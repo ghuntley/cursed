@@ -28,7 +28,6 @@ use aes::Aes256;
 use blake3::Hasher as Blake3Hasher;
 
 use crate::error::CursedError;
-use crate::error::Error;
 
 /// Post-Quantum Cryptography specific errors
 #[derive(Debug, Clone, PartialEq)]
@@ -67,36 +66,36 @@ pub enum PqcError {
     LatticeOperationFailed(String),
 }
 
-impl fmt::Display for PqcError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PqcError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
-            PqcError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
-            PqcError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
-            PqcError::UnsupportedParameters(msg) => write!(f, "Unsupported parameters: {}", msg),
-            PqcError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
-            PqcError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
-            PqcError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
-            PqcError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
-            PqcError::SigningFailed(msg) => write!(f, "Signing failed: {}", msg),
-            PqcError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
-            PqcError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
-            PqcError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
-            PqcError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
-            PqcError::InternalError(msg) => write!(f, "Internal error: {}", msg),
-            PqcError::AssessmentFailed(msg) => write!(f, "Quantum resistance assessment failed: {}", msg),
-            PqcError::LatticeOperationFailed(msg) => write!(f, "Lattice operation failed: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for PqcError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             PqcError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
+//             PqcError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
+//             PqcError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
+//             PqcError::UnsupportedParameters(msg) => write!(f, "Unsupported parameters: {}", msg),
+//             PqcError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
+//             PqcError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
+//             PqcError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
+//             PqcError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
+//             PqcError::SigningFailed(msg) => write!(f, "Signing failed: {}", msg),
+//             PqcError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
+//             PqcError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
+//             PqcError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
+//             PqcError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
+//             PqcError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+//             PqcError::AssessmentFailed(msg) => write!(f, "Quantum resistance assessment failed: {}", msg),
+//             PqcError::LatticeOperationFailed(msg) => write!(f, "Lattice operation failed: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for PqcError {}
-
-impl From<PqcError> for CursedError {
-    fn from(err: PqcError) -> Self {
-        CursedError::Runtime(format!("PQC error: {}", err))
-    }
-}
+// impl std::error::CursedError for PqcError {}
+// 
+// impl From<PqcError> for CursedError {
+//     fn from(err: PqcError) -> Self {
+//         CursedError::Runtime(format!("PQC error: {}", err))
+//     }
+// }
 
 /// Result type for PQC operations
 pub type PqcResult<T> = std::result::Result<T, PqcError>;
@@ -247,7 +246,7 @@ pub struct LatticeFoundation {
     pub dimension: usize,
     /// Modulus for operations
     pub modulus: u64,
-    /// Error distribution parameter
+    /// CursedError distribution parameter
     pub error_stddev: f64,
     /// Number of samples
     pub samples: usize,

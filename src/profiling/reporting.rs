@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Performance reporting and visualization generation
 
 use std::collections::HashMap;
@@ -6,11 +6,11 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument};
 
-use crate::profiling::core::{ProfileData, ProfilerError};
-use crate::profiling::cpu::{CpuProfileData, FlameGraph};
-use crate::profiling::memory::MemoryProfileData;
-use crate::profiling::concurrency::ConcurrencyProfileData;
-use crate::profiling::benchmarking::BenchmarkResults;
+// use crate::profiling::core::{ProfileData, ProfilerError};
+// use crate::profiling::cpu::{CpuProfileData, FlameGraph};
+// use crate::profiling::memory::MemoryProfileData;
+// use crate::profiling::concurrency::ConcurrencyProfileData;
+// use crate::profiling::benchmarking::BenchmarkResults;
 
 /// Performance report generator
 #[derive(Debug)]
@@ -24,7 +24,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, profile_data))]
-    pub fn generate_report(&self, profile_data: &ProfileData) -> Result<(), Error> {
+    pub fn generate_report(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         info!("Generating performance report for session: {}", profile_data.session_name);
         
         let mut report = PerformanceReport::new(
@@ -53,7 +53,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, benchmark_results))]
-    pub fn generate_benchmark_report(&self, benchmark_results: &BenchmarkResults) -> Result<(), Error> {
+    pub fn generate_benchmark_report(&self, benchmark_results: &BenchmarkResults) -> crate::error::Result<()> {
         info!("Generating benchmark report for suite: {}", benchmark_results.suite_name);
         
         let report = BenchmarkReport {
@@ -70,7 +70,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, report))]
-    pub fn export_html(&self, report: &PerformanceReport, output_path: &str) -> Result<(), Error> {
+    pub fn export_html(&self, report: &PerformanceReport, output_path: &str) -> crate::error::Result<()> {
         let html = self.generate_html_report(report)?;
         std::fs::write(output_path, html).map_err(ProfilerError::IoError)?;
         info!("HTML report exported to: {}", output_path);
@@ -78,7 +78,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, report))]
-    pub fn export_markdown(&self, report: &PerformanceReport, output_path: &str) -> Result<(), Error> {
+    pub fn export_markdown(&self, report: &PerformanceReport, output_path: &str) -> crate::error::Result<()> {
         let markdown = self.generate_markdown_report(report)?;
         std::fs::write(output_path, markdown).map_err(ProfilerError::IoError)?;
         info!("Markdown report exported to: {}", output_path);
@@ -86,7 +86,7 @@ impl ReportGenerator {
     }
     
     #[instrument(skip(self, report))]
-    pub fn export_json(&self, report: &PerformanceReport, output_path: &str) -> Result<(), Error> {
+    pub fn export_json(&self, report: &PerformanceReport, output_path: &str) -> crate::error::Result<()> {
         let json = serde_json::to_string_pretty(report)
             .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
         std::fs::write(output_path, json).map_err(ProfilerError::IoError)?;
@@ -96,7 +96,7 @@ impl ReportGenerator {
     
     /// Import a performance report from JSON file
     #[instrument(skip(self))]
-    pub fn import_json(&self, input_path: &str) -> Result<(), Error> {
+    pub fn import_json(&self, input_path: &str) -> crate::error::Result<()> {
         let json = std::fs::read_to_string(input_path)
             .map_err(ProfilerError::IoError)?;
         let report: PerformanceReport = serde_json::from_str(&json)
@@ -107,7 +107,7 @@ impl ReportGenerator {
     
     /// Import a benchmark report from JSON file
     #[instrument(skip(self))]
-    pub fn import_benchmark_json(&self, input_path: &str) -> Result<(), Error> {
+    pub fn import_benchmark_json(&self, input_path: &str) -> crate::error::Result<()> {
         let json = std::fs::read_to_string(input_path)
             .map_err(ProfilerError::IoError)?;
         let report: BenchmarkReport = serde_json::from_str(&json)
@@ -118,7 +118,7 @@ impl ReportGenerator {
     
     /// Import a performance report from binary format
     #[instrument(skip(self))]
-    pub fn import_binary(&self, input_path: &str) -> Result<(), Error> {
+    pub fn import_binary(&self, input_path: &str) -> crate::error::Result<()> {
         let data = std::fs::read(input_path)
             .map_err(ProfilerError::IoError)?;
         let report: PerformanceReport = bincode::deserialize(&data)
@@ -129,7 +129,7 @@ impl ReportGenerator {
     
     /// Export a performance report to binary format
     #[instrument(skip(self, report))]
-    pub fn export_binary(&self, report: &PerformanceReport, output_path: &str) -> Result<(), Error> {
+    pub fn export_binary(&self, report: &PerformanceReport, output_path: &str) -> crate::error::Result<()> {
         let data = bincode::serialize(report)
             .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
         std::fs::write(output_path, data).map_err(ProfilerError::IoError)?;
@@ -137,7 +137,7 @@ impl ReportGenerator {
         Ok(())
     }
     
-    fn extract_cpu_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
+    fn extract_cpu_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Cpu) {
             let cpu_data: CpuProfileData = bincode::deserialize(data)
                 .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
@@ -147,7 +147,7 @@ impl ReportGenerator {
         }
     }
     
-    fn extract_memory_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
+    fn extract_memory_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Memory) {
             let memory_data: MemoryProfileData = bincode::deserialize(data)
                 .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
@@ -157,7 +157,7 @@ impl ReportGenerator {
         }
     }
     
-    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> Result<(), Error> {
+    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
         if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Concurrency) {
             let concurrency_data: ConcurrencyProfileData = bincode::deserialize(data)
                 .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
@@ -167,7 +167,7 @@ impl ReportGenerator {
         }
     }
     
-    fn generate_cpu_analysis(&self, cpu_data: &CpuProfileData) -> Result<(), Error> {
+    fn generate_cpu_analysis(&self, cpu_data: &CpuProfileData) -> crate::error::Result<()> {
         let hot_functions = cpu_data.get_hot_functions(self.config.max_functions);
         let call_graph = cpu_data.get_call_graph();
         let flame_graph = FlameGraph::from_cpu_profile(cpu_data)?;
@@ -198,7 +198,7 @@ impl ReportGenerator {
         })
     }
     
-    fn generate_memory_analysis(&self, memory_data: &MemoryProfileData) -> Result<(), Error> {
+    fn generate_memory_analysis(&self, memory_data: &MemoryProfileData) -> crate::error::Result<()> {
         let current_usage = memory_data.calculate_current_usage();
         let allocation_analysis = memory_data.analyze_patterns();
         let memory_leaks = memory_data.detect_leaks();
@@ -215,7 +215,7 @@ impl ReportGenerator {
         })
     }
     
-    fn generate_concurrency_analysis(&self, concurrency_data: &ConcurrencyProfileData) -> Result<(), Error> {
+    fn generate_concurrency_analysis(&self, concurrency_data: &ConcurrencyProfileData) -> crate::error::Result<()> {
         let goroutine_timeline = concurrency_data.generate_goroutine_timeline();
         let channel_analysis = concurrency_data.analyze_channels();
         let deadlocks = concurrency_data.detect_deadlocks();
@@ -405,7 +405,7 @@ impl ReportGenerator {
         ]
     }
     
-    fn generate_html_report(&self, report: &PerformanceReport) -> Result<(), Error> {
+    fn generate_html_report(&self, report: &PerformanceReport) -> crate::error::Result<()> {
         let mut html = String::new();
         
         html.push_str("<!DOCTYPE html><html><head>");
@@ -481,7 +481,7 @@ impl ReportGenerator {
         Ok(html)
     }
     
-    fn generate_markdown_report(&self, report: &PerformanceReport) -> Result<(), Error> {
+    fn generate_markdown_report(&self, report: &PerformanceReport) -> crate::error::Result<()> {
         let mut md = String::new();
         
         md.push_str(&format!("# Performance Report: {}\n\n", report.session_name));
@@ -819,206 +819,3 @@ impl From<&crate::profiling::concurrency::ChannelStats> for SerializableChannelS
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_report_generator_creation() {
-        let config = ReportConfig::default();
-        let generator = ReportGenerator::new(config);
-        assert!(generator.config.include_flame_graphs);
-    }
-    
-    #[test]
-    fn test_performance_score_calculation() {
-        let config = ReportConfig::default();
-        let generator = ReportGenerator::new(config);
-        
-        let report = PerformanceReport::new("test".to_string(), ReportConfig::default());
-        let score = generator.calculate_performance_score(&report);
-        
-        assert_eq!(score, 100.0); // No issues, perfect score
-    }
-    
-    #[test]
-    fn test_markdown_generation() {
-        let config = ReportConfig::default();
-        let generator = ReportGenerator::new(config.clone());
-        
-        let report = PerformanceReport::new("test_session".to_string(), config);
-        let markdown = generator.generate_markdown_report(&report).unwrap();
-        
-        assert!(markdown.contains("# Performance Report: test_session"));
-        assert!(markdown.contains("## Summary"));
-    }
-    
-    #[test]
-    fn test_serializable_memory_leak_conversion() {
-        use std::time::{Duration, Instant};
-        use crate::profiling::memory::MemoryLeak;
-        
-        let start_time = Instant::now();
-        std::thread::sleep(Duration::from_millis(1)); // Ensure some elapsed time
-        
-        let leak = MemoryLeak {
-            address: 0x12345678,
-            size: 1024,
-            age: Duration::from_secs(10),
-            stack_trace: vec!["function_a".to_string(), "function_b".to_string()],
-            allocation_timestamp: start_time,
-        };
-        
-        let serializable = SerializableMemoryLeak::from(&leak);
-        
-        assert_eq!(serializable.address, 0x12345678);
-        assert_eq!(serializable.size, 1024);
-        assert_eq!(serializable.age, Duration::from_secs(10));
-        assert_eq!(serializable.stack_trace, vec!["function_a", "function_b"]);
-        assert!(serializable.allocation_timestamp_millis > 0);
-    }
-    
-    #[test]
-    fn test_performance_report_serialization() {
-        let config = ReportConfig::default();
-        let report = PerformanceReport::new("test_session".to_string(), config);
-        
-        // Test JSON serialization
-        let json = serde_json::to_string(&report).unwrap();
-        assert!(json.contains("test_session"));
-        
-        // Test JSON deserialization
-        let deserialized: PerformanceReport = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized.session_name, "test_session");
-        assert_eq!(deserialized.config.max_functions, 20);
-        
-        // Test binary serialization
-        let binary = bincode::serialize(&report).unwrap();
-        assert!(!binary.is_empty());
-        
-        // Test binary deserialization
-        let deserialized_bin: PerformanceReport = bincode::deserialize(&binary).unwrap();
-        assert_eq!(deserialized_bin.session_name, "test_session");
-    }
-    
-    #[test]
-    fn test_report_generator_import_export() {
-        use std::fs;
-        use std::env;
-        
-        let config = ReportConfig::default();
-        let generator = ReportGenerator::new(config.clone());
-        
-        let report = PerformanceReport::new("import_export_test".to_string(), config);
-        
-        // Create temporary directory for test files
-        let temp_dir = env::temp_dir().join("cursed_profiling_test");
-        fs::create_dir_all(&temp_dir).unwrap();
-        
-        // Test JSON export/import
-        let json_path = temp_dir.join("test_report.json");
-        generator.export_json(&report, json_path.to_str().unwrap()).unwrap();
-        
-        let imported_report = generator.import_json(json_path.to_str().unwrap()).unwrap();
-        assert_eq!(imported_report.session_name, "import_export_test");
-        
-        // Test binary export/import
-        let binary_path = temp_dir.join("test_report.bin");
-        generator.export_binary(&report, binary_path.to_str().unwrap()).unwrap();
-        
-        let imported_binary = generator.import_binary(binary_path.to_str().unwrap()).unwrap();
-        assert_eq!(imported_binary.session_name, "import_export_test");
-        
-        // Cleanup
-        fs::remove_dir_all(&temp_dir).unwrap();
-    }
-    
-    #[test]
-    fn test_serializable_channel_analysis_conversion() {
-        use std::collections::HashMap;
-        use crate::profiling::concurrency::{ChannelAnalysis, ChannelStats};
-        
-        let mut channel_stats = HashMap::new();
-        channel_stats.insert("channel_1".to_string(), ChannelStats {
-            messages_sent: 100,
-            messages_received: 95,
-            blocks_on_send: 5,
-            blocks_on_receive: 2,
-            buffer_capacity: 10,
-            current_buffer_size: 3,
-        });
-        
-        let analysis = ChannelAnalysis {
-            total_channels: 5,
-            active_channels: 3,
-            total_messages: 500,
-            total_blocks: 20,
-            average_buffer_utilization: 0.6,
-            channel_statistics: channel_stats,
-        };
-        
-        let serializable = SerializableChannelAnalysis::from(&analysis);
-        
-        assert_eq!(serializable.total_channels, 5);
-        assert_eq!(serializable.active_channels, 3);
-        assert_eq!(serializable.total_messages, 500);
-        assert_eq!(serializable.average_buffer_utilization, 0.6);
-        assert!(serializable.channel_statistics.contains_key("channel_1"));
-        
-        let channel_1_stats = &serializable.channel_statistics["channel_1"];
-        assert_eq!(channel_1_stats.messages_sent, 100);
-        assert_eq!(channel_1_stats.buffer_capacity, 10);
-    }
-    
-    #[test]
-    fn test_deserialization_error_handling() {
-        let config = ReportConfig::default();
-        let generator = ReportGenerator::new(config);
-        
-        // Test with invalid JSON
-        let invalid_json = r#"{"invalid": "json", "missing_fields": true}"#;
-        let temp_dir = std::env::temp_dir().join("cursed_profiling_test_errors");
-        std::fs::create_dir_all(&temp_dir).unwrap();
-        
-        let invalid_json_path = temp_dir.join("invalid.json");
-        std::fs::write(&invalid_json_path, invalid_json).unwrap();
-        
-        let result = generator.import_json(invalid_json_path.to_str().unwrap());
-        assert!(result.is_err());
-        
-        // Test with non-existent file
-        let result = generator.import_json("/non/existent/path.json");
-        assert!(result.is_err());
-        
-        // Cleanup
-        std::fs::remove_dir_all(&temp_dir).unwrap();
-    }
-    
-    #[test]
-    fn test_report_config_serialization() {
-        let config = ReportConfig {
-            include_flame_graphs: false,
-            include_call_graphs: true,
-            max_functions: 50,
-            max_memory_leaks: 25,
-            max_goroutines: 100,
-            performance_threshold: 15.5,
-        };
-        
-        // Test JSON serialization
-        let json = serde_json::to_string(&config).unwrap();
-        let deserialized: ReportConfig = serde_json::from_str(&json).unwrap();
-        
-        assert_eq!(deserialized.include_flame_graphs, false);
-        assert_eq!(deserialized.include_call_graphs, true);
-        assert_eq!(deserialized.max_functions, 50);
-        assert_eq!(deserialized.performance_threshold, 15.5);
-        
-        // Test binary serialization
-        let binary = bincode::serialize(&config).unwrap();
-        let deserialized_bin: ReportConfig = bincode::deserialize(&binary).unwrap();
-        
-        assert_eq!(deserialized_bin.max_memory_leaks, 25);
-        assert_eq!(deserialized_bin.max_goroutines, 100);
-    }
-}

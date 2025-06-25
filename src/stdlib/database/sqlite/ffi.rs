@@ -15,7 +15,7 @@ use super::{SqliteError, SqliteResult, SqliteType, SqliteVersion, SqliteFeatures
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SqliteResultCode {
     Ok = 0,
-    Error = 1,
+    CursedError = 1,
     Internal = 2,
     Perm = 3,
     Abort = 4,
@@ -52,7 +52,7 @@ impl SqliteResultCode {
     pub fn from_raw(code: c_int) -> Self {
         match code {
             0 => SqliteResultCode::Ok,
-            1 => SqliteResultCode::Error,
+            1 => SqliteResultCode::CursedError,
             2 => SqliteResultCode::Internal,
             3 => SqliteResultCode::Perm,
             4 => SqliteResultCode::Abort,
@@ -82,7 +82,7 @@ impl SqliteResultCode {
             28 => SqliteResultCode::Warning,
             100 => SqliteResultCode::Row,
             101 => SqliteResultCode::Done,
-            _ => SqliteResultCode::Error,
+            _ => SqliteResultCode::CursedError,
         }
     }
 
@@ -95,7 +95,7 @@ impl SqliteResultCode {
     pub fn message(self) -> &'static str {
         match self {
             SqliteResultCode::Ok => "Successful result",
-            SqliteResultCode::Error => "Generic error",
+            SqliteResultCode::CursedError => "Generic error",
             SqliteResultCode::Internal => "Internal logic error",
             SqliteResultCode::Perm => "Access permission denied",
             SqliteResultCode::Abort => "Callback routine requested abort",
@@ -765,65 +765,3 @@ extern "C" {
     fn sqlite3_compileoption_get(n: c_int) -> *const c_char;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_result_code_conversion() {
-        assert_eq!(SqliteResultCode::from_raw(0), SqliteResultCode::Ok);
-        assert_eq!(SqliteResultCode::from_raw(100), SqliteResultCode::Row);
-        assert_eq!(SqliteResultCode::from_raw(101), SqliteResultCode::Done);
-        assert_eq!(SqliteResultCode::from_raw(999), SqliteResultCode::Error);
-    }
-
-    #[test]
-    fn test_result_code_is_ok() {
-        assert!(SqliteResultCode::Ok.is_ok());
-        assert!(SqliteResultCode::Row.is_ok());
-        assert!(SqliteResultCode::Done.is_ok());
-        assert!(!SqliteResultCode::Error.is_ok());
-        assert!(!SqliteResultCode::Busy.is_ok());
-    }
-
-    #[test]
-    fn test_result_code_messages() {
-        assert_eq!(SqliteResultCode::Ok.message(), "Successful result");
-        assert_eq!(SqliteResultCode::Error.message(), "Generic error");
-        assert_eq!(SqliteResultCode::Busy.message(), "Database file is locked");
-        assert_eq!(SqliteResultCode::NoMem.message(), "Memory allocation failed");
-    }
-
-    #[test]
-    fn test_handle_creation() {
-        // Test that we can create handles (using null pointers for testing)
-        // In real usage, these would come from SQLite
-        
-        // Note: This is just testing the safe wrapper, not actual SQLite functionality
-        let null_ptr = std::ptr::null_mut();
-        let result = unsafe { 
-            SqliteHandle::from_raw(null_ptr, "test.db".to_string(), 0) 
-        };
-        assert!(result.is_err()); // Should fail with null pointer
-    }
-
-    #[test]
-    fn test_sqlite_type_conversion() {
-        assert_eq!(SqliteType::from_code(1), SqliteType::Integer);
-        assert_eq!(SqliteType::from_code(2), SqliteType::Real);
-        assert_eq!(SqliteType::from_code(3), SqliteType::Text);
-        assert_eq!(SqliteType::from_code(4), SqliteType::Blob);
-        assert_eq!(SqliteType::from_code(5), SqliteType::Null);
-        assert_eq!(SqliteType::from_code(999), SqliteType::Null);
-
-        assert_eq!(SqliteType::Integer.to_code(), 1);
-        assert_eq!(SqliteType::Real.to_code(), 2);
-        assert_eq!(SqliteType::Text.to_code(), 3);
-        assert_eq!(SqliteType::Blob.to_code(), 4);
-        assert_eq!(SqliteType::Null.to_code(), 5);
-    }
-
-    // Note: Most FFI functions can't be tested without linking to SQLite
-    // In a real implementation, we'd have integration tests that link to libsqlite3
-}

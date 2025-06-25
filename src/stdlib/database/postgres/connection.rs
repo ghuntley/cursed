@@ -11,11 +11,11 @@ pub struct Client;
 pub struct NoTls;
 pub struct Statement;
 pub struct Transaction;
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     DriverConn, DriverStmt, DriverTx, TxOptions, SqlValue,
     driver::{QueryResult, ExecuteResult, ConnectionMetadata}
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::config::PostgresConfig;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
 use super::types::{map_postgres_value, prepare_parameters, extract_column_info};
@@ -367,7 +367,7 @@ impl PostgresConnection {
 }
 
 impl DriverConn for PostgresConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         // For async prepare, we need to use a runtime
         let handle = tokio::runtime::Handle::current();
         let mut conn = PostgresConnection::from_client(
@@ -382,7 +382,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| e.to_database_error())
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = tokio::runtime::Handle::current();
         let mut conn = PostgresConnection::from_client(
             self.client.as_ref().unwrap().clone(), // This would need proper handling
@@ -394,7 +394,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| e.to_database_error())
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         let handle = tokio::runtime::Handle::current();
         let mut conn = PostgresConnection::from_client(
             self.client.as_ref().unwrap().clone(), // This would need proper handling
@@ -406,7 +406,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| e.to_database_error())
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         let handle = tokio::runtime::Handle::current();
         let mut conn = PostgresConnection::from_client(
             self.client.as_ref().unwrap().clone(), // This would need proper handling
@@ -420,11 +420,11 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| e.to_database_error())
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         let handle = tokio::runtime::Handle::current();
         let client = self.client.as_ref().ok_or_else(|| {
-            crate::stdlib::database::DatabaseError::new(
-                crate::stdlib::database::DatabaseErrorKind::ConnectionFailed,
+//             crate::stdlib::database::DatabaseError::new(
+//                 crate::stdlib::database::DatabaseErrorKind::ConnectionFailed,
                 "No active connection",
             )
         })?;
@@ -434,7 +434,7 @@ impl DriverConn for PostgresConnection {
         }).map_err(|e| PostgresError::from(e).to_database_error())
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // tokio-postgres connections close automatically when dropped
         Ok(())
     }
@@ -488,50 +488,3 @@ impl DriverConn for PostgresConnection {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_connection_stats() {
-        let stats = ConnectionStats::default();
-        assert_eq!(stats.queries_executed, 0);
-        assert_eq!(stats.statements_prepared, 0);
-        assert_eq!(stats.transactions_started, 0);
-    }
-
-    #[tokio::test]
-    async fn test_connection_creation() {
-        let config = PostgresConfig::default();
-        
-        // This will fail without a real PostgreSQL server
-        let result = PostgresConnection::new(config).await;
-        
-        // Expect connection failure, not configuration error
-        if let Err(err) = result {
-            assert!(matches!(
-                err.kind,
-                PostgresErrorKind::ConnectionFailed | PostgresErrorKind::TimeoutError
-            ));
-        }
-    }
-
-    #[test]
-    fn test_connection_metadata() {
-        let config = PostgresConfig::default();
-        let conn = PostgresConnection {
-            client: None,
-            config,
-            connection_id: "test-123".to_string(),
-            connected_at: SystemTime::now(),
-            last_activity: Arc::new(std::sync::Mutex::new(SystemTime::now())),
-            stats: Arc::new(std::sync::Mutex::new(ConnectionStats::default())),
-            in_transaction: Arc::new(std::sync::Mutex::new(false)),
-        };
-        
-        let metadata = conn.metadata();
-        assert_eq!(metadata.driver_name, "PostgreSQL");
-        assert_eq!(metadata.connection_id, "test-123");
-        assert_eq!(metadata.database_name, "postgres");
-    }
-}

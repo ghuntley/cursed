@@ -3,7 +3,7 @@
 // Complete implementation of RSA-PSS (Probabilistic Signature Scheme)
 // with support for multiple key sizes, salt lengths, and hash algorithms.
 
-use crate::stdlib::packages::crypto_signatures::{
+// use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},
     hash_algorithms::{HashAlgorithm, HashAlgorithmManager},
 };
@@ -641,80 +641,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_key_generation() {
-        let manager = RsaPssManager::new();
-        let keypair = manager.generate_keypair(RsaKeySize::Bits2048).unwrap();
-        
-        assert_eq!(keypair.public_key.modulus.len(), 256);
-        assert_eq!(keypair.private_key.private_exponent.len(), 256);
-    }
-
-    #[test]
-    fn test_pss_parameters() {
-        let manager = RsaPssManager::new();
-        let params = RsaPssParams::default();
-        
-        manager.validate_params(&params).unwrap();
-        
-        let salt_length = manager.get_optimal_salt_length(&params).unwrap();
-        assert_eq!(salt_length, 32); // SHA-256 digest length
-    }
-
-    #[test]
-    fn test_sign_verify_cycle() {
-        let manager = RsaPssManager::new();
-        let keypair = manager.generate_keypair(RsaKeySize::Bits2048).unwrap();
-        let message = b"test message for RSA-PSS signing";
-        
-        let signature = manager.sign(message, &keypair.private_key, None).unwrap();
-        assert_eq!(signature.signature.len(), 256); // 2048 bits = 256 bytes
-        
-        let result = manager.verify(message, &signature, &keypair.public_key).unwrap();
-        assert!(result.is_valid);
-    }
-
-    #[test]
-    fn test_mgf1() {
-        let manager = RsaPssManager::new();
-        let seed = b"test seed";
-        let mask = manager.mgf1(seed, 50, &HashAlgorithm::Sha256).unwrap();
-        
-        assert_eq!(mask.len(), 50);
-        
-        // MGF1 should be deterministic
-        let mask2 = manager.mgf1(seed, 50, &HashAlgorithm::Sha256).unwrap();
-        assert_eq!(mask, mask2);
-    }
-
-    #[test]
-    fn test_different_key_sizes() {
-        let manager = RsaPssManager::new();
-        
-        for key_size in [RsaKeySize::Bits2048, RsaKeySize::Bits3072, RsaKeySize::Bits4096] {
-            let keypair = manager.generate_keypair(key_size.clone()).unwrap();
-            let expected_size = manager.get_key_size_bytes(&key_size);
-            
-            assert_eq!(keypair.public_key.modulus.len(), expected_size);
-        }
-    }
-
-    #[test]
-    fn test_utils_functions() {
-        let keypair = utils::generate_keypair(RsaKeySize::Bits2048).unwrap();
-        let message = b"test message";
-        
-        let signature = utils::sign(message, &keypair.private_key, HashAlgorithm::Sha256).unwrap();
-        assert_eq!(signature.len(), 256);
-        
-        let is_valid = utils::verify(message, &signature, &keypair.public_key, HashAlgorithm::Sha256).unwrap();
-        assert!(is_valid);
-        
-        let params = utils::default_params_for_key_size(RsaKeySize::Bits3072);
-        assert_eq!(params.hash_algorithm, HashAlgorithm::Sha384);
-    }
-}

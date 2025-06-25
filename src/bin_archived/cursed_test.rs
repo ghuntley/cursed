@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CURSED Test Runner CLI
 /// 
 /// Command-line interface for the CURSED testing framework
@@ -97,7 +97,7 @@ enum Commands {
     },
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> crate::error::Result<()> {
     let cli = Cli::parse();
     
     // Build test framework configuration
@@ -178,7 +178,7 @@ fn parse_report_format(format: &str) -> ReportFormat {
     }
 }
 
-fn run_all_tests(framework: &mut TestFramework) -> Result<(), Error> {
+fn run_all_tests(framework: &mut TestFramework) -> crate::error::Result<()> {
     println!("🚀 Running CURSED tests...");
     
     let report = framework.run_tests()?;
@@ -196,7 +196,7 @@ fn run_all_tests(framework: &mut TestFramework) -> Result<(), Error> {
     }
 }
 
-fn run_specific_tests(framework: &mut TestFramework, test_names: &[String]) -> Result<(), Error> {
+fn run_specific_tests(framework: &mut TestFramework, test_names: &[String]) -> crate::error::Result<()> {
     println!("🎯 Running specific tests: {:?}", test_names);
     
     let mut passed = 0;
@@ -232,7 +232,7 @@ fn run_specific_tests(framework: &mut TestFramework, test_names: &[String]) -> R
     }
 }
 
-fn list_tests(framework: &mut TestFramework, detailed: bool) -> Result<(), Error> {
+fn list_tests(framework: &mut TestFramework, detailed: bool) -> crate::error::Result<()> {
     println!("🔍 Discovering tests...");
     
     // For now, we'll simulate test discovery since we don't have actual test files
@@ -260,7 +260,7 @@ fn list_tests(framework: &mut TestFramework, detailed: bool) -> Result<(), Error
     Ok(())
 }
 
-fn show_statistics(framework: &TestFramework) -> Result<(), Error> {
+fn show_statistics(framework: &TestFramework) -> crate::error::Result<()> {
     println!("📊 Test Statistics:");
     
     let stats = framework.get_statistics();
@@ -276,7 +276,7 @@ fn show_statistics(framework: &TestFramework) -> Result<(), Error> {
     Ok(())
 }
 
-fn generate_report(framework: &mut TestFramework, format: &str, output: Option<PathBuf>) -> Result<(), Error> {
+fn generate_report(framework: &mut TestFramework, format: &str, output: Option<PathBuf>) -> crate::error::Result<()> {
     println!("📄 Generating {} report...", format);
     
     // Run tests to get results
@@ -349,7 +349,7 @@ fn print_test_summary(report: &TestFrameworkReport) {
                 failure.test_info.line_number
             );
             if let TestStatus::Failed(ref message) = failure.status {
-                println!("   Error: {}", message);
+                println!("   CursedError: {}", message);
             }
         }
     }

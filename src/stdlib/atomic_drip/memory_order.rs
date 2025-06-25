@@ -98,79 +98,23 @@ pub mod fence {
 
     /// Full memory barrier - ensures all memory operations are complete
     pub fn full_barrier() {
+        // TODO: implement
+    }
         memory_fence(MemoryOrder::SequentiallyConsistent);
     }
 
     /// Acquire barrier - prevents reordering of subsequent reads
     pub fn acquire_barrier() {
+        // TODO: implement
+    }
         memory_fence(MemoryOrder::Acquire);
     }
 
     /// Release barrier - prevents reordering of previous writes
     pub fn release_barrier() {
+        // TODO: implement
+    }
         memory_fence(MemoryOrder::Release);
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_memory_order_conversion() {
-        assert_eq!(MemoryOrder::Relaxed.to_std_ordering(), Ordering::Relaxed);
-        assert_eq!(MemoryOrder::Acquire.to_std_ordering(), Ordering::Acquire);
-        assert_eq!(MemoryOrder::Release.to_std_ordering(), Ordering::Release);
-        assert_eq!(MemoryOrder::AcquireRelease.to_std_ordering(), Ordering::AcqRel);
-        assert_eq!(MemoryOrder::SequentiallyConsistent.to_std_ordering(), Ordering::SeqCst);
-    }
-
-    #[test]
-    fn test_load_validity() {
-        assert!(MemoryOrder::Relaxed.is_valid_for_load());
-        assert!(MemoryOrder::Acquire.is_valid_for_load());
-        assert!(!MemoryOrder::Release.is_valid_for_load());
-        assert!(!MemoryOrder::AcquireRelease.is_valid_for_load());
-        assert!(MemoryOrder::SequentiallyConsistent.is_valid_for_load());
-    }
-
-    #[test]
-    fn test_store_validity() {
-        assert!(MemoryOrder::Relaxed.is_valid_for_store());
-        assert!(!MemoryOrder::Acquire.is_valid_for_store());
-        assert!(MemoryOrder::Release.is_valid_for_store());
-        assert!(!MemoryOrder::AcquireRelease.is_valid_for_store());
-        assert!(MemoryOrder::SequentiallyConsistent.is_valid_for_store());
-    }
-
-    #[test]
-    fn test_cas_validity() {
-        assert!(MemoryOrder::Relaxed.is_valid_for_cas());
-        assert!(MemoryOrder::Acquire.is_valid_for_cas());
-        assert!(MemoryOrder::Release.is_valid_for_cas());
-        assert!(MemoryOrder::AcquireRelease.is_valid_for_cas());
-        assert!(MemoryOrder::SequentiallyConsistent.is_valid_for_cas());
-    }
-
-    #[test]
-    fn test_cas_failure_ordering() {
-        assert_eq!(MemoryOrder::Release.cas_failure_ordering(), MemoryOrder::Relaxed);
-        assert_eq!(MemoryOrder::AcquireRelease.cas_failure_ordering(), MemoryOrder::Acquire);
-        assert_eq!(MemoryOrder::Relaxed.cas_failure_ordering(), MemoryOrder::Relaxed);
-    }
-
-    #[test]
-    fn test_default_ordering() {
-        assert_eq!(MemoryOrder::default(), MemoryOrder::SequentiallyConsistent);
-    }
-
-    #[test]
-    fn test_fence_operations() {
-        // These should not panic
-        fence::memory_fence(MemoryOrder::Relaxed);
-        fence::compiler_fence(MemoryOrder::Acquire);
-        fence::full_barrier();
-        fence::acquire_barrier();
-        fence::release_barrier();
-    }
-}

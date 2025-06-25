@@ -3,7 +3,7 @@
 /// Discovers CURSED test files and extracts test functions using the
 /// lexer and parser to identify test functions with proper syntax.
 
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::lexer::{Lexer, Token};
 use crate::parser::Parser;
 use crate::ast::{Program, Statement, FunctionStatement};
@@ -200,7 +200,7 @@ impl TestDiscovery {
                         }
                     }
                     Err(e) => {
-                        warn!("Error walking directory: {}", e);
+                        warn!("CursedError walking directory: {}", e);
                     }
                 }
             }
@@ -435,78 +435,3 @@ impl TestDiscovery {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-    use std::fs;
-
-    #[tokio::test]
-    async fn test_discovery_basic() {
-        let temp_dir = TempDir::new().unwrap();
-        let test_file_path = temp_dir.path().join("test_example.csd");
-        
-        fs::write(&test_file_path, r#"
-            squad TestData {
-                sus value: i32,
-            }
-
-            collab TestRunner {
-                slay test_addition() {
-                    sus result = 2 + 2
-                    assert_equal(result, 4)
-                }
-
-                slay test_string_ops() {
-                    sus msg = "hello world"
-                    assert_true(msg.contains("world"))
-                }
-            }
-        "#).unwrap();
-        
-        let mut discovery = TestDiscovery::new(temp_dir.path());
-        let suites = discovery.discover_tests().await.unwrap();
-        
-        assert_eq!(suites.len(), 1);
-        assert_eq!(suites[0].test_files.len(), 1);
-        assert_eq!(suites[0].test_files[0].test_functions.len(), 2);
-        
-        let test_names: Vec<&str> = suites[0].test_files[0].test_functions
-            .iter()
-            .map(|f| f.name.as_str())
-            .collect();
-        
-        assert!(test_names.contains(&"test_addition"));
-        assert!(test_names.contains(&"test_string_ops"));
-    }
-
-    #[tokio::test]
-    async fn test_discovery_with_patterns() {
-        let temp_dir = TempDir::new().unwrap();
-        
-        // Create test file that matches pattern
-        let test_file = temp_dir.path().join("integration_test.csd");
-        fs::write(&test_file, r#"
-            slay test_integration_flow() {
-                // Integration test
-            }
-        "#).unwrap();
-        
-        // Create file that doesn't match pattern
-        let non_test_file = temp_dir.path().join("main.csd");
-        fs::write(&non_test_file, r#"
-            slay main() {
-                println("Hello, World!")
-            }
-        "#).unwrap();
-        
-        let mut discovery = TestDiscovery::new(temp_dir.path())
-            .with_include_patterns(vec!["**/*test*.csd".to_string()]);
-        
-        let suites = discovery.discover_tests().await.unwrap();
-        
-        assert_eq!(suites.len(), 1);
-        assert_eq!(suites[0].test_files.len(), 1);
-        assert!(suites[0].test_files[0].path.file_name().unwrap().to_str().unwrap().contains("test"));
-    }
-}

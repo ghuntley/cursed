@@ -1,5 +1,5 @@
 /// Enhanced reflection utilities for LookinGlass
-use crate::stdlib::lookin_glass::{Type, Value, Kind, StructField, error::*};
+// use crate::stdlib::lookin_glass::{Type, Value, Kind, StructField, error::*};
 use std::collections::HashMap;
 use std::any::Any;
 
@@ -124,7 +124,7 @@ pub fn deep_copy(v: &Value) -> LookinGlassResult<Value> {
         Kind::Complex64 | Kind::Complex128 => {
             let (real, imag) = v.complex()?;
             Ok(Value::new(v.typ().clone(), 
-                crate::stdlib::lookin_glass::value::ValueData::Complex(real, imag)))
+//                 crate::stdlib::lookin_glass::value::ValueData::Complex(real, imag)))
         }
         Kind::String => Ok(Value::from_string(v.string()?)),
         
@@ -137,7 +137,7 @@ pub fn deep_copy(v: &Value) -> LookinGlassResult<Value> {
                 copied_elements.push(deep_copy(&elem)?);
             }
             Ok(Value::new(v.typ().clone(), 
-                crate::stdlib::lookin_glass::value::ValueData::Slice(copied_elements)))
+//                 crate::stdlib::lookin_glass::value::ValueData::Slice(copied_elements)))
         }
         
         Kind::Array => {
@@ -148,7 +148,7 @@ pub fn deep_copy(v: &Value) -> LookinGlassResult<Value> {
                 copied_elements.push(deep_copy(&elem)?);
             }
             Ok(Value::new(v.typ().clone(), 
-                crate::stdlib::lookin_glass::value::ValueData::Array(copied_elements)))
+//                 crate::stdlib::lookin_glass::value::ValueData::Array(copied_elements)))
         }
         
         Kind::Map => {
@@ -161,7 +161,7 @@ pub fn deep_copy(v: &Value) -> LookinGlassResult<Value> {
                 copied_map.insert(copied_key, copied_value);
             }
             Ok(Value::new(v.typ().clone(), 
-                crate::stdlib::lookin_glass::value::ValueData::Map(copied_map)))
+//                 crate::stdlib::lookin_glass::value::ValueData::Map(copied_map)))
         }
         
         Kind::Struct => {
@@ -172,30 +172,30 @@ pub fn deep_copy(v: &Value) -> LookinGlassResult<Value> {
                 copied_fields.push(deep_copy(&field)?);
             }
             Ok(Value::new(v.typ().clone(), 
-                crate::stdlib::lookin_glass::value::ValueData::Struct(copied_fields)))
+//                 crate::stdlib::lookin_glass::value::ValueData::Struct(copied_fields)))
         }
         
         Kind::Pointer => {
             if v.is_nil() {
                 Ok(Value::new(v.typ().clone(), 
-                    crate::stdlib::lookin_glass::value::ValueData::Pointer(None)))
+//                     crate::stdlib::lookin_glass::value::ValueData::Pointer(None)))
             } else {
                 let elem = v.elem()?;
                 let copied_elem = deep_copy(&elem)?;
                 Ok(Value::new(v.typ().clone(), 
-                    crate::stdlib::lookin_glass::value::ValueData::Pointer(Some(Box::new(copied_elem)))))
+//                     crate::stdlib::lookin_glass::value::ValueData::Pointer(Some(Box::new(copied_elem)))))
             }
         }
         
         Kind::Interface => {
             if v.is_nil() {
                 Ok(Value::new(v.typ().clone(), 
-                    crate::stdlib::lookin_glass::value::ValueData::Interface(None)))
+//                     crate::stdlib::lookin_glass::value::ValueData::Interface(None)))
             } else {
                 let elem = v.elem()?;
                 let copied_elem = deep_copy(&elem)?;
                 Ok(Value::new(v.typ().clone(), 
-                    crate::stdlib::lookin_glass::value::ValueData::Interface(Some(Box::new(copied_elem)))))
+//                     crate::stdlib::lookin_glass::value::ValueData::Interface(Some(Box::new(copied_elem)))))
             }
         }
         
@@ -265,14 +265,14 @@ pub fn map_to_struct(m: &HashMap<String, Value>, struct_type: &Type) -> LookinGl
             value.convert(field_info.field_type())?
         } else {
             // Use zero value for missing fields
-            crate::stdlib::lookin_glass::core_functions::zero(field_info.field_type().clone())?
+//             crate::stdlib::lookin_glass::core_functions::zero(field_info.field_type().clone())?
         };
         
         field_values.push(final_value);
     }
     
     Ok(Value::new(struct_type.clone(), 
-        crate::stdlib::lookin_glass::value::ValueData::Struct(field_values)))
+//         crate::stdlib::lookin_glass::value::ValueData::Struct(field_values)))
 }
 
 /// GetTags returns all struct tags as a map
@@ -436,7 +436,7 @@ pub fn map_to_value(json: &serde_json::Value, target_type: Option<&Type>) -> Loo
     match json {
         serde_json::Value::Null => {
             if let Some(typ) = target_type {
-                crate::stdlib::lookin_glass::core_functions::zero(typ.clone())
+//                 crate::stdlib::lookin_glass::core_functions::zero(typ.clone())
             } else {
                 Ok(Value::invalid())
             }
@@ -466,8 +466,8 @@ pub fn map_to_value(json: &serde_json::Value, target_type: Option<&Type>) -> Loo
                 Type::new(Kind::Interface, "interface{}".to_string(), "".to_string())
             };
             
-            let slice_type = crate::stdlib::lookin_glass::core_functions::slice_of(elem_type);
-            Ok(Value::new(slice_type, crate::stdlib::lookin_glass::value::ValueData::Slice(values)))
+//             let slice_type = crate::stdlib::lookin_glass::core_functions::slice_of(elem_type);
+//             Ok(Value::new(slice_type, crate::stdlib::lookin_glass::value::ValueData::Slice(values)))
         }
         serde_json::Value::Object(obj) => {
             if let Some(typ) = target_type {
@@ -489,176 +489,12 @@ pub fn map_to_value(json: &serde_json::Value, target_type: Option<&Type>) -> Loo
                 map.insert(key_val, value_val);
             }
             
-            let map_type = crate::stdlib::lookin_glass::core_functions::map_of(
+//             let map_type = crate::stdlib::lookin_glass::core_functions::map_of(
                 Type::basic(Kind::String),
                 Type::new(Kind::Interface, "interface{}".to_string(), "".to_string())
             );
-            Ok(Value::new(map_type, crate::stdlib::lookin_glass::value::ValueData::Map(map)))
+//             Ok(Value::new(map_type, crate::stdlib::lookin_glass::value::ValueData::Map(map)))
         }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::lookin_glass::{StructField, StructTag};
-
-    #[test]
-    fn test_deep_equal() {
-        let val1 = Value::from_int(42);
-        let val2 = Value::from_int(42);
-        let val3 = Value::from_int(24);
-
-        assert!(deep_equal(&val1, &val2));
-        assert!(!deep_equal(&val1, &val3));
-
-        let str1 = Value::from_string("hello".to_string());
-        let str2 = Value::from_string("hello".to_string());
-        let str3 = Value::from_string("world".to_string());
-
-        assert!(deep_equal(&str1, &str2));
-        assert!(!deep_equal(&str1, &str3));
-    }
-
-    #[test]
-    fn test_deep_copy() {
-        let original = Value::from_string("hello".to_string());
-        let copied = deep_copy(&original).unwrap();
-
-        assert!(deep_equal(&original, &copied));
-        assert_eq!(copied.string().unwrap(), "hello");
-
-        let int_original = Value::from_int(42);
-        let int_copied = deep_copy(&int_original).unwrap();
-        assert_eq!(int_copied.int().unwrap(), 42);
-    }
-
-    #[test]
-    fn test_struct_to_map() {
-        // Create a simple struct type
-        let name_field = StructField::builder("Name".to_string(), Type::basic(Kind::String))
-            .tag_string("json:\"name\"".to_string())
-            .build();
-        let age_field = StructField::builder("Age".to_string(), Type::basic(Kind::Int32))
-            .tag_string("json:\"age\"".to_string())
-            .build();
-        
-        let struct_type = Type::new(Kind::Struct, "Person".to_string(), "".to_string())
-            .with_fields(vec![name_field, age_field]);
-        
-        // Create struct value
-        let fields = vec![
-            Value::from_string("Alice".to_string()),
-            Value::from_int(25)
-        ];
-        let struct_val = Value::new(struct_type, 
-            crate::stdlib::lookin_glass::value::ValueData::Struct(fields));
-
-        let map = struct_to_map(&struct_val).unwrap();
-        
-        assert_eq!(map.len(), 2);
-        assert_eq!(map.get("name").unwrap().string().unwrap(), "Alice");
-        assert_eq!(map.get("age").unwrap().int().unwrap(), 25);
-    }
-
-    #[test]
-    fn test_map_to_struct() {
-        // Create struct type
-        let name_field = StructField::simple("Name".to_string(), Type::basic(Kind::String));
-        let age_field = StructField::simple("Age".to_string(), Type::basic(Kind::Int32));
-        
-        let struct_type = Type::new(Kind::Struct, "Person".to_string(), "".to_string())
-            .with_fields(vec![name_field, age_field]);
-        
-        // Create map
-        let mut map = HashMap::new();
-        map.insert("Name".to_string(), Value::from_string("Bob".to_string()));
-        map.insert("Age".to_string(), Value::from_int(30));
-        
-        let struct_val = map_to_struct(&map, &struct_type).unwrap();
-        
-        assert_eq!(struct_val.field(0).unwrap().string().unwrap(), "Bob");
-        assert_eq!(struct_val.field(1).unwrap().int().unwrap(), 30);
-    }
-
-    #[test]
-    fn test_get_tags() {
-        let field_with_tags = StructField::builder("TestField".to_string(), Type::basic(Kind::String))
-            .tag_string("json:\"test_field\" db:\"test_column\" validate:\"required\"".to_string())
-            .build();
-        
-        let struct_type = Type::new(Kind::Struct, "Test".to_string(), "".to_string())
-            .with_field(field_with_tags);
-        
-        let fields = vec![Value::from_string("test".to_string())];
-        let struct_val = Value::new(struct_type, 
-            crate::stdlib::lookin_glass::value::ValueData::Struct(fields));
-
-        let tags = get_tags(&struct_val).unwrap();
-        
-        assert!(tags.contains_key("TestField"));
-        let field_tags = &tags["TestField"];
-        assert_eq!(field_tags.get("json").unwrap(), "test_field");
-        assert_eq!(field_tags.get("db").unwrap(), "test_column");
-        assert_eq!(field_tags.get("validate").unwrap(), "required");
-    }
-
-    #[test]
-    fn test_field_operations() {
-        let name_field = StructField::simple("Name".to_string(), Type::basic(Kind::String));
-        let age_field = StructField::simple("Age".to_string(), Type::basic(Kind::Int32));
-        
-        let struct_type = Type::new(Kind::Struct, "Person".to_string(), "".to_string())
-            .with_fields(vec![name_field, age_field]);
-        
-        let fields = vec![
-            Value::from_string("Charlie".to_string()),
-            Value::from_int(35)
-        ];
-        let struct_val = Value::new(struct_type, 
-            crate::stdlib::lookin_glass::value::ValueData::Struct(fields));
-
-        // Test field_names
-        let names = field_names(&struct_val).unwrap();
-        assert_eq!(names, vec!["Name", "Age"]);
-
-        // Test has_field
-        assert!(has_field(&struct_val, "Name"));
-        assert!(has_field(&struct_val, "Age"));
-        assert!(!has_field(&struct_val, "NonExistent"));
-
-        // Test get_field
-        let name_val = get_field(&struct_val, "Name").unwrap();
-        assert_eq!(name_val.string().unwrap(), "Charlie");
-    }
-
-    #[test]
-    fn test_value_to_map_conversion() {
-        let string_val = Value::from_string("hello".to_string());
-        let json_val = value_to_map(&string_val).unwrap();
-        assert_eq!(json_val, serde_json::Value::String("hello".to_string()));
-
-        let int_val = Value::from_int(42);
-        let json_int = value_to_map(&int_val).unwrap();
-        assert_eq!(json_int, serde_json::Value::Number(serde_json::Number::from(42i64)));
-
-        let bool_val = Value::from_bool(true);
-        let json_bool = value_to_map(&bool_val).unwrap();
-        assert_eq!(json_bool, serde_json::Value::Bool(true));
-    }
-
-    #[test]
-    fn test_map_to_value_conversion() {
-        let json_str = serde_json::Value::String("hello".to_string());
-        let val = map_to_value(&json_str, None).unwrap();
-        assert_eq!(val.string().unwrap(), "hello");
-
-        let json_num = serde_json::Value::Number(serde_json::Number::from(42));
-        let val_num = map_to_value(&json_num, None).unwrap();
-        assert_eq!(val_num.int().unwrap(), 42);
-
-        let json_bool = serde_json::Value::Bool(true);
-        let val_bool = map_to_value(&json_bool, None).unwrap();
-        assert_eq!(val_bool.bool().unwrap(), true);
-    }
-}

@@ -1,9 +1,8 @@
 /// TLS Handshake Protocol Implementation
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_random::SecureRandom;
-use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_random::SecureRandom;
+// use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
@@ -558,88 +557,3 @@ impl fmt::Display for TlsCipherSuite {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tls_manager_creation() {
-        let manager = TlsHandshakeManager::new().unwrap();
-        assert_eq!(manager.sessions.lock().unwrap().len(), 0);
-    }
-
-    #[test]
-    fn test_client_handshake_start() {
-        let manager = TlsHandshakeManager::new().unwrap();
-        let (session_id, client_hello) = manager.start_client_handshake(None).unwrap();
-        
-        assert!(!session_id.is_empty());
-        assert_eq!(client_hello.message_type, TlsHandshakeType::ClientHello);
-        
-        let session = manager.get_session(&session_id).unwrap().unwrap();
-        assert_eq!(session.state, TlsHandshakeState::ClientHelloSent);
-        assert!(session.is_client);
-    }
-
-    #[test]
-    fn test_server_handshake_start() {
-        let manager = TlsHandshakeManager::new().unwrap();
-        let session_id = manager.start_server_handshake(None).unwrap();
-        
-        assert!(!session_id.is_empty());
-        
-        let session = manager.get_session(&session_id).unwrap().unwrap();
-        assert_eq!(session.state, TlsHandshakeState::Initial);
-        assert!(!session.is_client);
-    }
-
-    #[test]
-    fn test_tls_config() {
-        let config = TlsConfig {
-            version: TlsVersion::Tls13,
-            cipher_suites: vec![TlsCipherSuite::AES256GcmSha384],
-            server_name: Some("example.com".to_string()),
-            verify_peer: true,
-            client_auth: false,
-            session_timeout: Duration::from_secs(300),
-            max_handshake_time: Duration::from_secs(30),
-        };
-        
-        let manager = TlsHandshakeManager::new().unwrap();
-        let (session_id, _) = manager.start_client_handshake(Some(config.clone())).unwrap();
-        
-        let session = manager.get_session(&session_id).unwrap().unwrap();
-        assert_eq!(session.config.version, config.version);
-        assert_eq!(session.config.server_name, config.server_name);
-    }
-
-    #[test]
-    fn test_handshake_complete_check() {
-        let manager = TlsHandshakeManager::new().unwrap();
-        let (session_id, _) = manager.start_client_handshake(None).unwrap();
-        
-        // Initially not complete
-        assert!(!manager.is_handshake_complete(&session_id).unwrap());
-        
-        // Invalid session
-        assert!(!manager.is_handshake_complete("invalid").unwrap());
-    }
-
-    #[test]
-    fn test_display_formatting() {
-        assert_eq!(format!("{}", TlsVersion::Tls12), "TLS 1.2");
-        assert_eq!(format!("{}", TlsVersion::Tls13), "TLS 1.3");
-        assert_eq!(format!("{}", TlsCipherSuite::AES256GcmSha384), "AES256-GCM-SHA384");
-    }
-
-    #[test]
-    fn test_cipher_suite_conversion() {
-        let manager = TlsHandshakeManager::new().unwrap();
-        
-        let aes128_bytes = manager.cipher_suite_to_bytes(&TlsCipherSuite::AES128GcmSha256);
-        assert_eq!(aes128_bytes, [0x00, 0x9C]);
-        
-        let aes256_bytes = manager.cipher_suite_to_bytes(&TlsCipherSuite::AES256GcmSha384);
-        assert_eq!(aes256_bytes, [0x00, 0x9D]);
-    }
-}

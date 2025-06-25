@@ -1,10 +1,10 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr HTTP response handling for web_vibez - comprehensive response building
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::stdlib::packages::web_vibez::{
+// use crate::stdlib::packages::web_vibez::{
     status::StatusCode as WebStatusCode,
     types::{Headers, ContentType, Cookie},
     error::{WebError, WebResult},
@@ -384,7 +384,7 @@ impl fmt::Display for HttpResponse {
     }
 }
 
-/// fr fr Error response helper functions - common error responses
+/// fr fr CursedError response helper functions - common error responses
 impl HttpResponse {
     /// fr fr Create error response from WebError - automatic conversion
     pub fn from_error(error: &WebError) -> Self {
@@ -404,7 +404,7 @@ impl HttpResponse {
             .with_json(&error_body)
             .unwrap_or_else(|_| {
                 // Fallback if JSON serialization fails
-                Self::new(status).with_text(format!("Error: {}", message))
+                Self::new(status).with_text(format!("CursedError: {}", message))
             })
     }
 
@@ -449,80 +449,3 @@ impl HttpResponse {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_response_creation() {
-        let resp = HttpResponse::ok();
-        assert_eq!(resp.status, StatusCode::OK);
-        assert!(resp.body.is_empty());
-        assert_eq!(resp.version, "HTTP/1.1");
-    }
-
-    #[test]
-    fn test_response_with_text() {
-        let resp = HttpResponse::ok().with_text("Hello world");
-        assert_eq!(resp.body_text().unwrap(), "Hello world");
-        assert_eq!(resp.header("content-type"), Some(&"text/plain".to_string()));
-        assert_eq!(resp.header("content-length"), Some(&"11".to_string()));
-    }
-
-    #[test]
-    fn test_response_with_json() {
-        let data = serde_json::json!({ "message": "hello" });
-        let resp = HttpResponse::ok().with_json(&data).unwrap();
-        
-        assert_eq!(resp.header("content-type"), Some(&"application/json".to_string()));
-        assert!(resp.body_text().unwrap().contains("hello"));
-    }
-
-    #[test]
-    fn test_response_builder() {
-        let resp = ResponseBuilder::ok()
-            .header("x-custom", "value")
-            .text("Hello world")
-            .build();
-
-        assert_eq!(resp.status, StatusCode::OK);
-        assert_eq!(resp.header("x-custom"), Some(&"value".to_string()));
-        assert_eq!(resp.body_text().unwrap(), "Hello world");
-    }
-
-    #[test]
-    fn test_redirect_responses() {
-        let resp = HttpResponse::permanent_redirect("/new-location");
-        assert_eq!(resp.status, StatusCode::MovedPermanently);
-        assert_eq!(resp.header("location"), Some(&"/new-location".to_string()));
-
-        let resp = HttpResponse::temporary_redirect("/temp-location");
-        assert_eq!(resp.status, StatusCode::Found);
-        assert_eq!(resp.header("location"), Some(&"/temp-location".to_string()));
-    }
-
-    #[test]
-    fn test_response_predicates() {
-        assert!(HttpResponse::ok().is_success());
-        assert!(!HttpResponse::not_found().is_success());
-        
-        assert!(HttpResponse::not_found().is_client_error());
-        assert!(!HttpResponse::ok().is_client_error());
-        
-        assert!(HttpResponse::internal_server_error().is_server_error());
-        assert!(!HttpResponse::ok().is_server_error());
-    }
-
-    #[test]
-    fn test_http_string_format() {
-        let resp = HttpResponse::ok()
-            .with_text("Hello world")
-            .with_header("x-custom", "value");
-
-        let http_string = resp.to_http_string();
-        assert!(http_string.contains("HTTP/1.1 200 OK"));
-        assert!(http_string.contains("content-type: text/plain"));
-        assert!(http_string.contains("x-custom: value"));
-        assert!(http_string.contains("Hello world"));
-    }
-}

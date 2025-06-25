@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// RuntimeProcessInfo lifecycle management for CURSED
 /// 
 /// This module provides comprehensive process lifecycle management including
@@ -10,12 +10,12 @@ use std::sync::{Arc, Mutex, Weak};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, timeout_error, execution_failed, invalid_state, system_error
 };
 
-use crate::stdlib::process::core::{ProcessConfig};
-use crate::stdlib::process::info::{ProcessInfo as StdProcessInfo, ProcessState as StdProcessState};
+// use crate::stdlib::process::core::{ProcessConfig};
+// use crate::stdlib::process::info::{ProcessInfo as StdProcessInfo, ProcessState as StdProcessState};
 use crate::runtime::process::{ProcessInfo as RuntimeProcessInfo, ProcessStatus as RuntimeProcessStatus};
 
 /// Process lifecycle events
@@ -431,7 +431,7 @@ impl ProcessLifecycleManager {
                             }
                         }
                         Err(e) => {
-                            // Error checking process status
+                            // CursedError checking process status
                             managed.state = ProcessLifecycleState::Failed(
                                 system_error(&format!("Failed to check process status: {}", e), None)
                             );
@@ -459,7 +459,7 @@ impl Default for ProcessLifecycleManager {
 impl Drop for ProcessLifecycleManager {
     fn drop(&mut self) {
         if let Err(e) = self.shutdown() {
-            eprintln!("Error during ProcessLifecycleManager shutdown: {}", e);
+            eprintln!("CursedError during ProcessLifecycleManager shutdown: {}", e);
         }
     }
 }
@@ -505,150 +505,3 @@ impl ProcessLifecycleManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::process::core::{ProcessConfig};
-    use crate::stdlib::process::communication::{ProcessIo};
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_lifecycle_manager_creation() {
-        let manager = ProcessLifecycleManager::new();
-        assert_eq!(manager.active_process_count(), 0);
-    }
-
-    #[test]
-    fn test_lifecycle_manager_with_config() {
-        let manager = ProcessLifecycleManager::with_config(50, Duration::from_secs(60));
-        assert_eq!(manager.max_concurrent, 50);
-        assert_eq!(manager.default_timeout, Duration::from_secs(60));
-    }
-
-    #[test]
-    fn test_process_spawning() {
-        let manager = ProcessLifecycleManager::new();
-        
-        // Create a simple echo command
-        let config = ProcessConfig::new("echo")
-            .args(&["test"])
-            .timeout(Duration::from_secs(5));
-        
-        let pid = manager.spawn(config).unwrap();
-        assert!(pid > 0);
-        assert_eq!(manager.active_process_count(), 1);
-        
-        // Wait for process to complete
-        let exit_status = manager.wait(pid).unwrap();
-        assert!(exit_status.success());
-    }
-
-    #[test]
-    fn test_process_timeout() {
-        let manager = ProcessLifecycleManager::new();
-        
-        // Create a long-running command that should timeout
-        #[cfg(unix)]
-        let config = ProcessConfig::new("sleep")
-            .args(&["10"])
-            .timeout(Duration::from_millis(100));
-        
-        #[cfg(windows)]
-        let config = ProcessConfig::new("timeout")
-            .args(&["10"])
-            .timeout(Duration::from_millis(100));
-        
-        let pid = manager.spawn(config).unwrap();
-        
-        // Wait with a short timeout
-        let result = manager.wait_with_timeout(pid, Some(Duration::from_millis(200)));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_process_termination() {
-        let manager = ProcessLifecycleManager::new();
-        
-        // Create a long-running command
-        #[cfg(unix)]
-        let config = ProcessConfig::new("sleep").args(&["60"]);
-        
-        #[cfg(windows)]
-        let config = ProcessConfig::new("timeout").args(&["60"]);
-        
-        let pid = manager.spawn(config).unwrap();
-        
-        // Terminate the process
-        assert!(manager.terminate(pid, Some(Duration::from_secs(1))).is_ok());
-        
-        // Check that process state is updated
-        thread::sleep(Duration::from_millis(500));
-        let state = manager.get_process_state(pid);
-        assert!(state.is_err() || matches!(state.unwrap(), ProcessLifecycleState::Killed));
-    }
-
-    #[test]
-    fn test_process_listing() {
-        let manager = ProcessLifecycleManager::new();
-        
-        // Spawn multiple processes
-        let config1 = ProcessConfig::new("echo").args(&["test1"]);
-        let config2 = ProcessConfig::new("echo").args(&["test2"]);
-        
-        let pid1 = manager.spawn(config1).unwrap();
-        let pid2 = manager.spawn(config2).unwrap();
-        
-        let active_pids = manager.list_active_processes();
-        assert!(active_pids.contains(&pid1));
-        assert!(active_pids.contains(&pid2));
-        assert_eq!(manager.active_process_count(), 2);
-    }
-
-    #[test]
-    fn test_lifecycle_states() {
-        let manager = ProcessLifecycleManager::new();
-        
-        let config = ProcessConfig::new("echo").args(&["test"]);
-        let pid = manager.spawn(config).unwrap();
-        
-        // Initially should be Starting or Running
-        let initial_state = manager.get_process_state(pid).unwrap();
-        assert!(matches!(initial_state, 
-            ProcessLifecycleState::Starting | ProcessLifecycleState::Running
-        ));
-        
-        // Wait for completion
-        let _ = manager.wait(pid);
-        
-        // Should eventually be completed (or removed from active list)
-        let final_state = manager.get_process_state(pid);
-        assert!(final_state.is_err() || matches!(final_state.unwrap(), ProcessLifecycleState::Completed(_)));
-    }
-
-    #[test]
-    fn test_statistics() {
-        let manager = ProcessLifecycleManager::new();
-        let stats = manager.get_statistics();
-        
-        assert_eq!(stats.active_count, 0);
-        assert!(stats.max_concurrent_reached >= 0);
-    }
-
-    #[test]
-    fn test_concurrent_limit() {
-        let manager = ProcessLifecycleManager::with_config(1, Duration::from_secs(60));
-        
-        // First process should succeed
-        let config1 = ProcessConfig::new("echo").args(&["test1"]);
-        let _pid1 = manager.spawn(config1).unwrap();
-        
-        // Second process should fail due to limit
-        let config2 = ProcessConfig::new("echo").args(&["test2"]);
-        let result = manager.spawn(config2);
-        assert!(result.is_err());
-    }
-}

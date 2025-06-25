@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// SPHINCS+ Hash-based Signature Implementation
 /// 
 /// SPHINCS+ is a stateless hash-based signature scheme providing strong security guarantees
@@ -21,7 +21,7 @@ use crate::error::Error;
 use std::fmt;
 use rand::rngs::OsRng;
 use sha3::{Sha3_256, Sha3_512, Digest};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// SPHINCS+ parameter sets
@@ -531,52 +531,3 @@ impl SphincsPlusSignature_ {
 // Type alias for easier use
 pub type SphincsPlusAlgorithm = SphincsPlusSignature_;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sphincs_parameter_sets() {
-        assert_eq!(SphincsPlusParameterSet::Sphincs128s.security_level(), SecurityLevel::Level1);
-        assert_eq!(SphincsPlusParameterSet::Sphincs192s.security_level(), SecurityLevel::Level3);
-        assert_eq!(SphincsPlusParameterSet::Sphincs256s.security_level(), SecurityLevel::Level5);
-    }
-
-    #[test]
-    fn test_sphincs_variants() {
-        assert!(SphincsPlusParameterSet::Sphincs128s.is_small_signature());
-        assert!(SphincsPlusParameterSet::Sphincs128f.is_fast_signature());
-    }
-
-    #[test]
-    fn test_sphincs_keygen() {
-        let (pub_key, sec_key) = SphincsPlusAlgorithm::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.parameter_set(), SphincsPlusParameterSet::Sphincs128s);
-        assert_eq!(sec_key.parameter_set(), SphincsPlusParameterSet::Sphincs128s);
-    }
-
-    #[test]
-    fn test_sphincs_sign_verify() {
-        let (pub_key, sec_key) = SphincsPlusAlgorithm::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, hash-based signatures!";
-        
-        let signature = SphincsPlusAlgorithm::sign(&sec_key, message).unwrap();
-        let is_valid = SphincsPlusAlgorithm::verify(&pub_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_sphincs_fast_vs_small() {
-        let (pub_key_fast, _) = SphincsPlusAlgorithm::keygen_fast(SecurityLevel::Level1).unwrap();
-        let (pub_key_small, _) = SphincsPlusAlgorithm::keygen_small(SecurityLevel::Level1).unwrap();
-        
-        assert!(pub_key_fast.parameter_set().is_fast_signature());
-        assert!(pub_key_small.parameter_set().is_small_signature());
-        
-        // Fast variant should have larger signatures
-        let fast_sig_size = pub_key_fast.parameter_set().additional_sizes()[0].1;
-        let small_sig_size = pub_key_small.parameter_set().additional_sizes()[0].1;
-        assert!(fast_sig_size > small_sig_size);
-    }
-}

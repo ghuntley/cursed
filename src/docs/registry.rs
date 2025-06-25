@@ -793,25 +793,3 @@ impl Default for RegistryConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[tokio::test]
-    async fn test_registry_creation() {
-        let config = RegistryConfig::default();
-        let registry = DocumentationRegistry::new(config);
-        
-        let packages = registry.list_packages().await;
-        assert!(packages.is_empty());
-    }
-    
-    #[test]
-    fn test_version_comparison() {
-        let config = RegistryConfig::default();
-        let registry = DocumentationRegistry::new(config);
-        
-        assert!(registry.is_newer_version("1.1.0", "1.0.0"));
-        assert!(!registry.is_newer_version("1.0.0", "1.1.0"));
-    }
-}

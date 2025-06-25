@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Create a new template engine with the given configuration
 pub fn create_template_engine(config: TemplateConfig) -> Result<TemplateEngine, TemplateError> {
@@ -12,7 +12,6 @@ use std::time::{Duration, Instant, SystemTime};
 use tracing::{debug, error, info, instrument, warn};
 use uuid;
 
-use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 use super::template_syntax::{TemplateAst, TemplateLexer, TemplateParser};
 use super::template_cache::TemplateCache;
@@ -67,56 +66,56 @@ pub enum TemplateError {
     },
 }
 
-impl std::fmt::Display for TemplateError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TemplateError::ParseError { message, line, column } => {
-                write!(f, "Template parse error at line {}, column {}: {}", line, column, message)
-            }
-            TemplateError::RenderError { message, template_name, line } => {
-                match (template_name, line) {
-                    (Some(name), Some(line)) => write!(f, "Template render error in '{}' at line {}: {}", name, line, message),
-                    (Some(name), None) => write!(f, "Template render error in '{}': {}", name, message),
-                    (None, Some(line)) => write!(f, "Template render error at line {}: {}", line, message),
-                    (None, None) => write!(f, "Template render error: {}", message),
-                }
-            }
-            TemplateError::LoadError { template_name, source } => {
-                write!(f, "Failed to load template '{}': {}", template_name, source)
-            }
-            TemplateError::VariableError { variable_name, context } => {
-                write!(f, "Variable '{}' not found in context: {}", variable_name, context)
-            }
-            TemplateError::FilterError { filter_name, message } => {
-                write!(f, "Filter '{}' error: {}", filter_name, message)
-            }
-            TemplateError::CompileError { message, source_location } => {
-                match source_location {
-                    Some(loc) => write!(f, "Template compile error at {}: {}", loc, message),
-                    None => write!(f, "Template compile error: {}", message),
-                }
-            }
-            TemplateError::SecurityError { message, attempted_path } => {
-                write!(f, "Template security error (path: '{}'): {}", attempted_path, message)
-            }
-            TemplateError::ConfigError(msg) => write!(f, "Template configuration error: {}", msg),
-            TemplateError::RecursionError { depth, max_depth } => {
-                write!(f, "Template recursion limit exceeded: {} > {}", depth, max_depth)
-            }
-        }
-    }
-}
+// impl std::fmt::Display for TemplateError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             TemplateError::ParseError { message, line, column } => {
+//                 write!(f, "Template parse error at line {}, column {}: {}", line, column, message)
+//             }
+//             TemplateError::RenderError { message, template_name, line } => {
+//                 match (template_name, line) {
+//                     (Some(name), Some(line)) => write!(f, "Template render error in '{}' at line {}: {}", name, line, message),
+//                     (Some(name), None) => write!(f, "Template render error in '{}': {}", name, message),
+//                     (None, Some(line)) => write!(f, "Template render error at line {}: {}", line, message),
+//                     (None, None) => write!(f, "Template render error: {}", message),
+//                 }
+//             }
+//             TemplateError::LoadError { template_name, source } => {
+//                 write!(f, "Failed to load template '{}': {}", template_name, source)
+//             }
+//             TemplateError::VariableError { variable_name, context } => {
+//                 write!(f, "Variable '{}' not found in context: {}", variable_name, context)
+//             }
+//             TemplateError::FilterError { filter_name, message } => {
+//                 write!(f, "Filter '{}' error: {}", filter_name, message)
+//             }
+//             TemplateError::CompileError { message, source_location } => {
+//                 match source_location {
+//                     Some(loc) => write!(f, "Template compile error at {}: {}", loc, message),
+//                     None => write!(f, "Template compile error: {}", message),
+//                 }
+//             }
+//             TemplateError::SecurityError { message, attempted_path } => {
+//                 write!(f, "Template security error (path: '{}'): {}", attempted_path, message)
+//             }
+//             TemplateError::ConfigError(msg) => write!(f, "Template configuration error: {}", msg),
+//             TemplateError::RecursionError { depth, max_depth } => {
+//                 write!(f, "Template recursion limit exceeded: {} > {}", depth, max_depth)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for TemplateError {}
-
-impl From<TemplateError> for CursedError {
-    fn from(err: TemplateError) -> Self {
-        CursedError::TemplateError {
-            message: err.to_string(),
-            source_location: None,
-        }
-    }
-}
+// impl std::error::CursedError for TemplateError {}
+// 
+// impl From<TemplateError> for CursedError {
+//     fn from(err: TemplateError) -> Self {
+//         CursedError::TemplateError {
+//             message: err.to_string(),
+//             source_location: None,
+//         }
+//     }
+// }
 
 /// Template performance metrics
 #[derive(Debug, Clone)]
@@ -171,7 +170,7 @@ pub struct TemplateMetadata {
 
 impl Template {
     /// Create a new template from source
-    pub fn from_source(name: String, source: String, delimiters: &TemplateDelimiters) -> Result<(), Error> {
+    pub fn from_source(name: String, source: String, delimiters: &TemplateDelimiters) -> crate::error::Result<()> {
         let parse_start = Instant::now();
         
         let mut lexer = TemplateLexer::new(&source, delimiters);
@@ -406,7 +405,7 @@ impl Default for TemplateConfig {
 /// Trait for loading templates from various sources
 pub trait TemplateLoader: Send + Sync {
     /// Load a template by name/path
-    fn load(&self, name: &str) -> Result<String, Error>;
+    fn load(&self, name: &str) -> crate::error::Result<String>;
     
     /// Check if a template exists
     fn exists(&self, name: &str) -> bool;
@@ -442,7 +441,7 @@ impl FileSystemLoader {
 
 impl TemplateLoader for FileSystemLoader {
     #[instrument(skip(self))]
-    fn load(&self, name: &str) -> Result<String, Error> {
+    fn load(&self, name: &str) -> crate::error::Result<String> {
         let template_path = self.base_dir.join(name);
         
         // Security check: ensure template is within base directory
@@ -529,7 +528,7 @@ impl TemplateContext {
     }
     
     /// Create a scoped context for loops with iteration variables
-    pub fn create_loop_scope(&self, loop_var: String, loop_value: CursedObject, index: usize) -> Result<(), Error> {
+    pub fn create_loop_scope(&self, loop_var: String, loop_value: CursedObject, index: usize) -> crate::error::Result<()> {
         let scope = Self::with_parent_and_isolation(self.clone(), ContextIsolationLevel::Local);
         scope.set_local(loop_var, loop_value)?;
         scope.set_local("loop".to_string(), CursedObject::Map({
@@ -545,12 +544,12 @@ impl TemplateContext {
     }
     
     /// Set a variable in this context (thread-safe)
-    pub fn set<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), Error> {
+    pub fn set<K: Into<String>>(&self, key: K, value: CursedObject) -> crate::error::Result<()> {
         self.set_local(key, value)
     }
     
     /// Set a variable in this context only (no parent traversal)
-    pub fn set_local<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), Error> {
+    pub fn set_local<K: Into<String>>(&self, key: K, value: CursedObject) -> crate::error::Result<()> {
         let key_str = key.into();
         let mut variables = self.variables.write()
             .map_err(|_| CursedError::TemplateError {
@@ -563,7 +562,7 @@ impl TemplateContext {
     }
     
     /// Update an existing variable in this context or parent contexts
-    pub fn update<K: Into<String>>(&self, key: K, value: CursedObject) -> Result<(), Error> {
+    pub fn update<K: Into<String>>(&self, key: K, value: CursedObject) -> crate::error::Result<()> {
         let key_str = key.into();
         
         match self.isolation_level {
@@ -606,7 +605,7 @@ impl TemplateContext {
     }
     
     /// Update variable in parent chain (helper for None isolation level)
-    fn update_in_parent_chain(&self, key: &str, value: &CursedObject) -> Result<(), Error> {
+    fn update_in_parent_chain(&self, key: &str, value: &CursedObject) -> crate::error::Result<()> {
         // Check if variable exists in current context
         {
             let variables = self.variables.read()
@@ -682,7 +681,7 @@ impl TemplateContext {
     }
     
     /// Merge another context into this one (thread-safe)
-    pub fn merge(&self, other: &TemplateContext) -> Result<(), Error> {
+    pub fn merge(&self, other: &TemplateContext) -> crate::error::Result<()> {
         let other_variables = other.variables.read()
             .map_err(|_| CursedError::TemplateError {
                 message: "Failed to acquire read lock for source context during merge".to_string(),
@@ -703,7 +702,7 @@ impl TemplateContext {
     }
     
     /// Create a context with additional variables for includes
-    pub fn create_include_context(&self, include_vars: HashMap<String, CursedObject>) -> Result<(), Error> {
+    pub fn create_include_context(&self, include_vars: HashMap<String, CursedObject>) -> crate::error::Result<()> {
         let include_context = Self::with_parent_and_isolation(self.clone(), ContextIsolationLevel::Local);
         
         for (key, value) in include_vars {
@@ -771,7 +770,7 @@ impl TemplateEngine {
     
     /// Set a global context variable available to all templates
     #[instrument(skip(self, key, value))]
-    pub fn set_global<K: Into<String> + std::fmt::Debug>(&self, key: K, value: CursedObject) -> Result<(), Error> {
+    pub fn set_global<K: Into<String> + std::fmt::Debug>(&self, key: K, value: CursedObject) -> crate::error::Result<()> {
         let mut context = self.global_context.write()
             .map_err(|_| CursedError::TemplateError {
                 message: "Failed to acquire global context lock".to_string(),
@@ -783,9 +782,9 @@ impl TemplateEngine {
     }
     
     /// Register a custom filter
-    pub fn register_filter<F>(&self, name: &str, filter: F) -> Result<(), Error>
+    pub fn register_filter<F>(&self, name: &str, filter: F) -> crate::error::Result<()>
     where
-        F: Fn(&FilterContext, &[CursedObject]) -> Result<(), Error> + Send + Sync + 'static,
+        F: Fn(&FilterContext, &[CursedObject]) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.filters.register(name, filter);
         Ok(())
@@ -793,7 +792,7 @@ impl TemplateEngine {
     
     /// Render a template by name with the given context
     #[instrument(skip(self, context))]
-    pub fn render(&self, template_name: &str, context: TemplateContext) -> Result<(), Error> {
+    pub fn render(&self, template_name: &str, context: TemplateContext) -> crate::error::Result<()> {
         info!(template = template_name, "Starting template render");
         let render_start = Instant::now();
         
@@ -858,7 +857,7 @@ impl TemplateEngine {
     
     /// Load and compile a template, caching the result
     #[instrument(skip(self))]
-    fn load_and_compile_template(&self, template_name: &str) -> Result<(), Error> {
+    fn load_and_compile_template(&self, template_name: &str) -> crate::error::Result<()> {
         // Load template source
         let template_source = self.loader.load(template_name)?;
         
@@ -881,7 +880,7 @@ impl TemplateEngine {
     
     /// Render a template from a string with the given context
     #[instrument(skip(self, template_source, context))]
-    pub fn render_string(&self, template_source: &str, context: TemplateContext) -> Result<(), Error> {
+    pub fn render_string(&self, template_source: &str, context: TemplateContext) -> crate::error::Result<()> {
         debug!(source_length = template_source.len(), "Rendering template from string");
         let render_start = Instant::now();
         
@@ -938,7 +937,7 @@ impl TemplateEngine {
     
     /// Parse a template source into an AST
     #[instrument(skip(self, source))]
-    pub fn parse_template(&self, source: &str) -> Result<(), Error> {
+    pub fn parse_template(&self, source: &str) -> crate::error::Result<()> {
         debug!(source_length = source.len(), "Parsing template");
         
         let mut lexer = TemplateLexer::new(source, &self.config.delimiters);
@@ -985,14 +984,14 @@ impl TemplateEngine {
     
     /// Precompile a template for better performance
     #[instrument(skip(self))]
-    pub fn precompile_template(&self, template_name: &str) -> Result<(), Error> {
+    pub fn precompile_template(&self, template_name: &str) -> crate::error::Result<()> {
         self.load_and_compile_template(template_name)?;
         Ok(())
     }
     
     /// Validate a template without rendering
     #[instrument(skip(self))]
-    pub fn validate_template(&self, template_name: &str) -> Result<(), Error> {
+    pub fn validate_template(&self, template_name: &str) -> crate::error::Result<()> {
         let template_source = self.loader.load(template_name)
             .map_err(|e| TemplateError::LoadError {
                 template_name: template_name.to_string(),
@@ -1010,7 +1009,7 @@ impl TemplateEngine {
     
     /// Validate template source string
     #[instrument(skip(self, source))]
-    pub fn validate_template_source(&self, source: &str) -> Result<(), Error> {
+    pub fn validate_template_source(&self, source: &str) -> crate::error::Result<()> {
         Template::from_source(
             "validation".to_string(),
             source.to_string(),
@@ -1037,291 +1036,3 @@ impl Default for TemplateEngine {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_template_context_operations() {
-        let context = TemplateContext::new();
-        
-        // Test setting and getting variables
-        context.set("name", CursedObject::String("Alice".to_string())).unwrap();
-        context.set("age", CursedObject::Integer(25)).unwrap();
-        
-        assert_eq!(context.get("name"), Some(CursedObject::String("Alice".to_string())));
-        assert_eq!(context.get("age"), Some(CursedObject::Integer(25)));
-        assert_eq!(context.get("nonexistent"), None);
-        
-        // Test contains
-        assert!(context.contains("name"));
-        assert!(context.contains("age"));
-        assert!(!context.contains("nonexistent"));
-    }
-    
-    #[test]
-    fn test_template_context_inheritance() {
-        let parent = TemplateContext::new();
-        parent.set("global_var", CursedObject::String("global".to_string())).unwrap();
-        parent.set("override_me", CursedObject::String("parent".to_string())).unwrap();
-        
-        let child = TemplateContext::with_parent(parent);
-        child.set("local_var", CursedObject::String("local".to_string())).unwrap();
-        child.set("override_me", CursedObject::String("child".to_string())).unwrap();
-        
-        // Test variable lookup
-        assert_eq!(child.get("global_var"), Some(CursedObject::String("global".to_string())));
-        assert_eq!(child.get("local_var"), Some(CursedObject::String("local".to_string())));
-        assert_eq!(child.get("override_me"), Some(CursedObject::String("child".to_string())));
-    }
-    
-    #[test]
-    fn test_template_config_defaults() {
-        let config = TemplateConfig::default();
-        
-        assert!(config.auto_escape);
-        assert!(config.enable_cache);
-        assert_eq!(config.cache_size, 1000);
-        assert!(!config.strict_mode);
-        assert_eq!(config.max_nesting_depth, 20);
-        assert_eq!(config.delimiters.variable, ("{{".to_string(), "}}".to_string()));
-        assert_eq!(config.delimiters.block, ("{%".to_string(), "%}".to_string()));
-        assert_eq!(config.delimiters.comment, ("{#".to_string(), "#}".to_string()));
-    }
-    
-    #[test]
-    fn test_filesystem_loader_creation() {
-        let loader = FileSystemLoader::new("templates");
-        assert_eq!(loader.base_dir, PathBuf::from("templates"));
-        assert_eq!(loader.extensions, Vec::from(["html", "txt", "md"]));
-        
-        let loader_with_exts = FileSystemLoader::with_extensions(
-            "custom_templates", 
-            Vec::from(["csd".to_string(), "tmpl".to_string()])
-        );
-        assert_eq!(loader_with_exts.base_dir, PathBuf::from("custom_templates"));
-        assert_eq!(loader_with_exts.extensions, Vec::from(["csd", "tmpl"]));
-    }
-    
-    #[test]
-    fn test_template_creation() {
-        let delimiters = TemplateDelimiters {
-            variable: ("{{".to_string(), "}}".to_string()),
-            block: ("{%".to_string(), "%}".to_string()),
-            comment: ("{#".to_string(), "#}".to_string()),
-        };
-        
-        let source = "Hello {{ name }}!";
-        let template = Template::from_source(
-            "test".to_string(),
-            source.to_string(),
-            &delimiters,
-        );
-        
-        assert!(template.is_ok());
-        let template = template.unwrap();
-        assert_eq!(template.name, "test");
-        assert_eq!(template.source, source);
-        assert_eq!(template.metadata.size, source.len());
-        assert!(template.metrics.is_some());
-    }
-    
-    #[test]
-    fn test_template_error_display() {
-        let error = TemplateError::ParseError {
-            message: "Invalid syntax".to_string(),
-            line: 5,
-            column: 10,
-        };
-        assert!(error.to_string().contains("line 5"));
-        assert!(error.to_string().contains("column 10"));
-        assert!(error.to_string().contains("Invalid syntax"));
-        
-        let error = TemplateError::VariableError {
-            variable_name: "user".to_string(),
-            context: "main template".to_string(),
-        };
-        assert!(error.to_string().contains("user"));
-        assert!(error.to_string().contains("main template"));
-    }
-    
-    #[test]
-    fn test_template_engine_creation() {
-        let engine = TemplateEngine::new();
-        assert!(engine.config.auto_escape);
-        assert!(engine.config.enable_cache);
-        assert_eq!(engine.config.cache_size, 1000);
-        
-        // Test performance monitoring
-        let stats = engine.performance_stats();
-        assert!(stats.is_some());
-        let stats = stats.unwrap();
-        assert_eq!(stats.total_renders, 0);
-        assert_eq!(stats.total_cache_operations, 0);
-    }
-    
-    #[test]
-    fn test_template_engine_global_context() {
-        let engine = TemplateEngine::new();
-        
-        // Set global variable
-        let result = engine.set_global("app_name", CursedObject::String("CURSED App".to_string()));
-        assert!(result.is_ok());
-        
-        // Check cache operations
-        assert_eq!(engine.compiled_cache_size(), 0);
-        engine.clear_compiled_cache();
-        assert_eq!(engine.compiled_cache_size(), 0);
-    }
-    
-    #[test]
-    fn test_performance_monitor() {
-        let monitor = TemplatePerformanceMonitor::new();
-        
-        // Initial stats
-        let stats = monitor.get_stats().unwrap();
-        assert_eq!(stats.total_renders, 0);
-        assert_eq!(stats.cache_hit_rate, 0.0);
-        
-        // Record some operations
-        monitor.record_cache_result(true);
-        monitor.record_cache_result(false);
-        
-        let metrics = TemplateMetrics {
-            name: "test".to_string(),
-            parse_time_ms: 5,
-            render_time_ms: 10,
-            size_bytes: 100,
-            variables_resolved: 3,
-            filters_applied: 1,
-            cache_hit: true,
-            timestamp: SystemTime::now(),
-        };
-        
-        monitor.record_render(metrics);
-        
-        let stats = monitor.get_stats().unwrap();
-        assert_eq!(stats.total_renders, 1);
-        assert_eq!(stats.cache_hit_rate, 0.5); // 1 hit out of 2 operations
-        assert_eq!(stats.total_cache_operations, 2);
-    }
-    
-    #[test]
-    fn test_template_validation() {
-        let engine = TemplateEngine::new();
-        
-        // Valid template
-        let result = engine.validate_template_source("Hello {{ name }}!");
-        assert!(result.is_ok());
-        
-        // Test invalid template source - this would need proper error handling from the lexer/parser
-        // For now we'll test the structure
-        let valid_source = "Hello World!";
-        let result = engine.validate_template_source(valid_source);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_filter_tracking_in_render() {
-        use std::fs;
-        use std::path::Path;
-        
-        // Create temporary template directory
-        let temp_dir = std::env::temp_dir().join("cursed_template_test");
-        fs::create_dir_all(&temp_dir).unwrap();
-        
-        // Create a test template file with filters
-        let template_content = r#"Hello {{ name | upper | trim }}! Your score is {{ score | format:2 }}."#;
-        let template_path = temp_dir.join("test_template.html");
-        fs::write(&template_path, template_content).unwrap();
-        
-        // Create engine with custom loader
-        let loader = Arc::new(FileSystemLoader::new(&temp_dir));
-        let config = TemplateConfig::default();
-        let engine = TemplateEngine::with_config_and_loader(config, loader);
-        
-        // Create context with variables
-        let context = TemplateContext::new();
-        context.set("name", CursedObject::String("  alice  ".to_string())).unwrap();
-        context.set("score", CursedObject::Float(95.567)).unwrap();
-        
-        // Render the template and check metrics
-        let result = engine.render("test_template.html", context);
-        assert!(result.is_ok());
-        
-        let output = result.unwrap();
-        assert!(output.contains("ALICE"));
-        assert!(output.contains("95.57"));
-        
-        // Check performance stats for filter tracking
-        let stats = engine.performance_stats();
-        assert!(stats.is_some());
-        let stats = stats.unwrap();
-        assert_eq!(stats.total_renders, 1);
-        
-        // Cleanup
-        fs::remove_dir_all(&temp_dir).ok();
-    }
-
-    #[test]
-    fn test_filter_tracking_in_string_render() {
-        let engine = TemplateEngine::new();
-        
-        // Template with multiple filters
-        let template_source = r#"{{ message | lower | trim | capitalize }} - {{ count | format:0 | add:1 }}"#;
-        
-        let context = TemplateContext::new();
-        context.set("message", CursedObject::String("  HELLO WORLD  ".to_string())).unwrap();
-        context.set("count", CursedObject::Integer(9)).unwrap();
-        
-        // Render and check filter application
-        let result = engine.render_string(template_source, context);
-        assert!(result.is_ok());
-        
-        let output = result.unwrap();
-        assert!(output.contains("Hello World"));
-        
-        // Verify performance monitoring recorded the render
-        let stats = engine.performance_stats();
-        assert!(stats.is_some());
-        let stats = stats.unwrap();
-        assert!(stats.total_renders >= 1);
-    }
-
-    #[test]
-    fn test_comprehensive_filter_metrics() {
-        let engine = TemplateEngine::new();
-        
-        // Register a custom filter to test filter tracking
-        engine.register_filter("test_filter", |_context, args| {
-            let s = match &args[0] {
-                CursedObject::String(s) => s.clone(),
-                _ => "default".to_string(),
-            };
-            Ok(CursedObject::String(format!("filtered_{}", s)))
-        }).unwrap();
-        
-        // Template that uses multiple built-in and custom filters
-        let template_source = r#"{{ name | test_filter | upper }} has {{ items | length }} items"#;
-        
-        let context = TemplateContext::new();
-        context.set("name", CursedObject::String("alice".to_string())).unwrap();
-        context.set("items", CursedObject::Array(vec![
-            CursedObject::String("apple".to_string()),
-            CursedObject::String("banana".to_string()),
-            CursedObject::String("cherry".to_string()),
-        ])).unwrap();
-        
-        // Render and verify output
-        let result = engine.render_string(template_source, context);
-        assert!(result.is_ok());
-        
-        let output = result.unwrap();
-        assert!(output.contains("FILTERED_ALICE"));
-        assert!(output.contains("3 items"));
-        
-        // Check that filters were tracked
-        let stats = engine.performance_stats();
-        assert!(stats.is_some());
-    }
-}

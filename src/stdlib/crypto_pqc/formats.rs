@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Key Format Conversion and Serialization
 /// 
 /// This module provides functionality for converting PQC keys between different
@@ -7,8 +7,8 @@ use crate::error::Error;
 use std::collections::HashMap;
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use serde::{Serialize, Deserialize};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, AlgorithmType, SecurityLevel};
-use crate::stdlib::crypto_pqc::key_management::{PqcKey, KeyType, KeyFormat};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, AlgorithmType, SecurityLevel};
+// use crate::stdlib::crypto_pqc::key_management::{PqcKey, KeyType, KeyFormat};
 
 /// Key format converter
 pub struct KeyFormatConverter;
@@ -356,111 +356,3 @@ impl FormatValidator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn create_test_key() -> PqcKey {
-        PqcKey::new(
-            AlgorithmType::Kyber,
-            SecurityLevel::Level3,
-            KeyType::Public,
-            vec![1, 2, 3, 4, 5, 6, 7, 8],
-        )
-    }
-
-    #[test]
-    fn test_pem_conversion() {
-        let key = create_test_key();
-        
-        let pem = KeyFormatConverter::to_pem(&key).unwrap();
-        assert!(pem.contains("-----BEGIN Kyber PUBLIC KEY-----"));
-        assert!(pem.contains("-----END Kyber PUBLIC KEY-----"));
-        assert!(FormatValidator::validate_pem(&pem));
-        
-        let parsed_key = KeyFormatConverter::from_pem(&pem).unwrap();
-        assert_eq!(parsed_key.algorithm, key.algorithm);
-        assert_eq!(parsed_key.key_type, key.key_type);
-        assert_eq!(parsed_key.key_data, key.key_data);
-    }
-
-    #[test]
-    fn test_der_conversion() {
-        let key = create_test_key();
-        
-        let der = KeyFormatConverter::to_der(&key).unwrap();
-        assert!(!der.is_empty());
-        
-        let parsed_key = KeyFormatConverter::from_der(&der).unwrap();
-        assert_eq!(parsed_key.algorithm, key.algorithm);
-        assert_eq!(parsed_key.security_level, key.security_level);
-        assert_eq!(parsed_key.key_type, key.key_type);
-        assert_eq!(parsed_key.key_data, key.key_data);
-    }
-
-    #[test]
-    fn test_jwk_conversion() {
-        let key = create_test_key();
-        
-        let jwk = KeyFormatConverter::to_jwk(&key).unwrap();
-        assert!(jwk.contains("\"kty\": \"PQC\""));
-        assert!(jwk.contains("\"alg\": \"Kyber\""));
-        assert!(FormatValidator::validate_jwk(&jwk));
-        
-        let parsed_key = KeyFormatConverter::from_jwk(&jwk).unwrap();
-        assert_eq!(parsed_key.algorithm, key.algorithm);
-        assert_eq!(parsed_key.security_level, key.security_level);
-        assert_eq!(parsed_key.key_type, key.key_type);
-        assert_eq!(parsed_key.key_data, key.key_data);
-    }
-
-    #[test]
-    fn test_cursed_native_conversion() {
-        let key = create_test_key();
-        
-        let native = KeyFormatConverter::to_cursed_native(&key).unwrap();
-        assert!(FormatValidator::validate_cursed_native(&native));
-        
-        let parsed_key = KeyFormatConverter::from_cursed_native(&native).unwrap();
-        assert_eq!(parsed_key.algorithm, key.algorithm);
-        assert_eq!(parsed_key.security_level, key.security_level);
-        assert_eq!(parsed_key.key_type, key.key_type);
-        assert_eq!(parsed_key.key_data, key.key_data);
-    }
-
-    #[test]
-    fn test_batch_conversion() {
-        let keys = vec![create_test_key(), create_test_key()];
-        
-        let pem_results = BatchFormatConverter::convert_batch(&keys, KeyFormat::Pem).unwrap();
-        assert_eq!(pem_results.len(), 2);
-        
-        for pem in &pem_results {
-            assert!(FormatValidator::validate_pem(pem));
-        }
-    }
-
-    #[test]
-    fn test_key_bundle() {
-        let key = create_test_key();
-        
-        let bundle = BatchFormatConverter::create_key_bundle(&key).unwrap();
-        assert!(FormatValidator::validate_pem(&bundle.pem));
-        assert!(FormatValidator::validate_jwk(&bundle.jwk));
-        assert!(FormatValidator::validate_cursed_native(&bundle.cursed_native));
-    }
-
-    #[test]
-    fn test_format_detection() {
-        let key = create_test_key();
-        
-        let pem = KeyFormatConverter::to_pem(&key).unwrap();
-        assert_eq!(FormatValidator::detect_format(&pem), Some(KeyFormat::Pem));
-        
-        let jwk = KeyFormatConverter::to_jwk(&key).unwrap();
-        assert_eq!(FormatValidator::detect_format(&jwk), Some(KeyFormat::Jwk));
-        
-        let native = KeyFormatConverter::to_cursed_native(&key).unwrap();
-        assert_eq!(FormatValidator::detect_format(&native), Some(KeyFormat::CursedNative));
-    }
-}

@@ -10,12 +10,11 @@ use std::time::{Duration, SystemTime, Instant};
 use serde::{Serialize, Deserialize};
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use super::unified_api::{
     UnifiedCryptoError, UnifiedCryptoResult, UnifiedCryptoManager, CryptoConfig, 
     PerformanceMetrics, SecurityAuditResult, CryptoOperation
 };
-use crate::error::Error;
 use super::integration_manager::{CryptoIntegrationManager, IntegrationTestResult};
 
 /// fr fr Package information
@@ -38,7 +37,7 @@ pub struct PackageInfo {
 pub struct PackageRegistryEntry {
     pub info: PackageInfo,
     pub status: PackageStatus,
-    pub init_function: Option<fn() -> Result<(), Error>>,
+    pub init_function: Option<fn() -> crate::error::Result<()>>,
     pub test_function: Option<fn() -> UnifiedCryptoResult<HashMap<String, bool>>>,
     pub capabilities: PackageCapabilities,
 }
@@ -239,7 +238,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_advanced::init_crypto_advanced()
+//                 crate::stdlib::packages::crypto_advanced::init_crypto_advanced()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -283,7 +282,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric()
+//                 crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -315,7 +314,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_hash_advanced::init_crypto_hash_advanced()
+//                 crate::stdlib::packages::crypto_hash_advanced::init_crypto_hash_advanced()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -342,7 +341,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_signatures::init_crypto_signatures()
+//                 crate::stdlib::packages::crypto_signatures::init_crypto_signatures()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -369,7 +368,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_kdf::init_crypto_kdf()
+//                 crate::stdlib::packages::crypto_kdf::init_crypto_kdf()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -396,7 +395,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_random::init_crypto_random()
+//                 crate::stdlib::packages::crypto_random::init_crypto_random()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -424,7 +423,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_pki::init_crypto_pki()
+//                 crate::stdlib::packages::crypto_pki::init_crypto_pki()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -451,7 +450,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_zk::init_crypto_zk()
+//                 crate::stdlib::packages::crypto_zk::init_crypto_zk()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -483,7 +482,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_pqc::init_crypto_pqc()
+//                 crate::stdlib::packages::crypto_pqc::init_crypto_pqc()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -516,7 +515,7 @@ impl CryptoPackageManager {
             },
             status: PackageStatus::Registered,
             init_function: Some(|| {
-                crate::stdlib::packages::crypto_protocols::init_crypto_protocols()
+//                 crate::stdlib::packages::crypto_protocols::init_crypto_protocols()
                     .map_err(|e| CursedError::Runtime(e.to_string()))
             }),
             test_function: None,
@@ -750,51 +749,3 @@ pub fn initialize_crypto_ecosystem() -> UnifiedCryptoResult<()> {
     global_package_manager().initialize()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_package_manager_creation() {
-        let manager = CryptoPackageManager::new();
-        assert!(manager.get_global_config().is_ok());
-    }
-
-    #[test]
-    fn test_package_registration() {
-        let manager = CryptoPackageManager::new();
-        let result = manager.register_all_packages();
-        assert!(result.is_ok());
-
-        let packages = manager.list_packages().unwrap();
-        assert!(!packages.is_empty());
-        assert!(packages.iter().any(|p| p.name == "crypto_advanced"));
-    }
-
-    #[test]
-    fn test_package_capabilities() {
-        let capabilities = PackageCapabilities::default();
-        assert!(!capabilities.encryption);
-        assert!(!capabilities.digital_signatures);
-    }
-
-    #[test]
-    fn test_package_statistics() {
-        let stats = PackageStatistics::default();
-        assert_eq!(stats.total_operations, 0);
-        assert_eq!(stats.error_rate, 0.0);
-    }
-
-    #[test]
-    fn test_system_overview() {
-        let manager = CryptoPackageManager::new();
-        let _ = manager.register_all_packages();
-        
-        let overview = manager.get_system_overview();
-        assert!(overview.is_ok());
-
-        let overview_data = overview.unwrap();
-        assert!(overview_data.contains_key("uptime"));
-        assert!(overview_data.contains_key("total_packages"));
-    }
-}

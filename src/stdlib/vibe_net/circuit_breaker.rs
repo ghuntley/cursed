@@ -1,8 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Circuit breaker implementation for VibeNet
 
 use std::time::Duration;
-use crate::error::CursedError;
 use super::NetResult;
 
 /// CircuitBreakerState represents the state of a circuit breaker

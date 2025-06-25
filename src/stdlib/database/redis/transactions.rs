@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use tracing::{debug, error, info, instrument, warn};
 
 use super::{DatabaseError, RedisConnection};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Redis transaction manager
 #[derive(Debug)]
@@ -114,7 +114,7 @@ impl Default for TransactionConfig {
 impl RedisTransactionManager {
     /// Create new transaction manager
     #[instrument]
-    pub fn new(config: TransactionConfig) -> Result<(), Error> {
+    pub fn new(config: TransactionConfig) -> crate::error::Result<()> {
         info!("Creating Redis transaction manager");
         
         config.validate()?;
@@ -128,7 +128,7 @@ impl RedisTransactionManager {
     
     /// Begin new transaction
     #[instrument(skip(self, connection))]
-    pub async fn begin_transaction(&self, connection: &mut RedisConnection) -> Result<(), Error> {
+    pub async fn begin_transaction(&self, connection: &mut RedisConnection) -> crate::error::Result<()> {
         debug!(connection_id = connection.id(), "Beginning new transaction");
         
         let transaction_id = format!("txn_{}", rand::random::<u64>());
@@ -166,7 +166,7 @@ impl RedisTransactionManager {
     
     /// Add command to transaction
     #[instrument(skip(self))]
-    pub async fn queue_command(&self, transaction_id: &str, command: &str, args: &[&str]) -> Result<(), Error> {
+    pub async fn queue_command(&self, transaction_id: &str, command: &str, args: &[&str]) -> crate::error::Result<()> {
         debug!(transaction_id = transaction_id, command = command, "Queuing command in transaction");
         
         let mut transactions = self.active_transactions.lock().unwrap();
@@ -207,7 +207,7 @@ impl RedisTransactionManager {
     
     /// Watch keys for optimistic locking
     #[instrument(skip(self, connection))]
-    pub async fn watch_keys(&self, transaction_id: &str, connection: &mut RedisConnection, keys: &[&str]) -> Result<(), Error> {
+    pub async fn watch_keys(&self, transaction_id: &str, connection: &mut RedisConnection, keys: &[&str]) -> crate::error::Result<()> {
         debug!(transaction_id = transaction_id, keys = ?keys, "Watching keys for transaction");
         
         if !self.config.enable_watch {
@@ -233,7 +233,7 @@ impl RedisTransactionManager {
     
     /// Commit transaction (execute EXEC)
     #[instrument(skip(self, connection))]
-    pub async fn commit_transaction(&self, transaction_id: &str, connection: &mut RedisConnection) -> Result<(), Error> {
+    pub async fn commit_transaction(&self, transaction_id: &str, connection: &mut RedisConnection) -> crate::error::Result<()> {
         info!(transaction_id = transaction_id, "Committing transaction");
         
         let start_time = Instant::now();
@@ -297,7 +297,7 @@ impl RedisTransactionManager {
     
     /// Abort transaction (execute DISCARD)
     #[instrument(skip(self, connection))]
-    pub async fn abort_transaction(&self, transaction_id: &str, connection: &mut RedisConnection) -> Result<(), Error> {
+    pub async fn abort_transaction(&self, transaction_id: &str, connection: &mut RedisConnection) -> crate::error::Result<()> {
         info!(transaction_id = transaction_id, "Aborting transaction");
         
         // Remove transaction
@@ -344,7 +344,7 @@ impl RedisTransactionManager {
     
     /// Clean up expired transactions
     #[instrument(skip(self))]
-    pub async fn cleanup_expired_transactions(&self) -> Result<(), Error> {
+    pub async fn cleanup_expired_transactions(&self) -> crate::error::Result<()> {
         debug!("Cleaning up expired transactions");
         
         let mut transactions = self.active_transactions.lock().unwrap();
@@ -421,7 +421,7 @@ pub struct TransactionInfo {
 
 impl TransactionConfig {
     /// Validate transaction configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.max_duration.as_secs() == 0 {
             return Err(DatabaseError::Configuration("Max duration must be greater than 0".to_string()));
         }

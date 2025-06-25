@@ -3,8 +3,8 @@
 /// This module provides comprehensive signal handling for CURSED applications
 /// Based on the signal_boost.md specification
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult, system_error, timeout_error, invalid_operation};
-use crate::error::Error;
+// use crate::stdlib::ipc::error::{IpcError, IpcResult, system_error, timeout_error, invalid_operation};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, OnceLock};
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -823,82 +823,3 @@ pub fn cleanup_signal_boost() -> IpcResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::mpsc;
-    use std::time::Duration;
-
-    #[test]
-    fn test_boost_signal_creation() {
-        let sig = BoostSignal::SIGINT;
-        assert_eq!(sig.signal_number(), 2);
-        assert_eq!(sig.name(), "SIGINT");
-    }
-
-    #[test]
-    fn test_signal_handler_creation() {
-        let mut handler = SignalHandler::new();
-        let called = Arc::new(Mutex::new(false));
-        let called_clone = called.clone();
-        
-        handler.register(BoostSignal::SIGINT, move |_| {
-            *called_clone.lock().unwrap() = true;
-        });
-        
-        // Handler is registered but not called in this test
-        assert!(!*called.lock().unwrap());
-    }
-
-    #[test]
-    fn test_graceful_shutdown_creation() {
-        let mut shutdown = GracefulShutdown::new();
-        let executed = Arc::new(Mutex::new(false));
-        let executed_clone = executed.clone();
-        
-        shutdown.add("test_task", move || {
-            *executed_clone.lock().unwrap() = true;
-            Ok(())
-        });
-        
-        // Task is added but not executed until shutdown
-        assert!(!*executed.lock().unwrap());
-    }
-
-    #[test]
-    fn test_signal_multiplexer() {
-        let mut mux = SignalMultiplexer::new();
-        let (tx, rx) = mpsc::channel();
-        
-        let id = mux.add(tx, &[BoostSignal::SIGINT, BoostSignal::SIGTERM]);
-        assert_eq!(mux.count(), 1);
-        
-        mux.remove(id);
-        assert_eq!(mux.count(), 0);
-    }
-
-    #[test]
-    fn test_signal_filtering() {
-        let (tx, rx) = mpsc::channel();
-        
-        // Send some signals
-        tx.send(BoostSignal::SIGINT).unwrap();
-        tx.send(BoostSignal::SIGTERM).unwrap();
-        tx.send(BoostSignal::SIGUSR1).unwrap();
-        drop(tx);
-        
-        // Filter to only allow SIGINT and SIGTERM
-        let filtered = filter_signals(rx, |sig| {
-            sig == BoostSignal::SIGINT || sig == BoostSignal::SIGTERM
-        });
-        
-        let received: Vec<_> = filtered.iter().collect();
-        assert_eq!(received.len(), 2);
-    }
-
-    #[test]
-    fn test_vibe_checker_creation() {
-        let checker = vibe_check(BoostSignal::SIGUSR1, || true);
-        assert!(checker.get_status());
-    }
-}

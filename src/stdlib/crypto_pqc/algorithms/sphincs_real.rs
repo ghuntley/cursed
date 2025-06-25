@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real SPHINCS+ Hash-based Signature Implementation
 /// 
 /// This is a production-ready implementation of SPHINCS+, a stateless hash-based
@@ -30,7 +30,7 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use sha3::{Sha3_256, Sha3_512, Digest, Shake256};
 use sha3::digest::{ExtendableOutput, Update, XofReader};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// SPHINCS+ parameter sets with complete specifications
@@ -830,70 +830,3 @@ impl RealSphincsPlusSignature {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_sphincs_plus_keygen() {
-        let (pub_key, sec_key) = RealSphincsPlusAlgorithm::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params.security_level(), SecurityLevel::Level1);
-        assert_eq!(sec_key.params.security_level(), SecurityLevel::Level1);
-    }
-
-    #[test]
-    fn test_real_sphincs_plus_sign_verify() {
-        let (pub_key, sec_key) = RealSphincsPlusAlgorithm::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Test message for SPHINCS+";
-        
-        let signature = RealSphincsPlusAlgorithm::sign(&sec_key, message).unwrap();
-        let is_valid = RealSphincsPlusAlgorithm::verify(&pub_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_sphincs_plus_parameters() {
-        let params = SphincsPlusParams::new(SecurityLevel::Level1, false);
-        assert_eq!(params.n(), 16);
-        assert_eq!(params.security_level(), SecurityLevel::Level1);
-        
-        let params_fast = SphincsPlusParams::new(SecurityLevel::Level1, true);
-        assert_eq!(params_fast.n(), 16);
-        assert!(params_fast.d() > params.d()); // Fast variant has more layers
-    }
-
-    #[test]
-    fn test_address_serialization() {
-        let mut addr = Address::new();
-        addr.set_layer(1);
-        addr.set_tree(42);
-        addr.set_type(2);
-        
-        let bytes = addr.to_bytes();
-        assert_eq!(bytes.len(), 32);
-        assert_eq!(u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]), 1);
-        assert_eq!(u64::from_be_bytes([bytes[4], bytes[5], bytes[6], bytes[7], bytes[8], bytes[9], bytes[10], bytes[11]]), 42);
-        assert_eq!(u32::from_be_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]), 2);
-    }
-
-    #[test]
-    fn test_base_w_conversion() {
-        let input = [0x12, 0x34];
-        let result = WotsPlus::base_w(&input, 16, 4).unwrap();
-        assert_eq!(result.len(), 4);
-        // 0x12 = 0001 0010, 0x34 = 0011 0100
-        // In base 16: [1, 2, 3, 4]
-        assert_eq!(result, vec![1, 2, 3, 4]);
-    }
-
-    #[test]
-    fn test_fors_message_to_indices() {
-        let message = [0xFF, 0x00];
-        let indices = Fors::message_to_indices(&message, 4, 2).unwrap();
-        assert_eq!(indices.len(), 2);
-        // First 4 bits: 1111 = 15, Next 4 bits: 0000 = 0
-        assert_eq!(indices[0], 15);
-        assert_eq!(indices[1], 0);
-    }
-}

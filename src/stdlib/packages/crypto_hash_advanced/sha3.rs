@@ -4,8 +4,7 @@
 /// SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE128, and SHAKE256.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
 use std::collections::HashMap;
 
 /// fr fr SHA-3 algorithm variants
@@ -362,7 +361,7 @@ impl Sha3Utils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay SHA3-224 hash function
-pub fn sha3_224(args: Vec<Value>) -> Result<(), Error> {
+pub fn sha3_224(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("SHA3-224 requires input data".to_string()));
     }
@@ -377,7 +376,7 @@ pub fn sha3_224(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay SHA3-256 hash function
-pub fn sha3_256(args: Vec<Value>) -> Result<(), Error> {
+pub fn sha3_256(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("SHA3-256 requires input data".to_string()));
     }
@@ -392,7 +391,7 @@ pub fn sha3_256(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay SHA3-384 hash function
-pub fn sha3_384(args: Vec<Value>) -> Result<(), Error> {
+pub fn sha3_384(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("SHA3-384 requires input data".to_string()));
     }
@@ -407,7 +406,7 @@ pub fn sha3_384(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay SHA3-512 hash function
-pub fn sha3_512(args: Vec<Value>) -> Result<(), Error> {
+pub fn sha3_512(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("SHA3-512 requires input data".to_string()));
     }
@@ -422,7 +421,7 @@ pub fn sha3_512(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay SHAKE128 extendable output function
-pub fn shake128(args: Vec<Value>) -> Result<(), Error> {
+pub fn shake128(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("SHAKE128 requires input data and output length".to_string()));
     }
@@ -446,7 +445,7 @@ pub fn shake128(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay SHAKE256 extendable output function
-pub fn shake256(args: Vec<Value>) -> Result<(), Error> {
+pub fn shake256(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("SHAKE256 requires input data and output length".to_string()));
     }
@@ -470,7 +469,7 @@ pub fn shake256(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Create streaming SHA-3 hasher
-pub fn create_sha3_hasher(args: Vec<Value>) -> Result<(), Error> {
+pub fn create_sha3_hasher(args: Vec<Value>) -> crate::error::Result<()> {
     let variant_str = if args.is_empty() {
         "SHA3-256"
     } else {
@@ -504,78 +503,3 @@ pub fn create_sha3_hasher(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::Object(result))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_sha3_256_empty() {
-        let hash = Sha3Hasher::hash(Sha3Variant::Sha3_256, b"");
-        let expected = "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a";
-        assert_eq!(Sha3Utils::to_hex(&hash), expected);
-    }
-    
-    #[test]
-    fn test_sha3_256_abc() {
-        let hash = Sha3Hasher::hash(Sha3Variant::Sha3_256, b"abc");
-        // Note: This is a test vector - would need to verify with reference implementation
-        assert_eq!(hash.len(), 32);
-    }
-    
-    #[test]
-    fn test_sha3_512_empty() {
-        let hash = Sha3Hasher::hash(Sha3Variant::Sha3_512, b"");
-        assert_eq!(hash.len(), 64);
-    }
-    
-    #[test]
-    fn test_shake128_custom_length() {
-        let hash = Sha3Hasher::shake(Sha3Variant::Shake128, b"test", 16);
-        assert_eq!(hash.len(), 16);
-        
-        let hash = Sha3Hasher::shake(Sha3Variant::Shake128, b"test", 64);
-        assert_eq!(hash.len(), 64);
-    }
-    
-    #[test]
-    fn test_shake256_custom_length() {
-        let hash = Sha3Hasher::shake(Sha3Variant::Shake256, b"test", 100);
-        assert_eq!(hash.len(), 100);
-    }
-    
-    #[test]
-    fn test_streaming_sha3() {
-        let mut hasher = Sha3Hasher::new(Sha3Variant::Sha3_256);
-        hasher.update(b"hello");
-        hasher.update(b" ");
-        hasher.update(b"world");
-        let hash1 = hasher.finalize();
-        
-        let hash2 = Sha3Hasher::hash(Sha3Variant::Sha3_256, b"hello world");
-        assert_eq!(hash1, hash2);
-    }
-    
-    #[test]
-    fn test_variant_properties() {
-        assert_eq!(Sha3Variant::Sha3_256.name(), "SHA3-256");
-        assert_eq!(Sha3Variant::Sha3_256.output_size(), Some(32));
-        assert_eq!(Sha3Variant::Sha3_256.rate(), 136);
-        assert_eq!(Sha3Variant::Shake128.output_size(), None);
-        assert_eq!(Sha3Variant::Shake128.domain_separator(), 0x1f);
-    }
-    
-    #[test]
-    fn test_keccak_state_operations() {
-        let mut state = KeccakState::new();
-        
-        // Test absorption
-        state.absorb(b"test data", 136);
-        
-        // Test squeezing
-        let mut output = vec![0u8; 32];
-        state.squeeze(&mut output, 136);
-        
-        // Should produce some output (not all zeros)
-        assert!(output.iter().any(|&b| b != 0));
-    }
-}

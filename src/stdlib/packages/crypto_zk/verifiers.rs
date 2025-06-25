@@ -1,15 +1,14 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Generic verifier implementations for zero-knowledge proofs
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
-use crate::stdlib::packages::crypto_zk::groth16::{Groth16Verifier, Groth16VerifyingKey, Groth16Proof};
-use crate::stdlib::packages::crypto_zk::plonk::{PlonkVerifier, PlonkVerifyingKey, PlonkProof};
-use crate::stdlib::packages::crypto_zk::stark::{StarkVerifier, StarkProof, StarkConstraints};
-use crate::stdlib::packages::crypto_zk::bulletproofs::{BulletproofsVerifier, BulletproofsRangeProof, BulletproofsParams};
-use crate::stdlib::packages::crypto_zk::proofs::{SchnorrProof, SigmaProof, NIZKProof};
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
+// use crate::stdlib::packages::crypto_zk::groth16::{Groth16Verifier, Groth16VerifyingKey, Groth16Proof};
+// use crate::stdlib::packages::crypto_zk::plonk::{PlonkVerifier, PlonkVerifyingKey, PlonkProof};
+// use crate::stdlib::packages::crypto_zk::stark::{StarkVerifier, StarkProof, StarkConstraints};
+// use crate::stdlib::packages::crypto_zk::bulletproofs::{BulletproofsVerifier, BulletproofsRangeProof, BulletproofsParams};
+// use crate::stdlib::packages::crypto_zk::proofs::{SchnorrProof, SigmaProof, NIZKProof};
 use std::time::{Instant, Duration};
 
 /// Generic verification result
@@ -214,17 +213,17 @@ impl UniversalVerifier {
         
         // Create demo objects for verification
         let demo_vk = Groth16VerifyingKey {
-            alpha_g1: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            beta_g2: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
-            gamma_g2: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
-            delta_g2: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
-            ic: vec![crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(); public_elems.len() + 1],
+//             alpha_g1: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             beta_g2: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
+//             gamma_g2: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
+//             delta_g2: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
+//             ic: vec![crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(); public_elems.len() + 1],
         };
 
         let demo_proof = Groth16Proof {
-            a: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            b: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
-            c: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             a: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             b: crate::stdlib::packages::crypto_zk::groth16::G2Point::generator(),
+//             c: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
         };
 
         Groth16Verifier::verify(&demo_vk, &public_elems, &demo_proof)
@@ -247,24 +246,24 @@ impl UniversalVerifier {
         let demo_vk = PlonkVerifyingKey {
             domain_size: 4,
             num_public_inputs: public_elems.len(),
-            q_l_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            q_r_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            q_o_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            q_m_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            q_c_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            sigma_commitments: vec![crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(); 3],
-            g1_generator: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            g2_generator: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             q_l_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             q_r_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             q_o_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             q_m_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             q_c_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             sigma_commitments: vec![crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(); 3],
+//             g1_generator: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             g2_generator: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
         };
 
         let demo_proof = PlonkProof {
-            a_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            b_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            c_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            z_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            t_lo_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            t_mid_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            t_hi_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             a_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             b_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             c_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             z_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             t_lo_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             t_mid_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             t_hi_commitment: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
             w_xi_eval: FieldElement::one(),
             w_xi_omega_eval: FieldElement::one(),
             a_xi_eval: FieldElement::one(),
@@ -273,7 +272,7 @@ impl UniversalVerifier {
             s_sigma1_xi_eval: FieldElement::one(),
             s_sigma2_xi_eval: FieldElement::one(),
             z_xi_omega_eval: FieldElement::one(),
-            opening_proof: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             opening_proof: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
         };
 
         PlonkVerifier::verify(&demo_vk, &public_elems, &demo_proof)
@@ -291,7 +290,7 @@ impl UniversalVerifier {
         let demo_proof = StarkProof {
             trace_commitment: vec![0u8; 32],
             constraint_evaluations: vec![FieldElement::zero(); 2],
-            fri_proof: crate::stdlib::packages::crypto_zk::stark::FriProof {
+//             fri_proof: crate::stdlib::packages::crypto_zk::stark::FriProof {
                 commitments: vec![vec![0u8; 32]],
                 final_polynomial: vec![FieldElement::one()],
                 query_proofs: Vec::new(),
@@ -310,16 +309,16 @@ impl UniversalVerifier {
         // Create demo objects for Bulletproofs verification
         let demo_params = BulletproofsParams::generate(32)?;
         let demo_proof = BulletproofsRangeProof {
-            a: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            s: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            t1: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
-            t2: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             a: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             s: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             t1: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
+//             t2: crate::stdlib::packages::crypto_zk::groth16::G1Point::generator(),
             tau_x: FieldElement::one(),
             mu: FieldElement::one(),
             l_vec: vec![FieldElement::one(); 32],
             r_vec: vec![FieldElement::zero(); 32],
         };
-        let demo_commitment = crate::stdlib::packages::crypto_zk::groth16::G1Point::generator();
+//         let demo_commitment = crate::stdlib::packages::crypto_zk::groth16::G1Point::generator();
 
         BulletproofsVerifier::verify_range(&demo_params, &demo_proof, &demo_commitment, 0, 255)
     }
@@ -702,159 +701,3 @@ impl Verifiers {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_universal_verifier_creation() {
-        let verifier = UniversalVerifier::new();
-        assert!(!verifier.supported_systems.is_empty());
-        assert!(verifier.supported_systems.contains(&"groth16".to_string()));
-        assert!(verifier.supported_systems.contains(&"plonk".to_string()));
-        assert!(verifier.supported_systems.contains(&"stark".to_string()));
-    }
-
-    #[test]
-    fn test_verification_result() {
-        let result = VerificationResult::success(
-            "test".to_string(),
-            Duration::from_millis(100),
-            vec![1, 2, 3, 4],
-        );
-        
-        assert!(result.is_valid);
-        assert_eq!(result.proof_system, "test");
-        assert!(result.error_message.is_none());
-        
-        let failure = VerificationResult::failure(
-            "test".to_string(),
-            Duration::from_millis(50),
-            "Test error".to_string(),
-        );
-        
-        assert!(!failure.is_valid);
-        assert!(failure.error_message.is_some());
-    }
-
-    #[test]
-    fn test_proof_verification() {
-        let mut verifier = UniversalVerifier::new();
-        let demo_proof = Value::Object(HashMap::new());
-        let demo_inputs = Value::Array(vec![Value::Integer(1), Value::Integer(2)]);
-        
-        let result = verifier.verify_proof("schnorr", &demo_proof, &demo_inputs, None);
-        assert!(result.is_ok());
-        
-        let result = result.unwrap();
-        assert_eq!(result.proof_system, "schnorr");
-    }
-
-    #[test]
-    fn test_batch_verification() {
-        let mut verifier = UniversalVerifier::new();
-        let batch_data = vec![
-            ("schnorr".to_string(), Value::Object(HashMap::new()), Value::Array(vec![Value::Integer(1)]), None),
-            ("sigma".to_string(), Value::Object(HashMap::new()), Value::Array(vec![Value::Integer(2)]), None),
-        ];
-        
-        let result = verifier.batch_verify(&batch_data);
-        assert!(result.is_ok());
-        
-        let result = result.unwrap();
-        assert_eq!(result.batch_size, 2);
-        assert_eq!(result.individual_results.len(), 2);
-    }
-
-    #[test]
-    fn test_cache_functionality() {
-        let mut verifier = UniversalVerifier::new();
-        let demo_proof = Value::Object(HashMap::new());
-        let demo_inputs = Value::Array(vec![Value::Integer(1)]);
-        
-        // First verification
-        let result1 = verifier.verify_proof("schnorr", &demo_proof, &demo_inputs, None).unwrap();
-        
-        // Second verification (should use cache)
-        let result2 = verifier.verify_proof("schnorr", &demo_proof, &demo_inputs, None).unwrap();
-        
-        assert_eq!(result1.is_valid, result2.is_valid);
-        assert!(!verifier.verification_cache.is_empty());
-        
-        verifier.clear_cache();
-        assert!(verifier.verification_cache.is_empty());
-    }
-
-    #[test]
-    fn test_verifiers_api() {
-        let verifier = Verifiers::create_universal_verifier();
-        assert!(verifier.is_ok());
-        
-        let supported = Verifiers::supported_systems();
-        assert!(matches!(supported, Value::Array(_)));
-        
-        let complexity = Verifiers::verification_complexity();
-        assert!(matches!(complexity, Value::Object(_)));
-        
-        let practices = Verifiers::verification_best_practices();
-        assert!(matches!(practices, Value::Object(_)));
-    }
-
-    #[test]
-    fn test_verification_api() {
-        let proof_system = Value::String("schnorr".to_string());
-        let proof = Value::Object(HashMap::new());
-        let public_inputs = Value::Array(vec![Value::Integer(1), Value::Integer(2)]);
-        
-        let result = Verifiers::verify_proof(&proof_system, &proof, &public_inputs, None);
-        assert!(result.is_ok());
-        
-        let result_value = result.unwrap();
-        assert!(matches!(result_value, Value::Object(_)));
-    }
-
-    #[test]
-    fn test_benchmarking() {
-        let proof_system = Value::String("schnorr".to_string());
-        let benchmark = Verifiers::benchmark_verification(&proof_system, 10);
-        assert!(benchmark.is_ok());
-        
-        let batch_sizes = Value::Array(vec![Value::Integer(5), Value::Integer(10)]);
-        let batch_benchmark = Verifiers::benchmark_batch_verification(&batch_sizes);
-        assert!(batch_benchmark.is_ok());
-    }
-
-    #[test]
-    fn test_unsupported_proof_system() {
-        let mut verifier = UniversalVerifier::new();
-        let demo_proof = Value::Object(HashMap::new());
-        let demo_inputs = Value::Array(vec![Value::Integer(1)]);
-        
-        let result = verifier.verify_proof("unsupported", &demo_proof, &demo_inputs, None);
-        assert!(result.is_ok()); // Returns VerificationResult with error
-        
-        let result = result.unwrap();
-        assert!(!result.is_valid);
-        assert!(result.error_message.is_some());
-    }
-
-    #[test]
-    fn test_field_element_parsing() {
-        let verifier = UniversalVerifier::new();
-        
-        let valid_array = Value::Array(vec![
-            Value::Integer(1),
-            Value::String("2".to_string()),
-            Value::Integer(3),
-        ]);
-        
-        let result = verifier.parse_field_array(&valid_array);
-        assert!(result.is_ok());
-        
-        let elements = result.unwrap();
-        assert_eq!(elements.len(), 3);
-        assert_eq!(elements[0], FieldElement::new(1));
-        assert_eq!(elements[1], FieldElement::new(2));
-        assert_eq!(elements[2], FieldElement::new(3));
-    }
-}

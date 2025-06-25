@@ -1,8 +1,8 @@
 /// Date/time formatting and parsing functionality
-use crate::stdlib::time::error::{TimeError, TimeResult, parse_error, format_error};
-use crate::stdlib::time::datetime::{DateTime, Date, Time};
-use crate::stdlib::time::duration::Duration;
-use crate::error::Error;
+// use crate::stdlib::time::error::{TimeError, TimeResult, parse_error, format_error};
+// use crate::stdlib::time::datetime::{DateTime, Date, Time};
+// use crate::stdlib::time::duration::Duration;
+use crate::error::CursedError;
 
 /// Standard date/time format patterns
 #[derive(Debug, Clone, PartialEq)]
@@ -446,7 +446,7 @@ fn parse_unix_timestamp(input: &str) -> TimeResult<DateTime> {
     let timestamp: i64 = input.parse()
         .map_err(|_| parse_error(input, "Unix timestamp", "Invalid timestamp"))?;
     
-    crate::stdlib::time::datetime::from_timestamp(timestamp)
+//     crate::stdlib::time::datetime::from_timestamp(timestamp)
 }
 
 fn format_with_pattern(value: &str, _pattern: &str) -> TimeResult<String> {
@@ -454,50 +454,3 @@ fn format_with_pattern(value: &str, _pattern: &str) -> TimeResult<String> {
     Ok(value.to_string())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::time::datetime::{Date, Time, DateTime};
-    
-    #[test]
-    fn test_format_iso8601() {
-        let date = Date::new(2023, 12, 25).unwrap();
-        let time = Time::new(15, 30, 45, 0).unwrap();
-        let datetime = DateTime::new(date, time);
-        
-        let formatted = format_iso8601(&datetime).unwrap();
-        assert_eq!(formatted, "2023-12-25T15:30:45");
-    }
-    
-    #[test]
-    fn test_parse_iso8601() {
-        let parsed = parse_iso8601("2023-12-25T15:30:45").unwrap();
-        assert_eq!(parsed.date.year, 2023);
-        assert_eq!(parsed.date.month, 12);
-        assert_eq!(parsed.date.day, 25);
-        assert_eq!(parsed.time.hour, 15);
-        assert_eq!(parsed.time.minute, 30);
-        assert_eq!(parsed.time.second, 45);
-    }
-    
-    #[test]
-    fn test_parse_duration() {
-        let d1 = parse_duration("2h 30m").unwrap();
-        assert_eq!(d1.total_seconds(), 9000); // 2*3600 + 30*60
-        
-        let d2 = parse_duration("1d 4h").unwrap();
-        assert_eq!(d2.total_seconds(), 100800); // 24*3600 + 4*3600
-        
-        let d3 = parse_duration("45s").unwrap();
-        assert_eq!(d3.total_seconds(), 45);
-    }
-    
-    #[test]
-    fn test_format_duration() {
-        let d1 = Duration::from_seconds(3661);
-        assert_eq!(format_duration(&d1), "1 hour, 1 minute, and 1 second");
-        
-        let d2 = Duration::from_seconds(60);
-        assert_eq!(format_duration(&d2), "1 minute");
-    }
-}

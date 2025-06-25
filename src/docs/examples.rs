@@ -3,7 +3,7 @@
 // Automatically generates and validates code examples for documentation.
 
 use crate::docs::generator::{Example, DocumentationItem};
-use crate::error::Error;
+use crate::error::CursedError;
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::process::Command;
@@ -18,9 +18,9 @@ pub struct ExampleGenerator {
 
 impl ExampleGenerator {
     /// Create new example generator
-    pub fn new(cursed_binary: PathBuf) -> Result<(), Error> {
+    pub fn new(cursed_binary: PathBuf) -> crate::error::Result<()> {
         let temp_dir = std::env::temp_dir().join("cursed_doc_examples");
-        fs::create_dir_all(&temp_dir).map_err(Error::Io)?;
+        fs::create_dir_all(&temp_dir).map_err(CursedError::Io)?;
         
         Ok(Self {
             temp_dir,
@@ -30,7 +30,7 @@ impl ExampleGenerator {
     }
 
     /// Generate examples for documentation items
-    pub fn generate_examples(&self, items: &mut [DocumentationItem]) -> Result<(), Error> {
+    pub fn generate_examples(&self, items: &mut [DocumentationItem]) -> crate::error::Result<()> {
         for item in items {
             match &item.kind {
                 crate::docs::generator::ItemKind::Function => {
@@ -55,7 +55,7 @@ impl ExampleGenerator {
     }
 
     /// Generate example for a function
-    fn generate_function_example(&self, item: &DocumentationItem) -> Result<(), Error> {
+    fn generate_function_example(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut example_code = String::new();
         
         // Import statement
@@ -100,7 +100,7 @@ impl ExampleGenerator {
     }
 
     /// Generate example for a struct
-    fn generate_struct_example(&self, item: &DocumentationItem) -> Result<(), Error> {
+    fn generate_struct_example(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut example_code = String::new();
         
         // Import statement
@@ -141,7 +141,7 @@ impl ExampleGenerator {
     }
 
     /// Generate example for an interface
-    fn generate_interface_example(&self, item: &DocumentationItem) -> Result<(), Error> {
+    fn generate_interface_example(&self, item: &DocumentationItem) -> crate::error::Result<()> {
         let mut example_code = String::new();
         
         // Import statement
@@ -183,7 +183,7 @@ impl ExampleGenerator {
     }
 
     /// Generate function call with appropriate parameters
-    fn generate_function_call(&self, name: &str, parameters: &[crate::docs::generator::Parameter]) -> Result<(), Error> {
+    fn generate_function_call(&self, name: &str, parameters: &[crate::docs::generator::Parameter]) -> crate::error::Result<()> {
         let mut call = format!("{}(", name);
         
         let mut param_values = Vec::new();
@@ -199,7 +199,7 @@ impl ExampleGenerator {
     }
 
     /// Generate default value for a type
-    fn generate_default_value(&self, type_name: &Option<String>) -> Result<(), Error> {
+    fn generate_default_value(&self, type_name: &Option<String>) -> crate::error::Result<()> {
         match type_name.as_deref() {
             Some("i32") | Some("i64") | Some("int") => Ok("42".to_string()),
             Some("f32") | Some("f64") | Some("float") => Ok("3.14".to_string()),
@@ -216,7 +216,7 @@ impl ExampleGenerator {
     }
 
     /// Validate that an example compiles correctly
-    fn validate_example(&self, example: &Example) -> Result<(), Error> {
+    fn validate_example(&self, example: &Example) -> crate::error::Result<()> {
         if !self.validate_examples {
             return Ok(());
         }
@@ -228,28 +228,28 @@ impl ExampleGenerator {
                 .unwrap()
                 .as_nanos()));
         
-        fs::write(&temp_file, &example.code).map_err(Error::Io)?;
+        fs::write(&temp_file, &example.code).map_err(CursedError::Io)?;
         
         // Try to compile the example
         let output = Command::new(&self.cursed_binary)
             .arg("check")
             .arg(&temp_file)
             .output()
-            .map_err(|e| Error::General(format!("Failed to run cursed compiler: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to run cursed compiler: {}", e)))?;
         
         // Clean up temp file
         let _ = fs::remove_file(&temp_file);
         
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(Error::General(format!("Example validation failed: {}", stderr)));
+            return Err(CursedError::General(format!("Example validation failed: {}", stderr)));
         }
         
         Ok(())
     }
 
     /// Extract examples from test files
-    pub fn extract_examples_from_tests(&self, test_dir: &Path) -> Result<(), Error> {
+    pub fn extract_examples_from_tests(&self, test_dir: &Path) -> crate::error::Result<()> {
         let mut examples = HashMap::new();
         
         if !test_dir.exists() {
@@ -257,8 +257,8 @@ impl ExampleGenerator {
         }
         
         // Walk through test directory
-        for entry in fs::read_dir(test_dir).map_err(Error::Io)? {
-            let entry = entry.map_err(Error::Io)?;
+        for entry in fs::read_dir(test_dir).map_err(CursedError::Io)? {
+            let entry = entry.map_err(CursedError::Io)?;
             let path = entry.path();
             
             if path.is_file() && path.extension().map_or(false, |ext| ext == "csd" || ext == "rs") {
@@ -273,8 +273,8 @@ impl ExampleGenerator {
     }
 
     /// Extract examples from a single test file
-    fn extract_examples_from_file(&self, file_path: &Path) -> Result<(), Error> {
-        let content = fs::read_to_string(file_path).map_err(Error::Io)?;
+    fn extract_examples_from_file(&self, file_path: &Path) -> crate::error::Result<()> {
+        let content = fs::read_to_string(file_path).map_err(CursedError::Io)?;
         let mut examples = HashMap::new();
         
         let lines: Vec<&str> = content.split("\n").collect();
@@ -296,7 +296,7 @@ impl ExampleGenerator {
     }
 
     /// Extract example from a test function
-    fn extract_test_example(&self, lines: &[&str], start: usize) -> Result<(), Error> {
+    fn extract_test_example(&self, lines: &[&str], start: usize) -> crate::error::Result<()> {
         // Find the test function
         let mut func_start = start;
         while func_start < lines.len() && !lines[func_start].contains("fn ") {
@@ -364,7 +364,7 @@ impl ExampleGenerator {
     }
 
     /// Clean test code to make it suitable for documentation
-    fn clean_test_code(&self, code: String) -> Result<(), Error> {
+    fn clean_test_code(&self, code: String) -> crate::error::Result<()> {
         let mut cleaned = code;
         
         // Remove test-specific annotations
@@ -389,7 +389,7 @@ impl ExampleGenerator {
     }
 
     /// Generate comprehensive example collection
-    pub fn generate_example_collection(&self, items: &[DocumentationItem], test_dir: Option<&Path>) -> Result<(), Error> {
+    pub fn generate_example_collection(&self, items: &[DocumentationItem], test_dir: Option<&Path>) -> crate::error::Result<()> {
         let mut all_examples = Vec::new();
         
         // Generate examples for each documented item
@@ -412,7 +412,7 @@ impl ExampleGenerator {
     }
 
     /// Generate comprehensive examples showcasing language features
-    fn generate_comprehensive_examples(&self) -> Result<(), Error> {
+    fn generate_comprehensive_examples(&self) -> crate::error::Result<()> {
         let mut examples = Vec::new();
         
         // Basic syntax example
@@ -451,9 +451,9 @@ slay calculate(a: i32, b: i32) -> i32 {
             output: Some("Hello, CURSED!\nPositive number\nIteration: 0\nIteration: 1\nIteration: 2\nIteration: 3\nIteration: 4\nResult: 30".to_string()),
         });
         
-        // Error handling example
+        // CursedError handling example
         examples.push(Example {
-            title: Some("Error Handling".to_string()),
+            title: Some("CursedError Handling".to_string()),
             description: Some("Demonstrating CURSED error handling with the ? operator".to_string()),
             code: r#"import "stdlib::io";
 
@@ -467,10 +467,10 @@ slay main() {
     facts result = risky_operation()?;
     println("Success: {}", result)?;
     
-    // Error handling with pattern matching
+    // CursedError handling with pattern matching
     bestie risky_operation() {
         Ok(value) => println("Got value: {}", value)?,
-        Err(error) => println("Error: {}", error)?,
+        Err(error) => println("CursedError: {}", error)?,
     }
 }"#.to_string(),
             language: "cursed".to_string(),

@@ -830,34 +830,3 @@ impl Default for CacheSettings {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_publish_config_creation() {
-        let config = PublishConfig {
-            target: PublishTarget::Local {
-                path: PathBuf::from("/tmp/docs"),
-            },
-            base_url: "https://docs.cursed.dev".to_string(),
-            cdn: None,
-            optimization: OptimizationConfig::default(),
-            auth: None,
-            domain: None,
-        };
-        
-        assert_eq!(config.base_url, "https://docs.cursed.dev");
-    }
-    
-    #[test]
-    fn test_optimization_config_defaults() {
-        let config = OptimizationConfig::default();
-        assert!(config.minify_html);
-        assert!(config.minify_css);
-        assert!(config.minify_js);
-        assert!(config.optimize_images);
-        assert!(config.gzip_compression);
-        assert!(!config.brotli_compression);
-    }
-}

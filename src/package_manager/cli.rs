@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -178,7 +178,7 @@ pub enum WorkspaceCommands {
 
 impl PackageManagerCli {
     /// Execute the CLI command
-    pub async fn execute(&self) -> Result<(), Error> {
+    pub async fn execute(&self) -> crate::error::Result<()> {
         let config = PackageManagerConfig::default();
         let mut manager = PackageManager::new(config)?;
         
@@ -340,7 +340,7 @@ impl PackageManagerCli {
     }
     
     /// Load configuration from file and apply CLI overrides
-    pub fn load_config(&self) -> Result<(), Error> {
+    pub fn load_config(&self) -> crate::error::Result<()> {
         let mut config = PackageManagerConfig::default();
         
         // Apply CLI overrides

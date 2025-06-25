@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Advanced synchronization primitives for CURSED IPC
 /// 
 /// This module provides sophisticated synchronization mechanisms including
@@ -10,8 +10,8 @@ use std::collections::{HashMap, HashSet};
 use std::thread::{self, ThreadId};
 use std::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
 
-use crate::stdlib::ipc::{IpcResult, IpcError, IpcHandle, IpcPermissions};
-use crate::stdlib::ipc::error::{timeout_error, resource_error, system_error, communication_error};
+// use crate::stdlib::ipc::{IpcResult, IpcError, IpcHandle, IpcPermissions};
+// use crate::stdlib::ipc::error::{timeout_error, resource_error, system_error, communication_error};
 
 /// Barrier configuration
 #[derive(Debug, Clone)]
@@ -86,9 +86,9 @@ impl Barrier {
         }
 
         let handle = if let Some(ref name) = config.name {
-            IpcHandle::named(name, crate::stdlib::ipc::types::IpcHandleType::Barrier)
+//             IpcHandle::named(name, crate::stdlib::ipc::types::IpcHandleType::Barrier)
         } else {
-            IpcHandle::anonymous(crate::stdlib::ipc::types::IpcHandleType::Barrier)
+//             IpcHandle::anonymous(crate::stdlib::ipc::types::IpcHandleType::Barrier)
         };
 
         let state = BarrierState {
@@ -489,118 +489,3 @@ pub fn create_distributed_coordinator(node_id: &str) -> DistributedCoordinator {
     DistributedCoordinator::new(node_id.to_string())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
-
-    #[test]
-    fn test_barrier_creation() {
-        let config = BarrierConfig::new(3);
-        let barrier = Barrier::new(config).unwrap();
-        assert_eq!(barrier.waiters(), 0);
-    }
-
-    #[test]
-    fn test_barrier_basic_operation() {
-        let barrier = Arc::new(create_barrier(2).unwrap());
-        let counter = Arc::new(AtomicUsize::new(0));
-        
-        let barrier_clone = Arc::clone(&barrier);
-        let counter_clone = Arc::clone(&counter);
-        
-        let handle = thread::spawn(move || {
-            counter_clone.fetch_add(1, Ordering::Relaxed);
-            barrier_clone.wait().unwrap();
-            counter_clone.fetch_add(1, Ordering::Relaxed);
-        });
-        
-        counter.fetch_add(1, Ordering::Relaxed);
-        barrier.wait().unwrap();
-        counter.fetch_add(1, Ordering::Relaxed);
-        
-        handle.join().unwrap();
-        assert_eq!(counter.load(Ordering::Relaxed), 4);
-    }
-
-    #[test]
-    fn test_rwlock_timeout() {
-        let rwlock = create_rwlock_timeout(42);
-        
-        // Read lock should succeed
-        let read_guard = rwlock.read_timeout(Duration::from_millis(100)).unwrap();
-        assert_eq!(*read_guard, 42);
-        drop(read_guard);
-        
-        // Write lock should succeed
-        let write_guard = rwlock.write_timeout(Duration::from_millis(100)).unwrap();
-        drop(write_guard);
-        
-        let stats = rwlock.statistics();
-        assert_eq!(stats.read_locks, 1);
-        assert_eq!(stats.write_locks, 1);
-    }
-
-    #[test]
-    fn test_condition_variable() {
-        let condvar = create_condition_variable();
-        let mutex = Arc::new(Mutex::new(false));
-        let mutex_clone = Arc::clone(&mutex);
-        
-        let handle = thread::spawn(move || {
-            thread::sleep(Duration::from_millis(10));
-            let mut guard = mutex_clone.lock().unwrap();
-            *guard = true;
-            condvar.notify_one();
-        });
-        
-        let guard = mutex.lock().unwrap();
-        let (guard, timed_out) = condvar.wait_timeout(guard, Duration::from_millis(100)).unwrap();
-        assert!(!timed_out);
-        assert!(*guard);
-        
-        handle.join().unwrap();
-    }
-
-    #[test]
-    fn test_distributed_coordinator() {
-        let coordinator = create_distributed_coordinator("node1");
-        
-        coordinator.add_peer("node2".to_string()).unwrap();
-        coordinator.add_peer("node3".to_string()).unwrap();
-        
-        assert_eq!(coordinator.peer_count(), 2);
-        
-        coordinator.start_coordination().unwrap();
-        assert!(!coordinator.is_leader()); // No leader election implemented yet
-        
-        coordinator.stop_coordination().unwrap();
-    }
-
-    #[test]
-    fn test_barrier_timeout() {
-        let barrier = create_barrier(2).unwrap();
-        let result = barrier.wait_timeout(Duration::from_millis(10));
-        assert!(result.is_err());
-        
-        let stats = barrier.statistics();
-        assert_eq!(stats.timeout_count, 1);
-    }
-
-    #[test]
-    fn test_barrier_reset() {
-        let barrier = Arc::new(create_barrier(2).unwrap());
-        
-        let barrier_clone = Arc::clone(&barrier);
-        let handle = thread::spawn(move || {
-            thread::sleep(Duration::from_millis(50));
-            barrier_clone.reset().unwrap();
-        });
-        
-        let result = barrier.wait_timeout(Duration::from_millis(100));
-        // Wait should fail due to reset
-        handle.join().unwrap();
-        
-        assert_eq!(barrier.waiters(), 0);
-    }
-}

@@ -1,8 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Stream handle management for CURSED console I/O operations
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::sync::{Arc, Mutex};
-use crate::stdlib::io::error::{IoError, IoResult};
+// use crate::stdlib::io::error::{IoError, IoResult};
 
 /// Handle to standard input stream
 #[derive(Debug, Clone)]

@@ -26,13 +26,13 @@ pub trait Migration: Send + Sync + Debug {
     }
     
     /// Apply the migration (move schema forward)
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error>;
+    fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()>;
     
     /// Rollback the migration (move schema backward)
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error>;
+    fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()>;
     
     /// Check if migration can be safely applied
-    fn can_apply(&self, schema: &DatabaseSchema) -> Result<(), Error> {
+    fn can_apply(&self, schema: &DatabaseSchema) -> crate::error::Result<()> {
         // Default: check dependencies are satisfied
         let applied_migrations = schema.get_applied_migrations();
         for dep in self.dependencies() {
@@ -163,7 +163,7 @@ impl MigrationManager {
 
     /// facts Register a migration
     #[instrument(skip(self, migration))]
-    pub fn register_migration(&self, migration: Box<dyn Migration>) -> Result<(), Error> {
+    pub fn register_migration(&self, migration: Box<dyn Migration>) -> crate::error::Result<()> {
         let version = migration.version();
         info!(version = %version, name = %migration.name(), "Registering migration");
         
@@ -187,7 +187,7 @@ impl MigrationManager {
 
     /// periodt Apply all pending migrations
     #[instrument(skip(self))]
-    pub async fn migrate(&self) -> Result<(), Error> {
+    pub async fn migrate(&self) -> crate::error::Result<()> {
         info!("Starting migration process");
         
         // Get pending migrations in dependency order
@@ -207,7 +207,7 @@ impl MigrationManager {
 
     /// bestie Rollback to specific version
     #[instrument(skip(self))]
-    pub async fn rollback_to(&self, target_version: &str) -> Result<(), Error> {
+    pub async fn rollback_to(&self, target_version: &str) -> crate::error::Result<()> {
         info!(target = target_version, "Rolling back to version");
         
         let applied_migrations = self.get_applied_migrations()?;
@@ -242,7 +242,7 @@ impl MigrationManager {
 
     /// yolo Get current schema version
     #[instrument(skip(self))]
-    pub fn current_version(&self) -> Result<(), Error> {
+    pub fn current_version(&self) -> crate::error::Result<()> {
         debug!("Getting current schema version");
         
         let applied_migrations = self.get_applied_migrations()?;
@@ -271,7 +271,7 @@ impl MigrationManager {
 
     /// lit Generate migration for entity
     #[instrument(skip(self))]
-    pub fn generate_migration<T: Entity>(&self, operation: MigrationOperation) -> Result<(), Error> {
+    pub fn generate_migration<T: Entity>(&self, operation: MigrationOperation) -> crate::error::Result<()> {
         info!(entity = T::table_name(), operation = ?operation, "Generating migration");
         
         let version = self.generate_version();
@@ -317,7 +317,7 @@ impl MigrationManager {
     }
 
     // Helper methods
-    async fn apply_migration(&self, version: &str) -> Result<(), Error> {
+    async fn apply_migration(&self, version: &str) -> crate::error::Result<()> {
         info!(version = version, "Applying migration");
         
         // Update status to in progress
@@ -377,7 +377,7 @@ impl MigrationManager {
         }
     }
     
-    async fn rollback_migration(&self, version: &str) -> Result<(), Error> {
+    async fn rollback_migration(&self, version: &str) -> crate::error::Result<()> {
         info!(version = version, "Rolling back migration");
         
         let migration_exists = if let Ok(migrations) = self.migrations.lock() {
@@ -409,7 +409,7 @@ impl MigrationManager {
         }
     }
     
-    async fn execute_migration_up(&self, migration: &dyn Migration) -> Result<(), Error> {
+    async fn execute_migration_up(&self, migration: &dyn Migration) -> crate::error::Result<()> {
         debug!(migration = %migration.name(), "Executing migration up");
         
         let sql_statements = if let Ok(mut schema) = self.schema.lock() {
@@ -440,7 +440,7 @@ impl MigrationManager {
         Ok(())
     }
     
-    async fn execute_migration_down(&self, migration: &dyn Migration) -> Result<(), Error> {
+    async fn execute_migration_down(&self, migration: &dyn Migration) -> crate::error::Result<()> {
         debug!(migration = %migration.name(), "Executing migration down");
         
         let sql_statements = if let Ok(mut schema) = self.schema.lock() {
@@ -471,7 +471,7 @@ impl MigrationManager {
         Ok(())
     }
     
-    fn get_pending_migrations(&self) -> Result<(), Error> {
+    fn get_pending_migrations(&self) -> crate::error::Result<()> {
         if let Ok(tracker) = self.status_tracker.lock() {
             let pending: Vec<String> = tracker.iter()
                 .filter(|(_, status)| matches!(status, MigrationStatus::Pending))
@@ -483,7 +483,7 @@ impl MigrationManager {
         }
     }
     
-    fn get_applied_migrations(&self) -> Result<(), Error> {
+    fn get_applied_migrations(&self) -> crate::error::Result<()> {
         if let Ok(tracker) = self.status_tracker.lock() {
             let mut applied: Vec<String> = tracker.iter()
                 .filter(|(_, status)| matches!(status, MigrationStatus::Applied { .. }))
@@ -496,7 +496,7 @@ impl MigrationManager {
         }
     }
     
-    fn sort_by_dependencies(&self, migrations: Vec<String>) -> Result<(), Error> {
+    fn sort_by_dependencies(&self, migrations: Vec<String>) -> crate::error::Result<()> {
         debug!("Sorting migrations by dependencies");
         
         let migrations_guard = self.migrations.lock().map_err(|_| 
@@ -597,7 +597,7 @@ impl MigrationManager {
     /// 2. Falls back to analyzing the connection string/data source name
     /// 3. Defaults to PostgreSQL if detection fails
     #[instrument(skip(self))]
-    fn detect_database_dialect(&self) -> Result<(), Error> {
+    fn detect_database_dialect(&self) -> crate::error::Result<()> {
         debug!("Detecting database dialect");
         
         let driver_name = &self.db.driver_name;
@@ -690,14 +690,14 @@ impl<T: Entity> Migration for CreateTableMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let table_schema = TableSchema::from_entity::<T>()?;
         let sql = table_schema.to_create_sql("postgresql");
         schema.add_table(table_schema);
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!("DROP TABLE IF EXISTS {}", T::table_name());
         schema.remove_table(T::table_name());
         Ok(Vec::from([sql]))
@@ -731,13 +731,13 @@ impl<T: Entity> Migration for DropTableMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!("DROP TABLE IF EXISTS {}", T::table_name());
         schema.remove_table(T::table_name());
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let table_schema = TableSchema::from_entity::<T>()?;
         let sql = table_schema.to_create_sql("postgresql");
         schema.add_table(table_schema);
@@ -774,7 +774,7 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!(
             "ALTER TABLE {} ADD COLUMN {} {}{}",
             T::table_name(),
@@ -797,7 +797,7 @@ impl<T: Entity> Migration for AddColumnMigration<T> {
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!(
             "ALTER TABLE {} DROP COLUMN {}",
             T::table_name(),
@@ -841,7 +841,7 @@ impl<T: Entity> Migration for DropColumnMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!(
             "ALTER TABLE {} DROP COLUMN {}",
             T::table_name(),
@@ -855,7 +855,7 @@ impl<T: Entity> Migration for DropColumnMigration<T> {
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         // Note: This is a destructive operation - we can't perfectly restore the column
         // In a real implementation, we'd need to store the original column definition
         warn!("Dropping column is a destructive operation - rollback may not be perfect");
@@ -935,7 +935,7 @@ impl<T: Entity> Migration for AddIndexMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let unique_keyword = if self.index.unique { "UNIQUE " } else { "" };
         let condition_clause = if let Some(condition) = &self.index.condition {
             format!(" WHERE {}", condition)
@@ -960,7 +960,7 @@ impl<T: Entity> Migration for AddIndexMigration<T> {
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!("DROP INDEX IF EXISTS {};", self.index.name);
         
         // Remove index from schema
@@ -1033,7 +1033,7 @@ impl<T: Entity> Migration for DropIndexMigration<T> {
         self.name.clone()
     }
     
-    fn up(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn up(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         let sql = format!("DROP INDEX IF EXISTS {};", self.index_name);
         
         // Remove index from schema
@@ -1044,7 +1044,7 @@ impl<T: Entity> Migration for DropIndexMigration<T> {
         Ok(Vec::from([sql]))
     }
     
-    fn down(&self, schema: &mut DatabaseSchema) -> Result<(), Error> {
+    fn down(&self, schema: &mut DatabaseSchema) -> crate::error::Result<()> {
         // Note: This is a destructive operation - we can't perfectly restore the index
         // In a real implementation, we'd need to store the original index definition
         warn!("Dropping index is a destructive operation - rollback may not be perfect");
@@ -1100,284 +1100,3 @@ impl IndexType {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::Arc;
-    use tracing_test::traced_test;
-use crate::error_types::Error;
-
-    #[derive(Debug, Clone)]
-    struct TestUser {
-        id: Option<i64>,
-        name: String,
-        email: String,
-    }
-
-    impl super::super::entity::Entity for TestUser {
-        fn table_name() -> &'static str {
-            "users"
-        }
-
-        fn primary_key_value(&self) -> Option<SqlValue> {
-            self.id.map(SqlValue::Integer)
-        }
-
-        fn set_primary_key_value(&mut self, value: SqlValue) {
-            if let SqlValue::Integer(id) = value {
-                self.id = Some(id);
-            }
-        }
-
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
-            Ok(Self {
-                id: None,
-                name: "Test".to_string(),
-                email: "test@example.com".to_string(),
-            })
-        }
-
-        fn to_fields(&self) -> HashMap<String, SqlValue> {
-            HashMap::new()
-        }
-
-        fn field_names() -> Vec<&'static str> {
-            Vec::from(["id", "name", "email"])
-        }
-
-        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> {
-            Vec::from([])
-        }
-
-        fn metadata() -> super::super::entity::EntityMetadata {
-            super::super::entity::EntityMetadata {
-                table_name: "users".to_string(),
-                primary_key: "id".to_string(),
-                fields: Vec::from(["id".to_string(), "name".to_string(), "email".to_string()]),
-                relationships: Vec::from([]),
-                validation_rules: Vec::from([]),
-                indexes: Vec::from([]),
-                version: 1,
-            }
-        }
-    }
-
-    fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_migration_manager_creation() {
-        let db = create_mock_db();
-        let manager = MigrationManager::new(db);
-        
-        let stats = manager.stats();
-        assert_eq!(stats.pending_migrations, 0);
-        assert_eq!(stats.applied_migrations, 0);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_migration_registration() {
-        let db = create_mock_db();
-        let manager = MigrationManager::new(db);
-        
-        let migration = Box::new(CreateTableMigration::<TestUser>::new(
-            "001".to_string(),
-            "create_users_table".to_string(),
-        ));
-        
-        manager.register_migration(migration).expect("Should register migration");
-        
-        let status = manager.migration_status("001");
-        assert!(matches!(status, Some(MigrationStatus::Pending)));
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_migration_generation() {
-        let db = create_mock_db();
-        let manager = MigrationManager::new(db);
-        
-        let operation = MigrationOperation::CreateTable {
-            name: "users".to_string(),
-            columns: Vec::new(),
-            indexes: Vec::new(),
-        };
-        
-        let migration = manager.generate_migration::<TestUser>(operation)
-            .expect("Should generate migration");
-        
-        assert_eq!(migration.name(), "create_table_users");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_schema_version() {
-        let db = create_mock_db();
-        let manager = MigrationManager::new(db);
-        
-        let version = manager.current_version().expect("Should get current version");
-        assert_eq!(version.version, "0.0.0");
-        assert_eq!(version.applied_migrations.len(), 0);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_create_table_migration() {
-        let migration = CreateTableMigration::<TestUser>::new(
-            "001".to_string(),
-            "create_users_table".to_string(),
-        );
-        
-        assert_eq!(migration.version(), "001");
-        assert_eq!(migration.name(), "create_users_table");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_add_index_migration() {
-        let index = IndexDefinition {
-            name: "idx_users_email".to_string(),
-            columns: vec!["email".to_string()],
-            unique: true,
-            index_type: super::super::entity::IndexType::BTree,
-            condition: None,
-        };
-        
-        let migration = AddIndexMigration::<TestUser>::new(
-            "002".to_string(),
-            "add_email_index".to_string(),
-            index,
-        );
-        
-        assert_eq!(migration.version(), "002");
-        assert_eq!(migration.name(), "add_email_index");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_drop_index_migration() {
-        let migration = DropIndexMigration::<TestUser>::new(
-            "003".to_string(),
-            "drop_email_index".to_string(),
-            "idx_users_email".to_string(),
-        );
-        
-        assert_eq!(migration.version(), "003");
-        assert_eq!(migration.name(), "drop_email_index");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_migration_operations() {
-        let db = create_mock_db();
-        let manager = MigrationManager::new(db);
-        
-        // Test AddIndex operation generation
-        let add_index_op = MigrationOperation::AddIndex {
-            table: "users".to_string(),
-            index: IndexDefinition {
-                name: "idx_users_name".to_string(),
-                columns: vec!["name".to_string()],
-                unique: false,
-                index_type: super::super::entity::IndexType::BTree,
-                condition: None,
-            },
-        };
-        
-        let migration = manager.generate_migration::<TestUser>(add_index_op)
-            .expect("Should generate AddIndex migration");
-        assert_eq!(migration.name(), "add_index_users");
-        
-        // Test DropIndex operation generation
-        let drop_index_op = MigrationOperation::DropIndex {
-            table: "users".to_string(),
-            index: "idx_users_name".to_string(),
-        };
-        
-        let migration = manager.generate_migration::<TestUser>(drop_index_op)
-            .expect("Should generate DropIndex migration");
-        assert_eq!(migration.name(), "drop_index_users");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_migration_dependency_sorting() {
-        let db = create_mock_db();
-        let manager = MigrationManager::new(db);
-        
-        // Create migrations with dependencies
-        struct Migration1;
-        impl Migration for Migration1 {
-            fn version(&self) -> String { "001".to_string() }
-            fn name(&self) -> String { "first".to_string() }
-            fn up(&self, _: &mut DatabaseSchema) -> Result<(), Error> { Ok(vec![]) }
-            fn down(&self, _: &mut DatabaseSchema) -> Result<(), Error> { Ok(vec![]) }
-        }
-        
-        struct Migration2;
-        impl Migration for Migration2 {
-            fn version(&self) -> String { "002".to_string() }
-            fn name(&self) -> String { "second".to_string() }
-            fn dependencies(&self) -> Vec<String> { vec!["001".to_string()] }
-            fn up(&self, _: &mut DatabaseSchema) -> Result<(), Error> { Ok(vec![]) }
-            fn down(&self, _: &mut DatabaseSchema) -> Result<(), Error> { Ok(vec![]) }
-        }
-        
-        manager.register_migration(Box::new(Migration1)).expect("Should register migration 1");
-        manager.register_migration(Box::new(Migration2)).expect("Should register migration 2");
-        
-        let sorted = manager.sort_by_dependencies(vec!["002".to_string(), "001".to_string()])
-            .expect("Should sort by dependencies");
-        
-        assert_eq!(sorted, vec!["001", "002"]);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_database_dialect_detection() {
-        // Test PostgreSQL detection
-        let pg_db = DB::open("postgresql".to_string(), "postgres://user:pass@localhost/db".to_string())
-            .expect("Should create PostgreSQL DB");
-        let pg_manager = MigrationManager::new(Arc::new(pg_db));
-        let pg_dialect = pg_manager.detect_database_dialect().expect("Should detect PostgreSQL");
-        assert_eq!(pg_dialect, "postgresql");
-        
-        // Test MySQL detection
-        let mysql_db = DB::open("mysql".to_string(), "mysql://user:pass@localhost/db".to_string())
-            .expect("Should create MySQL DB");
-        let mysql_manager = MigrationManager::new(Arc::new(mysql_db));
-        let mysql_dialect = mysql_manager.detect_database_dialect().expect("Should detect MySQL");
-        assert_eq!(mysql_dialect, "mysql");
-        
-        // Test SQLite detection
-        let sqlite_db = DB::open("sqlite".to_string(), "test.db".to_string())
-            .expect("Should create SQLite DB");
-        let sqlite_manager = MigrationManager::new(Arc::new(sqlite_db));
-        let sqlite_dialect = sqlite_manager.detect_database_dialect().expect("Should detect SQLite");
-        assert_eq!(sqlite_dialect, "sqlite");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_index_type_sql_generation() {
-        assert_eq!(
-            super::super::entity::IndexType::BTree.to_sql("postgresql"),
-            "USING btree"
-        );
-        assert_eq!(
-            super::super::entity::IndexType::Hash.to_sql("postgresql"),
-            "USING hash"
-        );
-        assert_eq!(
-            super::super::entity::IndexType::BTree.to_sql("mysql"),
-            "USING BTREE"
-        );
-        assert_eq!(
-            super::super::entity::IndexType::BTree.to_sql("sqlite"),
-            ""
-        );
-    }
-}

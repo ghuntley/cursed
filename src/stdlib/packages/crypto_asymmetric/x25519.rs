@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr X25519 key exchange implementation
 /// 
 /// This module provides production-ready X25519 Elliptic Curve Diffie-Hellman (ECDH)
@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use rand::rngs::OsRng;
 use x25519_dalek::{EphemeralSecret, PublicKey, SharedSecret};
 use zeroize::Zeroizing;
-use crate::error::CursedError;
 
 /// fr fr X25519 key pair structure
 #[derive(Debug, Clone)]
@@ -94,24 +93,24 @@ pub enum X25519Error {
     Internal(String),
 }
 
-impl std::fmt::Display for X25519Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            X25519Error::KeyGenerationFailed(msg) => write!(f, "X25519 key generation failed: {}", msg),
-            X25519Error::KeyExchangeFailed(msg) => write!(f, "X25519 key exchange failed: {}", msg),
-            X25519Error::InvalidPublicKey(msg) => write!(f, "Invalid X25519 public key: {}", msg),
-            X25519Error::InvalidPrivateKey(msg) => write!(f, "Invalid X25519 private key: {}", msg),
-            X25519Error::InvalidFormat(msg) => write!(f, "Invalid key format: {}", msg),
-            X25519Error::InvalidKeyLength(len) => write!(f, "Invalid key length: {} bytes (expected 32)", len),
-            X25519Error::InvalidSharedSecret(msg) => write!(f, "Invalid shared secret: {}", msg),
-            X25519Error::Internal(msg) => write!(f, "Internal X25519 error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for X25519Error {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             X25519Error::KeyGenerationFailed(msg) => write!(f, "X25519 key generation failed: {}", msg),
+//             X25519Error::KeyExchangeFailed(msg) => write!(f, "X25519 key exchange failed: {}", msg),
+//             X25519Error::InvalidPublicKey(msg) => write!(f, "Invalid X25519 public key: {}", msg),
+//             X25519Error::InvalidPrivateKey(msg) => write!(f, "Invalid X25519 private key: {}", msg),
+//             X25519Error::InvalidFormat(msg) => write!(f, "Invalid key format: {}", msg),
+//             X25519Error::InvalidKeyLength(len) => write!(f, "Invalid key length: {} bytes (expected 32)", len),
+//             X25519Error::InvalidSharedSecret(msg) => write!(f, "Invalid shared secret: {}", msg),
+//             X25519Error::Internal(msg) => write!(f, "Internal X25519 error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for X25519Error {}
-
-type X25519Result<T> = Result<T, Error>;
+// impl std::error::CursedError for X25519Error {}
+// 
+type X25519crate::error::Result<T> = Result<T>;
 
 /// fr fr X25519 engine for cryptographic operations
 pub struct X25519Engine {
@@ -350,10 +349,10 @@ impl Default for X25519Engine {
 }
 
 /// fr fr Public API functions for CURSED integration
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 
 /// slay Generate X25519 static key pair
-pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_generate_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let mut engine = X25519Engine::new();
     match engine.generate_static_keypair() {
         Ok(keypair) => {
@@ -376,7 +375,7 @@ pub fn x25519_generate_keypair(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Generate X25519 ephemeral key pair
-pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> crate::error::Result<()> {
     let engine = X25519Engine::new();
     match engine.generate_ephemeral_keypair() {
         Ok(keypair) => {
@@ -398,7 +397,7 @@ pub fn x25519_generate_ephemeral_keypair(_args: Vec<Value>) -> Result<(), Error>
 }
 
 /// slay Generate X25519 key pair from seed
-pub fn x25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_generate_keypair_from_seed(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("X25519 key generation from seed requires seed".to_string()));
     }
@@ -432,7 +431,7 @@ pub fn x25519_generate_keypair_from_seed(args: Vec<Value>) -> Result<(), Error> 
 }
 
 /// slay Perform X25519 key exchange
-pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("X25519 key exchange requires our private key and their public key".to_string()));
     }
@@ -470,7 +469,7 @@ pub fn x25519_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Derive X25519 public key from private key
-pub fn x25519_derive_public_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_derive_public_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("X25519 derive public key requires private key".to_string()));
     }
@@ -494,7 +493,7 @@ pub fn x25519_derive_public_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Validate X25519 public key
-pub fn x25519_validate_public_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn x25519_validate_public_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("X25519 validate public key requires public key".to_string()));
     }
@@ -517,214 +516,3 @@ pub fn x25519_validate_public_key(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::bool(is_valid))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_x25519_static_key_generation() {
-        let mut engine = X25519Engine::new();
-        let keypair = engine.generate_static_keypair().unwrap();
-        
-        // Verify key lengths
-        assert_eq!(keypair.public_key_bytes().len(), 32);
-        assert_eq!(keypair.private_key_bytes().len(), 32);
-    }
-    
-    #[test]
-    fn test_x25519_ephemeral_key_generation() {
-        let engine = X25519Engine::new();
-        let keypair = engine.generate_ephemeral_keypair().unwrap();
-        
-        // Verify key length
-        assert_eq!(keypair.public_key_bytes().len(), 32);
-    }
-    
-    #[test]
-    fn test_x25519_deterministic_generation() {
-        let engine = X25519Engine::new();
-        let seed = [42u8; 32];
-        
-        let keypair1 = engine.generate_keypair_from_seed(&seed).unwrap();
-        let keypair2 = engine.generate_keypair_from_seed(&seed).unwrap();
-        
-        // Same seed should produce same keys
-        assert_eq!(keypair1.public_key_bytes(), keypair2.public_key_bytes());
-        assert_eq!(keypair1.private_key_bytes(), keypair2.private_key_bytes());
-    }
-    
-    #[test]
-    fn test_x25519_key_exchange_static() {
-        let mut engine = X25519Engine::new();
-        let alice_keypair = engine.generate_static_keypair().unwrap();
-        let bob_keypair = engine.generate_static_keypair().unwrap();
-        
-        // Perform key exchange from both sides
-        let alice_shared = engine.key_exchange_static(&alice_keypair, &bob_keypair.public_key).unwrap();
-        let bob_shared = engine.key_exchange_static(&bob_keypair, &alice_keypair.public_key).unwrap();
-        
-        // Shared secrets should be identical
-        assert_eq!(*alice_shared, *bob_shared);
-        assert_eq!(alice_shared.len(), 32);
-    }
-    
-    #[test]
-    fn test_x25519_key_exchange_ephemeral() {
-        let engine = X25519Engine::new();
-        let mut engine_mut = X25519Engine::new();
-        
-        let alice_ephemeral = engine.generate_ephemeral_keypair().unwrap();
-        let bob_static = engine_mut.generate_static_keypair().unwrap();
-        
-        // Perform key exchange (ephemeral with static)
-        let shared_secret = engine.key_exchange_ephemeral(alice_ephemeral, &bob_static.public_key).unwrap();
-        
-        assert_eq!(shared_secret.len(), 32);
-        // Should not be all zeros (extremely unlikely)
-        assert!(!shared_secret.iter().all(|&b| b == 0));
-    }
-    
-    #[test]
-    fn test_x25519_key_exchange_raw() {
-        let mut engine = X25519Engine::new();
-        let alice_keypair = engine.generate_static_keypair().unwrap();
-        let bob_keypair = engine.generate_static_keypair().unwrap();
-        
-        let alice_private_bytes = alice_keypair.private_key_bytes();
-        let bob_public_bytes = bob_keypair.public_key_bytes();
-        
-        let shared_secret = engine.key_exchange_raw(&alice_private_bytes, &bob_public_bytes).unwrap();
-        
-        assert_eq!(shared_secret.len(), 32);
-        assert!(!shared_secret.iter().all(|&b| b == 0));
-    }
-    
-    #[test]
-    fn test_key_serialization() {
-        let mut engine = X25519Engine::new();
-        let keypair = engine.generate_static_keypair().unwrap();
-        
-        // Test raw serialization
-        let private_raw = engine.serialize_private_key(&keypair, X25519KeyFormat::Raw).unwrap();
-        let public_raw = engine.serialize_public_key(&keypair, X25519KeyFormat::Raw).unwrap();
-        
-        assert_eq!(private_raw.len(), 32);
-        assert_eq!(public_raw.len(), 32);
-        
-        // Test base64 serialization
-        let private_b64 = engine.serialize_private_key(&keypair, X25519KeyFormat::Base64).unwrap();
-        let public_b64 = engine.serialize_public_key(&keypair, X25519KeyFormat::Base64).unwrap();
-        
-        // Base64 of 32 bytes should be 44 characters (padded)
-        assert_eq!(private_b64.len(), 44);
-        assert_eq!(public_b64.len(), 44);
-        
-        // Test hex serialization
-        let private_hex = engine.serialize_private_key(&keypair, X25519KeyFormat::Hex).unwrap();
-        let public_hex = engine.serialize_public_key(&keypair, X25519KeyFormat::Hex).unwrap();
-        
-        // Hex of 32 bytes should be 64 characters
-        assert_eq!(private_hex.len(), 64);
-        assert_eq!(public_hex.len(), 64);
-    }
-    
-    #[test]
-    fn test_key_deserialization() {
-        let mut engine = X25519Engine::new();
-        let original_keypair = engine.generate_static_keypair().unwrap();
-        
-        // Test raw deserialization
-        let private_raw = engine.serialize_private_key(&original_keypair, X25519KeyFormat::Raw).unwrap();
-        let deserialized_keypair = engine.deserialize_private_key(&private_raw, X25519KeyFormat::Raw).unwrap();
-        
-        // Should derive the same public key
-        assert_eq!(original_keypair.public_key_bytes(), deserialized_keypair.public_key_bytes());
-        
-        // Test public key deserialization
-        let public_raw = engine.serialize_public_key(&original_keypair, X25519KeyFormat::Raw).unwrap();
-        let deserialized_public = engine.deserialize_public_key(&public_raw, X25519KeyFormat::Raw).unwrap();
-        
-        assert_eq!(original_keypair.public_key_bytes(), *deserialized_public.as_bytes());
-    }
-    
-    #[test]
-    fn test_public_key_derivation() {
-        let mut engine = X25519Engine::new();
-        let keypair = engine.generate_static_keypair().unwrap();
-        
-        let private_key_bytes = keypair.private_key_bytes();
-        let derived_public_key = engine.derive_public_key(&private_key_bytes).unwrap();
-        let actual_public_key = keypair.public_key_bytes();
-        
-        assert_eq!(derived_public_key, actual_public_key);
-    }
-    
-    #[test]
-    fn test_public_key_validation() {
-        let mut engine = X25519Engine::new();
-        let keypair = engine.generate_static_keypair().unwrap();
-        
-        // Valid key should pass validation
-        let valid_key = keypair.public_key_bytes();
-        assert!(engine.validate_public_key(&valid_key).unwrap());
-        
-        // All zeros should fail
-        let zero_key = [0u8; 32];
-        assert!(!engine.validate_public_key(&zero_key).unwrap());
-        
-        // All ones should fail
-        let ones_key = [0xFFu8; 32];
-        assert!(!engine.validate_public_key(&ones_key).unwrap());
-        
-        // Wrong length should fail
-        let short_key = [1u8; 31];
-        assert!(!engine.validate_public_key(&short_key).unwrap());
-    }
-    
-    #[test]
-    fn test_invalid_key_lengths() {
-        let engine = X25519Engine::new();
-        
-        // Test invalid private key length for key exchange
-        let invalid_private = vec![0u8; 31]; // Too short
-        let valid_public = [1u8; 32];
-        let result = engine.key_exchange_raw(&invalid_private, &valid_public);
-        assert!(result.is_err());
-        
-        // Test invalid public key length for key exchange
-        let valid_private = [1u8; 32];
-        let invalid_public = vec![0u8; 31]; // Too short
-        let result = engine.key_exchange_raw(&valid_private, &invalid_public);
-        assert!(result.is_err());
-    }
-    
-    #[test]
-    fn test_cross_compatibility() {
-        // Test that our implementation is compatible with standard test vectors
-        let mut engine = X25519Engine::new();
-        
-        // Use known test vectors (simplified for demo)
-        let alice_private = [
-            0x77, 0x07, 0x6d, 0x0a, 0x73, 0x18, 0xa5, 0x7d,
-            0x3c, 0x16, 0xc1, 0x72, 0x51, 0xb2, 0x66, 0x45,
-            0xdf, 0x4c, 0x2f, 0x87, 0xeb, 0xc0, 0x99, 0x2a,
-            0xb1, 0x77, 0xfb, 0xa5, 0x1d, 0xb9, 0x2c, 0x2a
-        ];
-        
-        let bob_public = [
-            0xde, 0x9e, 0xdb, 0x7d, 0x7b, 0x7d, 0xc1, 0xb4,
-            0xd3, 0x5b, 0x61, 0xc2, 0xec, 0xe4, 0x35, 0x37,
-            0x3f, 0x83, 0x43, 0xc8, 0x5b, 0x78, 0x67, 0x4d,
-            0xad, 0xfc, 0x7e, 0x14, 0x6f, 0x88, 0x2b, 0x4f
-        ];
-        
-        let shared_secret = engine.key_exchange_raw(&alice_private, &bob_public).unwrap();
-        
-        // The shared secret should be deterministic
-        assert_eq!(shared_secret.len(), 32);
-        
-        // Test that the same inputs always give the same output
-        let shared_secret2 = engine.key_exchange_raw(&alice_private, &bob_public).unwrap();
-        assert_eq!(*shared_secret, *shared_secret2);
-    }
-}

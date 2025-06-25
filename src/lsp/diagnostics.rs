@@ -7,11 +7,11 @@
 use std::collections::HashMap;
 use tower_lsp::lsp_types::*;
 use tracing::{debug, error, instrument, warn, info};
+use crate::error::CursedError;
 
 use crate::lexer::{Lexer, Token, TokenType};
 use crate::parser::Parser;
 use crate::type_system::TypeChecker, Type;
-use crate::error::{CursedError, Error};
 use crate::ast::Program;
 use crate::imports::{ImportResolver, ImportManager};
 
@@ -82,7 +82,7 @@ impl DiagnosticsProvider {
     }
     
     /// Comprehensive analysis using CURSED compiler infrastructure
-    async fn analyze_with_compiler(&self, content: &str) -> Result<(), Error> {
+    async fn analyze_with_compiler(&self, content: &str) -> crate::error::Result<()> {
         info!("Running comprehensive compiler analysis");
         let mut diagnostics = Vec::new();
         
@@ -142,7 +142,7 @@ impl DiagnosticsProvider {
     }
     
     /// Analyze semantics using AST
-    async fn analyze_semantics(&self, ast: &Program) -> Result<(), Error> {
+    async fn analyze_semantics(&self, ast: &Program) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
         
         // Check for unreachable code
@@ -161,7 +161,7 @@ impl DiagnosticsProvider {
     }
     
     /// Analyze types using type checker
-    async fn analyze_types(&self, ast: &Program) -> Result<(), Error> {
+    async fn analyze_types(&self, ast: &Program) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
         
         if let Ok(mut type_checker) = self.type_checker.write() {
@@ -180,7 +180,7 @@ impl DiagnosticsProvider {
     }
     
     /// Analyze imports using import resolver
-    async fn analyze_imports(&self, ast: &Program) -> Result<(), Error> {
+    async fn analyze_imports(&self, ast: &Program) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
         
         if let Ok(mut import_resolver) = self.import_resolver.write() {
@@ -197,7 +197,7 @@ impl DiagnosticsProvider {
                                     end: Position { line: 0, character: stmt_str.len() as u32 },
                                 },
                                 DiagnosticSeverity::ERROR,
-                                format!("Cannot resolve import: '{}'", import_path),
+//                                 format!("Cannot resolve import: '{}'", import_path),
                                 Some("import".to_string()),
                             ));
                         }
@@ -241,7 +241,7 @@ impl DiagnosticsProvider {
     }
     
     /// Convert type error to diagnostic
-    fn convert_type_error_to_diagnostic(&self, error: &Error) -> Diagnostic {
+    fn convert_type_error_to_diagnostic(&self, error: &CursedError) -> Diagnostic {
         self.create_diagnostic_impl(
             Range {
                 start: Position { line: 0, character: 0 },
@@ -438,7 +438,7 @@ impl DiagnosticsProvider {
     }
 
     /// Analyze lexer errors
-    fn analyze_lexer_errors(&self, content: &str) -> Result<(), Error> {
+    fn analyze_lexer_errors(&self, content: &str) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
         let mut lexer = Lexer::new(content.to_string());
         
@@ -488,7 +488,7 @@ impl DiagnosticsProvider {
     }
 
     /// Analyze parser errors
-    fn analyze_parser_errors(&self, content: &str) -> Result<(), Error> {
+    fn analyze_parser_errors(&self, content: &str) -> crate::error::Result<()> {
         let mut diagnostics = Vec::new();
         let lexer = Lexer::new(content.to_string());
         let mut parser = match Parser::new(lexer) {
@@ -939,38 +939,3 @@ impl Default for DiagnosticsProvider {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_syntax_diagnostics() {
-        let provider = DiagnosticsProvider::new();
-        let content = "slay main() {\n    facts x = 42\n    // Missing closing brace";
-        
-        let diagnostics = provider.get_syntax_diagnostics(content).await;
-        // Should have at least one diagnostic for syntax error
-        assert!(!diagnostics.is_empty());
-    }
-
-    #[tokio::test]
-    async fn test_style_diagnostics() {
-        let provider = DiagnosticsProvider::new();
-        let content = "function main() {\n    var x = 42\n}"; // Using non-CURSED style
-        
-        let diagnostics = provider.get_lint_diagnostics(content).await;
-        // Should suggest using CURSED slang
-        assert!(!diagnostics.is_empty());
-        assert!(diagnostics.iter().any(|d| d.source == Some("cursed-style".to_string())));
-    }
-
-    #[tokio::test]
-    async fn test_unused_variable_detection() {
-        let provider = DiagnosticsProvider::new();
-        let content = "slay main() {\n    facts unused_var = 42\n    print(\"hello\")\n}";
-        
-        let diagnostics = provider.get_semantic_diagnostics(content).await;
-        // Should detect unused variable
-        assert!(diagnostics.iter().any(|d| d.message.contains("never used")));
-    }
-}

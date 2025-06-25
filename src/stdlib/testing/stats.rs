@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Statistics and performance measurement for CURSED testing framework
 /// 
 /// Provides comprehensive metrics collection, timing analysis, and
@@ -6,7 +6,6 @@ use crate::error::Error;
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use crate::crate::stdlib::errors_simple::CursedError;
 use super::{TestError, TestFrameworkResult};
 
 /// Test execution timing information

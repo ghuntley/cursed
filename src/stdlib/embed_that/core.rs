@@ -1,9 +1,9 @@
-use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
-use crate::stdlib::io::{IoResult, IoError};
+// use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
+// use crate::stdlib::io::{IoResult, IoError};
 use std::collections::HashMap;
 use std::io::{Read, Cursor};
 use std::time::SystemTime;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Core type aliases for CURSED language compatibility
 pub type tea = String;  // String type in CURSED

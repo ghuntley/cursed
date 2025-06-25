@@ -10,7 +10,7 @@
 // - **WebSocket Integration**: Real-time communication between server and browser
 // - **Interactive Features**: Code playground, executable examples, API explorer
 // - **Performance Monitoring**: Real-time metrics and generation statistics
-// - **Error Recovery**: Graceful handling of generation failures with user feedback
+// - **CursedError Recovery**: Graceful handling of generation failures with user feedback
 // - **Multi-Format Support**: Serves multiple documentation formats simultaneously
 //
 // ## Example Usage
@@ -35,8 +35,7 @@
 
 use crate::build_system::file_watcher::{FileWatcher, WatchConfig, FileWatchEvent, FileWatcherBuilder};
 use crate::documentation::{DocumentationGenerator, DocumentationConfig, DocGeneratorConfig, DocFormat};
-use crate::error::Error as CursedError;
-use crate::error::Error;
+use crate::error::CursedError;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -50,7 +49,7 @@ use warp::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
 use warp::{Filter, Rejection, Reply};
 
-pub type LiveServerResult<T> = std::result::Result<T, Error>;
+pub type LiveServercrate::error::Result<T> = std::result::Result<T>;
 
 /// Configuration for the live documentation server
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -914,7 +913,7 @@ impl LiveDocumentationServer {
                             &statistics_for_incoming,
                             &ws_tx_for_incoming,
                         ).await {
-                            warn!("Error handling WebSocket message from {}: {}", client_id, e);
+                            warn!("CursedError handling WebSocket message from {}: {}", client_id, e);
                         }
                     }
                     Err(e) => {
@@ -1042,7 +1041,7 @@ impl LiveDocumentationServer {
     
     /// Execute code in the playground
     #[instrument(skip(code))]
-    async fn execute_code_playground(code: &str, language: &str) -> Result<(), Error> {
+    async fn execute_code_playground(code: &str, language: &str) -> crate::error::Result<()> {
         if language != "cursed" && language != "csd" {
             return Err(CursedError::system_error("Only CURSED language is supported"));
         }
@@ -1061,7 +1060,7 @@ impl LiveDocumentationServer {
     async fn execute_api_method(
         method_name: &str, 
         parameters: &HashMap<String, serde_json::Value>
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Executing API method: {} with {} parameters", method_name, parameters.len());
         
         // This would integrate with the CURSED runtime to call actual methods
@@ -1077,7 +1076,7 @@ impl LiveDocumentationServer {
     }
     
     /// Create API routes for interactive features
-    fn create_api_routes(&self) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    fn create_api_routes(&self) -> impl Filter<Extract = impl warp::Reply, CursedError = warp::Rejection> + Clone {
         // Statistics endpoint
         let statistics = Arc::clone(&self.statistics);
         let stats_route = warp::path!("api" / "stats")

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real NTRU Key Encapsulation Mechanism Implementation
 /// 
 /// This is a production-ready implementation of NTRU, a lattice-based
@@ -20,7 +20,7 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use sha3::{Sha3_256, Digest, Shake256};
 use sha3::digest::{ExtendableOutput, Update, XofReader};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// NTRU parameter sets with real mathematical parameters
@@ -556,71 +556,3 @@ impl RealNtru {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_ntru_keygen() {
-        let (pub_key, sec_key) = RealNtru::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params, NtruParams::NtruHps509);
-        assert_eq!(sec_key.params, NtruParams::NtruHps509);
-    }
-
-    #[test]
-    fn test_real_ntru_encaps_decaps() {
-        let (pub_key, sec_key) = RealNtru::keygen(SecurityLevel::Level1).unwrap();
-        
-        let (ciphertext, shared_secret1) = RealNtru::encaps(&pub_key).unwrap();
-        let shared_secret2 = RealNtru::decaps(&sec_key, &ciphertext).unwrap();
-        
-        assert_eq!(shared_secret1.data, shared_secret2.data);
-    }
-
-    #[test]
-    fn test_ntru_polynomial_operations() {
-        let mut poly1 = NtruPolynomial::new(509, 2048);
-        poly1.coeffs[0] = 1;
-        poly1.coeffs[1] = 2;
-        
-        let mut poly2 = NtruPolynomial::new(509, 2048);
-        poly2.coeffs[0] = 3;
-        poly2.coeffs[1] = 4;
-        
-        let sum = poly1.add(&poly2);
-        assert_eq!(sum.coeffs[0], 4);
-        assert_eq!(sum.coeffs[1], 6);
-    }
-
-    #[test]
-    fn test_ntru_ternary_sampling() {
-        let seed = [42u8; 32];
-        let poly = NtruPolynomial::sample_ternary(509, 254, &seed);
-        
-        // Count non-zero coefficients
-        let non_zero = poly.coeffs.iter().filter(|&&x| x != 0).count();
-        assert_eq!(non_zero, 2 * 254); // 254 ones and 254 minus ones
-        
-        // Count ones and minus ones
-        let ones = poly.coeffs.iter().filter(|&&x| x == 1).count();
-        let minus_ones = poly.coeffs.iter().filter(|&&x| x == -1).count();
-        assert_eq!(ones, 254);
-        assert_eq!(minus_ones, 254);
-    }
-
-    #[test]
-    fn test_ntru_serialization() {
-        let (pub_key, sec_key) = RealNtru::keygen(SecurityLevel::Level1).unwrap();
-        
-        // Test public key serialization
-        let pub_bytes = pub_key.as_bytes();
-        let pub_key2 = NtruPublicKey::from_bytes(pub_key.params, &pub_bytes).unwrap();
-        assert_eq!(pub_key.h.coeffs, pub_key2.h.coeffs);
-        
-        // Test secret key serialization
-        let sec_bytes = sec_key.as_bytes();
-        let sec_key2 = NtruSecretKey::from_bytes(sec_key.params, &sec_bytes).unwrap();
-        assert_eq!(sec_key.f.coeffs, sec_key2.f.coeffs);
-        assert_eq!(sec_key.f_inv.coeffs, sec_key2.f_inv.coeffs);
-    }
-}

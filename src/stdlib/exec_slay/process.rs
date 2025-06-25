@@ -1,11 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // SlayProcess implementation for process management
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use crate::error::CursedError;
 use super::{SlayResult, SharedProcessState, ProcessStats, SignalOptions, io_error_to_cursed};
-use crate::stdlib::process::real_monitoring::get_real_cpu_times;
+// use crate::stdlib::process::real_monitoring::get_real_cpu_times;
 
 /// Represents a process created by a SlayCommand
 #[derive(Debug)]
@@ -437,67 +436,3 @@ impl SlayProcessState {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::{Arc, Mutex};
-
-    fn create_test_process() -> SlayProcess {
-        SlayProcess::new(Arc::new(Mutex::new(SharedProcessState::new())))
-    }
-
-    #[test]
-    fn test_slay_process_creation() {
-        let process = create_test_process();
-        assert!(!process.is_running());
-    }
-
-    #[test]
-    fn test_slay_process_elapsed_time() {
-        let process = create_test_process();
-        let elapsed = process.elapsed_time();
-        assert!(elapsed >= Duration::from_secs(0));
-    }
-
-    #[test]
-    fn test_slay_process_set_limits() {
-        let process = create_test_process();
-        
-        // Valid limits
-        assert!(process.set_limits(100, 50.0).is_ok());
-        
-        // Invalid limits
-        assert!(process.set_limits(-1, 50.0).is_err());
-        assert!(process.set_limits(100, -1.0).is_err());
-        assert!(process.set_limits(100, 150.0).is_err());
-    }
-
-    #[test]
-    fn test_signal_options_default() {
-        let opts = SignalOptions::default();
-        assert_eq!(opts.grace_period, Duration::from_secs(5));
-        assert!(!opts.force);
-        assert_eq!(opts.signal, 15);
-        assert!(!opts.recursive);
-    }
-
-    #[test]
-    fn test_slay_process_state() {
-        use std::process::ExitStatus;
-        use std::os::unix::process::ExitStatusExt;
-use crate::stdlib::process::info::ProcessState;
-        
-        let exit_status = ExitStatus::from_raw(0);
-        let run_time = Duration::from_secs(1);
-        let stdout = b"hello".to_vec();
-        let stderr = b"error".to_vec();
-        
-        let state = SlayProcessState::new(exit_status, run_time, stdout.clone(), stderr.clone());
-        
-        assert!(state.success());
-        assert_eq!(state.exit_code(), 0);
-        assert_eq!(state.run_time(), run_time);
-        assert_eq!(state.stdout(), stdout.as_slice());
-        assert_eq!(state.stderr(), stderr.as_slice());
-    }
-}

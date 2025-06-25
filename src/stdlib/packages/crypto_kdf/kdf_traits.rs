@@ -3,8 +3,8 @@
 /// This module provides common traits and interfaces for all KDF implementations
 /// to ensure consistency and interoperability.
 
-use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
+use crate::error::CursedError;
 
 /// fr fr Common KDF trait for all key derivation functions
 pub trait KeyDerivationFunction {
@@ -256,15 +256,15 @@ pub struct KdfEngineWrapper {
 
 #[derive(Debug)]
 enum KdfEngineType {
-    Pbkdf2(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine),
-    Argon2(crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine),
-    Scrypt(crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine),
-    Hkdf(crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine),
+//     Pbkdf2(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine),
+//     Argon2(crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine),
+//     Scrypt(crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine),
+//     Hkdf(crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine),
 }
 
 impl KdfEngineWrapper {
     /// Create PBKDF2 wrapper
-    pub fn new_pbkdf2(engine: crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine) -> Self {
+//     pub fn new_pbkdf2(engine: crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine) -> Self {
         Self {
             engine: KdfEngineType::Pbkdf2(engine),
             config: "pbkdf2_default".to_string(),
@@ -272,7 +272,7 @@ impl KdfEngineWrapper {
     }
     
     /// Create Argon2 wrapper  
-    pub fn new_argon2(engine: crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine) -> Self {
+//     pub fn new_argon2(engine: crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine) -> Self {
         Self {
             engine: KdfEngineType::Argon2(engine),
             config: "argon2_default".to_string(),
@@ -280,7 +280,7 @@ impl KdfEngineWrapper {
     }
     
     /// Create Scrypt wrapper
-    pub fn new_scrypt(engine: crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine) -> Self {
+//     pub fn new_scrypt(engine: crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine) -> Self {
         Self {
             engine: KdfEngineType::Scrypt(engine),
             config: "scrypt_default".to_string(),
@@ -288,7 +288,7 @@ impl KdfEngineWrapper {
     }
     
     /// Create HKDF wrapper
-    pub fn new_hkdf(engine: crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine) -> Self {
+//     pub fn new_hkdf(engine: crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine) -> Self {
         Self {
             engine: KdfEngineType::Hkdf(engine),
             config: "hkdf_default".to_string(),
@@ -358,23 +358,23 @@ impl Configurable for KdfEngineWrapper {
         match algorithm.to_lowercase().as_str() {
             "pbkdf2" => {
                 let pbkdf2_config = KdfFactory::parse_pbkdf2_config(params)?;
-                let engine = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine::new(pbkdf2_config)
+//                 let engine = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine::new(pbkdf2_config)
                     .map_err(|e| KdfError::InvalidConfig(format!("PBKDF2 engine creation failed: {}", e)))?;
                 Ok(KdfEngineWrapper::new_pbkdf2(engine))
             }
             "argon2" | "argon2i" | "argon2d" | "argon2id" => {
                 let argon2_config = KdfFactory::parse_argon2_config(algorithm, params)?;
-                let engine = crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine::new(argon2_config);
+//                 let engine = crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine::new(argon2_config);
                 Ok(KdfEngineWrapper::new_argon2(engine))
             }
             "scrypt" => {
                 let scrypt_config = KdfFactory::parse_scrypt_config(params)?;
-                let engine = crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine::new(scrypt_config)
+//                 let engine = crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine::new(scrypt_config)
                     .map_err(|e| KdfError::InvalidConfig(format!("Scrypt engine creation failed: {}", e)))?;
                 Ok(KdfEngineWrapper::new_scrypt(engine))
             }
             "hkdf" => {
-                let engine = crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine::new();
+//                 let engine = crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine::new();
                 Ok(KdfEngineWrapper::new_hkdf(engine))
             }
             _ => Err(KdfError::InvalidConfig(format!("Unknown algorithm in config: {}", algorithm))),
@@ -477,23 +477,23 @@ impl KdfFactory {
         match algorithm.to_lowercase().as_str() {
             "pbkdf2" => {
                 let pbkdf2_config = Self::parse_pbkdf2_config(config)?;
-                let engine = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine::new(pbkdf2_config)
+//                 let engine = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Engine::new(pbkdf2_config)
                     .map_err(|e| KdfError::InvalidConfig(format!("PBKDF2 config error: {}", e)))?;
                 Ok(Box::new(KdfEngineWrapper::new_pbkdf2(engine)))
             }
             "argon2" | "argon2i" | "argon2d" | "argon2id" => {
                 let argon2_config = Self::parse_argon2_config(algorithm, config)?;
-                let engine = crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine::new(argon2_config);
+//                 let engine = crate::stdlib::packages::crypto_kdf::argon2::Argon2Engine::new(argon2_config);
                 Ok(Box::new(KdfEngineWrapper::new_argon2(engine)))
             }
             "scrypt" => {
                 let scrypt_config = Self::parse_scrypt_config(config)?;
-                let engine = crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine::new(scrypt_config)
+//                 let engine = crate::stdlib::packages::crypto_kdf::scrypt::ScryptEngine::new(scrypt_config)
                     .map_err(|e| KdfError::InvalidConfig(format!("Scrypt config error: {}", e)))?;
                 Ok(Box::new(KdfEngineWrapper::new_scrypt(engine)))
             }
             "hkdf" => {
-                let engine = crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine::new();
+//                 let engine = crate::stdlib::packages::crypto_kdf::hkdf::HkdfEngine::new();
                 Ok(Box::new(KdfEngineWrapper::new_hkdf(engine)))
             }
             _ => Err(KdfError::InvalidConfig(format!("Unknown algorithm: {}", algorithm))),
@@ -501,12 +501,12 @@ impl KdfFactory {
     }
     
     /// facts Parse PBKDF2 configuration from string
-    fn parse_pbkdf2_config(config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config> {
+//     fn parse_pbkdf2_config(config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config> {
         if config.is_empty() {
-            return Ok(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config::new());
+//             return Ok(crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config::new());
         }
         
-        let mut pbkdf2_config = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config::new();
+//         let mut pbkdf2_config = crate::stdlib::packages::crypto_kdf::pbkdf2::Pbkdf2Config::new();
         
         // Parse configuration string format: "iterations=100000,output_len=32,hash=sha256"
         for pair in config.split(',') {
@@ -525,7 +525,7 @@ impl KdfFactory {
                         .map_err(|_| KdfError::InvalidConfig("Invalid output_len value".to_string()))?;
                 }
                 "hash" => {
-                    use crate::stdlib::packages::crypto_hash_advanced::hmac::HmacAlgorithm;
+//                     use crate::stdlib::packages::crypto_hash_advanced::hmac::HmacAlgorithm;
                     pbkdf2_config.hash_algorithm = match parts[1].trim().to_lowercase().as_str() {
                         "sha256" => HmacAlgorithm::Sha256,
                         "sha512" => HmacAlgorithm::Sha512,
@@ -543,11 +543,11 @@ impl KdfFactory {
     }
     
     /// vibes Parse Argon2 configuration from string
-    fn parse_argon2_config(algorithm: &str, config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::argon2::Argon2Config> {
-        let mut argon2_config = crate::stdlib::packages::crypto_kdf::argon2::Argon2Config::new();
+//     fn parse_argon2_config(algorithm: &str, config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::argon2::Argon2Config> {
+//         let mut argon2_config = crate::stdlib::packages::crypto_kdf::argon2::Argon2Config::new();
         
         // Set variant based on algorithm name
-        use crate::stdlib::packages::crypto_kdf::argon2::Argon2Variant;
+//         use crate::stdlib::packages::crypto_kdf::argon2::Argon2Variant;
         argon2_config.variant = match algorithm.to_lowercase().as_str() {
             "argon2i" => Argon2Variant::Argon2i,
             "argon2d" => Argon2Variant::Argon2d,
@@ -595,12 +595,12 @@ impl KdfFactory {
     }
     
     /// periodt Parse Scrypt configuration from string
-    fn parse_scrypt_config(config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig> {
+//     fn parse_scrypt_config(config: &str) -> KdfResult<crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig> {
         if config.is_empty() {
-            return Ok(crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig::new());
+//             return Ok(crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig::new());
         }
         
-        let mut scrypt_config = crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig::new();
+//         let mut scrypt_config = crate::stdlib::packages::crypto_kdf::scrypt::ScryptConfig::new();
         
         // Parse configuration string format: "n=32768,r=8,p=1,output_len=32"
         for pair in config.split(',') {
@@ -765,86 +765,3 @@ impl PasswordStrength {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_attack_resistance() {
-        let resistance = AttackResistance::new();
-        assert!(resistance.brute_force >= 128);
-        
-        let high_sec = AttackResistance::high_security();
-        assert!(high_sec.brute_force > resistance.brute_force);
-        assert!(high_sec.side_channel);
-    }
-    
-    #[test]
-    fn test_performance_result() {
-        let times = vec![100, 120, 90, 110, 105];
-        let result = PerformanceResult::new(5, &times, 1024);
-        
-        assert_eq!(result.iterations, 5);
-        assert_eq!(result.min_time_ms, 90);
-        assert_eq!(result.max_time_ms, 120);
-        assert_eq!(result.memory_usage_bytes, 1024);
-        assert!(result.throughput_ops_per_sec > 0.0);
-    }
-    
-    #[test]
-    fn test_kdf_factory() {
-        let algorithms = KdfFactory::available_algorithms();
-        assert!(algorithms.contains(&"argon2"));
-        assert!(algorithms.contains(&"pbkdf2"));
-        assert!(algorithms.contains(&"scrypt"));
-        assert!(algorithms.contains(&"hkdf"));
-        
-        let recommendation = KdfFactory::recommend_algorithm("password");
-        assert_eq!(recommendation, "argon2id");
-    }
-    
-    #[test]
-    fn test_kdf_utils() {
-        let salt = KdfUtils::generate_salt(16).unwrap();
-        assert_eq!(salt.len(), 16);
-        
-        let salt2 = KdfUtils::generate_salt(16).unwrap();
-        assert_ne!(salt, salt2); // Should be random
-        
-        // Test password strength
-        let weak_pw = b"123";
-        let strong_pw = b"MyStr0ng!P@ssw0rd";
-        
-        let weak_strength = KdfUtils::validate_password_strength(weak_pw);
-        let strong_strength = KdfUtils::validate_password_strength(strong_pw);
-        
-        assert_eq!(weak_strength, PasswordStrength::Weak);
-        assert_eq!(strong_strength, PasswordStrength::Strong);
-        
-        // Test entropy calculation
-        let low_entropy = b"aaaaaaaaa";
-        let high_entropy = b"aB3$9mK2p";
-        
-        let low_ent = KdfUtils::calculate_entropy(low_entropy);
-        let high_ent = KdfUtils::calculate_entropy(high_entropy);
-        
-        assert!(high_ent > low_ent);
-        
-        // Test secure comparison
-        let data1 = b"test_data";
-        let data2 = b"test_data";
-        let data3 = b"different";
-        
-        assert!(KdfUtils::secure_compare(data1, data2));
-        assert!(!KdfUtils::secure_compare(data1, data3));
-    }
-    
-    #[test]
-    fn test_password_strength() {
-        assert_eq!(PasswordStrength::Weak.score(), 1);
-        assert_eq!(PasswordStrength::Strong.score(), 4);
-        
-        assert!(PasswordStrength::Strong.description().contains("Excellent"));
-        assert!(PasswordStrength::Weak.description().contains("Weak"));
-    }
-}

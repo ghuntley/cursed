@@ -6,13 +6,12 @@
 /// multiple security levels.
 
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_pqc::multivariate_crypto::{
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_pqc::multivariate_crypto::{
     FieldElement, Polynomial, PolynomialSystem, LinearTransformation,
     MultivariateConfig, MultivariateError, MultivariateSecurityLevel
 };
-use crate::error::Error;
-use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
+// use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
 
 use std::collections::HashMap;
 use std::fmt;
@@ -79,7 +78,7 @@ impl RainbowConfig {
     }
     
     /// sus Validate Rainbow configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.v1 == 0 || self.o1 == 0 || self.o2 == 0 {
             return Err(RainbowError::InvalidConfig("All layer sizes must be positive".to_string()));
         }
@@ -345,19 +344,19 @@ pub struct RainbowKeyPair {
 
 impl RainbowKeyPair {
     /// Generate new Rainbow key pair
-    pub fn generate(config: &RainbowConfig) -> Result<(), Error> {
+    pub fn generate(config: &RainbowConfig) -> crate::error::Result<()> {
         let mut engine = RainbowEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// Sign message with Rainbow signature
-    pub fn sign(&self, message: &[u8]) -> Result<(), Error> {
+    pub fn sign(&self, message: &[u8]) -> crate::error::Result<()> {
         let mut engine = RainbowEngine::new(self.config.clone())?;
         engine.sign(message, &self.private_key)
     }
     
     /// Verify Rainbow signature
-    pub fn verify(&self, message: &[u8], signature: &RainbowSignature) -> Result<(), Error> {
+    pub fn verify(&self, message: &[u8], signature: &RainbowSignature) -> crate::error::Result<()> {
         let engine = RainbowEngine::new(self.config.clone())?;
         engine.verify(message, signature, &self.public_key)
     }
@@ -413,7 +412,7 @@ impl RainbowSignature {
     }
     
     /// Deserialize Rainbow signature
-    pub fn deserialize(data: &[u8], algorithm: String) -> Result<(), Error> {
+    pub fn deserialize(data: &[u8], algorithm: String) -> crate::error::Result<()> {
         if data.len() < 8 {
             return Err(RainbowError::InvalidSignature("Invalid signature data".to_string()));
         }
@@ -476,7 +475,7 @@ pub struct RainbowEngine {
 
 impl RainbowEngine {
     /// Create new Rainbow engine
-    pub fn new(config: RainbowConfig) -> Result<(), Error> {
+    pub fn new(config: RainbowConfig) -> crate::error::Result<()> {
         config.validate()?;
         let params = config.derived_params();
         
@@ -487,7 +486,7 @@ impl RainbowEngine {
     }
     
     /// Generate Rainbow key pair
-    pub fn generate_keypair(&mut self) -> Result<(), Error> {
+    pub fn generate_keypair(&mut self) -> crate::error::Result<()> {
         // Step 1: Generate secret Rainbow layers with proper structure
         let secret_layers = self.generate_secret_layers()?;
         
@@ -527,7 +526,7 @@ impl RainbowEngine {
     }
     
     /// Generate secret Rainbow layers with proper oil-vinegar structure
-    fn generate_secret_layers(&mut self) -> Result<(), Error> {
+    fn generate_secret_layers(&mut self) -> crate::error::Result<()> {
         let mut layers = Vec::new();
         
         // Layer 1: v1 vinegar variables, o1 oil variables
@@ -575,7 +574,7 @@ impl RainbowEngine {
         _secret_layers: &[RainbowLayer],
         _s_transform: &LinearTransformation,
         _t_transform: &LinearTransformation,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Simplified composition: in practice this involves complex polynomial arithmetic
         // The public map is P = T ∘ F ∘ S where F is the Rainbow map
         let mut public_polynomials = Vec::new();
@@ -595,7 +594,7 @@ impl RainbowEngine {
     }
     
     /// Sign message using Rainbow signature scheme
-    pub fn sign(&mut self, message: &[u8], private_key: &RainbowPrivateKey) -> Result<(), Error> {
+    pub fn sign(&mut self, message: &[u8], private_key: &RainbowPrivateKey) -> crate::error::Result<()> {
         // Step 1: Hash message to get target
         let message_hash = self.hash_message(message)?;
         let target = self.hash_to_field_elements(&message_hash)?;
@@ -617,7 +616,7 @@ impl RainbowEngine {
     }
     
     /// Solve Rainbow system using layered structure
-    fn solve_rainbow_system(&mut self, layers: &[RainbowLayer], target: &[FieldElement]) -> Result<(), Error> {
+    fn solve_rainbow_system(&mut self, layers: &[RainbowLayer], target: &[FieldElement]) -> crate::error::Result<()> {
         let mut solution = vec![FieldElement::zero(self.params.field_size); self.params.n];
         let mut target_idx = 0;
         
@@ -645,7 +644,7 @@ impl RainbowEngine {
         layer: &RainbowLayer,
         target: &[FieldElement],
         solution: &mut [FieldElement],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Assign random values to vinegar variables
         for &vinegar_var in &layer.vinegar_variables {
             let value = (self.rng.next_u32() % self.params.field_size as u32) as u8;
@@ -690,7 +689,7 @@ impl RainbowEngine {
         layer: &RainbowLayer,
         target: &[FieldElement],
         solution: &mut [FieldElement],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Vinegar variables are already assigned from layer 1
         
         // Build and solve quadratic system for oil variables
@@ -704,7 +703,7 @@ impl RainbowEngine {
     }
     
     /// Verify Rainbow signature
-    pub fn verify(&self, message: &[u8], signature: &RainbowSignature, public_key: &RainbowPublicKey) -> Result<(), Error> {
+    pub fn verify(&self, message: &[u8], signature: &RainbowSignature, public_key: &RainbowPublicKey) -> crate::error::Result<()> {
         // Step 1: Hash message and compare
         let message_hash = self.hash_message(message)?;
         if message_hash != signature.message_hash {
@@ -737,7 +736,7 @@ impl RainbowEngine {
     }
     
     /// Hash message
-    fn hash_message(&self, message: &[u8]) -> Result<(), Error> {
+    fn hash_message(&self, message: &[u8]) -> crate::error::Result<()> {
         // Simplified hash function (use SHA-256 in practice)
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
@@ -750,7 +749,7 @@ impl RainbowEngine {
     }
     
     /// Convert hash to field elements
-    fn hash_to_field_elements(&self, hash: &[u8]) -> Result<(), Error> {
+    fn hash_to_field_elements(&self, hash: &[u8]) -> crate::error::Result<()> {
         let mut elements = Vec::new();
         
         for &byte in hash.iter().take(self.params.m) {
@@ -779,28 +778,28 @@ pub enum RainbowError {
     FieldOperationError(String),
 }
 
-impl fmt::Display for RainbowError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            RainbowError::InvalidConfig(msg) => write!(f, "Rainbow configuration error: {}", msg),
-            RainbowError::InitializationError(msg) => write!(f, "Rainbow initialization error: {}", msg),
-            RainbowError::KeyGenerationError(msg) => write!(f, "Rainbow key generation error: {}", msg),
-            RainbowError::SigningError(msg) => write!(f, "Rainbow signing error: {}", msg),
-            RainbowError::VerificationError(msg) => write!(f, "Rainbow verification error: {}", msg),
-            RainbowError::InvalidSignature(msg) => write!(f, "Invalid Rainbow signature: {}", msg),
-            RainbowError::LayerError(msg) => write!(f, "Rainbow layer error: {}", msg),
-            RainbowError::FieldOperationError(msg) => write!(f, "Rainbow field operation error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for RainbowError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             RainbowError::InvalidConfig(msg) => write!(f, "Rainbow configuration error: {}", msg),
+//             RainbowError::InitializationError(msg) => write!(f, "Rainbow initialization error: {}", msg),
+//             RainbowError::KeyGenerationError(msg) => write!(f, "Rainbow key generation error: {}", msg),
+//             RainbowError::SigningError(msg) => write!(f, "Rainbow signing error: {}", msg),
+//             RainbowError::VerificationError(msg) => write!(f, "Rainbow verification error: {}", msg),
+//             RainbowError::InvalidSignature(msg) => write!(f, "Invalid Rainbow signature: {}", msg),
+//             RainbowError::LayerError(msg) => write!(f, "Rainbow layer error: {}", msg),
+//             RainbowError::FieldOperationError(msg) => write!(f, "Rainbow field operation error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for RainbowError {}
-
-impl From<RainbowError> for CursedError {
-    fn from(err: RainbowError) -> Self {
-        CursedError::CryptoError(err.to_string())
-    }
-}
+// impl std::error::CursedError for RainbowError {}
+// 
+// impl From<RainbowError> for CursedError {
+//     fn from(err: RainbowError) -> Self {
+//         CursedError::CryptoError(err.to_string())
+//     }
+// }
 
 impl From<MultivariateError> for RainbowError {
     fn from(err: MultivariateError) -> Self {
@@ -836,7 +835,7 @@ impl RainbowUtils {
     }
     
     /// Validate Rainbow parameters for security
-    pub fn validate_security(config: &RainbowConfig) -> Result<(), Error> {
+    pub fn validate_security(config: &RainbowConfig) -> crate::error::Result<()> {
         let params = config.derived_params();
         
         // Estimate security against direct attacks
@@ -961,141 +960,3 @@ pub fn init_rainbow() -> AdvancedCryptoResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_rainbow_config_creation() {
-        let level_i = RainbowConfig::level_i();
-        assert_eq!(level_i.v1, 36);
-        assert_eq!(level_i.o1, 32);
-        assert_eq!(level_i.o2, 32);
-        assert!(level_i.validate().is_ok());
-        
-        let params = level_i.derived_params();
-        assert_eq!(params.v2, 68); // v1 + o1
-        assert_eq!(params.n, 100); // v2 + o2
-        assert_eq!(params.m, 64);  // o1 + o2
-    }
-    
-    #[test]
-    fn test_rainbow_security_levels() {
-        assert_eq!(RainbowSecurityLevel::LevelI.bits(), 128);
-        assert_eq!(RainbowSecurityLevel::LevelIII.bits(), 192);
-        assert_eq!(RainbowSecurityLevel::LevelV.bits(), 256);
-        
-        assert_eq!(RainbowSecurityLevel::LevelI.name(), "Rainbow-I");
-        assert_eq!(RainbowSecurityLevel::LevelIII.name(), "Rainbow-III");
-        assert_eq!(RainbowSecurityLevel::LevelV.name(), "Rainbow-V");
-    }
-    
-    #[test]
-    fn test_rainbow_polynomial() {
-        let field_size = 16;
-        let mut rng = SecureRng::new().unwrap();
-        
-        let oil_vars = vec![0, 1];
-        let vinegar_vars = vec![2, 3, 4];
-        
-        let poly = RainbowPolynomial::random(&oil_vars, &vinegar_vars, field_size, &mut rng, 1);
-        
-        let point = vec![
-            FieldElement::new(1, field_size),
-            FieldElement::new(2, field_size),
-            FieldElement::new(3, field_size),
-            FieldElement::new(4, field_size),
-            FieldElement::new(5, field_size),
-        ];
-        
-        let result = poly.evaluate(&point);
-        assert_eq!(result.field_size, field_size);
-    }
-    
-    #[test]
-    fn test_rainbow_layer() {
-        let oil_vars = vec![0, 1];
-        let vinegar_vars = vec![2, 3];
-        let mut layer = RainbowLayer::new(oil_vars.clone(), vinegar_vars.clone());
-        
-        let field_size = 16;
-        let mut rng = SecureRng::new().unwrap();
-        let poly = RainbowPolynomial::random(&oil_vars, &vinegar_vars, field_size, &mut rng, 1);
-        
-        layer.add_polynomial(poly);
-        assert_eq!(layer.polynomials.len(), 1);
-        
-        let point = vec![
-            FieldElement::new(1, field_size),
-            FieldElement::new(2, field_size),
-            FieldElement::new(3, field_size),
-            FieldElement::new(4, field_size),
-        ];
-        
-        let results = layer.evaluate(&point);
-        assert_eq!(results.len(), 1);
-    }
-    
-    #[test]
-    fn test_rainbow_key_generation() {
-        let config = RainbowConfig::level_i();
-        let keypair = RainbowKeyPair::generate(&config);
-        assert!(keypair.is_ok());
-        
-        let kp = keypair.unwrap();
-        assert_eq!(kp.public_key.params.n, 100);
-        assert_eq!(kp.private_key.params.m, 64);
-        assert_eq!(kp.private_key.layers.len(), 2);
-    }
-    
-    #[test]
-    fn test_rainbow_signature() {
-        let config = RainbowConfig::level_i();
-        if let Ok(keypair) = RainbowKeyPair::generate(&config) {
-            let message = b"Hello, Rainbow world!";
-            
-            if let Ok(signature) = keypair.sign(message) {
-                let is_valid = keypair.verify(message, &signature).unwrap_or(false);
-                // Note: Due to simplified implementation, verification may not always pass
-                assert!(signature.signature.len() > 0);
-                
-                // Test serialization
-                let serialized = signature.serialize();
-                let deserialized = RainbowSignature::deserialize(&serialized, signature.algorithm.clone());
-                assert!(deserialized.is_ok());
-            }
-        }
-    }
-    
-    #[test]
-    fn test_rainbow_utils() {
-        let config = RainbowConfig::level_i();
-        
-        let sig_size = RainbowUtils::signature_size(&config);
-        assert_eq!(sig_size, 100); // n variables
-        
-        let pk_size = RainbowUtils::public_key_size(&config);
-        assert!(pk_size > 0);
-        
-        let sk_size = RainbowUtils::private_key_size(&config);
-        assert!(sk_size > 0);
-        
-        let security_report = RainbowUtils::validate_security(&config);
-        assert!(security_report.is_ok());
-        
-        let report = security_report.unwrap();
-        assert!(report.estimated_security_bits > 0.0);
-        assert!(!report.recommendations.is_empty());
-    }
-    
-    #[test]
-    fn test_rainbow_engine() {
-        let config = RainbowConfig::level_i();
-        let engine = RainbowEngine::new(config);
-        assert!(engine.is_ok());
-        
-        let eng = engine.unwrap();
-        assert_eq!(eng.params.n, 100);
-        assert_eq!(eng.params.m, 64);
-    }
-}

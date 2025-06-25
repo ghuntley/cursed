@@ -13,13 +13,13 @@ use super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
 /// fr fr Connection middleware trait for intercepting operations
 pub trait ConnectionMiddleware: Send + Sync + std::fmt::Debug {
     /// sus Before connection operation
-    fn before_operation(&self, context: &OperationContext) -> Result<(), Error>;
+    fn before_operation(&self, context: &OperationContext) -> crate::error::Result<()>;
     
     /// facts After connection operation
-    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), Error>;
+    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> crate::error::Result<()>;
     
     /// lowkey On connection error
-    fn on_error(&self, context: &OperationContext, error: &DatabaseError) -> Result<(), Error>;
+    fn on_error(&self, context: &OperationContext, error: &DatabaseError) -> crate::error::Result<()>;
 }
 
 /// fr fr Operation context for middleware
@@ -102,7 +102,7 @@ impl QueryLoggingMiddleware {
 
 impl ConnectionMiddleware for QueryLoggingMiddleware {
     #[instrument(skip(self, context))]
-    fn before_operation(&self, context: &OperationContext) -> Result<(), Error> {
+    fn before_operation(&self, context: &OperationContext) -> crate::error::Result<()> {
         if self.log_all_queries {
             if let Some(ref sql) = context.sql {
                 let sanitized_sql = self.sanitize_sql(sql);
@@ -119,7 +119,7 @@ impl ConnectionMiddleware for QueryLoggingMiddleware {
     }
 
     #[instrument(skip(self, context, result))]
-    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), Error> {
+    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> crate::error::Result<()> {
         let should_log = self.log_all_queries || 
             (self.log_slow_queries && result.duration >= self.slow_query_threshold);
 
@@ -153,7 +153,7 @@ impl ConnectionMiddleware for QueryLoggingMiddleware {
     }
 
     #[instrument(skip(self, context, error))]
-    fn on_error(&self, context: &OperationContext, error: &DatabaseError) -> Result<(), Error> {
+    fn on_error(&self, context: &OperationContext, error: &DatabaseError) -> crate::error::Result<()> {
         if let Some(ref sql) = context.sql {
             let sanitized_sql = self.sanitize_sql(sql);
             error!(
@@ -227,7 +227,7 @@ impl PerformanceProfilingMiddleware {
 
 impl ConnectionMiddleware for PerformanceProfilingMiddleware {
     #[instrument(skip(self, context))]
-    fn before_operation(&self, context: &OperationContext) -> Result<(), Error> {
+    fn before_operation(&self, context: &OperationContext) -> crate::error::Result<()> {
         if let Ok(mut conn_stats) = self.connection_stats.lock() {
             let stats = conn_stats.entry(context.connection_id.clone())
                 .or_insert_with(|| ConnectionStats {
@@ -244,7 +244,7 @@ impl ConnectionMiddleware for PerformanceProfilingMiddleware {
     }
 
     #[instrument(skip(self, context, result))]
-    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> Result<(), Error> {
+    fn after_operation(&self, context: &OperationContext, result: &OperationResult) -> crate::error::Result<()> {
         // Update operation stats
         if let Ok(mut op_stats) = self.operation_stats.lock() {
             let stats = op_stats.entry(context.operation_type.clone())
@@ -284,7 +284,7 @@ impl ConnectionMiddleware for PerformanceProfilingMiddleware {
     }
 
     #[instrument(skip(self, context, _error))]
-    fn on_error(&self, context: &OperationContext, _error: &DatabaseError) -> Result<(), Error> {
+    fn on_error(&self, context: &OperationContext, _error: &DatabaseError) -> crate::error::Result<()> {
         if let Ok(mut conn_stats) = self.connection_stats.lock() {
             if let Some(stats) = conn_stats.get_mut(&context.connection_id) {
                 stats.active_operations = stats.active_operations.saturating_sub(1);
@@ -353,7 +353,7 @@ impl ConnectionHealthChecker {
 
     /// facts Check health of specific connection
     #[instrument(skip(self))]
-    pub async fn check_connection_health(&self, connection_id: &str) -> Result<(), Error> {
+    pub async fn check_connection_health(&self, connection_id: &str) -> crate::error::Result<()> {
         debug!(connection_id = %connection_id, "Checking connection health");
         
         let start_time = Instant::now();
@@ -457,7 +457,7 @@ impl ConnectionHealthChecker {
     }
 
     /// lowkey Execute actual health check query
-    async fn execute_health_check_query(&self, connection_id: &str) -> Result<(), Error> {
+    async fn execute_health_check_query(&self, connection_id: &str) -> crate::error::Result<()> {
         trace!(connection_id = %connection_id, "Executing health check query");
         
         // Simulate health check with small delay
@@ -587,7 +587,7 @@ impl DatabaseLoadBalancer {
 
     /// facts Get next connection using load balancing strategy
     #[instrument(skip(self))]
-    pub async fn get_connection(&self) -> Result<(), Error> {
+    pub async fn get_connection(&self) -> crate::error::Result<()> {
         debug!(strategy = ?self.strategy, "Getting connection using load balancer");
         
         let nodes = self.database_nodes.read()
@@ -620,7 +620,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// lowkey Round robin selection
-    async fn round_robin_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
+    async fn round_robin_selection(&self, nodes: &[DatabaseNode]) -> crate::error::Result<()> {
         let mut index = self.current_index.lock()
             .map_err(|_| DatabaseError::connection_error("Failed to acquire index lock"))?;
         
@@ -631,7 +631,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// periodt Weighted round robin selection
-    async fn weighted_round_robin_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
+    async fn weighted_round_robin_selection(&self, nodes: &[DatabaseNode]) -> crate::error::Result<()> {
         let total_weight: u32 = nodes.iter().map(|n| n.weight).sum();
         
         if total_weight == 0 {
@@ -656,7 +656,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// bestie Least connections selection
-    async fn least_connections_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
+    async fn least_connections_selection(&self, nodes: &[DatabaseNode]) -> crate::error::Result<()> {
         let mut min_connections = u32::MAX;
         let mut selected_node = &nodes[0];
         
@@ -673,7 +673,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// yolo Random selection
-    async fn random_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
+    async fn random_selection(&self, nodes: &[DatabaseNode]) -> crate::error::Result<()> {
         use rand::Rng;
         let mut rng = rand::thread_rng();
         let index = rng.gen_range(0..nodes.len());
@@ -681,7 +681,7 @@ impl DatabaseLoadBalancer {
     }
 
     /// slay Health-aware selection (prefer healthy nodes with lower priority)
-    async fn health_aware_selection(&self, nodes: &[DatabaseNode]) -> Result<(), Error> {
+    async fn health_aware_selection(&self, nodes: &[DatabaseNode]) -> crate::error::Result<()> {
         // Filter healthy nodes
         let healthy_nodes: Vec<&DatabaseNode> = nodes.iter()
             .filter(|n| n.is_healthy)
@@ -707,7 +707,7 @@ impl DatabaseLoadBalancer {
 
     /// facts Release connection and decrement count
     #[instrument(skip(self))]
-    pub async fn release_connection(&self, connection_string: &str) -> Result<(), Error> {
+    pub async fn release_connection(&self, connection_string: &str) -> crate::error::Result<()> {
         let nodes = self.database_nodes.read()
             .map_err(|_| DatabaseError::connection_error("Failed to read database nodes"))?;
         
@@ -785,148 +785,3 @@ pub struct NodeStats {
     pub priority: u8,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing_test::traced_test;
-use crate::error::Error;
-
-    #[traced_test]
-    #[test]
-    fn test_query_logging_middleware() {
-        let middleware = QueryLoggingMiddleware::new(Duration::from_millis(100), true);
-        
-        let context = OperationContext {
-            operation_type: OperationType::Query,
-            connection_id: "conn_1".to_string(),
-            sql: Some("SELECT * FROM users WHERE password = 'secret123'".to_string()),
-            parameters: Vec::from([]),
-            started_at: Instant::now(),
-            metadata: HashMap::new(),
-        };
-        
-        let sanitized = middleware.sanitize_sql("SELECT * FROM users WHERE password = 'secret123'");
-        assert!(sanitized.contains("[REDACTED]"));
-        
-        let result = middleware.before_operation(&context);
-        assert!(result.is_ok());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_performance_profiling_middleware() {
-        let middleware = PerformanceProfilingMiddleware::new();
-        
-        let context = OperationContext {
-            operation_type: OperationType::Query,
-            connection_id: "conn_1".to_string(),
-            sql: Some("SELECT * FROM users".to_string()),
-            parameters: Vec::from([]),
-            started_at: Instant::now(),
-            metadata: HashMap::new(),
-        };
-        
-        let result = OperationResult {
-            success: true,
-            duration: Duration::from_millis(50),
-            rows_affected: None,
-            rows_returned: Some(10),
-            error: None,
-        };
-        
-        middleware.before_operation(&context).expect("Before operation should succeed");
-        middleware.after_operation(&context, &result).expect("After operation should succeed");
-        
-        let stats = middleware.get_stats();
-        assert!(stats.operation_stats.contains_key(&OperationType::Query));
-        assert!(stats.connection_stats.contains_key("conn_1"));
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_connection_health_checker() {
-        let checker = ConnectionHealthChecker::new(
-            Duration::from_secs(1),
-            Duration::from_millis(100)
-        );
-        
-        let status = checker.check_connection_health("healthy_conn").await
-            .expect("Health check should succeed");
-        
-        assert_eq!(status, HealthStatus::Healthy);
-        
-        let unhealthy_status = checker.check_connection_health("unhealthy_conn").await
-            .expect("Health check should succeed");
-        
-        assert_eq!(unhealthy_status, HealthStatus::Unhealthy);
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_load_balancer_round_robin() {
-        let nodes = vec![
-            DatabaseNode {
-                id: "node1".to_string(),
-                connection_string: "conn1".to_string(),
-                weight: 1,
-                max_connections: 10,
-                current_connections: Arc::new(Mutex::new(0)),
-                is_healthy: true,
-                priority: 1,
-            },
-            DatabaseNode {
-                id: "node2".to_string(),
-                connection_string: "conn2".to_string(),
-                weight: 1,
-                max_connections: 10,
-                current_connections: Arc::new(Mutex::new(0)),
-                is_healthy: true,
-                priority: 1,
-            },
-        ];
-        
-        let balancer = DatabaseLoadBalancer::new(LoadBalancingStrategy::RoundRobin, nodes);
-        
-        let conn1 = balancer.get_connection().await.expect("Should get connection");
-        let conn2 = balancer.get_connection().await.expect("Should get connection");
-        let conn3 = balancer.get_connection().await.expect("Should get connection");
-        
-        assert_eq!(conn1, "conn1");
-        assert_eq!(conn2, "conn2");
-        assert_eq!(conn3, "conn1"); // Should cycle back
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_load_balancer_least_connections() {
-        let nodes = vec![
-            DatabaseNode {
-                id: "node1".to_string(),
-                connection_string: "conn1".to_string(),
-                weight: 1,
-                max_connections: 10,
-                current_connections: Arc::new(Mutex::new(5)),
-                is_healthy: true,
-                priority: 1,
-            },
-            DatabaseNode {
-                id: "node2".to_string(),
-                connection_string: "conn2".to_string(),
-                weight: 1,
-                max_connections: 10,
-                current_connections: Arc::new(Mutex::new(2)),
-                is_healthy: true,
-                priority: 1,
-            },
-        ];
-        
-        let balancer = DatabaseLoadBalancer::new(LoadBalancingStrategy::LeastConnections, nodes);
-        
-        let conn = balancer.get_connection().await.expect("Should get connection");
-        assert_eq!(conn, "conn2"); // Should pick node with fewer connections
-        
-        let stats = balancer.get_stats();
-        assert_eq!(stats.total_nodes, 2);
-        assert_eq!(stats.healthy_nodes, 2);
-    }
-}

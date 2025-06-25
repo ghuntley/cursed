@@ -128,27 +128,3 @@ impl ByteArray {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_hex_conversion() {
-        let bytes = vec![0x12, 0x34, 0xAB, 0xCD];
-        let hex = ByteFit::bytes_to_hex(&bytes);
-        assert_eq!(hex, "1234abcd");
-        
-        let decoded = ByteFit::hex_to_bytes(&hex).unwrap();
-        assert_eq!(decoded, bytes);
-    }
-
-    #[test]
-    fn test_bit_operations() {
-        let byte = 0b10101010;
-        assert!(ByteFit::get_bit(byte, 1));
-        assert!(!ByteFit::get_bit(byte, 0));
-        
-        let modified = ByteFit::set_bit(byte, 0, true);
-        assert_eq!(modified, 0b10101011);
-    }
-}

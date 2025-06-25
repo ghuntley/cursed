@@ -1,5 +1,5 @@
 /// Dictionary-based compression support
-use crate::stdlib::squish_core::{
+// use crate::stdlib::squish_core::{
     error::{SquishError, SquishResult},
     constants::*,
 };

@@ -63,6 +63,12 @@ blake3 = "1.5"  # BLAKE3 hashing
 argon2 = "0.5"  # Argon2 password hashing
 scrypt = "0.11" # scrypt password hashing
 pbkdf2 = "0.12" # PBKDF2 key derivation
+bcrypt = "0.15" # Bcrypt password hashing
+openssl = { version = "0.10", features = ["vendored"] } # OpenSSL for TLS/crypto support
+rustls = { version = "0.21", features = ["dangerous_configuration"] } # Pure Rust TLS implementation
+rustls-webpki = "0.101" # WebPKI for rustls certificate validation  
+native-tls = "0.2" # Native TLS support
+rustls-connector = "0.17" # TLS connector for rustls
 rsa = { version = "0.9", features = ["sha2"] }     # RSA public key cryptography
 p256 = { version = "0.13", features = ["ecdh"] }   # NIST P-256 elliptic curve
 p384 = { version = "0.13", features = ["ecdh"] }   # NIST P-384 elliptic curve

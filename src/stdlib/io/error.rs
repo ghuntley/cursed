@@ -30,40 +30,40 @@ pub enum IoError {
     System(i32, String),
 }
 
-impl fmt::Display for IoError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            IoError::UnexpectedEof => write!(f, "Unexpected end of input"),
-            IoError::InvalidUtf8 => write!(f, "Invalid UTF-8 sequence"),
-            IoError::Interrupted => write!(f, "Operation interrupted"),
-            IoError::PermissionDenied => write!(f, "Permission denied"),
-            IoError::WouldBlock => write!(f, "Resource temporarily unavailable"),
-            IoError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
-            IoError::BufferOverflow => write!(f, "Buffer overflow"),
-            IoError::StreamClosed => write!(f, "Stream is closed"),
-            IoError::Timeout => write!(f, "Operation timed out"),
-            IoError::General(msg) => write!(f, "I/O error: {}", msg),
-            IoError::System(code, msg) => write!(f, "System error {}: {}", code, msg),
-        }
-    }
-}
+// impl fmt::Display for IoError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             IoError::UnexpectedEof => write!(f, "Unexpected end of input"),
+//             IoError::InvalidUtf8 => write!(f, "Invalid UTF-8 sequence"),
+//             IoError::Interrupted => write!(f, "Operation interrupted"),
+//             IoError::PermissionDenied => write!(f, "Permission denied"),
+//             IoError::WouldBlock => write!(f, "Resource temporarily unavailable"),
+//             IoError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+//             IoError::BufferOverflow => write!(f, "Buffer overflow"),
+//             IoError::StreamClosed => write!(f, "Stream is closed"),
+//             IoError::Timeout => write!(f, "Operation timed out"),
+//             IoError::General(msg) => write!(f, "I/O error: {}", msg),
+//             IoError::System(code, msg) => write!(f, "System error {}: {}", code, msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for IoError {}
-
-impl From<std::io::Error> for IoError {
-    fn from(error: std::io::Error) -> Self {
-        match error.kind() {
-            std::io::ErrorKind::UnexpectedEof => IoError::UnexpectedEof,
-            std::io::ErrorKind::InvalidInput => IoError::InvalidInput(error.to_string()),
-            std::io::ErrorKind::InvalidData => IoError::InvalidUtf8,
-            std::io::ErrorKind::PermissionDenied => IoError::PermissionDenied,
-            std::io::ErrorKind::WouldBlock => IoError::WouldBlock,
-            std::io::ErrorKind::Interrupted => IoError::Interrupted,
-            std::io::ErrorKind::TimedOut => IoError::Timeout,
-            _ => IoError::General(error.to_string()),
-        }
-    }
-}
+// impl std::error::CursedError for IoError {}
+// 
+// impl From<std::io::Error> for IoError {
+//     fn from(error: std::io::Error) -> Self {
+//         match error.kind() {
+//             std::io::ErrorKind::UnexpectedEof => IoError::UnexpectedEof,
+//             std::io::ErrorKind::InvalidInput => IoError::InvalidInput(error.to_string()),
+//             std::io::ErrorKind::InvalidData => IoError::InvalidUtf8,
+//             std::io::ErrorKind::PermissionDenied => IoError::PermissionDenied,
+//             std::io::ErrorKind::WouldBlock => IoError::WouldBlock,
+//             std::io::ErrorKind::Interrupted => IoError::Interrupted,
+//             std::io::ErrorKind::TimedOut => IoError::Timeout,
+//             _ => IoError::General(error.to_string()),
+//         }
+//     }
+// }
 
 impl From<std::string::FromUtf8Error> for IoError {
     fn from(_: std::string::FromUtf8Error) -> Self {
@@ -77,11 +77,11 @@ impl From<std::str::Utf8Error> for IoError {
     }
 }
 
-impl From<IoError> for CursedError {
-    fn from(io_error: IoError) -> Self {
-        CursedError::Runtime(format!("I/O operation failed: {}", io_error))
-    }
-}
+// impl From<IoError> for CursedError {
+//     fn from(io_error: IoError) -> Self {
+//         CursedError::Runtime(format!("I/O operation failed: {}", io_error))
+//     }
+// }
 
 /// Result type for I/O operations
 pub type IoResult<T> = std::result::Result<T, IoError>;

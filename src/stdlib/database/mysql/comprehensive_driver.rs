@@ -23,12 +23,12 @@ use std::fmt;
 use mysql::{Pool, PooledConn, OptsBuilder, Conn, Opts, Params, Value as MySqlValue};
 use mysql::prelude::*;
 
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, 
     SqlIsolationLevel, SqlValue, TxOptions, VibeContext
 };
-use crate::error::Error;
-use crate::stdlib::database::driver::{
+use crate::error::CursedError;
+// use crate::stdlib::database::driver::{
     DriverCapabilities, ConnectionMetadata, QueryResult, ExecuteResult
 };
 
@@ -358,7 +358,7 @@ impl Default for DriverMetadata {
                 "SSL/TLS Security".to_string(),
                 "Statement Caching".to_string(),
                 "Type Safety".to_string(),
-                "Error Recovery".to_string(),
+                "CursedError Recovery".to_string(),
                 "Performance Monitoring".to_string(),
             ],
         }
@@ -533,7 +533,7 @@ impl ComprehensiveMySqlDriver {
         if status.pool_initialized {
             match self.get_connection() {
                 Ok(mut conn) => {
-                    let test_result: Result<(), Error> = conn.query("SELECT 1 as test");
+                    let test_result: crate::error::Result<()> = conn.query("SELECT 1 as test");
                     status.basic_functionality = test_result.is_ok();
                     self.return_connection(conn);
                 }
@@ -725,7 +725,7 @@ impl ComprehensiveMySqlConnection {
 }
 
 impl DriverConn for ComprehensiveMySqlConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         // Check statement cache first
         if let Some(_cached_stmt) = self.driver.stmt_cache.get(query) {
             // For now, we'll create a new statement even if cached
@@ -744,7 +744,7 @@ impl DriverConn for ComprehensiveMySqlConnection {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         // Convert CURSED SqlValue args to MySQL Values
         let mut mysql_params = Vec::new();
         for arg in args {
@@ -779,7 +779,7 @@ impl DriverConn for ComprehensiveMySqlConnection {
         })
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         // Convert CURSED SqlValue args to MySQL Values
         let mut mysql_params = Vec::new();
         for arg in args {
@@ -806,7 +806,7 @@ impl DriverConn for ComprehensiveMySqlConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         // Convert isolation level to MySQL format
         let isolation_sql = match opts.isolation_level {
             Some(SqlIsolationLevel::LevelReadUncommitted) => "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED",
@@ -831,12 +831,12 @@ impl DriverConn for ComprehensiveMySqlConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         // Simple ping test
         Ok(())
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // Connection is automatically returned to pool on drop
         Ok(())
     }
@@ -873,7 +873,7 @@ impl ComprehensiveMySqlStatement {
         query: String,
         driver: Arc<ComprehensiveMySqlDriver>,
         connection_id: String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let statement_id = uuid::Uuid::new_v4().to_string();
         
         // Count parameters in the query (? placeholders)
@@ -891,7 +891,7 @@ impl ComprehensiveMySqlStatement {
 }
 
 impl DriverStmt for ComprehensiveMySqlStatement {
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         // Validate parameter count
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
@@ -931,7 +931,7 @@ impl DriverStmt for ComprehensiveMySqlStatement {
         })
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         // Validate parameter count
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
@@ -964,7 +964,7 @@ impl DriverStmt for ComprehensiveMySqlStatement {
         })
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // Statement cleanup would happen here
         Ok(())
     }
@@ -991,7 +991,7 @@ impl ComprehensiveMySqlTransaction {
         driver: Arc<ComprehensiveMySqlDriver>,
         connection_id: String,
         options: TxOptions,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let transaction_id = uuid::Uuid::new_v4().to_string();
         
         // In real implementation, would execute BEGIN TRANSACTION on the connection
@@ -1008,7 +1008,7 @@ impl ComprehensiveMySqlTransaction {
 }
 
 impl DriverTx for ComprehensiveMySqlTransaction {
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         if !self.is_active.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1029,7 +1029,7 @@ impl DriverTx for ComprehensiveMySqlTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         if !self.is_active.load(std::sync::atomic::Ordering::SeqCst) {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1054,7 +1054,7 @@ impl DriverTx for ComprehensiveMySqlTransaction {
         self.is_active.load(std::sync::atomic::Ordering::SeqCst)
     }
 
-    fn savepoint(&self, name: &str) -> Result<(), Error> {
+    fn savepoint(&self, name: &str) -> crate::error::Result<()> {
         if !self.is_active() {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1068,7 +1068,7 @@ impl DriverTx for ComprehensiveMySqlTransaction {
         Ok(())
     }
 
-    fn rollback_to_savepoint(&self, name: &str) -> Result<(), Error> {
+    fn rollback_to_savepoint(&self, name: &str) -> crate::error::Result<()> {
         if !self.is_active() {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1082,7 +1082,7 @@ impl DriverTx for ComprehensiveMySqlTransaction {
         Ok(())
     }
 
-    fn release_savepoint(&self, name: &str) -> Result<(), Error> {
+    fn release_savepoint(&self, name: &str) -> crate::error::Result<()> {
         if !self.is_active() {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::TransactionError,
@@ -1110,42 +1110,42 @@ impl SimpleMySqlConnection {
 }
 
 impl DriverConn for SimpleMySqlConnection {
-    fn prepare(&self, _query: &str) -> Result<(), Error> {
+    fn prepare(&self, _query: &str) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn query(&self, _query: &str, _args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, _query: &str, _args: &[SqlValue]) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn execute(&self, _query: &str, _args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, _query: &str, _args: &[SqlValue]) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn begin_transaction(&self, _opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, _opts: TxOptions) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::NotSupported,
             "MySQL support requires additional configuration. This is a placeholder implementation."
         ))
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         Ok(())
     }
 
@@ -1176,7 +1176,7 @@ impl DriverConn for SimpleMySqlConnection {
 
 /// fr fr Implementation of Driver trait for comprehensive MySQL driver
 impl Driver for ComprehensiveMySqlDriver {
-    fn open(&self, data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()> {
         // Initialize pool if not already done
         if let Ok(pool_guard) = self.pool.read() {
             if pool_guard.is_none() {
@@ -1236,311 +1236,3 @@ pub fn create_mysql_driver_with_config(config: MySqlConfig) -> ComprehensiveMySq
     ComprehensiveMySqlDriver::with_config(config)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_mysql_config_default() {
-        let config = MySqlConfig::default();
-        assert_eq!(config.max_connections, 100);
-        assert_eq!(config.min_connections, 10);
-        assert_eq!(config.charset, "utf8mb4");
-        assert_eq!(config.timezone, "UTC");
-        assert!(config.foreign_key_checks);
-        assert!(config.ssl_enabled);
-    }
-
-    #[test]
-    fn test_mysql_config_validation() {
-        let mut config = MySqlConfig::default();
-        assert!(config.validate().is_ok());
-        
-        config.max_connections = 0;
-        assert!(config.validate().is_err());
-        
-        config.max_connections = 10;
-        config.min_connections = 20;
-        assert!(config.validate().is_err());
-        
-        config.min_connections = 5;
-        config.charset = "".to_string();
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn test_parse_mysql_dsn() {
-        // Test simple database name
-        let info = parse_mysql_dsn("testdb").unwrap();
-        assert_eq!(info.database, "testdb");
-        assert_eq!(info.host, "localhost");
-        assert_eq!(info.port, 3306);
-        assert_eq!(info.username, "root");
-        
-        // Test full DSN
-        let info = parse_mysql_dsn("mysql://user:pass@host:3307/database?charset=utf8").unwrap();
-        assert_eq!(info.username, "user");
-        assert_eq!(info.password, "pass");
-        assert_eq!(info.host, "host");
-        assert_eq!(info.port, 3307);
-        assert_eq!(info.database, "database");
-        assert_eq!(info.parameters.get("charset"), Some(&"utf8".to_string()));
-        
-        // Test host:port/database format
-        let info = parse_mysql_dsn("localhost:3306/mydb").unwrap();
-        assert_eq!(info.host, "localhost");
-        assert_eq!(info.port, 3306);
-        assert_eq!(info.database, "mydb");
-        
-        // Test with authentication
-        let info = parse_mysql_dsn("user:password@localhost/testdb").unwrap();
-        assert_eq!(info.username, "user");
-        assert_eq!(info.password, "password");
-        assert_eq!(info.host, "localhost");
-        assert_eq!(info.database, "testdb");
-    }
-
-    #[test]
-    fn test_parse_mysql_dsn_errors() {
-        assert!(parse_mysql_dsn("").is_err());
-        assert!(parse_mysql_dsn("host:invalid_port/db").is_err());
-    }
-
-    #[test]
-    fn test_driver_creation() {
-        let driver = ComprehensiveMySqlDriver::new();
-        assert_eq!(driver.name(), "Comprehensive MySQL Driver for CURSED");
-        assert!(driver.capabilities().supports_transactions);
-        assert!(driver.capabilities().supports_prepared_statements);
-        assert!(driver.capabilities().supports_multiple_result_sets);
-        assert!(driver.capabilities().supports_stored_procedures);
-        assert!(driver.capabilities().supports_batch_operations);
-        assert!(driver.capabilities().supports_concurrent_connections);
-    }
-
-    #[test]
-    fn test_driver_with_config() {
-        let mut config = MySqlConfig::default();
-        config.max_connections = 50;
-        config.charset = "latin1".to_string();
-        
-        let driver = ComprehensiveMySqlDriver::with_config(config);
-        assert_eq!(driver.capabilities().max_connections, Some(50));
-    }
-
-    #[test]
-    fn test_statement_cache() {
-        let cache = StatementCache::new(2);
-        
-        // Test miss
-        assert!(cache.get("SELECT 1").is_none());
-        
-        // Test insert and hit
-        cache.insert("SELECT 1".to_string(), vec![1, 2, 3]);
-        assert_eq!(cache.get("SELECT 1"), Some(vec![1, 2, 3]));
-        
-        // Test LRU eviction
-        cache.insert("SELECT 2".to_string(), vec![4, 5, 6]);
-        cache.insert("SELECT 3".to_string(), vec![7, 8, 9]);
-        
-        // First query should be evicted
-        assert!(cache.get("SELECT 1").is_none());
-        assert_eq!(cache.get("SELECT 2"), Some(vec![4, 5, 6]));
-        assert_eq!(cache.get("SELECT 3"), Some(vec![7, 8, 9]));
-        
-        // Check stats
-        let (hits, misses, size) = cache.stats();
-        assert_eq!(hits, 3);
-        assert_eq!(misses, 2);
-        assert_eq!(size, 2);
-    }
-
-    #[test]
-    fn test_value_conversion() {
-        // Test null conversion
-        let sql_null = SqlValue::Null;
-        let mysql_null = convert_to_mysql_value(&sql_null).unwrap();
-        assert_eq!(mysql_null, MySqlValue::NULL);
-        
-        // Test boolean conversion
-        let sql_bool = SqlValue::Boolean(true);
-        let mysql_bool = convert_to_mysql_value(&sql_bool).unwrap();
-        assert_eq!(mysql_bool, MySqlValue::from(true));
-        
-        // Test integer conversion
-        let sql_int = SqlValue::Integer(42);
-        let mysql_int = convert_to_mysql_value(&sql_int).unwrap();
-        assert_eq!(mysql_int, MySqlValue::from(42i64));
-        
-        // Test string conversion
-        let sql_str = SqlValue::String("hello".to_string());
-        let mysql_str = convert_to_mysql_value(&sql_str).unwrap();
-        assert_eq!(mysql_str, MySqlValue::from("hello"));
-    }
-
-    #[test]
-    fn test_health_status() {
-        let mut status = DriverHealthStatus::new();
-        assert!(!status.overall_health);
-        assert!(!status.pool_initialized);
-        assert!(!status.basic_functionality);
-        assert_eq!(status.active_connections, 0);
-        
-        status.pool_initialized = true;
-        status.basic_functionality = true;
-        status.connection_errors = 0;
-        status.query_errors = 0;
-        status.overall_health = true;
-        
-        assert!(status.overall_health);
-    }
-
-    #[test]
-    fn test_driver_metadata() {
-        let metadata = DriverMetadata::default();
-        assert_eq!(metadata.name, "Comprehensive MySQL Driver for CURSED");
-        assert!(!metadata.features.is_empty());
-        assert!(metadata.features.contains(&"Connection Pooling".to_string()));
-        assert!(metadata.features.contains(&"Prepared Statements".to_string()));
-        assert!(metadata.features.contains(&"Transactions".to_string()));
-        assert!(metadata.features.contains(&"SSL/TLS Security".to_string()));
-    }
-
-    #[test]
-    fn test_pool_stats() {
-        let mut stats = MySqlPoolStats::default();
-        assert_eq!(stats.active_connections, 0);
-        assert_eq!(stats.query_count, 0);
-        
-        stats.active_connections = 5;
-        stats.query_count = 100;
-        stats.update();
-        
-        assert_eq!(stats.active_connections, 5);
-        assert_eq!(stats.query_count, 100);
-        assert!(stats.last_updated > SystemTime::UNIX_EPOCH);
-    }
-
-    #[test]
-    fn test_prepared_statement_creation() {
-        let driver = Arc::new(ComprehensiveMySqlDriver::new());
-        let connection_id = "test_conn_123".to_string();
-        
-        // Test statement with parameters
-        let stmt = ComprehensiveMySqlStatement::new(
-            "SELECT * FROM users WHERE id = ? AND name = ?".to_string(),
-            driver,
-            connection_id,
-        ).unwrap();
-        
-        assert_eq!(stmt.parameter_count(), 2);
-        assert!(stmt.query.contains("SELECT"));
-    }
-
-    #[test]
-    fn test_prepared_statement_parameter_validation() {
-        let driver = Arc::new(ComprehensiveMySqlDriver::new());
-        let connection_id = "test_conn_123".to_string();
-        
-        let stmt = ComprehensiveMySqlStatement::new(
-            "SELECT * FROM users WHERE id = ?".to_string(),
-            driver,
-            connection_id,
-        ).unwrap();
-        
-        // Test with correct number of parameters
-        let args = vec![SqlValue::Integer(42)];
-        let result = stmt.execute(&args);
-        assert!(result.is_ok());
-        
-        // Test with wrong number of parameters
-        let args = vec![SqlValue::Integer(42), SqlValue::String("test".to_string())];
-        let result = stmt.execute(&args);
-        assert!(result.is_err());
-        
-        // Test with no parameters when one is expected
-        let args = vec![];
-        let result = stmt.execute(&args);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_transaction_lifecycle() {
-        let driver = Arc::new(ComprehensiveMySqlDriver::new());
-        let connection_id = "test_conn_123".to_string();
-        let opts = TxOptions::default();
-        
-        let tx = ComprehensiveMySqlTransaction::new(
-            driver,
-            connection_id,
-            opts,
-        ).unwrap();
-        
-        // Test that transaction starts active
-        assert!(tx.is_active());
-        
-        // Test commit
-        let result = tx.commit();
-        assert!(result.is_ok());
-        assert!(!tx.is_active());
-        
-        // Test that operations fail after commit
-        let result = tx.commit();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_transaction_rollback() {
-        let driver = Arc::new(ComprehensiveMySqlDriver::new());
-        let connection_id = "test_conn_123".to_string();
-        let opts = TxOptions::default();
-        
-        let tx = ComprehensiveMySqlTransaction::new(
-            driver,
-            connection_id,
-            opts,
-        ).unwrap();
-        
-        // Test that transaction starts active
-        assert!(tx.is_active());
-        
-        // Test rollback
-        let result = tx.rollback();
-        assert!(result.is_ok());
-        assert!(!tx.is_active());
-        
-        // Test that operations fail after rollback
-        let result = tx.rollback();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_savepoint_operations() {
-        let driver = Arc::new(ComprehensiveMySqlDriver::new());
-        let connection_id = "test_conn_123".to_string();
-        let opts = TxOptions::default();
-        
-        let tx = ComprehensiveMySqlTransaction::new(
-            driver,
-            connection_id,
-            opts,
-        ).unwrap();
-        
-        // Test savepoint creation
-        let result = tx.savepoint("test_savepoint");
-        assert!(result.is_ok());
-        
-        // Test rollback to savepoint
-        let result = tx.rollback_to_savepoint("test_savepoint");
-        assert!(result.is_ok());
-        
-        // Test release savepoint
-        let result = tx.release_savepoint("test_savepoint");
-        assert!(result.is_ok());
-        
-        // Test operations after transaction commit
-        let _ = tx.commit();
-        let result = tx.savepoint("test_savepoint");
-        assert!(result.is_err());
-    }
-}

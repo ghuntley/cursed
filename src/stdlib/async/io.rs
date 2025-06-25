@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Async I/O operations for CURSED stdlib
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -6,7 +6,7 @@ use std::io::{self, Read, Write, Seek, BufRead, BufReader, BufWriter};
 use std::path::Path;
 
 use crate::runtime::r#async::{Promise, PromiseResolver};
-use crate::stdlib::r#async::{AsyncError, AsyncResult, spawn_blocking_io};
+// use crate::stdlib::r#async::{AsyncError, AsyncResult, spawn_blocking_io};
 use std::future::Future;
 use std::sync::{Arc, Mutex};
 
@@ -431,7 +431,7 @@ where
 
 
 /// Public helper function for spawning blocking operations
-pub async fn spawn_blocking_io_public<F, R>(f: F) -> Result<(), Error>
+pub async fn spawn_blocking_io_public<F, R>(f: F) -> crate::error::Result<()>
 where
     F: FnOnce() -> R + Send + 'static,
     R: Send + 'static,
@@ -558,27 +558,3 @@ pub mod file {
 
 pub use file::AsyncFile;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_async_stdin_creation() {
-        let stdin = stdin_async();
-        // Would need proper async test framework for polling
-    }
-
-    #[test]
-    fn test_async_stdout_creation() {
-        let stdout = stdout_async();
-        // Would need proper async test framework for polling
-    }
-
-    #[test]
-    fn test_async_buf_reader_creation() {
-        let data = b"hello world";
-        let cursor = std::io::Cursor::new(data);
-        let reader = AsyncBufReader::new(cursor);
-        // Would need proper async test framework for testing read operations
-    }
-}

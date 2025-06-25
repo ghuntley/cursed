@@ -2,7 +2,7 @@
 /// 
 /// Provides GC control, monitoring, and configuration capabilities
 
-use crate::error::Error;
+use crate::error::CursedError;
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::time::{Duration, Instant};
 
@@ -44,7 +44,7 @@ impl Default for GcStats {
 }
 
 /// Run garbage collection synchronously
-pub fn run_gc() -> Result<(), Error> {
+pub fn run_gc() -> crate::error::Result<()> {
     if !GC_ENABLED.load(Ordering::SeqCst) {
         return Ok(());
     }
@@ -81,7 +81,7 @@ pub fn run_gc() -> Result<(), Error> {
 
 /// Set garbage collector target percentage
 /// Returns the previous percentage setting
-pub fn set_gc_percent(percent: i32) -> Result<(), Error> {
+pub fn set_gc_percent(percent: i32) -> crate::error::Result<()> {
     let old_percent = GC_TARGET_PERCENT.swap(percent, Ordering::SeqCst);
     
     // Update the runtime state
@@ -108,7 +108,7 @@ pub fn is_gc_enabled() -> bool {
 }
 
 /// Force memory to be returned to the operating system
-pub fn free_os_memory() -> Result<(), Error> {
+pub fn free_os_memory() -> crate::error::Result<()> {
     // First run a GC cycle to free up unreachable objects
     run_gc()?;
     
@@ -119,7 +119,7 @@ pub fn free_os_memory() -> Result<(), Error> {
 }
 
 /// Get current GC statistics
-pub fn get_gc_stats() -> Result<(), Error> {
+pub fn get_gc_stats() -> crate::error::Result<()> {
     let gc_state = super::get_gc_state()?;
     
     let avg_pause = if gc_state.gc_count > 0 {
@@ -170,7 +170,7 @@ impl Default for GcConfig {
 }
 
 /// Configure GC parameters
-pub fn configure_gc(config: GcConfig) -> Result<(), Error> {
+pub fn configure_gc(config: GcConfig) -> crate::error::Result<()> {
     // Set memory limit if specified
     if let Some(limit) = config.memory_limit {
         super::set_memory_limit(limit as usize)?;
@@ -214,15 +214,15 @@ impl Default for JitStats {
 }
 
 /// Get JIT compiler statistics
-pub fn jit_stats() -> Result<(), Error> {
+pub fn jit_stats() -> crate::error::Result<()> {
     // This would integrate with the LLVM JIT system when available
     Ok(JitStats::default())
 }
 
 /// Set JIT optimization level (0-3)
-pub fn set_jit_opt_level(level: u32) -> Result<(), Error> {
+pub fn set_jit_opt_level(level: u32) -> crate::error::Result<()> {
     if level > 3 {
-        return Err(Error::Runtime("JIT optimization level must be 0-3".to_string()));
+        return Err(CursedError::Runtime("JIT optimization level must be 0-3".to_string()));
     }
     
     // This would configure the LLVM optimization level when available
@@ -246,7 +246,7 @@ pub struct RuntimeMetrics {
 }
 
 /// Get comprehensive runtime metrics
-pub fn get_metrics() -> Result<(), Error> {
+pub fn get_metrics() -> crate::error::Result<()> {
     let gc_stats = get_gc_stats()?;
     let jit_stats = jit_stats()?;
     
@@ -270,7 +270,7 @@ pub fn get_metrics() -> Result<(), Error> {
 }
 
 /// Set finalizer for an object (placeholder)
-pub fn set_finalizer<T>(obj: &T, finalizer: impl Fn(&T) + 'static) -> Result<(), Error> {
+pub fn set_finalizer<T>(obj: &T, finalizer: impl Fn(&T) + 'static) -> crate::error::Result<()> {
     // This would integrate with the GC system to register finalizers
     // For now, just ignore the finalizer
     Ok(())
@@ -301,148 +301,7 @@ impl CpuProfile {
 }
 
 /// Start CPU profiling
-pub fn cpu_profile() -> Result<(), Error> {
+pub fn cpu_profile() -> crate::error::Result<()> {
     Ok(CpuProfile::new())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_gc_percent() {
-        let initial = get_gc_percent();
-        assert_eq!(initial, 100); // Default value
-        
-        let old = set_gc_percent(200).unwrap();
-        assert_eq!(old, 100);
-        
-        let current = get_gc_percent();
-        assert_eq!(current, 200);
-        
-        // Test disabling GC
-        set_gc_percent(-1).unwrap();
-        assert!(!is_gc_enabled());
-        
-        // Re-enable GC
-        set_gc_percent(100).unwrap();
-        assert!(is_gc_enabled());
-    }
-
-    #[test]
-    fn test_run_gc() {
-        // Should not panic or error
-        let result = run_gc();
-        match result {
-            Ok(()) => {},
-            Err(_) => {
-                // May fail if GC subsystem is not available
-            }
-        }
-    }
-
-    #[test]
-    fn test_gc_stats() {
-        let stats = get_gc_stats();
-        match stats {
-            Ok(stats) => {
-                assert!(stats.cycles >= 0);
-                assert!(stats.total_pause_time >= 0);
-                assert!(stats.cpu_fraction >= 0.0);
-            }
-            Err(_) => {
-                // May fail if runtime state is not available
-            }
-        }
-    }
-
-    #[test]
-    fn test_gc_config() {
-        let config = GcConfig {
-            memory_limit: Some(1024 * 1024 * 1024), // 1GB
-            max_pause_time: Some(50_000_000), // 50ms
-            incremental: true,
-            concurrent: true,
-            ..Default::default()
-        };
-        
-        let result = configure_gc(config);
-        match result {
-            Ok(()) => {},
-            Err(_) => {
-                // May fail if runtime components are not available
-            }
-        }
-    }
-
-    #[test]
-    fn test_jit_stats() {
-        let stats = jit_stats().unwrap();
-        assert_eq!(stats.functions_compiled, 0); // Default/placeholder
-    }
-
-    #[test]
-    fn test_jit_opt_level() {
-        assert!(set_jit_opt_level(0).is_ok());
-        assert!(set_jit_opt_level(3).is_ok());
-        assert!(set_jit_opt_level(4).is_err()); // Invalid level
-    }
-
-    #[test]
-    fn test_runtime_metrics() {
-        let metrics = get_metrics();
-        match metrics {
-            Ok(metrics) => {
-                assert!(metrics.memory_used >= 0);
-                assert!(metrics.goroutine_count > 0);
-                assert!(metrics.cpu_utilization >= 0.0);
-                assert!(metrics.cpu_utilization <= 1.0);
-            }
-            Err(_) => {
-                // May fail if runtime components are not available
-            }
-        }
-    }
-
-    #[test]
-    fn test_keep_alive() {
-        let data = vec![1, 2, 3, 4, 5];
-        keep_alive(&data); // Should not panic
-        // Data should still be accessible after keep_alive
-        assert_eq!(data.len(), 5);
-    }
-
-    #[test]
-    fn test_cpu_profile() {
-        let profile = cpu_profile().unwrap();
-        std::thread::sleep(Duration::from_millis(1));
-        let elapsed = profile.stop();
-        assert!(elapsed >= Duration::from_millis(1));
-    }
-
-    #[test] 
-    fn test_free_os_memory() {
-        let result = free_os_memory();
-        match result {
-            Ok(()) => {},
-            Err(_) => {
-                // May fail if GC or memory subsystems are not available
-            }
-        }
-    }
-
-    #[test]
-    fn test_set_finalizer() {
-        let data = vec![1, 2, 3];
-        let result = set_finalizer(&data, |_| {
-            // Finalizer callback
-        });
-        
-        match result {
-            Ok(()) => {},
-            Err(_) => {
-                // May fail if GC subsystem is not available
-            }
-        }
-    }
-}

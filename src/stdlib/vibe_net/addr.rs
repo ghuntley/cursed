@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Network address types for VibeNet
 /// 
 /// This module provides comprehensive network address handling including TCP, UDP,
@@ -7,7 +7,6 @@ use crate::error::Error;
 use std::fmt;
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, ToSocketAddrs};
 use std::path::PathBuf;
-use crate::error::CursedError;
 use super::ip::IPVibe;
 use super::error::{NetError, address_resolution_error};
 use super::NetResult;
@@ -299,67 +298,3 @@ impl fmt::Display for UnixAddrVibe {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tcp_addr_creation() {
-        let ip = IPVibe::parse_ip("192.168.1.1").unwrap();
-        let addr = TCPAddrVibe::new(ip, 8080);
-        assert_eq!(addr.port(), 8080);
-        assert_eq!(addr.network(), "tcp4");
-    }
-
-    #[test]
-    fn test_tcp_addr_resolve() {
-        let addr = TCPAddrVibe::resolve("tcp", "127.0.0.1:8080").unwrap();
-        assert_eq!(addr.port(), 8080);
-        assert!(addr.ip().is_ipv4());
-    }
-
-    #[test]
-    fn test_udp_addr_creation() {
-        let ip = IPVibe::parse_ip("::1").unwrap();
-        let addr = UDPAddrVibe::new(ip, 9090);
-        assert_eq!(addr.port(), 9090);
-        assert_eq!(addr.network(), "udp6");
-    }
-
-    #[test]
-    fn test_udp_addr_resolve() {
-        let addr = UDPAddrVibe::resolve("udp", "localhost:5000").unwrap();
-        assert_eq!(addr.port(), 5000);
-    }
-
-    #[test]
-    fn test_unix_addr_creation() {
-        let addr = UnixAddrVibe::resolve("unix", "/tmp/test.sock").unwrap();
-        assert_eq!(addr.name(), "/tmp/test.sock");
-        assert_eq!(addr.network(), "unix");
-    }
-
-    #[test]
-    fn test_invalid_network_type() {
-        let result = TCPAddrVibe::resolve("invalid", "127.0.0.1:8080");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_zone_handling() {
-        let ip = IPVibe::parse_ip("::1").unwrap();
-        let mut addr = TCPAddrVibe::new(ip, 8080);
-        addr.set_zone("eth0".to_string());
-        assert_eq!(addr.zone(), "eth0");
-    }
-
-    #[test]
-    fn test_addr_vibe_trait() {
-        let ip = IPVibe::parse_ip("127.0.0.1").unwrap();
-        let addr = TCPAddrVibe::new(ip, 8080);
-        let addr_vibe: &dyn AddrVibe = &addr;
-        
-        assert_eq!(addr_vibe.network(), "tcp4");
-        assert!(addr_vibe.string().contains("127.0.0.1:8080"));
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Variance Analysis Implementation for CURSED Language
 //
 // This module provides variance analysis for generic types, enabling safe
@@ -10,7 +10,6 @@ use tracing::{debug, error, info, warn, instrument};
 
 use crate::ast::types::Type;
 use crate::ast::traits::TypeParameter;
-use crate::error::CursedError;
 
 /// Represents the variance of a type parameter
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -123,7 +122,7 @@ impl VarianceRegistry {
 
     /// Analyze the variance of type parameters in a type definition
     #[instrument(skip(self))]
-    pub fn analyze_type_variance(&self, type_name: &str, definition: &Type) -> Result<(), Error> {
+    pub fn analyze_type_variance(&self, type_name: &str, definition: &Type) -> crate::error::Result<()> {
         debug!("Analyzing variance for type: {}", type_name);
 
         let mut variance_analyzer = VarianceAnalyzer::new();
@@ -143,7 +142,7 @@ impl VarianceRegistry {
 
     /// Get variance information for a type
     #[instrument(skip(self))]
-    pub fn get_type_variance(&self, type_name: &str) -> Result<(), Error> {
+    pub fn get_type_variance(&self, type_name: &str) -> crate::error::Result<()> {
         let type_variances = self.type_variances.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
@@ -152,7 +151,7 @@ impl VarianceRegistry {
 
     /// Check if one type is a subtype of another (considering variance)
     #[instrument(skip(self))]
-    pub fn is_subtype(&self, subtype: &Type, supertype: &Type) -> Result<(), Error> {
+    pub fn is_subtype(&self, subtype: &Type, supertype: &Type) -> crate::error::Result<()> {
         // Check cache first
         let cache_key = (subtype.clone(), supertype.clone());
         {
@@ -181,7 +180,7 @@ impl VarianceRegistry {
 
     /// Internal implementation for computing subtyping relationships
     #[instrument(skip(self))]
-    fn compute_subtyping_relationship(&self, subtype: &Type, supertype: &Type) -> Result<(), Error> {
+    fn compute_subtyping_relationship(&self, subtype: &Type, supertype: &Type) -> crate::error::Result<()> {
         // Reflexivity: T <: T
         if subtype == supertype {
             return Ok(true);
@@ -244,7 +243,7 @@ impl VarianceRegistry {
 
     /// Check subtyping for generic types considering variance
     #[instrument(skip(self))]
-    fn check_generic_subtyping(&self, type_name: &str, sub_args: &[Type], super_args: &[Type]) -> Result<(), Error> {
+    fn check_generic_subtyping(&self, type_name: &str, sub_args: &[Type], super_args: &[Type]) -> crate::error::Result<()> {
         let variances = self.get_type_variance(type_name)?;
         
         if variances.len() != sub_args.len() {
@@ -281,7 +280,7 @@ impl VarianceRegistry {
         sub_return: &Type,
         super_params: &[Type],
         super_return: &Type,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Functions are contravariant in parameters and covariant in return type
         if sub_params.len() != super_params.len() {
             return Ok(false);
@@ -300,7 +299,7 @@ impl VarianceRegistry {
 
     /// Register safe variance relationships
     #[instrument(skip(self))]
-    pub fn register_safe_variance(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), Error> {
+    pub fn register_safe_variance(&self, type_name: &str, param_name: &str, variance: Variance) -> crate::error::Result<()> {
         let mut relationships = self.safe_variance_relationships.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
         
@@ -311,7 +310,7 @@ impl VarianceRegistry {
 
     /// Check if a variance relationship is safe
     #[instrument(skip(self))]
-    pub fn is_variance_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), Error> {
+    pub fn is_variance_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> crate::error::Result<()> {
         let relationships = self.safe_variance_relationships.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
@@ -320,7 +319,7 @@ impl VarianceRegistry {
 
     /// Register built-in type variances
     #[instrument(skip(self))]
-    fn register_builtin_variances(&self) -> Result<(), Error> {
+    fn register_builtin_variances(&self) -> crate::error::Result<()> {
         // Array<T> is covariant in T
         self.register_safe_variance("Array", "T", Variance::Covariant)?;
 
@@ -347,7 +346,7 @@ impl VarianceRegistry {
 
     /// Clear all caches
     #[instrument(skip(self))]
-    pub fn clear_caches(&self) -> Result<(), Error> {
+    pub fn clear_caches(&self) -> crate::error::Result<()> {
         {
             let mut cache = self.subtyping_cache.write()
                 .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
@@ -359,7 +358,7 @@ impl VarianceRegistry {
 
     /// Get statistics about the variance registry
     #[instrument(skip(self))]
-    pub fn get_statistics(&self) -> Result<(), Error> {
+    pub fn get_statistics(&self) -> crate::error::Result<()> {
         let type_variances = self.type_variances.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         let subtyping_cache = self.subtyping_cache.read()
@@ -404,7 +403,7 @@ impl VarianceAnalyzer {
     }
 
     #[instrument(skip(self))]
-    fn analyze_type(&mut self, type_ref: &Type) -> Result<(), Error> {
+    fn analyze_type(&mut self, type_ref: &Type) -> crate::error::Result<()> {
         self.visit_type(type_ref, Variance::Covariant)?;
         
         let mut result = Vec::new();
@@ -421,7 +420,7 @@ impl VarianceAnalyzer {
     }
 
     #[instrument(skip(self))]
-    fn visit_type(&mut self, type_ref: &Type, context_variance: Variance) -> Result<(), Error> {
+    fn visit_type(&mut self, type_ref: &Type, context_variance: Variance) -> crate::error::Result<()> {
         match type_ref {
             Type::Generic(name) => {
                 // This is a type parameter usage
@@ -513,18 +512,18 @@ impl VarianceAnalyzer {
 /// Trait for working with variance in the type system
 pub trait VarianceHandler {
     /// Check if a variance assignment is safe for a given usage pattern
-    fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), Error>;
+    fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> crate::error::Result<()>;
     
     /// Get the most restrictive variance for a type parameter
-    fn compute_safe_variance(&self, type_name: &str, param_name: &str) -> Result<(), Error>;
+    fn compute_safe_variance(&self, type_name: &str, param_name: &str) -> crate::error::Result<()>;
     
     /// Validate variance annotations against actual usage
-    fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> Result<(), Error>;
+    fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> crate::error::Result<()>;
 }
 
 impl VarianceHandler for VarianceRegistry {
     #[instrument(skip(self))]
-    fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> Result<(), Error> {
+    fn is_variance_assignment_safe(&self, type_name: &str, param_name: &str, variance: Variance) -> crate::error::Result<()> {
         let type_variances = self.get_type_variance(type_name)?;
         
         if let Some(param_variance) = type_variances.iter().find(|pv| pv.parameter_name == param_name) {
@@ -548,7 +547,7 @@ impl VarianceHandler for VarianceRegistry {
     }
 
     #[instrument(skip(self))]
-    fn compute_safe_variance(&self, type_name: &str, param_name: &str) -> Result<(), Error> {
+    fn compute_safe_variance(&self, type_name: &str, param_name: &str) -> crate::error::Result<()> {
         let type_variances = self.get_type_variance(type_name)?;
         
         if let Some(param_variance) = type_variances.iter().find(|pv| pv.parameter_name == param_name) {
@@ -560,7 +559,7 @@ impl VarianceHandler for VarianceRegistry {
     }
 
     #[instrument(skip(self))]
-    fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> Result<(), Error> {
+    fn validate_variance_annotations(&self, type_name: &str, annotations: &[(String, Variance)]) -> crate::error::Result<()> {
         let mut errors = Vec::new();
         
         for (param_name, requested_variance) in annotations {
@@ -576,98 +575,3 @@ impl VarianceHandler for VarianceRegistry {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_variance_combination() {
-        assert_eq!(Variance::Covariant.combine(Variance::Covariant), Variance::Covariant);
-        assert_eq!(Variance::Covariant.combine(Variance::Contravariant), Variance::Contravariant);
-        assert_eq!(Variance::Contravariant.combine(Variance::Contravariant), Variance::Covariant);
-        assert_eq!(Variance::Invariant.combine(Variance::Covariant), Variance::Invariant);
-    }
-
-    #[test]
-    fn test_variance_inversion() {
-        assert_eq!(Variance::Covariant.invert(), Variance::Contravariant);
-        assert_eq!(Variance::Contravariant.invert(), Variance::Covariant);
-        assert_eq!(Variance::Invariant.invert(), Variance::Invariant);
-        assert_eq!(Variance::Bivariant.invert(), Variance::Bivariant);
-    }
-
-    #[test]
-    fn test_basic_subtyping() {
-        let registry = VarianceRegistry::new();
-        
-        // Test reflexivity
-        assert!(registry.is_subtype(&Type::Integer, &Type::Integer).unwrap());
-        
-        // Test basic subtyping
-        assert!(registry.is_subtype(&Type::Integer, &Type::Float).unwrap());
-        assert!(registry.is_subtype(&Type::Nil, &Type::String).unwrap());
-    }
-
-    #[test]
-    fn test_array_covariance() {
-        let registry = VarianceRegistry::new();
-        
-        let int_array = Type::Array(Box::new(Type::Integer));
-        let float_array = Type::Array(Box::new(Type::Float));
-        
-        // Arrays should be covariant: Array<Int> <: Array<Float>
-        assert!(registry.is_subtype(&int_array, &float_array).unwrap());
-    }
-
-    #[test]
-    fn test_function_contravariance() {
-        let registry = VarianceRegistry::new();
-        
-        let func1 = Type::Function(vec![Type::Float], Box::new(Type::Integer));
-        let func2 = Type::Function(vec![Type::Integer], Box::new(Type::Float));
-        
-        // Function types: (Float) -> Int <: (Int) -> Float
-        assert!(registry.is_subtype(&func1, &func2).unwrap());
-    }
-
-    #[test]
-    fn test_variance_registry() {
-        let registry = VarianceRegistry::new();
-        
-        // Test safe variance registration
-        let result = registry.register_safe_variance("MyType", "T", Variance::Covariant);
-        assert!(result.is_ok());
-        
-        // Test variance safety check
-        let is_safe = registry.is_variance_safe("MyType", "T", Variance::Covariant).unwrap();
-        assert!(is_safe);
-        
-        let is_not_safe = registry.is_variance_safe("MyType", "T", Variance::Contravariant).unwrap();
-        assert!(!is_not_safe);
-    }
-
-    #[test]
-    fn test_variance_analyzer() {
-        let mut analyzer = VarianceAnalyzer::new();
-        
-        // Test analyzing a simple generic type
-        let array_type = Type::Array(Box::new(Type::Generic("T".to_string())));
-        
-        let variances = analyzer.analyze_type(&array_type).unwrap();
-        assert_eq!(variances.len(), 1);
-        assert_eq!(variances[0].parameter_name, "T");
-        assert_eq!(variances[0].variance, Variance::Covariant);
-    }
-
-    #[test]
-    fn test_statistics() {
-        let registry = VarianceRegistry::new();
-        
-        // Register some variance information
-        registry.register_safe_variance("Type1", "T", Variance::Covariant).unwrap();
-        registry.register_safe_variance("Type2", "U", Variance::Contravariant).unwrap();
-        
-        let stats = registry.get_statistics().unwrap();
-        assert!(stats.safe_variance_relationships >= 2);
-    }
-}

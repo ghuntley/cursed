@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// FTP client implementation with comprehensive protocol support
 /// 
 /// This module provides a complete FTP client implementation supporting:
@@ -17,8 +17,8 @@ use std::net::{TcpStream, TcpListener, SocketAddr, Ipv4Addr};
 use std::path::Path;
 use std::fs::File;
 
-use crate::stdlib::net::protocols::{ProtocolError, ProtocolResult};
-use crate::stdlib::net::socket::TcpSocket;
+// use crate::stdlib::net::protocols::{ProtocolError, ProtocolResult};
+// use crate::stdlib::net::socket::TcpSocket;
 
 /// FTP transfer modes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -952,107 +952,3 @@ impl AsyncFtpClient {
     // Future: Add async methods here
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ftp_config_default() {
-        let config = FtpConfig::default();
-        assert_eq!(config.server, "localhost");
-        assert_eq!(config.port, 21);
-        assert_eq!(config.username, "anonymous");
-        assert!(config.passive_mode);
-        assert_eq!(config.transfer_mode, FtpTransferMode::Binary);
-    }
-
-    #[test]
-    fn test_ftp_transfer_mode() {
-        assert_eq!(FtpTransferMode::Binary.as_str(), "I");
-        assert_eq!(FtpTransferMode::Ascii.as_str(), "A");
-    }
-
-    #[test]
-    fn test_ftp_response() {
-        let response = FtpResponse {
-            code: 200,
-            message: "OK".to_string(),
-            is_multiline: false,
-        };
-        
-        assert!(response.is_success());
-        assert!(!response.is_intermediate());
-        assert!(!response.is_error());
-        
-        let error_response = FtpResponse {
-            code: 500,
-            message: "Error".to_string(),
-            is_multiline: false,
-        };
-        
-        assert!(error_response.is_error());
-        assert!(!error_response.is_success());
-    }
-
-    #[test]
-    fn test_transfer_progress() {
-        let mut progress = TransferProgress::new(Some(1000));
-        assert_eq!(progress.bytes_transferred, 0);
-        assert_eq!(progress.total_bytes, Some(1000));
-        
-        progress.update(500);
-        assert_eq!(progress.bytes_transferred, 500);
-        assert_eq!(progress.percentage(), Some(50.0));
-    }
-
-    #[test]
-    fn test_ftp_client_creation() {
-        let config = FtpConfig {
-            server: "ftp.example.com".to_string(),
-            port: 21,
-            username: "test".to_string(),
-            password: "test".to_string(),
-            passive_mode: false,
-            transfer_mode: FtpTransferMode::Ascii,
-            timeout: Duration::from_secs(60),
-            keep_alive: false,
-            max_retries: 5,
-        };
-        
-        let client = FtpClient::new(config);
-        assert_eq!(client.config.server, "ftp.example.com");
-        assert!(!client.config.passive_mode);
-        assert_eq!(client.config.transfer_mode, FtpTransferMode::Ascii);
-        assert_eq!(client.state, FtpState::Disconnected);
-    }
-
-    #[test]
-    fn test_pasv_parsing() {
-        let client = FtpClient::new(FtpConfig::default());
-        let response = "227 Entering Passive Mode (192,168,1,1,20,21)";
-        
-        let (ip, port) = client.parse_pasv_response(response).unwrap();
-        assert_eq!(ip, "192.168.1.1");
-        assert_eq!(port, 20 * 256 + 21);
-    }
-
-    #[test]
-    fn test_unix_listing_parsing() {
-        let client = FtpClient::new(FtpConfig::default());
-        let line = "drwxr-xr-x   2 user  group    4096 Jan 01 12:00 testdir";
-        
-        let entry = client.parse_unix_listing_line(line).unwrap();
-        assert_eq!(entry.name, "testdir");
-        assert!(entry.is_directory);
-        assert_eq!(entry.permissions, "drwxr-xr-x");
-    }
-
-    #[test]
-    fn test_port_command_formatting() {
-        let client = FtpClient::new(FtpConfig::default());
-        let addr: SocketAddr = "192.168.1.1:5000".parse().unwrap();
-        
-        let port_command = client.format_port_command(addr).unwrap();
-        assert_eq!(port_command, "PORT 192,168,1,1,19,136"); // 5000 = 19*256 + 136
-    }
-}

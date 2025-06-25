@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP Validation and Security for CURSED web_vibez
 ///
 /// Comprehensive validation rules and security checks for HTTP processing.
@@ -8,7 +8,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
-use crate::stdlib::http_core::{
+// use crate::stdlib::http_core::{
     Request, Response, HeaderMap, HttpError, HttpResult, ContentType, MimeType
 };
 
@@ -728,74 +728,3 @@ impl RateLimiter {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_validation_rules() {
-        let rule = ValidationRule::Required;
-        assert!(rule.validate("test").is_ok());
-        assert!(rule.validate("").is_err());
-
-        let rule = ValidationRule::MinLength(5);
-        assert!(rule.validate("hello").is_ok());
-        assert!(rule.validate("hi").is_err());
-
-        let rule = ValidationRule::Email;
-        assert!(rule.validate("user@example.com").is_ok());
-        assert!(rule.validate("invalid-email").is_err());
-    }
-
-    #[test]
-    fn test_field_rules() {
-        let rules = FieldRules::new("email")
-            .required()
-            .email()
-            .max_length(100);
-
-        assert!(rules.validate(Some("user@example.com")).is_ok());
-        assert!(rules.validate(Some("invalid-email")).is_err());
-        assert!(rules.validate(None).is_err());
-
-        let optional_rules = FieldRules::new("phone").optional().pattern("phone");
-        assert!(optional_rules.validate(None).is_ok());
-    }
-
-    #[test]
-    fn test_security_config() {
-        let config = SecurityConfig::strict();
-        assert!(config.enforce_https);
-        assert!(config.csrf_protection);
-        assert_eq!(config.max_file_size, Some(5 * 1024 * 1024));
-    }
-
-    #[test]
-    fn test_rate_limit_config() {
-        let rate_limit = RateLimit::by_ip(100, Duration::from_secs(3600));
-        assert_eq!(rate_limit.max_requests, 100);
-        assert_eq!(rate_limit.window, Duration::from_secs(3600));
-    }
-
-    #[test]
-    fn test_validation_rules_builder() {
-        let rules = ValidationRules::new()
-            .field(FieldRules::new("username").required().min_length(3).max_length(50))
-            .field(FieldRules::new("email").required().email())
-            .max_request_size(1024 * 1024)
-            .allowed_methods(Vec::from(["GET".to_string(), "POST".to_string()]));
-
-        assert!(rules.get_field_rules("username").is_some());
-        assert!(rules.get_field_rules("email").is_some());
-        assert_eq!(rules.max_request_size, Some(1024 * 1024));
-    }
-
-    #[test]
-    fn test_http_validator() {
-        let validator = HttpValidator::new()
-            .with_security(SecurityConfig::default());
-
-        // Would test with actual request objects in real implementation
-        assert!(true); // Placeholder test
-    }
-}

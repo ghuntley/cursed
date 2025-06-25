@@ -1,7 +1,7 @@
 use crate::types::SecurityContext;
-use crate::stdlib::web_vibez::SecurityContext;
-use crate::stdlib::process::EnhancedProcess;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::SecurityContext;
+// use crate::stdlib::process::EnhancedProcess;
+use crate::error::CursedError;
 /// macOS-specific process management and IPC implementation
 /// 
 /// This module provides macOS-specific implementations for the unified
@@ -18,13 +18,12 @@ use std::time::Duration;
 
 use tracing::{info, warn, error, debug, instrument};
 
-use crate::error::CursedError;
-use crate::stdlib::process::{
+// use crate::stdlib::process::{
     EnhancedProcess, ResourceLimits, SecurityContext, ProcessState
 };
 
 use super::unified_process_ipc::{
-use crate::stdlib::process::info::ProcessState;
+// use crate::stdlib::process::info::ProcessState;
     PlatformHandler, IpcType, IpcConnection, SecuritySettings
 };
 
@@ -41,7 +40,7 @@ pub struct MacOSPlatformHandler {
 
 impl MacOSPlatformHandler {
     /// Create a new macOS platform handler
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         Ok(Self {
             launchd_integration: true,
             security_framework: true,
@@ -52,7 +51,7 @@ impl MacOSPlatformHandler {
 
 impl PlatformHandler for MacOSPlatformHandler {
     /// Initialize macOS-specific features
-    fn initialize(&self) -> Result<(), Error> {
+    fn initialize(&self) -> crate::error::Result<()> {
         info!("Initializing macOS platform handler");
         
         // Initialize launchd integration if enabled
@@ -69,7 +68,7 @@ impl PlatformHandler for MacOSPlatformHandler {
     }
     
     /// Create macOS-specific IPC mechanism
-    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<(), Error> {
+    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> crate::error::Result<()> {
         match ipc_type {
             IpcType::UnixSockets => {
                 Ok(Box::new(MacOSUnixSocket::new(name)?))
@@ -87,7 +86,7 @@ impl PlatformHandler for MacOSPlatformHandler {
     }
     
     /// Apply macOS-specific security settings
-    fn apply_security(&self, process: &mut EnhancedProcess, settings: &SecuritySettings) -> Result<(), Error> {
+    fn apply_security(&self, process: &mut EnhancedProcess, settings: &SecuritySettings) -> crate::error::Result<()> {
         debug!("Applying macOS security settings");
         
         // Apply sandbox if enabled
@@ -109,7 +108,7 @@ impl PlatformHandler for MacOSPlatformHandler {
     }
     
     /// Cleanup macOS-specific resources
-    fn cleanup(&self) -> Result<(), Error> {
+    fn cleanup(&self) -> crate::error::Result<()> {
         info!("Cleaning up macOS platform handler");
         Ok(())
     }
@@ -122,7 +121,7 @@ struct MacOSUnixSocket {
 }
 
 impl MacOSUnixSocket {
-    fn new(name: &str) -> Result<(), Error> {
+    fn new(name: &str) -> crate::error::Result<()> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -130,19 +129,19 @@ impl MacOSUnixSocket {
 }
 
 impl IpcConnection for MacOSUnixSocket {
-    fn send(&self, message: &[u8]) -> Result<(), Error> {
+    fn send(&self, message: &[u8]) -> crate::error::Result<()> {
         // Stub implementation
         debug!("Sending {} bytes via macOS Unix socket: {}", message.len(), self.name);
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         // Stub implementation
         debug!("Receiving from macOS Unix socket: {}", self.name);
         Ok(Vec::new())
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         debug!("Closing macOS Unix socket: {}", self.name);
         Ok(())
     }
@@ -155,7 +154,7 @@ struct MacOSNamedPipe {
 }
 
 impl MacOSNamedPipe {
-    fn new(name: &str) -> Result<(), Error> {
+    fn new(name: &str) -> crate::error::Result<()> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -163,17 +162,17 @@ impl MacOSNamedPipe {
 }
 
 impl IpcConnection for MacOSNamedPipe {
-    fn send(&self, message: &[u8]) -> Result<(), Error> {
+    fn send(&self, message: &[u8]) -> crate::error::Result<()> {
         debug!("Sending {} bytes via macOS named pipe: {}", message.len(), self.name);
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         debug!("Receiving from macOS named pipe: {}", self.name);
         Ok(Vec::new())
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         debug!("Closing macOS named pipe: {}", self.name);
         Ok(())
     }
@@ -186,7 +185,7 @@ struct MacOSSharedMemory {
 }
 
 impl MacOSSharedMemory {
-    fn new(name: &str) -> Result<(), Error> {
+    fn new(name: &str) -> crate::error::Result<()> {
         Ok(Self {
             name: name.to_string(),
         })
@@ -194,17 +193,17 @@ impl MacOSSharedMemory {
 }
 
 impl IpcConnection for MacOSSharedMemory {
-    fn send(&self, message: &[u8]) -> Result<(), Error> {
+    fn send(&self, message: &[u8]) -> crate::error::Result<()> {
         debug!("Writing {} bytes to macOS shared memory: {}", message.len(), self.name);
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         debug!("Reading from macOS shared memory: {}", self.name);
         Ok(Vec::new())
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         debug!("Closing macOS shared memory: {}", self.name);
         Ok(())
     }

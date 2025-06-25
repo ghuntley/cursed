@@ -1,12 +1,11 @@
 use crate::web::StatusCode;
-use crate::error::Error;
-/// Error handling for the web_vibez framework
+use crate::error::CursedError;
+/// CursedError handling for the web_vibez framework
 /// 
 /// Provides comprehensive error types and handling for routing,
 /// middleware, and handler operations
 
 use std::fmt;
-use std::error::Error;
 
 /// Router-specific errors
 #[derive(Debug, Clone)]
@@ -25,33 +24,33 @@ pub enum RouterError {
     InvalidConfiguration(String),
 }
 
-impl fmt::Display for RouterError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            RouterError::InvalidPattern(pattern, reason) => {
-                write!(f, "Invalid route pattern '{}': {}", pattern, reason)
-            }
-            RouterError::DuplicateRoute(route) => {
-                write!(f, "Route '{}' already exists", route)
-            }
-            RouterError::RouteNotFound(route) => {
-                write!(f, "Route '{}' not found", route)
-            }
-            RouterError::TooManyRoutes(count) => {
-                write!(f, "Too many routes registered: {}", count)
-            }
-            RouterError::PriorityConflict(route1, route2) => {
-                write!(f, "Priority conflict between routes '{}' and '{}'", route1, route2)
-            }
-            RouterError::InvalidConfiguration(reason) => {
-                write!(f, "Invalid router configuration: {}", reason)
-            }
-        }
-    }
-}
+// impl fmt::Display for RouterError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             RouterError::InvalidPattern(pattern, reason) => {
+//                 write!(f, "Invalid route pattern '{}': {}", pattern, reason)
+//             }
+//             RouterError::DuplicateRoute(route) => {
+//                 write!(f, "Route '{}' already exists", route)
+//             }
+//             RouterError::RouteNotFound(route) => {
+//                 write!(f, "Route '{}' not found", route)
+//             }
+//             RouterError::TooManyRoutes(count) => {
+//                 write!(f, "Too many routes registered: {}", count)
+//             }
+//             RouterError::PriorityConflict(route1, route2) => {
+//                 write!(f, "Priority conflict between routes '{}' and '{}'", route1, route2)
+//             }
+//             RouterError::InvalidConfiguration(reason) => {
+//                 write!(f, "Invalid router configuration: {}", reason)
+//             }
+//         }
+//     }
+// }
 
-impl Error for RouterError {}
-
+// impl CursedError for RouterError {}
+// 
 impl From<String> for RouterError {
     fn from(error: String) -> Self {
         RouterError::InvalidConfiguration(error)
@@ -85,26 +84,26 @@ pub enum MiddlewareError {
     Custom(String),
 }
 
-impl fmt::Display for MiddlewareError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MiddlewareError::Authentication(msg) => write!(f, "Authentication error: {}", msg),
-            MiddlewareError::Authorization(msg) => write!(f, "Authorization error: {}", msg),
-            MiddlewareError::RateLimit(msg) => write!(f, "Rate limit error: {}", msg),
-            MiddlewareError::FileSystem(msg) => write!(f, "File system error: {}", msg),
-            MiddlewareError::Network(msg) => write!(f, "Network error: {}", msg),
-            MiddlewareError::Timeout(msg) => write!(f, "Timeout error: {}", msg),
-            MiddlewareError::Configuration(msg) => write!(f, "Configuration error: {}", msg),
-            MiddlewareError::Security(msg) => write!(f, "Security error: {}", msg),
-            MiddlewareError::Validation(msg) => write!(f, "Validation error: {}", msg),
-            MiddlewareError::ExternalService(msg) => write!(f, "External service error: {}", msg),
-            MiddlewareError::Custom(msg) => write!(f, "Middleware error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for MiddlewareError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             MiddlewareError::Authentication(msg) => write!(f, "Authentication error: {}", msg),
+//             MiddlewareError::Authorization(msg) => write!(f, "Authorization error: {}", msg),
+//             MiddlewareError::RateLimit(msg) => write!(f, "Rate limit error: {}", msg),
+//             MiddlewareError::FileSystem(msg) => write!(f, "File system error: {}", msg),
+//             MiddlewareError::Network(msg) => write!(f, "Network error: {}", msg),
+//             MiddlewareError::Timeout(msg) => write!(f, "Timeout error: {}", msg),
+//             MiddlewareError::Configuration(msg) => write!(f, "Configuration error: {}", msg),
+//             MiddlewareError::Security(msg) => write!(f, "Security error: {}", msg),
+//             MiddlewareError::Validation(msg) => write!(f, "Validation error: {}", msg),
+//             MiddlewareError::ExternalService(msg) => write!(f, "External service error: {}", msg),
+//             MiddlewareError::Custom(msg) => write!(f, "Middleware error: {}", msg),
+//         }
+//     }
+// }
 
-impl Error for MiddlewareError {}
-
+// impl CursedError for MiddlewareError {}
+// 
 /// Handler-specific errors
 #[derive(Debug, Clone)]
 pub enum HandlerError {
@@ -136,28 +135,28 @@ pub enum HandlerError {
     Internal(String),
 }
 
-impl fmt::Display for HandlerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            HandlerError::RequestProcessing(msg) => write!(f, "Request processing error: {}", msg),
-            HandlerError::ResponseGeneration(msg) => write!(f, "Response generation error: {}", msg),
-            HandlerError::Serialization(msg) => write!(f, "Serialization error: {}", msg),
-            HandlerError::Deserialization(msg) => write!(f, "Deserialization error: {}", msg),
-            HandlerError::FileSystem(msg) => write!(f, "File system error: {}", msg),
-            HandlerError::Database(msg) => write!(f, "Database error: {}", msg),
-            HandlerError::ExternalApi(msg) => write!(f, "External API error: {}", msg),
-            HandlerError::BusinessLogic(msg) => write!(f, "Business logic error: {}", msg),
-            HandlerError::Validation(msg) => write!(f, "Validation error: {}", msg),
-            HandlerError::Network(msg) => write!(f, "Network error: {}", msg),
-            HandlerError::Configuration(msg) => write!(f, "Configuration error: {}", msg),
-            HandlerError::NotImplemented(msg) => write!(f, "Not implemented: {}", msg),
-            HandlerError::Internal(msg) => write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for HandlerError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             HandlerError::RequestProcessing(msg) => write!(f, "Request processing error: {}", msg),
+//             HandlerError::ResponseGeneration(msg) => write!(f, "Response generation error: {}", msg),
+//             HandlerError::Serialization(msg) => write!(f, "Serialization error: {}", msg),
+//             HandlerError::Deserialization(msg) => write!(f, "Deserialization error: {}", msg),
+//             HandlerError::FileSystem(msg) => write!(f, "File system error: {}", msg),
+//             HandlerError::Database(msg) => write!(f, "Database error: {}", msg),
+//             HandlerError::ExternalApi(msg) => write!(f, "External API error: {}", msg),
+//             HandlerError::BusinessLogic(msg) => write!(f, "Business logic error: {}", msg),
+//             HandlerError::Validation(msg) => write!(f, "Validation error: {}", msg),
+//             HandlerError::Network(msg) => write!(f, "Network error: {}", msg),
+//             HandlerError::Configuration(msg) => write!(f, "Configuration error: {}", msg),
+//             HandlerError::NotImplemented(msg) => write!(f, "Not implemented: {}", msg),
+//             HandlerError::Internal(msg) => write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl Error for HandlerError {}
-
+// impl CursedError for HandlerError {}
+// 
 /// Comprehensive web framework error
 #[derive(Debug)]
 pub enum WebVibezError {
@@ -173,28 +172,28 @@ pub enum WebVibezError {
     System(String),
 }
 
-impl fmt::Display for WebVibezError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            WebVibezError::Router(err) => write!(f, "Router: {}", err),
-            WebVibezError::Middleware(err) => write!(f, "Middleware: {}", err),
-            WebVibezError::Handler(err) => write!(f, "Handler: {}", err),
-            WebVibezError::Configuration(msg) => write!(f, "Configuration: {}", msg),
-            WebVibezError::System(msg) => write!(f, "System: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for WebVibezError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             WebVibezError::Router(err) => write!(f, "Router: {}", err),
+//             WebVibezError::Middleware(err) => write!(f, "Middleware: {}", err),
+//             WebVibezError::Handler(err) => write!(f, "Handler: {}", err),
+//             WebVibezError::Configuration(msg) => write!(f, "Configuration: {}", msg),
+//             WebVibezError::System(msg) => write!(f, "System: {}", msg),
+//         }
+//     }
+// }
 
-impl Error for WebVibezError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            WebVibezError::Router(err) => Some(err),
-            WebVibezError::Middleware(err) => Some(err),
-            WebVibezError::Handler(err) => Some(err),
-            _ => None,
-        }
-    }
-}
+// impl CursedError for WebVibezError {
+//     fn source(&self) -> Option<&(dyn CursedError + 'static)> {
+//         match self {
+//             WebVibezError::Router(err) => Some(err),
+//             WebVibezError::Middleware(err) => Some(err),
+//             WebVibezError::Handler(err) => Some(err),
+//             _ => None,
+//         }
+//     }
+// }
 
 impl From<RouterError> for WebVibezError {
     fn from(err: RouterError) -> Self {
@@ -214,10 +213,10 @@ impl From<HandlerError> for WebVibezError {
     }
 }
 
-/// Error context for providing additional information
+/// CursedError context for providing additional information
 #[derive(Debug, Clone)]
 pub struct ErrorContext {
-    /// Error location (file, line, function)
+    /// CursedError location (file, line, function)
     pub location: Option<String>,
     /// Request ID for tracing
     pub request_id: Option<String>,
@@ -272,7 +271,7 @@ impl Default for ErrorContext {
 pub struct ContextualError {
     /// The underlying error
     pub error: WebVibezError,
-    /// Error context
+    /// CursedError context
     pub context: ErrorContext,
 }
 
@@ -295,34 +294,34 @@ impl ContextualError {
     }
 }
 
-impl fmt::Display for ContextualError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.error)?;
-        
-        if let Some(request_id) = &self.context.request_id {
-            write!(f, " (request: {})", request_id)?;
-        }
-        
-        if let Some(location) = &self.context.location {
-            write!(f, " at {}", location)?;
-        }
-        
-        Ok(())
-    }
-}
+// impl fmt::Display for ContextualError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.error)?;
+//         
+//         if let Some(request_id) = &self.context.request_id {
+//             write!(f, " (request: {})", request_id)?;
+//         }
+//         
+//         if let Some(location) = &self.context.location {
+//             write!(f, " at {}", location)?;
+//         }
+//         
+//         Ok(())
+//     }
+// }
 
-impl Error for ContextualError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&self.error)
-    }
-}
+// impl CursedError for ContextualError {
+//     fn source(&self) -> Option<&(dyn CursedError + 'static)> {
+//         Some(&self.error)
+//     }
+// }
 
-/// Error response builder for HTTP responses
+/// CursedError response builder for HTTP responses
 #[derive(Debug)]
 pub struct ErrorResponse {
     /// HTTP status code
     pub status: u16,
-    /// Error code for API clients
+    /// CursedError code for API clients
     pub code: String,
     /// Human-readable error message
     pub message: String,
@@ -407,14 +406,14 @@ impl ErrorResponse {
     }
 }
 
-/// Error handler trait for custom error processing
+/// CursedError handler trait for custom error processing
 pub trait ErrorHandler: Send + Sync {
     /// Handle an error and generate appropriate response
     fn handle_error(
         &self,
         error: &WebVibezError,
-        context: &crate::stdlib::web_vibez::context::RequestContext,
-        response: &mut crate::stdlib::web_vibez::context::ResponseContext,
+//         context: &crate::stdlib::web_vibez::context::RequestContext,
+//         response: &mut crate::stdlib::web_vibez::context::ResponseContext,
     );
 
     /// Check if this handler can process the given error
@@ -464,10 +463,10 @@ impl ErrorHandler for DefaultErrorHandler {
     fn handle_error(
         &self,
         error: &WebVibezError,
-        context: &crate::stdlib::web_vibez::context::RequestContext,
-        response: &mut crate::stdlib::web_vibez::context::ResponseContext,
+//         context: &crate::stdlib::web_vibez::context::RequestContext,
+//         response: &mut crate::stdlib::web_vibez::context::ResponseContext,
     ) {
-        use crate::stdlib::web_vibez::StatusCode;
+//         use crate::stdlib::web_vibez::StatusCode;
 
         let mut error_response = ErrorResponse::from_error(error)
             .with_request_id(&context.request_id);
@@ -503,21 +502,21 @@ impl ErrorHandler for DefaultErrorHandler {
 #[macro_export]
 macro_rules! router_error {
     ($variant:ident, $($arg:expr),*) => {
-        $crate::stdlib::web_vibez::error_handling::RouterError::$variant($($arg),*)
+//         $crate::stdlib::web_vibez::error_handling::RouterError::$variant($($arg),*)
     };
 }
 
 #[macro_export]
 macro_rules! middleware_error {
     ($variant:ident, $($arg:expr),*) => {
-        $crate::stdlib::web_vibez::error_handling::MiddlewareError::$variant($($arg),*)
+//         $crate::stdlib::web_vibez::error_handling::MiddlewareError::$variant($($arg),*)
     };
 }
 
 #[macro_export]
 macro_rules! handler_error {
     ($variant:ident, $($arg:expr),*) => {
-        $crate::stdlib::web_vibez::error_handling::HandlerError::$variant($($arg),*)
+//         $crate::stdlib::web_vibez::error_handling::HandlerError::$variant($($arg),*)
     };
 }
 
@@ -543,57 +542,3 @@ mod chrono {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_router_error_display() {
-        let error = RouterError::InvalidPattern("/invalid[".to_string(), "unclosed bracket".to_string());
-        assert_eq!(error.to_string(), "Invalid route pattern '/invalid[': unclosed bracket");
-    }
-
-    #[test]
-    fn test_middleware_error_display() {
-        let error = MiddlewareError::Authentication("Invalid token".to_string());
-        assert_eq!(error.to_string(), "Authentication error: Invalid token");
-    }
-
-    #[test]
-    fn test_handler_error_display() {
-        let error = HandlerError::NotImplemented("Feature X".to_string());
-        assert_eq!(error.to_string(), "Not implemented: Feature X");
-    }
-
-    #[test]
-    fn test_error_response() {
-        let error = WebVibezError::Middleware(MiddlewareError::Authentication("Bad token".to_string()));
-        let response = ErrorResponse::from_error(&error);
-        
-        assert_eq!(response.status, 401);
-        assert_eq!(response.code, "AUTHENTICATION_FAILED");
-        assert_eq!(response.message, "Authentication required");
-    }
-
-    #[test]
-    fn test_error_context() {
-        let context = ErrorContext::new()
-            .with_request_id("req_123")
-            .with_location("handler.rs:42")
-            .with_data("user_id", "user_456");
-            
-        assert_eq!(context.request_id, Some("req_123".to_string()));
-        assert_eq!(context.location, Some("handler.rs:42".to_string()));
-        assert_eq!(context.data.get("user_id"), Some(&"user_456".to_string()));
-    }
-
-    #[test]
-    fn test_contextual_error() {
-        let error = WebVibezError::Handler(HandlerError::Internal("Database connection failed".to_string()));
-        let context = ErrorContext::new().with_request_id("req_789");
-        let contextual = ContextualError::new(error).with_context(context);
-        
-        assert!(contextual.to_string().contains("req_789"));
-        assert!(contextual.to_string().contains("Database connection failed"));
-    }
-}

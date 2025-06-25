@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // CURSED Optimization Profiler
 // 
 // A command-line tool for analyzing and reporting optimization performance
@@ -146,7 +146,7 @@ async fn main() -> Result<()> {
             let input = sub_m.value_of("input").unwrap();
             let output_file = sub_m.value_of("output");
             let iterations: usize = sub_m.value_of("iterations").unwrap().parse()
-                .map_err(|_| cursed::error::Error::General("Invalid iterations count".to_string()))?;
+                .map_err(|_| cursed::error::CursedError::General("Invalid iterations count".to_string()))?;
                 
             run_benchmark(input, output_file, iterations).await?;
         }
@@ -182,7 +182,7 @@ async fn run_analysis(
 
     // Read source file
     let source = fs::read_to_string(input_file)
-        .map_err(|e| cursed::error::Error::General(format!("Failed to read input file: {}", e)))?;
+        .map_err(|e| cursed::error::CursedError::General(format!("Failed to read input file: {}", e)))?;
 
     // Create enhanced performance analyzer
     let mut analyzer = EnhancedPerformanceAnalyzer::new();
@@ -200,7 +200,7 @@ async fn run_analysis(
     // Output report
     if let Some(output_path) = output_file {
         fs::write(output_path, &report)
-            .map_err(|e| cursed::error::Error::General(format!("Failed to write report: {}", e)))?;
+            .map_err(|e| cursed::error::CursedError::General(format!("Failed to write report: {}", e)))?;
         info!("Analysis report written to {}", output_path);
     } else {
         println!("{}", report);
@@ -256,7 +256,7 @@ async fn run_benchmark(input: &str, output_file: Option<&str>, iterations: usize
     // Output report
     if let Some(output_path) = output_file {
         fs::write(output_path, &report)
-            .map_err(|e| cursed::error::Error::General(format!("Failed to write report: {}", e)))?;
+            .map_err(|e| cursed::error::CursedError::General(format!("Failed to write report: {}", e)))?;
         info!("Benchmark report written to {}", output_path);
     } else {
         println!("{}", report);
@@ -274,7 +274,7 @@ async fn run_comparison(
 
     // Read source file
     let source = fs::read_to_string(input_file)
-        .map_err(|e| cursed::error::Error::General(format!("Failed to read input file: {}", e)))?;
+        .map_err(|e| cursed::error::CursedError::General(format!("Failed to read input file: {}", e)))?;
 
     // Analyze both optimization levels
     let mut analyzer = EnhancedPerformanceAnalyzer::new();
@@ -323,7 +323,7 @@ async fn run_profiling(input_file: &str, profile_passes: bool) -> Result<()> {
     } else {
         // Profile overall compilation performance
         let source = fs::read_to_string(input_file)
-            .map_err(|e| cursed::error::Error::General(format!("Failed to read input file: {}", e)))?;
+            .map_err(|e| cursed::error::CursedError::General(format!("Failed to read input file: {}", e)))?;
 
         let mut analyzer = EnhancedPerformanceAnalyzer::new();
         let result = analyzer.analyze_compilation(&source, input_file, OptimizationLevel::O2).await?;
@@ -361,7 +361,7 @@ async fn run_single_benchmark(input: &str, opt_level: OptimizationLevel) -> Resu
     // Simulate compilation with different optimization levels
     // In a real implementation, this would call the actual compiler
     let source = fs::read_to_string(input)
-        .map_err(|e| cursed::error::Error::General(format!("Failed to read input: {}", e)))?;
+        .map_err(|e| cursed::error::CursedError::General(format!("Failed to read input: {}", e)))?;
     
     let mut analyzer = EnhancedPerformanceAnalyzer::new();
     let _result = analyzer.analyze_compilation(&source, input, opt_level).await?;
@@ -375,7 +375,7 @@ fn parse_optimization_level(level_str: &str) -> Result<OptimizationLevel> {
         "O1" => Ok(OptimizationLevel::O1),
         "O2" => Ok(OptimizationLevel::O2),
         "O3" => Ok(OptimizationLevel::O3),
-        _ => Err(cursed::error::Error::General(format!("Invalid optimization level: {}", level_str))),
+        _ => Err(cursed::error::CursedError::General(format!("Invalid optimization level: {}", level_str))),
     }
 }
 
@@ -462,7 +462,7 @@ fn generate_text_report(analysis: &cursed::optimization::EnhancedAnalysisResult)
 
 fn generate_json_report(analysis: &cursed::optimization::EnhancedAnalysisResult) -> Result<String> {
     serde_json::to_string_pretty(analysis)
-        .map_err(|e| cursed::error::Error::General(format!("JSON serialization failed: {}", e)))
+        .map_err(|e| cursed::error::CursedError::General(format!("JSON serialization failed: {}", e)))
 }
 
 #[derive(Debug)]

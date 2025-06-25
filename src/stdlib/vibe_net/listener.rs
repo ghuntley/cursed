@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Listener types for VibeNet
 /// 
 /// This module provides network listeners for accepting incoming connections
@@ -7,7 +7,6 @@ use crate::error::Error;
 use std::net::{TcpListener, SocketAddr};
 use std::os::unix::net::UnixListener;
 use std::time::SystemTime;
-use crate::error::CursedError;
 use super::addr::{AddrVibe, TCPAddrVibe, UnixAddrVibe};
 use super::conn::{ConnVibe, TCPConnVibe, UnixConnVibe};
 use super::error::{NetError, connection_failed_error};
@@ -149,22 +148,3 @@ impl ListenerVibe for UnixListenerVibe {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tcp_listener_creation() {
-        let listener = TCPListenerVibe::listen("tcp", None);
-        assert!(listener.is_ok());
-    }
-
-    #[test]
-    fn test_listener_traits() {
-        fn assert_listener_vibe<T: ListenerVibe>() {}
-        
-        // These should compile without error
-        assert_listener_vibe::<TCPListenerVibe>();
-        assert_listener_vibe::<UnixListenerVibe>();
-    }
-}

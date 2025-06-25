@@ -25,7 +25,7 @@ pub mod packages;
 
 // Web framework
 pub mod web_vibez {
-    pub use crate::common::*;
+    pub use crate::common_types::*;
     
     pub struct SecurityContext;
 }
@@ -36,9 +36,9 @@ pub mod crypto_pqc;
 
 // Asynchronous support
 pub mod r#async {
-    pub use crate::common::*;
+    pub use crate::common_types::*;
     
-    pub type AsyncError = crate::error::Error;
+    pub type AsyncError = crate::error::CursedError;
     pub type AsyncResult<T> = std::result::Result<T, AsyncError>;
     
     pub fn spawn_blocking_io<F, T>(_f: F) -> AsyncResult<T> 
@@ -117,9 +117,9 @@ pub mod vibecheck;
 // Concurrency and system modules (stubbed for minimal build)
 pub mod sync {
     // Minimal sync primitives
-    pub use crate::common::*;
+    pub use crate::common_types::*;
     
-    pub type SyncError = crate::error::Error;
+    pub type SyncError = crate::error::CursedError;
     pub type SyncResult<T> = std::result::Result<T, SyncError>;
     
     pub mod error {
@@ -151,7 +151,7 @@ pub mod sync {
     }
     
     pub mod primitives {
-        pub use crate::common::*;
+        pub use crate::common_types::*;
         
         pub fn spawn<F>(_f: F) where F: FnOnce() {
             // Minimal implementation
@@ -167,10 +167,10 @@ pub mod sync {
 
 pub mod process {
     // Basic process management
-    pub use crate::common::*;
+    pub use crate::common_types::*;
     
     pub mod info {
-        pub use crate::common::*;
+        pub use crate::common_types::*;
         
         #[derive(Debug, Clone)]
         pub struct ProcessInfo;
@@ -184,16 +184,16 @@ pub mod process {
     }
     
     pub mod real_ipc {
-        pub use crate::common::*;
+        pub use crate::common_types::*;
         
         pub struct IpcChannel;
         pub struct IpcMessage;
     }
     
     pub mod error {
-        pub use crate::common::*;
+        pub use crate::common_types::*;
         
-        pub type ProcessError = crate::error::Error;
+        pub type ProcessError = crate::error::CursedError;
         pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
         
         pub fn system_error(msg: &str) -> ProcessError {
@@ -204,12 +204,12 @@ pub mod process {
 
 pub mod time {
     // Time utilities
-    pub use crate::common::*;
+    pub use crate::common_types::*;
     
     pub mod error {
-        pub use crate::common::*;
+        pub use crate::common_types::*;
         
-        pub type TimeError = crate::error::Error;
+        pub type TimeError = crate::error::CursedError;
         pub type TimeResult<T> = std::result::Result<T, TimeError>;
         
         pub fn invalid_date_error(msg: &str) -> TimeError {
@@ -226,7 +226,7 @@ pub mod time {
     }
     
     pub mod duration {
-        pub use crate::common::*;
+        pub use crate::common_types::*;
         
         pub struct Duration(std::time::Duration);
         
@@ -238,7 +238,7 @@ pub mod time {
     }
     
     pub mod datetime {
-        pub use crate::common::*;
+        pub use crate::common_types::*;
         
         pub struct DateTime;
         pub struct Date;
@@ -256,17 +256,17 @@ pub mod time {
 
 pub mod net {
     // Network utilities  
-    pub use crate::common::*;
+    pub use crate::common_types::*;
     
-    pub type NetResult<T> = std::result::Result<T, crate::error::Error>;
+    pub type Netcrate::error::Result<T> = std::result::Result<T>;
 }
 
 pub mod testing {
     // Testing framework basics
-    pub use crate::common::*;
+    pub use crate::common_types::*;
     
     pub mod core {
-        pub use crate::common::*;
+        pub use crate::common_types::*;
         
         pub struct VibeTest;
         pub struct VibeBench;
@@ -279,7 +279,7 @@ pub mod testing {
         
         pub enum BenchResult {
             Success { duration: std::time::Duration },
-            Error(String),
+            CursedError(String),
         }
     }
 }

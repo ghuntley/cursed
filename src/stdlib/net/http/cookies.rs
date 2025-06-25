@@ -1,9 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP cookie management for CURSED networking
 
 use std::collections::HashMap;
 use std::time::SystemTime;
-use crate::stdlib::net::error::{NetError, NetResult};
+// use crate::stdlib::net::error::{NetError, NetResult};
 
 /// HTTP cookie representation
 #[derive(Debug, Clone)]

@@ -3,7 +3,7 @@
 // Provides command-line interface for generating documentation from CURSED projects.
 
 use crate::docs::generator::{DocumentationGenerator, DocGeneratorConfig, DocFormat};
-use crate::error::Error;
+use crate::error::CursedError;
 use clap::{Arg, ArgGroup, Command, value_parser};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -132,7 +132,7 @@ impl DocsCommand {
     }
 
     /// Execute the docs command
-    pub fn execute(matches: &clap::ArgMatches) -> Result<(), Error> {
+    pub fn execute(matches: &clap::ArgMatches) -> crate::error::Result<()> {
         let input_path = matches.get_one::<PathBuf>("input").unwrap();
         let output_path = matches.get_one::<PathBuf>("output").unwrap();
         let format_str = matches.get_one::<String>("format").unwrap();
@@ -141,7 +141,7 @@ impl DocsCommand {
 
         // Parse format
         let format = DocFormat::from_str(format_str)
-            .map_err(|e| Error::General(format!("Invalid format: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Invalid format: {}", e)))?;
 
         // Build configuration
         let mut config = DocGeneratorConfig {
@@ -235,7 +235,7 @@ impl DocsCommand {
     }
 
     /// Generate documentation for the entire CURSED standard library
-    pub fn generate_stdlib_docs(output_dir: &PathBuf, format: DocFormat) -> Result<(), Error> {
+    pub fn generate_stdlib_docs(output_dir: &PathBuf, format: DocFormat) -> crate::error::Result<()> {
         let config = DocGeneratorConfig {
             output_dir: output_dir.clone(),
             format,
@@ -258,12 +258,12 @@ impl DocsCommand {
         if stdlib_path.exists() {
             generator.generate_from_directory(stdlib_path)
         } else {
-            Err(Error::General("Standard library source not found at src/stdlib".to_string()))
+            Err(CursedError::General("Standard library source not found at src/stdlib".to_string()))
         }
     }
 
     /// Generate API documentation for external tools
-    pub fn generate_api_docs(input_dir: &PathBuf, output_dir: &PathBuf) -> Result<(), Error> {
+    pub fn generate_api_docs(input_dir: &PathBuf, output_dir: &PathBuf) -> crate::error::Result<()> {
         let config = DocGeneratorConfig {
             output_dir: output_dir.clone(),
             format: DocFormat::Json,
@@ -288,7 +288,7 @@ impl DocsCommand {
     }
 
     /// Quick documentation generation with sensible defaults
-    pub fn quick_generate(input_path: &PathBuf) -> Result<(), Error> {
+    pub fn quick_generate(input_path: &PathBuf) -> crate::error::Result<()> {
         let output_path = input_path.parent()
             .unwrap_or_else(|| std::path::Path::new("."))
             .join("docs");

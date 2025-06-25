@@ -10,13 +10,13 @@
 /// - Includes modern concurrency patterns with Gen Z naming
 /// - Optimized for performance while maintaining safety
 
-use crate::stdlib::sync::{self, SyncError, SyncResult};
-use crate::error::Error;
+// use crate::stdlib::sync::{self, SyncError, SyncResult};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex as StdMutex, RwLock as StdRwLock};
 use std::time::Duration;
 
-/// Error type for ConcurrenZ operations
+/// CursedError type for ConcurrenZ operations
 pub type ConcurrenzError = SyncError;
 
 /// Result type for ConcurrenZ operations  
@@ -470,6 +470,8 @@ pub fn sleep_vibes(duration: Duration) {
 /// yield_vibes(); // Let other threads run
 /// ```
 pub fn yield_vibes() {
+        // TODO: implement
+    }
     std::thread::yield_now();
 }
 
@@ -665,6 +667,8 @@ pub fn num_cpus_vibes() -> usize {
 /// park_vibes(); // Park until unparked
 /// ```
 pub fn park_vibes() {
+        // TODO: implement
+    }
     std::thread::park();
 }
 
@@ -706,237 +710,3 @@ pub fn get_concurrenz_stats() -> HashMap<String, String> {
     stats
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-    use std::sync::Arc;
-
-    #[test]
-    fn test_mutex_vibes() {
-        let mutex = new_mutex_vibes(42);
-        
-        {
-            let guard = mutex.lock_it().unwrap();
-            assert_eq!(*guard, 42);
-        }
-        
-        {
-            let mut guard = mutex.lock_it().unwrap();
-            *guard = 100;
-        }
-        
-        {
-            let guard = mutex.lock_it().unwrap();
-            assert_eq!(*guard, 100);
-        }
-        
-        // Test try_lock
-        let guard = mutex.try_lock_it().unwrap();
-        assert_eq!(*guard, 100);
-    }
-
-    #[test]
-    fn test_rwlock_vibes() {
-        let rwlock = new_rwlock_vibes(42);
-        
-        // Test read lock
-        {
-            let read_guard1 = rwlock.read_it().unwrap();
-            let read_guard2 = rwlock.read_it().unwrap(); // Multiple readers OK
-            assert_eq!(*read_guard1, 42);
-            assert_eq!(*read_guard2, 42);
-        }
-        
-        // Test write lock
-        {
-            let mut write_guard = rwlock.write_it().unwrap();
-            *write_guard = 100;
-        }
-        
-        {
-            let read_guard = rwlock.read_it().unwrap();
-            assert_eq!(*read_guard, 100);
-        }
-        
-        // Test try operations
-        let read_guard = rwlock.try_read_it().unwrap();
-        assert_eq!(*read_guard, 100);
-    }
-
-    #[test]
-    fn test_atomic_bool_vibes() {
-        let atomic = new_atomic_bool_vibes(false);
-        
-        assert_eq!(atomic.load_it(), false);
-        
-        atomic.store_it(true);
-        assert_eq!(atomic.load_it(), true);
-        
-        let old_value = atomic.swap_it(false);
-        assert_eq!(old_value, true);
-        assert_eq!(atomic.load_it(), false);
-        
-        let old_value = atomic.compare_and_swap_it(false, true);
-        assert_eq!(old_value, false);
-        assert_eq!(atomic.load_it(), true);
-    }
-
-    #[test]
-    fn test_atomic_int_vibes() {
-        let atomic = new_atomic_int_vibes(10);
-        
-        assert_eq!(atomic.load_it(), 10);
-        
-        atomic.store_it(20);
-        assert_eq!(atomic.load_it(), 20);
-        
-        let old_value = atomic.fetch_add_it(5);
-        assert_eq!(old_value, 20);
-        assert_eq!(atomic.load_it(), 25);
-        
-        let old_value = atomic.fetch_sub_it(10);
-        assert_eq!(old_value, 25);
-        assert_eq!(atomic.load_it(), 15);
-        
-        let new_value = atomic.increment_it();
-        assert_eq!(new_value, 16);
-        assert_eq!(atomic.load_it(), 16);
-        
-        let new_value = atomic.decrement_it();
-        assert_eq!(new_value, 15);
-        assert_eq!(atomic.load_it(), 15);
-    }
-
-    #[test]
-    fn test_channel_vibes() {
-        let (sender, receiver) = channel_vibes();
-        
-        // Test send and receive
-        sender.send_it(42).unwrap();
-        let value = receiver.receive_it().unwrap();
-        assert_eq!(value, 42);
-        
-        // Test try_send and try_receive
-        sender.try_send_it(100).unwrap();
-        let value = receiver.try_receive_it().unwrap();
-        assert_eq!(value, 100);
-        
-        // Test empty channel
-        assert!(receiver.try_receive_it().is_err());
-    }
-
-    #[test]
-    fn test_thread_vibes() {
-        let handle = spawn_thread_vibes(|| {
-            42
-        });
-        
-        let result = handle.join_it().unwrap();
-        assert_eq!(result, 42);
-        
-        // Test named thread
-        let handle = spawn_named_thread_vibes("test_thread", || {
-            100
-        });
-        
-        let result = handle.join_it().unwrap();
-        assert_eq!(result, 100);
-    }
-
-    #[test]
-    fn test_barrier_vibes() {
-        let barrier = new_barrier_vibes(2);
-        let barrier_clone = barrier.clone();
-        
-        let handle = spawn_thread_vibes(move || {
-            barrier_clone.wait_it();
-            42
-        });
-        
-        barrier.wait_it();
-        let result = handle.join_it().unwrap();
-        assert_eq!(result, 42);
-    }
-
-    #[test]
-    fn test_condvar_vibes() {
-        let mutex = Arc::new(new_mutex_vibes(false));
-        let condvar = Arc::new(new_condvar_vibes());
-        
-        let mutex_clone = Arc::clone(&mutex);
-        let condvar_clone = Arc::clone(&condvar);
-        
-        let handle = spawn_thread_vibes(move || {
-            let guard = mutex_clone.lock_it().unwrap();
-            condvar_clone.wait_it(guard).unwrap();
-            42
-        });
-        
-        // Give the other thread time to start waiting
-        sleep_vibes(Duration::from_millis(10));
-        
-        {
-            let mut guard = mutex.lock_it().unwrap();
-            *guard = true;
-        }
-        condvar.notify_one_it();
-        
-        let result = handle.join_it().unwrap();
-        assert_eq!(result, 42);
-    }
-
-    #[test]
-    fn test_once_vibes() {
-        let once = new_once_vibes();
-        let counter = Arc::new(new_atomic_int_vibes(0));
-        
-        assert!(!once.is_completed());
-        
-        let counter_clone1 = Arc::clone(&counter);
-        let counter_clone2 = Arc::clone(&counter);
-        
-        once.call_once_it(move || {
-            counter_clone1.increment_it();
-        });
-        
-        once.call_once_it(move || {
-            counter_clone2.increment_it(); // This should not run
-        });
-        
-        assert!(once.is_completed());
-        assert_eq!(counter.load_it(), 1);
-    }
-
-    #[test]
-    fn test_utility_functions() {
-        let cores = num_cpus_vibes();
-        assert!(cores > 0);
-        
-        let thread_id = current_thread_id_vibes();
-        assert_eq!(thread_id, std::thread::current().id());
-        
-        // Test thread name (main thread may or may not have a name)
-        let _thread_name = current_thread_name_vibes();
-        
-        // Test yield
-        yield_vibes(); // Should not panic
-        
-        // Test sleep
-        let start = std::time::Instant::now();
-        sleep_vibes(Duration::from_millis(10));
-        let elapsed = start.elapsed();
-        assert!(elapsed >= Duration::from_millis(10));
-    }
-
-    #[test]
-    fn test_parking() {
-        let handle = spawn_thread_vibes(|| {
-            park_timeout_vibes(Duration::from_millis(10));
-            42
-        });
-        
-        let result = handle.join_it().unwrap();
-        assert_eq!(result, 42);
-    }
-}

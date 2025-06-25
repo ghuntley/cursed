@@ -1,4 +1,4 @@
-use crate::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 
 #[derive(Debug, Clone)]
 pub struct DebugContext {
@@ -11,7 +11,7 @@ pub struct DebugContext {
 pub enum ErrorSeverity {
     Info,
     Warning,
-    Error,
+    CursedError,
     Critical,
 }
 
@@ -25,7 +25,7 @@ impl DebugContextBuilder {
             context: DebugContext {
                 message,
                 location: None,
-                severity: ErrorSeverity::Error,
+                severity: ErrorSeverity::CursedError,
             },
         }
     }
@@ -45,18 +45,18 @@ impl DebugContextBuilder {
     }
 }
 
-pub type DebugResult<T> = Result<T, Error>;
+pub type DebugResult<T> = crate::error::Result<T>;
 
 pub trait IntoDebugContext {
     fn into_debug_context(self) -> DebugContext;
 }
 
-impl IntoDebugContext for Error {
-    fn into_debug_context(self) -> DebugContext {
-        DebugContext {
-            message: self.to_string(),
-            location: None,
-            severity: ErrorSeverity::Error,
-        }
-    }
-}
+// impl IntoDebugContext for CursedError {
+//     fn into_debug_context(self) -> DebugContext {
+//         DebugContext {
+//             message: self.to_string(),
+//             location: None,
+//             severity: ErrorSeverity::CursedError,
+//         }
+//     }
+// }

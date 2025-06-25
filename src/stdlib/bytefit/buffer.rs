@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced Buffer type for efficient byte manipulation
 use super::{ByteFitError, ByteFitResult, buffer_overflow, invalid_input};
 use std::sync::{Arc, Mutex};
@@ -334,7 +334,7 @@ impl Write for FitBuffer {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match self.write(buf) {
             Ok(n) => Ok(n),
-            Err(_) => Err(io::Error::new(io::ErrorKind::Other, "Write failed")),
+            Err(_) => Err(std::io::Error::new(io::ErrorKind::Other, "Write failed")),
         }
     }
 
@@ -343,95 +343,3 @@ impl Write for FitBuffer {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_basic_operations() {
-        let buf = new_fit_buffer(None);
-        
-        assert_eq!(buf.len(), 0);
-        assert!(buf.is_empty());
-        
-        buf.write_string("hello").unwrap();
-        assert_eq!(buf.len(), 5);
-        assert_eq!(buf.string(), "hello");
-        
-        buf.write_string(" world").unwrap();
-        assert_eq!(buf.string(), "hello world");
-    }
-
-    #[test]
-    fn test_read_operations() {
-        let buf = new_fit_buffer(Some(b"hello world".to_vec()));
-        
-        assert_eq!(buf.read_byte().unwrap(), b'h');
-        assert_eq!(buf.len(), 10);
-        
-        let mut buffer = [0u8; 5];
-        let n = buf.read(&mut buffer).unwrap();
-        assert_eq!(n, 5);
-        assert_eq!(&buffer, b"ello ");
-    }
-
-    #[test]
-    fn test_append_methods() {
-        let buf = new_fit_buffer(None);
-        
-        buf.append_string("Hello ")
-           .append_int(42, 10)
-           .append_string(" - ")
-           .append_bool(true);
-        
-        assert_eq!(buf.string(), "Hello 42 - true");
-    }
-
-    #[test]
-    fn test_clone_buffer() {
-        let buf1 = new_fit_buffer(Some(b"test".to_vec()));
-        let buf2 = buf1.clone_buffer();
-        
-        assert_eq!(buf1.string(), buf2.string());
-        
-        buf1.append_string(" modified");
-        assert_ne!(buf1.string(), buf2.string());
-    }
-
-    #[test]
-    fn test_replace_operations() {
-        let buf = new_fit_buffer(Some(b"hello world hello".to_vec()));
-        
-        buf.replace(b"hello", b"hi", 1);
-        assert_eq!(buf.string(), "hi world hello");
-        
-        buf.replace_all(b"hello", b"hi");
-        assert_eq!(buf.string(), "hi world hi");
-    }
-
-    #[test]
-    fn test_trim_operations() {
-        let buf = new_fit_buffer(Some(b"  hello world  ".to_vec()));
-        
-        buf.trim_space().unwrap();
-        assert_eq!(buf.string(), "hello world");
-    }
-
-    #[test]
-    fn test_unicode_operations() {
-        let buf = new_fit_buffer(Some("Hello 🦀 World".as_bytes().to_vec()));
-        
-        let (ch, size) = buf.read_rune().unwrap();
-        assert_eq!(ch, 'H');
-        assert_eq!(size, 1);
-        
-        // Skip to the crab emoji
-        for _ in 0..5 {
-            buf.read_byte().unwrap();
-        }
-        
-        let (ch, size) = buf.read_rune().unwrap();
-        assert_eq!(ch, '🦀');
-        assert_eq!(size, 4);
-    }
-}

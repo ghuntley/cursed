@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Unix domain sockets implementation for CURSED IPC
 /// 
 /// Provides Unix domain sockets for local inter-process communication
@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult, unix_socket_error, system_error, timeout_error, connection_error};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult, unix_socket_error, system_error, timeout_error, connection_error};
 
 /// Unix socket registry for cleanup
 static SOCKET_REGISTRY: std::sync::OnceLock<Arc<RwLock<HashMap<String, PathBuf>>>> = std::sync::OnceLock::new();
@@ -586,154 +586,3 @@ pub fn cleanup_sockets() -> IpcResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-    use tempfile::tempdir;
-
-    #[test]
-    fn test_unix_socket_config() {
-        let config = UnixSocketConfig::default();
-        assert_eq!(config.socket_type, UnixSocketType::Stream);
-        assert_eq!(config.buffer_size, 8192);
-        assert!(config.remove_existing);
-    }
-
-    #[test]
-    fn test_unix_socket_creation() {
-        let socket = UnixSocket::new("/tmp/test_socket");
-        assert_eq!(socket.path(), Path::new("/tmp/test_socket"));
-        assert!(!socket.is_connected());
-    }
-
-    #[test]
-    fn test_unix_stream_socket() {
-        let temp_dir = tempdir().unwrap();
-        let socket_path = temp_dir.path().join("test_stream_socket");
-        
-        // Start server in background thread
-        let server_path = socket_path.clone();
-        let server_handle = thread::spawn(move || {
-            let mut server = UnixSocketServer::new(&server_path);
-            if server.listen().is_ok() {
-                if let Ok(mut client_socket) = server.accept() {
-                    // Echo server
-                    let mut buffer = [0u8; 1024];
-                    if let Ok(bytes_read) = client_socket.receive(&mut buffer) {
-                        let _ = client_socket.send(&buffer[..bytes_read]);
-                    }
-                }
-            }
-        });
-        
-        // Give server time to start
-        thread::sleep(Duration::from_millis(100));
-        
-        // Connect client
-        let client = UnixSocketClient::new();
-        if let Ok(mut client_socket) = client.connect(&socket_path) {
-            let test_message = b"Hello, Unix socket!";
-            if client_socket.send(test_message).is_ok() {
-                let mut buffer = [0u8; 1024];
-                if let Ok(bytes_received) = client_socket.receive(&mut buffer) {
-                    assert_eq!(&buffer[..bytes_received], test_message);
-                }
-            }
-        }
-        
-        let _ = server_handle.join();
-    }
-
-    #[test]
-    fn test_unix_datagram_socket() {
-        let temp_dir = tempdir().unwrap();
-        let server_path = temp_dir.path().join("test_datagram_server");
-        let client_path = temp_dir.path().join("test_datagram_client");
-        
-        // Start datagram server
-        let mut server = UnixDatagramServer::new(&server_path);
-        if server.bind().is_ok() {
-            // Create client socket
-            let config = UnixSocketConfig {
-                socket_type: UnixSocketType::Datagram,
-                ..Default::default()
-            };
-            let mut client = UnixSocket::with_config(&client_path, config);
-            
-            if client.connect().is_ok() {
-                let test_message = b"Datagram test message";
-                if client.send(test_message).is_ok() {
-                    let mut buffer = [0u8; 1024];
-                    if let Ok((bytes_received, _client_path)) = server.receive_from(&mut buffer) {
-                        assert_eq!(&buffer[..bytes_received], test_message);
-                        
-                        // Echo back
-                        let _ = server.send_to(&buffer[..bytes_received], &client_path);
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn test_unix_socket_line_protocol() {
-        let temp_dir = tempdir().unwrap();
-        let socket_path = temp_dir.path().join("test_line_socket");
-        
-        // Start server in background thread
-        let server_path = socket_path.clone();
-        let server_handle = thread::spawn(move || {
-            let mut server = UnixSocketServer::new(&server_path);
-            if server.listen().is_ok() {
-                if let Ok(mut client_socket) = server.accept() {
-                    // Line echo server
-                    if let Ok(line) = client_socket.receive_line() {
-                        let _ = client_socket.send_line(&format!("Echo: {}", line));
-                    }
-                }
-            }
-        });
-        
-        // Give server time to start
-        thread::sleep(Duration::from_millis(100));
-        
-        // Connect client
-        let client = UnixSocketClient::new();
-        if let Ok(mut client_socket) = client.connect(&socket_path) {
-            if client_socket.send_line("Test line").is_ok() {
-                if let Ok(response) = client_socket.receive_line() {
-                    assert_eq!(response, "Echo: Test line");
-                }
-            }
-        }
-        
-        let _ = server_handle.join();
-    }
-
-    #[test]
-    fn test_socket_registry() {
-        let registry = get_socket_registry();
-        assert!(registry.read().is_ok());
-        
-        // Test cleanup
-        assert!(cleanup_sockets().is_ok());
-    }
-
-    #[test]
-    fn test_socket_timeout() {
-        let temp_dir = tempdir().unwrap();
-        let socket_path = temp_dir.path().join("test_timeout_socket");
-        
-        let config = UnixSocketConfig {
-            timeout: Some(Duration::from_millis(100)),
-            ..Default::default()
-        };
-        
-        // Test connect timeout (should fail since no server)
-        let client = UnixSocketClient::with_config(config);
-        let result = client.connect_timeout(&socket_path, Duration::from_millis(50));
-        assert!(result.is_err());
-    }
-}

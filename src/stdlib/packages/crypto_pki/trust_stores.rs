@@ -12,7 +12,7 @@
 /// - Trust policy enforcement and validation
 /// - Comprehensive error handling and security validation
 
-use crate::stdlib::packages::crypto_pki::{
+// use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult},
     types::*,
 };
@@ -22,6 +22,7 @@ use std::time::{SystemTime, Duration, UNIX_EPOCH};
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::io::{Read, Write};
+use crate::error::CursedError;
 
 /// Core trust store manager with comprehensive certificate validation
 #[derive(Debug)]
@@ -399,9 +400,9 @@ pub enum TrustLevel {
 /// Trust validation error
 #[derive(Debug, Clone)]
 pub struct TrustValidationError {
-    /// Error code
+    /// CursedError code
     pub code: TrustErrorCode,
-    /// Error message
+    /// CursedError message
     pub message: String,
     /// Certificate causing error
     pub certificate: Option<X509Certificate>,

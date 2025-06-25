@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// exec_vibez - Enhanced external command execution for CURSED
 /// 
 /// This module provides comprehensive functionality for executing external commands
@@ -24,7 +24,6 @@ pub use groups::{ProcessGroup, ProcessGroupOptions, NewProcessGroup};
 pub use environment::{Environment, NewEnvironment, CommandWithEnv};
 pub use streaming::{OutputStreamer, NewOutputStreamer, InputGenerator, NewInputGenerator};
 pub use timeout::{RunWithTimeout, TimeoutConfig};
-pub use error::{Error as ExecError, ExecResult};
 pub use context::{ProcessContext, VibeContext};
 pub use enhanced::{
     // Enhanced features
@@ -37,7 +36,7 @@ pub use enhanced::{
 
 // Module initialization
 use std::sync::Once;
-use crate::stdlib::process::info::ProcessState;
+// use crate::stdlib::process::info::ProcessState;
 
 static INIT: Once = Once::new();
 
@@ -85,14 +84,15 @@ pub enum ContextError {
     ContextSetup(String),
 }
 
-impl std::fmt::Display for ContextError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ContextError::InvalidContext(msg) => write!(f, "Invalid context: {}", msg),
-            ContextError::MissingContext => write!(f, "Missing context"),
-            ContextError::ContextSetup(msg) => write!(f, "Context setup error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for ContextError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ContextError::InvalidContext(msg) => write!(f, "Invalid context: {}", msg),
+//             ContextError::MissingContext => write!(f, "Missing context"),
+//             ContextError::ContextSetup(msg) => write!(f, "Context setup error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ContextError {}
+// impl std::error::CursedError for ContextError {}
+// 

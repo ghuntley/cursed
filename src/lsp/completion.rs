@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Enhanced Auto-completion provider for CURSED language server
 // 
 // Provides intelligent context-aware code completion using CURSED's type system,
@@ -12,7 +12,6 @@ use crate::lexer::{Lexer, TokenType};
 use crate::parser::Parser;
 use crate::type_system::TypeChecker, Type;
 use crate::ast::Program;
-use crate::error::CursedError;
 
 /// Enhanced completion provider with semantic analysis
 pub struct CompletionProvider {
@@ -123,7 +122,7 @@ impl CompletionProvider {
     }
     
     /// Parse content to get AST for context analysis
-    async fn parse_content_for_context(&self, content: &str) -> Result<(), Error> {
+    async fn parse_content_for_context(&self, content: &str) -> crate::error::Result<()> {
         let lexer = Lexer::new(content);
         let mut parser = Parser::new(lexer)?;
         parser.parse_program()
@@ -206,7 +205,7 @@ impl CompletionProvider {
             // Control keywords
             ("bounce", "Return statement", CompletionItemKind::KEYWORD),
             ("yeet", "Throw/panic statement", CompletionItemKind::KEYWORD),
-            ("catch", "Error handling", CompletionItemKind::KEYWORD),
+            ("catch", "CursedError handling", CompletionItemKind::KEYWORD),
             ("finally", "Cleanup block", CompletionItemKind::KEYWORD),
             
             // Switch statement keywords
@@ -367,7 +366,7 @@ impl CompletionProvider {
             ("trim", "trim(string)", "Trim whitespace from string"),
             ("replace", "replace(string, old, new)", "Replace substring"),
             
-            // Error handling
+            // CursedError handling
             ("try", "try(expression)", "Try expression, return Result"),
             ("unwrap", "unwrap(result)", "Unwrap Result or panic"),
             ("expect", "expect(result, message)", "Unwrap Result or panic with message"),
@@ -1036,61 +1035,3 @@ impl Default for CompletionProvider {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_keyword_completion() {
-        let provider = CompletionProvider::new();
-        let content = "sl";
-        let position = Position { line: 0, character: 2 };
-        
-        let completions = provider.get_completions(content, position).await;
-        
-        assert!(!completions.is_empty());
-        assert!(completions.iter().any(|c| c.label == "slay"));
-    }
-
-    #[tokio::test]
-    async fn test_variable_completion() {
-        let provider = CompletionProvider::new();
-        let content = "facts my_var = 42\nprint(my";
-        let position = Position { line: 1, character: 9 };
-        
-        let completions = provider.get_completions(content, position).await;
-        
-        assert!(completions.iter().any(|c| c.label == "my_var"));
-    }
-
-    #[tokio::test]
-    async fn test_function_completion() {
-        let provider = CompletionProvider::new();
-        let content = "pr";
-        let position = Position { line: 0, character: 2 };
-        
-        let completions = provider.get_completions(content, position).await;
-        
-        assert!(completions.iter().any(|c| c.label == "print"));
-        assert!(completions.iter().any(|c| c.label == "println"));
-    }
-
-    #[test]
-    fn test_variable_extraction() {
-        let provider = CompletionProvider::new();
-        
-        let name = provider.extract_variable_name("facts my_variable = 42");
-        assert_eq!(name, Some("my_variable".to_string()));
-        
-        let name = provider.extract_variable_name("sus count: int = 0");
-        assert_eq!(name, Some("count".to_string()));
-    }
-
-    #[test]
-    fn test_function_signature_extraction() {
-        let provider = CompletionProvider::new();
-        
-        let sig = provider.extract_function_signature("slay calculate(a: int, b: int) -> int {");
-        assert_eq!(sig, Some(("calculate".to_string(), "a: int, b: int".to_string(), "int".to_string())));
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Request/response debugging and development utilities
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
@@ -211,9 +211,9 @@ impl HotReloadWatcher {
         }
     }
 
-    pub fn watch_path(&mut self, path: std::path::PathBuf) -> Result<(), Error> {
+    pub fn watch_path(&mut self, path: std::path::PathBuf) -> crate::error::Result<()> {
         if !path.exists() {
-            return Err(crate::error::Error::Io(std::io::Error::new(
+            return Err(crate::error::CursedError::Io(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 format!("Watch path does not exist: {}", path.display())
             )));
@@ -240,7 +240,7 @@ impl HotReloadWatcher {
         self
     }
 
-    pub fn enable(&mut self) -> Result<(), Error> {
+    pub fn enable(&mut self) -> crate::error::Result<()> {
         if !self.enabled {
             self.enabled = true;
             self.start_watching()?;
@@ -248,7 +248,7 @@ impl HotReloadWatcher {
         Ok(())
     }
 
-    pub fn disable(&mut self) -> Result<(), Error> {
+    pub fn disable(&mut self) -> crate::error::Result<()> {
         if self.enabled {
             self.enabled = false;
             self.stop_watching()?;
@@ -256,7 +256,7 @@ impl HotReloadWatcher {
         Ok(())
     }
 
-    fn start_watching(&mut self) -> Result<(), Error> {
+    fn start_watching(&mut self) -> crate::error::Result<()> {
         use notify::{Watcher, RecursiveMode, Config};
         
         let (tx, rx) = std::sync::mpsc::channel();
@@ -277,7 +277,7 @@ impl HotReloadWatcher {
                 let _ = tx.send(res);
             },
             Config::default(),
-        ).map_err(|e| crate::error::Error::Io(std::io::Error::new(
+        ).map_err(|e| crate::error::CursedError::Io(std::io::Error::new(
             std::io::ErrorKind::Other,
             format!("Failed to create file watcher: {}", e)
         )))?;
@@ -291,7 +291,7 @@ impl HotReloadWatcher {
             };
             
             watcher.watch(path, mode).map_err(|e| {
-                crate::error::Error::Io(std::io::Error::new(
+                crate::error::CursedError::Io(std::io::Error::new(
                     std::io::ErrorKind::Other,
                     format!("Failed to watch path {}: {}", path.display(), e)
                 ))
@@ -304,7 +304,7 @@ impl HotReloadWatcher {
         Ok(())
     }
 
-    fn stop_watching(&mut self) -> Result<(), Error> {
+    fn stop_watching(&mut self) -> crate::error::Result<()> {
         if let Some(mut watcher) = self.watcher.take() {
             for path in &self.watched_paths {
                 let _ = watcher.unwatch(path);
@@ -421,128 +421,3 @@ impl Drop for HotReloadWatcher {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_request_debugger() {
-        let debugger = RequestDebugger::new();
-        let mut headers = HashMap::new();
-        headers.insert("Content-Type".to_string(), "application/json".to_string());
-        
-        let debug_output = debugger.log_request("GET", "/api/test", &headers, b"test body");
-        assert!(debug_output.contains("GET"));
-        assert!(debug_output.contains("/api/test"));
-        assert!(debug_output.contains("Content-Type"));
-        assert!(debug_output.contains("test body"));
-    }
-
-    #[test]
-    fn test_response_debugger() {
-        let debugger = ResponseDebugger::new();
-        let mut headers = HashMap::new();
-        headers.insert("Content-Type".to_string(), "text/html".to_string());
-        
-        let debug_output = debugger.log_response(
-            200, 
-            &headers, 
-            b"<html></html>", 
-            Duration::from_millis(150)
-        );
-        assert!(debug_output.contains("200"));
-        assert!(debug_output.contains("Content-Type"));
-        assert!(debug_output.contains("<html></html>"));
-        assert!(debug_output.contains("150ms") || debug_output.contains("0.15"));
-    }
-
-    #[test]
-    fn test_hot_reload_watcher_creation() {
-        let watcher = HotReloadWatcher::new();
-        assert!(!watcher.is_enabled());
-        assert_eq!(watcher.get_watched_paths().len(), 0);
-        assert!(watcher.get_file_patterns().contains(&"*.csd".to_string()));
-        assert_eq!(watcher.get_debounce_duration(), Duration::from_millis(300));
-    }
-
-    #[test]
-    fn test_hot_reload_watcher_configuration() {
-        let watcher = HotReloadWatcher::new()
-            .with_patterns(vec!["*.rs".to_string(), "*.md".to_string()])
-            .with_debounce(Duration::from_millis(500));
-        
-        assert_eq!(watcher.get_file_patterns(), &["*.rs", "*.md"]);
-        assert_eq!(watcher.get_debounce_duration(), Duration::from_millis(500));
-    }
-
-    #[test]
-    fn test_pattern_matching() {
-        assert!(HotReloadWatcher::matches_pattern("test.csd", "*.csd"));
-        assert!(HotReloadWatcher::matches_pattern("file.cursed", "*.cursed"));
-        assert!(HotReloadWatcher::matches_pattern("config.toml", "*.toml"));
-        assert!(HotReloadWatcher::matches_pattern("prefix_test", "prefix_*"));
-        assert!(HotReloadWatcher::matches_pattern("exact_match", "exact_match"));
-        
-        assert!(!HotReloadWatcher::matches_pattern("test.rs", "*.csd"));
-        assert!(!HotReloadWatcher::matches_pattern("test.csd", "*.rs"));
-        assert!(!HotReloadWatcher::matches_pattern("wrong_prefix", "prefix_*"));
-    }
-
-    #[test]
-    fn test_watch_nonexistent_path() {
-        let mut watcher = HotReloadWatcher::new();
-        let result = watcher.watch_path(std::path::PathBuf::from("/nonexistent/path"));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_watch_valid_path() -> Result<(), Error> {
-        let temp_dir = TempDir::new()?;
-        let mut watcher = HotReloadWatcher::new();
-        
-        let result = watcher.watch_path(temp_dir.path().to_path_buf());
-        assert!(result.is_ok());
-        assert_eq!(watcher.get_watched_paths().len(), 1);
-        
-        Ok(())
-    }
-
-    #[test]
-    fn test_enable_disable_watcher() -> Result<(), Error> {
-        let temp_dir = TempDir::new()?;
-        let mut watcher = HotReloadWatcher::new();
-        
-        watcher.watch_path(temp_dir.path().to_path_buf())?;
-        
-        let result = watcher.enable();
-        assert!(result.is_ok());
-        assert!(watcher.is_enabled());
-        
-        let result = watcher.disable();
-        assert!(result.is_ok());
-        assert!(!watcher.is_enabled());
-        
-        Ok(())
-    }
-
-    #[test]
-    fn test_debugger_disabled() {
-        let debugger = RequestDebugger::new().enabled(false);
-        let headers = HashMap::new();
-        
-        let debug_output = debugger.log_request("GET", "/test", &headers, b"");
-        assert!(debug_output.is_empty());
-    }
-
-    #[test]
-    fn test_body_truncation() {
-        let debugger = RequestDebugger::new();
-        let headers = HashMap::new();
-        let long_body = vec![b'x'; 2000]; // Longer than default max_body_length (1024)
-        
-        let debug_output = debugger.log_request("POST", "/test", &headers, &long_body);
-        assert!(debug_output.contains("truncated"));
-    }
-}

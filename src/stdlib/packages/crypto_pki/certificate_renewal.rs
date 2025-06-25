@@ -10,7 +10,7 @@
 /// - Comprehensive error handling and recovery
 /// - Certificate backup and restoration
 
-use crate::stdlib::packages::crypto_pki::{
+// use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
     types::*,
     certificate_signing::{CertificateSigner, CertificateSigningRequest},
@@ -18,8 +18,7 @@ use crate::stdlib::packages::crypto_pki::{
     validation::ValidationResult,
     chain_validation::{ChainValidator, ValidationContext},
 };
-use crate::error::Error;
-use crate::error::Error as CursedError;
+use crate::error::CursedError;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
@@ -352,7 +351,7 @@ pub struct RenewalTask {
     pub scheduled_at: SystemTime,
     /// Retry attempt number
     pub retry_attempt: u32,
-    /// Error details if failed
+    /// CursedError details if failed
     pub error_details: Option<String>,
     /// Progress percentage (0-100)
     pub progress_percentage: u8,
@@ -520,9 +519,9 @@ pub enum RenewalResult {
     },
     /// Renewal failed
     Failed {
-        /// Error message
+        /// CursedError message
         error: String,
-        /// Error code
+        /// CursedError code
         error_code: String,
         /// Whether retry is recommended
         retry_recommended: bool,
@@ -1873,7 +1872,7 @@ impl Default for MonitoringConfig {
 /// Public API functions for certificate renewal
 
 /// Initialize certificate renewal system
-pub fn init_certificate_renewal(config: RenewalConfig) -> Result<(), Error> {
+pub fn init_certificate_renewal(config: RenewalConfig) -> crate::error::Result<()> {
     // Global renewal manager would be initialized here
     println!("🔄 Certificate Renewal System initialized");
     println!("   ✅ ACME protocol support (Let's Encrypt)");
@@ -1887,7 +1886,7 @@ pub fn init_certificate_renewal(config: RenewalConfig) -> Result<(), Error> {
 }
 
 /// Create a new certificate renewal manager
-pub fn create_renewal_manager(config: RenewalConfig) -> Result<(), Error> {
+pub fn create_renewal_manager(config: RenewalConfig) -> crate::error::Result<()> {
     let mut manager = CertificateRenewalManager::new(config);
     manager.initialize()
         .map_err(|e| CursedError::Runtime(format!("Failed to initialize renewal manager: {}", e)))?;
@@ -1902,7 +1901,7 @@ pub fn add_certificate_to_monitoring(
     certificate_path: PathBuf,
     private_key_path: PathBuf,
     monitoring_config: CertificateMonitoringConfig,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     manager.add_certificate_to_monitoring(certificate_id, certificate, certificate_path, private_key_path, monitoring_config)
         .map_err(|e| CursedError::Runtime(format!("Failed to add certificate to monitoring: {}", e)))
 }
@@ -1912,7 +1911,7 @@ pub fn trigger_certificate_renewal(
     manager: &mut CertificateRenewalManager,
     certificate_id: &str,
     renewal_method: Option<RenewalMethod>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     manager.trigger_manual_renewal(certificate_id, renewal_method)
         .map_err(|e| CursedError::Runtime(format!("Failed to trigger certificate renewal: {}", e)))
 }
@@ -1921,7 +1920,7 @@ pub fn trigger_certificate_renewal(
 pub fn get_certificate_renewal_status(
     manager: &CertificateRenewalManager,
     certificate_id: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     manager.get_certificate_status(certificate_id)
         .map_err(|e| CursedError::Runtime(format!("Failed to get certificate status: {}", e)))
 }
@@ -1929,7 +1928,7 @@ pub fn get_certificate_renewal_status(
 /// Get renewal statistics
 pub fn get_renewal_statistics(
     manager: &CertificateRenewalManager,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     manager.get_renewal_statistics()
         .map_err(|e| CursedError::Runtime(format!("Failed to get renewal statistics: {}", e)))
 }

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Vibez - CURSED formatting and printing utilities with Gen Z flair
 /// 
 /// This module provides comprehensive formatting and printing functionality
@@ -46,6 +46,8 @@ static INIT: Once = Once::new();
 
 /// Initialize the vibez module
 pub fn initialize() {
+        // TODO: implement
+    }
     INIT.call_once(|| {
         debug::init_debug_system();
     });

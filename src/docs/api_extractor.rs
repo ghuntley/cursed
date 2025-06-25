@@ -3,7 +3,7 @@
 // Extracts comprehensive API documentation from the CURSED standard library and Rust source code.
 
 use crate::docs::generator::{ExtractedDocumentation, DocumentationItem, ItemKind, Visibility, Parameter, Example, SourceInfo};
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -35,10 +35,10 @@ impl ApiExtractor {
     }
 
     /// Extract all standard library documentation
-    pub fn extract_stdlib_documentation(&self) -> Result<(), Error> {
+    pub fn extract_stdlib_documentation(&self) -> crate::error::Result<()> {
         let stdlib_path = self.base_path.join("src/stdlib");
         if !stdlib_path.exists() {
-            return Err(Error::General("Standard library path not found".to_string()));
+            return Err(CursedError::General("Standard library path not found".to_string()));
         }
 
         let mut all_docs = Vec::new();
@@ -92,7 +92,7 @@ impl ApiExtractor {
     }
 
     /// Extract documentation from a specific module directory
-    fn extract_module_documentation(&self, module_path: &Path, module_name: &str, description: &str) -> Result<(), Error> {
+    fn extract_module_documentation(&self, module_path: &Path, module_name: &str, description: &str) -> crate::error::Result<()> {
         let mut docs = Vec::new();
 
         // Main module file
@@ -129,8 +129,8 @@ impl ApiExtractor {
     }
 
     /// Extract documentation from a Rust source file
-    fn extract_rust_file_documentation(&self, file_path: &Path) -> Result<(), Error> {
-        let source = fs::read_to_string(file_path).map_err(Error::Io)?;
+    fn extract_rust_file_documentation(&self, file_path: &Path) -> crate::error::Result<()> {
+        let source = fs::read_to_string(file_path).map_err(CursedError::Io)?;
         let module_name = self.derive_module_name(file_path);
         
         let mut items = Vec::new();
@@ -153,7 +153,7 @@ impl ApiExtractor {
     }
 
     /// Parse Rust source code for documentable items
-    fn parse_rust_source(&self, source: &str) -> Result<(), Error> {
+    fn parse_rust_source(&self, source: &str) -> crate::error::Result<()> {
         let mut items = Vec::new();
         let lines: Vec<&str> = source.split("\n").collect();
         
@@ -185,7 +185,7 @@ impl ApiExtractor {
     }
 
     /// Extract documentation comment block
-    fn extract_doc_block(&self, lines: &[&str], start: usize) -> Result<(), Error> {
+    fn extract_doc_block(&self, lines: &[&str], start: usize) -> crate::error::Result<()> {
         let mut doc_lines = Vec::new();
         let mut end = start;
         
@@ -209,7 +209,7 @@ impl ApiExtractor {
     }
 
     /// Find the item being documented after doc comments
-    fn find_documented_item(&self, lines: &[&str], doc_end: usize, doc_content: &str) -> Result<(), Error> {
+    fn find_documented_item(&self, lines: &[&str], doc_end: usize, doc_content: &str) -> crate::error::Result<()> {
         // Skip empty lines after doc comments
         let mut item_start = doc_end + 1;
         while item_start < lines.len() && lines[item_start].trim().is_empty() {
@@ -235,7 +235,7 @@ impl ApiExtractor {
     }
 
     /// Parse a Rust item (function, struct, etc.)
-    fn parse_rust_item(&self, line: &str, line_num: usize) -> Result<(), Error> {
+    fn parse_rust_item(&self, line: &str, line_num: usize) -> crate::error::Result<()> {
         let location = SourceLocation {
             line: line_num as u32,
             column: 1,
@@ -281,7 +281,7 @@ impl ApiExtractor {
     }
 
     /// Parse function item
-    fn parse_function_item(&self, line: &str, location: &SourceLocation) -> Result<(), Error> {
+    fn parse_function_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
         let fn_part = if is_public { &line[4..] } else { line };
         
@@ -335,7 +335,7 @@ impl ApiExtractor {
     }
 
     /// Parse struct item
-    fn parse_struct_item(&self, line: &str, location: &SourceLocation) -> Result<(), Error> {
+    fn parse_struct_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
         let struct_part = if is_public { &line[4..] } else { line };
         
@@ -366,7 +366,7 @@ impl ApiExtractor {
     }
 
     /// Parse enum item
-    fn parse_enum_item(&self, line: &str, location: &SourceLocation) -> Result<(), Error> {
+    fn parse_enum_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
         let enum_part = if is_public { &line[4..] } else { line };
         
@@ -397,7 +397,7 @@ impl ApiExtractor {
     }
 
     /// Parse trait item
-    fn parse_trait_item(&self, line: &str, location: &SourceLocation) -> Result<(), Error> {
+    fn parse_trait_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
         let trait_part = if is_public { &line[4..] } else { line };
         
@@ -428,7 +428,7 @@ impl ApiExtractor {
     }
 
     /// Parse type alias item
-    fn parse_type_item(&self, line: &str, location: &SourceLocation) -> Result<(), Error> {
+    fn parse_type_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
         let type_part = if is_public { &line[4..] } else { line };
         
@@ -457,7 +457,7 @@ impl ApiExtractor {
     }
 
     /// Parse constant item
-    fn parse_const_item(&self, line: &str, location: &SourceLocation) -> Result<(), Error> {
+    fn parse_const_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
         let const_part = if is_public { &line[4..] } else { line };
         
@@ -486,7 +486,7 @@ impl ApiExtractor {
     }
 
     /// Parse static variable item
-    fn parse_static_item(&self, line: &str, location: &SourceLocation) -> Result<(), Error> {
+    fn parse_static_item(&self, line: &str, location: &SourceLocation) -> crate::error::Result<()> {
         let is_public = line.starts_with("pub ");
         let static_part = if is_public { &line[4..] } else { line };
         
@@ -515,7 +515,7 @@ impl ApiExtractor {
     }
 
     /// Parse function parameters
-    fn parse_function_parameters(&self, params_str: &str) -> Result<(), Error> {
+    fn parse_function_parameters(&self, params_str: &str) -> crate::error::Result<()> {
         let mut parameters = Vec::new();
         
         if params_str.trim().is_empty() {
@@ -547,7 +547,7 @@ impl ApiExtractor {
     }
 
     /// Parse documentation content
-    fn parse_doc_content(&self, content: &str) -> Result<(), Error> {
+    fn parse_doc_content(&self, content: &str) -> crate::error::Result<()> {
         let lines: Vec<&str> = content.split("\n").collect();
         let mut summary = String::new();
         let mut description_lines = Vec::new();
@@ -632,7 +632,7 @@ impl ApiExtractor {
     }
 
     /// Gather source file information
-    fn gather_source_info(&self, source: &str, file_path: &Path) -> Result<(), Error> {
+    fn gather_source_info(&self, source: &str, file_path: &Path) -> crate::error::Result<()> {
         let file_size = source.len() as u64;
         let line_count = source.split("\n").count();
         
@@ -649,7 +649,7 @@ impl ApiExtractor {
     }
 
     /// Generate comprehensive stdlib API reference
-    pub fn generate_api_reference(&self, output_path: &Path) -> Result<(), Error> {
+    pub fn generate_api_reference(&self, output_path: &Path) -> crate::error::Result<()> {
         let docs = self.extract_stdlib_documentation()?;
         
         // Create comprehensive API reference structure
@@ -664,9 +664,9 @@ impl ApiExtractor {
         });
         
         let api_content = serde_json::to_string_pretty(&api_ref)
-            .map_err(|e| Error::General(format!("Failed to serialize API reference: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to serialize API reference: {}", e)))?;
         
-        fs::write(output_path, api_content).map_err(Error::Io)?;
+        fs::write(output_path, api_content).map_err(CursedError::Io)?;
         Ok(())
     }
 }

@@ -1,7 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Memory mapping and management operations
 use std::ptr;
-use crate::stdlib::sys_core::error::{SysCoreError, SysCoreResult, system_call_error, not_supported, invalid_argument};
+// use crate::stdlib::sys_core::error::{SysCoreError, SysCoreResult, system_call_error, not_supported, invalid_argument};
 
 /// Memory mapping handle
 pub struct MemoryMap {
@@ -368,15 +368,21 @@ pub fn free_memory(ptr: *mut u8, size: usize, alignment: usize) -> SysCoreResult
 
 /// Memory barrier operations
 pub fn memory_barrier() {
+        // TODO: implement
+    }
     std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
 }
 
 /// Read barrier
 pub fn read_barrier() {
+        // TODO: implement
+    }
     std::sync::atomic::fence(std::sync::atomic::Ordering::Acquire);
 }
 
 /// Write barrier
 pub fn write_barrier() {
+        // TODO: implement
+    }
     std::sync::atomic::fence(std::sync::atomic::Ordering::Release);
 }

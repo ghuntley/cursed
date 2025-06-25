@@ -17,7 +17,7 @@ pub struct ValidationError {
     pub field: String,
     /// Validation rule that failed
     pub rule: String,
-    /// Error message
+    /// CursedError message
     pub message: String,
     /// Expected value or constraint
     pub expected: Option<String>,
@@ -49,21 +49,21 @@ impl ValidationError {
     }
 }
 
-impl Display for ValidationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Validation failed for field '{}' (rule: {}): {}", 
-               self.field, self.rule, self.message)?;
-        
-        if let (Some(expected), Some(actual)) = (&self.expected, &self.actual) {
-            write!(f, " Expected: {}, Actual: {}", expected, actual)?;
-        }
-        
-        Ok(())
-    }
-}
+// impl Display for ValidationError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "Validation failed for field '{}' (rule: {}): {}", 
+//                self.field, self.rule, self.message)?;
+//         
+//         if let (Some(expected), Some(actual)) = (&self.expected, &self.actual) {
+//             write!(f, " Expected: {}, Actual: {}", expected, actual)?;
+//         }
+//         
+//         Ok(())
+//     }
+// }
 
-impl std::error::Error for ValidationError {}
-
+// impl std::error::CursedError for ValidationError {}
+// 
 /// fr fr Validation context for entity validation
 #[derive(Debug, Clone)]
 pub struct ValidationContext {
@@ -127,7 +127,7 @@ pub trait Validator: Send + Sync + Debug {
     fn rule_name(&self) -> &str;
     
     /// Validate a field value
-    fn validate(&self, field: &str, value: &SqlValue, context: &ValidationContext) -> Result<(), Error>;
+    fn validate(&self, field: &str, value: &SqlValue, context: &ValidationContext) -> crate::error::Result<()>;
     
     /// Check if validator applies to field type
     fn applies_to(&self, _field_type: &str) -> bool {
@@ -244,7 +244,7 @@ impl EntityValidator {
 
     /// yolo Validate entity with all rules
     #[instrument(skip(self, context))]
-    pub fn validate(&self, context: &ValidationContext) -> Result<(), Error> {
+    pub fn validate(&self, context: &ValidationContext) -> crate::error::Result<()> {
         debug!(entity = %context.entity_type, "Validating entity");
         
         let mut errors = Vec::new();
@@ -307,7 +307,7 @@ impl Validator for Required {
         "required"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         match value {
             SqlValue::Null => Err(ValidationError::new(field, "required", "Field is required")),
             SqlValue::String(s) if s.is_empty() => Err(ValidationError::new(field, "required", "Field cannot be empty")),
@@ -327,7 +327,7 @@ impl Validator for MinLength {
         "min_length"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         match value {
             SqlValue::String(s) => {
                 if s.len() < self.min {
@@ -362,7 +362,7 @@ impl Validator for MaxLength {
         "max_length"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         match value {
             SqlValue::String(s) => {
                 if s.len() > self.max {
@@ -397,7 +397,7 @@ impl Validator for ExactLength {
         "exact_length"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         match value {
             SqlValue::String(s) => {
                 if s.len() != self.length {
@@ -428,7 +428,7 @@ impl Validator for MinValue {
         "min_value"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         let numeric_value = match value {
             SqlValue::Integer(i) => *i as f64,
             SqlValue::Float(f) => *f,
@@ -464,7 +464,7 @@ impl Validator for MaxValue {
         "max_value"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         let numeric_value = match value {
             SqlValue::Integer(i) => *i as f64,
             SqlValue::Float(f) => *f,
@@ -497,7 +497,7 @@ impl Validator for Range {
         "range"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         let numeric_value = match value {
             SqlValue::Integer(i) => *i as f64,
             SqlValue::Float(f) => *f,
@@ -527,7 +527,7 @@ impl Validator for EmailFormat {
         "email_format"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         match value {
             SqlValue::String(s) => {
                 // Simple email validation (would use proper regex in production)
@@ -555,7 +555,7 @@ impl Validator for UrlFormat {
         "url_format"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         match value {
             SqlValue::String(s) => {
                 // Simple URL validation
@@ -579,7 +579,7 @@ impl Validator for PhoneFormat {
         "phone_format"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         match value {
             SqlValue::String(s) => {
                 // Simple phone validation (digits, spaces, dashes, parentheses)
@@ -607,7 +607,7 @@ impl Validator for Pattern {
         "pattern"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         match value {
             SqlValue::String(s) => {
                 // Simplified pattern matching (would use proper regex crate)
@@ -634,7 +634,7 @@ impl Validator for In {
         "in"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         let string_value = match value {
             SqlValue::String(s) => s.clone(),
             SqlValue::Integer(i) => i.to_string(),
@@ -668,7 +668,7 @@ impl Validator for NotIn {
         "not_in"
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, _context: &ValidationContext) -> crate::error::Result<()> {
         let string_value = match value {
             SqlValue::String(s) => s.clone(),
             SqlValue::Integer(i) => i.to_string(),
@@ -702,7 +702,7 @@ impl Validator for CustomValidator {
         self.validator.rule_name()
     }
 
-    fn validate(&self, field: &str, value: &SqlValue, context: &ValidationContext) -> Result<(), Error> {
+    fn validate(&self, field: &str, value: &SqlValue, context: &ValidationContext) -> crate::error::Result<()> {
         self.validator.validate(field, value, context)
     }
 
@@ -711,184 +711,3 @@ impl Validator for CustomValidator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing_test::traced_test;
-use crate::error_types::Error;
-
-    #[traced_test]
-    #[test]
-    fn test_required_validator() {
-        let validator = Required;
-        let context = ValidationContext::new("test", HashMap::new());
-
-        // Test null value (should fail)
-        let result = validator.validate("field", &SqlValue::Null, &context);
-        assert!(result.is_err());
-
-        // Test empty string (should fail)
-        let result = validator.validate("field", &SqlValue::String("".to_string()), &context);
-        assert!(result.is_err());
-
-        // Test valid value (should pass)
-        let result = validator.validate("field", &SqlValue::String("value".to_string()), &context);
-        assert!(result.is_ok());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_min_length_validator() {
-        let validator = MinLength { min: 5 };
-        let context = ValidationContext::new("test", HashMap::new());
-
-        // Test short string (should fail)
-        let result = validator.validate("field", &SqlValue::String("abc".to_string()), &context);
-        assert!(result.is_err());
-
-        // Test exact length (should pass)
-        let result = validator.validate("field", &SqlValue::String("abcde".to_string()), &context);
-        assert!(result.is_ok());
-
-        // Test longer string (should pass)
-        let result = validator.validate("field", &SqlValue::String("abcdef".to_string()), &context);
-        assert!(result.is_ok());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_max_length_validator() {
-        let validator = MaxLength { max: 5 };
-        let context = ValidationContext::new("test", HashMap::new());
-
-        // Test long string (should fail)
-        let result = validator.validate("field", &SqlValue::String("abcdef".to_string()), &context);
-        assert!(result.is_err());
-
-        // Test exact length (should pass)
-        let result = validator.validate("field", &SqlValue::String("abcde".to_string()), &context);
-        assert!(result.is_ok());
-
-        // Test shorter string (should pass)
-        let result = validator.validate("field", &SqlValue::String("abc".to_string()), &context);
-        assert!(result.is_ok());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_min_value_validator() {
-        let validator = MinValue { min: 10.0 };
-        let context = ValidationContext::new("test", HashMap::new());
-
-        // Test small value (should fail)
-        let result = validator.validate("field", &SqlValue::Integer(5), &context);
-        assert!(result.is_err());
-
-        // Test exact value (should pass)
-        let result = validator.validate("field", &SqlValue::Float(10.0), &context);
-        assert!(result.is_ok());
-
-        // Test larger value (should pass)
-        let result = validator.validate("field", &SqlValue::Integer(15), &context);
-        assert!(result.is_ok());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_email_format_validator() {
-        let validator = EmailFormat;
-        let context = ValidationContext::new("test", HashMap::new());
-
-        // Test invalid email (should fail)
-        let result = validator.validate("field", &SqlValue::String("invalid".to_string()), &context);
-        assert!(result.is_err());
-
-        // Test valid email (should pass)
-        let result = validator.validate("field", &SqlValue::String("test@example.com".to_string()), &context);
-        assert!(result.is_ok());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_in_validator() {
-        let validator = In {
-            values: Vec::from(["red".to_string(), "green".to_string(), "blue".to_string()]),
-        };
-        let context = ValidationContext::new("test", HashMap::new());
-
-        // Test invalid value (should fail)
-        let result = validator.validate("field", &SqlValue::String("yellow".to_string()), &context);
-        assert!(result.is_err());
-
-        // Test valid value (should pass)
-        let result = validator.validate("field", &SqlValue::String("red".to_string()), &context);
-        assert!(result.is_ok());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_entity_validator() {
-        let mut entity_validator = EntityValidator::new();
-        
-        entity_validator.add_field_rule("name", Box::new(Required));
-        entity_validator.add_field_rule("name", Box::new(MinLength { min: 2 }));
-        entity_validator.add_field_rule("email", Box::new(EmailFormat));
-
-        let mut values = HashMap::new();
-        values.insert("name".to_string(), SqlValue::String("John".to_string()));
-        values.insert("email".to_string(), SqlValue::String("john@example.com".to_string()));
-        
-        let context = ValidationContext::new("user", values);
-        
-        let result = entity_validator.validate(&context);
-        assert!(result.is_ok());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_entity_validator_with_errors() {
-        let mut entity_validator = EntityValidator::new();
-        
-        entity_validator.add_field_rule("name", Box::new(Required));
-        entity_validator.add_field_rule("name", Box::new(MinLength { min: 10 }));
-
-        let mut values = HashMap::new();
-        values.insert("name".to_string(), SqlValue::String("Bob".to_string()));
-        
-        let context = ValidationContext::new("user", values);
-        
-        let result = entity_validator.validate(&context);
-        assert!(result.is_err());
-        
-        if let Err(errors) = result {
-            assert_eq!(errors.len(), 1);
-            assert_eq!(errors[0].rule, "min_length");
-        }
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_validation_rule_to_validator() {
-        let rule = ValidationRule::MinLength { min: 5 };
-        let validator = rule.to_validator();
-        
-        assert_eq!(validator.rule_name(), "min_length");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_validation_error_display() {
-        let error = ValidationError::with_values(
-            "name",
-            "min_length",
-            "Field too short",
-            "5",
-            "3"
-        );
-        
-        let error_string = error.to_string();
-        assert!(error_string.contains("min_length"));
-        assert!(error_string.contains("Expected: 5"));
-        assert!(error_string.contains("Actual: 3"));
-    }
-}

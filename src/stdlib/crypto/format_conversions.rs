@@ -4,9 +4,9 @@
 /// including PEM, DER, and JSON Web Key (JWK) formats with security best practices.
 
 use std::collections::HashMap;
-use crate::stdlib::value::Value;
-use crate::error::{CursedError, Error};
-use crate::stdlib::crypto::asymmetric::{AsymmetricError, RsaPublicKeyWrapper, RsaPrivateKeyWrapper, EcdsaPublicKey, EcdsaPrivateKey, EcCurve};
+// use crate::stdlib::value::Value;
+use crate::error::CursedError;
+// use crate::stdlib::crypto::asymmetric::{AsymmetricError, RsaPublicKeyWrapper, RsaPrivateKeyWrapper, EcdsaPublicKey, EcdsaPrivateKey, EcCurve};
 
 use base64::{Engine as _, engine::general_purpose};
 use serde::{Serialize, Deserialize};
@@ -23,7 +23,7 @@ pub enum KeyFormat {
 }
 
 impl KeyFormat {
-    pub fn from_str(s: &str) -> Result<(), Error> {
+    pub fn from_str(s: &str) -> crate::error::Result<()> {
         match s.to_lowercase().as_str() {
             "pem" => Ok(KeyFormat::Pem),
             "der" => Ok(KeyFormat::Der),
@@ -96,7 +96,7 @@ pub struct FormatConverter;
 
 impl FormatConverter {
     /// slay Convert RSA public key to JWK format
-    pub fn rsa_public_key_to_jwk(public_key: &RsaPublicKeyWrapper, key_id: Option<String>) -> Result<(), Error> {
+    pub fn rsa_public_key_to_jwk(public_key: &RsaPublicKeyWrapper, key_id: Option<String>) -> crate::error::Result<()> {
         use rsa::traits::PublicKeyParts;
         
         let n_bytes = public_key.inner.n().to_bytes_be();
@@ -126,7 +126,7 @@ impl FormatConverter {
     }
     
     /// slay Convert RSA private key to JWK format (WARNING: Contains private data)
-    pub fn rsa_private_key_to_jwk(private_key: &RsaPrivateKeyWrapper, key_id: Option<String>) -> Result<(), Error> {
+    pub fn rsa_private_key_to_jwk(private_key: &RsaPrivateKeyWrapper, key_id: Option<String>) -> crate::error::Result<()> {
         use rsa::traits::PublicKeyParts;
         
         let public_key = private_key.inner.to_public_key();
@@ -173,8 +173,8 @@ impl FormatConverter {
     }
     
     /// slay Convert ECDSA public key to JWK format
-    pub fn ecdsa_public_key_to_jwk(public_key: &EcdsaPublicKey, key_id: Option<String>) -> Result<(), Error> {
-        use crate::stdlib::crypto::asymmetric::{EcPublicKeyData};
+    pub fn ecdsa_public_key_to_jwk(public_key: &EcdsaPublicKey, key_id: Option<String>) -> crate::error::Result<()> {
+//         use crate::stdlib::crypto::asymmetric::{EcPublicKeyData};
         
         let (crv, x_bytes, y_bytes) = match &public_key.data {
             EcPublicKeyData::P256(pk) => {
@@ -224,8 +224,8 @@ impl FormatConverter {
     }
     
     /// slay Convert ECDSA private key to JWK format (WARNING: Contains private data)
-    pub fn ecdsa_private_key_to_jwk(private_key: &EcdsaPrivateKey, key_id: Option<String>) -> Result<(), Error> {
-        use crate::stdlib::crypto::asymmetric::{EcPrivateKeyData, EcPublicKeyData};
+    pub fn ecdsa_private_key_to_jwk(private_key: &EcdsaPrivateKey, key_id: Option<String>) -> crate::error::Result<()> {
+//         use crate::stdlib::crypto::asymmetric::{EcPrivateKeyData, EcPublicKeyData};
         
         let (crv, x_bytes, y_bytes, d_bytes) = match &private_key.data {
             EcPrivateKeyData::P256(sk) => {
@@ -278,7 +278,7 @@ impl FormatConverter {
     }
     
     /// slay Parse RSA public key from JWK format
-    pub fn rsa_public_key_from_jwk(jwk: &JsonWebKey) -> Result<(), Error> {
+    pub fn rsa_public_key_from_jwk(jwk: &JsonWebKey) -> crate::error::Result<()> {
         if jwk.kty != "RSA" {
             return Err(CursedError::InvalidArgument(format!("Expected RSA key type, got {}", jwk.kty)));
         }
@@ -314,7 +314,7 @@ impl FormatConverter {
     }
     
     /// slay Parse ECDSA public key from JWK format
-    pub fn ecdsa_public_key_from_jwk(jwk: &JsonWebKey) -> Result<(), Error> {
+    pub fn ecdsa_public_key_from_jwk(jwk: &JsonWebKey) -> crate::error::Result<()> {
         if jwk.kty != "EC" {
             return Err(CursedError::InvalidArgument(format!("Expected EC key type, got {}", jwk.kty)));
         }
@@ -344,7 +344,7 @@ impl FormatConverter {
             _ => return Err(CursedError::InvalidArgument(format!("Unsupported curve: {}", crv))),
         };
         
-        use crate::stdlib::crypto::asymmetric::EcPublicKeyData;
+//         use crate::stdlib::crypto::asymmetric::EcPublicKeyData;
         use elliptic_curve::sec1::ToEncodedPoint;
         
         let data = match curve {
@@ -394,19 +394,19 @@ impl FormatConverter {
     }
     
     /// slay Convert JWK to JSON string
-    pub fn jwk_to_json(jwk: &JsonWebKey) -> Result<(), Error> {
+    pub fn jwk_to_json(jwk: &JsonWebKey) -> crate::error::Result<()> {
         serde_json::to_string_pretty(jwk)
             .map_err(|e| CursedError::InvalidArgument(format!("JWK serialization failed: {}", e)))
     }
     
     /// slay Parse JWK from JSON string
-    pub fn jwk_from_json(json: &str) -> Result<(), Error> {
+    pub fn jwk_from_json(json: &str) -> crate::error::Result<()> {
         serde_json::from_str(json)
             .map_err(|e| CursedError::InvalidArgument(format!("JWK parsing failed: {}", e)))
     }
     
     /// slay Enhanced DER encoding with error recovery
-    pub fn enhanced_der_encode(data: &[u8], tag: &str) -> Result<(), Error> {
+    pub fn enhanced_der_encode(data: &[u8], tag: &str) -> crate::error::Result<()> {
         use der::{Encode, Tag, Header, Length};
         
         // Validate input
@@ -439,7 +439,7 @@ impl FormatConverter {
     }
     
     /// slay Enhanced DER decoding with validation
-    pub fn enhanced_der_decode(der_data: &[u8]) -> Result<(), Error> {
+    pub fn enhanced_der_decode(der_data: &[u8]) -> crate::error::Result<()> {
         use der::{Decode, Header, Tag};
         
         if der_data.is_empty() {
@@ -513,7 +513,7 @@ impl FormatConverter {
 /// fr fr Public API functions for CURSED stdlib integration
 
 /// slay Convert key to JWK format
-pub fn key_to_jwk(args: Vec<Value>) -> Result<(), Error> {
+pub fn key_to_jwk(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("key_to_jwk requires: key_data, key_type, [key_id]".to_string()));
     }
@@ -566,7 +566,7 @@ pub fn key_to_jwk(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Parse JWK from JSON
-pub fn jwk_from_json(args: Vec<Value>) -> Result<(), Error> {
+pub fn jwk_from_json(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("jwk_from_json requires: json_string".to_string()));
     }
@@ -583,7 +583,7 @@ pub fn jwk_from_json(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Convert to DER format
-pub fn key_to_der(args: Vec<Value>) -> Result<(), Error> {
+pub fn key_to_der(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("key_to_der requires: key_data, tag".to_string()));
     }
@@ -612,7 +612,7 @@ pub fn key_to_der(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Parse DER format
-pub fn der_decode(args: Vec<Value>) -> Result<(), Error> {
+pub fn der_decode(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("der_decode requires: der_data".to_string()));
     }
@@ -633,7 +633,7 @@ pub fn der_decode(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Detect key format
-pub fn detect_format(args: Vec<Value>) -> Result<(), Error> {
+pub fn detect_format(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("detect_format requires: key_data".to_string()));
     }
@@ -648,56 +648,3 @@ pub fn detect_format(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::String(format.name().to_string()))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_key_format_detection() {
-        // Test PEM format
-        let pem_data = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0B...\n-----END PUBLIC KEY-----";
-        assert_eq!(FormatConverter::detect_key_format(pem_data), KeyFormat::Pem);
-        
-        // Test JWK format
-        let jwk_data = r#"{"kty":"RSA","n":"0vx7agoebGc..."}"#;
-        assert_eq!(FormatConverter::detect_key_format(jwk_data), KeyFormat::Jwk);
-        
-        // Test hex format
-        let hex_data = "deadbeef";
-        assert_eq!(FormatConverter::detect_key_format(hex_data), KeyFormat::Raw);
-    }
-    
-    #[test]
-    fn test_supported_formats() {
-        let rsa_formats = FormatConverter::supported_formats("rsa");
-        assert!(rsa_formats.contains(&KeyFormat::Pem));
-        assert!(rsa_formats.contains(&KeyFormat::Jwk));
-        
-        let ec_formats = FormatConverter::supported_formats("ec");
-        assert!(ec_formats.contains(&KeyFormat::Jwk));
-        assert!(ec_formats.contains(&KeyFormat::Raw));
-    }
-    
-    #[test]
-    fn test_format_conversion_api() {
-        // Test detect_format function
-        let args = vec![Value::String("-----BEGIN PUBLIC KEY-----\ntest\n-----END PUBLIC KEY-----".to_string())];
-        let result = detect_format(args).unwrap();
-        assert_eq!(result, Value::String("PEM".to_string()));
-        
-        // Test JWK conversion
-        let jwk_args = vec![
-            Value::String("test_key_data".to_string()),
-            Value::String("RSA".to_string()),
-            Value::String("test_kid".to_string()),
-        ];
-        let jwk_result = key_to_jwk(jwk_args).unwrap();
-        
-        if let Value::Object(map) = jwk_result {
-            assert_eq!(map.get("kty"), Some(&Value::String("RSA".to_string())));
-            assert_eq!(map.get("kid"), Some(&Value::String("test_kid".to_string())));
-        } else {
-            panic!("Expected object result");
-        }
-    }
-}

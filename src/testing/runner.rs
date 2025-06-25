@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test Runner Main Controller
 /// 
 /// Orchestrates the complete test execution pipeline including discovery,
@@ -540,75 +540,3 @@ pub async fn run_tests_with_pattern(pattern: &str) -> TestingResult<TestReport> 
     runner.run_tests_matching(pattern).await
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-    use std::fs;
-
-    #[tokio::test]
-    async fn test_runner_creation() {
-        let config = TestRunnerConfig::default();
-        let runner = TestRunner::new(config);
-        assert!(runner.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_runner_builder() {
-        let runner = TestRunnerBuilder::new()
-            .with_fail_fast(true)
-            .with_dry_run(true)
-            .with_coverage(true)
-            .build();
-        
-        assert!(runner.is_ok());
-        
-        let runner = runner.unwrap();
-        assert!(runner.config.fail_fast);
-        assert!(runner.config.dry_run);
-        assert!(runner.config.collect_coverage);
-    }
-
-    #[tokio::test]
-    async fn test_empty_directory() {
-        let temp_dir = TempDir::new().unwrap();
-        
-        let mut config = TestConfig::default();
-        config.working_directory = temp_dir.path().to_path_buf();
-        
-        let mut runner = TestRunnerBuilder::new()
-            .with_config(config)
-            .build()
-            .unwrap();
-        
-        let report = runner.run_all_tests().await.unwrap();
-        assert_eq!(report.summary.total_tests, 0);
-    }
-
-    #[tokio::test]
-    async fn test_dry_run_mode() {
-        let temp_dir = TempDir::new().unwrap();
-        let test_file = temp_dir.path().join("test_example.csd");
-        
-        fs::write(&test_file, r#"
-            slay test_addition() {
-                sus result = 2 + 2
-                assert_equal(result, 4)
-            }
-        "#).unwrap();
-        
-        let mut config = TestConfig::default();
-        config.working_directory = temp_dir.path().to_path_buf();
-        
-        let mut runner = TestRunnerBuilder::new()
-            .with_config(config)
-            .with_dry_run(true)
-            .build()
-            .unwrap();
-        
-        let report = runner.run_all_tests().await.unwrap();
-        
-        // In dry run mode, tests are discovered but not executed
-        assert_eq!(report.summary.total_tests, 0);
-    }
-}

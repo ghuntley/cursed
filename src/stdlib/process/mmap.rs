@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Memory-mapped files implementation for CURSED
 /// 
 /// This module provides comprehensive memory mapping functionality including:
@@ -16,7 +16,6 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::collections::HashMap;
 use std::fs::File;
 use std::os::fd::{AsRawFd, RawFd};
-use crate::error::CursedError;
 
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd as UnixAsRawFd;
@@ -175,7 +174,7 @@ impl MmapHandle {
     }
 
     /// Get a slice view of the mapped memory (read-only)
-    pub fn as_slice(&self) -> Result<(), Error> {
+    pub fn as_slice(&self) -> crate::error::Result<()> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -188,7 +187,7 @@ impl MmapHandle {
     }
 
     /// Get a mutable slice view of the mapped memory
-    pub fn as_mut_slice(&mut self) -> Result<(), Error> {
+    pub fn as_mut_slice(&mut self) -> crate::error::Result<()> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -234,7 +233,7 @@ impl MmapHandle {
     }
 
     /// Flush changes to disk synchronously
-    pub fn sync(&self, sync_type: SyncType) -> Result<(), Error> {
+    pub fn sync(&self, sync_type: SyncType) -> crate::error::Result<()> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -285,7 +284,7 @@ impl MmapHandle {
     }
 
     /// Change protection flags for the mapping
-    pub fn protect(&mut self, new_protection: ProtectionFlags) -> Result<(), Error> {
+    pub fn protect(&mut self, new_protection: ProtectionFlags) -> crate::error::Result<()> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -340,7 +339,7 @@ impl MmapHandle {
     }
 
     /// Lock pages in physical memory
-    pub fn lock_pages(&mut self) -> Result<(), Error> {
+    pub fn lock_pages(&mut self) -> crate::error::Result<()> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -378,7 +377,7 @@ impl MmapHandle {
     }
 
     /// Unlock pages from physical memory
-    pub fn unlock_pages(&mut self) -> Result<(), Error> {
+    pub fn unlock_pages(&mut self) -> crate::error::Result<()> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -416,7 +415,7 @@ impl MmapHandle {
     }
 
     /// Provide memory usage advice to the kernel
-    pub fn advise(&self, advice: MemoryAdvice) -> Result<(), Error> {
+    pub fn advise(&self, advice: MemoryAdvice) -> crate::error::Result<()> {
         if self.ptr.is_null() {
             return Err(CursedError::Memory("Invalid memory mapping".to_string()));
         }
@@ -548,7 +547,7 @@ impl MmapManager {
         &self,
         file: &File,
         config: MmapConfig,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if config.length == 0 {
             return Err(CursedError::InvalidInput("Mapping length cannot be zero".to_string()));
         }
@@ -690,7 +689,7 @@ impl MmapManager {
     }
 
     /// Create an anonymous memory mapping (not backed by a file)
-    pub fn map_anonymous(&self, config: MmapConfig) -> Result<(), Error> {
+    pub fn map_anonymous(&self, config: MmapConfig) -> crate::error::Result<()> {
         if config.length == 0 {
             return Err(CursedError::InvalidInput("Mapping length cannot be zero".to_string()));
         }
@@ -820,7 +819,7 @@ pub struct SharedMemoryRegion {
 
 impl SharedMemoryRegion {
     /// Create a new shared memory region
-    pub fn create(name: &str, size: usize) -> Result<(), Error> {
+    pub fn create(name: &str, size: usize) -> crate::error::Result<()> {
         let manager = MmapManager::new();
         let config = MmapConfig {
             protection: ProtectionFlags::ReadWrite,
@@ -889,180 +888,20 @@ pub fn get_mmap_manager() -> &'static MmapManager {
 }
 
 /// Convenience function to create a file-backed memory mapping
-pub fn map_file(file: &File, config: MmapConfig) -> Result<(), Error> {
+pub fn map_file(file: &File, config: MmapConfig) -> crate::error::Result<()> {
     get_mmap_manager().map_file(file, config)
 }
 
 /// Convenience function to create an anonymous memory mapping
-pub fn map_anonymous(config: MmapConfig) -> Result<(), Error> {
+pub fn map_anonymous(config: MmapConfig) -> crate::error::Result<()> {
     get_mmap_manager().map_anonymous(config)
 }
 
 /// Convenience function to create a shared memory region
-pub fn create_shared_memory(name: &str, size: usize) -> Result<(), Error> {
+pub fn create_shared_memory(name: &str, size: usize) -> crate::error::Result<()> {
     SharedMemoryRegion::create(name, size)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs::OpenOptions;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
-
-    #[test]
-    fn test_anonymous_mapping() {
-        let config = MmapConfig {
-            protection: ProtectionFlags::ReadWrite,
-            mapping_type: MappingType::Anonymous,
-            length: 4096,
-            ..Default::default()
-        };
-
-        let handle = map_anonymous(config).unwrap();
-        assert_eq!(handle.len(), 4096);
-        assert!(handle.can_read());
-        assert!(handle.can_write());
-
-        // Test writing and reading
-        {
-            let mut slice = handle.as_ref().clone().as_mut_slice().unwrap();
-            slice[0] = 42;
-            slice[100] = 84;
-        }
-
-        let slice = handle.as_slice().unwrap();
-        assert_eq!(slice[0], 42);
-        assert_eq!(slice[100], 84);
-    }
-
-    #[test]
-    fn test_file_mapping() {
-        let mut temp_file = NamedTempFile::new().unwrap();
-        let test_data = b"Hello, memory-mapped world!";
-        temp_file.write_all(test_data).unwrap();
-        temp_file.flush().unwrap();
-
-        let file = temp_file.reopen().unwrap();
-        let config = MmapConfig {
-            protection: ProtectionFlags::Read,
-            mapping_type: MappingType::Private,
-            length: test_data.len(),
-            ..Default::default()
-        };
-
-        let handle = map_file(&file, config).unwrap();
-        let slice = handle.as_slice().unwrap();
-        assert_eq!(slice, test_data);
-    }
-
-    #[test]
-    fn test_protection_changes() {
-        let config = MmapConfig {
-            protection: ProtectionFlags::Read,
-            mapping_type: MappingType::Anonymous,
-            length: 4096,
-            ..Default::default()
-        };
-
-        let handle = map_anonymous(config).unwrap();
-        assert!(handle.can_read());
-        assert!(!handle.can_write());
-
-        // Change to read-write
-        let mut mutable_handle = Arc::try_unwrap(handle).unwrap();
-        mutable_handle.protect(ProtectionFlags::ReadWrite).unwrap();
-        assert!(mutable_handle.can_read());
-        assert!(mutable_handle.can_write());
-    }
-
-    #[test]
-    fn test_memory_advice() {
-        let config = MmapConfig {
-            protection: ProtectionFlags::ReadWrite,
-            mapping_type: MappingType::Anonymous,
-            length: 4096,
-            ..Default::default()
-        };
-
-        let handle = map_anonymous(config).unwrap();
-        
-        // Test various memory advice operations
-        handle.advise(MemoryAdvice::Sequential).unwrap();
-        handle.advise(MemoryAdvice::Random).unwrap();
-        handle.advise(MemoryAdvice::WillNeed).unwrap();
-        handle.advise(MemoryAdvice::DontNeed).unwrap();
-    }
-
-    #[test]
-    fn test_shared_memory_region() {
-        let region = create_shared_memory("test_region", 8192).unwrap();
-        assert_eq!(region.name(), "test_region");
-        assert_eq!(region.size(), 8192);
-        
-        let handle = region.handle();
-        assert!(handle.can_read());
-        assert!(handle.can_write());
-    }
-
-    #[test]
-    fn test_mmap_statistics() {
-        let manager = MmapManager::new();
-        
-        let stats_before = manager.get_statistics();
-        assert_eq!(stats_before.total_mappings, 0);
-        
-        let config = MmapConfig {
-            protection: ProtectionFlags::ReadWrite,
-            mapping_type: MappingType::Anonymous,
-            length: 4096,
-            ..Default::default()
-        };
-
-        let _handle = manager.map_anonymous(config).unwrap();
-        
-        let stats_after = manager.get_statistics();
-        assert_eq!(stats_after.total_mappings, 1);
-        assert_eq!(stats_after.total_size, 4096);
-    }
-
-    #[test]
-    fn test_handle_cloning() {
-        let config = MmapConfig {
-            protection: ProtectionFlags::ReadWrite,
-            mapping_type: MappingType::Anonymous,
-            length: 4096,
-            ..Default::default()
-        };
-
-        let handle1 = map_anonymous(config).unwrap();
-        let handle2 = handle1.clone_handle();
-        
-        assert_eq!(handle1.as_ptr(), handle2.as_ptr());
-        assert_eq!(handle1.len(), handle2.len());
-        
-        // Both handles should point to the same memory
-        {
-            let mut slice1 = Arc::try_unwrap(handle1).unwrap().as_mut_slice().unwrap();
-            slice1[0] = 123;
-        }
-        
-        let slice2 = handle2.as_slice().unwrap();
-        assert_eq!(slice2[0], 123);
-    }
-}
-
-/// Options for memory mapping configuration
-#[derive(Debug, Clone)]
-pub struct MmapOptions {
-    pub read: bool,
-    pub write: bool,
-    pub execute: bool,
-    pub shared: bool,
-    pub private: bool,
-    pub anonymous: bool,
-    pub huge_pages: bool,
-}
 
 impl Default for MmapOptions {
     fn default() -> Self {

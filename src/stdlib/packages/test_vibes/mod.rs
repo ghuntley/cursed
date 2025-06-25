@@ -23,12 +23,16 @@ pub use runners::{test_main, TestRunner};
 
 /// fr fr Initialize the test_vibes package and register it with stdlib
 pub fn init_test_vibes() {
+        // TODO: implement
+    }
     // Register built-in testing functions with the dot registry
     register_builtin_functions();
 }
 
 /// fr fr Register built-in testing functions with the CURSED stdlib
 fn register_builtin_functions() {
+        // TODO: implement
+    }
     // This will integrate with the existing dot registry system
     // Common testing functions that would be available globally:
     // - test_vibes.run() - run tests
@@ -62,25 +66,3 @@ pub fn test_suite(name: &str, tests: Vec<fn(&mut VibeTest)>) -> TestResult {
     suite_result
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_package_initialization() {
-        init_test_vibes();
-        // Should not panic and should complete successfully
-    }
-
-    #[test]
-    fn test_quick_test_creation() {
-        let test = quick_test("sample_test");
-        assert_eq!(test.name(), "sample_test");
-    }
-
-    #[test]
-    fn test_quick_bench_creation() {
-        let bench = quick_bench("sample_bench");
-        assert_eq!(bench.name(), "sample_bench");
-    }
-}

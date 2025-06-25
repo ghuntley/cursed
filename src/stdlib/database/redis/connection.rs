@@ -10,7 +10,7 @@ use tracing::{debug, error, info, instrument, warn};
 use tokio::time::timeout;
 
 use super::{DatabaseError, RedisConfig};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Redis connection pool
 #[derive(Debug)]
@@ -47,7 +47,7 @@ pub struct ConnectionPoolStats {
 impl RedisConnectionPool {
     /// Create new connection pool
     #[instrument]
-    pub async fn new(config: &RedisConfig) -> Result<(), Error> {
+    pub async fn new(config: &RedisConfig) -> crate::error::Result<()> {
         info!("Creating Redis connection pool");
         
         let pool = Self {
@@ -68,7 +68,7 @@ impl RedisConnectionPool {
     
     /// Get connection from pool
     #[instrument(skip(self))]
-    pub async fn get_connection(&self) -> Result<(), Error> {
+    pub async fn get_connection(&self) -> crate::error::Result<()> {
         debug!("Getting connection from pool");
         
         // Try to get existing connection
@@ -102,7 +102,7 @@ impl RedisConnectionPool {
     
     /// Return connection to pool
     #[instrument(skip(self, connection))]
-    pub async fn return_connection(&self, connection: RedisConnection) -> Result<(), Error> {
+    pub async fn return_connection(&self, connection: RedisConnection) -> crate::error::Result<()> {
         debug!(connection_id = connection.id, "Returning connection to pool");
         
         // Check if connection is still healthy
@@ -127,7 +127,7 @@ impl RedisConnectionPool {
     
     /// Create new connection
     #[instrument(skip(self))]
-    async fn create_connection(&self) -> Result<(), Error> {
+    async fn create_connection(&self) -> crate::error::Result<()> {
         debug!("Creating new Redis connection");
         
         let connection = RedisConnection::new(&self.config).await?;
@@ -148,7 +148,7 @@ impl RedisConnectionPool {
     
     /// Health check for all connections
     #[instrument(skip(self))]
-    pub async fn health_check(&self) -> Result<(), Error> {
+    pub async fn health_check(&self) -> crate::error::Result<()> {
         debug!("Performing pool health check");
         
         let mut connections = self.connections.lock().unwrap();
@@ -175,14 +175,14 @@ impl RedisConnectionPool {
     
     /// Close all connections in pool
     #[instrument(skip(self))]
-    pub async fn close(&self) -> Result<(), Error> {
+    pub async fn close(&self) -> crate::error::Result<()> {
         info!("Closing Redis connection pool");
         
         let mut connections = self.connections.lock().unwrap();
         
         for connection in connections.drain(..) {
             if let Err(e) = connection.close().await {
-                error!(error = ?e, "Error closing connection");
+                error!(error = ?e, "CursedError closing connection");
             }
         }
         
@@ -200,7 +200,7 @@ impl RedisConnectionPool {
 impl RedisConnection {
     /// Create new Redis connection
     #[instrument]
-    pub async fn new(config: &RedisConfig) -> Result<(), Error> {
+    pub async fn new(config: &RedisConfig) -> crate::error::Result<()> {
         let id = rand::random::<u64>();
         debug!(connection_id = id, "Creating new Redis connection");
         
@@ -240,7 +240,7 @@ impl RedisConnection {
     
     /// Perform health check on connection
     #[instrument(skip(self))]
-    pub async fn health_check(&self) -> Result<(), Error> {
+    pub async fn health_check(&self) -> crate::error::Result<()> {
         debug!(connection_id = self.id, "Performing connection health check");
         
         // Simulate PING command
@@ -267,7 +267,7 @@ impl RedisConnection {
     
     /// Execute Redis command on this connection
     #[instrument(skip(self))]
-    pub async fn execute_command(&mut self, command: &str, args: &[&str]) -> Result<(), Error> {
+    pub async fn execute_command(&mut self, command: &str, args: &[&str]) -> crate::error::Result<()> {
         debug!(connection_id = self.id, command = command, "Executing Redis command");
         
         // Update last used time
@@ -299,7 +299,7 @@ impl RedisConnection {
     
     /// Close the connection
     #[instrument(skip(self))]
-    pub async fn close(self) -> Result<(), Error> {
+    pub async fn close(self) -> crate::error::Result<()> {
         info!(connection_id = self.id, "Closing Redis connection");
         
         // Simulate connection cleanup

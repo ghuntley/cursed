@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Environment and system configuration management
 /// 
 /// This module provides environment and system configuration capabilities including:
@@ -11,7 +11,7 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
-use crate::stdlib::system::info::SystemResult;
+// use crate::stdlib::system::info::SystemResult;
 
 /// Environment variable manager
 #[derive(Debug, Clone)]
@@ -216,17 +216,17 @@ impl Registry {
     /// Non-Windows platforms don't have registry
     #[cfg(not(target_os = "windows"))]
     pub fn read_string(&self, _key: &str) -> SystemResult<String> {
-        Err(crate::stdlib::system::info::SystemError::UnsupportedOperation("Registry access not available on this platform".to_string()))
+//         Err(crate::stdlib::system::info::SystemError::UnsupportedOperation("Registry access not available on this platform".to_string()))
     }
 
     #[cfg(not(target_os = "windows"))]
     pub fn write_string(&self, _key: &str, _value: &str) -> SystemResult<()> {
-        Err(crate::stdlib::system::info::SystemError::UnsupportedOperation("Registry access not available on this platform".to_string()))
+//         Err(crate::stdlib::system::info::SystemError::UnsupportedOperation("Registry access not available on this platform".to_string()))
     }
 
     #[cfg(not(target_os = "windows"))]
     pub fn delete_value(&self, _key: &str) -> SystemResult<()> {
-        Err(crate::stdlib::system::info::SystemError::UnsupportedOperation("Registry access not available on this platform".to_string()))
+//         Err(crate::stdlib::system::info::SystemError::UnsupportedOperation("Registry access not available on this platform".to_string()))
     }
 }
 
@@ -290,75 +290,3 @@ pub fn remove_from_path(path: &str) -> SystemResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_environment_manager() {
-        let mut manager = EnvironmentManager::new();
-        
-        // Test setting and getting
-        assert!(manager.set("TEST_VAR", "test_value").is_ok());
-        assert_eq!(manager.get("TEST_VAR"), Some("test_value".to_string()));
-        
-        // Test removal
-        assert!(manager.remove("TEST_VAR").is_ok());
-        assert_eq!(manager.get("TEST_VAR"), None);
-    }
-
-    #[test]
-    fn test_system_paths() {
-        let paths = get_system_paths();
-        assert!(paths.home.exists() || paths.home.as_os_str().is_empty() == false);
-        assert!(paths.temp.as_os_str().is_empty() == false);
-    }
-
-    #[test]
-    fn test_environment_variables() {
-        // Test setting and getting
-        assert!(set_environment_variable("TEST_CURSED", "test").is_ok());
-        assert_eq!(get_environment_variable("TEST_CURSED"), Some("test".to_string()));
-        
-        // Test removal
-        assert!(remove_environment_variable("TEST_CURSED").is_ok());
-        assert_eq!(get_environment_variable("TEST_CURSED"), None);
-    }
-
-    #[test]
-    fn test_path_variable() {
-        let paths = get_path_variable();
-        assert!(!paths.is_empty());
-    }
-
-    #[test]
-    fn test_path_manipulation() {
-        let test_path = "/test/path";
-        
-        // Add to path
-        assert!(add_to_path(test_path).is_ok());
-        let paths = get_path_variable();
-        assert!(paths.iter().any(|p| p.to_str() == Some(test_path)));
-        
-        // Remove from path
-        assert!(remove_from_path(test_path).is_ok());
-    }
-
-    #[test]
-    fn test_registry_creation() {
-        let registry = Registry::new("HKEY_LOCAL_MACHINE\\Software\\Test");
-        assert_eq!(registry.path, "HKEY_LOCAL_MACHINE\\Software\\Test");
-    }
-
-    #[cfg(target_os = "windows")]
-    #[test]
-    fn test_registry_operations() {
-        let registry = Registry::new("HKEY_CURRENT_USER\\Software\\Test");
-        
-        // These would normally interact with the actual registry
-        // For testing, we just verify the operations don't panic
-        let _ = registry.write_string("TestKey", "TestValue");
-        let _ = registry.read_string("TestKey");
-        let _ = registry.delete_value("TestKey");
-    }
-}

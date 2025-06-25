@@ -5,9 +5,8 @@
 /// - VibeBench: Benchmark execution context  
 /// - VibeTestingManager: Test suite manager
 
-use crate::stdlib::value::Value;
-use crate::crate::stdlib::errors_simple::CursedError;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+use crate::error::CursedError;
 use super::{TestVibesResult, TestVibesError, test_failed, test_skipped};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -88,7 +87,7 @@ impl VibeTest {
     }
 
     /// Print error message and mark test as failed
-    pub fn Error(&self, args: &[Value]) -> TestVibesResult<()> {
+    pub fn CursedError(&self, args: &[Value]) -> TestVibesResult<()> {
         let message = format_args_to_string(args);
         self.Log(&[Value::String(format!("ERROR: {}", message))])?;
         self.Fail()
@@ -97,7 +96,7 @@ impl VibeTest {
     /// Print formatted error message and mark test as failed
     pub fn Errorf(&self, format: &str, args: &[Value]) -> TestVibesResult<()> {
         let message = format_string(format, args)?;
-        self.Error(&[Value::String(message)])
+        self.CursedError(&[Value::String(message)])
     }
 
     /// Mark test as failed
@@ -120,7 +119,7 @@ impl VibeTest {
 
     /// Print fatal error message and stop execution
     pub fn Fatal(&self, args: &[Value]) -> TestVibesResult<()> {
-        self.Error(args)?;
+        self.CursedError(args)?;
         self.FailNow()
     }
 
@@ -270,7 +269,7 @@ impl VibeBench {
     }
 
     /// Print error message and mark benchmark as failed
-    pub fn Error(&self, args: &[Value]) -> TestVibesResult<()> {
+    pub fn CursedError(&self, args: &[Value]) -> TestVibesResult<()> {
         let message = format_args_to_string(args);
         self.Log(&[Value::String(format!("ERROR: {}", message))])?;
         self.Fail()
@@ -279,7 +278,7 @@ impl VibeBench {
     /// Print formatted error message and mark benchmark as failed
     pub fn Errorf(&self, format: &str, args: &[Value]) -> TestVibesResult<()> {
         let message = format_string(format, args)?;
-        self.Error(&[Value::String(message)])
+        self.CursedError(&[Value::String(message)])
     }
 
     /// Mark benchmark as failed
@@ -302,7 +301,7 @@ impl VibeBench {
 
     /// Print fatal error and stop execution
     pub fn Fatal(&self, args: &[Value]) -> TestVibesResult<()> {
-        self.Error(args)?;
+        self.CursedError(args)?;
         self.FailNow()
     }
 

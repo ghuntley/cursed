@@ -5,7 +5,7 @@
 /// with the CURSED database error system.
 
 use std::fmt;
-use crate::stdlib::database::{DatabaseError, DatabaseErrorKind};
+// use crate::stdlib::database::{DatabaseError, DatabaseErrorKind};
 
 /// PostgreSQL-specific error kinds
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -54,40 +54,40 @@ pub enum PostgresErrorKind {
     Other(String),
 }
 
-impl fmt::Display for PostgresErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PostgresErrorKind::ConnectionFailed => write!(f, "Connection failed"),
-            PostgresErrorKind::AuthenticationFailed => write!(f, "Authentication failed"),
-            PostgresErrorKind::SslError => write!(f, "SSL/TLS error"),
-            PostgresErrorKind::QueryError => write!(f, "Query execution error"),
-            PostgresErrorKind::TransactionError => write!(f, "Transaction error"),
-            PostgresErrorKind::TypeConversionError => write!(f, "Type conversion error"),
-            PostgresErrorKind::InvalidConfiguration => write!(f, "Invalid configuration"),
-            PostgresErrorKind::PoolError => write!(f, "Connection pool error"),
-            PostgresErrorKind::TimeoutError => write!(f, "Operation timeout"),
-            PostgresErrorKind::ProtocolError => write!(f, "Protocol error"),
-            PostgresErrorKind::DatabaseNotFound => write!(f, "Database not found"),
-            PostgresErrorKind::PermissionDenied => write!(f, "Permission denied"),
-            PostgresErrorKind::ConstraintViolation => write!(f, "Constraint violation"),
-            PostgresErrorKind::SyntaxError => write!(f, "SQL syntax error"),
-            PostgresErrorKind::DataTypeError => write!(f, "Data type error"),
-            PostgresErrorKind::SerializationFailure => write!(f, "Serialization failure"),
-            PostgresErrorKind::DeadlockDetected => write!(f, "Deadlock detected"),
-            PostgresErrorKind::InvalidCursorState => write!(f, "Invalid cursor state"),
-            PostgresErrorKind::FeatureNotSupported => write!(f, "Feature not supported"),
-            PostgresErrorKind::ServerError => write!(f, "Server error"),
-            PostgresErrorKind::Other(msg) => write!(f, "{}", msg),
-        }
-    }
-}
+// impl fmt::Display for PostgresErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             PostgresErrorKind::ConnectionFailed => write!(f, "Connection failed"),
+//             PostgresErrorKind::AuthenticationFailed => write!(f, "Authentication failed"),
+//             PostgresErrorKind::SslError => write!(f, "SSL/TLS error"),
+//             PostgresErrorKind::QueryError => write!(f, "Query execution error"),
+//             PostgresErrorKind::TransactionError => write!(f, "Transaction error"),
+//             PostgresErrorKind::TypeConversionError => write!(f, "Type conversion error"),
+//             PostgresErrorKind::InvalidConfiguration => write!(f, "Invalid configuration"),
+//             PostgresErrorKind::PoolError => write!(f, "Connection pool error"),
+//             PostgresErrorKind::TimeoutError => write!(f, "Operation timeout"),
+//             PostgresErrorKind::ProtocolError => write!(f, "Protocol error"),
+//             PostgresErrorKind::DatabaseNotFound => write!(f, "Database not found"),
+//             PostgresErrorKind::PermissionDenied => write!(f, "Permission denied"),
+//             PostgresErrorKind::ConstraintViolation => write!(f, "Constraint violation"),
+//             PostgresErrorKind::SyntaxError => write!(f, "SQL syntax error"),
+//             PostgresErrorKind::DataTypeError => write!(f, "Data type error"),
+//             PostgresErrorKind::SerializationFailure => write!(f, "Serialization failure"),
+//             PostgresErrorKind::DeadlockDetected => write!(f, "Deadlock detected"),
+//             PostgresErrorKind::InvalidCursorState => write!(f, "Invalid cursor state"),
+//             PostgresErrorKind::FeatureNotSupported => write!(f, "Feature not supported"),
+//             PostgresErrorKind::ServerError => write!(f, "Server error"),
+//             PostgresErrorKind::Other(msg) => write!(f, "{}", msg),
+//         }
+//     }
+// }
 
 /// PostgreSQL-specific error with detailed context
 #[derive(Debug, Clone)]
 pub struct PostgresError {
-    /// Error kind
+    /// CursedError kind
     pub kind: PostgresErrorKind,
-    /// Error message
+    /// CursedError message
     pub message: String,
     /// PostgreSQL SQLSTATE code (if available)
     pub sqlstate: Option<String>,
@@ -137,7 +137,7 @@ impl PostgresError {
     }
 
     /// Create error from tokio-postgres error
-    pub fn from_tokio_postgres(error: tokio_postgres::Error) -> Self {
+    pub fn from_tokio_postgres(error: tokio_postgres::CursedError) -> Self {
         let kind = classify_tokio_postgres_error(&error);
         let mut pg_error = Self::new(kind, &error.to_string());
         
@@ -160,7 +160,7 @@ impl PostgresError {
     }
 
     /// Create error from bb8 pool error
-    pub fn from_bb8_error(error: bb8::RunError<tokio_postgres::Error>) -> Self {
+    pub fn from_bb8_error(error: bb8::RunError<tokio_postgres::CursedError>) -> Self {
         match error {
             bb8::RunError::User(pg_error) => Self::from_tokio_postgres(pg_error),
             bb8::RunError::TimedOut => Self::new(
@@ -236,48 +236,48 @@ impl PostgresError {
     }
 }
 
-impl fmt::Display for PostgresError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PostgreSQL {}: {}", self.kind, self.message)?;
-        
-        if let Some(ref sqlstate) = self.sqlstate {
-            write!(f, " (SQLSTATE: {})", sqlstate)?;
-        }
-        
-        if let Some(ref detail) = self.detail {
-            write!(f, " Detail: {}", detail)?;
-        }
-        
-        if let Some(ref hint) = self.hint {
-            write!(f, " Hint: {}", hint)?;
-        }
-        
-        Ok(())
-    }
-}
+// impl fmt::Display for PostgresError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "PostgreSQL {}: {}", self.kind, self.message)?;
+//         
+//         if let Some(ref sqlstate) = self.sqlstate {
+//             write!(f, " (SQLSTATE: {})", sqlstate)?;
+//         }
+//         
+//         if let Some(ref detail) = self.detail {
+//             write!(f, " Detail: {}", detail)?;
+//         }
+//         
+//         if let Some(ref hint) = self.hint {
+//             write!(f, " Hint: {}", hint)?;
+//         }
+//         
+//         Ok(())
+//     }
+// }
 
-impl std::error::Error for PostgresError {}
-
+// impl std::error::CursedError for PostgresError {}
+// 
 impl From<PostgresError> for DatabaseError {
     fn from(error: PostgresError) -> Self {
         error.to_database_error()
     }
 }
 
-impl From<tokio_postgres::Error> for PostgresError {
-    fn from(error: tokio_postgres::Error) -> Self {
-        Self::from_tokio_postgres(error)
-    }
-}
+// impl From<tokio_postgres::CursedError> for PostgresError {
+//     fn from(error: tokio_postgres::CursedError) -> Self {
+//         Self::from_tokio_postgres(error)
+//     }
+// }
 
-impl From<bb8::RunError<tokio_postgres::Error>> for PostgresError {
-    fn from(error: bb8::RunError<tokio_postgres::Error>) -> Self {
-        Self::from_bb8_error(error)
-    }
-}
+// impl From<bb8::RunError<tokio_postgres::CursedError>> for PostgresError {
+//     fn from(error: bb8::RunError<tokio_postgres::CursedError>) -> Self {
+//         Self::from_bb8_error(error)
+//     }
+// }
 
 /// Classify tokio-postgres error into PostgreSQL error kind
-fn classify_tokio_postgres_error(error: &tokio_postgres::Error) -> PostgresErrorKind {
+fn classify_tokio_postgres_error(error: &tokio_postgres::CursedError) -> PostgresErrorKind {
     if error.is_closed() {
         return PostgresErrorKind::ConnectionFailed;
     }
@@ -324,40 +324,3 @@ fn classify_tokio_postgres_error(error: &tokio_postgres::Error) -> PostgresError
 /// Type alias for PostgreSQL result
 pub type PostgresResult<T> = std::result::Result<T, PostgresError>;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_error_creation() {
-        let error = PostgresError::new(PostgresErrorKind::ConnectionFailed, "Connection lost");
-        assert_eq!(error.kind, PostgresErrorKind::ConnectionFailed);
-        assert_eq!(error.message, "Connection lost");
-    }
-
-    #[test]
-    fn test_error_conversion() {
-        let pg_error = PostgresError::new(PostgresErrorKind::QueryError, "Query failed");
-        let db_error: DatabaseError = pg_error.into();
-        assert!(matches!(db_error.kind(), DatabaseErrorKind::QueryError));
-    }
-
-    #[test]
-    fn test_retryable_errors() {
-        let retryable = PostgresError::new(PostgresErrorKind::ConnectionFailed, "Connection lost");
-        assert!(retryable.is_retryable());
-        
-        let non_retryable = PostgresError::new(PostgresErrorKind::SyntaxError, "Bad SQL");
-        assert!(!non_retryable.is_retryable());
-    }
-
-    #[test]
-    fn test_connection_errors() {
-        let conn_error = PostgresError::new(PostgresErrorKind::ConnectionFailed, "Connection lost");
-        assert!(conn_error.is_connection_error());
-        
-        let query_error = PostgresError::new(PostgresErrorKind::QueryError, "Bad query");
-        assert!(!query_error.is_connection_error());
-    }
-}

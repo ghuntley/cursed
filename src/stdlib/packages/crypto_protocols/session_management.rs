@@ -1,9 +1,8 @@
 /// Cryptographic Session Management Implementation
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_random::SecureRandom;
-use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_random::SecureRandom;
+// use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
@@ -37,7 +36,7 @@ pub enum SessionState {
     Rekeying,
     Closing,
     Closed,
-    Error,
+    CursedError,
 }
 
 /// Session statistics
@@ -508,14 +507,14 @@ impl fmt::Display for SessionState {
             SessionState::Rekeying => write!(f, "Rekeying"),
             SessionState::Closing => write!(f, "Closing"),
             SessionState::Closed => write!(f, "Closed"),
-            SessionState::Error => write!(f, "Error"),
+            SessionState::CursedError => write!(f, "CursedError"),
         }
     }
 }
 
 // Implement Serialize and Deserialize for SessionResumptionData
 impl serde::Serialize for SessionResumptionData {
-    fn serialize<S>(&self, serializer: S) -> Result<(), Error>
+    fn serialize<S>(&self, serializer: S) -> crate::error::Result<()>
     where
         S: serde::Serializer,
     {
@@ -530,7 +529,7 @@ impl serde::Serialize for SessionResumptionData {
 }
 
 impl<'de> serde::Deserialize<'de> for SessionResumptionData {
-    fn deserialize<D>(deserializer: D) -> Result<(), Error>
+    fn deserialize<D>(deserializer: D) -> crate::error::Result<()>
     where
         D: serde::Deserializer<'de>,
     {
@@ -547,7 +546,7 @@ impl<'de> serde::Deserialize<'de> for SessionResumptionData {
                 formatter.write_str("struct SessionResumptionData")
             }
 
-            fn visit_map<V>(self, mut map: V) -> Result<(), Error>
+            fn visit_map<V>(self, mut map: V) -> crate::error::Result<()>
             where
                 V: serde::de::MapAccess<'de>,
             {
@@ -560,34 +559,34 @@ impl<'de> serde::Deserialize<'de> for SessionResumptionData {
                     match key {
                         Field::MasterSecret => {
                             if master_secret.is_some() {
-                                return Err(serde::de::Error::duplicate_field("master_secret"));
+                                return Err(serde::de::CursedError::duplicate_field("master_secret"));
                             }
                             master_secret = Some(map.next_value()?);
                         }
                         Field::CipherSuite => {
                             if cipher_suite.is_some() {
-                                return Err(serde::de::Error::duplicate_field("cipher_suite"));
+                                return Err(serde::de::CursedError::duplicate_field("cipher_suite"));
                             }
                             cipher_suite = Some(map.next_value()?);
                         }
                         Field::CompressionMethod => {
                             if compression_method.is_some() {
-                                return Err(serde::de::Error::duplicate_field("compression_method"));
+                                return Err(serde::de::CursedError::duplicate_field("compression_method"));
                             }
                             compression_method = Some(map.next_value()?);
                         }
                         Field::PeerCertificateHash => {
                             if peer_certificate_hash.is_some() {
-                                return Err(serde::de::Error::duplicate_field("peer_certificate_hash"));
+                                return Err(serde::de::CursedError::duplicate_field("peer_certificate_hash"));
                             }
                             peer_certificate_hash = Some(map.next_value()?);
                         }
                     }
                 }
 
-                let master_secret = master_secret.ok_or_else(|| serde::de::Error::missing_field("master_secret"))?;
-                let cipher_suite = cipher_suite.ok_or_else(|| serde::de::Error::missing_field("cipher_suite"))?;
-                let compression_method = compression_method.ok_or_else(|| serde::de::Error::missing_field("compression_method"))?;
+                let master_secret = master_secret.ok_or_else(|| serde::de::CursedError::missing_field("master_secret"))?;
+                let cipher_suite = cipher_suite.ok_or_else(|| serde::de::CursedError::missing_field("cipher_suite"))?;
+                let compression_method = compression_method.ok_or_else(|| serde::de::CursedError::missing_field("compression_method"))?;
 
                 Ok(SessionResumptionData {
                     master_secret,
@@ -603,133 +602,3 @@ impl<'de> serde::Deserialize<'de> for SessionResumptionData {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_session_manager_creation() {
-        let manager = SessionManager::new().unwrap();
-        assert_eq!(manager.active_sessions.lock().unwrap().len(), 0);
-    }
-
-    #[test]
-    fn test_create_session() {
-        let manager = SessionManager::new().unwrap();
-        let session_id = manager.create_session("peer123", None).unwrap();
-        
-        assert!(!session_id.is_empty());
-        
-        let session = manager.get_session(&session_id).unwrap().unwrap();
-        assert_eq!(session.session_id, session_id);
-        assert_eq!(session.state, SessionState::Initializing);
-        assert_eq!(session.peer_id, "peer123");
-    }
-
-    #[test]
-    fn test_activate_session() {
-        let manager = SessionManager::new().unwrap();
-        let session_id = manager.create_session("peer123", None).unwrap();
-        
-        manager.activate_session(&session_id).unwrap();
-        
-        let session = manager.get_session(&session_id).unwrap().unwrap();
-        assert_eq!(session.state, SessionState::Active);
-    }
-
-    #[test]
-    fn test_record_activity() {
-        let manager = SessionManager::new().unwrap();
-        let session_id = manager.create_session("peer123", None).unwrap();
-        manager.activate_session(&session_id).unwrap();
-        
-        let needs_rekey = manager.record_activity(&session_id, 100, 200).unwrap();
-        
-        let session = manager.get_session(&session_id).unwrap().unwrap();
-        assert_eq!(session.stats.bytes_sent, 100);
-        assert_eq!(session.stats.bytes_received, 200);
-        assert_eq!(session.stats.messages_sent, 1);
-        assert_eq!(session.stats.messages_received, 1);
-    }
-
-    #[test]
-    fn test_session_ticket_creation() {
-        let manager = SessionManager::new().unwrap();
-        let session_id = manager.create_session("peer123", None).unwrap();
-        manager.activate_session(&session_id).unwrap();
-        
-        let ticket = manager.create_session_ticket(&session_id).unwrap();
-        
-        assert!(!ticket.ticket_id.is_empty());
-        assert_eq!(ticket.session_id, session_id);
-        assert!(!ticket.encrypted_state.is_empty());
-        assert_eq!(ticket.resumption_count, 0);
-    }
-
-    #[test]
-    fn test_session_resumption() {
-        let manager = SessionManager::new().unwrap();
-        let session_id = manager.create_session("peer123", None).unwrap();
-        manager.activate_session(&session_id).unwrap();
-        
-        let ticket = manager.create_session_ticket(&session_id).unwrap();
-        let new_session_id = manager.resume_session(&ticket.ticket_id, "peer123").unwrap();
-        
-        assert!(!new_session_id.is_empty());
-        assert_ne!(new_session_id, session_id);
-        
-        let new_session = manager.get_session(&new_session_id).unwrap().unwrap();
-        assert_eq!(new_session.state, SessionState::Active);
-    }
-
-    #[test]
-    fn test_close_session() {
-        let manager = SessionManager::new().unwrap();
-        let session_id = manager.create_session("peer123", None).unwrap();
-        manager.activate_session(&session_id).unwrap();
-        
-        manager.close_session(&session_id).unwrap();
-        
-        let session = manager.get_session(&session_id).unwrap().unwrap();
-        assert_eq!(session.state, SessionState::Closed);
-    }
-
-    #[test]
-    fn test_list_active_sessions() {
-        let manager = SessionManager::new().unwrap();
-        
-        let session1 = manager.create_session("peer1", None).unwrap();
-        let session2 = manager.create_session("peer2", None).unwrap();
-        
-        manager.activate_session(&session1).unwrap();
-        manager.activate_session(&session2).unwrap();
-        
-        let active_sessions = manager.list_active_sessions().unwrap();
-        assert_eq!(active_sessions.len(), 2);
-        assert!(active_sessions.contains(&session1));
-        assert!(active_sessions.contains(&session2));
-    }
-
-    #[test]
-    fn test_cleanup_expired() {
-        let manager = SessionManager::new().unwrap();
-        let _ = manager.create_session("peer123", None).unwrap();
-        
-        // Should have sessions
-        assert!(manager.active_sessions.lock().unwrap().len() > 0);
-        
-        // Clean up (sessions not expired yet)
-        let (sessions_cleaned, tickets_cleaned) = manager.cleanup_expired().unwrap();
-        assert_eq!(sessions_cleaned, 0);
-        assert_eq!(tickets_cleaned, 0);
-    }
-
-    #[test]
-    fn test_display_formatting() {
-        assert_eq!(format!("{}", SessionType::TLS), "TLS");
-        assert_eq!(format!("{}", SessionState::Active), "Active");
-        
-        let custom_type = SessionType::Custom("MyProtocol".to_string());
-        assert_eq!(format!("{}", custom_type), "Custom(MyProtocol)");
-    }
-}

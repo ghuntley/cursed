@@ -1,5 +1,5 @@
 //! Minimal parser for CURSED - just enough to parse basic programs
-use crate::error_types::Error;
+use crate::error::CursedError;
 use crate::minimal_ast::*;
 use crate::lexer::{Lexer, Token, TokenType};
 
@@ -11,7 +11,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(mut lexer: Lexer) -> Result<Self, Error> {
+    pub fn new(mut lexer: Lexer) -> crate::error::Result<Self> {
         let current_token = lexer.next_token();
         let peek_token = lexer.next_token();
         
@@ -50,7 +50,7 @@ impl Parser {
         self.errors.push(msg);
     }
     
-    pub fn parse_program(&mut self) -> Result<Program, Error> {
+    pub fn parse_program(&mut self) -> crate::error::Result<Program> {
         let mut program = Program {
             statements: Vec::new(),
         };

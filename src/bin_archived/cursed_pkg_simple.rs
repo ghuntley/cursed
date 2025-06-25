@@ -1,10 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Simple CURSED Package Manager Binary
 use std::path::PathBuf;
 use cursed::package_manager::{PackageManager, PackageManagerConfig};
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> crate::error::Result<()> {
     // Initialize tracing for logging
     tracing_subscriber::fmt::init();
     
@@ -25,14 +25,14 @@ async fn main() -> Result<(), Error> {
         }
         "install" => {
             if args.len() < 3 {
-                eprintln!("Error: Package name required for install");
+                eprintln!("CursedError: Package name required for install");
                 return Ok(());
             }
             handle_install(&args[2]).await?;
         }
         "search" => {
             if args.len() < 3 {
-                eprintln!("Error: Search query required");
+                eprintln!("CursedError: Search query required");
                 return Ok(());
             }
             handle_search(&args[2]).await?;
@@ -56,6 +56,8 @@ async fn main() -> Result<(), Error> {
 }
 
 fn print_help() {
+        // TODO: implement
+    }
     println!("CURSED Package Manager");
     println!();
     println!("Usage: cursed-pkg-simple <command> [args...]");
@@ -69,7 +71,7 @@ fn print_help() {
     println!("  help            Show this help message");
 }
 
-fn handle_init(name: &str) -> Result<(), Error> {
+fn handle_init(name: &str) -> crate::error::Result<()> {
     println!("📦 Initializing package: {}", name);
     
     // Create basic CursedPackage.toml
@@ -102,7 +104,7 @@ authors = ["Your Name <your.email@example.com>"]
     Ok(())
 }
 
-async fn handle_install(package_name: &str) -> Result<(), Error> {
+async fn handle_install(package_name: &str) -> crate::error::Result<()> {
     println!("📦 Installing package: {}", package_name);
     
     // Create package manager with default configuration
@@ -142,7 +144,7 @@ async fn handle_install(package_name: &str) -> Result<(), Error> {
     Ok(())
 }
 
-async fn handle_search(query: &str) -> Result<(), Error> {
+async fn handle_search(query: &str) -> crate::error::Result<()> {
     println!("🔍 Searching for packages matching: {}", query);
     
     // Create package manager with default configuration
@@ -186,7 +188,7 @@ async fn handle_search(query: &str) -> Result<(), Error> {
     Ok(())
 }
 
-async fn handle_list() -> Result<(), Error> {
+async fn handle_list() -> crate::error::Result<()> {
     println!("📋 Listing installed packages");
     
     // Create package manager with default configuration
@@ -212,7 +214,7 @@ async fn handle_list() -> Result<(), Error> {
     Ok(())
 }
 
-async fn handle_clean() -> Result<(), Error> {
+async fn handle_clean() -> crate::error::Result<()> {
     println!("🧹 Cleaning package cache");
     
     // Create package manager with default configuration

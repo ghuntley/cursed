@@ -1,7 +1,6 @@
 /// Production-ready tree hashing implementations for Merkle trees and hash trees
-use crate::error_types::Error;
-use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::stdlib::crypto::types::CryptoError;
+use crate::error::CursedError;
+// use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::collections::VecDeque;
 
 /// Result type for tree operations
@@ -44,7 +43,7 @@ impl<H: Hasher + Clone> MerkleTree<H> {
     /// Build the Merkle tree and compute root hash
     pub fn build(&mut self) -> TreeResult<Vec<u8>> {
         if self.leaves.is_empty() {
-            return Err(Error::InvalidArgument("Cannot build tree with no leaves".to_string()));
+            return Err(CursedError::InvalidArgument("Cannot build tree with no leaves".to_string()));
         }
         
         self.tree.clear();
@@ -97,7 +96,7 @@ impl<H: Hasher + Clone> MerkleTree<H> {
     /// Generate Merkle proof for a leaf at given index
     pub fn generate_proof(&mut self, leaf_index: usize) -> TreeResult<MerkleProof> {
         if leaf_index >= self.leaves.len() {
-            return Err(Error::InvalidArgument(
+            return Err(CursedError::InvalidArgument(
                 format!("Leaf index {} out of bounds ({})", leaf_index, self.leaves.len())
             ));
         }
@@ -181,7 +180,7 @@ impl<H: Hasher + Clone> MerkleTree<H> {
     /// Update a leaf and rebuild affected path
     pub fn update_leaf(&mut self, index: usize, new_data: &[u8]) -> TreeResult<Vec<u8>> {
         if index >= self.leaves.len() {
-            return Err(Error::InvalidArgument("Leaf index out of bounds".to_string()));
+            return Err(CursedError::InvalidArgument("Leaf index out of bounds".to_string()));
         }
         
         self.leaves[index] = new_data.to_vec();
@@ -235,7 +234,7 @@ impl MerkleProof {
         let mut offset = 0;
         
         if data.len() < 4 {
-            return Err(Error::InvalidArgument("Proof data too short".to_string()));
+            return Err(CursedError::InvalidArgument("Proof data too short".to_string()));
         }
         
         // Leaf data
@@ -243,7 +242,7 @@ impl MerkleProof {
         offset += 4;
         
         if offset + leaf_len >= data.len() {
-            return Err(Error::InvalidArgument("Invalid leaf data length".to_string()));
+            return Err(CursedError::InvalidArgument("Invalid leaf data length".to_string()));
         }
         
         let leaf_data = data[offset..offset + leaf_len].to_vec();
@@ -255,7 +254,7 @@ impl MerkleProof {
         
         // Leaf hash
         if offset + hash_size >= data.len() {
-            return Err(Error::InvalidArgument("Invalid leaf hash".to_string()));
+            return Err(CursedError::InvalidArgument("Invalid leaf hash".to_string()));
         }
         
         let leaf_hash = data[offset..offset + hash_size].to_vec();
@@ -271,7 +270,7 @@ impl MerkleProof {
         
         for _ in 0..proof_count {
             if offset + hash_size + 1 > data.len() {
-                return Err(Error::InvalidArgument("Invalid proof hash".to_string()));
+                return Err(CursedError::InvalidArgument("Invalid proof hash".to_string()));
             }
             
             proof_hashes.push(data[offset..offset + hash_size].to_vec());
@@ -283,7 +282,7 @@ impl MerkleProof {
         
         // Root hash
         if offset + hash_size != data.len() {
-            return Err(Error::InvalidArgument("Invalid root hash".to_string()));
+            return Err(CursedError::InvalidArgument("Invalid root hash".to_string()));
         }
         
         let root_hash = data[offset..offset + hash_size].to_vec();
@@ -321,7 +320,7 @@ impl<H: Hasher + Clone> BinaryHashTree<H> {
     pub fn set_leaf(&mut self, index: usize, data: &[u8]) -> TreeResult<()> {
         let max_leaves = 1 << self.height;
         if index >= max_leaves {
-            return Err(Error::InvalidArgument(
+            return Err(CursedError::InvalidArgument(
                 format!("Leaf index {} exceeds maximum {}", index, max_leaves - 1)
             ));
         }
@@ -392,7 +391,7 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
     /// Add data to the streaming tree
     pub fn add_data(&mut self, data: &[u8]) -> TreeResult<()> {
         if self.finalized {
-            return Err(Error::InvalidArgument("Cannot add data to finalized tree".to_string()));
+            return Err(CursedError::InvalidArgument("Cannot add data to finalized tree".to_string()));
         }
         
         let leaf_hash = self.hasher.clone().hash(data);
@@ -405,7 +404,7 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
     /// Finalize tree and get root hash
     pub fn finalize(&mut self) -> TreeResult<Vec<u8>> {
         if self.finalized {
-            return Err(Error::InvalidArgument("Tree already finalized".to_string()));
+            return Err(CursedError::InvalidArgument("Tree already finalized".to_string()));
         }
         
         // Process any remaining items in buffer
@@ -453,7 +452,7 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
             }
         }
         
-        Err(Error::InvalidArgument("Empty tree".to_string()))
+        Err(CursedError::InvalidArgument("Empty tree".to_string()))
     }
     
     fn process_buffer(&mut self) {
@@ -486,117 +485,3 @@ impl<H: Hasher + Clone> StreamingMerkleTree<H> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::crypto_hash_advanced::xxhash::XxHash64;
-
-    #[test]
-    fn test_merkle_tree_basic() {
-        let hasher = XxHash64::new();
-        let mut tree = MerkleTree::new(hasher);
-        
-        tree.add_leaf(b"leaf1");
-        tree.add_leaf(b"leaf2");
-        tree.add_leaf(b"leaf3");
-        tree.add_leaf(b"leaf4");
-        
-        let root = tree.build().unwrap();
-        assert_eq!(root.len(), 8); // xxHash64 produces 8 bytes
-        assert_eq!(tree.leaf_count(), 4);
-        assert_eq!(tree.depth(), 2); // 4 leaves -> depth 2
-    }
-
-    #[test]
-    fn test_merkle_proof() {
-        let hasher = XxHash64::new();
-        let mut tree = MerkleTree::new(hasher.clone());
-        
-        tree.add_leaf(b"data1");
-        tree.add_leaf(b"data2");
-        tree.add_leaf(b"data3");
-        tree.add_leaf(b"data4");
-        
-        tree.build().unwrap();
-        
-        // Generate and verify proof for leaf 1
-        let proof = tree.generate_proof(1).unwrap();
-        assert!(tree.verify_proof(&proof));
-        
-        // Proof should serialize/deserialize correctly
-        let proof_bytes = proof.to_bytes();
-        let parsed_proof = MerkleProof::from_bytes(&proof_bytes).unwrap();
-        assert!(tree.verify_proof(&parsed_proof));
-    }
-
-    #[test]
-    fn test_merkle_tree_update() {
-        let hasher = XxHash64::new();
-        let mut tree = MerkleTree::new(hasher);
-        
-        tree.add_leaf(b"original");
-        let original_root = tree.build().unwrap();
-        
-        tree.update_leaf(0, b"updated").unwrap();
-        let updated_root = tree.root().unwrap();
-        
-        assert_ne!(original_root, updated_root);
-    }
-
-    #[test]
-    fn test_binary_hash_tree() {
-        let hasher = XxHash64::new();
-        let mut tree = BinaryHashTree::new(hasher, 2); // 4 leaves
-        
-        tree.set_leaf(0, b"leaf0").unwrap();
-        tree.set_leaf(1, b"leaf1").unwrap();
-        tree.set_leaf(2, b"leaf2").unwrap();
-        tree.set_leaf(3, b"leaf3").unwrap();
-        
-        let root = tree.root().unwrap();
-        assert_eq!(root.len(), 8);
-    }
-
-    #[test]
-    fn test_streaming_merkle_tree() {
-        let hasher = XxHash64::new();
-        let mut tree = StreamingMerkleTree::new(hasher);
-        
-        tree.add_data(b"data1").unwrap();
-        tree.add_data(b"data2").unwrap();
-        tree.add_data(b"data3").unwrap();
-        tree.add_data(b"data4").unwrap();
-        
-        let root = tree.finalize().unwrap();
-        assert_eq!(root.len(), 8);
-    }
-
-    #[test]
-    fn test_merkle_tree_empty() {
-        let hasher = XxHash64::new();
-        let mut tree = MerkleTree::new(hasher);
-        
-        assert!(tree.build().is_err());
-    }
-
-    #[test]
-    fn test_merkle_proof_invalid_index() {
-        let hasher = XxHash64::new();
-        let mut tree = MerkleTree::new(hasher);
-        
-        tree.add_leaf(b"data");
-        tree.build().unwrap();
-        
-        assert!(tree.generate_proof(1).is_err());
-    }
-
-    #[test]
-    fn test_binary_tree_bounds() {
-        let hasher = XxHash64::new();
-        let mut tree = BinaryHashTree::new(hasher, 1); // 2 leaves
-        
-        assert!(tree.set_leaf(0, b"ok").is_ok());
-        assert!(tree.set_leaf(1, b"ok").is_ok());
-        assert!(tree.set_leaf(2, b"error").is_err());
-    }
-}

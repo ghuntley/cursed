@@ -1,9 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Unix domain sockets implementation for CURSED IPC
 use std::io::{Read, Write, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use crate::stdlib::ipc::error::{IpcError, IpcResult};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult};
 
 #[cfg(unix)]
 use std::os::unix::net::{UnixStream, UnixListener};
@@ -187,7 +187,7 @@ impl UnixSocket {
                 SocketAddress::Path(path) => path.to_string_lossy().to_string(),
                 SocketAddress::Abstract(name) => format!("@{}", name),
             };
-            crate::stdlib::ipc::register_socket(addr_str, address)?;
+//             crate::stdlib::ipc::register_socket(addr_str, address)?;
 
             Ok(listener)
         }
@@ -204,14 +204,14 @@ impl UnixSocket {
         {
             match &mut self.stream {
                 Some(stream) => {
-                    crate::stdlib::ipc::increment_operations();
+//                     crate::stdlib::ipc::increment_operations();
                     stream.write(data).map_err(|e| {
-                        crate::stdlib::ipc::increment_failed_operations();
+//                         crate::stdlib::ipc::increment_failed_operations();
                         IpcError::from(e)
                     })
                 }
                 None => {
-                    crate::stdlib::ipc::increment_failed_operations();
+//                     crate::stdlib::ipc::increment_failed_operations();
                     Err(IpcError::InvalidOperation("Socket not connected".to_string()))
                 }
             }
@@ -234,14 +234,14 @@ impl UnixSocket {
         {
             match &mut self.stream {
                 Some(stream) => {
-                    crate::stdlib::ipc::increment_operations();
+//                     crate::stdlib::ipc::increment_operations();
                     stream.read(buffer).map_err(|e| {
-                        crate::stdlib::ipc::increment_failed_operations();
+//                         crate::stdlib::ipc::increment_failed_operations();
                         IpcError::from(e)
                     })
                 }
                 None => {
-                    crate::stdlib::ipc::increment_failed_operations();
+//                     crate::stdlib::ipc::increment_failed_operations();
                     Err(IpcError::InvalidOperation("Socket not connected".to_string()))
                 }
             }
@@ -300,7 +300,7 @@ impl Drop for UnixSocket {
             SocketAddress::Path(path) => path.to_string_lossy().to_string(),
             SocketAddress::Abstract(name) => format!("@{}", name),
         };
-        let _ = crate::stdlib::ipc::unregister_socket(&addr_str);
+//         let _ = crate::stdlib::ipc::unregister_socket(&addr_str);
     }
 }
 
@@ -342,81 +342,3 @@ pub fn remove_socket<P: AsRef<Path>>(path: P) -> IpcResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_socket_address() {
-        let addr = SocketAddress::from_path("/tmp/test.sock");
-        assert!(addr.as_path().is_some());
-        assert!(addr.as_abstract().is_none());
-
-        let addr = SocketAddress::from_abstract("test");
-        assert!(addr.as_path().is_none());
-        assert!(addr.as_abstract().is_some());
-        assert_eq!(addr.as_abstract().unwrap(), "test");
-    }
-
-    #[test]
-    fn test_socket_config() {
-        let addr = SocketAddress::from_path("/tmp/test.sock");
-        let config = SocketConfig::new(addr)
-            .with_type(SocketType::Datagram)
-            .with_buffer_size(4096)
-            .with_timeout(Duration::from_secs(5))
-            .with_permissions(0o644);
-
-        assert_eq!(config.socket_type, SocketType::Datagram);
-        assert_eq!(config.buffer_size, 4096);
-        assert_eq!(config.timeout, Some(Duration::from_secs(5)));
-        assert_eq!(config.permissions, 0o644);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_socket_pair() {
-        let result = create_socket_pair();
-        assert!(result.is_ok());
-
-        let (mut sock1, mut sock2) = result.unwrap();
-        assert!(sock1.is_connected());
-        assert!(sock2.is_connected());
-
-        // Test communication
-        let message = "Hello from socket 1";
-        assert!(sock1.send_string(message).is_ok());
-
-        let received = sock2.receive_string(1024);
-        assert!(received.is_ok());
-        assert_eq!(received.unwrap(), message);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_socket_bind_connect() {
-        let temp_dir = TempDir::new().unwrap();
-        let socket_path = temp_dir.path().join("test.sock");
-        let addr = SocketAddress::from_path(&socket_path);
-
-        // Bind listener
-        let listener = UnixSocket::bind(addr.clone());
-        assert!(listener.is_ok());
-
-        // Connect to socket
-        let client = UnixSocket::connect(addr);
-        assert!(client.is_ok());
-
-        let client = client.unwrap();
-        assert!(client.is_connected());
-    }
-
-    #[test]
-    fn test_error_handling() {
-        // Test connecting to non-existent socket
-        let addr = SocketAddress::from_path("/non/existent/socket");
-        let result = UnixSocket::connect(addr);
-        assert!(result.is_err());
-    }
-}

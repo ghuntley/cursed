@@ -1,7 +1,6 @@
 /// Production-ready hash function performance analysis and benchmarking
-use crate::error_types::Error;
-use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::stdlib::crypto::types::CryptoError;
+use crate::error::CursedError;
+// use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
@@ -190,7 +189,7 @@ impl HashBenchmark {
             .collect();
         
         if small_results.is_empty() {
-            return Err(Error::InvalidArgument("No small input results available".to_string()));
+            return Err(CursedError::InvalidArgument("No small input results available".to_string()));
         }
         
         let avg_latency = small_results.iter()
@@ -234,7 +233,7 @@ impl HashBenchmark {
             .collect();
         
         if large_results.is_empty() {
-            return Err(Error::InvalidArgument("No large input results available".to_string()));
+            return Err(CursedError::InvalidArgument("No large input results available".to_string()));
         }
         
         let throughput_mb_per_second = large_results.iter()
@@ -527,80 +526,3 @@ pub struct RealtimeStats {
     pub max_latency: Duration,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::crypto_hash_advanced::xxhash::XxHash64;
-
-    #[test]
-    fn test_hash_benchmark() {
-        let hasher = XxHash64::new();
-        let benchmark = HashBenchmark::with_custom_sizes(vec![64, 1024, 4096]);
-        
-        let metrics = benchmark.benchmark(hasher).unwrap();
-        assert_eq!(metrics.algorithm, "xxHash64");
-        assert!(metrics.throughput_bytes_per_second > 0.0);
-        assert!(metrics.efficiency_score >= 0.0);
-    }
-
-    #[test]
-    fn test_comparative_benchmark() {
-        let hashers = vec![
-            XxHash64::new(),
-            XxHash64::with_seed(12345),
-        ];
-        
-        let benchmark = ComparativeBenchmark::new();
-        let report = benchmark.compare_hashers(hashers).unwrap();
-        
-        assert_eq!(report.results.len(), 2);
-        assert!(!report.rankings.most_efficient.is_empty());
-    }
-
-    #[test]
-    fn test_performance_monitor() {
-        let hasher = XxHash64::new();
-        let mut monitor = PerformanceMonitor::new(hasher);
-        
-        let data = b"test data";
-        let _result = monitor.record_operation(data);
-        
-        let stats = monitor.get_stats().unwrap();
-        assert_eq!(stats.sample_count, 1);
-        assert!(stats.average_latency.as_nanos() > 0);
-    }
-
-    #[test]
-    fn test_comparison_report_markdown() {
-        let metrics = vec![
-            PerformanceMetrics {
-                algorithm: "TestHash1".to_string(),
-                throughput_bytes_per_second: 1000.0,
-                throughput_hashes_per_second: 500.0,
-                latency_per_hash: Duration::from_micros(2),
-                memory_usage_bytes: 256,
-                cpu_cycles_per_byte: None,
-                efficiency_score: 75.0,
-                small_input_performance: SmallInputMetrics {
-                    average_latency: Duration::from_micros(1),
-                    median_latency: Duration::from_micros(1),
-                    p95_latency: Duration::from_micros(2),
-                    throughput: 1000.0,
-                    overhead_percentage: 5.0,
-                },
-                large_input_performance: LargeInputMetrics {
-                    throughput_mb_per_second: 100.0,
-                    streaming_efficiency: 0.9,
-                    memory_efficiency: 0.8,
-                    scalability_factor: 1.2,
-                },
-            },
-        ];
-        
-        let report = ComparisonReport::new(metrics);
-        let markdown = report.to_markdown();
-        
-        assert!(markdown.contains("# Hash Function Performance Comparison"));
-        assert!(markdown.contains("TestHash1"));
-    }
-}

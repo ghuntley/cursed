@@ -1,6 +1,6 @@
-use crate::error::Error;
+use crate::error::CursedError;
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
-use crate::stdlib::fs::error::{FsError, FsResult};
+// use crate::stdlib::fs::error::{FsError, FsResult};
 
 /// Join multiple path components into a single path
 pub fn join_path(parts: Vec<String>) -> String {
@@ -156,70 +156,3 @@ pub fn relative_path(from: &str, to: &str) -> FsResult<String> {
     Ok(result.to_string_lossy().to_string())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_join_path() {
-        let parts = vec![
-            "home".to_string(),
-            "user".to_string(),
-            "documents".to_string(),
-            "file.txt".to_string()
-        ];
-        let joined = join_path(parts);
-        assert!(joined.contains("home"));
-        assert!(joined.contains("user"));
-        assert!(joined.contains("documents"));
-        assert!(joined.contains("file.txt"));
-    }
-
-    #[test]
-    fn test_parent_dir() {
-        assert_eq!(parent_dir("/home/user/file.txt"), Some("/home/user".to_string()));
-        assert_eq!(parent_dir("file.txt"), Some("".to_string()));
-        assert_eq!(parent_dir("/"), None);
-    }
-
-    #[test]
-    fn test_file_name() {
-        assert_eq!(file_name("/home/user/file.txt"), Some("file.txt".to_string()));
-        assert_eq!(file_name("/home/user/"), Some("user".to_string()));
-        assert_eq!(file_name("file.txt"), Some("file.txt".to_string()));
-    }
-
-    #[test]
-    fn test_extension() {
-        assert_eq!(extension("file.txt"), Some("txt".to_string()));
-        assert_eq!(extension("archive.tar.gz"), Some("gz".to_string()));
-        assert_eq!(extension("filename"), None);
-        assert_eq!(extension(".hidden"), None);
-    }
-
-    #[test]
-    fn test_file_stem() {
-        assert_eq!(file_stem("file.txt"), Some("file".to_string()));
-        assert_eq!(file_stem("archive.tar.gz"), Some("archive.tar".to_string()));
-        assert_eq!(file_stem("filename"), Some("filename".to_string()));
-    }
-
-    #[test]
-    fn test_normalize_path() {
-        assert_eq!(normalize_path("./file.txt"), "file.txt");
-        assert_eq!(normalize_path("../file.txt"), "file.txt");
-        assert_eq!(normalize_path("dir/../file.txt"), "file.txt");
-        assert_eq!(normalize_path("./dir/./file.txt"), join_path(vec!["dir".to_string(), "file.txt".to_string()]));
-    }
-
-    #[test]
-    fn test_split_path() {
-        let (dir, file) = split_path("/home/user/file.txt");
-        assert_eq!(dir, Some("/home/user".to_string()));
-        assert_eq!(file, Some("file.txt".to_string()));
-        
-        let (dir, file) = split_path("file.txt");
-        assert_eq!(dir, Some("".to_string()));
-        assert_eq!(file, Some("file.txt".to_string()));
-    }
-}

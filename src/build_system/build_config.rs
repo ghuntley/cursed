@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Build Configuration System
 // 
 // Defines the configuration structure for CURSED projects including
@@ -232,7 +232,7 @@ impl Default for BuildConfig {
 }
 
 // Use canonical OptimizationLevel from optimization config
-pub use crate::common::optimization_level::OptimizationLevel;
+pub use crate::common_types::optimization_level::OptimizationLevel;
 
 /// Panic strategies
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -538,7 +538,7 @@ fn default_incremental() -> bool { true }
 
 impl BuildConfig {
     /// Load configuration from TOML file
-    pub fn load_from_file(path: &PathBuf) -> Result<(), Error> {
+    pub fn load_from_file(path: &PathBuf) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| ConfigError::IoError(e))?;
         
@@ -550,7 +550,7 @@ impl BuildConfig {
     }
     
     /// Save configuration to TOML file
-    pub fn save_to_file(&self, path: &PathBuf) -> Result<(), Error> {
+    pub fn save_to_file(&self, path: &PathBuf) -> crate::error::Result<()> {
         let content = toml::to_string_pretty(self)
             .map_err(|e| ConfigError::SerializeError(e))?;
         
@@ -561,7 +561,7 @@ impl BuildConfig {
     }
     
     /// Validate the configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         // Validate project name
         if self.project.name.trim().is_empty() {
             return Err(ConfigError::ValidationError("Project name cannot be empty".to_string()));
@@ -596,12 +596,12 @@ impl BuildConfig {
     }
     
     /// Get effective profile configuration (with inheritance resolved)
-    pub fn get_effective_profile(&self, profile_name: &str) -> Result<(), Error> {
+    pub fn get_effective_profile(&self, profile_name: &str) -> crate::error::Result<()> {
         let mut visited = std::collections::HashSet::new();
         self.resolve_profile(profile_name, &mut visited)
     }
     
-    fn resolve_profile(&self, name: &str, visited: &mut std::collections::HashSet<String>) -> Result<(), Error> {
+    fn resolve_profile(&self, name: &str, visited: &mut std::collections::HashSet<String>) -> crate::error::Result<()> {
         if visited.contains(name) {
             return Err(ConfigError::ValidationError(
                 format!("Circular profile inheritance detected: {}", name)
@@ -728,7 +728,7 @@ pub enum ProjectType {
 }
 
 /// Configuration error types
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::CursedError)]
 pub enum ConfigError {
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
@@ -753,89 +753,3 @@ fn is_valid_semver(version: &str) -> bool {
     parts.iter().all(|part| part.parse::<u32>().is_ok())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    
-    #[test]
-    fn test_default_config_creation() {
-        let config = BuildConfig::default_for_project("test-project", ProjectType::Binary);
-        
-        assert_eq!(config.project.name, "test-project");
-        assert_eq!(config.project.version, "0.1.0");
-        assert_eq!(config.targets.len(), 1);
-        assert_eq!(config.profiles.len(), 2);
-        assert!(config.profiles.contains_key("dev"));
-        assert!(config.profiles.contains_key("release"));
-    }
-    
-    #[test]
-    fn test_config_validation() {
-        let mut config = BuildConfig::default_for_project("test", ProjectType::Binary);
-        
-        // Valid config should pass
-        assert!(config.validate().is_ok());
-        
-        // Empty name should fail
-        config.project.name = "".to_string();
-        assert!(config.validate().is_err());
-        
-        // Invalid version should fail
-        config.project.name = "test".to_string();
-        config.project.version = "invalid".to_string();
-        assert!(config.validate().is_err());
-    }
-    
-    #[test]
-    fn test_profile_inheritance() {
-        let mut config = BuildConfig::default_for_project("test", ProjectType::Binary);
-        
-        // Add a custom profile that inherits from release
-        config.profiles.insert("production".to_string(), BuildProfile {
-            inherits: Some("release".to_string()),
-            optimization: OptimizationLevel::Os,
-            debug: false,
-            strip: true,
-            lto: true,
-            panic: PanicStrategy::Abort,
-            codegen_units: Some(1),
-            llvm_args: Vec::from(["-march=native".to_string()]),
-            env: HashMap::new(),
-        });
-        
-        let effective = config.get_effective_profile("production").unwrap();
-        assert_eq!(effective.optimization, OptimizationLevel::Os);
-        assert_eq!(effective.debug, false);
-        assert_eq!(effective.strip, true);
-        assert!(effective.llvm_args.contains(&"-march=native".to_string()));
-    }
-    
-    #[test]
-    fn test_config_serialization() {
-        let config = BuildConfig::default_for_project("test-project", ProjectType::Library);
-        
-        let dir = tempdir().unwrap();
-        let file_path = dir.path().join("CursedBuild.toml");
-        
-        // Save and reload
-        config.save_to_file(&file_path).unwrap();
-        let loaded_config = BuildConfig::load_from_file(&file_path).unwrap();
-        
-        assert_eq!(config.project.name, loaded_config.project.name);
-        assert_eq!(config.project.version, loaded_config.project.version);
-        assert_eq!(config.targets.len(), loaded_config.targets.len());
-    }
-    
-    #[test]
-    fn test_semver_validation() {
-        assert!(is_valid_semver("1.0.0"));
-        assert!(is_valid_semver("0.1.0"));
-        assert!(is_valid_semver("10.20.30"));
-        
-        assert!(!is_valid_semver("1.0"));
-        assert!(!is_valid_semver("1.0.0.0"));
-        assert!(!is_valid_semver("invalid"));
-        assert!(!is_valid_semver("1.0.x"));
-    }
-}

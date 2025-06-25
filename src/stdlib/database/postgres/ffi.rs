@@ -4,7 +4,7 @@
 /// All memory management and error handling is done safely through these bindings.
 
 use std::ffi::{CStr, CString};
-use crate::error::Error;
+use crate::error::CursedError;
 use std::os::raw::{c_char, c_int, c_uint, c_void};
 use std::ptr;
 
@@ -270,7 +270,7 @@ extern "C" {
     pub fn PQoptions(conn: *mut PGconn) -> *const c_char;
 }
 
-/// fr fr Error field codes for detailed error information
+/// fr fr CursedError field codes for detailed error information
 pub mod error_field_codes {
     pub const SEVERITY: i32 = b'S' as i32;
     pub const SEVERITY_NONLOCALIZED: i32 = b'V' as i32;

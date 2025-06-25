@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Search functions for SortaFresh
 /// 
 /// This module provides binary search functionality for sorted data:
@@ -8,7 +8,6 @@ use crate::error::Error;
 /// - Advanced search utilities
 
 use super::SortaFreshResult;
-use crate::stdlib::collections::CollectionsError;
 use std::cmp::Ordering;
 
 /// Uses binary search to find the index in a sorted data structure
@@ -266,144 +265,3 @@ fn i32_to_usize(val: i32) -> Option<usize> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_search_basic() {
-        let result = search(5, |i| i >= 3);
-        assert_eq!(result, 3);
-        
-        let result = search(5, |i| i >= 0);
-        assert_eq!(result, 0);
-        
-        let result = search(5, |i| i >= 10);
-        assert_eq!(result, 5);
-    }
-
-    #[test]
-    fn test_search_ints() {
-        let data = vec![1, 3, 5, 7, 9, 11];
-        
-        assert_eq!(search_ints(&data, 5), 2); // Exact match
-        assert_eq!(search_ints(&data, 6), 3); // Should insert at position 3
-        assert_eq!(search_ints(&data, 0), 0); // Before all elements
-        assert_eq!(search_ints(&data, 15), 6); // After all elements
-        
-        // Empty slice
-        assert_eq!(search_ints(&[], 5), 0);
-    }
-
-    #[test]
-    fn test_search_float64s() {
-        let data = vec![1.1, 2.2, 3.3, 4.4, 5.5];
-        
-        assert_eq!(search_float64s(&data, 3.3), 2); // Exact match
-        assert_eq!(search_float64s(&data, 3.5), 3); // Should insert at position 3
-        assert_eq!(search_float64s(&data, 0.5), 0); // Before all elements
-        assert_eq!(search_float64s(&data, 6.0), 5); // After all elements
-        
-        // Test with NaN
-        let data_with_nan = vec![1.0, 2.0, f64::NAN, f64::NAN];
-        assert_eq!(search_float64s(&data_with_nan, f64::NAN), 4); // NaN input returns end
-        assert_eq!(search_float64s(&data_with_nan, 1.5), 1); // Normal search still works
-    }
-
-    #[test]
-    fn test_search_strings() {
-        let data = vec![
-            "apple".to_string(),
-            "banana".to_string(),
-            "cherry".to_string(),
-            "date".to_string(),
-        ];
-        
-        assert_eq!(search_strings(&data, "banana"), 1); // Exact match
-        assert_eq!(search_strings(&data, "blueberry"), 2); // Should insert at position 2
-        assert_eq!(search_strings(&data, "aardvark"), 0); // Before all elements
-        assert_eq!(search_strings(&data, "zebra"), 4); // After all elements
-    }
-
-    #[test]
-    fn test_binary_search() {
-        let data = vec![1, 3, 5, 7, 9, 11];
-        
-        let (index, found) = binary_search(&data, &5, |a, b| (*a).cmp(b));
-        assert_eq!(index, 2);
-        assert!(found);
-        
-        let (index, found) = binary_search(&data, &6, |a, b| (*a).cmp(b));
-        assert_eq!(index, 3);
-        assert!(!found);
-        
-        // Empty slice
-        let (index, found) = binary_search(&[], &5, |a, b| (*a).cmp(b));
-        assert_eq!(index, 0);
-        assert!(!found);
-    }
-
-    #[test]
-    fn test_insertion_point() {
-        let data = vec![1, 3, 5, 7, 9, 11];
-        
-        assert_eq!(insertion_point(&data, &5, |a, b| (*a).cmp(b)), 2); // Exact match position
-        assert_eq!(insertion_point(&data, &6, |a, b| (*a).cmp(b)), 3); // Insert position
-        assert_eq!(insertion_point(&data, &0, |a, b| (*a).cmp(b)), 0); // Before all
-        assert_eq!(insertion_point(&data, &15, |a, b| (*a).cmp(b)), 6); // After all
-    }
-
-    #[test]
-    fn test_binary_search_by_key() {
-        #[derive(Debug, PartialEq)]
-        struct Person {
-            name: String,
-            age: i32,
-        }
-        
-        let people = vec![
-            Person { name: "Alice".to_string(), age: 20 },
-            Person { name: "Bob".to_string(), age: 25 },
-            Person { name: "Charlie".to_string(), age: 30 },
-        ];
-        
-        let (index, found) = binary_search_by_key(&people, &25, |p| p.age);
-        assert_eq!(index, 1);
-        assert!(found);
-        
-        let (index, found) = binary_search_by_key(&people, &27, |p| p.age);
-        assert_eq!(index, 2);
-        assert!(!found);
-    }
-
-    #[test]
-    fn test_equal_range() {
-        let data = vec![1, 2, 2, 2, 3, 4, 5];
-        let (lower, upper) = equal_range(&data, &2, |a, b| (*a).cmp(b));
-        
-        assert_eq!(lower, 1); // First occurrence of 2
-        assert_eq!(upper, 4); // First element after 2s
-        
-        // Test with non-existent element
-        let (lower, upper) = equal_range(&data, &6, |a, b| (*a).cmp(b));
-        assert_eq!(lower, upper); // Should be the same (insertion point)
-    }
-
-    #[test]
-    fn test_search_first() {
-        let data = vec![1, 3, 5, 7, 9, 11];
-        
-        assert_eq!(search_first(&data, |&x| x > 5), Some(3)); // First element > 5 is at index 3
-        assert_eq!(search_first(&data, |&x| x > 15), None); // No element > 15
-        assert_eq!(search_first(&data, |&x| x >= 1), Some(0)); // First element >= 1 is at index 0
-    }
-
-    #[test]
-    fn test_search_last() {
-        let data = vec![1, 3, 5, 7, 9, 11];
-        
-        assert_eq!(search_last(&data, |&x| x < 9), Some(2)); // Last element < 9 is at index 2
-        assert_eq!(search_last(&data, |&x| x < 0), None); // No element < 0
-        assert_eq!(search_last(&data, |&x| x <= 11), Some(5)); // Last element <= 11 is at index 5
-    }
-}

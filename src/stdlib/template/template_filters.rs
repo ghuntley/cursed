@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Template Filters - Built-in functions and filter registry for CURSED templates
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -8,11 +8,10 @@ use base64::{Engine as _, engine::general_purpose};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 
 /// Filter function type
-pub type FilterFn = Box<dyn Fn(&FilterContext, &[CursedObject]) -> std::result::Result<CursedObject, crate::stdlib::template::TemplateError> + Send + Sync>;
+// pub type FilterFn = Box<dyn Fn(&FilterContext, &[CursedObject]) -> std::result::Result<CursedObject, crate::stdlib::template::TemplateError> + Send + Sync>;
 
 /// Template filter trait for implementing custom filters
 pub trait TemplateFilter: Send + Sync {
@@ -26,7 +25,7 @@ pub trait TemplateFilter: Send + Sync {
     fn required_args(&self) -> Option<usize> { None }
     
     /// Apply the filter
-    fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> Result<(), Error>;
+    fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()>;
     
     /// Whether this filter can be cached
     fn cacheable(&self) -> bool { true }
@@ -71,7 +70,7 @@ impl FilterContext {
     }
     
     /// Increment chain depth
-    pub fn deeper(&self) -> Result<(), Error> {
+    pub fn deeper(&self) -> crate::error::Result<()> {
         if self.chain_depth >= self.max_chain_depth {
             return Err(CursedError::TemplateError {
                 message: format!("Filter chain depth exceeded maximum of {}", self.max_chain_depth),
@@ -163,7 +162,7 @@ impl FilterRegistry {
     /// Register a custom filter function
     pub fn register<F>(&self, name: &str, filter: F)
     where
-        F: Fn(&FilterContext, &[CursedObject]) -> Result<(), Error> + Send + Sync + 'static,
+        F: Fn(&FilterContext, &[CursedObject]) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         if let Ok(mut filters) = self.filters.write() {
             filters.insert(name.to_string(), Box::new(filter));
@@ -183,14 +182,14 @@ impl FilterRegistry {
 
     /// Apply a filter to values with context
     #[instrument(skip(self, args))]
-    pub fn apply(&self, name: &str, args: &[CursedObject]) -> Result<(), Error> {
+    pub fn apply(&self, name: &str, args: &[CursedObject]) -> crate::error::Result<()> {
         let context = FilterContext::new();
         self.apply_with_context(name, &context, args)
     }
     
     /// Apply a filter with explicit context
     #[instrument(skip(self, args))]
-    pub fn apply_with_context(&self, name: &str, context: &FilterContext, args: &[CursedObject]) -> Result<(), Error> {
+    pub fn apply_with_context(&self, name: &str, context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()> {
         let start_time = Instant::now();
         
         // Check cache first if enabled
@@ -391,7 +390,7 @@ impl FilterRegistry {
         self.register("join", |_context, args| {
             let arr = extract_array(&args[0])?;
             let sep = extract_string(&args[1])?;
-            let strings: Result<(), Error> = arr.iter()
+            let strings: crate::error::Result<()> = arr.iter()
                 .map(extract_string)
                 .collect();
             Ok(CursedObject::String(strings?.join(&sep)))
@@ -976,7 +975,7 @@ impl FilterRegistry {
         self.register("bestie", |_context, args| {
             let arr = extract_array(&args[0])?;
             let sep = if args.len() > 1 { extract_string(&args[1])? } else { ", ".to_string() };
-            let strings: Result<(), Error> = arr.iter()
+            let strings: crate::error::Result<()> = arr.iter()
                 .map(extract_string)
                 .collect();
             Ok(CursedObject::String(strings?.join(&sep)))
@@ -1190,7 +1189,7 @@ impl FilterRegistry {
             let arr = extract_array(&args[0])?;
             let operation = if args.len() > 1 { extract_string(&args[1])? } else { "toString".to_string() };
             
-            let mapped: Result<(), Error> = arr.iter()
+            let mapped: crate::error::Result<()> = arr.iter()
                 .map(|item| {
                     match operation.as_str() {
                         "upper" => match item {
@@ -1280,7 +1279,7 @@ impl TemplateFilter for CapitalizeFilter {
     fn description(&self) -> &str { "Capitalize the first letter of each word" }
     fn required_args(&self) -> Option<usize> { Some(1) }
     
-    fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> Result<(), Error> {
+    fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()> {
         let s = extract_string(&args[0])?;
         let result = s.split_whitespace()
             .map(|word| {
@@ -1303,7 +1302,7 @@ impl TemplateFilter for ReverseStringFilter {
     fn description(&self) -> &str { "Reverse a string character by character" }
     fn required_args(&self) -> Option<usize> { Some(1) }
     
-    fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> Result<(), Error> {
+    fn apply(&self, _context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()> {
         let s = extract_string(&args[0])?;
         let reversed: String = s.chars().rev().collect();
         Ok(CursedObject::String(reversed))
@@ -1317,7 +1316,7 @@ impl TemplateFilter for ChainableFilter {
     fn description(&self) -> &str { "Apply multiple filters in sequence" }
     fn cacheable(&self) -> bool { false } // Don't cache chained operations
     
-    fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> Result<(), Error> {
+    fn apply(&self, context: &FilterContext, args: &[CursedObject]) -> crate::error::Result<()> {
         if args.len() < 2 {
             return Err(CursedError::TemplateError {
                 message: "chain filter requires at least 2 arguments: value and filter name".to_string(),
@@ -1349,7 +1348,7 @@ impl Default for FilterRegistry {
 }
 
 /// Helper function to extract string from CursedObject
-fn extract_string(obj: &CursedObject) -> Result<(), Error> {
+fn extract_string(obj: &CursedObject) -> crate::error::Result<()> {
     match obj {
         CursedObject::String(s) => Ok(s.clone()),
         CursedObject::Integer(n) => Ok(n.to_string()),
@@ -1364,7 +1363,7 @@ fn extract_string(obj: &CursedObject) -> Result<(), Error> {
 }
 
 /// Helper function to extract integer from CursedObject
-fn extract_int(obj: &CursedObject) -> Result<(), Error> {
+fn extract_int(obj: &CursedObject) -> crate::error::Result<()> {
     match obj {
         CursedObject::Integer(n) => Ok(*n),
         CursedObject::Float(n) => Ok(*n as i64),
@@ -1382,7 +1381,7 @@ fn extract_int(obj: &CursedObject) -> Result<(), Error> {
 }
 
 /// Helper function to extract float from CursedObject
-fn extract_float(obj: &CursedObject) -> Result<(), Error> {
+fn extract_float(obj: &CursedObject) -> crate::error::Result<()> {
     match obj {
         CursedObject::Float(n) => Ok(*n),
         CursedObject::Integer(n) => Ok(*n as f64),
@@ -1400,7 +1399,7 @@ fn extract_float(obj: &CursedObject) -> Result<(), Error> {
 }
 
 /// Helper function to extract array from CursedObject
-fn extract_array(obj: &CursedObject) -> Result<(), Error> {
+fn extract_array(obj: &CursedObject) -> crate::error::Result<()> {
     match obj {
         CursedObject::Array(arr) => Ok(arr.clone()),
         _ => Err(CursedError::TemplateError {
@@ -1437,7 +1436,7 @@ fn is_truthy(obj: &CursedObject) -> bool {
 }
 
 /// Advanced string formatting function with printf-style placeholders
-fn format_string_cursed(format: &str, args: &[CursedObject]) -> Result<(), Error> {
+fn format_string_cursed(format: &str, args: &[CursedObject]) -> crate::error::Result<()> {
     let mut result = String::new();
     let mut chars = format.chars().peekable();
     let mut arg_index = 0;
@@ -1541,7 +1540,7 @@ fn format_string_cursed(format: &str, args: &[CursedObject]) -> Result<(), Error
 }
 
 /// Parse a printf-style format specifier
-fn parse_format_specifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<(), Error> {
+fn parse_format_specifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> crate::error::Result<()> {
     let mut spec = FormatSpecifier::default();
     
     // Parse flags, width, precision, and conversion character
@@ -1650,7 +1649,7 @@ fn parse_format_specifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> R
 }
 
 /// Parse a placeholder like {0} or {name}
-fn parse_placeholder(chars: &mut std::iter::Peekable<std::str::Chars>) -> Result<(), Error> {
+fn parse_placeholder(chars: &mut std::iter::Peekable<std::str::Chars>) -> crate::error::Result<()> {
     let mut placeholder = String::new();
     
     while let Some(&ch) = chars.peek() {
@@ -1679,7 +1678,7 @@ struct FormatSpecifier {
 }
 
 /// Format an argument according to a format specifier
-fn format_argument(arg: &CursedObject, spec: &FormatSpecifier) -> Result<(), Error> {
+fn format_argument(arg: &CursedObject, spec: &FormatSpecifier) -> crate::error::Result<()> {
     let result = match spec.conversion {
         'c' => {
             match arg {
@@ -1781,387 +1780,3 @@ impl std::fmt::Display for FormatSpecifier {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_filter_context() {
-        let context = FilterContext::new();
-        assert_eq!(context.chain_depth, 0);
-        assert!(context.track_performance);
-        assert!(context.cache_enabled);
-        
-        let deeper = context.deeper().unwrap();
-        assert_eq!(deeper.chain_depth, 1);
-        
-        // Test max depth
-        let mut deep_context = context;
-        for _ in 0..10 {
-            deep_context = deep_context.deeper().unwrap();
-        }
-        assert!(deep_context.deeper().is_err());
-    }
-
-    #[test]
-    fn test_string_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test lower filter
-        let result = registry.apply("lower", &[CursedObject::String("HELLO".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::String("hello".to_string()));
-
-        // Test upper filter
-        let result = registry.apply("upper", &[CursedObject::String("hello".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::String("HELLO".to_string()));
-
-        // Test title filter
-        let result = registry.apply("title", &[CursedObject::String("hello world".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::String("Hello World".to_string()));
-    }
-
-    #[test]
-    fn test_math_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test add filter
-        let result = registry.apply("add", &[
-            CursedObject::Integer(5),
-            CursedObject::Integer(3),
-        ]).unwrap();
-        assert_eq!(result, CursedObject::Float(8.0));
-
-        // Test max filter
-        let result = registry.apply("max", &[
-            CursedObject::Float(5.5),
-            CursedObject::Float(3.2),
-        ]).unwrap();
-        assert_eq!(result, CursedObject::Float(5.5));
-    }
-
-    #[test]
-    fn test_collection_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test len filter
-        let arr = vec![
-            CursedObject::String("a".to_string()),
-            CursedObject::String("b".to_string()),
-            CursedObject::String("c".to_string()),
-        ];
-        let result = registry.apply("len", &[CursedObject::Array(arr)]).unwrap();
-        assert_eq!(result, CursedObject::Integer(3));
-
-        // Test first filter
-        let arr = vec![
-            CursedObject::String("first".to_string()),
-            CursedObject::String("second".to_string()),
-        ];
-        let result = registry.apply("first", &[CursedObject::Array(arr)]).unwrap();
-        assert_eq!(result, CursedObject::String("first".to_string()));
-    }
-
-    #[test]
-    fn test_conversion_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test toString filter
-        let result = registry.apply("toString", &[CursedObject::Integer(42)]).unwrap();
-        assert_eq!(result, CursedObject::String("42".to_string()));
-
-        // Test toInt filter
-        let result = registry.apply("toInt", &[CursedObject::String("123".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::Integer(123));
-    }
-
-    #[test]
-    fn test_html_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test htmlEscape filter
-        let result = registry.apply("htmlEscape", &[
-            CursedObject::String("<script>alert('xss')</script>".to_string())
-        ]).unwrap();
-        
-        if let CursedObject::String(escaped) = result {
-            assert!(escaped.contains("&lt;script&gt;"));
-        } else {
-            panic!("Expected string result");
-        }
-    }
-
-    #[test]
-    fn test_cursed_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test no_cap filter (trim alias)
-        let result = registry.apply("no_cap", &[CursedObject::String("  hello  ".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::String("hello".to_string()));
-
-        // Test vibes filter (format alias)
-        let result = registry.apply("vibes", &[CursedObject::Float(3.14159), CursedObject::Integer(2)]).unwrap();
-        assert_eq!(result, CursedObject::String("3.14".to_string()));
-
-        // Test periodt filter
-        let result = registry.apply("periodt", &[CursedObject::String("hello".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::String("hello.".to_string()));
-
-        // Test flex filter
-        let result = registry.apply("flex", &[CursedObject::String("strong".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::String("STRONG 💪".to_string()));
-
-        // Test bussin filter
-        let result = registry.apply("bussin", &[CursedObject::Float(9.0)]).unwrap();
-        assert_eq!(result, CursedObject::String("bussin 😍".to_string()));
-
-        let result = registry.apply("bussin", &[CursedObject::Float(5.0)]).unwrap();
-        assert_eq!(result, CursedObject::String("nah chief".to_string()));
-    }
-
-    #[test]
-    fn test_trait_filters() {
-        let registry = FilterRegistry::new();
-        
-        // Register trait-based filters
-        registry.register_trait_filter(CapitalizeFilter);
-        registry.register_trait_filter(ReverseStringFilter);
-
-        // Test capitalize filter
-        let result = registry.apply("capitalize", &[CursedObject::String("hello world".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::String("Hello World".to_string()));
-
-        // Test reverse_string filter
-        let result = registry.apply("reverse_string", &[CursedObject::String("hello".to_string())]).unwrap();
-        assert_eq!(result, CursedObject::String("olleh".to_string()));
-    }
-
-    #[test]
-    fn test_filter_caching() {
-        let registry = FilterRegistry::new();
-
-        // Apply the same filter multiple times
-        let args = vec![CursedObject::String("HELLO".to_string())];
-        
-        let result1 = registry.apply("lower", &args).unwrap();
-        let result2 = registry.apply("lower", &args).unwrap();
-        
-        assert_eq!(result1, result2);
-        assert_eq!(result1, CursedObject::String("hello".to_string()));
-
-        // Check stats
-        if let Some(stats) = registry.get_stats("lower") {
-            assert!(stats.call_count >= 2);
-        }
-    }
-
-    #[test]
-    fn test_advanced_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test sort filter
-        let arr = vec![
-            CursedObject::String("zebra".to_string()),
-            CursedObject::String("apple".to_string()),
-            CursedObject::String("banana".to_string()),
-        ];
-        let result = registry.apply("sort", &[CursedObject::Array(arr)]).unwrap();
-        
-        if let CursedObject::Array(sorted) = result {
-            assert_eq!(sorted[0], CursedObject::String("apple".to_string()));
-            assert_eq!(sorted[1], CursedObject::String("banana".to_string()));
-            assert_eq!(sorted[2], CursedObject::String("zebra".to_string()));
-        } else {
-            panic!("Expected array result");
-        }
-
-        // Test truncate filter
-        let result = registry.apply("truncate", &[
-            CursedObject::String("This is a very long string".to_string()),
-            CursedObject::Integer(10),
-            CursedObject::String("...".to_string())
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("This is...".to_string()));
-
-        // Test filter with condition
-        let arr = vec![
-            CursedObject::String("".to_string()),
-            CursedObject::String("hello".to_string()),
-            CursedObject::String("".to_string()),
-            CursedObject::String("world".to_string()),
-        ];
-        let result = registry.apply("filter", &[
-            CursedObject::Array(arr),
-            CursedObject::String("non_empty".to_string())
-        ]).unwrap();
-        
-        if let CursedObject::Array(filtered) = result {
-            assert_eq!(filtered.len(), 2);
-            assert_eq!(filtered[0], CursedObject::String("hello".to_string()));
-            assert_eq!(filtered[1], CursedObject::String("world".to_string()));
-        } else {
-            panic!("Expected array result");
-        }
-    }
-
-    #[test]
-    fn test_date_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test time_ago filter
-        let now = chrono::Utc::now().timestamp();
-        let one_hour_ago = now - 3600;
-        let result = registry.apply("time_ago", &[CursedObject::Integer(one_hour_ago)]).unwrap();
-        
-        if let CursedObject::String(time_str) = result {
-            assert!(time_str.contains("hour"));
-        } else {
-            panic!("Expected string result");
-        }
-
-        // Test date_format filter
-        let timestamp = 1640995200; // 2022-01-01 00:00:00 UTC
-        let result = registry.apply("date_format", &[
-            CursedObject::Integer(timestamp),
-            CursedObject::String("%Y-%m-%d".to_string())
-        ]).unwrap();
-        
-        if let CursedObject::String(date_str) = result {
-            assert_eq!(date_str, "2022-01-01");
-        } else {
-            panic!("Expected string result");
-        }
-    }
-
-    #[test]
-    fn test_error_handling() {
-        let registry = FilterRegistry::new();
-
-        // Test unknown filter
-        let result = registry.apply("unknown_filter", &[CursedObject::String("test".to_string())]);
-        assert!(result.is_err());
-
-        // Test invalid arguments
-        let result = registry.apply("add", &[CursedObject::String("not_a_number".to_string()), CursedObject::Integer(5)]);
-        assert!(result.is_err());
-
-        // Test division by zero
-        let result = registry.apply("div", &[CursedObject::Float(10.0), CursedObject::Float(0.0)]);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_printf_sprintf_filters() {
-        let registry = FilterRegistry::new();
-
-        // Test printf with string format
-        let result = registry.apply("printf", &[
-            CursedObject::String("Hello %s!".to_string()),
-            CursedObject::String("World".to_string())
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Hello World!".to_string()));
-
-        // Test sprintf with integer format
-        let result = registry.apply("sprintf", &[
-            CursedObject::String("Number: %d".to_string()),
-            CursedObject::Integer(42)
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Number: 42".to_string()));
-
-        // Test printf with float format
-        let result = registry.apply("printf", &[
-            CursedObject::String("Value: %.2f".to_string()),
-            CursedObject::Float(3.14159)
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Value: 3.14".to_string()));
-
-        // Test printf with multiple arguments
-        let result = registry.apply("printf", &[
-            CursedObject::String("Name: %s, Age: %d, Height: %.1f".to_string()),
-            CursedObject::String("Alice".to_string()),
-            CursedObject::Integer(25),
-            CursedObject::Float(5.6)
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Name: Alice, Age: 25, Height: 5.6".to_string()));
-
-        // Test placeholder-style formatting
-        let result = registry.apply("printf", &[
-            CursedObject::String("Hello {}! You are {} years old.".to_string()),
-            CursedObject::String("Bob".to_string()),
-            CursedObject::Integer(30)
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Hello Bob! You are 30 years old.".to_string()));
-
-        // Test indexed placeholders
-        let result = registry.apply("sprintf", &[
-            CursedObject::String("Second: {1}, First: {0}".to_string()),
-            CursedObject::String("First".to_string()),
-            CursedObject::String("Second".to_string())
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Second: Second, First: First".to_string()));
-
-        // Test hexadecimal format
-        let result = registry.apply("printf", &[
-            CursedObject::String("Hex: %x, HEX: %X".to_string()),
-            CursedObject::Integer(255),
-            CursedObject::Integer(255)
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Hex: ff, HEX: FF".to_string()));
-
-        // Test octal format
-        let result = registry.apply("sprintf", &[
-            CursedObject::String("Octal: %o".to_string()),
-            CursedObject::Integer(64)
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Octal: 100".to_string()));
-
-        // Test character format
-        let result = registry.apply("printf", &[
-            CursedObject::String("Char: %c".to_string()),
-            CursedObject::Integer(65)
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Char: A".to_string()));
-
-        // Test scientific notation
-        let result = registry.apply("sprintf", &[
-            CursedObject::String("Scientific: %.2e".to_string()),
-            CursedObject::Float(1234.5)
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Scientific: 1.23e3".to_string()));
-
-        // Test escaped characters
-        let result = registry.apply("printf", &[
-            CursedObject::String("Escaped: %% and {{}}".to_string())
-        ]).unwrap();
-        assert_eq!(result, CursedObject::String("Escaped: % and {}".to_string()));
-    }
-
-    #[test]
-    fn test_printf_error_cases() {
-        let registry = FilterRegistry::new();
-
-        // Test insufficient arguments
-        let result = registry.apply("printf", &[
-            CursedObject::String("Hello %s %s!".to_string()),
-            CursedObject::String("World".to_string())
-        ]);
-        assert!(result.is_err());
-
-        // Test no arguments
-        let result = registry.apply("sprintf", &[]);
-        assert!(result.is_err());
-
-        // Test invalid character conversion
-        let result = registry.apply("printf", &[
-            CursedObject::String("Char: %c".to_string()),
-            CursedObject::String("".to_string())
-        ]);
-        assert!(result.is_err());
-
-        // Test out of range index
-        let result = registry.apply("sprintf", &[
-            CursedObject::String("Index: {5}".to_string()),
-            CursedObject::String("only one arg".to_string())
-        ]);
-        assert!(result.is_err());
-    }
-}

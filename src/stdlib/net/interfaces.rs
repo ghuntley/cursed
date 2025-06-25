@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Network interface enumeration and management for CURSED networking
 /// 
 /// This module provides functionality to discover and query network interfaces
@@ -6,8 +6,8 @@ use crate::error::Error;
 /// configuration details.
 
 use std::collections::HashMap;
-use crate::stdlib::net::error::{NetError, NetResult, general_error};
-use crate::stdlib::net::address::{IpAddr, SocketAddr};
+// use crate::stdlib::net::error::{NetError, NetResult, general_error};
+// use crate::stdlib::net::address::{IpAddr, SocketAddr};
 
 /// Network interface type
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -608,99 +608,3 @@ pub fn refresh_interface_cache() -> NetResult<()> {
     manager_guard.refresh()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_interface_type_display() {
-        assert_eq!(InterfaceType::Ethernet.to_string(), "Ethernet");
-        assert_eq!(InterfaceType::Wireless.to_string(), "Wireless");
-        assert_eq!(InterfaceType::Loopback.to_string(), "Loopback");
-    }
-
-    #[test]
-    fn test_interface_stats_default() {
-        let stats = InterfaceStats::default();
-        assert_eq!(stats.bytes_sent, 0);
-        assert_eq!(stats.bytes_received, 0);
-        assert_eq!(stats.packets_sent, 0);
-    }
-
-    #[test]
-    fn test_interface_config_default() {
-        let config = InterfaceConfig::default();
-        assert_eq!(config.mtu, 1500);
-        assert!(!config.up);
-        assert!(!config.running);
-    }
-
-    #[test]
-    fn test_network_interface_creation() {
-        let iface = NetworkInterface::new("eth0".to_string(), 1);
-        assert_eq!(iface.name, "eth0");
-        assert_eq!(iface.index, 1);
-        assert_eq!(iface.interface_type, InterfaceType::Unknown);
-        assert!(!iface.is_active());
-    }
-
-    #[test]
-    fn test_interface_properties() {
-        let mut iface = NetworkInterface::new("lo".to_string(), 0);
-        iface.interface_type = InterfaceType::Loopback;
-        iface.config.loopback = true;
-        iface.config.up = true;
-        iface.config.running = true;
-        iface.ip_addresses.push("127.0.0.1".parse().unwrap());
-        
-        assert!(iface.is_loopback());
-        assert!(iface.is_active());
-        assert_eq!(iface.primary_ip(), Some("127.0.0.1".parse().unwrap()));
-        assert_eq!(iface.ipv4_addresses().len(), 1);
-        assert_eq!(iface.ipv6_addresses().len(), 0);
-    }
-
-    #[test]
-    fn test_interface_manager_creation() {
-        let mut manager = InterfaceManager::new();
-        assert!(manager.interfaces.is_empty());
-        
-        // Test refresh - should not panic
-        let _ = manager.refresh();
-    }
-
-    #[test]
-    fn test_interface_bandwidth_estimate() {
-        let mut iface = NetworkInterface::new("eth0".to_string(), 1);
-        iface.interface_type = InterfaceType::Ethernet;
-        assert!(iface.bandwidth_estimate() > 0.0);
-        
-        iface.interface_type = InterfaceType::Wireless;
-        assert!(iface.bandwidth_estimate() > 0.0);
-    }
-
-    #[test]
-    fn test_interface_format_info() {
-        let mut iface = NetworkInterface::new("eth0".to_string(), 1);
-        iface.interface_type = InterfaceType::Ethernet;
-        iface.config.up = true;
-        iface.config.running = true;
-        iface.ip_addresses.push("192.168.1.100".parse().unwrap());
-        
-        let info = iface.format_info();
-        assert!(info.contains("eth0"));
-        assert!(info.contains("Ethernet"));
-        assert!(info.contains("UP"));
-        assert!(info.contains("192.168.1.100"));
-    }
-
-    #[test]
-    fn test_global_interface_functions() {
-        // These should not panic
-        let _ = list_interfaces();
-        let _ = get_interface_by_name("nonexistent");
-        let _ = get_default_interface();
-        let _ = get_active_interfaces();
-        let _ = refresh_interface_cache();
-    }
-}

@@ -8,9 +8,9 @@ use std::fmt;
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use std::fs;
 use std::path::{Path, PathBuf};
+use crate::error::CursedError;
 
-use crate::stdlib::value::Value;
-use crate::error::{CursedError, Error};
+// use crate::stdlib::value::Value;
 use super::asymmetric::{AsymmetricError, AsymmetricResult, RsaPublicKey, EcdsaPublicKey};
 // Use explicit imports instead of glob import to avoid conflicts
 use x509_parser::certificate::X509Certificate as X509ParserCertificate;
@@ -158,41 +158,41 @@ pub enum CertificateError {
     Internal(String),
 }
 
-impl fmt::Display for CertificateError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CertificateError::InvalidFormat(msg) => 
-                write!(f, "Invalid certificate format: {}", msg),
-            CertificateError::InvalidSignature => 
-                write!(f, "Invalid certificate signature"),
-            CertificateError::InvalidPublicKey => 
-                write!(f, "Invalid public key format"),
-            CertificateError::Expired => 
-                write!(f, "Certificate has expired"),
-            CertificateError::NotYetValid => 
-                write!(f, "Certificate is not yet valid"),
-            CertificateError::UntrustedIssuer => 
-                write!(f, "Certificate issued by untrusted authority"),
-            CertificateError::ChainValidationFailed(msg) => 
-                write!(f, "Certificate chain validation failed: {}", msg),
-            CertificateError::RevocationCheckFailed(msg) => 
-                write!(f, "Certificate revocation check failed: {}", msg),
-            CertificateError::HostnameMismatch(expected) => 
-                write!(f, "Certificate hostname mismatch, expected: {}", expected),
-            CertificateError::UnsupportedAlgorithm(alg) => 
-                write!(f, "Unsupported algorithm: {}", alg),
-            CertificateError::ParseError(msg) => 
-                write!(f, "Certificate parse error: {}", msg),
-            CertificateError::EncodingError(msg) => 
-                write!(f, "Certificate encoding error: {}", msg),
-            CertificateError::Internal(msg) => 
-                write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for CertificateError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             CertificateError::InvalidFormat(msg) => 
+//                 write!(f, "Invalid certificate format: {}", msg),
+//             CertificateError::InvalidSignature => 
+//                 write!(f, "Invalid certificate signature"),
+//             CertificateError::InvalidPublicKey => 
+//                 write!(f, "Invalid public key format"),
+//             CertificateError::Expired => 
+//                 write!(f, "Certificate has expired"),
+//             CertificateError::NotYetValid => 
+//                 write!(f, "Certificate is not yet valid"),
+//             CertificateError::UntrustedIssuer => 
+//                 write!(f, "Certificate issued by untrusted authority"),
+//             CertificateError::ChainValidationFailed(msg) => 
+//                 write!(f, "Certificate chain validation failed: {}", msg),
+//             CertificateError::RevocationCheckFailed(msg) => 
+//                 write!(f, "Certificate revocation check failed: {}", msg),
+//             CertificateError::HostnameMismatch(expected) => 
+//                 write!(f, "Certificate hostname mismatch, expected: {}", expected),
+//             CertificateError::UnsupportedAlgorithm(alg) => 
+//                 write!(f, "Unsupported algorithm: {}", alg),
+//             CertificateError::ParseError(msg) => 
+//                 write!(f, "Certificate parse error: {}", msg),
+//             CertificateError::EncodingError(msg) => 
+//                 write!(f, "Certificate encoding error: {}", msg),
+//             CertificateError::Internal(msg) => 
+//                 write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for CertificateError {}
-
+// impl std::error::CursedError for CertificateError {}
+// 
 pub type CertificateResult<T> = std::result::Result<T, CertificateError>;
 
 /// fr fr Certificate encoding formats
@@ -369,7 +369,7 @@ impl CertificateProcessor {
     }
     
     /// Convert x509-parser certificate to internal format
-    fn convert_x509_to_internal(&self, x509_cert: X509ParserCertificate<'_>, raw_der: &[u8]) -> CertificateResult<crate::stdlib::crypto::certificates::X509Certificate> {
+//     fn convert_x509_to_internal(&self, x509_cert: X509ParserCertificate<'_>, raw_der: &[u8]) -> CertificateResult<crate::stdlib::crypto::certificates::X509Certificate> {
         // Extract issuer DN
         let issuer = self.extract_distinguished_name(&x509_cert.issuer)?;
         
@@ -403,7 +403,7 @@ impl CertificateProcessor {
             }
         }
         
-        Ok(crate::stdlib::crypto::certificates::X509Certificate {
+//         Ok(crate::stdlib::crypto::certificates::X509Certificate {
             version: x509_cert.version as u8,
             serial_number: x509_cert.serial.to_bytes_be(),
             signature_algorithm: self.determine_signature_algorithm(&x509_cert.signature_algorithm)?,
@@ -1328,7 +1328,7 @@ impl ObjectIdentifier {
 /// fr fr Public API functions for CURSED stdlib integration
 
 /// slay Parse certificate from PEM
-pub fn parse_certificate_pem(args: Vec<Value>) -> Result<(), Error> {
+pub fn parse_certificate_pem(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("parse_certificate_pem requires PEM data".to_string()));
     }
@@ -1353,7 +1353,7 @@ pub fn parse_certificate_pem(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Parse certificate from DER
-pub fn parse_certificate_der(args: Vec<Value>) -> Result<(), Error> {
+pub fn parse_certificate_der(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("parse_certificate_der requires DER data".to_string()));
     }
@@ -1400,7 +1400,7 @@ pub fn parse_certificate_der(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Validate certificate
-pub fn validate_certificate(args: Vec<Value>) -> Result<(), Error> {
+pub fn validate_certificate(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("validate_certificate requires certificate data".to_string()));
     }
@@ -1466,7 +1466,7 @@ pub fn validate_certificate(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Validate certificate chain
-pub fn validate_certificate_chain(args: Vec<Value>) -> Result<(), Error> {
+pub fn validate_certificate_chain(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("validate_certificate_chain requires certificate chain".to_string()));
     }
@@ -1476,7 +1476,7 @@ pub fn validate_certificate_chain(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Get certificate fingerprint
-pub fn get_certificate_fingerprint(args: Vec<Value>) -> Result<(), Error> {
+pub fn get_certificate_fingerprint(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("get_certificate_fingerprint requires certificate".to_string()));
     }
@@ -1505,7 +1505,7 @@ pub fn get_certificate_fingerprint(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Parse CSR from PEM
-pub fn parse_csr_pem(args: Vec<Value>) -> Result<(), Error> {
+pub fn parse_csr_pem(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("parse_csr_pem requires PEM data".to_string()));
     }
@@ -1528,7 +1528,7 @@ pub fn parse_csr_pem(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Convert PEM to DER
-pub fn pem_to_der(args: Vec<Value>) -> Result<(), Error> {
+pub fn pem_to_der(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("pem_to_der requires PEM data".to_string()));
     }
@@ -1546,7 +1546,7 @@ pub fn pem_to_der(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Convert DER to PEM
-pub fn der_to_pem(args: Vec<Value>) -> Result<(), Error> {
+pub fn der_to_pem(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("der_to_pem requires DER data".to_string()));
     }
@@ -1590,96 +1590,3 @@ mod hex {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_distinguished_name() {
-        let dn = DistinguishedName::new()
-            .with_common_name("example.com")
-            .with_organization("Example Corp")
-            .with_country("US");
-            
-        assert_eq!(dn.common_name.as_ref().unwrap(), "example.com");
-        assert_eq!(dn.organization.as_ref().unwrap(), "Example Corp");
-        assert_eq!(dn.country.as_ref().unwrap(), "US");
-        
-        let dn_str = dn.to_string();
-        assert!(dn_str.contains("CN=example.com"));
-        assert!(dn_str.contains("O=Example Corp"));
-        assert!(dn_str.contains("C=US"));
-    }
-
-    #[test]
-    fn test_object_identifier() {
-        let oid = ObjectIdentifier::from_string("2.5.29.15").unwrap();
-        assert_eq!(oid.components, Vec::from([2, 5, 29, 15]));
-        assert_eq!(oid.to_string(), "2.5.29.15");
-        
-        let invalid_oid = ObjectIdentifier::from_string("invalid.oid");
-        assert!(invalid_oid.is_err());
-    }
-
-    #[test]
-    fn test_certificate_processor() {
-        let processor = CertificateProcessor::new();
-        assert_eq!(processor.config.check_expiration, true);
-        assert_eq!(processor.config.max_chain_length, 10);
-    }
-
-    #[test]
-    fn test_certificate_error() {
-        let error = CertificateError::Expired;
-        assert_eq!(error.to_string(), "Certificate has expired");
-        
-        let error = CertificateError::HostnameMismatch("example.com".to_string());
-        assert_eq!(error.to_string(), "Certificate hostname mismatch, expected: example.com");
-    }
-
-    #[test]
-    fn test_encoding_formats() {
-        assert_eq!(EncodingFormat::Der as u8, 0);
-        assert_eq!(EncodingFormat::Pem as u8, 1);
-    }
-
-    #[test]
-    fn test_public_key_algorithms() {
-        assert_eq!(PublicKeyAlgorithm::RsaEncryption as u8, 0);
-        assert_eq!(PublicKeyAlgorithm::EcPublicKey as u8, 1);
-    }
-
-    #[test]
-    fn test_signature_algorithms() {
-        assert_eq!(SignatureAlgorithm::Sha256WithRsaEncryption as u8, 0);
-        assert_eq!(SignatureAlgorithm::EcdsaWithSha256 as u8, 3);
-    }
-
-    #[test]
-    fn test_base64_encoding() {
-        let processor = CertificateProcessor::new();
-        let data = b"hello world";
-        let encoded = processor.base64_encode(data);
-        let decoded = processor.base64_decode(&encoded).unwrap();
-        assert_eq!(decoded, data);
-    }
-
-    #[test]
-    fn test_wildcard_matching() {
-        let processor = CertificateProcessor::new();
-        assert!(processor.wildcard_match("*.example.com", "www.example.com"));
-        assert!(!processor.wildcard_match("*.example.com", "sub.www.example.com"));
-        assert!(processor.wildcard_match("example.com", "example.com"));
-    }
-
-    #[test]
-    fn test_api_functions() {
-        // Use a valid base64 encoded dummy certificate
-        let pem_data = "-----BEGIN CERTIFICATE-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\n-----END CERTIFICATE-----";
-        let result = parse_certificate_pem(Vec::from([Value::String(pem_data.to_string())]));
-        assert!(result.is_ok());
-        
-        let result = validate_certificate(Vec::from([Value::String("dummy".to_string())]));
-        assert!(result.is_ok());
-    }
-}

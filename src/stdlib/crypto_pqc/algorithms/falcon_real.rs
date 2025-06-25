@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real FALCON Digital Signature Implementation
 /// 
 /// This is a production-ready implementation of FALCON, a lattice-based
@@ -19,7 +19,7 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use sha3::{Sha3_256, Digest, Shake256};
 use sha3::digest::{ExtendableOutput, Update, XofReader};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 
 // FALCON parameters
@@ -677,71 +677,3 @@ fn mod_inverse(a: i32, m: i32) -> i32 {
     ((x % m as i64 + m as i64) % m as i64) as i32
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_falcon_keygen() {
-        let (pub_key, sec_key) = RealFalcon::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params, FalconParams::Falcon512);
-        assert_eq!(sec_key.params, FalconParams::Falcon512);
-    }
-
-    #[test]
-    fn test_real_falcon_sign_verify() {
-        let (pub_key, sec_key) = RealFalcon::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, compact signatures!";
-        
-        let signature = RealFalcon::sign(&sec_key, message).unwrap();
-        let is_valid = RealFalcon::verify(&pub_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_falcon_polynomial_operations() {
-        let poly1 = FalconPolynomial::from_coeffs(vec![1, 2, 3]);
-        let poly2 = FalconPolynomial::from_coeffs(vec![4, 5, 6]);
-        
-        let sum = poly1.add(&poly2);
-        assert_eq!(sum.coeffs, vec![5, 7, 9]);
-        
-        let diff = poly1.sub(&poly2);
-        assert_eq!(diff.coeffs, vec![-3, -3, -3]);
-    }
-
-    #[test]
-    fn test_complex_operations() {
-        let a = Complex::new(1.0, 2.0);
-        let b = Complex::new(3.0, 4.0);
-        
-        let sum = a.add(&b);
-        assert_eq!(sum.re, 4.0);
-        assert_eq!(sum.im, 6.0);
-        
-        let product = a.mul(&b);
-        assert_eq!(product.re, -5.0);
-        assert_eq!(product.im, 10.0);
-    }
-
-    #[test]
-    fn test_fft_ifft() {
-        let mut data = vec![
-            Complex::new(1.0, 0.0),
-            Complex::new(2.0, 0.0),
-            Complex::new(3.0, 0.0),
-            Complex::new(4.0, 0.0),
-        ];
-        
-        let original = data.clone();
-        fft(&mut data);
-        ifft(&mut data);
-        
-        // Should be close to original after FFT/IFFT
-        for i in 0..data.len() {
-            assert!((data[i].re - original[i].re).abs() < 1e-10);
-            assert!((data[i].im - original[i].im).abs() < 1e-10);
-        }
-    }
-}

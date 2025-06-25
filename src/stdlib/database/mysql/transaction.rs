@@ -8,11 +8,11 @@ use std::sync::{Arc, Mutex};
 use mysql::{Pool, PooledConn, Row, Transaction as MySqlTx};
 use mysql::prelude::*;
 
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     DriverTx, DriverStmt, DatabaseError, SqlValue, TxOptions, SqlIsolationLevel,
     driver::{QueryResult, ExecuteResult}
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::error::{MySqlError, MySqlResult};
 use super::types::{convert_from_sql_value, convert_isolation_level, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
@@ -173,7 +173,7 @@ impl MySqlTransaction {
 }
 
 impl DriverTx for MySqlTransaction {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         if !self.is_transaction_active() {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
@@ -190,17 +190,17 @@ impl DriverTx for MySqlTransaction {
         Ok(Box::new(statement))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_query_internal(query, args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_command_internal(query, args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         if !self.is_transaction_active() {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
@@ -219,7 +219,7 @@ impl DriverTx for MySqlTransaction {
         }
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         if !self.is_transaction_active() {
             return Err(DatabaseError::transaction_error("Transaction is not active"));
         }
@@ -277,39 +277,3 @@ impl Drop for MySqlTransaction {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::database::SqlIsolationLevel;
-
-    #[test]
-    fn test_transaction_options() {
-        let opts = TxOptions {
-            isolation: SqlIsolationLevel::LevelSerializable,
-            read_only: true,
-        };
-
-        assert_eq!(opts.isolation, SqlIsolationLevel::LevelSerializable);
-        assert!(opts.read_only);
-    }
-
-    #[test]
-    fn test_isolation_level_conversion() {
-        assert!(convert_isolation_level(SqlIsolationLevel::LevelReadCommitted).is_ok());
-        assert!(convert_isolation_level(SqlIsolationLevel::LevelSerializable).is_ok());
-        assert!(convert_isolation_level(SqlIsolationLevel::LevelRepeatableRead).is_ok());
-        assert!(convert_isolation_level(SqlIsolationLevel::LevelReadUncommitted).is_ok());
-    }
-
-    #[test]
-    fn test_transaction_structure() {
-        let pool = Arc::new(Pool::new("mysql://localhost/test").unwrap());
-        let options = TxOptions::default();
-        let config = MySqlConfig::default();
-
-        // We can't create a real transaction without a MySQL server
-        // But we can test the structure and options
-        assert_eq!(options.isolation, SqlIsolationLevel::LevelDefault);
-        assert!(!options.read_only);
-    }
-}

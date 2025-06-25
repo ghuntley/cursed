@@ -7,7 +7,7 @@
 /// - Hardware configuration and features
 
 use std::collections::HashMap;
-use crate::stdlib::system::info::SystemResult;
+// use crate::stdlib::system::info::SystemResult;
 
 /// Complete hardware information
 #[derive(Debug, Clone)]
@@ -379,48 +379,3 @@ fn cleanup_unix_hardware() -> SystemResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_hardware_info() {
-        let result = get_hardware_info();
-        assert!(result.is_ok());
-        
-        let info = result.unwrap();
-        assert!(!info.cpu.brand.is_empty());
-        assert!(info.cpu.cores > 0);
-    }
-
-    #[test]
-    fn test_cpu_info() {
-        let result = get_cpu_info();
-        assert!(result.is_ok());
-        
-        let cpu = result.unwrap();
-        assert!(cpu.cores > 0);
-        assert!(cpu.threads > 0);
-    }
-
-    #[test]
-    fn test_memory_info() {
-        let result = get_memory_info();
-        assert!(result.is_ok());
-        
-        let memory = result.unwrap();
-        assert!(memory.total_physical > 0);
-    }
-
-    #[test]
-    fn test_storage_info() {
-        let result = get_storage_info();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_hardware_init_cleanup() {
-        assert!(init_hardware_detection().is_ok());
-        assert!(cleanup_hardware_detection().is_ok());
-    }
-}

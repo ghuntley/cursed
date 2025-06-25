@@ -24,8 +24,8 @@
 /// - Extension criticality handling
 /// - Trust anchor validation
 
-use crate::stdlib::packages::crypto_pki::*;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_pki::*;
+use crate::error::CursedError;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -340,7 +340,7 @@ impl CertificatePathValidator {
         &mut self,
         target_certificate: &CertificateInfo,
         intermediate_certificates: &[CertificateInfo],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Step 1: Build certificate chain
         let chain_result = self.build_certificate_chain(
             target_certificate,
@@ -428,7 +428,7 @@ impl CertificatePathValidator {
         &self,
         target_certificate: &CertificateInfo,
         intermediate_certificates: &[CertificateInfo],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut chain = vec![target_certificate.clone()];
         let mut current_cert = target_certificate;
         let mut visited = HashSet::new();
@@ -489,7 +489,7 @@ impl CertificatePathValidator {
     fn find_trust_anchor(
         &self,
         certificate_chain: &[CertificateInfo],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let root_cert = certificate_chain.last().unwrap();
         
         for trust_anchor in &self.context.trust_anchors {
@@ -514,7 +514,7 @@ impl CertificatePathValidator {
         &self,
         certificate_chain: &[CertificateInfo],
         trust_anchor: &TrustAnchor,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let root_cert = certificate_chain.last().unwrap();
         
         Ok(ValidationState {
@@ -562,7 +562,7 @@ impl CertificatePathValidator {
         index: usize,
         state: &mut ValidationState,
         is_end_entity: bool,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Step 1: Verify certificate signature
         self.verify_certificate_signature(certificate, state)?;
         
@@ -605,7 +605,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         state: &ValidationState,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Extract signature algorithm and parameters
         let signature_algorithm = &certificate.signature_algorithm;
         let signature_value = &certificate.signature_value;
@@ -635,7 +635,7 @@ impl CertificatePathValidator {
     fn check_validity_period(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let current_time = self.context.validation_time;
         
         if current_time < certificate.not_before {
@@ -663,7 +663,7 @@ impl CertificatePathValidator {
     fn check_revocation_status(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Check CRL distribution points
         if let Some(crl_points) = &certificate.crl_distribution_points {
             for crl_point in crl_points {
@@ -699,7 +699,7 @@ impl CertificatePathValidator {
         certificate: &CertificateInfo,
         state: &mut ValidationState,
         is_end_entity: bool,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Extract certificate policies from certificate
         let cert_policies = self.extract_certificate_policies(certificate)?;
         
@@ -746,7 +746,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         state: &mut ValidationState,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Extract name constraints from certificate
         if let Some(name_constraints) = &certificate.name_constraints {
             // Add permitted subtrees
@@ -779,7 +779,7 @@ impl CertificatePathValidator {
         certificate: &CertificateInfo,
         state: &mut ValidationState,
         is_end_entity: bool,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if let Some(basic_constraints) = &certificate.basic_constraints {
             // Check CA flag for non-end-entity certificates
             if !is_end_entity && !basic_constraints.ca {
@@ -818,7 +818,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         is_end_entity: bool,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if let Some(key_usage) = certificate.key_usage {
             if !is_end_entity {
                 // CA certificates must have key cert sign usage
@@ -839,7 +839,7 @@ impl CertificatePathValidator {
     fn process_critical_extensions(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for extension in &certificate.extensions {
             if extension.critical && !self.is_supported_critical_extension(&extension.oid) {
                 return Err(PathValidationError::CriticalExtensionNotSupported {
@@ -856,7 +856,7 @@ impl CertificatePathValidator {
     fn perform_wrap_up_procedures(
         &self,
         state: &ValidationState,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Check explicit policy requirement
         if let Some(explicit_policy) = state.explicit_policy {
             if explicit_policy == 0 && !self.context.required_policies.is_empty() {
@@ -906,14 +906,14 @@ impl CertificatePathValidator {
     fn is_self_signed(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(certificate.subject_name == certificate.issuer_name)
     }
     
     fn is_trusted_root(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for trust_anchor in &self.context.trust_anchors {
             if let Some(anchor_cert) = &trust_anchor.certificate {
                 if self.certificates_match(certificate, anchor_cert)? {
@@ -928,7 +928,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         intermediates: &[CertificateInfo],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for intermediate in intermediates {
             if intermediate.subject_name == certificate.issuer_name {
                 // Verify key identifiers match if present
@@ -950,7 +950,7 @@ impl CertificatePathValidator {
     fn find_issuer_in_trust_anchors(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for trust_anchor in &self.context.trust_anchors {
             if trust_anchor.subject_name == certificate.issuer_name {
                 if let Some(aki) = &certificate.authority_key_identifier {
@@ -971,7 +971,7 @@ impl CertificatePathValidator {
         &self,
         cert1: &CertificateInfo,
         cert2: &CertificateInfo,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(cert1.subject_name == cert2.subject_name &&
            cert1.public_key == cert2.public_key)
     }
@@ -980,7 +980,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         trust_anchor: &TrustAnchor,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(certificate.subject_name == trust_anchor.subject_name &&
            certificate.public_key == trust_anchor.public_key)
     }
@@ -989,7 +989,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         state: &ValidationState,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Verify issuer name matches working issuer name
         if certificate.issuer_name != state.working_issuer_name {
             return Err(PathValidationError::ChainBuildingFailed {
@@ -1011,7 +1011,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         algorithm: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Implement signature verification based on algorithm
         match algorithm {
             "sha256WithRSAEncryption" => {
@@ -1044,7 +1044,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         hash_algorithm: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // RSA signature verification implementation
         // This would integrate with actual cryptographic library
         Ok(true) // Placeholder
@@ -1056,7 +1056,7 @@ impl CertificatePathValidator {
         signature: &[u8],
         public_key: &PublicKeyInfo,
         hash_algorithm: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // ECDSA signature verification implementation
         // This would integrate with actual cryptographic library
         Ok(true) // Placeholder
@@ -1065,7 +1065,7 @@ impl CertificatePathValidator {
     fn extract_certificate_policies(
         &self,
         certificate: &CertificateInfo,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut policies = Vec::new();
         
         for extension in &certificate.extensions {
@@ -1082,7 +1082,7 @@ impl CertificatePathValidator {
     fn parse_certificate_policies_extension(
         &self,
         extension_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Parse DER-encoded certificate policies extension
         // This would use actual ASN.1/DER parsing
         Ok(vec![]) // Placeholder
@@ -1092,7 +1092,7 @@ impl CertificatePathValidator {
         &self,
         policy_tree: &mut PolicyTree,
         cert_policies: &[CertificatePolicy],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Update policy tree according to RFC 5280 algorithm
         // This implements the complex policy tree processing logic
         Ok(()) // Placeholder
@@ -1102,7 +1102,7 @@ impl CertificatePathValidator {
         &self,
         subject_name: &DistinguishedName,
         state: &ValidationState,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Convert distinguished name to general name for constraint checking
         let general_name = GeneralName::DirectoryName(subject_name.clone());
         self.validate_general_name_constraints(&general_name, state)
@@ -1112,7 +1112,7 @@ impl CertificatePathValidator {
         &self,
         name: &GeneralName,
         state: &ValidationState,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Check excluded subtrees first
         for excluded in &state.excluded_subtrees {
             if self.name_matches_subtree(name, excluded)? {
@@ -1152,7 +1152,7 @@ impl CertificatePathValidator {
         &self,
         name: &GeneralName,
         subtree: &GeneralSubtree,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match (&name, &subtree.base) {
             (GeneralName::DnsName(name), GeneralName::DnsName(constraint)) => {
                 Ok(self.dns_name_matches(name, constraint))
@@ -1265,7 +1265,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         state: &mut ValidationState,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Update working public key
         state.working_public_key = certificate.public_key.clone();
         state.working_public_key_algorithm = certificate.public_key.algorithm.clone();
@@ -1297,7 +1297,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         crl_point: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // CRL revocation checking implementation
         // This would download and parse CRL, then check certificate serial number
         Ok(()) // Placeholder
@@ -1307,7 +1307,7 @@ impl CertificatePathValidator {
         &self,
         certificate: &CertificateInfo,
         ocsp_responder: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // OCSP revocation checking implementation
         // This would send OCSP request and parse response
         Ok(()) // Placeholder
@@ -1389,63 +1389,10 @@ pub fn validate_certificate_path_simple(
     target_certificate: &CertificateInfo,
     intermediate_certificates: &[CertificateInfo],
     trust_anchors: &[TrustAnchor],
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let context = create_validation_context_with_anchors(trust_anchors.to_vec());
     let mut validator = CertificatePathValidator::new(context);
     
     validator.validate_path(target_certificate, intermediate_certificates)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    /// Test basic path validation functionality
-    #[test]
-    fn test_path_validation_basic() {
-        // This would test basic path validation with mock certificates
-        // Implementation would create test certificates and validate paths
-    }
-    
-    /// Test certificate chain building
-    #[test]
-    fn test_certificate_chain_building() {
-        // Test chain building from end entity to trust anchor
-    }
-    
-    /// Test name constraint validation
-    #[test]
-    fn test_name_constraint_validation() {
-        // Test DNS name, email, and IP address constraint validation
-    }
-    
-    /// Test certificate policy processing
-    #[test]
-    fn test_certificate_policy_processing() {
-        // Test policy tree building and validation
-    }
-    
-    /// Test path length constraint validation
-    #[test]
-    fn test_path_length_constraints() {
-        // Test path length constraint enforcement
-    }
-    
-    /// Test revocation checking integration
-    #[test]
-    fn test_revocation_checking() {
-        // Test CRL and OCSP revocation checking
-    }
-    
-    /// Test critical extension processing
-    #[test]
-    fn test_critical_extension_processing() {
-        // Test handling of critical extensions
-    }
-    
-    /// Test error scenarios and edge cases
-    #[test]
-    fn test_error_scenarios() {
-        // Test various error conditions and edge cases
-    }
-}

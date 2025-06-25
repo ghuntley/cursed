@@ -1,11 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // macOS-specific platform implementations for process and IPC management
 use super::*;
-use crate::error::CursedError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use crate::stdlib::process::info::ProcessInfo;
+// use crate::stdlib::process::info::ProcessInfo;
 
 pub struct MacOSProcessManager {
     processes: Arc<Mutex<HashMap<u32, ProcessInfo>>>,
@@ -18,17 +17,17 @@ impl MacOSProcessManager {
         }
     }
 
-    pub fn spawn_process(&self, _config: &ProcessConfig) -> Result<(), Error> {
+    pub fn spawn_process(&self, _config: &ProcessConfig) -> crate::error::Result<()> {
         // TODO: Implement macOS-specific process spawning
         Ok(0)
     }
 
-    pub fn kill_process(&self, _pid: u32) -> Result<(), Error> {
+    pub fn kill_process(&self, _pid: u32) -> crate::error::Result<()> {
         // TODO: Implement macOS-specific process termination
         Ok(())
     }
 
-    pub fn list_processes(&self) -> Result<(), Error> {
+    pub fn list_processes(&self) -> crate::error::Result<()> {
         // TODO: Implement macOS-specific process listing
         Ok(vec![])
     }
@@ -45,17 +44,17 @@ impl MacOSIPCManager {
         }
     }
 
-    pub fn create_channel(&self, _name: &str) -> Result<(), Error> {
+    pub fn create_channel(&self, _name: &str) -> crate::error::Result<()> {
         // TODO: Implement macOS-specific IPC channel creation
         Ok(String::new())
     }
 
-    pub fn send_message(&self, _channel: &str, _message: &[u8]) -> Result<(), Error> {
+    pub fn send_message(&self, _channel: &str, _message: &[u8]) -> crate::error::Result<()> {
         // TODO: Implement macOS-specific message sending
         Ok(())
     }
 
-    pub fn receive_message(&self, _channel: &str, _timeout: Duration) -> Result<(), Error> {
+    pub fn receive_message(&self, _channel: &str, _timeout: Duration) -> crate::error::Result<()> {
         // TODO: Implement macOS-specific message receiving
         Ok(vec![])
     }

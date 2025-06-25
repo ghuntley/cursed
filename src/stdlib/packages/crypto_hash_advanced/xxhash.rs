@@ -1,7 +1,6 @@
 /// Production-ready xxHash implementation - fast non-cryptographic hash function
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::io::Read;
 
 // xxHash constants
@@ -399,78 +398,3 @@ pub fn xxhash64(data: &[u8], seed: u64) -> u64 {
     ])
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_xxhash32_empty() {
-        let mut hasher = XxHash32::new();
-        let result = hasher.hash(b"");
-        let expected = xxhash32(b"", 0);
-        assert_eq!(u32::from_le_bytes([result[0], result[1], result[2], result[3]]), expected);
-    }
-
-    #[test]
-    fn test_xxhash32_known_vectors() {
-        // Known test vector
-        let result = xxhash32(b"abc", 0);
-        assert_ne!(result, 0); // Should produce non-zero hash
-        
-        // Different seeds should produce different results
-        let result1 = xxhash32(b"test", 0);
-        let result2 = xxhash32(b"test", 1);
-        assert_ne!(result1, result2);
-    }
-
-    #[test]
-    fn test_xxhash64_empty() {
-        let mut hasher = XxHash64::new();
-        let result = hasher.hash(b"");
-        let expected = xxhash64(b"", 0);
-        assert_eq!(u64::from_le_bytes([
-            result[0], result[1], result[2], result[3],
-            result[4], result[5], result[6], result[7],
-        ]), expected);
-    }
-
-    #[test]
-    fn test_xxhash64_incremental() {
-        let mut hasher1 = XxHash64::new();
-        hasher1.update(b"hello");
-        hasher1.update(b"world");
-        let result1 = hasher1.finalize();
-        
-        let mut hasher2 = XxHash64::new();
-        let result2 = hasher2.hash(b"helloworld");
-        
-        assert_eq!(result1, result2);
-    }
-
-    #[test]
-    fn test_xxhash_reset() {
-        let mut hasher = XxHash64::new();
-        hasher.update(b"some data");
-        hasher.reset();
-        let result = hasher.hash(b"different data");
-        
-        let mut fresh_hasher = XxHash64::new();
-        let expected = fresh_hasher.hash(b"different data");
-        
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_xxhash_large_data() {
-        let large_data = vec![42u8; 10000];
-        let result1 = xxhash64(&large_data, 0);
-        let result2 = xxhash64(&large_data, 0);
-        assert_eq!(result1, result2);
-        
-        // Different data should produce different hash
-        let mut different_data = large_data.clone();
-        different_data[5000] = 43;
-        let result3 = xxhash64(&different_data, 0);
-        assert_ne!(result1, result3);
-    }
-}

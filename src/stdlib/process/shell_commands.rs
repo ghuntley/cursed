@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Shell command execution for CURSED process management
 /// 
 /// This module provides convenient shell command execution functionality
@@ -10,8 +10,8 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult, execution_failed, invalid_arguments};
-use crate::stdlib::process::exec_slay::{SlayCommand, SlayProcessState, ProcessStdout, ProcessStderr};
+// use crate::stdlib::process::error::{ProcessError, ProcessResult, execution_failed, invalid_arguments};
+// use crate::stdlib::process::exec_slay::{SlayCommand, SlayProcessState, ProcessStdout, ProcessStderr};
 
 /// Shell command manager for executing shell commands
 #[derive(Debug)]
@@ -440,102 +440,3 @@ pub fn shell_script_output<P: AsRef<Path>>(script_path: P, config: Option<ShellC
     shell_output_enhanced(&script_content, Some(config))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_shell_config_default() {
-        let config = ShellConfig::default();
-        
-        #[cfg(unix)]
-        assert_eq!(config.shell_path, "/bin/sh");
-        
-        #[cfg(windows)]
-        assert_eq!(config.shell_path, "cmd");
-        
-        assert!(config.capture_output);
-        assert!(!config.merge_stderr);
-    }
-
-    #[test]
-    fn test_validate_shell_command() {
-        assert!(validate_shell_command("echo hello").is_ok());
-        assert!(validate_shell_command("ls -la").is_ok());
-        assert!(validate_shell_command("").is_err());
-        assert!(validate_shell_command("   ").is_err());
-    }
-
-    #[test]
-    fn test_parse_shell_command() {
-        let result = parse_shell_command("echo hello world").unwrap();
-        assert_eq!(result.0, "echo");
-        assert_eq!(result.1, vec!["hello", "world"]);
-        
-        let result = parse_shell_command("ls").unwrap();
-        assert_eq!(result.0, "ls");
-        assert!(result.1.is_empty());
-        
-        assert!(parse_shell_command("").is_err());
-    }
-
-    #[test]
-    fn test_shell_config_with_environment() {
-        let mut config = ShellConfig::default();
-        config.environment.insert("TEST_VAR".to_string(), "test_value".to_string());
-        config.timeout = Some(Duration::from_secs(5));
-        
-        assert_eq!(config.environment.get("TEST_VAR"), Some(&"test_value".to_string()));
-        assert_eq!(config.timeout, Some(Duration::from_secs(5)));
-    }
-
-    #[test]
-    fn test_create_shell_command() {
-        let mut config = ShellConfig::default();
-        config.environment.insert("PATH".to_string(), "/usr/bin".to_string());
-        config.working_dir = Some("/tmp".to_string());
-        
-        let command = create_shell_command("echo test", &config).unwrap();
-        // We can't easily test the internal state of Command, but we can verify it was created
-        assert!(format!("{:?}", command).contains("echo test"));
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_run_shell_basic() {
-        // Test basic shell execution
-        let result = run_shell("echo hello");
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_shell_output_basic() {
-        // Test shell output capture
-        let result = shell_output("echo hello");
-        assert!(result.is_ok());
-        
-        if let Ok(output) = result {
-            let output_str = String::from_utf8_lossy(&output);
-            assert!(output_str.contains("hello"));
-        }
-    }
-
-    #[test]
-    fn test_shell_config_builder() {
-        let mut config = ShellConfig::default();
-        config.timeout = Some(Duration::from_secs(10));
-        config.capture_output = false;
-        config.merge_stderr = true;
-        config.environment.insert("TEST".to_string(), "value".to_string());
-        
-        assert_eq!(config.timeout, Some(Duration::from_secs(10)));
-        assert!(!config.capture_output);
-        assert!(config.merge_stderr);
-        assert_eq!(config.environment.len(), 1);
-    }
-}

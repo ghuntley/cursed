@@ -8,7 +8,7 @@
 /// library that's optimized for performance and ease of use.
 
 use std::fmt;
-use crate::error::Error;
+use crate::error::CursedError;
 
 // Core mathematical modules
 pub mod basic;
@@ -170,7 +170,7 @@ pub use special::{
     binomial, binomial_f64, permutations as special_permutations,
     // Number sequences
     fibonacci as special_fibonacci, lucas, catalan,
-    // Error functions
+    // CursedError functions
     erf, erfc, erf_inv,
     // Bessel functions
     bessel_j0, bessel_j1, bessel_y0, bessel_y1,
@@ -265,7 +265,7 @@ pub use big_mood::{
     fast_mul, rand_prime,
 };
 
-/// Error types for mathematical operations
+/// CursedError types for mathematical operations
 #[derive(Debug, Clone, PartialEq)]
 pub enum MathError {
     /// Domain error: input value outside valid domain
@@ -288,42 +288,42 @@ pub enum MathError {
     ComputationError { function: String, message: String },
 }
 
-impl fmt::Display for MathError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MathError::DomainError { function, value, message } => {
-                write!(f, "Domain error in {}: value {} - {}", function, value, message)
-            }
-            MathError::RangeError { function, message } => {
-                write!(f, "Range error in {}: {}", function, message)
-            }
-            MathError::Overflow { function, value } => {
-                write!(f, "Overflow in {}: value {} is too large", function, value)
-            }
-            MathError::Underflow { function, value } => {
-                write!(f, "Underflow in {}: value {} is too small", function, value)
-            }
-            MathError::DivisionByZero { function } => {
-                write!(f, "Division by zero in {}", function)
-            }
-            MathError::InvalidInput { function, parameter, value } => {
-                write!(f, "Invalid input in {}: parameter {} = {}", function, parameter, value)
-            }
-            MathError::NegativeInput { function, value } => {
-                write!(f, "Negative input in {}: {} (positive value required)", function, value)
-            }
-            MathError::IntegerOverflow { function, value } => {
-                write!(f, "Integer overflow in {}: value {}", function, value)
-            }
-            MathError::ComputationError { function, message } => {
-                write!(f, "Computation error in {}: {}", function, message)
-            }
-        }
-    }
-}
+// impl fmt::Display for MathError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             MathError::DomainError { function, value, message } => {
+//                 write!(f, "Domain error in {}: value {} - {}", function, value, message)
+//             }
+//             MathError::RangeError { function, message } => {
+//                 write!(f, "Range error in {}: {}", function, message)
+//             }
+//             MathError::Overflow { function, value } => {
+//                 write!(f, "Overflow in {}: value {} is too large", function, value)
+//             }
+//             MathError::Underflow { function, value } => {
+//                 write!(f, "Underflow in {}: value {} is too small", function, value)
+//             }
+//             MathError::DivisionByZero { function } => {
+//                 write!(f, "Division by zero in {}", function)
+//             }
+//             MathError::InvalidInput { function, parameter, value } => {
+//                 write!(f, "Invalid input in {}: parameter {} = {}", function, parameter, value)
+//             }
+//             MathError::NegativeInput { function, value } => {
+//                 write!(f, "Negative input in {}: {} (positive value required)", function, value)
+//             }
+//             MathError::IntegerOverflow { function, value } => {
+//                 write!(f, "Integer overflow in {}: value {}", function, value)
+//             }
+//             MathError::ComputationError { function, message } => {
+//                 write!(f, "Computation error in {}: {}", function, message)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for MathError {}
-
+// impl std::error::CursedError for MathError {}
+// 
 /// Result type for mathematical operations
 pub type MathResult<T> = std::result::Result<T, MathError>;
 

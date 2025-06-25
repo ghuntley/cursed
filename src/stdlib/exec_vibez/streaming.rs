@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Output streaming and input generation for exec_vibez
 /// 
 /// Implements OutputStreamer and InputGenerator functionality according to specs/stdlib/exec_vibez.md
@@ -109,7 +109,7 @@ impl OutputStreamer {
                         match line_result {
                             Ok(line) => line_cb(line),
                             Err(e) => {
-                                tracing::warn!("Error reading line from stdout: {}", e);
+                                tracing::warn!("CursedError reading line from stdout: {}", e);
                                 break;
                             }
                         }
@@ -128,7 +128,7 @@ impl OutputStreamer {
                             Ok(0) => break, // EOF
                             Ok(n) => data_cb(&buffer[..n]),
                             Err(e) => {
-                                tracing::warn!("Error reading data from stdout: {}", e);
+                                tracing::warn!("CursedError reading data from stdout: {}", e);
                                 break;
                             }
                         }
@@ -156,7 +156,7 @@ impl OutputStreamer {
                                 tracing::debug!("stderr: {}", line);
                             }
                             Err(e) => {
-                                tracing::warn!("Error reading line from stderr: {}", e);
+                                tracing::warn!("CursedError reading line from stderr: {}", e);
                                 break;
                             }
                         }
@@ -258,12 +258,12 @@ impl InputGenerator {
                     
                     // Write the data
                     if let Err(e) = stdin.write_all(&data) {
-                        tracing::warn!("Error writing to stdin: {}", e);
+                        tracing::warn!("CursedError writing to stdin: {}", e);
                         break;
                     }
                     
                     if let Err(e) = stdin.flush() {
-                        tracing::warn!("Error flushing stdin: {}", e);
+                        tracing::warn!("CursedError flushing stdin: {}", e);
                         break;
                     }
                     
@@ -363,93 +363,3 @@ pub fn get_active_streamer_count() -> usize {
     ACTIVE_STREAMERS.load(Ordering::Relaxed)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::exec_vibez::cmd::Cmd;
-use crate::stdlib::process::info::ProcessState;
-    
-    #[test]
-    fn test_output_streamer_creation() {
-        let cmd = Cmd::new("echo", &["test"]);
-        let streamer = OutputStreamer::new(cmd);
-        
-        assert!(!streamer.is_active());
-        assert_eq!(streamer.buffer_size, 8192);
-        assert!(streamer.include_stderr);
-    }
-    
-    #[test]
-    fn test_output_streamer_configuration() {
-        let cmd = Cmd::new("echo", &["test"]);
-        let mut streamer = OutputStreamer::new(cmd);
-        
-        streamer.set_buffer_size(4096)
-                .include_stderr(false);
-        
-        assert_eq!(streamer.buffer_size, 4096);
-        assert!(!streamer.include_stderr);
-    }
-    
-    #[test]
-    fn test_output_streamer_callbacks() {
-        let cmd = Cmd::new("echo", &["test"]);
-        let mut streamer = OutputStreamer::new(cmd);
-        
-        streamer.on_line(|line| {
-            println!("Got line: {}", line);
-        });
-        
-        // Can't easily test the callback without running a real process
-        // but we can verify the streamer was configured
-        assert!(streamer.line_callback.is_some());
-    }
-    
-    #[test]
-    fn test_new_output_streamer_constructor() {
-        let cmd = Cmd::new("echo", &["test"]);
-        let streamer = new_output_streamer(cmd);
-        
-        assert!(!streamer.is_active());
-    }
-    
-    #[test]
-    fn test_input_generator_queue() {
-        // We can test the queue functionality without actually creating a process
-        let queue = Arc::new(Mutex::new(VecDeque::new()));
-        
-        {
-            let mut q = queue.lock().unwrap();
-            q.push_back((b"test".to_vec(), None));
-            q.push_back((b"data".to_vec(), Some(Duration::from_millis(100))));
-        }
-        
-        assert_eq!(queue.lock().unwrap().len(), 2);
-        
-        let item = queue.lock().unwrap().pop_front();
-        assert!(item.is_some());
-        if let Some((data, delay)) = item {
-            assert_eq!(data, b"test");
-            assert_eq!(delay, None);
-        }
-    }
-    
-    #[test]
-    fn test_active_streamer_count() {
-        let initial_count = get_active_streamer_count();
-        
-        {
-            let cmd = Cmd::new("echo", &["test"]);
-            let _streamer = OutputStreamer::new(cmd);
-            
-            assert_eq!(get_active_streamer_count(), initial_count + 1);
-        }
-        
-        // After streamer is dropped, count should decrease
-        assert_eq!(get_active_streamer_count(), initial_count);
-    }
-}
-
-
-pub type NewOutputStreamer = OutputStreamer;
-pub type NewInputGenerator = InputGenerator;

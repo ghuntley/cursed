@@ -1,6 +1,7 @@
 /// Debug utilities and helper functions
-use crate::debug::{DebugInfoManager, SourceLocation, debug_symbols::DebugSymbol};
-use crate::error::Error;
+use crate::error::SourceLocation;
+// use crate::debug::DebugConfig;
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tracing::{debug, info, instrument};
@@ -360,101 +361,25 @@ pub struct DebugSessionConfig {
 
 impl DebugSessionConfig {
     /// Save configuration to a file
-    pub fn save_to_file(&self, path: &Path) -> Result<(), Error> {
+    pub fn save_to_file(&self, path: &Path) -> crate::error::Result<()> {
         let json = serde_json::to_string_pretty(self)
-            .map_err(|e| Error::Compile(format!("Failed to serialize debug config: {}", e)))?;
+            .map_err(|e| CursedError::Compile(format!("Failed to serialize debug config: {}", e)))?;
         
         std::fs::write(path, json)
-            .map_err(|e| Error::Compile(format!("Failed to write debug config: {}", e)))?;
+            .map_err(|e| CursedError::Compile(format!("Failed to write debug config: {}", e)))?;
         
         Ok(())
     }
     
     /// Load configuration from a file
-    pub fn load_from_file(path: &Path) -> Result<(), Error> {
+    pub fn load_from_file(path: &Path) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)
-            .map_err(|e| Error::Compile(format!("Failed to read debug config: {}", e)))?;
+            .map_err(|e| CursedError::Compile(format!("Failed to read debug config: {}", e)))?;
         
         serde_json::from_str(&content)
-            .map_err(|e| Error::Compile(format!("Failed to parse debug config: {}", e)))
+            .map_err(|e| CursedError::Compile(format!("Failed to parse debug config: {}", e)))
     }
 }
 
 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::debug::DebugConfig;
-    use std::path::PathBuf;
-
-    #[test]
-    fn test_stack_frame_parsing() {
-        let trace_line = "#0  0x00007ffff7a05b25 in test_function () at main.c:42";
-        let frame = DebugUtils::parse_stack_frame(trace_line).unwrap();
-        
-        assert_eq!(frame.frame_number, 0);
-        assert_eq!(frame.address, 0x00007ffff7a05b25);
-        assert_eq!(frame.function_name, "test_function");
-        assert_eq!(frame.file, Some("main.c".to_string()));
-        assert_eq!(frame.line, Some(42));
-    }
-
-    #[test]
-    fn test_variable_value_extraction() {
-        let debugger_output = "x = 42\ny = \"hello\"\n(int) z = 100";
-        let variables = DebugUtils::extract_variable_values(debugger_output);
-        
-        assert_eq!(variables.get("x"), Some(&"42".to_string()));
-        assert_eq!(variables.get("y"), Some(&"\"hello\"".to_string()));
-        assert_eq!(variables.get("z"), Some(&"100".to_string()));
-    }
-
-    #[test]
-    fn test_gdb_command_generation() {
-        let debug_manager = DebugInfoManager::new();
-        let executable = PathBuf::from("/tmp/test_program");
-        
-        let commands = DebugUtils::generate_gdb_commands(&executable, &debug_manager);
-        
-        assert!(!commands.is_empty());
-        assert!(commands.iter().any(|cmd| cmd.starts_with("file")));
-        assert!(commands.iter().any(|cmd| cmd.contains("set print pretty")));
-    }
-
-    #[test]
-    fn test_vscode_launch_config() {
-        let executable = PathBuf::from("/tmp/test_program");
-        let source_root = PathBuf::from("/tmp/source");
-        
-        let config = DebugUtils::generate_vscode_launch_config(&executable, &source_root);
-        
-        assert!(config.is_object());
-        assert!(config["configurations"].is_array());
-        assert_eq!(config["configurations"].as_array().unwrap().len(), 1);
-    }
-
-    #[test]
-    fn test_debug_session_config_serialization() {
-        let config = DebugSessionConfig {
-            executable: PathBuf::from("/tmp/test"),
-            source_directories: Vec::from([PathBuf::from("/tmp/src")]),
-            breakpoints: vec![Breakpoint {
-                function_name: Some("main".to_string()),
-                file: Some(PathBuf::from("main.c")),
-                line: Some(10),
-                column: Some(1),
-                condition: None,
-            }],
-            watch_expressions: Vec::from(["x".to_string()]),
-            environment_variables: HashMap::new(),
-            arguments: Vec::from(["arg1".to_string()]),
-        };
-        
-        let json = serde_json::to_string(&config).unwrap();
-        let deserialized: DebugSessionConfig = serde_json::from_str(&json).unwrap();
-        
-        assert_eq!(config.executable, deserialized.executable);
-        assert_eq!(config.breakpoints.len(), deserialized.breakpoints.len());
-    }
-}

@@ -1,5 +1,5 @@
 /// Unicode range tables and property definitions
-use crate::stdlib::glyph_gang::error::{GlyphGangResult, range_error};
+// use crate::stdlib::glyph_gang::error::{GlyphGangResult, range_error};
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 

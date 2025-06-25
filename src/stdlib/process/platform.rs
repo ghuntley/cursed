@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Platform-specific process management utilities
 /// 
 /// Process management is crucial for system integration in modern applications.
@@ -1153,10 +1153,9 @@ pub mod macos {
     fn get_process_executable_path(pid: u32) -> Option<PathBuf> {
         use std::mem;
         use std::ffi::CStr;
-use crate::stdlib::process::core::ProcessHandle;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
+// use crate::stdlib::process::core::ProcessHandle;
+// use crate::stdlib::process::info::ProcessInfo;
+// use crate::stdlib::process::error::ProcessResult;
         
         let mut path_buf = [0u8; 4096]; // MAXPATHLEN on macOS
         

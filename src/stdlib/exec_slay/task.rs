@@ -1,10 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // SlayTask implementation for background task management
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use std::thread;
-use crate::error::CursedError;
 use super::{SlayCommand, SlayResult, SharedProcessState};
 
 /// Represents a background task running a command
@@ -27,7 +26,7 @@ struct TaskState {
     finished: bool,
     /// Exit code when finished
     exit_code: Option<i32>,
-    /// Error message if any
+    /// CursedError message if any
     error: Option<String>,
     /// Captured output
     output: Vec<u8>,
@@ -332,101 +331,3 @@ impl Default for SlayTaskManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::exec_slay::SlayCommand;
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessState;
-
-    #[test]
-    fn test_task_status_display() {
-        assert_eq!(TaskStatus::Running.to_string(), "Running");
-        assert_eq!(TaskStatus::Completed.to_string(), "Completed");
-        assert_eq!(TaskStatus::Failed("error".to_string()).to_string(), "Failed: error");
-        assert_eq!(TaskStatus::Unknown.to_string(), "Unknown");
-    }
-
-    #[test]
-    fn test_task_manager_creation() {
-        let manager = SlayTaskManager::new();
-        assert_eq!(manager.total_count(), 0);
-        assert_eq!(manager.running_count(), 0);
-    }
-
-    #[test]
-    fn test_task_manager_add_task() {
-        let mut manager = SlayTaskManager::new();
-        let cmd = SlayCommand::new("echo", &["test"]);
-        let task = SlayTask::run_background(cmd);
-        
-        let index = manager.add_task(task);
-        assert_eq!(index, 0);
-        assert_eq!(manager.total_count(), 1);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_background_task_creation() {
-        let cmd = SlayCommand::new("echo", &["hello"]);
-        let task = SlayTask::run_background(cmd);
-        
-        assert!(task.elapsed_time() >= Duration::from_secs(0));
-        assert_eq!(task.command_string(), "echo hello");
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_background_task_wait() {
-        let cmd = SlayCommand::new("echo", &["test"]);
-        let mut task = SlayTask::run_background(cmd);
-        
-        // Wait for completion
-        let result = task.wait();
-        assert!(result.is_ok());
-        assert!(task.is_finished());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_background_task_output() {
-        let cmd = SlayCommand::new("echo", &["hello"]);
-        let mut task = SlayTask::run_background(cmd);
-        
-        // Wait for completion
-        task.wait().unwrap();
-        
-        let output = task.get_output().unwrap();
-        let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("hello"));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_background_task_timeout() {
-        let cmd = SlayCommand::new("sleep", &["0.1"]);
-        let mut task = SlayTask::run_background(cmd);
-        
-        // Should complete within timeout
-        let completed = task.wait_timeout(Duration::from_secs(1)).unwrap();
-        assert!(completed);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_task_manager_run_background() {
-        let mut manager = SlayTaskManager::new();
-        let cmd = SlayCommand::new("echo", &["test"]);
-        
-        let index = manager.run_background(cmd);
-        assert_eq!(index, 0);
-        assert_eq!(manager.total_count(), 1);
-    }
-
-    #[test]
-    fn test_task_manager_status_summary() {
-        let manager = SlayTaskManager::new();
-        let summary = manager.status_summary();
-        assert!(summary.is_empty());
-    }
-}

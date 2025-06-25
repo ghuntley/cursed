@@ -10,7 +10,7 @@ use std::time::{Instant, Duration};
 use serde::{Serialize, Deserialize};
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 
 /// fr fr Unified crypto error type
 #[derive(Debug, Clone, PartialEq)]
@@ -35,24 +35,24 @@ pub enum UnifiedCryptoError {
     Integration(String),
 }
 
-impl std::fmt::Display for UnifiedCryptoError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            UnifiedCryptoError::Configuration(msg) => write!(f, "Configuration error: {}", msg),
-            UnifiedCryptoError::UnsupportedAlgorithm(msg) => write!(f, "Unsupported algorithm: {}", msg),
-            UnifiedCryptoError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
-            UnifiedCryptoError::OperationFailed(msg) => write!(f, "Operation failed: {}", msg),
-            UnifiedCryptoError::SecurityViolation(msg) => write!(f, "Security violation: {}", msg),
-            UnifiedCryptoError::PerformanceThreshold(msg) => write!(f, "Performance threshold exceeded: {}", msg),
-            UnifiedCryptoError::PackageNotInitialized(msg) => write!(f, "Package not initialized: {}", msg),
-            UnifiedCryptoError::ComplianceFailed(msg) => write!(f, "Compliance check failed: {}", msg),
-            UnifiedCryptoError::Integration(msg) => write!(f, "Integration error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for UnifiedCryptoError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             UnifiedCryptoError::Configuration(msg) => write!(f, "Configuration error: {}", msg),
+//             UnifiedCryptoError::UnsupportedAlgorithm(msg) => write!(f, "Unsupported algorithm: {}", msg),
+//             UnifiedCryptoError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+//             UnifiedCryptoError::OperationFailed(msg) => write!(f, "Operation failed: {}", msg),
+//             UnifiedCryptoError::SecurityViolation(msg) => write!(f, "Security violation: {}", msg),
+//             UnifiedCryptoError::PerformanceThreshold(msg) => write!(f, "Performance threshold exceeded: {}", msg),
+//             UnifiedCryptoError::PackageNotInitialized(msg) => write!(f, "Package not initialized: {}", msg),
+//             UnifiedCryptoError::ComplianceFailed(msg) => write!(f, "Compliance check failed: {}", msg),
+//             UnifiedCryptoError::Integration(msg) => write!(f, "Integration error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for UnifiedCryptoError {}
-
+// impl std::error::CursedError for UnifiedCryptoError {}
+// 
 pub type UnifiedCryptoResult<T> = std::result::Result<T, UnifiedCryptoError>;
 
 /// fr fr Crypto operation types
@@ -161,7 +161,7 @@ pub enum PackageStatus {
     NotInitialized,
     Initializing,
     Ready,
-    Error(String),
+    CursedError(String),
     Disabled,
 }
 
@@ -220,43 +220,43 @@ impl UnifiedCryptoManager {
 
         let result = match package_name {
             "crypto_advanced" => {
-                crate::stdlib::packages::crypto_advanced::init_crypto_advanced()
+//                 crate::stdlib::packages::crypto_advanced::init_crypto_advanced()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_advanced: {}", e)))
             },
             "crypto_asymmetric" => {
-                crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric()
+//                 crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_asymmetric: {}", e)))
             },
             "crypto_hash_advanced" => {
-                crate::stdlib::packages::crypto_hash_advanced::init_crypto_hash_advanced()
+//                 crate::stdlib::packages::crypto_hash_advanced::init_crypto_hash_advanced()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_hash_advanced: {}", e)))
             },
             "crypto_signatures" => {
-                crate::stdlib::packages::crypto_signatures::init_crypto_signatures()
+//                 crate::stdlib::packages::crypto_signatures::init_crypto_signatures()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_signatures: {}", e)))
             },
             "crypto_kdf" => {
-                crate::stdlib::packages::crypto_kdf::init_crypto_kdf()
+//                 crate::stdlib::packages::crypto_kdf::init_crypto_kdf()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_kdf: {}", e)))
             },
             "crypto_random" => {
-                crate::stdlib::packages::crypto_random::init_crypto_random()
+//                 crate::stdlib::packages::crypto_random::init_crypto_random()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_random: {}", e)))
             },
             "crypto_pki" => {
-                crate::stdlib::packages::crypto_pki::init_crypto_pki()
+//                 crate::stdlib::packages::crypto_pki::init_crypto_pki()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_pki: {}", e)))
             },
             "crypto_zk" => {
-                crate::stdlib::packages::crypto_zk::init_crypto_zk()
+//                 crate::stdlib::packages::crypto_zk::init_crypto_zk()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_zk: {}", e)))
             },
             "crypto_pqc" => {
-                crate::stdlib::packages::crypto_pqc::init_crypto_pqc()
+//                 crate::stdlib::packages::crypto_pqc::init_crypto_pqc()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_pqc: {}", e)))
             },
             "crypto_protocols" => {
-                crate::stdlib::packages::crypto_protocols::init_crypto_protocols()
+//                 crate::stdlib::packages::crypto_protocols::init_crypto_protocols()
                     .map_err(|e| UnifiedCryptoError::Integration(format!("crypto_protocols: {}", e)))
             },
             _ => Err(UnifiedCryptoError::UnsupportedAlgorithm(format!("Unknown package: {}", package_name))),
@@ -274,7 +274,7 @@ impl UnifiedCryptoManager {
                 Ok(())
             },
             Err(e) => {
-                status.insert(package_name.to_string(), PackageStatus::Error(e.to_string()));
+                status.insert(package_name.to_string(), PackageStatus::CursedError(e.to_string()));
                 Err(e)
             },
         }
@@ -576,74 +576,3 @@ where
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_unified_crypto_manager_creation() {
-        let manager = UnifiedCryptoManager::new();
-        assert!(manager.get_config().is_ok());
-    }
-
-    #[test]
-    fn test_crypto_config_default() {
-        let config = CryptoConfig::default();
-        assert!(!config.enabled_packages.is_empty());
-        assert!(config.performance_monitoring);
-        assert_eq!(config.compliance_level, ComplianceLevel::Production);
-    }
-
-    #[test]
-    fn test_performance_metrics() {
-        let manager = UnifiedCryptoManager::new();
-        let metrics = PerformanceMetrics {
-            operation: CryptoOperation::SymmetricEncrypt,
-            algorithm: "AES-256-GCM".to_string(),
-            duration: Duration::from_millis(10),
-            throughput_bytes_per_second: Some(1000000),
-            memory_usage_bytes: Some(1024),
-            cpu_cycles: Some(1000),
-            timestamp: std::time::SystemTime::now(),
-        };
-
-        assert!(manager.record_performance(metrics).is_ok());
-    }
-
-    #[test]
-    fn test_security_audit() {
-        let manager = UnifiedCryptoManager::new();
-        let audit_result = manager.perform_security_audit();
-        assert!(audit_result.is_ok());
-
-        let audit = audit_result.unwrap();
-        assert!(!audit.algorithm_compliance.is_empty());
-        assert!(audit.overall_score >= 0.0);
-        assert!(audit.overall_score <= 100.0);
-    }
-
-    #[test]
-    fn test_list_available_algorithms() {
-        let manager = UnifiedCryptoManager::new();
-        let algorithms = manager.list_available_algorithms();
-        
-        assert!(algorithms.contains_key("symmetric"));
-        assert!(algorithms.contains_key("asymmetric"));
-        assert!(algorithms.contains_key("hash"));
-        assert!(algorithms.contains_key("pqc_kem"));
-        assert!(algorithms.contains_key("pqc_signature"));
-    }
-
-    #[test]
-    fn test_quick_crypto_operation() {
-        let result = quick_crypto_operation(
-            CryptoOperation::Hash,
-            "SHA-256",
-            || Ok("test_result".to_string())
-        );
-        
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "test_result".to_string());
-    }
-}

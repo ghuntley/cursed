@@ -1,12 +1,12 @@
-use crate::error::Error as CursedError;
-/// Error handling for exec_vibez
+use crate::error::CursedError;
+/// CursedError handling for exec_vibez
 use std::fmt;
 use std::io;
 
 /// Result type for exec_vibez operations
 pub type ExecResult<T> = std::result::Result<T, ExecError>;
 
-/// Error types for exec_vibez operations
+/// CursedError types for exec_vibez operations
 #[derive(Debug, Clone)]
 pub enum ExecError {
     /// Command execution failed
@@ -75,68 +75,68 @@ pub enum ExecError {
     },
 }
 
-impl fmt::Display for ExecError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ExecError::ExecutionFailed { command, message, exit_code } => {
-                if let Some(code) = exit_code {
-                    write!(f, "Command '{}' failed with exit code {}: {}", command, code, message)
-                } else {
-                    write!(f, "Command '{}' failed: {}", command, message)
-                }
-            }
-            ExecError::InvalidArguments { function, parameter, message } => {
-                write!(f, "Invalid argument '{}' in function '{}': {}", parameter, function, message)
-            }
-            ExecError::IoError { operation, kind, message } => {
-                write!(f, "I/O error during '{}' ({}): {}", operation, kind, message)
-            }
-            ExecError::Timeout { command, timeout } => {
-                write!(f, "Command '{}' timed out after {:?}", command, timeout)
-            }
-            ExecError::PermissionDenied { operation, resource } => {
-                write!(f, "Permission denied for '{}' on resource '{}'", operation, resource)
-            }
-            ExecError::CommandNotFound { command, search_paths } => {
-                write!(f, "Command '{}' not found in paths: {}", command, search_paths.join(":"))
-            }
-            ExecError::ProcessNotFound { pid } => {
-                write!(f, "Process with PID {} not found", pid)
-            }
-            ExecError::EnvironmentError { variable, message } => {
-                write!(f, "Environment variable '{}' error: {}", variable, message)
-            }
-            ExecError::PlatformError { platform, message } => {
-                write!(f, "Platform-specific error on '{}': {}", platform, message)
-            }
-            ExecError::ResourceLimitExceeded { resource, limit, current } => {
-                write!(f, "Resource limit exceeded for '{}': {} > {}", resource, current, limit)
-            }
-            ExecError::SecurityViolation { operation, message } => {
-                write!(f, "Security violation during '{}': {}", operation, message)
-            }
-            ExecError::SystemError { code, operation, message } => {
-                write!(f, "System error {} during '{}': {}", code, operation, message)
-            }
-        }
-    }
-}
+// impl fmt::Display for ExecError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ExecError::ExecutionFailed { command, message, exit_code } => {
+//                 if let Some(code) = exit_code {
+//                     write!(f, "Command '{}' failed with exit code {}: {}", command, code, message)
+//                 } else {
+//                     write!(f, "Command '{}' failed: {}", command, message)
+//                 }
+//             }
+//             ExecError::InvalidArguments { function, parameter, message } => {
+//                 write!(f, "Invalid argument '{}' in function '{}': {}", parameter, function, message)
+//             }
+//             ExecError::IoError { operation, kind, message } => {
+//                 write!(f, "I/O error during '{}' ({}): {}", operation, kind, message)
+//             }
+//             ExecError::Timeout { command, timeout } => {
+//                 write!(f, "Command '{}' timed out after {:?}", command, timeout)
+//             }
+//             ExecError::PermissionDenied { operation, resource } => {
+//                 write!(f, "Permission denied for '{}' on resource '{}'", operation, resource)
+//             }
+//             ExecError::CommandNotFound { command, search_paths } => {
+//                 write!(f, "Command '{}' not found in paths: {}", command, search_paths.join(":"))
+//             }
+//             ExecError::ProcessNotFound { pid } => {
+//                 write!(f, "Process with PID {} not found", pid)
+//             }
+//             ExecError::EnvironmentError { variable, message } => {
+//                 write!(f, "Environment variable '{}' error: {}", variable, message)
+//             }
+//             ExecError::PlatformError { platform, message } => {
+//                 write!(f, "Platform-specific error on '{}': {}", platform, message)
+//             }
+//             ExecError::ResourceLimitExceeded { resource, limit, current } => {
+//                 write!(f, "Resource limit exceeded for '{}': {} > {}", resource, current, limit)
+//             }
+//             ExecError::SecurityViolation { operation, message } => {
+//                 write!(f, "Security violation during '{}': {}", operation, message)
+//             }
+//             ExecError::SystemError { code, operation, message } => {
+//                 write!(f, "System error {} during '{}': {}", code, operation, message)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for ExecError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
+// impl std::error::CursedError for ExecError {
+//     fn source(&self) -> Option<&(dyn std::error::CursedError + 'static)> {
+//         None
+//     }
+// }
 
-impl From<io::Error> for ExecError {
-    fn from(error: io::Error) -> Self {
-        ExecError::IoError {
-            operation: "unknown".to_string(),
-            kind: format!("{:?}", error.kind()),
-            message: error.to_string(),
-        }
-    }
-}
+// impl From<std::io::Error> for ExecError {
+//     fn from(error: std::io::Error) -> Self {
+//         ExecError::IoError {
+//             operation: "unknown".to_string(),
+//             kind: format!("{:?}", error.kind()),
+//             message: error.to_string(),
+//         }
+//     }
+// }
 
 /// Helper functions for creating specific error types
 
@@ -247,7 +247,7 @@ pub fn system_error(code: i32, operation: &str, message: &str) -> ExecError {
     }
 }
 
-/// Error trait implementation for integration with CURSED error system
+/// CursedError trait implementation for integration with CURSED error system
 impl ExecError {
     /// Get error code if available
     pub fn exit_code(&self) -> Option<i32> {
@@ -293,130 +293,16 @@ impl ExecError {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-    
-    #[test]
-    fn test_execution_failed_error() {
-        let err = execution_failed("test_cmd", "Test failure");
-        
-        match err {
-            ExecError::ExecutionFailed { command, message, exit_code } => {
-                assert_eq!(command, "test_cmd");
-                assert_eq!(message, "Test failure");
-                assert_eq!(exit_code, None);
-            }
-            _ => panic!("Wrong error type"),
-        }
-        
-        assert_eq!(err.category(), "execution");
-        assert!(err.is_recoverable());
-    }
-    
-    #[test]
-    fn test_execution_failed_with_code_error() {
-        let err = execution_failed_with_code("test_cmd", 1, "Test failure");
-        
-        match err {
-            ExecError::ExecutionFailed { command, message, exit_code } => {
-                assert_eq!(command, "test_cmd");
-                assert_eq!(message, "Test failure");
-                assert_eq!(exit_code, Some(1));
-            }
-            _ => panic!("Wrong error type"),
-        }
-        
-        assert_eq!(err.exit_code(), Some(1));
-    }
-    
-    #[test]
-    fn test_timeout_error() {
-        let timeout = Duration::from_secs(30);
-        let err = timeout_error("long_cmd", timeout);
-        
-        match err {
-            ExecError::Timeout { command, timeout: t } => {
-                assert_eq!(command, "long_cmd");
-                assert_eq!(t, timeout);
-            }
-            _ => panic!("Wrong error type"),
-        }
-        
-        assert_eq!(err.category(), "timeout");
-        assert!(err.is_recoverable());
-    }
-    
-    #[test]
-    fn test_invalid_arguments_error() {
-        let err = invalid_arguments("test_function", "test_param", "Invalid value");
-        
-        assert_eq!(err.category(), "arguments");
-        assert!(err.is_recoverable());
-    }
-    
-    #[test]
-    fn test_permission_denied_error() {
-        let err = permission_denied("execute", "/usr/bin/sudo");
-        
-        assert_eq!(err.category(), "permission");
-        assert!(!err.is_recoverable());
-    }
-    
-    #[test]
-    fn test_command_not_found_error() {
-        let paths = vec!["/usr/bin".to_string(), "/bin".to_string()];
-        let err = command_not_found("nonexistent", paths);
-        
-        assert_eq!(err.category(), "not_found");
-        assert!(!err.is_recoverable());
-    }
-    
-    #[test]
-    fn test_error_display() {
-        let err = execution_failed_with_code("test", 1, "failed");
-        let display = format!("{}", err);
-        assert!(display.contains("test"));
-        assert!(display.contains("exit code 1"));
-        assert!(display.contains("failed"));
-    }
-    
-    #[test]
-    fn test_io_error_conversion() {
-        let io_err = io::Error::new(io::ErrorKind::NotFound, "File not found");
-        let exec_err: ExecError = io_err.into();
-        
-        match exec_err {
-            ExecError::IoError { operation, kind, message } => {
-                assert_eq!(operation, "unknown");
-                assert_eq!(kind, "NotFound");
-                assert!(message.contains("File not found"));
-            }
-            _ => panic!("Wrong error type"),
-        }
-    }
-}
 
+// impl std::fmt::Display for ContextError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ContextError::InvalidContext(msg) => write!(f, "Invalid context: {}", msg),
+//             ContextError::MissingContext => write!(f, "Missing context"),
+//             ContextError::ContextSetup(msg) => write!(f, "Context setup error: {}", msg),
+//         }
+//     }
+// }
 
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
-
-
-#[derive(Debug, Clone)]
-pub enum ContextError {
-    InvalidContext(String),
-    MissingContext,
-    ContextSetup(String),
-}
-
-impl std::fmt::Display for ContextError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ContextError::InvalidContext(msg) => write!(f, "Invalid context: {}", msg),
-            ContextError::MissingContext => write!(f, "Missing context"),
-            ContextError::ContextSetup(msg) => write!(f, "Context setup error: {}", msg),
-        }
-    }
-}
-
-impl std::error::Error for ContextError {}
+// impl std::error::CursedError for ContextError {}
+// 

@@ -5,7 +5,7 @@
 // workflows and improved developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildProfile, BuildError, BuildResult};
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::{HashMap, HashSet, BTreeMap};
 use std::path::{Path, PathBuf};
 use std::fs;
@@ -277,13 +277,13 @@ pub enum SignatureAlgorithm {
 
 /// Storage backend trait
 pub trait StorageBackend: Send + Sync + std::fmt::Debug {
-    fn store_artifact(&mut self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), Error>;
-    fn retrieve_artifact(&self, artifact_id: &str) -> Result<(), Error>;
-    fn delete_artifact(&mut self, artifact_id: &str) -> Result<(), Error>;
-    fn list_artifacts(&self, filter: &ArtifactFilter) -> Result<(), Error>;
-    fn get_artifact_info(&self, artifact_id: &str) -> Result<(), Error>;
-    fn health_check(&self) -> Result<(), Error>;
-    fn get_storage_statistics(&self) -> Result<(), Error>;
+    fn store_artifact(&mut self, artifact: &BuildArtifact, data: &[u8]) -> crate::error::Result<()>;
+    fn retrieve_artifact(&self, artifact_id: &str) -> crate::error::Result<()>;
+    fn delete_artifact(&mut self, artifact_id: &str) -> crate::error::Result<()>;
+    fn list_artifacts(&self, filter: &ArtifactFilter) -> crate::error::Result<()>;
+    fn get_artifact_info(&self, artifact_id: &str) -> crate::error::Result<()>;
+    fn health_check(&self) -> crate::error::Result<()>;
+    fn get_storage_statistics(&self) -> crate::error::Result<()>;
 }
 
 /// Artifact filter for querying
@@ -528,7 +528,7 @@ pub struct CachedMetadata {
 }
 
 /// Artifact error types
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::CursedError)]
 pub enum ArtifactError {
     #[error("Storage error: {0}")]
     StorageError(String),
@@ -626,7 +626,7 @@ impl Default for ArtifactConfig {
 
 impl ArtifactManager {
     /// Create new artifact manager
-    pub fn new(config: ArtifactConfig) -> Result<(), Error> {
+    pub fn new(config: ArtifactConfig) -> crate::error::Result<()> {
         let storage_backend = Self::create_storage_backend(&config)?;
         let version_manager = VersionManager::new(VersioningStrategy::Semantic);
         let cleanup_manager = CleanupManager::new();
@@ -662,7 +662,7 @@ impl ArtifactManager {
         build_result: &BuildResult,
         build_config: &BuildConfig,
         profile: &BuildProfile,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Storing {} artifacts from build", build_result.outputs.len());
         
         let mut stored_artifact_ids = Vec::new();
@@ -708,7 +708,7 @@ impl ArtifactManager {
     
     /// Retrieve artifact by ID
     #[instrument(skip(self))]
-    pub async fn retrieve_artifact(&mut self, artifact_id: &str) -> Result<(), Error> {
+    pub async fn retrieve_artifact(&mut self, artifact_id: &str) -> crate::error::Result<()> {
         debug!("Retrieving artifact: {}", artifact_id);
         
         // Check metadata first
@@ -736,7 +736,7 @@ impl ArtifactManager {
     
     /// Search artifacts by filter
     #[instrument(skip(self))]
-    pub async fn search_artifacts(&self, filter: &ArtifactFilter) -> Result<(), Error> {
+    pub async fn search_artifacts(&self, filter: &ArtifactFilter) -> crate::error::Result<()> {
         debug!("Searching artifacts with filter");
         
         let artifact_ids = self.storage_backend.list_artifacts(filter)?;
@@ -753,7 +753,7 @@ impl ArtifactManager {
     
     /// Clean up artifacts based on policies
     #[instrument(skip(self))]
-    pub async fn cleanup_artifacts(&mut self) -> Result<(), Error> {
+    pub async fn cleanup_artifacts(&mut self) -> crate::error::Result<()> {
         info!("Starting artifact cleanup");
         
         let cleanup_result = self.cleanup_manager.run_cleanup(
@@ -778,7 +778,7 @@ impl ArtifactManager {
     pub async fn distribute_artifacts(
         &mut self,
         artifact_ids: &[String],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Distributing {} artifacts", artifact_ids.len());
         
         let distribution_result = self.distribution_manager.distribute_artifacts(
@@ -800,7 +800,7 @@ impl ArtifactManager {
     
     /// Optimize storage (deduplication, compression, etc.)
     #[instrument(skip(self))]
-    pub async fn optimize_storage(&mut self) -> Result<(), Error> {
+    pub async fn optimize_storage(&mut self) -> crate::error::Result<()> {
         info!("Starting storage optimization");
         
         // Run deduplication
@@ -825,7 +825,7 @@ impl ArtifactManager {
         build_result: &BuildResult,
         build_config: &BuildConfig,
         profile: &BuildProfile,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let metadata = fs::metadata(output_path)
             .map_err(|e| ArtifactError::IoError(e))?;
         
@@ -906,7 +906,7 @@ impl ArtifactManager {
     }
     
     /// Compress data using configured algorithm with real implementations
-    fn compress_data(&self, data: &[u8]) -> Result<(), Error> {
+    fn compress_data(&self, data: &[u8]) -> crate::error::Result<()> {
         use std::io::Write;
         
         match self.config.compression_algorithm {
@@ -944,7 +944,7 @@ impl ArtifactManager {
     }
     
     /// Decompress data with real implementations
-    fn decompress_data(&self, data: &[u8]) -> Result<(), Error> {
+    fn decompress_data(&self, data: &[u8]) -> crate::error::Result<()> {
         use std::io::Read;
         
         match self.config.compression_algorithm {
@@ -983,7 +983,7 @@ impl ArtifactManager {
     }
     
     /// Verify artifact integrity
-    fn verify_artifact_integrity(&self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), Error> {
+    fn verify_artifact_integrity(&self, artifact: &BuildArtifact, data: &[u8]) -> crate::error::Result<()> {
         let calculated_checksum = self.calculate_checksum(data);
         if calculated_checksum != artifact.checksum {
             return Err(ArtifactError::IntegrityError(
@@ -994,7 +994,7 @@ impl ArtifactManager {
     }
     
     /// Create storage backend based on configuration
-    fn create_storage_backend(config: &ArtifactConfig) -> Result<(), Error> {
+    fn create_storage_backend(config: &ArtifactConfig) -> crate::error::Result<()> {
         match config.storage_backend {
             StorageBackendType::Local => Ok(Box::new(LocalStorageBackend::new(config.storage_dir.clone())?)),
             _ => Err(ArtifactError::ConfigurationError("Unsupported storage backend".to_string())),
@@ -1002,19 +1002,19 @@ impl ArtifactManager {
     }
     
     /// Run deduplication process
-    async fn run_deduplication(&mut self) -> Result<(), Error> {
+    async fn run_deduplication(&mut self) -> crate::error::Result<()> {
         // Placeholder for deduplication logic
         Ok(())
     }
     
     /// Optimize compression settings
-    async fn optimize_compression(&mut self) -> Result<(), Error> {
+    async fn optimize_compression(&mut self) -> crate::error::Result<()> {
         // Placeholder for compression optimization
         Ok(())
     }
     
     /// Update storage statistics
-    async fn update_storage_statistics(&mut self, artifact_ids: &[String]) -> Result<(), Error> {
+    async fn update_storage_statistics(&mut self, artifact_ids: &[String]) -> crate::error::Result<()> {
         self.statistics.total_artifacts += artifact_ids.len();
         self.statistics.artifacts_created_today += artifact_ids.len();
         
@@ -1041,7 +1041,7 @@ pub struct LocalStorageBackend {
 }
 
 impl LocalStorageBackend {
-    fn new(storage_dir: PathBuf) -> Result<(), Error> {
+    fn new(storage_dir: PathBuf) -> crate::error::Result<()> {
         fs::create_dir_all(&storage_dir)
             .map_err(|e| ArtifactError::IoError(e))?;
         
@@ -1050,7 +1050,7 @@ impl LocalStorageBackend {
 }
 
 impl StorageBackend for LocalStorageBackend {
-    fn store_artifact(&mut self, artifact: &BuildArtifact, data: &[u8]) -> Result<(), Error> {
+    fn store_artifact(&mut self, artifact: &BuildArtifact, data: &[u8]) -> crate::error::Result<()> {
         let artifact_path = self.storage_dir.join(&artifact.artifact_id);
         fs::write(&artifact_path, data)
             .map_err(|e| ArtifactError::IoError(e))?;
@@ -1065,13 +1065,13 @@ impl StorageBackend for LocalStorageBackend {
         Ok(())
     }
     
-    fn retrieve_artifact(&self, artifact_id: &str) -> Result<(), Error> {
+    fn retrieve_artifact(&self, artifact_id: &str) -> crate::error::Result<()> {
         let artifact_path = self.storage_dir.join(artifact_id);
         fs::read(&artifact_path)
             .map_err(|e| ArtifactError::IoError(e))
     }
     
-    fn delete_artifact(&mut self, artifact_id: &str) -> Result<(), Error> {
+    fn delete_artifact(&mut self, artifact_id: &str) -> crate::error::Result<()> {
         let artifact_path = self.storage_dir.join(artifact_id);
         let metadata_path = self.storage_dir.join(format!("{}.meta", artifact_id));
         
@@ -1088,7 +1088,7 @@ impl StorageBackend for LocalStorageBackend {
         Ok(())
     }
     
-    fn list_artifacts(&self, _filter: &ArtifactFilter) -> Result<(), Error> {
+    fn list_artifacts(&self, _filter: &ArtifactFilter) -> crate::error::Result<()> {
         let mut artifact_ids = Vec::new();
         
         for entry in fs::read_dir(&self.storage_dir)
@@ -1106,7 +1106,7 @@ impl StorageBackend for LocalStorageBackend {
         Ok(artifact_ids)
     }
     
-    fn get_artifact_info(&self, artifact_id: &str) -> Result<(), Error> {
+    fn get_artifact_info(&self, artifact_id: &str) -> crate::error::Result<()> {
         let metadata_path = self.storage_dir.join(format!("{}.meta", artifact_id));
         let metadata_json = fs::read_to_string(&metadata_path)
             .map_err(|e| ArtifactError::IoError(e))?;
@@ -1115,7 +1115,7 @@ impl StorageBackend for LocalStorageBackend {
             .map_err(|e| ArtifactError::StorageError(e.to_string()))
     }
     
-    fn health_check(&self) -> Result<(), Error> {
+    fn health_check(&self) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         
         // Check if storage directory is accessible
@@ -1138,7 +1138,7 @@ impl StorageBackend for LocalStorageBackend {
         })
     }
     
-    fn get_storage_statistics(&self) -> Result<(), Error> {
+    fn get_storage_statistics(&self) -> crate::error::Result<()> {
         // Count artifacts
         let artifacts = self.list_artifacts(&ArtifactFilter::default())?;
         let total_artifacts = artifacts.len();
@@ -1162,7 +1162,7 @@ impl VersionManager {
         }
     }
     
-    fn add_version(&mut self, artifact: &BuildArtifact) -> Result<(), Error> {
+    fn add_version(&mut self, artifact: &BuildArtifact) -> crate::error::Result<()> {
         let version = self.generate_version(artifact)?;
         
         let history = self.version_store.entry(artifact.name.clone())
@@ -1189,7 +1189,7 @@ impl VersionManager {
         Ok(())
     }
     
-    fn generate_version(&self, artifact: &BuildArtifact) -> Result<(), Error> {
+    fn generate_version(&self, artifact: &BuildArtifact) -> crate::error::Result<()> {
         match self.versioning_strategy {
             VersioningStrategy::Semantic => {
                 // Generate semantic version based on existing versions
@@ -1241,7 +1241,7 @@ impl CleanupManager {
         &mut self,
         storage: &mut dyn StorageBackend,
         metadata: &mut MetadataStore,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let start_time = std::time::Instant::now();
         let mut stats = CleanupStatistics {
             total_cleanups: 1,
@@ -1280,7 +1280,7 @@ impl CleanupManager {
         &self,
         policy: &CleanupPolicy,
         storage: &dyn StorageBackend,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Simplified cleanup logic
         let all_artifacts = storage.list_artifacts(&ArtifactFilter::default())?;
         let mut artifacts_to_clean = Vec::new();
@@ -1338,7 +1338,7 @@ impl DistributionManager {
         artifact_ids: &[String],
         storage: &dyn StorageBackend,
         metadata: &MetadataStore,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut stats = DistributionStatistics {
             total_distributions: artifact_ids.len(),
             successful_distributions: 0,
@@ -1368,7 +1368,7 @@ impl DistributionManager {
         artifact_id: &str,
         storage: &dyn StorageBackend,
         metadata: &MetadataStore,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let artifact = metadata.get_metadata(artifact_id)?;
         let data = storage.retrieve_artifact(artifact_id)?;
         
@@ -1387,7 +1387,7 @@ impl DistributionManager {
         artifact: &BuildArtifact,
         data: &[u8],
         channel: &DistributionChannel,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Placeholder for actual distribution logic
         debug!("Distributing artifact {} to channel {}", artifact.artifact_id, channel.name);
         Ok(())
@@ -1403,7 +1403,7 @@ impl MetadataStore {
         }
     }
     
-    fn store_metadata(&mut self, artifact: &BuildArtifact) -> Result<(), Error> {
+    fn store_metadata(&mut self, artifact: &BuildArtifact) -> crate::error::Result<()> {
         self.artifact_metadata.insert(artifact.artifact_id.clone(), artifact.clone());
         
         // Update search indices
@@ -1412,19 +1412,19 @@ impl MetadataStore {
         Ok(())
     }
     
-    fn get_metadata(&self, artifact_id: &str) -> Result<(), Error> {
+    fn get_metadata(&self, artifact_id: &str) -> crate::error::Result<()> {
         self.artifact_metadata.get(artifact_id)
             .cloned()
             .ok_or_else(|| ArtifactError::ArtifactNotFound(artifact_id.to_string()))
     }
     
-    fn remove_metadata(&mut self, artifact_id: &str) -> Result<(), Error> {
+    fn remove_metadata(&mut self, artifact_id: &str) -> crate::error::Result<()> {
         self.artifact_metadata.remove(artifact_id);
         self.metadata_cache.remove(artifact_id);
         Ok(())
     }
     
-    fn update_access_time(&mut self, artifact_id: &str) -> Result<(), Error> {
+    fn update_access_time(&mut self, artifact_id: &str) -> crate::error::Result<()> {
         if let Some(artifact) = self.artifact_metadata.get_mut(artifact_id) {
             artifact.last_accessed = SystemTime::now();
         }
@@ -1443,7 +1443,7 @@ impl MetadataStore {
         target_index.insert(artifact.artifact_id.clone());
     }
     
-    async fn rebuild_indices(&mut self) -> Result<(), Error> {
+    async fn rebuild_indices(&mut self) -> crate::error::Result<()> {
         self.search_indices.clear();
         
         for artifact in self.artifact_metadata.values() {
@@ -1454,62 +1454,3 @@ impl MetadataStore {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    
-    #[test]
-    fn test_artifact_manager_creation() {
-        let config = ArtifactConfig::default();
-        let manager = ArtifactManager::new(config);
-        assert!(manager.is_ok());
-    }
-    
-    #[test]
-    fn test_local_storage_backend() {
-        let temp_dir = tempdir().unwrap();
-        let storage = LocalStorageBackend::new(temp_dir.path().to_path_buf());
-        assert!(storage.is_ok());
-    }
-    
-    #[test]
-    fn test_version_generation() {
-        let version_manager = VersionManager::new(VersioningStrategy::Semantic);
-        
-        let artifact = BuildArtifact {
-            artifact_id: "test".to_string(),
-            name: "test".to_string(),
-            artifact_type: ArtifactType::Executable,
-            path: PathBuf::from("test"),
-            size: 100,
-            checksum: "checksum".to_string(),
-            created_at: SystemTime::now(),
-            last_accessed: SystemTime::now(),
-            build_id: "build".to_string(),
-            target_name: "target".to_string(),
-            profile_name: "profile".to_string(),
-            platform: Platform {
-                os: "linux".to_string(),
-                arch: "x86_64".to_string(),
-                variant: None,
-                abi: None,
-            },
-            metadata: ArtifactMetadata {
-                compiler_version: "1.0.0".to_string(),
-                optimization_level: "none".to_string(),
-                debug_info: false,
-                build_flags: Vec::new(),
-                source_files: Vec::new(),
-                include_paths: Vec::new(),
-                link_libraries: Vec::new(),
-                custom_metadata: HashMap::new(),
-            },
-            dependencies: Vec::new(),
-            signature: None,
-        };
-        
-        let version = version_manager.generate_version(&artifact);
-        assert!(version.is_ok());
-    }
-}

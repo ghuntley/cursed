@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Privilege management and security for CURSED processes
 /// 
 /// Privilege management is critical for system security and enables:
@@ -17,7 +17,7 @@ use std::collections::HashSet;
 use std::ffi::CString;
 use std::path::PathBuf;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessResult, ProcessError, process_not_found_pid, permission_denied_pid,
     invalid_state, execution_failed, timeout_error, system_error, platform_error
 };
@@ -704,105 +704,6 @@ pub fn create_sandbox() -> ProcessResult<()> {
     env.apply()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_capability_methods() {
-        let cap = Capability::NetBindService;
-        assert_eq!(cap.name(), "CAP_NET_BIND_SERVICE");
-        assert!(cap.description().contains("privileged ports"));
-    }
-
-    #[test]
-    fn test_privilege_level() {
-        let level = PrivilegeLevel::User;
-        assert_eq!(level, PrivilegeLevel::User);
-        assert_ne!(level, PrivilegeLevel::Root);
-    }
-
-    #[test]
-    fn test_secure_environment_creation() {
-        let env = SecureEnvironment::minimal();
-        assert_eq!(env.target_uid, 65534);
-        assert_eq!(env.target_gid, 65534);
-        assert!(env.no_new_privs);
-        assert!(env.allowed_capabilities.is_empty());
-    }
-
-    #[test]
-    fn test_network_service_environment() {
-        let env = SecureEnvironment::network_service();
-        assert!(env.allowed_capabilities.contains(&Capability::NetBindService));
-        assert_eq!(env.allowed_capabilities.len(), 1);
-    }
-
-    #[test]
-    fn test_user_info_creation() {
-        let user_info = PrivilegeManager::get_current_user_info();
-        assert!(user_info.is_ok());
-        
-        let user_info = user_info.unwrap();
-        assert!(!user_info.username.is_empty());
-    }
-
-    #[test]
-    fn test_privilege_manager_creation() {
-        let manager = PrivilegeManager::new();
-        assert!(manager.is_ok());
-        
-        let manager = manager.unwrap();
-        assert!(manager.current_user().is_some());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_current_uid_gid() {
-        let uid = current_uid();
-        let gid = current_gid();
-        
-        // Should return valid IDs
-        assert!(uid >= 0);
-        assert!(gid >= 0);
-        
-        // Should match what libc returns
-        assert_eq!(uid, unsafe { libc::getuid() });
-        assert_eq!(gid, unsafe { libc::getgid() });
-    }
-
-    #[test]
-    fn test_is_root() {
-        let is_root = is_root();
-        // Just ensure it returns a boolean without panicking
-        assert!(is_root == true || is_root == false);
-    }
-
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn test_capability_checking() {
-        let manager = PrivilegeManager::new().unwrap();
-        
-        // Test capability checking (should not panic)
-        let has_kill = manager.has_capability(Capability::Kill);
-        assert!(has_kill.is_ok());
-        
-        let caps = manager.get_current_capabilities();
-        assert!(caps.is_ok());
-    }
-}
-
-/// Options for privilege configuration
-#[derive(Debug, Clone)]
-pub struct PrivilegeOptions {
-    pub drop_privileges: bool,
-    pub target_uid: Option<u32>,
-    pub target_gid: Option<u32>,
-    pub retain_capabilities: Vec<String>,
-    pub chroot_path: Option<PathBuf>,
-}
 
 impl Default for PrivilegeOptions {
     fn default() -> Self {

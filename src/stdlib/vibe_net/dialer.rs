@@ -1,8 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Dialer configuration for VibeNet
 
 use std::time::{Duration, SystemTime};
-use crate::error::CursedError;
 use super::addr::AddrVibe;
 use super::conn::ConnVibe;
 use super::dns::DNSResolverVibe;

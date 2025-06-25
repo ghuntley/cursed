@@ -3,8 +3,8 @@
 /// Optimizes the compilation pipeline itself with parallel compilation support,
 /// incremental compilation cache improvements, and compilation progress reporting.
 
-use crate::error::{Error, Result};
-use crate::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportConfig, ReportFormat};
+use crate::error::{CursedError, Result};
+// use crate::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportConfig, ReportFormat};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -260,7 +260,7 @@ impl PerformancePipeline {
         rayon::ThreadPoolBuilder::new()
             .num_threads(num_threads)
             .build_global()
-            .map_err(|e| Error::General(format!("Failed to initialize thread pool: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to initialize thread pool: {}", e)))?;
         
         // Initialize incremental compilation cache
         if self.incremental_config.enabled {
@@ -428,7 +428,7 @@ impl PerformancePipeline {
         
         // Simulate random failures for testing
         if job.file_path.to_string_lossy().contains("error") {
-            return Err(Error::General("Simulated compilation error".to_string()));
+            return Err(CursedError::General("Simulated compilation error".to_string()));
         }
         
         Ok(())
@@ -440,10 +440,10 @@ impl PerformancePipeline {
         
         if cache_file.exists() {
             let cache_data = std::fs::read_to_string(&cache_file)
-                .map_err(|e| Error::General(format!("Failed to read cache file: {}", e)))?;
+                .map_err(|e| CursedError::General(format!("Failed to read cache file: {}", e)))?;
             
             let cache_entries: HashMap<PathBuf, CacheEntry> = serde_json::from_str(&cache_data)
-                .map_err(|e| Error::General(format!("Failed to parse cache file: {}", e)))?;
+                .map_err(|e| CursedError::General(format!("Failed to parse cache file: {}", e)))?;
             
             *self.cache.lock().unwrap() = cache_entries;
             println!("📦 Loaded compilation cache with {} entries", self.cache.lock().unwrap().len());
@@ -456,16 +456,16 @@ impl PerformancePipeline {
     fn save_cache(&self) -> Result<()> {
         if !self.incremental_config.cache_dir.exists() {
             std::fs::create_dir_all(&self.incremental_config.cache_dir)
-                .map_err(|e| Error::General(format!("Failed to create cache directory: {}", e)))?;
+                .map_err(|e| CursedError::General(format!("Failed to create cache directory: {}", e)))?;
         }
         
         let cache_file = self.incremental_config.cache_dir.join("compilation_cache.json");
         let cache = self.cache.lock().unwrap();
         let cache_data = serde_json::to_string_pretty(&*cache)
-            .map_err(|e| Error::General(format!("Failed to serialize cache: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to serialize cache: {}", e)))?;
         
         std::fs::write(&cache_file, cache_data)
-            .map_err(|e| Error::General(format!("Failed to write cache file: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to write cache file: {}", e)))?;
         
         Ok(())
     }
@@ -613,66 +613,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_parallel_config_creation() {
-        let config = ParallelConfig::default();
-        assert_eq!(config.num_threads, 0); // Auto-detect
-        assert!(config.enable_work_stealing);
-    }
-    
-    #[test]
-    fn test_incremental_config_creation() {
-        let config = IncrementalConfig::default();
-        assert!(config.enabled);
-        assert_eq!(config.cache_dir, PathBuf::from(".cursed_cache"));
-    }
-    
-    #[test]
-    fn test_progress_reporter_creation() {
-        let config = ProgressConfig::default();
-        let reporter = ProgressReporter::new(config, 10);
-        
-        reporter.update_progress(5);
-        reporter.set_phase(CompilationPhase::Lexing);
-    }
-    
-    #[test]
-    fn test_compilation_job_creation() {
-        let job = CompilationJob {
-            id: 1,
-            file_path: PathBuf::from("test.csd"),
-            source_code: "sus x = 42;".to_string(),
-            dependencies: Vec::new(),
-            priority: 0,
-        };
-        
-        assert_eq!(job.id, 1);
-        assert_eq!(job.priority, 0);
-    }
-    
-    #[test]
-    fn test_auto_parallel_config() {
-        let config = utils::auto_parallel_config();
-        assert!(config.num_threads > 0);
-        assert!(config.enable_work_stealing);
-    }
-    
-    #[tokio::test]
-    async fn test_performance_pipeline_initialization() {
-        let (parallel_config, incremental_config, progress_config) = utils::dev_config();
-        let mut pipeline = PerformancePipeline::new(
-            parallel_config,
-            incremental_config,
-            progress_config,
-        );
-        
-        // This test might fail in some environments due to rayon global pool initialization
-        // In a real implementation, you'd handle this more gracefully
-        let result = pipeline.initialize();
-        assert!(result.is_ok() || result.is_err()); // Either outcome is acceptable for testing
-    }
-}

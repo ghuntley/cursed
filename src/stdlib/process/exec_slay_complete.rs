@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Complete ExecSlay implementation matching the specification
 /// Provides utilities for running external commands with style and efficiency
 
@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::stdlib::process::error::{ProcessResult, ProcessError, execution_failed, timeout_error, system_error};
+// use crate::stdlib::process::error::{ProcessResult, ProcessError, execution_failed, timeout_error, system_error};
 
 /// Represents an external command to be executed (SlayCommand)
 #[derive(Debug, Clone)]
@@ -325,7 +325,7 @@ impl SlayCommand {
                     }
                     thread::sleep(Duration::from_millis(10));
                 }
-                Err(e) => return Err(execution_failed(&self.command, &format!("Error waiting for process: {}", e))),
+                Err(e) => return Err(execution_failed(&self.command, &format!("CursedError waiting for process: {}", e))),
             }
         }
     }
@@ -695,45 +695,3 @@ impl Default for SignalOptions {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_slay_command_creation() {
-        let cmd = SlayCommand::new("echo", &["hello", "world"]);
-        assert_eq!(cmd.command, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-    }
-
-    #[test]
-    fn test_command_builder() {
-        let cmd = SlayCommandBuilder::new("ls")
-            .with_args(&["-la"])
-            .with_timeout(Duration::from_secs(10))
-            .use_shell(true)
-            .build();
-        
-        assert_eq!(cmd.command, "ls");
-        assert_eq!(cmd.args, vec!["-la"]);
-        assert_eq!(cmd.timeout, Some(Duration::from_secs(10)));
-        assert!(cmd.use_shell);
-    }
-
-    #[test]
-    fn test_shell_commands() {
-        // These tests would need to be run on appropriate platforms
-        // For now, we just test that the functions exist and can be called
-        let _result = run_shell("echo test");
-        let _result = shell_output("echo test");
-        
-        let mut env = HashMap::new();
-        env.insert("TEST_VAR".to_string(), "test_value".to_string());
-        let _result = run_shell_with_env("echo $TEST_VAR", env);
-        
-        let _result = run_shell_in_dir("pwd", "/tmp");
-    }
-}

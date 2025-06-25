@@ -1,6 +1,6 @@
 /// Direct system call interface
-use crate::stdlib::sys_core::error::{SysCoreResult, system_call_error, not_supported, invalid_argument};
-use crate::error::Error;
+// use crate::stdlib::sys_core::error::{SysCoreResult, system_call_error, not_supported, invalid_argument};
+use crate::error::CursedError;
 
 /// System call identifier
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -22,7 +22,7 @@ pub enum SystemCall {
 #[derive(Debug, Clone)]
 pub enum SystemCallResult {
     Success(i64),
-    Error(i32),
+    CursedError(i32),
 }
 
 /// Direct system call interface (platform-specific)
@@ -72,8 +72,8 @@ pub fn direct_syscall(call: SystemCall, args: &[u64]) -> SysCoreResult<i64> {
 pub fn safe_syscall(call: SystemCall, args: &[u64]) -> SystemCallResult {
     match direct_syscall(call, args) {
         Ok(result) => SystemCallResult::Success(result),
-        Err(SysCoreError::SystemCall(_, errno)) => SystemCallResult::Error(errno),
-        Err(_) => SystemCallResult::Error(-1),
+        Err(SysCoreError::SystemCall(_, errno)) => SystemCallResult::CursedError(errno),
+        Err(_) => SystemCallResult::CursedError(-1),
     }
 }
 
@@ -303,4 +303,3 @@ impl SyscallProfiler {
     }
 }
 
-use crate::stdlib::sys_core::error::SysCoreError;

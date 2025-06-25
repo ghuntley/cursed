@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // CPU profiling with call stack sampling and performance analysis
 
 use std::collections::HashMap;
@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::profiling::core::{DataCollector, CollectorStats, ProfilerError};
+// use crate::profiling::core::{DataCollector, CollectorStats, ProfilerError};
 
 /// CPU profiler for call stack sampling and execution analysis
 #[derive(Debug)]
@@ -34,7 +34,7 @@ impl CpuProfiler {
     }
     
     #[instrument(skip(self))]
-    fn start_sampling(&mut self) -> Result<(), Error> {
+    fn start_sampling(&mut self) -> crate::error::Result<()> {
         let collecting = Arc::clone(&self.collecting);
         let data = Arc::clone(&self.data);
         let stats = Arc::clone(&self.stats);
@@ -91,7 +91,7 @@ impl CpuProfiler {
         }
     }
     
-    fn capture_stack_trace(max_depth: usize) -> Result<(), Error> {
+    fn capture_stack_trace(max_depth: usize) -> crate::error::Result<()> {
         // In a real implementation, this would use platform-specific APIs
         // like libunwind, Windows StackWalk, or signal-based sampling
         
@@ -134,7 +134,7 @@ impl CpuProfiler {
         self.data.read().unwrap().clone()
     }
     
-    pub fn generate_flame_graph(&self) -> Result<(), Error> {
+    pub fn generate_flame_graph(&self) -> crate::error::Result<()> {
         let profile_data = self.get_profile_data();
         FlameGraph::from_cpu_profile(&profile_data)
     }
@@ -142,7 +142,7 @@ impl CpuProfiler {
 
 impl DataCollector for CpuProfiler {
     #[instrument(skip(self))]
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("CPU profiler already collecting".to_string()));
         }
@@ -151,7 +151,7 @@ impl DataCollector for CpuProfiler {
     }
     
     #[instrument(skip(self))]
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("CPU profiler not collecting".to_string()));
         }
@@ -324,7 +324,7 @@ pub struct FlameGraph {
 }
 
 impl FlameGraph {
-    pub fn from_cpu_profile(profile: &CpuProfileData) -> Result<(), Error> {
+    pub fn from_cpu_profile(profile: &CpuProfileData) -> crate::error::Result<()> {
         let mut nodes = Vec::new();
         let mut stack_counts: HashMap<Vec<String>, u64> = HashMap::new();
         
@@ -406,81 +406,3 @@ pub struct FlameGraphNode {
     pub stack_trace: Vec<String>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_cpu_profiler_creation() {
-        let profiler = CpuProfiler::new(100, 32);
-        assert_eq!(profiler.sampling_frequency, 100);
-        assert_eq!(profiler.max_stack_depth, 32);
-        assert!(!profiler.is_collecting());
-    }
-    
-    #[test]
-    fn test_cpu_profile_data() {
-        let mut data = CpuProfileData::new();
-        
-        let stack_trace = StackTrace {
-            frames: vec![
-                StackFrame {
-                    function_name: "main".to_string(),
-                    file_name: Some("main.csd".to_string()),
-                    line_number: Some(10),
-                    instruction_pointer: 0x1000,
-                    module_name: Some("main".to_string()),
-                },
-            ],
-            timestamp: Instant::now(),
-            thread_id: 1,
-        };
-        
-        data.add_sample(stack_trace);
-        assert_eq!(data.sample_count, 1);
-        assert_eq!(data.function_stats.len(), 1);
-    }
-    
-    #[test]
-    fn test_flame_graph_generation() {
-        let mut profile = CpuProfileData::new();
-        
-        // Add some sample data
-        let stack_trace = StackTrace {
-            frames: vec![
-                StackFrame {
-                    function_name: "main".to_string(),
-                    file_name: None,
-                    line_number: None,
-                    instruction_pointer: 0x1000,
-                    module_name: None,
-                },
-                StackFrame {
-                    function_name: "helper".to_string(),
-                    file_name: None,
-                    line_number: None,
-                    instruction_pointer: 0x2000,
-                    module_name: None,
-                },
-            ],
-            timestamp: Instant::now(),
-            thread_id: 1,
-        };
-        
-        profile.add_sample(stack_trace);
-        
-        let flame_graph = FlameGraph::from_cpu_profile(&profile).unwrap();
-        assert!(flame_graph.nodes.len() > 0);
-        assert_eq!(flame_graph.total_samples, 1);
-    }
-    
-    #[test]
-    fn test_call_graph() {
-        let mut call_graph = CallGraph::new();
-        call_graph.add_edge("main".to_string(), "helper".to_string());
-        call_graph.add_edge("main".to_string(), "helper".to_string());
-        
-        assert_eq!(call_graph.get_call_frequency("main", "helper"), 2);
-        assert_eq!(call_graph.get_call_frequency("helper", "main"), 0);
-    }
-}

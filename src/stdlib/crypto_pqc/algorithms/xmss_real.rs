@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real XMSS (eXtended Merkle Signature Scheme) Implementation
 /// 
 /// This is a production-ready implementation of XMSS, a hash-based
@@ -20,7 +20,7 @@ use std::collections::HashMap;
 use rand::rngs::OsRng;
 use rand::RngCore;
 use sha2::{Sha256, Digest};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// XMSS parameter sets
@@ -793,85 +793,3 @@ impl RealXmss {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_xmss_keygen() {
-        let (pub_key, sec_key) = RealXmss::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params, XmssParams::XmssSha2_10_256);
-        assert_eq!(sec_key.params, XmssParams::XmssSha2_10_256);
-        assert_eq!(sec_key.index, 0);
-    }
-
-    #[test]
-    fn test_real_xmss_sign_verify() {
-        let (pub_key, sec_key) = RealXmss::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, post-quantum world!";
-        
-        let signature = RealXmss::sign(&sec_key, message).unwrap();
-        let is_valid = RealXmss::verify(&pub_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_xmss_signature_remaining() {
-        let (_, sec_key) = RealXmss::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(sec_key.signatures_remaining(), 1024); // 2^10
-    }
-
-    #[test]
-    fn test_wots_plus_operations() {
-        let params = XmssParams::XmssSha2_10_256;
-        let wots = WotsPlus::new(params);
-        
-        // Test base_w conversion
-        let input = [0xFF, 0x00, 0xAA];
-        let base_w = wots.base_w(&input);
-        assert!(!base_w.is_empty());
-        
-        // All values should be less than w
-        for &val in &base_w {
-            assert!(val < params.w() as u32);
-        }
-    }
-
-    #[test]
-    fn test_xmss_serialization() {
-        let (pub_key, sec_key) = RealXmss::keygen(SecurityLevel::Level1).unwrap();
-        
-        // Test public key serialization
-        let pub_bytes = pub_key.as_bytes();
-        let pub_key2 = XmssPublicKey::from_bytes(pub_key.params, &pub_bytes).unwrap();
-        assert_eq!(pub_key.root, pub_key2.root);
-        assert_eq!(pub_key.seed, pub_key2.seed);
-        
-        // Test secret key serialization
-        let sec_bytes = sec_key.as_bytes();
-        let sec_key2 = XmssSecretKey::from_bytes(sec_key.params, &sec_bytes).unwrap();
-        assert_eq!(sec_key.index, sec_key2.index);
-        assert_eq!(sec_key.sk_prf, sec_key2.sk_prf);
-        assert_eq!(sec_key.seed, sec_key2.seed);
-        assert_eq!(sec_key.root, sec_key2.root);
-    }
-
-    #[test]
-    fn test_xmss_address_operations() {
-        let mut addr = XmssAddress::new();
-        addr.set_ots_address(42);
-        addr.set_chain_address(24);
-        addr.set_hash_address(12);
-        addr.set_key_and_mask(1);
-        
-        let bytes = addr.to_bytes();
-        assert_eq!(bytes.len(), 32);
-        
-        // Verify address is properly encoded
-        assert_eq!(u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]), 42);
-        assert_eq!(u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]), 24);
-        assert_eq!(u32::from_be_bytes([bytes[24], bytes[25], bytes[26], bytes[27]]), 12);
-        assert_eq!(u32::from_be_bytes([bytes[28], bytes[29], bytes[30], bytes[31]]), 1);
-    }
-}

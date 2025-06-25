@@ -37,14 +37,14 @@ pub use rpc_transport::{
 };
 
 /// Initialize transport subsystem
-pub fn initialize() -> crate::stdlib::ipc::IpcResult<()> {
+// pub fn initialize() -> crate::stdlib::ipc::IpcResult<()> {
     unix_socket::initialize_unix_transport()?;
     pool::initialize_pool_manager()?;
     Ok(())
 }
 
 /// Shutdown transport subsystem  
-pub fn shutdown() -> crate::stdlib::ipc::IpcResult<()> {
+// pub fn shutdown() -> crate::stdlib::ipc::IpcResult<()> {
     pool::shutdown_pool_manager()?;
     unix_socket::cleanup_unix_transport()?;
     Ok(())

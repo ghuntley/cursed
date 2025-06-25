@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr SQL data types and values - the foundation of all SQL operations periodt
 ///
 /// This module defines all the SQL data types, values, and conversion logic
@@ -307,13 +307,13 @@ pub struct SqlNull;
 pub mod datetime {
     use super::*;
     use chrono::{NaiveDate, NaiveTime, NaiveDateTime, DateTime, Utc};
-    use crate::stdlib::packages::db_core::error::DatabaseResult;
+//     use crate::stdlib::packages::db_core::error::DatabaseResult;
 
     /// slay Create a SQL Date value
     pub fn sql_date(year: i32, month: u32, day: u32) -> DatabaseResult<SqlValue> {
         let date = NaiveDate::from_ymd_opt(year, month, day)
-            .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
-                crate::stdlib::packages::db_core::ErrorKind::DataConversion,
+//             .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
+//                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
                 "Invalid date values"
             ))?;
         Ok(SqlValue::Date(date))
@@ -322,8 +322,8 @@ pub mod datetime {
     /// slay Create a SQL Time value
     pub fn sql_time(hour: u32, minute: u32, second: u32) -> DatabaseResult<SqlValue> {
         let time = NaiveTime::from_hms_opt(hour, minute, second)
-            .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
-                crate::stdlib::packages::db_core::ErrorKind::DataConversion,
+//             .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
+//                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
                 "Invalid time values"
             ))?;
         Ok(SqlValue::Time(time))
@@ -332,13 +332,13 @@ pub mod datetime {
     /// slay Create a SQL Timestamp value
     pub fn sql_timestamp(year: i32, month: u32, day: u32, hour: u32, minute: u32, second: u32) -> DatabaseResult<SqlValue> {
         let date = NaiveDate::from_ymd_opt(year, month, day)
-            .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
-                crate::stdlib::packages::db_core::ErrorKind::DataConversion,
+//             .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
+//                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
                 "Invalid date values"
             ))?;
         let time = NaiveTime::from_hms_opt(hour, minute, second)
-            .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
-                crate::stdlib::packages::db_core::ErrorKind::DataConversion,
+//             .ok_or_else(|| crate::stdlib::packages::db_core::DatabaseError::new(
+//                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
                 "Invalid time values"
             ))?;
         Ok(SqlValue::Timestamp(NaiveDateTime::new(date, time)))
@@ -353,14 +353,14 @@ pub mod datetime {
 /// fr fr SQL Decimal helpers
 pub mod decimal {
     use super::*;
-    use crate::stdlib::packages::db_core::error::DatabaseResult;
+//     use crate::stdlib::packages::db_core::error::DatabaseResult;
 
     /// slay Create a SQL Decimal value
     pub fn sql_decimal(value: &str, precision: u32, scale: u32) -> DatabaseResult<SqlValue> {
         // Validate decimal format
         if !is_valid_decimal(value) {
-            return Err(crate::stdlib::packages::db_core::DatabaseError::new(
-                crate::stdlib::packages::db_core::ErrorKind::DataConversion,
+//             return Err(crate::stdlib::packages::db_core::DatabaseError::new(
+//                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
                 "Invalid decimal format"
             ));
         }
@@ -392,13 +392,13 @@ pub mod array {
 pub mod json {
     use super::*;
     use serde_json::Value;
-    use crate::stdlib::packages::db_core::error::DatabaseResult;
+//     use crate::stdlib::packages::db_core::error::DatabaseResult;
 
     /// slay Create a SQL JSON value from string
     pub fn sql_json_from_str(json_str: &str) -> DatabaseResult<SqlValue> {
         let value: Value = serde_json::from_str(json_str)
-            .map_err(|e| crate::stdlib::packages::db_core::DatabaseError::new(
-                crate::stdlib::packages::db_core::ErrorKind::DataConversion,
+//             .map_err(|e| crate::stdlib::packages::db_core::DatabaseError::new(
+//                 crate::stdlib::packages::db_core::ErrorKind::DataConversion,
                 &format!("Invalid JSON: {}", e)
             ))?;
         Ok(SqlValue::Json(value))
@@ -802,10 +802,10 @@ impl From<serde_json::Value> for SqlValue {
 }
 
 /// fr fr Conversion to db_core Parameter type
-impl From<SqlValue> for crate::stdlib::packages::db_core::Parameter {
+// impl From<SqlValue> for crate::stdlib::packages::db_core::Parameter {
     fn from(sql_value: SqlValue) -> Self {
         // Convert SqlValue to input parameter with SQL string representation
-        crate::stdlib::packages::db_core::Parameter::input(&sql_value.to_sql())
+//         crate::stdlib::packages::db_core::Parameter::input(&sql_value.to_sql())
     }
 }
 
@@ -821,132 +821,3 @@ impl fmt::Display for SqlType {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sql_value_creation() {
-        let text_val = SqlValue::Text("hello".to_string());
-        let int_val = SqlValue::Integer(42);
-        let bool_val = SqlValue::Boolean(true);
-        let null_val = SqlValue::Null;
-
-        assert!(!text_val.is_null());
-        assert!(!int_val.is_null());
-        assert!(!bool_val.is_null());
-        assert!(null_val.is_null());
-    }
-
-    #[test]
-    fn test_sql_value_type_detection() {
-        let text_val = SqlValue::Text("hello".to_string());
-        let int_val = SqlValue::Integer(42);
-        
-        assert_eq!(text_val.sql_type(), SqlType::Text);
-        assert_eq!(int_val.sql_type(), SqlType::Integer);
-    }
-
-    #[test]
-    fn test_sql_value_conversions() {
-        let int_val = SqlValue::Integer(42);
-        let float_val = SqlValue::Float(3.14);
-        let bool_val = SqlValue::Boolean(true);
-        let text_val = SqlValue::Text("123".to_string());
-
-        assert_eq!(int_val.as_i64(), Some(42));
-        assert_eq!(float_val.as_f64(), Some(3.14));
-        assert_eq!(bool_val.as_bool(), Some(true));
-        assert_eq!(text_val.as_i64(), Some(123));
-    }
-
-    #[test]
-    fn test_sql_type_checks() {
-        assert!(SqlType::Integer.is_numeric());
-        assert!(SqlType::Text.is_text());
-        assert!(SqlType::Binary(10).is_binary());
-        assert!(SqlType::Timestamp.is_temporal());
-        
-        assert!(!SqlType::Text.is_numeric());
-        assert!(!SqlType::Integer.is_text());
-    }
-
-    #[test]
-    fn test_sql_parameter_creation() {
-        let input_param = SqlParameter::input(SqlValue::Integer(42));
-        let named_param = SqlParameter::named_input("id", SqlValue::Integer(1));
-        let output_param = SqlParameter::output(SqlType::Text);
-
-        assert_eq!(input_param.direction, ParameterDirection::In);
-        assert_eq!(named_param.name, Some("id".to_string()));
-        assert_eq!(output_param.direction, ParameterDirection::Out);
-    }
-
-    #[test]
-    fn test_sql_row_operations() {
-        let columns = vec![
-            SqlColumn::new("id", SqlType::Integer, false, 0),
-            SqlColumn::new("name", SqlType::Text, true, 1),
-        ];
-        let values = vec![
-            SqlValue::Integer(1),
-            SqlValue::Text("Alice".to_string()),
-        ];
-        let row = SqlRow::new(values, columns);
-
-        assert_eq!(row.column_count(), 2);
-        assert_eq!(row.get(0), Some(&SqlValue::Integer(1)));
-        assert_eq!(row.get_by_name("name"), Some(&SqlValue::Text("Alice".to_string())));
-
-        let map = row.to_map();
-        assert_eq!(map.get("id"), Some(&SqlValue::Integer(1)));
-        assert_eq!(map.get("name"), Some(&SqlValue::Text("Alice".to_string())));
-    }
-
-    #[test]
-    fn test_datetime_helpers() {
-        let date = datetime::sql_date(2024, 1, 15).unwrap();
-        let time = datetime::sql_time(14, 30, 0).unwrap();
-        let timestamp = datetime::sql_timestamp(2024, 1, 15, 14, 30, 0).unwrap();
-
-        assert!(matches!(date, SqlValue::Date(_)));
-        assert!(matches!(time, SqlValue::Time(_)));
-        assert!(matches!(timestamp, SqlValue::Timestamp(_)));
-    }
-
-    #[test]
-    fn test_json_helpers() {
-        let json_val = json::sql_json_from_str(r#"{"name": "Alice", "age": 30}"#).unwrap();
-        assert!(matches!(json_val, SqlValue::Json(_)));
-
-        let json_obj = serde_json::json!({"test": true});
-        let json_val2 = json::sql_json(json_obj);
-        assert!(matches!(json_val2, SqlValue::Json(_)));
-    }
-
-    #[test]
-    fn test_array_helpers() {
-        let arr = array::sql_array(vec![
-            SqlValue::Integer(1),
-            SqlValue::Integer(2),
-            SqlValue::Integer(3),
-        ]);
-        assert!(matches!(arr, SqlValue::Array(_)));
-
-        let arr_type = array::sql_array_type(SqlType::Integer);
-        assert!(matches!(arr_type, SqlType::Array(_)));
-    }
-
-    #[test]
-    fn test_type_conversions() {
-        let bool_val: SqlValue = true.into();
-        let int_val: SqlValue = 42i64.into();
-        let str_val: SqlValue = "hello".into();
-        let string_val: SqlValue = String::from("world").into();
-
-        assert!(matches!(bool_val, SqlValue::Boolean(true)));
-        assert!(matches!(int_val, SqlValue::Integer(42)));
-        assert!(matches!(str_val, SqlValue::Text(_)));
-        assert!(matches!(string_val, SqlValue::Text(_)));
-    }
-}

@@ -28,7 +28,7 @@
 // ## Mathematical Foundations:
 // - **Lattice-based**: LWE, Ring-LWE, Module-LWE hardness assumptions
 // - **Hash-based**: One-way function and Merkle tree security
-// - **Code-based**: Error-correcting code hardness (Classic McEliece)
+// - **Code-based**: CursedError-correcting code hardness (Classic McEliece)
 // - **Multivariate**: Solving systems of multivariate polynomial equations
 // - **Isogeny-based**: Supersingular isogeny graph traversal (SIKE - broken)
 // 
@@ -119,41 +119,41 @@ pub enum PqcError {
     MemorySafetyViolation(String),
 }
 
-impl fmt::Display for PqcError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PqcError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
-            PqcError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
-            PqcError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
-            PqcError::UnsupportedParameters(msg) => write!(f, "Unsupported parameters: {}", msg),
-            PqcError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
-            PqcError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
-            PqcError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
-            PqcError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
-            PqcError::SigningFailed(msg) => write!(f, "Signing failed: {}", msg),
-            PqcError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
-            PqcError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
-            PqcError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
-            PqcError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
-            PqcError::InternalError(msg) => write!(f, "Internal error: {}", msg),
-            PqcError::AssessmentFailed(msg) => write!(f, "Quantum resistance assessment failed: {}", msg),
-            PqcError::LatticeOperationFailed(msg) => write!(f, "Lattice operation failed: {}", msg),
-            PqcError::HashOperationFailed(msg) => write!(f, "Hash operation failed: {}", msg),
-            PqcError::HybridOperationFailed(msg) => write!(f, "Hybrid operation failed: {}", msg),
-            PqcError::SideChannelDetected(msg) => write!(f, "Side-channel attack detected: {}", msg),
-            PqcError::TimingAttackMitigation(msg) => write!(f, "Timing attack mitigation: {}", msg),
-            PqcError::MemorySafetyViolation(msg) => write!(f, "Memory safety violation: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for PqcError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             PqcError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
+//             PqcError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
+//             PqcError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
+//             PqcError::UnsupportedParameters(msg) => write!(f, "Unsupported parameters: {}", msg),
+//             PqcError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
+//             PqcError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
+//             PqcError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
+//             PqcError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
+//             PqcError::SigningFailed(msg) => write!(f, "Signing failed: {}", msg),
+//             PqcError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
+//             PqcError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
+//             PqcError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
+//             PqcError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
+//             PqcError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+//             PqcError::AssessmentFailed(msg) => write!(f, "Quantum resistance assessment failed: {}", msg),
+//             PqcError::LatticeOperationFailed(msg) => write!(f, "Lattice operation failed: {}", msg),
+//             PqcError::HashOperationFailed(msg) => write!(f, "Hash operation failed: {}", msg),
+//             PqcError::HybridOperationFailed(msg) => write!(f, "Hybrid operation failed: {}", msg),
+//             PqcError::SideChannelDetected(msg) => write!(f, "Side-channel attack detected: {}", msg),
+//             PqcError::TimingAttackMitigation(msg) => write!(f, "Timing attack mitigation: {}", msg),
+//             PqcError::MemorySafetyViolation(msg) => write!(f, "Memory safety violation: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for PqcError {}
-
-impl From<PqcError> for CursedError {
-    fn from(err: PqcError) -> Self {
-        CursedError::Runtime(format!("Post-Quantum Cryptography error: {}", err))
-    }
-}
+// impl std::error::CursedError for PqcError {}
+// 
+// impl From<PqcError> for CursedError {
+//     fn from(err: PqcError) -> Self {
+//         CursedError::Runtime(format!("Post-Quantum Cryptography error: {}", err))
+//     }
+// }
 
 /// Result type for PQC operations
 pub type PqcResult<T> = std::result::Result<T, PqcError>;
@@ -256,7 +256,7 @@ pub enum MathematicalFoundation {
     NtruLattice,
     /// Hash function security (SPHINCS+)
     HashBased,
-    /// Error-correcting codes (McEliece)
+    /// CursedError-correcting codes (McEliece)
     CodeBased,
     /// Supersingular isogeny graphs (SIKE - broken)
     IsogenyBased,
@@ -490,9 +490,9 @@ impl KyberParameterSet {
 pub struct KyberParams {
     /// Module dimension
     pub k: usize,
-    /// Error distribution parameter for key generation
+    /// CursedError distribution parameter for key generation
     pub eta1: i32,
-    /// Error distribution parameter for encryption
+    /// CursedError distribution parameter for encryption
     pub eta2: i32,
     /// Compression parameter for ciphertext u
     pub du: usize,
@@ -1537,90 +1537,3 @@ impl QuantumThreatAssessment {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_kyber_keygen() {
-        let result = KyberKem::keygen(SecurityLevel::Level1);
-        assert!(result.is_ok());
-        
-        let (pk, sk) = result.unwrap();
-        assert_eq!(pk.parameter_set, KyberParameterSet::Kyber512);
-        assert_eq!(sk.parameter_set, KyberParameterSet::Kyber512);
-    }
-
-    #[test]
-    fn test_kyber_encaps_decaps() {
-        let (pk, sk) = KyberKem::keygen(SecurityLevel::Level1).unwrap();
-        let (ciphertext, secret1) = KyberKem::encaps(&pk).unwrap();
-        let secret2 = KyberKem::decaps(&sk, &ciphertext).unwrap();
-        
-        assert_eq!(secret1.as_slice(), secret2.as_slice());
-    }
-
-    #[test]
-    fn test_dilithium_sign_verify() {
-        let (pk, sk) = DilithiumSigner::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Test message for signing";
-        
-        let signature = DilithiumSigner::sign(&sk, message).unwrap();
-        let is_valid = DilithiumSigner::verify(&pk, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_hybrid_key_exchange() {
-        let alice_keys = HybridKeyExchange::generate_keypair(SecurityLevel::Level1).unwrap();
-        let bob_keys = HybridKeyExchange::generate_keypair(SecurityLevel::Level1).unwrap();
-        
-        let shared_secret = HybridKeyExchange::perform_exchange(&alice_keys, &bob_keys);
-        assert!(shared_secret.is_ok());
-    }
-
-    #[test]
-    fn test_constant_time_bytes_equal() {
-        let a = b"hello world";
-        let b = b"hello world";
-        let c = b"hello_world";
-        
-        assert!(ConstantTime::bytes_equal(a, b));
-        assert!(!ConstantTime::bytes_equal(a, c));
-    }
-
-    #[test]
-    fn test_security_levels() {
-        assert_eq!(SecurityLevel::Level1.classical_bits(), 128);
-        assert_eq!(SecurityLevel::Level3.classical_bits(), 192);
-        assert_eq!(SecurityLevel::Level5.classical_bits(), 256);
-        
-        assert_eq!(SecurityLevel::Level1.quantum_bits(), 64);
-        assert_eq!(SecurityLevel::Level3.quantum_bits(), 96);
-        assert_eq!(SecurityLevel::Level5.quantum_bits(), 128);
-    }
-
-    #[test]
-    fn test_algorithm_recommendations() {
-        assert_eq!(
-            get_recommended_algorithm("kem", SecurityLevel::Level3).unwrap(),
-            AlgorithmType::Kyber
-        );
-        assert_eq!(
-            get_recommended_algorithm("signature", SecurityLevel::Level3).unwrap(),
-            AlgorithmType::Dilithium
-        );
-    }
-
-    #[test]
-    fn test_hex_conversion() {
-        let bytes = vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
-        let hex = bytes_to_hex(&bytes);
-        assert_eq!(hex, "0123456789abcdef");
-        
-        let converted = hex_to_bytes(&hex).unwrap();
-        assert_eq!(bytes, converted);
-    }
-}

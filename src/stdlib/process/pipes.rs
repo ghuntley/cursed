@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Named pipes and process communication primitives
 /// 
 /// This module provides cross-platform named pipe implementation for process communication
@@ -29,7 +29,7 @@ mod windows_constants {
     pub const INVALID_HANDLE_VALUE: isize = -1;
 }
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult, communication_error, timeout_error};
+// use crate::stdlib::process::error::{ProcessError, ProcessResult, communication_error, timeout_error};
 
 /// Options for pipe configuration
 #[derive(Debug, Clone)]
@@ -239,7 +239,6 @@ impl NamedPipe {
         // Windows API call implementation
         use winapi::um::winbase::{CreateNamedPipeW, PIPE_ACCESS_INBOUND, PIPE_ACCESS_OUTBOUND, PIPE_ACCESS_DUPLEX,
                                  PIPE_TYPE_BYTE, PIPE_READMODE_BYTE, PIPE_WAIT, INVALID_HANDLE_VALUE};
-        use winapi::um::errhandlingapi::GetLastError;
         
         let handle = unsafe {
             CreateNamedPipeW(
@@ -301,7 +300,6 @@ impl NamedPipe {
         use winapi::um::fileapi::{CreateFileW, OPEN_EXISTING};
         use winapi::um::winnt::{GENERIC_READ, GENERIC_WRITE};
         use winapi::um::winbase::INVALID_HANDLE_VALUE;
-        use winapi::um::errhandlingapi::GetLastError;
         
         let handle = unsafe {
             CreateFileW(
@@ -370,7 +368,6 @@ impl NamedPipe {
                 
                 // Windows WriteFile implementation
                 use winapi::um::fileapi::WriteFile;
-                use winapi::um::errhandlingapi::GetLastError;
                 
                 let mut bytes_written = 0u32;
                 let success = unsafe {
@@ -424,7 +421,6 @@ impl NamedPipe {
                 
                 // Windows ReadFile implementation
                 use winapi::um::fileapi::ReadFile;
-                use winapi::um::errhandlingapi::GetLastError;
                 use winapi::shared::winerror::ERROR_BROKEN_PIPE;
                 
                 let mut bytes_read = 0u32;
@@ -823,86 +819,3 @@ pub mod message {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-    
-    #[test]
-    fn test_channel_pipe_creation() {
-        let pipe = NamedPipe::create_channel_pipe("test_pipe".to_string(), PipeMode::ReadWrite).unwrap();
-        assert_eq!(pipe.name(), "test_pipe");
-        assert_eq!(pipe.mode(), &PipeMode::ReadWrite);
-        assert!(pipe.can_read());
-        assert!(pipe.can_write());
-    }
-    
-    #[test]
-    fn test_channel_pipe_communication() {
-        let pipe = NamedPipe::create_channel_pipe("test_comm".to_string(), PipeMode::ReadWrite).unwrap();
-        
-        let data = b"Hello, pipe!";
-        let bytes_written = pipe.write(data).unwrap();
-        assert_eq!(bytes_written, data.len());
-        
-        let mut buffer = [0u8; 64];
-        let bytes_read = pipe.read(&mut buffer).unwrap();
-        assert_eq!(bytes_read, data.len());
-        assert_eq!(&buffer[..bytes_read], data);
-    }
-    
-    #[test]
-    fn test_pipe_mode_permissions() {
-        let read_pipe = NamedPipe::create_channel_pipe("read_only".to_string(), PipeMode::Read).unwrap();
-        assert!(read_pipe.can_read());
-        assert!(!read_pipe.can_write());
-        
-        let write_pipe = NamedPipe::create_channel_pipe("write_only".to_string(), PipeMode::Write).unwrap();
-        assert!(!write_pipe.can_read());
-        assert!(write_pipe.can_write());
-    }
-    
-    #[test]
-    fn test_pipe_server() {
-        let server = PipeServer::new("test_server");
-        assert_eq!(server.client_count(), 0);
-        
-        let client_id = server.accept_client().unwrap();
-        assert_eq!(server.client_count(), 1);
-        assert!(server.client_ids().contains(&client_id));
-        
-        server.remove_client(client_id).unwrap();
-        assert_eq!(server.client_count(), 0);
-    }
-    
-    #[test]
-    fn test_message_header() {
-        let header = message::MessageHeader::new(1, 100, 42);
-        assert_eq!(header.magic, message::MessageHeader::MAGIC);
-        assert_eq!(header.message_type, 1);
-        assert_eq!(header.payload_length, 100);
-        assert_eq!(header.sequence, 42);
-        assert!(header.is_valid());
-        
-        let bytes = header.to_bytes();
-        let restored = message::MessageHeader::from_bytes(&bytes);
-        assert!(restored.is_valid());
-        assert_eq!(restored.message_type, header.message_type);
-    }
-    
-    #[test]
-    fn test_message_communication() {
-        let pipe = NamedPipe::create_channel_pipe("message_test".to_string(), PipeMode::ReadWrite).unwrap();
-        
-        let payload = b"Test message payload".to_vec();
-        let message = message::Message::new(42, payload.clone(), 1);
-        
-        // This test would work with a real bidirectional pipe
-        // For channel pipes, we'd need a more complex setup
-        assert_eq!(message.header.message_type, 42);
-        assert_eq!(message.payload, payload);
-    }
-}

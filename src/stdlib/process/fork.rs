@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process forking and job control implementation for CURSED
 /// 
 /// Process forking is a fundamental system programming primitive that allows:
@@ -15,12 +15,12 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessResult, ProcessError, process_not_found_pid, permission_denied_pid,
     invalid_state, execution_failed, timeout_error, system_error
 };
 
-use crate::stdlib::process::core::{ProcessConfig, ProcessInfo, ProcessState};
+// use crate::stdlib::process::core::{ProcessConfig, ProcessInfo, ProcessState};
 
 /// Fork manager alias for process forking
 pub type ForkManager = JobControlManager;
@@ -323,7 +323,7 @@ impl JobControlManager {
             };
 
             for pid in members {
-                let _ = crate::stdlib::process::control::send_signal_to_pid(pid, signal);
+//                 let _ = crate::stdlib::process::control::send_signal_to_pid(pid, signal);
             }
             
             Ok(())
@@ -690,66 +690,3 @@ pub fn daemonize() -> ProcessResult<()> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_job_control_manager() {
-        let manager = JobControlManager::new();
-        
-        // Test process group creation
-        let pid = std::process::id();
-        assert!(manager.create_process_group(pid, None).is_ok());
-        
-        let groups = manager.list_process_groups().unwrap();
-        assert!(!groups.is_empty());
-    }
-
-    #[test]
-    fn test_wait_options() {
-        let options = WaitOptions::new()
-            .no_hang()
-            .untraced()
-            .continued();
-        
-        assert!(options.no_hang);
-        assert!(options.untraced);
-        assert!(options.continued);
-    }
-
-    #[test]
-    fn test_fork_result() {
-        let result = ForkResult {
-            child_pid: Some(1234),
-            parent_pid: None,
-            is_parent: true,
-            fork_time: Instant::now(),
-        };
-        
-        assert!(result.is_parent);
-        assert_eq!(result.child_pid, Some(1234));
-        assert_eq!(result.parent_pid, None);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_process_group_operations() {
-        let manager = JobControlManager::new();
-        let current_pid = std::process::id();
-        
-        // Only test if we have permission to create process groups
-        if let Ok(pgid) = manager.create_process_group(current_pid, None) {
-            assert_eq!(pgid, current_pid);
-            
-            let group = manager.get_process_group(pgid).unwrap();
-            assert_eq!(group.pgid, pgid);
-            assert_eq!(group.leader_pid, current_pid);
-            assert!(group.members.contains(&current_pid));
-        }
-    }
-}

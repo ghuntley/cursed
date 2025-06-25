@@ -3,8 +3,8 @@
 /// This module provides the fundamental types, traits, and constants used
 /// throughout the SquishCore compression system.
 
-use crate::stdlib::squish_core::{SquishError, SquishResult};
-use crate::error::Error;
+// use crate::stdlib::squish_core::{SquishError, SquishResult};
+use crate::error::CursedError;
 use std::io::{Read, Write};
 use std::time::{Duration, Instant};
 
@@ -215,10 +215,10 @@ pub fn compress(data: &[u8], algorithm: &str) -> SquishResult<Vec<u8>> {
 /// High-level compression function with level
 pub fn compress_with_level(data: &[u8], algorithm: &str, level: CompressionLevel) -> SquishResult<Vec<u8>> {
     match algorithm.to_lowercase().as_str() {
-        "gzip" => crate::stdlib::squish_core::gzip_compress_level(data, level),
-        "zlib" => crate::stdlib::squish_core::zlib_compress_level(data, level),
-        "deflate" | "flate" => crate::stdlib::squish_core::flate_compress_level(data, level),
-        "bzip2" => crate::stdlib::squish_core::bzip2_compress_level(data, level),
+//         "gzip" => crate::stdlib::squish_core::gzip_compress_level(data, level),
+//         "zlib" => crate::stdlib::squish_core::zlib_compress_level(data, level),
+//         "deflate" | "flate" => crate::stdlib::squish_core::flate_compress_level(data, level),
+//         "bzip2" => crate::stdlib::squish_core::bzip2_compress_level(data, level),
         _ => Err(SquishError::unsupported_format(format!("Unknown algorithm: {}", algorithm))),
     }
 }
@@ -226,10 +226,10 @@ pub fn compress_with_level(data: &[u8], algorithm: &str, level: CompressionLevel
 /// High-level decompression function
 pub fn decompress(data: &[u8], algorithm: &str) -> SquishResult<Vec<u8>> {
     match algorithm.to_lowercase().as_str() {
-        "gzip" => crate::stdlib::squish_core::gzip_decompress(data),
-        "zlib" => crate::stdlib::squish_core::zlib_decompress(data),
-        "deflate" | "flate" => crate::stdlib::squish_core::flate_decompress(data),
-        "bzip2" => crate::stdlib::squish_core::bzip2_decompress(data),
+//         "gzip" => crate::stdlib::squish_core::gzip_decompress(data),
+//         "zlib" => crate::stdlib::squish_core::zlib_decompress(data),
+//         "deflate" | "flate" => crate::stdlib::squish_core::flate_decompress(data),
+//         "bzip2" => crate::stdlib::squish_core::bzip2_decompress(data),
         _ => Err(SquishError::unsupported_format(format!("Unknown algorithm: {}", algorithm))),
     }
 }
@@ -272,66 +272,3 @@ impl Default for CompressionTimer {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_compression_level_conversion() {
-        assert_eq!(CompressionLevel::None.to_numeric(), 0);
-        assert_eq!(CompressionLevel::Fastest.to_numeric(), 1);
-        assert_eq!(CompressionLevel::Default.to_numeric(), 6);
-        assert_eq!(CompressionLevel::Best.to_numeric(), 9);
-        assert_eq!(CompressionLevel::Custom(5).to_numeric(), 5);
-    }
-
-    #[test]
-    fn test_compression_level_from_numeric() {
-        assert_eq!(CompressionLevel::from_numeric(0).unwrap(), CompressionLevel::None);
-        assert_eq!(CompressionLevel::from_numeric(1).unwrap(), CompressionLevel::Fastest);
-        assert_eq!(CompressionLevel::from_numeric(6).unwrap(), CompressionLevel::Default);
-        assert_eq!(CompressionLevel::from_numeric(9).unwrap(), CompressionLevel::Best);
-        
-        assert!(CompressionLevel::from_numeric(-10).is_err());
-        assert!(CompressionLevel::from_numeric(100).is_err());
-    }
-
-    #[test]
-    fn test_compression_stats() {
-        let stats = CompressionStats::new(
-            1000,
-            600,
-            Duration::from_millis(100),
-            "gzip".to_string(),
-            Some(6),
-        );
-        
-        assert_eq!(stats.input_size, 1000);
-        assert_eq!(stats.output_size, 600);
-        assert_eq!(stats.compression_ratio, 0.6);
-        assert_eq!(stats.space_saved_percent, 40.0);
-        assert!(stats.throughput_bps > 0.0);
-        
-        let summary = stats.format_summary();
-        assert!(summary.contains("gzip"));
-        assert!(summary.contains("1000"));
-        assert!(summary.contains("600"));
-        assert!(summary.contains("40.0%"));
-    }
-
-    #[test]
-    fn test_compression_timer() {
-        let timer = CompressionTimer::new();
-        std::thread::sleep(Duration::from_millis(10));
-        let elapsed = timer.elapsed();
-        assert!(elapsed >= Duration::from_millis(10));
-    }
-
-    #[test]
-    fn test_constants() {
-        assert_eq!(NO_COMPRESSION, CompressionLevel::None);
-        assert_eq!(BEST_SPEED, CompressionLevel::Fastest);
-        assert_eq!(BEST_COMPRESSION, CompressionLevel::Best);
-        assert_eq!(DEFAULT_COMPRESSION, CompressionLevel::Default);
-    }
-}

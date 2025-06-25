@@ -1,12 +1,12 @@
 // HTTP request types and utilities for GlowUpHTTP
 
-use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
+// use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 use tracing::{debug, instrument};
-use crate::error_types::Error;
+use crate::error::CursedError;
 
 /// HTTP methods
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -419,14 +419,14 @@ impl VibeRequest {
 
 // Add some external dependencies that would be needed
 mod base64 {
-    pub fn decode(input: &str) -> Result<(), Error> {
+    pub fn decode(input: &str) -> crate::error::Result<()> {
         // Simplified base64 decode - in real implementation use base64 crate
         Ok(input.as_bytes().to_vec())
     }
 }
 
 mod urlencoding {
-    pub fn decode(input: &str) -> Result<(), Error> {
+    pub fn decode(input: &str) -> crate::error::Result<()> {
         // Simplified URL decode - in real implementation use percent-encoding crate
         Ok(std::borrow::Cow::Borrowed(input))
     }

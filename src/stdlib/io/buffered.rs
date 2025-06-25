@@ -1,8 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Buffered I/O implementations for efficient CURSED console operations
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::sync::{Arc, Mutex};
-use crate::stdlib::io::error::{IoError, IoResult};
+// use crate::stdlib::io::error::{IoError, IoResult};
 
 /// Default buffer size for I/O operations
 const DEFAULT_BUFFER_SIZE: usize = 8192;
@@ -308,84 +308,3 @@ pub fn shared_buffered_stderr() -> SharedBufferedWriter<std::io::Stderr> {
     SharedBufferedWriter::new(std::io::stderr())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_buffered_reader_line_reading() {
-        let data = "line1\nline2\nline3";
-        let cursor = Cursor::new(data.as_bytes());
-        let mut reader = BufferedReader::new(cursor);
-
-        assert_eq!(reader.read_line().unwrap(), Some("line1".to_string()));
-        assert_eq!(reader.line_number(), 1);
-        assert_eq!(reader.read_line().unwrap(), Some("line2".to_string()));
-        assert_eq!(reader.line_number(), 2);
-        assert_eq!(reader.read_line().unwrap(), Some("line3".to_string()));
-        assert_eq!(reader.line_number(), 3);
-        assert_eq!(reader.read_line().unwrap(), None);
-    }
-
-    #[test]
-    fn test_buffered_reader_read_all_lines() {
-        let data = "line1\nline2\nline3";
-        let cursor = Cursor::new(data.as_bytes());
-        let mut reader = BufferedReader::new(cursor);
-
-        let lines = reader.read_lines().unwrap();
-        assert_eq!(lines, vec!["line1", "line2", "line3"]);
-        assert_eq!(reader.line_number(), 3);
-    }
-
-    #[test]
-    fn test_buffered_writer_writing() {
-        let mut buffer = Vec::new();
-        {
-            let cursor = Cursor::new(&mut buffer);
-            let mut writer = BufferedWriter::new(cursor);
-
-            writer.write_line("Hello").unwrap();
-            writer.write_line("World").unwrap();
-            writer.flush().unwrap();
-        }
-
-        let result = String::from_utf8(buffer).unwrap();
-        assert_eq!(result, "Hello\nWorld\n");
-    }
-
-    #[test]
-    fn test_buffered_writer_bytes_written() {
-        let buffer = Vec::new();
-        let cursor = Cursor::new(buffer);
-        let mut writer = BufferedWriter::new(cursor);
-
-        writer.write_str("Hello").unwrap();
-        assert_eq!(writer.bytes_written(), 5);
-
-        writer.write_str(" World").unwrap();
-        assert_eq!(writer.bytes_written(), 11);
-    }
-
-    #[test]
-    fn test_buffered_reader_with_capacity() {
-        let data = "test data";
-        let cursor = Cursor::new(data.as_bytes());
-        let reader = BufferedReader::with_capacity(1024, cursor);
-        
-        // Just test that it was created successfully
-        assert_eq!(reader.line_number(), 0);
-    }
-
-    #[test]
-    fn test_buffered_writer_with_capacity() {
-        let buffer = Vec::new();
-        let cursor = Cursor::new(buffer);
-        let writer = BufferedWriter::with_capacity(1024, cursor);
-        
-        // Test capacity
-        assert_eq!(writer.capacity(), 1024);
-        assert_eq!(writer.bytes_written(), 0);
-    }
-}

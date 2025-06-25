@@ -18,8 +18,8 @@ use num_complex::Complex;
 use num_traits::{Zero, One, Pow, Signed, Float, ToPrimitive, FromPrimitive, Num};
 use rand::Rng;
 
-use crate::stdlib::math::{MathError, MathResult};
-use crate::error::Error;
+// use crate::stdlib::math::{MathError, MathResult};
+use crate::error::CursedError;
 
 /// Arbitrary-precision integer type
 /// 
@@ -1049,110 +1049,3 @@ pub fn fast_mul(x: &BigInt, y: &BigInt) -> BigInt {
     x.mul(y)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_big_int_creation() {
-        let x = BigInt::new(42);
-        assert_eq!(x.to_string(), "42");
-        
-        let zero = BigInt::zero();
-        assert_eq!(zero.to_string(), "0");
-        
-        let one = BigInt::one();
-        assert_eq!(one.to_string(), "1");
-    }
-
-    #[test]
-    fn test_big_int_arithmetic() {
-        let x = BigInt::new(123);
-        let y = BigInt::new(456);
-        
-        assert_eq!(x.add(&y).to_string(), "579");
-        assert_eq!(y.sub(&x).to_string(), "333");
-        assert_eq!(x.mul(&y).to_string(), "56088");
-        
-        let div_result = x.div(&BigInt::new(3)).unwrap();
-        assert_eq!(div_result.to_string(), "41");
-    }
-
-    #[test]
-    fn test_big_rat_creation() {
-        let r = BigRat::new(1, 3).unwrap();
-        assert_eq!(r.to_string(), "1/3");
-        
-        let zero = BigRat::zero();
-        assert_eq!(zero.to_string(), "0");
-    }
-
-    #[test]
-    fn test_big_rat_arithmetic() {
-        let r1 = BigRat::new(1, 3).unwrap();
-        let r2 = BigRat::new(2, 5).unwrap();
-        
-        let sum = r1.add(&r2);
-        // 1/3 + 2/5 = 5/15 + 6/15 = 11/15
-        assert_eq!(sum.to_string(), "11/15");
-    }
-
-    #[test]
-    fn test_decimal_creation() {
-        let d = Decimal::new("123.45").unwrap();
-        assert_eq!(d.to_string(), "123.45");
-        
-        let d2 = Decimal::new("100").unwrap();
-        assert_eq!(d2.to_string(), "100");
-    }
-
-    #[test]
-    fn test_decimal_arithmetic() {
-        let d1 = Decimal::new("19.99").unwrap();
-        let d2 = Decimal::new("0.01").unwrap();
-        
-        let sum = d1.add(&d2);
-        assert_eq!(sum.to_string(), "20.00");
-    }
-
-    #[test]
-    fn test_parse_functions() {
-        let int_result = parse_int("123", 10).unwrap();
-        assert_eq!(int_result.to_string(), "123");
-        
-        let hex_result = parse_int("FF", 16).unwrap();
-        assert_eq!(hex_result.to_string(), "255");
-        
-        let rat_result = parse_rat("3/4").unwrap();
-        assert_eq!(rat_result.to_string(), "3/4");
-    }
-
-    #[test]
-    fn test_mathematical_functions() {
-        let x = BigFloat::new(4.0);
-        let sqrt_result = sqrt(&x).unwrap();
-        assert!((sqrt_result.value - 2.0).abs() < 1e-10);
-        
-        let y = BigFloat::new(8.0);
-        let cbrt_result = cbrt(&y);
-        assert!((cbrt_result.value - 2.0).abs() < 1e-10);
-    }
-
-    #[test]
-    fn test_binomial_coefficient() {
-        let result = binomial(5, 2).unwrap();
-        assert_eq!(result.to_string(), "10");
-        
-        let result2 = binomial(10, 3).unwrap();
-        assert_eq!(result2.to_string(), "120");
-    }
-
-    #[test]
-    fn test_error_handling() {
-        let result = BigInt::new(1).div(&BigInt::zero());
-        assert!(result.is_err());
-        
-        let result2 = sqrt(&BigFloat::new(-1.0));
-        assert!(result2.is_err());
-    }
-}

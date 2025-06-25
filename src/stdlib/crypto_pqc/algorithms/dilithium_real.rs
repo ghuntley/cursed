@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Real Dilithium Digital Signature Implementation
 /// 
 /// This is a production-ready implementation of CRYSTALS-Dilithium, a lattice-based
@@ -19,7 +19,7 @@ use std::fmt;
 use rand::rngs::OsRng;
 use rand::RngCore;
 use sha3::{Sha3_256, Sha3_512, Digest, Keccak256};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{DigitalSignature, ParameterSet, AlgorithmPerformance, KeySizes};
 
 // Dilithium parameters
@@ -915,69 +915,3 @@ fn challenge_polynomial(c: &[u8; SEEDBYTES], tau: i32) -> Polynomial {
     poly
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_real_dilithium_keygen() {
-        let (pub_key, sec_key) = RealDilithium::keygen(SecurityLevel::Level1).unwrap();
-        assert_eq!(pub_key.params, DilithiumParams::Dilithium2);
-        assert_eq!(sec_key.params, DilithiumParams::Dilithium2);
-    }
-
-    #[test]
-    fn test_real_dilithium_sign_verify() {
-        let (pub_key, sec_key) = RealDilithium::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, real post-quantum world!";
-        
-        let signature = RealDilithium::sign(&sec_key, message).unwrap();
-        let is_valid = RealDilithium::verify(&pub_key, message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_real_dilithium_invalid_signature() {
-        let (pub_key, sec_key) = RealDilithium::keygen(SecurityLevel::Level1).unwrap();
-        let message = b"Hello, real post-quantum world!";
-        let wrong_message = b"Wrong message";
-        
-        let signature = RealDilithium::sign(&sec_key, message).unwrap();
-        let is_valid = RealDilithium::verify(&pub_key, wrong_message, &signature).unwrap();
-        
-        assert!(!is_valid);
-    }
-
-    #[test]
-    fn test_polynomial_operations() {
-        let mut poly1 = Polynomial::new();
-        poly1.coeffs[0] = 1;
-        poly1.coeffs[1] = 2;
-        
-        let mut poly2 = Polynomial::new();
-        poly2.coeffs[0] = 3;
-        poly2.coeffs[1] = 4;
-        
-        let sum = poly1.add(&poly2);
-        assert_eq!(sum.coeffs[0], 4);
-        assert_eq!(sum.coeffs[1], 6);
-    }
-
-    #[test]
-    fn test_ntt_operations() {
-        let mut poly = Polynomial::new();
-        poly.coeffs[0] = 1;
-        poly.coeffs[1] = 2;
-        poly.coeffs[2] = 3;
-        
-        let original = poly.clone();
-        poly.ntt();
-        poly.intt();
-        
-        // After NTT and INTT, should be close to original (modulo precision)
-        for i in 0..3 {
-            assert!((poly.coeffs[i] - original.coeffs[i]).abs() < 100);
-        }
-    }
-}

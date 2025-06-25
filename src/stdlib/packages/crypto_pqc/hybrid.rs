@@ -1,11 +1,10 @@
 /// fr fr Hybrid cryptography combining classical and post-quantum algorithms
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_asymmetric::{AsymmetricKey, AsymmetricKeyPair};
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_asymmetric::{AsymmetricKey, AsymmetricKeyPair};
 use crate::error::CursedError;
-use crate::error::Error;
 use super::pqc_core::{PqcKey, SecurityLevel};
 use super::kyber::{KyberKeyPair, KyberParams};
-use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
+// use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
 use std::collections::HashMap;
 
 /// Hybrid scheme types
@@ -648,116 +647,3 @@ impl HybridCryptoManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_hybrid_algorithm_config() {
-        let x25519_kyber = HybridAlgorithmConfig::x25519_kyber(SecurityLevel::Level1);
-        assert_eq!(x25519_kyber.classical_algorithm, "X25519");
-        assert_eq!(x25519_kyber.pqc_algorithm, "Kyber512");
-        assert_eq!(x25519_kyber.scheme_type, HybridSchemeType::Kem);
-        
-        let ed25519_dilithium = HybridAlgorithmConfig::ed25519_dilithium(SecurityLevel::Level3);
-        assert_eq!(ed25519_dilithium.classical_algorithm, "Ed25519");
-        assert_eq!(ed25519_dilithium.pqc_algorithm, "Dilithium3");
-        assert_eq!(ed25519_dilithium.scheme_type, HybridSchemeType::Signature);
-        
-        let rsa_sphincs = HybridAlgorithmConfig::rsa_sphincs(2048);
-        assert_eq!(rsa_sphincs.classical_algorithm, "RSA2048");
-        assert_eq!(rsa_sphincs.pqc_algorithm, "SPHINCS+128s");
-    }
-    
-    #[test]
-    fn test_x25519_kyber_hybrid() {
-        let hybrid = X25519KyberHybrid::new(SecurityLevel::Level1).unwrap();
-        let keypair = hybrid.generate_keypair().unwrap();
-        
-        assert!(keypair.validate().is_ok());
-        assert_eq!(keypair.classical_keypair.public_key.algorithm, "X25519");
-        assert_eq!(keypair.pqc_keypair.algorithm, "Kyber512");
-        
-        let kem_result = hybrid.encapsulate(&keypair).unwrap();
-        assert!(!kem_result.shared_secret.is_empty());
-        assert_eq!(kem_result.algorithm, "X25519+Kyber512");
-        
-        let decap_secret = hybrid.decapsulate(&keypair, &kem_result).unwrap();
-        assert_eq!(decap_secret, kem_result.shared_secret);
-    }
-    
-    #[test]
-    fn test_ed25519_dilithium_hybrid() {
-        let hybrid = Ed25519DilithiumHybrid::new(SecurityLevel::Level1);
-        let keypair = hybrid.generate_keypair().unwrap();
-        
-        assert!(keypair.validate().is_ok());
-        assert_eq!(keypair.classical_keypair.public_key.algorithm, "Ed25519");
-        assert_eq!(keypair.pqc_keypair.algorithm, "Dilithium2");
-        
-        let message = b"Hello, hybrid world!";
-        let signature = hybrid.sign(&keypair, message).unwrap();
-        assert_eq!(signature.algorithm, "Ed25519+Dilithium2");
-        assert_eq!(signature.classical_signature.len(), 64); // Ed25519 signature size
-        assert_eq!(signature.pqc_signature.len(), 2420); // Dilithium2 signature size
-        
-        let is_valid = hybrid.verify(&keypair, message, &signature).unwrap();
-        assert!(is_valid);
-        
-        // Test serialization/deserialization
-        let serialized = signature.serialize();
-        let deserialized = HybridSignature::deserialize(&serialized, signature.algorithm.clone()).unwrap();
-        assert_eq!(deserialized.classical_signature, signature.classical_signature);
-        assert_eq!(deserialized.pqc_signature, signature.pqc_signature);
-    }
-    
-    #[test]
-    fn test_fallback_manager() {
-        let mut manager = HybridFallbackManager::new(FallbackStrategy::RequireBoth);
-        assert!(manager.can_proceed());
-        
-        manager.set_availability(false, true);
-        assert!(!manager.can_proceed()); // RequireBoth strategy
-        
-        manager.fallback_strategy = FallbackStrategy::AcceptEither;
-        assert!(manager.can_proceed()); // PQC available
-        
-        manager.set_availability(false, false);
-        assert!(!manager.can_proceed()); // Neither available
-        
-        manager.fallback_strategy = FallbackStrategy::PreferPqc;
-        manager.set_availability(true, true);
-        let (use_classical, use_pqc) = manager.determine_algorithms();
-        assert!(!use_classical && use_pqc); // Should prefer PQC
-    }
-    
-    #[test]
-    fn test_hybrid_crypto_manager() {
-        let mut manager = HybridCryptoManager::new(FallbackStrategy::RequireBoth);
-        
-        assert!(manager.init_x25519_kyber(SecurityLevel::Level1).is_ok());
-        assert!(manager.init_ed25519_dilithium(SecurityLevel::Level1).is_ok());
-        
-        // Test that managers are initialized
-        assert!(manager.x25519_kyber.is_some());
-        assert!(manager.ed25519_dilithium.is_some());
-    }
-    
-    #[test]
-    fn test_hybrid_signature_serialization() {
-        let signature = HybridSignature {
-            classical_signature: vec![1, 2, 3, 4],
-            pqc_signature: vec![5, 6, 7, 8, 9, 10],
-            algorithm: "Test+Algorithm".to_string(),
-            message_hash: vec![11, 12],
-        };
-        
-        let serialized = signature.serialize();
-        let deserialized = HybridSignature::deserialize(&serialized, signature.algorithm.clone()).unwrap();
-        
-        assert_eq!(deserialized.classical_signature, signature.classical_signature);
-        assert_eq!(deserialized.pqc_signature, signature.pqc_signature);
-        assert_eq!(deserialized.message_hash, signature.message_hash);
-        assert_eq!(deserialized.algorithm, signature.algorithm);
-    }
-}

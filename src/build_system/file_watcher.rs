@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // # CURSED File Watching System
 //
 // This module provides comprehensive file system monitoring capabilities for the CURSED
@@ -55,7 +55,6 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime};
 
 use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
-use crate::error::Error as CursedError;
 
 pub type CursedResult<T> = std::result::Result<T, SystemError>;
 

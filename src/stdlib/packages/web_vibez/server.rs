@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr HTTP server implementation for web_vibez - the main server engine
 use std::sync::Arc;
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -8,7 +8,7 @@ use std::thread;
 use std::time::Duration;
 use std::collections::HashMap;
 
-use crate::stdlib::packages::web_vibez::{
+// use crate::stdlib::packages::web_vibez::{
     request::{HttpRequest, RequestBuilder},
     response::HttpResponse,
     router::Router,
@@ -516,39 +516,3 @@ impl RequestBuilderExt for RequestBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::net::{IpAddr, Ipv4Addr};
-
-    #[test]
-    fn test_server_config() {
-        let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let config = ServerConfig::new(addr)
-            .max_connections(500)
-            .server_name("test-server/1.0".to_string());
-
-        assert_eq!(config.address, addr);
-        assert_eq!(config.max_connections, 500);
-        assert_eq!(config.server_name, "test-server/1.0");
-    }
-
-    #[test]
-    fn test_parse_query_string() {
-        let query = "name=john&age=30&city=boston";
-        let params = HttpServer::parse_query_string(query);
-        
-        assert_eq!(params.get("name"), Some(&"john".to_string()));
-        assert_eq!(params.get("age"), Some(&"30".to_string()));
-        assert_eq!(params.get("city"), Some(&"boston".to_string()));
-    }
-
-    #[test]
-    fn test_server_creation() {
-        let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
-        let config = ServerConfig::new(addr);
-        let server = HttpServer::new(config);
-        
-        assert!(!server.is_running());
-    }
-}

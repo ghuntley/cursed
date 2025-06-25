@@ -35,7 +35,7 @@ pub mod hybrid;
 pub mod analysis;
 pub mod formats;
 pub mod agility;
-use crate::error::Error;
+use crate::error::CursedError;
 
 // Re-export real implementations as primary API
 pub use algorithms::kyber_real::*;
@@ -73,7 +73,6 @@ pub use formats::*;
 pub use agility::*;
 
 use std::fmt;
-use crate::error::CursedError;
 
 /// Post-Quantum Cryptography specific errors
 #[derive(Debug, Clone, PartialEq)]
@@ -118,39 +117,39 @@ pub enum PqcError {
     AnalysisError(String),
 }
 
-impl fmt::Display for PqcError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PqcError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
-            PqcError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
-            PqcError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
-            PqcError::UnsupportedParameters(msg) => write!(f, "Unsupported parameters: {}", msg),
-            PqcError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
-            PqcError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
-            PqcError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
-            PqcError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
-            PqcError::SigningFailed(msg) => write!(f, "Signing failed: {}", msg),
-            PqcError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
-            PqcError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
-            PqcError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
-            PqcError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
-            PqcError::InternalError(msg) => write!(f, "Internal error: {}", msg),
-            PqcError::AlgorithmNotAvailable(msg) => write!(f, "Algorithm not available: {}", msg),
-            PqcError::HybridError(msg) => write!(f, "Hybrid protocol error: {}", msg),
-            PqcError::FormatError(msg) => write!(f, "Format error: {}", msg),
-            PqcError::BenchmarkError(msg) => write!(f, "Benchmark error: {}", msg),
-            PqcError::AnalysisError(msg) => write!(f, "Analysis error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for PqcError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             PqcError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
+//             PqcError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
+//             PqcError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
+//             PqcError::UnsupportedParameters(msg) => write!(f, "Unsupported parameters: {}", msg),
+//             PqcError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
+//             PqcError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
+//             PqcError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
+//             PqcError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
+//             PqcError::SigningFailed(msg) => write!(f, "Signing failed: {}", msg),
+//             PqcError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
+//             PqcError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
+//             PqcError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
+//             PqcError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
+//             PqcError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+//             PqcError::AlgorithmNotAvailable(msg) => write!(f, "Algorithm not available: {}", msg),
+//             PqcError::HybridError(msg) => write!(f, "Hybrid protocol error: {}", msg),
+//             PqcError::FormatError(msg) => write!(f, "Format error: {}", msg),
+//             PqcError::BenchmarkError(msg) => write!(f, "Benchmark error: {}", msg),
+//             PqcError::AnalysisError(msg) => write!(f, "Analysis error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for PqcError {}
-
-impl From<PqcError> for CursedError {
-    fn from(err: PqcError) -> Self {
-        CursedError::Runtime(format!("PQC error: {}", err))
-    }
-}
+// impl std::error::CursedError for PqcError {}
+// 
+// impl From<PqcError> for CursedError {
+//     fn from(err: PqcError) -> Self {
+//         CursedError::Runtime(format!("PQC error: {}", err))
+//     }
+// }
 
 /// Result type for PQC operations
 pub type PqcResult<T> = std::result::Result<T, PqcError>;
@@ -268,7 +267,7 @@ impl AlgorithmFamily {
             AlgorithmFamily::LatticeBased => "Lattice-based algorithms (NTRU, Module-LWE, etc.)",
             AlgorithmFamily::HashBased => "Hash-based signatures (stateless and stateful)",
             AlgorithmFamily::Multivariate => "Multivariate polynomial equations",
-            AlgorithmFamily::CodeBased => "Error-correcting codes",
+            AlgorithmFamily::CodeBased => "CursedError-correcting codes",
             AlgorithmFamily::IsogenyBased => "Isogeny-based (deprecated/research only)",
         }
     }

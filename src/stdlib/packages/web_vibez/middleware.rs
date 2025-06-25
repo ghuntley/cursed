@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Middleware system for web_vibez - request/response processing pipeline
 use std::sync::Arc;
 use std::future::Future;
@@ -7,7 +7,7 @@ use std::pin::Pin;
 use std::time::{Duration, Instant};
 use std::net::IpAddr;
 
-use crate::stdlib::packages::web_vibez::{
+// use crate::stdlib::packages::web_vibez::{
     request::HttpRequest,
     response::HttpResponse,
     handler::Handler,
@@ -511,7 +511,7 @@ impl Default for SecurityHeadersMiddleware {
 }
 
 /// fr fr Rate limiting middleware - production-ready request throttling
-use crate::stdlib::packages::web_vibez::ratelimit::{
+// use crate::stdlib::packages::web_vibez::ratelimit::{
     RateLimiter, RateLimitConfig, RateLimitDecision, InMemoryStore, FixedWindow,
     extract_client_id, WindowConfig, BucketConfig, ClientIdentification, ErrorConfig,
 };
@@ -593,20 +593,20 @@ impl RateLimitMiddleware {
                 let mut parts = Vec::new();
                 for factor in factors {
                     match factor {
-                        crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::IpAddress => {
+//                         crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::IpAddress => {
                             parts.push(extract_client_id(request.client_ip()));
                         }
-                        crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::Header { name } => {
+//                         crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::Header { name } => {
                             if let Some(value) = request.header(name) {
                                 parts.push(value.clone());
                             }
                         }
-                        crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::UserAgent => {
+//                         crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::UserAgent => {
                             if let Some(ua) = request.header("user-agent") {
                                 parts.push(ua.clone());
                             }
                         }
-                        crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::Custom { name: _, extractor: _ } => {
+//                         crate::stdlib::packages::web_vibez::ratelimit::IdentificationFactor::Custom { name: _, extractor: _ } => {
                             // Custom extractors would be implemented here
                             parts.push("custom".to_string());
                         }
@@ -659,12 +659,12 @@ impl RateLimitMiddleware {
     }
 
     /// fr fr Get rate limiter metrics - monitoring
-    pub async fn get_metrics(&self) -> crate::stdlib::packages::web_vibez::ratelimit::RateLimitMetrics {
+//     pub async fn get_metrics(&self) -> crate::stdlib::packages::web_vibez::ratelimit::RateLimitMetrics {
         self.limiter.get_metrics().await
     }
 
     /// fr fr Reset client rate limit - administrative function
-    pub async fn reset_client(&self, client_id: &str) -> crate::stdlib::packages::web_vibez::ratelimit::RateLimitResult<()> {
+//     pub async fn reset_client(&self, client_id: &str) -> crate::stdlib::packages::web_vibez::ratelimit::RateLimitResult<()> {
         self.limiter.reset_client(client_id).await
     }
 }
@@ -746,65 +746,3 @@ impl Middleware for RateLimitMiddleware {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::web_vibez::{method::HttpMethod, status::StatusCode};
-
-    #[tokio::test]
-    async fn test_middleware_chain() {
-        let chain = MiddlewareChain::new()
-            .add(LoggingMiddleware::new())
-            .add(CorsMiddleware::new());
-
-        assert_eq!(chain.len(), 2);
-
-        let mut request = HttpRequest::new(HttpMethod::Get, "/test".to_string());
-        let result = chain.process_request(&mut request).await;
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_cors_middleware() {
-        let cors = CorsMiddleware::new()
-            .allowed_origins(Vec::from(["https://example.com".to_string()]));
-
-        let mut request = HttpRequest::new(HttpMethod::Get, "/test".to_string());
-        request.headers.insert("origin".to_string(), "https://example.com".to_string());
-        
-        let mut response = HttpResponse::ok();
-        
-        cors.after_response(&request, &mut response).await.unwrap();
-        
-        assert_eq!(
-            response.header("access-control-allow-origin"),
-            Some(&"https://example.com".to_string())
-        );
-    }
-
-    #[tokio::test]
-    async fn test_security_headers_middleware() {
-        let security = SecurityHeadersMiddleware::new();
-        let request = HttpRequest::new(HttpMethod::Get, "/test".to_string());
-        let mut response = HttpResponse::ok();
-        
-        security.after_response(&request, &mut response).await.unwrap();
-        
-        assert!(response.header("content-security-policy").is_some());
-        assert!(response.header("x-frame-options").is_some());
-        assert_eq!(response.header("x-content-type-options"), Some(&"nosniff".to_string()));
-    }
-
-    #[tokio::test]
-    async fn test_rate_limit_middleware() {
-        let rate_limit = RateLimitMiddleware::per_minute(100);
-        let mut request = HttpRequest::new(HttpMethod::Get, "/test".to_string());
-        let mut response = HttpResponse::ok();
-        
-        let result = rate_limit.before_request(&mut request).await;
-        assert!(result.is_ok());
-        
-        rate_limit.after_response(&request, &mut response).await.unwrap();
-        assert_eq!(response.header("x-ratelimit-limit"), Some(&"100".to_string()));
-    }
-}

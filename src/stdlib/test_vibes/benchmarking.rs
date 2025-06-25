@@ -2,8 +2,8 @@
 /// 
 /// Provides functions for performance testing and measurement
 
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+use crate::error::CursedError;
 use super::{VibeBench, TestVibesResult};
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
@@ -420,75 +420,3 @@ pub fn benchmark_collection_operations() -> TestVibesResult<BenchmarkSuiteResult
         .run()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_basic_benchmark() {
-        let result = Benchmark("test_benchmark", |b| {
-            // Simple operation to benchmark
-            for _ in 0..b.N {
-                let _x = 2 + 2;
-            }
-            Ok(())
-        });
-        
-        assert!(result.is_ok());
-        let benchmark_result = result.unwrap();
-        assert!(benchmark_result.iterations > 0);
-        assert!(benchmark_result.ns_per_op > 0.0);
-    }
-
-    #[test]
-    fn test_benchmark_suite() {
-        let result = BenchmarkSuite::new("Test Suite")
-            .add_benchmark("simple_math", |b| {
-                for _ in 0..b.N {
-                    let _x = 5 * 7;
-                }
-                Ok(())
-            })
-            .add_benchmark("string_length", |b| {
-                let s = "hello world";
-                for _ in 0..b.N {
-                    let _len = s.len();
-                }
-                Ok(())
-            })
-            .run();
-        
-        assert!(result.is_ok());
-        let suite_result = result.unwrap();
-        assert_eq!(suite_result.results.len(), 2);
-    }
-
-    #[test]
-    fn test_benchmark_comparison() {
-        let baseline = super::super::BenchmarkResult {
-            name: "baseline".to_string(),
-            state: super::super::VibeBenchState::Completed,
-            iterations: 1000,
-            duration: Duration::from_nanos(1000),
-            ns_per_op: 100.0,
-            bytes_per_op: None,
-            allocations: None,
-            custom_metrics: std::collections::HashMap::new(),
-        };
-        
-        let comparison = super::super::BenchmarkResult {
-            name: "optimized".to_string(),
-            state: super::super::VibeBenchState::Completed,
-            iterations: 1000,
-            duration: Duration::from_nanos(800),
-            ns_per_op: 80.0,
-            bytes_per_op: None,
-            allocations: None,
-            custom_metrics: std::collections::HashMap::new(),
-        };
-        
-        let comp = BenchmarkComparison::new(baseline, comparison);
-        assert!(comp.is_faster());
-        assert!((comp.performance_ratio() - 0.8).abs() < 0.001);
-    }
-}

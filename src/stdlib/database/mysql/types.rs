@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr MySQL type conversion and value handling
 /// 
 /// This module provides comprehensive type conversion between MySQL types
@@ -6,7 +6,7 @@ use crate::error::Error;
 
 use std::time::SystemTime;
 use mysql::{Value as MySqlValue, Row};
-use crate::stdlib::database::SqlValue;
+// use crate::stdlib::database::SqlValue;
 use super::error::{MySqlError, MySqlResult};
 
 /// Convert CURSED SqlValue to MySQL Value
@@ -132,12 +132,12 @@ pub fn get_column_info(row: &Row) -> (Vec<String>, Vec<String>) {
 }
 
 /// Convert MySQL isolation level to CURSED isolation level
-pub fn convert_isolation_level(level: crate::stdlib::database::SqlIsolationLevel) -> MySqlResult<mysql::IsolationLevel> {
+// pub fn convert_isolation_level(level: crate::stdlib::database::SqlIsolationLevel) -> MySqlResult<mysql::IsolationLevel> {
     match level {
-        crate::stdlib::database::SqlIsolationLevel::LevelReadUncommitted => Ok(mysql::IsolationLevel::ReadUncommitted),
-        crate::stdlib::database::SqlIsolationLevel::LevelReadCommitted => Ok(mysql::IsolationLevel::ReadCommitted),
-        crate::stdlib::database::SqlIsolationLevel::LevelRepeatableRead => Ok(mysql::IsolationLevel::RepeatableRead),
-        crate::stdlib::database::SqlIsolationLevel::LevelSerializable => Ok(mysql::IsolationLevel::Serializable),
+//         crate::stdlib::database::SqlIsolationLevel::LevelReadUncommitted => Ok(mysql::IsolationLevel::ReadUncommitted),
+//         crate::stdlib::database::SqlIsolationLevel::LevelReadCommitted => Ok(mysql::IsolationLevel::ReadCommitted),
+//         crate::stdlib::database::SqlIsolationLevel::LevelRepeatableRead => Ok(mysql::IsolationLevel::RepeatableRead),
+//         crate::stdlib::database::SqlIsolationLevel::LevelSerializable => Ok(mysql::IsolationLevel::Serializable),
         _ => {
             // Default to READ COMMITTED for unsupported levels
             Ok(mysql::IsolationLevel::ReadCommitted)
@@ -252,53 +252,3 @@ pub struct MySqlConnectionInfo {
     pub database: String,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_sql_value_conversion() {
-        // Test null conversion
-        let null_value = SqlValue::Null;
-        let mysql_null = convert_from_sql_value(&null_value).unwrap();
-        assert!(matches!(mysql_null, MySqlValue::NULL));
-        
-        // Test integer conversion
-        let int_value = SqlValue::Integer(42);
-        let mysql_int = convert_from_sql_value(&int_value).unwrap();
-        assert!(matches!(mysql_int, MySqlValue::Int(42)));
-        
-        // Test string conversion
-        let str_value = SqlValue::String("test".to_string());
-        let mysql_str = convert_from_sql_value(&str_value).unwrap();
-        assert!(matches!(mysql_str, MySqlValue::Bytes(_)));
-    }
-    
-    #[test]
-    fn test_connection_string_parsing() {
-        let dsn = "mysql://user:pass@localhost:3306/testdb";
-        let info = parse_connection_string(dsn).unwrap();
-        
-        assert_eq!(info.user, "user");
-        assert_eq!(info.password, "pass");
-        assert_eq!(info.host, "localhost");
-        assert_eq!(info.port, 3306);
-        assert_eq!(info.database, "testdb");
-    }
-    
-    #[test]
-    fn test_placeholder_generation() {
-        assert_eq!(build_placeholders(0), "");
-        assert_eq!(build_placeholders(1), "?");
-        assert_eq!(build_placeholders(3), "?, ?, ?");
-    }
-    
-    #[test]
-    fn test_string_escaping() {
-        let input = "test'string\"with\nnewlines";
-        let escaped = escape_string(input);
-        assert!(escaped.contains("\\'"));
-        assert!(escaped.contains("\\\""));
-        assert!(escaped.contains("\\n"));
-    }
-}

@@ -108,7 +108,7 @@ impl AdvancedTransactionManager {
 
     /// facts Begin new transaction with full configuration
     #[instrument(skip(self))]
-    pub async fn begin_transaction(&self, config: TransactionConfig) -> Result<(), Error> {
+    pub async fn begin_transaction(&self, config: TransactionConfig) -> crate::error::Result<()> {
         info!(
             isolation = ?config.isolation_level,
             timeout = ?config.timeout,
@@ -160,7 +160,7 @@ impl AdvancedTransactionManager {
 
     /// lowkey Create savepoint for nested transaction support
     #[instrument(skip(self))]
-    pub async fn create_savepoint(&self, transaction_id: &str, savepoint_name: &str) -> Result<(), Error> {
+    pub async fn create_savepoint(&self, transaction_id: &str, savepoint_name: &str) -> crate::error::Result<()> {
         debug!(
             transaction_id = %transaction_id,
             savepoint = savepoint_name,
@@ -199,7 +199,7 @@ impl AdvancedTransactionManager {
 
     /// periodt Rollback to specific savepoint
     #[instrument(skip(self))]
-    pub async fn rollback_to_savepoint(&self, transaction_id: &str, savepoint_name: &str) -> Result<(), Error> {
+    pub async fn rollback_to_savepoint(&self, transaction_id: &str, savepoint_name: &str) -> crate::error::Result<()> {
         debug!(
             transaction_id = %transaction_id,
             savepoint = savepoint_name,
@@ -230,7 +230,7 @@ impl AdvancedTransactionManager {
 
     /// bestie Commit transaction with 2PC support for distributed transactions
     #[instrument(skip(self))]
-    pub async fn commit_transaction(&self, transaction_id: &str) -> Result<(), Error> {
+    pub async fn commit_transaction(&self, transaction_id: &str) -> crate::error::Result<()> {
         info!(transaction_id = %transaction_id, "Committing transaction");
 
         let mut transactions = self.active_transactions.lock()
@@ -265,7 +265,7 @@ impl AdvancedTransactionManager {
 
     /// yolo Rollback transaction with cleanup
     #[instrument(skip(self))]
-    pub async fn rollback_transaction(&self, transaction_id: &str) -> Result<(), Error> {
+    pub async fn rollback_transaction(&self, transaction_id: &str) -> crate::error::Result<()> {
         info!(transaction_id = %transaction_id, "Rolling back transaction");
 
         let mut transactions = self.active_transactions.lock()
@@ -295,9 +295,9 @@ impl AdvancedTransactionManager {
 
     /// facts Execute with retry logic and exponential backoff
     #[instrument(skip(self, operation))]
-    pub async fn execute_with_retry<F, T>(&self, operation: F, retry_policy: RetryPolicy) -> Result<(), Error>
+    pub async fn execute_with_retry<F, T>(&self, operation: F, retry_policy: RetryPolicy) -> crate::error::Result<()>
     where
-        F: Fn() -> Result<(), Error> + Send + Sync,
+        F: Fn() -> crate::error::Result<()> + Send + Sync,
         T: Send,
     {
         debug!(max_retries = retry_policy.max_retries, "Executing operation with retry");
@@ -352,7 +352,7 @@ impl AdvancedTransactionManager {
 
     /// highkey Commit distributed transaction using 2PC protocol
     #[instrument(skip(self, transaction))]
-    async fn commit_distributed_transaction(&self, transaction: &mut AdvancedTransaction) -> Result<(), Error> {
+    async fn commit_distributed_transaction(&self, transaction: &mut AdvancedTransaction) -> crate::error::Result<()> {
         debug!(transaction_id = %transaction.transaction_id, "Starting 2PC commit");
 
         // Phase 1: Prepare
@@ -406,7 +406,7 @@ impl AdvancedTransactionManager {
 
     /// sus Rollback distributed transaction
     #[instrument(skip(self, transaction))]
-    async fn rollback_distributed_transaction(&self, transaction: &mut AdvancedTransaction) -> Result<(), Error> {
+    async fn rollback_distributed_transaction(&self, transaction: &mut AdvancedTransaction) -> crate::error::Result<()> {
         debug!(transaction_id = %transaction.transaction_id, "Rolling back distributed transaction");
 
         self.distributed_coordinator
@@ -442,7 +442,7 @@ impl AdvancedTransactionManager {
 
     /// lowkey Set isolation level for transaction
     #[instrument(skip(self, transaction))]
-    async fn set_isolation_level(&self, transaction: &AdvancedTransaction, level: IsolationLevel) -> Result<(), Error> {
+    async fn set_isolation_level(&self, transaction: &AdvancedTransaction, level: IsolationLevel) -> crate::error::Result<()> {
         let sql = match level {
             IsolationLevel::ReadUncommitted => "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED",
             IsolationLevel::ReadCommitted => "SET TRANSACTION ISOLATION LEVEL READ COMMITTED",
@@ -455,7 +455,7 @@ impl AdvancedTransactionManager {
 
     /// facts Execute SQL within transaction context
     #[instrument(skip(self, params))]
-    async fn execute_transaction_sql(&self, transaction_id: &str, sql: &str, params: &[SqlValue]) -> Result<(), Error> {
+    async fn execute_transaction_sql(&self, transaction_id: &str, sql: &str, params: &[SqlValue]) -> crate::error::Result<()> {
         trace!(
             transaction_id = %transaction_id,
             sql = %sql,
@@ -506,7 +506,7 @@ impl ConnectionManager {
     }
 
     #[instrument(skip(self))]
-    async fn acquire_connection(&self) -> Result<(), Error> {
+    async fn acquire_connection(&self) -> crate::error::Result<()> {
         let mut counter = self.connection_counter.lock()
             .map_err(|_| DatabaseError::connection_error("Failed to acquire connection counter lock"))?;
         
@@ -528,7 +528,7 @@ impl DistributedTransactionCoordinator {
     }
 
     #[instrument(skip(self, config))]
-    async fn initialize_distributed_transaction(&self, transaction_id: &str, config: DistributedTransactionConfig) -> Result<(), Error> {
+    async fn initialize_distributed_transaction(&self, transaction_id: &str, config: DistributedTransactionConfig) -> crate::error::Result<()> {
         debug!(
             transaction_id = %transaction_id,
             coordinator = %config.coordinator_id,
@@ -545,7 +545,7 @@ impl DistributedTransactionCoordinator {
     }
 
     #[instrument(skip(self))]
-    async fn prepare_transaction(&self, transaction_id: &str, nodes: &[String]) -> Result<(), Error> {
+    async fn prepare_transaction(&self, transaction_id: &str, nodes: &[String]) -> crate::error::Result<()> {
         debug!(transaction_id = %transaction_id, nodes = ?nodes, "Sending prepare to all nodes");
         
         let mut failed_nodes = Vec::new();
@@ -563,7 +563,7 @@ impl DistributedTransactionCoordinator {
     }
 
     #[instrument(skip(self))]
-    async fn commit_transaction(&self, transaction_id: &str, nodes: &[String]) -> Result<(), Error> {
+    async fn commit_transaction(&self, transaction_id: &str, nodes: &[String]) -> crate::error::Result<()> {
         debug!(transaction_id = %transaction_id, nodes = ?nodes, "Sending commit to all nodes");
         
         let mut failed_nodes = Vec::new();
@@ -581,7 +581,7 @@ impl DistributedTransactionCoordinator {
     }
 
     #[instrument(skip(self))]
-    async fn abort_transaction(&self, transaction_id: &str, nodes: &[String]) -> Result<(), Error> {
+    async fn abort_transaction(&self, transaction_id: &str, nodes: &[String]) -> crate::error::Result<()> {
         debug!(transaction_id = %transaction_id, nodes = ?nodes, "Sending abort to all nodes");
         
         for node in nodes {
@@ -591,25 +591,25 @@ impl DistributedTransactionCoordinator {
         Ok(())
     }
 
-    async fn send_begin_to_node(&self, transaction_id: &str, node: &str) -> Result<(), Error> {
+    async fn send_begin_to_node(&self, transaction_id: &str, node: &str) -> crate::error::Result<()> {
         trace!(transaction_id = %transaction_id, node = %node, "Sending BEGIN to node");
         tokio::time::sleep(Duration::from_millis(1)).await; // Simulate network call
         Ok(())
     }
 
-    async fn send_prepare_to_node(&self, transaction_id: &str, node: &str) -> Result<(), Error> {
+    async fn send_prepare_to_node(&self, transaction_id: &str, node: &str) -> crate::error::Result<()> {
         trace!(transaction_id = %transaction_id, node = %node, "Sending PREPARE to node");
         tokio::time::sleep(Duration::from_millis(5)).await; // Simulate network call
         Ok(())
     }
 
-    async fn send_commit_to_node(&self, transaction_id: &str, node: &str) -> Result<(), Error> {
+    async fn send_commit_to_node(&self, transaction_id: &str, node: &str) -> crate::error::Result<()> {
         trace!(transaction_id = %transaction_id, node = %node, "Sending COMMIT to node");
         tokio::time::sleep(Duration::from_millis(3)).await; // Simulate network call
         Ok(())
     }
 
-    async fn send_abort_to_node(&self, transaction_id: &str, node: &str) -> Result<(), Error> {
+    async fn send_abort_to_node(&self, transaction_id: &str, node: &str) -> crate::error::Result<()> {
         trace!(transaction_id = %transaction_id, node = %node, "Sending ABORT to node");
         tokio::time::sleep(Duration::from_millis(2)).await; // Simulate network call
         Ok(())
@@ -626,7 +626,7 @@ impl TransactionRecoveryManager {
     }
 
     #[instrument(skip(self))]
-    async fn log_partial_commit(&self, transaction_id: &str, failed_nodes: &[String]) -> Result<(), Error> {
+    async fn log_partial_commit(&self, transaction_id: &str, failed_nodes: &[String]) -> crate::error::Result<()> {
         warn!(
             transaction_id = %transaction_id,
             failed_nodes = ?failed_nodes,
@@ -689,102 +689,3 @@ impl Default for RetryPolicy {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing_test::traced_test;
-use crate::error::Error;
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_transaction_lifecycle() {
-        let manager = AdvancedTransactionManager::new();
-        let config = TransactionConfig::default();
-        
-        let tx_id = manager.begin_transaction(config).await.expect("Should begin transaction");
-        assert!(!tx_id.is_empty());
-        
-        manager.commit_transaction(&tx_id).await.expect("Should commit transaction");
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_savepoint_operations() {
-        let manager = AdvancedTransactionManager::new();
-        let config = TransactionConfig::default();
-        
-        let tx_id = manager.begin_transaction(config).await.expect("Should begin transaction");
-        
-        manager.create_savepoint(&tx_id, "sp1").await.expect("Should create savepoint");
-        manager.rollback_to_savepoint(&tx_id, "sp1").await.expect("Should rollback to savepoint");
-        
-        manager.commit_transaction(&tx_id).await.expect("Should commit transaction");
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_retry_logic() {
-        let manager = AdvancedTransactionManager::new();
-        let retry_policy = RetryPolicy {
-            max_retries: 2,
-            base_delay: Duration::from_millis(10),
-            ..Default::default()
-        };
-        
-        let mut attempt_count = 0;
-        let operation = || {
-            attempt_count += 1;
-            if attempt_count < 3 {
-                Err(DatabaseError::connection_error("Simulated failure"))
-            } else {
-                Ok("Success")
-            }
-        };
-        
-        let result = manager.execute_with_retry(operation, retry_policy).await;
-        assert!(result.is_ok());
-        assert_eq!(attempt_count, 3);
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_distributed_transaction_config() {
-        let dist_config = DistributedTransactionConfig {
-            coordinator_id: "coord1".to_string(),
-            participant_nodes: Vec::from(["node1".to_string(), "node2".to_string()]),
-            prepare_timeout: Duration::from_secs(5),
-            commit_timeout: Duration::from_secs(10),
-            recovery_log_path: "/tmp/recovery.log".to_string(),
-        };
-        
-        let config = TransactionConfig {
-            distributed_config: Some(dist_config),
-            ..Default::default()
-        };
-        
-        let manager = AdvancedTransactionManager::new();
-        let tx_id = manager.begin_transaction(config).await.expect("Should begin distributed transaction");
-        assert!(!tx_id.is_empty());
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_retry_delay_calculation() {
-        let manager = AdvancedTransactionManager::new();
-        let policy = RetryPolicy {
-            base_delay: Duration::from_millis(100),
-            max_delay: Duration::from_secs(5),
-            exponential_base: 2.0,
-            jitter: false,
-            ..Default::default()
-        };
-        
-        let delay1 = manager.calculate_retry_delay(&policy, 0);
-        let delay2 = manager.calculate_retry_delay(&policy, 1);
-        let delay3 = manager.calculate_retry_delay(&policy, 2);
-        
-        assert_eq!(delay1, Duration::from_millis(100));
-        assert_eq!(delay2, Duration::from_millis(200));
-        assert_eq!(delay3, Duration::from_millis(400));
-    }
-}

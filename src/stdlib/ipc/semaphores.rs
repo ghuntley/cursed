@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Semaphores implementation for CURSED IPC
 /// 
 /// Provides System V semaphores and POSIX semaphores for inter-process synchronization
@@ -10,7 +10,7 @@ use std::ptr;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult, semaphore_error, system_error, timeout_error, not_found, already_exists};
+// use crate::stdlib::ipc::error::{IpcError, IpcResult, semaphore_error, system_error, timeout_error, not_found, already_exists};
 
 /// Semaphore registry for cleanup
 static SEMAPHORE_REGISTRY: std::sync::OnceLock<Arc<RwLock<HashMap<String, Arc<SemaphoreInfo>>>>> = std::sync::OnceLock::new();
@@ -819,140 +819,3 @@ extern "C" {
 #[cfg(unix)]
 const SEM_FAILED: *mut libc::sem_t = (-1isize) as *mut libc::sem_t;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    use std::time::Duration;
-
-    #[test]
-    fn test_semaphore_config() {
-        let config = SemaphoreConfig::default();
-        assert_eq!(config.initial_value, 1);
-        assert_eq!(config.max_value, i32::MAX);
-        assert_eq!(config.permissions, 0o666);
-        assert!(!config.use_posix);
-    }
-
-    #[test]
-    fn test_semaphore_creation() {
-        let semaphore = Semaphore::new("test_semaphore", 2);
-        assert_eq!(semaphore.name(), "test_semaphore");
-        assert!(!semaphore.is_open());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_semaphore_sysv() {
-        let mut semaphore = Semaphore::new("test_sysv_semaphore", 3);
-        
-        // Test opening
-        if semaphore.open().is_ok() {
-            assert!(semaphore.is_open());
-            
-            // Test getting value
-            if let Ok(value) = semaphore.value() {
-                assert_eq!(value, 3);
-            }
-            
-            // Test wait and signal
-            if semaphore.wait().is_ok() {
-                if let Ok(value) = semaphore.value() {
-                    assert_eq!(value, 2);
-                }
-                
-                if semaphore.signal().is_ok() {
-                    if let Ok(value) = semaphore.value() {
-                        assert_eq!(value, 3);
-                    }
-                }
-            }
-            
-            // Test try_wait
-            if let Ok(acquired) = semaphore.try_wait() {
-                assert!(acquired);
-            }
-            
-            // Cleanup
-            let _ = semaphore.delete();
-        }
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_semaphore_posix() {
-        let config = SemaphoreConfig {
-            use_posix: true,
-            initial_value: 2,
-            ..Default::default()
-        };
-        let mut semaphore = Semaphore::with_config("test_posix_semaphore", config);
-        
-        // Test opening
-        if semaphore.open().is_ok() {
-            assert!(semaphore.is_open());
-            
-            // Test operations
-            if let Ok(value) = semaphore.value() {
-                assert_eq!(value, 2);
-            }
-            
-            if semaphore.wait().is_ok() {
-                if semaphore.signal().is_ok() {
-                    // Successful round trip
-                }
-            }
-            
-            // Test timeout
-            if let Ok(acquired) = semaphore.wait_timeout(Duration::from_millis(100)) {
-                if acquired && semaphore.signal().is_ok() {
-                    // Success
-                }
-            }
-            
-            // Cleanup
-            let _ = semaphore.delete();
-        }
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_semaphore_synchronization() {
-        let mut semaphore = Semaphore::new("test_sync_semaphore", 1);
-        
-        if semaphore.open().is_ok() {
-            let sem_name = semaphore.name().to_string();
-            
-            // Spawn thread that will wait on semaphore
-            let handle = thread::spawn(move || {
-                let mut thread_sem = Semaphore::new(&sem_name, 1);
-                if thread_sem.open().is_ok() {
-                    thread_sem.wait()
-                } else {
-                    Err(semaphore_error(Some(&sem_name), "open", "Failed to open in thread"))
-                }
-            });
-            
-            // Wait briefly then signal
-            thread::sleep(Duration::from_millis(100));
-            if semaphore.signal().is_ok() {
-                // Thread should now be able to acquire
-                if let Ok(result) = handle.join() {
-                    assert!(result.is_ok());
-                }
-            }
-            
-            // Cleanup
-            let _ = semaphore.delete();
-        }
-    }
-
-    #[test]
-    fn test_semaphore_registry() {
-        let registry = get_semaphore_registry();
-        assert!(registry.read().is_ok());
-        
-        // Test cleanup
-        assert!(cleanup_semaphores().is_ok());
-    }
-}

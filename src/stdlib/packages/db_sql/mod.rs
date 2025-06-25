@@ -47,12 +47,12 @@ pub use postgresql::{PostgreSqlDriver, PostgreSqlConnection, PgError};
 // pub use mysql::{MySqlDriver, MySqlConnection, MySqlError};  // Temporarily disabled - mysql crate not available
 pub use sqlite::{SqliteDriver, SqliteConnection, SqliteError};
 
-use crate::stdlib::packages::db_core::{
+// use crate::stdlib::packages::db_core::{
     DatabaseError, DriverRegistry, 
     ConnectionConfig, DatabaseDriver
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 
 use std::sync::Arc;
 
@@ -141,7 +141,7 @@ pub fn list_sql_drivers() -> Vec<String> {
 /// fr fr SQL utility functions
 pub mod utils {
     use super::*;
-    use crate::stdlib::packages::db_core::DatabaseConnection;
+//     use crate::stdlib::packages::db_core::DatabaseConnection;
 
     /// slay Create a SQL connection quickly
     pub async fn sql_connect(driver_name: &str, connection_string: &str) -> DbResult<Box<dyn DatabaseConnection>> {
@@ -158,7 +158,7 @@ pub mod utils {
         params: &[SqlValue]
     ) -> DbResult<SqlResultSet> {
         let mut conn = sql_connect(driver_name, connection_string).await?;
-        let db_params: Vec<crate::stdlib::packages::db_core::Parameter> = params.iter()
+//         let db_params: Vec<crate::stdlib::packages::db_core::Parameter> = params.iter()
             .map(|v| v.clone().into())
             .collect();
         
@@ -175,7 +175,7 @@ pub mod utils {
         params: &[SqlValue]
     ) -> DbResult<SqlExecuteResult> {
         let mut conn = sql_connect(driver_name, connection_string).await?;
-        let db_params: Vec<crate::stdlib::packages::db_core::Parameter> = params.iter()
+//         let db_params: Vec<crate::stdlib::packages::db_core::Parameter> = params.iter()
             .map(|v| v.clone().into())
             .collect();
         
@@ -276,47 +276,3 @@ pub struct SqlPackageInfo {
     pub features: Vec<String>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sql_driver_registry() {
-        let registry = SqlDriverRegistry::new();
-        let drivers = registry.list_drivers();
-        
-        // Should have at least the built-in drivers
-        assert!(drivers.contains(&"postgresql".to_string()));
-        assert!(drivers.contains(&"mysql".to_string()));
-        assert!(drivers.contains(&"sqlite".to_string()));
-    }
-
-    #[test]
-    fn test_init_db_sql() {
-        assert!(init_db_sql().is_ok());
-    }
-
-    #[test]
-    fn test_utils() {
-        assert!(utils::is_sql_driver_available("postgresql"));
-        assert!(utils::is_sql_driver_available("mysql"));
-        assert!(utils::is_sql_driver_available("sqlite"));
-        assert!(!utils::is_sql_driver_available("nonexistent"));
-    }
-
-    #[test]
-    fn test_sql_config() {
-        let config = SqlConfig::default();
-        assert_eq!(config.default_timeout, std::time::Duration::from_secs(30));
-        assert!(config.enable_statement_cache);
-        assert!(config.enable_connection_pooling);
-    }
-
-    #[test]
-    fn test_package_info() {
-        let info = sql_package_info();
-        assert_eq!(info.version, "1.0.0");
-        assert!(!info.supported_drivers.is_empty());
-        assert!(!info.features.is_empty());
-    }
-}

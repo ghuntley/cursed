@@ -1,7 +1,7 @@
 /// fr fr SQLite driver implementation - the lightweight champion periodt
 
 use crate::runtime::value::Value;
-use crate::stdlib::packages::{
+// use crate::stdlib::packages::{
     db_core::{
         ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
         Parameter, ResultSet, PreparedStatement, DatabaseTransaction,
@@ -10,13 +10,13 @@ use crate::stdlib::packages::{
     db_sql::{SqlDriver, SqlDialectTrait, SqlFeature, SqlValue, SqlResultSet, SqlExecuteResult},
     // types::ParameterDirection  // Explicit import to resolve E0659
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_sql::drivers::{
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_sql::drivers::{
     SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations,
     SqlTransactionIsolation, SqlConnectionInfo, SqlBatch, SqlTransaction
 };
 
-use crate::stdlib::packages::db_core::error::{
+// use crate::stdlib::packages::db_core::error::{
     DatabaseResult as DbResult, DatabaseError, ErrorKind, ConnectionError, QueryError, TransactionError
 };
 use async_trait::async_trait;
@@ -49,8 +49,8 @@ pub struct SqliteError {
 /// fr fr SQLite result set implementation
 #[derive(Debug)]
 pub struct SqliteResultSet {
-    rows: Vec<crate::stdlib::packages::db_core::Row>,
-    metadata: crate::stdlib::packages::db_core::ResultMetadata,
+//     rows: Vec<crate::stdlib::packages::db_core::Row>,
+//     metadata: crate::stdlib::packages::db_core::ResultMetadata,
     current_index: usize,
 }
 
@@ -137,7 +137,7 @@ impl SqliteConnection {
 }
 
 #[async_trait]
-impl crate::stdlib::packages::db_core::DatabaseDriver for SqliteDriver {
+// impl crate::stdlib::packages::db_core::DatabaseDriver for SqliteDriver {
     async fn connect(&self, config: ConnectionConfig) -> DbResult<Box<dyn DatabaseConnection>> {
         let database_path = config.connection_string
             .strip_prefix("sqlite://")
@@ -147,8 +147,8 @@ impl crate::stdlib::packages::db_core::DatabaseDriver for SqliteDriver {
         Ok(Box::new(conn))
     }
 
-    fn driver_info(&self) -> crate::stdlib::packages::db_core::DriverInfo {
-        crate::stdlib::packages::db_core::DriverInfo::new(
+//     fn driver_info(&self) -> crate::stdlib::packages::db_core::DriverInfo {
+//         crate::stdlib::packages::db_core::DriverInfo::new(
             &self.name,
             &self.version,
             "SQLite database driver",
@@ -181,15 +181,15 @@ impl SqlDriver for SqliteDriver {
     }
 
     fn sql_dialect(&self) -> Box<dyn SqlDialectTrait> {
-        Box::new(crate::stdlib::packages::db_sql::SqliteDialect::new())
+//         Box::new(crate::stdlib::packages::db_sql::SqliteDialect::new())
     }
 
-    fn supported_types(&self) -> Vec<crate::stdlib::packages::db_sql::SqlType> {
+//     fn supported_types(&self) -> Vec<crate::stdlib::packages::db_sql::SqlType> {
         vec![
-            crate::stdlib::packages::db_sql::SqlType::Integer,
-            crate::stdlib::packages::db_sql::SqlType::Text,
-            crate::stdlib::packages::db_sql::SqlType::Boolean,
-            crate::stdlib::packages::db_sql::SqlType::Blob,
+//             crate::stdlib::packages::db_sql::SqlType::Integer,
+//             crate::stdlib::packages::db_sql::SqlType::Text,
+//             crate::stdlib::packages::db_sql::SqlType::Boolean,
+//             crate::stdlib::packages::db_sql::SqlType::Blob,
         ]
     }
 
@@ -261,7 +261,7 @@ impl DatabaseConnection for SqliteConnection {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::types::ParameterDirection::In => {
+//                 crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 }
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -272,7 +272,7 @@ impl DatabaseConnection for SqliteConnection {
             let mut values = Vec::new();
             for i in 0..row.as_ref().column_count() {
                 let value = row.get::<usize, SqliteValue>(i)?;
-                let column_value = crate::stdlib::packages::db_core::ColumnValue {
+//                 let column_value = crate::stdlib::packages::db_core::ColumnValue {
                     data: match &value {
                         SqliteValue::Null => None,
                         SqliteValue::Integer(i) => Some(i.to_le_bytes().to_vec()),
@@ -281,20 +281,20 @@ impl DatabaseConnection for SqliteConnection {
                         SqliteValue::Blob(data) => Some(data.clone()),
                     },
                     column_type: match value {
-                        SqliteValue::Null => crate::stdlib::packages::db_core::ColumnType::Null,
-                        SqliteValue::Integer(_) => crate::stdlib::packages::db_core::ColumnType::BigInt,
-                        SqliteValue::Real(_) => crate::stdlib::packages::db_core::ColumnType::Double,
-                        SqliteValue::Text(_) => crate::stdlib::packages::db_core::ColumnType::Text,
-                        SqliteValue::Blob(_) => crate::stdlib::packages::db_core::ColumnType::Blob,
+//                         SqliteValue::Null => crate::stdlib::packages::db_core::ColumnType::Null,
+//                         SqliteValue::Integer(_) => crate::stdlib::packages::db_core::ColumnType::BigInt,
+//                         SqliteValue::Real(_) => crate::stdlib::packages::db_core::ColumnType::Double,
+//                         SqliteValue::Text(_) => crate::stdlib::packages::db_core::ColumnType::Text,
+//                         SqliteValue::Blob(_) => crate::stdlib::packages::db_core::ColumnType::Blob,
                     },
                     is_null: matches!(value, SqliteValue::Null),
                 };
                 values.push(column_value);
             }
             
-            Ok(crate::stdlib::packages::db_core::Row {
+//             Ok(crate::stdlib::packages::db_core::Row {
                 values,
-                metadata: crate::stdlib::packages::db_core::RowMetadata {
+//                 metadata: crate::stdlib::packages::db_core::RowMetadata {
                     row_number: 0,
                     is_inserted: false,
                     is_updated: false,
@@ -318,7 +318,7 @@ impl DatabaseConnection for SqliteConnection {
 
         let columns = if let Some(first_row) = result_rows.first() {
             first_row.values.iter().enumerate().map(|(i, val)| {
-                crate::stdlib::packages::db_core::Column {
+//                 crate::stdlib::packages::db_core::Column {
                     name: format!("column_{}", i),
                     column_type: val.column_type.clone(),
                     nullable: true,
@@ -338,7 +338,7 @@ impl DatabaseConnection for SqliteConnection {
 
         let result_set = SqliteResultSet {
             rows: result_rows,
-            metadata: crate::stdlib::packages::db_core::ResultMetadata {
+//             metadata: crate::stdlib::packages::db_core::ResultMetadata {
                 columns,
                 row_count: None,
                 affected_rows: 0,
@@ -366,7 +366,7 @@ impl DatabaseConnection for SqliteConnection {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::types::ParameterDirection::In => {
+//                 crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -398,7 +398,7 @@ impl DatabaseConnection for SqliteConnection {
         Ok(Box::new(stmt))
     }
 
-    async fn begin_transaction(&mut self, _options: Option<crate::stdlib::packages::db_core::TransactionOptions>) -> DbResult<Box<dyn DatabaseTransaction>> {
+//     async fn begin_transaction(&mut self, _options: Option<crate::stdlib::packages::db_core::TransactionOptions>) -> DbResult<Box<dyn DatabaseTransaction>> {
         if self.in_transaction {
             return Err(DatabaseError::transaction(
                 TransactionError::NotActive,
@@ -446,14 +446,14 @@ impl DatabaseConnection for SqliteConnection {
         Ok(())
     }
 
-    fn connection_info(&self) -> crate::stdlib::packages::db_core::traits::ConnectionInfo {
-        crate::stdlib::packages::db_core::traits::ConnectionInfo {
+//     fn connection_info(&self) -> crate::stdlib::packages::db_core::traits::ConnectionInfo {
+//         crate::stdlib::packages::db_core::traits::ConnectionInfo {
             database_name: "sqlite_db".to_string(),
             server_version: "3.42.0".to_string(),
             protocol_version: "1.0".to_string(),
             connection_id: self.connection_id.clone(),
             is_read_only: false,
-            transaction_isolation: crate::stdlib::packages::db_core::traits::TransactionIsolation::Serializable,
+//             transaction_isolation: crate::stdlib::packages::db_core::traits::TransactionIsolation::Serializable,
         }
     }
 }
@@ -683,7 +683,7 @@ impl SqlConnection for SqliteConnection {
 
 // Implement ResultSet trait for SqliteResultSet
 impl ResultSet for SqliteResultSet {
-    fn next(&mut self) -> DbResult<Option<crate::stdlib::packages::db_core::Row>> {
+//     fn next(&mut self) -> DbResult<Option<crate::stdlib::packages::db_core::Row>> {
         if self.current_index < self.rows.len() {
             let row = self.rows[self.current_index].clone();
             self.current_index += 1;
@@ -693,7 +693,7 @@ impl ResultSet for SqliteResultSet {
         }
     }
 
-    fn collect(&mut self) -> DbResult<Vec<crate::stdlib::packages::db_core::Row>> {
+//     fn collect(&mut self) -> DbResult<Vec<crate::stdlib::packages::db_core::Row>> {
         let mut result = Vec::new();
         while let Some(row) = self.next()? {
             result.push(row);
@@ -701,7 +701,7 @@ impl ResultSet for SqliteResultSet {
         Ok(result)
     }
 
-    fn columns(&self) -> &[crate::stdlib::packages::db_core::Column] {
+//     fn columns(&self) -> &[crate::stdlib::packages::db_core::Column] {
         &self.metadata.columns
     }
 
@@ -709,7 +709,7 @@ impl ResultSet for SqliteResultSet {
         self.current_index < self.rows.len()
     }
 
-    fn metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
+//     fn metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
         &self.metadata
     }
 
@@ -725,7 +725,7 @@ impl ResultSet for SqliteResultSet {
 // Implement PreparedStatement trait for SqlitePreparedStatement
 #[async_trait]
 impl PreparedStatement for SqlitePreparedStatement {
-    async fn execute(&mut self, parameters: &[Parameter]) -> DbResult<crate::stdlib::packages::db_core::ExecuteResult> {
+//     async fn execute(&mut self, parameters: &[Parameter]) -> DbResult<crate::stdlib::packages::db_core::ExecuteResult> {
         let conn = self.connection.lock()
             .map_err(|_| DatabaseError::driver("Failed to acquire connection lock"))?;
 
@@ -738,7 +738,7 @@ impl PreparedStatement for SqlitePreparedStatement {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::types::ParameterDirection::In => {
+//                 crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -751,7 +751,7 @@ impl PreparedStatement for SqlitePreparedStatement {
                 &format!("Statement execution failed: {}", e)
             ))?;
 
-        Ok(crate::stdlib::packages::db_core::ExecuteResult {
+//         Ok(crate::stdlib::packages::db_core::ExecuteResult {
             affected_rows: affected_rows as u64,
             last_insert_id: Some(conn.last_insert_rowid() as u64),
             warnings: Vec::new(),
@@ -773,7 +773,7 @@ impl PreparedStatement for SqlitePreparedStatement {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::types::ParameterDirection::In => {
+//                 crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -784,7 +784,7 @@ impl PreparedStatement for SqlitePreparedStatement {
             let mut values = Vec::new();
             for i in 0..row.as_ref().column_count() {
                 let value = row.get::<usize, SqliteValue>(i)?;
-                let column_value = crate::stdlib::packages::db_core::ColumnValue {
+//                 let column_value = crate::stdlib::packages::db_core::ColumnValue {
                     data: match &value {
                         SqliteValue::Null => None,
                         SqliteValue::Integer(i) => Some(i.to_le_bytes().to_vec()),
@@ -793,20 +793,20 @@ impl PreparedStatement for SqlitePreparedStatement {
                         SqliteValue::Blob(data) => Some(data.clone()),
                     },
                     column_type: match value {
-                        SqliteValue::Null => crate::stdlib::packages::db_core::ColumnType::Null,
-                        SqliteValue::Integer(_) => crate::stdlib::packages::db_core::ColumnType::BigInt,
-                        SqliteValue::Real(_) => crate::stdlib::packages::db_core::ColumnType::Double,
-                        SqliteValue::Text(_) => crate::stdlib::packages::db_core::ColumnType::Text,
-                        SqliteValue::Blob(_) => crate::stdlib::packages::db_core::ColumnType::Blob,
+//                         SqliteValue::Null => crate::stdlib::packages::db_core::ColumnType::Null,
+//                         SqliteValue::Integer(_) => crate::stdlib::packages::db_core::ColumnType::BigInt,
+//                         SqliteValue::Real(_) => crate::stdlib::packages::db_core::ColumnType::Double,
+//                         SqliteValue::Text(_) => crate::stdlib::packages::db_core::ColumnType::Text,
+//                         SqliteValue::Blob(_) => crate::stdlib::packages::db_core::ColumnType::Blob,
                     },
                     is_null: matches!(value, SqliteValue::Null),
                 };
                 values.push(column_value);
             }
             
-            Ok(crate::stdlib::packages::db_core::Row {
+//             Ok(crate::stdlib::packages::db_core::Row {
                 values,
-                metadata: crate::stdlib::packages::db_core::RowMetadata {
+//                 metadata: crate::stdlib::packages::db_core::RowMetadata {
                     row_number: 0,
                     is_inserted: false,
                     is_updated: false,
@@ -830,7 +830,7 @@ impl PreparedStatement for SqlitePreparedStatement {
 
         let columns = if let Some(first_row) = result_rows.first() {
             first_row.values.iter().enumerate().map(|(i, val)| {
-                crate::stdlib::packages::db_core::Column {
+//                 crate::stdlib::packages::db_core::Column {
                     name: format!("column_{}", i),
                     column_type: val.column_type.clone(),
                     nullable: true,
@@ -850,7 +850,7 @@ impl PreparedStatement for SqlitePreparedStatement {
 
         let result_set = SqliteResultSet {
             rows: result_rows,
-            metadata: crate::stdlib::packages::db_core::ResultMetadata {
+//             metadata: crate::stdlib::packages::db_core::ResultMetadata {
                 columns,
                 row_count: None,
                 affected_rows: 0,
@@ -875,16 +875,16 @@ impl PreparedStatement for SqlitePreparedStatement {
     }
     
     /// slay Get parameter metadata
-    fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
+//     fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
         // Placeholder implementation - would need to extract from SQLite statement
         &[]
     }
     
     /// slay Get result set metadata
-    fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
+//     fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
         // Placeholder implementation - would need to extract from SQLite statement
-        static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
-            std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
+//         static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
+//             std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
                 columns: vec![],
                 total_rows: None,
                 has_more_rows: false,
@@ -892,7 +892,7 @@ impl PreparedStatement for SqlitePreparedStatement {
                 schema_name: None,
                 table_name: None,
                 is_updatable: false,
-                result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
+//                 result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
             });
         &EMPTY_METADATA
     }
@@ -949,7 +949,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
         Ok(())
     }
 
-    async fn savepoint(&mut self, name: &str) -> DbResult<crate::stdlib::packages::db_core::SavePoint> {
+//     async fn savepoint(&mut self, name: &str) -> DbResult<crate::stdlib::packages::db_core::SavePoint> {
         let conn = self.connection.lock()
             .map_err(|_| DatabaseError::driver("Failed to acquire connection lock"))?;
 
@@ -959,14 +959,14 @@ impl DatabaseTransaction for SqliteTransactionImpl {
                 &format!("Failed to create savepoint: {}", e)
             ))?;
 
-        Ok(crate::stdlib::packages::db_core::SavePoint {
+//         Ok(crate::stdlib::packages::db_core::SavePoint {
             name: name.to_string(),
             transaction_id: self.transaction_id.clone(),
             created_at: std::time::SystemTime::now(),
         })
     }
 
-    async fn rollback_to_savepoint(&mut self, savepoint: &crate::stdlib::packages::db_core::SavePoint) -> DbResult<()> {
+//     async fn rollback_to_savepoint(&mut self, savepoint: &crate::stdlib::packages::db_core::SavePoint) -> DbResult<()> {
         let conn = self.connection.lock()
             .map_err(|_| DatabaseError::driver("Failed to acquire connection lock"))?;
 
@@ -993,7 +993,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::types::ParameterDirection::In => {
+//                 crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -1004,7 +1004,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
             let mut values = Vec::new();
             for i in 0..row.as_ref().column_count() {
                 let value = row.get::<usize, SqliteValue>(i)?;
-                let column_value = crate::stdlib::packages::db_core::ColumnValue {
+//                 let column_value = crate::stdlib::packages::db_core::ColumnValue {
                     data: match &value {
                         SqliteValue::Null => None,
                         SqliteValue::Integer(i) => Some(i.to_le_bytes().to_vec()),
@@ -1013,20 +1013,20 @@ impl DatabaseTransaction for SqliteTransactionImpl {
                         SqliteValue::Blob(data) => Some(data.clone()),
                     },
                     column_type: match value {
-                        SqliteValue::Null => crate::stdlib::packages::db_core::ColumnType::Null,
-                        SqliteValue::Integer(_) => crate::stdlib::packages::db_core::ColumnType::BigInt,
-                        SqliteValue::Real(_) => crate::stdlib::packages::db_core::ColumnType::Double,
-                        SqliteValue::Text(_) => crate::stdlib::packages::db_core::ColumnType::Text,
-                        SqliteValue::Blob(_) => crate::stdlib::packages::db_core::ColumnType::Blob,
+//                         SqliteValue::Null => crate::stdlib::packages::db_core::ColumnType::Null,
+//                         SqliteValue::Integer(_) => crate::stdlib::packages::db_core::ColumnType::BigInt,
+//                         SqliteValue::Real(_) => crate::stdlib::packages::db_core::ColumnType::Double,
+//                         SqliteValue::Text(_) => crate::stdlib::packages::db_core::ColumnType::Text,
+//                         SqliteValue::Blob(_) => crate::stdlib::packages::db_core::ColumnType::Blob,
                     },
                     is_null: matches!(value, SqliteValue::Null),
                 };
                 values.push(column_value);
             }
             
-            Ok(crate::stdlib::packages::db_core::Row {
+//             Ok(crate::stdlib::packages::db_core::Row {
                 values,
-                metadata: crate::stdlib::packages::db_core::RowMetadata {
+//                 metadata: crate::stdlib::packages::db_core::RowMetadata {
                     row_number: 0,
                     is_inserted: false,
                     is_updated: false,
@@ -1050,7 +1050,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
 
         let columns = if let Some(first_row) = result_rows.first() {
             first_row.values.iter().enumerate().map(|(i, val)| {
-                crate::stdlib::packages::db_core::Column {
+//                 crate::stdlib::packages::db_core::Column {
                     name: format!("column_{}", i),
                     column_type: val.column_type.clone(),
                     nullable: true,
@@ -1070,7 +1070,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
 
         let result_set = SqliteResultSet {
             rows: result_rows,
-            metadata: crate::stdlib::packages::db_core::ResultMetadata {
+//             metadata: crate::stdlib::packages::db_core::ResultMetadata {
                 columns,
                 row_count: None,
                 affected_rows: 0,
@@ -1085,7 +1085,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
         Ok(Box::new(result_set))
     }
 
-    async fn execute(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<crate::stdlib::packages::db_core::ExecuteResult> {
+//     async fn execute(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<crate::stdlib::packages::db_core::ExecuteResult> {
         let conn = self.connection.lock()
             .map_err(|_| DatabaseError::driver("Failed to acquire connection lock"))?;
 
@@ -1098,7 +1098,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
         // Convert parameters to rusqlite format
         let sqlite_params: Vec<&dyn ToSql> = parameters.iter()
             .map(|p| match p.direction {
-                crate::stdlib::packages::types::ParameterDirection::In => {
+//                 crate::stdlib::packages::types::ParameterDirection::In => {
                     Box::leak(Box::new(p.value.clone())) as &dyn ToSql
                 },
                 _ => Box::leak(Box::new(rusqlite::types::Null)) as &dyn ToSql,
@@ -1111,7 +1111,7 @@ impl DatabaseTransaction for SqliteTransactionImpl {
                 &format!("Statement execution failed: {}", e)
             ))?;
 
-        Ok(crate::stdlib::packages::db_core::ExecuteResult {
+//         Ok(crate::stdlib::packages::db_core::ExecuteResult {
             affected_rows: affected_rows as u64,
             last_insert_id: Some(conn.last_insert_rowid() as u64),
             warnings: Vec::new(),
@@ -1120,19 +1120,20 @@ impl DatabaseTransaction for SqliteTransactionImpl {
         })
     }
 
-    fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
+//     fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
         if self.active {
-            crate::stdlib::packages::db_core::traits::TransactionState::Active
+//             crate::stdlib::packages::db_core::traits::TransactionState::Active
         } else {
-            crate::stdlib::packages::db_core::traits::TransactionState::Committed
+//             crate::stdlib::packages::db_core::traits::TransactionState::Committed
         }
     }
 }
 
-impl std::fmt::Display for SqliteError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SQLite Error: {}", self.message)
-    }
-}
+// impl std::fmt::Display for SqliteError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "SQLite CursedError: {}", self.message)
+//     }
+// }
 
-impl std::error::Error for SqliteError {}
+// impl std::error::CursedError for SqliteError {}
+// 

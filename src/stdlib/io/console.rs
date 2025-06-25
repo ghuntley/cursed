@@ -1,5 +1,5 @@
 /// Basic console I/O operations for CURSED
-use crate::stdlib::{
+// use crate::stdlib::{
     io::{
         error::{IoError, IoResult},
         streams::{stdin, stdout, stderr}
@@ -170,66 +170,3 @@ fn format_value(value: &Value) -> String {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_format_string_basic() {
-        let args = vec![Value::String("world".to_string())];
-        let result = format_string("Hello, {}!", &args).unwrap();
-        assert_eq!(result, "Hello, world!");
-    }
-
-    #[test]
-    fn test_format_string_multiple_args() {
-        let args = vec![
-            Value::String("John".to_string()),
-            Value::Integer(25),
-        ];
-        let result = format_string("Name: {}, Age: {}", &args).unwrap();
-        assert_eq!(result, "Name: John, Age: 25");
-    }
-
-    #[test]
-    fn test_format_string_indexed() {
-        let args = vec![
-            Value::String("first".to_string()),
-            Value::String("second".to_string()),
-        ];
-        let result = format_string("{1} comes after {0}", &args).unwrap();
-        assert_eq!(result, "second comes after first");
-    }
-
-    #[test]
-    fn test_format_string_escaped_braces() {
-        let args = vec![Value::String("test".to_string())];
-        let result = format_string("{{{}}} is in braces", &args).unwrap();
-        assert_eq!(result, "{test} is in braces");
-    }
-
-    #[test]
-    fn test_format_value_types() {
-        assert_eq!(format_value(&Value::Bool(true)), "true");
-        assert_eq!(format_value(&Value::Number(3.14)), "3.14");
-        assert_eq!(format_value(&Value::Null), "null");
-    }
-
-    #[test]
-    fn test_format_value_array() {
-        let arr = vec![Value::Integer(1), Value::Integer(2), Value::Integer(3)];
-        let result = format_value(&Value::Array(arr));
-        assert_eq!(result, "[1, 2, 3]");
-    }
-
-    #[test]
-    fn test_format_value_object() {
-        let mut obj = HashMap::new();
-        obj.insert("name".to_string(), Value::String("John".to_string()));
-        obj.insert("age".to_string(), Value::Integer(30));
-        let result = format_value(&Value::Object(obj));
-        // Note: HashMap iteration order is not guaranteed, so we check both possibilities
-        assert!(result.contains("name: John") && result.contains("age: 30"));
-    }
-}

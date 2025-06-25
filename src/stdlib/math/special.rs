@@ -2,7 +2,7 @@
 
 use super::{MathError, MathResult, validate_float, domain_error, negative_input_error};
 use super::constants::{PI, E};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Factorial function for non-negative integers
 pub fn factorial(n: u64) -> MathResult<u64> {
@@ -201,7 +201,7 @@ pub fn permutations(n: u64, k: u64) -> MathResult<u64> {
     Ok(result)
 }
 
-/// Error function erf(x)
+/// CursedError function erf(x)
 pub fn erf(x: f64) -> MathResult<f64> {
     validate_float("erf", "x", x)?;
     

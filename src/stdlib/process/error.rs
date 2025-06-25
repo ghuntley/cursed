@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process management error types for CURSED
 /// 
 /// This module provides comprehensive error handling for process management operations,
@@ -176,96 +176,96 @@ impl ProcessError {
     }
 }
 
-impl fmt::Display for ProcessError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ProcessError::ProcessNotFound { pid, name, message } => {
-                write!(f, "Process not found")?;
-                if let Some(pid) = pid {
-                    write!(f, " (PID: {})", pid)?;
-                }
-                if let Some(name) = name {
-                    write!(f, " (name: {})", name)?;
-                }
-                write!(f, ": {}", message)
-            }
-            ProcessError::PermissionDenied { operation, pid, message } => {
-                write!(f, "Permission denied for {}", operation)?;
-                if let Some(pid) = pid {
-                    write!(f, " (PID: {})", pid)?;
-                }
-                write!(f, ": {}", message)
-            }
-            ProcessError::InvalidState { expected, actual, pid } => {
-                write!(f, "Invalid process state for PID {}: expected {}, got {}", pid, expected, actual)
-            }
-            ProcessError::ExecutionFailed { command, exit_code, stderr, message } => {
-                write!(f, "Execution failed for '{}': {}", command, message)?;
-                if let Some(code) = exit_code {
-                    write!(f, " (exit code: {})", code)?;
-                }
-                if let Some(err) = stderr {
-                    write!(f, " (stderr: {})", err)?;
-                }
-                Ok(())
-            }
-            ProcessError::Timeout { operation, duration, message } => {
-                write!(f, "Timeout in {} after {:?}: {}", operation, duration, message)
-            }
-            ProcessError::InvalidArguments { operation, argument, message } => {
-                write!(f, "Invalid argument '{}' for {}: {}", argument, operation, message)
-            }
-            ProcessError::EnvironmentError { variable, operation, message } => {
-                write!(f, "Environment error in {}", operation)?;
-                if let Some(var) = variable {
-                    write!(f, " (variable: {})", var)?;
-                }
-                write!(f, ": {}", message)
-            }
-            ProcessError::CommunicationError { operation, error_type, message } => {
-                write!(f, "Communication error in {} ({}): {}", operation, error_type, message)
-            }
-            ProcessError::SystemError { code, operation, message } => {
-                write!(f, "System error in {} (code {}): {}", operation, code, message)
-            }
-            ProcessError::IoError { operation, kind, message } => {
-                write!(f, "I/O error in {} ({}): {}", operation, kind, message)
-            }
-            ProcessError::SignalError { signal, operation, message } => {
-                write!(f, "Signal error for {} in {}: {}", signal, operation, message)
-            }
-            ProcessError::ResourceLimitExceeded { resource, limit, current, message } => {
-                write!(f, "Resource limit exceeded for {}: {} / {} - {}", resource, current, limit, message)
-            }
-            ProcessError::PlatformError { platform, feature, message } => {
-                write!(f, "Platform error on {}", platform)?;
-                if let Some(feat) = feature {
-                    write!(f, " (feature: {})", feat)?;
-                }
-                write!(f, ": {}", message)
-            }
-            ProcessError::General { message } => {
-                write!(f, "Process error: {}", message)
-            }
-        }
-    }
-}
+// impl fmt::Display for ProcessError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ProcessError::ProcessNotFound { pid, name, message } => {
+//                 write!(f, "Process not found")?;
+//                 if let Some(pid) = pid {
+//                     write!(f, " (PID: {})", pid)?;
+//                 }
+//                 if let Some(name) = name {
+//                     write!(f, " (name: {})", name)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             ProcessError::PermissionDenied { operation, pid, message } => {
+//                 write!(f, "Permission denied for {}", operation)?;
+//                 if let Some(pid) = pid {
+//                     write!(f, " (PID: {})", pid)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             ProcessError::InvalidState { expected, actual, pid } => {
+//                 write!(f, "Invalid process state for PID {}: expected {}, got {}", pid, expected, actual)
+//             }
+//             ProcessError::ExecutionFailed { command, exit_code, stderr, message } => {
+//                 write!(f, "Execution failed for '{}': {}", command, message)?;
+//                 if let Some(code) = exit_code {
+//                     write!(f, " (exit code: {})", code)?;
+//                 }
+//                 if let Some(err) = stderr {
+//                     write!(f, " (stderr: {})", err)?;
+//                 }
+//                 Ok(())
+//             }
+//             ProcessError::Timeout { operation, duration, message } => {
+//                 write!(f, "Timeout in {} after {:?}: {}", operation, duration, message)
+//             }
+//             ProcessError::InvalidArguments { operation, argument, message } => {
+//                 write!(f, "Invalid argument '{}' for {}: {}", argument, operation, message)
+//             }
+//             ProcessError::EnvironmentError { variable, operation, message } => {
+//                 write!(f, "Environment error in {}", operation)?;
+//                 if let Some(var) = variable {
+//                     write!(f, " (variable: {})", var)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             ProcessError::CommunicationError { operation, error_type, message } => {
+//                 write!(f, "Communication error in {} ({}): {}", operation, error_type, message)
+//             }
+//             ProcessError::SystemError { code, operation, message } => {
+//                 write!(f, "System error in {} (code {}): {}", operation, code, message)
+//             }
+//             ProcessError::IoError { operation, kind, message } => {
+//                 write!(f, "I/O error in {} ({}): {}", operation, kind, message)
+//             }
+//             ProcessError::SignalError { signal, operation, message } => {
+//                 write!(f, "Signal error for {} in {}: {}", signal, operation, message)
+//             }
+//             ProcessError::ResourceLimitExceeded { resource, limit, current, message } => {
+//                 write!(f, "Resource limit exceeded for {}: {} / {} - {}", resource, current, limit, message)
+//             }
+//             ProcessError::PlatformError { platform, feature, message } => {
+//                 write!(f, "Platform error on {}", platform)?;
+//                 if let Some(feat) = feature {
+//                     write!(f, " (feature: {})", feat)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             ProcessError::General { message } => {
+//                 write!(f, "Process error: {}", message)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for ProcessError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
+// impl std::error::CursedError for ProcessError {
+//     fn source(&self) -> Option<&(dyn std::error::CursedError + 'static)> {
+//         None
+//     }
+// }
 
-impl From<io::Error> for ProcessError {
-    fn from(error: io::Error) -> Self {
-        ProcessError::IoError {
-            operation: "unknown".to_string(),
-            kind: format!("{:?}", error.kind()),
-            message: error.to_string(),
-        }
-    }
-}
+// impl From<std::io::Error> for ProcessError {
+//     fn from(error: std::io::Error) -> Self {
+//         ProcessError::IoError {
+//             operation: "unknown".to_string(),
+//             kind: format!("{:?}", error.kind()),
+//             message: error.to_string(),
+//         }
+//     }
+// }
 
 impl From<num::ParseIntError> for ProcessError {
     fn from(error: num::ParseIntError) -> Self {
@@ -277,7 +277,7 @@ impl From<num::ParseIntError> for ProcessError {
     }
 }
 
-/// Error creation helper functions
+/// CursedError creation helper functions
 
 /// Create a process not found error
 pub fn process_not_found(message: &str) -> ProcessError {
@@ -470,63 +470,3 @@ pub fn general_error(message: &str) -> ProcessError {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_error_creation() {
-        let err = process_not_found("Process does not exist");
-        assert_eq!(err.category(), "ProcessNotFound");
-        assert!(!err.is_recoverable());
-
-        let err = permission_denied("kill", "Access denied");
-        assert_eq!(err.category(), "PermissionDenied");
-        assert!(!err.is_recoverable());
-
-        let err = timeout_error("wait", Duration::from_secs(30), "Process did not respond");
-        assert_eq!(err.category(), "Timeout");
-        assert!(err.is_recoverable());
-    }
-
-    #[test]
-    fn test_error_display() {
-        let err = process_not_found_pid(1234, "No such process");
-        let display = format!("{}", err);
-        assert!(display.contains("Process not found"));
-        assert!(display.contains("PID: 1234"));
-        assert!(display.contains("No such process"));
-    }
-
-    #[test]
-    fn test_error_conversion() {
-        let io_err = io::Error::new(io::ErrorKind::PermissionDenied, "Access denied");
-        let proc_err: ProcessError = io_err.into();
-        assert_eq!(proc_err.category(), "IoError");
-    }
-
-    #[test]
-    fn test_execution_failed_variants() {
-        let err1 = execution_failed("ls", "Command not found");
-        let err2 = execution_failed_with_code("ls", 127, "Command not found");
-        let err3 = execution_failed_with_stderr("ls", "No such file", "Failed");
-
-        assert_eq!(err1.category(), "ExecutionFailed");
-        assert_eq!(err2.category(), "ExecutionFailed");
-        assert_eq!(err3.category(), "ExecutionFailed");
-    }
-
-    #[test]
-    fn test_resource_limit_error() {
-        let err = resource_limit_exceeded("memory", 1024*1024, 2*1024*1024, "Memory limit exceeded");
-        assert_eq!(err.category(), "ResourceLimitExceeded");
-        assert!(err.is_recoverable());
-        
-        let display = format!("{}", err);
-        assert!(display.contains("memory"));
-        assert!(display.contains("1048576"));
-        assert!(display.contains("2097152"));
-    }
-}

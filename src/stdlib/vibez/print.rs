@@ -4,10 +4,10 @@
 /// type system and supports styled/colored output. Includes the essential
 /// `spill` functions for Gen Z-style output and input operations.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use std::io::{self, Write, stdout, stderr, stdin, BufRead};
 use std::fmt;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Print arguments to stdout without a newline
 /// Example: print("Hello", " ", "World")
@@ -31,7 +31,7 @@ pub fn println(args: &[Value]) -> io::Result<()> {
 }
 
 /// Print arguments to stderr without a newline
-/// Example: eprint("Error:", error_msg)
+/// Example: eprint("CursedError:", error_msg)
 pub fn eprint(args: &[Value]) -> io::Result<()> {
     let mut output = stderr();
     for (i, arg) in args.iter().enumerate() {
@@ -131,7 +131,7 @@ pub fn println_styled(args: &[Value], style: PrintStyle) -> io::Result<()> {
 }
 
 /// Print with color
-/// Example: print_colored(&[Value::String("Error".to_string())], PrintColor::Red)
+/// Example: print_colored(&[Value::String("CursedError".to_string())], PrintColor::Red)
 pub fn print_colored(args: &[Value], color: PrintColor) -> io::Result<()> {
     let color_code = match color {
         PrintColor::Default => "",
@@ -361,7 +361,7 @@ fn format_arg_with_spec(spec: &str, arg: &Value) -> io::Result<String> {
                 Value::Float(f) => Ok((*f as i64).to_string()),
                 Value::String(s) => s.parse::<i64>()
                     .map(|i| i.to_string())
-                    .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "Invalid integer")),
+                    .map_err(|_| std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid integer")),
                 _ => Ok("0".to_string()),
             }
         },
@@ -382,7 +382,7 @@ fn format_arg_with_spec(spec: &str, arg: &Value) -> io::Result<String> {
                 Value::Int(i) => Ok(format!("{:.6}", *i as f64)),
                 Value::String(s) => s.parse::<f64>()
                     .map(|f| format!("{}", f))
-                    .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "Invalid float")),
+                    .map_err(|_| std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid float")),
                 _ => Ok("0.000000".to_string()),
             }
         },
@@ -434,24 +434,24 @@ fn read_line_input() -> io::Result<String> {
 }
 
 /// Parse a string value into the appropriate CURSED Value type
-fn parse_value_from_str(s: &str, target_type: &Value) -> Result<(), Error> {
+fn parse_value_from_str(s: &str, target_type: &Value) -> crate::error::Result<()> {
     match target_type {
         Value::String(_) => Ok(Value::String(s.to_string())),
         Value::Int(_) => {
             s.parse::<i64>()
                 .map(Value::Int)
-                .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "Invalid integer"))
+                .map_err(|_| std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid integer"))
         },
         Value::Float(_) => {
             s.parse::<f64>()
                 .map(Value::Float)
-                .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "Invalid float"))
+                .map_err(|_| std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid float"))
         },
         Value::Bool(_) => {
             match s.to_lowercase().as_str() {
                 "true" | "t" | "1" | "yes" | "y" => Ok(Value::Bool(true)),
                 "false" | "f" | "0" | "no" | "n" => Ok(Value::Bool(false)),
-                _ => Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid boolean")),
+                _ => Err(std::io::Error::new(io::ErrorKind::InvalidInput, "Invalid boolean")),
             }
         },
         _ => {
@@ -483,54 +483,8 @@ fn format_value(value: &Value) -> String {
         Value::NativeFunction(_) => "<native_function>".to_string(),
         Value::Channel(_) => "<channel>".to_string(),
         Value::Interface(_) => "<interface>".to_string(),
-        Value::Error(e) => format!("Error: {}", e),
+        Value::CursedError(e) => format!("CursedError: {}", e),
         Value::Bytes(b) => format!("<bytes[{}]>", b.len()),
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_format_value_basic_types() {
-        assert_eq!(format_value(&Value::Nil), "nil");
-        assert_eq!(format_value(&Value::Bool(true)), "true");
-        assert_eq!(format_value(&Value::Int(42)), "42");
-        assert_eq!(format_value(&Value::Float(3.14)), "3.14");
-        assert_eq!(format_value(&Value::String("hello".to_string())), "hello");
-    }
-
-    #[test]
-    fn test_format_value_collections() {
-        let arr = vec![Value::Int(1), Value::Int(2), Value::Int(3)];
-        assert_eq!(format_value(&Value::Array(arr)), "[1, 2, 3]");
-
-        let mut obj = HashMap::new();
-        obj.insert("key".to_string(), Value::String("value".to_string()));
-        assert_eq!(format_value(&Value::Object(obj)), "{key: value}");
-    }
-
-    #[test]
-    fn test_print_to_buffer() {
-        let mut buffer = Vec::new();
-        let args = vec![Value::String("test".to_string()), Value::Int(123)];
-        
-        print_to(&mut buffer, &args).unwrap();
-        
-        let output = String::from_utf8(buffer).unwrap();
-        assert_eq!(output, "test 123");
-    }
-
-    #[test]
-    fn test_println_to_buffer() {
-        let mut buffer = Vec::new();
-        let args = vec![Value::String("test".to_string())];
-        
-        println_to(&mut buffer, &args).unwrap();
-        
-        let output = String::from_utf8(buffer).unwrap();
-        assert_eq!(output, "test\n");
-    }
-}

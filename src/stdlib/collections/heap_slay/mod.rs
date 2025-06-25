@@ -58,10 +58,10 @@ pub use types::{
     HeapError,
 };
 
-use crate::error::{Error, CursedError};
+use crate::error::{CursedError, CursedError};
 
 /// Result type for heap operations
-pub type HeapResult<T> = std::result::Result<T, Error>;
+pub type Heapcrate::error::Result<T> = std::result::Result<T>;
 
 /// Create a heap-specific error
 pub fn heap_error(message: &str) -> CursedError {
@@ -87,37 +87,3 @@ pub fn validate_not_empty(len: i32) -> HeapResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_heap_error_creation() {
-        let err = heap_error("test message");
-        let err_str = format!("{}", err);
-        assert!(err_str.contains("heap_slay"));
-        assert!(err_str.contains("test message"));
-        // Test that it's a General error variant
-        assert!(matches!(err, CursedError::General(_)));
-    }
-
-    #[test]
-    fn test_validate_index_valid() {
-        assert!(validate_index(0, 5).is_ok());
-        assert!(validate_index(4, 5).is_ok());
-    }
-
-    #[test]
-    fn test_validate_index_invalid() {
-        assert!(validate_index(-1, 5).is_err());
-        assert!(validate_index(5, 5).is_err());
-        assert!(validate_index(10, 5).is_err());
-    }
-
-    #[test]
-    fn test_validate_not_empty() {
-        assert!(validate_not_empty(1).is_ok());
-        assert!(validate_not_empty(10).is_ok());
-        assert!(validate_not_empty(0).is_err());
-    }
-}

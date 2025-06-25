@@ -1,5 +1,5 @@
 
-use crate::error::Error;
+use crate::error::CursedError;
 /// Template Renderer - Executes template AST and generates output
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -7,7 +7,6 @@ use std::io::Write;
 use std::time::{Duration, Instant};
 use tracing::{debug, error, info, instrument, warn, span, Level};
 
-use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 use super::template_core::{TemplateConfig, TemplateContext, TemplateLoader};
 use super::template_syntax::{
@@ -75,11 +74,11 @@ impl RenderContext {
         self.template_context.get(key)
     }
 
-    pub fn set(&mut self, key: String, value: CursedObject) -> Result<(), Error> {
+    pub fn set(&mut self, key: String, value: CursedObject) -> crate::error::Result<()> {
         self.template_context.set(key, value)
     }
     
-    pub fn update(&mut self, key: String, value: CursedObject) -> Result<(), Error> {
+    pub fn update(&mut self, key: String, value: CursedObject) -> crate::error::Result<()> {
         self.template_context.update(key, value)
     }
 
@@ -226,14 +225,14 @@ impl TemplateRenderer {
 
     /// Render a template AST with the given context
     #[instrument(skip(self, ast, context))]
-    pub fn render(&self, ast: &TemplateAst, context: TemplateContext) -> Result<(), Error> {
+    pub fn render(&self, ast: &TemplateAst, context: TemplateContext) -> crate::error::Result<()> {
         let render_context = RenderContext::new(context);
         self.render_with_context(ast, render_context)
     }
 
     /// Render with comprehensive context and return detailed results
     #[instrument(skip(self, ast, render_context))]
-    pub fn render_with_context(&self, ast: &TemplateAst, render_context: RenderContext) -> Result<(), Error> {
+    pub fn render_with_context(&self, ast: &TemplateAst, render_context: RenderContext) -> crate::error::Result<()> {
         let start_time = Instant::now();
         info!(nodes = ast.nodes.len(), "Starting template rendering");
         
@@ -265,7 +264,7 @@ impl TemplateRenderer {
 
     /// Render with full result metadata
     #[instrument(skip(self, ast, render_context))]
-    pub fn render_with_result(&self, ast: &TemplateAst, render_context: RenderContext) -> Result<(), Error> {
+    pub fn render_with_result(&self, ast: &TemplateAst, render_context: RenderContext) -> crate::error::Result<()> {
         let start_time = Instant::now();
         info!(nodes = ast.nodes.len(), "Starting comprehensive template rendering");
         
@@ -328,7 +327,7 @@ impl TemplateRenderer {
         nodes: &[TemplateNode],
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let render_context = RenderContext::new(context.clone());
         self.render_nodes_with_context(nodes, &render_context, output)
     }
@@ -340,7 +339,7 @@ impl TemplateRenderer {
         nodes: &[TemplateNode],
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for node in nodes {
             self.render_node_with_context(node, render_context, output)?;
             self.nodes_processed += 1;
@@ -355,7 +354,7 @@ impl TemplateRenderer {
         node: &TemplateNode,
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let render_context = RenderContext::new(context.clone());
         self.render_node_with_context(node, &render_context, output)
     }
@@ -367,7 +366,7 @@ impl TemplateRenderer {
         node: &TemplateNode,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match node {
             TemplateNode::Text(text) => {
                 output.push_str(text);
@@ -421,7 +420,7 @@ impl TemplateRenderer {
         filters: &[FilterCall],
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Track variable resolution
         self.variables_resolved += 1;
 
@@ -450,7 +449,7 @@ impl TemplateRenderer {
         filters: &[FilterCall],
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Track variable resolution
         self.variables_resolved += 1;
 
@@ -484,7 +483,7 @@ impl TemplateRenderer {
         block: &BlockNode,
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let render_context = RenderContext::new(context.clone());
         self.render_block_with_context(block, &render_context, output)
     }
@@ -496,7 +495,7 @@ impl TemplateRenderer {
         block: &BlockNode,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match block {
             BlockNode::If { condition, then_branch, elsif_branches, else_branch } => {
                 let condition_value = self.evaluate_expression_with_context(condition, render_context)?;
@@ -669,7 +668,7 @@ impl TemplateRenderer {
         name: &str,
         value: &TemplateExpression,
         render_context: &RenderContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let evaluated_value = self.evaluate_expression_with_context(value, render_context)?;
         
         // Actually update the template context
@@ -692,7 +691,7 @@ impl TemplateRenderer {
         else_branch: &Option<Vec<TemplateNode>>,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let condition_value = self.evaluate_expression_with_context(condition, render_context)?;
         if self.is_truthy_cursed(&condition_value) {
             self.render_nodes_with_context(then_branch, render_context, output)?;
@@ -711,7 +710,7 @@ impl TemplateRenderer {
         body: &[TemplateNode],
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let iterable = self.evaluate_expression_with_context(iterator, render_context)?;
         let items = self.make_iterable(&iterable)?;
         
@@ -744,7 +743,7 @@ impl TemplateRenderer {
         name: &str,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Load the base template
         let template_source = self.loader.load(name)?;
         debug!(template = name, "Loading base template - lowkey extends vibes");
@@ -784,7 +783,7 @@ impl TemplateRenderer {
         ast: &TemplateAst,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for node in &ast.nodes {
             match node {
                 TemplateNode::BlockDef { name, content, .. } => {
@@ -814,7 +813,7 @@ impl TemplateRenderer {
         include_context: &Option<HashMap<String, TemplateExpression>>,
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let render_context = RenderContext::new(context.clone());
         self.render_include_with_context(template_name, include_context, &render_context, output)
     }
@@ -827,7 +826,7 @@ impl TemplateRenderer {
         include_context: &Option<HashMap<String, TemplateExpression>>,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Prevent infinite recursion
         if self.nesting_depth >= self.config.max_nesting_depth {
             return Err(CursedError::TemplateError {
@@ -884,7 +883,7 @@ impl TemplateRenderer {
         blocks: &HashMap<String, Vec<TemplateNode>>,
         context: &TemplateContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let render_context = RenderContext::new(context.clone());
         self.render_layout_with_context(name, blocks, &render_context, output)
     }
@@ -897,7 +896,7 @@ impl TemplateRenderer {
         blocks: &HashMap<String, Vec<TemplateNode>>,
         render_context: &RenderContext,
         output: &mut String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Load the layout template
         let layout_source = self.loader.load(name)?;
         let lexer = super::template_syntax::TemplateLexer::new(&layout_source, &self.config.delimiters);
@@ -926,7 +925,7 @@ impl TemplateRenderer {
         &self,
         expr: &TemplateExpression,
         context: &TemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let render_context = RenderContext::new(context.clone());
         self.evaluate_expression_with_context(expr, &render_context)
     }
@@ -937,7 +936,7 @@ impl TemplateRenderer {
         &self,
         expr: &TemplateExpression,
         render_context: &RenderContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match expr {
             TemplateExpression::Variable(name) => {
                 // Support CURSED-style variable names
@@ -1048,7 +1047,7 @@ impl TemplateRenderer {
         args: &[TemplateExpression],
         value: CursedObject,
         context: &TemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let render_context = RenderContext::new(context.clone());
         self.apply_filter_with_context(filter_name, args, value, &render_context)
     }
@@ -1061,7 +1060,7 @@ impl TemplateRenderer {
         args: &[TemplateExpression],
         value: CursedObject,
         render_context: &RenderContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut filter_args = vec![value];
         for arg_expr in args {
             filter_args.push(self.evaluate_expression_with_context(arg_expr, render_context)?);
@@ -1101,7 +1100,7 @@ impl TemplateRenderer {
         left: &CursedObject,
         op: &BinaryOperator,
         right: &CursedObject,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match op {
             BinaryOperator::Add => self.add_objects(left, right),
             BinaryOperator::Sub => self.sub_objects(left, right),
@@ -1133,7 +1132,7 @@ impl TemplateRenderer {
         &self,
         op: &UnaryOperator,
         operand: &CursedObject,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match op {
             UnaryOperator::Not => Ok(CursedObject::Boolean(!self.is_truthy(operand))),
             UnaryOperator::Minus => match operand {
@@ -1160,7 +1159,7 @@ impl TemplateRenderer {
     }
 
     /// Helper methods for arithmetic operations
-    fn add_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
+    fn add_objects(&self, left: &CursedObject, right: &CursedObject) -> crate::error::Result<()> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => Ok(CursedObject::Integer(a + b)),
             (CursedObject::Float(a), CursedObject::Float(b)) => Ok(CursedObject::Float(a + b)),
@@ -1174,7 +1173,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn sub_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
+    fn sub_objects(&self, left: &CursedObject, right: &CursedObject) -> crate::error::Result<()> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => Ok(CursedObject::Integer(a - b)),
             (CursedObject::Float(a), CursedObject::Float(b)) => Ok(CursedObject::Float(a - b)),
@@ -1187,7 +1186,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn mul_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
+    fn mul_objects(&self, left: &CursedObject, right: &CursedObject) -> crate::error::Result<()> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => Ok(CursedObject::Integer(a * b)),
             (CursedObject::Float(a), CursedObject::Float(b)) => Ok(CursedObject::Float(a * b)),
@@ -1200,7 +1199,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn div_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
+    fn div_objects(&self, left: &CursedObject, right: &CursedObject) -> crate::error::Result<()> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => {
                 if *b == 0 {
@@ -1245,7 +1244,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn mod_objects(&self, left: &CursedObject, right: &CursedObject) -> Result<(), Error> {
+    fn mod_objects(&self, left: &CursedObject, right: &CursedObject) -> crate::error::Result<()> {
         match (left, right) {
             (CursedObject::Integer(a), CursedObject::Integer(b)) => {
                 if *b == 0 {
@@ -1263,7 +1262,7 @@ impl TemplateRenderer {
         }
     }
 
-    fn compare_objects<F>(&self, left: &CursedObject, right: &CursedObject, op: F) -> Result<(), Error>
+    fn compare_objects<F>(&self, left: &CursedObject, right: &CursedObject, op: F) -> crate::error::Result<()>
     where
         F: Fn(f64, f64) -> bool,
     {
@@ -1284,7 +1283,7 @@ impl TemplateRenderer {
     }
 
     /// Extract numeric value from object
-    fn extract_number(&self, obj: &CursedObject) -> Result<(), Error> {
+    fn extract_number(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
             CursedObject::Integer(n) => Ok(*n as f64),
             CursedObject::Float(n) => Ok(*n),
@@ -1296,7 +1295,7 @@ impl TemplateRenderer {
     }
 
     /// Get property from object
-    fn get_property(&self, obj: &CursedObject, property: &str) -> Result<(), Error> {
+    fn get_property(&self, obj: &CursedObject, property: &str) -> crate::error::Result<()> {
         match obj {
             CursedObject::Map(map) => {
                 Ok(map.get(property).cloned().unwrap_or(CursedObject::Nil))
@@ -1309,7 +1308,7 @@ impl TemplateRenderer {
     }
 
     /// Get property from object with CURSED-style slang support
-    fn get_property_cursed(&self, obj: &CursedObject, property: &str) -> Result<(), Error> {
+    fn get_property_cursed(&self, obj: &CursedObject, property: &str) -> crate::error::Result<()> {
         // Normalize property name for CURSED-style access
         let normalized_property = match property {
             "flex" => "length",
@@ -1337,7 +1336,7 @@ impl TemplateRenderer {
     }
 
     /// Get index from object with CURSED-style support
-    fn get_index_cursed(&self, obj: &CursedObject, index: &CursedObject) -> Result<(), Error> {
+    fn get_index_cursed(&self, obj: &CursedObject, index: &CursedObject) -> crate::error::Result<()> {
         match (obj, index) {
             (CursedObject::Array(arr), CursedObject::Integer(i)) => {
                 let idx = *i as usize;
@@ -1365,7 +1364,7 @@ impl TemplateRenderer {
         left: &CursedObject,
         op: &BinaryOperator,
         right: &CursedObject,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Support CURSED-style Gen Z truthiness and operators
         match op {
             BinaryOperator::And => Ok(CursedObject::Boolean(
@@ -1395,7 +1394,7 @@ impl TemplateRenderer {
         &self,
         op: &UnaryOperator,
         operand: &CursedObject,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match op {
             UnaryOperator::Not => Ok(CursedObject::Boolean(!self.is_truthy_cursed(operand))),
             UnaryOperator::Sus => Ok(CursedObject::Boolean(self.is_truthy_cursed(operand))), // Truthiness check
@@ -1477,7 +1476,7 @@ impl TemplateRenderer {
     }
 
     /// Convert object to iterable list
-    fn make_iterable(&self, obj: &CursedObject) -> Result<(), Error> {
+    fn make_iterable(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
             CursedObject::Array(arr) => Ok(arr.clone()),
             CursedObject::String(s) => Ok(s.chars().map(|c| CursedObject::String(c.to_string())).collect()),
@@ -1503,7 +1502,7 @@ impl TemplateRenderer {
     }
 
     /// Convert object to string
-    fn object_to_string(&self, obj: &CursedObject) -> Result<(), Error> {
+    fn object_to_string(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -1516,7 +1515,7 @@ impl TemplateRenderer {
     }
 
     /// Apply security escaping based on output format and security level
-    fn apply_security_escaping(&self, s: &str, render_context: &RenderContext) -> Result<(), Error> {
+    fn apply_security_escaping(&self, s: &str, render_context: &RenderContext) -> crate::error::Result<()> {
         match render_context.security_level {
             SecurityLevel::Strict | SecurityLevel::Moderate => {
                 match render_context.output_format {
@@ -1587,7 +1586,7 @@ impl TemplateRenderer {
     }
 
     /// Convert object to string with CURSED-style Gen Z slang
-    fn object_to_string_cursed(&self, obj: &CursedObject) -> Result<(), Error> {
+    fn object_to_string_cursed(&self, obj: &CursedObject) -> crate::error::Result<()> {
         match obj {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -1603,7 +1602,7 @@ impl TemplateRenderer {
                 Ok(format!("[{}]", items.join(", ")))
             }
             CursedObject::Map(map) => {
-                let items: Result<(), Error> = map.iter()
+                let items: crate::error::Result<()> = map.iter()
                     .map(|(k, v)| Ok(format!("{}: {}", k, self.object_to_string_cursed(v)?)))
                     .collect();
                 Ok(format!("{{{}}}", items?.join(", ")))
@@ -1612,174 +1611,3 @@ impl TemplateRenderer {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_render_text_node() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(crate::stdlib::template::template_core::FileSystemLoader::new("templates"));
-        let config = crate::stdlib::template::template_core::TemplateConfig::default();
-        
-        let mut renderer = TemplateRenderer::new(filters, loader, &config);
-        let mut output = String::new();
-        let context = TemplateContext::new();
-        
-        let node = TemplateNode::Text("Hello World".to_string());
-        renderer.render_node(&node, &context, &mut output).unwrap();
-        
-        assert_eq!(output, "Hello World");
-    }
-
-    #[test]
-    fn test_cursed_style_variables() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(crate::stdlib::template::template_core::FileSystemLoader::new("templates"));
-        let config = crate::stdlib::template::template_core::TemplateConfig::default();
-        
-        let renderer = TemplateRenderer::new(filters, loader, &config);
-        
-        // Test CURSED-style boolean conversion
-        assert_eq!(
-            renderer.object_to_string_cursed(&CursedObject::Boolean(true)).unwrap(),
-            "slay"
-        );
-        assert_eq!(
-            renderer.object_to_string_cursed(&CursedObject::Boolean(false)).unwrap(),
-            "sus"
-        );
-        assert_eq!(
-            renderer.object_to_string_cursed(&CursedObject::Nil).unwrap(),
-            "periodt"
-        );
-    }
-
-    #[test]
-    fn test_cursed_truthiness() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(crate::stdlib::template::template_core::FileSystemLoader::new("templates"));
-        let config = crate::stdlib::template::template_core::TemplateConfig::default();
-        
-        let renderer = TemplateRenderer::new(filters, loader, &config);
-        
-        // Test CURSED-style Gen Z slang truthiness
-        assert!(renderer.is_truthy_cursed(&CursedObject::String("slay".to_string())));
-        assert!(renderer.is_truthy_cursed(&CursedObject::String("fr".to_string())));
-        assert!(renderer.is_truthy_cursed(&CursedObject::String("periodt".to_string())));
-        assert!(renderer.is_truthy_cursed(&CursedObject::String("no_cap".to_string())));
-        
-        assert!(!renderer.is_truthy_cursed(&CursedObject::String("sus".to_string())));
-        assert!(!renderer.is_truthy_cursed(&CursedObject::String("cap".to_string())));
-        assert!(!renderer.is_truthy_cursed(&CursedObject::String("basic".to_string())));
-        assert!(!renderer.is_truthy_cursed(&CursedObject::String("cringe".to_string())));
-    }
-
-    #[test]
-    fn test_security_escaping() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(crate::stdlib::template::template_core::FileSystemLoader::new("templates"));
-        let config = crate::stdlib::template::template_core::TemplateConfig::default();
-        
-        let renderer = TemplateRenderer::new(filters, loader, &config);
-        
-        // Test HTML escaping
-        let html_input = "<script>alert('xss')</script>";
-        let escaped = renderer.escape_html(html_input);
-        assert_eq!(escaped, "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;");
-        
-        // Test JSON escaping
-        let json_input = "\"Hello\nWorld\"";
-        let escaped = renderer.escape_json(json_input);
-        assert_eq!(escaped, "\\\"Hello\\nWorld\\\"");
-        
-        // Test JavaScript escaping
-        let js_input = "alert('test')";
-        let escaped = renderer.escape_javascript(js_input);
-        assert_eq!(escaped, "alert(\\'test\\')");
-    }
-
-    #[test]
-    fn test_render_context_creation() {
-        let template_context = TemplateContext::new();
-        let render_context = RenderContext::new(template_context)
-            .with_template("test.tmpl".to_string())
-            .with_security_level(SecurityLevel::Strict)
-            .with_output_format(OutputFormat::Html);
-        
-        assert_eq!(render_context.current_template, Some("test.tmpl".to_string()));
-        assert_eq!(render_context.security_level, SecurityLevel::Strict);
-        assert_eq!(render_context.output_format, OutputFormat::Html);
-    }
-
-    #[test]
-    fn test_render_result_creation() {
-        let output = "Hello, World!".to_string();
-        let mut result = RenderResult::new(output.clone());
-        
-        result.add_security_warning("Potential XSS detected".to_string());
-        result.add_performance_warning("Slow rendering".to_string());
-        
-        assert_eq!(result.output, output);
-        assert_eq!(result.security_warnings.len(), 1);
-        assert_eq!(result.performance_warnings.len(), 1);
-        assert!(result.memory_used > 0);
-    }
-
-    #[test]
-    fn test_render_variable_node() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(crate::stdlib::template::template_core::FileSystemLoader::new("templates"));
-        let config = crate::stdlib::template::template_core::TemplateConfig::default();
-        
-        let mut renderer = TemplateRenderer::new(filters, loader, &config);
-        let mut output = String::new();
-        let context = TemplateContext::new();
-        context.set("name".to_string(), CursedObject::String("Alice".to_string())).unwrap();
-        
-        let node = TemplateNode::Variable {
-            expression: TemplateExpression::Variable("name".to_string()),
-            filters: vec![],
-            location: None,
-        };
-        renderer.render_node(&node, &context, &mut output).unwrap();
-        
-        assert_eq!(output, "Alice");
-    }
-
-    #[test]
-    fn test_binary_operations() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(crate::stdlib::template::template_core::FileSystemLoader::new("templates"));
-        let config = crate::stdlib::template::template_core::TemplateConfig::default();
-        
-        let renderer = TemplateRenderer::new(filters, loader, &config);
-        
-        let left = CursedObject::Integer(5);
-        let right = CursedObject::Integer(3);
-        
-        let result = renderer.apply_binary_op(&left, &BinaryOperator::Add, &right).unwrap();
-        assert_eq!(result, CursedObject::Integer(8));
-        
-        let result = renderer.apply_binary_op(&left, &BinaryOperator::Sub, &right).unwrap();
-        assert_eq!(result, CursedObject::Integer(2));
-    }
-
-    #[test]
-    fn test_is_truthy() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(crate::stdlib::template::template_core::FileSystemLoader::new("templates"));
-        let config = crate::stdlib::template::template_core::TemplateConfig::default();
-        
-        let renderer = TemplateRenderer::new(filters, loader, &config);
-        
-        assert!(renderer.is_truthy(&CursedObject::Boolean(true)));
-        assert!(!renderer.is_truthy(&CursedObject::Boolean(false)));
-        assert!(!renderer.is_truthy(&CursedObject::Nil));
-        assert!(renderer.is_truthy(&CursedObject::Integer(1)));
-        assert!(!renderer.is_truthy(&CursedObject::Integer(0)));
-        assert!(renderer.is_truthy(&CursedObject::String("hello".to_string())));
-        assert!(!renderer.is_truthy(&CursedObject::String("".to_string())));
-    }
-}

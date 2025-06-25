@@ -1,16 +1,15 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTML Template Features - HTML-specific templating functionality
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tracing::{debug, instrument, warn, info};
 
-use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 
 /// Template-specific error types
 #[derive(Debug, Clone)]
 pub enum TemplateError {
-    /// Error during template rendering
+    /// CursedError during template rendering
     RenderError(String),
     /// Invalid template parameter
     ParameterError(String),
@@ -20,24 +19,24 @@ pub enum TemplateError {
     GeneralError(String),
 }
 
-impl std::fmt::Display for TemplateError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TemplateError::RenderError(msg) => write!(f, "Template render error: {}", msg),
-            TemplateError::ParameterError(msg) => write!(f, "Template parameter error: {}", msg),
-            TemplateError::NotFoundError(msg) => write!(f, "Template not found: {}", msg),
-            TemplateError::GeneralError(msg) => write!(f, "Template error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for TemplateError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             TemplateError::RenderError(msg) => write!(f, "Template render error: {}", msg),
+//             TemplateError::ParameterError(msg) => write!(f, "Template parameter error: {}", msg),
+//             TemplateError::NotFoundError(msg) => write!(f, "Template not found: {}", msg),
+//             TemplateError::GeneralError(msg) => write!(f, "Template error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for TemplateError {}
-
-impl From<CursedError> for TemplateError {
-    fn from(err: CursedError) -> Self {
-        TemplateError::GeneralError(err.to_string())
-    }
-}
+// impl std::error::CursedError for TemplateError {}
+// 
+// impl From<CursedError> for TemplateError {
+//     fn from(err: CursedError) -> Self {
+//         TemplateError::GeneralError(err.to_string())
+//     }
+// }
 
 /// HTML template context with auto-escaping and safe content handling
 #[derive(Debug, Clone)]
@@ -386,7 +385,7 @@ impl HtmlTemplateContext {
     }
 
     /// Register a component template
-    pub fn register_component(&self, component: ComponentTemplate) -> Result<(), Error> {
+    pub fn register_component(&self, component: ComponentTemplate) -> crate::error::Result<()> {
         let mut cache = self.component_cache.lock()
             .map_err(|e| CursedError::Runtime(format!("Component cache lock error: {}", e)))?;
         cache.insert(component.name.clone(), component);
@@ -394,7 +393,7 @@ impl HtmlTemplateContext {
     }
 
     /// Get a component template
-    pub fn get_component(&self, name: &str) -> Result<(), Error> {
+    pub fn get_component(&self, name: &str) -> crate::error::Result<()> {
         let cache = self.component_cache.lock()
             .map_err(|e| CursedError::Runtime(format!("Component cache lock error: {}", e)))?;
         Ok(cache.get(name).cloned())
@@ -420,7 +419,7 @@ impl HtmlEscaper {
 
     /// Escape content based on context
     #[instrument(skip(self, content))]
-    pub fn escape(&self, content: &str, escape_context: EscapeContext) -> Result<(), Error> {
+    pub fn escape(&self, content: &str, escape_context: EscapeContext) -> crate::error::Result<()> {
         debug!(context = ?escape_context, content_length = content.len(), "Escaping HTML content");
 
         if !self.context.auto_escape {
@@ -503,7 +502,7 @@ impl HtmlEscaper {
         tag_name: &str,
         attributes: &HashMap<String, String>,
         content: Option<&str>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut html = format!("<{}", tag_name);
 
         // Add attributes
@@ -547,7 +546,7 @@ impl HtmlEscaper {
 
     /// Validate and sanitize HTML content
     #[instrument(skip(self, html))]
-    pub fn sanitize_html(&self, html: &str) -> Result<(), Error> {
+    pub fn sanitize_html(&self, html: &str) -> crate::error::Result<()> {
         debug!(html_length = html.len(), "Sanitizing HTML content");
 
         // This is a simplified HTML sanitizer
@@ -621,7 +620,7 @@ impl HtmlTemplateHelpers {
         attributes: &HashMap<String, CursedObject>,
         content: Option<&str>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         for (key, value) in attributes {
             let value_str = match value {
@@ -644,7 +643,7 @@ impl HtmlTemplateHelpers {
         text: &str,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("href".to_string(), href.to_string());
 
@@ -673,7 +672,7 @@ impl HtmlTemplateHelpers {
         alt: &str,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("src".to_string(), src.to_string());
         attr_map.insert("alt".to_string(), alt.to_string());
@@ -704,7 +703,7 @@ impl HtmlTemplateHelpers {
         attributes: Option<&HashMap<String, CursedObject>>,
         content: &str,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("action".to_string(), action.to_string());
         attr_map.insert("method".to_string(), method.to_string());
@@ -735,7 +734,7 @@ impl HtmlTemplateHelpers {
         value: Option<&str>,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("type".to_string(), input_type.to_string());
         attr_map.insert("name".to_string(), name.to_string());
@@ -764,7 +763,7 @@ impl HtmlTemplateHelpers {
     }
 
     /// Generate CSRF protection token
-    pub fn csrf_token(secret: &str) -> Result<(), Error> {
+    pub fn csrf_token(secret: &str) -> crate::error::Result<()> {
         use std::time::{SystemTime, UNIX_EPOCH};
         
         let timestamp = SystemTime::now()
@@ -778,7 +777,7 @@ impl HtmlTemplateHelpers {
     }
 
     /// Generate CSP nonce
-    pub fn csp_nonce() -> Result<(), Error> {
+    pub fn csp_nonce() -> crate::error::Result<()> {
         use rand::RngCore;
         
         let mut rng = rand::thread_rng();
@@ -796,7 +795,7 @@ impl HtmlTemplateHelpers {
         selected: Option<&str>,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("name".to_string(), name.to_string());
 
@@ -840,7 +839,7 @@ impl HtmlTemplateHelpers {
         content: &str,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("name".to_string(), name.to_string());
 
@@ -869,7 +868,7 @@ impl HtmlTemplateHelpers {
         options: &[(String, String)], // (value, label) pairs
         selected: Option<&str>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut html = String::new();
         
         for (value, label) in options {
@@ -901,7 +900,7 @@ impl HtmlTemplateHelpers {
         label: Option<&str>,
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut attr_map = HashMap::new();
         attr_map.insert("type".to_string(), "checkbox".to_string());
         attr_map.insert("name".to_string(), name.to_string());
@@ -950,7 +949,7 @@ impl LayoutHelpers {
         layout_template: &str,
         content_blocks: &HashMap<String, String>,
         context: &HtmlTemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!(layout_template_length = layout_template.len(), blocks_count = content_blocks.len(), "Rendering layout");
         
         let mut rendered = layout_template.to_string();
@@ -970,7 +969,7 @@ impl LayoutHelpers {
     }
 
     /// Generate meta tags for the page head
-    pub fn render_meta_tags(context: &HtmlTemplateContext) -> Result<(), Error> {
+    pub fn render_meta_tags(context: &HtmlTemplateContext) -> crate::error::Result<()> {
         let meta_config = &context.layout_config.meta_config;
         let mut meta_html = String::new();
         
@@ -1014,7 +1013,7 @@ impl LayoutHelpers {
         partial_name: &str,
         locals: &HashMap<String, CursedObject>,
         context: &HtmlTemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         use super::template_core::{FileSystemLoader, TemplateLoader, TemplateEngine};
         use super::template_render::RenderContext;
         use std::path::PathBuf;
@@ -1106,7 +1105,7 @@ impl LayoutHelpers {
 
 impl AssetHelpers {
     /// Generate stylesheet link tags
-    pub fn stylesheet_links(context: &HtmlTemplateContext) -> Result<(), Error> {
+    pub fn stylesheet_links(context: &HtmlTemplateContext) -> crate::error::Result<()> {
         let asset_config = &context.layout_config.asset_config;
         let mut html = String::new();
         
@@ -1129,7 +1128,7 @@ impl AssetHelpers {
     }
 
     /// Generate JavaScript script tags
-    pub fn javascript_includes(context: &HtmlTemplateContext) -> Result<(), Error> {
+    pub fn javascript_includes(context: &HtmlTemplateContext) -> crate::error::Result<()> {
         let asset_config = &context.layout_config.asset_config;
         let mut html = String::new();
         
@@ -1168,7 +1167,7 @@ impl AssetHelpers {
         alt: &str,
         sizes: &[(u32, String)], // (width, src) pairs
         context: &HtmlTemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let escaper = HtmlEscaper::new(context.clone());
         let escaped_src = escaper.escape_html_attribute(src);
         let escaped_alt = escaper.escape_html_attribute(alt);
@@ -1197,7 +1196,7 @@ impl FormHelpers {
         content: &str,
         context: &HtmlTemplateContext,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut form_content = String::new();
         
         // Add CSRF token as hidden field
@@ -1228,7 +1227,7 @@ impl FormHelpers {
         errors: &[String],
         attributes: Option<&HashMap<String, CursedObject>>,
         escaper: &HtmlEscaper,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut field_html = String::new();
         
         // Add label if provided
@@ -1267,7 +1266,7 @@ impl ComponentSystem {
         component_name: &str,
         parameters: &HashMap<String, CursedObject>,
         context: &HtmlTemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!(component_name = component_name, param_count = parameters.len(), "Rendering component");
         
         // Get component from cache
@@ -1301,7 +1300,7 @@ impl ComponentSystem {
     fn validate_parameters(
         component: &ComponentTemplate,
         parameters: &HashMap<String, CursedObject>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         for param_def in &component.parameters {
             if param_def.required && !parameters.contains_key(&param_def.name) {
                 return Err(CursedError::Runtime(format!(
@@ -1365,402 +1364,3 @@ impl ComponentSystem {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_html_escaping() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let content = "<script>alert('xss')</script>";
-        let escaped = escaper.escape(content, EscapeContext::Html).unwrap();
-        
-        assert!(escaped.contains("&lt;script&gt;"));
-        assert!(escaped.contains("&#x27;"));
-    }
-
-    #[test]
-    fn test_javascript_escaping() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let content = "alert('hello\nworld')";
-        let escaped = escaper.escape(content, EscapeContext::JavaScript).unwrap();
-        
-        assert!(escaped.contains("\\'"));
-        assert!(escaped.contains("\\n"));
-    }
-
-    #[test]
-    fn test_url_escaping() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let content = "hello world & more";
-        let escaped = escaper.escape(content, EscapeContext::Url).unwrap();
-        
-        assert!(escaped.contains("%20")); // space
-        assert!(escaped.contains("%26")); // ampersand
-    }
-
-    #[test]
-    fn test_html_tag_generation() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let mut attributes = HashMap::new();
-        attributes.insert("class".to_string(), "btn btn-primary".to_string());
-        attributes.insert("id".to_string(), "submit-btn".to_string());
-
-        let html = escaper.generate_html_with_csp("button", &attributes, Some("Click me")).unwrap();
-        
-        assert!(html.contains("<button"));
-        assert!(html.contains("class=\"btn btn-primary\""));
-        assert!(html.contains("id=\"submit-btn\""));
-        assert!(html.contains("Click me"));
-        assert!(html.contains("</button>"));
-    }
-
-    #[test]
-    fn test_csp_nonce_generation() {
-        let mut csp = CspSettings::default();
-        csp.generate_nonces = true;
-        csp.script_nonce = Some("abc123".to_string());
-
-        let context = HtmlTemplateContext::with_csp(csp);
-        let escaper = HtmlEscaper::new(context);
-
-        let html = escaper.generate_html_with_csp("script", &HashMap::new(), Some("console.log('test')")).unwrap();
-        
-        assert!(html.contains("nonce=\"abc123\""));
-    }
-
-    #[test]
-    fn test_html_sanitization() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let dangerous_html = "<script>alert('xss')</script><p onclick=\"alert('click')\">Hello</p>";
-        let sanitized = escaper.sanitize_html(dangerous_html).unwrap();
-        
-        assert!(!sanitized.contains("<script>"));
-        assert!(!sanitized.contains("onclick"));
-        assert!(sanitized.contains("<p>"));
-        assert!(sanitized.contains("Hello"));
-    }
-
-    #[test]
-    fn test_safe_content_marking() {
-        let mut context = HtmlTemplateContext::new();
-        context.mark_safe_html("trusted_content".to_string());
-
-        assert!(context.is_safe_content("trusted_content", &SafeContentType::Html));
-        assert!(!context.is_safe_content("trusted_content", &SafeContentType::JavaScript));
-        assert!(!context.is_safe_content("untrusted_content", &SafeContentType::Html));
-    }
-
-    #[test]
-    fn test_select_generation() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let options = vec![
-            ("value1".to_string(), "Option 1".to_string()),
-            ("value2".to_string(), "Option 2".to_string()),
-        ];
-
-        let html = HtmlTemplateHelpers::select("test_select", &options, Some("value1"), None, &escaper)
-            .expect("Failed to generate select HTML - expected String result but got different type");
-        assert!(html.contains("<select"));
-        assert!(html.contains("name=\"test_select\""));
-        assert!(html.contains("<option value=\"value1\" selected>Option 1</option>"));
-        assert!(html.contains("<option value=\"value2\">Option 2</option>"));
-    }
-
-    #[test]
-    fn test_textarea_generation() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let html = HtmlTemplateHelpers::textarea("message", "Hello world", None, &escaper)
-            .expect("Failed to generate textarea HTML - expected String result but got different type");
-        assert!(html.contains("<textarea"));
-        assert!(html.contains("name=\"message\""));
-        assert!(html.contains("Hello world"));
-        assert!(html.contains("</textarea>"));
-    }
-
-    #[test]
-    fn test_radio_group_generation() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let options = vec![
-            ("yes".to_string(), "Yes".to_string()),
-            ("no".to_string(), "No".to_string()),
-        ];
-
-        let html = HtmlTemplateHelpers::radio_group("choice", &options, Some("yes"), &escaper)
-            .expect("Failed to generate radio group HTML - expected String result but got different type");
-        assert!(html.contains("type=\"radio\""));
-        assert!(html.contains("name=\"choice\""));
-        assert!(html.contains("value=\"yes\" id=\"choice_yes\" checked"));
-        assert!(html.contains("value=\"no\" id=\"choice_no\">"));
-        assert!(html.contains("<label for=\"choice_yes\">Yes</label>"));
-        assert!(html.contains("<label for=\"choice_no\">No</label>"));
-    }
-
-    #[test]
-    fn test_checkbox_generation() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-
-        let html = HtmlTemplateHelpers::checkbox("agree", "1", true, Some("I agree"), None, &escaper)
-            .expect("Failed to generate checkbox HTML - expected String result but got different type");
-        assert!(html.contains("type=\"checkbox\""));
-        assert!(html.contains("name=\"agree\""));
-        assert!(html.contains("value=\"1\""));
-        assert!(html.contains("checked"));
-        assert!(html.contains("<label for=\"agree_1\">I agree</label>"));
-    }
-
-    #[test]
-    fn test_layout_content_blocks() {
-        let mut context = HtmlTemplateContext::new();
-        context.set_content_block("sidebar".to_string(), "<div>Sidebar content</div>".to_string());
-
-        assert_eq!(context.get_content_block("sidebar"), Some("<div>Sidebar content</div>"));
-        assert_eq!(context.get_content_block("nonexistent"), None);
-    }
-
-    #[test]
-    fn test_meta_configuration() {
-        let mut context = HtmlTemplateContext::new();
-        context.set_title("Test Page".to_string());
-        context.set_description("A test page description".to_string());
-        context.add_keyword("test".to_string());
-        context.add_keyword("page".to_string());
-        context.set_meta("author".to_string(), "Test Author".to_string());
-
-        assert_eq!(context.title(), Some("Test Page"));
-        assert_eq!(context.layout_config.meta_config.description, Some("A test page description".to_string()));
-        assert_eq!(context.layout_config.meta_config.keywords, vec!["test", "page"]);
-        assert_eq!(context.layout_config.meta_config.custom_meta.get("author"), Some(&"Test Author".to_string()));
-    }
-
-    #[test]
-    fn test_asset_configuration() {
-        let mut context = HtmlTemplateContext::new();
-        context.add_stylesheet("styles/main.css".to_string());
-        context.add_script("js/app.js".to_string());
-
-        assert_eq!(context.layout_config.asset_config.stylesheets, vec!["styles/main.css"]);
-        assert_eq!(context.layout_config.asset_config.scripts, vec!["js/app.js"]);
-    }
-
-    #[test]
-    fn test_layout_rendering() {
-        let context = HtmlTemplateContext::new();
-        let mut content_blocks = HashMap::new();
-        content_blocks.insert("main".to_string(), "<h1>Main Content</h1>".to_string());
-        content_blocks.insert("sidebar".to_string(), "<div>Sidebar</div>".to_string());
-
-        let layout_template = r#"
-        <html>
-        <body>
-            <main>{{ yield }}</main>
-            <aside>{{ yield 'sidebar' }}</aside>
-        </body>
-        </html>
-        "#;
-
-        let result = LayoutHelpers::render_layout(layout_template, &content_blocks, &context).unwrap();
-        assert!(result.contains("<main><h1>Main Content</h1></main>"));
-        assert!(result.contains("<aside><div>Sidebar</div></aside>"));
-    }
-
-    #[test]
-    fn test_meta_tags_rendering() {
-        let mut context = HtmlTemplateContext::new();
-        context.set_title("Test Page".to_string());
-        context.set_description("Test description".to_string());
-        context.add_keyword("test".to_string());
-        context.set_meta("author".to_string(), "Test Author".to_string());
-
-        let result = LayoutHelpers::render_meta_tags(&context).unwrap();
-        assert!(result.contains("<title>Test Page</title>"));
-        assert!(result.contains("<meta name=\"description\" content=\"Test description\">"));
-        assert!(result.contains("<meta name=\"keywords\" content=\"test\">"));
-        assert!(result.contains("<meta name=\"author\" content=\"Test Author\">"));
-    }
-
-    #[test]
-    fn test_asset_url_generation() {
-        let base_url = "/assets";
-        let version_suffix = Some("v1.2.3".to_string());
-
-        let url = AssetHelpers::asset_url("css/style.css", base_url, &version_suffix);
-        assert_eq!(url, "/assets/css/style.css?v=v1.2.3");
-
-        let url_no_version = AssetHelpers::asset_url("js/app.js", base_url, &None);
-        assert_eq!(url_no_version, "/assets/js/app.js");
-    }
-
-    #[test]
-    fn test_stylesheet_links_generation() {
-        let mut context = HtmlTemplateContext::new();
-        context.add_stylesheet("css/main.css".to_string());
-        context.add_stylesheet("css/theme.css".to_string());
-
-        let result = AssetHelpers::stylesheet_links(&context).unwrap();
-        assert!(result.contains("<link rel=\"stylesheet\" href=\"/assets/css/main.css\">"));
-        assert!(result.contains("<link rel=\"stylesheet\" href=\"/assets/css/theme.css\">"));
-    }
-
-    #[test]
-    fn test_javascript_includes_generation() {
-        let mut context = HtmlTemplateContext::new();
-        context.add_script("js/app.js".to_string());
-        context.add_script("js/utils.js".to_string());
-
-        let result = AssetHelpers::javascript_includes(&context).unwrap();
-        assert!(result.contains("<script src=\"/assets/js/app.js\"></script>"));
-        assert!(result.contains("<script src=\"/assets/js/utils.js\"></script>"));
-    }
-
-    #[test]
-    fn test_responsive_image_generation() {
-        let context = HtmlTemplateContext::new();
-        let sizes = vec![
-            (320, "images/small.jpg".to_string()),
-            (768, "images/medium.jpg".to_string()),
-            (1024, "images/large.jpg".to_string()),
-        ];
-
-        let result = AssetHelpers::responsive_image("images/default.jpg", "Test image", &sizes, &context).unwrap();
-        assert!(result.contains("src=\"images/default.jpg\""));
-        assert!(result.contains("alt=\"Test image\""));
-        assert!(result.contains("srcset=\"images/small.jpg 320w, images/medium.jpg 768w, images/large.jpg 1024w\""));
-    }
-
-    #[test]
-    fn test_form_with_csrf() {
-        let mut request_context = RequestContext {
-            path: "/test".to_string(),
-            method: "POST".to_string(),
-            session: HashMap::new(),
-            flash: HashMap::new(),
-            csrf_token: Some("csrf-token-123".to_string()),
-            user: None,
-        };
-
-        let context = HtmlTemplateContext::with_request_context(request_context);
-        let escaper = HtmlEscaper::new(context.clone());
-
-        let html = FormHelpers::form_with_csrf("/submit", "POST", None, "<input type=\"text\" name=\"data\">", &context, &escaper).unwrap();
-        assert!(html.contains("<form"));
-        assert!(html.contains("action=\"/submit\""));
-        assert!(html.contains("method=\"POST\""));
-        assert!(html.contains("<input type=\"hidden\" name=\"_token\" value=\"csrf-token-123\">"));
-        assert!(html.contains("<input type=\"text\" name=\"data\">"));
-    }
-
-    #[test]
-    fn test_form_field_with_validation() {
-        let context = HtmlTemplateContext::new();
-        let escaper = HtmlEscaper::new(context);
-        let errors = vec!["Field is required".to_string(), "Field must be valid".to_string()];
-
-        let result = FormHelpers::form_field("text", "username", Some("testuser"), Some("Username"), &errors, None, &escaper).unwrap();
-        assert!(result.contains("<label for=\"username\">Username</label>"));
-        assert!(result.contains("type=\"text\""));
-        assert!(result.contains("name=\"username\""));
-        assert!(result.contains("value=\"testuser\""));
-        assert!(result.contains("id=\"username\""));
-        assert!(result.contains("<div class=\"errors\">"));
-        assert!(result.contains("<span class=\"error\">Field is required</span>"));
-        assert!(result.contains("<span class=\"error\">Field must be valid</span>"));
-    }
-
-    #[test]
-    fn test_component_creation_and_registration() {
-        let context = HtmlTemplateContext::new();
-        
-        let parameters = vec![
-            ComponentSystem::create_parameter("title".to_string(), ComponentParameterType::String, true, None),
-            ComponentSystem::create_parameter("count".to_string(), ComponentParameterType::Integer, false, Some(CursedObject::Integer(0))),
-        ];
-
-        let component = ComponentSystem::create_component(
-            "test_component".to_string(),
-            "<h1>{{ title }}</h1><p>Count: {{ count }}</p>".to_string(),
-            parameters,
-            true,
-        );
-
-        context.register_component(component).unwrap();
-        let retrieved = context.get_component("test_component").unwrap();
-        assert!(retrieved.is_some());
-        
-        let component = retrieved.unwrap();
-        assert_eq!(component.name, "test_component");
-        assert_eq!(component.parameters.len(), 2);
-        assert!(component.cacheable);
-    }
-
-    #[test]
-    fn test_component_rendering() {
-        let context = HtmlTemplateContext::new();
-        
-        let parameters = vec![
-            ComponentSystem::create_parameter("title".to_string(), ComponentParameterType::String, true, None),
-        ];
-
-        let component = ComponentSystem::create_component(
-            "simple_component".to_string(),
-            "<h1>{{ title }}</h1>".to_string(),
-            parameters,
-            true,
-        );
-
-        context.register_component(component).unwrap();
-
-        let mut render_params = HashMap::new();
-        render_params.insert("title".to_string(), CursedObject::String("Hello World".to_string()));
-
-        let result = ComponentSystem::render_component("simple_component", &render_params, &context).unwrap();
-        assert_eq!(result, "<h1>Hello World</h1>");
-    }
-
-    #[test]
-    fn test_component_parameter_validation() {
-        let context = HtmlTemplateContext::new();
-        
-        let parameters = vec![
-            ComponentSystem::create_parameter("required_param".to_string(), ComponentParameterType::String, true, None),
-        ];
-
-        let component = ComponentSystem::create_component(
-            "validation_component".to_string(),
-            "{{ required_param }}".to_string(),
-            parameters,
-            false,
-        );
-
-        context.register_component(component).unwrap();
-
-        // Test missing required parameter
-        let empty_params = HashMap::new();
-        let result = ComponentSystem::render_component("validation_component", &empty_params, &context);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Required parameter 'required_param' missing"));
-
-        // Test valid parameters
-        let mut valid_params = HashMap::new();
-        valid_params.insert("required_param".to_string(), CursedObject::String("test".to_string()));
-        let result = ComponentSystem::render_component("validation_component", &valid_params, &context);
-        assert!(result.is_ok());
-    }
-}

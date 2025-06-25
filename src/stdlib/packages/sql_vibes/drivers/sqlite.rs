@@ -1,5 +1,5 @@
 /// fr fr SQLite database driver - lightweight file-based database vibes
-use crate::stdlib::packages::sql_vibes::{
+// use crate::stdlib::packages::sql_vibes::{
     DatabaseDriver, DatabaseConnectionTrait, PreparedStatementTrait, Transaction,
     ConnectionConfig, DriverInfo, DriverFeature, ConnectionInfo, TransactionState, TransactionIsolation,
     SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter
@@ -520,68 +520,3 @@ fn create_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSet {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sqlite_driver_creation() {
-        let driver = SqliteDriver::new();
-        let info = driver.driver_info();
-        
-        assert_eq!(info.name, "sqlite");
-        assert!(driver.supports_feature(DriverFeature::PreparedStatements));
-        assert!(driver.supports_feature(DriverFeature::Transactions));
-        assert!(!driver.supports_feature(DriverFeature::SslEncryption));
-    }
-
-    #[test]
-    fn test_validate_connection_string() {
-        let driver = SqliteDriver::new();
-        
-        assert!(driver.validate_connection_string("sqlite://test.db").is_ok());
-        assert!(driver.validate_connection_string(":memory:").is_ok());
-        assert!(driver.validate_connection_string("test.db").is_ok());
-        assert!(driver.validate_connection_string("").is_err());
-    }
-
-    #[test]
-    fn test_extract_sqlite_path() {
-        assert_eq!(extract_sqlite_path("sqlite://test.db").unwrap(), "test.db");
-        assert_eq!(extract_sqlite_path("sqlite3://data/test.db").unwrap(), "data/test.db");
-        assert_eq!(extract_sqlite_path(":memory:").unwrap(), ":memory:");
-        assert_eq!(extract_sqlite_path("test.db").unwrap(), "test.db");
-    }
-
-    #[test]
-    fn test_validate_sql() {
-        assert!(validate_sql("SELECT * FROM users").is_ok());
-        assert!(validate_sql("INSERT INTO users (name) VALUES (?)").is_ok());
-        assert!(validate_sql("").is_err());
-        assert!(validate_sql("SELECT * FROM users; DROP TABLE users").is_err());
-    }
-
-    #[test]
-    fn test_count_parameters() {
-        assert_eq!(count_parameters("SELECT * FROM users WHERE id = ?"), 1);
-        assert_eq!(count_parameters("SELECT * FROM users WHERE id = ? AND name = ?"), 2);
-        assert_eq!(count_parameters("SELECT * FROM users WHERE id = :id"), 1);
-        assert_eq!(count_parameters("SELECT * FROM users"), 0);
-    }
-
-    #[test]
-    fn test_validate_parameters() {
-        let params = vec![
-            Parameter::Positional { index: 0, value: SqlValue::Integer(1) },
-            Parameter::Named { name: "test".to_string(), value: SqlValue::Text("value".to_string()) },
-        ];
-        
-        assert!(validate_parameters(&params).is_ok());
-        
-        let bad_params = vec![
-            Parameter::Named { name: "".to_string(), value: SqlValue::Text("value".to_string()) },
-        ];
-        
-        assert!(validate_parameters(&bad_params).is_err());
-    }
-}

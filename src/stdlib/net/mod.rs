@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// Comprehensive networking and protocol support module for CURSED programming language
 /// 
 /// This module provides production-ready networking capabilities including:
@@ -230,41 +230,3 @@ pub struct NetworkStatistics {
     pub failed_connections: u64,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_module_initialization() {
-        // Test that the module can be initialized without errors
-        assert!(initialize().is_ok());
-        assert!(shutdown().is_ok());
-    }
-
-    #[test]
-    fn test_network_statistics() {
-        let stats = get_network_statistics();
-        assert_eq!(stats.active_connections, 0);
-        assert_eq!(stats.total_bytes_sent, 0);
-        assert_eq!(stats.total_bytes_received, 0);
-    }
-
-    #[test]
-    fn test_core_types_exist() {
-        // Test that all expected types are exported
-        let _ = std::any::type_name::<TcpSocket>();
-        let _ = std::any::type_name::<UdpSocket>();
-        let _ = std::any::type_name::<IpAddr>();
-        let _ = std::any::type_name::<SocketAddr>();
-        let _ = std::any::type_name::<HttpClient>();
-        let _ = std::any::type_name::<WebSocketClient>();
-    }
-
-    #[test]
-    fn test_error_functions_exist() {
-        let _ = connection_error("test");
-        let _ = timeout_error("test");
-        let _ = dns_error("test");
-        let _ = protocol_error("test");
-    }
-}

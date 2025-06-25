@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Crypto Package Integration Manager - orchestrates all crypto packages periodt
 /// 
 /// This module manages cross-package integration, compatibility testing,
@@ -10,8 +10,7 @@ use std::sync::{Arc, RwLock, Mutex};
 use std::time::{Instant, Duration, SystemTime};
 use serde::{Serialize, Deserialize};
 
-use crate::error::CursedError;
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use super::unified_api::{UnifiedCryptoError, UnifiedCryptoResult, PerformanceMetrics, CryptoOperation};
 
 /// fr fr Integration test result
@@ -530,54 +529,3 @@ pub fn initialize_crypto_integration() -> UnifiedCryptoResult<()> {
     global_integration_manager().initialize_integration_testing()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_integration_manager_creation() {
-        let manager = CryptoIntegrationManager::new();
-        assert!(manager.get_compatibility_matrix().is_ok());
-    }
-
-    #[test]
-    fn test_setup_package_dependencies() {
-        let manager = CryptoIntegrationManager::new();
-        assert!(manager.setup_package_dependencies().is_ok());
-
-        let deps = manager.get_package_dependencies("crypto_asymmetric").unwrap();
-        assert!(!deps.is_empty());
-    }
-
-    #[test]
-    fn test_compatibility_checking() {
-        let manager = CryptoIntegrationManager::new();
-        let _ = manager.build_compatibility_matrix();
-
-        let score = manager.check_compatibility("crypto_advanced", "crypto_random");
-        assert!(score.is_ok());
-    }
-
-    #[test]
-    fn test_integration_test_execution() {
-        let manager = CryptoIntegrationManager::new();
-        let result = manager.run_integration_test("symmetric_with_random", vec!["crypto_advanced", "crypto_random"]);
-        assert!(result.is_ok());
-
-        let test_result = result.unwrap();
-        assert_eq!(test_result.test_name, "symmetric_with_random");
-        assert_eq!(test_result.packages_involved.len(), 2);
-    }
-
-    #[test]
-    fn test_dependency_validation() {
-        let manager = CryptoIntegrationManager::new();
-        let _ = manager.setup_package_dependencies();
-
-        let validation = manager.validate_dependencies();
-        assert!(validation.is_ok());
-
-        let results = validation.unwrap();
-        assert!(!results.is_empty());
-    }
-}

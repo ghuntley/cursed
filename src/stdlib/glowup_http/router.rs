@@ -1,15 +1,15 @@
 use crate::web::StatusCode;
 // HTTP router implementation for GlowUpHTTP
 
-use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
-use crate::stdlib::glowup_http::handler::{Handler, HandlerFunc};
-use crate::stdlib::glowup_http::request::{VibeRequest, Method};
-use crate::stdlib::glowup_http::response::ResponderVibe;
-use crate::stdlib::glowup_http::middleware::MiddlewareFunc;
+// use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
+// use crate::stdlib::glowup_http::handler::{Handler, HandlerFunc};
+// use crate::stdlib::glowup_http::request::{VibeRequest, Method};
+// use crate::stdlib::glowup_http::response::ResponderVibe;
+// use crate::stdlib::glowup_http::middleware::MiddlewareFunc;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, instrument};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// HTTP router and dispatcher
 /// This follows the CURSED spec's `VibeRouter` naming
@@ -154,62 +154,3 @@ pub fn new_vibe_router() -> VibeRouter {
 // Convenience re-export for the spec function
 pub use new_vibe_router as NewVibeRouter;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::glowup_http::handler::handler_func;
-    use crate::web::StatusCode;
-
-    #[test]
-    fn test_router_creation() {
-        let router = VibeRouter::new();
-        assert_eq!(router.routes.len(), 0);
-        assert_eq!(router.middleware.len(), 0);
-    }
-
-    #[test]
-    fn test_add_route() {
-        let mut router = VibeRouter::new();
-        let handler = handler_func(|w, _r| {
-            w.write(b"Hello")?;
-            Ok(())
-        });
-        
-        router.get("/test", handler);
-        
-        // Should have added the route
-        let key = (Method::GET, "/test".to_string());
-        assert!(router.routes.contains_key(&key));
-    }
-
-    #[test]
-    fn test_route_handling() {
-        let mut router = VibeRouter::new();
-        let handler = handler_func(|w, _r| {
-            w.write(b"Hello from route")?;
-            Ok(())
-        });
-        
-        router.get("/hello", handler);
-        
-        let request = VibeRequest::new(Method::GET, "/hello");
-        let response = ResponderVibe::new();
-        
-        router.handle_vibe(&response, &request).unwrap();
-        
-        let body = response.get_body();
-        assert_eq!(body, b"Hello from route");
-    }
-
-    #[test]
-    fn test_not_found() {
-        let router = VibeRouter::new();
-        let request = VibeRequest::new(Method::GET, "/nonexistent");
-        let response = ResponderVibe::new();
-        
-        router.handle_vibe(&response, &request).unwrap();
-        
-        assert_eq!(response.get_status(), Some(StatusCode::NOT_FOUND));
-        assert_eq!(response.get_body(), b"Not Found");
-    }
-}

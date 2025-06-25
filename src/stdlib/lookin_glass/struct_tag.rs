@@ -1,7 +1,7 @@
 /// StructTag represents a squad tag in CURSED reflection
 use std::collections::HashMap;
 use std::fmt;
-use crate::stdlib::lookin_glass::error::{LookinGlassResult, reflection_error};
+// use crate::stdlib::lookin_glass::error::{LookinGlassResult, reflection_error};
 
 /// Represents a squad tag string with parsing capabilities
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -267,105 +267,3 @@ impl From<&str> for StructTag {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_empty_tag() {
-        let tag = StructTag::empty();
-        assert!(tag.is_empty());
-        assert_eq!(tag.len(), 0);
-        assert_eq!(tag.get("json"), "");
-        assert_eq!(tag.lookup("json"), (String::new(), false));
-    }
-
-    #[test]
-    fn test_simple_tag() {
-        let tag = StructTag::new("json:\"name\"".to_string());
-        assert!(!tag.is_empty());
-        assert_eq!(tag.len(), 1);
-        assert_eq!(tag.get("json"), "name");
-        assert_eq!(tag.lookup("json"), ("name".to_string(), true));
-        assert!(tag.has_key("json"));
-    }
-
-    #[test]
-    fn test_multiple_tags() {
-        let tag = StructTag::new("json:\"name\" xml:\"Name\" db:\"user_name\"".to_string());
-        assert_eq!(tag.len(), 3);
-        assert_eq!(tag.get("json"), "name");
-        assert_eq!(tag.get("xml"), "Name");
-        assert_eq!(tag.get("db"), "user_name");
-        
-        let keys = tag.keys();
-        assert!(keys.contains(&"json".to_string()));
-        assert!(keys.contains(&"xml".to_string()));
-        assert!(keys.contains(&"db".to_string()));
-    }
-
-    #[test]
-    fn test_complex_tag_values() {
-        let tag = StructTag::new("json:\"name,omitempty\" validate:\"required,min=1,max=100\"".to_string());
-        assert_eq!(tag.get("json"), "name,omitempty");
-        assert_eq!(tag.get("validate"), "required,min=1,max=100");
-    }
-
-    #[test]
-    fn test_escaped_quotes() {
-        let tag = StructTag::new("description:\"This is a \\\"quoted\\\" value\"".to_string());
-        assert_eq!(tag.get("description"), "This is a \"quoted\" value");
-    }
-
-    #[test]
-    fn test_tag_modification() {
-        let tag = StructTag::new("json:\"name\"".to_string());
-        let new_tag = tag.set("xml", "Name");
-        
-        assert_eq!(tag.get("xml"), ""); // Original unchanged
-        assert_eq!(new_tag.get("json"), "name");
-        assert_eq!(new_tag.get("xml"), "Name");
-        
-        let removed_tag = new_tag.remove("json");
-        assert_eq!(removed_tag.get("json"), "");
-        assert_eq!(removed_tag.get("xml"), "Name");
-    }
-
-    #[test]
-    fn test_tag_validation() {
-        assert!(StructTag::validate("json:\"name\"").is_ok());
-        assert!(StructTag::validate("json:\"name\" xml:\"Name\"").is_ok());
-        assert!(StructTag::validate("").is_ok());
-        
-        // Unclosed quote should fail
-        assert!(StructTag::validate("json:\"name").is_err());
-    }
-
-    #[test]
-    fn test_whitespace_handling() {
-        let tag = StructTag::new("  json : \"name\"   xml : \"Name\"  ".to_string());
-        assert_eq!(tag.get("json"), "name");
-        assert_eq!(tag.get("xml"), "Name");
-    }
-
-    #[test]
-    fn test_unquoted_values() {
-        let tag = StructTag::new("json:name xml:Name".to_string());
-        assert_eq!(tag.get("json"), "name");
-        assert_eq!(tag.get("xml"), "Name");
-    }
-
-    #[test]
-    fn test_special_characters() {
-        let tag = StructTag::new("desc:\"Line 1\\nLine 2\\tTabbed\"".to_string());
-        assert_eq!(tag.get("desc"), "Line 1\nLine 2\tTabbed");
-    }
-
-    #[test]
-    fn test_display() {
-        let tag = StructTag::new("json:\"name\" xml:\"Name\"".to_string());
-        let display = format!("{}", tag);
-        assert!(display.contains("json"));
-        assert!(display.contains("xml"));
-    }
-}

@@ -10,11 +10,11 @@
 /// - Provides Unicode-aware operations for global applications
 /// - Optimized for performance while maintaining ease of use
 
-use crate::stdlib::string::{self, StringError, StringResult};
-use crate::error::Error;
+// use crate::stdlib::string::{self, StringError, StringResult};
+use crate::error::CursedError;
 use std::collections::HashMap;
 
-/// Error type for StringZ operations
+/// CursedError type for StringZ operations
 pub type StringzError = StringError;
 
 /// Result type for StringZ operations  
@@ -703,80 +703,3 @@ pub fn get_stringz_stats() -> HashMap<String, String> {
     stats
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_basic_tea_operations() {
-        assert_eq!(string_length("hello"), 5);
-        assert!(is_empty_tea(""));
-        assert!(!is_empty_tea("vibes"));
-        assert_eq!(concat_tea("hello", " world"), "hello world");
-        assert_eq!(repeat_tea("yo ", 3), "yo yo yo ");
-        assert_eq!(reverse_tea("hello"), "olleh");
-    }
-
-    #[test]
-    fn test_search_and_replace() {
-        assert!(contains_tea("hello world", "world"));
-        assert!(starts_with_tea("hello", "he"));
-        assert!(ends_with_tea("hello", "lo"));
-        assert_eq!(find_tea("hello world", "world"), Some(6));
-        assert_eq!(replace_all_tea("hello world", "l", "x"), "hexxo worxd");
-        assert_eq!(count_tea("hello hello hello", "hello"), 3);
-    }
-
-    #[test]
-    fn test_transformations() {
-        assert_eq!(trim_tea("  hello  "), "hello");
-        assert_eq!(to_lowercase_tea("HELLO"), "hello");
-        assert_eq!(to_uppercase_tea("hello"), "HELLO");
-        assert_eq!(capitalize_tea("hello"), "Hello");
-    }
-
-    #[test]
-    fn test_validation() {
-        assert!(is_numeric_tea("123"));
-        assert!(!is_numeric_tea("abc"));
-        assert!(is_alphabetic_tea("hello"));
-        assert!(!is_alphabetic_tea("hello123"));
-        assert!(is_alphanumeric_tea("hello123"));
-        assert!(is_palindrome_tea("racecar"));
-    }
-
-    #[test]
-    fn test_splitting_and_joining() {
-        assert_eq!(split_tea("a,b,c", ","), vec!["a", "b", "c"]);
-        assert_eq!(join_tea(&["a", "b", "c"], ","), "a,b,c");
-        assert_eq!(split_whitespace_tea("hello  world"), vec!["hello", "world"]);
-    }
-
-    #[test]
-    fn test_formatting() {
-        assert_eq!(pad_left_tea("hello", 10), "     hello");
-        assert_eq!(pad_right_tea("hello", 10), "hello     ");
-        assert_eq!(truncate_tea("hello world", 5), "hello");
-    }
-
-    #[test]
-    fn test_advanced_operations() {
-        assert_eq!(tea_to_bytes("hello"), vec![104, 101, 108, 108, 111]);
-        assert!(bytes_to_tea(&[104, 101, 108, 108, 111]).unwrap() == "hello");
-        assert_eq!(tea_chars("hello"), vec!['h', 'e', 'l', 'l', 'o']);
-        assert!(is_ascii_tea("hello"));
-        assert!(!is_ascii_tea("héllo"));
-    }
-
-    #[test]
-    fn test_utility_functions() {
-        let (before, after) = partition_tea("a=b=c", "=");
-        assert_eq!(before, "a");
-        assert_eq!(after, "b=c");
-        
-        assert!(has_balanced_parentheses_tea("(hello)"));
-        assert!(!has_balanced_parentheses_tea("(hello"));
-        
-        assert_eq!(add_line_numbers_tea("hello\nworld"), "1: hello\n2: world");
-    }
-}

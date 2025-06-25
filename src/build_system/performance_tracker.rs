@@ -3,7 +3,7 @@
 /// Provides comprehensive performance tracking, compilation metrics,
 /// and build time analysis for the CURSED build system.
 
-use crate::error::{Error, Result};
+use crate::error::{CursedError, Result};
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock};
@@ -77,7 +77,7 @@ impl BuildPerformanceTracker {
         let mut current = self.current_build.lock().unwrap();
         
         let tracking = current.take()
-            .ok_or_else(|| Error::Internal("No build currently being tracked".to_string()))?;
+            .ok_or_else(|| CursedError::Internal("No build currently being tracked".to_string()))?;
         
         let total_duration = tracking.start_time.elapsed();
         
@@ -207,7 +207,7 @@ impl BuildPerformanceTracker {
             }
         }
         
-        Err(Error::Internal(format!("Phase not found or no active build: {}", phase_name)))
+        Err(CursedError::Internal(format!("Phase not found or no active build: {}", phase_name)))
     }
     
     /// Record file compilation

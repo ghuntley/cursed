@@ -1,6 +1,6 @@
 /// HTTP request types for CURSED networking
 
-use crate::stdlib::net::http::{Method, HttpHeaders};
+// use crate::stdlib::net::http::{Method, HttpHeaders};
 
 /// HTTP request representation
 #[derive(Debug, Clone)]

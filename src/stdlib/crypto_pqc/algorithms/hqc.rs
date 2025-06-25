@@ -2,7 +2,7 @@
 // 
 // HQC is a code-based KEM using Hamming quasi-cyclic codes.
 
-use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 use super::KeyEncapsulation;
 
 // Placeholder structures

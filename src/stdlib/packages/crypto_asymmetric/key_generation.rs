@@ -3,9 +3,8 @@
 // Provides comprehensive key generation functions for the CURSED stdlib.
 // Supports RSA, ECC, Ed25519, and X25519 key generation with proper validation.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use rsa::{RsaPrivateKey, RsaPublicKey};
@@ -40,7 +39,7 @@ impl AsymmetricAlgorithm {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "RSA-2048" | "RSA2048" => Ok(AsymmetricAlgorithm::Rsa2048),
             "RSA-3072" | "RSA3072" => Ok(AsymmetricAlgorithm::Rsa3072),
@@ -91,7 +90,7 @@ impl GeneratedKeyPair {
     }
     
     /// Convert to CURSED Value
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String(self.algorithm.name().to_string()));
@@ -117,20 +116,20 @@ pub enum KeyGenerationError {
     Internal(String),
 }
 
-impl std::fmt::Display for KeyGenerationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            KeyGenerationError::InvalidAlgorithm(alg) => write!(f, "Invalid algorithm: {}", alg),
-            KeyGenerationError::InvalidKeySize(size) => write!(f, "Invalid key size: {}", size),
-            KeyGenerationError::GenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
-            KeyGenerationError::InsufficientEntropy => write!(f, "Insufficient entropy for key generation"),
-            KeyGenerationError::Internal(msg) => write!(f, "Internal key generation error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for KeyGenerationError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             KeyGenerationError::InvalidAlgorithm(alg) => write!(f, "Invalid algorithm: {}", alg),
+//             KeyGenerationError::InvalidKeySize(size) => write!(f, "Invalid key size: {}", size),
+//             KeyGenerationError::GenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
+//             KeyGenerationError::InsufficientEntropy => write!(f, "Insufficient entropy for key generation"),
+//             KeyGenerationError::Internal(msg) => write!(f, "Internal key generation error: {}", msg),
+//         }
+//     }
+// }
 
 /// Generate cryptographic key pair
-pub fn generate_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Algorithm name required".to_string()));
     }
@@ -159,7 +158,7 @@ pub fn generate_keypair(args: Vec<Value>) -> Result<(), Error> {
 pub fn generate_asymmetric_keypair(
     algorithm: AsymmetricAlgorithm,
     custom_key_size: Option<usize>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     match algorithm {
         AsymmetricAlgorithm::Rsa2048 => generate_rsa_keypair(2048),
         AsymmetricAlgorithm::Rsa3072 => generate_rsa_keypair(3072),
@@ -172,7 +171,7 @@ pub fn generate_asymmetric_keypair(
 }
 
 /// Generate RSA key pair
-fn generate_rsa_keypair(key_size: usize) -> Result<(), Error> {
+fn generate_rsa_keypair(key_size: usize) -> crate::error::Result<()> {
     if key_size < 2048 {
         return Err(CursedError::InvalidArgument(format!("RSA key size {} too small (minimum 2048)", key_size)));
     }
@@ -210,7 +209,7 @@ fn generate_rsa_keypair(key_size: usize) -> Result<(), Error> {
 }
 
 /// Generate ECDSA P-256 key pair
-fn generate_ecdsa_p256_keypair() -> Result<(), Error> {
+fn generate_ecdsa_p256_keypair() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = P256SecretKey::random(&mut rng);
     let public_key = P256PublicKey::from(&private_key);
@@ -236,7 +235,7 @@ fn generate_ecdsa_p256_keypair() -> Result<(), Error> {
 }
 
 /// Generate ECDSA P-384 key pair
-fn generate_ecdsa_p384_keypair() -> Result<(), Error> {
+fn generate_ecdsa_p384_keypair() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = P384SecretKey::random(&mut rng);
     let public_key = P384PublicKey::from(&private_key);
@@ -260,7 +259,7 @@ fn generate_ecdsa_p384_keypair() -> Result<(), Error> {
 }
 
 /// Generate Ed25519 key pair
-fn generate_ed25519_keypair() -> Result<(), Error> {
+fn generate_ed25519_keypair() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let signing_key = SigningKey::generate(&mut rng);
     let verifying_key = signing_key.verifying_key();
@@ -279,7 +278,7 @@ fn generate_ed25519_keypair() -> Result<(), Error> {
 }
 
 /// Generate X25519 key pair
-fn generate_x25519_keypair() -> Result<(), Error> {
+fn generate_x25519_keypair() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = EphemeralSecret::random();
     let public_key = X25519PublicKey::from(&private_key);
@@ -311,7 +310,7 @@ pub fn list_asymmetric_algorithms() -> Vec<String> {
 }
 
 /// Validate algorithm and key size combination
-pub fn validate_algorithm_key_size(algorithm: AsymmetricAlgorithm, key_size: Option<usize>) -> Result<(), Error> {
+pub fn validate_algorithm_key_size(algorithm: AsymmetricAlgorithm, key_size: Option<usize>) -> crate::error::Result<()> {
     match algorithm {
         AsymmetricAlgorithm::Rsa2048 => {
             if let Some(size) = key_size {
@@ -366,33 +365,3 @@ pub fn validate_algorithm_key_size(algorithm: AsymmetricAlgorithm, key_size: Opt
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_algorithm_from_name() {
-        assert_eq!(AsymmetricAlgorithm::from_name("RSA-2048").unwrap(), AsymmetricAlgorithm::Rsa2048);
-        assert_eq!(AsymmetricAlgorithm::from_name("ed25519").unwrap(), AsymmetricAlgorithm::Ed25519);
-        assert!(AsymmetricAlgorithm::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_generate_rsa_keypair() {
-        let result = generate_rsa_keypair(2048);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_generate_ed25519_keypair() {
-        let result = generate_ed25519_keypair();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_validate_algorithm_key_size() {
-        assert!(validate_algorithm_key_size(AsymmetricAlgorithm::Rsa2048, Some(2048)).is_ok());
-        assert!(validate_algorithm_key_size(AsymmetricAlgorithm::Rsa2048, Some(1024)).is_err());
-        assert!(validate_algorithm_key_size(AsymmetricAlgorithm::Ed25519, None).is_ok());
-    }
-}

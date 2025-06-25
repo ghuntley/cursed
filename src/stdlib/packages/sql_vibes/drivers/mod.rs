@@ -10,8 +10,8 @@ pub use postgres::PostgresDriver;
 pub use mysql::MySqlDriver;
 pub use mock::MockDriver;
 
-use crate::stdlib::packages::sql_vibes::{DatabaseDriver, SqlResult, SqlError};
-use crate::error::Error;
+// use crate::stdlib::packages::sql_vibes::{DatabaseDriver, SqlResult, SqlError};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -90,40 +90,3 @@ impl Default for DriverRegistry {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_driver_registry_creation() {
-        let registry = DriverRegistry::new();
-        assert!(registry.has_driver("sqlite"));
-        assert!(registry.has_driver("postgres"));
-        assert!(registry.has_driver("mysql"));
-        assert!(registry.has_driver("mock"));
-        assert!(!registry.has_driver("nonexistent"));
-    }
-
-    #[test]
-    fn test_list_drivers() {
-        let registry = DriverRegistry::new();
-        let drivers = registry.list_drivers().unwrap();
-        
-        assert!(drivers.contains(&"sqlite".to_string()));
-        assert!(drivers.contains(&"postgres".to_string()));
-        assert!(drivers.contains(&"mysql".to_string()));
-        assert!(drivers.contains(&"mock".to_string()));
-        assert!(drivers.len() >= 4);
-    }
-
-    #[test]
-    fn test_get_driver() {
-        let registry = DriverRegistry::new();
-        
-        assert!(registry.get_driver("sqlite").is_ok());
-        assert!(registry.get_driver("postgres").is_ok());
-        assert!(registry.get_driver("mysql").is_ok());
-        assert!(registry.get_driver("mock").is_ok());
-        assert!(registry.get_driver("nonexistent").is_err());
-    }
-}

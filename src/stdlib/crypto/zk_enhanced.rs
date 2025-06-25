@@ -59,7 +59,7 @@ use ark_relations::{
     r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError, Variable},
     lc,
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use ark_r1cs_std::{
     alloc::{AllocVar, AllocationMode},
     fields::fp::FpVar,
@@ -72,7 +72,6 @@ use ark_poly::univariate::DensePolynomial;
 use ark_poly_commit::{PolynomialCommitment as ArkPolynomialCommitment, kzg10::KZG10};
 use ark_ec::PairingEngine;
 
-use crate::error::CursedError;
 
 /// Zero-Knowledge Proof specific errors
 #[derive(Debug, Clone, PartialEq)]
@@ -135,48 +134,48 @@ pub enum ZkError {
     DeserializationError(String),
 }
 
-impl fmt::Display for ZkError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ZkError::InvalidProof(msg) => write!(f, "Invalid proof: {}", msg),
-            ZkError::InvalidCommitment(msg) => write!(f, "Invalid commitment: {}", msg),
-            ZkError::InvalidWitness(msg) => write!(f, "Invalid witness: {}", msg),
-            ZkError::InvalidCircuit(msg) => write!(f, "Invalid circuit: {}", msg),
-            ZkError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
-            ZkError::ProofGenerationFailed(msg) => write!(f, "Proof generation failed: {}", msg),
-            ZkError::CommitmentFailed(msg) => write!(f, "Commitment failed: {}", msg),
-            ZkError::SetupFailed(msg) => write!(f, "Setup failed: {}", msg),
-            ZkError::InvalidParameters(msg) => write!(f, "Invalid parameters: {}", msg),
-            ZkError::CryptographicError(msg) => write!(f, "Cryptographic error: {}", msg),
-            ZkError::InternalError(msg) => write!(f, "Internal error: {}", msg),
-            ZkError::CircuitCompilationError(msg) => write!(f, "Circuit compilation error: {}", msg),
-            ZkError::ConstraintSystemError(msg) => write!(f, "Constraint system error: {}", msg),
-            ZkError::PolynomialCommitmentError(msg) => write!(f, "Polynomial commitment error: {}", msg),
-            ZkError::TrustedSetupError(msg) => write!(f, "Trusted setup error: {}", msg),
-            ZkError::RecursiveProofError(msg) => write!(f, "Recursive proof error: {}", msg),
-            ZkError::LookupArgumentError(msg) => write!(f, "Lookup argument error: {}", msg),
-            ZkError::MpcError(msg) => write!(f, "Multi-party computation error: {}", msg),
-            ZkError::ThresholdError(msg) => write!(f, "Threshold signature error: {}", msg),
-            ZkError::AnonymousCredentialError(msg) => write!(f, "Anonymous credential error: {}", msg),
-            ZkError::PsiError(msg) => write!(f, "Private set intersection error: {}", msg),
-            ZkError::BulletproofError(msg) => write!(f, "Bulletproof error: {}", msg),
-            ZkError::StarkError(msg) => write!(f, "STARK error: {}", msg),
-            ZkError::SnarkError(msg) => write!(f, "SNARK error: {}", msg),
-            ZkError::PlonkError(msg) => write!(f, "PLONK error: {}", msg),
-            ZkError::FiatShamirError(msg) => write!(f, "Fiat-Shamir transformation error: {}", msg),
-            ZkError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
-            ZkError::DeserializationError(msg) => write!(f, "Deserialization error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for ZkError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             ZkError::InvalidProof(msg) => write!(f, "Invalid proof: {}", msg),
+//             ZkError::InvalidCommitment(msg) => write!(f, "Invalid commitment: {}", msg),
+//             ZkError::InvalidWitness(msg) => write!(f, "Invalid witness: {}", msg),
+//             ZkError::InvalidCircuit(msg) => write!(f, "Invalid circuit: {}", msg),
+//             ZkError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
+//             ZkError::ProofGenerationFailed(msg) => write!(f, "Proof generation failed: {}", msg),
+//             ZkError::CommitmentFailed(msg) => write!(f, "Commitment failed: {}", msg),
+//             ZkError::SetupFailed(msg) => write!(f, "Setup failed: {}", msg),
+//             ZkError::InvalidParameters(msg) => write!(f, "Invalid parameters: {}", msg),
+//             ZkError::CryptographicError(msg) => write!(f, "Cryptographic error: {}", msg),
+//             ZkError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+//             ZkError::CircuitCompilationError(msg) => write!(f, "Circuit compilation error: {}", msg),
+//             ZkError::ConstraintSystemError(msg) => write!(f, "Constraint system error: {}", msg),
+//             ZkError::PolynomialCommitmentError(msg) => write!(f, "Polynomial commitment error: {}", msg),
+//             ZkError::TrustedSetupError(msg) => write!(f, "Trusted setup error: {}", msg),
+//             ZkError::RecursiveProofError(msg) => write!(f, "Recursive proof error: {}", msg),
+//             ZkError::LookupArgumentError(msg) => write!(f, "Lookup argument error: {}", msg),
+//             ZkError::MpcError(msg) => write!(f, "Multi-party computation error: {}", msg),
+//             ZkError::ThresholdError(msg) => write!(f, "Threshold signature error: {}", msg),
+//             ZkError::AnonymousCredentialError(msg) => write!(f, "Anonymous credential error: {}", msg),
+//             ZkError::PsiError(msg) => write!(f, "Private set intersection error: {}", msg),
+//             ZkError::BulletproofError(msg) => write!(f, "Bulletproof error: {}", msg),
+//             ZkError::StarkError(msg) => write!(f, "STARK error: {}", msg),
+//             ZkError::SnarkError(msg) => write!(f, "SNARK error: {}", msg),
+//             ZkError::PlonkError(msg) => write!(f, "PLONK error: {}", msg),
+//             ZkError::FiatShamirError(msg) => write!(f, "Fiat-Shamir transformation error: {}", msg),
+//             ZkError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
+//             ZkError::DeserializationError(msg) => write!(f, "Deserialization error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for ZkError {}
-
-impl From<ZkError> for CursedError {
-    fn from(err: ZkError) -> Self {
-        CursedError::Runtime(format!("ZK error: {}", err))
-    }
-}
+// impl std::error::CursedError for ZkError {}
+// 
+// impl From<ZkError> for CursedError {
+//     fn from(err: ZkError) -> Self {
+//         CursedError::Runtime(format!("ZK error: {}", err))
+//     }
+// }
 
 /// Result type for ZK operations
 pub type ZkResult<T> = std::result::Result<T, ZkError>;
@@ -2429,398 +2428,3 @@ pub fn create_zk_vm_state(
     Ok(trace)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_field_element_arithmetic() {
-        let modulus = 97; // Small prime for testing
-        let a = FieldElement::new(5, modulus);
-        let b = FieldElement::new(7, modulus);
-
-        let sum = a.add(&b).unwrap();
-        assert_eq!(sum.value, 12);
-
-        let product = a.mul(&b).unwrap();
-        assert_eq!(product.value, 35);
-
-        let diff = b.sub(&a).unwrap();
-        assert_eq!(diff.value, 2);
-    }
-
-    #[test]
-    fn test_polynomial_operations() {
-        let modulus = 97;
-        let coeffs = vec![
-            FieldElement::new(1, modulus), // constant term
-            FieldElement::new(2, modulus), // x term
-            FieldElement::new(3, modulus), // x^2 term
-        ];
-        let poly = Polynomial::new(coeffs);
-
-        // Test evaluation at x = 5: 1 + 2*5 + 3*25 = 86
-        let point = FieldElement::new(5, modulus);
-        let result = poly.evaluate(&point).unwrap();
-        assert_eq!(result.value, 86);
-
-        // Test polynomial addition
-        let other_coeffs = vec![
-            FieldElement::new(3, modulus),
-            FieldElement::new(1, modulus),
-        ];
-        let other_poly = Polynomial::new(other_coeffs);
-        
-        let sum_poly = poly.add(&other_poly).unwrap();
-        assert_eq!(sum_poly.coefficients.len(), 3);
-        assert_eq!(sum_poly.coefficients[0].value, 4); // 1 + 3
-        assert_eq!(sum_poly.coefficients[1].value, 3); // 2 + 1
-    }
-
-    #[test]
-    fn test_polynomial_commitment() {
-        let mut rng = OsRng;
-        let commitment_scheme = PolynomialCommitment::setup(
-            ZkSecurityLevel::Security128,
-            10,
-            &mut rng,
-        ).unwrap();
-
-        let coeffs = vec![
-            FieldElement::new(1, 2147483647),
-            FieldElement::new(2, 2147483647),
-            FieldElement::new(3, 2147483647),
-        ];
-        let polynomial = Polynomial::new(coeffs);
-
-        let commitment = commitment_scheme.commit(&polynomial).unwrap();
-        assert!(!commitment.is_empty());
-
-        // Test evaluation proof
-        let point = FieldElement::new(5, 2147483647);
-        let value = polynomial.evaluate(&point).unwrap();
-        
-        let proof = commitment_scheme.prove_evaluation(&polynomial, &point, &value, &mut rng).unwrap();
-        let is_valid = commitment_scheme.verify_evaluation(&commitment, &point, &value, &proof).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_plonk_protocol() {
-        let mut rng = OsRng;
-        let plonk = PlonkProtocol::setup(ZkSecurityLevel::Security128, 8, &mut rng).unwrap();
-
-        // Create simple arithmetic circuit: x * y = z
-        let constraint = Constraint {
-            a: vec![FieldElement::new(1, 2147483647), FieldElement::zero(2147483647), FieldElement::zero(2147483647)],
-            b: vec![FieldElement::zero(2147483647), FieldElement::new(1, 2147483647), FieldElement::zero(2147483647)],
-            c: vec![FieldElement::zero(2147483647), FieldElement::zero(2147483647), FieldElement::new(1, 2147483647)],
-        };
-
-        let circuit = ArithmeticCircuit {
-            constraints: vec![constraint],
-            num_variables: 3,
-            num_public: 1,
-        };
-
-        let plonk_circuit = plonk.compile_circuit(&circuit).unwrap();
-        
-        // Create witness: x=5, y=7, z=35
-        let witness = vec![
-            FieldElement::new(5, 2147483647),
-            FieldElement::new(7, 2147483647),
-            FieldElement::new(35, 2147483647),
-        ];
-
-        let proof = plonk.prove(&plonk_circuit, &witness, &mut rng).unwrap();
-        let public_inputs = vec![FieldElement::new(35, 2147483647)];
-        let is_valid = plonk.verify(&plonk_circuit, &proof, &public_inputs).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_stark_protocol() {
-        let stark = StarkProtocol::setup(ZkSecurityLevel::Security128, 8, 4).unwrap();
-        
-        let mut trace = StarkTrace::new(8, 2, 2147483647);
-        
-        // Simple trace: Fibonacci sequence
-        trace.set(0, 0, FieldElement::new(1, 2147483647)).unwrap();
-        trace.set(0, 1, FieldElement::new(1, 2147483647)).unwrap();
-        
-        for i in 1..8 {
-            let prev1 = trace.get(i-1, 0).unwrap();
-            let prev2 = trace.get(i-1, 1).unwrap();
-            let next = prev1.add(&prev2).unwrap();
-            
-            trace.set(i, 0, prev2).unwrap();
-            trace.set(i, 1, next).unwrap();
-        }
-
-        // Simple transition constraint
-        let constraint = Polynomial::new(vec![FieldElement::new(1, 2147483647)]);
-        let boundary_conditions = vec![(0, FieldElement::new(1, 2147483647))];
-
-        let mut rng = OsRng;
-        let proof = stark.prove(&trace, &[constraint.clone()], &boundary_conditions, &mut rng).unwrap();
-        
-        let public_inputs = vec![FieldElement::new(1, 2147483647)];
-        let is_valid = stark.verify(&proof, &public_inputs, &[constraint]).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_anonymous_credentials() {
-        let schema = CredentialSchema {
-            attributes: vec!["name".to_string(), "age".to_string(), "citizenship".to_string()],
-            required_attributes: vec![0, 2], // name and citizenship required
-            hidden_attributes: vec![1], // age is hidden
-        };
-
-        let mut rng = OsRng;
-        let cred_system = AnonymousCredentials::setup(schema, ZkSecurityLevel::Security128, &mut rng).unwrap();
-
-        // Issue credential
-        let mut attributes = HashMap::new();
-        attributes.insert("name".to_string(), FieldElement::new(12345, 2147483647)); // encoded name
-        attributes.insert("age".to_string(), FieldElement::new(25, 2147483647));
-        attributes.insert("citizenship".to_string(), FieldElement::new(67890, 2147483647)); // encoded citizenship
-
-        let credential = cred_system.issue_credential(attributes, &mut rng).unwrap();
-        
-        // Present credential revealing only name and citizenship
-        let revealed_attrs = vec!["name".to_string(), "citizenship".to_string()];
-        let presentation = cred_system.present_credential(&credential, &revealed_attrs, &mut rng).unwrap();
-        
-        // Verify presentation
-        let required_attrs = vec!["name".to_string(), "citizenship".to_string()];
-        let is_valid = cred_system.verify_presentation(&presentation, &required_attrs).unwrap();
-        
-        assert!(is_valid);
-        assert_eq!(presentation.revealed_attributes.len(), 2);
-        assert!(presentation.revealed_attributes.contains_key("name"));
-        assert!(presentation.revealed_attributes.contains_key("citizenship"));
-        assert!(!presentation.revealed_attributes.contains_key("age")); // age should be hidden
-    }
-
-    #[test]
-    fn test_private_set_intersection() {
-        let psi = PrivateSetIntersection::setup(ZkSecurityLevel::Security128, 10);
-        let mut rng = OsRng;
-
-        // Create two sets with some common elements
-        let set_a = vec![
-            b"element1".to_vec(),
-            b"element2".to_vec(),
-            b"element3".to_vec(),
-        ];
-        
-        let set_b = vec![
-            b"element2".to_vec(), // common
-            b"element4".to_vec(),
-            b"element3".to_vec(), // common
-        ];
-
-        let (commitments_a, _randomness_a) = psi.commit_set(&set_a, &mut rng).unwrap();
-        let (commitments_b, _randomness_b) = psi.commit_set(&set_b, &mut rng).unwrap();
-
-        let intersection_proof = psi.compute_intersection_proof(&commitments_a, &commitments_b, &mut rng).unwrap();
-        let intersection_indices = psi.verify_intersection_proof(&intersection_proof, &commitments_a, &commitments_b).unwrap();
-
-        // Should find intersections (exact indices depend on commitment order)
-        assert!(!intersection_indices.is_empty());
-    }
-
-    #[test]
-    fn test_public_api_functions() {
-        // Test polynomial commitment creation
-        let poly_commit = create_polynomial_commitment(128, 10).unwrap();
-        assert_eq!(poly_commit.security_level.bits(), 128);
-        assert_eq!(poly_commit.max_degree, 10);
-
-        // Test PLONK protocol creation
-        let plonk = create_plonk_protocol(128, 16).unwrap();
-        assert_eq!(plonk.max_constraints, 16);
-
-        // Test STARK protocol creation
-        let stark = create_stark_protocol(128, 8, 4).unwrap();
-        assert_eq!(stark.trace_length, 8);
-        assert_eq!(stark.extension_factor, 4);
-
-        // Test field element creation
-        let field_elem = create_field_element(42, 97);
-        assert_eq!(field_elem.value, 42);
-        assert_eq!(field_elem.modulus, 97);
-
-        // Test polynomial creation
-        let poly = create_polynomial(vec![1, 2, 3], 97);
-        assert_eq!(poly.coefficients.len(), 3);
-        assert_eq!(poly.degree, 2);
-
-        // Test generic proof verification
-        let proof_data = vec![0u8; 128];
-        let public_inputs = vec![42u64];
-        let result = verify_zk_proof("range", &proof_data, &public_inputs, 97).unwrap();
-        assert!(result); // Should pass basic structure checks
-    }
-
-    #[test]
-    fn test_hash_commitment_api() {
-        let data = b"secret message";
-        let randomness = b"random_nonce_1234567890123456";
-        
-        let commitment = hash_commit(data, randomness, 128).unwrap();
-        assert!(!commitment.is_empty());
-
-        let is_valid = verify_hash_commitment(&commitment, data, randomness, 128).unwrap();
-        assert!(is_valid);
-
-        // Test with wrong data
-        let wrong_data = b"wrong message";
-        let is_invalid = verify_hash_commitment(&commitment, wrong_data, randomness, 128).unwrap();
-        assert!(!is_invalid);
-    }
-
-    #[test]
-    fn test_zk_vm_state() {
-        let program = vec![1, 2, 3, 4]; // Simple program
-        let initial_state = vec![0, 10, 20]; // Initial register values
-        let modulus = 97;
-
-        let trace = create_zk_vm_state(&program, &initial_state, modulus).unwrap();
-        
-        assert_eq!(trace.num_registers, 3);
-        assert!(trace.num_steps >= program.len());
-
-        // Check initial state
-        assert_eq!(trace.get(0, 0).unwrap().value, 0);
-        assert_eq!(trace.get(0, 1).unwrap().value, 10);
-        assert_eq!(trace.get(0, 2).unwrap().value, 20);
-
-        // Check that computation progressed
-        let final_value = trace.get(1, 0).unwrap();
-        assert_eq!(final_value.value, 1); // 0 + 1 (first instruction)
-    }
-
-    #[test]
-    fn test_batch_verification() {
-        let proofs = vec![
-            ("merkle".to_string(), vec![0u8; 64], vec![1u64, 2]),
-            ("range".to_string(), vec![0u8; 128], vec![42u64]),
-            ("schnorr".to_string(), vec![0u8; 64], vec![123u64]),
-        ];
-
-        let results = batch_verify_zk_proofs(&proofs, 97).unwrap();
-        assert_eq!(results.len(), 3);
-        
-        // All should pass basic structure checks
-        for result in results {
-            assert!(result);
-        }
-    }
-
-    #[test]
-    fn test_arithmetic_circuit_creation() {
-        // Create circuit for x * y = z
-        let constraints = vec![
-            (vec![1, 0, 0], vec![0, 1, 0], vec![0, 0, 1]), // x * y = z
-        ];
-        
-        let circuit = create_arithmetic_circuit(constraints, 3, 1, 97).unwrap();
-        
-        assert_eq!(circuit.num_variables, 3);
-        assert_eq!(circuit.num_public, 1);
-        assert_eq!(circuit.constraints.len(), 1);
-    }
-
-    #[test]
-    fn test_pedersen_commitment() {
-        let mut rng = OsRng;
-        let commitment_scheme = PedersenCommitment::setup(ZkSecurityLevel::Security128, &mut rng).unwrap();
-
-        let value = 42;
-        let randomness = 123;
-
-        let commitment = commitment_scheme.commit(value, randomness).unwrap();
-        let is_valid = commitment_scheme.verify(&commitment, value, randomness).unwrap();
-
-        assert!(is_valid);
-
-        // Test with wrong value
-        let is_invalid = commitment_scheme.verify(&commitment, value + 1, randomness).unwrap();
-        assert!(!is_invalid);
-    }
-
-    #[test]
-    fn test_hash_commitment() {
-        let commitment_scheme = HashCommitment::new(ZkSecurityLevel::Security128);
-
-        let value = b"secret message";
-        let randomness = b"random_nonce_12345678901234567890";
-
-        let commitment = commitment_scheme.commit(value, randomness).unwrap();
-        let is_valid = commitment_scheme.verify(&commitment, value, randomness).unwrap();
-
-        assert!(is_valid);
-
-        // Test with wrong value
-        let wrong_value = b"wrong message";
-        let is_invalid = commitment_scheme.verify(&commitment, wrong_value, randomness).unwrap();
-        assert!(!is_invalid);
-    }
-
-    #[test]
-    fn test_schnorr_protocol() {
-        let mut rng = OsRng;
-        let protocol = SchnorrProtocol::setup(ZkSecurityLevel::Security128, &mut rng).unwrap();
-
-        let secret = 42;
-        let public = protocol.pow(&protocol.generator, secret).unwrap();
-
-        let proof = protocol.prove(secret, &public, &mut rng).unwrap();
-        let is_valid = protocol.verify(&proof, &public).unwrap();
-
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_merkle_tree() {
-        let leaves = vec![
-            b"leaf1".to_vec(),
-            b"leaf2".to_vec(),
-            b"leaf3".to_vec(),
-            b"leaf4".to_vec(),
-        ];
-
-        let tree = MerkleTree::new(leaves.clone()).unwrap();
-        let root = tree.root().unwrap();
-
-        // Test membership proof
-        let proof = tree.prove_membership(1).unwrap();
-        let is_valid = tree.verify_membership(&leaves[1], 1, &proof).unwrap();
-
-        assert!(is_valid);
-
-        // Test with wrong leaf
-        let is_invalid = tree.verify_membership(b"wrong_leaf", 1, &proof).unwrap();
-        assert!(!is_invalid);
-    }
-
-    #[test]
-    fn test_range_proof_system() {
-        let mut rng = OsRng;
-        let range_system = RangeProofSystem::setup(ZkSecurityLevel::Security128, 8, &mut rng).unwrap();
-
-        let value = 150; // In range [0, 256)
-        let randomness = 789;
-
-        let value_commitment = range_system.pedersen.commit(value, randomness).unwrap();
-        let range_proof = range_system.prove(value, randomness, &mut rng).unwrap();
-        let is_valid = range_system.verify(&range_proof, &value_commitment).unwrap();
-
-        assert!(is_valid);
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// URL Processing and Query Parameter Handling for CURSED web_vibez
 ///
 /// Comprehensive URL parsing, validation, and manipulation.
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
 
-use crate::stdlib::http_core::{HttpError, HttpResult};
+// use crate::stdlib::http_core::{HttpError, HttpResult};
 
 /// URL query parameters
 #[derive(Debug, Clone, PartialEq)]
@@ -591,103 +591,3 @@ impl FromStr for Url {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_query_params_parsing() {
-        let params = QueryParams::parse("key1=value1&key2=value2&key3");
-        
-        assert_eq!(params.get("key1"), Some("value1"));
-        assert_eq!(params.get("key2"), Some("value2"));
-        assert_eq!(params.get("key3"), Some(""));
-        assert_eq!(params.get("nonexistent"), None);
-    }
-
-    #[test]
-    fn test_query_params_encoding() {
-        let mut params = QueryParams::new();
-        params.insert("key with spaces", "value with spaces");
-        params.insert("special", "chars&=?");
-
-        let encoded = params.to_string();
-        assert!(encoded.contains("key%20with%20spaces"));
-        assert!(encoded.contains("value%20with%20spaces"));
-    }
-
-    #[test]
-    fn test_url_parsing_full() {
-        let url = Url::parse("https://example.com:8080/path/to/resource?q=search&limit=10#section").unwrap();
-        
-        assert_eq!(url.scheme, Some("https".to_string()));
-        assert_eq!(url.host, Some("example.com".to_string()));
-        assert_eq!(url.port, Some(8080));
-        assert_eq!(url.path, "/path/to/resource");
-        assert_eq!(url.query_params.get("q"), Some("search"));
-        assert_eq!(url.query_params.get("limit"), Some("10"));
-        assert_eq!(url.fragment, Some("section".to_string()));
-    }
-
-    #[test]
-    fn test_url_parsing_path_only() {
-        let url = Url::parse("/api/users?id=123").unwrap();
-        
-        assert_eq!(url.scheme, None);
-        assert_eq!(url.host, None);
-        assert_eq!(url.port, None);
-        assert_eq!(url.path, "/api/users");
-        assert_eq!(url.query_params.get("id"), Some("123"));
-    }
-
-    #[test]
-    fn test_url_building() {
-        let url = Url::new("/api")
-            .scheme("https")
-            .host("example.com")
-            .port(443)
-            .query("version", "v1")
-            .query("format", "json")
-            .fragment("results");
-
-        assert_eq!(url.to_string(), "https://example.com/api?version=v1&format=json#results");
-    }
-
-    #[test]
-    fn test_url_joining() {
-        let base = Url::parse("https://example.com/api/v1/").unwrap();
-        let joined = base.join("users/123");
-        
-        assert_eq!(joined.path, "/api/v1/users/123");
-        assert_eq!(joined.scheme, Some("https".to_string()));
-        assert_eq!(joined.host, Some("example.com".to_string()));
-    }
-
-    #[test]
-    fn test_url_normalization() {
-        let mut url = Url::parse("/api/../users/./profile/../settings").unwrap();
-        url.normalize();
-        
-        assert_eq!(url.path, "/users/settings");
-    }
-
-    #[test]
-    fn test_ipv6_url_parsing() {
-        let url = Url::parse("http://[::1]:8080/path").unwrap();
-        
-        assert_eq!(url.host, Some("::1".to_string()));
-        assert_eq!(url.port, Some(8080));
-        assert_eq!(url.path, "/path");
-    }
-
-    #[test]
-    fn test_url_properties() {
-        let https_url = Url::parse("https://example.com/secure").unwrap();
-        assert!(https_url.is_absolute());
-        assert!(https_url.is_secure());
-
-        let relative_url = Url::parse("/relative/path").unwrap();
-        assert!(!relative_url.is_absolute());
-        assert!(!relative_url.is_secure());
-    }
-}

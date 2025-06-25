@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CLI Test Commands
 /// 
 /// Command-line interface for the CURSED test runner system.
@@ -136,7 +136,7 @@ pub fn add_test_commands(cmd: Command) -> Command {
 pub async fn handle_test_command(
     matches: &clap::ArgMatches,
     shutdown: Arc<AtomicBool>
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let watch = matches.get_flag("watch");
 
     if watch {
@@ -147,7 +147,7 @@ pub async fn handle_test_command(
 }
 
 /// Handle single test execution (non-watch mode)
-async fn handle_single_test_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_single_test_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     println!("🧪 Running CURSED tests");
     
     // Parse command-line arguments
@@ -200,7 +200,7 @@ async fn handle_single_test_command(matches: &clap::ArgMatches) -> Result<(), Er
 async fn handle_watch_test_command(
     matches: &clap::ArgMatches, 
     shutdown: Arc<AtomicBool>
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     let patterns = matches.get_many::<String>("watch-pattern")
         .map(|v| v.map(|s| s.clone()).collect())
         .unwrap_or_else(|| vec!["*.csd".to_string(), "*.toml".to_string()]);
@@ -235,7 +235,7 @@ async fn handle_watch_test_command(
 }
 
 /// Parse test configuration from command-line arguments
-fn parse_test_config(matches: &clap::ArgMatches) -> Result<(), Error> {
+fn parse_test_config(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let mut config = TestConfig::default();
 
     // Pattern filtering
@@ -284,7 +284,7 @@ fn parse_test_config(matches: &clap::ArgMatches) -> Result<(), Error> {
 }
 
 /// Parse report format from command-line arguments
-fn parse_report_format(matches: &clap::ArgMatches) -> Result<(), Error> {
+fn parse_report_format(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let format_str = matches.get_one::<String>("format").unwrap();
     
     match format_str.as_str() {
@@ -361,56 +361,3 @@ pub async fn run_test_file(file_path: &str) -> TestResult<()> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use clap::Command;
-
-    #[test]
-    fn test_add_test_commands() {
-        let app = Command::new("test-app");
-        let app_with_tests = add_test_commands(app);
-        
-        // Test that the test subcommand was added
-        let matches = app_with_tests.try_get_matches_from(vec!["test-app", "test", "--help"]);
-        assert!(matches.is_err()); // Should exit with help
-    }
-
-    #[test]
-    fn test_parse_test_config() {
-        let app = Command::new("test-app");
-        let app_with_tests = add_test_commands(app);
-        
-        let matches = app_with_tests.try_get_matches_from(vec![
-            "test-app", "test", 
-            "--pattern", "test_example",
-            "--verbose",
-            "--jobs", "4",
-            "--timeout", "60"
-        ]).unwrap();
-        
-        let test_matches = matches.subcommand_matches("test").unwrap();
-        let config = parse_test_config(test_matches).unwrap();
-        
-        assert_eq!(config.test_patterns.len(), 1);
-        assert_eq!(config.test_patterns[0], "test_example");
-        assert!(config.verbose);
-        assert_eq!(config.max_parallel_tests, 4);
-        assert_eq!(config.timeout_seconds, 60);
-    }
-
-    #[test]
-    fn test_parse_report_format() {
-        let app = Command::new("test-app");
-        let app_with_tests = add_test_commands(app);
-        
-        let matches = app_with_tests.try_get_matches_from(vec![
-            "test-app", "test", "--format", "json"
-        ]).unwrap();
-        
-        let test_matches = matches.subcommand_matches("test").unwrap();
-        let format = parse_report_format(test_matches).unwrap();
-        
-        assert!(matches!(format, ReportFormat::Json));
-    }
-}

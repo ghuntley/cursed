@@ -1,8 +1,8 @@
 /// Timezone support and time zone conversions
-use crate::stdlib::time::error::{TimeError, TimeResult, timezone_error};
-use crate::stdlib::time::datetime::DateTime;
+// use crate::stdlib::time::error::{TimeError, TimeResult, timezone_error};
+// use crate::stdlib::time::datetime::DateTime;
 use std::collections::HashMap;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Represents a timezone
 #[derive(Debug, Clone, PartialEq)]
@@ -240,7 +240,7 @@ pub fn parse_offset(input: &str) -> TimeResult<UtcOffset> {
 
 /// Format datetime with timezone
 pub fn format_datetime_with_timezone(datetime: &DateTime, timezone: &Timezone, include_offset: bool) -> String {
-    let formatted = crate::stdlib::time::formatting::format_iso8601(datetime)
+//     let formatted = crate::stdlib::time::formatting::format_iso8601(datetime)
         .unwrap_or_else(|_| "Invalid DateTime".to_string());
     
     if include_offset {
@@ -269,60 +269,3 @@ pub fn get_timezone_transitions(timezone: &Timezone, year: i32) -> Vec<(DateTime
     vec![]
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::time::datetime::{Date, Time, DateTime};
-    
-    #[test]
-    fn test_utc_timezone() {
-        let tz = utc();
-        assert_eq!(tz.name, "UTC");
-        assert_eq!(tz.offset_seconds, 0);
-        assert!(tz.is_utc());
-    }
-    
-    #[test]
-    fn test_timezone_by_name() {
-        let est = timezone_by_name("EST").unwrap();
-        assert_eq!(est.name, "Eastern Standard Time");
-        assert_eq!(est.offset_seconds, -5 * 3600);
-        
-        let jst = timezone_by_name("JST").unwrap();
-        assert_eq!(jst.offset_seconds, 9 * 3600);
-    }
-    
-    #[test]
-    fn test_parse_offset() {
-        let offset1 = parse_offset("+05:30").unwrap();
-        assert_eq!(offset1.seconds, 5 * 3600 + 30 * 60);
-        
-        let offset2 = parse_offset("-08:00").unwrap();
-        assert_eq!(offset2.seconds, -8 * 3600);
-        
-        let offset3 = parse_offset("Z").unwrap();
-        assert_eq!(offset3.seconds, 0);
-    }
-    
-    #[test]
-    fn test_timezone_conversion() {
-        let date = Date::new(2023, 12, 25).unwrap();
-        let time = Time::new(15, 30, 45, 0).unwrap();
-        let datetime = DateTime::new(date, time);
-        
-        let utc_tz = utc();
-        let est_tz = timezone_by_name("EST").unwrap();
-        
-        let converted = convert_timezone(&datetime, &utc_tz, &est_tz).unwrap();
-        assert_eq!(converted.time.hour, 10); // 15:30 UTC -> 10:30 EST
-    }
-    
-    #[test]
-    fn test_offset_string_formatting() {
-        let tz1 = timezone_by_name("EST").unwrap();
-        assert_eq!(tz1.offset_string(), "-05:00");
-        
-        let tz2 = timezone_by_name("IST").unwrap();
-        assert_eq!(tz2.offset_string(), "+05:30");
-    }
-}

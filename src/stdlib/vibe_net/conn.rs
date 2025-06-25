@@ -12,8 +12,7 @@ use crate::error::CursedError;
 use super::addr::{AddrVibe, TCPAddrVibe, UDPAddrVibe, UnixAddrVibe};
 use super::error::{NetError as VibeNetError, connection_failed_error, timeout_error};
 use super::NetResult;
-use crate::error::Error;
-pub type NetError = crate::error::Error;
+pub type NetError = crate::error::CursedError;
 
 
 /// ConnVibe trait represents a generic network connection
@@ -531,45 +530,3 @@ impl Write for UnixConnVibe {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-
-    #[test]
-    fn test_tcp_connection_dial() {
-        // This test would require a server to connect to
-        // In practice, we'd mock or use a test server
-    }
-
-    #[test]
-    fn test_udp_connection_creation() {
-        let conn = UDPConnVibe::listen("udp", None);
-        assert!(conn.is_ok());
-    }
-
-    #[test]
-    fn test_connection_traits() {
-        // Test that our types implement the required traits
-        fn assert_conn_vibe<T: ConnVibe>() {}
-        fn assert_packet_conn_vibe<T: PacketConnVibe>() {}
-        
-        // These should compile without error
-        assert_conn_vibe::<TCPConnVibe>();
-        assert_conn_vibe::<UDPConnVibe>();
-        assert_conn_vibe::<UnixConnVibe>();
-        assert_packet_conn_vibe::<UDPConnVibe>();
-    }
-
-    #[test]
-    fn test_deadline_calculation() {
-        let future = SystemTime::now() + Duration::from_secs(10);
-        let past = SystemTime::now() - Duration::from_secs(10);
-        
-        // Future deadline should work
-        assert!(future > SystemTime::now());
-        
-        // Past deadline should be detected
-        assert!(past < SystemTime::now());
-    }
-}

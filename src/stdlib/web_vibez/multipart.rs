@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// File uploads and multipart form processing utilities
 use std::collections::HashMap;
 
@@ -53,7 +53,7 @@ impl MultipartProcessor {
         self
     }
 
-    pub fn parse(&self, data: &[u8]) -> Result<(), Error> {
+    pub fn parse(&self, data: &[u8]) -> crate::error::Result<()> {
         if self.boundary.is_empty() {
             return Err(MultipartError::InvalidBoundary);
         }
@@ -142,7 +142,7 @@ impl MultipartProcessor {
     }
 
     /// Parse individual multipart part
-    fn parse_part(&self, part_data: &[u8]) -> Result<(), Error> {
+    fn parse_part(&self, part_data: &[u8]) -> crate::error::Result<()> {
         // Find separator between headers and body
         let header_end = if let Some(pos) = Self::find_sequence(part_data, b"\r\n\r\n") {
             pos
@@ -353,22 +353,22 @@ pub enum MultipartError {
     InvalidEncoding,
 }
 
-impl std::fmt::Display for MultipartError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            MultipartError::InvalidBoundary => write!(f, "Invalid multipart boundary"),
-            MultipartError::FileTooLarge => write!(f, "File too large"),
-            MultipartError::UnsupportedType => write!(f, "Unsupported file type"),
-            MultipartError::ParseError(msg) => write!(f, "Parse error: {}", msg),
-            MultipartError::TotalSizeTooLarge => write!(f, "Total multipart data size too large"),
-            MultipartError::MissingContentDisposition => write!(f, "Missing Content-Disposition header"),
-            MultipartError::InvalidEncoding => write!(f, "Invalid character encoding"),
-        }
-    }
-}
+// impl std::fmt::Display for MultipartError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         match self {
+//             MultipartError::InvalidBoundary => write!(f, "Invalid multipart boundary"),
+//             MultipartError::FileTooLarge => write!(f, "File too large"),
+//             MultipartError::UnsupportedType => write!(f, "Unsupported file type"),
+//             MultipartError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+//             MultipartError::TotalSizeTooLarge => write!(f, "Total multipart data size too large"),
+//             MultipartError::MissingContentDisposition => write!(f, "Missing Content-Disposition header"),
+//             MultipartError::InvalidEncoding => write!(f, "Invalid character encoding"),
+//         }
+//     }
+// }
 
-impl std::error::Error for MultipartError {}
-
+// impl std::error::CursedError for MultipartError {}
+// 
 /// Individual field in a multipart form
 #[derive(Debug, Clone)]
 pub struct MultipartField {

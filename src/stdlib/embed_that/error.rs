@@ -1,9 +1,7 @@
 use crate::error::CursedError;
-use crate::error::Error;
-use thiserror::Error;
 
 /// Errors that can occur during embed operations
-#[derive(Error, Debug, Clone)]
+#[derive(CursedError, Debug, Clone)]
 pub enum EmbedError {
     #[error("File not found: {file}")]
     FileNotFound { file: String },
@@ -57,22 +55,22 @@ pub enum EmbedError {
     General { message: String },
 }
 
-impl From<EmbedError> for CursedError {
-    fn from(err: EmbedError) -> Self {
-        CursedError::Runtime { 
-            message: err.to_string(),
-            location: None 
-        }
-    }
-}
+// impl From<EmbedError> for CursedError {
+//     fn from(err: EmbedError) -> Self {
+//         CursedError::Runtime { 
+//             message: err.to_string(),
+//             location: None 
+//         }
+//     }
+// }
 
-impl From<std::io::Error> for EmbedError {
-    fn from(err: std::io::Error) -> Self {
-        EmbedError::IoError { 
-            reason: err.to_string() 
-        }
-    }
-}
+// impl From<std::io::Error> for EmbedError {
+//     fn from(err: std::io::Error) -> Self {
+//         EmbedError::IoError { 
+//             reason: err.to_string() 
+//         }
+//     }
+// }
 
 impl From<std::string::FromUtf8Error> for EmbedError {
     fn from(err: std::string::FromUtf8Error) -> Self {
@@ -82,29 +80,29 @@ impl From<std::string::FromUtf8Error> for EmbedError {
     }
 }
 
-impl From<serde_json::Error> for EmbedError {
-    fn from(err: serde_json::Error) -> Self {
-        EmbedError::JsonParsingError { 
-            reason: err.to_string() 
-        }
-    }
-}
+// impl From<serde_json::Error> for EmbedError {
+//     fn from(err: serde_json::Error) -> Self {
+//         EmbedError::JsonParsingError { 
+//             reason: err.to_string() 
+//         }
+//     }
+// }
 
-impl From<serde_yaml::Error> for EmbedError {
-    fn from(err: serde_yaml::Error) -> Self {
-        EmbedError::YamlParsingError { 
-            reason: err.to_string() 
-        }
-    }
-}
+// impl From<serde_yaml::CursedError> for EmbedError {
+//     fn from(err: serde_yaml::CursedError) -> Self {
+//         EmbedError::YamlParsingError { 
+//             reason: err.to_string() 
+//         }
+//     }
+// }
 
-impl From<toml::de::Error> for EmbedError {
-    fn from(err: toml::de::Error) -> Self {
-        EmbedError::TomlParsingError { 
-            reason: err.to_string() 
-        }
-    }
-}
+// impl From<toml::de::Error> for EmbedError {
+//     fn from(err: toml::de::Error) -> Self {
+//         EmbedError::TomlParsingError { 
+//             reason: err.to_string() 
+//         }
+//     }
+// }
 
 /// Type alias for Results in embed operations
 pub type EmbedResult<T> = std::result::Result<T, EmbedError>;

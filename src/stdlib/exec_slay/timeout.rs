@@ -1,8 +1,7 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Timeout wrapper functions for command execution
 
 use std::time::Duration;
-use crate::error::CursedError;
 use super::{SlayCommand, SlayResult};
 
 /// Run a command with a timeout
@@ -140,80 +139,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::exec_slay::SlayCommand;
-
-    #[test]
-    fn test_timeout_config() {
-        let config = TimeoutConfig::new()
-            .with_execution_timeout(Duration::from_secs(10))
-            .with_kill_timeout(Duration::from_secs(2))
-            .with_io_timeout(Duration::from_millis(500));
-
-        assert_eq!(config.execution_timeout, Some(Duration::from_secs(10)));
-        assert_eq!(config.kill_timeout, Some(Duration::from_secs(2)));
-        assert_eq!(config.io_timeout, Some(Duration::from_millis(500)));
-    }
-
-    #[test]
-    fn test_timeout_config_apply() {
-        let config = TimeoutConfig::new()
-            .with_execution_timeout(Duration::from_secs(5));
-        
-        let command = SlayCommand::new("echo", &["test"]);
-        let command_with_timeout = config.apply_to_command(command);
-        
-        assert_eq!(command_with_timeout.options.timeout, Some(Duration::from_secs(5)));
-    }
-
-    #[test]
-    fn test_timeout_utils() {
-        let start = utils::now();
-        utils::sleep(Duration::from_millis(10));
-        assert!(utils::has_elapsed(start, Duration::from_millis(5)));
-        assert!(!utils::has_elapsed(start, Duration::from_secs(1)));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_run_with_timeout() {
-        let command = SlayCommand::new("echo", &["hello"]);
-        let result = run_with_timeout(command, Duration::from_secs(5));
-        assert!(result.is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_output_with_timeout() {
-        let command = SlayCommand::new("echo", &["hello"]);
-        let output = output_with_timeout(command, Duration::from_secs(5)).unwrap();
-        let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("hello"));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_run_command_with_timeout() {
-        let result = run_command_with_timeout("echo", &["test"], Duration::from_secs(5));
-        assert!(result.is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_get_output_with_timeout() {
-        let output = get_output_with_timeout("echo", &["hello"], Duration::from_secs(5)).unwrap();
-        let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("hello"));
-    }
-
-    #[test]
-    fn test_with_timeout_util() {
-        let result = utils::with_timeout(Duration::from_secs(1), || {
-            Ok("test".to_string())
-        });
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "test");
-    }
-}

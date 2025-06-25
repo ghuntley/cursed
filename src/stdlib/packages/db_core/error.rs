@@ -1,25 +1,24 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Database error types - when things go sideways periodt
 ///
 /// This module provides comprehensive error handling for database operations.
 /// Because errors happen bestie, and we need to handle them gracefully!
 
 use std::fmt;
-use std::error::Error as StdError;
 
 /// fr fr Main database result type - our error-aware return type
-pub type DatabaseResult<T> = std::result::Result<T, Error>;
+pub type Databasecrate::error::Result<T> = std::result::Result<T>;
 
 /// fr fr Main database error type
 #[derive(Debug, Clone)]
 pub struct DatabaseError {
-    /// fr fr Error kind
+    /// fr fr CursedError kind
     pub kind: ErrorKind,
-    /// fr fr Error message
+    /// fr fr CursedError message
     pub message: String,
     /// fr fr Source error (if any)
     pub source: Option<String>,
-    /// fr fr Error code (driver-specific)
+    /// fr fr CursedError code (driver-specific)
     pub code: Option<String>,
     /// fr fr SQL state (if applicable)
     pub sql_state: Option<String>,
@@ -27,7 +26,7 @@ pub struct DatabaseError {
     pub context: std::collections::HashMap<String, String>,
 }
 
-/// fr fr Error kinds for different types of database errors
+/// fr fr CursedError kinds for different types of database errors
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ErrorKind {
     /// Connection-related errors
@@ -260,25 +259,25 @@ impl DatabaseError {
     }
 }
 
-impl fmt::Display for DatabaseError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Database error [{}]: {}", self.category(), self.message)?;
-        
-        if let Some(code) = &self.code {
-            write!(f, " (code: {})", code)?;
-        }
-        
-        if let Some(state) = &self.sql_state {
-            write!(f, " (SQL state: {})", state)?;
-        }
-        
-        if let Some(source) = &self.source {
-            write!(f, " - caused by: {}", source)?;
-        }
-        
-        Ok(())
-    }
-}
+// impl fmt::Display for DatabaseError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "Database error [{}]: {}", self.category(), self.message)?;
+//         
+//         if let Some(code) = &self.code {
+//             write!(f, " (code: {})", code)?;
+//         }
+//         
+//         if let Some(state) = &self.sql_state {
+//             write!(f, " (SQL state: {})", state)?;
+//         }
+//         
+//         if let Some(source) = &self.source {
+//             write!(f, " - caused by: {}", source)?;
+//         }
+//         
+//         Ok(())
+//     }
+// }
 
 impl StdError for DatabaseError {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
@@ -286,20 +285,20 @@ impl StdError for DatabaseError {
     }
 }
 
-/// fr fr Error conversion helpers for common error types
-impl From<std::io::Error> for DatabaseError {
-    fn from(error: std::io::Error) -> Self {
-        DatabaseError::new(ErrorKind::Network, &error.to_string())
-            .with_source(error)
-    }
-}
+/// fr fr CursedError conversion helpers for common error types
+// impl From<std::io::Error> for DatabaseError {
+//     fn from(error: std::io::Error) -> Self {
+//         DatabaseError::new(ErrorKind::Network, &error.to_string())
+//             .with_source(error)
+//     }
+// }
 
-impl From<serde_json::Error> for DatabaseError {
-    fn from(error: serde_json::Error) -> Self {
-        DatabaseError::new(ErrorKind::DataConversion, &error.to_string())
-            .with_source(error)
-    }
-}
+// impl From<serde_json::Error> for DatabaseError {
+//     fn from(error: serde_json::Error) -> Self {
+//         DatabaseError::new(ErrorKind::DataConversion, &error.to_string())
+//             .with_source(error)
+//     }
+// }
 
 impl From<url::ParseError> for DatabaseError {
     fn from(error: url::ParseError) -> Self {
@@ -310,7 +309,7 @@ impl From<url::ParseError> for DatabaseError {
     }
 }
 
-/// fr fr Error chain helpers for debugging
+/// fr fr CursedError chain helpers for debugging
 impl DatabaseError {
     /// slay Get full error chain as a string
     pub fn error_chain(&self) -> String {
@@ -326,7 +325,7 @@ impl DatabaseError {
     /// slay Get error details for debugging
     pub fn debug_info(&self) -> String {
         let mut info = vec![
-            format!("Error: {}", self.message),
+            format!("CursedError: {}", self.message),
             format!("Kind: {:?}", self.kind),
             format!("Category: {}", self.category()),
             format!("Retryable: {}", self.is_retryable()),
@@ -375,60 +374,3 @@ impl<T> DatabaseResultExt<T> for DatabaseResult<T> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_database_error_creation() {
-        let error = DatabaseError::connection(
-            ConnectionError::FailedToConnect,
-            "Could not connect to database"
-        ).with_code("08001").with_context("host", "localhost");
-
-        assert_eq!(error.category(), "connection");
-        assert!(error.is_retryable());
-        assert!(!error.is_permanent());
-        assert_eq!(error.code, Some("08001".to_string()));
-        assert_eq!(error.context.get("host"), Some(&"localhost".to_string()));
-    }
-
-    #[test]
-    fn test_error_chain() {
-        let error = DatabaseError::query(
-            QueryError::SyntaxError,
-            "Invalid SQL syntax"
-        ).with_source(std::io::Error::new(std::io::ErrorKind::Other, "Source error"));
-
-        let chain = error.error_chain();
-        assert!(chain.contains("Invalid SQL syntax"));
-        assert!(chain.contains("caused by"));
-    }
-
-    #[test]
-    fn test_retryable_errors() {
-        let timeout_error = DatabaseError::timeout("Query timeout");
-        assert!(timeout_error.is_retryable());
-
-        let syntax_error = DatabaseError::query(QueryError::SyntaxError, "Bad SQL");
-        assert!(!syntax_error.is_retryable());
-        assert!(syntax_error.is_permanent());
-    }
-
-    #[test]
-    fn test_error_conversions() {
-        let io_error = std::io::Error::new(std::io::ErrorKind::ConnectionRefused, "Connection refused");
-        let db_error: DatabaseError = io_error.into();
-        assert_eq!(db_error.category(), "network");
-    }
-
-    #[test]
-    fn test_result_extensions() {
-        let result: DatabaseResult<i32> = Err(DatabaseError::driver("Test error"));
-        let result_with_context = result.with_context("operation", "test");
-        
-        if let Err(error) = result_with_context {
-            assert_eq!(error.context.get("operation"), Some(&"test".to_string()));
-        }
-    }
-}

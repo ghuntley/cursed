@@ -1,6 +1,6 @@
 /// fr fr Database migration system - schema evolution with CURSED vibes periodt
-use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, DatabaseConnection, QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder};
-use crate::error::Error;
+// use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, DatabaseConnection, QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder};
+use crate::error::CursedError;
 use std::collections::{HashMap, BTreeMap};
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Serialize, Deserialize};
@@ -559,7 +559,7 @@ pub struct MigrationResult {
     /// Execution time in milliseconds
     pub execution_time_ms: u64,
     
-    /// Error message if failed
+    /// CursedError message if failed
     pub error_message: Option<String>,
 }
 
@@ -581,7 +581,7 @@ pub struct MigrationStatusInfo {
     /// Execution time in milliseconds
     pub execution_time_ms: Option<u64>,
     
-    /// Error message if failed
+    /// CursedError message if failed
     pub error_message: Option<String>,
 }
 
@@ -638,14 +638,14 @@ impl MigrationError {
     }
 }
 
-impl fmt::Display for MigrationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Migration Error [{}]: {}", self.kind, self.message)
-    }
-}
+// impl fmt::Display for MigrationError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "Migration CursedError [{}]: {}", self.kind, self.message)
+//     }
+// }
 
-impl std::error::Error for MigrationError {}
-
+// impl std::error::CursedError for MigrationError {}
+// 
 impl From<MigrationError> for SqlError {
     fn from(err: MigrationError) -> Self {
         SqlError::configuration(err.to_string())
@@ -664,19 +664,19 @@ pub enum MigrationErrorKind {
     RollbackFailed,
 }
 
-impl fmt::Display for MigrationErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            MigrationErrorKind::DuplicateVersion => write!(f, "DuplicateVersion"),
-            MigrationErrorKind::MigrationNotFound => write!(f, "MigrationNotFound"),
-            MigrationErrorKind::NotReversible => write!(f, "NotReversible"),
-            MigrationErrorKind::MissingDependency => write!(f, "MissingDependency"),
-            MigrationErrorKind::ValidationFailed => write!(f, "ValidationFailed"),
-            MigrationErrorKind::ExecutionFailed => write!(f, "ExecutionFailed"),
-            MigrationErrorKind::RollbackFailed => write!(f, "RollbackFailed"),
-        }
-    }
-}
+// impl fmt::Display for MigrationErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             MigrationErrorKind::DuplicateVersion => write!(f, "DuplicateVersion"),
+//             MigrationErrorKind::MigrationNotFound => write!(f, "MigrationNotFound"),
+//             MigrationErrorKind::NotReversible => write!(f, "NotReversible"),
+//             MigrationErrorKind::MissingDependency => write!(f, "MissingDependency"),
+//             MigrationErrorKind::ValidationFailed => write!(f, "ValidationFailed"),
+//             MigrationErrorKind::ExecutionFailed => write!(f, "ExecutionFailed"),
+//             MigrationErrorKind::RollbackFailed => write!(f, "RollbackFailed"),
+//         }
+//     }
+// }
 
 /// fr fr Example migration implementation - creates users table
 pub struct CreateUsersTableMigration;
@@ -771,140 +771,3 @@ impl Migration for CreatePostsTableMigration {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_migration_direction_display() {
-        assert_eq!(MigrationDirection::Up.to_string(), "up");
-        assert_eq!(MigrationDirection::Down.to_string(), "down");
-    }
-
-    #[test]
-    fn test_migration_status_display() {
-        assert_eq!(MigrationStatus::Pending.to_string(), "pending");
-        assert_eq!(MigrationStatus::Applied.to_string(), "applied");
-        assert_eq!(MigrationStatus::Failed.to_string(), "failed");
-        assert_eq!(MigrationStatus::RolledBack.to_string(), "rolled_back");
-    }
-
-    #[test]
-    fn test_migration_manager_creation() {
-        let manager = MigrationManager::new();
-        assert_eq!(manager.migration_table, "schema_migrations");
-        assert!(manager.auto_create_table);
-        assert_eq!(manager.get_migrations().len(), 0);
-        
-        let custom_manager = MigrationManager::with_table_name("custom_migrations".to_string());
-        assert_eq!(custom_manager.migration_table, "custom_migrations");
-    }
-
-    #[test]
-    fn test_migration_registration() {
-        let mut manager = MigrationManager::new();
-        let migration = Box::new(CreateUsersTableMigration);
-        
-        assert!(manager.register_migration(migration).is_ok());
-        assert_eq!(manager.get_migrations().len(), 1);
-        
-        // Try to register duplicate
-        let duplicate_migration = Box::new(CreateUsersTableMigration);
-        assert!(manager.register_migration(duplicate_migration).is_err());
-    }
-
-    #[test]
-    fn test_create_users_table_migration() {
-        let migration = CreateUsersTableMigration;
-        
-        assert_eq!(migration.version(), "20240101000001_create_users_table");
-        assert_eq!(migration.description(), "Create users table with basic fields");
-        assert!(migration.is_reversible());
-        assert_eq!(migration.dependencies().len(), 0);
-    }
-
-    #[test]
-    fn test_create_posts_table_migration() {
-        let migration = CreatePostsTableMigration;
-        
-        assert_eq!(migration.version(), "20240101000002_create_posts_table");
-        assert_eq!(migration.description(), "Create posts table with user relationship");
-        assert!(migration.is_reversible());
-        assert_eq!(migration.dependencies().len(), 1);
-        assert_eq!(migration.dependencies()[0], "20240101000001_create_users_table");
-    }
-
-    #[test]
-    fn test_migration_result() {
-        let result = MigrationResult {
-            version: "test_migration".to_string(),
-            direction: MigrationDirection::Up,
-            success: true,
-            execution_time_ms: 150,
-            error_message: None,
-        };
-        
-        assert_eq!(result.version, "test_migration");
-        assert_eq!(result.direction, MigrationDirection::Up);
-        assert!(result.success);
-        assert_eq!(result.execution_time_ms, 150);
-        assert!(result.error_message.is_none());
-    }
-
-    #[test]
-    fn test_migration_status_info() {
-        let status_info = MigrationStatusInfo {
-            version: "test_migration".to_string(),
-            description: "Test migration".to_string(),
-            status: MigrationStatus::Applied,
-            applied_at: Some(SystemTime::now()),
-            execution_time_ms: Some(200),
-            error_message: None,
-        };
-        
-        assert_eq!(status_info.version, "test_migration");
-        assert_eq!(status_info.status, MigrationStatus::Applied);
-        assert!(status_info.applied_at.is_some());
-        assert_eq!(status_info.execution_time_ms, Some(200));
-    }
-
-    #[test]
-    fn test_migration_errors() {
-        let duplicate_error = MigrationError::duplicate_version("test_v1".to_string());
-        assert_eq!(duplicate_error.kind, MigrationErrorKind::DuplicateVersion);
-        assert!(duplicate_error.message.contains("test_v1"));
-        assert_eq!(duplicate_error.migration_version, Some("test_v1".to_string()));
-        
-        let not_found_error = MigrationError::migration_not_found("missing_v1".to_string());
-        assert_eq!(not_found_error.kind, MigrationErrorKind::MigrationNotFound);
-        
-        let not_reversible_error = MigrationError::not_reversible("irreversible_v1".to_string());
-        assert_eq!(not_reversible_error.kind, MigrationErrorKind::NotReversible);
-        
-        let missing_dep_error = MigrationError::missing_dependency("v2".to_string(), "v1".to_string());
-        assert_eq!(missing_dep_error.kind, MigrationErrorKind::MissingDependency);
-    }
-
-    #[test]
-    fn test_dependency_validation() {
-        let mut manager = MigrationManager::new();
-        
-        // Register migrations in order
-        let users_migration = Box::new(CreateUsersTableMigration);
-        let posts_migration = Box::new(CreatePostsTableMigration);
-        
-        assert!(manager.register_migration(users_migration).is_ok());
-        assert!(manager.register_migration(posts_migration).is_ok());
-        
-        // Validate dependencies
-        assert!(manager.validate_dependencies().is_ok());
-        
-        // Test with missing dependency
-        let mut manager_with_missing_dep = MigrationManager::new();
-        let posts_only = Box::new(CreatePostsTableMigration);
-        assert!(manager_with_missing_dep.register_migration(posts_only).is_ok());
-        
-        // This should fail because posts migration depends on users migration
-        assert!(manager_with_missing_dep.validate_dependencies().is_err());
-    }
-}

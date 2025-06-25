@@ -3,7 +3,7 @@
 /// Provides comprehensive documentation quality analysis including linting,
 /// consistency checks, grammar validation, and best practices enforcement.
 
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 use crate::docs::generator::{ExtractedDocumentation, DocumentationItem};
 
 use serde::{Deserialize, Serialize};
@@ -209,7 +209,7 @@ pub struct CustomRule {
 /// Rule severity levels
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Severity {
-    Error,
+    CursedError,
     Warning,
     Info,
     Suggestion,
@@ -750,7 +750,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Analyze documentation quality
-    pub fn analyze_quality(&mut self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    pub fn analyze_quality(&mut self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut issues = Vec::new();
 
         // Run all quality checks
@@ -800,7 +800,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Check grammar in documentation
-    fn check_grammar(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn check_grammar(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut issues = Vec::new();
 
         for item in &documentation.items {
@@ -827,7 +827,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Check spelling in documentation
-    fn check_spelling(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn check_spelling(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut issues = Vec::new();
 
         for item in &documentation.items {
@@ -874,7 +874,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Check style consistency
-    fn check_style(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn check_style(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut issues = Vec::new();
 
         for item in &documentation.items {
@@ -915,7 +915,7 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Check best practices
-    fn check_best_practices(&self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn check_best_practices(&self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let mut issues = Vec::new();
 
         for item in &documentation.items {
@@ -1279,7 +1279,7 @@ impl DocumentationQualityAnalyzer {
         if metrics.coverage_metrics.missing_descriptions > 10 {
             key_weaknesses.push("Many items lack descriptions".to_string());
         }
-        if issues.iter().filter(|i| i.severity == Severity::Error).count() > 0 {
+        if issues.iter().filter(|i| i.severity == Severity::CursedError).count() > 0 {
             key_weaknesses.push("Critical issues present".to_string());
         }
         if metrics.readability_metrics.complexity_score > 0.8 {
@@ -1318,10 +1318,10 @@ impl DocumentationQualityAnalyzer {
     }
 
     /// Generate quality report
-    pub fn generate_quality_report(&self, result: &QualityAnalysisResult, output_path: &Path) -> Result<(), Error> {
+    pub fn generate_quality_report(&self, result: &QualityAnalysisResult, output_path: &Path) -> crate::error::Result<()> {
         let report_content = self.generate_html_quality_report(result);
         fs::write(output_path, report_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write quality report: {}", e)))
+            .map_err(|e| CursedError::SystemError(format!("Failed to write quality report: {}", e)))
     }
 
     /// Generate HTML quality report
@@ -1450,7 +1450,7 @@ impl DocumentationQualityAnalyzer {
             .take(20) // Limit to first 20 issues
             .map(|issue| {
                 let severity_class = match issue.severity {
-                    Severity::Error => "error",
+                    Severity::CursedError => "error",
                     Severity::Warning => "warning",
                     _ => "info",
                 };

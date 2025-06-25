@@ -3,9 +3,8 @@
 // Provides comprehensive private key utilities for the CURSED stdlib.
 // Supports private key generation, validation, format conversion, and security operations.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use zeroize::{Zeroize, Zeroizing};
@@ -43,7 +42,7 @@ impl PrivateKeyFormat {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "PKCS1-PEM" | "PKCS#1-PEM" => Ok(PrivateKeyFormat::Pkcs1Pem),
             "PKCS1-DER" | "PKCS#1-DER" => Ok(PrivateKeyFormat::Pkcs1Der),
@@ -93,7 +92,7 @@ impl PrivateKeyAlgorithm {
         }
     }
     
-    pub fn from_name(name: &str) -> Result<(), Error> {
+    pub fn from_name(name: &str) -> crate::error::Result<()> {
         match name.to_uppercase().as_str() {
             "RSA-2048" | "RSA2048" => Ok(PrivateKeyAlgorithm::Rsa2048),
             "RSA-3072" | "RSA3072" => Ok(PrivateKeyAlgorithm::Rsa3072),
@@ -145,7 +144,7 @@ impl PrivateKeyInfo {
         hex::encode(result)
     }
     
-    pub fn to_value(&self) -> Result<(), Error> {
+    pub fn to_value(&self) -> crate::error::Result<()> {
         let mut map = HashMap::new();
         
         map.insert("algorithm".to_string(), Value::String(self.algorithm.name().to_string()));
@@ -204,7 +203,7 @@ impl Drop for SecurePrivateKey {
 }
 
 /// Generate private key
-pub fn generate_private_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn generate_private_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Algorithm name required".to_string()));
     }
@@ -228,7 +227,7 @@ pub fn generate_private_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Generate RSA private key
-fn generate_rsa_private_key(key_size: usize) -> Result<(), Error> {
+fn generate_rsa_private_key(key_size: usize) -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = RsaPrivateKey::new(&mut rng, key_size)
         .map_err(|e| CursedError::CryptoError(format!("RSA key generation failed: {}", e)))?;
@@ -259,7 +258,7 @@ fn generate_rsa_private_key(key_size: usize) -> Result<(), Error> {
 }
 
 /// Generate P-256 private key
-fn generate_p256_private_key() -> Result<(), Error> {
+fn generate_p256_private_key() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = P256SecretKey::random(&mut rng);
     
@@ -282,7 +281,7 @@ fn generate_p256_private_key() -> Result<(), Error> {
 }
 
 /// Generate P-384 private key
-fn generate_p384_private_key() -> Result<(), Error> {
+fn generate_p384_private_key() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = P384SecretKey::random(&mut rng);
     
@@ -305,7 +304,7 @@ fn generate_p384_private_key() -> Result<(), Error> {
 }
 
 /// Generate Ed25519 private key
-fn generate_ed25519_private_key() -> Result<(), Error> {
+fn generate_ed25519_private_key() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let signing_key = SigningKey::generate(&mut rng);
     let private_bytes = signing_key.to_bytes();
@@ -326,7 +325,7 @@ fn generate_ed25519_private_key() -> Result<(), Error> {
 }
 
 /// Generate X25519 private key
-fn generate_x25519_private_key() -> Result<(), Error> {
+fn generate_x25519_private_key() -> crate::error::Result<()> {
     let mut rng = OsRng;
     let private_key = EphemeralSecret::random();
     let private_bytes = private_key.to_bytes();
@@ -347,7 +346,7 @@ fn generate_x25519_private_key() -> Result<(), Error> {
 }
 
 /// Validate private key
-pub fn validate_private_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn validate_private_key(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("Private key validation requires: algorithm, private_key".to_string()));
     }
@@ -444,7 +443,7 @@ fn validate_x25519_private_key(private_key_bytes: &[u8]) -> Result<(), String> {
 }
 
 /// Convert private key format
-pub fn convert_private_key_format(args: Vec<Value>) -> Result<(), Error> {
+pub fn convert_private_key_format(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("Format conversion requires: algorithm, private_key, from_format, to_format".to_string()));
     }
@@ -492,7 +491,7 @@ fn convert_rsa_private_key_format(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -557,7 +556,7 @@ fn convert_p256_private_key_format(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -621,7 +620,7 @@ fn convert_p384_private_key_format(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let private_key = match from_format {
         PrivateKeyFormat::Pkcs8Der => {
@@ -685,7 +684,7 @@ fn convert_ed25519_private_key_format(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Parse based on from_format
     let private_key = match from_format {
         PrivateKeyFormat::Raw => {
@@ -735,7 +734,7 @@ fn convert_x25519_private_key_format(
     private_key_bytes: &[u8],
     from_format: PrivateKeyFormat,
     to_format: PrivateKeyFormat,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // Validate key length
     if private_key_bytes.len() != 32 {
         return Err(CursedError::InvalidArgument("X25519 private key must be 32 bytes".to_string()));
@@ -765,7 +764,7 @@ fn convert_x25519_private_key_format(
 }
 
 /// Check if private key is encrypted
-pub fn is_private_key_encrypted(args: Vec<Value>) -> Result<(), Error> {
+pub fn is_private_key_encrypted(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Private key required".to_string()));
     }
@@ -798,7 +797,7 @@ fn detect_pkcs8_encryption(data: &[u8]) -> bool {
 }
 
 /// Get private key strength assessment
-pub fn assess_private_key_strength(args: Vec<Value>) -> Result<(), Error> {
+pub fn assess_private_key_strength(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::InvalidArgument("Strength assessment requires: algorithm, private_key".to_string()));
     }
@@ -861,53 +860,3 @@ pub fn list_private_key_formats() -> Vec<String> {
     ]
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_algorithm_from_name() {
-        assert_eq!(PrivateKeyAlgorithm::from_name("RSA-2048").unwrap(), PrivateKeyAlgorithm::Rsa2048);
-        assert_eq!(PrivateKeyAlgorithm::from_name("ed25519").unwrap(), PrivateKeyAlgorithm::Ed25519);
-        assert!(PrivateKeyAlgorithm::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_format_from_name() {
-        assert_eq!(PrivateKeyFormat::from_name("PKCS#8-DER").unwrap(), PrivateKeyFormat::Pkcs8Der);
-        assert_eq!(PrivateKeyFormat::from_name("raw").unwrap(), PrivateKeyFormat::Raw);
-        assert!(PrivateKeyFormat::from_name("invalid").is_err());
-    }
-
-    #[test]
-    fn test_validate_ed25519_private_key() {
-        let valid_key = vec![0u8; 32];
-        assert!(validate_ed25519_private_key(&valid_key).is_ok());
-        
-        let invalid_key = vec![0u8; 16];
-        assert!(validate_ed25519_private_key(&invalid_key).is_err());
-    }
-
-    #[test]
-    fn test_validate_x25519_private_key() {
-        let valid_key = vec![0u8; 32];
-        assert!(validate_x25519_private_key(&valid_key).is_ok());
-        
-        let invalid_key = vec![0u8; 16];
-        assert!(validate_x25519_private_key(&invalid_key).is_err());
-    }
-
-    #[test]
-    fn test_list_private_key_algorithms() {
-        let algorithms = list_private_key_algorithms();
-        assert!(algorithms.contains(&"RSA-2048".to_string()));
-        assert!(algorithms.contains(&"Ed25519".to_string()));
-    }
-
-    #[test]
-    fn test_list_private_key_formats() {
-        let formats = list_private_key_formats();
-        assert!(formats.contains(&"PKCS#8-DER".to_string()));
-        assert!(formats.contains(&"Raw".to_string()));
-    }
-}

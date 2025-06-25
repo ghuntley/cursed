@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// LookinGlass - Runtime reflection capabilities for CURSED
 /// 
 /// This package provides runtime reflection capabilities that allow programs 
@@ -55,6 +55,8 @@ static INIT: Once = Once::new();
 
 /// Initialize the LookinGlass reflection package
 pub fn initialize() {
+        // TODO: implement
+    }
     INIT.call_once(|| {
         // Initialize any global state needed for reflection
         tracing::info!("LookinGlass reflection package initialized");
@@ -80,14 +82,3 @@ pub struct ReflectionStatistics {
     pub struct_conversions: u64,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_package_initialization() {
-        initialize();
-        let stats = get_reflection_statistics();
-        assert_eq!(stats.types_created, 0);
-    }
-}

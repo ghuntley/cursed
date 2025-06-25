@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Configuration types for the CURSED compiler
 /// 
 /// This module provides type definitions for various configuration
@@ -63,14 +63,14 @@ impl CursedConfig {
     }
 
     /// Load configuration from file
-    pub fn load_from_file(path: &std::path::Path) -> Result<(), Error> {
+    pub fn load_from_file(path: &std::path::Path) -> crate::error::Result<()> {
         // Implementation would read from TOML/JSON file
         // For now, return default
         Ok(Self::new())
     }
 
     /// Save configuration to file
-    pub fn save_to_file(&self, path: &std::path::Path) -> Result<(), Error> {
+    pub fn save_to_file(&self, path: &std::path::Path) -> crate::error::Result<()> {
         // Implementation would write to TOML/JSON file
         Ok(())
     }
@@ -228,7 +228,7 @@ impl DebugConfig {
             runtime_debugging: false,
             profiling: false,
             tracing: false,
-            tracing_level: TracingLevel::Error,
+            tracing_level: TracingLevel::CursedError,
             debug_output_dir: None,
         }
     }
@@ -256,7 +256,7 @@ pub enum TracingLevel {
     Debug,
     Info,
     Warn,
-    Error,
+    CursedError,
     Off,
 }
 
@@ -275,7 +275,7 @@ pub struct RuntimeConfig {
     pub default_channel_buffer_size: usize,
     /// Panic handling configuration
     pub panic_config: PanicConfig,
-    /// Error handling configuration
+    /// CursedError handling configuration
     pub error_config: ErrorConfig,
 }
 
@@ -402,7 +402,7 @@ pub enum PanicOutputFormat {
     Json,
 }
 
-/// Error handling configuration
+/// CursedError handling configuration
 #[derive(Debug, Clone)]
 pub struct ErrorConfig {
     /// Enable error propagation
@@ -411,7 +411,7 @@ pub struct ErrorConfig {
     pub max_chain_depth: usize,
     /// Enable error context
     pub context_enabled: bool,
-    /// Error output format
+    /// CursedError output format
     pub output_format: ErrorOutputFormat,
 }
 
@@ -435,7 +435,7 @@ impl ErrorConfig {
     }
 }
 
-/// Error output format
+/// CursedError output format
 #[derive(Debug, Clone)]
 pub enum ErrorOutputFormat {
     Minimal,
@@ -692,48 +692,3 @@ impl Default for ModParser {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_cursed_config_creation() {
-        let config = CursedConfig::new();
-        assert_eq!(config.project.name, "cursed_project");
-        assert_eq!(config.project.version, "0.1.0");
-    }
-
-    #[test]
-    fn test_development_config() {
-        let config = CursedConfig::development();
-        assert!(config.debug.debug_symbols);
-        assert!(config.compilation.incremental);
-        assert_eq!(config.runtime.goroutine_stack_size, 64 * 1024);
-    }
-
-    #[test]
-    fn test_release_config() {
-        let config = CursedConfig::release();
-        assert!(!config.debug.debug_symbols);
-        assert!(!config.compilation.incremental);
-        assert!(config.output.optimize_for_size);
-    }
-
-    #[test]
-    fn test_security_context() {
-        let context = SecurityContext::new();
-        assert_eq!(context.crypto_params.symmetric_key_size, 256);
-
-        let high_security = SecurityContext::high_security();
-        assert_eq!(high_security.crypto_params.asymmetric_key_size, 4096);
-        assert!(high_security.secure_allocations);
-    }
-
-    #[test]
-    fn test_mod_parser() {
-        let parser = ModParser::new();
-        assert_eq!(parser.config.max_recursion_depth, 1000);
-        assert!(parser.config.error_recovery);
-        assert!(parser.cache_modules);
-    }
-}

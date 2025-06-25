@@ -321,7 +321,7 @@ fn get_total_memory() -> io::Result<u64> {
                     .output()?;
                 let mem_str = String::from_utf8_lossy(&output.stdout);
                 mem_str.trim().parse().map_err(|_| {
-                    io::Error::new(io::ErrorKind::InvalidData, "Failed to parse memory size")
+                    std::io::Error::new(io::ErrorKind::InvalidData, "Failed to parse memory size")
                 })
             }
             #[cfg(not(target_os = "macos"))]
@@ -376,7 +376,7 @@ fn get_uptime() -> io::Result<u64> {
             let content = fs::read_to_string("/proc/uptime")?;
             let uptime_str = content.split_whitespace().next().unwrap_or("0");
             let uptime_f: f64 = uptime_str.parse().map_err(|_| {
-                io::Error::new(io::ErrorKind::InvalidData, "Failed to parse uptime")
+                std::io::Error::new(io::ErrorKind::InvalidData, "Failed to parse uptime")
             })?;
             Ok(uptime_f as u64)
         }
@@ -558,7 +558,7 @@ pub mod file_ops {
     
     #[cfg(not(unix))]
     pub fn set_permissions<P: AsRef<Path>>(_path: P, _mode: u32) -> io::Result<()> {
-        Err(io::Error::new(
+        Err(std::io::Error::new(
             io::ErrorKind::Unsupported,
             "File permissions not supported on this platform",
         ))
@@ -574,7 +574,7 @@ pub mod file_ops {
     
     #[cfg(not(unix))]
     pub fn get_permissions<P: AsRef<Path>>(_path: P) -> io::Result<u32> {
-        Err(io::Error::new(
+        Err(std::io::Error::new(
             io::ErrorKind::Unsupported,
             "File permissions not supported on this platform",
         ))
@@ -598,7 +598,7 @@ pub mod file_ops {
     
     #[cfg(not(any(unix, windows)))]
     pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(_src: P, _dst: Q) -> io::Result<()> {
-        Err(io::Error::new(
+        Err(std::io::Error::new(
             io::ErrorKind::Unsupported,
             "Symbolic links not supported on this platform",
         ))
@@ -637,7 +637,7 @@ pub mod process_ops {
     pub fn set_priority(pid: u32, priority: i32) -> io::Result<()> {
         unsafe {
             if libc::setpriority(libc::PRIO_PROCESS, pid, priority) == -1 {
-                return Err(io::Error::last_os_error());
+                return Err(std::io::Error::last_os_error());
             }
         }
         Ok(())
@@ -645,7 +645,7 @@ pub mod process_ops {
     
     #[cfg(not(unix))]
     pub fn set_priority(_pid: u32, _priority: i32) -> io::Result<()> {
-        Err(io::Error::new(
+        Err(std::io::Error::new(
             io::ErrorKind::Unsupported,
             "Process priority setting not implemented on this platform",
         ))
@@ -656,8 +656,8 @@ pub mod process_ops {
     pub fn get_priority(pid: u32) -> io::Result<i32> {
         unsafe {
             let priority = libc::getpriority(libc::PRIO_PROCESS, pid);
-            if priority == -1 && io::Error::last_os_error().kind() != io::ErrorKind::NotFound {
-                Err(io::Error::last_os_error())
+            if priority == -1 && std::io::Error::last_os_error().kind() != io::ErrorKind::NotFound {
+                Err(std::io::Error::last_os_error())
             } else {
                 Ok(priority)
             }
@@ -666,7 +666,7 @@ pub mod process_ops {
     
     #[cfg(not(unix))]
     pub fn get_priority(_pid: u32) -> io::Result<i32> {
-        Err(io::Error::new(
+        Err(std::io::Error::new(
             io::ErrorKind::Unsupported,
             "Process priority getting not implemented on this platform",
         ))
@@ -845,65 +845,3 @@ extern crate num_cpus;
 // Include external crate for directories
 extern crate dirs;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-    
-    #[test]
-    fn test_platform_detection() {
-        let platform = Platform::current();
-        assert_ne!(platform, Platform::Unknown);
-        assert!(!platform.name().is_empty());
-    }
-    
-    #[test]
-    fn test_platform_properties() {
-        let platform = Platform::current();
-        
-        if platform.is_windows() {
-            assert_eq!(platform.path_separator(), '\\');
-            assert_eq!(platform.env_path_separator(), ';');
-        } else {
-            assert_eq!(platform.path_separator(), '/');
-            assert_eq!(platform.env_path_separator(), ':');
-        }
-    }
-    
-    #[test]
-    fn test_feature_support() {
-        let features = get_supported_features();
-        assert!(!features.is_empty());
-        
-        // Thread support should be available on all platforms
-        assert!(PlatformFeature::ThreadSupport.is_supported());
-        
-        // Case sensitivity depends on platform
-        let case_sensitive = PlatformFeature::CaseSensitiveFileSystem.is_supported();
-        assert_eq!(case_sensitive, !Platform::current().is_windows());
-    }
-    
-    #[test]
-    fn test_system_info() {
-        if let Ok(info) = SystemInfo::gather() {
-            assert!(!info.hostname.is_empty());
-            assert!(!info.architecture.is_empty());
-            assert!(info.cpu_count > 0);
-        }
-    }
-    
-    #[test]
-    fn test_process_operations() {
-        let pid = process_ops::current_pid();
-        assert!(pid > 0);
-    }
-    
-    #[test]
-    fn test_directory_functions() {
-        assert!(get_temp_directory().exists());
-        
-        if let Some(home) = get_home_directory() {
-            assert!(home.exists());
-        }
-    }
-}

@@ -1,11 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CURSED Code Formatter CLI Tool
 /// 
 /// A command-line interface for formatting CURSED source code files with
 /// configurable formatting rules and comprehensive options.
 
 use cursed::tools::formatter::{CursedFormatter, FormatterConfig, BraceStyle, OperatorSpacing, CommaSpacing};
-use cursed::error::Error;
 use std::env;
 use std::fs;
 use std::io::{self, Read, Write};
@@ -42,10 +41,12 @@ impl Default for CliConfig {
 }
 
 fn main() {
+        // TODO: implement
+    }
     let config = match parse_args() {
         Ok(config) => config,
         Err(error) => {
-            eprintln!("Error: {}", error);
+            eprintln!("CursedError: {}", error);
             process::exit(1);
         }
     };
@@ -54,7 +55,7 @@ fn main() {
     match result {
         Ok(exit_code) => process::exit(exit_code),
         Err(error) => {
-            eprintln!("Error: {}", error);
+            eprintln!("CursedError: {}", error);
             process::exit(1);
         }
     }
@@ -218,7 +219,7 @@ fn load_config_file(config: &mut CliConfig, path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn run_formatter(config: CliConfig) -> Result<(), Error> {
+fn run_formatter(config: CliConfig) -> crate::error::Result<()> {
     let mut formatter = CursedFormatter::new(config.formatter_config.clone());
     let mut total_files = 0;
     let mut changed_files = 0;
@@ -228,7 +229,7 @@ fn run_formatter(config: CliConfig) -> Result<(), Error> {
         // Read from stdin
         let mut input = String::new();
         io::stdin().read_to_string(&mut input)
-            .map_err(|e| Error::General(format!("Failed to read from stdin: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to read from stdin: {}", e)))?;
 
         let result = formatter.format(&input)?;
         
@@ -274,7 +275,7 @@ fn run_formatter(config: CliConfig) -> Result<(), Error> {
             }
             Err(e) => {
                 if !config.quiet {
-                    eprintln!("Error processing {}: {}", file_path.display(), e);
+                    eprintln!("CursedError processing {}: {}", file_path.display(), e);
                 }
                 error_files += 1;
             }
@@ -304,11 +305,11 @@ fn run_formatter(config: CliConfig) -> Result<(), Error> {
     }
 }
 
-fn collect_cursed_files(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), Error> {
+fn collect_cursed_files(dir: &Path, files: &mut Vec<PathBuf>) -> crate::error::Result<()> {
     for entry in fs::read_dir(dir)
-        .map_err(|e| Error::General(format!("Failed to read directory {}: {}", dir.display(), e)))? {
+        .map_err(|e| CursedError::General(format!("Failed to read directory {}: {}", dir.display(), e)))? {
         let entry = entry
-            .map_err(|e| Error::General(format!("Failed to read directory entry: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to read directory entry: {}", e)))?;
         let path = entry.path();
         
         if path.is_dir() {
@@ -320,9 +321,9 @@ fn collect_cursed_files(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), Erro
     Ok(())
 }
 
-fn process_file(formatter: &mut CursedFormatter, file_path: &Path, config: &CliConfig) -> Result<(), Error> {
+fn process_file(formatter: &mut CursedFormatter, file_path: &Path, config: &CliConfig) -> crate::error::Result<()> {
     let content = fs::read_to_string(file_path)
-        .map_err(|e| Error::General(format!("Failed to read file: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to read file: {}", e)))?;
 
     let result = formatter.format(&content)?;
 
@@ -347,7 +348,7 @@ fn process_file(formatter: &mut CursedFormatter, file_path: &Path, config: &CliC
     } else if config.write_in_place {
         if result.changes_made {
             fs::write(file_path, &result.formatted_code)
-                .map_err(|e| Error::General(format!("Failed to write file: {}", e)))?;
+                .map_err(|e| CursedError::General(format!("Failed to write file: {}", e)))?;
             if !config.quiet {
                 eprintln!("Formatted: {}", file_path.display());
             }
@@ -387,6 +388,8 @@ fn print_diff(filename: &str, original: &str, formatted: &str) {
 }
 
 fn print_usage() {
+        // TODO: implement
+    }
     println!("cursed-fmt {}", env!("CARGO_PKG_VERSION"));
     println!("A code formatter for the CURSED programming language");
     println!();

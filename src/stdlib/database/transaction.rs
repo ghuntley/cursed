@@ -4,7 +4,7 @@
 
 use std::sync::{Arc, Mutex};
 use super::{DatabaseError, DatabaseErrorKind, TxOptions, DriverTx};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// fr fr Transaction manager for coordinating database transactions
 #[derive(Debug)]
@@ -22,7 +22,7 @@ impl TransactionManager {
     }
 
     /// slay Begin a new transaction
-    pub fn begin(&self, tx: Box<dyn DriverTx>) -> Result<(), Error> {
+    pub fn begin(&self, tx: Box<dyn DriverTx>) -> crate::error::Result<()> {
         let mut active = self.active_tx.lock().map_err(|_| {
             DatabaseError::transaction_error("Failed to acquire transaction lock")
         })?;
@@ -36,7 +36,7 @@ impl TransactionManager {
     }
 
     /// slay Commit the active transaction
-    pub fn commit(&self) -> Result<(), Error> {
+    pub fn commit(&self) -> crate::error::Result<()> {
         let mut active = self.active_tx.lock().map_err(|_| {
             DatabaseError::transaction_error("Failed to acquire transaction lock")
         })?;
@@ -49,7 +49,7 @@ impl TransactionManager {
     }
 
     /// slay Rollback the active transaction
-    pub fn rollback(&self) -> Result<(), Error> {
+    pub fn rollback(&self) -> crate::error::Result<()> {
         let mut active = self.active_tx.lock().map_err(|_| {
             DatabaseError::transaction_error("Failed to acquire transaction lock")
         })?;

@@ -1,8 +1,8 @@
-use crate::stdlib::embed_that::core::{ThatFiles, tea};
-use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
-use crate::stdlib::template::{TemplateEngine, TemplateConfig, TemplateFormat};
+// use crate::stdlib::embed_that::core::{ThatFiles, tea};
+// use crate::stdlib::embed_that::error::{EmbedError, EmbedResult};
+// use crate::stdlib::template::{TemplateEngine, TemplateConfig, TemplateFormat};
 use std::collections::HashMap;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Template integration for embedded files
 pub struct TemplateIntegration;
@@ -47,7 +47,7 @@ impl TemplateIntegration {
         config.strict_mode = false;
         
         // Create template engine
-        let engine = crate::stdlib::template::create_template_engine(config)
+//         let engine = crate::stdlib::template::create_template_engine(config)
             .map_err(|e| EmbedError::TemplateParsingError { 
                 reason: format!("Failed to create template engine: {}", e) 
             })?;
@@ -91,7 +91,7 @@ impl TemplateIntegration {
         let mut config = TemplateConfig::default();
         config.auto_escape = true;
         
-        let engine = crate::stdlib::template::create_template_engine(config)
+//         let engine = crate::stdlib::template::create_template_engine(config)
             .map_err(|e| EmbedError::TemplateParsingError { 
                 reason: format!("Failed to create template engine: {}", e) 
             })?;
@@ -169,7 +169,7 @@ impl TemplateIntegration {
         }
         
         // Create template engine with provided configuration
-        let engine = crate::stdlib::template::create_template_engine(config)
+//         let engine = crate::stdlib::template::create_template_engine(config)
             .map_err(|e| EmbedError::TemplateParsingError { 
                 reason: format!("Failed to create template engine: {}", e) 
             })?;
@@ -207,7 +207,7 @@ impl TemplateIntegration {
                     let format = detect_template_format(&template_name);
                     let config = TemplateConfig::default();
                     
-                    match crate::stdlib::template::create_template_engine(config) {
+//                     match crate::stdlib::template::create_template_engine(config) {
                         Ok(engine) => {
                             match engine.add_template(&template_name, &content, format) {
                                 Ok(_) => {

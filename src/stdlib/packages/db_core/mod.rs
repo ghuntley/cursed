@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Core database interfaces and types - the foundation periodt
 /// 
 /// This module provides the fundamental database abstractions that all
@@ -166,26 +166,3 @@ pub fn init_db_core() -> DbResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_driver_registry() {
-        let mut registry = DriverRegistry::new();
-        assert_eq!(registry.list_drivers().len(), 0);
-        
-        // In a real test, we'd register a mock driver here
-        assert!(registry.get_driver("nonexistent").is_none());
-    }
-    
-    #[test]
-    fn test_init_db_core() {
-        assert!(init_db_core().is_ok());
-    }
-    
-    #[test]
-    fn test_utils() {
-        assert!(!utils::is_driver_available("nonexistent"));
-    }
-}

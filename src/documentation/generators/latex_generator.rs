@@ -5,7 +5,7 @@
 // mathematical notation, cross-references, and support for multiple document classes.
 
 use crate::ast::*;
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -255,11 +255,11 @@ impl LaTeXGenerator {
         &mut self,
         docs: &[crate::documentation::ExtractedDocumentation],
         output_dir: &Path,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Generating LaTeX documentation for {} modules", docs.len());
         
         std::fs::create_dir_all(output_dir)
-            .map_err(|e| Error::FileWriteError(output_dir.to_path_buf(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(output_dir.to_path_buf(), e.to_string()))?;
 
         let mut output_files = Vec::new();
 
@@ -267,7 +267,7 @@ impl LaTeXGenerator {
         let main_content = self.generate_main_document(docs)?;
         let main_file = output_dir.join("documentation.tex");
         std::fs::write(&main_file, main_content)
-            .map_err(|e| Error::FileWriteError(main_file.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(main_file.clone(), e.to_string()))?;
         output_files.push(main_file);
 
         // Generate individual module files if using report or book class
@@ -280,7 +280,7 @@ impl LaTeXGenerator {
                     .replace(' ', "_");
                 let module_file = output_dir.join(format!("{}.tex", module_name));
                 std::fs::write(&module_file, module_content)
-                    .map_err(|e| Error::FileWriteError(module_file.clone(), e.to_string()))?;
+                    .map_err(|e| CursedError::FileWriteError(module_file.clone(), e.to_string()))?;
                 output_files.push(module_file);
             }
         }
@@ -290,7 +290,7 @@ impl LaTeXGenerator {
             let bib_content = self.generate_bibliography()?;
             let bib_file = output_dir.join("references.bib");
             std::fs::write(&bib_file, bib_content)
-                .map_err(|e| Error::FileWriteError(bib_file.clone(), e.to_string()))?;
+                .map_err(|e| CursedError::FileWriteError(bib_file.clone(), e.to_string()))?;
             output_files.push(bib_file);
         }
 
@@ -298,25 +298,25 @@ impl LaTeXGenerator {
         let makefile_content = self.generate_makefile()?;
         let makefile = output_dir.join("Makefile");
         std::fs::write(&makefile, makefile_content)
-            .map_err(|e| Error::FileWriteError(makefile.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(makefile.clone(), e.to_string()))?;
         output_files.push(makefile);
 
         // Generate compilation script
         let compile_script = self.generate_compile_script()?;
         let script_file = output_dir.join("compile.sh");
         std::fs::write(&script_file, compile_script)
-            .map_err(|e| Error::FileWriteError(script_file.clone(), e.to_string()))?;
+            .map_err(|e| CursedError::FileWriteError(script_file.clone(), e.to_string()))?;
         
         // Make script executable
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = std::fs::metadata(&script_file)
-                .map_err(|e| Error::FileWriteError(script_file.clone(), e.to_string()))?
+                .map_err(|e| CursedError::FileWriteError(script_file.clone(), e.to_string()))?
                 .permissions();
             perms.set_mode(0o755);
             std::fs::set_permissions(&script_file, perms)
-                .map_err(|e| Error::FileWriteError(script_file.clone(), e.to_string()))?;
+                .map_err(|e| CursedError::FileWriteError(script_file.clone(), e.to_string()))?;
         }
         
         output_files.push(script_file);
@@ -330,7 +330,7 @@ impl LaTeXGenerator {
     fn generate_main_document(
         &mut self,
         docs: &[crate::documentation::ExtractedDocumentation],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut latex = String::new();
 
         // Document class and options
@@ -381,7 +381,7 @@ impl LaTeXGenerator {
 
     /// Generate LaTeX preamble with packages and configurations
     #[instrument(skip(self))]
-    fn generate_preamble(&self) -> Result<(), Error> {
+    fn generate_preamble(&self) -> crate::error::Result<()> {
         let mut preamble = String::new();
 
         // Unicode support
@@ -469,7 +469,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate code highlighting setup
-    fn generate_code_highlighting_setup(&self) -> Result<(), Error> {
+    fn generate_code_highlighting_setup(&self) -> crate::error::Result<()> {
         let mut setup = String::new();
 
         if self.config.syntax_highlighting.use_minted {
@@ -545,7 +545,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate title page
-    fn generate_title_page(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<(), Error> {
+    fn generate_title_page(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> crate::error::Result<()> {
         let mut title = String::new();
 
         match self.config.document_class {
@@ -581,7 +581,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate table of contents
-    fn generate_table_of_contents(&self) -> Result<(), Error> {
+    fn generate_table_of_contents(&self) -> crate::error::Result<()> {
         let mut toc = String::new();
 
         match self.config.document_class {
@@ -617,7 +617,7 @@ impl LaTeXGenerator {
     fn generate_main_content(
         &mut self,
         docs: &[crate::documentation::ExtractedDocumentation],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut content = String::new();
 
         // Introduction section
@@ -638,7 +638,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate introduction section
-    fn generate_introduction_section(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<(), Error> {
+    fn generate_introduction_section(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> crate::error::Result<()> {
         let mut intro = String::new();
 
         let section_cmd = match self.config.document_class {
@@ -698,7 +698,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate quick reference section
-    fn generate_quick_reference_section(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<(), Error> {
+    fn generate_quick_reference_section(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> crate::error::Result<()> {
         let mut reference = String::new();
 
         let section_cmd = match self.config.document_class {
@@ -789,7 +789,7 @@ impl LaTeXGenerator {
         &mut self,
         doc: &crate::documentation::ExtractedDocumentation,
         index: usize,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut module = String::new();
 
         let module_name = doc.source_file.file_stem()
@@ -871,7 +871,7 @@ impl LaTeXGenerator {
         func: &crate::documentation::FunctionDoc,
         module_name: &str,
         index: usize,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut doc = String::new();
 
         // Function header
@@ -985,7 +985,7 @@ impl LaTeXGenerator {
         type_doc: &crate::documentation::TypeDoc,
         module_name: &str,
         index: usize,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut doc = String::new();
 
         // Type header
@@ -1086,7 +1086,7 @@ impl LaTeXGenerator {
         constant: &crate::documentation::DocumentationItem,
         module_name: &str,
         index: usize,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut doc = String::new();
 
         // Constant header
@@ -1120,7 +1120,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate API reference appendix
-    fn generate_api_reference_appendix(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> Result<(), Error> {
+    fn generate_api_reference_appendix(&self, docs: &[crate::documentation::ExtractedDocumentation]) -> crate::error::Result<()> {
         let mut appendix = String::new();
 
         let section_cmd = match self.config.document_class {
@@ -1199,7 +1199,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate bibliography section
-    fn generate_bibliography_section(&self) -> Result<(), Error> {
+    fn generate_bibliography_section(&self) -> crate::error::Result<()> {
         let mut bib = String::new();
 
         match self.config.document_class {
@@ -1222,7 +1222,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate index section
-    fn generate_index_section(&self) -> Result<(), Error> {
+    fn generate_index_section(&self) -> crate::error::Result<()> {
         let mut index = String::new();
 
         if !matches!(self.config.document_class, DocumentClass::Beamer) {
@@ -1233,7 +1233,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate module document (for separate compilation)
-    fn generate_module_document(&mut self, doc: &crate::documentation::ExtractedDocumentation) -> Result<(), Error> {
+    fn generate_module_document(&mut self, doc: &crate::documentation::ExtractedDocumentation) -> crate::error::Result<()> {
         let module_name = doc.source_file.file_stem()
             .unwrap_or_default()
             .to_string_lossy();
@@ -1249,7 +1249,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate bibliography file
-    fn generate_bibliography(&self) -> Result<(), Error> {
+    fn generate_bibliography(&self) -> crate::error::Result<()> {
         let mut bib = String::new();
 
         // Add standard CURSED language reference
@@ -1280,7 +1280,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate Makefile for LaTeX compilation
-    fn generate_makefile(&self) -> Result<(), Error> {
+    fn generate_makefile(&self) -> crate::error::Result<()> {
         let mut makefile = String::new();
 
         makefile.push_str("# LaTeX Documentation Makefile for CURSED\n");
@@ -1347,7 +1347,7 @@ impl LaTeXGenerator {
     }
 
     /// Generate compilation script
-    fn generate_compile_script(&self) -> Result<(), Error> {
+    fn generate_compile_script(&self) -> crate::error::Result<()> {
         let mut script = String::new();
 
         script.push_str("#!/bin/bash\n");

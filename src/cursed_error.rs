@@ -1,17 +1,17 @@
 // Core CURSED error type for high-level operations
 // This provides a unified error interface for the CURSED language
 
-use crate::error_types::Error;
+use crate::error::CursedError;
 
-/// Main CURSED error type - a wrapper around the core Error enum
+/// Main CURSED error type - a wrapper around the core CursedError enum
 #[derive(Debug, Clone)]
 pub struct CursedError {
-    pub error: Error,
+    pub error: CursedError,
     pub context: Option<String>,
 }
 
 impl CursedError {
-    pub fn new(error: Error) -> Self {
+    pub fn new(error: CursedError) -> Self {
         Self { error, context: None }
     }
 
@@ -21,20 +21,21 @@ impl CursedError {
     }
 }
 
-impl From<Error> for CursedError {
-    fn from(error: Error) -> Self {
-        Self::new(error)
-    }
-}
+// impl From<CursedError> for CursedError {
+//     fn from(error: CursedError) -> Self {
+//         Self::new(error)
+//     }
+// }
 
-impl std::fmt::Display for CursedError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(context) = &self.context {
-            write!(f, "{}: {}", context, self.error)
-        } else {
-            write!(f, "{}", self.error)
-        }
-    }
-}
+// impl std::fmt::Display for CursedError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         if let Some(context) = &self.context {
+//             write!(f, "{}: {}", context, self.error)
+//         } else {
+//             write!(f, "{}", self.error)
+//         }
+//     }
+// }
 
-impl std::error::Error for CursedError {}
+// impl std::error::CursedError for CursedError {}
+// 

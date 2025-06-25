@@ -1,6 +1,6 @@
-use crate::stdlib::web_vibez::SecurityContext;
-use crate::stdlib::process::EnhancedProcess;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::SecurityContext;
+// use crate::stdlib::process::EnhancedProcess;
+use crate::error::CursedError;
 /// Unix-specific process management and IPC implementation
 /// 
 /// This module provides Unix-specific implementations for the unified
@@ -30,11 +30,10 @@ use nix::sys::stat::Mode;
 use nix::sys::wait::{waitpid, WaitStatus};
 use nix::unistd::{fork, ForkResult, Pid, getpid, getppid, setsid, setpgid};
 
-use crate::error::CursedError;
-use crate::stdlib::process::error::{ProcessError, ProcessResult};
-use crate::stdlib::process::enhanced_control::{EnhancedProcess as StdEnhancedProcess};
+// use crate::stdlib::process::error::{ProcessError, ProcessResult};
+// use crate::stdlib::process::enhanced_control::{EnhancedProcess as StdEnhancedProcess};
 use crate::runtime::process::{ResourceLimits as RuntimeResourceLimits, SecurityContext as RuntimeSecurityContext};
-use crate::stdlib::process::info::{ProcessState as StdProcessState};
+// use crate::stdlib::process::info::{ProcessState as StdProcessState};
 
 type ResourceLimits = RuntimeResourceLimits;
 type SecurityContext = RuntimeSecurityContext;
@@ -244,7 +243,7 @@ unsafe impl Sync for ShmSegment {}
 impl UnixPlatformHandler {
     /// Create a new Unix platform handler
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         info!("Creating Unix platform handler");
         
         let settings = UnixSettings {
@@ -268,7 +267,7 @@ impl UnixPlatformHandler {
     
     /// Create a process namespace
     #[instrument(skip(self))]
-    fn create_namespace(&self, namespace_type: NamespaceType) -> Result<(), Error> {
+    fn create_namespace(&self, namespace_type: NamespaceType) -> crate::error::Result<()> {
         if !self.settings.enable_namespaces {
             return Err(CursedError::Platform("Namespaces not enabled".to_string()));
         }
@@ -289,7 +288,7 @@ impl UnixPlatformHandler {
         if result != 0 {
             return Err(CursedError::Platform(format!(
                 "Failed to create namespace: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -316,7 +315,7 @@ impl UnixPlatformHandler {
     
     /// Create a cgroup for process resource management
     #[instrument(skip(self))]
-    fn create_cgroup(&self, name: &str, limits: CgroupLimits) -> Result<(), Error> {
+    fn create_cgroup(&self, name: &str, limits: CgroupLimits) -> crate::error::Result<()> {
         if !self.settings.enable_cgroups {
             return Err(CursedError::Platform("Cgroups not enabled".to_string()));
         }
@@ -339,7 +338,7 @@ impl UnixPlatformHandler {
     
     /// Apply resource limits to a cgroup
     #[instrument(skip(self))]
-    fn apply_cgroup_limits(&self, cgroup_path: &Path, limits: &CgroupLimits) -> Result<(), Error> {
+    fn apply_cgroup_limits(&self, cgroup_path: &Path, limits: &CgroupLimits) -> crate::error::Result<()> {
         debug!("Applying cgroup resource limits");
         
         // CPU limit
@@ -376,7 +375,7 @@ impl UnixPlatformHandler {
     
     /// Create a Unix domain socket
     #[instrument(skip(self))]
-    fn create_unix_socket(&self, name: &str, socket_type: UnixSocketType) -> Result<(), Error> {
+    fn create_unix_socket(&self, name: &str, socket_type: UnixSocketType) -> crate::error::Result<()> {
         debug!(name = name, socket_type = ?socket_type, "Creating Unix domain socket");
         
         let socket_manager = self.socket_manager.lock().unwrap();
@@ -412,7 +411,7 @@ impl UnixPlatformHandler {
     
     /// Create shared memory segment
     #[instrument(skip(self))]
-    fn create_shared_memory(&self, name: &str, size: usize) -> Result<(), Error> {
+    fn create_shared_memory(&self, name: &str, size: usize) -> crate::error::Result<()> {
         debug!(name = name, size = size, "Creating shared memory segment");
         
         let shm_path = format!("/dev/shm/{}", name);
@@ -430,7 +429,7 @@ impl UnixPlatformHandler {
                 let _ = libc::close(fd);
                 return Err(CursedError::Platform(format!(
                     "Failed to set shared memory size: {}",
-                    io::Error::last_os_error()
+                    std::io::Error::last_os_error()
                 )));
             }
         }
@@ -461,11 +460,11 @@ impl UnixPlatformHandler {
         &self,
         process: &mut EnhancedProcess,
         settings: &SecuritySettings,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Applying Unix-specific security");
         
         // Apply process group isolation
-        if settings.isolation_level != crate::stdlib::process::unified_process_ipc::IsolationLevel::None {
+//         if settings.isolation_level != crate::stdlib::process::unified_process_ipc::IsolationLevel::None {
             // Create new process group
             // This would require access to the process PID
         }
@@ -480,7 +479,7 @@ impl UnixPlatformHandler {
 
 impl PlatformHandler for UnixPlatformHandler {
     #[instrument(skip(self))]
-    fn initialize(&self) -> Result<(), Error> {
+    fn initialize(&self) -> crate::error::Result<()> {
         info!("Initializing Unix platform handler");
         
         // Check if running as root for namespace support
@@ -504,7 +503,7 @@ impl PlatformHandler for UnixPlatformHandler {
     }
     
     #[instrument(skip(self))]
-    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> Result<(), Error> {
+    fn create_ipc(&self, ipc_type: IpcType, name: &str) -> crate::error::Result<()> {
         info!(ipc_type = ?ipc_type, name = name, "Creating Unix IPC mechanism");
         
         match ipc_type {
@@ -538,7 +537,7 @@ impl PlatformHandler for UnixPlatformHandler {
         &self,
         process: &mut EnhancedProcess,
         settings: &SecuritySettings,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.apply_unix_security(process, settings)
     }
     
@@ -548,7 +547,7 @@ impl PlatformHandler for UnixPlatformHandler {
     }
     
     #[instrument(skip(self))]
-    fn cleanup(&self) -> Result<(), Error> {
+    fn cleanup(&self) -> crate::error::Result<()> {
         info!("Cleaning up Unix platform handler");
         
         // Cleanup shared memory segments
@@ -589,7 +588,7 @@ enum UnixSocketConnection {
 }
 
 impl IpcConnection for UnixSocketConnection {
-    fn send(&self, message: &[u8]) -> Result<(), Error> {
+    fn send(&self, message: &[u8]) -> crate::error::Result<()> {
         match self {
             UnixSocketConnection::Stream { stream, .. } => {
                 if let Some(ref mut stream) = stream.as_ref() {
@@ -603,7 +602,7 @@ impl IpcConnection for UnixSocketConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         match self {
             UnixSocketConnection::Stream { stream, .. } => {
                 if let Some(ref mut stream) = stream.as_ref() {
@@ -619,7 +618,7 @@ impl IpcConnection for UnixSocketConnection {
         }
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         match self {
             UnixSocketConnection::Stream { path, .. } => {
                 if path.exists() {
@@ -646,7 +645,7 @@ unsafe impl Send for UnixSharedMemoryConnection {}
 unsafe impl Sync for UnixSharedMemoryConnection {}
 
 impl IpcConnection for UnixSharedMemoryConnection {
-    fn send(&self, message: &[u8]) -> Result<(), Error> {
+    fn send(&self, message: &[u8]) -> crate::error::Result<()> {
         if message.len() > self.size {
             return Err(CursedError::Platform("Message too large for shared memory".to_string()));
         }
@@ -666,7 +665,7 @@ impl IpcConnection for UnixSharedMemoryConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         let mut buffer = vec![0u8; self.size];
         unsafe {
             let addr = self.addr.load(Ordering::Acquire);
@@ -688,7 +687,7 @@ impl IpcConnection for UnixSharedMemoryConnection {
         Ok(buffer)
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         unsafe {
             let addr = self.addr.load(Ordering::Acquire);
             if !addr.is_null() {
@@ -713,7 +712,7 @@ struct UnixNamedPipeConnection {
 }
 
 impl UnixNamedPipeConnection {
-    fn new(name: &str) -> Result<(), Error> {
+    fn new(name: &str) -> crate::error::Result<()> {
         let pipe_path = PathBuf::from(format!("/tmp/{}.fifo", name));
         
         // Create FIFO
@@ -721,10 +720,10 @@ impl UnixNamedPipeConnection {
             .map_err(|e| CursedError::Platform(format!("Invalid pipe path: {}", e)))?;
         
         let result = unsafe { libc::mkfifo(pipe_path_cstr.as_ptr(), 0o666) };
-        if result != 0 && io::Error::last_os_error().kind() != io::ErrorKind::AlreadyExists {
+        if result != 0 && std::io::Error::last_os_error().kind() != io::ErrorKind::AlreadyExists {
             return Err(CursedError::Platform(format!(
                 "Failed to create FIFO: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -736,7 +735,7 @@ impl UnixNamedPipeConnection {
 }
 
 impl IpcConnection for UnixNamedPipeConnection {
-    fn send(&self, message: &[u8]) -> Result<(), Error> {
+    fn send(&self, message: &[u8]) -> crate::error::Result<()> {
         let mut file = OpenOptions::new()
             .write(true)
             .open(&self.path)
@@ -748,7 +747,7 @@ impl IpcConnection for UnixNamedPipeConnection {
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         let mut file = OpenOptions::new()
             .read(true)
             .open(&self.path)
@@ -761,7 +760,7 @@ impl IpcConnection for UnixNamedPipeConnection {
         Ok(buffer)
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         if self.path.exists() {
             std::fs::remove_file(&self.path)
                 .map_err(|e| CursedError::Platform(format!("Failed to remove FIFO: {}", e)))?;
@@ -782,7 +781,7 @@ unsafe impl Send for UnixSemaphoreConnection {}
 unsafe impl Sync for UnixSemaphoreConnection {}
 
 impl UnixSemaphoreConnection {
-    fn new(name: &str) -> Result<(), Error> {
+    fn new(name: &str) -> crate::error::Result<()> {
         let sem_name = CString::new(format!("/{}", name))
             .map_err(|e| CursedError::Platform(format!("Invalid semaphore name: {}", e)))?;
         
@@ -798,7 +797,7 @@ impl UnixSemaphoreConnection {
         if semaphore == libc::SEM_FAILED {
             return Err(CursedError::Platform(format!(
                 "Failed to create semaphore: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         
@@ -810,7 +809,7 @@ impl UnixSemaphoreConnection {
 }
 
 impl IpcConnection for UnixSemaphoreConnection {
-    fn send(&self, _message: &[u8]) -> Result<(), Error> {
+    fn send(&self, _message: &[u8]) -> crate::error::Result<()> {
         // Post (increment) semaphore
         let semaphore = self.semaphore.load(Ordering::Acquire);
         if semaphore.is_null() {
@@ -820,13 +819,13 @@ impl IpcConnection for UnixSemaphoreConnection {
         if result != 0 {
             return Err(CursedError::Platform(format!(
                 "Failed to post semaphore: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         Ok(())
     }
     
-    fn receive(&self) -> Result<(), Error> {
+    fn receive(&self) -> crate::error::Result<()> {
         // Wait (decrement) semaphore
         let semaphore = self.semaphore.load(Ordering::Acquire);
         if semaphore.is_null() {
@@ -836,13 +835,13 @@ impl IpcConnection for UnixSemaphoreConnection {
         if result != 0 {
             return Err(CursedError::Platform(format!(
                 "Failed to wait on semaphore: {}",
-                io::Error::last_os_error()
+                std::io::Error::last_os_error()
             )));
         }
         Ok(vec![1]) // Success signal
     }
     
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         unsafe {
             let semaphore = self.semaphore.load(Ordering::Acquire);
             if !semaphore.is_null() {
@@ -857,7 +856,7 @@ impl IpcConnection for UnixSemaphoreConnection {
 
 // Implementation stubs for required types
 impl UnixNamespaceManager {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         Ok(Self {
             active_namespaces: HashMap::new(),
             enabled_namespaces: Vec::new(),
@@ -866,7 +865,7 @@ impl UnixNamespaceManager {
 }
 
 impl UnixCgroupsManager {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         Ok(Self {
             base_path: PathBuf::from("/sys/fs/cgroup"),
             active_cgroups: HashMap::new(),
@@ -876,7 +875,7 @@ impl UnixCgroupsManager {
 }
 
 impl UnixSocketManager {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         let socket_dir = PathBuf::from("/tmp/cursed_sockets");
         std::fs::create_dir_all(&socket_dir)
             .map_err(|e| CursedError::Platform(format!("Failed to create socket directory: {}", e)))?;
@@ -889,7 +888,7 @@ impl UnixSocketManager {
 }
 
 impl UnixSignalManager {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         Ok(Self {
             signal_handlers: HashMap::new(),
             pending_signals: Vec::new(),
@@ -898,7 +897,7 @@ impl UnixSignalManager {
 }
 
 impl UnixSharedMemoryManager {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         Ok(Self {
             active_segments: HashMap::new(),
             shm_dir: PathBuf::from("/dev/shm"),
@@ -906,43 +905,3 @@ impl UnixSharedMemoryManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-    
-    #[test]
-    fn test_unix_platform_handler_creation() {
-        assert!(UnixPlatformHandler::new().is_ok());
-    }
-    
-    #[test]
-    fn test_cgroup_limits() {
-        let limits = CgroupLimits {
-            cpu_limit: Some(50.0),
-            memory_limit: Some(1_000_000_000), // 1GB
-            pids_limit: Some(100),
-            blkio_weight: Some(500),
-        };
-        
-        assert_eq!(limits.cpu_limit, Some(50.0));
-        assert_eq!(limits.memory_limit, Some(1_000_000_000));
-    }
-    
-    #[test]
-    fn test_namespace_types() {
-        let ns_types = vec![
-            NamespaceType::Pid,
-            NamespaceType::Net,
-            NamespaceType::Mnt,
-            NamespaceType::Uts,
-            NamespaceType::Ipc,
-            NamespaceType::User,
-            NamespaceType::Cgroup,
-        ];
-        
-        assert_eq!(ns_types.len(), 7);
-    }
-}

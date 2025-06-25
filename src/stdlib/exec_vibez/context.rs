@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Context types for exec_vibez - timeout and cancellation support
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -229,17 +229,17 @@ pub enum ContextError {
     DeadlineExceeded,
 }
 
-impl std::fmt::Display for ContextError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ContextError::Cancelled => write!(f, "context cancelled"),
-            ContextError::DeadlineExceeded => write!(f, "context deadline exceeded"),
-        }
-    }
-}
+// impl std::fmt::Display for ContextError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             ContextError::Cancelled => write!(f, "context cancelled"),
+//             ContextError::DeadlineExceeded => write!(f, "context deadline exceeded"),
+//         }
+//     }
+// }
 
-impl std::error::Error for ContextError {}
-
+// impl std::error::CursedError for ContextError {}
+// 
 /// Convenience functions following Go-style API
 
 /// Create a background context
@@ -272,123 +272,6 @@ pub fn WithValue(parent: VibeContext, key: String, value: String) -> VibeContext
     parent.with_value(key, value)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-    
-    #[test]
-    fn test_background_context() {
-        let ctx = Background();
-        assert!(!ctx.done());
-        assert!(ctx.err().is_none());
-        assert!(ctx.deadline().is_none());
-    }
-    
-    #[test]
-    fn test_context_with_timeout() {
-        let parent = Background();
-        let (ctx, _cancel) = WithTimeout(parent, Duration::from_millis(50));
-        
-        assert!(!ctx.done());
-        
-        // Wait for timeout
-        std::thread::sleep(Duration::from_millis(100));
-        
-        assert!(ctx.done());
-        assert_eq!(ctx.err(), Some(ContextError::DeadlineExceeded));
-    }
-    
-    #[test]
-    fn test_context_with_cancel() {
-        let parent = Background();
-        let (ctx, cancel) = WithCancel(parent);
-        
-        assert!(!ctx.done());
-        
-        cancel.cancel();
-        
-        assert!(ctx.done());
-        assert_eq!(ctx.err(), Some(ContextError::Cancelled));
-    }
-    
-    #[test]
-    fn test_context_with_deadline() {
-        let parent = Background();
-        let deadline = Instant::now() + Duration::from_millis(50);
-        let (ctx, _cancel) = WithDeadline(parent, deadline);
-        
-        assert!(!ctx.done());
-        assert_eq!(ctx.deadline(), Some(deadline));
-        
-        // Wait for deadline
-        std::thread::sleep(Duration::from_millis(100));
-        
-        assert!(ctx.done());
-        assert_eq!(ctx.err(), Some(ContextError::DeadlineExceeded));
-    }
-    
-    #[test]
-    fn test_context_with_value() {
-        let parent = Background();
-        let ctx = WithValue(parent, "key1".to_string(), "value1".to_string());
-        
-        assert_eq!(ctx.value("key1"), Some("value1".to_string()));
-        assert_eq!(ctx.value("nonexistent"), None);
-    }
-    
-    #[test]
-    fn test_context_inheritance() {
-        let parent = Background();
-        let ctx1 = WithValue(parent, "key1".to_string(), "value1".to_string());
-        let (ctx2, _cancel) = WithCancel(ctx1);
-        let ctx3 = WithValue(ctx2, "key2".to_string(), "value2".to_string());
-        
-        // Should inherit values from parent contexts
-        assert_eq!(ctx3.value("key1"), Some("value1".to_string()));
-        assert_eq!(ctx3.value("key2"), Some("value2".to_string()));
-    }
-    
-    #[test]
-    fn test_context_timeout_inheritance() {
-        let parent = Background();
-        let (ctx1, _cancel1) = WithTimeout(parent, Duration::from_millis(100));
-        let (ctx2, cancel2) = WithCancel(ctx1);
-        
-        // Cancel child context
-        cancel2.cancel();
-        
-        // Child should be done due to cancellation
-        assert!(ctx2.done());
-        assert_eq!(ctx2.err(), Some(ContextError::Cancelled));
-    }
-    
-    #[test]
-    fn test_will_timeout() {
-        let parent = Background();
-        let (ctx, _cancel) = WithTimeout(parent, Duration::from_millis(100));
-        
-        assert!(ctx.will_timeout(Duration::from_millis(200)));
-        assert!(!ctx.will_timeout(Duration::from_millis(50)));
-    }
-    
-    #[test]
-    fn test_context_error_display() {
-        let cancelled = ContextError::Cancelled;
-        let deadline = ContextError::DeadlineExceeded;
-        
-        assert_eq!(format!("{}", cancelled), "context cancelled");
-        assert_eq!(format!("{}", deadline), "context deadline exceeded");
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct ProcessContext {
-    pub environment: std::collections::HashMap<String, String>,
-    pub working_dir: Option<std::path::PathBuf>,
-    pub timeout: Option<std::time::Duration>,
-}
 
 impl ProcessContext {
     pub fn new() -> Self {

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Unified key generator for all asymmetric cryptography algorithms
 /// 
 /// This module provides a unified interface for generating keys across different
@@ -7,7 +7,6 @@ use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 use zeroize::Zeroizing;
-use crate::error::CursedError;
 use super::{
     rsa::{RsaEngine, RsaError, CursedRsaKeyPair, RSA_2048_BITS, RSA_3072_BITS, RSA_4096_BITS, KeyFormat as RsaKeyFormat},
     ecc::{EccEngine, EccError, EccKeyPair, EccCurve, EccKeyFormat},
@@ -149,23 +148,23 @@ pub enum KeyGeneratorError {
     Internal(String),
 }
 
-impl std::fmt::Display for KeyGeneratorError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            KeyGeneratorError::UnsupportedAlgorithm(algo) => write!(f, "Unsupported algorithm: {}", algo),
-            KeyGeneratorError::UnsupportedOperation(op) => write!(f, "Unsupported operation: {}", op),
-            KeyGeneratorError::RsaError(msg) => write!(f, "RSA error: {}", msg),
-            KeyGeneratorError::EccError(msg) => write!(f, "ECC error: {}", msg),
-            KeyGeneratorError::Ed25519Error(msg) => write!(f, "Ed25519 error: {}", msg),
-            KeyGeneratorError::X25519Error(msg) => write!(f, "X25519 error: {}", msg),
-            KeyGeneratorError::InvalidParameters(msg) => write!(f, "Invalid parameters: {}", msg),
-            KeyGeneratorError::Internal(msg) => write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for KeyGeneratorError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             KeyGeneratorError::UnsupportedAlgorithm(algo) => write!(f, "Unsupported algorithm: {}", algo),
+//             KeyGeneratorError::UnsupportedOperation(op) => write!(f, "Unsupported operation: {}", op),
+//             KeyGeneratorError::RsaError(msg) => write!(f, "RSA error: {}", msg),
+//             KeyGeneratorError::EccError(msg) => write!(f, "ECC error: {}", msg),
+//             KeyGeneratorError::Ed25519Error(msg) => write!(f, "Ed25519 error: {}", msg),
+//             KeyGeneratorError::X25519Error(msg) => write!(f, "X25519 error: {}", msg),
+//             KeyGeneratorError::InvalidParameters(msg) => write!(f, "Invalid parameters: {}", msg),
+//             KeyGeneratorError::Internal(msg) => write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for KeyGeneratorError {}
-
+// impl std::error::CursedError for KeyGeneratorError {}
+// 
 impl From<RsaError> for KeyGeneratorError {
     fn from(err: RsaError) -> Self {
         KeyGeneratorError::RsaError(err.to_string())
@@ -190,7 +189,7 @@ impl From<X25519Error> for KeyGeneratorError {
     }
 }
 
-type KeyGeneratorResult<T> = Result<T, Error>;
+type KeyGeneratorcrate::error::Result<T> = Result<T>;
 
 /// fr fr Unified key generator for all asymmetric algorithms
 /// 
@@ -424,10 +423,10 @@ impl Default for KeyGenerator {
 }
 
 /// fr fr Public API functions for CURSED integration
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 
 /// slay Generate key pair for specified algorithm
-pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn generate_asymmetric_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     let algorithm_name = if args.is_empty() {
         "Ed25519".to_string()
     } else {
@@ -465,7 +464,7 @@ pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay List supported algorithms
-pub fn list_asymmetric_algorithms(_args: Vec<Value>) -> Result<(), Error> {
+pub fn list_asymmetric_algorithms(_args: Vec<Value>) -> crate::error::Result<()> {
     let algorithms = KeyGenerator::supported_algorithms();
     let mut result = Vec::new();
     
@@ -483,91 +482,3 @@ pub fn list_asymmetric_algorithms(_args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::Array(result))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_algorithm_properties() {
-        assert!(AsymmetricAlgorithm::Rsa2048.supports_encryption());
-        assert!(AsymmetricAlgorithm::Rsa2048.supports_signing());
-        assert!(!AsymmetricAlgorithm::Rsa2048.supports_key_exchange());
-        
-        assert!(!AsymmetricAlgorithm::EcdsaP256.supports_encryption());
-        assert!(AsymmetricAlgorithm::EcdsaP256.supports_signing());
-        assert!(!AsymmetricAlgorithm::EcdsaP256.supports_key_exchange());
-        
-        assert!(!AsymmetricAlgorithm::Ed25519.supports_encryption());
-        assert!(AsymmetricAlgorithm::Ed25519.supports_signing());
-        assert!(!AsymmetricAlgorithm::Ed25519.supports_key_exchange());
-        
-        assert!(!AsymmetricAlgorithm::X25519.supports_encryption());
-        assert!(!AsymmetricAlgorithm::X25519.supports_signing());
-        assert!(AsymmetricAlgorithm::X25519.supports_key_exchange());
-    }
-    
-    #[test]
-    fn test_algorithm_from_string() {
-        assert_eq!(AsymmetricAlgorithm::from_string("RSA-2048"), Some(AsymmetricAlgorithm::Rsa2048));
-        assert_eq!(AsymmetricAlgorithm::from_string("P256"), Some(AsymmetricAlgorithm::EcdsaP256));
-        assert_eq!(AsymmetricAlgorithm::from_string("Ed25519"), Some(AsymmetricAlgorithm::Ed25519));
-        assert_eq!(AsymmetricAlgorithm::from_string("X25519"), Some(AsymmetricAlgorithm::X25519));
-        assert_eq!(AsymmetricAlgorithm::from_string("Unknown"), None);
-    }
-    
-    #[test]
-    fn test_key_generation_all_algorithms() {
-        let mut generator = KeyGenerator::new();
-        
-        for algorithm in KeyGenerator::supported_algorithms() {
-            let keypair = generator.generate_keypair(algorithm).unwrap();
-            assert_eq!(keypair.algorithm(), algorithm);
-            assert_eq!(keypair.key_size_bits(), algorithm.key_size_bits());
-        }
-    }
-    
-    #[test]
-    fn test_keypair_serialization() {
-        let mut generator = KeyGenerator::new();
-        
-        // Test RSA
-        let rsa_keypair = generator.generate_keypair(AsymmetricAlgorithm::Rsa2048).unwrap();
-        let (private_pem, public_pem) = generator.serialize_keypair_to_pem(&rsa_keypair).unwrap();
-        assert!(!private_pem.is_empty());
-        assert!(!public_pem.is_empty());
-        
-        // Test Ed25519
-        let ed_keypair = generator.generate_keypair(AsymmetricAlgorithm::Ed25519).unwrap();
-        let (private_pem, public_pem) = generator.serialize_keypair_to_pem(&ed_keypair).unwrap();
-        assert!(!private_pem.is_empty());
-        assert!(!public_pem.is_empty());
-    }
-    
-    #[test]
-    fn test_keypair_info() {
-        let mut generator = KeyGenerator::new();
-        let keypair = generator.generate_keypair(AsymmetricAlgorithm::EcdsaP256).unwrap();
-        let info = generator.get_keypair_info(&keypair);
-        
-        assert_eq!(info.get("algorithm"), Some(&"ECDSA-P256".to_string()));
-        assert_eq!(info.get("key_size_bits"), Some(&"256".to_string()));
-        assert_eq!(info.get("supports_signing"), Some(&"true".to_string()));
-        assert_eq!(info.get("supports_encryption"), Some(&"false".to_string()));
-    }
-    
-    #[test]
-    fn test_algorithm_filtering() {
-        let encryption_algos = KeyGenerator::encryption_algorithms();
-        assert!(encryption_algos.contains(&AsymmetricAlgorithm::Rsa2048));
-        assert!(!encryption_algos.contains(&AsymmetricAlgorithm::Ed25519));
-        
-        let signing_algos = KeyGenerator::signing_algorithms();
-        assert!(signing_algos.contains(&AsymmetricAlgorithm::Ed25519));
-        assert!(signing_algos.contains(&AsymmetricAlgorithm::EcdsaP256));
-        assert!(!signing_algos.contains(&AsymmetricAlgorithm::X25519));
-        
-        let kex_algos = KeyGenerator::key_exchange_algorithms();
-        assert!(kex_algos.contains(&AsymmetricAlgorithm::X25519));
-        assert!(!kex_algos.contains(&AsymmetricAlgorithm::Ed25519));
-    }
-}

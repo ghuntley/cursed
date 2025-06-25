@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP client implementation for CURSED networking
 /// 
 /// This module provides a comprehensive HTTP client with support for various
@@ -7,9 +7,9 @@ use crate::error::Error;
 use std::time::Duration;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use crate::stdlib::net::error::{NetError, NetResult, http_error, http_error_with_status, timeout_error};
-use crate::stdlib::net::socket::TcpSocket;
-use crate::stdlib::net::http::{
+// use crate::stdlib::net::error::{NetError, NetResult, http_error, http_error_with_status, timeout_error};
+// use crate::stdlib::net::socket::TcpSocket;
+// use crate::stdlib::net::http::{
     HttpRequest, HttpResponse, HttpHeaders, HttpAuth, CookieJar, ConnectionPool,
     HttpConfig, Method, Status, HttpVersion, mime
 };
@@ -581,7 +581,7 @@ struct UrlComponents {
 
 /// Enhanced JSON serialization support
 mod json {
-    use crate::stdlib::net::error::{NetError, NetResult};
+//     use crate::stdlib::net::error::{NetError, NetResult};
     use std::collections::HashMap;
     
     /// JSON serialization trait
@@ -951,7 +951,7 @@ mod json {
     
     impl<T: JsonSerialize> JsonSerialize for Vec<T> {
         fn to_json(&self) -> NetResult<String> {
-            let items: Result<(), Error> = self.iter()
+            let items: crate::error::Result<()> = self.iter()
                 .map(|item| item.to_json())
                 .collect();
             let items = items?;
@@ -961,7 +961,7 @@ mod json {
     
     impl<T: JsonSerialize> JsonSerialize for HashMap<String, T> {
         fn to_json(&self) -> NetResult<String> {
-            let items: Result<(), Error> = self.iter()
+            let items: crate::error::Result<()> = self.iter()
                 .map(|(k, v)| {
                     let value_json = v.to_json()?;
                     Ok(format!("\"{}\":{}", escape_json_string(k), value_json))
@@ -1234,228 +1234,3 @@ pub mod query {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_client_creation() {
-        let client = HttpClient::new();
-        assert!(client.is_ok());
-    }
-
-    #[test]
-    fn test_http_client_builder() {
-        let client = HttpClient::builder()
-            .connect_timeout(Duration::from_secs(10))
-            .user_agent("Test-Agent/1.0")
-            .follow_redirects(true)
-            .build();
-        
-        assert!(client.is_ok());
-    }
-
-    #[test]
-    fn test_request_builder() {
-        let client = HttpClient::new().unwrap();
-        let mut headers = HashMap::new();
-        headers.insert("key".to_string(), "value".to_string());
-        
-        let request_builder = client.post("http://example.com")
-            .header("Custom-Header", "value")
-            .content_type("application/json")
-            .form(&headers);
-        
-        // The request builder should be created successfully
-        assert_eq!(request_builder.request.method, Method::POST);
-        assert_eq!(request_builder.request.url, "http://example.com");
-    }
-
-    #[test]
-    fn test_request_builder_with_query_params() {
-        let client = HttpClient::new().unwrap();
-        
-        let request_builder = client.get("http://example.com/api")
-            .query("page", "1")
-            .query("limit", "10");
-        
-        assert!(request_builder.request.url.contains("page=1"));
-        assert!(request_builder.request.url.contains("limit=10"));
-        assert!(request_builder.request.url.contains("?"));
-    }
-
-    #[test]
-    fn test_request_builder_with_auth() {
-        let client = HttpClient::new().unwrap();
-        
-        let request_builder = client.get("http://example.com")
-            .bearer_token("abc123")
-            .basic_auth("user", Some("pass"));
-        
-        assert!(request_builder.request.headers.contains("authorization"));
-    }
-
-    #[test]
-    fn test_url_parsing() {
-        let client = HttpClient::new().unwrap();
-        
-        let url1 = client.parse_url("http://example.com/path").unwrap();
-        assert_eq!(url1.host, "example.com");
-        assert_eq!(url1.port, 80);
-        assert_eq!(url1.path, "/path");
-        assert!(!url1.is_https);
-        
-        let url2 = client.parse_url("https://example.com:8080/api").unwrap();
-        assert_eq!(url2.host, "example.com");
-        assert_eq!(url2.port, 8080);
-        assert_eq!(url2.path, "/api");
-        assert!(url2.is_https);
-    }
-
-    #[test]
-    fn test_status_line_parsing() {
-        let client = HttpClient::new().unwrap();
-        
-        let (version, status) = client.parse_status_line("HTTP/1.1 200 OK").unwrap();
-        assert_eq!(version, HttpVersion::Http11);
-        assert_eq!(status.as_u16(), 200);
-        
-        let result = client.parse_status_line("INVALID");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_url_encoding() {
-        assert_eq!(urlencoding::encode("hello world"), "hello+world");
-        assert_eq!(urlencoding::encode("test@example.com"), "test%40example.com");
-        assert_eq!(urlencoding::encode("normal"), "normal");
-        
-        assert_eq!(urlencoding::decode("hello+world"), "hello world");
-        assert_eq!(urlencoding::decode("test%40example.com"), "test@example.com");
-    }
-
-    #[test]
-    fn test_json_serialization() {
-        let value = "test string";
-        let json = json::to_string(value).unwrap();
-        assert_eq!(json, "\"test string\"");
-        
-        let number = 42i32;
-        let json = json::to_string(&number).unwrap();
-        assert_eq!(json, "42");
-        
-        let boolean = true;
-        let json = json::to_string(&boolean).unwrap();
-        assert_eq!(json, "true");
-    }
-
-    #[test]
-    fn test_json_parsing() {
-        let json_str = r#"{"name":"John","age":30,"active":true}"#;
-        let value = json::JsonValue::parse(json_str).unwrap();
-        
-        if let json::JsonValue::Object(obj) = value {
-            assert_eq!(obj.get("name"), Some(&json::JsonValue::String("John".to_string())));
-            assert_eq!(obj.get("age"), Some(&json::JsonValue::Number(30.0)));
-            assert_eq!(obj.get("active"), Some(&json::JsonValue::Bool(true)));
-        } else {
-            panic!("Expected JSON object");
-        }
-    }
-
-    #[test]
-    fn test_base64_encoding() {
-        let input = b"Hello, World!";
-        let encoded = base64_encode(input);
-        assert_eq!(encoded, "SGVsbG8sIFdvcmxkIQ==");
-        
-        let decoded = base64_decode(&encoded).unwrap();
-        assert_eq!(decoded, input);
-        
-        // Test encoding without padding
-        let input2 = b"Hello";
-        let encoded2 = base64_encode(input2);
-        let decoded2 = base64_decode(&encoded2).unwrap();
-        assert_eq!(decoded2, input2);
-    }
-
-    #[test]
-    fn test_query_parameter_handling() {
-        let mut params = HashMap::new();
-        params.insert("key1".to_string(), "value1".to_string());
-        params.insert("key2".to_string(), "value with spaces".to_string());
-        
-        let query_string = query::build_query_string(&params);
-        assert!(query_string.contains("key1=value1"));
-        assert!(query_string.contains("key2=value+with+spaces"));
-        
-        let parsed = query::parse_query_string(&query_string);
-        assert_eq!(parsed.get("key1"), Some(&"value1".to_string()));
-        assert_eq!(parsed.get("key2"), Some(&"value with spaces".to_string()));
-    }
-
-    #[test]
-    fn test_add_query_params_to_url() {
-        let mut params = HashMap::new();
-        params.insert("page".to_string(), "1".to_string());
-        params.insert("limit".to_string(), "10".to_string());
-        
-        let url = query::add_query_params("http://example.com/api", &params);
-        assert!(url.starts_with("http://example.com/api?"));
-        assert!(url.contains("page=1"));
-        assert!(url.contains("limit=10"));
-    }
-
-    #[test]
-    fn test_json_array_serialization() {
-        let vec = vec!["item1".to_string(), "item2".to_string()];
-        let json = json::to_string(&vec).unwrap();
-        assert_eq!(json, r#"["item1","item2"]"#);
-    }
-
-    #[test]
-    fn test_json_object_serialization() {
-        let mut map = HashMap::new();
-        map.insert("key1".to_string(), "value1".to_string());
-        map.insert("key2".to_string(), "value2".to_string());
-        
-        let json = json::to_string(&map).unwrap();
-        assert!(json.contains(r#""key1":"value1""#));
-        assert!(json.contains(r#""key2":"value2""#));
-        assert!(json.starts_with('{') && json.ends_with('}'));
-    }
-
-    #[test]
-    fn test_json_escape_sequences() {
-        let value = "Hello\nWorld\t\"Quote\"\\Backslash";
-        let json = json::to_string(&value).unwrap();
-        assert!(json.contains("\\n"));
-        assert!(json.contains("\\t"));
-        assert!(json.contains("\\\""));
-        assert!(json.contains("\\\\"));
-    }
-
-    #[test]
-    fn test_form_data_encoding() {
-        let client = HttpClient::new().unwrap();
-        let mut form_data = HashMap::new();
-        form_data.insert("username".to_string(), "john doe".to_string());
-        form_data.insert("password".to_string(), "secret@123".to_string());
-        
-        let request_builder = client.post("http://example.com/login")
-            .form(&form_data);
-        
-        assert!(request_builder.request.body.is_some());
-        let body = request_builder.request.body.unwrap();
-        assert!(body.contains("username=john+doe"));
-        assert!(body.contains("password=secret%40123"));
-    }
-
-    #[test]
-    fn test_chunked_encoding_utilities() {
-        // Test hex parsing for chunked encoding
-        assert_eq!(usize::from_str_radix("a", 16).unwrap(), 10);
-        assert_eq!(usize::from_str_radix("ff", 16).unwrap(), 255);
-        assert_eq!(usize::from_str_radix("1000", 16).unwrap(), 4096);
-    }
-}

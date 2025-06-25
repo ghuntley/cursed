@@ -313,6 +313,8 @@ static mut STATS_INITIALIZED: bool = false;
 
 /// Initialize global statistics tracking
 pub fn initialize_stats() {
+        // TODO: implement
+    }
     unsafe {
         if !STATS_INITIALIZED {
             GLOBAL_STATS = Some(ModuleStats::default());
@@ -322,12 +324,12 @@ pub fn initialize_stats() {
 }
 
 /// Get global module statistics
-pub fn get_module_stats() -> crate::stdlib::squish_core::error::SquishResult<ModuleStats> {
+// pub fn get_module_stats() -> crate::stdlib::squish_core::error::SquishResult<ModuleStats> {
     unsafe {
         if let Some(ref stats) = GLOBAL_STATS {
             Ok(stats.clone())
         } else {
-            Err(crate::stdlib::squish_core::error::general_error("Statistics not initialized"))
+//             Err(crate::stdlib::squish_core::error::general_error("Statistics not initialized"))
         }
     }
 }
@@ -343,6 +345,8 @@ pub fn update_global_stats(algorithm: &str, stats: &CompressionStats) {
 
 /// Record a failed operation in global statistics
 pub fn record_global_failure() {
+        // TODO: implement
+    }
     unsafe {
         if let Some(ref mut global_stats) = GLOBAL_STATS {
             global_stats.overall_metrics.record_failure();
@@ -352,6 +356,8 @@ pub fn record_global_failure() {
 
 /// Start operation tracking
 pub fn start_operation() {
+        // TODO: implement
+    }
     unsafe {
         if let Some(ref mut global_stats) = GLOBAL_STATS {
             global_stats.increment_active_operations();
@@ -361,6 +367,8 @@ pub fn start_operation() {
 
 /// End operation tracking
 pub fn end_operation() {
+        // TODO: implement
+    }
     unsafe {
         if let Some(ref mut global_stats) = GLOBAL_STATS {
             global_stats.decrement_active_operations();

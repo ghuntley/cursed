@@ -2,7 +2,7 @@
 use crate::ast::*;
 use crate::ast::conditionals::{IfStatement, ForStatement, SwitchStatement, RangeForStatement, WhileStatement};
 use crate::ast::statements::{ThrowStatement, TryStatement, CatchStatement};
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::parser::Parser;
 use crate::lexer::Lexer;
 use std::collections::HashMap;
@@ -97,7 +97,7 @@ impl CursedFormatter {
         }
     }
     
-    pub fn format(&mut self, source: &str) -> Result<(), Error> {
+    pub fn format(&mut self, source: &str) -> crate::error::Result<()> {
         // Reset state
         self.current_indent = 0;
         self.output.clear();

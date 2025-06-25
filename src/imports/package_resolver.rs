@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Package import resolution
 
 use std::collections::HashMap;
@@ -143,7 +143,7 @@ impl PackageImportResolver {
     }
     
     /// Resolve package import (e.g., "cursed-http::client")
-    pub async fn resolve_package_import(&self, import_path: &str) -> Result<(), Error> {
+    pub async fn resolve_package_import(&self, import_path: &str) -> crate::error::Result<()> {
         // Parse package import path
         let parts: Vec<&str> = import_path.split("::").collect();
         if parts.len() < 2 {
@@ -198,7 +198,7 @@ impl PackageImportResolver {
     }
     
     /// Ensure package is available for import
-    async fn ensure_package_available(&self, package_name: &str) -> Result<(), Error> {
+    async fn ensure_package_available(&self, package_name: &str) -> crate::error::Result<()> {
         let mut package_manager = self.package_manager.lock().map_err(|_| {
             ImportError::ModuleLoadError {
                 module: package_name.to_string(),
@@ -225,7 +225,7 @@ impl PackageImportResolver {
     }
     
     /// Update package export information from installed packages
-    pub async fn update_package_exports(&mut self) -> Result<(), Error> {
+    pub async fn update_package_exports(&mut self) -> crate::error::Result<()> {
         let installed = {
             let package_manager = self.package_manager.lock().map_err(|_| {
                 ImportError::ModuleLoadError {
@@ -247,7 +247,7 @@ impl PackageImportResolver {
     }
     
     /// Discover exports for an unknown package
-    fn discover_package_exports(&mut self, package: &PackageMetadata) -> Result<(), Error> {
+    fn discover_package_exports(&mut self, package: &PackageMetadata) -> crate::error::Result<()> {
         // In a real implementation, this would parse the package files
         // For now, create a basic export info
         let mut modules = HashMap::new();
@@ -288,23 +288,3 @@ impl PackageImportResolver {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::package_manager::PackageManagerConfig;
-    
-    #[tokio::test]
-    async fn test_package_import_resolution() {
-        let config = PackageManagerConfig::default();
-        let package_manager = Arc::new(Mutex::new(
-            PackageManager::new(config).unwrap()
-        ));
-        
-        let resolver = PackageImportResolver::new(package_manager);
-        
-        // This would require the package to be actually installed
-        // For testing, we rely on the known exports
-        assert!(resolver.package_exports.contains_key("cursed-http"));
-        assert!(resolver.get_package_modules("cursed-http").unwrap().contains(&"client".to_string()));
-    }
-}

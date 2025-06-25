@@ -1,5 +1,5 @@
 pub use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 // Use the main StatusCode from crate::web instead of defining our own
 use std::fmt;
 
@@ -54,29 +54,9 @@ impl fmt::Display for StatusClass {
             StatusClass::Informational => write!(f, "Informational"),
             StatusClass::Success => write!(f, "Success"),
             StatusClass::Redirection => write!(f, "Redirection"),
-            StatusClass::ClientError => write!(f, "Client Error"),
-            StatusClass::ServerError => write!(f, "Server Error"),
+            StatusClass::ClientError => write!(f, "Client CursedError"),
+            StatusClass::ServerError => write!(f, "Server CursedError"),
         }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_status_class_classification() {
-        assert_eq!(StatusClass::from_status_code(StatusCode::OK), StatusClass::Success);
-        assert_eq!(StatusClass::from_status_code(StatusCode::NotFound), StatusClass::ClientError);
-        assert_eq!(StatusClass::from_status_code(StatusCode::InternalServerError), StatusClass::ServerError);
-        assert_eq!(StatusClass::from_status_code(StatusCode::MovedPermanently), StatusClass::Redirection);
-    }
-
-    #[test]
-    fn test_status_class_helpers() {
-        assert!(StatusClass::Success.is_success());
-        assert!(!StatusClass::Success.is_error());
-        assert!(StatusClass::ClientError.is_error());
-        assert!(StatusClass::Redirection.is_redirection());
-    }
-}

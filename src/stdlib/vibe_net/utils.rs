@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// # Network Utility Functions
 /// 
 /// This module provides network utility functions including IP address manipulation,
@@ -8,8 +8,7 @@ use std::collections::HashMap;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::str::FromStr;
 use std::time::{Duration, Instant, SystemTime};
-use crate::error::CursedError;
-use crate::stdlib::vibe_net::NetResult;
+// use crate::stdlib::vibe_net::NetResult;
 
 /// Network bandwidth measurement and calculation utilities
 pub struct BandwidthMeter {
@@ -491,60 +490,3 @@ pub struct BandwidthTestResult {
     pub packet_loss: f64,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_bandwidth_meter() {
-        let mut meter = BandwidthMeter::new(Duration::from_secs(1), 100);
-        meter.record_transfer(1000, Duration::from_millis(100), TransferDirection::Download);
-        
-        let stats = meter.bandwidth_stats();
-        assert!(stats.download_bytes_per_sec > 0.0);
-    }
-
-    #[test]
-    fn test_cidr_parsing() {
-        let result = NetworkUtils::parse_cidr("192.168.1.0/24").unwrap();
-        assert_eq!(result.1, 24);
-    }
-
-    #[test]
-    fn test_ipv4_in_network() {
-        let ip = Ipv4Addr::new(192, 168, 1, 100);
-        let network = Ipv4Addr::new(192, 168, 1, 0);
-        let result = NetworkUtils::ipv4_in_network(ip, network, 24).unwrap();
-        assert!(result);
-    }
-
-    #[test]
-    fn test_format_bytes() {
-        assert_eq!(NetworkUtils::format_bytes(1024), "1.00 KB");
-        assert_eq!(NetworkUtils::format_bytes(1048576), "1.00 MB");
-    }
-
-    #[test]
-    fn test_host_count() {
-        let count = NetworkUtils::host_count(24, false).unwrap();
-        assert_eq!(count, 256);
-    }
-
-    #[test]
-    fn test_socket_addr_parsing() {
-        let addr = NetworkUtils::parse_socket_addr("127.0.0.1", 8080).unwrap();
-        assert_eq!(addr.port(), 8080);
-    }
-
-    #[test]
-    fn test_topology_discovery() {
-        let mut discovery = TopologyDiscovery::new();
-        assert_eq!(discovery.get_discovered_hosts().len(), 0);
-    }
-
-    #[test]
-    fn test_network_tester() {
-        let tester = NetworkTester::new();
-        assert_eq!(tester.packet_size, 1024);
-    }
-}

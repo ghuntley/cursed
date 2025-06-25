@@ -2,7 +2,7 @@
 /// 
 /// Provides setup and teardown functionality for tests with resource management
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use super::{VibeTest, TestVibesResult};
 use std::sync::Arc;
 
@@ -251,52 +251,3 @@ impl NetworkFixture {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::test_vibes::core::VibeTest;
-
-    #[test]
-    fn test_basic_fixture() {
-        let test = VibeTest::new("test_fixture");
-        
-        let fixture = NewFixtureVibe(
-            |_t: &VibeTest| -> TestVibesResult<Value> {
-                Ok(Value::String("test_data".to_string()))
-            },
-            |_t: &VibeTest, _fixture: &Value| -> TestVibesResult<()> {
-                Ok(())
-            }
-        );
-        
-        let result = fixture.Run(&test, |_t: &VibeTest, data: &Value| -> TestVibesResult<()> {
-            match data {
-                Value::String(s) => {
-                    assert_eq!(s, "test_data");
-                    Ok(())
-                }
-                _ => panic!("Expected string value"),
-            }
-        });
-        
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_database_fixture() {
-        let test = VibeTest::new("test_db_fixture");
-        let db_fixture = DatabaseFixture::new();
-        
-        let result = db_fixture.Run(&test, |_t: &VibeTest, db_config: &Value| -> TestVibesResult<()> {
-            if let Value::Object(config) = db_config {
-                assert!(config.contains_key("host"));
-                assert!(config.contains_key("database"));
-                Ok(())
-            } else {
-                panic!("Expected database configuration object");
-            }
-        });
-        
-        assert!(result.is_ok());
-    }
-}

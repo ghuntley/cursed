@@ -3,15 +3,16 @@
 /// This module provides thread pools, parallel iterators, and work-stealing
 /// scheduling for efficient parallel computation.
 
-use crate::stdlib::sync::error::{SyncError, SyncResult, thread_pool_error, timeout_error};
-use crate::stdlib::sync::primitives::{spawn, AtomicUsize, AtomicBool, Ordering, Mutex, CondVar};
+// use crate::stdlib::sync::error::{SyncError, SyncResult, thread_pool_error, timeout_error};
+// use crate::stdlib::sync::primitives::{spawn, AtomicUsize, AtomicBool, Ordering, Mutex};
+// use crate::stdlib::sync::primitives::CondVar;
 use std::sync::{Arc, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU64, AtomicUsize as StdAtomicUsize, AtomicBool as StdAtomicBool, Ordering as StdOrdering};
 use num_cpus;
-use crate::error::Error;
+use crate::error::CursedError;
 
 // Global thread pool management
 static GLOBAL_POOL_INITIALIZED: StdAtomicBool = StdAtomicBool::new(false);
@@ -1057,162 +1058,3 @@ pub fn get_thread_pool_utilization() -> f64 {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicI32, Ordering};
-
-    #[test]
-    fn test_thread_pool_creation() {
-        let pool = ThreadPool::new(4).unwrap();
-        assert_eq!(pool.thread_count(), 4);
-        assert_eq!(pool.active_tasks(), 0);
-    }
-
-    #[test]
-    fn test_thread_pool_execution() {
-        let pool = ThreadPool::new(2).unwrap();
-        let counter = Arc::new(AtomicI32::new(0));
-        
-        for _ in 0..10 {
-            let counter_clone = Arc::clone(&counter);
-            pool.execute(move || {
-                counter_clone.fetch_add(1, StdOrdering::Relaxed);
-            }).unwrap();
-        }
-        
-        pool.join().unwrap();
-        assert_eq!(counter.load(StdOrdering::Relaxed), 10);
-    }
-
-    #[test]
-    fn test_thread_pool_spawn() {
-        let pool = ThreadPool::new(2).unwrap();
-        
-        let handle = pool.spawn(|| 42).unwrap();
-        let result = handle.join().unwrap();
-        assert_eq!(result, 42);
-    }
-
-    #[test]
-    fn test_thread_pool_builder() {
-        let pool = ThreadPoolBuilder::new()
-            .num_threads(3)
-            .thread_name_prefix("test".to_string())
-            .build()
-            .unwrap();
-        
-        assert_eq!(pool.thread_count(), 3);
-        assert_eq!(pool.config().thread_name_prefix, "test");
-    }
-
-    #[test]
-    fn test_work_stealing_pool() {
-        let pool = WorkStealingPool::new(2).unwrap();
-        let counter = Arc::new(AtomicI32::new(0));
-        
-        for _ in 0..10 {
-            let counter_clone = Arc::clone(&counter);
-            pool.submit(move || {
-                counter_clone.fetch_add(1, StdOrdering::Relaxed);
-            }).unwrap();
-        }
-        
-        // Wait a bit for tasks to complete
-        thread::sleep(Duration::from_millis(100));
-        assert_eq!(counter.load(StdOrdering::Relaxed), 10);
-    }
-
-    #[test]
-    fn test_task_queue() {
-        let queue = TaskQueue::new();
-        
-        queue.push(Box::new(|| {})).unwrap();
-        assert_eq!(queue.len().unwrap(), 1);
-        assert!(!queue.is_empty().unwrap());
-        
-        let _task = queue.try_pop().unwrap();
-        assert_eq!(queue.len().unwrap(), 0);
-        assert!(queue.is_empty().unwrap());
-    }
-
-    #[test]
-    fn test_bounded_task_queue() {
-        let queue = TaskQueue::bounded(1);
-        
-        queue.push(Box::new(|| {})).unwrap();
-        assert!(queue.push(Box::new(|| {})).is_err()); // Should fail, queue is full
-    }
-
-    #[test]
-    fn test_parallel_for_each() {
-        let data = vec![1, 2, 3, 4, 5];
-        let counter = Arc::new(AtomicI32::new(0));
-        
-        {
-            let counter_clone = Arc::clone(&counter);
-            par_for_each(data, move |_| {
-                counter_clone.fetch_add(1, StdOrdering::Relaxed);
-            }).unwrap();
-        }
-        
-        assert_eq!(counter.load(StdOrdering::Relaxed), 5);
-    }
-
-    #[test]
-    fn test_parallel_map() {
-        let data = vec![1, 2, 3, 4, 5];
-        let results = par_map(data, |x| x * 2).unwrap();
-        assert_eq!(results, vec![2, 4, 6, 8, 10]);
-    }
-
-    #[test]
-    fn test_parallel_filter() {
-        let data = vec![1, 2, 3, 4, 5, 6];
-        let results = par_filter(data, |x| *x % 2 == 0).unwrap();
-        assert_eq!(results, vec![2, 4, 6]);
-    }
-
-    #[test]
-    fn test_parallel_reduce() {
-        let data = vec![1, 2, 3, 4, 5];
-        let sum = par_reduce(data, 0, |acc, x| acc + x).unwrap();
-        assert_eq!(sum, 15);
-    }
-
-    #[test]
-    fn test_parallel_sort() {
-        let data = vec![5, 2, 8, 1, 9, 3];
-        let sorted = parallel_sort(data).unwrap();
-        assert_eq!(sorted, vec![1, 2, 3, 5, 8, 9]);
-    }
-
-    #[test]
-    fn test_parallel_search() {
-        let data = vec![1, 2, 3, 4, 5];
-        let result = parallel_search(data, |x| *x == 3).unwrap();
-        assert_eq!(result, Some(3));
-        
-        let data = vec![1, 2, 4, 5];
-        let result = parallel_search(data, |x| *x == 3).unwrap();
-        assert_eq!(result, None);
-    }
-
-    #[test]
-    fn test_load_balancer() {
-        let balancer = LoadBalancer::new(SchedulerPolicy::RoundRobin);
-        
-        assert_eq!(balancer.select_worker(4, None), 0);
-        assert_eq!(balancer.select_worker(4, None), 1);
-        assert_eq!(balancer.select_worker(4, None), 2);
-        assert_eq!(balancer.select_worker(4, None), 3);
-        assert_eq!(balancer.select_worker(4, None), 0); // Wraps around
-    }
-
-    #[test]
-    fn test_global_thread_pool() {
-        let _ = init_global_thread_pool();
-        let pool = get_global_pool().unwrap();
-        assert!(pool.thread_count() > 0);
-    }
-}

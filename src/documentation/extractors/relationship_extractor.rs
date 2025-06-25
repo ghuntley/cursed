@@ -6,7 +6,7 @@
 
 use crate::ast::*;
 use crate::documentation::extractors::ast_node_support::{ExpressionType, Literal};
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::documentation::extractors::ast_extractor::{RelationshipInfo, RelationshipType, RelationshipStrength};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -25,7 +25,7 @@ pub struct RelationshipExtractor {
 impl RelationshipExtractor {
     /// Create a new relationship extractor
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         Ok(Self {
             relationship_cache: HashMap::new(),
             known_types: HashSet::new(),
@@ -39,7 +39,7 @@ impl RelationshipExtractor {
         &self,
         module_decl: &ModuleDeclaration,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting module relationships for: {}", module_decl.to_string());
         
         let mut relationships = Vec::new();
@@ -64,7 +64,7 @@ impl RelationshipExtractor {
         &self,
         func_decl: &FunctionDeclaration,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting function relationships for: {}", func_decl.to_string());
         
         let mut relationships = Vec::new();
@@ -112,7 +112,7 @@ impl RelationshipExtractor {
         &self,
         struct_decl: &StructDeclaration,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting struct relationships for: {}", struct_decl.to_string());
         
         let mut relationships = Vec::new();
@@ -157,7 +157,7 @@ impl RelationshipExtractor {
         &self,
         interface_decl: &InterfaceDeclaration,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!("Extracting interface relationships for: {}", interface_decl.to_string());
         
         let mut relationships = Vec::new();
@@ -207,7 +207,7 @@ impl RelationshipExtractor {
         source_name: &str,
         type_expr: &dyn Expression,
         relationship_type: RelationshipType,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         match &type_expr.expr_type {
@@ -268,7 +268,7 @@ impl RelationshipExtractor {
         &self,
         caller_name: &str,
         body: &AstNode,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // Recursively search for function calls in the AST
@@ -283,7 +283,7 @@ impl RelationshipExtractor {
         node: &AstNode,
         caller_name: &str,
         relationships: &mut Vec<RelationshipInfo>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match &node.node_type {
             AstNodeType::ExpressionStatement(expr_stmt) => {
                 self.extract_calls_from_expression(&expr_stmt.expression, caller_name, relationships)?;
@@ -340,7 +340,7 @@ impl RelationshipExtractor {
         expr: &dyn Expression,
         caller_name: &str,
         relationships: &mut Vec<RelationshipInfo>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match &expr.expr_type {
             ExpressionType::FunctionCall(call) => {
                 if let ExpressionType::Identifier(id) = &call.function.expr_type {
@@ -401,7 +401,7 @@ impl RelationshipExtractor {
         &self,
         source_name: &str,
         constraints: &[GenericConstraint],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         for constraint in constraints {
@@ -421,7 +421,7 @@ impl RelationshipExtractor {
         &self,
         module_decl: &ModuleDeclaration,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // Parse import statements from source code
@@ -447,7 +447,7 @@ impl RelationshipExtractor {
         &self,
         module_decl: &ModuleDeclaration,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // Parse export statements from source code
@@ -467,7 +467,7 @@ impl RelationshipExtractor {
         &self,
         body: &AstNode,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // This would recursively analyze the module body
@@ -480,7 +480,7 @@ impl RelationshipExtractor {
         &self,
         struct_name: &str,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // Look for impl blocks in source code
@@ -506,7 +506,7 @@ impl RelationshipExtractor {
         &self,
         struct_name: &str,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // Look for inheritance patterns in source code
@@ -533,7 +533,7 @@ impl RelationshipExtractor {
         &self,
         interface_name: &str,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // Look for interface inheritance patterns
@@ -559,7 +559,7 @@ impl RelationshipExtractor {
         &self,
         interface_name: &str,
         source_code: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut relationships = Vec::new();
 
         // Look for types that implement this interface

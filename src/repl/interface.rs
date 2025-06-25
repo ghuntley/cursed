@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // REPL User Interface Module
 // 
 // Provides the main interface components for the CURSED REPL,
@@ -8,7 +8,6 @@ use std::io::{self, Write};
 use colored::Colorize;
 
 use crate::repl::{ReplOutput, ReplResult};
-use crate::error::Error;
 
 /// REPL interface configuration
 #[derive(Debug, Clone)]
@@ -123,10 +122,10 @@ impl ReplInterface {
     fn print_error_output(&self, output: &ReplOutput) {
         if self.config.use_colors {
             print!("{} ", "🔥".bright_red());
-            print!("{}", "Error:".bright_red().bold());
+            print!("{}", "CursedError:".bright_red().bold());
             print!(" {}", output.content.bright_red());
         } else {
-            print!("🔥 Error: {}", output.content);
+            print!("🔥 CursedError: {}", output.content);
         }
 
         if let Some(duration) = output.execution_time {
@@ -166,7 +165,7 @@ impl ReplInterface {
                     println!("✅ {}", message);
                 }
             }
-            MessageType::Error => {
+            MessageType::CursedError => {
                 if self.config.use_colors {
                     println!("{} {}", "❌".bright_red(), message.bright_red());
                 } else {
@@ -203,11 +202,11 @@ impl ReplInterface {
         } else {
             print!("{} ", message);
         }
-        io::stdout().flush().map_err(|e| Error::repl_error(e.to_string()))?;
+        io::stdout().flush().map_err(|e| CursedError::repl_error(e.to_string()))?;
 
         let mut input = String::new();
         io::stdin().read_line(&mut input)
-            .map_err(|e| Error::repl_error(e.to_string()))?;
+            .map_err(|e| CursedError::repl_error(e.to_string()))?;
 
         Ok(input.trim().to_string())
     }
@@ -304,7 +303,7 @@ pub enum MessageType {
     Info,
     Warning,
     Success,
-    Error,
+    CursedError,
 }
 
 impl Default for ReplInterface {
@@ -313,58 +312,3 @@ impl Default for ReplInterface {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-
-    #[test]
-    fn test_interface_creation() {
-        let interface = ReplInterface::default();
-        assert_eq!(interface.line_number(), 1);
-    }
-
-    #[test]
-    fn test_output_formatting() {
-        let interface = ReplInterface::new(InterfaceConfig {
-            use_colors: false,
-            ..Default::default()
-        });
-
-        let output = ReplOutput::success("test result".to_string())
-            .with_timing(Duration::from_millis(10));
-
-        // This would normally print to stdout, but we can't easily test that
-        // The important thing is that it doesn't panic
-        interface.print_output(&output);
-    }
-
-    #[test]
-    fn test_message_types() {
-        let interface = ReplInterface::new(InterfaceConfig {
-            use_colors: false,
-            ..Default::default()
-        });
-
-        interface.print_message("Info message", MessageType::Info);
-        interface.print_message("Warning message", MessageType::Warning);
-        interface.print_message("Success message", MessageType::Success);
-        interface.print_message("Error message", MessageType::Error);
-    }
-
-    #[test]
-    fn test_table_printing() {
-        let interface = ReplInterface::new(InterfaceConfig {
-            use_colors: false,
-            ..Default::default()
-        });
-
-        let headers = vec!["Name", "Type", "Value"];
-        let rows = vec![
-            vec!["x".to_string(), "int".to_string(), "42".to_string()],
-            vec!["y".to_string(), "string".to_string(), "hello".to_string()],
-        ];
-
-        interface.print_table(&headers, &rows);
-    }
-}

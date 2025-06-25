@@ -3,12 +3,12 @@
 /// Unified signing interface for all signature algorithms supported by CURSED crypto.
 /// Provides algorithm abstraction, key management integration, and comprehensive error handling.
 
-use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
-use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, KeyType};
-use crate::stdlib::packages::crypto_signatures::ed25519::Ed25519Signer;
-use crate::stdlib::packages::crypto_signatures::ecdsa::EcdsaSigner;
-use crate::stdlib::packages::crypto_signatures::rsa_signatures::{RsaSigner, RsaSignatureScheme, RsaHashAlgorithm};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+// use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, KeyType};
+// use crate::stdlib::packages::crypto_signatures::ed25519::Ed25519Signer;
+// use crate::stdlib::packages::crypto_signatures::ecdsa::EcdsaSigner;
+// use crate::stdlib::packages::crypto_signatures::rsa_signatures::{RsaSigner, RsaSignatureScheme, RsaHashAlgorithm};
+use crate::error::CursedError;
 use std::sync::{Arc, Mutex};
 
 /// Universal digital signature trait
@@ -356,7 +356,7 @@ impl DigitalSignature for Ed25519Signature {
 /// Utility functions for digital signatures
 pub mod utils {
     use super::*;
-    use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
+//     use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
     
     /// Quick signature generation and verification (for testing)
     pub fn quick_sign_and_verify(message: &[u8]) -> SignatureResult<bool> {

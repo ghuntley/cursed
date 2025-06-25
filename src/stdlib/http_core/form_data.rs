@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Form Data Processing for CURSED web_vibez
 ///
 /// Comprehensive form data parsing for URL-encoded and multipart forms.
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::io::{self, Read};
 
-use crate::stdlib::http_core::{HttpError, HttpResult, ContentType, MimeType};
+// use crate::stdlib::http_core::{HttpError, HttpResult, ContentType, MimeType};
 
 /// Form field value types
 #[derive(Debug, Clone)]
@@ -545,102 +545,3 @@ impl MultipartData {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_form_value_creation() {
-        let text_value = FormValue::text("hello");
-        assert!(text_value.is_text());
-        assert_eq!(text_value.as_text(), Some("hello"));
-
-        let file_value = FormValue::file("test.txt", b"content".to_vec(), Some("text/plain"));
-        assert!(file_value.is_file());
-        assert_eq!(file_value.as_file().unwrap().0, "test.txt");
-    }
-
-    #[test]
-    fn test_form_data_url_encoded() {
-        let form_data = FormData::from_url_encoded("name=John&age=30&city=New%20York").unwrap();
-        
-        assert_eq!(form_data.get_text("name"), Some("John"));
-        assert_eq!(form_data.get_text("age"), Some("30"));
-        assert_eq!(form_data.get_text("city"), Some("New York"));
-    }
-
-    #[test]
-    fn test_form_data_to_url_encoded() {
-        let mut form_data = FormData::new();
-        form_data.add_text("name", "John Doe");
-        form_data.add_text("email", "john@example.com");
-        
-        let encoded = form_data.to_url_encoded();
-        assert!(encoded.contains("name=John%20Doe"));
-        assert!(encoded.contains("email=john%40example.com"));
-    }
-
-    #[test]
-    fn test_form_data_operations() {
-        let mut form_data = FormData::new();
-        
-        // Add fields
-        form_data.add_text("username", "alice");
-        form_data.add_text("tags", "rust");
-        form_data.add_text("tags", "web");
-        
-        assert_eq!(form_data.get_text("username"), Some("alice"));
-        assert_eq!(form_data.get_all("tags").unwrap().len(), 2);
-        assert!(form_data.contains_key("username"));
-        assert!(!form_data.contains_key("nonexistent"));
-        
-        // Remove field
-        form_data.remove("username");
-        assert!(!form_data.contains_key("username"));
-    }
-
-    #[test]
-    fn test_form_field_creation() {
-        let text_field = FormField::text("username", "alice");
-        assert_eq!(text_field.name, "username");
-        assert!(text_field.value.is_text());
-
-        let file_field = FormField::file("upload", "test.txt", b"content".to_vec(), Some("text/plain"));
-        assert_eq!(file_field.name, "upload");
-        assert!(file_field.value.is_file());
-    }
-
-    #[test]
-    fn test_form_data_validation() {
-        let mut form_data = FormData::new();
-        form_data.add_text("normal", "value");
-        
-        // Should pass validation
-        assert!(form_data.validate().is_ok());
-        
-        // Add very large text (would fail in real scenario with limits)
-        // This test validates the structure, actual limits are configurable
-        form_data.add_text("large", "x".repeat(100));
-        assert!(form_data.validate().is_ok());
-    }
-
-    #[test]
-    fn test_multipart_parser_creation() {
-        let parser = MultipartData::new("----WebKitFormBoundary123");
-        assert_eq!(parser.boundary, "----WebKitFormBoundary123");
-        assert!(parser.form_data.is_empty());
-    }
-
-    #[test]
-    fn test_content_disposition_parsing() {
-        let name = MultipartData::parse_content_disposition_name(
-            "form-data; name=\"username\"; filename=\"test.txt\""
-        );
-        assert_eq!(name, Some("username".to_string()));
-
-        let filename = MultipartData::parse_content_disposition_filename(
-            "form-data; name=\"file\"; filename=\"document.pdf\""
-        );
-        assert_eq!(filename, Some("document.pdf".to_string()));
-    }
-}

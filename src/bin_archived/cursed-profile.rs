@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // CURSED Profiling CLI Tool
 
 use clap::Parser;
@@ -8,7 +8,7 @@ use tracing_subscriber::{FmtSubscriber, EnvFilter};
 use cursed::profiling::cli::{ProfileCli, CliExecutor, CliConfig};
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> crate::error::Result<()> {
     // Initialize tracing
     let filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info"));

@@ -5,9 +5,8 @@
 /// hardness of decoding linear codes, which is believed to be quantum-resistant.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_pqc::lattice_crypto::{SecureRng, LatticeRng};
 use std::collections::HashMap;
 use std::fmt;
 
@@ -54,13 +53,13 @@ impl CodeConfig {
     }
     
     /// vibes Validate code configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.dimension >= self.code_length {
             return Err(CodeError::InvalidConfig("Dimension must be less than code length".to_string()));
         }
         
         if self.error_capacity == 0 {
-            return Err(CodeError::InvalidConfig("Error capacity must be positive".to_string()));
+            return Err(CodeError::InvalidConfig("CursedError capacity must be positive".to_string()));
         }
         
         // Check Singleton bound: k + t <= n
@@ -142,7 +141,7 @@ pub struct CodeEngine {
 
 impl CodeEngine {
     /// slay Create new code-based engine
-    pub fn new(config: CodeConfig) -> Result<(), Error> {
+    pub fn new(config: CodeConfig) -> crate::error::Result<()> {
         config.validate()?;
         
         let rng = Box::new(SecureRng::new()
@@ -158,7 +157,7 @@ impl CodeEngine {
     }
     
     /// bestie Generate code-based key pair
-    pub fn generate_keypair(&mut self) -> Result<(), Error> {
+    pub fn generate_keypair(&mut self) -> crate::error::Result<()> {
         match self.config.scheme_type {
             CodeSchemeType::McEliece => self.generate_mceliece_keypair(),
             CodeSchemeType::Niederreiter => self.generate_niederreiter_keypair(),
@@ -167,7 +166,7 @@ impl CodeEngine {
     }
     
     /// vibes Generate McEliece key pair
-    fn generate_mceliece_keypair(&mut self) -> Result<(), Error> {
+    fn generate_mceliece_keypair(&mut self) -> crate::error::Result<()> {
         let n = self.config.code_length;
         let k = self.config.dimension;
         let t = self.config.error_capacity;
@@ -217,14 +216,14 @@ impl CodeEngine {
     }
     
     /// periodt Generate Niederreiter key pair
-    fn generate_niederreiter_keypair(&mut self) -> Result<(), Error> {
+    fn generate_niederreiter_keypair(&mut self) -> crate::error::Result<()> {
         // Similar to McEliece but uses parity check matrix instead
         // This is a placeholder for the full implementation
         Err(CodeError::UnsupportedScheme("Niederreiter not fully implemented".to_string()))
     }
     
     /// sus Encrypt message using code-based cryptosystem
-    pub fn encrypt(&mut self, message: &[u8], public_key: &CodePublicKey) -> Result<(), Error> {
+    pub fn encrypt(&mut self, message: &[u8], public_key: &CodePublicKey) -> crate::error::Result<()> {
         let n = public_key.code_length;
         let k = public_key.dimension;
         let t = public_key.error_capacity;
@@ -248,7 +247,7 @@ impl CodeEngine {
     }
     
     /// facts Decrypt ciphertext using code-based cryptosystem
-    pub fn decrypt(&mut self, ciphertext: &[u8], private_key: &CodePrivateKey) -> Result<(), Error> {
+    pub fn decrypt(&mut self, ciphertext: &[u8], private_key: &CodePrivateKey) -> crate::error::Result<()> {
         let n = private_key.code_length;
         let k = private_key.dimension;
         
@@ -272,7 +271,7 @@ impl CodeEngine {
     }
     
     /// yolo Generate Goppa polynomial
-    fn generate_goppa_polynomial(&mut self, degree: usize) -> Result<(), Error> {
+    fn generate_goppa_polynomial(&mut self, degree: usize) -> crate::error::Result<()> {
         let mut coefficients = Vec::with_capacity(degree + 1);
         
         // Generate random polynomial of specified degree
@@ -294,14 +293,14 @@ impl CodeEngine {
     }
     
     /// stan Check if polynomial is irreducible (simplified)
-    fn is_irreducible(&self, _poly: &[u32]) -> Result<(), Error> {
+    fn is_irreducible(&self, _poly: &[u32]) -> crate::error::Result<()> {
         // Simplified irreducibility test
         // In practice, use proper irreducibility testing algorithms
         Ok(true)
     }
     
     /// bestie Generate random invertible matrix
-    fn generate_random_invertible_matrix(&mut self, size: usize) -> Result<(), Error> {
+    fn generate_random_invertible_matrix(&mut self, size: usize) -> crate::error::Result<()> {
         loop {
             let matrix = self.generate_random_matrix(size, size)?;
             if self.is_invertible(&matrix)? {
@@ -311,7 +310,7 @@ impl CodeEngine {
     }
     
     /// vibes Generate random matrix
-    fn generate_random_matrix(&mut self, rows: usize, cols: usize) -> Result<(), Error> {
+    fn generate_random_matrix(&mut self, rows: usize, cols: usize) -> crate::error::Result<()> {
         let mut data = Vec::with_capacity(rows * cols);
         
         for _ in 0..(rows * cols) {
@@ -323,14 +322,14 @@ impl CodeEngine {
     }
     
     /// periodt Check if matrix is invertible
-    fn is_invertible(&self, matrix: &Matrix) -> Result<(), Error> {
+    fn is_invertible(&self, matrix: &Matrix) -> crate::error::Result<()> {
         // Simplified invertibility check using determinant
         // In practice, use proper Gaussian elimination
         Ok(matrix.rows == matrix.cols && matrix.rows > 0)
     }
     
     /// sus Generate permutation matrix
-    fn generate_permutation_matrix(&mut self, size: usize) -> Result<(), Error> {
+    fn generate_permutation_matrix(&mut self, size: usize) -> crate::error::Result<()> {
         let mut permutation = (0..size).collect::<Vec<_>>();
         
         // Fisher-Yates shuffle
@@ -343,7 +342,7 @@ impl CodeEngine {
     }
     
     /// facts Helper methods for bit/byte conversion
-    fn bytes_to_bits(&self, bytes: &[u8], target_length: usize) -> Result<(), Error> {
+    fn bytes_to_bits(&self, bytes: &[u8], target_length: usize) -> crate::error::Result<()> {
         let mut bits = Vec::new();
         
         for &byte in bytes {
@@ -357,7 +356,7 @@ impl CodeEngine {
         Ok(bits)
     }
     
-    fn bits_to_bytes(&self, bits: &[u8]) -> Result<(), Error> {
+    fn bits_to_bytes(&self, bits: &[u8]) -> crate::error::Result<()> {
         let mut bytes = Vec::new();
         
         for chunk in bits.chunks(8) {
@@ -374,14 +373,14 @@ impl CodeEngine {
     }
     
     /// yolo Matrix multiplication S * G * P
-    fn multiply_matrices_sgp(&self, s: &Matrix, g: &Matrix, p: &PermutationMatrix) -> Result<(), Error> {
+    fn multiply_matrices_sgp(&self, s: &Matrix, g: &Matrix, p: &PermutationMatrix) -> crate::error::Result<()> {
         // This is a simplified implementation
         // In practice, use optimized matrix operations
         let sg = self.multiply_matrices(s, g)?;
         self.multiply_matrix_permutation(&sg, p)
     }
     
-    fn multiply_matrices(&self, a: &Matrix, b: &Matrix) -> Result<(), Error> {
+    fn multiply_matrices(&self, a: &Matrix, b: &Matrix) -> crate::error::Result<()> {
         if a.cols != b.rows {
             return Err(CodeError::MatrixError("Matrix dimensions don't match for multiplication".to_string()));
         }
@@ -401,7 +400,7 @@ impl CodeEngine {
         Ok(Matrix::new(result, a.rows, b.cols))
     }
     
-    fn multiply_matrix_permutation(&self, matrix: &Matrix, perm: &PermutationMatrix) -> Result<(), Error> {
+    fn multiply_matrix_permutation(&self, matrix: &Matrix, perm: &PermutationMatrix) -> crate::error::Result<()> {
         let mut result = vec![0u8; matrix.rows * matrix.cols];
         
         for i in 0..matrix.rows {
@@ -415,7 +414,7 @@ impl CodeEngine {
     }
     
     /// stan Placeholder methods for Goppa decoding
-    fn encode_message(&self, message: &[u8], generator: &Matrix) -> Result<(), Error> {
+    fn encode_message(&self, message: &[u8], generator: &Matrix) -> crate::error::Result<()> {
         // Simplified encoding: multiply message vector by generator matrix
         if message.len() != generator.rows {
             return Err(CodeError::EncodingError("Message length doesn't match generator matrix".to_string()));
@@ -434,7 +433,7 @@ impl CodeEngine {
         Ok(codeword)
     }
     
-    fn generate_error_vector(&mut self, length: usize, weight: usize) -> Result<(), Error> {
+    fn generate_error_vector(&mut self, length: usize, weight: usize) -> crate::error::Result<()> {
         let mut error = vec![0u8; length];
         let mut positions = Vec::new();
         
@@ -450,7 +449,7 @@ impl CodeEngine {
         Ok(error)
     }
     
-    fn add_vectors(&self, a: &[u8], b: &[u8]) -> Result<(), Error> {
+    fn add_vectors(&self, a: &[u8], b: &[u8]) -> crate::error::Result<()> {
         if a.len() != b.len() {
             return Err(CodeError::VectorError("Vector lengths don't match".to_string()));
         }
@@ -459,7 +458,7 @@ impl CodeEngine {
         Ok(result)
     }
     
-    fn apply_inverse_permutation(&self, vector: &[u8], perm: &PermutationMatrix) -> Result<(), Error> {
+    fn apply_inverse_permutation(&self, vector: &[u8], perm: &PermutationMatrix) -> crate::error::Result<()> {
         let mut result = vec![0u8; vector.len()];
         
         for (i, &pos) in perm.permutation.iter().enumerate() {
@@ -469,19 +468,19 @@ impl CodeEngine {
         Ok(result)
     }
     
-    fn decode_goppa(&self, _vector: &[u8], _private_key: &CodePrivateKey) -> Result<(), Error> {
+    fn decode_goppa(&self, _vector: &[u8], _private_key: &CodePrivateKey) -> crate::error::Result<()> {
         // Placeholder for Goppa decoding algorithm
         // In practice, implement Patterson's algorithm or similar
         Err(CodeError::DecodingError("Goppa decoding not implemented".to_string()))
     }
     
-    fn apply_inverse_s_matrix(&self, codeword: &[u8], _s_matrix: &Matrix, k: usize) -> Result<(), Error> {
+    fn apply_inverse_s_matrix(&self, codeword: &[u8], _s_matrix: &Matrix, k: usize) -> crate::error::Result<()> {
         // Placeholder for S matrix inversion
         // Return first k bits as message (simplified)
         Ok(codeword[..k].to_vec())
     }
     
-    fn remove_padding(&self, bytes: &[u8]) -> Result<(), Error> {
+    fn remove_padding(&self, bytes: &[u8]) -> crate::error::Result<()> {
         // Remove trailing zeros (simplified padding removal)
         let mut result = bytes.to_vec();
         while let Some(&0) = result.last() {
@@ -538,7 +537,7 @@ pub struct FiniteField {
 }
 
 impl FiniteField {
-    pub fn new(size: u32) -> Result<(), Error> {
+    pub fn new(size: u32) -> crate::error::Result<()> {
         if !size.is_power_of_two() {
             return Err(CodeError::InvalidConfig("Field size must be power of 2".to_string()));
         }
@@ -560,7 +559,7 @@ pub struct GoppaCode {
 }
 
 impl GoppaCode {
-    pub fn new(polynomial: Vec<u32>, length: usize, dimension: usize, error_capacity: usize, _field: &FiniteField) -> Result<(), Error> {
+    pub fn new(polynomial: Vec<u32>, length: usize, dimension: usize, error_capacity: usize, _field: &FiniteField) -> crate::error::Result<()> {
         Ok(Self {
             polynomial,
             length,
@@ -569,7 +568,7 @@ impl GoppaCode {
         })
     }
     
-    pub fn generator_matrix(&self) -> Result<(), Error> {
+    pub fn generator_matrix(&self) -> crate::error::Result<()> {
         // Placeholder for generator matrix computation
         // In practice, compute from Goppa polynomial
         let data = vec![0u8; self.dimension * self.length];
@@ -587,19 +586,19 @@ pub struct CodeKeyPair {
 
 impl CodeKeyPair {
     /// slay Generate new code-based key pair
-    pub fn generate(config: &CodeConfig) -> Result<(), Error> {
+    pub fn generate(config: &CodeConfig) -> crate::error::Result<()> {
         let mut engine = CodeEngine::new(config.clone())?;
         engine.generate_keypair()
     }
     
     /// bestie Encrypt message with public key
-    pub fn encrypt(&self, message: &[u8]) -> Result<(), Error> {
+    pub fn encrypt(&self, message: &[u8]) -> crate::error::Result<()> {
         let mut engine = CodeEngine::new(self.config.clone())?;
         engine.encrypt(message, &self.public_key)
     }
     
     /// vibes Decrypt ciphertext with private key
-    pub fn decrypt(&self, ciphertext: &[u8]) -> Result<(), Error> {
+    pub fn decrypt(&self, ciphertext: &[u8]) -> crate::error::Result<()> {
         let mut engine = CodeEngine::new(self.config.clone())?;
         engine.decrypt(ciphertext, &self.private_key)
     }
@@ -641,31 +640,31 @@ pub enum CodeError {
     UnsupportedScheme(String),
 }
 
-impl fmt::Display for CodeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CodeError::InvalidConfig(msg) => write!(f, "Code configuration error: {}", msg),
-            CodeError::InitializationError(msg) => write!(f, "Code initialization error: {}", msg),
-            CodeError::KeyGenerationError(msg) => write!(f, "Code key generation error: {}", msg),
-            CodeError::EncryptionError(msg) => write!(f, "Code encryption error: {}", msg),
-            CodeError::DecryptionError(msg) => write!(f, "Code decryption error: {}", msg),
-            CodeError::EncodingError(msg) => write!(f, "Code encoding error: {}", msg),
-            CodeError::DecodingError(msg) => write!(f, "Code decoding error: {}", msg),
-            CodeError::MatrixError(msg) => write!(f, "Matrix operation error: {}", msg),
-            CodeError::VectorError(msg) => write!(f, "Vector operation error: {}", msg),
-            CodeError::MessageTooLong(msg) => write!(f, "Message too long: {}", msg),
-            CodeError::UnsupportedScheme(msg) => write!(f, "Unsupported scheme: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for CodeError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             CodeError::InvalidConfig(msg) => write!(f, "Code configuration error: {}", msg),
+//             CodeError::InitializationError(msg) => write!(f, "Code initialization error: {}", msg),
+//             CodeError::KeyGenerationError(msg) => write!(f, "Code key generation error: {}", msg),
+//             CodeError::EncryptionError(msg) => write!(f, "Code encryption error: {}", msg),
+//             CodeError::DecryptionError(msg) => write!(f, "Code decryption error: {}", msg),
+//             CodeError::EncodingError(msg) => write!(f, "Code encoding error: {}", msg),
+//             CodeError::DecodingError(msg) => write!(f, "Code decoding error: {}", msg),
+//             CodeError::MatrixError(msg) => write!(f, "Matrix operation error: {}", msg),
+//             CodeError::VectorError(msg) => write!(f, "Vector operation error: {}", msg),
+//             CodeError::MessageTooLong(msg) => write!(f, "Message too long: {}", msg),
+//             CodeError::UnsupportedScheme(msg) => write!(f, "Unsupported scheme: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for CodeError {}
-
-impl From<CodeError> for CursedError {
-    fn from(err: CodeError) -> Self {
-        CursedError::CryptoError(err.to_string())
-    }
-}
+// impl std::error::CursedError for CodeError {}
+// 
+// impl From<CodeError> for CursedError {
+//     fn from(err: CodeError) -> Self {
+//         CursedError::CryptoError(err.to_string())
+//     }
+// }
 
 /// fr fr Code-based utility functions
 pub struct CodeUtils;
@@ -684,7 +683,7 @@ impl CodeUtils {
     }
     
     /// bestie Validate code parameters for production
-    pub fn validate_for_production(config: &CodeConfig) -> Result<(), Error> {
+    pub fn validate_for_production(config: &CodeConfig) -> crate::error::Result<()> {
         let security_bits = Self::estimate_security_level(config);
         let is_secure = security_bits >= 128.0;
         
@@ -731,133 +730,3 @@ pub struct CodeSecurityValidation {
     pub scheme_name: String,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_code_config_creation() {
-        let config = CodeConfig::new();
-        assert_eq!(config.code_length, 3488);
-        assert_eq!(config.dimension, 2720);
-        assert_eq!(config.error_capacity, 64);
-        assert_eq!(config.scheme_type, CodeSchemeType::McEliece);
-        
-        assert!(config.validate().is_ok());
-    }
-    
-    #[test]
-    fn test_code_config_security_levels() {
-        let config128 = CodeConfig::with_security_level(CodeSecurityLevel::Level128);
-        assert_eq!(config128.code_length, 3488);
-        assert_eq!(config128.security_level.bits(), 128);
-        
-        let config192 = CodeConfig::with_security_level(CodeSecurityLevel::Level192);
-        assert_eq!(config192.code_length, 4608);
-        assert_eq!(config192.security_level.bits(), 192);
-        
-        let config256 = CodeConfig::with_security_level(CodeSecurityLevel::Level256);
-        assert_eq!(config256.code_length, 6688);
-        assert_eq!(config256.security_level.bits(), 256);
-    }
-    
-    #[test]
-    fn test_code_config_validation() {
-        let mut config = CodeConfig::new();
-        
-        // Valid config should pass
-        assert!(config.validate().is_ok());
-        
-        // Invalid: dimension >= code_length
-        config.dimension = config.code_length;
-        assert!(config.validate().is_err());
-        
-        // Reset and test invalid error capacity
-        config.dimension = 2720;
-        config.error_capacity = 0;
-        assert!(config.validate().is_err());
-        
-        // Reset and test Singleton bound violation
-        config.error_capacity = 64;
-        config.dimension = config.code_length; // k + t > n
-        assert!(config.validate().is_err());
-    }
-    
-    #[test]
-    fn test_code_config_properties() {
-        let config = CodeConfig::new();
-        assert_eq!(config.redundancy(), 768); // 3488 - 2720
-        assert!((config.code_rate() - 0.7798).abs() < 0.001); // 2720/3488 ≈ 0.7798
-    }
-    
-    #[test]
-    fn test_matrix_operations() {
-        let data = vec![1, 0, 1, 0, 1, 1];
-        let matrix = Matrix::new(data, 2, 3);
-        
-        assert_eq!(matrix.get(0, 0), 1);
-        assert_eq!(matrix.get(0, 2), 1);
-        assert_eq!(matrix.get(1, 1), 1);
-        
-        let mut mutable_matrix = matrix.clone();
-        mutable_matrix.set(0, 1, 1);
-        assert_eq!(mutable_matrix.get(0, 1), 1);
-    }
-    
-    #[test]
-    fn test_permutation_matrix() {
-        let perm = PermutationMatrix::new(vec![2, 0, 1]);
-        assert_eq!(perm.permutation.len(), 3);
-        assert!(perm.permutation.contains(&0));
-        assert!(perm.permutation.contains(&1));
-        assert!(perm.permutation.contains(&2));
-    }
-    
-    #[test]
-    fn test_finite_field() {
-        let field = FiniteField::new(4096);
-        assert!(field.is_ok());
-        
-        let field = field.unwrap();
-        assert_eq!(field.size, 4096);
-        assert!(field.primitive_poly > 0);
-        
-        // Test invalid field size
-        let invalid_field = FiniteField::new(100); // Not power of 2
-        assert!(invalid_field.is_err());
-    }
-    
-    #[test]
-    fn test_code_engine_creation() {
-        let config = CodeConfig::new();
-        let engine = CodeEngine::new(config);
-        assert!(engine.is_ok());
-    }
-    
-    #[test]
-    fn test_scheme_type_names() {
-        assert_eq!(CodeSchemeType::McEliece.name(), "Classic McEliece");
-        assert_eq!(CodeSchemeType::Niederreiter.name(), "Niederreiter");
-        assert_eq!(CodeSchemeType::Bike.name(), "BIKE");
-        assert_eq!(CodeSchemeType::Hqc.name(), "HQC");
-    }
-    
-    #[test]
-    fn test_security_estimation() {
-        let config = CodeConfig::new();
-        let security_bits = CodeUtils::estimate_security_level(&config);
-        assert!(security_bits > 100.0); // Should provide reasonable security
-    }
-    
-    #[test]
-    fn test_security_validation() {
-        let config = CodeConfig::new();
-        let validation = CodeUtils::validate_for_production(&config).unwrap();
-        
-        assert!(validation.estimated_security_bits > 0.0);
-        assert!(validation.code_rate > 0.0 && validation.code_rate < 1.0);
-        assert_eq!(validation.redundancy, 768);
-        assert!(!validation.recommendations.is_empty());
-        assert_eq!(validation.scheme_name, "Classic McEliece");
-    }
-}

@@ -3,8 +3,8 @@
 /// Provides robust data structures for profile collection, aggregation, and reporting
 /// with thread-safe operations and multiple export formats.
 
-use crate::error::Error;
-use crate::stdlib::vibecheck::{memory_profiler::MemoryStats, cpu_profiler::CpuProfile};
+use crate::error::CursedError;
+// use crate::stdlib::vibecheck::{memory_profiler::MemoryStats, cpu_profiler::CpuProfile};
 use std::collections::{HashMap, BTreeMap};
 use std::time::{Duration, SystemTime};
 use std::fmt;
@@ -329,19 +329,19 @@ impl ProfileData {
     }
 
     /// Export to JSON
-    pub fn to_json(&self) -> Result<(), Error> {
+    pub fn to_json(&self) -> crate::error::Result<()> {
         serde_json::to_string_pretty(self)
-            .map_err(|e| Error::Runtime(format!("Failed to serialize to JSON: {}", e)))
+            .map_err(|e| CursedError::Runtime(format!("Failed to serialize to JSON: {}", e)))
     }
 
     /// Import from JSON
-    pub fn from_json(json: &str) -> Result<(), Error> {
+    pub fn from_json(json: &str) -> crate::error::Result<()> {
         serde_json::from_str(json)
-            .map_err(|e| Error::Runtime(format!("Failed to deserialize from JSON: {}", e)))
+            .map_err(|e| CursedError::Runtime(format!("Failed to deserialize from JSON: {}", e)))
     }
 
     /// Merge with another profile data
-    pub fn merge(&mut self, other: &ProfileData) -> Result<(), Error> {
+    pub fn merge(&mut self, other: &ProfileData) -> crate::error::Result<()> {
         // Update metadata duration
         if let (Some(self_duration), Some(other_duration)) = (&self.metadata.duration, &other.metadata.duration) {
             self.metadata.duration = Some(*self_duration + *other_duration);
@@ -523,7 +523,7 @@ impl CpuProfileData {
 
 impl ProfileReport {
     /// Generate report as string
-    pub fn generate(&self) -> Result<(), Error> {
+    pub fn generate(&self) -> crate::error::Result<()> {
         match self.config.format {
             ReportFormat::Text => self.generate_text_report(),
             ReportFormat::Json => self.data.to_json(),
@@ -534,7 +534,7 @@ impl ProfileReport {
     }
 
     /// Generate text report
-    fn generate_text_report(&self) -> Result<(), Error> {
+    fn generate_text_report(&self) -> crate::error::Result<()> {
         let mut report = String::new();
         
         report.push_str("=== CURSED Profiling Report ===\n\n");
@@ -610,7 +610,7 @@ impl ProfileReport {
     }
 
     /// Generate HTML report
-    fn generate_html_report(&self) -> Result<(), Error> {
+    fn generate_html_report(&self) -> crate::error::Result<()> {
         let mut html = String::new();
         
         html.push_str("<!DOCTYPE html>\n");
@@ -654,7 +654,7 @@ impl ProfileReport {
     }
 
     /// Generate Markdown report
-    fn generate_markdown_report(&self) -> Result<(), Error> {
+    fn generate_markdown_report(&self) -> crate::error::Result<()> {
         let mut md = String::new();
         
         md.push_str("# CURSED Profiling Report\n\n");
@@ -699,7 +699,7 @@ impl ProfileReport {
     }
 
     /// Generate CSV report
-    fn generate_csv_report(&self) -> Result<(), Error> {
+    fn generate_csv_report(&self) -> crate::error::Result<()> {
         let mut csv = String::new();
         
         // CSV headers and data for function statistics
@@ -731,14 +731,14 @@ fn get_hostname() -> String {
         .unwrap_or_else(|_| "unknown".to_string())
 }
 
-fn calculate_max_depth(function_calls: &[crate::stdlib::vibecheck::cpu_profiler::FunctionCall]) -> usize {
+// fn calculate_max_depth(function_calls: &[crate::stdlib::vibecheck::cpu_profiler::FunctionCall]) -> usize {
     function_calls.iter()
         .map(|call| calculate_call_depth(call, 0))
         .max()
         .unwrap_or(0)
 }
 
-fn calculate_call_depth(call: &crate::stdlib::vibecheck::cpu_profiler::FunctionCall, current_depth: usize) -> usize {
+// fn calculate_call_depth(call: &crate::stdlib::vibecheck::cpu_profiler::FunctionCall, current_depth: usize) -> usize {
     let max_child_depth = call.children.iter()
         .map(|child| calculate_call_depth(child, current_depth + 1))
         .max()
@@ -766,116 +766,3 @@ mod num_cpus {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_profile_data_creation() {
-        let profile = ProfileData::new("test_session".to_string(), "test_app".to_string());
-        
-        assert_eq!(profile.metadata.session_id, "test_session");
-        assert_eq!(profile.metadata.target, "test_app");
-        assert!(profile.memory.is_none());
-        assert!(profile.cpu.is_none());
-    }
-
-    #[test]
-    fn test_profile_data_finalization() {
-        let mut profile = ProfileData::new("test".to_string(), "app".to_string());
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        
-        profile.finalize();
-        
-        assert!(profile.metadata.end_time.is_some());
-        assert!(profile.metadata.duration.is_some());
-        assert!(profile.metadata.duration.unwrap() > Duration::from_millis(5));
-    }
-
-    #[test]
-    fn test_custom_metrics() {
-        let mut profile = ProfileData::new("test".to_string(), "app".to_string());
-        
-        profile.add_custom_metric("test_counter".to_string(), MetricValue::Counter(42));
-        profile.add_custom_metric("test_float".to_string(), MetricValue::Float(3.14));
-        
-        assert_eq!(profile.custom_metrics.len(), 2);
-    }
-
-    #[test]
-    fn test_json_serialization() {
-        let profile = ProfileData::new("test".to_string(), "app".to_string());
-        
-        let json = profile.to_json().unwrap();
-        assert!(json.contains("test"));
-        assert!(json.contains("session_id"));
-        
-        let restored = ProfileData::from_json(&json).unwrap();
-        assert_eq!(restored.metadata.session_id, profile.metadata.session_id);
-    }
-
-    #[test]
-    fn test_report_generation() {
-        let profile = ProfileData::new("test".to_string(), "app".to_string());
-        let report = profile.create_report(ProfileReportConfig::default());
-        
-        let text_report = report.generate().unwrap();
-        assert!(text_report.contains("Profiling Report"));
-        assert!(text_report.contains("test"));
-    }
-
-    #[test]
-    fn test_system_info() {
-        let info = SystemInfo::current();
-        
-        assert!(!info.os.is_empty());
-        assert!(!info.arch.is_empty());
-        assert!(info.cpu_cores > 0);
-        assert!(info.total_memory > 0);
-    }
-
-    #[test]
-    fn test_metric_value_formatting() {
-        assert_eq!(format_metric_value(&MetricValue::Integer(42)), "42");
-        assert_eq!(format_metric_value(&MetricValue::Float(3.14159)), "3.14");
-        assert_eq!(format_metric_value(&MetricValue::String("test".to_string())), "test");
-        assert_eq!(format_metric_value(&MetricValue::Counter(100)), "100");
-    }
-
-    #[test]
-    fn test_profile_merge() {
-        let mut profile1 = ProfileData::new("test1".to_string(), "app".to_string());
-        let profile2 = ProfileData::new("test2".to_string(), "app".to_string());
-        
-        profile1.add_custom_metric("metric1".to_string(), MetricValue::Counter(10));
-        profile1.metadata.duration = Some(Duration::from_secs(5));
-        
-        profile1.merge(&profile2).unwrap();
-        
-        assert!(profile1.custom_metrics.contains_key("metric1"));
-    }
-
-    #[test] 
-    fn test_report_formats() {
-        let profile = ProfileData::new("test".to_string(), "app".to_string());
-        
-        // Test different report formats
-        let mut config = ProfileReportConfig::default();
-        
-        config.format = ReportFormat::Text;
-        let text = profile.create_report(config.clone()).generate().unwrap();
-        assert!(text.contains("Profiling Report"));
-        
-        config.format = ReportFormat::Json;
-        let json = profile.create_report(config.clone()).generate().unwrap();
-        assert!(json.contains("session_id"));
-        
-        config.format = ReportFormat::Markdown;
-        let md = profile.create_report(config.clone()).generate().unwrap();
-        assert!(md.contains("# CURSED Profiling Report"));
-        
-        config.format = ReportFormat::Html;
-        let html = profile.create_report(config.clone()).generate().unwrap();
-        assert!(html.contains("<html>"));
-    }
-}

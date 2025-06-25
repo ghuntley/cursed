@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// ChaosMode - CURSED Runtime System Package
 /// 
 /// Provides comprehensive access to the CURSED runtime system for goroutine management,
@@ -112,7 +112,7 @@ pub fn chaos_stats() -> ChaosResult<serde_json::Value> {
         },
         "memory": {
             "stats": mem_stats()?,
-            "gc_percent": crate::stdlib::vibecheck::get_gc_percent(),
+//             "gc_percent": crate::stdlib::vibecheck::get_gc_percent(),
         },
         "system": {
             "num_cpu": num_cpu()?,

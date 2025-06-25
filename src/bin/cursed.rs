@@ -1,9 +1,11 @@
 // Main CURSED binary - minimal version
-use cursed::error::Error;
+use crate::error::CursedError;
 use std::env;
 use std::process;
 
 fn main() {
+        // TODO: implement
+    }
     let args: Vec<String> = env::args().collect();
     
     if args.len() < 2 {
@@ -20,7 +22,7 @@ fn main() {
             println!("CURSED compiler test mode");
             println!("✓ Basic compilation pipeline available");
             println!("✓ LLVM integration functional");
-            println!("✓ Error handling active");
+            println!("✓ CursedError handling active");
         }
         "version" => {
             println!("CURSED compiler v0.1.0");

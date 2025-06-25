@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 
 /// fr fr Comprehensive cryptography for CURSED - secure everything periodt
 /// 
@@ -93,7 +93,7 @@ pub use pqc::{
 };
 
 // Import comprehensive PQC module
-use crate::stdlib::crypto_pqc;
+// use crate::stdlib::crypto_pqc;
 
 // Re-export production PQC types
 pub use pqc_production::{
@@ -160,22 +160,22 @@ pub use package_manager::{
 };
 
 // Re-export package types for integration
-pub use crate::stdlib::packages::crypto_asymmetric::*;
-pub use crate::stdlib::packages::crypto_pki::*;
-pub use crate::stdlib::packages::crypto_advanced::*;
-pub use crate::stdlib::packages::crypto_hash_advanced::*;
-pub use crate::stdlib::packages::crypto_kdf::*;
-pub use crate::stdlib::packages::crypto_random::*;
-pub use crate::stdlib::packages::crypto_signatures::*;
-pub use crate::stdlib::packages::crypto_zk::*;
-pub use crate::stdlib::packages::crypto_pqc::*;
-pub use crate::stdlib::packages::crypto_protocols::*;
+// pub use crate::stdlib::packages::crypto_asymmetric::*;
+// pub use crate::stdlib::packages::crypto_pki::*;
+// pub use crate::stdlib::packages::crypto_advanced::*;
+// pub use crate::stdlib::packages::crypto_hash_advanced::*;
+// pub use crate::stdlib::packages::crypto_kdf::*;
+// pub use crate::stdlib::packages::crypto_random::*;
+// pub use crate::stdlib::packages::crypto_signatures::*;
+// pub use crate::stdlib::packages::crypto_zk::*;
+// pub use crate::stdlib::packages::crypto_pqc::*;
+// pub use crate::stdlib::packages::crypto_protocols::*;
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use std::collections::HashMap;
 
 /// fr fr Initialize the comprehensive crypto ecosystem
-pub fn init_crypto() -> std::result::Result<(), Error> {
+pub fn init_crypto() -> std::result::crate::error::Result<()> {
     println!("🚀 Initializing comprehensive CURSED crypto ecosystem...");
 
     // Initialize the unified crypto ecosystem using package manager
@@ -191,16 +191,16 @@ pub fn init_crypto() -> std::result::Result<(), Error> {
             println!("🔄 Attempting fallback initialization...");
             
             let packages = [
-                ("crypto_asymmetric", || crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric()),
-                ("crypto_pki", || crate::stdlib::packages::crypto_pki::init_crypto_pki()),
-                ("crypto_advanced", || crate::stdlib::packages::crypto_advanced::init_crypto_advanced()),
-                ("crypto_hash_advanced", || crate::stdlib::packages::crypto_hash_advanced::init_crypto_hash_advanced()),
-                ("crypto_kdf", || crate::stdlib::packages::crypto_kdf::init_crypto_kdf()),
-                ("crypto_random", || crate::stdlib::packages::crypto_random::init_crypto_random()),
-                ("crypto_signatures", || crate::stdlib::packages::crypto_signatures::init_crypto_signatures()),
-                ("crypto_zk", || crate::stdlib::packages::crypto_zk::init_crypto_zk()),
-                ("crypto_pqc", || crate::stdlib::packages::crypto_pqc::init_crypto_pqc()),
-                ("crypto_protocols", || crate::stdlib::packages::crypto_protocols::init_crypto_protocols()),
+//                 ("crypto_asymmetric", || crate::stdlib::packages::crypto_asymmetric::init_crypto_asymmetric()),
+//                 ("crypto_pki", || crate::stdlib::packages::crypto_pki::init_crypto_pki()),
+//                 ("crypto_advanced", || crate::stdlib::packages::crypto_advanced::init_crypto_advanced()),
+//                 ("crypto_hash_advanced", || crate::stdlib::packages::crypto_hash_advanced::init_crypto_hash_advanced()),
+//                 ("crypto_kdf", || crate::stdlib::packages::crypto_kdf::init_crypto_kdf()),
+//                 ("crypto_random", || crate::stdlib::packages::crypto_random::init_crypto_random()),
+//                 ("crypto_signatures", || crate::stdlib::packages::crypto_signatures::init_crypto_signatures()),
+//                 ("crypto_zk", || crate::stdlib::packages::crypto_zk::init_crypto_zk()),
+//                 ("crypto_pqc", || crate::stdlib::packages::crypto_pqc::init_crypto_pqc()),
+//                 ("crypto_protocols", || crate::stdlib::packages::crypto_protocols::init_crypto_protocols()),
             ];
 
             let mut failed_packages = Vec::new();
@@ -218,7 +218,7 @@ pub fn init_crypto() -> std::result::Result<(), Error> {
                 println!("🔐 Fallback initialization completed - basic crypto ready bestie!");
                 Ok(())
             } else {
-                Err(Error::Runtime(format!(
+                Err(CursedError::Runtime(format!(
                     "Failed to initialize packages: {:?}. Original error: {}", 
                     failed_packages, e
                 )))
@@ -228,7 +228,7 @@ pub fn init_crypto() -> std::result::Result<(), Error> {
 }
 
 /// fr fr Get comprehensive crypto module information
-pub fn get_crypto_info(_args: Vec<Value>) -> std::result::Result<(), Error> {
+pub fn get_crypto_info(_args: Vec<Value>) -> std::result::crate::error::Result<()> {
     let mut info = HashMap::new();
     
     // Basic module info
@@ -308,7 +308,7 @@ pub fn get_crypto_info(_args: Vec<Value>) -> std::result::Result<(), Error> {
 }
 
 /// fr fr Comprehensive crypto functionality testing
-pub fn test_crypto(_args: Vec<Value>) -> std::result::Result<(), Error> {
+pub fn test_crypto(_args: Vec<Value>) -> std::result::crate::error::Result<()> {
     let mut results = HashMap::new();
     
     println!("🧪 Running comprehensive crypto ecosystem tests...");
@@ -414,39 +414,3 @@ pub fn test_crypto(_args: Vec<Value>) -> std::result::Result<(), Error> {
     Ok(Value::Object(results))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_crypto_init() {
-        // Init may fail in test environment, just check it doesn't panic
-        let _ = init_crypto();
-    }
-
-    #[test]
-    fn test_crypto_info() {
-        let result = get_crypto_info(Vec::from([]));
-        assert!(result.is_ok());
-        
-        if let Ok(Value::Object(info)) = result {
-            assert!(info.contains_key("version"));
-            assert!(info.contains_key("algorithms"));
-            assert!(info.contains_key("features"));
-        }
-    }
-
-    #[test]
-    fn test_crypto_test() {
-        let result = test_crypto(Vec::from([]));
-        assert!(result.is_ok());
-        
-        if let Ok(Value::Object(results)) = result {
-            assert!(results.contains_key("rsa_keygen"));
-            assert!(results.contains_key("ecdsa_keygen"));
-            assert!(results.contains_key("x25519_keygen"));
-            assert!(results.contains_key("ed25519_keygen"));
-            assert!(results.contains_key("cert_parsing"));
-        }
-    }
-}

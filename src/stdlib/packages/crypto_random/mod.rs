@@ -26,11 +26,11 @@ pub use secure_random::*;
 pub use csprng::*;
 pub use nonce_generation::*;
 
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+use crate::error::CursedError;
 
 /// Result type for cryptographic random operations
-pub type CsprngResult<T> = Result<T, Box<dyn std::error::Error + Send + Sync>>;
+pub type CsprngResult<T> = Result<T, Box<dyn std::error::CursedError + Send + Sync>>;
 
 /// Supported CSPRNG algorithms
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

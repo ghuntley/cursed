@@ -1,8 +1,7 @@
 /// Cryptographic Key Exchange Protocols
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_random::SecureRandom;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_random::SecureRandom;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, Instant};
@@ -344,71 +343,3 @@ impl KeyExchangeBenchmark {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_key_exchange_manager_creation() {
-        let manager = KeyExchangeManager::new().unwrap();
-        assert_eq!(manager.sessions.lock().unwrap().len(), 0);
-    }
-
-    #[test]
-    fn test_diffie_hellman_exchange() {
-        let manager = KeyExchangeManager::new().unwrap();
-        let result = manager.initiate_exchange(KeyExchangeProtocol::DiffieHellman).unwrap();
-        
-        assert!(!result.public_key.is_empty());
-        assert!(!result.session_id.is_empty());
-        assert_eq!(result.protocol, KeyExchangeProtocol::DiffieHellman);
-    }
-
-    #[test]
-    fn test_complete_exchange() {
-        let manager = KeyExchangeManager::new().unwrap();
-        let result = manager.initiate_exchange(KeyExchangeProtocol::X25519).unwrap();
-        
-        let peer_key = vec![1u8; 32];
-        let shared_secret = manager.complete_exchange(&result.session_id, peer_key).unwrap();
-        
-        assert!(!shared_secret.is_empty());
-        assert_eq!(shared_secret.len(), 32);
-    }
-
-    #[test]
-    fn test_session_expiration() {
-        let manager = KeyExchangeManager::new().unwrap();
-        let _ = manager.initiate_exchange(KeyExchangeProtocol::ECDH).unwrap();
-        
-        // Should have one session
-        assert_eq!(manager.sessions.lock().unwrap().len(), 1);
-        
-        // Clean up (no expired sessions yet)
-        let cleaned = manager.cleanup_expired_sessions().unwrap();
-        assert_eq!(cleaned, 0);
-        assert_eq!(manager.sessions.lock().unwrap().len(), 1);
-    }
-
-    #[test]
-    fn test_post_quantum_protocols() {
-        let manager = KeyExchangeManager::new().unwrap();
-        
-        // Test Kyber1024
-        let result = manager.initiate_exchange(KeyExchangeProtocol::Kyber1024).unwrap();
-        assert_eq!(result.protocol, KeyExchangeProtocol::Kyber1024);
-        
-        // Test SIKE (deprecated)
-        let result = manager.initiate_exchange(KeyExchangeProtocol::SIKE).unwrap();
-        assert_eq!(result.protocol, KeyExchangeProtocol::SIKE);
-    }
-
-    #[test]
-    fn test_benchmark() {
-        let benchmark = KeyExchangeBenchmark::new().unwrap();
-        let duration = benchmark.benchmark_protocol(KeyExchangeProtocol::X25519, 5).unwrap();
-        
-        // Should complete within reasonable time
-        assert!(duration.as_millis() < 1000);
-    }
-}

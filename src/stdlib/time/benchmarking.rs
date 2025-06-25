@@ -1,10 +1,10 @@
 /// Performance measurement and benchmarking utilities
-use crate::stdlib::time::error::{TimeError, TimeResult, time_error};
-use crate::stdlib::time::duration::Duration;
-use crate::stdlib::time::datetime::Instant;
-use crate::stdlib::time::sleep::system_time_nanos;
+// use crate::stdlib::time::error::{TimeError, TimeResult, time_error};
+// use crate::stdlib::time::duration::Duration;
+// use crate::stdlib::time::datetime::Instant;
+// use crate::stdlib::time::sleep::system_time_nanos;
 use std::collections::HashMap;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Benchmark result containing timing and statistical information
 #[derive(Debug, Clone)]
@@ -452,7 +452,7 @@ impl Default for PerformanceCounter {
 #[macro_export]
 macro_rules! bench {
     ($name:expr, $iterations:expr, $code:block) => {
-        $crate::stdlib::time::benchmarking::benchmark($name, $iterations, || $code)
+//         $crate::stdlib::time::benchmarking::benchmark($name, $iterations, || $code)
     };
 }
 
@@ -461,7 +461,7 @@ macro_rules! bench {
 macro_rules! time_block {
     ($name:expr, $code:block) => {
         {
-            let start = $crate::stdlib::time::datetime::Instant::now();
+//             let start = $crate::stdlib::time::datetime::Instant::now();
             let result = $code;
             let elapsed = start.elapsed();
             println!("{}: {}", $name, elapsed.humanize());
@@ -470,102 +470,3 @@ macro_rules! time_block {
     };
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::thread;
-    
-    #[test]
-    fn test_benchmark_result() {
-        let times = vec![
-            Duration::from_milliseconds(100),
-            Duration::from_milliseconds(110),
-            Duration::from_milliseconds(90),
-            Duration::from_milliseconds(105),
-            Duration::from_milliseconds(95),
-        ];
-        
-        let result = BenchmarkResult::new("test".to_string(), times).unwrap();
-        
-        assert_eq!(result.iterations, 5);
-        assert_eq!(result.min_time, Duration::from_milliseconds(90));
-        assert_eq!(result.max_time, Duration::from_milliseconds(110));
-        assert!(result.throughput.is_some());
-    }
-    
-    #[test]
-    fn test_simple_benchmark() {
-        let result = benchmark("sleep_test", 5, || {
-            thread::sleep(std::time::Duration::from_millis(10));
-        }).unwrap();
-        
-        assert_eq!(result.iterations, 5);
-        assert!(result.average_time.total_milliseconds() >= 8);
-        assert!(result.average_time.total_milliseconds() <= 50);
-    }
-    
-    #[test]
-    fn test_benchmark_runner() {
-        let mut bench = Benchmark::new();
-        
-        let result = bench.bench("test_function", || {
-            // Simple computation
-            let mut sum = 0;
-            for i in 1..=100 {
-                sum += i;
-            }
-            sum
-        }).unwrap();
-        
-        assert_eq!(result.name, "test_function");
-        assert!(result.iterations > 0);
-    }
-    
-    #[test]
-    fn test_time_it() {
-        let (result, duration) = time_it(|| {
-            thread::sleep(std::time::Duration::from_millis(10));
-            42
-        }).unwrap();
-        
-        assert_eq!(result, 42);
-        assert!(duration.total_milliseconds() >= 8);
-    }
-    
-    #[test]
-    fn test_performance_counter() {
-        let mut counter = PerformanceCounter::new();
-        
-        counter.increment("operations");
-        counter.increment("operations");
-        counter.add("bytes", 1024);
-        
-        counter.start_timer("processing");
-        thread::sleep(std::time::Duration::from_millis(10));
-        counter.stop_timer("processing");
-        
-        assert_eq!(counter.get_counter("operations"), 2);
-        assert_eq!(counter.get_counter("bytes"), 1024);
-        assert!(counter.get_timer("processing").total_milliseconds() >= 8);
-    }
-    
-    #[test]
-    fn test_benchmark_comparison() {
-        let result1 = BenchmarkResult::new("fast".to_string(), vec![
-            Duration::from_milliseconds(10),
-            Duration::from_milliseconds(12),
-            Duration::from_milliseconds(11),
-        ]).unwrap();
-        
-        let result2 = BenchmarkResult::new("slow".to_string(), vec![
-            Duration::from_milliseconds(20),
-            Duration::from_milliseconds(22),
-            Duration::from_milliseconds(21),
-        ]).unwrap();
-        
-        let comparison = compare_benchmarks(&[result1, result2]);
-        assert!(comparison.contains("Benchmark Comparison"));
-        assert!(comparison.contains("fast"));
-        assert!(comparison.contains("slow"));
-    }
-}

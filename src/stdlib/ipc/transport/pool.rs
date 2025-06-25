@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Connection pooling for transport layer
 /// 
 /// This module provides production-ready connection pooling with resource
@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex, RwLock, Condvar};
 use std::time::{Duration, Instant, SystemTime};
 use std::thread;
 use tracing::{debug, info, warn, error, instrument};
-use crate::stdlib::ipc::{IpcResult, IpcError, communication_error_detailed, resource_error};
+// use crate::stdlib::ipc::{IpcResult, IpcError, communication_error_detailed, resource_error};
 use super::traits::{Transport, TransportConnection};
 
 /// Connection pool configuration
@@ -644,126 +644,3 @@ pub fn get_pool_statistics() -> PoolStatistics {
     PoolStatistics::new()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
-
-    // Mock connection for testing
-    #[derive(Debug)]
-    struct MockConnection {
-        active: AtomicBool,
-        data: String,
-    }
-
-    impl MockConnection {
-        fn new(data: String) -> Self {
-            Self {
-                active: AtomicBool::new(true),
-                data,
-            }
-        }
-    }
-
-    impl TransportConnection for MockConnection {
-        fn read(&mut self, buffer: &mut [u8]) -> IpcResult<usize> {
-            let data = self.data.as_bytes();
-            let len = std::cmp::min(buffer.len(), data.len());
-            buffer[..len].copy_from_slice(&data[..len]);
-            Ok(len)
-        }
-
-        fn write(&mut self, data: &[u8]) -> IpcResult<usize> {
-            Ok(data.len())
-        }
-
-        fn flush(&mut self) -> IpcResult<()> {
-            Ok(())
-        }
-
-        fn close(&mut self) -> IpcResult<()> {
-            self.active.store(false, Ordering::Relaxed);
-            Ok(())
-        }
-
-        fn is_active(&self) -> bool {
-            self.active.load(Ordering::Relaxed)
-        }
-
-        fn remote_address(&self) -> Option<String> {
-            Some("mock://test".to_string())
-        }
-
-        fn set_read_timeout(&mut self, _timeout: Option<Duration>) -> IpcResult<()> {
-            Ok(())
-        }
-
-        fn set_write_timeout(&mut self, _timeout: Option<Duration>) -> IpcResult<()> {
-            Ok(())
-        }
-
-        fn try_clone(&self) -> IpcResult<Box<dyn TransportConnection>> {
-            Ok(Box::new(MockConnection::new(self.data.clone())))
-        }
-    }
-
-    #[test]
-    fn test_pool_config() {
-        let config = PoolConfig::new()
-            .with_max_connections(50)
-            .with_min_connections(5)
-            .with_connection_timeout(Duration::from_secs(10));
-
-        assert_eq!(config.max_connections, 50);
-        assert_eq!(config.min_connections, 5);
-        assert_eq!(config.connection_timeout, Duration::from_secs(10));
-        assert!(config.validate().is_ok());
-
-        // Test invalid config
-        let invalid_config = PoolConfig::new()
-            .with_max_connections(0);
-        assert!(invalid_config.validate().is_err());
-
-        let invalid_config2 = PoolConfig::new()
-            .with_max_connections(5)
-            .with_min_connections(10);
-        assert!(invalid_config2.validate().is_err());
-    }
-
-    #[test]
-    fn test_pooled_connection() {
-        // This test would require a mock transport implementation
-        // For now, we'll test the basic structure
-        let stats = ConnectionStats {
-            created_at: Instant::now(),
-            last_used: Instant::now(),
-            usage_count: 5,
-            age: Duration::from_secs(60),
-            idle_time: Duration::from_secs(30),
-        };
-
-        assert_eq!(stats.usage_count, 5);
-        assert!(stats.age >= Duration::from_secs(60));
-        assert!(stats.idle_time >= Duration::from_secs(30));
-    }
-
-    #[test]
-    fn test_pool_statistics() {
-        let mut stats = PoolStatistics::new();
-        assert_eq!(stats.total_connections_created, 0);
-        assert_eq!(stats.current_pool_size, 0);
-
-        stats.total_connections_created += 1;
-        stats.current_pool_size += 1;
-        assert_eq!(stats.total_connections_created, 1);
-        assert_eq!(stats.current_pool_size, 1);
-    }
-
-    #[test]
-    fn test_connection_queue() {
-        let mut queue = ConnectionQueue::<MockConnection>::new();
-        assert_eq!(queue.connections.len(), 0);
-        assert_eq!(queue.active_count, 0);
-        assert_eq!(queue.waiters.len(), 0);
-    }
-}

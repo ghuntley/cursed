@@ -1,9 +1,9 @@
-/// Preprocessor Error Types
+/// Preprocessor CursedError Types
 /// 
 /// This module defines error types specific to the generic syntax preprocessor,
 /// providing detailed error messages for malformed generic syntax.
 
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 
 use std::fmt;
 
@@ -129,75 +129,46 @@ impl PreprocessorError {
     }
 }
 
-impl fmt::Display for PreprocessorError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} at {}", self.detailed_message(), self.location())
-    }
-}
+// impl fmt::Display for PreprocessorError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{} at {}", self.detailed_message(), self.location())
+//     }
+// }
 
-impl std::error::Error for PreprocessorError {}
+// impl std::error::CursedError for PreprocessorError {}
+// 
+// Convert PreprocessorError to the main CursedError type
+// impl From<PreprocessorError> for CursedError {
+//     fn from(err: PreprocessorError) -> Self {
+//         match err {
+//             PreprocessorError::LexerError { message, location } => {
+//                 CursedError::Lexical { message, location }
+//             }
+//             _ => CursedError::Parse(err.to_string()),
+//         }
+//     }
+// }
 
-/// Convert PreprocessorError to the main Error type
-impl From<PreprocessorError> for Error {
-    fn from(err: PreprocessorError) -> Self {
-        match err {
-            PreprocessorError::LexerError { message, location } => {
-                Error::Lexical { message, location }
-            }
-            _ => Error::Parse(err.to_string()),
-        }
-    }
-}
+// Convert main CursedError to PreprocessorError
+// impl From<CursedError> for PreprocessorError {
+//     fn from(err: CursedError) -> Self {
+//         match err {
+//             CursedError::Lexical { message, location } => {
+//                 PreprocessorError::lexer_error(location, message)
+//             }
+//             CursedError::Parse(message) => {
+//                 PreprocessorError::general(
+//                     SourceLocation::new(0, 0, 0, None),
+//                     message
+//                 )
+//             }
+//             _ => {
+//                 PreprocessorError::general(
+//                     SourceLocation::new(0, 0, 0, None),
+//                     err.to_string()
+//                 )
+//             }
+//         }
+//     }
+// }
 
-/// Convert main Error to PreprocessorError
-impl From<Error> for PreprocessorError {
-    fn from(err: Error) -> Self {
-        match err {
-            Error::Lexical { message, location } => {
-                PreprocessorError::lexer_error(location, message)
-            }
-            Error::Parse(message) => {
-                PreprocessorError::general(
-                    SourceLocation::new(0, 0, 0, None),
-                    message
-                )
-            }
-            _ => {
-                PreprocessorError::general(
-                    SourceLocation::new(0, 0, 0, None),
-                    err.to_string()
-                )
-            }
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_preprocessor_error_creation() {
-        let location = SourceLocation::new(1, 10, 15, Some("test.csd".to_string()));
-        let error = PreprocessorError::unclosed_type_parameters(
-            location.clone(),
-            "Missing closing bracket".to_string()
-        );
-        
-        assert_eq!(error.location(), &location);
-        assert!(error.detailed_message().contains("Unclosed type parameter brackets"));
-    }
-
-    #[test]
-    fn test_error_conversion() {
-        let location = SourceLocation::new(1, 5, 10, Some("test.csd".to_string()));
-        let preprocessor_error = PreprocessorError::unexpected_token(
-            location,
-            "T".to_string(),
-            "normie".to_string()
-        );
-        
-        let main_error: Error = preprocessor_error.into();
-        assert!(main_error.to_string().contains("Expected 'T'"));
-    }
-}

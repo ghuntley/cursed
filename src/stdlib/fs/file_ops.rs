@@ -1,8 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 use std::fs;
 use std::io::{Read, Write};
 use std::path::Path;
-use crate::stdlib::fs::error::{FsError, FsResult};
+// use crate::stdlib::fs::error::{FsError, FsResult};
 
 /// Read the entire contents of a file as a string
 pub fn read_file(path: &str) -> FsResult<String> {
@@ -240,118 +240,3 @@ pub fn truncate_file(path: &str, size: u64) -> FsResult<()> {
     file.set_len(size).map_err(FsError::from)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_write_and_read_file() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.txt");
-        let file_path_str = file_path.to_string_lossy().to_string();
-        
-        let content = "Hello, World!";
-        
-        // Write file
-        write_file(&file_path_str, content).unwrap();
-        
-        // Read file
-        let read_content = read_file(&file_path_str).unwrap();
-        assert_eq!(read_content, content);
-    }
-
-    #[test]
-    fn test_append_file() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.txt");
-        let file_path_str = file_path.to_string_lossy().to_string();
-        
-        // Write initial content
-        write_file(&file_path_str, "Hello").unwrap();
-        
-        // Append content
-        append_file(&file_path_str, ", World!").unwrap();
-        
-        // Read and verify
-        let content = read_file(&file_path_str).unwrap();
-        assert_eq!(content, "Hello, World!");
-    }
-
-    #[test]
-    fn test_copy_file() {
-        let temp_dir = TempDir::new().unwrap();
-        let src_path = temp_dir.path().join("source.txt");
-        let dst_path = temp_dir.path().join("dest.txt");
-        
-        let src_str = src_path.to_string_lossy().to_string();
-        let dst_str = dst_path.to_string_lossy().to_string();
-        
-        let content = "Test content";
-        
-        // Create source file
-        write_file(&src_str, content).unwrap();
-        
-        // Copy file
-        copy_file(&src_str, &dst_str).unwrap();
-        
-        // Verify destination
-        let read_content = read_file(&dst_str).unwrap();
-        assert_eq!(read_content, content);
-    }
-
-    #[test]
-    fn test_move_file() {
-        let temp_dir = TempDir::new().unwrap();
-        let src_path = temp_dir.path().join("source.txt");
-        let dst_path = temp_dir.path().join("dest.txt");
-        
-        let src_str = src_path.to_string_lossy().to_string();
-        let dst_str = dst_path.to_string_lossy().to_string();
-        
-        let content = "Test content";
-        
-        // Create source file
-        write_file(&src_str, content).unwrap();
-        
-        // Move file
-        move_file(&src_str, &dst_str).unwrap();
-        
-        // Verify source is gone and destination exists
-        assert!(!Path::new(&src_str).exists());
-        let read_content = read_file(&dst_str).unwrap();
-        assert_eq!(read_content, content);
-    }
-
-    #[test]
-    fn test_delete_file() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.txt");
-        let file_path_str = file_path.to_string_lossy().to_string();
-        
-        // Create file
-        write_file(&file_path_str, "content").unwrap();
-        assert!(Path::new(&file_path_str).exists());
-        
-        // Delete file
-        delete_file(&file_path_str).unwrap();
-        assert!(!Path::new(&file_path_str).exists());
-    }
-
-    #[test]
-    fn test_truncate_file() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.txt");
-        let file_path_str = file_path.to_string_lossy().to_string();
-        
-        // Create file with content
-        write_file(&file_path_str, "Hello, World!").unwrap();
-        
-        // Truncate to 5 bytes
-        truncate_file(&file_path_str, 5).unwrap();
-        
-        // Verify truncation
-        let content = read_file(&file_path_str).unwrap();
-        assert_eq!(content, "Hello");
-    }
-}

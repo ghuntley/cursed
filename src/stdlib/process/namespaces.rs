@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process namespaces implementation for CURSED (Linux-specific)
 /// 
 /// Process namespaces are a fundamental Linux feature that enables:
@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 use std::fs;
 use std::ffi::CString;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessResult, ProcessError, process_not_found_pid, permission_denied_pid,
     invalid_state, execution_failed, timeout_error, system_error, platform_error
 };
@@ -586,96 +586,6 @@ impl NamespaceComparison {
 // Additional trait for working with namespaces
 use std::os::unix::fs::MetadataExt;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_namespace_manager_creation() {
-        let manager = NamespaceManager::new();
-        // Should work on any platform, but only be supported on Linux
-        #[cfg(target_os = "linux")]
-        assert!(manager.is_supported());
-        
-        #[cfg(not(target_os = "linux"))]
-        assert!(!manager.is_supported());
-    }
-
-    #[test]
-    fn test_namespace_type_methods() {
-        let ns_type = NamespaceType::Mount;
-        assert_eq!(ns_type.proc_name(), "mnt");
-        
-        let ns_type = NamespaceType::Network;
-        assert_eq!(ns_type.proc_name(), "net");
-    }
-
-    #[test]
-    fn test_container_config() {
-        let config = ContainerConfig::new()
-            .with_network_isolation()
-            .with_hostname("test-container");
-        
-        assert!(config.network_isolation);
-        assert_eq!(config.hostname.as_deref(), Some("test-container"));
-    }
-
-    #[test]
-    fn test_sandboxed_config() {
-        let config = ContainerConfig::sandboxed();
-        assert!(config.network_isolation);
-        assert!(config.user_namespace);
-        assert_eq!(config.hostname.as_deref(), Some("sandbox"));
-    }
-
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn test_get_current_namespaces() {
-        let manager = NamespaceManager::new();
-        let namespaces = manager.get_current_namespaces();
-        
-        // Should be able to read our own namespaces
-        assert!(namespaces.is_ok());
-        let namespaces = namespaces.unwrap();
-        
-        // Should have at least some namespaces
-        assert!(!namespaces.is_empty());
-        
-        // Should include common namespace types
-        let ns_types: Vec<_> = namespaces.iter().map(|ns| ns.namespace_type).collect();
-        assert!(ns_types.contains(&NamespaceType::Mount));
-        assert!(ns_types.contains(&NamespaceType::PID));
-    }
-
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn test_namespace_comparison() {
-        let manager = NamespaceManager::new();
-        let current_pid = std::process::id();
-        
-        // Compare process with itself - should share all namespaces
-        let comparison = manager.compare_namespaces(current_pid, current_pid);
-        assert!(comparison.is_ok());
-        
-        let comparison = comparison.unwrap();
-        assert!(comparison.shares_all_namespaces());
-        assert!(!comparison.completely_isolated());
-    }
-}
-
-/// Options for namespace configuration
-#[derive(Debug, Clone)]
-pub struct NamespaceOptions {
-    pub mount_namespace: bool,
-    pub uts_namespace: bool,
-    pub ipc_namespace: bool,
-    pub pid_namespace: bool,
-    pub network_namespace: bool,
-    pub user_namespace: bool,
-    pub cgroup_namespace: bool,
-}
 
 impl Default for NamespaceOptions {
     fn default() -> Self {

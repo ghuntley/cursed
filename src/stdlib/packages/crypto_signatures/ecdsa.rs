@@ -3,9 +3,9 @@
 /// Implementation of Elliptic Curve Digital Signature Algorithm (ECDSA) for CURSED crypto.
 /// Supports secp256k1 (Bitcoin curve) and secp256r1/P-256 (NIST curve) with secure random nonces.
 
-use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
-use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+// use crate::stdlib::packages::crypto_signatures::key_management::{KeyPair, PublicKey, KeyType};
+use crate::error::CursedError;
 use std::sync::{Arc, Mutex};
 
 /// ECDSA signature size in bytes (r + s components)
@@ -600,7 +600,7 @@ impl EcdsaVerifier {
 /// Utility functions for ECDSA
 pub mod utils {
     use super::*;
-    use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
+//     use crate::stdlib::packages::crypto_signatures::key_management::KeyGenerator;
     
     /// Generate a new ECDSA key pair for the specified curve
     pub fn generate_keypair(curve: EcdsaCurve) -> SignatureResult<KeyPair> {

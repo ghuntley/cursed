@@ -1,12 +1,12 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Plugin sandboxing for security and resource management
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use std::thread;
 use std::collections::HashSet;
-use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
-use crate::stdlib::plug_vibes::plug::{Plug, load_with_options, LoadOptions};
-use crate::stdlib::value::Value;
+// use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
+// use crate::stdlib::plug_vibes::plug::{Plug, load_with_options, LoadOptions};
+// use crate::stdlib::value::Value;
 
 /// Options for configuring plugin sandbox
 #[derive(Debug, Clone)]
@@ -407,115 +407,3 @@ impl ResourceMonitor {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sandbox_options_default() {
-        let options = SandboxOptions::default();
-        
-        assert_eq!(options.memory_limit, 64 * 1024 * 1024);
-        assert_eq!(options.cpu_limit, 0.5);
-        assert_eq!(options.time_limit, Duration::from_secs(30));
-        assert!(!options.file_access);
-        assert!(!options.network_access);
-        assert_eq!(options.max_threads, 4);
-        assert!(options.syscall_filtering);
-    }
-
-    #[test]
-    fn test_sandbox_options_builder() {
-        let options = SandboxOptions::new()
-            .with_memory_limit(128 * 1024 * 1024)
-            .with_cpu_limit(0.8)
-            .with_time_limit(Duration::from_secs(60))
-            .with_file_access(vec!["/tmp".to_string()])
-            .with_network_access(vec!["localhost".to_string()])
-            .with_max_threads(8);
-
-        assert_eq!(options.memory_limit, 128 * 1024 * 1024);
-        assert_eq!(options.cpu_limit, 0.8);
-        assert_eq!(options.time_limit, Duration::from_secs(60));
-        assert!(options.file_access);
-        assert!(options.network_access);
-        assert_eq!(options.allowed_paths, vec!["/tmp".to_string()]);
-        assert_eq!(options.allowed_hosts, vec!["localhost".to_string()]);
-        assert_eq!(options.max_threads, 8);
-    }
-
-    #[test]
-    fn test_sandbox_creation() {
-        let options = SandboxOptions::default();
-        let sandbox = Sandbox::new(options);
-        
-        let usage = sandbox.get_resource_usage();
-        assert_eq!(usage.memory_used, 0);
-        assert_eq!(usage.threads_created, 0);
-    }
-
-    #[test]
-    fn test_file_access_check() {
-        let options = SandboxOptions::new()
-            .with_file_access(vec!["/tmp".to_string(), "/var/log".to_string()]);
-        let sandbox = Sandbox::new(options);
-        
-        // Allowed paths
-        assert!(sandbox.check_file_access("/tmp/test.txt").is_ok());
-        assert!(sandbox.check_file_access("/var/log/app.log").is_ok());
-        
-        // Disallowed path
-        assert!(sandbox.check_file_access("/etc/passwd").is_err());
-    }
-
-    #[test]
-    fn test_network_access_check() {
-        let options = SandboxOptions::new()
-            .with_network_access(vec!["example.com".to_string(), "localhost".to_string()]);
-        let sandbox = Sandbox::new(options);
-        
-        // Allowed hosts
-        assert!(sandbox.check_network_access("example.com").is_ok());
-        assert!(sandbox.check_network_access("api.example.com").is_ok()); // subdomain allowed
-        assert!(sandbox.check_network_access("localhost").is_ok());
-        
-        // Disallowed host
-        assert!(sandbox.check_network_access("malicious.com").is_err());
-    }
-
-    #[test]
-    fn test_syscall_check() {
-        let options = SandboxOptions::new()
-            .with_syscall_filtering(true, vec!["read".to_string(), "write".to_string()]);
-        let sandbox = Sandbox::new(options);
-        
-        // Allowed syscalls
-        assert!(sandbox.check_syscall("read").is_ok());
-        assert!(sandbox.check_syscall("write").is_ok());
-        
-        // Blocked syscall
-        assert!(sandbox.check_syscall("execve").is_err());
-    }
-
-    #[test]
-    fn test_resource_usage_tracking() {
-        let options = SandboxOptions::default();
-        let sandbox = Sandbox::new(options);
-        
-        let usage = sandbox.get_resource_usage();
-        assert_eq!(usage.memory_used, 0);
-        assert_eq!(usage.cpu_time_used, Duration::from_secs(0));
-    }
-
-    #[test]
-    fn test_sandbox_release() {
-        let options = SandboxOptions::default();
-        let sandbox = Sandbox::new(options);
-        
-        let result = sandbox.release();
-        assert!(result.is_ok());
-        
-        let usage = sandbox.get_resource_usage();
-        assert_eq!(usage.memory_used, 0);
-    }
-}

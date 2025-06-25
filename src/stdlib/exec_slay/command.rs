@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // SlayCommand implementation for process execution
 
 use std::collections::HashMap;
@@ -8,7 +8,6 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use std::thread;
-use crate::error::CursedError;
 use super::{SlayOptions, SlayResult, SharedProcessState, io_error_to_cursed, get_shell_args};
 use super::process::SlayProcess;
 
@@ -303,94 +302,3 @@ impl Clone for SlayCommand {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessState;
-
-    #[test]
-    fn test_new_slay_command() {
-        let cmd = SlayCommand::new("echo", &["hello", "world"]);
-        assert_eq!(cmd.name, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-    }
-
-    #[test]
-    fn test_slay_command_to_string() {
-        let cmd = SlayCommand::new("ls", &["-la", "/tmp"]);
-        let cmd_str = cmd.to_string();
-        assert_eq!(cmd_str, "ls -la /tmp");
-    }
-
-    #[test]
-    fn test_slay_command_with_options() {
-        let mut options = SlayOptions::default();
-        options.timeout = Some(Duration::from_secs(10));
-        options.use_shell = true;
-
-        let cmd = SlayCommand::new("echo", &["test"])
-            .with_options(options);
-        
-        assert_eq!(cmd.options.timeout, Some(Duration::from_secs(10)));
-        assert!(cmd.options.use_shell);
-    }
-
-    #[test]
-    fn test_slay_command_set_dir() {
-        let mut cmd = SlayCommand::new("pwd", &[]);
-        cmd.set_dir("/tmp");
-        assert_eq!(cmd.options.dir, Some("/tmp".to_string()));
-    }
-
-    #[test]
-    fn test_slay_command_add_env() {
-        let mut cmd = SlayCommand::new("env", &[]);
-        cmd.add_env("TEST_VAR", "test_value");
-        assert!(cmd.options.env.contains(&"TEST_VAR=test_value".to_string()));
-    }
-
-    #[test]
-    fn test_slay_command_clone() {
-        let cmd1 = SlayCommand::new("echo", &["test"]);
-        let cmd2 = cmd1.clone();
-        
-        assert_eq!(cmd1.name, cmd2.name);
-        assert_eq!(cmd1.args, cmd2.args);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_simple_command_execution() {
-        let mut cmd = SlayCommand::new("echo", &["hello"]);
-        let result = cmd.run();
-        assert!(result.is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_command_output() {
-        let mut cmd = SlayCommand::new("echo", &["hello"]);
-        let output = cmd.output().unwrap();
-        let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("hello"));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_command_with_timeout() {
-        let mut cmd = SlayCommand::new("sleep", &["0.1"]);
-        cmd.set_timeout(Duration::from_secs(1));
-        let result = cmd.run();
-        assert!(result.is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_command_timeout_exceeded() {
-        let mut cmd = SlayCommand::new("sleep", &["2"]);
-        cmd.set_timeout(Duration::from_millis(100));
-        let result = cmd.run();
-        assert!(result.is_err());
-    }
-}

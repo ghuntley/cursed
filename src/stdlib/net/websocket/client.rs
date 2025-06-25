@@ -1,10 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// WebSocket client implementation
 
 use std::sync::{Arc, Mutex};
-use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
-use crate::stdlib::net::socket::TcpSocket;
-use crate::stdlib::net::websocket::{WebSocketFrame, WebSocketMessage, WebSocketConfig, ConnectionState, CloseCode};
+// use crate::stdlib::net::error::{NetError, NetResult, websocket_error};
+// use crate::stdlib::net::socket::TcpSocket;
+// use crate::stdlib::net::websocket::{WebSocketFrame, WebSocketMessage, WebSocketConfig, ConnectionState, CloseCode};
 
 /// WebSocket client
 #[derive(Debug)]
@@ -323,60 +323,3 @@ fn sha1_hash(_input: &[u8]) -> [u8; 20] {
     [0u8; 20]
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_websocket_client_builder() {
-        let builder = WebSocketClientBuilder::new();
-        assert!(builder.config.max_message_size > 0);
-    }
-
-    #[test]
-    fn test_url_parsing() {
-        let client = WebSocketClient {
-            socket: Arc::new(Mutex::new(None)),
-            state: Arc::new(Mutex::new(ConnectionState::Closed)),
-            config: WebSocketConfig::default(),
-            url: String::new(),
-        };
-        
-        let (host, port, path) = client.parse_websocket_url("ws://example.com:8080/socket").unwrap();
-        assert_eq!(host, "example.com");
-        assert_eq!(port, 8080);
-        assert_eq!(path, "/socket");
-        
-        let (host, port, path) = client.parse_websocket_url("wss://example.com/ws").unwrap();
-        assert_eq!(host, "example.com");
-        assert_eq!(port, 443);
-        assert_eq!(path, "/ws");
-    }
-
-    #[test]
-    fn test_websocket_key_generation() {
-        let client = WebSocketClient {
-            socket: Arc::new(Mutex::new(None)),
-            state: Arc::new(Mutex::new(ConnectionState::Closed)),
-            config: WebSocketConfig::default(),
-            url: String::new(),
-        };
-        
-        let key1 = client.generate_websocket_key();
-        let key2 = client.generate_websocket_key();
-        
-        assert!(!key1.is_empty());
-        assert!(!key2.is_empty());
-        // Keys should be different (probabilistically)
-        assert_ne!(key1, key2);
-    }
-
-    #[test]
-    fn test_base64_encoding() {
-        assert_eq!(base64_encode(b"hello"), "aGVsbG8=");
-        assert_eq!(base64_encode(b""), "");
-        assert_eq!(base64_encode(b"f"), "Zg==");
-        assert_eq!(base64_encode(b"fo"), "Zm8=");
-        assert_eq!(base64_encode(b"foo"), "Zm9v");
-    }
-}

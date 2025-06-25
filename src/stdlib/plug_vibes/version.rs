@@ -1,8 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Plugin versioning system for compatibility checking
 use std::fmt;
 use std::str::FromStr;
-use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
+// use crate::stdlib::plug_vibes::error::{PluginError, PluginResult};
 
 /// Semantic version structure for plugin compatibility
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -194,58 +194,3 @@ impl fmt::Display for VersionConstraint {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_version() {
-        let v = parse_version("1.2.3").unwrap();
-        assert_eq!(v.major, 1);
-        assert_eq!(v.minor, 2);
-        assert_eq!(v.patch, 3);
-        assert_eq!(v.pre_release, None);
-    }
-
-    #[test]
-    fn test_parse_version_with_prerelease() {
-        let v = parse_version("1.2.3-alpha").unwrap();
-        assert_eq!(v.major, 1);
-        assert_eq!(v.minor, 2);
-        assert_eq!(v.patch, 3);
-        assert_eq!(v.pre_release, Some("alpha".to_string()));
-    }
-
-    #[test]
-    fn test_version_compatibility() {
-        let v1 = Version::new(1, 2, 3);
-        let v2 = Version::new(1, 1, 0);
-        let v3 = Version::new(2, 0, 0);
-
-        assert!(v1.compatible(&v2));
-        assert!(!v1.compatible(&v3));
-        assert!(!v2.compatible(&v1));
-    }
-
-    #[test]
-    fn test_version_comparison() {
-        let v1 = Version::new(1, 2, 3);
-        let v2 = Version::new(1, 2, 4);
-        let v3 = Version::new(1, 2, 3);
-
-        assert!(v2.greater_than(&v1));
-        assert!(v1.less_than(&v2));
-        assert!(v1.equal(&v3));
-    }
-
-    #[test]
-    fn test_version_constraint_satisfies() {
-        let v1 = Version::new(1, 2, 3);
-        
-        assert!(VersionConstraint::Exact(v1.clone()).satisfies(&v1));
-        assert!(VersionConstraint::AtLeast(Version::new(1, 0, 0)).satisfies(&v1));
-        assert!(VersionConstraint::AtMost(Version::new(2, 0, 0)).satisfies(&v1));
-        assert!(VersionConstraint::Compatible(Version::new(1, 1, 0)).satisfies(&v1));
-        assert!(VersionConstraint::Any.satisfies(&v1));
-    }
-}

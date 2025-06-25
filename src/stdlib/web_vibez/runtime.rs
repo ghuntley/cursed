@@ -5,13 +5,13 @@ use crate::web::StatusCode;
 /// code calls for HTTP server functionality. These functions interface with the
 /// system-level networking APIs and provide the real HTTP server behavior.
 
-use crate::stdlib::web_vibez::{HttpServer, HttpMethod, StatusCode};
-use crate::stdlib::web_vibez::server::{ServerError, HttpRequest, HttpResponse as ServerHttpResponse};
-use crate::stdlib::web_vibez::router::Router;
-use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
-use crate::stdlib::web_vibez::config::WebVibezConfig;
-use crate::stdlib::web_vibez::client::{HttpClient, HttpResponse as ClientHttpResponse, HttpError};
-use crate::error::Error;
+// use crate::stdlib::web_vibez::{HttpServer, HttpMethod, StatusCode};
+// use crate::stdlib::web_vibez::server::{ServerError, HttpRequest, HttpResponse as ServerHttpResponse};
+// use crate::stdlib::web_vibez::router::Router;
+// use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
+// use crate::stdlib::web_vibez::config::WebVibezConfig;
+// use crate::stdlib::web_vibez::client::{HttpClient, HttpResponse as ClientHttpResponse, HttpError};
+use crate::error::CursedError;
 
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -30,7 +30,7 @@ static mut GLOBAL_ROUTER: Option<Arc<Router>> = None;
 static mut GLOBAL_CLIENT: Option<Arc<HttpClient>> = None;
 
 /// Initialize the global HTTP server instance
-fn initialize_server() -> Result<(), Error> {
+fn initialize_server() -> crate::error::Result<()> {
     unsafe {
         if GLOBAL_SERVER.is_none() {
             let config = WebVibezConfig::default();
@@ -46,7 +46,7 @@ fn initialize_server() -> Result<(), Error> {
 }
 
 /// Get the global server instance
-fn get_server() -> Result<(), Error> {
+fn get_server() -> crate::error::Result<()> {
     unsafe {
         GLOBAL_SERVER.clone().ok_or_else(|| {
             ServerError::ConfigError("Server not initialized".to_string())
@@ -55,7 +55,7 @@ fn get_server() -> Result<(), Error> {
 }
 
 /// Get the global router instance
-fn get_router() -> Result<(), Error> {
+fn get_router() -> crate::error::Result<()> {
     unsafe {
         GLOBAL_ROUTER.clone().ok_or_else(|| {
             ServerError::ConfigError("Router not initialized".to_string())
@@ -64,7 +64,7 @@ fn get_router() -> Result<(), Error> {
 }
 
 /// Get the global client instance
-fn get_client() -> Result<(), Error> {
+fn get_client() -> crate::error::Result<()> {
     unsafe {
         GLOBAL_CLIENT.clone().ok_or_else(|| {
             ServerError::ConfigError("Client not initialized".to_string())
@@ -73,7 +73,7 @@ fn get_client() -> Result<(), Error> {
 }
 
 /// Convert C string to Rust string
-fn c_str_to_string(c_str: *const c_char) -> Result<(), Error> {
+fn c_str_to_string(c_str: *const c_char) -> crate::error::Result<()> {
     if c_str.is_null() {
         return Err(ServerError::ParseError("Null string pointer".to_string()));
     }
@@ -146,7 +146,7 @@ pub extern "C" fn web_vibez_listen_and_serve(
                 // Handle each connection in a separate thread
                 thread::spawn(move || {
                     if let Err(e) = handle_connection(stream) {
-                        error!("Error handling connection: {:?}", e);
+                        error!("CursedError handling connection: {:?}", e);
                     }
                 });
             }
@@ -240,7 +240,7 @@ pub extern "C" fn web_vibez_handle_func(
 }
 
 /// Handle an incoming HTTP connection
-fn handle_connection(mut stream: TcpStream) -> Result<(), Error> {
+fn handle_connection(mut stream: TcpStream) -> crate::error::Result<()> {
     let mut buffer = [0; 1024];
     let bytes_read = stream.read(&mut buffer)
         .map_err(|e| ServerError::ConnectionError(format!("Read error: {}", e)))?;
@@ -426,7 +426,7 @@ fn make_http_request(
     url: &str,
     content_type: Option<&str>,
     body: Option<&str>,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     // This is a very basic HTTP client implementation
     // In production, you would use a proper HTTP client library like reqwest
     

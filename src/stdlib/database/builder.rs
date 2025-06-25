@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 use super::{DatabaseError, DatabaseErrorKind, SqlValue, DB, SlayRows, SlayResult};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// fr fr Base query builder
 #[derive(Debug, Clone)]
@@ -187,25 +187,25 @@ impl SelectBuilder {
     }
 
     /// slay Execute query and return SlayRows
-    pub fn exec(&self, db: &DB) -> Result<(), Error> {
+    pub fn exec(&self, db: &DB) -> crate::error::Result<()> {
         let (query, params) = self.build();
         db.slay_query(query, params)
     }
 
     /// slay Execute query and return first row as map
-    pub fn one(&self, db: &DB) -> Result<(), Error> {
+    pub fn one(&self, db: &DB) -> crate::error::Result<()> {
         let mut result = self.exec(db)?;
         result.first()
     }
 
     /// slay Execute query and return all rows as maps
-    pub fn all(&self, db: &DB) -> Result<(), Error> {
+    pub fn all(&self, db: &DB) -> crate::error::Result<()> {
         let mut result = self.exec(db)?;
         result.all()
     }
 
     /// slay Execute query and return count
-    pub fn count(&self, db: &DB) -> Result<(), Error> {
+    pub fn count(&self, db: &DB) -> crate::error::Result<()> {
         let mut builder = self.clone();
         builder.columns = Vec::from(["COUNT(*)".to_string()]);
         let (query, params) = builder.build();
@@ -291,7 +291,7 @@ impl InsertBuilder {
     }
 
     /// slay Execute the INSERT
-    pub fn exec(&self, db: &DB) -> Result<(), Error> {
+    pub fn exec(&self, db: &DB) -> crate::error::Result<()> {
         let (query, params) = self.build();
         db.slay_exec(query, params)
     }
@@ -368,7 +368,7 @@ impl UpdateBuilder {
     }
 
     /// slay Execute the UPDATE
-    pub fn exec(&self, db: &DB) -> Result<(), Error> {
+    pub fn exec(&self, db: &DB) -> crate::error::Result<()> {
         let (query, params) = self.build();
         db.slay_exec(query, params)
     }
@@ -415,7 +415,7 @@ impl DeleteBuilder {
     }
 
     /// slay Execute the DELETE
-    pub fn exec(&self, db: &DB) -> Result<(), Error> {
+    pub fn exec(&self, db: &DB) -> crate::error::Result<()> {
         let (query, params) = self.build();
         db.slay_exec(query, params)
     }

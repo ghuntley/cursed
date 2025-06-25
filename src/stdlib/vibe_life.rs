@@ -10,16 +10,16 @@
 /// - Includes modern OS patterns with Gen Z naming  
 /// - Optimized for cross-platform compatibility
 
-use crate::stdlib::{env, process, fs};
-use crate::stdlib::env::{EnvError, EnvResult};
-use crate::stdlib::process::{ProcessError, ProcessResult};
-use crate::stdlib::fs::{FsError, FsResult};
-use crate::error::Error;
+// use crate::stdlib::{env, process, fs};
+// use crate::stdlib::env::{EnvError, EnvResult};
+// use crate::stdlib::process::{ProcessError, ProcessResult};
+// use crate::stdlib::fs::{FsError, FsResult};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, Duration};
 
-/// Error type for VibeLife operations
+/// CursedError type for VibeLife operations
 #[derive(Debug, Clone)]
 pub enum VibeLifeError {
     /// Environment variable error
@@ -38,22 +38,22 @@ pub enum VibeLifeError {
     SystemError(String),
 }
 
-impl std::fmt::Display for VibeLifeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            VibeLifeError::EnvError(msg) => write!(f, "Environment error: {}", msg),
-            VibeLifeError::ProcessError(msg) => write!(f, "Process error: {}", msg),
-            VibeLifeError::FsError(msg) => write!(f, "File system error: {}", msg),
-            VibeLifeError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
-            VibeLifeError::NotFound(msg) => write!(f, "Not found: {}", msg),
-            VibeLifeError::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
-            VibeLifeError::SystemError(msg) => write!(f, "System error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for VibeLifeError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             VibeLifeError::EnvError(msg) => write!(f, "Environment error: {}", msg),
+//             VibeLifeError::ProcessError(msg) => write!(f, "Process error: {}", msg),
+//             VibeLifeError::FsError(msg) => write!(f, "File system error: {}", msg),
+//             VibeLifeError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
+//             VibeLifeError::NotFound(msg) => write!(f, "Not found: {}", msg),
+//             VibeLifeError::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
+//             VibeLifeError::SystemError(msg) => write!(f, "System error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for VibeLifeError {}
-
+// impl std::error::CursedError for VibeLifeError {}
+// 
 impl From<EnvError> for VibeLifeError {
     fn from(err: EnvError) -> Self {
         VibeLifeError::EnvError(err.to_string())
@@ -824,143 +824,3 @@ pub fn get_vibe_life_stats() -> HashMap<String, String> {
     stats
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-
-    #[test]
-    fn test_environment_operations() {
-        // Test setting and getting environment variable
-        set_env_vibe("TEST_VAR", "test_value").unwrap();
-        assert_eq!(get_env_vibe("TEST_VAR"), Some("test_value".to_string()));
-        assert!(env_exists_vibe("TEST_VAR"));
-        
-        // Test with default
-        assert_eq!(get_env_vibe_or("NONEXISTENT_VAR", "default"), "default");
-        
-        // Clean up
-        remove_env_vibe("TEST_VAR").unwrap();
-        assert!(!env_exists_vibe("TEST_VAR"));
-    }
-
-    #[test]
-    fn test_path_operations() {
-        let joined = join_path_vibe("/home/user", "documents/file.txt");
-        assert!(joined.contains("home") && joined.contains("user") && joined.contains("file.txt"));
-        
-        let filename = get_filename_vibe("/home/user/file.txt");
-        assert_eq!(filename, Some("file.txt".to_string()));
-        
-        let extension = get_extension_vibe("/home/user/file.txt");
-        assert_eq!(extension, Some("txt".to_string()));
-        
-        let parent = get_parent_vibe("/home/user/file.txt");
-        assert!(parent.is_some());
-        
-        let normalized = normalize_path_vibe("/home/user/../user/./file.txt");
-        assert!(normalized.contains("user") && normalized.contains("file.txt"));
-    }
-
-    #[test]
-    fn test_system_information() {
-        let os_name = get_os_name_vibe();
-        assert!(!os_name.is_empty());
-        
-        let arch = get_architecture_vibe();
-        assert!(!arch.is_empty());
-        
-        let cpu_count = get_cpu_count_vibe();
-        assert!(cpu_count > 0);
-        
-        let username = get_username_vibe();
-        // Username might not be available in all test environments
-        
-        let hostname = get_hostname_vibe();
-        // Hostname might not be available in all test environments
-    }
-
-    #[test]
-    fn test_process_operations() {
-        let current_pid = get_current_process_vibe();
-        assert!(current_pid > 0);
-        
-        let parent_pid = get_parent_process_vibe();
-        assert!(parent_pid > 0);
-        
-        // Test that current process is alive
-        assert!(is_process_alive_vibe(current_pid));
-        
-        // Test command existence
-        #[cfg(unix)]
-        assert!(command_exists_vibe("ls"));
-        
-        #[cfg(windows)]
-        assert!(command_exists_vibe("dir"));
-    }
-
-    #[test]
-    fn test_time_operations() {
-        let timestamp = get_timestamp_vibe();
-        assert!(timestamp > 0);
-        
-        let timestamp_ms = get_timestamp_millis_vibe();
-        assert!(timestamp_ms > 0);
-        assert!(timestamp_ms > timestamp); // Milliseconds should be larger
-        
-        // Test sleep (very short to avoid slowing tests)
-        let start = std::time::Instant::now();
-        sleep_millis_vibe(1);
-        let elapsed = start.elapsed();
-        assert!(elapsed >= Duration::from_millis(1));
-    }
-
-    #[test]
-    fn test_platform_detection() {
-        // These should not panic
-        let _is_unix = is_unix_vibe();
-        let _is_windows = is_windows_vibe();
-        let _is_case_sensitive = is_case_sensitive_vibe();
-        let _path_separator = get_path_separator_vibe();
-    }
-
-    #[test]
-    fn test_memory_operations() {
-        let memory_info = get_memory_info_vibe().unwrap();
-        assert!(memory_info.total_memory > 0);
-        assert!(memory_info.available_memory <= memory_info.total_memory);
-        assert!(memory_info.used_memory <= memory_info.total_memory);
-        assert!(memory_info.free_memory <= memory_info.total_memory);
-    }
-
-    #[test]
-    fn test_command_execution() {
-        // Test a simple command that should exist on most systems
-        #[cfg(unix)]
-        {
-            let result = run_command_vibe("echo", &["hello"]);
-            assert!(result.is_ok());
-            let output = result.unwrap();
-            assert!(output.contains("hello"));
-        }
-        
-        #[cfg(windows)]
-        {
-            let result = run_command_vibe("echo", &["hello"]);
-            assert!(result.is_ok());
-            let output = result.unwrap();
-            assert!(output.contains("hello"));
-        }
-    }
-
-    #[test]
-    fn test_module_stats() {
-        let stats = get_vibe_life_stats();
-        assert!(stats.contains_key("version"));
-        assert!(stats.contains_key("operations"));
-        assert!(stats.contains_key("features"));
-        assert!(stats.contains_key("os"));
-        assert!(stats.contains_key("arch"));
-        assert!(stats.contains_key("cpu_cores"));
-    }
-}

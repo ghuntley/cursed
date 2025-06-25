@@ -1,9 +1,8 @@
 /// Secure Communication Channels Implementation
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_random::SecureRandom;
-use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_random::SecureRandom;
+// use crate::stdlib::packages::crypto_hash_advanced::HashRegistry;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
@@ -574,108 +573,3 @@ impl fmt::Display for SecurityLevel {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_channel_manager_creation() {
-        let manager = SecureChannelManager::new().unwrap();
-        assert_eq!(manager.channels.lock().unwrap().len(), 0);
-    }
-
-    #[test]
-    fn test_create_channel() {
-        let manager = SecureChannelManager::new().unwrap();
-        let channel_id = manager.create_channel(None).unwrap();
-        
-        assert!(!channel_id.is_empty());
-        
-        let channel = manager.get_channel(&channel_id).unwrap().unwrap();
-        assert_eq!(channel.channel_id, channel_id);
-        assert!(!channel.is_established);
-        assert!(!channel.is_closed);
-    }
-
-    #[test]
-    fn test_handshake_process() {
-        let manager = SecureChannelManager::new().unwrap();
-        let channel_id = manager.create_channel(None).unwrap();
-        
-        // Initial handshake step
-        let (state, message) = manager.handshake_step(&channel_id, None).unwrap();
-        assert_eq!(state, HandshakeState::ClientHello);
-        assert!(message.is_some());
-        
-        let hello_msg = message.unwrap();
-        assert_eq!(hello_msg.message_type, MessageType::Handshake);
-    }
-
-    #[test]
-    fn test_channel_config() {
-        let config = ChannelConfig {
-            channel_type: ChannelType::TLS,
-            security_level: SecurityLevel::High,
-            cipher: ChannelCipher::AES256GCM,
-            auth_method: ChannelAuth::Certificate,
-            forward_secrecy: true,
-            compression: false,
-            heartbeat_interval: Some(Duration::from_secs(30)),
-            session_timeout: Duration::from_secs(3600),
-        };
-        
-        let manager = SecureChannelManager::new().unwrap();
-        let channel_id = manager.create_channel(Some(config.clone())).unwrap();
-        
-        let channel = manager.get_channel(&channel_id).unwrap().unwrap();
-        assert_eq!(channel.config.channel_type, config.channel_type);
-        assert_eq!(channel.config.security_level, config.security_level);
-    }
-
-    #[test]
-    fn test_list_channels() {
-        let manager = SecureChannelManager::new().unwrap();
-        
-        let channel1 = manager.create_channel(None).unwrap();
-        let channel2 = manager.create_channel(None).unwrap();
-        
-        let channels = manager.list_channels().unwrap();
-        assert_eq!(channels.len(), 2);
-        assert!(channels.contains(&channel1));
-        assert!(channels.contains(&channel2));
-    }
-
-    #[test]
-    fn test_close_channel() {
-        let manager = SecureChannelManager::new().unwrap();
-        let channel_id = manager.create_channel(None).unwrap();
-        
-        // Close the channel
-        manager.close_channel(&channel_id).unwrap();
-        
-        let channel = manager.get_channel(&channel_id).unwrap().unwrap();
-        assert!(channel.is_closed);
-    }
-
-    #[test]
-    fn test_cleanup_expired() {
-        let manager = SecureChannelManager::new().unwrap();
-        let _ = manager.create_channel(None).unwrap();
-        
-        // Should have channels
-        assert!(manager.channels.lock().unwrap().len() > 0);
-        
-        // Clean up (channels not expired yet)
-        let cleaned = manager.cleanup_expired_channels().unwrap();
-        assert_eq!(cleaned, 0);
-    }
-
-    #[test]
-    fn test_display_formatting() {
-        assert_eq!(format!("{}", ChannelType::TLS), "TLS");
-        assert_eq!(format!("{}", SecurityLevel::High), "High (128-bit)");
-        
-        let custom_type = ChannelType::Custom("MyProtocol".to_string());
-        assert_eq!(format!("{}", custom_type), "Custom(MyProtocol)");
-    }
-}

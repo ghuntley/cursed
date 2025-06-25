@@ -1,7 +1,7 @@
 /// fr fr MySQL driver implementation - the popular choice periodt
 
 use crate::runtime::value::Value;
-use crate::stdlib::packages::{
+// use crate::stdlib::packages::{
     db_core::{
         ConnectionConfig, DatabaseConnection, DriverFeature, SqlDialect,
         Parameter, ResultSet, PreparedStatement, DatabaseTransaction,
@@ -10,13 +10,13 @@ use crate::stdlib::packages::{
     db_sql::{SqlDriver, SqlDialectTrait, SqlValue, SqlResultSet, SqlExecuteResult},
     // types::ParameterDirection  // Explicit import to resolve E0659
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_sql::drivers::{
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_sql::drivers::{
     SqlConnection, ConfigurationOption, DriverPerformanceInfo, DriverLimitations,
     SqlTransactionIsolation, SqlConnectionInfo, SqlBatch, SqlTransaction
 };
 
-use crate::stdlib::packages::db_core::error::{
+// use crate::stdlib::packages::db_core::error::{
     DatabaseResult as DbResult, DatabaseError, ErrorKind, ConnectionError, QueryError, TransactionError
 };
 use async_trait::async_trait;
@@ -49,8 +49,8 @@ pub struct MySqlError {
 /// fr fr MySQL result set implementation
 #[derive(Debug)]
 pub struct MySqlResultSet {
-    rows: Vec<crate::stdlib::packages::db_core::Row>,
-    metadata: crate::stdlib::packages::db_core::ResultMetadata,
+//     rows: Vec<crate::stdlib::packages::db_core::Row>,
+//     metadata: crate::stdlib::packages::db_core::ResultMetadata,
     current_index: usize,
 }
 
@@ -186,7 +186,7 @@ impl MySqlConnection {
     fn convert_parameters(parameters: &[Parameter]) -> Vec<MySqlValue> {
         parameters.iter()
             .filter_map(|p| match p.direction {
-                crate::stdlib::packages::types::ParameterDirection::In => {
+//                 crate::stdlib::packages::types::ParameterDirection::In => {
                     Some(Self::convert_parameter_value(&p.value))
                 }
                 _ => Some(MySqlValue::NULL),
@@ -218,7 +218,7 @@ impl MySqlConnection {
     }
 
     /// slay Process MySQL rows into CURSED rows
-    fn process_mysql_rows(mysql_rows: Vec<MySqlRow>) -> DbResult<(Vec<crate::stdlib::packages::db_core::Row>, Vec<crate::stdlib::packages::db_core::Column>)> {
+//     fn process_mysql_rows(mysql_rows: Vec<MySqlRow>) -> DbResult<(Vec<crate::stdlib::packages::db_core::Row>, Vec<crate::stdlib::packages::db_core::Column>)> {
         let mut result_rows = Vec::new();
         let mut columns = Vec::new();
 
@@ -230,24 +230,24 @@ impl MySqlConnection {
                         mysql::consts::ColumnType::MYSQL_TYPE_TINY |
                         mysql::consts::ColumnType::MYSQL_TYPE_SHORT |
                         mysql::consts::ColumnType::MYSQL_TYPE_LONG |
-                        mysql::consts::ColumnType::MYSQL_TYPE_LONGLONG => crate::stdlib::packages::db_core::ColumnType::BigInt,
+//                         mysql::consts::ColumnType::MYSQL_TYPE_LONGLONG => crate::stdlib::packages::db_core::ColumnType::BigInt,
                         mysql::consts::ColumnType::MYSQL_TYPE_FLOAT |
-                        mysql::consts::ColumnType::MYSQL_TYPE_DOUBLE => crate::stdlib::packages::db_core::ColumnType::Double,
+//                         mysql::consts::ColumnType::MYSQL_TYPE_DOUBLE => crate::stdlib::packages::db_core::ColumnType::Double,
                         mysql::consts::ColumnType::MYSQL_TYPE_STRING |
                         mysql::consts::ColumnType::MYSQL_TYPE_VAR_STRING |
-                        mysql::consts::ColumnType::MYSQL_TYPE_VARCHAR => crate::stdlib::packages::db_core::ColumnType::Text,
+//                         mysql::consts::ColumnType::MYSQL_TYPE_VARCHAR => crate::stdlib::packages::db_core::ColumnType::Text,
                         mysql::consts::ColumnType::MYSQL_TYPE_BLOB |
                         mysql::consts::ColumnType::MYSQL_TYPE_MEDIUM_BLOB |
-                        mysql::consts::ColumnType::MYSQL_TYPE_LONG_BLOB => crate::stdlib::packages::db_core::ColumnType::Blob,
-                        mysql::consts::ColumnType::MYSQL_TYPE_DATE => crate::stdlib::packages::db_core::ColumnType::Date,
-                        mysql::consts::ColumnType::MYSQL_TYPE_TIME => crate::stdlib::packages::db_core::ColumnType::Time,
+//                         mysql::consts::ColumnType::MYSQL_TYPE_LONG_BLOB => crate::stdlib::packages::db_core::ColumnType::Blob,
+//                         mysql::consts::ColumnType::MYSQL_TYPE_DATE => crate::stdlib::packages::db_core::ColumnType::Date,
+//                         mysql::consts::ColumnType::MYSQL_TYPE_TIME => crate::stdlib::packages::db_core::ColumnType::Time,
                         mysql::consts::ColumnType::MYSQL_TYPE_DATETIME |
-                        mysql::consts::ColumnType::MYSQL_TYPE_TIMESTAMP => crate::stdlib::packages::db_core::ColumnType::Timestamp,
-                        mysql::consts::ColumnType::MYSQL_TYPE_JSON => crate::stdlib::packages::db_core::ColumnType::Json,
-                        _ => crate::stdlib::packages::db_core::ColumnType::Text,
+//                         mysql::consts::ColumnType::MYSQL_TYPE_TIMESTAMP => crate::stdlib::packages::db_core::ColumnType::Timestamp,
+//                         mysql::consts::ColumnType::MYSQL_TYPE_JSON => crate::stdlib::packages::db_core::ColumnType::Json,
+//                         _ => crate::stdlib::packages::db_core::ColumnType::Text,
                     };
 
-                    crate::stdlib::packages::db_core::Column {
+//                     crate::stdlib::packages::db_core::Column {
                         name: col.name_str().to_string(),
                         column_type,
                         nullable: true,
@@ -269,7 +269,7 @@ impl MySqlConnection {
                 let mysql_value: MySqlValue = mysql_row.get(i).unwrap_or(MySqlValue::NULL);
                 let sql_value = Self::mysql_value_to_sql(mysql_value.clone());
                 
-                let column_value = crate::stdlib::packages::db_core::ColumnValue {
+//                 let column_value = crate::stdlib::packages::db_core::ColumnValue {
                     data: match &mysql_value {
                         MySqlValue::NULL => None,
                         MySqlValue::Bytes(data) => Some(data.clone()),
@@ -282,16 +282,16 @@ impl MySqlConnection {
                     column_type: if i < columns.len() { 
                         columns[i].column_type.clone() 
                     } else { 
-                        crate::stdlib::packages::db_core::ColumnType::Text 
+//                         crate::stdlib::packages::db_core::ColumnType::Text 
                     },
                     is_null: matches!(mysql_value, MySqlValue::NULL),
                 };
                 values.push(column_value);
             }
 
-            result_rows.push(crate::stdlib::packages::db_core::Row {
+//             result_rows.push(crate::stdlib::packages::db_core::Row {
                 values,
-                metadata: crate::stdlib::packages::db_core::RowMetadata {
+//                 metadata: crate::stdlib::packages::db_core::RowMetadata {
                     row_number: row_idx,
                     is_inserted: false,
                     is_updated: false,
@@ -305,7 +305,7 @@ impl MySqlConnection {
 }
 
 #[async_trait]
-impl crate::stdlib::packages::db_core::DatabaseDriver for MySqlDriver {
+// impl crate::stdlib::packages::db_core::DatabaseDriver for MySqlDriver {
     async fn connect(&self, config: ConnectionConfig) -> DbResult<Box<dyn DatabaseConnection>> {
         let connection_string = if config.connection_string.starts_with("mysql://") {
             config.connection_string
@@ -325,8 +325,8 @@ impl crate::stdlib::packages::db_core::DatabaseDriver for MySqlDriver {
         Ok(Box::new(conn))
     }
 
-    fn driver_info(&self) -> crate::stdlib::packages::db_core::DriverInfo {
-        crate::stdlib::packages::db_core::DriverInfo::new(
+//     fn driver_info(&self) -> crate::stdlib::packages::db_core::DriverInfo {
+//         crate::stdlib::packages::db_core::DriverInfo::new(
             &self.name,
             &self.version,
             "MySQL database driver",
@@ -369,19 +369,19 @@ impl SqlDriver for MySqlDriver {
     }
 
     fn sql_dialect(&self) -> Box<dyn SqlDialectTrait> {
-        Box::new(crate::stdlib::packages::db_sql::MySqlDialect::new())
+//         Box::new(crate::stdlib::packages::db_sql::MySqlDialect::new())
     }
 
-    fn supported_types(&self) -> Vec<crate::stdlib::packages::db_sql::SqlType> {
+//     fn supported_types(&self) -> Vec<crate::stdlib::packages::db_sql::SqlType> {
         vec![
-            crate::stdlib::packages::db_sql::SqlType::Integer,
-            crate::stdlib::packages::db_sql::SqlType::Text,
-            crate::stdlib::packages::db_sql::SqlType::Boolean,
-            crate::stdlib::packages::db_sql::SqlType::Json,
+//             crate::stdlib::packages::db_sql::SqlType::Integer,
+//             crate::stdlib::packages::db_sql::SqlType::Text,
+//             crate::stdlib::packages::db_sql::SqlType::Boolean,
+//             crate::stdlib::packages::db_sql::SqlType::Json,
         ]
     }
 
-    fn supports_sql_feature(&self, _feature: crate::stdlib::packages::db_sql::SqlFeature) -> bool {
+//     fn supports_sql_feature(&self, _feature: crate::stdlib::packages::db_sql::SqlFeature) -> bool {
         true
     }
 
@@ -435,7 +435,7 @@ impl DatabaseConnection for MySqlConnection {
 
         let result_set = MySqlResultSet {
             rows: result_rows,
-            metadata: crate::stdlib::packages::db_core::ResultMetadata {
+//             metadata: crate::stdlib::packages::db_core::ResultMetadata {
                 columns,
                 row_count: None,
                 affected_rows: 0,
@@ -479,7 +479,7 @@ impl DatabaseConnection for MySqlConnection {
         Ok(Box::new(stmt))
     }
 
-    async fn begin_transaction(&mut self, _options: Option<crate::stdlib::packages::db_core::TransactionOptions>) -> DbResult<Box<dyn DatabaseTransaction>> {
+//     async fn begin_transaction(&mut self, _options: Option<crate::stdlib::packages::db_core::TransactionOptions>) -> DbResult<Box<dyn DatabaseTransaction>> {
         if self.in_transaction {
             return Err(DatabaseError::transaction(
                 TransactionError::NotActive,
@@ -521,14 +521,14 @@ impl DatabaseConnection for MySqlConnection {
         Ok(())
     }
 
-    fn connection_info(&self) -> crate::stdlib::packages::db_core::traits::ConnectionInfo {
-        crate::stdlib::packages::db_core::traits::ConnectionInfo {
+//     fn connection_info(&self) -> crate::stdlib::packages::db_core::traits::ConnectionInfo {
+//         crate::stdlib::packages::db_core::traits::ConnectionInfo {
             database_name: "mysql_db".to_string(),
             server_version: "8.0.35".to_string(),
             protocol_version: "10".to_string(),
             connection_id: self.connection_id.clone(),
             is_read_only: false,
-            transaction_isolation: crate::stdlib::packages::db_core::traits::TransactionIsolation::RepeatableRead,
+//             transaction_isolation: crate::stdlib::packages::db_core::traits::TransactionIsolation::RepeatableRead,
         }
     }
 }
@@ -549,12 +549,12 @@ impl SqlConnection for MySqlConnection {
 
         Ok(SqlResultSet {
             rows: result_rows.into_iter().map(|row| {
-                crate::stdlib::packages::db_sql::SqlRow {
+//                 crate::stdlib::packages::db_sql::SqlRow {
                     values: row.values.into_iter().map(|col| {
                         match &col.data {
                             Some(data) => {
                                 match col.column_type {
-                                    crate::stdlib::packages::db_core::ColumnType::BigInt => {
+//                                     crate::stdlib::packages::db_core::ColumnType::BigInt => {
                                         if data.len() >= 8 {
                                             SqlValue::Integer(i64::from_le_bytes([
                                                 data[0], data[1], data[2], data[3],
@@ -564,7 +564,7 @@ impl SqlConnection for MySqlConnection {
                                             SqlValue::Null
                                         }
                                     },
-                                    crate::stdlib::packages::db_core::ColumnType::Double => {
+//                                     crate::stdlib::packages::db_core::ColumnType::Double => {
                                         if data.len() >= 8 {
                                             SqlValue::Double(f64::from_le_bytes([
                                                 data[0], data[1], data[2], data[3],
@@ -574,7 +574,7 @@ impl SqlConnection for MySqlConnection {
                                             SqlValue::Null
                                         }
                                     },
-                                    crate::stdlib::packages::db_core::ColumnType::Text => {
+//                                     crate::stdlib::packages::db_core::ColumnType::Text => {
                                         if let Ok(s) = String::from_utf8(data.clone()) {
                                             SqlValue::Text(s)
                                         } else {
@@ -587,7 +587,7 @@ impl SqlConnection for MySqlConnection {
                             None => SqlValue::Null,
                         }
                     }).collect(),
-                    metadata: crate::stdlib::packages::db_sql::SqlRowMetadata {
+//                     metadata: crate::stdlib::packages::db_sql::SqlRowMetadata {
                         row_number: row.metadata.row_number,
                         table_name: None,
                         is_updated: row.metadata.is_updated,
@@ -595,15 +595,15 @@ impl SqlConnection for MySqlConnection {
                 }
             }).collect(),
             columns: columns.into_iter().map(|col| {
-                crate::stdlib::packages::db_sql::SqlColumn {
+//                 crate::stdlib::packages::db_sql::SqlColumn {
                     name: col.name,
                     sql_type: match col.column_type {
-                        crate::stdlib::packages::db_core::ColumnType::BigInt => crate::stdlib::packages::db_sql::SqlType::Integer,
-                        crate::stdlib::packages::db_core::ColumnType::Double => crate::stdlib::packages::db_sql::SqlType::Real,
-                        crate::stdlib::packages::db_core::ColumnType::Text => crate::stdlib::packages::db_sql::SqlType::Text,
-                        crate::stdlib::packages::db_core::ColumnType::Blob => crate::stdlib::packages::db_sql::SqlType::Blob,
-                        crate::stdlib::packages::db_core::ColumnType::Json => crate::stdlib::packages::db_sql::SqlType::Json,
-                        _ => crate::stdlib::packages::db_sql::SqlType::Text,
+//                         crate::stdlib::packages::db_core::ColumnType::BigInt => crate::stdlib::packages::db_sql::SqlType::Integer,
+//                         crate::stdlib::packages::db_core::ColumnType::Double => crate::stdlib::packages::db_sql::SqlType::Real,
+//                         crate::stdlib::packages::db_core::ColumnType::Text => crate::stdlib::packages::db_sql::SqlType::Text,
+//                         crate::stdlib::packages::db_core::ColumnType::Blob => crate::stdlib::packages::db_sql::SqlType::Blob,
+//                         crate::stdlib::packages::db_core::ColumnType::Json => crate::stdlib::packages::db_sql::SqlType::Json,
+//                         _ => crate::stdlib::packages::db_sql::SqlType::Text,
                     },
                     nullable: col.nullable,
                     ordinal: col.ordinal,
@@ -611,7 +611,7 @@ impl SqlConnection for MySqlConnection {
                     schema_name: col.schema_name,
                 }
             }).collect(),
-            metadata: crate::stdlib::packages::db_sql::SqlResultMetadata {
+//             metadata: crate::stdlib::packages::db_sql::SqlResultMetadata {
                 row_count: None,
                 affected_rows: 0,
                 execution_time: std::time::Duration::from_millis(0),
@@ -735,7 +735,7 @@ impl SqlConnection for MySqlConnection {
 
 // Implement ResultSet trait for MySqlResultSet
 impl ResultSet for MySqlResultSet {
-    fn next(&mut self) -> DbResult<Option<crate::stdlib::packages::db_core::Row>> {
+//     fn next(&mut self) -> DbResult<Option<crate::stdlib::packages::db_core::Row>> {
         if self.current_index < self.rows.len() {
             let row = self.rows[self.current_index].clone();
             self.current_index += 1;
@@ -745,7 +745,7 @@ impl ResultSet for MySqlResultSet {
         }
     }
 
-    fn collect(&mut self) -> DbResult<Vec<crate::stdlib::packages::db_core::Row>> {
+//     fn collect(&mut self) -> DbResult<Vec<crate::stdlib::packages::db_core::Row>> {
         let mut result = Vec::new();
         while let Some(row) = self.next()? {
             result.push(row);
@@ -753,7 +753,7 @@ impl ResultSet for MySqlResultSet {
         Ok(result)
     }
 
-    fn columns(&self) -> &[crate::stdlib::packages::db_core::Column] {
+//     fn columns(&self) -> &[crate::stdlib::packages::db_core::Column] {
         &self.metadata.columns
     }
 
@@ -761,7 +761,7 @@ impl ResultSet for MySqlResultSet {
         self.current_index < self.rows.len()
     }
 
-    fn metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
+//     fn metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
         &self.metadata
     }
 
@@ -777,7 +777,7 @@ impl ResultSet for MySqlResultSet {
 // Implement PreparedStatement trait for MySqlPreparedStatement
 #[async_trait]
 impl PreparedStatement for MySqlPreparedStatement {
-    async fn execute(&mut self, parameters: &[Parameter]) -> DbResult<crate::stdlib::packages::db_core::ExecuteResult> {
+//     async fn execute(&mut self, parameters: &[Parameter]) -> DbResult<crate::stdlib::packages::db_core::ExecuteResult> {
         let mut conn = self.pool.get_conn()
             .map_err(|e| DatabaseError::connection(
                 ConnectionError::FailedToConnect,
@@ -792,7 +792,7 @@ impl PreparedStatement for MySqlPreparedStatement {
                 &format!("MySQL prepared statement execution failed: {}", e)
             ))?;
 
-        Ok(crate::stdlib::packages::db_core::ExecuteResult {
+//         Ok(crate::stdlib::packages::db_core::ExecuteResult {
             affected_rows: conn.affected_rows(),
             last_insert_id: Some(conn.last_insert_id()),
             warnings: Vec::new(),
@@ -820,7 +820,7 @@ impl PreparedStatement for MySqlPreparedStatement {
 
         let result_set = MySqlResultSet {
             rows: result_rows,
-            metadata: crate::stdlib::packages::db_core::ResultMetadata {
+//             metadata: crate::stdlib::packages::db_core::ResultMetadata {
                 columns,
                 row_count: None,
                 affected_rows: 0,
@@ -845,16 +845,16 @@ impl PreparedStatement for MySqlPreparedStatement {
     }
     
     /// slay Get parameter metadata
-    fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
+//     fn parameter_metadata(&self) -> &[crate::stdlib::packages::db_core::ParameterMetadata] {
         // Placeholder implementation - would need to extract from MySQL statement
         &[]
     }
     
     /// slay Get result set metadata
-    fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
+//     fn result_metadata(&self) -> &crate::stdlib::packages::db_core::ResultMetadata {
         // Placeholder implementation - would need to extract from MySQL statement
-        static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
-            std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
+//         static EMPTY_METADATA: std::sync::LazyLock<crate::stdlib::packages::db_core::ResultMetadata> = 
+//             std::sync::LazyLock::new(|| crate::stdlib::packages::db_core::ResultMetadata {
                 columns: vec![],
                 total_rows: None,
                 has_more_rows: false,
@@ -862,7 +862,7 @@ impl PreparedStatement for MySqlPreparedStatement {
                 schema_name: None,
                 table_name: None,
                 is_updatable: false,
-                result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
+//                 result_type: crate::stdlib::packages::db_core::result::ResultType::ForwardOnly,
             });
         &EMPTY_METADATA
     }
@@ -915,7 +915,7 @@ impl DatabaseTransaction for MySqlTransactionImpl {
         Ok(())
     }
 
-    async fn savepoint(&mut self, name: &str) -> DbResult<crate::stdlib::packages::db_core::SavePoint> {
+//     async fn savepoint(&mut self, name: &str) -> DbResult<crate::stdlib::packages::db_core::SavePoint> {
         if let Some(ref mut tx) = self.connection {
             tx.exec_drop(&format!("SAVEPOINT {}", name), ())
                 .map_err(|e| DatabaseError::transaction(
@@ -924,14 +924,14 @@ impl DatabaseTransaction for MySqlTransactionImpl {
                 ))?;
         }
 
-        Ok(crate::stdlib::packages::db_core::SavePoint {
+//         Ok(crate::stdlib::packages::db_core::SavePoint {
             name: name.to_string(),
             transaction_id: self.transaction_id.clone(),
             created_at: std::time::SystemTime::now(),
         })
     }
 
-    async fn rollback_to_savepoint(&mut self, savepoint: &crate::stdlib::packages::db_core::SavePoint) -> DbResult<()> {
+//     async fn rollback_to_savepoint(&mut self, savepoint: &crate::stdlib::packages::db_core::SavePoint) -> DbResult<()> {
         if let Some(ref mut tx) = self.connection {
             tx.exec_drop(&format!("ROLLBACK TO SAVEPOINT {}", savepoint.name), ())
                 .map_err(|e| DatabaseError::transaction(
@@ -957,7 +957,7 @@ impl DatabaseTransaction for MySqlTransactionImpl {
 
             let result_set = MySqlResultSet {
                 rows: result_rows,
-                metadata: crate::stdlib::packages::db_core::ResultMetadata {
+//                 metadata: crate::stdlib::packages::db_core::ResultMetadata {
                     columns,
                     row_count: None,
                     affected_rows: 0,
@@ -978,7 +978,7 @@ impl DatabaseTransaction for MySqlTransactionImpl {
         }
     }
 
-    async fn execute(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<crate::stdlib::packages::db_core::ExecuteResult> {
+//     async fn execute(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<crate::stdlib::packages::db_core::ExecuteResult> {
         if let Some(ref mut tx) = self.connection {
             let mysql_params = MySqlConnection::convert_parameters(parameters);
             
@@ -988,7 +988,7 @@ impl DatabaseTransaction for MySqlTransactionImpl {
                     &format!("MySQL transaction execute failed: {}", e)
                 ))?;
 
-            Ok(crate::stdlib::packages::db_core::ExecuteResult {
+//             Ok(crate::stdlib::packages::db_core::ExecuteResult {
                 affected_rows: tx.affected_rows(),
                 last_insert_id: Some(tx.last_insert_id()),
                 warnings: Vec::new(),
@@ -1003,19 +1003,20 @@ impl DatabaseTransaction for MySqlTransactionImpl {
         }
     }
 
-    fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
+//     fn state(&self) -> crate::stdlib::packages::db_core::traits::TransactionState {
         if self.active {
-            crate::stdlib::packages::db_core::traits::TransactionState::Active
+//             crate::stdlib::packages::db_core::traits::TransactionState::Active
         } else {
-            crate::stdlib::packages::db_core::traits::TransactionState::Committed
+//             crate::stdlib::packages::db_core::traits::TransactionState::Committed
         }
     }
 }
 
-impl std::fmt::Display for MySqlError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "MySQL Error: {}", self.message)
-    }
-}
+// impl std::fmt::Display for MySqlError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "MySQL CursedError: {}", self.message)
+//     }
+// }
 
-impl std::error::Error for MySqlError {}
+// impl std::error::CursedError for MySqlError {}
+// 

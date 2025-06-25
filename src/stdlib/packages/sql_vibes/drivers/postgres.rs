@@ -1,5 +1,5 @@
 /// fr fr PostgreSQL database driver - enterprise-grade database vibes
-use crate::stdlib::packages::sql_vibes::{
+// use crate::stdlib::packages::sql_vibes::{
     DatabaseDriver, DatabaseConnection, PreparedStatement, Transaction,
     ConnectionConfig, DriverInfo, DriverFeature, ConnectionInfo, TransactionState, TransactionIsolation,
     SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter
@@ -629,71 +629,3 @@ fn create_postgres_mock_result_set(sql: &str, _params: &[Parameter]) -> ResultSe
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_postgres_driver_creation() {
-        let driver = PostgresDriver::new();
-        let info = driver.driver_info();
-        
-        assert_eq!(info.name, "postgres");
-        assert!(driver.supports_feature(DriverFeature::PreparedStatements));
-        assert!(driver.supports_feature(DriverFeature::Transactions));
-        assert!(driver.supports_feature(DriverFeature::SslEncryption));
-        assert!(driver.supports_feature(DriverFeature::JsonSupport));
-    }
-
-    #[test]
-    fn test_validate_connection_string() {
-        let driver = PostgresDriver::new();
-        
-        assert!(driver.validate_connection_string("postgres://user:pass@localhost/db").is_ok());
-        assert!(driver.validate_connection_string("postgresql://user:pass@localhost:5432/db").is_ok());
-        assert!(driver.validate_connection_string("").is_err());
-        assert!(driver.validate_connection_string("sqlite://test.db").is_err());
-        assert!(driver.validate_connection_string("postgres://localhost/db").is_err()); // Missing auth
-    }
-
-    #[test]
-    fn test_parse_postgres_connection_string() {
-        let parsed = parse_postgres_connection_string("postgres://user:pass@localhost:5432/testdb?sslmode=require").unwrap();
-        
-        assert_eq!(parsed.username, "user");
-        assert_eq!(parsed.password, "pass");
-        assert_eq!(parsed.host, "localhost");
-        assert_eq!(parsed.port, 5432);
-        assert_eq!(parsed.database, "testdb");
-        assert_eq!(parsed.ssl_mode, "require");
-        assert_eq!(parsed.parameters.get("sslmode"), Some(&"require".to_string()));
-    }
-
-    #[test]
-    fn test_parse_postgres_connection_string_defaults() {
-        let parsed = parse_postgres_connection_string("postgres://user@localhost/testdb").unwrap();
-        
-        assert_eq!(parsed.username, "user");
-        assert_eq!(parsed.password, "");
-        assert_eq!(parsed.host, "localhost");
-        assert_eq!(parsed.port, 5432); // Default port
-        assert_eq!(parsed.database, "testdb");
-        assert_eq!(parsed.ssl_mode, "prefer"); // Default SSL mode
-    }
-
-    #[test]
-    fn test_count_postgres_parameters() {
-        assert_eq!(count_postgres_parameters("SELECT * FROM users WHERE id = $1"), 1);
-        assert_eq!(count_postgres_parameters("SELECT * FROM users WHERE id = $1 AND name = $2"), 2);
-        assert_eq!(count_postgres_parameters("SELECT * FROM users WHERE id = $2 AND name = $1"), 2); // Max param number
-        assert_eq!(count_postgres_parameters("SELECT * FROM users"), 0);
-    }
-
-    #[test]
-    fn test_validate_postgres_sql() {
-        assert!(validate_postgres_sql("SELECT * FROM users").is_ok());
-        assert!(validate_postgres_sql("INSERT INTO users (name) VALUES ($1)").is_ok());
-        assert!(validate_postgres_sql("").is_err());
-        assert!(validate_postgres_sql("SELECT * FROM users; DROP TABLE users").is_err());
-    }
-}

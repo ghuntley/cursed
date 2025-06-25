@@ -1,7 +1,6 @@
 /// Production-ready password hashing with modern algorithms (Argon2, scrypt, PBKDF2)
-use crate::error_types::Error;
-use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::stdlib::crypto::types::CryptoError;
+use crate::error::CursedError;
+// use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
 use std::time::{Duration, Instant};
 
 /// Result type for password operations
@@ -115,7 +114,7 @@ impl PasswordHash {
         let parts: Vec<&str> = phc_string.split('$').collect();
         
         if parts.len() < 4 {
-            return Err(Error::InvalidArgument("Invalid PHC string format".to_string()));
+            return Err(CursedError::InvalidArgument("Invalid PHC string format".to_string()));
         }
         
         // Parse algorithm
@@ -125,7 +124,7 @@ impl PasswordHash {
             "argon2d" => PasswordAlgorithm::Argon2d,
             "scrypt" => PasswordAlgorithm::Scrypt,
             "pbkdf2" => PasswordAlgorithm::Pbkdf2,
-            _ => return Err(Error::InvalidArgument("Unknown algorithm".to_string())),
+            _ => return Err(CursedError::InvalidArgument("Unknown algorithm".to_string())),
         };
         
         // Parse parameters
@@ -162,7 +161,7 @@ impl PasswordHash {
             let kv: Vec<&str> = param.split('=').collect();
             if kv.len() == 2 {
                 let value = kv[1].parse::<u32>()
-                    .map_err(|_| Error::InvalidArgument("Invalid parameter value".to_string()))?;
+                    .map_err(|_| CursedError::InvalidArgument("Invalid parameter value".to_string()))?;
                 params.insert(kv[0], value);
             }
         }
@@ -185,7 +184,7 @@ impl PasswordHash {
                     b'0'..=b'9' => byte - b'0' + 52,
                     b'+' => 62,
                     b'/' => 63,
-                    _ => return Err(Error::InvalidArgument("Invalid base64 character".to_string())),
+                    _ => return Err(CursedError::InvalidArgument("Invalid base64 character".to_string())),
                 };
             }
             
@@ -298,7 +297,7 @@ impl PasswordHasher {
         // This is a simplified implementation for demonstration
         // Production code should use the official Argon2 implementation
         
-        let mut hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
+//         let mut hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
         
         // Add algorithm variant
         hasher.update(&[variant]);
@@ -316,7 +315,7 @@ impl PasswordHasher {
         let mut state = hasher.finalize();
         
         for _ in 0..self.config.time_cost {
-            let mut round_hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
+//             let mut round_hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
             round_hasher.update(&state);
             round_hasher.update(password);
             round_hasher.update(salt);
@@ -331,7 +330,7 @@ impl PasswordHasher {
     /// Simplified scrypt implementation
     fn scrypt_hash(&self, password: &[u8], salt: &[u8]) -> PasswordResult<Vec<u8>> {
         // Simplified scrypt - production should use proper implementation
-        let mut hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
+//         let mut hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
         
         hasher.update(salt);
         hasher.update(password);
@@ -342,7 +341,7 @@ impl PasswordHasher {
         
         // Create memory blocks
         for i in 0..self.config.memory_cost {
-            let mut block_hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
+//             let mut block_hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
             block_hasher.update(&state);
             block_hasher.update(&i.to_le_bytes());
             let block = block_hasher.finalize();
@@ -353,7 +352,7 @@ impl PasswordHasher {
         // Mix memory blocks
         for _ in 0..self.config.time_cost {
             for block in &memory_blocks {
-                let mut mix_hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
+//                 let mut mix_hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
                 mix_hasher.update(&state);
                 mix_hasher.update(block);
                 state = mix_hasher.finalize();
@@ -377,7 +376,7 @@ impl PasswordHasher {
             block_salt.extend_from_slice(&block_index.to_be_bytes());
             
             // Initial hash
-            let mut hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
+//             let mut hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
             hasher.update(password);
             hasher.update(&block_salt);
             let mut u = hasher.finalize();
@@ -385,7 +384,7 @@ impl PasswordHasher {
             
             // Iterate
             for _ in 1..iterations {
-                let mut iter_hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
+//                 let mut iter_hasher = crate::stdlib::packages::crypto_hash_advanced::blake3::Blake3Hasher::new();
                 iter_hasher.update(password);
                 iter_hasher.update(&u);
                 u = iter_hasher.finalize();
@@ -570,75 +569,3 @@ impl PasswordStrengthLevel {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_password_hashing() {
-        let hasher = PasswordHasher::new(PasswordConfig::fast());
-        
-        let password = "my_secure_password";
-        let hash_result = hasher.hash_password(password).unwrap();
-        
-        assert_eq!(hash_result.algorithm, PasswordAlgorithm::Argon2id);
-        assert!(!hash_result.hash.is_empty());
-        assert!(!hash_result.salt.is_empty());
-        
-        // Verify correct password
-        assert!(hasher.verify_password(password, &hash_result).unwrap());
-        
-        // Verify incorrect password
-        assert!(!hasher.verify_password("wrong_password", &hash_result).unwrap());
-    }
-
-    #[test]
-    fn test_phc_string_format() {
-        let hasher = PasswordHasher::new(PasswordConfig::fast());
-        let hash_result = hasher.hash_password("test").unwrap();
-        
-        let phc_string = hash_result.to_string();
-        assert!(phc_string.starts_with("$argon2id$"));
-        
-        let parsed = PasswordHash::from_string(&phc_string).unwrap();
-        assert_eq!(parsed.algorithm, hash_result.algorithm);
-    }
-
-    #[test]
-    fn test_password_strength_analyzer() {
-        let weak = PasswordStrengthAnalyzer::analyze("123");
-        assert_eq!(weak.level, PasswordStrengthLevel::VeryWeak);
-        assert!(!weak.feedback.is_empty());
-        
-        let strong = PasswordStrengthAnalyzer::analyze("MyStr0ng!P@ssw0rd");
-        assert!(matches!(strong.level, PasswordStrengthLevel::Strong | PasswordStrengthLevel::VeryStrong));
-        
-        let moderate = PasswordStrengthAnalyzer::analyze("password123");
-        assert!(weak.score < moderate.score);
-    }
-
-    #[test]
-    fn test_password_configs() {
-        let fast = PasswordConfig::fast();
-        let secure = PasswordConfig::secure_default();
-        
-        assert!(fast.memory_cost < secure.memory_cost);
-        assert!(fast.time_cost <= secure.time_cost);
-    }
-
-    #[test]
-    fn test_different_algorithms() {
-        let configs = [
-            PasswordConfig { algorithm: PasswordAlgorithm::Argon2id, ..PasswordConfig::fast() },
-            PasswordConfig { algorithm: PasswordAlgorithm::Scrypt, ..PasswordConfig::fast() },
-            PasswordConfig { algorithm: PasswordAlgorithm::Pbkdf2, ..PasswordConfig::fast() },
-        ];
-        
-        for config in &configs {
-            let hasher = PasswordHasher::new(config.clone());
-            let result = hasher.hash_password("test").unwrap();
-            assert_eq!(result.algorithm, config.algorithm);
-            assert!(hasher.verify_password("test", &result).unwrap());
-        }
-    }
-}

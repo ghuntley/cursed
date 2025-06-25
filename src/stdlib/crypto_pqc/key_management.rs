@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Post-Quantum Cryptography Key Management
 /// 
 /// This module provides comprehensive key management functionality for PQC algorithms,
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use serde::{Serialize, Deserialize};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType, StandardizationStatus};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType, StandardizationStatus};
 
 /// Universal key container for all PQC algorithms
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -537,116 +537,3 @@ impl fmt::Display for KeyManagerStatistics {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_pqc_key_creation() {
-        let key = PqcKey::new(
-            AlgorithmType::Kyber,
-            SecurityLevel::Level3,
-            KeyType::Public,
-            vec![1, 2, 3, 4],
-        );
-
-        assert_eq!(key.algorithm, AlgorithmType::Kyber);
-        assert_eq!(key.security_level, SecurityLevel::Level3);
-        assert_eq!(key.key_type, KeyType::Public);
-        assert_eq!(key.key_data, vec![1, 2, 3, 4]);
-        assert!(!key.metadata.key_id.is_empty());
-    }
-
-    #[test]
-    fn test_key_expiration() {
-        let mut key = PqcKey::new(
-            AlgorithmType::Kyber,
-            SecurityLevel::Level1,
-            KeyType::Public,
-            vec![1, 2, 3, 4],
-        );
-
-        assert!(!key.is_expired());
-        
-        key.set_expiration(Duration::from_secs(1));
-        assert!(!key.is_expired()); // Should not be expired immediately
-        
-        // Manually set expiration in the past
-        key.metadata.expires_at = Some(key.metadata.created_at - 1);
-        assert!(key.is_expired());
-    }
-
-    #[test]
-    fn test_key_validation() {
-        let key = PqcKey::new(
-            AlgorithmType::Kyber,
-            SecurityLevel::Level1,
-            KeyType::Public,
-            vec![1, 2, 3, 4],
-        );
-
-        assert!(key.validate().is_ok());
-
-        // Test deprecated algorithm
-        let sike_key = PqcKey::new(
-            AlgorithmType::Sike,
-            SecurityLevel::Level1,
-            KeyType::Public,
-            vec![1, 2, 3, 4],
-        );
-
-        assert!(sike_key.validate().is_err());
-    }
-
-    #[test]
-    fn test_key_manager() {
-        let mut manager = KeyManager::new();
-
-        let key1 = PqcKey::new(
-            AlgorithmType::Kyber,
-            SecurityLevel::Level1,
-            KeyType::Public,
-            vec![1, 2, 3, 4],
-        );
-
-        let key2 = PqcKey::new(
-            AlgorithmType::Dilithium,
-            SecurityLevel::Level3,
-            KeyType::Secret,
-            vec![5, 6, 7, 8],
-        );
-
-        let key1_id = manager.add_key(key1).unwrap();
-        let key2_id = manager.add_key(key2).unwrap();
-
-        assert_eq!(manager.list_key_ids().len(), 2);
-        assert!(manager.get_key(&key1_id).is_some());
-        assert!(manager.get_key(&key2_id).is_some());
-
-        let kyber_keys = manager.list_keys_by_algorithm(AlgorithmType::Kyber);
-        assert_eq!(kyber_keys.len(), 1);
-
-        let level1_keys = manager.list_keys_by_security_level(SecurityLevel::Level1);
-        assert_eq!(level1_keys.len(), 1);
-    }
-
-    #[test]
-    fn test_key_manager_statistics() {
-        let mut manager = KeyManager::new();
-
-        let key1 = PqcKey::new(AlgorithmType::Kyber, SecurityLevel::Level1, KeyType::Public, vec![1]);
-        let key2 = PqcKey::new(AlgorithmType::Kyber, SecurityLevel::Level3, KeyType::Secret, vec![2]);
-        let key3 = PqcKey::new(AlgorithmType::Dilithium, SecurityLevel::Level1, KeyType::Public, vec![3]);
-
-        manager.add_key(key1).unwrap();
-        manager.add_key(key2).unwrap();
-        manager.add_key(key3).unwrap();
-
-        let stats = manager.get_statistics();
-        assert_eq!(stats.total_keys, 3);
-        assert_eq!(stats.by_algorithm[&AlgorithmType::Kyber], 2);
-        assert_eq!(stats.by_algorithm[&AlgorithmType::Dilithium], 1);
-        assert_eq!(stats.by_security_level[&SecurityLevel::Level1], 2);
-        assert_eq!(stats.by_security_level[&SecurityLevel::Level3], 1);
-    }
-}

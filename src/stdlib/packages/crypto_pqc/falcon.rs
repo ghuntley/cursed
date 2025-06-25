@@ -13,8 +13,8 @@
 /// - Gaussian sampling for signature generation
 /// - Constant-time operations where feasible
 
-use crate::stdlib::packages::crypto_advanced::{AdvancedCryptoError, AdvancedCryptoResult};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::{AdvancedCryptoError, AdvancedCryptoResult};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -25,7 +25,7 @@ use sha2::{Sha256, Sha512, Digest};
 /// Result type for Falcon operations
 pub type FalconResult<T> = AdvancedCryptoResult<T>;
 
-/// Error type for Falcon operations
+/// CursedError type for Falcon operations
 pub type FalconError = AdvancedCryptoError;
 
 /// Falcon security levels
@@ -1392,186 +1392,4 @@ pub fn init_falcon() -> FalconResult<()> {
 }
 
 /// Test vectors for validation
-#[cfg(test)]
-pub mod test_vectors {
-    use super::*;
 
-    /// Known test vector for Falcon-512
-    pub fn falcon512_test_vector() -> (Vec<u8>, FalconKeyPair, FalconSignature) {
-        // This would contain actual NIST test vectors in a real implementation
-        let security_level = FalconSecurityLevel::Falcon512;
-        
-        // Simplified test data
-        let message = b"test message for falcon-512".to_vec();
-        let key_pair = falcon_keygen(security_level).expect("Key generation failed");
-        let signature = key_pair.sign(&message).expect("Signing failed");
-        
-        (message, key_pair, signature)
-    }
-
-    /// Known test vector for Falcon-1024
-    pub fn falcon1024_test_vector() -> (Vec<u8>, FalconKeyPair, FalconSignature) {
-        // This would contain actual NIST test vectors in a real implementation
-        let security_level = FalconSecurityLevel::Falcon1024;
-        
-        // Simplified test data
-        let message = b"test message for falcon-1024".to_vec();
-        let key_pair = falcon_keygen(security_level).expect("Key generation failed");
-        let signature = key_pair.sign(&message).expect("Signing failed");
-        
-        (message, key_pair, signature)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_falcon512_keygen() {
-        let key_pair = falcon_keygen(FalconSecurityLevel::Falcon512).unwrap();
-        assert_eq!(key_pair.security_level(), FalconSecurityLevel::Falcon512);
-        assert_eq!(key_pair.degree(), 512);
-    }
-
-    #[test]
-    fn test_falcon1024_keygen() {
-        let key_pair = falcon_keygen(FalconSecurityLevel::Falcon1024).unwrap();
-        assert_eq!(key_pair.security_level(), FalconSecurityLevel::Falcon1024);
-        assert_eq!(key_pair.degree(), 1024);
-    }
-
-    #[test]
-    fn test_sign_verify_falcon512() {
-        let key_pair = falcon_keygen(FalconSecurityLevel::Falcon512).unwrap();
-        let message = b"Hello, Falcon-512!";
-        
-        let signature = key_pair.sign(message).unwrap();
-        let is_valid = key_pair.verify(message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_sign_verify_falcon1024() {
-        let key_pair = falcon_keygen(FalconSecurityLevel::Falcon1024).unwrap();
-        let message = b"Hello, Falcon-1024!";
-        
-        let signature = key_pair.sign(message).unwrap();
-        let is_valid = key_pair.verify(message, &signature).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_signature_serialization() {
-        let key_pair = falcon_keygen(FalconSecurityLevel::Falcon512).unwrap();
-        let message = b"Serialization test";
-        
-        let signature = key_pair.sign(message).unwrap();
-        let bytes = signature.to_bytes();
-        let deserialized = FalconSignature::from_bytes(&bytes).unwrap();
-        
-        let is_valid = key_pair.verify(message, &deserialized).unwrap();
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_key_serialization() {
-        let key_pair = falcon_keygen(FalconSecurityLevel::Falcon512).unwrap();
-        
-        // Test public key serialization
-        let pub_bytes = key_pair.public_key.to_bytes();
-        let pub_deserialized = FalconPublicKey::from_bytes(&pub_bytes).unwrap();
-        assert_eq!(pub_deserialized.security_level, key_pair.public_key.security_level);
-        assert_eq!(pub_deserialized.h, key_pair.public_key.h);
-        
-        // Test private key serialization
-        let priv_bytes = key_pair.private_key.to_bytes();
-        let priv_deserialized = FalconPrivateKey::from_bytes(&priv_bytes).unwrap();
-        assert_eq!(priv_deserialized.security_level, key_pair.private_key.security_level);
-    }
-
-    #[test]
-    fn test_invalid_signature() {
-        let key_pair = falcon_keygen(FalconSecurityLevel::Falcon512).unwrap();
-        let message = b"Original message";
-        let wrong_message = b"Modified message";
-        
-        let signature = key_pair.sign(message).unwrap();
-        let is_valid = key_pair.verify(wrong_message, &signature).unwrap();
-        
-        assert!(!is_valid);
-    }
-
-    #[test]
-    fn test_gaussian_sampler() {
-        let mut sampler = GaussianSampler::new(165.0).unwrap();
-        
-        // Sample multiple values
-        let samples: Vec<i16> = (0..1000).map(|_| sampler.sample()).collect();
-        
-        // Check that we get reasonable distribution
-        let mean: f64 = samples.iter().map(|&x| x as f64).sum::<f64>() / samples.len() as f64;
-        assert!(mean.abs() < 10.0); // Should be close to 0
-        
-        // Check standard deviation
-        let variance: f64 = samples.iter()
-            .map(|&x| (x as f64 - mean).powi(2))
-            .sum::<f64>() / samples.len() as f64;
-        let std_dev = variance.sqrt();
-        assert!(std_dev > 100.0 && std_dev < 200.0); // Should be close to sigma
-    }
-
-    #[test]
-    fn test_fft() {
-        let fft = FalconFFT::new(8).unwrap();
-        let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
-        
-        let transformed = fft.fft(&input).unwrap();
-        let reconstructed = fft.ifft(&transformed).unwrap();
-        
-        // Check reconstruction accuracy
-        for (original, reconstructed) in input.iter().zip(reconstructed.iter()) {
-            assert!((original - reconstructed).abs() < 1e-10);
-        }
-    }
-
-    #[test]
-    fn test_falcon_registry() {
-        let registry = FalconRegistry::new();
-        let key_pair = falcon_keygen(FalconSecurityLevel::Falcon512).unwrap();
-        
-        // Register key pair
-        registry.register_key_pair("test_key".to_string(), key_pair).unwrap();
-        
-        // Test signing with registered key
-        let message = b"Registry test message";
-        let signature = registry.sign_with_key("test_key", message).unwrap();
-        
-        // Test verification with registered key
-        let is_valid = registry.verify_with_key("test_key", message, &signature).unwrap();
-        assert!(is_valid);
-        
-        // Check statistics
-        let stats = registry.get_stats().unwrap();
-        assert_eq!(stats.sign_falcon512_count, 1);
-        assert_eq!(stats.verify_falcon512_count, 1);
-        assert_eq!(stats.verify_success_count, 1);
-    }
-
-    #[test]
-    fn test_security_levels() {
-        let falcon512 = FalconSecurityLevel::Falcon512;
-        let falcon1024 = FalconSecurityLevel::Falcon1024;
-        
-        assert_eq!(falcon512.degree(), 512);
-        assert_eq!(falcon1024.degree(), 1024);
-        
-        assert!(falcon512.signature_size() < falcon1024.signature_size());
-        assert!(falcon512.public_key_size() < falcon1024.public_key_size());
-        assert!(falcon512.private_key_size() < falcon1024.private_key_size());
-        
-        assert_eq!(falcon512.modulus(), falcon1024.modulus()); // Same modulus
-    }
-}

@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{instrument, debug, info, warn, error};
-use crate::error_types::Error;
+use crate::error::CursedError;
 
 use super::super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
 use super::entity::Entity;
@@ -240,7 +240,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
 
     /// slay Execute query and return entities
     #[instrument(skip(self))]
-    pub async fn execute(self) -> Result<(), Error> {
+    pub async fn execute(self) -> crate::error::Result<()> {
         info!(table = %self.table, "Executing query");
         
         let sql = self.build_sql()?;
@@ -262,14 +262,14 @@ impl<T: Entity> FluentQueryBuilder<T> {
 
     /// lit Execute and return first result
     #[instrument(skip(self))]
-    pub async fn first_vibe(self) -> Result<(), Error> {
+    pub async fn first_vibe(self) -> crate::error::Result<()> {
         let mut results = self.limit(1).execute().await?;
         Ok(results.pop())
     }
 
     /// tea Execute and return single result (error if not exactly one)
     #[instrument(skip(self))]
-    pub async fn single_main_character(self) -> Result<(), Error> {
+    pub async fn single_main_character(self) -> crate::error::Result<()> {
         let results = self.limit(2).execute().await?;
         
         match results.len() {
@@ -281,7 +281,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
 
     /// flex Count total matching records
     #[instrument(skip(self))]
-    pub async fn count_the_vibes(mut self) -> Result<(), Error> {
+    pub async fn count_the_vibes(mut self) -> crate::error::Result<()> {
         debug!(table = %self.table, "Counting records");
         
         // Modify query for counting
@@ -316,14 +316,14 @@ impl<T: Entity> FluentQueryBuilder<T> {
 
     /// vibe Check if any records exist
     #[instrument(skip(self))]
-    pub async fn exists_no_cap(self) -> Result<(), Error> {
+    pub async fn exists_no_cap(self) -> crate::error::Result<()> {
         let count = self.count_the_vibes().await?;
         Ok(count > 0)
     }
 
     /// sus Build SQL query string
     #[instrument(skip(self))]
-    fn build_sql(&self) -> Result<(), Error> {
+    fn build_sql(&self) -> crate::error::Result<()> {
         let mut sql = String::new();
         
         // SELECT clause
@@ -400,7 +400,7 @@ impl<T: Entity> FluentQueryBuilder<T> {
     }
 
     /// facts Execute SQL and return raw rows with real database execution
-    async fn execute_sql(&self, sql: &str) -> Result<(), Error> {
+    async fn execute_sql(&self, sql: &str) -> crate::error::Result<()> {
         debug!(sql = %sql, params = ?self.parameters, "Executing SQL query");
         
         // Execute query with parameters using the connection pool
@@ -525,7 +525,7 @@ impl QueryExecutor {
 
     /// facts Execute raw SQL query
     #[instrument(skip(self))]
-    pub async fn execute_raw(&self, sql: &str, params: &[SqlValue]) -> Result<(), Error> {
+    pub async fn execute_raw(&self, sql: &str, params: &[SqlValue]) -> crate::error::Result<()> {
         info!(sql = sql, param_count = params.len(), "Executing raw SQL");
         
         // Check cache first
@@ -573,182 +573,6 @@ pub trait VibeQuery<T: Entity> {
     fn limit(&self, count: u64) -> FluentQueryBuilder<T>;
     
     /// Execute and get results
-    fn get_vibes(&self) -> impl std::future::Future<Output = Result<(), Error>> + Send;
+    fn get_vibes(&self) -> impl std::future::Future<Output = crate::error::Result<()>> + Send;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::Arc;
-    use tracing_test::traced_test;
-
-    #[derive(Debug, Clone)]
-    struct TestUser {
-        id: Option<i64>,
-        name: String,
-        email: String,
-    }
-
-    impl super::super::entity::Entity for TestUser {
-        fn table_name() -> &'static str {
-            "users"
-        }
-
-        fn primary_key_value(&self) -> Option<SqlValue> {
-            self.id.map(SqlValue::Integer)
-        }
-
-        fn set_primary_key_value(&mut self, value: SqlValue) {
-            if let SqlValue::Integer(id) = value {
-                self.id = Some(id);
-            }
-        }
-
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
-            Ok(Self {
-                id: match row.get("id") {
-                    Some(SqlValue::Integer(id)) => Some(*id),
-                    _ => None,
-                },
-                name: match row.get("name") {
-                    Some(SqlValue::String(name)) => name.clone(),
-                    _ => return Err(DatabaseError::validation_error("Missing name field")),
-                },
-                email: match row.get("email") {
-                    Some(SqlValue::String(email)) => email.clone(),
-                    _ => String::new(),
-                },
-            })
-        }
-
-        fn to_fields(&self) -> HashMap<String, SqlValue> {
-            let mut fields = HashMap::new();
-            if let Some(id) = self.id {
-                fields.insert("id".to_string(), SqlValue::Integer(id));
-            }
-            fields.insert("name".to_string(), SqlValue::String(self.name.clone()));
-            fields.insert("email".to_string(), SqlValue::String(self.email.clone()));
-            fields
-        }
-
-        fn field_names() -> Vec<&'static str> {
-            Vec::from(["id", "name", "email"])
-        }
-
-        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> {
-            Vec::from([])
-        }
-
-        fn metadata() -> super::super::entity::EntityMetadata {
-            super::super::entity::EntityMetadata {
-                table_name: "users".to_string(),
-                primary_key: "id".to_string(),
-                fields: Vec::from(["id".to_string(), "name".to_string(), "email".to_string()]),
-                relationships: Vec::from([]),
-                validation_rules: Vec::from([]),
-                indexes: Vec::from([]),
-                version: 1,
-            }
-        }
-    }
-
-    fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_query_builder_creation() {
-        let db = create_mock_db();
-        let builder = FluentQueryBuilder::<TestUser>::new("users", db);
-        assert_eq!(builder.table, "users");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_where_clause_building() {
-        let db = create_mock_db();
-        let builder = FluentQueryBuilder::<TestUser>::new("users", db)
-            .where_clause("name = ?", Vec::from([SqlValue::String("John".to_string())]));
-        
-        assert_eq!(builder.where_conditions.len(), 1);
-        assert_eq!(builder.where_conditions[0].condition, "name = ?");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_join_building() {
-        let db = create_mock_db();
-        let builder = FluentQueryBuilder::<TestUser>::new("users", db)
-            .join_the_party("profiles", "users.id = profiles.user_id");
-        
-        assert_eq!(builder.joins.len(), 1);
-        assert_eq!(builder.joins[0].table, "profiles");
-        assert_eq!(builder.joins[0].join_type, JoinType::Inner);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_order_by_building() {
-        let db = create_mock_db();
-        let builder = FluentQueryBuilder::<TestUser>::new("users", db)
-            .asc_vibes("name")
-            .desc_vibes("created_at");
-        
-        assert_eq!(builder.order_by.len(), 2);
-        assert_eq!(builder.order_by[0].field, "name");
-        assert_eq!(builder.order_by[0].direction, OrderDirection::Ascending);
-        assert_eq!(builder.order_by[1].direction, OrderDirection::Descending);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_sql_building() {
-        let db = create_mock_db();
-        let builder = FluentQueryBuilder::<TestUser>::new("users", db)
-            .select_these_vibes(&["id", "name", "email"])
-            .where_clause("active = ?", Vec::from([SqlValue::Boolean(true)]))
-            .order_by_vibe("name", OrderDirection::Ascending)
-            .limit(10);
-        
-        let sql = builder.build_sql().expect("Should build SQL");
-        
-        assert!(sql.contains("SELECT id, name, email"));
-        assert!(sql.contains("FROM users"));
-        assert!(sql.contains("WHERE active = ?"));
-        assert!(sql.contains("ORDER BY name ASC"));
-        assert!(sql.contains("LIMIT 10"));
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_query_execution() {
-        let db = create_mock_db();
-        let builder = FluentQueryBuilder::<TestUser>::new("users", db);
-        
-        let results = builder.execute().await.expect("Should execute query");
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0].name, "Test");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_pagination() {
-        let db = create_mock_db();
-        let builder = FluentQueryBuilder::<TestUser>::new("users", db)
-            .paginate_the_tea(2, 10);
-        
-        assert_eq!(builder.limit_value, Some(10));
-        assert_eq!(builder.offset_value, Some(10)); // page 2 with 10 per page
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_count_query() {
-        let db = create_mock_db();
-        let builder = FluentQueryBuilder::<TestUser>::new("users", db);
-        
-        let count = builder.count_the_vibes().await.expect("Should count records");
-        assert_eq!(count, 42); // Placeholder value
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test attributes and metadata parsing for CURSED testing framework
 /// 
 /// Handles parsing and validation of test attributes like #[test], #[ignore],
@@ -6,7 +6,6 @@ use crate::error::Error;
 
 use std::collections::HashMap;
 use std::time::Duration;
-use crate::crate::stdlib::errors_simple::CursedError;
 use super::{TestError, TestFrameworkResult};
 
 /// Test attribute types

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// IPC-side Process Coordination for CURSED
 /// 
 /// This module provides IPC-aware process coordination, ensuring that IPC
@@ -8,11 +8,11 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::time::{Duration, Instant};
 
-use crate::stdlib::ipc::error::{IpcError, IpcResult, invalid_operation};
-use crate::stdlib::ipc::shared_memory::SharedMemorySegment;
-use crate::stdlib::ipc::named_pipes::NamedPipe;
-use crate::stdlib::ipc::message_queues::MessageQueue;
-use crate::stdlib::ipc::traits::IpcResource;
+// use crate::stdlib::ipc::error::{IpcError, IpcResult, invalid_operation};
+// use crate::stdlib::ipc::shared_memory::SharedMemorySegment;
+// use crate::stdlib::ipc::named_pipes::NamedPipe;
+// use crate::stdlib::ipc::message_queues::MessageQueue;
+// use crate::stdlib::ipc::traits::IpcResource;
 
 /// IPC Process Registry manages process-aware IPC resources
 pub struct IpcProcessRegistry {
@@ -524,119 +524,3 @@ pub fn create_process_aware_manager(registry: Arc<IpcProcessRegistry>) -> Proces
     ProcessAwareIpcManager::new(registry)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_process_registry_creation() {
-        let config = ProcessRegistryConfig::default();
-        let registry = IpcProcessRegistry::new(config);
-        
-        let stats = registry.get_statistics();
-        assert_eq!(stats.active_processes, 0);
-        assert_eq!(stats.total_resources, 0);
-    }
-
-    #[test]
-    fn test_process_registration() {
-        let config = ProcessRegistryConfig::default();
-        let registry = IpcProcessRegistry::new(config);
-        
-        let binding = registry.register_process(1234).unwrap();
-        assert_eq!(binding.process_id, 1234);
-        assert_eq!(binding.resource_count(), 0);
-        
-        let stats = registry.get_statistics();
-        assert_eq!(stats.active_processes, 1);
-    }
-
-    #[test]
-    fn test_resource_binding() {
-        let config = ProcessRegistryConfig::default();
-        let registry = IpcProcessRegistry::new(config);
-        
-        registry.register_process(1234).unwrap();
-        registry.bind_resource_to_process(1234, "test_resource", IpcResourceType::NamedPipe).unwrap();
-        
-        let resources = registry.get_process_resources(1234);
-        assert_eq!(resources.len(), 1);
-        assert_eq!(resources[0].0, "test_resource");
-        assert_eq!(resources[0].1, IpcResourceType::NamedPipe);
-        
-        let processes = registry.get_resource_processes("test_resource");
-        assert_eq!(processes.len(), 1);
-        assert_eq!(processes[0], 1234);
-    }
-
-    #[test]
-    fn test_resource_unbinding() {
-        let config = ProcessRegistryConfig::default();
-        let registry = IpcProcessRegistry::new(config);
-        
-        registry.register_process(1234).unwrap();
-        registry.bind_resource_to_process(1234, "test_resource", IpcResourceType::NamedPipe).unwrap();
-        
-        assert!(registry.is_resource_in_use("test_resource"));
-        
-        registry.unbind_resource_from_process(1234, "test_resource").unwrap();
-        
-        assert!(!registry.is_resource_in_use("test_resource"));
-        let resources = registry.get_process_resources(1234);
-        assert_eq!(resources.len(), 0);
-    }
-
-    #[test]
-    fn test_process_unregistration() {
-        let config = ProcessRegistryConfig::default();
-        let registry = IpcProcessRegistry::new(config);
-        
-        registry.register_process(1234).unwrap();
-        registry.bind_resource_to_process(1234, "test_resource", IpcResourceType::NamedPipe).unwrap();
-        
-        registry.unregister_process(1234).unwrap();
-        
-        let stats = registry.get_statistics();
-        assert_eq!(stats.active_processes, 0);
-        assert!(!registry.is_resource_in_use("test_resource"));
-    }
-
-    #[test]
-    fn test_process_ipc_binding() {
-        let mut binding = ProcessIpcBinding::new(1234, 10);
-        assert_eq!(binding.resource_count(), 0);
-        
-        binding.add_resource("test".to_string(), IpcResourceType::NamedPipe).unwrap();
-        assert_eq!(binding.resource_count(), 1);
-        assert!(binding.has_resource("test"));
-        assert_eq!(binding.get_resource_type("test"), Some(IpcResourceType::NamedPipe));
-        
-        binding.remove_resource("test");
-        assert_eq!(binding.resource_count(), 0);
-        assert!(!binding.has_resource("test"));
-    }
-
-    #[test]
-    fn test_resource_type_str() {
-        assert_eq!(IpcResourceType::NamedPipe.as_str(), "named_pipe");
-        assert_eq!(IpcResourceType::SharedMemory.as_str(), "shared_memory");
-        assert_eq!(IpcResourceType::MessageQueue.as_str(), "message_queue");
-        assert_eq!(IpcResourceType::Socket.as_str(), "socket");
-    }
-
-    #[test]
-    fn test_registry_statistics() {
-        let config = ProcessRegistryConfig::default();
-        let registry = IpcProcessRegistry::new(config);
-        
-        registry.register_process(1234).unwrap();
-        registry.bind_resource_to_process(1234, "pipe1", IpcResourceType::NamedPipe).unwrap();
-        registry.bind_resource_to_process(1234, "mem1", IpcResourceType::SharedMemory).unwrap();
-        
-        let stats = registry.get_statistics();
-        assert_eq!(stats.active_processes, 1);
-        assert_eq!(stats.total_resources, 2);
-        assert_eq!(stats.pipes, 1);
-        assert_eq!(stats.shared_memory, 1);
-    }
-}

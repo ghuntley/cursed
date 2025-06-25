@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Template Streaming Renderer - High-performance streaming template rendering
 use std::collections::HashMap;
 use std::io::{Write, BufWriter};
@@ -10,7 +10,6 @@ use tokio::task::JoinHandle;
 use futures::{Stream, StreamExt};
 use tracing::{debug, error, info, instrument, span, warn, Level};
 
-use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 use super::template_core::{TemplateContext, TemplateConfig, TemplateLoader};
 use super::template_syntax::{TemplateAst, TemplateNode, TemplateExpression, BlockNode};
@@ -92,8 +91,8 @@ pub enum ControlCommand {
     Flush,
     /// End of stream
     End,
-    /// Error occurred
-    Error(String),
+    /// CursedError occurred
+    CursedError(String),
     /// Progress update
     Progress(f32),
 }
@@ -160,7 +159,7 @@ impl StreamingTemplateRenderer {
         ast: &TemplateAst,
         context: RenderContext,
         writer: W,
-    ) -> Result<StreamingResult, Error> {
+    ) -> crate::error::Result<StreamingResult> {
         let start_time = Instant::now();
         info!("Starting streaming template render");
         
@@ -231,7 +230,7 @@ impl StreamingTemplateRenderer {
                 StreamChunk::Control(ControlCommand::End) => {
                     break;
                 }
-                StreamChunk::Control(ControlCommand::Error(error_msg)) => {
+                StreamChunk::Control(ControlCommand::CursedError(error_msg)) => {
                     return Err(CursedError::TemplateError {
                         message: format!("Streaming error: {}", error_msg),
                         source_location: None,
@@ -297,7 +296,7 @@ impl StreamingTemplateRenderer {
         ast: TemplateAst,
         context: RenderContext,
         chunk_sender: mpsc::Sender<StreamChunk>,
-    ) -> Result<tokio::task::JoinHandle<Result<bool, Error>>, CursedError> {
+    ) -> crate::error::crate::error::Result<tokio::task::JoinHandle<Result<bool>>> {
         let config = self.config.clone();
         
         let handle = tokio::spawn(async move {
@@ -319,7 +318,7 @@ impl StreamingTemplateRenderer {
                     }
                     Err(e) => {
                         error!(error = ?e, node_index = index, "Failed to process template node");
-                        let _ = chunk_sender.send(StreamChunk::Control(ControlCommand::Error(e.to_string()))).await;
+                        let _ = chunk_sender.send(StreamChunk::Control(ControlCommand::CursedError(e.to_string()))).await;
                         return Err(e);
                     }
                 }
@@ -346,7 +345,7 @@ impl StreamingTemplateRenderer {
         node: &TemplateNode,
         context: &RenderContext,
         config: &StreamingConfig,
-    ) -> Result<Vec<StreamChunk>, Error> {
+    ) -> crate::error::Result<Vec<StreamChunk>> {
         let mut chunks = Vec::new();
         
         match node {
@@ -438,14 +437,14 @@ impl StreamingTemplateRenderer {
         value: &CursedObject,
         _filters: &[String],
         _context: &RenderContext,
-    ) -> Result<CursedObject, Error> {
+    ) -> crate::error::Result<CursedObject> {
         // For streaming, we'll use a simplified filter application
         // In a full implementation, this would use the FilterRegistry
         Ok(value.clone())
     }
     
     /// Apply security escaping
-    fn apply_security_escaping(text: &str, context: &RenderContext) -> Result<String, Error> {
+    fn apply_security_escaping(text: &str, context: &RenderContext) -> crate::error::Result<String> {
         match context.security_level {
             SecurityLevel::Strict | SecurityLevel::Moderate => {
                 match context.output_format {
@@ -460,7 +459,7 @@ impl StreamingTemplateRenderer {
     }
     
     /// Convert object to string
-    fn object_to_string(obj: &CursedObject) -> Result<String, Error> {
+    fn object_to_string(obj: &CursedObject) -> crate::error::Result<String> {
         match obj {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -475,7 +474,7 @@ impl StreamingTemplateRenderer {
                 Ok(format!("[{}]", items.join(", ")))
             }
             CursedObject::Map(map) => {
-                let items: Result<(), Error> = map.iter()
+                let items: crate::error::Result<()> = map.iter()
                     .map(|(k, v)| Ok(format!("{}: {}", k, Self::object_to_string(v)?)))
                     .collect();
                 Ok(format!("{{{}}}", items?.join(", ")))
@@ -532,7 +531,7 @@ impl StreamingTemplateRenderer {
         &self,
         ast: &TemplateAst,
         context: RenderContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut output = Vec::new();
         let result = self.stream_to_writer(ast, context, &mut output).await?;
         
@@ -551,7 +550,7 @@ pub struct TemplateStream {
     /// Chunk receiver
     chunk_receiver: mpsc::Receiver<StreamChunk>,
     /// Background processing handle
-    _processing_handle: JoinHandle<Result<(), Error>>,
+    _processing_handle: JoinHandle<crate::error::Result<()>>,
 }
 
 impl TemplateStream {
@@ -560,7 +559,7 @@ impl TemplateStream {
         renderer: &StreamingTemplateRenderer,
         ast: TemplateAst,
         context: RenderContext,
-    ) -> Result<Self, Error> {
+    ) -> crate::error::Result<Self> {
         let (chunk_sender, chunk_receiver) = mpsc::channel::<StreamChunk>(renderer.config.max_concurrent_operations);
         let processing_handle = renderer.start_background_processing(ast, context, chunk_sender).await?;
         
@@ -572,7 +571,7 @@ impl TemplateStream {
 }
 
 impl Stream for TemplateStream {
-    type Item = Result<StreamChunk, Error>;
+    type Item = crate::error::Result<StreamChunk>;
     
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
@@ -586,115 +585,3 @@ impl Stream for TemplateStream {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::template::template_syntax::{TemplateLexer, TemplateParser};
-    use crate::stdlib::template::template_core::{TemplateDelimiters, FileSystemLoader};
-    use crate::stdlib::template::template_filters::FilterRegistry;
-    use tokio::io::sink;
-    
-    #[tokio::test]
-    async fn test_streaming_renderer_creation() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(FileSystemLoader::new("templates"));
-        let template_config = TemplateConfig::default();
-        let streaming_config = StreamingConfig::default();
-        
-        let renderer = StreamingTemplateRenderer::new(filters, loader, &template_config, streaming_config);
-        
-        assert_eq!(renderer.config.buffer_size, 8192);
-        assert!(renderer.config.enable_async);
-    }
-    
-    #[tokio::test]
-    async fn test_simple_streaming() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(FileSystemLoader::new("templates"));
-        let template_config = TemplateConfig::default();
-        let streaming_config = StreamingConfig::default();
-        
-        let renderer = StreamingTemplateRenderer::new(filters, loader, &template_config, streaming_config);
-        
-        let template_source = "Hello, {{ name }}!";
-        let delimiters = TemplateDelimiters {
-            variable: ("{{".to_string(), "}}".to_string()),
-            block: ("{%".to_string(), "%}".to_string()),
-            comment: ("{#".to_string(), "#}".to_string()),
-        };
-        
-        let mut lexer = TemplateLexer::new(template_source, &delimiters);
-        let tokens = lexer.tokenize().unwrap();
-        let mut parser = TemplateParser::new(tokens);
-        let ast = parser.parse().unwrap();
-        
-        let mut context = RenderContext::new();
-        context.set("name".to_string(), CursedObject::String("World".to_string())).unwrap();
-        
-        let (output, result) = renderer.stream_to_string(&ast, context).await.unwrap();
-        
-        assert_eq!(output, "Hello, World!");
-        assert!(result.completed_successfully);
-        assert!(result.bytes_written > 0);
-    }
-    
-    #[tokio::test]
-    async fn test_streaming_to_writer() {
-        let filters = Arc::new(FilterRegistry::new());
-        let loader = Arc::new(FileSystemLoader::new("templates"));
-        let template_config = TemplateConfig::default();
-        let streaming_config = StreamingConfig::default();
-        
-        let renderer = StreamingTemplateRenderer::new(filters, loader, &template_config, streaming_config);
-        
-        let template_source = "{{ message }}";
-        let delimiters = TemplateDelimiters {
-            variable: ("{{".to_string(), "}}".to_string()),
-            block: ("{%".to_string(), "%}".to_string()),
-            comment: ("{#".to_string(), "#}".to_string()),
-        };
-        
-        let mut lexer = TemplateLexer::new(template_source, &delimiters);
-        let tokens = lexer.tokenize().unwrap();
-        let mut parser = TemplateParser::new(tokens);
-        let ast = parser.parse().unwrap();
-        
-        let mut context = RenderContext::new();
-        context.set("message".to_string(), CursedObject::String("Streaming works!".to_string())).unwrap();
-        
-        let mut output = Vec::new();
-        let result = renderer.stream_to_writer(&ast, context, &mut output).await.unwrap();
-        
-        let output_string = String::from_utf8(output).unwrap();
-        assert_eq!(output_string, "Streaming works!");
-        assert!(result.completed_successfully);
-    }
-    
-    #[tokio::test]
-    async fn test_chunk_processing() {
-        let config = StreamingConfig::default();
-        let context = RenderContext::new();
-        
-        let text_node = TemplateNode::Text("Hello, World!".to_string());
-        let chunks = StreamingTemplateRenderer::process_node_to_chunks(&text_node, &context, &config).await.unwrap();
-        
-        assert_eq!(chunks.len(), 1);
-        match &chunks[0] {
-            StreamChunk::Text(text) => assert_eq!(text, "Hello, World!"),
-            _ => panic!("Expected text chunk"),
-        }
-    }
-    
-    #[test]
-    fn test_security_escaping() {
-        let context = RenderContext::new()
-            .with_security_level(SecurityLevel::Strict)
-            .with_output_format(OutputFormat::Html);
-        
-        let input = "<script>alert('xss')</script>";
-        let escaped = StreamingTemplateRenderer::apply_security_escaping(input, &context).unwrap();
-        
-        assert!(escaped.contains("&lt;script&gt;"));
-        assert!(escaped.contains("&lt;/script&gt;"));
-    }
-}

@@ -3,7 +3,7 @@
 // Generates comprehensive JSON documentation for API consumption and tooling integration.
 
 use crate::docs::generator::{DocGeneratorConfig, ExtractedDocumentation, SearchIndexEntry};
-use crate::error::Error;
+use crate::error::CursedError;
 use serde_json;
 use std::fs;
 use std::path::Path;
@@ -21,7 +21,7 @@ impl JsonGenerator {
     }
 
     /// Generate comprehensive JSON documentation
-    pub fn generate_documentation(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_documentation(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> crate::error::Result<()> {
         let json_path = output_dir.join("documentation.json");
         
         // Create comprehensive documentation structure
@@ -64,23 +64,23 @@ impl JsonGenerator {
         });
         
         let json_content = serde_json::to_string_pretty(&doc_data)
-            .map_err(|e| Error::General(format!("Failed to serialize documentation: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to serialize documentation: {}", e)))?;
         
-        fs::write(json_path, json_content).map_err(Error::Io)?;
+        fs::write(json_path, json_content).map_err(CursedError::Io)?;
         
         // Generate individual module files
         for doc in docs {
             let module_path = output_dir.join(format!("{}.json", self.sanitize_module_name(&doc.module_name)));
             let module_json = serde_json::to_string_pretty(doc)
-                .map_err(|e| Error::General(format!("Failed to serialize module {}: {}", doc.module_name, e)))?;
-            fs::write(module_path, module_json).map_err(Error::Io)?;
+                .map_err(|e| CursedError::General(format!("Failed to serialize module {}: {}", doc.module_name, e)))?;
+            fs::write(module_path, module_json).map_err(CursedError::Io)?;
         }
         
         Ok(())
     }
 
     /// Generate search index JSON
-    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_search_index(&self, search_index: &[SearchIndexEntry], output_dir: &Path) -> crate::error::Result<()> {
         let search_path = output_dir.join("search_index.json");
         
         let search_data = serde_json::json!({
@@ -93,14 +93,14 @@ impl JsonGenerator {
         });
         
         let json_content = serde_json::to_string_pretty(&search_data)
-            .map_err(|e| Error::General(format!("Failed to serialize search index: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to serialize search index: {}", e)))?;
         
-        fs::write(search_path, json_content).map_err(Error::Io)?;
+        fs::write(search_path, json_content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Generate API schema for tooling integration
-    pub fn generate_api_schema(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_api_schema(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> crate::error::Result<()> {
         let schema_path = output_dir.join("api_schema.json");
         
         // Extract API-like items (functions, interfaces)
@@ -153,14 +153,14 @@ impl JsonGenerator {
         });
         
         let schema_content = serde_json::to_string_pretty(&schema)
-            .map_err(|e| Error::General(format!("Failed to serialize API schema: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to serialize API schema: {}", e)))?;
         
-        fs::write(schema_path, schema_content).map_err(Error::Io)?;
+        fs::write(schema_path, schema_content).map_err(CursedError::Io)?;
         Ok(())
     }
 
     /// Generate metrics and analytics data
-    pub fn generate_metrics(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_metrics(&self, docs: &[ExtractedDocumentation], output_dir: &Path) -> crate::error::Result<()> {
         let metrics_path = output_dir.join("metrics.json");
         
         let mut module_metrics = Vec::new();
@@ -216,9 +216,9 @@ impl JsonGenerator {
         });
         
         let metrics_content = serde_json::to_string_pretty(&metrics)
-            .map_err(|e| Error::General(format!("Failed to serialize metrics: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to serialize metrics: {}", e)))?;
         
-        fs::write(metrics_path, metrics_content).map_err(Error::Io)?;
+        fs::write(metrics_path, metrics_content).map_err(CursedError::Io)?;
         Ok(())
     }
 

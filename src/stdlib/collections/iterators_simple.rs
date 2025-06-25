@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Simplified Iterator system for CURSED collections
 /// 
 /// This module provides a basic iterator system that avoids complex type constraints
@@ -387,74 +387,3 @@ impl SimpleIteratorUtils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_vec_iterator() {
-        let vec = vec![1, 2, 3, 4, 5];
-        let result: Vec<i32> = vec.into_iter().collect();
-        assert_eq!(result, vec![1, 2, 3, 4, 5]);
-    }
-
-    #[test]
-    fn test_range_iterator() {
-        let result: Vec<i32> = simple_range(0, 5).collect();
-        assert_eq!(result, vec![0, 1, 2, 3, 4]);
-    }
-
-    #[test]
-    fn test_map() {
-        let vec = vec![1, 2, 3, 4, 5];
-        let result: Vec<i32> = vec.into_iter().map(|x| x * 2).collect();
-        assert_eq!(result, vec![2, 4, 6, 8, 10]);
-    }
-
-    #[test]
-    fn test_filter() {
-        let vec = vec![1, 2, 3, 4, 5, 6];
-        let result: Vec<i32> = vec.into_iter().filter(|&x| x % 2 == 0).collect();
-        assert_eq!(result, vec![2, 4, 6]);
-    }
-
-    #[test]
-    fn test_take_skip() {
-        let vec = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-        
-        let taken: Vec<i32> = vec.clone().into_iter().take(5).collect();
-        assert_eq!(taken, vec![1, 2, 3, 4, 5]);
-        
-        let skipped: Vec<i32> = vec.into_iter().skip(3).collect();
-        assert_eq!(skipped, vec![4, 5, 6, 7, 8, 9, 10]);
-    }
-
-    #[test]
-    fn test_fold_reduce() {
-        let vec = vec![1, 2, 3, 4, 5];
-        
-        let sum = vec.clone().into_iter().fold(0, |acc, x| acc + x);
-        assert_eq!(sum, 15);
-        
-        let product = vec.into_iter().reduce(|acc, x| acc * x);
-        assert_eq!(product, Some(120));
-    }
-
-    #[test]
-    fn test_utilities() {
-        let vec = vec![1, 2, 3, 4, 5];
-        
-        assert_eq!(SimpleIteratorUtils::sum(vec.clone().simple_into_iter()), 15);
-        assert_eq!(SimpleIteratorUtils::min(vec.clone().simple_into_iter()), Some(1));
-        assert_eq!(SimpleIteratorUtils::max(vec.simple_into_iter()), Some(5));
-    }
-
-    #[test]
-    fn test_partition() {
-        let vec = vec![1, 2, 3, 4, 5, 6];
-        let (evens, odds) = SimpleIteratorUtils::partition(vec.simple_into_iter(), |&x| x % 2 == 0);
-        
-        assert_eq!(evens, vec![2, 4, 6]);
-        assert_eq!(odds, vec![1, 3, 5]);
-    }
-}

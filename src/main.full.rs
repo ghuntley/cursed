@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 #!/usr/bin/env rust
 // CURSED Programming Language CLI
 // 
@@ -23,6 +23,8 @@ static SHUTDOWN: AtomicBool = AtomicBool::new(false);
 
 #[tokio::main]
 async fn main() {
+        // TODO: implement
+    }
     // Initialize the CURSED runtime
     cursed::init();
 
@@ -53,7 +55,7 @@ async fn main() {
     match result {
         Ok(_) => process::exit(0),
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("CursedError: {}", e);
             process::exit(1);
         }
     }
@@ -61,6 +63,8 @@ async fn main() {
 
 /// Setup signal handlers for graceful shutdown
 async fn setup_signal_handlers() {
+        // TODO: implement
+    }
     tokio::spawn(async {
         match signal::ctrl_c().await {
             Ok(()) => {
@@ -525,7 +529,7 @@ fn build_cli() -> Command {
         )
 }
 
-async fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let _args = matches.get_many::<String>("args");
     let watch = matches.get_flag("watch");
@@ -554,7 +558,7 @@ async fn handle_run_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     }
 }
 
-async fn handle_single_run_command(file: &str) -> Result<(), Error> {
+async fn handle_single_run_command(file: &str) -> crate::error::Result<()> {
     println!("🚀 Running CURSED program: {}", file);
     
     // Check if file exists
@@ -569,7 +573,7 @@ async fn handle_single_run_command(file: &str) -> Result<(), Error> {
     Ok(())
 }
 
-async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_run_command_with_optimization_enablement(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     use cursed::optimization::{
         OptimizationEnablementSystem, OptimizationProfile, 
         enablement_system::cli::parse_optimization_profile
@@ -677,7 +681,7 @@ async fn handle_single_run_command_with_options(
     enable_lto: bool,
     enhanced_passes: bool,
     disable_enhanced_passes: bool,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     use cursed::common::OptimizationLevel;
     use cursed::codegen::llvm::optimization::utils::create_config_from_args;
     use cursed::profiling::performance::{PerformanceMonitor, CompilationPhase, ReportFormat, ReportConfig};
@@ -766,7 +770,7 @@ async fn handle_single_run_command_with_options(
     Ok(())
 }
 
-async fn handle_watch_run_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_watch_run_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let patterns = matches.get_many::<String>("watch-pattern")
         .map(|v| v.map(|s| s.clone()).collect())
@@ -801,7 +805,7 @@ async fn handle_watch_run_command(matches: &clap::ArgMatches) -> Result<(), Erro
     Ok(())
 }
 
-async fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_build_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
     let emit = matches.get_one::<String>("emit").unwrap();
@@ -823,7 +827,7 @@ async fn handle_build_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     }
 }
 
-async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_build_command_with_optimization_enablement(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     use cursed::optimization::{
         OptimizationEnablementSystem, OptimizationProfile, 
         enablement_system::cli::parse_optimization_profile
@@ -955,7 +959,7 @@ async fn handle_single_build_command(
     emit: &str, 
     optimize: bool,
     opt_level: &str,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     println!("🔨 Building CURSED program: {}", file);
     
     if optimize {
@@ -1001,7 +1005,7 @@ async fn handle_single_build_command(
     Ok(())
 }
 
-async fn handle_watch_build_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_watch_build_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let output = matches.get_one::<String>("output");
     let emit = matches.get_one::<String>("emit").unwrap();
@@ -1040,7 +1044,7 @@ async fn handle_watch_build_command(matches: &clap::ArgMatches) -> Result<(), Er
     Ok(())
 }
 
-async fn handle_check_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let watch = matches.get_flag("watch");
 
@@ -1051,7 +1055,7 @@ async fn handle_check_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     }
 }
 
-async fn handle_single_check_command(file: &str) -> Result<(), Error> {
+async fn handle_single_check_command(file: &str) -> crate::error::Result<()> {
     println!("🔍 Checking CURSED program: {}", file);
 
     // Check if file exists
@@ -1067,7 +1071,7 @@ async fn handle_single_check_command(file: &str) -> Result<(), Error> {
     Ok(())
 }
 
-async fn handle_watch_check_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_watch_check_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file").unwrap();
     let patterns = matches.get_many::<String>("watch-pattern")
         .map(|v| v.map(|s| s.clone()).collect())
@@ -1102,7 +1106,7 @@ async fn handle_watch_check_command(matches: &clap::ArgMatches) -> Result<(), Er
     Ok(())
 }
 
-async fn handle_format_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_format_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let file = matches.get_one::<String>("file");
     let check_only = matches.get_flag("check");
     let write_file = matches.get_flag("write");
@@ -1143,7 +1147,7 @@ async fn handle_directory_formatting(
     dir_path: &str,
     check_only: bool,
     write_file: bool,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     use walkdir::WalkDir;
     
     println!("🎨 Formatting all CURSED files in directory: {}", dir_path);
@@ -1248,20 +1252,20 @@ async fn handle_directory_formatting(
     Ok(())
 }
 
-async fn handle_doc_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_doc_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     // Use the enhanced documentation system
     documentation::handle_documentation_command(matches).await.map_err(|e| e.into())
 }
 
-async fn handle_package_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_package_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     package_manager::handle_package_command(matches)
 }
 
-async fn handle_optimize_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_optimize_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     optimization_commands::handle_optimization_command(matches).await
 }
 
-async fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_test_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     use cursed::testing::{TestConfig, TestRunnerBuilder, ReportFormat};
     
     let pattern = matches.get_one::<String>("pattern");
@@ -1278,7 +1282,7 @@ async fn handle_test_command(matches: &clap::ArgMatches) -> Result<(), Error> {
 async fn handle_single_test_command(
     pattern: Option<&String>, 
     verbose: bool
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     println!("🧪 Running CURSED tests");
     
     // Create test configuration
@@ -1321,7 +1325,7 @@ async fn handle_single_test_command(
     Ok(())
 }
 
-async fn handle_watch_test_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_watch_test_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let pattern = matches.get_one::<String>("pattern");
     let verbose = matches.get_flag("verbose");
     let patterns = matches.get_many::<String>("watch-pattern")
@@ -1360,7 +1364,7 @@ async fn handle_watch_test_command(matches: &clap::ArgMatches) -> Result<(), Err
     Ok(())
 }
 
-async fn handle_repl_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_repl_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     use cursed::repl::CursedRepl;
     
     let history = matches.get_flag("history");
@@ -1393,11 +1397,11 @@ async fn handle_repl_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     }
 }
 
-async fn handle_bootstrap_command(matches: &clap::ArgMatches) -> Result<(), Error> {
-    bootstrap::handle_bootstrap_command(matches).await.map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+async fn handle_bootstrap_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
+    bootstrap::handle_bootstrap_command(matches).await.map_err(|e| Box::new(e) as Box<dyn std::error::CursedError>)
 }
 
-async fn handle_watch_command(matches: &clap::ArgMatches) -> Result<(), Error> {
+async fn handle_watch_command(matches: &clap::ArgMatches) -> crate::error::Result<()> {
     let command = matches.get_one::<String>("command").unwrap();
     let path = matches.get_one::<String>("path").unwrap();
     let patterns = matches.get_many::<String>("pattern")
@@ -1456,7 +1460,7 @@ async fn handle_watch_command(matches: &clap::ArgMatches) -> Result<(), Error> {
     Ok(())
 }
 
-async fn run_watch_command(command: &str, clear_screen: bool) -> Result<(), Error> {
+async fn run_watch_command(command: &str, clear_screen: bool) -> crate::error::Result<()> {
     if clear_screen {
         print!("\x1B[2J\x1B[1;1H"); // Clear screen and move cursor to top
     }

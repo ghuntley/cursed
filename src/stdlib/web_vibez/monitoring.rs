@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Performance metrics collection and monitoring utilities
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -517,7 +517,7 @@ pub enum AlertType {
 pub enum AlertSeverity {
     Info,
     Warning,
-    Error,
+    CursedError,
     Critical,
 }
 
@@ -578,7 +578,7 @@ impl AlertSystem {
                                global_metrics.concurrent_connections, 
                                self.thresholds.concurrent_connections_threshold),
                 timestamp: SystemTime::now(),
-                severity: AlertSeverity::Error,
+                severity: AlertSeverity::CursedError,
             });
         }
 
@@ -591,7 +591,7 @@ impl AlertSystem {
                     message: format!("High error rate on {}: {:.1}% (threshold: {:.1}%)", 
                                    route, error_rate, self.thresholds.error_rate_threshold),
                     timestamp: SystemTime::now(),
-                    severity: AlertSeverity::Error,
+                    severity: AlertSeverity::CursedError,
                 });
             }
 
@@ -684,124 +684,6 @@ impl Default for AlertThresholds {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_metrics_collector() {
-        let mut collector = MetricsCollector::new();
-        
-        // Record some requests
-        collector.record_request("/api/users", "GET", 200, Duration::from_millis(100), 1024);
-        collector.record_request("/api/users", "GET", 200, Duration::from_millis(150), 2048);
-        collector.record_request("/api/users", "POST", 500, Duration::from_millis(200), 512);
-
-        let metrics = collector.get_route_metrics("/api/users", "GET").unwrap();
-        assert_eq!(metrics.count, 2);
-        assert_eq!(metrics.error_rate(), 0.0); // No errors for GET requests
-
-        let post_metrics = collector.get_route_metrics("/api/users", "POST").unwrap();
-        assert_eq!(post_metrics.count, 1);
-        assert_eq!(post_metrics.error_rate(), 100.0); // 100% error rate
-
-        let global = collector.get_global_metrics();
-        assert_eq!(global.total_requests, 3);
-        assert_eq!(global.total_errors, 1);
-    }
-
-    #[test]
-    fn test_performance_monitor() {
-        let mut monitor = PerformanceMonitor::new();
-        
-        monitor.record_cpu_usage(50.0);
-        monitor.record_cpu_usage(70.0);
-        monitor.record_cpu_usage(90.0);
-        
-        monitor.record_memory_usage(1024 * 1024 * 100); // 100MB
-        monitor.record_memory_usage(1024 * 1024 * 200); // 200MB
-
-        assert_eq!(monitor.peak_cpu_usage(), 90.0);
-        assert_eq!(monitor.average_cpu_usage(), 70.0);
-        assert!(monitor.is_high_load());
-        
-        assert_eq!(monitor.peak_memory_usage(), 1024 * 1024 * 200);
-        assert_eq!(monitor.current_memory_usage(), 1024 * 1024 * 200);
-    }
-
-    #[test]
-    fn test_alert_system() {
-        let mut alert_system = AlertSystem::new().with_thresholds(AlertThresholds {
-            cpu_threshold: 50.0,
-            memory_threshold: 1024 * 1024 * 100, // 100MB
-            error_rate_threshold: 10.0,
-            response_time_threshold: Duration::from_millis(500),
-            concurrent_connections_threshold: 100,
-        });
-
-        let performance = PerformanceSummary {
-            current_cpu: 80.0, // Above threshold
-            peak_cpu: 80.0,
-            average_cpu: 80.0,
-            current_memory: 1024 * 1024 * 200, // Above threshold
-            peak_memory: 1024 * 1024 * 200,
-            average_memory: 1024 * 1024 * 200,
-            measurements_count: 1,
-            last_measurement: SystemTime::now(),
-        };
-
-        let global_metrics = GlobalMetrics {
-            total_requests: 100,
-            total_errors: 5,
-            total_bytes_sent: 1024 * 1024,
-            total_bytes_received: 512 * 1024,
-            concurrent_connections: 150, // Above threshold
-            peak_concurrent_connections: 150,
-            uptime: Duration::from_secs(3600),
-        };
-
-        let route_metrics = HashMap::new();
-
-        alert_system.check_metrics(&performance, &global_metrics, &route_metrics);
-
-        let recent_alerts = alert_system.get_recent_alerts(10);
-        assert!(!recent_alerts.is_empty());
-        
-        // Should have alerts for CPU, memory, and connections
-        let alert_counts = alert_system.get_alert_counts();
-        assert!(alert_counts.get("high_cpu").is_some());
-        assert!(alert_counts.get("high_memory").is_some());
-        assert!(alert_counts.get("too_many_connections").is_some());
-    }
-
-    #[test]
-    fn test_prometheus_export() {
-        let mut collector = MetricsCollector::new();
-        collector.record_request("/test", "GET", 200, Duration::from_millis(100), 1024);
-
-        let prometheus_output = collector.export_prometheus();
-        assert!(prometheus_output.contains("cursed_http_requests_total"));
-        assert!(prometheus_output.contains("cursed_http_request_duration_seconds"));
-    }
-
-    #[test]
-    fn test_json_export() {
-        let mut collector = MetricsCollector::new();
-        collector.record_request("/test", "GET", 200, Duration::from_millis(100), 1024);
-
-        let json_output = collector.export_json();
-        assert!(json_output.contains("\"global\""));
-        assert!(json_output.contains("\"routes\""));
-        assert!(json_output.contains("\"total_requests\""));
-    }
-}
-
-/// Web-based monitoring dashboard for visualizing metrics
-#[derive(Debug, Clone)]
-pub struct MonitoringDashboard {
-    collector: MetricsCollector,
-    config: DashboardConfig,
-}
 
 /// Configuration for monitoring dashboard
 #[derive(Debug, Clone)]

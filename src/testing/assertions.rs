@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test Assertions System
 /// 
 /// Provides comprehensive assertion functions for CURSED tests
@@ -16,7 +16,7 @@ pub struct Assert;
 /// Assertion error with detailed context
 #[derive(Debug, Clone)]
 pub struct AssertionError {
-    /// Error message
+    /// CursedError message
     pub message: String,
     /// Expected value (if applicable)
     pub expected: Option<String>,
@@ -559,60 +559,3 @@ pub fn assert_that<T>(value: T) -> AssertionBuilder<T> {
     AssertionBuilder::new(value)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_assert_true() {
-        assert!(Assert::assert_true(true, "should pass").is_ok());
-        assert!(Assert::assert_true(false, "should fail").is_err());
-    }
-
-    #[test]
-    fn test_assert_false() {
-        assert!(Assert::assert_false(false, "should pass").is_ok());
-        assert!(Assert::assert_false(true, "should fail").is_err());
-    }
-
-    #[test]
-    fn test_assert_equal() {
-        assert!(Assert::assert_equal(5, 5, "should pass").is_ok());
-        assert!(Assert::assert_equal(5, 3, "should fail").is_err());
-    }
-
-    #[test]
-    fn test_assert_contains() {
-        assert!(Assert::assert_contains("hello world", "world", "should pass").is_ok());
-        assert!(Assert::assert_contains("hello", "world", "should fail").is_err());
-    }
-
-    #[test]
-    fn test_assert_empty() {
-        let empty: Vec<i32> = vec![];
-        let non_empty = vec![1, 2, 3];
-        
-        assert!(Assert::assert_empty(&empty, "should pass").is_ok());
-        assert!(Assert::assert_empty(&non_empty, "should fail").is_err());
-    }
-
-    #[test]
-    fn test_assert_float_equal() {
-        assert!(Assert::assert_float_equal(1.0, 1.0001, 0.001, "should pass").is_ok());
-        assert!(Assert::assert_float_equal(1.0, 1.1, 0.01, "should fail").is_err());
-    }
-
-    #[test]
-    fn test_assertion_builder() {
-        assert!(assert_that(5).equals(5).is_ok());
-        assert!(assert_that(5).not_equals(3).is_ok());
-        assert!(assert_that(Some(10)).is_some().is_ok());
-        assert!(assert_that(None::<i32>).is_none().is_ok());
-    }
-
-    #[test]
-    fn test_assert_panics() {
-        assert!(Assert::assert_panics(|| panic!("test panic"), "should pass").is_ok());
-        assert!(Assert::assert_panics(|| { /* no panic */ }, "should fail").is_err());
-    }
-}

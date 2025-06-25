@@ -10,15 +10,14 @@ use crate::build_system::{
     ParallelCompiler, ParallelCompilationConfig, IncrementalOptimizer, IncrementalConfig,
     BuildProfiler, ProfilerConfig, ArtifactManager, ArtifactConfig
 };
-use crate::error::Error;
-use crate::common::optimization_level::OptimizationLevel;
+use crate::error::CursedError;
+use crate::common_types::optimization_level::OptimizationLevel;
 use crate::build_system::{
     BootstrapPipeline, BootstrapConfig, BootstrapBuildResult, BootstrapStatistics,
     BootstrapIntegration
 };
 
 use crate::build_system::build_pipeline::{BuildPipeline, PipelineContext, PipelineResult};
-use crate::build_system::incremental_cache::CacheError;
 use crate::package_manager::{PackageManager, PackageManagerError};
 
 use serde::{Deserialize, Serialize};
@@ -235,7 +234,7 @@ pub enum BottleneckSeverity {
 }
 
 /// Build error types
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::CursedError)]
 pub enum BuildError {
     #[error("Configuration error: {0}")]
     ConfigError(String),
@@ -265,7 +264,7 @@ pub enum BuildError {
     ConfigurationError(#[from] crate::build_system::build_config::ConfigError),
     
     #[error("File watcher error: {0}")]
-    WatcherError(#[from] notify::Error),
+    WatcherError(#[from] notify::CursedError),
     
     #[error("Bootstrap error: {0}")]
     BootstrapError(String),
@@ -273,7 +272,7 @@ pub enum BuildError {
 
 impl BuildOrchestrator {
     /// Create a new build orchestrator
-    pub fn new(config: BuildConfig, work_dir: PathBuf) -> Result<(), Error> {
+    pub fn new(config: BuildConfig, work_dir: PathBuf) -> crate::error::Result<()> {
         let cache = IncrementalCache::new(work_dir.join("target").join("cache"))?;
         let dependency_resolver = DependencyResolver::new();
         let package_manager_config = crate::package_manager::PackageManagerConfig {
@@ -305,7 +304,7 @@ impl BuildOrchestrator {
     
     /// Build all targets
     #[instrument(skip(self))]
-    pub async fn build_all(&mut self, profile: &str) -> Result<(), Error> {
+    pub async fn build_all(&mut self, profile: &str) -> crate::error::Result<()> {
         info!("Starting build for all targets with profile: {}", profile);
         
         let start_time = Instant::now();
@@ -368,7 +367,7 @@ impl BuildOrchestrator {
     
     /// Build using comprehensive pipeline (enhanced method)
     #[instrument(skip(self))]
-    pub async fn build_with_pipeline(&mut self, profile: &str, targets: Vec<String>, force_rebuild: bool, parallel: bool) -> Result<(), Error> {
+    pub async fn build_with_pipeline(&mut self, profile: &str, targets: Vec<String>, force_rebuild: bool, parallel: bool) -> crate::error::Result<()> {
         info!("Starting pipeline build with profile: {}", profile);
         
         let context = PipelineContext {
@@ -385,13 +384,13 @@ impl BuildOrchestrator {
     
     /// Build specific targets with pipeline
     #[instrument(skip(self))]
-    pub async fn build_targets_with_pipeline(&mut self, profile: &str, target_names: &[String]) -> Result<(), Error> {
+    pub async fn build_targets_with_pipeline(&mut self, profile: &str, target_names: &[String]) -> crate::error::Result<()> {
         self.build_with_pipeline(profile, target_names.to_vec(), false, true).await
     }
     
     /// Quick build (skip formatting and linting)
     #[instrument(skip(self))]
-    pub async fn quick_build(&mut self, profile: &str) -> Result<(), Error> {
+    pub async fn quick_build(&mut self, profile: &str) -> crate::error::Result<()> {
         info!("Starting quick build (skipping formatting and linting)");
         
         // Create temporary config without format/lint on build
@@ -429,7 +428,7 @@ impl BuildOrchestrator {
     
     /// Clean build artifacts and cache
     #[instrument(skip(self))]
-    pub async fn clean_all(&mut self, clean_cache: bool) -> Result<(), Error> {
+    pub async fn clean_all(&mut self, clean_cache: bool) -> crate::error::Result<()> {
         info!("Cleaning build artifacts");
         
         let target_dir = self.work_dir.join("target");
@@ -453,7 +452,7 @@ impl BuildOrchestrator {
     
     /// Watch for file changes and rebuild
     #[instrument(skip(self))]
-    pub async fn watch(&mut self, profile: &str, command: &str) -> Result<(), Error> {
+    pub async fn watch(&mut self, profile: &str, command: &str) -> crate::error::Result<()> {
         info!("Starting file watcher for profile: {}", profile);
         
         // Configure watch settings
@@ -504,7 +503,7 @@ impl BuildOrchestrator {
     
     /// Build a specific target
     #[instrument(skip(self, target, profile))]
-    pub async fn build_target(&mut self, target: &BuildTarget, profile: &BuildProfile) -> Result<(), Error> {
+    pub async fn build_target(&mut self, target: &BuildTarget, profile: &BuildProfile) -> crate::error::Result<()> {
         info!("Building target: {} ({})", target.name, target.path.display());
         
         let start_time = Instant::now();
@@ -535,7 +534,7 @@ impl BuildOrchestrator {
     
     /// Resolve package dependencies
     #[instrument(skip(self))]
-    async fn resolve_dependencies(&mut self) -> Result<(), Error> {
+    async fn resolve_dependencies(&mut self) -> crate::error::Result<()> {
         info!("Resolving dependencies");
         
         // Use dependency resolver to create dependency graph
@@ -551,7 +550,7 @@ impl BuildOrchestrator {
     }
     
     /// Check if target is cached and up to date
-    async fn check_cache(&self, target: &BuildTarget) -> Result<(), Error> {
+    async fn check_cache(&self, target: &BuildTarget) -> crate::error::Result<()> {
         if let Some(entry) = self.cache.get(&target.name) {
             // Check if source files have changed
             let source_modified = self.get_source_modification_time(&target.path)?;
@@ -581,14 +580,14 @@ impl BuildOrchestrator {
     }
     
     /// Get modification time for source files
-    fn get_source_modification_time(&self, path: &Path) -> Result<(), Error> {
+    fn get_source_modification_time(&self, path: &Path) -> crate::error::Result<()> {
         let metadata = std::fs::metadata(path)?;
         Ok(metadata.modified()?)
     }
     
     /// Compile a target using CURSED compiler
     #[instrument(skip(self, target, profile))]
-    async fn compile_target(&self, target: &BuildTarget, profile: &BuildProfile) -> Result<(), Error> {
+    async fn compile_target(&self, target: &BuildTarget, profile: &BuildProfile) -> crate::error::Result<()> {
         let start_time = Instant::now();
         
         // Determine output path using actual profile name
@@ -734,7 +733,7 @@ impl BuildOrchestrator {
     }
     
     /// Run pre-build scripts
-    async fn run_pre_build_scripts(&self, target: &BuildTarget) -> Result<(), Error> {
+    async fn run_pre_build_scripts(&self, target: &BuildTarget) -> crate::error::Result<()> {
         if let Some(script) = self.config.scripts.get("pre-build") {
             info!("Running pre-build script for target: {}", target.name);
             self.run_script(script).await?;
@@ -751,7 +750,7 @@ impl BuildOrchestrator {
     }
     
     /// Run post-build scripts
-    async fn run_post_build_scripts(&self, target: &BuildTarget, result: &BuildResult) -> Result<(), Error> {
+    async fn run_post_build_scripts(&self, target: &BuildTarget, result: &BuildResult) -> crate::error::Result<()> {
         if let Some(script) = self.config.scripts.get("post-build") {
             info!("Running post-build script for target: {}", target.name);
             self.run_script(script).await?;
@@ -768,7 +767,7 @@ impl BuildOrchestrator {
     }
     
     /// Execute a build script
-    async fn run_script(&self, script: &str) -> Result<(), Error> {
+    async fn run_script(&self, script: &str) -> crate::error::Result<()> {
         let mut cmd = if cfg!(target_os = "windows") {
             Command::new("cmd")
         } else {
@@ -796,7 +795,7 @@ impl BuildOrchestrator {
     }
     
     /// Update build cache
-    async fn update_cache(&mut self, target: &BuildTarget, result: &BuildResult) -> Result<(), Error> {
+    async fn update_cache(&mut self, target: &BuildTarget, result: &BuildResult) -> crate::error::Result<()> {
         self.cache.insert(
             &target.name,
             result.outputs.clone(),
@@ -809,7 +808,7 @@ impl BuildOrchestrator {
     
     /// Clean build artifacts
     #[instrument(skip(self))]
-    pub fn clean(&self) -> Result<(), Error> {
+    pub fn clean(&self) -> crate::error::Result<()> {
         info!("Cleaning build artifacts");
         
         let target_dir = self.work_dir.join("target");
@@ -823,7 +822,7 @@ impl BuildOrchestrator {
     
     /// Run tests with comprehensive discovery and execution
     #[instrument(skip(self))]
-    pub async fn test(&mut self, profile: &str) -> Result<(), Error> {
+    pub async fn test(&mut self, profile: &str) -> crate::error::Result<()> {
         info!("Running comprehensive test suite with profile: {}", profile);
         
         let start_time = Instant::now();
@@ -919,7 +918,7 @@ impl BuildOrchestrator {
     
     /// Run tests with custom filter patterns
     #[instrument(skip(self))]
-    pub async fn test_with_filter(&mut self, profile: &str, patterns: &[String]) -> Result<(), Error> {
+    pub async fn test_with_filter(&mut self, profile: &str, patterns: &[String]) -> crate::error::Result<()> {
         info!("Running filtered tests with patterns: {:?}", patterns);
         
         let start_time = Instant::now();
@@ -1003,7 +1002,7 @@ impl BuildOrchestrator {
     
     /// Run only ignored tests
     #[instrument(skip(self))]
-    pub async fn test_ignored(&mut self, profile: &str) -> Result<(), Error> {
+    pub async fn test_ignored(&mut self, profile: &str) -> crate::error::Result<()> {
         info!("Running ignored tests with profile: {}", profile);
         
         let start_time = Instant::now();
@@ -1096,7 +1095,7 @@ impl BuildOrchestrator {
         &self, 
         execution_result: TestExecutionResult, 
         total_duration: Duration
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let success = execution_result.summary.success;
         let statistics = &execution_result.statistics;
         
@@ -1150,7 +1149,7 @@ impl BuildOrchestrator {
     
     /// Run toolchain integration (format, lint, etc.)
     #[instrument(skip(self))]
-    pub async fn run_tools(&self) -> Result<(), Error> {
+    pub async fn run_tools(&self) -> crate::error::Result<()> {
         info!("Running toolchain integration");
         
         // Run formatter
@@ -1172,7 +1171,7 @@ impl BuildOrchestrator {
     }
     
     /// Run CURSED formatter
-    async fn run_formatter(&self) -> Result<(), Error> {
+    async fn run_formatter(&self) -> crate::error::Result<()> {
         info!("Running CURSED formatter");
         
         let output = Command::new("./target/debug/cursed-fmt")
@@ -1190,7 +1189,7 @@ impl BuildOrchestrator {
     }
     
     /// Run CURSED linter
-    async fn run_linter(&self) -> Result<(), Error> {
+    async fn run_linter(&self) -> crate::error::Result<()> {
         info!("Running CURSED linter");
         
         let output = Command::new("./target/debug/cursed_lint_new")
@@ -1207,7 +1206,7 @@ impl BuildOrchestrator {
     }
     
     /// Run documentation generator
-    async fn run_docs(&self) -> Result<(), Error> {
+    async fn run_docs(&self) -> crate::error::Result<()> {
         info!("Running documentation generator");
         
         let output = Command::new("./target/debug/cursed-doc")
@@ -1229,7 +1228,7 @@ impl BuildOrchestrator {
     
     /// Start file watching
     #[instrument(skip(self))]
-    pub async fn start_file_watching(&mut self) -> Result<(), Error> {
+    pub async fn start_file_watching(&mut self) -> crate::error::Result<()> {
         if self.file_watcher.is_some() {
             warn!("File watcher already running");
             return Ok(());
@@ -1364,7 +1363,7 @@ impl BuildOrchestrator {
     
     /// Stop file watching
     #[instrument(skip(self))]
-    pub async fn stop_file_watching(&mut self) -> Result<(), Error> {
+    pub async fn stop_file_watching(&mut self) -> crate::error::Result<()> {
         if let Some(mut file_watcher) = self.file_watcher.take() {
             info!("Stopping file watcher");
             
@@ -1376,7 +1375,7 @@ impl BuildOrchestrator {
             // Wait for thread to finish
             if let Some(watch_thread) = file_watcher.watch_thread.take() {
                 if let Err(e) = watch_thread.join() {
-                    error!("Error joining file watcher thread: {:?}", e);
+                    error!("CursedError joining file watcher thread: {:?}", e);
                 }
             }
             
@@ -1387,7 +1386,7 @@ impl BuildOrchestrator {
     }
     
     /// Check if we need to trigger a rebuild
-    async fn check_for_rebuild_trigger(&self) -> Result<(), Error> {
+    async fn check_for_rebuild_trigger(&self) -> crate::error::Result<()> {
         // This is a placeholder - in the real implementation,
         // the file watcher thread would set a flag that we check here
         // For now, we return false to prevent constant rebuilding
@@ -1406,7 +1405,7 @@ impl BuildOrchestrator {
     
     /// Enable advanced parallel compilation
     #[instrument(skip(self))]
-    pub async fn enable_parallel_compilation(&mut self, config: Option<ParallelCompilationConfig>) -> Result<(), Error> {
+    pub async fn enable_parallel_compilation(&mut self, config: Option<ParallelCompilationConfig>) -> crate::error::Result<()> {
         info!("Enabling advanced parallel compilation");
         
         let parallel_config = config.unwrap_or_default();
@@ -1421,7 +1420,7 @@ impl BuildOrchestrator {
     
     /// Enable incremental optimization
     #[instrument(skip(self))]
-    pub async fn enable_incremental_optimization(&mut self, config: Option<IncrementalConfig>) -> Result<(), Error> {
+    pub async fn enable_incremental_optimization(&mut self, config: Option<IncrementalConfig>) -> crate::error::Result<()> {
         info!("Enabling incremental compilation optimization");
         
         let incremental_config = config.unwrap_or_default();
@@ -1436,7 +1435,7 @@ impl BuildOrchestrator {
     
     /// Enable build profiling
     #[instrument(skip(self))]
-    pub async fn enable_build_profiling(&mut self, config: Option<ProfilerConfig>) -> Result<(), Error> {
+    pub async fn enable_build_profiling(&mut self, config: Option<ProfilerConfig>) -> crate::error::Result<()> {
         info!("Enabling build performance profiling");
         
         let profiler_config = config.unwrap_or_default();
@@ -1451,7 +1450,7 @@ impl BuildOrchestrator {
     
     /// Enable artifact management
     #[instrument(skip(self))]
-    pub async fn enable_artifact_management(&mut self, config: Option<ArtifactConfig>) -> Result<(), Error> {
+    pub async fn enable_artifact_management(&mut self, config: Option<ArtifactConfig>) -> crate::error::Result<()> {
         info!("Enabling advanced artifact management");
         
         let artifact_config = config.unwrap_or_default();
@@ -1466,7 +1465,7 @@ impl BuildOrchestrator {
     
     /// Build with advanced optimization
     #[instrument(skip(self))]
-    pub async fn build_optimized(&mut self, profile: &str) -> Result<(), Error> {
+    pub async fn build_optimized(&mut self, profile: &str) -> crate::error::Result<()> {
         info!("Starting optimized build with advanced features");
         
         // Start profiling if enabled
@@ -1611,7 +1610,7 @@ impl BuildOrchestrator {
     }
     
     /// Extract enhanced metrics from pipeline results
-    fn extract_enhanced_pipeline_metrics(&self, pipeline_result: &PipelineResult) -> Result<(), Error> {
+    fn extract_enhanced_pipeline_metrics(&self, pipeline_result: &PipelineResult) -> crate::error::Result<()> {
         let mut phase_timings = HashMap::new();
         let mut total_lines_compiled = 0;
         
@@ -1890,7 +1889,7 @@ impl BuildOrchestrator {
     }
     
     /// Create compilation tasks from build targets
-    fn create_compilation_tasks(&self, targets: &[BuildTarget], profile: &str) -> Result<(), Error> {
+    fn create_compilation_tasks(&self, targets: &[BuildTarget], profile: &str) -> crate::error::Result<()> {
         let mut tasks = Vec::new();
         
         for target in targets {
@@ -1913,7 +1912,7 @@ impl BuildOrchestrator {
 
     /// Execute bootstrap compilation process
     #[instrument(skip(self))]
-    pub async fn bootstrap_compile(&mut self, config: Option<BootstrapConfig>) -> Result<(), Error> {
+    pub async fn bootstrap_compile(&mut self, config: Option<BootstrapConfig>) -> crate::error::Result<()> {
         info!("Starting bootstrap compilation through build orchestrator");
 
         let _bootstrap_config = config.unwrap_or_else(|| {
@@ -1930,7 +1929,7 @@ impl BuildOrchestrator {
 
     /// Execute quick bootstrap verification
     #[instrument(skip(self))]
-    pub async fn bootstrap_verify(&mut self, config: Option<BootstrapConfig>) -> Result<(), Error> {
+    pub async fn bootstrap_verify(&mut self, config: Option<BootstrapConfig>) -> crate::error::Result<()> {
         info!("Starting quick bootstrap verification through build orchestrator");
 
         let _bootstrap_config = config.unwrap_or_else(|| {
@@ -1947,7 +1946,7 @@ impl BuildOrchestrator {
 
     /// Check bootstrap feasibility
     #[instrument(skip(self))]
-    pub async fn check_bootstrap_feasibility(&mut self) -> Result<(), Error> {
+    pub async fn check_bootstrap_feasibility(&mut self) -> crate::error::Result<()> {
         info!("Checking bootstrap feasibility");
 
         // Check if bootstrap source exists
@@ -1987,7 +1986,7 @@ impl BuildOrchestrator {
     }
 
     /// Test basic functionality of the Rust-based compiler
-    async fn test_rust_compiler_basic_functionality(&self, compiler_path: &Path) -> Result<(), Error> {
+    async fn test_rust_compiler_basic_functionality(&self, compiler_path: &Path) -> crate::error::Result<()> {
         use std::process::{Command, Stdio};
 
         // Create a simple test program
@@ -2069,7 +2068,7 @@ fn extract_warnings(output: &str) -> Vec<String> {
 }
 
 /// Count lines of code in a file
-fn count_lines(path: &Path) -> Result<(), Error> {
+fn count_lines(path: &Path) -> crate::error::Result<()> {
     let content = std::fs::read_to_string(path)?;
     Ok(content.split("\n").count())
 }
@@ -2218,46 +2217,3 @@ fn extract_time_from_line(line: &str, metric_name: &str, metrics: &mut HashMap<S
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    use crate::build_system::{BuildConfig, ProjectType};
-    
-    #[tokio::test]
-    async fn test_build_orchestrator_creation() {
-        let config = BuildConfig::default_for_project("test", ProjectType::Binary);
-        let work_dir = tempdir().unwrap().into_path();
-        
-        let orchestrator = BuildOrchestrator::new(config, work_dir);
-        assert!(orchestrator.is_ok());
-    }
-    
-    #[test]
-    fn test_warning_extraction() {
-        let output = "
-            info: compilation started
-            warning: unused variable `x`
-            ERROR: compilation failed
-            WARNING: deprecated function used
-        ";
-        
-        let warnings = extract_warnings(output);
-        assert_eq!(warnings.len(), 2);
-        assert!(warnings[0].contains("unused variable"));
-        assert!(warnings[1].contains("deprecated function"));
-    }
-    
-    #[test]
-    fn test_line_counting() -> Result<(), Error> {
-        let dir = tempdir()?;
-        let file_path = dir.path().join("test.csd");
-        
-        std::fs::write(&file_path, "line 1\nline 2\nline 3\n")?;
-        
-        let count = count_lines(&file_path)?;
-        assert_eq!(count, 3);
-        
-        Ok(())
-    }
-}

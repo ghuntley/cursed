@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Async standard library for CURSED
 /// 
 /// Provides high-level async operations for I/O, networking, and other
@@ -52,7 +52,7 @@ pub mod utils {
     use std::time::Duration;
 
     /// Convert a synchronous function to an async one by running it in a thread pool
-    pub async fn spawn_blocking<F, R>(f: F) -> Result<(), Error>
+    pub async fn spawn_blocking<F, R>(f: F) -> crate::error::Result<()>
     where
         F: FnOnce() -> R + Send + 'static,
         R: Send + 'static,
@@ -103,7 +103,7 @@ pub mod utils {
         join.await
     }
 
-    /// Convert a Result<(), Error> to a Future<Result<(), Error>>
+    /// Convert a crate::error::Result<()> to a Future<crate::error::Result<()>>
     pub async fn flatten_result<T, E, F>(result: Result<F, E>) -> Result<T, E>
     where
         F: std::future::Future<Output = T>,
@@ -153,6 +153,8 @@ pub mod utils {
 
     /// Yield execution to allow other tasks to run
     pub async fn yield_to_scheduler() {
+        // TODO: implement
+    }
         yield_now().await
     }
 
@@ -183,26 +185,26 @@ pub enum AsyncError {
     Other(String),
 }
 
-impl std::fmt::Display for AsyncError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AsyncError::Io(msg) => write!(f, "I/O error: {}", msg),
-            AsyncError::Network(msg) => write!(f, "Network error: {}", msg),
-            AsyncError::Timeout => write!(f, "Operation timed out"),
-            AsyncError::Channel(msg) => write!(f, "Channel error: {}", msg),
-            AsyncError::Runtime(msg) => write!(f, "Runtime error: {}", msg),
-            AsyncError::Other(msg) => write!(f, "Async error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for AsyncError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             AsyncError::Io(msg) => write!(f, "I/O error: {}", msg),
+//             AsyncError::Network(msg) => write!(f, "Network error: {}", msg),
+//             AsyncError::Timeout => write!(f, "Operation timed out"),
+//             AsyncError::Channel(msg) => write!(f, "Channel error: {}", msg),
+//             AsyncError::Runtime(msg) => write!(f, "Runtime error: {}", msg),
+//             AsyncError::Other(msg) => write!(f, "Async error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for AsyncError {}
-
-impl From<std::io::Error> for AsyncError {
-    fn from(err: std::io::Error) -> Self {
-        AsyncError::Io(err.to_string())
-    }
-}
+// impl std::error::CursedError for AsyncError {}
+// 
+// impl From<std::io::Error> for AsyncError {
+//     fn from(err: std::io::Error) -> Self {
+//         AsyncError::Io(err.to_string())
+//     }
+// }
 
 impl From<FutureError> for AsyncError {
     fn from(err: FutureError) -> Self {
@@ -241,12 +243,14 @@ pub fn timeout_error() -> AsyncError {
 }
 
 /// Initialize the async stdlib module
-pub fn initialize() -> Result<(), Error> {
+pub fn initialize() -> crate::error::Result<()> {
     // Initialize any global async state
     crate::runtime::r#async::initialize_async_runtime()
 }
 
 /// Shutdown the async stdlib module
 pub fn shutdown() {
+        // TODO: implement
+    }
     crate::runtime::r#async::shutdown_async_runtime();
 }

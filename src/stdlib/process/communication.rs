@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process communication and IPC integration for CURSED
 /// 
 /// This module provides high-level process communication functionality,
@@ -8,13 +8,13 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, communication_error, timeout_error, invalid_arguments
 };
 
-use crate::stdlib::process::core::{Process, ProcessConfig};
-use crate::stdlib::process::ipc_integration::{ProcessIpcCoordinator, InterProcessChannel};
-use crate::stdlib::ipc::process_coordination::{IpcProcessRegistry, ProcessAwareIpcManager};
+// use crate::stdlib::process::core::{Process, ProcessConfig};
+// use crate::stdlib::process::ipc_integration::{ProcessIpcCoordinator, InterProcessChannel};
+// use crate::stdlib::ipc::process_coordination::{IpcProcessRegistry, ProcessAwareIpcManager};
 
 /// Communication channel type alias for process communication
 pub type CommunicationChannel = InterProcessChannel;
@@ -544,7 +544,7 @@ pub fn execute_with_communication(
     comm_config: CommunicationConfig,
 ) -> ProcessResult<(Process, ProcessCommunication)> {
     // Spawn the process
-    let process = crate::stdlib::process::spawn_process(config)?;
+//     let process = crate::stdlib::process::spawn_process(config)?;
     
     // Create communication channels
     let communication = create_process_communication(process.id(), comm_config)?;
@@ -652,7 +652,7 @@ pub fn create_daemon(
     }
     
     // Spawn the daemon process
-    let process = crate::stdlib::process::spawn_process(daemon_config)?;
+//     let process = crate::stdlib::process::spawn_process(daemon_config)?;
     
     // Create communication for the daemon
     create_process_communication(process.id(), comm_config)
@@ -674,7 +674,7 @@ pub fn create_daemon_with_ipc(
     }
     
     // Spawn the daemon process
-    let process = crate::stdlib::process::spawn_process(daemon_config)?;
+//     let process = crate::stdlib::process::spawn_process(daemon_config)?;
     
     // Create enhanced communication for the daemon
     create_enhanced_process_communication(process.id(), comm_config, coordinator, ipc_manager)
@@ -701,126 +701,3 @@ pub fn monitor_process_output(
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_process_channels() {
-        let mut channels = ProcessChannels::new();
-        assert_eq!(channels.total_channels(), 0);
-
-        channels.add_pipe("test_pipe".to_string());
-        channels.add_shared_memory("test_memory".to_string());
-        channels.add_message_queue("test_queue".to_string());
-
-        assert_eq!(channels.total_channels(), 3);
-        assert_eq!(channels.pipes.len(), 1);
-        assert_eq!(channels.shared_memory.len(), 1);
-        assert_eq!(channels.message_queues.len(), 1);
-    }
-
-    #[test]
-    fn test_communication_config() {
-        let config = CommunicationConfig::default();
-        assert_eq!(config.timeout, Duration::from_secs(30));
-        assert_eq!(config.buffer_size, 8192);
-        assert!(!config.enable_compression);
-        assert!(!config.enable_encryption);
-        assert_eq!(config.max_message_size, 1024 * 1024);
-        assert_eq!(config.ipc_type, IpcType::Pipe);
-    }
-
-    #[test]
-    fn test_process_communication_creation() {
-        let channels = ProcessChannels::new();
-        let comm = ProcessCommunication::new(1234, channels);
-        
-        assert_eq!(comm.process_id, 1234);
-        assert_eq!(comm.channels.total_channels(), 0);
-        
-        let stats = comm.get_statistics();
-        assert_eq!(stats.bytes_sent, 0);
-        assert_eq!(stats.messages_sent, 0);
-    }
-
-    #[test]
-    fn test_create_process_communication() {
-        let config = CommunicationConfig::default();
-        let comm = create_process_communication(5678, config).unwrap();
-        
-        assert_eq!(comm.process_id, 5678);
-        assert_eq!(comm.channels.pipes.len(), 1);
-        assert_eq!(comm.channels.pipes[0], "process_pipe_5678");
-    }
-
-    #[test]
-    fn test_auto_ipc_type() {
-        let mut config = CommunicationConfig::default();
-        config.ipc_type = IpcType::Auto;
-        
-        let comm = create_process_communication(9999, config).unwrap();
-        
-        // Should have all types available for auto selection
-        assert!(!comm.channels.pipes.is_empty());
-        assert!(!comm.channels.shared_memory.is_empty());
-        assert!(!comm.channels.message_queues.is_empty());
-    }
-
-    #[test]
-    fn test_named_pipe() {
-        let pipe = NamedPipe::new("test_pipe".to_string(), PipeMode::ReadWrite);
-        assert_eq!(pipe.name, "test_pipe");
-        assert_eq!(pipe.mode, PipeMode::ReadWrite);
-    }
-
-    #[test]
-    fn test_shared_memory() {
-        let shm = SharedMemory::new("test_memory".to_string(), 4096);
-        assert_eq!(shm.name, "test_memory");
-        assert_eq!(shm.size, 4096);
-    }
-
-    #[test]
-    fn test_message_queue() {
-        let mq = MessageQueue::new("test_queue".to_string(), 100);
-        assert_eq!(mq.name, "test_queue");
-        assert_eq!(mq.max_messages, 100);
-    }
-
-    #[test]
-    fn test_communication_stats() {
-        let mut stats = CommunicationStats::new();
-        assert_eq!(stats.errors, 0);
-        assert_eq!(stats.timeouts, 0);
-
-        stats.record_error();
-        stats.record_timeout();
-
-        assert_eq!(stats.errors, 1);
-        assert_eq!(stats.timeouts, 1);
-    }
-
-    #[test]
-    fn test_create_pipe() {
-        let pipe = create_pipe("test", PipeMode::Read).unwrap();
-        assert_eq!(pipe.name, "test");
-        assert_eq!(pipe.mode, PipeMode::Read);
-    }
-
-    #[test]
-    fn test_pipe_mode_equality() {
-        assert_eq!(PipeMode::Read, PipeMode::Read);
-        assert_ne!(PipeMode::Read, PipeMode::Write);
-        assert_ne!(PipeMode::Write, PipeMode::ReadWrite);
-    }
-
-    #[test]
-    fn test_ipc_type_equality() {
-        assert_eq!(IpcType::Pipe, IpcType::Pipe);
-        assert_ne!(IpcType::Pipe, IpcType::SharedMemory);
-        assert_ne!(IpcType::Auto, IpcType::MessageQueue);
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Comprehensive assertion framework for CURSED unit testing
 /// 
 /// Provides a wide range of assertion functions for validating test expectations
@@ -8,8 +8,7 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::time::{Duration, Instant};
-use crate::crate::stdlib::errors_simple::CursedError;
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use super::{TestError, assertion_error};
 
 /// Result type for assertion operations
@@ -65,28 +64,28 @@ impl AssertionError {
     }
 }
 
-impl std::fmt::Display for AssertionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Assertion failed in {}:{}", self.context.file, self.context.line)?;
-        writeln!(f, "Function: {}", self.context.function)?;
-        writeln!(f, "Expression: {}", self.context.expression)?;
-        writeln!(f, "Details: {}", self.details)?;
-        
-        if let Some(expected) = &self.context.expected {
-            writeln!(f, "Expected: {}", expected)?;
-        }
-        
-        if let Some(actual) = &self.context.actual {
-            writeln!(f, "Actual: {}", actual)?;
-        }
-        
-        if let Some(message) = &self.context.message {
-            writeln!(f, "Message: {}", message)?;
-        }
-        
-        Ok(())
-    }
-}
+// impl std::fmt::Display for AssertionError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         writeln!(f, "Assertion failed in {}:{}", self.context.file, self.context.line)?;
+//         writeln!(f, "Function: {}", self.context.function)?;
+//         writeln!(f, "Expression: {}", self.context.expression)?;
+//         writeln!(f, "Details: {}", self.details)?;
+//         
+//         if let Some(expected) = &self.context.expected {
+//             writeln!(f, "Expected: {}", expected)?;
+//         }
+//         
+//         if let Some(actual) = &self.context.actual {
+//             writeln!(f, "Actual: {}", actual)?;
+//         }
+//         
+//         if let Some(message) = &self.context.message {
+//             writeln!(f, "Message: {}", message)?;
+//         }
+//         
+//         Ok(())
+//     }
+// }
 
 // ============================================================================
 // BASIC ASSERTIONS

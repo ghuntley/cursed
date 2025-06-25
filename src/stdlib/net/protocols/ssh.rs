@@ -7,8 +7,8 @@
 /// - Connection management with timeouts
 /// - Comprehensive error handling
 
-use crate::stdlib::net::protocols::{ProtocolError, ProtocolResult};
-use crate::error::Error;
+// use crate::stdlib::net::protocols::{ProtocolError, ProtocolResult};
+use crate::error::CursedError;
 use ssh2::{Session, Channel, Sftp, ScpFileStat};
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};

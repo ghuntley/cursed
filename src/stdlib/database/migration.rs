@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 use super::{DatabaseError, DatabaseErrorKind, DB};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// fr fr Database migration definition
 #[derive(Debug, Clone)]
@@ -67,7 +67,7 @@ impl Migrator {
     }
 
     /// slay Apply all pending migrations
-    pub fn migrate_up(&self) -> Result<(), Error> {
+    pub fn migrate_up(&self) -> crate::error::Result<()> {
         let current_version = self.current_version()?;
         
         for migration in &self.migrations {
@@ -80,7 +80,7 @@ impl Migrator {
     }
 
     /// slay Rollback the last migration
-    pub fn migrate_down(&self) -> Result<(), Error> {
+    pub fn migrate_down(&self) -> crate::error::Result<()> {
         let current_version = self.current_version()?;
         
         if let Some(migration) = self.migrations.iter().find(|m| m.version == current_version) {
@@ -91,7 +91,7 @@ impl Migrator {
     }
 
     /// slay Migrate to a specific version
-    pub fn migrate_to(&self, target_version: i32) -> Result<(), Error> {
+    pub fn migrate_to(&self, target_version: i32) -> crate::error::Result<()> {
         let current_version = self.current_version()?;
         
         if target_version > current_version {
@@ -114,13 +114,13 @@ impl Migrator {
     }
 
     /// slay Get current database version
-    pub fn current_version(&self) -> Result<(), Error> {
+    pub fn current_version(&self) -> crate::error::Result<()> {
         // In a real implementation, this would query a migrations table
         Ok(0)
     }
 
     /// slay List all migrations with their status
-    pub fn list_migrations(&self) -> Result<(), Error> {
+    pub fn list_migrations(&self) -> crate::error::Result<()> {
         let current_version = self.current_version()?;
         
         let mut result = Vec::new();
@@ -137,7 +137,7 @@ impl Migrator {
     }
 
     /// slay Apply a single migration
-    fn apply_migration(&self, migration: &Migration) -> Result<(), Error> {
+    fn apply_migration(&self, migration: &Migration) -> crate::error::Result<()> {
         let mut tx = self.db.begin()?;
         
         match tx.exec(migration.up.clone(), Vec::from([])) {
@@ -155,7 +155,7 @@ impl Migrator {
     }
 
     /// slay Rollback a single migration
-    fn rollback_migration(&self, migration: &Migration) -> Result<(), Error> {
+    fn rollback_migration(&self, migration: &Migration) -> crate::error::Result<()> {
         let mut tx = self.db.begin()?;
         
         match tx.exec(migration.down.clone(), Vec::from([])) {
@@ -173,13 +173,13 @@ impl Migrator {
     }
 
     /// slay Record migration in database
-    fn record_migration(&self, version: i32, description: &str) -> Result<(), Error> {
+    fn record_migration(&self, version: i32, description: &str) -> crate::error::Result<()> {
         // In a real implementation, this would insert into a migrations table
         Ok(())
     }
 
     /// slay Remove migration record from database
-    fn remove_migration_record(&self, version: i32) -> Result<(), Error> {
+    fn remove_migration_record(&self, version: i32) -> crate::error::Result<()> {
         // In a real implementation, this would delete from migrations table
         Ok(())
     }

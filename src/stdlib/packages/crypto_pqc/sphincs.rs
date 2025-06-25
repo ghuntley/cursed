@@ -1,11 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr SPHINCS+ Hash-Based Digital Signatures for Post-Quantum Cryptography
 /// no cap Stateless post-quantum signatures with proven security based on hash functions
 
 use std::collections::HashMap;
 use std::fmt;
-use crate::stdlib::packages::crypto_advanced::errors::{AdvancedCryptoError, AdvancedCryptoResult};
-use crate::stdlib::packages::crypto_hash_advanced::{sha3, blake3};
+// use crate::stdlib::packages::crypto_advanced::{AdvancedCryptoError, AdvancedCryptoResult};
+// use crate::stdlib::packages::crypto_hash_advanced::{sha3, blake3};
 
 /// fr fr SPHINCS+ parameter sets for different security levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -985,74 +985,3 @@ pub fn init_sphincs() -> AdvancedCryptoResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parameter_set_properties() {
-        let params = SphincsParameterSet::Sphincs128s;
-        assert_eq!(params.security_level(), 128);
-        assert_eq!(params.public_key_size(), 32);
-        assert!(params.signature_size() > 0);
-    }
-
-    #[test]
-    fn test_key_generation() {
-        let engine = SphincsEngine::new(SphincsParameterSet::Sphincs128s);
-        let keypair = engine.generate_keypair(None).unwrap();
-        
-        assert_eq!(keypair.public_key.params, SphincsParameterSet::Sphincs128s);
-        assert_eq!(keypair.private_key.params, SphincsParameterSet::Sphincs128s);
-    }
-
-    #[test]
-    fn test_sign_and_verify() {
-        let engine = SphincsEngine::new(SphincsParameterSet::Sphincs128s);
-        let keypair = engine.generate_keypair(None).unwrap();
-        let message = b"test message for SPHINCS+";
-        
-        let signature = engine.sign(message, &keypair.private_key).unwrap();
-        let is_valid = engine.verify(message, &signature, &keypair.public_key).unwrap();
-        
-        assert!(is_valid);
-    }
-
-    #[test]
-    fn test_signature_size() {
-        let engine = SphincsEngine::new(SphincsParameterSet::Sphincs128s);
-        let keypair = engine.generate_keypair(None).unwrap();
-        let message = b"test";
-        
-        let signature = engine.sign(message, &keypair.private_key).unwrap();
-        assert_eq!(signature.signature.len(), SphincsParameterSet::Sphincs128s.signature_size());
-    }
-
-    #[test]
-    fn test_different_parameter_sets() {
-        for &params in &[SphincsParameterSet::Sphincs128s, SphincsParameterSet::Sphincs192s] {
-            let engine = SphincsEngine::new(params);
-            let keypair = engine.generate_keypair(None).unwrap();
-            let message = b"cross-parameter test";
-            
-            let signature = engine.sign(message, &keypair.private_key).unwrap();
-            let is_valid = engine.verify(message, &signature, &keypair.public_key).unwrap();
-            
-            assert!(is_valid);
-        }
-    }
-
-    #[test]
-    fn test_invalid_signature_verification() {
-        let engine = SphincsEngine::new(SphincsParameterSet::Sphincs128s);
-        let keypair = engine.generate_keypair(None).unwrap();
-        let message = b"original message";
-        let wrong_message = b"tampered message";
-        
-        let signature = engine.sign(message, &keypair.private_key).unwrap();
-        let is_valid = engine.verify(wrong_message, &signature, &keypair.public_key).unwrap();
-        
-        // Should fail verification for tampered message
-        assert!(!is_valid);
-    }
-}

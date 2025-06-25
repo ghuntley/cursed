@@ -1,5 +1,5 @@
 /// Platform-specific operations and information
-use crate::stdlib::sys_core::error::{SysCoreResult, platform_error};
+// use crate::stdlib::sys_core::error::{SysCoreResult, platform_error};
 
 /// Get platform name
 pub fn get_platform_name() -> String {

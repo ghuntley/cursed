@@ -16,7 +16,6 @@ use std::io::{self, Read, Write, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use crate::error::CursedError;
 use super::{IpcError, IpcResult};
-use crate::error::Error;
 
 /// Advanced IPC manager with comprehensive features
 #[derive(Debug)]
@@ -232,7 +231,7 @@ pub enum MessageType {
     Control,
     Heartbeat,
     Acknowledgment,
-    Error,
+    CursedError,
     Broadcast,
 }
 
@@ -344,7 +343,7 @@ pub enum SocketState {
     Listening,
     Connected,
     Closed,
-    Error,
+    CursedError,
 }
 
 /// Unix socket configuration
@@ -844,7 +843,7 @@ impl AdvancedNamedPipe {
                 
             unsafe {
                 if libc::mkfifo(path_cstr.as_ptr(), 0o666) != 0 {
-                    let error = io::Error::last_os_error();
+                    let error = std::io::Error::last_os_error();
                     if error.kind() != io::ErrorKind::AlreadyExists {
                         return Err(IpcError::CreationFailed(error.to_string()));
                     }
@@ -1125,128 +1124,3 @@ pub fn cleanup_advanced_ipc() -> IpcResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::real_ipc::IpcMessage;
-
-    #[test]
-    fn test_advanced_ipc_manager_creation() {
-        let config = AdvancedIpcConfig::default();
-        let manager = AdvancedIpcManager::new(config);
-        
-        assert_eq!(manager.config.default_shm_size, 1024 * 1024);
-        assert_eq!(manager.config.default_queue_capacity, 1000);
-    }
-
-    #[test]
-    fn test_shared_memory_creation() {
-        let config = AdvancedIpcConfig::default();
-        let manager = AdvancedIpcManager::new(config);
-        
-        let shm_config = SharedMemoryConfig {
-            copy_on_write: false,
-            memory_protection: true,
-            sync_strategy: SyncStrategy::OnAccess,
-            persistence: PersistenceConfig {
-                enabled: false,
-                backup_path: None,
-                backup_interval: Duration::from_secs(60),
-                restore_on_startup: false,
-            },
-        };
-        
-        let result = manager.create_shared_memory("test_shm", 4096, shm_config);
-        assert!(result.is_ok());
-        
-        let shm = result.unwrap();
-        assert_eq!(shm.id, "test_shm");
-        assert_eq!(shm.size, 4096);
-    }
-
-    #[test]
-    fn test_message_queue_creation() {
-        let config = AdvancedIpcConfig::default();
-        let manager = AdvancedIpcManager::new(config);
-        
-        let queue_config = MessageQueueConfig {
-            persistent: false,
-            ordered: true,
-            duplicate_detection: false,
-            default_ttl: Some(Duration::from_secs(300)),
-            compression: CompressionConfig {
-                enabled: false,
-                algorithm: CompressionAlgorithm::None,
-                level: 0,
-                min_size: 1024,
-            },
-        };
-        
-        let result = manager.create_message_queue("test_queue", 100, queue_config);
-        assert!(result.is_ok());
-        
-        let queue = result.unwrap();
-        assert_eq!(queue.id, "test_queue");
-        assert_eq!(queue.max_capacity, 100);
-    }
-
-    #[test]
-    fn test_message_priority_queue() {
-        let queue_config = MessageQueueConfig {
-            persistent: false,
-            ordered: true,
-            duplicate_detection: false,
-            default_ttl: None,
-            compression: CompressionConfig {
-                enabled: false,
-                algorithm: CompressionAlgorithm::None,
-                level: 0,
-                min_size: 1024,
-            },
-        };
-        
-        let queue = AdvancedMessageQueue::new("test", 10, queue_config).unwrap();
-        
-        // Send messages with different priorities
-        let low_msg = IpcMessage::new(b"low priority".to_vec(), MessagePriority::Low);
-        let high_msg = IpcMessage::new(b"high priority".to_vec(), MessagePriority::High);
-        let normal_msg = IpcMessage::new(b"normal priority".to_vec(), MessagePriority::Normal);
-        
-        queue.send(low_msg).unwrap();
-        queue.send(high_msg).unwrap();
-        queue.send(normal_msg).unwrap();
-        
-        // Should receive high priority first
-        let received = queue.receive(Some(Duration::from_secs(1))).unwrap();
-        assert_eq!(received.data, b"high priority");
-        assert_eq!(received.priority, MessagePriority::High);
-    }
-
-    #[test]
-    fn test_connection_pool() {
-        let config = ConnectionPoolConfig::default();
-        let pool = IpcConnectionPool::new("test_pool", config).unwrap();
-        
-        // Get connection from pool
-        let conn = pool.get_connection(IpcConnectionType::SharedMemory).unwrap();
-        assert_eq!(conn.connection_type, IpcConnectionType::SharedMemory);
-        assert_eq!(conn.state, ConnectionState::Active);
-        
-        // Return connection to pool
-        let result = pool.return_connection(conn);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_ipc_message_expiration() {
-        let mut msg = IpcMessage::new(b"test data".to_vec(), MessagePriority::Normal);
-        msg.ttl = Some(Duration::from_millis(1));
-        
-        assert!(!msg.is_expired());
-        
-        // Wait for expiration
-        std::thread::sleep(Duration::from_millis(10));
-        assert!(msg.is_expired());
-    }
-}

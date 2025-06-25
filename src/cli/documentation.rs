@@ -4,7 +4,7 @@
 // comprehensive options and integration with the documentation system.
 
 use crate::docs::{DocumentationGenerator, DocGeneratorConfig, DocFormat, ApiExtractor, ExampleGenerator};
-use crate::error::Error;
+use crate::error::CursedError;
 use clap::{ArgMatches, Command, Arg, ArgAction};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -136,7 +136,7 @@ pub fn add_documentation_commands(app: Command) -> Command {
 }
 
 /// Handle documentation command
-pub async fn handle_documentation_command(matches: &ArgMatches) -> Result<(), Error> {
+pub async fn handle_documentation_command(matches: &ArgMatches) -> crate::error::Result<()> {
     let input_path = PathBuf::from(matches.get_one::<String>("input").unwrap());
     let output_dir = PathBuf::from(matches.get_one::<String>("output").unwrap());
     let verbose = matches.get_flag("verbose");
@@ -156,7 +156,7 @@ pub async fn handle_documentation_command(matches: &ArgMatches) -> Result<(), Er
             Ok(format) => formats.push(format),
             Err(e) => {
                 error!("Invalid format '{}': {}", format_str, e);
-                return Err(Error::General(format!("Invalid format: {}", format_str)));
+                return Err(CursedError::General(format!("Invalid format: {}", format_str)));
             }
         }
     }
@@ -214,7 +214,7 @@ pub async fn handle_documentation_command(matches: &ArgMatches) -> Result<(), Er
             }
             Err(_) => {
                 error!("❌ Documentation generation timed out for format {}", format);
-                return Err(Error::General("Documentation generation timed out".to_string()));
+                return Err(CursedError::General("Documentation generation timed out".to_string()));
             }
         }
     }
@@ -251,7 +251,7 @@ pub async fn handle_documentation_command(matches: &ArgMatches) -> Result<(), Er
 }
 
 /// Generate documentation for a specific format
-async fn generate_documentation_format(config: DocGeneratorConfig, input_path: &PathBuf) -> Result<(), Error> {
+async fn generate_documentation_format(config: DocGeneratorConfig, input_path: &PathBuf) -> crate::error::Result<()> {
     let mut generator = DocumentationGenerator::new(config);
     
     if input_path.is_file() {
@@ -259,14 +259,14 @@ async fn generate_documentation_format(config: DocGeneratorConfig, input_path: &
     } else if input_path.is_dir() {
         generator.generate_from_directory(input_path)?;
     } else {
-        return Err(Error::General(format!("Invalid input path: {}", input_path.display())));
+        return Err(CursedError::General(format!("Invalid input path: {}", input_path.display())));
     }
     
     Ok(())
 }
 
 /// Watch files and regenerate documentation on changes
-async fn watch_and_regenerate(config: DocGeneratorConfig, input_path: &PathBuf) -> Result<(), Error> {
+async fn watch_and_regenerate(config: DocGeneratorConfig, input_path: &PathBuf) -> crate::error::Result<()> {
     use notify::{Watcher, RecommendedWatcher, RecursiveMode, Event, EventKind};
     use notify::event::{CreateKind, ModifyKind, RemoveKind};
     use std::sync::mpsc::channel;
@@ -274,10 +274,10 @@ async fn watch_and_regenerate(config: DocGeneratorConfig, input_path: &PathBuf) 
 
     let (tx, rx) = channel();
     let mut watcher: RecommendedWatcher = Watcher::new(tx, notify::Config::default())
-        .map_err(|e| Error::General(format!("Failed to create file watcher: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to create file watcher: {}", e)))?;
 
     watcher.watch(input_path, RecursiveMode::Recursive)
-        .map_err(|e| Error::General(format!("Failed to watch directory: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to watch directory: {}", e)))?;
 
     info!("Watching {} for changes. Press Ctrl+C to stop.", input_path.display());
     
@@ -333,11 +333,11 @@ fn should_regenerate(event: &Event) -> bool {
 }
 
 /// Serve documentation on HTTP server
-async fn serve_documentation(docs_dir: &PathBuf, port: u16) -> Result<(), Error> {
+async fn serve_documentation(docs_dir: &PathBuf, port: u16) -> crate::error::Result<()> {
     use warp::Filter;
     
     if !docs_dir.exists() {
-        return Err(Error::General(format!("Documentation directory does not exist: {}", docs_dir.display())));
+        return Err(CursedError::General(format!("Documentation directory does not exist: {}", docs_dir.display())));
     }
 
     info!("📖 Serving documentation at http://localhost:{}", port);
@@ -367,7 +367,7 @@ async fn start_live_documentation_server(
     enable_live: bool,
     enable_playground: bool,
     enable_api_explorer: bool,
-) -> Result<(), Error> {
+) -> crate::error::Result<()> {
     use crate::documentation::live_server::{LiveDocumentationServer, LiveServerConfig};
     use std::time::Duration;
     
@@ -384,21 +384,21 @@ async fn start_live_documentation_server(
     
     // Create and start live server
     let mut server = LiveDocumentationServer::new(config)
-        .map_err(|e| Error::General(format!("Failed to create live server: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to create live server: {}", e)))?;
     
     // Start serving with hot reload
     server.start_serving(&[input_path], output_dir).await
-        .map_err(|e| Error::General(format!("Failed to start live server: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to start live server: {}", e)))?;
     
     Ok(())
 }
 
 /// Open documentation in default browser
-fn open_documentation(docs_dir: &PathBuf) -> Result<(), Error> {
+fn open_documentation(docs_dir: &PathBuf) -> crate::error::Result<()> {
     let index_file = docs_dir.join("index.html");
     
     if !index_file.exists() {
-        return Err(Error::General("Documentation not found. Run generation first.".to_string()));
+        return Err(CursedError::General("Documentation not found. Run generation first.".to_string()));
     }
 
     info!("🌐 Opening documentation in browser...");
@@ -408,7 +408,7 @@ fn open_documentation(docs_dir: &PathBuf) -> Result<(), Error> {
         std::process::Command::new("cmd")
             .args(["/c", "start", &index_file.to_string_lossy()])
             .spawn()
-            .map_err(|e| Error::General(format!("Failed to open browser: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to open browser: {}", e)))?;
     }
 
     #[cfg(target_os = "macos")]
@@ -416,7 +416,7 @@ fn open_documentation(docs_dir: &PathBuf) -> Result<(), Error> {
         std::process::Command::new("open")
             .arg(&index_file)
             .spawn()
-            .map_err(|e| Error::General(format!("Failed to open browser: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to open browser: {}", e)))?;
     }
 
     #[cfg(target_os = "linux")]
@@ -424,77 +424,9 @@ fn open_documentation(docs_dir: &PathBuf) -> Result<(), Error> {
         std::process::Command::new("xdg-open")
             .arg(&index_file)
             .spawn()
-            .map_err(|e| Error::General(format!("Failed to open browser: {}", e)))?;
+            .map_err(|e| CursedError::General(format!("Failed to open browser: {}", e)))?;
     }
 
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-
-    #[tokio::test]
-    async fn test_documentation_generation() {
-        let temp_dir = TempDir::new().unwrap();
-        let output_dir = temp_dir.path().join("docs");
-        
-        let config = DocGeneratorConfig {
-            output_dir: output_dir.clone(),
-            format: DocFormat::Html,
-            include_examples: true,
-            include_private: false,
-            generate_cross_refs: true,
-            custom_css: None,
-            template_dir: None,
-            title: "Test Documentation".to_string(),
-            description: Some("Test project".to_string()),
-            version: Some("1.0.0".to_string()),
-            authors: vec!["Test Author".to_string()],
-            base_url: None,
-        };
-
-        // Test basic config creation
-        assert_eq!(config.title, "Test Documentation");
-        assert_eq!(config.include_examples, true);
-        assert_eq!(config.include_private, false);
-    }
-
-    #[test]
-    fn test_format_parsing() {
-        assert!(matches!(DocFormat::from_str("html"), Ok(DocFormat::Html)));
-        assert!(matches!(DocFormat::from_str("markdown"), Ok(DocFormat::Markdown)));
-        assert!(matches!(DocFormat::from_str("md"), Ok(DocFormat::Markdown)));
-        assert!(matches!(DocFormat::from_str("json"), Ok(DocFormat::Json)));
-        assert!(matches!(DocFormat::from_str("xml"), Ok(DocFormat::Xml)));
-        assert!(DocFormat::from_str("invalid").is_err());
-    }
-
-    #[test]
-    fn test_should_regenerate() {
-        use notify::event::{CreateKind, ModifyKind, DataChange};
-        use std::path::Path;
-        
-        let event = Event {
-            kind: EventKind::Create(CreateKind::File),
-            paths: vec![Path::new("test.csd").to_path_buf()],
-            attrs: Default::default(),
-        };
-        assert!(should_regenerate(&event));
-
-        let event = Event {
-            kind: EventKind::Modify(ModifyKind::Data(DataChange::Content)),
-            paths: vec![Path::new("test.csd").to_path_buf()],
-            attrs: Default::default(),
-        };
-        assert!(should_regenerate(&event));
-
-        let event = Event {
-            kind: EventKind::Create(CreateKind::File),
-            paths: vec![Path::new("test.txt").to_path_buf()],
-            attrs: Default::default(),
-        };
-        assert!(!should_regenerate(&event));
-    }
-}

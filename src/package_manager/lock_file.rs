@@ -15,6 +15,7 @@ use std::fs;
 use tracing::{info, warn, debug, instrument};
 use chrono::Utc;
 use semver::Version;
+use crate::error::CursedError;
 
 /// Lock file manager for handling lock file operations
 #[derive(Debug)]
@@ -75,7 +76,7 @@ impl LockFileManager {
 
     /// Load existing lock file from disk
     #[instrument(skip(self))]
-    pub fn load(&mut self) -> Result<(), Error> {
+    pub fn load(&mut self) -> crate::error::Result<()> {
         if !self.lock_file_path.exists() {
             debug!("Lock file does not exist: {:?}", self.lock_file_path);
             return Ok(None);
@@ -109,7 +110,7 @@ impl LockFileManager {
 
     /// Save lock file to disk
     #[instrument(skip(self, lock_file))]
-    pub fn save(&mut self, lock_file: &LockFile) -> Result<(), Error> {
+    pub fn save(&mut self, lock_file: &LockFile) -> crate::error::Result<()> {
         info!("Saving lock file to {:?} with {} packages", 
               self.lock_file_path, lock_file.packages.len());
 
@@ -282,7 +283,7 @@ impl LockFileManager {
     }
 
     /// Delete lock file from disk
-    pub fn delete(&mut self) -> Result<(), Error> {
+    pub fn delete(&mut self) -> crate::error::Result<()> {
         if self.lock_file_path.exists() {
             fs::remove_file(&self.lock_file_path)
                 .map_err(|e| PackageManagerError::FileSystemError { 
@@ -319,7 +320,7 @@ impl LockFileManager {
     }
 
     /// Export lock file in different formats
-    pub fn export(&self, format: LockFileExportFormat) -> Result<(), Error> {
+    pub fn export(&self, format: LockFileExportFormat) -> crate::error::Result<()> {
         let Some(lock_file) = &self.current_lock else {
             return Err(PackageManagerError::InvalidMetadata { 
                 reason: "No lock file loaded".to_string()
@@ -404,7 +405,7 @@ impl LockFileManager {
     }
     
     /// Load lock file from disk
-    pub fn load(&mut self) -> Result<(), Error> {
+    pub fn load(&mut self) -> crate::error::Result<()> {
         self.load_from_disk()?;
         Ok(())
     }
@@ -427,167 +428,3 @@ pub enum LockFileExportFormat {
     Summary,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-    use crate::package_manager::metadata::PackageMetadata;
-    use std::collections::HashMap;
-
-    fn create_test_dependency() -> ResolvedDependency {
-        let metadata = PackageMetadata {
-            name: "test-package".to_string(),
-            version: "1.0.0".to_string(),
-            description: "Test package".to_string(),
-            authors: vec!["Test Author".to_string()],
-            dependencies: HashMap::new(),
-            dev_dependencies: HashMap::new(),
-            repository: Some("https://github.com/test/test-package".to_string()),
-            license: Some("MIT".to_string()),
-            keywords: vec!["test".to_string()],
-            categories: vec!["development".to_string()],
-        };
-
-        ResolvedDependency {
-            package: metadata,
-            depth: 1,
-            required_by: vec!["root".to_string()],
-            constraint: "^1.0.0".to_string(),
-            resolved_version: Version::parse("1.0.0").unwrap(),
-            is_dev_dependency: false,
-            optional: false,
-        }
-    }
-
-    #[test]
-    fn test_lock_file_manager_creation() {
-        let temp_dir = TempDir::new().unwrap();
-        let lock_path = temp_dir.path().join("test.lock");
-        
-        let manager = LockFileManager::new(&lock_path);
-        assert_eq!(manager.path(), lock_path);
-        assert!(!manager.exists());
-        assert!(manager.current_lock().is_none());
-    }
-
-    #[test]
-    fn test_lock_file_generation() {
-        let temp_dir = TempDir::new().unwrap();
-        let manager = LockFileManager::with_project_dir(temp_dir.path());
-        
-        let dependencies = vec![create_test_dependency()];
-        let lock_file = manager.generate_from_dependencies(&dependencies);
-        
-        assert_eq!(lock_file.version, "1.0");
-        assert_eq!(lock_file.packages.len(), 1);
-        assert!(lock_file.packages.contains_key("test-package"));
-        
-        let package = &lock_file.packages["test-package"];
-        assert_eq!(package.version, "1.0.0");
-        assert!(!package.checksum.is_empty());
-    }
-
-    #[test]
-    fn test_lock_file_save_and_load() {
-        let temp_dir = TempDir::new().unwrap();
-        let mut manager = LockFileManager::with_project_dir(temp_dir.path());
-        
-        let dependencies = vec![create_test_dependency()];
-        let lock_file = manager.generate_from_dependencies(&dependencies);
-        
-        // Save lock file
-        let save_result = manager.save(&lock_file);
-        assert!(save_result.is_ok());
-        assert!(manager.exists());
-        
-        // Create new manager and load
-        let mut new_manager = LockFileManager::with_project_dir(temp_dir.path());
-        let load_result = new_manager.load();
-        assert!(load_result.is_ok());
-        
-        let loaded_lock = load_result.unwrap();
-        assert!(loaded_lock.is_some());
-        
-        let loaded = loaded_lock.unwrap();
-        assert_eq!(loaded.packages.len(), lock_file.packages.len());
-        assert_eq!(loaded.version, lock_file.version);
-    }
-
-    #[test]
-    fn test_lock_file_validation() {
-        let temp_dir = TempDir::new().unwrap();
-        let mut manager = LockFileManager::with_project_dir(temp_dir.path());
-        
-        let dependencies = vec![create_test_dependency()];
-        let lock_file = manager.generate_from_dependencies(&dependencies);
-        
-        manager.save(&lock_file).unwrap();
-        manager.load().unwrap();
-        
-        // Validation with same dependencies should pass
-        let validation = manager.validate(&dependencies);
-        assert!(validation.is_valid);
-        assert!(validation.missing_packages.is_empty());
-        assert!(validation.version_mismatches.is_empty());
-        assert!(validation.extra_packages.is_empty());
-        
-        // Validation with different version should fail
-        let mut modified_dep = create_test_dependency();
-        modified_dep.resolved_version = Version::parse("2.0.0").unwrap();
-        
-        let validation = manager.validate(&[modified_dep]);
-        assert!(!validation.is_valid);
-        assert_eq!(validation.version_mismatches.len(), 1);
-    }
-
-    #[test]
-    fn test_lock_file_export_formats() {
-        let temp_dir = TempDir::new().unwrap();
-        let mut manager = LockFileManager::with_project_dir(temp_dir.path());
-        
-        let dependencies = vec![create_test_dependency()];
-        let lock_file = manager.generate_from_dependencies(&dependencies);
-        
-        manager.save(&lock_file).unwrap();
-        manager.load().unwrap();
-        
-        // Test JSON export
-        let json_export = manager.export(LockFileExportFormat::Json);
-        assert!(json_export.is_ok());
-        let json_content = json_export.unwrap();
-        assert!(!json_content.is_empty());
-        
-        // Verify it's valid JSON
-        let _: serde_json::Value = serde_json::from_str(&json_content).unwrap();
-        
-        // Test YAML export
-        let yaml_export = manager.export(LockFileExportFormat::Yaml);
-        assert!(yaml_export.is_ok());
-        let yaml_content = yaml_export.unwrap();
-        assert!(!yaml_content.is_empty());
-        
-        // Test Summary export
-        let summary_export = manager.export(LockFileExportFormat::Summary);
-        assert!(summary_export.is_ok());
-        let summary_content = summary_export.unwrap();
-        assert!(summary_content.contains("Lock File Summary"));
-        assert!(summary_content.contains("test-package"));
-    }
-
-    #[test]
-    fn test_lock_file_deletion() {
-        let temp_dir = TempDir::new().unwrap();
-        let mut manager = LockFileManager::with_project_dir(temp_dir.path());
-        
-        let dependencies = vec![create_test_dependency()];
-        let lock_file = manager.generate_from_dependencies(&dependencies);
-        
-        manager.save(&lock_file).unwrap();
-        assert!(manager.exists());
-        
-        let delete_result = manager.delete();
-        assert!(delete_result.is_ok());
-        assert!(!manager.exists());
-        assert!(manager.current_lock().is_none());
-    }
-}

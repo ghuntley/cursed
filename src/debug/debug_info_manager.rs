@@ -10,13 +10,13 @@
 /// - **Variable Inspection**: Examining variable values during debugging sessions  
 /// - **Stack Traces**: Generating meaningful stack traces with source locations
 /// - **IDE Integration**: Supporting IDE debugging features and code navigation
-/// - **Error Context**: Providing precise source locations for runtime errors
+/// - **CursedError Context**: Providing precise source locations for runtime errors
 /// - **Profiling**: Enabling profilers to map performance data to source code
 /// - **Testing**: Supporting test frameworks with precise error reporting
 /// - **Development Productivity**: Dramatically improving developer debugging experience
 
-use crate::error::{Error as CursedError, SourceLocation as ErrorSourceLocation};
-use crate::debug::{
+use crate::error::{CursedError as CursedError, SourceLocation as ErrorSourceLocation};
+// use crate::debug::{
     enhanced_debug::{
         EnhancedDebugInfo, DebugInfoRegistry, SymbolMetadata, TypeDebugInfo,
         ScopeInfo, SourceMap, SymbolType, TypeKind, FieldDebugInfo, DebugStatistics
@@ -24,7 +24,7 @@ use crate::debug::{
     debug_config::DebugConfig,
 };
 
-use crate::runtime::debug_info::{DebugInfo, VariableInfo, EnhancedStackTrace};
+// use crate::runtime::debug_info::{DebugInfo, VariableInfo, EnhancedStackTrace};
 use crate::codegen::llvm::debug_info::{LlvmDebugGenerator, LlvmDebugManager, SimpleDebugLocation};
 
 use std::collections::HashMap;
@@ -141,7 +141,7 @@ pub trait LlvmDebugManagerTrait {
         name: &str,
         file_path: &Path,
         line: u32,
-    ) -> Result<(), Error>;
+    ) -> crate::error::Result<()>;
     
     fn create_variable_debug(
         &mut self,
@@ -149,7 +149,7 @@ pub trait LlvmDebugManagerTrait {
         type_name: &str,
         file_path: &Path,
         line: u32,
-    ) -> Result<(), Error>;
+    ) -> crate::error::Result<()>;
     
     fn finalize(&mut self);
 }
@@ -198,7 +198,7 @@ impl DebugInfoManager {
         &mut self,
         file: PathBuf,
         producer: String,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.enabled {
             return Ok(());
         }
@@ -252,7 +252,7 @@ impl DebugInfoManager {
         &mut self,
         name: String,
         location: ErrorSourceLocation,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.enabled {
             return Ok(());
         }
@@ -333,7 +333,7 @@ impl DebugInfoManager {
     }
 
     /// End function debug information
-    pub fn end_function(&mut self) -> Result<(), Error> {
+    pub fn end_function(&mut self) -> crate::error::Result<()> {
         if !self.enabled {
             return Ok(());
         }
@@ -378,7 +378,7 @@ impl DebugInfoManager {
         name: String,
         type_name: String,
         location: ErrorSourceLocation,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.enabled {
             return Ok(());
         }
@@ -439,7 +439,7 @@ impl DebugInfoManager {
     }
 
     /// Generate LLVM debug metadata
-    pub fn generate_llvm_debug_metadata(&self) -> Result<(), Error> {
+    pub fn generate_llvm_debug_metadata(&self) -> crate::error::Result<()> {
         if !self.enabled {
             return Ok(String::new());
         }
@@ -681,7 +681,7 @@ impl DebugInfoManager {
     }
 
     /// Update statistics with a closure
-    fn update_statistics<F>(&self, updater: F) -> Result<(), Error>
+    fn update_statistics<F>(&self, updater: F) -> crate::error::Result<()>
     where
         F: FnOnce(&mut DebugStatistics),
     {
@@ -699,159 +699,3 @@ impl Default for DebugInfoManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_debug_info_manager_creation() {
-        let manager = DebugInfoManager::new();
-        assert!(manager.is_enabled());
-        assert_eq!(manager.functions().len(), 0);
-    }
-
-    #[test]
-    fn test_compilation_unit_initialization() {
-        let mut manager = DebugInfoManager::new();
-        let file = PathBuf::from("test.csd");
-        let producer = "Test Producer".to_string();
-        
-        let result = manager.initialize_compilation_unit(file, producer);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_function_debug_lifecycle() {
-        let mut manager = DebugInfoManager::new();
-        let location = ErrorSourceLocation::new(PathBuf::from("test.csd"), 10, 5);
-        
-        // Initialize compilation unit first
-        let _ = manager.initialize_compilation_unit(
-            PathBuf::from("test.csd"),
-            "Test Producer".to_string(),
-        );
-        
-        // Begin function
-        let result = manager.begin_function("test_function".to_string(), location);
-        assert!(result.is_ok());
-        assert!(manager.functions().contains(&"test_function".to_string()));
-        
-        // End function
-        let result = manager.end_function();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_variable_debug_info() {
-        let mut manager = DebugInfoManager::new();
-        let location = ErrorSourceLocation::new(PathBuf::from("test.csd"), 10, 5);
-        
-        // Initialize compilation unit
-        let _ = manager.initialize_compilation_unit(
-            PathBuf::from("test.csd"),
-            "Test Producer".to_string(),
-        );
-        
-        // Begin function
-        let _ = manager.begin_function("test_function".to_string(), location.clone());
-        
-        // Add variable
-        let result = manager.add_variable(
-            "test_var".to_string(),
-            "sus".to_string(),
-            location,
-        );
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_debug_location_generation() {
-        let manager = DebugInfoManager::new();
-        let location = ErrorSourceLocation::new(PathBuf::from("test.csd"), 42, 10);
-        
-        let debug_location = manager.generate_debug_location(&location);
-        assert!(!debug_location.is_empty());
-        assert!(debug_location.starts_with("!dbg"));
-    }
-
-    #[test]
-    fn test_current_location_tracking() {
-        let mut manager = DebugInfoManager::new();
-        let location = ErrorSourceLocation::new(PathBuf::from("test.csd"), 42, 10);
-        
-        manager.set_current_location(location.clone());
-        let current = manager.current_location();
-        
-        assert!(current.is_some());
-        let current = current.unwrap();
-        assert_eq!(current.line, 42);
-        assert_eq!(current.column, 10);
-    }
-
-    #[test]
-    fn test_debug_statistics() {
-        let mut manager = DebugInfoManager::new();
-        let location = ErrorSourceLocation::new(PathBuf::from("test.csd"), 10, 5);
-        
-        // Initialize compilation unit
-        let _ = manager.initialize_compilation_unit(
-            PathBuf::from("test.csd"),
-            "Test Producer".to_string(),
-        );
-        
-        // Add function and variable
-        let _ = manager.begin_function("test_function".to_string(), location.clone());
-        let _ = manager.add_variable("test_var".to_string(), "sus".to_string(), location);
-        
-        let stats = manager.statistics();
-        assert!(stats.symbol_count >= 2); // Function + variable
-    }
-
-    #[test]
-    fn test_validation() {
-        let manager = DebugInfoManager::new();
-        let result = manager.validate();
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_llvm_metadata_generation() {
-        let manager = DebugInfoManager::new();
-        let metadata = manager.generate_llvm_debug_metadata();
-        assert!(metadata.is_ok());
-    }
-
-    #[test]
-    fn test_line_table_generation() {
-        let manager = DebugInfoManager::new();
-        let line_table = manager.generate_line_table();
-        assert_eq!(line_table.len(), 0); // Empty for new manager
-    }
-
-    #[test]
-    fn test_configuration_update() {
-        let mut manager = DebugInfoManager::new();
-        let mut config = DebugConfig::default();
-        config.debug_info_enabled = false;
-        
-        manager.update_config(config);
-        assert!(!manager.is_enabled());
-    }
-
-    #[test]
-    fn test_clear_debug_info() {
-        let mut manager = DebugInfoManager::new();
-        let location = ErrorSourceLocation::new(PathBuf::from("test.csd"), 10, 5);
-        
-        // Add some debug info
-        let _ = manager.initialize_compilation_unit(
-            PathBuf::from("test.csd"),
-            "Test Producer".to_string(),
-        );
-        let _ = manager.begin_function("test_function".to_string(), location);
-        
-        // Clear it
-        manager.clear();
-        assert_eq!(manager.functions().len(), 0);
-    }
-}

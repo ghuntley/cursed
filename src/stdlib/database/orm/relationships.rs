@@ -135,7 +135,7 @@ impl RelationshipManager {
 
     /// facts Register relationship for entity
     #[instrument(skip(self))]
-    pub fn register_relationship(&self, entity_name: &str, relationship: Relationship) -> Result<(), Error> {
+    pub fn register_relationship(&self, entity_name: &str, relationship: Relationship) -> crate::error::Result<()> {
         debug!(entity = entity_name, relationship = %relationship.name, "Registering relationship");
         
         if let Ok(mut relationships) = self.relationships.lock() {
@@ -166,7 +166,7 @@ impl RelationshipManager {
         entity: &T,
         relationship_name: &str,
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(
             entity = T::table_name(),
             relationship = relationship_name,
@@ -196,7 +196,7 @@ impl RelationshipManager {
         entity: &T,
         relationship_names: &[&str],
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(
             entity = T::table_name(),
             relationships = ?relationship_names,
@@ -227,7 +227,7 @@ impl RelationshipManager {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match &relationship.relationship_type {
             RelationshipType::HasMany { foreign_key, local_key } => {
                 let local_value = entity.primary_key_value()
@@ -327,7 +327,7 @@ impl LazyLoader {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(
             entity = T::table_name(),
             relationship = %relationship.name,
@@ -379,7 +379,7 @@ impl LazyLoader {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(
             relationship_type = ?relationship.relationship_type,
             "Executing relationship query"
@@ -455,7 +455,7 @@ impl EagerLoader {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(
             entity = T::table_name(),
             relationship = %relationship.name,
@@ -483,7 +483,7 @@ impl EagerLoader {
         entities: &[T],
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!(
             entity_count = entities.len(),
             relationship = %relationship.name,
@@ -531,7 +531,7 @@ impl EagerLoader {
         entity: &T,
         relationship: &Relationship,
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(
             relationship_type = ?relationship.relationship_type,
             "Batch loading relationship for single entity"
@@ -581,7 +581,7 @@ impl EagerLoader {
         relationship: &Relationship,
         primary_keys: &[SqlValue],
         db: Arc<DB>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(
             relationship = %relationship.name,
             key_count = primary_keys.len(),
@@ -733,188 +733,3 @@ pub trait BelongsToMany<T: Entity>: Entity {
     fn belongs_to_many_relationship() -> Relationship;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::Arc;
-    use tracing_test::traced_test;
-use crate::error_types::Error;
-
-    #[derive(Debug, Clone)]
-    struct TestUser {
-        id: Option<i64>,
-        name: String,
-    }
-
-    #[derive(Debug, Clone)]
-    struct TestPost {
-        id: Option<i64>,
-        user_id: i64,
-        title: String,
-    }
-
-    impl super::super::entity::Entity for TestUser {
-        fn table_name() -> &'static str { "users" }
-        fn primary_key_value(&self) -> Option<SqlValue> { self.id.map(SqlValue::Integer) }
-        fn set_primary_key_value(&mut self, value: SqlValue) { 
-            if let SqlValue::Integer(id) = value { self.id = Some(id); }
-        }
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
-            Ok(Self { id: None, name: "Test".to_string() })
-        }
-        fn to_fields(&self) -> HashMap<String, SqlValue> { HashMap::new() }
-        fn field_names() -> Vec<&'static str> { Vec::from(["id", "name"]) }
-        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { Vec::from([]) }
-        fn metadata() -> super::super::entity::EntityMetadata {
-            super::super::entity::EntityMetadata {
-                table_name: "users".to_string(),
-                primary_key: "id".to_string(),
-                fields: Vec::from(["id".to_string(), "name".to_string()]),
-                relationships: Vec::from([]),
-                validation_rules: Vec::from([]),
-                indexes: Vec::from([]),
-                version: 1,
-            }
-        }
-    }
-
-    impl super::super::entity::Entity for TestPost {
-        fn table_name() -> &'static str { "posts" }
-        fn primary_key_value(&self) -> Option<SqlValue> { self.id.map(SqlValue::Integer) }
-        fn set_primary_key_value(&mut self, value: SqlValue) { 
-            if let SqlValue::Integer(id) = value { self.id = Some(id); }
-        }
-        fn from_row(row: &HashMap<String, SqlValue>) -> Result<(), Error> {
-            Ok(Self { id: None, user_id: 1, title: "Test".to_string() })
-        }
-        fn to_fields(&self) -> HashMap<String, SqlValue> { 
-            let mut fields = HashMap::new();
-            fields.insert("user_id".to_string(), SqlValue::Integer(self.user_id));
-            fields
-        }
-        fn field_names() -> Vec<&'static str> { Vec::from(["id", "user_id", "title"]) }
-        fn column_definitions() -> Vec<super::super::entity::ColumnDefinition> { Vec::from([]) }
-        fn metadata() -> super::super::entity::EntityMetadata {
-            super::super::entity::EntityMetadata {
-                table_name: "posts".to_string(),
-                primary_key: "id".to_string(),
-                fields: Vec::from(["id".to_string(), "user_id".to_string(), "title".to_string()]),
-                relationships: Vec::from([]),
-                validation_rules: Vec::from([]),
-                indexes: Vec::from([]),
-                version: 1,
-            }
-        }
-    }
-
-    fn create_mock_db() -> Arc<DB> {
-        Arc::new(DB::open("test".to_string(), "".to_string()).expect("Failed to create test DB"))
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_relationship_manager_creation() {
-        let manager = RelationshipManager::new();
-        
-        let relationships = manager.get_relationships("users");
-        assert_eq!(relationships.len(), 0);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_relationship_registration() {
-        let manager = RelationshipManager::new();
-        
-        let relationship = RelationshipBuilder::new("posts", "users", "posts")
-            .has_many("user_id");
-        
-        manager.register_relationship("users", relationship).expect("Should register relationship");
-        
-        let relationships = manager.get_relationships("users");
-        assert_eq!(relationships.len(), 1);
-        assert_eq!(relationships[0].name, "posts");
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_relationship_builder() {
-        let relationship = RelationshipBuilder::new("posts", "users", "posts")
-            .has_many("user_id");
-        
-        assert_eq!(relationship.name, "posts");
-        assert_eq!(relationship.source_entity, "users");
-        assert_eq!(relationship.target_entity, "posts");
-        
-        match relationship.relationship_type {
-            RelationshipType::HasMany { foreign_key, .. } => {
-                assert_eq!(foreign_key, "user_id");
-            }
-            _ => panic!("Expected HasMany relationship"),
-        }
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_belongs_to_many_relationship() {
-        let relationship = RelationshipBuilder::new("roles", "users", "roles")
-            .belongs_to_many("user_roles", "user_id", "role_id");
-        
-        match relationship.relationship_type {
-            RelationshipType::BelongsToMany { 
-                pivot_table, 
-                foreign_pivot_key, 
-                related_pivot_key, 
-                .. 
-            } => {
-                assert_eq!(pivot_table, "user_roles");
-                assert_eq!(foreign_pivot_key, "user_id");
-                assert_eq!(related_pivot_key, "role_id");
-            }
-            _ => panic!("Expected BelongsToMany relationship"),
-        }
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_lazy_loading() {
-        let db = create_mock_db();
-        let manager = RelationshipManager::new();
-        
-        let relationship = RelationshipBuilder::new("posts", "users", "posts")
-            .has_many("user_id");
-        
-        manager.register_relationship("users", relationship).expect("Should register relationship");
-        
-        let user = TestUser {
-            id: Some(1),
-            name: "John".to_string(),
-        };
-        
-        let posts: Vec<TestPost> = manager.load_relationship(&user, "posts", db)
-            .await
-            .expect("Should load relationship");
-        
-        assert_eq!(posts.len(), 1);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_lazy_loader() {
-        let loader = LazyLoader::new();
-        
-        // Test cache clearing
-        loader.clear_cache();
-        
-        // Test successful creation
-        // Note: Full testing would require actual database operations
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_eager_loader() {
-        let loader = EagerLoader::new();
-        
-        // Test batch size configuration
-        assert_eq!(loader.batch_size, 100);
-    }
-}

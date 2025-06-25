@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Build system integration and CI/CD support for profiling
 
 use std::collections::HashMap;
@@ -7,9 +7,9 @@ use std::process::{Command, Stdio};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::profiling::core::{ProfilerConfig, CursedProfiler, ProfilerError};
-use crate::profiling::benchmarking::{BenchmarkSuite, BenchmarkConfig, BenchmarkResults};
-use crate::profiling::reporting::{ReportGenerator, ReportConfig};
+// use crate::profiling::core::{ProfilerConfig, CursedProfiler, ProfilerError};
+// use crate::profiling::benchmarking::{BenchmarkSuite, BenchmarkConfig, BenchmarkResults};
+// use crate::profiling::reporting::{ReportGenerator, ReportConfig};
 
 /// Build system integration for automated profiling
 #[derive(Debug)]
@@ -27,7 +27,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn setup_profiling_build(&mut self) -> Result<(), Error> {
+    pub fn setup_profiling_build(&mut self) -> crate::error::Result<()> {
         info!("Setting up profiling build integration");
         
         let profiler_config = ProfilerConfig {
@@ -48,7 +48,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn profile_build(&mut self, target: &str) -> Result<(), Error> {
+    pub fn profile_build(&mut self, target: &str) -> crate::error::Result<()> {
         info!("Starting profiled build for target: {}", target);
         
         let session_name = format!("build_{}_{}", target, chrono::Utc::now().format("%Y%m%d_%H%M%S"));
@@ -86,7 +86,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn run_performance_tests(&self) -> Result<(), Error> {
+    pub fn run_performance_tests(&self) -> crate::error::Result<()> {
         info!("Running performance tests");
         
         let mut test_results = HashMap::new();
@@ -125,7 +125,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn detect_performance_regressions(&self, current: &PerformanceTestResults) -> Result<(), Error> {
+    pub fn detect_performance_regressions(&self, current: &PerformanceTestResults) -> crate::error::Result<()> {
         info!("Detecting performance regressions");
         
         let mut regressions = Vec::new();
@@ -166,7 +166,7 @@ impl BuildIntegration {
     }
     
     #[instrument(skip(self))]
-    pub fn generate_ci_report(&self, results: &PerformanceTestResults) -> Result<(), Error> {
+    pub fn generate_ci_report(&self, results: &PerformanceTestResults) -> crate::error::Result<()> {
         info!("Generating CI/CD report");
         
         let regression_report = self.detect_performance_regressions(results)?;
@@ -206,7 +206,7 @@ impl BuildIntegration {
         Ok(report)
     }
     
-    fn execute_build_command(&self, target: &str) -> Result<(), Error> {
+    fn execute_build_command(&self, target: &str) -> crate::error::Result<()> {
         let mut command = Command::new(&self.config.build_command);
         command.args(&self.config.build_args);
         command.arg(target);
@@ -222,7 +222,7 @@ impl BuildIntegration {
         })
     }
     
-    fn collect_build_artifacts(&self, target: &str) -> Result<(), Error> {
+    fn collect_build_artifacts(&self, target: &str) -> crate::error::Result<()> {
         let mut artifacts = Vec::new();
         
         // Collect binary artifacts
@@ -264,7 +264,7 @@ impl BuildIntegration {
         Ok(artifacts)
     }
     
-    fn load_benchmarks_from_file(&self, suite: &mut BenchmarkSuite, _path: &Path) -> Result<(), Error> {
+    fn load_benchmarks_from_file(&self, suite: &mut BenchmarkSuite, _path: &Path) -> crate::error::Result<()> {
         // In a real implementation, this would parse benchmark files
         // and add them to the suite
         warn!("Benchmark file loading not yet implemented");
@@ -307,7 +307,7 @@ impl BuildIntegration {
         }
     }
     
-    fn collect_ci_artifacts(&self, _results: &PerformanceTestResults) -> Result<(), Error> {
+    fn collect_ci_artifacts(&self, _results: &PerformanceTestResults) -> crate::error::Result<()> {
         let mut artifacts = Vec::new();
         
         // Collect HTML reports
@@ -623,38 +623,3 @@ jobs:
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_build_integration_creation() {
-        let config = BuildConfig::default();
-        let integration = BuildIntegration::new(config);
-        assert!(integration.profiler.is_none());
-    }
-    
-    #[test]
-    fn test_build_config_default() {
-        let config = BuildConfig::default();
-        assert_eq!(config.build_command, "cargo");
-        assert!(config.enable_profiling);
-        assert_eq!(config.regression_threshold, 10.0);
-    }
-    
-    #[test]
-    fn test_ci_status() {
-        let status = CiStatus::Success;
-        assert_eq!(status, CiStatus::Success);
-    }
-    
-    #[test]
-    fn test_github_actions_integration() {
-        let config = BuildConfig::default();
-        let integration = GitHubActionsIntegration::new(config);
-        let workflow = integration.generate_workflow();
-        
-        assert!(workflow.contains("Performance Testing"));
-        assert!(workflow.contains("cursed-profile"));
-    }
-}

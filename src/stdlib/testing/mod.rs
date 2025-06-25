@@ -66,7 +66,7 @@ pub use assertions::{
     assert_empty, assert_not_empty, assert_contains_element, assert_not_contains_element,
     assert_has_length, assert_all_true, assert_any_true, assert_none_true,
     
-    // Error assertions
+    // CursedError assertions
     assert_error, assert_no_error, assert_error_type, assert_error_message,
     assert_panic, assert_no_panic,
     
@@ -90,14 +90,13 @@ pub use macros::{
     setup_function, teardown_function, test_suite_macro
 };
 
-// Error handling for testing framework
-use crate::crate::stdlib::errors_simple::CursedError;
-use crate::error::Error;
+// CursedError handling for testing framework
+use crate::error::CursedError;
 
 /// Result type for testing operations
 pub type TestFrameworkResult<T> = std::result::Result<T, TestError>;
 
-/// Error types specific to the testing framework
+/// CursedError types specific to the testing framework
 #[derive(Debug, Clone)]
 pub enum TestError {
     /// Test discovery failed
@@ -116,28 +115,28 @@ pub enum TestError {
     FrameworkError(String),
 }
 
-impl std::fmt::Display for TestError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TestError::DiscoveryError(msg) => write!(f, "Test discovery error: {}", msg),
-            TestError::ExecutionError(msg) => write!(f, "Test execution error: {}", msg),
-            TestError::AssertionError(msg) => write!(f, "Assertion failed: {}", msg),
-            TestError::TimeoutError(msg) => write!(f, "Test timeout: {}", msg),
-            TestError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
-            TestError::ReportError(msg) => write!(f, "Report generation error: {}", msg),
-            TestError::FrameworkError(msg) => write!(f, "Framework error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for TestError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             TestError::DiscoveryError(msg) => write!(f, "Test discovery error: {}", msg),
+//             TestError::ExecutionError(msg) => write!(f, "Test execution error: {}", msg),
+//             TestError::AssertionError(msg) => write!(f, "Assertion failed: {}", msg),
+//             TestError::TimeoutError(msg) => write!(f, "Test timeout: {}", msg),
+//             TestError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
+//             TestError::ReportError(msg) => write!(f, "Report generation error: {}", msg),
+//             TestError::FrameworkError(msg) => write!(f, "Framework error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for TestError {}
-
+// impl std::error::CursedError for TestError {}
+// 
 /// Convert TestError to CursedError
-impl From<TestError> for CursedError {
-    fn from(err: TestError) -> Self {
-        CursedError::Runtime(err.to_string())
-    }
-}
+// impl From<TestError> for CursedError {
+//     fn from(err: TestError) -> Self {
+//         CursedError::Runtime(err.to_string())
+//     }
+// }
 
 /// Helper function to create test discovery errors
 pub fn discovery_error(message: &str) -> TestError {

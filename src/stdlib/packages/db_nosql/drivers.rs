@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr NoSQL driver interfaces - the contracts for NoSQL databases periodt
 
 use async_trait::async_trait;
@@ -8,17 +8,17 @@ use std::any::Any;
 #[async_trait]
 pub trait NoSqlDriver: Send + Sync {
     /// slay Connect to NoSQL database
-    async fn connect(&self, connection_string: &str) -> Result<(), Error>;
+    async fn connect(&self, connection_string: &str) -> crate::error::Result<()>;
 }
 
 /// fr fr NoSQL connection trait
 #[async_trait]
 pub trait NoSqlConnection: Send + Sync {
     /// slay Insert document
-    async fn insert(&mut self, collection: &str, document: serde_json::Value) -> Result<(), Error>;
+    async fn insert(&mut self, collection: &str, document: serde_json::Value) -> crate::error::Result<()>;
     
     /// slay Find documents
-    async fn find(&mut self, collection: &str, query: serde_json::Value) -> Result<(), Error>;
+    async fn find(&mut self, collection: &str, query: serde_json::Value) -> crate::error::Result<()>;
     
     /// slay Get underlying type for downcasting
     fn as_any(&self) -> &dyn Any;

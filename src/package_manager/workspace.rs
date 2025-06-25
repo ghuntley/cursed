@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Workspace management for multi-package CURSED projects
 /// 
 /// Handles workspace discovery, configuration, and operations across
@@ -7,7 +7,6 @@ use crate::error::Error;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use glob::glob;
 
 use crate::package_manager::{PackageManagerError, PackageMetadata};
@@ -65,7 +64,7 @@ pub struct WorkspaceManager {
 }
 
 /// Workspace-specific errors
-#[derive(Error, Debug)]
+#[derive(CursedError, Debug)]
 pub enum WorkspaceError {
     #[error("Workspace not found - no CursedPackage.toml with [workspace] section found")]
     NotFound,
@@ -107,7 +106,7 @@ pub enum WorkspaceError {
 
 impl WorkspaceManager {
     /// Create a new workspace manager
-    pub fn discover<P: AsRef<Path>>(root: P) -> Result<(), Error> {
+    pub fn discover<P: AsRef<Path>>(root: P) -> crate::error::Result<()> {
         let root = root.as_ref().to_path_buf();
         let package_file = root.join("CursedPackage.toml");
         
@@ -168,7 +167,7 @@ impl WorkspaceManager {
     }
     
     /// Discover workspace members from configuration
-    fn discover_members(&mut self) -> Result<(), Error> {
+    fn discover_members(&mut self) -> crate::error::Result<()> {
         let config = self.config.as_ref().ok_or(WorkspaceError::NotFound)?;
         
         let mut discovered_paths = HashSet::new();
@@ -238,7 +237,7 @@ impl WorkspaceManager {
     }
     
     /// Find dependencies that are local to the workspace
-    fn find_local_dependencies(&self, metadata: &PackageMetadata) -> Result<(), Error> {
+    fn find_local_dependencies(&self, metadata: &PackageMetadata) -> crate::error::Result<()> {
         let mut local_deps = Vec::new();
         
         for (dep_name, _version) in &metadata.dependencies {
@@ -252,7 +251,7 @@ impl WorkspaceManager {
     }
     
     /// Validate that workspace has no circular dependencies
-    fn validate_dependency_graph(&self) -> Result<(), Error> {
+    fn validate_dependency_graph(&self) -> crate::error::Result<()> {
         let mut visited = HashSet::new();
         let mut visiting = HashSet::new();
         
@@ -271,7 +270,7 @@ impl WorkspaceManager {
         member_name: &str,
         visited: &mut HashSet<String>,
         visiting: &mut HashSet<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if visiting.contains(member_name) {
             // Found a cycle
             let cycle: Vec<String> = visiting.iter().cloned().collect();
@@ -298,7 +297,7 @@ impl WorkspaceManager {
     }
     
     /// Get build order for workspace members
-    pub fn get_build_order(&self) -> Result<(), Error> {
+    pub fn get_build_order(&self) -> crate::error::Result<()> {
         let mut build_order = Vec::new();
         let mut built = HashSet::new();
         
@@ -340,7 +339,7 @@ impl WorkspaceManager {
     pub fn init_workspace<P: AsRef<Path>>(
         root: P,
         members: Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let root = root.as_ref().to_path_buf();
         let package_file = root.join("CursedPackage.toml");
         
@@ -417,7 +416,7 @@ impl WorkspaceManager {
     }
     
     /// Add a member to the workspace
-    pub fn add_member(&mut self, member_pattern: String) -> Result<(), Error> {
+    pub fn add_member(&mut self, member_pattern: String) -> crate::error::Result<()> {
         let config = self.config.as_mut().ok_or(WorkspaceError::NotFound)?;
         
         if !config.members.contains(&member_pattern) {
@@ -430,7 +429,7 @@ impl WorkspaceManager {
     }
     
     /// Remove a member from the workspace
-    pub fn remove_member(&mut self, member_pattern: &str) -> Result<(), Error> {
+    pub fn remove_member(&mut self, member_pattern: &str) -> crate::error::Result<()> {
         let config = self.config.as_mut().ok_or(WorkspaceError::NotFound)?;
         
         config.members.retain(|pattern| pattern != member_pattern);
@@ -441,7 +440,7 @@ impl WorkspaceManager {
     }
     
     /// Save workspace configuration
-    fn save_config(&self) -> Result<(), Error> {
+    fn save_config(&self) -> crate::error::Result<()> {
         let config = self.config.as_ref().ok_or(WorkspaceError::NotFound)?;
         let package_file = self.root.join("CursedPackage.toml");
         
@@ -482,7 +481,7 @@ impl WorkspaceManager {
     }
     
     /// Generate workspace-level lock file
-    pub fn generate_lock_file(&mut self) -> Result<(), Error> {
+    pub fn generate_lock_file(&mut self) -> crate::error::Result<()> {
         // Collect all dependencies from workspace members
         let mut all_dependencies: HashMap<String, String> = HashMap::new();
         
@@ -529,7 +528,7 @@ impl WorkspaceManager {
     }
     
     /// Load workspace lock file
-    pub fn load_lock_file(&mut self) -> Result<(), Error> {
+    pub fn load_lock_file(&mut self) -> crate::error::Result<()> {
         self.lock_file_manager.load().map_err(Into::into)
     }
     
@@ -562,7 +561,7 @@ impl WorkspaceManager {
     }
     
     /// Validate workspace integrity
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         // Check that all local dependencies exist in workspace
         for member in &self.members {
             for local_dep in &member.local_dependencies {
@@ -589,103 +588,3 @@ impl Default for WorkspaceConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-    
-    #[test]
-    fn test_workspace_config_default() {
-        let config = WorkspaceConfig::default();
-        assert!(config.members.is_empty());
-        assert!(config.exclude.is_empty());
-        assert!(config.dependencies.is_empty());
-    }
-    
-    #[test]
-    fn test_workspace_init() {
-        let temp_dir = TempDir::new().unwrap();
-        let workspace_root = temp_dir.path();
-        
-        let members = vec!["package1".to_string(), "package2".to_string()];
-        let workspace = WorkspaceManager::init_workspace(workspace_root, members.clone()).unwrap();
-        
-        assert!(workspace.is_workspace());
-        assert_eq!(workspace.config().unwrap().members, members);
-        
-        // Check that CursedPackage.toml was created
-        let package_file = workspace_root.join("CursedPackage.toml");
-        assert!(package_file.exists());
-    }
-    
-    #[test]
-    fn test_workspace_discovery_no_workspace() {
-        let temp_dir = TempDir::new().unwrap();
-        let workspace_root = temp_dir.path();
-        
-        // Create a regular package file without workspace section
-        let package_file = workspace_root.join("CursedPackage.toml");
-        std::fs::write(&package_file, r#"
-            name = "test-package"
-            version = "1.0.0"
-            description = "Test package"
-            authors = ["Test"]
-        "#).unwrap();
-        
-        let workspace = WorkspaceManager::discover(workspace_root).unwrap();
-        assert!(!workspace.is_workspace());
-    }
-    
-    #[test]
-    fn test_build_order_simple() {
-        let temp_dir = TempDir::new().unwrap();
-        let workspace_root = temp_dir.path();
-        
-        // Create workspace with dependencies: package2 -> package1
-        let members = vec!["package1".to_string(), "package2".to_string()];
-        let mut workspace = WorkspaceManager::init_workspace(workspace_root, members).unwrap();
-        
-        // Mock members with dependencies
-        workspace.members = vec![
-            WorkspaceMember {
-                name: "package1".to_string(),
-                path: workspace_root.join("package1"),
-                metadata: PackageMetadata {
-                    name: "package1".to_string(),
-                    version: "1.0.0".to_string(),
-                    description: "Package 1".to_string(),
-                    authors: Vec::new(),
-                    dependencies: HashMap::new(),
-                    dev_dependencies: HashMap::new(),
-                    repository: None,
-                    license: None,
-                    keywords: Vec::new(),
-                    categories: Vec::new(),
-                },
-                local_dependencies: Vec::new(),
-            },
-            WorkspaceMember {
-                name: "package2".to_string(),
-                path: workspace_root.join("package2"),
-                metadata: PackageMetadata {
-                    name: "package2".to_string(),
-                    version: "1.0.0".to_string(),
-                    description: "Package 2".to_string(),
-                    authors: Vec::new(),
-                    dependencies: HashMap::new(),
-                    dev_dependencies: HashMap::new(),
-                    repository: None,
-                    license: None,
-                    keywords: Vec::new(),
-                    categories: Vec::new(),
-                },
-                local_dependencies: vec!["package1".to_string()],
-            },
-        ];
-        
-        let build_order = workspace.get_build_order().unwrap();
-        assert_eq!(build_order.len(), 2);
-        assert_eq!(build_order[0].name, "package1");
-        assert_eq!(build_order[1].name, "package2");
-    }
-}

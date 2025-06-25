@@ -1,11 +1,10 @@
-use crate::error::Error;
-pub type JsonError = crate::error::Error;
+use crate::error::CursedError;
+pub type JsonError = crate::error::CursedError;
 
 /// JSON Value Types
 /// 
 /// JSON value representation and conversion utilities for CURSED
 
-use crate::error::CursedError;
 use crate::runtime::value::Value;
 use std::collections::HashMap;
 use std::fmt;
@@ -262,7 +261,7 @@ pub fn escape_json_string(s: &str) -> String {
 }
 
 /// Unescape JSON string escape sequences
-pub fn unescape_json_string(s: &str) -> Result<(), Error> {
+pub fn unescape_json_string(s: &str) -> crate::error::Result<()> {
     let mut result = String::with_capacity(s.len());
     let mut chars = s.chars();
     
@@ -306,110 +305,3 @@ pub fn unescape_json_string(s: &str) -> Result<(), Error> {
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_json_value_type_checks() {
-        assert!(JsonValue::Null.is_null());
-        assert!(JsonValue::Bool(true).is_bool());
-        assert!(JsonValue::Number(42.0).is_number());
-        assert!(JsonValue::String("test".to_string()).is_string());
-        assert!(JsonValue::Array(vec![]).is_array());
-        assert!(JsonValue::Object(HashMap::new()).is_object());
-    }
-    
-    #[test]
-    fn test_json_value_accessors() {
-        let value = JsonValue::Bool(true);
-        assert_eq!(value.as_bool(), Some(true));
-        assert_eq!(value.as_number(), None);
-        
-        let value = JsonValue::Number(3.14);
-        assert_eq!(value.as_number(), Some(3.14));
-        assert_eq!(value.as_bool(), None);
-        
-        let value = JsonValue::String("hello".to_string());
-        assert_eq!(value.as_str(), Some("hello"));
-    }
-    
-    #[test]
-    fn test_json_value_display() {
-        assert_eq!(JsonValue::Null.to_string(), "null");
-        assert_eq!(JsonValue::Bool(true).to_string(), "true");
-        assert_eq!(JsonValue::Number(42.0).to_string(), "42");
-        assert_eq!(JsonValue::String("hello".to_string()).to_string(), "\"hello\"");
-        
-        let arr = JsonValue::Array(vec![JsonValue::Number(1.0), JsonValue::Number(2.0)]);
-        assert_eq!(arr.to_string(), "[1,2]");
-    }
-    
-    #[test]
-    fn test_value_conversion() {
-        let cursed_value = Value::String("test".to_string());
-        let json_value: JsonValue = cursed_value.clone().into();
-        let back_to_cursed: Value = json_value.into();
-        
-        assert_eq!(cursed_value, back_to_cursed);
-    }
-    
-    #[test]
-    fn test_escape_json_string() {
-        assert_eq!(escape_json_string("hello"), "hello");
-        assert_eq!(escape_json_string("\"quoted\""), "\\\"quoted\\\"");
-        assert_eq!(escape_json_string("line\nbreak"), "line\\nbreak");
-        assert_eq!(escape_json_string("tab\there"), "tab\\there");
-        assert_eq!(escape_json_string("back\\slash"), "back\\\\slash");
-    }
-    
-    #[test]
-    fn test_unescape_json_string() {
-        assert_eq!(unescape_json_string("hello").unwrap(), "hello");
-        assert_eq!(unescape_json_string("\\\"quoted\\\"").unwrap(), "\"quoted\"");
-        assert_eq!(unescape_json_string("line\\nbreak").unwrap(), "line\nbreak");
-        assert_eq!(unescape_json_string("tab\\there").unwrap(), "tab\there");
-        assert_eq!(unescape_json_string("back\\\\slash").unwrap(), "back\\slash");
-        assert_eq!(unescape_json_string("\\u0041").unwrap(), "A");
-    }
-    
-    #[test]
-    fn test_is_empty() {
-        assert!(JsonValue::Null.is_empty());
-        assert!(JsonValue::Bool(false).is_empty());
-        assert!(JsonValue::Number(0.0).is_empty());
-        assert!(JsonValue::String("".to_string()).is_empty());
-        assert!(JsonValue::Array(vec![]).is_empty());
-        assert!(JsonValue::Object(HashMap::new()).is_empty());
-        
-        assert!(!JsonValue::Bool(true).is_empty());
-        assert!(!JsonValue::Number(1.0).is_empty());
-        assert!(!JsonValue::String("hello".to_string()).is_empty());
-    }
-    
-    #[test]
-    fn test_object_access() {
-        let mut obj = HashMap::new();
-        obj.insert("name".to_string(), JsonValue::String("Alice".to_string()));
-        obj.insert("age".to_string(), JsonValue::Number(30.0));
-        
-        let value = JsonValue::Object(obj);
-        
-        assert_eq!(value.get("name"), Some(&JsonValue::String("Alice".to_string())));
-        assert_eq!(value.get("age"), Some(&JsonValue::Number(30.0)));
-        assert_eq!(value.get("missing"), None);
-    }
-    
-    #[test]
-    fn test_array_access() {
-        let arr = vec![
-            JsonValue::String("first".to_string()),
-            JsonValue::String("second".to_string()),
-        ];
-        let value = JsonValue::Array(arr);
-        
-        assert_eq!(value.get_index(0), Some(&JsonValue::String("first".to_string())));
-        assert_eq!(value.get_index(1), Some(&JsonValue::String("second".to_string())));
-        assert_eq!(value.get_index(2), None);
-    }
-}

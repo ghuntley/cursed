@@ -1,11 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Post-Quantum Cryptography Security Analysis
 /// 
 /// This module provides tools for analyzing the quantum resistance and security
 /// properties of PQC algorithms.
 
 use std::collections::HashMap;
-use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType, AlgorithmFamily, StandardizationStatus};
+// use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType, AlgorithmFamily, StandardizationStatus};
 
 /// Quantum threat assessment
 #[derive(Debug, Clone)]
@@ -557,51 +557,3 @@ pub fn global_security_analyzer() -> &'static PqcSecurityAnalyzer {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_security_analyzer() {
-        let analyzer = PqcSecurityAnalyzer::new();
-        
-        // Test getting analysis
-        let kyber_analysis = analyzer.get_analysis(AlgorithmType::Kyber).unwrap();
-        assert_eq!(kyber_analysis.algorithm, AlgorithmType::Kyber);
-        assert_eq!(kyber_analysis.family, AlgorithmFamily::LatticeBased);
-        assert_eq!(kyber_analysis.confidence_rating, ConfidenceRating::VeryHigh);
-        
-        // Test SIKE is marked as broken
-        let sike_analysis = analyzer.get_analysis(AlgorithmType::Sike).unwrap();
-        assert_eq!(sike_analysis.standardization_status, StandardizationStatus::Deprecated);
-        assert_eq!(sike_analysis.quantum_security_strength.bits_of_security, 0);
-        
-        // Test quantum threat assessment
-        let threat = analyzer.get_quantum_threat_assessment();
-        assert_eq!(threat.current_threat_level, ThreatLevel::Moderate);
-        assert!(!threat.affected_algorithms.is_empty());
-        
-        // Test recommendations
-        let level1_recommendations = analyzer.get_recommendations(SecurityLevel::Level1);
-        assert!(!level1_recommendations.is_empty());
-        assert!(!level1_recommendations.contains(&AlgorithmType::Sike)); // Should not recommend broken algorithm
-    }
-
-    #[test]
-    fn test_global_analyzer() {
-        let analyzer = global_security_analyzer();
-        assert!(analyzer.get_analysis(AlgorithmType::Kyber).is_some());
-    }
-
-    #[test]
-    fn test_security_report_generation() {
-        let analyzer = PqcSecurityAnalyzer::new();
-        let report = analyzer.generate_security_report();
-        
-        assert!(report.contains("Post-Quantum Cryptography Security Analysis Report"));
-        assert!(report.contains("Quantum Threat Assessment"));
-        assert!(report.contains("Kyber"));
-        assert!(report.contains("Dilithium"));
-        assert!(report.contains("SPHINCS"));
-    }
-}

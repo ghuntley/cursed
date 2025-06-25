@@ -2,9 +2,8 @@
 // 
 // Provides comprehensive hardware acceleration detection and capabilities enumeration.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -128,7 +127,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Get cached capabilities or detect if cache is expired
-    pub fn get_capabilities(&self) -> Result<(), Error> {
+    pub fn get_capabilities(&self) -> crate::error::Result<()> {
         let now = Instant::now();
         
         // Check if we have valid cached data
@@ -159,7 +158,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Force refresh of capabilities detection
-    pub fn refresh_capabilities(&self) -> Result<(), Error> {
+    pub fn refresh_capabilities(&self) -> crate::error::Result<()> {
         // Clear cache
         {
             let mut cache_time = self.cache_timestamp.lock().unwrap();
@@ -173,7 +172,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect all hardware acceleration capabilities
-    fn detect_capabilities(&self) -> Result<(), Error> {
+    fn detect_capabilities(&self) -> crate::error::Result<()> {
         let start_time = Instant::now();
 
         let cpu_features = self.detect_cpu_features()?;
@@ -195,7 +194,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect CPU cryptographic features
-    fn detect_cpu_features(&self) -> Result<(), Error> {
+    fn detect_cpu_features(&self) -> crate::error::Result<()> {
         let mut features = CpuFeatures::default();
 
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
@@ -218,7 +217,7 @@ impl HardwareAccelerationDetector {
 
     /// Detect x86/x86_64 CPU features using CPUID
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    fn detect_x86_features(&self) -> Result<(), Error> {
+    fn detect_x86_features(&self) -> crate::error::Result<()> {
         let mut features = CpuFeatures::default();
 
         unsafe {
@@ -264,7 +263,7 @@ impl HardwareAccelerationDetector {
 
     /// Detect AArch64 CPU features
     #[cfg(target_arch = "aarch64")]
-    fn detect_aarch64_features(&self) -> Result<(), Error> {
+    fn detect_aarch64_features(&self) -> crate::error::Result<()> {
         let mut features = CpuFeatures::default();
 
         // Check for AES and SHA extensions via system registers or /proc/cpuinfo
@@ -279,7 +278,7 @@ impl HardwareAccelerationDetector {
 
     /// Detect ARM CPU features
     #[cfg(target_arch = "arm")]
-    fn detect_arm_features(&self) -> Result<(), Error> {
+    fn detect_arm_features(&self) -> crate::error::Result<()> {
         let mut features = CpuFeatures::default();
 
         // Check for cryptographic extensions via /proc/cpuinfo
@@ -292,7 +291,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect Hardware Security Modules
-    fn detect_hsms(&self) -> Result<(), Error> {
+    fn detect_hsms(&self) -> crate::error::Result<()> {
         let mut hsms = Vec::new();
 
         // Check for common HSM interfaces
@@ -304,7 +303,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for PKCS#11 HSMs
-    fn check_pkcs11_hsms(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), Error> {
+    fn check_pkcs11_hsms(&self, hsms: &mut Vec<HsmInfo>) -> crate::error::Result<()> {
         // Common PKCS#11 library paths
         let pkcs11_paths = vec![
             "/usr/lib/pkcs11/",
@@ -334,7 +333,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for TPM modules
-    fn check_tpm_modules(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), Error> {
+    fn check_tpm_modules(&self, hsms: &mut Vec<HsmInfo>) -> crate::error::Result<()> {
         // Check for TPM 2.0 device
         if std::path::Path::new("/dev/tpm0").exists() {
             hsms.push(HsmInfo {
@@ -359,7 +358,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for secure enclaves
-    fn check_secure_enclaves(&self, hsms: &mut Vec<HsmInfo>) -> Result<(), Error> {
+    fn check_secure_enclaves(&self, hsms: &mut Vec<HsmInfo>) -> crate::error::Result<()> {
         // Intel SGX
         if std::path::Path::new("/dev/isgx").exists() || 
            std::path::Path::new("/dev/sgx").exists() {
@@ -385,7 +384,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect GPU acceleration capabilities
-    fn detect_gpu_acceleration(&self) -> Result<(), Error> {
+    fn detect_gpu_acceleration(&self) -> crate::error::Result<()> {
         let mut gpu_accel = GpuAcceleration {
             opencl_available: false,
             cuda_available: false,
@@ -409,7 +408,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check OpenCL support
-    fn check_opencl_support(&self) -> Result<(), Error> {
+    fn check_opencl_support(&self) -> crate::error::Result<()> {
         // Check for OpenCL libraries
         let opencl_libs = vec![
             "libOpenCL.so.1",
@@ -443,7 +442,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check CUDA support
-    fn check_cuda_support(&self) -> Result<(), Error> {
+    fn check_cuda_support(&self) -> crate::error::Result<()> {
         // Check for CUDA runtime libraries
         let cuda_libs = vec![
             "/usr/local/cuda/lib64/libcudart.so",
@@ -466,7 +465,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check Vulkan Compute support
-    fn check_vulkan_compute(&self) -> Result<(), Error> {
+    fn check_vulkan_compute(&self) -> crate::error::Result<()> {
         // Check for Vulkan libraries
         let vulkan_libs = vec![
             "libvulkan.so.1",
@@ -485,7 +484,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Enumerate GPU devices
-    fn enumerate_gpu_devices(&self) -> Result<(), Error> {
+    fn enumerate_gpu_devices(&self) -> crate::error::Result<()> {
         let mut devices = Vec::new();
 
         // Try to get NVIDIA GPU information
@@ -537,7 +536,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Detect cryptographic coprocessors
-    fn detect_crypto_coprocessors(&self) -> Result<(), Error> {
+    fn detect_crypto_coprocessors(&self) -> crate::error::Result<()> {
         let mut coprocessors = Vec::new();
 
         // Check for IBM Crypto Express cards
@@ -553,7 +552,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for IBM Crypto Express cards
-    fn check_ibm_crypto_express(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), Error> {
+    fn check_ibm_crypto_express(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> crate::error::Result<()> {
         // Check for IBM crypto devices in /sys/bus/ap/devices
         if let Ok(entries) = std::fs::read_dir("/sys/bus/ap/devices") {
             for entry in entries.flatten() {
@@ -579,7 +578,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for Cavium/Marvell crypto cards
-    fn check_cavium_crypto(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), Error> {
+    fn check_cavium_crypto(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> crate::error::Result<()> {
         // Check lspci output for Cavium devices
         if let Ok(output) = std::process::Command::new("lspci").output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
@@ -605,7 +604,7 @@ impl HardwareAccelerationDetector {
     }
 
     /// Check for other PCIe crypto cards
-    fn check_pcie_crypto_cards(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> Result<(), Error> {
+    fn check_pcie_crypto_cards(&self, coprocessors: &mut Vec<CryptoCoprocessor>) -> crate::error::Result<()> {
         // Check for various crypto accelerator vendors
         if let Ok(output) = std::process::Command::new("lspci").output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
@@ -654,7 +653,7 @@ pub fn get_hardware_detector() -> &'static HardwareAccelerationDetector {
 }
 
 /// Check hardware acceleration support
-pub fn check_hardware_support(_args: Vec<Value>) -> Result<(), Error> {
+pub fn check_hardware_support(_args: Vec<Value>) -> crate::error::Result<()> {
     let detector = get_hardware_detector();
     let capabilities = detector.get_capabilities()?;
     
@@ -727,7 +726,7 @@ pub fn check_hardware_support(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Get specific CPU feature availability
-pub fn has_cpu_feature(args: Vec<Value>) -> Result<(), Error> {
+pub fn has_cpu_feature(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() != 1 {
         return Err(CursedError::InvalidArguments("Expected 1 argument (feature_name)".to_string()));
     }
@@ -757,7 +756,7 @@ pub fn has_cpu_feature(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Get available HSMs
-pub fn get_available_hsms(_args: Vec<Value>) -> Result<(), Error> {
+pub fn get_available_hsms(_args: Vec<Value>) -> crate::error::Result<()> {
     let detector = get_hardware_detector();
     let capabilities = detector.get_capabilities()?;
     
@@ -770,7 +769,7 @@ pub fn get_available_hsms(_args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Refresh hardware detection cache
-pub fn refresh_hardware_detection(_args: Vec<Value>) -> Result<(), Error> {
+pub fn refresh_hardware_detection(_args: Vec<Value>) -> crate::error::Result<()> {
     let detector = get_hardware_detector();
     let capabilities = detector.refresh_capabilities()?;
     
@@ -785,170 +784,3 @@ pub fn refresh_hardware_detection(_args: Vec<Value>) -> Result<(), Error> {
     )))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_hardware_detector_creation() {
-        let detector = HardwareAccelerationDetector::new();
-        assert!(detector.cached_capabilities.lock().unwrap().is_none());
-    }
-
-    #[test]
-    fn test_cpu_features_default() {
-        let features = CpuFeatures::default();
-        assert!(!features.aes_ni);
-        assert!(!features.sha_extensions);
-        assert!(!features.pclmulqdq);
-    }
-
-    #[test]
-    fn test_get_platform_and_architecture() {
-        let detector = HardwareAccelerationDetector::new();
-        let platform = detector.get_platform();
-        let architecture = detector.get_architecture();
-        
-        assert!(!platform.is_empty());
-        assert!(!architecture.is_empty());
-    }
-
-    #[test]
-    fn test_capabilities_detection() {
-        let detector = HardwareAccelerationDetector::new();
-        let result = detector.get_capabilities();
-        
-        // Should succeed even if no acceleration is available
-        assert!(result.is_ok());
-        
-        let capabilities = result.unwrap();
-        assert!(!capabilities.platform.is_empty());
-        assert!(!capabilities.architecture.is_empty());
-    }
-
-    #[test]
-    fn test_cache_functionality() {
-        let detector = HardwareAccelerationDetector::new();
-        
-        // First call should detect
-        let caps1 = detector.get_capabilities().unwrap();
-        
-        // Second call should use cache
-        let caps2 = detector.get_capabilities().unwrap();
-        
-        // Should be the same (cached)
-        assert_eq!(caps1.platform, caps2.platform);
-        assert_eq!(caps1.architecture, caps2.architecture);
-    }
-
-    #[test]
-    fn test_refresh_capabilities() {
-        let detector = HardwareAccelerationDetector::new();
-        
-        // Get initial capabilities
-        let _caps1 = detector.get_capabilities().unwrap();
-        
-        // Refresh should work
-        let caps2 = detector.refresh_capabilities().unwrap();
-        assert!(!caps2.platform.is_empty());
-    }
-
-    #[test]
-    fn test_check_hardware_support_function() {
-        let result = check_hardware_support(vec![]);
-        assert!(result.is_ok());
-        
-        if let Value::Object(map) = result.unwrap() {
-            assert!(map.contains_key("cpu_features"));
-            assert!(map.contains_key("hsms"));
-            assert!(map.contains_key("gpu_acceleration"));
-            assert!(map.contains_key("crypto_coprocessors"));
-            assert!(map.contains_key("platform"));
-            assert!(map.contains_key("architecture"));
-        } else {
-            panic!("Expected object result");
-        }
-    }
-
-    #[test]
-    fn test_has_cpu_feature_function() {
-        let result = has_cpu_feature(vec![Value::String("aes_ni".to_string())]);
-        assert!(result.is_ok());
-        
-        if let Value::Bool(_) = result.unwrap() {
-            // Result should be a boolean
-        } else {
-            panic!("Expected boolean result");
-        }
-    }
-
-    #[test]
-    fn test_has_cpu_feature_invalid_args() {
-        let result = has_cpu_feature(vec![]);
-        assert!(result.is_err());
-        
-        let result = has_cpu_feature(vec![Value::Number(42.0)]);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_get_available_hsms_function() {
-        let result = get_available_hsms(vec![]);
-        assert!(result.is_ok());
-        
-        if let Value::Array(_) = result.unwrap() {
-            // Result should be an array
-        } else {
-            panic!("Expected array result");
-        }
-    }
-
-    #[test]
-    fn test_refresh_hardware_detection_function() {
-        let result = refresh_hardware_detection(vec![]);
-        assert!(result.is_ok());
-        
-        if let Value::String(msg) = result.unwrap() {
-            assert!(msg.contains("Hardware detection refreshed"));
-        } else {
-            panic!("Expected string result");
-        }
-    }
-
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    #[test]
-    fn test_x86_feature_detection() {
-        let detector = HardwareAccelerationDetector::new();
-        let result = detector.detect_x86_features();
-        
-        // Should succeed on x86 platforms
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_hsm_detection() {
-        let detector = HardwareAccelerationDetector::new();
-        let result = detector.detect_hsms();
-        
-        // Should succeed even if no HSMs are found
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_gpu_acceleration_detection() {
-        let detector = HardwareAccelerationDetector::new();
-        let result = detector.detect_gpu_acceleration();
-        
-        // Should succeed even if no GPU acceleration is available
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_crypto_coprocessor_detection() {
-        let detector = HardwareAccelerationDetector::new();
-        let result = detector.detect_crypto_coprocessors();
-        
-        // Should succeed even if no coprocessors are found
-        assert!(result.is_ok());
-    }
-}

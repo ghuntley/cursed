@@ -3,7 +3,7 @@
 /// Provides sophisticated cross-referencing capabilities with semantic analysis,
 /// dependency visualization, and intelligent relationship detection.
 
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 use crate::docs::generator::{ExtractedDocumentation, DocumentationItem, ItemKind};
 use crate::lexer::{Lexer, Token, TokenType};
 use crate::parser::{Parser, ParsedProgram};
@@ -311,7 +311,7 @@ pub struct ShadowingIssue {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ShadowingSeverity {
     Warning,
-    Error,
+    CursedError,
     Info,
 }
 
@@ -520,7 +520,7 @@ impl CrossReferenceAnalyzer {
         &mut self,
         documentation: &ExtractedDocumentation,
         source_files: &[PathBuf],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Phase 1: Build semantic model
         if self.config.enable_semantic_analysis {
             self.build_semantic_model(source_files)?;
@@ -560,19 +560,19 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Build semantic model from source files
-    fn build_semantic_model(&mut self, source_files: &[PathBuf]) -> Result<(), Error> {
+    fn build_semantic_model(&mut self, source_files: &[PathBuf]) -> crate::error::Result<()> {
         for file_path in source_files {
             let content = fs::read_to_string(file_path)
-                .map_err(|e| Error::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
 
             // Parse the file
             let mut lexer = Lexer::new(&content);
             let tokens = lexer.tokenize()
-                .map_err(|e| Error::SystemError(format!("Failed to tokenize {}: {:?}", file_path.display(), e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to tokenize {}: {:?}", file_path.display(), e)))?;
 
             let mut parser = Parser::new(tokens);
             let program = parser.parse()
-                .map_err(|e| Error::SystemError(format!("Failed to parse {}: {:?}", file_path.display(), e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to parse {}: {:?}", file_path.display(), e)))?;
 
             // Analyze semantics
             self.analyze_program_semantics(&program, file_path)?;
@@ -591,7 +591,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Analyze semantics of a parsed program
-    fn analyze_program_semantics(&mut self, program: &ParsedProgram, file_path: &Path) -> Result<(), Error> {
+    fn analyze_program_semantics(&mut self, program: &ParsedProgram, file_path: &Path) -> crate::error::Result<()> {
         // Enter global scope
         self.semantic_analyzer.symbol_table.enter_scope(ScopeType::Global, SourceLocation {
             line: 1,
@@ -611,7 +611,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Analyze semantics of a statement
-    fn analyze_statement_semantics(&mut self, statement: &dyn Statement) -> Result<(), Error> {
+    fn analyze_statement_semantics(&mut self, statement: &dyn Statement) -> crate::error::Result<()> {
         match statement {
             Statement::FunctionDeclaration { name, location, .. } => {
                 self.semantic_analyzer.symbol_table.add_symbol(Symbol {
@@ -687,7 +687,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Build dependency graph
-    fn build_dependency_graph(&mut self, documentation: &ExtractedDocumentation, source_files: &[PathBuf]) -> Result<(), Error> {
+    fn build_dependency_graph(&mut self, documentation: &ExtractedDocumentation, source_files: &[PathBuf]) -> crate::error::Result<()> {
         // Add nodes for each documentation item
         for item in &documentation.items {
             let node_type = match item.kind {
@@ -721,9 +721,9 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Analyze dependencies in a file
-    fn analyze_file_dependencies(&mut self, file_path: &Path) -> Result<(), Error> {
+    fn analyze_file_dependencies(&mut self, file_path: &Path) -> crate::error::Result<()> {
         let content = fs::read_to_string(file_path)
-            .map_err(|e| Error::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
 
         // Simple dependency extraction (would be more sophisticated in practice)
         let lines: Vec<&str> = content.split("\n").collect();
@@ -799,7 +799,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Analyze type relationships
-    fn analyze_type_relationships(&mut self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn analyze_type_relationships(&mut self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         // Build similarity matrix
         self.build_type_similarity_matrix(documentation)?;
 
@@ -816,7 +816,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Build type similarity matrix
-    fn build_type_similarity_matrix(&mut self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn build_type_similarity_matrix(&mut self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         let type_items: Vec<&DocumentationItem> = documentation.items.iter()
             .filter(|item| matches!(item.kind, ItemKind::Struct | ItemKind::Interface | ItemKind::Type))
             .collect();
@@ -900,7 +900,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Detect inheritance relationships
-    fn detect_inheritance_relationships(&mut self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn detect_inheritance_relationships(&mut self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         // Simple pattern matching for inheritance keywords
         for item in &documentation.items {
             if item.description.contains("extends") || item.description.contains("inherits") {
@@ -938,7 +938,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Detect interface implementations
-    fn detect_interface_implementations(&mut self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn detect_interface_implementations(&mut self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         for item in &documentation.items {
             if item.description.contains("implements") {
                 if let Some(interface_type) = self.extract_interface_type(&item.description) {
@@ -973,7 +973,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Compute transitive relationships
-    fn compute_transitive_relationships(&mut self) -> Result<(), Error> {
+    fn compute_transitive_relationships(&mut self) -> crate::error::Result<()> {
         // Use Floyd-Warshall-like algorithm to compute transitive closure
         let types: Vec<String> = self.type_relationships.direct_relationships.keys().cloned().collect();
 
@@ -1017,7 +1017,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Build reference index
-    fn build_reference_index(&mut self, documentation: &ExtractedDocumentation) -> Result<(), Error> {
+    fn build_reference_index(&mut self, documentation: &ExtractedDocumentation) -> crate::error::Result<()> {
         for item in &documentation.items {
             // Create definition reference
             let def_ref = Reference {
@@ -1062,7 +1062,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate concept suggestions
-    fn generate_concept_suggestions(&self) -> Result<(), Error> {
+    fn generate_concept_suggestions(&self) -> crate::error::Result<()> {
         let mut suggestions = Vec::new();
 
         // Similar types suggestions
@@ -1091,7 +1091,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate related function suggestions
-    fn generate_related_function_suggestions(&self) -> Result<(), Error> {
+    fn generate_related_function_suggestions(&self) -> crate::error::Result<()> {
         let mut suggestions = Vec::new();
 
         // Group functions by naming patterns
@@ -1154,7 +1154,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate usage pattern suggestions
-    fn generate_usage_pattern_suggestions(&self) -> Result<(), Error> {
+    fn generate_usage_pattern_suggestions(&self) -> crate::error::Result<()> {
         let mut suggestions = Vec::new();
 
         // Find common usage patterns
@@ -1184,9 +1184,9 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate various output formats
-    pub fn generate_cross_reference_outputs(&self, result: &CrossReferenceResult, output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_cross_reference_outputs(&self, result: &CrossReferenceResult, output_dir: &Path) -> crate::error::Result<()> {
         fs::create_dir_all(output_dir)
-            .map_err(|e| Error::SystemError(format!("Failed to create output directory: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to create output directory: {}", e)))?;
 
         for format in &self.config.output_formats {
             match format {
@@ -1203,7 +1203,7 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate HTML cross-reference output
-    fn generate_html_output(&self, result: &CrossReferenceResult, output_dir: &Path) -> Result<(), Error> {
+    fn generate_html_output(&self, result: &CrossReferenceResult, output_dir: &Path) -> crate::error::Result<()> {
         let html_content = format!(
             r#"<!DOCTYPE html>
 <html lang="en">
@@ -1293,7 +1293,7 @@ impl CrossReferenceAnalyzer {
         );
 
         fs::write(output_dir.join("cross_references.html"), html_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write HTML output: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write HTML output: {}", e)))?;
 
         Ok(())
     }
@@ -1325,18 +1325,18 @@ impl CrossReferenceAnalyzer {
     }
 
     /// Generate JSON output
-    fn generate_json_output(&self, result: &CrossReferenceResult, output_dir: &Path) -> Result<(), Error> {
+    fn generate_json_output(&self, result: &CrossReferenceResult, output_dir: &Path) -> crate::error::Result<()> {
         let json_content = serde_json::to_string_pretty(result)
-            .map_err(|e| Error::SystemError(format!("Failed to serialize result: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to serialize result: {}", e)))?;
 
         fs::write(output_dir.join("cross_references.json"), json_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write JSON output: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write JSON output: {}", e)))?;
 
         Ok(())
     }
 
     /// Generate GraphViz output
-    fn generate_graphviz_output(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_graphviz_output(&self, output_dir: &Path) -> crate::error::Result<()> {
         let mut dot_content = String::from("digraph CrossReferences {\n");
         dot_content.push_str("    rankdir=TB;\n");
         dot_content.push_str("    node [shape=box, style=filled, fillcolor=lightblue];\n");
@@ -1359,13 +1359,13 @@ impl CrossReferenceAnalyzer {
         dot_content.push_str("}\n");
 
         fs::write(output_dir.join("dependencies.dot"), dot_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write GraphViz output: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write GraphViz output: {}", e)))?;
 
         Ok(())
     }
 
     /// Generate Mermaid diagram output
-    fn generate_mermaid_output(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_mermaid_output(&self, output_dir: &Path) -> crate::error::Result<()> {
         let mut mermaid_content = String::from("graph TD\n");
 
         // Add nodes and edges
@@ -1380,13 +1380,13 @@ impl CrossReferenceAnalyzer {
         }
 
         fs::write(output_dir.join("dependencies.mmd"), mermaid_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write Mermaid output: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write Mermaid output: {}", e)))?;
 
         Ok(())
     }
 
     /// Generate PlantUML output
-    fn generate_plantuml_output(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_plantuml_output(&self, output_dir: &Path) -> crate::error::Result<()> {
         let mut plantuml_content = String::from("@startuml\n");
         plantuml_content.push_str("!theme blueprint\n");
 
@@ -1408,13 +1408,13 @@ impl CrossReferenceAnalyzer {
         plantuml_content.push_str("@enduml\n");
 
         fs::write(output_dir.join("relationships.puml"), plantuml_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write PlantUML output: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write PlantUML output: {}", e)))?;
 
         Ok(())
     }
 
     /// Generate Cypher query output for Neo4j
-    fn generate_cypher_output(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_cypher_output(&self, output_dir: &Path) -> crate::error::Result<()> {
         let mut cypher_content = String::new();
 
         // Create nodes
@@ -1445,7 +1445,7 @@ impl CrossReferenceAnalyzer {
         }
 
         fs::write(output_dir.join("graph.cypher"), cypher_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write Cypher output: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write Cypher output: {}", e)))?;
 
         Ok(())
     }
@@ -1548,17 +1548,17 @@ impl CrossReferenceAnalyzer {
         }
     }
 
-    fn build_scope_hierarchy(&mut self) -> Result<(), Error> {
+    fn build_scope_hierarchy(&mut self) -> crate::error::Result<()> {
         // Build scope hierarchy from symbol table
         Ok(())
     }
 
-    fn analyze_variable_lifetimes(&mut self) -> Result<(), Error> {
+    fn analyze_variable_lifetimes(&mut self) -> crate::error::Result<()> {
         // Analyze variable lifetimes
         Ok(())
     }
 
-    fn detect_shadowing_issues(&mut self) -> Result<(), Error> {
+    fn detect_shadowing_issues(&mut self) -> crate::error::Result<()> {
         // Detect variable shadowing
         Ok(())
     }

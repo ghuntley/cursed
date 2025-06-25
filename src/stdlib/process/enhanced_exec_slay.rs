@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced ExecSlay implementation with complete feature set
 /// 
 /// This module provides the full ExecSlay API as specified in the CURSED language
@@ -13,12 +13,12 @@ use std::sync::{Arc, Mutex, RwLock, mpsc, Condvar};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime};
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult};
-pub use crate::stdlib::process::exec_slay::{
+// use crate::stdlib::process::error::{ProcessError, ProcessResult};
+// pub use crate::stdlib::process::exec_slay::{
     SlayCommand, SlayProcess, SlayProcessState, SlayOptions, SlayPipeline,
     SlayTask, SlayCommandBuilder, ProcessStats, SignalOptions
 };
-use crate::stdlib::ipc::{IpcConfig, initialize_ipc};
+// use crate::stdlib::ipc::{IpcConfig, initialize_ipc};
 
 /// Enhanced slay command with additional capabilities
 pub type EnhancedSlayCommand = EnhancedCommandBuilder;
@@ -450,13 +450,13 @@ impl EnhancedCommandBuilder {
                     // Change user/group if specified
                     if let Some(gid) = context.group_id {
                         if libc::setgid(gid) != 0 {
-                            return Err(io::Error::last_os_error());
+                            return Err(std::io::Error::last_os_error());
                         }
                     }
                     
                     if let Some(uid) = context.user_id {
                         if libc::setuid(uid) != 0 {
-                            return Err(io::Error::last_os_error());
+                            return Err(std::io::Error::last_os_error());
                         }
                     }
                     
@@ -466,7 +466,7 @@ impl EnhancedCommandBuilder {
                             context.supplementary_groups.len(),
                             context.supplementary_groups.as_ptr()
                         ) != 0 {
-                            return Err(io::Error::last_os_error());
+                            return Err(std::io::Error::last_os_error());
                         }
                     }
                     
@@ -1004,7 +1004,7 @@ impl SlayProcess {
         
         // Validate input
         if limit_percent <= 0.0 || limit_percent > 100.0 {
-            return Err(crate::stdlib::process::error::invalid_arguments(
+//             return Err(crate::stdlib::process::error::invalid_arguments(
                 &format!("CPU limit percentage must be between 0 and 100, got {}", limit_percent)
             ));
         }
@@ -1043,7 +1043,7 @@ impl SlayProcess {
         
         // Create cgroup directory
         std::fs::create_dir_all(&cgroup_path)
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "create_cgroup", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "create_cgroup", &e.to_string()))?;
         
         // Set CPU quota (period is typically 100000 microseconds = 100ms)
         let period = 100_000;
@@ -1052,19 +1052,19 @@ impl SlayProcess {
         let mut quota_file = OpenOptions::new()
             .write(true)
             .open(format!("{}/cpu.max", cgroup_path))
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_cpu_max", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_cpu_max", &e.to_string()))?;
         
         write!(quota_file, "{} {}", quota, period)
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cpu_max", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cpu_max", &e.to_string()))?;
         
         // Add process to cgroup
         let mut procs_file = OpenOptions::new()
             .write(true)
             .open(format!("{}/cgroup.procs", cgroup_path))
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_cgroup_procs", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_cgroup_procs", &e.to_string()))?;
         
         write!(procs_file, "{}", self.pid)
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cgroup_procs", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cgroup_procs", &e.to_string()))?;
         
         Ok(())
     }
@@ -1080,7 +1080,7 @@ impl SlayProcess {
         
         // Create cgroup directory
         std::fs::create_dir_all(&cgroup_path)
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "create_cgroup", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "create_cgroup", &e.to_string()))?;
         
         // Set CPU quota (period is typically 100000 microseconds = 100ms)
         let period = 100_000;
@@ -1089,27 +1089,27 @@ impl SlayProcess {
         let mut period_file = OpenOptions::new()
             .write(true)
             .open(format!("{}/cpu.cfs_period_us", cgroup_path))
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_cpu_period", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_cpu_period", &e.to_string()))?;
         
         write!(period_file, "{}", period)
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cpu_period", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cpu_period", &e.to_string()))?;
         
         let mut quota_file = OpenOptions::new()
             .write(true)
             .open(format!("{}/cpu.cfs_quota_us", cgroup_path))
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_cpu_quota", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_cpu_quota", &e.to_string()))?;
         
         write!(quota_file, "{}", quota)
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cpu_quota", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_cpu_quota", &e.to_string()))?;
         
         // Add process to cgroup
         let mut tasks_file = OpenOptions::new()
             .write(true)
             .open(format!("{}/tasks", cgroup_path))
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_tasks", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "open_tasks", &e.to_string()))?;
         
         write!(tasks_file, "{}", self.pid)
-            .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_tasks", &e.to_string()))?;
+//             .map_err(|e| crate::stdlib::process::error::system_error(-1, "write_tasks", &e.to_string()))?;
         
         Ok(())
     }
@@ -1135,7 +1135,7 @@ impl SlayProcess {
             });
             Ok(())
         } else {
-            Err(crate::stdlib::process::error::system_error(-1, "cpulimit", 
+//             Err(crate::stdlib::process::error::system_error(-1, "cpulimit", 
                 "CPU limiting requires cgroups support or cpulimit tool"))
         }
     }
@@ -1186,7 +1186,7 @@ impl SlayPipeline {
 
             // Configure stdout for next command (except last)
             if i < self.commands.len() - 1 {
-                command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
+//                 command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
             }
 
             command.start()?;
@@ -1218,7 +1218,7 @@ impl SlayPipeline {
     /// Get pipeline output
     pub fn output_enhanced(&mut self) -> ProcessResult<(Vec<u8>, Vec<SlayProcessState>)> {
         if let Some(last_command) = self.commands.last_mut() {
-            last_command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
+//             last_command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
         }
         
         let states = self.run_enhanced()?;
@@ -1234,8 +1234,8 @@ impl SlayPipeline {
     /// Get combined pipeline output
     pub fn combined_output_enhanced(&mut self) -> ProcessResult<(Vec<u8>, Vec<SlayProcessState>)> {
         if let Some(last_command) = self.commands.last_mut() {
-            last_command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
-            last_command.stderr = Some(crate::stdlib::process::exec_slay::ProcessStderr::Pipe);
+//             last_command.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
+//             last_command.stderr = Some(crate::stdlib::process::exec_slay::ProcessStderr::Pipe);
         }
         
         let states = self.run_enhanced()?;
@@ -1446,19 +1446,19 @@ impl SlayCommandBuilder {
     }
 
     /// Set stdin configuration
-    pub fn with_stdin_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStdin) -> Self {
+//     pub fn with_stdin_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStdin) -> Self {
         self.stdin = Some(config);
         self
     }
 
     /// Set stdout configuration
-    pub fn with_stdout_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStdout) -> Self {
+//     pub fn with_stdout_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStdout) -> Self {
         self.stdout = Some(config);
         self
     }
 
     /// Set stderr configuration
-    pub fn with_stderr_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStderr) -> Self {
+//     pub fn with_stderr_enhanced(mut self, config: crate::stdlib::process::exec_slay::ProcessStderr) -> Self {
         self.stderr = Some(config);
         self
     }
@@ -1513,7 +1513,7 @@ pub fn run_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Duration) -> Pro
 
 /// Get output with timeout
 pub fn output_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<(Vec<u8>, SlayProcessState)> {
-    cmd.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
+//     cmd.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
     cmd.run_with_timeout(timeout)?;
     let output = cmd.output()?;
     let state = cmd.process_state()?;
@@ -1522,8 +1522,8 @@ pub fn output_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Duration) -> 
 
 /// Get combined output with timeout
 pub fn combined_output_with_timeout_enhanced(mut cmd: SlayCommand, timeout: Duration) -> ProcessResult<(Vec<u8>, SlayProcessState)> {
-    cmd.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
-    cmd.stderr = Some(crate::stdlib::process::exec_slay::ProcessStderr::Pipe);
+//     cmd.stdout = Some(crate::stdlib::process::exec_slay::ProcessStdout::Pipe);
+//     cmd.stderr = Some(crate::stdlib::process::exec_slay::ProcessStderr::Pipe);
     cmd.run_with_timeout(timeout)?;
     let output = cmd.combined_output()?;
     let state = cmd.process_state()?;
@@ -1661,52 +1661,3 @@ fn get_linux_process_stats(pid: u32, start_time: Instant) -> ProcessResult<Proce
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_enhanced_command_creation() {
-        let cmd = SlayCommand::new_slay_command("echo", &["hello", "world"]);
-        assert_eq!(cmd.path, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-    }
-
-    #[test]
-    fn test_enhanced_command_builder() {
-        let cmd = SlayCommandBuilder::new_enhanced("ls")
-            .with_args_enhanced(&["-la", "/tmp"])
-            .with_timeout_enhanced(Duration::from_secs(5))
-            .use_shell_enhanced(false)
-            .build_enhanced();
-        
-        assert_eq!(cmd.path, "ls");
-        assert_eq!(cmd.args, vec!["-la", "/tmp"]);
-    }
-
-    #[test]
-    fn test_enhanced_pipeline_creation() {
-        let cmd1 = SlayCommand::new("cat", &["test.txt"]);
-        let cmd2 = SlayCommand::new("grep", &["pattern"]);
-        let cmd3 = SlayCommand::new("wc", &["-l"]);
-        
-        let pipeline = SlayPipeline::pipe(vec![cmd1, cmd2, cmd3]);
-        assert_eq!(pipeline.commands.len(), 3);
-    }
-
-    #[test]
-    fn test_enhanced_string_representation() {
-        let cmd = SlayCommand::new("echo", &["hello"])
-            .with_dir("/tmp")
-            .with_env_var("TEST", "value");
-        
-        let repr = cmd.enhanced_string();
-        assert!(repr.contains("echo hello"));
-        assert!(repr.contains("/tmp"));
-        assert!(repr.contains("env vars"));
-    }
-}

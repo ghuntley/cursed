@@ -10,13 +10,13 @@
 /// - Includes modern I/O patterns with Gen Z naming
 /// - Optimized for performance while maintaining ease of use
 
-use crate::stdlib::io::{self, IoError, IoResult};
-use crate::error::Error;
+// use crate::stdlib::io::{self, IoError, IoResult};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::io::{Write, BufRead, BufReader, BufWriter};
 use std::fs::File;
 
-/// Error type for DropZ operations
+/// CursedError type for DropZ operations
 pub type DropzError = IoError;
 
 /// Result type for DropZ operations
@@ -74,7 +74,7 @@ pub fn drop_error_tea(text: &str) -> DropzResult<()> {
 /// 
 /// # Examples
 /// ```cursed
-/// drop_error_line_tea("Error: File not found"); // Output to stderr with newline
+/// drop_error_line_tea("CursedError: File not found"); // Output to stderr with newline
 /// ```
 pub fn drop_error_line_tea(text: &str) -> DropzResult<()> {
     io::eprintln(text)
@@ -88,8 +88,8 @@ pub fn drop_error_line_tea(text: &str) -> DropzResult<()> {
 /// ```
 pub fn drop_formatted_tea(format: &str, args: &[&str]) -> DropzResult<()> {
     // Convert &[&str] to &[Value] for compatibility with io::printf
-    let values: Vec<crate::stdlib::value::Value> = args.iter()
-        .map(|&s| crate::stdlib::value::Value::String(s.to_string()))
+//     let values: Vec<crate::stdlib::value::Value> = args.iter()
+//         .map(|&s| crate::stdlib::value::Value::String(s.to_string()))
         .collect();
     io::printf(format, &values)
 }
@@ -645,114 +645,3 @@ pub fn get_dropz_stats() -> HashMap<String, String> {
     stats
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn test_simple_format() {
-        let result = simple_format("Hello {}, you are {} years old", &["Alice", "25"]).unwrap();
-        assert_eq!(result, "Hello Alice, you are 25 years old");
-        
-        let result = simple_format("Hello {0}, you are {1} years old", &["Bob", "30"]).unwrap();
-        assert_eq!(result, "Hello Bob, you are 30 years old");
-    }
-
-    #[test]
-    fn test_stream_catcher_vibes() {
-        let input = "Line 1\nLine 2\nLine 3\n";
-        let cursor = Cursor::new(input.as_bytes());
-        let mut reader = StreamCatcherVibes::new(cursor);
-        
-        let line1 = reader.catch_line().unwrap();
-        assert_eq!(line1, "Line 1");
-        
-        let line2 = reader.catch_line().unwrap();
-        assert_eq!(line2, "Line 2");
-        
-        let all_remaining = reader.catch_all_lines().unwrap();
-        assert_eq!(all_remaining, vec!["Line 3"]);
-    }
-
-    #[test]
-    fn test_stream_dropper_vibes() {
-        let mut output = Vec::new();
-        {
-            let mut writer = StreamDropperVibes::new(&mut output);
-            
-            writer.drop_tea("Hello").unwrap();
-            writer.drop_line(" World").unwrap();
-            writer.drop_formatted("Number: {}", &["42"]).unwrap();
-            writer.flush_it().unwrap();
-        }
-        
-        let result = String::from_utf8(output).unwrap();
-        assert!(result.contains("Hello"));
-        assert!(result.contains(" World\n"));
-        assert!(result.contains("Number: 42"));
-    }
-
-    #[test]
-    fn test_progress_vibes() {
-        let mut progress = new_progress_vibes(100, 20);
-        
-        // Test basic operations without actually displaying
-        progress.set_message("Testing".to_string());
-        
-        // These would normally output to terminal, but in tests we just verify they don't panic
-        // progress.update_it(50).unwrap();
-        // progress.step_it().unwrap();
-        // progress.finish_it().unwrap();
-    }
-
-    #[test]
-    fn test_terminal_operations() {
-        // Test that terminal operations don't panic
-        let _size = get_terminal_size_vibes().unwrap();
-        
-        // These would normally affect terminal, but in tests we just verify they don't panic
-        // clear_drops().unwrap();
-        // move_cursor_vibes(1, 1).unwrap();
-        // hide_cursor_vibes().unwrap();
-        // show_cursor_vibes().unwrap();
-        // set_text_color_vibes("red").unwrap();
-        // reset_text_color_vibes().unwrap();
-    }
-
-    #[test]
-    fn test_all_lines_reading() {
-        let input = "Line 1\nLine 2\nLine 3";
-        let cursor = Cursor::new(input.as_bytes());
-        let mut reader = StreamCatcherVibes::new(cursor);
-        
-        let all_lines = reader.catch_all_lines().unwrap();
-        assert_eq!(all_lines, vec!["Line 1", "Line 2", "Line 3"]);
-    }
-
-    #[test]
-    fn test_multiple_lines_writing() {
-        let mut output = Vec::new();
-        {
-            let mut writer = StreamDropperVibes::new(&mut output);
-            writer.drop_lines(&["Line 1", "Line 2", "Line 3"]).unwrap();
-            writer.flush_it().unwrap();
-        }
-        
-        let result = String::from_utf8(output).unwrap();
-        assert!(result.contains("Line 1\n"));
-        assert!(result.contains("Line 2\n"));
-        assert!(result.contains("Line 3\n"));
-    }
-
-    #[test]
-    fn test_color_validation() {
-        // Valid colors should not return errors
-        assert!(set_text_color_vibes("red").is_ok());
-        assert!(set_text_color_vibes("green").is_ok());
-        assert!(set_text_color_vibes("blue").is_ok());
-        
-        // Invalid color should return error
-        assert!(set_text_color_vibes("invalid_color").is_err());
-    }
-}

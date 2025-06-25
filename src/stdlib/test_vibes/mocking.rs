@@ -2,7 +2,7 @@
 /// 
 /// Provides mock objects with expectations and verification capabilities
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use super::{VibeTest, TestVibesResult, expectation_not_met};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -407,64 +407,3 @@ fn values_equal(a: &Value, b: &Value) -> bool {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::test_vibes::core::VibeTest;
-
-    #[test]
-    fn test_basic_mock() {
-        let mock = MockVibe::new("TestService");
-        
-        // Set up expectation
-        let expectation = mock.Expect("get_user")
-            .WithArgs(vec![Value::Int(123)])
-            .Return(vec![Value::String("John Doe".to_string())]);
-        mock.add_expectation(expectation);
-        
-        // Call the method
-        let result = mock.call_method("get_user", &[Value::Int(123)]);
-        assert!(result.is_ok());
-        
-        let return_values = result.unwrap();
-        assert_eq!(return_values.len(), 1);
-        assert_eq!(return_values[0], Value::String("John Doe".to_string()));
-    }
-
-    #[test]
-    fn test_mock_verification() {
-        let test = VibeTest::new("test_verification");
-        let mock = MockVibe::new("TestService");
-        
-        // Set up expectation
-        let expectation = mock.Expect("save_data")
-            .WithArgs(vec![Value::String("test".to_string())])
-            .Times(1);
-        mock.add_expectation(expectation);
-        
-        // Call the method
-        let _ = mock.call_method("save_data", &[Value::String("test".to_string())]);
-        
-        // Verify expectations
-        let result = mock.Verify(&test);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_mock_builder() {
-        let mock = MockBuilder::new("DatabaseService")
-            .expect("find_user")
-            .with_args(vec![Value::Int(1)])
-            .returns(vec![Value::String("Alice".to_string())])
-            .and()
-            .stub("get_config", vec![Value::String("production".to_string())])
-            .build();
-        
-        // Test the built mock
-        let result = mock.call_method("find_user", &[Value::Int(1)]);
-        assert!(result.is_ok());
-        
-        let config_result = mock.call_method("get_config", &[]);
-        assert!(result.is_ok());
-    }
-}

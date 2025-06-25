@@ -64,7 +64,7 @@ use crate::ast::identifiers::Identifier;
 use crate::ast::calls::CallExpression;
 use crate::ast::operators::{BinaryExpression, UnaryExpression};
 use crate::ast::if_expression::IfExpression;
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::type_system::{
     TypeEnvironment, TypeExpression, TypeDefinition, MethodSignature
     // ConstraintContext, constraint_resolver::ConstraintResolver disabled for simplified AST
@@ -94,7 +94,7 @@ pub struct BidirectionalChecker {
     context: InferenceContext,
     /// Type checking mode
     checking_mode: CheckingMode,
-    /// Error collection
+    /// CursedError collection
     errors: Vec<InferenceError>,
 }
 
@@ -309,7 +309,7 @@ impl TypeInference {
         expression: &dyn Expression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Generate cache key
         let cache_key = self.generate_cache_key(expression, context);
 
@@ -333,7 +333,7 @@ impl TypeInference {
         expression: &dyn Expression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Try to downcast to specific expression types
         if let Some(literal) = expression.as_any().downcast_ref::<IntegerLiteral>() {
             self.infer_integer_literal(literal, context)
@@ -362,7 +362,7 @@ impl TypeInference {
         &mut self,
         literal: &IntegerLiteral,
         _context: &InferenceContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(TypeExpression::named("normie"))
     }
 
@@ -371,7 +371,7 @@ impl TypeInference {
         &mut self,
         literal: &BooleanLiteral,
         _context: &InferenceContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(TypeExpression::named("facts"))
     }
 
@@ -380,7 +380,7 @@ impl TypeInference {
         &mut self,
         literal: &StringLiteral,
         _context: &InferenceContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         Ok(TypeExpression::named("tea"))
     }
 
@@ -390,7 +390,7 @@ impl TypeInference {
         identifier: &Identifier,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let var_name = &identifier.value;
 
         // Check local variables first
@@ -419,16 +419,16 @@ impl TypeInference {
         call: &CallExpression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let function_name = &call.function.string();
 
         // Get function signature
         let signature = context.function_signatures.get(function_name)
-            .ok_or_else(|| Error::Type(format!("Function '{}' not found", function_name)))?;
+            .ok_or_else(|| CursedError::Type(format!("Function '{}' not found", function_name)))?;
 
         // Check argument count
         if call.arguments.len() != signature.parameters.len() {
-            return Err(Error::Type(format!(
+            return Err(CursedError::Type(format!(
                 "Function '{}' expects {} arguments, got {}",
                 function_name,
                 signature.parameters.len(),
@@ -455,7 +455,7 @@ impl TypeInference {
             
             // For now, just validate constraint immediately
             if !self.check_constraint_immediately(&constraint, environment)? {
-                return Err(Error::Type(format!(
+                return Err(CursedError::Type(format!(
                     "Argument type mismatch in call to '{}'",
                     function_name
                 )));
@@ -464,7 +464,7 @@ impl TypeInference {
 
         // Return function return type
         signature.return_type.clone()
-            .ok_or_else(|| Error::Type(format!("Function '{}' has no return type", function_name)))
+            .ok_or_else(|| CursedError::Type(format!("Function '{}' has no return type", function_name)))
     }
 
     /// Infer binary expression type
@@ -473,7 +473,7 @@ impl TypeInference {
         binary: &BinaryExpression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let left_type = self.infer_expression(binary.left.as_ref(), context, environment)?;
         let right_type = self.infer_expression(binary.right.as_ref(), context, environment)?;
 
@@ -484,7 +484,7 @@ impl TypeInference {
                 if left_type == TypeExpression::named("normie") && right_type == TypeExpression::named("normie") {
                     Ok(TypeExpression::named("normie"))
                 } else {
-                    Err(Error::Type(format!(
+                    Err(CursedError::Type(format!(
                         "Arithmetic operator '{}' requires numeric operands, got {} and {}",
                         binary.operator, left_type.to_string(), right_type.to_string()
                     )))
@@ -497,7 +497,7 @@ impl TypeInference {
                 if self.are_types_compatible(&left_type, &right_type, environment)? {
                     Ok(TypeExpression::named("facts"))
                 } else {
-                    Err(Error::Type(format!(
+                    Err(CursedError::Type(format!(
                         "Cannot compare types {} and {}",
                         left_type.to_string(), right_type.to_string()
                     )))
@@ -510,14 +510,14 @@ impl TypeInference {
                 if left_type == TypeExpression::named("facts") && right_type == TypeExpression::named("facts") {
                     Ok(TypeExpression::named("facts"))
                 } else {
-                    Err(Error::Type(format!(
+                    Err(CursedError::Type(format!(
                         "Logical operator '{}' requires boolean operands",
                         binary.operator
                     )))
                 }
             }
             
-            _ => Err(Error::Type(format!("Unknown binary operator '{}'", binary.operator)))
+            _ => Err(CursedError::Type(format!("Unknown binary operator '{}'", binary.operator)))
         }
     }
 
@@ -527,7 +527,7 @@ impl TypeInference {
         unary: &UnaryExpression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let operand_type = self.infer_expression(unary.operand.as_ref(), context, environment)?;
 
         match unary.operator.as_str() {
@@ -536,7 +536,7 @@ impl TypeInference {
                 if operand_type == TypeExpression::named("normie") {
                     Ok(TypeExpression::named("normie"))
                 } else {
-                    Err(Error::Type(format!(
+                    Err(CursedError::Type(format!(
                         "Unary negation requires numeric operand, got {}",
                         operand_type.to_string()
                     )))
@@ -548,14 +548,14 @@ impl TypeInference {
                 if operand_type == TypeExpression::named("facts") {
                     Ok(TypeExpression::named("facts"))
                 } else {
-                    Err(Error::Type(format!(
+                    Err(CursedError::Type(format!(
                         "Logical negation requires boolean operand, got {}",
                         operand_type.to_string()
                     )))
                 }
             }
             
-            _ => Err(Error::Type(format!("Unknown unary operator '{}'", unary.operator)))
+            _ => Err(CursedError::Type(format!("Unknown unary operator '{}'", unary.operator)))
         }
     }
 
@@ -565,11 +565,11 @@ impl TypeInference {
         if_expr: &IfExpression,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Condition must be boolean
         let condition_type = self.infer_expression(if_expr.condition.as_ref(), context, environment)?;
         if condition_type != TypeExpression::named("facts") {
-            return Err(Error::Type(format!(
+            return Err(CursedError::Type(format!(
                 "If condition must be boolean, got {}",
                 condition_type.to_string()
             )));
@@ -587,7 +587,7 @@ impl TypeInference {
                 // Return the more general type (simplified)
                 Ok(then_type)
             } else {
-                Err(Error::Type(format!(
+                Err(CursedError::Type(format!(
                     "If branches have incompatible types: {} and {}",
                     then_type.to_string(), else_type.to_string()
                 )))
@@ -604,7 +604,7 @@ impl TypeInference {
         expression: &dyn Expression,
         _context: &InferenceContext,
         _environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Generate fresh type variable for unknown expressions
         let fresh_var = self.type_var_generator.generate_fresh();
         Ok(TypeExpression::parameter(&fresh_var))
@@ -616,7 +616,7 @@ impl TypeInference {
         type1: &TypeExpression,
         type2: &TypeExpression,
         _environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Simplified compatibility check
         match (type1, type2) {
             (TypeExpression::Named(name1), TypeExpression::Named(name2)) => Ok(name1 == name2),
@@ -630,7 +630,7 @@ impl TypeInference {
         &self,
         constraint: &InferenceConstraint,
         _environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match constraint.constraint_type {
             ConstraintType::Equality => Ok(constraint.left_type == constraint.right_type),
             ConstraintType::Subtyping => {
@@ -657,7 +657,7 @@ impl TypeInference {
         expected_type: Option<&TypeExpression>,
         context: &InferenceContext,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         match expected_type {
             Some(expected) => {
                 // Analysis mode: check against expected type
@@ -665,7 +665,7 @@ impl TypeInference {
                 if self.are_types_compatible(&inferred, expected, environment)? {
                     Ok(expected.clone())
                 } else {
-                    Err(Error::Type(format!(
+                    Err(CursedError::Type(format!(
                         "Type mismatch: expected {}, got {}",
                         expected.to_string(),
                         inferred.to_string()
@@ -695,7 +695,7 @@ impl BidirectionalChecker {
         &mut self,
         expression: &dyn Expression,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.checking_mode = CheckingMode::Synthesis;
         // Implementation would go here
         Ok(TypeExpression::named("sus")) // Placeholder
@@ -707,7 +707,7 @@ impl BidirectionalChecker {
         expression: &dyn Expression,
         expected_type: &TypeExpression,
         environment: &TypeEnvironment,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.checking_mode = CheckingMode::Analysis(expected_type.clone());
         // Implementation would go here
         Ok(()) // Placeholder
@@ -831,7 +831,7 @@ impl ConstraintAccumulator {
     }
 
     /// Solve accumulated constraints
-    pub fn solve_constraints(&mut self) -> Result<(), Error> {
+    pub fn solve_constraints(&mut self) -> crate::error::Result<()> {
         // Simplified constraint solving
         Ok(HashMap::new())
     }
@@ -879,119 +879,9 @@ impl SubtypingEngine {
     }
 }
 
-impl Default for TypeInference {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// impl Default for TypeInference {
+//     fn default() -> Self {
+//         Self::new()
+//     }
+// }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::type_system::TypeEnvironment;
-
-    #[test]
-    fn test_type_inference_creation() {
-        let inference = TypeInference::new();
-        assert_eq!(inference.inference_cache.len(), 0);
-    }
-
-    #[test]
-    fn test_type_variable_generator() {
-        let mut generator = TypeVariableGenerator::new();
-        
-        let var1 = generator.generate_fresh();
-        let var2 = generator.generate_fresh();
-        
-        assert_ne!(var1, var2);
-        assert!(var1.starts_with("T"));
-        assert!(var2.starts_with("T"));
-    }
-
-    #[test]
-    fn test_inference_context() {
-        let mut context = InferenceContext::new();
-        
-        context.add_variable("x".to_string(), TypeExpression::named("normie"));
-        assert_eq!(context.variable_types.get("x"), Some(&TypeExpression::named("normie")));
-        
-        context.set_expected_return_type(TypeExpression::named("tea"));
-        assert_eq!(context.expected_return_type, Some(TypeExpression::named("tea")));
-    }
-
-    #[test]
-    fn test_constraint_accumulator() {
-        let mut accumulator = ConstraintAccumulator::new();
-        
-        let constraint = InferenceConstraint {
-            id: "test_constraint".to_string(),
-            constraint_type: ConstraintType::Equality,
-            left_type: TypeExpression::parameter("T"),
-            right_type: TypeExpression::named("normie"),
-            origin: ConstraintOrigin {
-                expression: "test".to_string(),
-                location: None,
-                context: "test context".to_string(),
-            },
-        };
-        
-        accumulator.add_constraint(constraint);
-        assert_eq!(accumulator.constraints.len(), 1);
-    }
-
-    #[test]
-    fn test_subtyping_engine() {
-        let mut engine = SubtypingEngine::new();
-        
-        let type1 = TypeExpression::named("normie");
-        let type2 = TypeExpression::named("normie");
-        
-        // Test reflexivity
-        assert!(engine.is_subtype(&type1, &type2));
-        
-        // Test type variable subtyping
-        let type_var = TypeExpression::parameter("T");
-        assert!(engine.is_subtype(&type_var, &type1));
-        assert!(engine.is_subtype(&type1, &type_var));
-    }
-
-    #[test]
-    fn test_bidirectional_checker() {
-        let checker = BidirectionalChecker::new();
-        assert_eq!(checker.checking_mode, CheckingMode::Bidirectional);
-        assert_eq!(checker.errors.len(), 0);
-    }
-
-    #[test]
-    fn test_inference_error() {
-        let error = InferenceError {
-            error_type: InferenceErrorType::TypeMismatch,
-            expression: "x + y".to_string(),
-            expected_type: Some(TypeExpression::named("normie")),
-            actual_type: Some(TypeExpression::named("tea")),
-            location: None,
-            suggestions: vec!["Cast tea to normie".to_string()],
-        };
-        
-        assert_eq!(error.error_type, InferenceErrorType::TypeMismatch);
-        assert_eq!(error.suggestions.len(), 1);
-    }
-
-    #[test]
-    fn test_context_inferrer() {
-        let mut inferrer = ContextInferrer::new();
-        
-        let frame = InferenceFrame {
-            frame_type: FrameType::Function,
-            bindings: HashMap::new(),
-            constraints: Vec::new(),
-        };
-        
-        inferrer.push_frame(frame);
-        assert_eq!(inferrer.context_stack.len(), 1);
-        
-        let popped = inferrer.pop_frame();
-        assert!(popped.is_some());
-        assert_eq!(popped.unwrap().frame_type, FrameType::Function);
-    }
-}

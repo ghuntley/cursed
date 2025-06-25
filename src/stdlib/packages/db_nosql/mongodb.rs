@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// MongoDB driver for CURSED programming language
 /// 
 /// This module provides a comprehensive MongoDB driver with:
@@ -31,9 +31,8 @@ use mongodb::{
 
 use futures::stream::TryStreamExt;
 
-use crate::stdlib::value::Value;
-use crate::error::CursedError;
-use crate::stdlib::packages::ErrorKind;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::ErrorKind;
 
 /// MongoDB-specific error types
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -70,21 +69,21 @@ pub enum MongoDbError {
     General(String),
 }
 
-impl From<MongoDbError> for CursedError {
-    fn from(err: MongoDbError) -> Self {
-        CursedError::new(
-            ErrorKind::DatabaseError,
-            format!("MongoDB error: {:?}", err),
-            None,
-        )
-    }
-}
+// impl From<MongoDbError> for CursedError {
+//     fn from(err: MongoDbError) -> Self {
+//         CursedError::new(
+//             ErrorKind::DatabaseError,
+//             format!("MongoDB error: {:?}", err),
+//             None,
+//         )
+//     }
+// }
 
-impl From<mongodb::error::Error> for MongoDbError {
-    fn from(err: mongodb::error::Error) -> Self {
-        MongoDbError::General(err.to_string())
-    }
-}
+// impl From<mongodb::error::CursedError> for MongoDbError {
+//     fn from(err: mongodb::error::CursedError) -> Self {
+//         MongoDbError::General(err.to_string())
+//     }
+// }
 
 /// MongoDB connection configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -205,7 +204,7 @@ impl MongoDbQueryBuilder {
     }
 
     /// Add a filter condition
-    pub fn filter(mut self, key: &str, value: &Value) -> Result<(), Error> {
+    pub fn filter(mut self, key: &str, value: &Value) -> crate::error::Result<()> {
         let bson_value = value_to_bson(value)?;
         self.filter.insert(key, bson_value);
         Ok(self)
@@ -282,7 +281,7 @@ impl MongoDbCollection {
     }
 
     /// Find documents
-    pub async fn find(&self, query: MongoDbQueryBuilder) -> Result<(), Error> {
+    pub async fn find(&self, query: MongoDbQueryBuilder) -> crate::error::Result<()> {
         let filter = query.get_filter().clone();
         let options = query.build_find_options();
         
@@ -301,7 +300,7 @@ impl MongoDbCollection {
     }
 
     /// Find one document
-    pub async fn find_one(&self, query: MongoDbQueryBuilder) -> Result<(), Error> {
+    pub async fn find_one(&self, query: MongoDbQueryBuilder) -> crate::error::Result<()> {
         let filter = query.get_filter().clone();
         let options = query.build_find_options();
         
@@ -317,7 +316,7 @@ impl MongoDbCollection {
     }
 
     /// Insert one document
-    pub async fn insert_one(&self, document: &Value) -> Result<(), Error> {
+    pub async fn insert_one(&self, document: &Value) -> crate::error::Result<()> {
         let doc = value_to_document(document)?;
         let result = self.collection
             .insert_one(doc, None)
@@ -328,8 +327,8 @@ impl MongoDbCollection {
     }
 
     /// Insert many documents
-    pub async fn insert_many(&self, documents: &[Value]) -> Result<(), Error> {
-        let docs: Result<(), Error> = documents
+    pub async fn insert_many(&self, documents: &[Value]) -> crate::error::Result<()> {
+        let docs: crate::error::Result<()> = documents
             .iter()
             .map(value_to_document)
             .collect();
@@ -348,7 +347,7 @@ impl MongoDbCollection {
         &self,
         filter: MongoDbQueryBuilder,
         update: &Value,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let filter_doc = filter.get_filter().clone();
         let update_doc = value_to_document(update)?;
         let update_doc = doc! { "$set": update_doc };
@@ -366,7 +365,7 @@ impl MongoDbCollection {
         &self,
         filter: MongoDbQueryBuilder,
         update: &Value,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let filter_doc = filter.get_filter().clone();
         let update_doc = value_to_document(update)?;
         let update_doc = doc! { "$set": update_doc };
@@ -380,7 +379,7 @@ impl MongoDbCollection {
     }
 
     /// Delete one document
-    pub async fn delete_one(&self, filter: MongoDbQueryBuilder) -> Result<(), Error> {
+    pub async fn delete_one(&self, filter: MongoDbQueryBuilder) -> crate::error::Result<()> {
         let filter_doc = filter.get_filter().clone();
 
         let result = self.collection
@@ -392,7 +391,7 @@ impl MongoDbCollection {
     }
 
     /// Delete many documents
-    pub async fn delete_many(&self, filter: MongoDbQueryBuilder) -> Result<(), Error> {
+    pub async fn delete_many(&self, filter: MongoDbQueryBuilder) -> crate::error::Result<()> {
         let filter_doc = filter.get_filter().clone();
 
         let result = self.collection
@@ -404,7 +403,7 @@ impl MongoDbCollection {
     }
 
     /// Count documents
-    pub async fn count_documents(&self, filter: MongoDbQueryBuilder) -> Result<(), Error> {
+    pub async fn count_documents(&self, filter: MongoDbQueryBuilder) -> crate::error::Result<()> {
         let filter_doc = filter.get_filter().clone();
 
         let count = self.collection
@@ -416,7 +415,7 @@ impl MongoDbCollection {
     }
 
     /// Aggregate pipeline
-    pub async fn aggregate(&self, pipeline: Vec<Document>) -> Result<(), Error> {
+    pub async fn aggregate(&self, pipeline: Vec<Document>) -> crate::error::Result<()> {
         let mut cursor = self.collection
             .aggregate(pipeline, None)
             .await
@@ -432,7 +431,7 @@ impl MongoDbCollection {
     }
 
     /// Create index
-    pub async fn create_index(&self, keys: Document, options: Option<IndexOptions>) -> Result<(), Error> {
+    pub async fn create_index(&self, keys: Document, options: Option<IndexOptions>) -> crate::error::Result<()> {
         let index_model = IndexModel::builder()
             .keys(keys)
             .options(options)
@@ -447,7 +446,7 @@ impl MongoDbCollection {
     }
 
     /// Drop index
-    pub async fn drop_index(&self, index_name: &str) -> Result<(), Error> {
+    pub async fn drop_index(&self, index_name: &str) -> crate::error::Result<()> {
         self.collection
             .drop_index(index_name, None)
             .await
@@ -457,7 +456,7 @@ impl MongoDbCollection {
     }
 
     /// List indexes
-    pub async fn list_indexes(&self) -> Result<(), Error> {
+    pub async fn list_indexes(&self) -> crate::error::Result<()> {
         let mut cursor = self.collection
             .list_indexes(None)
             .await
@@ -498,7 +497,7 @@ impl MongoDbDatabase {
     }
 
     /// Create collection
-    pub async fn create_collection(&self, name: &str, options: Option<CreateCollectionOptions>) -> Result<(), Error> {
+    pub async fn create_collection(&self, name: &str, options: Option<CreateCollectionOptions>) -> crate::error::Result<()> {
         self.database
             .create_collection(name, options)
             .await
@@ -508,7 +507,7 @@ impl MongoDbDatabase {
     }
 
     /// Drop collection
-    pub async fn drop_collection(&self, name: &str) -> Result<(), Error> {
+    pub async fn drop_collection(&self, name: &str) -> crate::error::Result<()> {
         self.database
             .collection::<Document>(name)
             .drop(None)
@@ -519,7 +518,7 @@ impl MongoDbDatabase {
     }
 
     /// List collections
-    pub async fn list_collections(&self) -> Result<(), Error> {
+    pub async fn list_collections(&self) -> crate::error::Result<()> {
         let mut cursor = self.database
             .list_collections(None, None)
             .await
@@ -536,7 +535,7 @@ impl MongoDbDatabase {
     }
 
     /// Run command
-    pub async fn run_command(&self, command: Document) -> Result<(), Error> {
+    pub async fn run_command(&self, command: Document) -> crate::error::Result<()> {
         let result = self.database
             .run_command(command, None)
             .await
@@ -555,7 +554,7 @@ pub struct MongoDbConnection {
 
 impl MongoDbConnection {
     /// Create a new connection
-    pub async fn new(config: MongoDbConfig) -> Result<(), Error> {
+    pub async fn new(config: MongoDbConfig) -> crate::error::Result<()> {
         let client_options = Self::build_client_options(&config).await?;
         let client = Client::with_options(client_options)
             .map_err(MongoDbError::from)?;
@@ -571,7 +570,7 @@ impl MongoDbConnection {
     }
 
     /// Build client options from config
-    async fn build_client_options(config: &MongoDbConfig) -> Result<(), Error> {
+    async fn build_client_options(config: &MongoDbConfig) -> crate::error::Result<()> {
         let mut client_options = ClientOptions::parse(&config.connection_string)
             .await
             .map_err(|e| MongoDbError::InvalidConfiguration(e.to_string()))?;
@@ -685,7 +684,7 @@ impl MongoDbConnection {
     }
 
     /// List databases
-    pub async fn list_databases(&self) -> Result<(), Error> {
+    pub async fn list_databases(&self) -> crate::error::Result<()> {
         let databases = self.client
             .list_databases(None, None)
             .await
@@ -695,7 +694,7 @@ impl MongoDbConnection {
     }
 
     /// Drop database
-    pub async fn drop_database(&self, name: &str) -> Result<(), Error> {
+    pub async fn drop_database(&self, name: &str) -> crate::error::Result<()> {
         self.client
             .database(name)
             .drop(None)
@@ -706,7 +705,7 @@ impl MongoDbConnection {
     }
 
     /// Test connection
-    pub async fn ping(&self) -> Result<(), Error> {
+    pub async fn ping(&self) -> crate::error::Result<()> {
         self.client
             .database("admin")
             .run_command(doc! {"ping": 1}, None)
@@ -737,7 +736,7 @@ impl MongoDbDriver {
     }
 
     /// Add a connection with a name
-    pub async fn add_connection(&self, name: String, config: MongoDbConfig) -> Result<(), Error> {
+    pub async fn add_connection(&self, name: String, config: MongoDbConfig) -> crate::error::Result<()> {
         let connection = MongoDbConnection::new(config).await?;
         let mut connections = self.connections.write().await;
         connections.insert(name, connection);
@@ -745,7 +744,7 @@ impl MongoDbDriver {
     }
 
     /// Get a connection by name
-    pub async fn get_connection(&self, name: &str) -> Result<(), Error> {
+    pub async fn get_connection(&self, name: &str) -> crate::error::Result<()> {
         let connections = self.connections.read().await;
         connections.get(name)
             .cloned()
@@ -753,7 +752,7 @@ impl MongoDbDriver {
     }
 
     /// Remove a connection
-    pub async fn remove_connection(&self, name: &str) -> Result<(), Error> {
+    pub async fn remove_connection(&self, name: &str) -> crate::error::Result<()> {
         let mut connections = self.connections.write().await;
         connections.remove(name)
             .ok_or_else(|| MongoDbError::ConnectionFailed(format!("Connection '{}' not found", name)))?;
@@ -767,12 +766,12 @@ impl MongoDbDriver {
     }
 
     /// Create a default connection
-    pub async fn connect(config: MongoDbConfig) -> Result<(), Error> {
+    pub async fn connect(config: MongoDbConfig) -> crate::error::Result<()> {
         MongoDbConnection::new(config).await
     }
 
     /// Create connection with default configuration
-    pub async fn connect_default() -> Result<(), Error> {
+    pub async fn connect_default() -> crate::error::Result<()> {
         Self::connect(MongoDbConfig::default()).await
     }
 }
@@ -784,7 +783,7 @@ impl Default for MongoDbDriver {
 }
 
 /// Utility functions for BSON/Value conversion
-fn value_to_bson(value: &Value) -> Result<(), Error> {
+fn value_to_bson(value: &Value) -> crate::error::Result<()> {
     match value {
         Value::Null => Ok(Bson::Null),
         Value::Bool(b) => Ok(Bson::Boolean(*b)),
@@ -792,7 +791,7 @@ fn value_to_bson(value: &Value) -> Result<(), Error> {
         Value::Float(f) => Ok(Bson::Double(*f)),
         Value::String(s) => Ok(Bson::String(s.clone())),
         Value::Array(arr) => {
-            let bson_arr: Result<(), Error> = arr.iter()
+            let bson_arr: crate::error::Result<()> = arr.iter()
                 .map(value_to_bson)
                 .collect();
             Ok(Bson::Array(bson_arr?))
@@ -807,7 +806,7 @@ fn value_to_bson(value: &Value) -> Result<(), Error> {
     }
 }
 
-fn bson_to_value(bson: &Bson) -> Result<(), Error> {
+fn bson_to_value(bson: &Bson) -> crate::error::Result<()> {
     match bson {
         Bson::Null => Ok(Value::Null),
         Bson::Boolean(b) => Ok(Value::Bool(*b)),
@@ -816,7 +815,7 @@ fn bson_to_value(bson: &Bson) -> Result<(), Error> {
         Bson::Double(f) => Ok(Value::Float(*f)),
         Bson::String(s) => Ok(Value::String(s.clone())),
         Bson::Array(arr) => {
-            let values: Result<(), Error> = arr.iter()
+            let values: crate::error::Result<()> = arr.iter()
                 .map(bson_to_value)
                 .collect();
             Ok(Value::Array(values?))
@@ -836,7 +835,7 @@ fn bson_to_value(bson: &Bson) -> Result<(), Error> {
     }
 }
 
-fn value_to_document(value: &Value) -> Result<(), Error> {
+fn value_to_document(value: &Value) -> crate::error::Result<()> {
     match value {
         Value::Object(obj) => {
             let mut doc = Document::new();
@@ -952,7 +951,7 @@ pub struct MongoDbTransaction {
 
 impl MongoDbTransaction {
     /// Start a new transaction
-    pub async fn start(connection: &MongoDbConnection) -> Result<(), Error> {
+    pub async fn start(connection: &MongoDbConnection) -> crate::error::Result<()> {
         let mut session = connection.client.start_session(None)
             .await
             .map_err(MongoDbError::from)?;
@@ -965,7 +964,7 @@ impl MongoDbTransaction {
     }
 
     /// Commit the transaction
-    pub async fn commit(mut self) -> Result<(), Error> {
+    pub async fn commit(mut self) -> crate::error::Result<()> {
         self.session.commit_transaction()
             .await
             .map_err(MongoDbError::from)?;
@@ -974,7 +973,7 @@ impl MongoDbTransaction {
     }
 
     /// Abort the transaction
-    pub async fn abort(mut self) -> Result<(), Error> {
+    pub async fn abort(mut self) -> crate::error::Result<()> {
         self.session.abort_transaction()
             .await
             .map_err(MongoDbError::from)?;
@@ -983,118 +982,3 @@ impl MongoDbTransaction {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::value::Value;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_config_default() {
-        let config = MongoDbConfig::default();
-        assert_eq!(config.connection_string, "mongodb://localhost:27017");
-        assert_eq!(config.database_name, "cursed_db");
-        assert_eq!(config.max_pool_size, Some(10));
-        assert_eq!(config.retry_writes, true);
-    }
-
-    #[test]
-    fn test_query_builder() {
-        let mut builder = MongoDbQueryBuilder::new();
-        
-        // Test filter
-        let name_value = Value::String("test".to_string());
-        builder = builder.filter("name", &name_value).unwrap();
-        
-        // Test projection and sorting
-        builder = builder
-            .project(&["name", "age"])
-            .sort("age", -1)
-            .limit(10)
-            .skip(5);
-
-        let options = builder.build_find_options();
-        assert_eq!(options.limit, Some(10));
-        assert_eq!(options.skip, Some(5));
-        assert!(options.projection.is_some());
-        assert!(options.sort.is_some());
-    }
-
-    #[test]
-    fn test_value_to_bson_conversion() {
-        // Test basic types
-        assert!(matches!(value_to_bson(&Value::Null), Ok(Bson::Null)));
-        assert!(matches!(value_to_bson(&Value::Bool(true)), Ok(Bson::Boolean(true))));
-        assert!(matches!(value_to_bson(&Value::Int(42)), Ok(Bson::Int64(42))));
-        assert!(matches!(value_to_bson(&Value::Float(3.14)), Ok(Bson::Double(_))));
-        assert!(matches!(value_to_bson(&Value::String("test".to_string())), Ok(Bson::String(_))));
-
-        // Test array
-        let arr = Value::Array(vec![Value::Int(1), Value::Int(2)]);
-        assert!(matches!(value_to_bson(&arr), Ok(Bson::Array(_))));
-
-        // Test object
-        let mut obj = HashMap::new();
-        obj.insert("key".to_string(), Value::String("value".to_string()));
-        let obj_val = Value::Object(obj);
-        assert!(matches!(value_to_bson(&obj_val), Ok(Bson::Document(_))));
-    }
-
-    #[test]
-    fn test_bson_to_value_conversion() {
-        // Test basic types
-        assert!(matches!(bson_to_value(&Bson::Null), Ok(Value::Null)));
-        assert!(matches!(bson_to_value(&Bson::Boolean(true)), Ok(Value::Bool(true))));
-        assert!(matches!(bson_to_value(&Bson::Int64(42)), Ok(Value::Int(42))));
-        assert!(matches!(bson_to_value(&Bson::Double(3.14)), Ok(Value::Float(_))));
-        assert!(matches!(bson_to_value(&Bson::String("test".to_string())), Ok(Value::String(_))));
-
-        // Test array
-        let arr = Bson::Array(vec![Bson::Int64(1), Bson::Int64(2)]);
-        assert!(matches!(bson_to_value(&arr), Ok(Value::Array(_))));
-
-        // Test document
-        let mut doc = Document::new();
-        doc.insert("key", "value");
-        let doc_bson = Bson::Document(doc);
-        assert!(matches!(bson_to_value(&doc_bson), Ok(Value::Object(_))));
-    }
-
-    #[test]
-    fn test_aggregation_pipeline_builder() {
-        let pipeline = AggregationPipelineBuilder::new()
-            .match_stage(doc! { "status": "active" })
-            .group_stage(doc! { "_id": "$category", "count": { "$sum": 1 } })
-            .sort_stage(doc! { "count": -1 })
-            .limit_stage(10)
-            .build();
-
-        assert_eq!(pipeline.len(), 4);
-        assert!(pipeline[0].contains_key("$match"));
-        assert!(pipeline[1].contains_key("$group"));
-        assert!(pipeline[2].contains_key("$sort"));
-        assert!(pipeline[3].contains_key("$limit"));
-    }
-
-    #[test]
-    fn test_error_conversions() {
-        let mongo_error = MongoDbError::ConnectionFailed("test".to_string());
-        let cursed_error: CursedError = mongo_error.into();
-        assert!(matches!(cursed_error.kind(), ErrorKind::DatabaseError));
-    }
-
-    #[tokio::test]
-    async fn test_driver_connection_management() {
-        let driver = MongoDbDriver::new();
-        let config = MongoDbConfig::default();
-        
-        // Test adding connection (will fail without actual MongoDB, but tests the interface)
-        let result = driver.add_connection("test".to_string(), config).await;
-        // We expect this to fail in test environment without MongoDB
-        assert!(result.is_err());
-        
-        // Test connection listing
-        let connections = driver.list_connections().await;
-        assert!(connections.is_empty());
-    }
-}

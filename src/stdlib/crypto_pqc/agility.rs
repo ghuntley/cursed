@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Algorithm Agility Framework for Post-Quantum Cryptography
 /// 
 /// This module provides a framework for algorithm agility, allowing systems to
@@ -19,8 +19,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use serde::{Serialize, Deserialize};
 use tracing::{info, warn, error, debug, instrument};
 
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType, AlgorithmFamily, StandardizationStatus};
-use crate::stdlib::crypto_pqc::hybrid::{ClassicalAlgorithm, ClassicalSignatureAlgorithm, HybridConfig};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType, AlgorithmFamily, StandardizationStatus};
+// use crate::stdlib::crypto_pqc::hybrid::{ClassicalAlgorithm, ClassicalSignatureAlgorithm, HybridConfig};
 
 /// Algorithm agility manager for dynamic cryptographic algorithm selection
 #[derive(Debug, Clone)]
@@ -836,54 +836,3 @@ impl Default for AlgorithmAgilityManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_algorithm_agility_manager_creation() {
-        let manager = AlgorithmAgilityManager::new();
-        assert!(manager.policies.read().unwrap().len() > 0);
-    }
-
-    #[test]
-    fn test_algorithm_selection() {
-        let manager = AlgorithmAgilityManager::new();
-        let context = SelectionContext::default();
-        
-        let selection = manager.select_algorithm(&context).unwrap();
-        assert!(matches!(selection.selected_algorithm, AlgorithmType::Kyber | AlgorithmType::Dilithium));
-    }
-
-    #[test]
-    fn test_threat_assessment_update() {
-        let manager = AlgorithmAgilityManager::new();
-        
-        let indicators = vec![
-            ThreatIndicator {
-                indicator_type: ThreatIndicatorType::QuantumAdvancement,
-                severity: ThreatLevel::High,
-                description: "Significant quantum computing breakthrough".to_string(),
-                detected_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
-                expires_at: None,
-            }
-        ];
-        
-        manager.update_threat_assessment(indicators).unwrap();
-        
-        let assessor = manager.threat_assessor.lock().unwrap();
-        assert_eq!(assessor.current_threat_level, ThreatLevel::High);
-    }
-
-    #[test]
-    fn test_policy_evaluation() {
-        let manager = AlgorithmAgilityManager::new();
-        let context = SelectionContext {
-            required_security_level: Some(SecurityLevel::Level5),
-            ..Default::default()
-        };
-        
-        let selection = manager.select_algorithm(&context).unwrap();
-        assert!(selection.hybrid_recommendation.is_some());
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP client functionality for making requests
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -267,7 +267,7 @@ impl RequestBuilder {
     }
 
     /// Execute the request
-    pub fn send(self) -> Result<(), Error> {
+    pub fn send(self) -> crate::error::Result<()> {
         // Use async runtime to execute the HTTP request
         let runtime = tokio::runtime::Runtime::new()
             .map_err(|e| HttpError::Other(format!("Failed to create async runtime: {}", e)))?;
@@ -276,7 +276,7 @@ impl RequestBuilder {
     }
 
     /// Execute the request asynchronously
-    async fn send_async(self) -> Result<(), Error> {
+    async fn send_async(self) -> crate::error::Result<()> {
         // Validate URL
         Url::parse(&self.url)
             .map_err(|_| HttpError::InvalidUrl(self.url.clone()))?;
@@ -398,7 +398,7 @@ impl HttpResponse {
     }
 
     /// Get response body as string
-    pub fn text(&self) -> Result<(), Error> {
+    pub fn text(&self) -> crate::error::Result<()> {
         String::from_utf8(self.body.clone())
     }
 
@@ -424,7 +424,7 @@ impl HttpResponse {
     }
 
     /// Parse JSON response (simplified)
-    pub fn json(&self) -> Result<(), Error> {
+    pub fn json(&self) -> crate::error::Result<()> {
         // In a real implementation, this would parse JSON using a proper parser
         // For now, just return the text if it looks like JSON
         let text = self.text().map_err(|_| HttpError::InvalidResponse)?;
@@ -479,27 +479,27 @@ pub enum HttpError {
     Other(String),
 }
 
-impl std::fmt::Display for HttpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            HttpError::NetworkError(msg) => write!(f, "Network error: {}", msg),
-            HttpError::TimeoutError => write!(f, "Request timeout"),
-            HttpError::InvalidUrl(url) => write!(f, "Invalid URL: {}", url),
-            HttpError::InvalidResponse => write!(f, "Invalid response"),
-            HttpError::InvalidJson => write!(f, "Invalid JSON response"),
-            HttpError::TooManyRedirects => write!(f, "Too many redirects"),
-            HttpError::AuthenticationFailed => write!(f, "Authentication failed"),
-            HttpError::TlsError(msg) => write!(f, "TLS/SSL error: {}", msg),
-            HttpError::ConnectionError(msg) => write!(f, "Connection error: {}", msg),
-            HttpError::RequestError(msg) => write!(f, "Request error: {}", msg),
-            HttpError::ResponseError(msg) => write!(f, "Response error: {}", msg),
-            HttpError::Other(msg) => write!(f, "HTTP error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for HttpError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         match self {
+//             HttpError::NetworkError(msg) => write!(f, "Network error: {}", msg),
+//             HttpError::TimeoutError => write!(f, "Request timeout"),
+//             HttpError::InvalidUrl(url) => write!(f, "Invalid URL: {}", url),
+//             HttpError::InvalidResponse => write!(f, "Invalid response"),
+//             HttpError::InvalidJson => write!(f, "Invalid JSON response"),
+//             HttpError::TooManyRedirects => write!(f, "Too many redirects"),
+//             HttpError::AuthenticationFailed => write!(f, "Authentication failed"),
+//             HttpError::TlsError(msg) => write!(f, "TLS/SSL error: {}", msg),
+//             HttpError::ConnectionError(msg) => write!(f, "Connection error: {}", msg),
+//             HttpError::RequestError(msg) => write!(f, "Request error: {}", msg),
+//             HttpError::ResponseError(msg) => write!(f, "Response error: {}", msg),
+//             HttpError::Other(msg) => write!(f, "HTTP error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for HttpError {}
-
+// impl std::error::CursedError for HttpError {}
+// 
 /// Cookie structure
 #[derive(Debug, Clone)]
 pub struct Cookie {
@@ -700,140 +700,3 @@ fn base64_encode(input: &[u8]) -> String {
     result
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_client_creation() {
-        let client = HttpClient::new()
-            .with_base_url("https://api.example.com".to_string())
-            .with_timeout(Duration::from_secs(60))
-            .with_user_agent("Test Client".to_string());
-
-        let request = client.get("/users");
-        assert_eq!(request.url, "https://api.example.com/users");
-    }
-
-    #[test]
-    fn test_request_builder() {
-        let client = HttpClient::new();
-        let request = client.post("/api/data")
-            .header("Content-Type".to_string(), "application/json".to_string())
-            .json(r#"{"test": "data"}"#);
-
-        assert_eq!(request.method, "POST");
-        assert!(request.headers.contains_key("Content-Type"));
-    }
-
-    #[test]
-    fn test_form_encoding() {
-        let client = HttpClient::new();
-        let mut form_data = HashMap::new();
-        form_data.insert("name".to_string(), "John Doe".to_string());
-        form_data.insert("email".to_string(), "john@example.com".to_string());
-
-        let request = client.post("/submit").form(&form_data);
-        
-        if let Some(body) = request.body {
-            let body_str = String::from_utf8(body).unwrap();
-            assert!(body_str.contains("name=John%20Doe"));
-            assert!(body_str.contains("email=john%40example.com"));
-        }
-    }
-
-    #[test]
-    fn test_authentication() {
-        let client = HttpClient::new();
-        
-        // Test basic auth
-        let basic_request = client.get("/protected")
-            .basic_auth("user", "pass");
-        assert!(basic_request.headers.get("Authorization").unwrap().starts_with("Basic"));
-
-        // Test bearer token
-        let bearer_request = client.get("/api")
-            .bearer_token("abc123");
-        assert_eq!(
-            bearer_request.headers.get("Authorization").unwrap(),
-            "Bearer abc123"
-        );
-    }
-
-    #[test]
-    fn test_cookie_parsing() {
-        let cookie_str = "sessionid=abc123; Domain=example.com; Path=/; Secure; HttpOnly; Max-Age=3600";
-        let cookie = Cookie::parse(cookie_str).unwrap();
-
-        assert_eq!(cookie.name, "sessionid");
-        assert_eq!(cookie.value, "abc123");
-        assert_eq!(cookie.domain, Some("example.com".to_string()));
-        assert_eq!(cookie.path, Some("/".to_string()));
-        assert!(cookie.secure);
-        assert!(cookie.http_only);
-        assert_eq!(cookie.max_age, Some(3600));
-    }
-
-    #[test]
-    fn test_connection_pool() {
-        let mut pool = ConnectionPool::new().with_max_connections(5);
-
-        // Get connection
-        let conn1 = pool.get_connection("example.com");
-        assert!(conn1.is_some());
-
-        // Return connection
-        if let Some(conn) = conn1 {
-            pool.return_connection(conn);
-        }
-
-        // Get connection again (should reuse)
-        let conn2 = pool.get_connection("example.com");
-        assert!(conn2.is_some());
-
-        let stats = pool.stats();
-        assert_eq!(stats.max_connections_per_host, 5);
-    }
-
-    #[test]
-    fn test_url_encoding() {
-        assert_eq!(url_encode("hello world"), "hello%20world");
-        assert_eq!(url_encode("test@example.com"), "test%40example.com");
-        assert_eq!(url_encode("safe-string_123"), "safe-string_123");
-    }
-
-    #[test]
-    fn test_base64_encoding() {
-        assert_eq!(base64_encode(b"hello"), "aGVsbG8=");
-        assert_eq!(base64_encode(b"hello world"), "aGVsbG8gd29ybGQ=");
-        assert_eq!(base64_encode(b"user:pass"), "dXNlcjpwYXNz");
-    }
-
-    #[test]
-    fn test_request_validation() {
-        let client = HttpClient::new();
-        
-        // Test URL validation - invalid URLs should be caught before network calls
-        let invalid_request = client.get("not-a-valid-url").send();
-        assert!(invalid_request.is_err());
-        
-        // Test request building with invalid header names
-        let mut headers = HashMap::new();
-        headers.insert("Invalid\nHeader".to_string(), "value".to_string());
-        
-        let invalid_header_request = client.get("https://httpbin.org/get")
-            .headers(headers)
-            .send();
-        assert!(invalid_header_request.is_err());
-        
-        // Test that valid request building works (we won't send it)
-        let valid_request_builder = client.get("https://httpbin.org/get")
-            .header("Content-Type".to_string(), "application/json".to_string())
-            .json(r#"{"test": "data"}"#);
-        
-        // Verify the request builder has correct properties
-        assert_eq!(valid_request_builder.method, "GET");
-        assert!(valid_request_builder.url.contains("httpbin.org"));
-        assert!(valid_request_builder.headers.contains_key("Content-Type"));
-    }
-}

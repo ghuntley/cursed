@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// CURSED Compiler Optimization Tool
 /// 
 /// Standalone tool for analyzing and optimizing CURSED compilation performance.
@@ -11,13 +11,14 @@ use cursed::optimization::{
     analysis::PerformanceAnalyzer,
 };
 
-use cursed::error::{Error, Result};
 use clap::{Arg, ArgMatches, Command};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 
 fn main() {
+        // TODO: implement
+    }
     let matches = Command::new("cursed-optimize")
         .version("1.0.0")
         .author("CURSED Development Team")
@@ -206,7 +207,7 @@ fn main() {
     match result {
         Ok(()) => std::process::exit(0),
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("CursedError: {}", e);
             std::process::exit(1);
         }
     }
@@ -491,7 +492,7 @@ fn handle_report_command(matches: &ArgMatches) -> Result<()> {
     println!("   Format: {}", format);
 
     if !profile_dir.exists() {
-        return Err(Error::General(format!(
+        return Err(CursedError::General(format!(
             "Profile directory does not exist: {}", 
             profile_dir.display()
         )));
@@ -519,7 +520,7 @@ fn handle_report_command(matches: &ArgMatches) -> Result<()> {
             std::fs::write(output_file, content)?;
         }
         _ => {
-            return Err(Error::General(format!("Unsupported format: {}", format)));
+            return Err(CursedError::General(format!("Unsupported format: {}", format)));
         }
     }
 
@@ -783,7 +784,7 @@ fn analyze_source_file(path: &std::path::Path) -> Result<SourceFileStats> {
     use std::fs;
     
     let content = fs::read_to_string(path)
-        .map_err(|e| Error::General(format!("Failed to read file {}: {}", path.display(), e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to read file {}: {}", path.display(), e)))?;
     
     let size = content.len();
     let lines = content.split("\n").count();
@@ -882,10 +883,10 @@ struct BenchmarkResult {
 /// Write benchmark results to file
 fn write_benchmark_results(results: &[BenchmarkResult], output_file: &PathBuf) -> Result<()> {
     let json = serde_json::to_string_pretty(results)
-        .map_err(|e| Error::General(format!("Failed to serialize results: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to serialize results: {}", e)))?;
     
     std::fs::write(output_file, json)
-        .map_err(|e| Error::General(format!("Failed to write results: {}", e)))?;
+        .map_err(|e| CursedError::General(format!("Failed to write results: {}", e)))?;
     
     Ok(())
 }

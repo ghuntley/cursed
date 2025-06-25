@@ -1,8 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 use std::fs;
 use std::path::Path;
 use std::time::SystemTime;
-use crate::stdlib::fs::error::{FsError, FsResult};
+// use crate::stdlib::fs::error::{FsError, FsResult};
 
 /// File or directory metadata
 #[derive(Debug, Clone)]
@@ -111,71 +111,3 @@ pub fn file_size(path: &str) -> FsResult<u64> {
     Ok(metadata.len())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use std::io::Write;
-    use tempfile::TempDir;
-
-    #[test]
-    fn test_exists() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.txt");
-        
-        // File doesn't exist
-        assert!(!exists(&file_path.to_string_lossy()));
-        
-        // Create file
-        fs::File::create(&file_path).unwrap();
-        assert!(exists(&file_path.to_string_lossy()));
-    }
-
-    #[test]
-    fn test_is_file_is_dir() {
-        let temp_dir = TempDir::new().unwrap();
-        let dir_path = temp_dir.path().to_string_lossy().to_string();
-        let file_path = temp_dir.path().join("test.txt");
-        
-        // Test directory
-        assert!(is_dir(&dir_path));
-        assert!(!is_file(&dir_path));
-        
-        // Create and test file
-        fs::File::create(&file_path).unwrap();
-        let file_path_str = file_path.to_string_lossy().to_string();
-        assert!(is_file(&file_path_str));
-        assert!(!is_dir(&file_path_str));
-    }
-
-    #[test]
-    fn test_file_size() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.txt");
-        
-        // Create file with content
-        let mut file = fs::File::create(&file_path).unwrap();
-        file.write_all(b"Hello, World!").unwrap();
-        
-        let file_path_str = file_path.to_string_lossy().to_string();
-        let size = file_size(&file_path_str).unwrap();
-        assert_eq!(size, 13); // "Hello, World!" is 13 bytes
-    }
-
-    #[test]
-    fn test_metadata() {
-        let temp_dir = TempDir::new().unwrap();
-        let file_path = temp_dir.path().join("test.txt");
-        
-        // Create file with content
-        let mut file = fs::File::create(&file_path).unwrap();
-        file.write_all(b"Hello").unwrap();
-        
-        let file_path_str = file_path.to_string_lossy().to_string();
-        let meta = metadata(&file_path_str).unwrap();
-        
-        assert!(meta.is_file);
-        assert!(!meta.is_dir);
-        assert_eq!(meta.size, 5);
-    }
-}

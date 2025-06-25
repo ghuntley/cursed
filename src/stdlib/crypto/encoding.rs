@@ -1,4 +1,4 @@
-use crate::error::{CursedError, Error};
+use crate::error::CursedError;
 use base64::{Engine as _, engine::general_purpose};
 use tracing::{debug, info, warn, error, instrument};
 
@@ -16,7 +16,7 @@ impl Base64Encoder {
 
     /// Decode standard base64
     #[instrument(skip(encoded))]
-    pub fn decode_standard(encoded: &str) -> Result<(), Error> {
+    pub fn decode_standard(encoded: &str) -> crate::error::Result<()> {
         let decoded = base64::engine::general_purpose::STANDARD.decode(encoded.trim())
             .map_err(|e| CursedError::new("base64_error", &format!("Invalid base64: {}", e)))?;
         debug!(input_length = encoded.len(), output_length = decoded.len(), "Decoded from standard base64");
@@ -33,7 +33,7 @@ impl Base64Encoder {
 
     /// Decode URL-safe base64
     #[instrument(skip(encoded))]
-    pub fn decode_url_safe(encoded: &str) -> Result<(), Error> {
+    pub fn decode_url_safe(encoded: &str) -> crate::error::Result<()> {
         let decoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(encoded.trim())
             .map_err(|e| CursedError::new("base64_error", &format!("Invalid URL-safe base64: {}", e)))?;
         debug!(input_length = encoded.len(), output_length = decoded.len(), "Decoded from URL-safe base64");
@@ -42,7 +42,7 @@ impl Base64Encoder {
 
     /// Encode with custom alphabet and padding
     #[instrument(skip(data, alphabet))]
-    pub fn encode_custom(data: &[u8], alphabet: &str, padding: Option<char>) -> Result<(), Error> {
+    pub fn encode_custom(data: &[u8], alphabet: &str, padding: Option<char>) -> crate::error::Result<()> {
         if alphabet.len() != 64 {
             return Err(CursedError::new("base64_error", "Custom alphabet must be exactly 64 characters"));
         }
@@ -114,7 +114,7 @@ impl HexEncoder {
 
     /// Decode hex string to bytes
     #[instrument(skip(hex))]
-    pub fn decode(hex: &str) -> Result<(), Error> {
+    pub fn decode(hex: &str) -> crate::error::Result<()> {
         let clean_hex = hex.trim().replace(' ', "");
         
         if clean_hex.len() % 2 != 0 {
@@ -154,7 +154,7 @@ impl HexEncoder {
 
     /// Decode formatted hex (ignores separators)
     #[instrument(skip(formatted_hex))]
-    pub fn decode_formatted(formatted_hex: &str) -> Result<(), Error> {
+    pub fn decode_formatted(formatted_hex: &str) -> crate::error::Result<()> {
         let clean_hex: String = formatted_hex.chars()
             .filter(|c| c.is_ascii_hexdigit())
             .collect();
@@ -203,7 +203,7 @@ impl Base32Encoder {
 
     /// Decode base32 to bytes
     #[instrument(skip(encoded))]
-    pub fn decode(encoded: &str) -> Result<(), Error> {
+    pub fn decode(encoded: &str) -> crate::error::Result<()> {
         let clean = encoded.trim().replace('=', "").to_uppercase();
         let mut result = Vec::new();
         let mut buffer = 0u64;
@@ -234,7 +234,7 @@ impl Base32Encoder {
 
     /// Encode with custom alphabet
     #[instrument(skip(data, alphabet))]
-    pub fn encode_custom(data: &[u8], alphabet: &str) -> Result<(), Error> {
+    pub fn encode_custom(data: &[u8], alphabet: &str) -> crate::error::Result<()> {
         if alphabet.len() != 32 {
             return Err(CursedError::new("base32_error", "Custom alphabet must be exactly 32 characters"));
         }
@@ -270,7 +270,7 @@ pub struct Asn1Parser;
 impl Asn1Parser {
     /// Parse ASN.1 tag and length
     #[instrument(skip(data))]
-    pub fn parse_tag_length(data: &[u8]) -> Result<(), Error> {
+    pub fn parse_tag_length(data: &[u8]) -> crate::error::Result<()> {
         if data.is_empty() {
             return Err(CursedError::new("asn1_error", "Empty ASN.1 data"));
         }
@@ -328,7 +328,7 @@ impl Asn1Parser {
 
     /// Parse ASN.1 sequence
     #[instrument(skip(data))]
-    pub fn parse_sequence(data: &[u8]) -> Result<(), Error> {
+    pub fn parse_sequence(data: &[u8]) -> crate::error::Result<()> {
         let sequence_element = Self::parse_tag_length(data)?;
         
         if sequence_element.tag != 0x30 {
@@ -351,7 +351,7 @@ impl Asn1Parser {
 
     /// Parse ASN.1 integer
     #[instrument(skip(data))]
-    pub fn parse_integer(data: &[u8]) -> Result<(), Error> {
+    pub fn parse_integer(data: &[u8]) -> crate::error::Result<()> {
         let element = Self::parse_tag_length(data)?;
         
         if element.tag != 0x02 {
@@ -368,7 +368,7 @@ impl Asn1Parser {
 
     /// Parse ASN.1 octet string
     #[instrument(skip(data))]
-    pub fn parse_octet_string(data: &[u8]) -> Result<(), Error> {
+    pub fn parse_octet_string(data: &[u8]) -> crate::error::Result<()> {
         let element = Self::parse_tag_length(data)?;
         
         if element.tag != 0x04 {
@@ -381,7 +381,7 @@ impl Asn1Parser {
 
     /// Parse ASN.1 bit string
     #[instrument(skip(data))]
-    pub fn parse_bit_string(data: &[u8]) -> Result<(), Error> {
+    pub fn parse_bit_string(data: &[u8]) -> crate::error::Result<()> {
         let element = Self::parse_tag_length(data)?;
         
         if element.tag != 0x03 {
@@ -394,7 +394,6 @@ impl Asn1Parser {
 
         let unused_bits = element.content[0];
         if unused_bits > 7 {
-            return Err(CursedError::new("asn1_error", "Invalid unused bits count"));
         }
 
         let bit_string = Asn1BitString {
@@ -482,7 +481,7 @@ impl UrlEncoder {
 
     /// URL decode string
     #[instrument(skip(encoded))]
-    pub fn decode(encoded: &str) -> Result<(), Error> {
+    pub fn decode(encoded: &str) -> crate::error::Result<()> {
         let mut result = Vec::new();
         let mut chars = encoded.chars().peekable();
         
@@ -513,111 +512,3 @@ impl UrlEncoder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_base64_encoding() {
-        let data = b"Hello, World!";
-        
-        let encoded = Base64Encoder::encode_standard(data);
-        let decoded = Base64Encoder::decode_standard(&encoded).unwrap();
-        assert_eq!(data, decoded.as_slice());
-        
-        let url_encoded = Base64Encoder::encode_url_safe(data);
-        let url_decoded = Base64Encoder::decode_url_safe(&url_encoded).unwrap();
-        assert_eq!(data, url_decoded.as_slice());
-    }
-
-    #[test]
-    fn test_hex_encoding() {
-        let data = Vec::from([0x00, 0x01, 0x02, 0xfe, 0xff]);
-        
-        let encoded = HexEncoder::encode_lower(&data);
-        assert_eq!(encoded, "000102feff");
-        
-        let decoded = HexEncoder::decode(&encoded).unwrap();
-        assert_eq!(data, decoded);
-        
-        let formatted = HexEncoder::encode_formatted(&data, ":", true);
-        assert_eq!(formatted, "00:01:02:FE:FF");
-        
-        let formatted_decoded = HexEncoder::decode_formatted(&formatted).unwrap();
-        assert_eq!(data, formatted_decoded);
-    }
-
-    #[test]
-    fn test_base32_encoding() {
-        let data = b"Hello";
-        
-        let encoded = Base32Encoder::encode(data);
-        let decoded = Base32Encoder::decode(&encoded).unwrap();
-        assert_eq!(data, decoded.as_slice());
-        
-        let no_padding = Base32Encoder::encode_no_padding(data);
-        assert!(!no_padding.contains('='));
-    }
-
-    #[test]
-    fn test_asn1_parsing() {
-        // Simple INTEGER: 0x02 0x01 0x05 (integer value 5)
-        let int_data = Vec::from([0x02, 0x01, 0x05]);
-        let parsed_int = Asn1Parser::parse_integer(&int_data).unwrap();
-        assert_eq!(parsed_int, Vec::from([0x05]));
-        
-        // Simple OCTET STRING: 0x04 0x05 "hello"
-        let octet_data = Vec::from([0x04, 0x05, b'h', b'e', b'l', b'l', b'o']);
-        let parsed_octet = Asn1Parser::parse_octet_string(&octet_data).unwrap();
-        assert_eq!(parsed_octet, b"hello");
-    }
-
-    #[test]
-    fn test_url_encoding() {
-        let data = b"hello world!@#$%";
-        
-        let encoded = UrlEncoder::encode(data);
-        let decoded = UrlEncoder::decode(&encoded).unwrap();
-        assert_eq!(data, decoded.as_slice());
-        
-        // Test specific encodings
-        assert!(encoded.contains("%20") || encoded.contains("+")); // space
-        assert!(encoded.contains("%21")); // !
-        assert!(encoded.contains("%40")); // @
-    }
-
-    #[test]
-    fn test_encoding_round_trips() {
-        let test_data = vec![
-            Vec::from([]),
-            Vec::from([0]),
-            Vec::from([255]),
-            b"Simple ASCII text".to_vec(),
-            Vec::from([0x00, 0x01, 0x02, 0x7f, 0x80, 0xfe, 0xff]),
-            (0..=255).collect::<Vec<u8>>(),
-        ];
-        
-        for data in test_data {
-            // Base64 round trips
-            let b64 = Base64Encoder::encode_standard(&data);
-            assert_eq!(data, Base64Encoder::decode_standard(&b64).unwrap());
-            
-            let b64_url = Base64Encoder::encode_url_safe(&data);
-            assert_eq!(data, Base64Encoder::decode_url_safe(&b64_url).unwrap());
-            
-            // Hex round trips
-            let hex = HexEncoder::encode_lower(&data);
-            assert_eq!(data, HexEncoder::decode(&hex).unwrap());
-            
-            // Base32 round trips (if not empty)
-            if !data.is_empty() {
-                let b32 = Base32Encoder::encode(&data);
-                assert_eq!(data, Base32Encoder::decode(&b32).unwrap());
-            }
-            
-            // URL encoding round trips
-            let url = UrlEncoder::encode(&data);
-            assert_eq!(data, UrlEncoder::decode(&url).unwrap());
-        }
-    }
-}

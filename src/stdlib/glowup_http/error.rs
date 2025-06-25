@@ -1,10 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// GlowUpHTTP error types and error handling utilities
 
 use std::fmt;
 use std::io;
-use std::net::AddrParseError;
-use std::sync::PoisonError;
 
 /// Result type for GlowUpHTTP operations
 pub type GlowUpResult<T> = std::result::Result<T, GlowUpError>;
@@ -50,37 +48,37 @@ pub enum GlowUpError {
     Internal(String),
 }
 
-impl fmt::Display for GlowUpError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            GlowUpError::Io(msg) => write!(f, "I/O error: {}", msg),
-            GlowUpError::Parse(msg) => write!(f, "Parse error: {}", msg),
-            GlowUpError::Connection(msg) => write!(f, "Connection error: {}", msg),
-            GlowUpError::Bind(msg) => write!(f, "Bind error: {}", msg),
-            GlowUpError::Tls(msg) => write!(f, "TLS error: {}", msg),
-            GlowUpError::Timeout(msg) => write!(f, "Timeout error: {}", msg),
-            GlowUpError::Auth(msg) => write!(f, "Authentication error: {}", msg),
-            GlowUpError::Config(msg) => write!(f, "Configuration error: {}", msg),
-            GlowUpError::Middleware(msg) => write!(f, "Middleware error: {}", msg),
-            GlowUpError::Router(msg) => write!(f, "Router error: {}", msg),
-            GlowUpError::WebSocket(msg) => write!(f, "WebSocket error: {}", msg),
-            GlowUpError::Json(msg) => write!(f, "JSON error: {}", msg),
-            GlowUpError::Http(code, msg) => write!(f, "HTTP error {}: {}", code, msg),
-            GlowUpError::InvalidRequest(msg) => write!(f, "Invalid request: {}", msg),
-            GlowUpError::ServerAlreadyRunning => write!(f, "Server is already running"),
-            GlowUpError::ServerNotRunning => write!(f, "Server is not running"),
-            GlowUpError::Internal(msg) => write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for GlowUpError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             GlowUpError::Io(msg) => write!(f, "I/O error: {}", msg),
+//             GlowUpError::Parse(msg) => write!(f, "Parse error: {}", msg),
+//             GlowUpError::Connection(msg) => write!(f, "Connection error: {}", msg),
+//             GlowUpError::Bind(msg) => write!(f, "Bind error: {}", msg),
+//             GlowUpError::Tls(msg) => write!(f, "TLS error: {}", msg),
+//             GlowUpError::Timeout(msg) => write!(f, "Timeout error: {}", msg),
+//             GlowUpError::Auth(msg) => write!(f, "Authentication error: {}", msg),
+//             GlowUpError::Config(msg) => write!(f, "Configuration error: {}", msg),
+//             GlowUpError::Middleware(msg) => write!(f, "Middleware error: {}", msg),
+//             GlowUpError::Router(msg) => write!(f, "Router error: {}", msg),
+//             GlowUpError::WebSocket(msg) => write!(f, "WebSocket error: {}", msg),
+//             GlowUpError::Json(msg) => write!(f, "JSON error: {}", msg),
+//             GlowUpError::Http(code, msg) => write!(f, "HTTP error {}: {}", code, msg),
+//             GlowUpError::InvalidRequest(msg) => write!(f, "Invalid request: {}", msg),
+//             GlowUpError::ServerAlreadyRunning => write!(f, "Server is already running"),
+//             GlowUpError::ServerNotRunning => write!(f, "Server is not running"),
+//             GlowUpError::Internal(msg) => write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for GlowUpError {}
-
-impl From<io::Error> for GlowUpError {
-    fn from(err: io::Error) -> Self {
-        GlowUpError::Io(err.to_string())
-    }
-}
+// impl std::error::CursedError for GlowUpError {}
+// 
+// impl From<std::io::Error> for GlowUpError {
+//     fn from(err: std::io::Error) -> Self {
+//         GlowUpError::Io(err.to_string())
+//     }
+// }
 
 impl From<AddrParseError> for GlowUpError {
     fn from(err: AddrParseError) -> Self {
@@ -94,11 +92,11 @@ impl<T> From<PoisonError<T>> for GlowUpError {
     }
 }
 
-impl From<serde_json::Error> for GlowUpError {
-    fn from(err: serde_json::Error) -> Self {
-        GlowUpError::Json(err.to_string())
-    }
-}
+// impl From<serde_json::Error> for GlowUpError {
+//     fn from(err: serde_json::Error) -> Self {
+//         GlowUpError::Json(err.to_string())
+//     }
+// }
 
 // Helper functions for creating specific error types
 impl GlowUpError {

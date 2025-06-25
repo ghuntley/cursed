@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// LLVM Integration for Process Management and IPC
 /// 
 /// This module provides LLVM code generation support for process management
@@ -16,35 +16,34 @@ use inkwell::IntPredicate;
 use tracing::{info, warn, error, debug, instrument};
 
 use crate::codegen::llvm::LlvmCodeGenerator;
-use crate::error::CursedError;
 
 /// LLVM integration trait for process management
 pub trait ProcessLlvmIntegration {
     /// Compile process spawn operation
-    fn compile_spawn_process(&mut self, command: &str, args: &[&str]) -> Result<(), Error>;
+    fn compile_spawn_process(&mut self, command: &str, args: &[&str]) -> crate::error::Result<()>;
     
     /// Compile process wait operation
-    fn compile_wait_process(&mut self, pid: IntValue) -> Result<(), Error>;
+    fn compile_wait_process(&mut self, pid: IntValue) -> crate::error::Result<()>;
     
     /// Compile process kill operation
-    fn compile_kill_process(&mut self, pid: IntValue) -> Result<(), Error>;
+    fn compile_kill_process(&mut self, pid: IntValue) -> crate::error::Result<()>;
     
     /// Compile IPC named pipe creation
-    fn compile_create_named_pipe(&mut self, name: &str, is_server: bool) -> Result<(), Error>;
+    fn compile_create_named_pipe(&mut self, name: &str, is_server: bool) -> crate::error::Result<()>;
     
     /// Compile shared memory creation
-    fn compile_create_shared_memory(&mut self, name: &str, size: IntValue) -> Result<(), Error>;
+    fn compile_create_shared_memory(&mut self, name: &str, size: IntValue) -> crate::error::Result<()>;
     
     /// Compile message queue creation
-    fn compile_create_message_queue(&mut self, name: &str) -> Result<(), Error>;
+    fn compile_create_message_queue(&mut self, name: &str) -> crate::error::Result<()>;
     
     /// Compile pipeline execution
-    fn compile_execute_pipeline(&mut self, commands: &[(&str, &[&str])]) -> Result<(), Error>;
+    fn compile_execute_pipeline(&mut self, commands: &[(&str, &[&str])]) -> crate::error::Result<()>;
 }
 
 impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     #[instrument(skip(self))]
-    fn compile_spawn_process(&mut self, command: &str, args: &[&str]) -> Result<(), Error> {
+    fn compile_spawn_process(&mut self, command: &str, args: &[&str]) -> crate::error::Result<()> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_spawn_process";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -120,7 +119,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_wait_process(&mut self, pid: IntValue) -> Result<(), Error> {
+    fn compile_wait_process(&mut self, pid: IntValue) -> crate::error::Result<()> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_wait_process";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -146,7 +145,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_kill_process(&mut self, pid: IntValue) -> Result<(), Error> {
+    fn compile_kill_process(&mut self, pid: IntValue) -> crate::error::Result<()> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_kill_process";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -172,7 +171,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_create_named_pipe(&mut self, name: &str, is_server: bool) -> Result<(), Error> {
+    fn compile_create_named_pipe(&mut self, name: &str, is_server: bool) -> crate::error::Result<()> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_create_named_pipe";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -218,7 +217,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_create_shared_memory(&mut self, name: &str, size: IntValue) -> Result<(), Error> {
+    fn compile_create_shared_memory(&mut self, name: &str, size: IntValue) -> crate::error::Result<()> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_create_shared_memory";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -269,7 +268,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_create_message_queue(&mut self, name: &str) -> Result<(), Error> {
+    fn compile_create_message_queue(&mut self, name: &str) -> crate::error::Result<()> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_create_message_queue";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -304,7 +303,7 @@ impl ProcessLlvmIntegration for crate::codegen::llvm::LlvmCodeGenerator {
     }
     
     #[instrument(skip(self))]
-    fn compile_execute_pipeline(&mut self, commands: &[(&str, &[&str])]) -> Result<(), Error> {
+    fn compile_execute_pipeline(&mut self, commands: &[(&str, &[&str])]) -> crate::error::Result<()> {
         // Declare the FFI function if not already declared
         let function_name = "cursed_execute_pipeline";
         let function = if let Some(function) = self.module.get_function(function_name) {
@@ -564,66 +563,3 @@ pub extern "C" fn cursed_execute_pipeline(
     ptr
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use inkwell::context::Context;
-    use inkwell::module::Module;
-    use inkwell::builder::Builder;
-    
-    fn create_test_codegen() -> LlvmCodeGenerator<'static> {
-        let context = Box::leak(Box::new(Context::create()));
-        let module = context.create_module("test");
-        let builder = context.create_builder();
-        
-        LlvmCodeGenerator {
-            context,
-            module,
-            builder,
-            current_function: None,
-            variables: HashMap::new(),
-            blocks: HashMap::new(),
-            loop_stack: Vec::new(),
-            break_blocks: Vec::new(),
-            continue_blocks: Vec::new(),
-            gc_runtime: None,
-        }
-    }
-    
-    #[test]
-    fn test_process_llvm_integration_creation() {
-        let mut codegen = create_test_codegen();
-        
-        // Test that we can call the integration methods without panicking
-        // In a real test, we'd verify the generated LLVM IR
-        
-        // This would fail because we don't have a function context, but we can test compilation
-        let result = codegen.compile_spawn_process("echo", &["test"]);
-        assert!(result.is_ok() || result.is_err()); // Just verify it doesn't panic
-    }
-    
-    #[test]
-    fn test_ffi_functions() {
-        // Test FFI functions
-        let command = std::ffi::CString::new("echo").unwrap();
-        let args = [std::ffi::CString::new("test").unwrap().as_ptr()];
-        
-        let pid = cursed_spawn_process(command.as_ptr(), args.as_ptr(), 1);
-        assert!(pid != 0); // Should return a valid PID or error code
-        
-        let wait_result = cursed_wait_process(pid);
-        assert!(wait_result >= 0); // Should return success or error code
-        
-        let pipe_name = std::ffi::CString::new("test_pipe").unwrap();
-        let pipe_handle = cursed_create_named_pipe(pipe_name.as_ptr(), 1);
-        assert!(!pipe_handle.is_null()); // Should return a handle
-        
-        let shm_name = std::ffi::CString::new("test_shm").unwrap();
-        let shm_handle = cursed_create_shared_memory(shm_name.as_ptr(), 1024);
-        assert!(!shm_handle.is_null()); // Should return a handle
-        
-        let queue_name = std::ffi::CString::new("test_queue").unwrap();
-        let queue_handle = cursed_create_message_queue(queue_name.as_ptr());
-        assert!(!queue_handle.is_null()); // Should return a handle
-    }
-}

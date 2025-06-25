@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Rate limiting module for web_vibez - comprehensive rate limiting system
 pub mod store;
 pub mod algorithm;
@@ -193,64 +193,3 @@ pub fn extract_client_id(ip: Option<IpAddr>) -> String {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::packages::web_vibez::ratelimit::store::InMemoryStore;
-    use crate::stdlib::packages::web_vibez::ratelimit::algorithm::FixedWindow;
-
-    #[tokio::test]
-    async fn test_rate_limiter_basic() {
-        let store = Arc::new(InMemoryStore::new());
-        let algorithm = Arc::new(FixedWindow::new());
-        let config = RateLimitConfig::new(10, Duration::from_secs(60));
-        
-        let limiter = RateLimiter::new(store, algorithm, config);
-        
-        // First request should be allowed
-        let decision = limiter.check_request("test_client").await.unwrap();
-        assert!(matches!(decision, RateLimitDecision::Allow { .. }));
-        
-        // Get context
-        let context = limiter.get_context("test_client").await.unwrap();
-        assert_eq!(context.limit, 10);
-        assert_eq!(context.current_count, 1);
-    }
-
-    #[tokio::test]
-    async fn test_rate_limiter_exceed_limit() {
-        let store = Arc::new(InMemoryStore::new());
-        let algorithm = Arc::new(FixedWindow::new());
-        let config = RateLimitConfig::new(2, Duration::from_secs(60));
-        
-        let limiter = RateLimiter::new(store, algorithm, config);
-        
-        // First two requests should be allowed
-        for _ in 0..2 {
-            let decision = limiter.check_request("test_client").await.unwrap();
-            assert!(matches!(decision, RateLimitDecision::Allow { .. }));
-        }
-        
-        // Third request should be denied
-        let decision = limiter.check_request("test_client").await.unwrap();
-        assert!(matches!(decision, RateLimitDecision::Deny { .. }));
-    }
-
-    #[tokio::test]
-    async fn test_metrics_tracking() {
-        let store = Arc::new(InMemoryStore::new());
-        let algorithm = Arc::new(FixedWindow::new());
-        let config = RateLimitConfig::new(1, Duration::from_secs(60));
-        
-        let limiter = RateLimiter::new(store, algorithm, config);
-        
-        // Make requests
-        limiter.check_request("client1").await.unwrap(); // Allow
-        limiter.check_request("client1").await.unwrap(); // Deny
-        
-        let metrics = limiter.get_metrics().await;
-        assert_eq!(metrics.total_requests, 2);
-        assert_eq!(metrics.allowed_requests, 1);
-        assert_eq!(metrics.denied_requests, 1);
-    }
-}

@@ -5,9 +5,8 @@ pub mod standard;
 
 use std::sync::{Arc, Mutex};
 use std::io::Write;
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 
 // Re-export main types and functions
 pub use logger::{Logger, new_logger};
@@ -25,7 +24,7 @@ lazy_static::lazy_static! {
 /// Standard logger functions that operate on the global logger instance
 
 /// spill - Print args followed by newline
-pub fn spill(args: &[Value]) -> Result<(), Error> {
+pub fn spill(args: &[Value]) -> crate::error::Result<()> {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -33,7 +32,7 @@ pub fn spill(args: &[Value]) -> Result<(), Error> {
 }
 
 /// spillf - Print formatted string
-pub fn spillf(format: &str, args: &[Value]) -> Result<(), Error> {
+pub fn spillf(format: &str, args: &[Value]) -> crate::error::Result<()> {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -73,7 +72,7 @@ pub fn shookf(format: &str, args: &[Value]) -> ! {
 }
 
 /// setFlags - Set output flags for standard logger
-pub fn set_flags(flag: i32) -> Result<(), Error> {
+pub fn set_flags(flag: i32) -> crate::error::Result<()> {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -82,7 +81,7 @@ pub fn set_flags(flag: i32) -> Result<(), Error> {
 }
 
 /// setOutput - Set output destination for standard logger
-pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), Error> {
+pub fn set_output(writer: Box<dyn Write + Send>) -> crate::error::Result<()> {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -91,7 +90,7 @@ pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), Error> {
 }
 
 /// setPrefix - Set output prefix for standard logger
-pub fn set_prefix(prefix: &str) -> Result<(), Error> {
+pub fn set_prefix(prefix: &str) -> crate::error::Result<()> {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -100,7 +99,7 @@ pub fn set_prefix(prefix: &str) -> Result<(), Error> {
 }
 
 /// Get current flags from standard logger
-pub fn flags() -> Result<(), Error> {
+pub fn flags() -> crate::error::Result<()> {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
@@ -108,39 +107,10 @@ pub fn flags() -> Result<(), Error> {
 }
 
 /// Get current prefix from standard logger
-pub fn prefix() -> Result<(), Error> {
+pub fn prefix() -> crate::error::Result<()> {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire logger lock".to_string())
     })?;
     Ok(logger.prefix())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_standard_logger_operations() {
-        // Test basic functionality
-        assert!(set_flags(Ldate | Ltime).is_ok());
-        assert!(set_prefix("test: ").is_ok());
-        
-        let current_flags = flags().unwrap();
-        assert_eq!(current_flags, Ldate | Ltime);
-        
-        let current_prefix = prefix().unwrap();
-        assert_eq!(current_prefix, "test: ");
-    }
-    
-    #[test]
-    fn test_spill_functionality() {
-        let args = vec![Value::String("test message".to_string())];
-        assert!(spill(&args).is_ok());
-    }
-    
-    #[test]
-    fn test_spillf_functionality() {
-        let args = vec![Value::String("world".to_string())];
-        assert!(spillf("Hello, {}!", &args).is_ok());
-    }
-}

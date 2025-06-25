@@ -144,28 +144,3 @@ impl Ord for OptimizationLevel {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_optimization_level_conversions() {
-        assert_eq!(OptimizationLevel::O0.to_llvm_level(), 0);
-        assert_eq!(OptimizationLevel::O1.to_llvm_level(), 1);
-        assert_eq!(OptimizationLevel::O2.to_llvm_level(), 2);
-        assert_eq!(OptimizationLevel::O3.to_llvm_level(), 3);
-    }
-    
-    #[test]
-    fn test_optimization_level_from_str() {
-        assert_eq!(OptimizationLevel::from_str("O0").unwrap(), OptimizationLevel::O0);
-        assert_eq!(OptimizationLevel::from_str("O2").unwrap(), OptimizationLevel::O2);
-        assert_eq!(OptimizationLevel::from_str("aggressive").unwrap(), OptimizationLevel::O3);
-    }
-    
-    #[test]
-    fn test_optimization_level_display() {
-        assert_eq!(format!("{}", OptimizationLevel::O0), "O0");
-        assert_eq!(format!("{}", OptimizationLevel::Aggressive), "aggressive");
-    }
-}

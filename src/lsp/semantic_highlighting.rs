@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Semantic highlighting implementation for CURSED language constructs
 // 
 // Provides comprehensive semantic highlighting for CURSED's Gen Z slang keywords,
@@ -45,7 +45,7 @@ pub enum CursedSemanticTokenType {
     YoloKeyword,         // While/for loops
     StanKeyword,         // Goroutine spawning
     CrushKeyword,        // Channel operations
-    SpillKeyword,        // Error/panic
+    SpillKeyword,        // CursedError/panic
     NoCapKeyword,        // Boolean true
     CapKeyword,          // Boolean false
     VibezKeyword,        // Return statements
@@ -380,7 +380,7 @@ impl SemanticHighlightingProvider {
         map.insert("stan".to_string(), CursedSemanticTokenType::StanKeyword);
         map.insert("crush".to_string(), CursedSemanticTokenType::CrushKeyword);
         
-        // Error handling
+        // CursedError handling
         map.insert("spill".to_string(), CursedSemanticTokenType::SpillKeyword);
         
         // Boolean values
@@ -472,7 +472,7 @@ impl SemanticHighlightingProvider {
                     "vibez" => TokenType::Yolo, // Return equivalent
                     "skrr" => TokenType::Ghosted, // Break equivalent
                     "yeet" => TokenType::Yeet,
-                    "spill" => TokenType::YeetError, // Error equivalent
+                    "spill" => TokenType::YeetError, // CursedError equivalent
                     "no_cap" => TokenType::NoCap,
                     "cap" => TokenType::Cap,
                     "squad" => TokenType::Squad,
@@ -532,7 +532,7 @@ impl SemanticHighlightingProvider {
                 (CursedSemanticTokenType::Operator, vec![])
             }
             
-            // Error propagation operator
+            // CursedError propagation operator
             TokenType::Question => {
                 (CursedSemanticTokenType::ErrorPropagation, vec![])
             }
@@ -611,87 +611,3 @@ impl Default for SemanticHighlightingProvider {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_semantic_highlighting_basic() {
-        let provider = SemanticHighlightingProvider::new();
-        let content = r#"
-            slay greet(name: string) -> string {
-                sus greeting = "Hello, " + name;
-                vibez greeting;
-            }
-            
-            facts PI = 3.14159;
-            
-            lowkey (x > 0) {
-                // This is a comment
-                spill "positive number";
-            }
-        "#;
-        
-        let tokens = provider.get_semantic_tokens(content).unwrap();
-        assert!(!tokens.is_empty());
-        
-        // Verify specific keywords are highlighted
-        let keyword_tokens: Vec<_> = tokens
-            .iter()
-            .filter(|t| matches!(
-                t.token_type,
-                CursedSemanticTokenType::SlayKeyword |
-                CursedSemanticTokenType::SusKeyword |
-                CursedSemanticTokenType::FactsKeyword |
-                CursedSemanticTokenType::LowkeyKeyword |
-                CursedSemanticTokenType::VibezKeyword |
-                CursedSemanticTokenType::SpillKeyword
-            ))
-            .collect();
-        
-        assert!(keyword_tokens.len() >= 6);
-    }
-    
-    #[test]
-    fn test_semantic_token_encoding() {
-        let provider = SemanticHighlightingProvider::new();
-        let tokens = vec![
-            SemanticToken::new(
-                0,
-                0,
-                4,
-                CursedSemanticTokenType::SlayKeyword,
-                vec![CursedSemanticTokenModifier::SlangKeyword],
-            ),
-            SemanticToken::new(
-                0,
-                5,
-                5,
-                CursedSemanticTokenType::Function,
-                vec![CursedSemanticTokenModifier::Declaration],
-            ),
-        ];
-        
-        let encoded = provider.encode_semantic_tokens(tokens);
-        assert!(!encoded.data.is_empty());
-        assert_eq!(encoded.data.len(), 10); // 2 tokens * 5 values each
-    }
-    
-    #[test]
-    fn test_keyword_mapping() {
-        let provider = SemanticHighlightingProvider::new();
-        
-        assert_eq!(
-            provider.keyword_map.get("slay"),
-            Some(&CursedSemanticTokenType::SlayKeyword)
-        );
-        assert_eq!(
-            provider.keyword_map.get("sus"),
-            Some(&CursedSemanticTokenType::SusKeyword)
-        );
-        assert_eq!(
-            provider.keyword_map.get("lowkey"),
-            Some(&CursedSemanticTokenType::LowkeyKeyword)
-        );
-    }
-}

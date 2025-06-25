@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Local Package Database Management
 /// 
 /// Provides persistent storage and management of installed package metadata:
@@ -13,7 +13,6 @@ use std::sync::{Arc, Mutex};
 use rusqlite::{Connection, params, Row, Result as SqliteResult, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
-use thiserror::Error;
 use tracing::{info, warn, error, debug, instrument};
 
 use super::{PackageMetadata, PackageManagerError};
@@ -70,7 +69,7 @@ pub enum InstallAction {
 }
 
 /// Database errors
-#[derive(Error, Debug)]
+#[derive(CursedError, Debug)]
 pub enum DatabaseError {
     #[error("Package not found: {name}")]
     PackageNotFound { name: String },
@@ -100,7 +99,7 @@ pub enum DatabaseError {
 impl PackageDatabase {
     /// Create a new package database
     #[instrument(skip(db_path))]
-    pub fn new<P: AsRef<Path>>(db_path: P) -> Result<(), Error> {
+    pub fn new<P: AsRef<Path>>(db_path: P) -> crate::error::Result<()> {
         let db_path = db_path.as_ref().to_path_buf();
         
         // Ensure parent directory exists
@@ -123,7 +122,7 @@ impl PackageDatabase {
     }
     
     /// Initialize database schema
-    fn initialize_schema(&mut self) -> Result<(), Error> {
+    fn initialize_schema(&mut self) -> crate::error::Result<()> {
         // Enable foreign keys
         self.connection.execute("PRAGMA foreign_keys = ON", [])?;
         
@@ -170,7 +169,7 @@ impl PackageDatabase {
     }
     
     /// Create database tables
-    fn create_tables(&mut self) -> Result<(), Error> {
+    fn create_tables(&mut self) -> crate::error::Result<()> {
         // Packages table
         self.connection.execute(
             "CREATE TABLE packages (
@@ -256,7 +255,7 @@ impl PackageDatabase {
     
     /// Add a package to the database
     #[instrument(skip(self, package), fields(package = %package.name, version = %package.version))]
-    pub fn add_package(&mut self, package: &InstalledPackage) -> Result<(), Error> {
+    pub fn add_package(&mut self, package: &InstalledPackage) -> crate::error::Result<()> {
         let tx = self.connection.transaction()?;
         
         // Insert package record
@@ -340,7 +339,7 @@ impl PackageDatabase {
     
     /// Get a package from the database
     #[instrument(skip(self), fields(package_name))]
-    pub fn get_package(&self, name: &str) -> Result<(), Error> {
+    pub fn get_package(&self, name: &str) -> crate::error::Result<()> {
         let mut stmt = self.connection.prepare(
             "SELECT name, version, install_time, install_path, metadata_json, file_operations_json 
              FROM packages WHERE name = ?1"
@@ -375,7 +374,7 @@ impl PackageDatabase {
     
     /// Remove a package from the database
     #[instrument(skip(self), fields(package_name))]
-    pub fn remove_package(&mut self, name: &str) -> Result<(), Error> {
+    pub fn remove_package(&mut self, name: &str) -> crate::error::Result<()> {
         let tx = self.connection.transaction()?;
         
         let rows_affected = tx.execute("DELETE FROM packages WHERE name = ?1", params![name])?;
@@ -400,7 +399,7 @@ impl PackageDatabase {
     }
     
     /// List all installed packages
-    pub fn list_packages(&self) -> Result<(), Error> {
+    pub fn list_packages(&self) -> crate::error::Result<()> {
         let mut stmt = self.connection.prepare(
             "SELECT name, version, install_time, install_path, metadata_json, file_operations_json 
              FROM packages ORDER BY name"
@@ -439,7 +438,7 @@ impl PackageDatabase {
     }
     
     /// Get package dependencies
-    pub fn get_dependencies(&self, package_name: &str) -> Result<(), Error> {
+    pub fn get_dependencies(&self, package_name: &str) -> crate::error::Result<()> {
         let mut stmt = self.connection.prepare(
             "SELECT package_name, dependency_name, version_constraint, is_dev_dependency 
              FROM dependencies WHERE package_name = ?1"
@@ -463,7 +462,7 @@ impl PackageDatabase {
     }
     
     /// Get packages that depend on a given package
-    pub fn get_dependents(&self, dependency_name: &str) -> Result<(), Error> {
+    pub fn get_dependents(&self, dependency_name: &str) -> crate::error::Result<()> {
         let mut stmt = self.connection.prepare(
             "SELECT package_name, dependency_name, version_constraint, is_dev_dependency 
              FROM dependencies WHERE dependency_name = ?1"
@@ -487,7 +486,7 @@ impl PackageDatabase {
     }
     
     /// Check if a package is installed
-    pub fn is_installed(&self, name: &str) -> Result<(), Error> {
+    pub fn is_installed(&self, name: &str) -> crate::error::Result<()> {
         let count: i32 = self.connection.query_row(
             "SELECT COUNT(*) FROM packages WHERE name = ?1",
             params![name],
@@ -502,7 +501,7 @@ impl PackageDatabase {
         &self,
         package_name: Option<&str>,
         limit: Option<usize>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let (query, params): (String, Vec<String>) = match package_name {
             Some(name) => (
                 format!(
@@ -564,7 +563,7 @@ impl PackageDatabase {
         action: InstallAction,
         success: bool,
         error_message: Option<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.connection.execute(
             "INSERT INTO installation_history 
              (package_name, version, action, timestamp, success, error_message) 
@@ -583,14 +582,14 @@ impl PackageDatabase {
     }
     
     /// Vacuum database to reclaim space
-    pub fn vacuum(&self) -> Result<(), Error> {
+    pub fn vacuum(&self) -> crate::error::Result<()> {
         self.connection.execute("VACUUM", [])?;
         info!("Database vacuumed");
         Ok(())
     }
     
     /// Get database statistics
-    pub fn get_statistics(&self) -> Result<(), Error> {
+    pub fn get_statistics(&self) -> crate::error::Result<()> {
         let package_count: i32 = self.connection.query_row(
             "SELECT COUNT(*) FROM packages",
             [],
@@ -620,7 +619,7 @@ impl PackageDatabase {
     }
     
     /// Verify database integrity
-    pub fn verify_integrity(&self) -> Result<(), Error> {
+    pub fn verify_integrity(&self) -> crate::error::Result<()> {
         // Run SQLite integrity check
         let integrity_result: String = self.connection.query_row(
             "PRAGMA integrity_check",
@@ -679,16 +678,16 @@ pub struct SharedPackageDatabase {
 }
 
 impl SharedPackageDatabase {
-    pub fn new(db_path: impl AsRef<Path>) -> Result<(), Error> {
+    pub fn new(db_path: impl AsRef<Path>) -> crate::error::Result<()> {
         let db = PackageDatabase::new(db_path)?;
         Ok(Self {
             inner: Arc::new(Mutex::new(db)),
         })
     }
     
-    pub fn with_db<F, R>(&self, f: F) -> Result<(), Error>
+    pub fn with_db<F, R>(&self, f: F) -> crate::error::Result<()>
     where
-        F: FnOnce(&mut PackageDatabase) -> Result<(), Error>,
+        F: FnOnce(&mut PackageDatabase) -> crate::error::Result<()>,
     {
         let mut db = self.inner.lock()
             .map_err(|e| DatabaseError::TransactionFailed {

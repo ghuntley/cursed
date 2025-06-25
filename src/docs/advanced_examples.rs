@@ -3,7 +3,7 @@
 /// Provides comprehensive example extraction, validation, and generation capabilities
 /// including automatic test extraction, runnable snippets, and categorized examples.
 
-use crate::error::{Error, SourceLocation};
+use crate::error::{CursedError, SourceLocation};
 use crate::lexer::{Lexer, Token, TokenType};
 use crate::parser::{Parser, ParsedProgram};
 // use crate::compiler::Compiler; // TODO: Implement main compiler interface
@@ -184,7 +184,7 @@ pub struct ExtractedExample {
     pub tags: HashSet<String>,
     /// Validation status
     pub is_validated: bool,
-    /// Error information if validation failed
+    /// CursedError information if validation failed
     pub validation_error: Option<String>,
 }
 
@@ -206,7 +206,7 @@ pub struct ValidationResult {
     pub success: bool,
     /// Output produced by the example
     pub output: String,
-    /// Error message if validation failed
+    /// CursedError message if validation failed
     pub error_message: Option<String>,
     /// Execution time
     pub execution_time: Duration,
@@ -242,7 +242,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from source files and tests
-    pub fn extract_examples(&mut self, source_paths: &[PathBuf]) -> Result<(), Error> {
+    pub fn extract_examples(&mut self, source_paths: &[PathBuf]) -> crate::error::Result<()> {
         let start_time = Instant::now();
         let mut total_extracted = 0;
         let mut extraction_errors = Vec::new();
@@ -255,7 +255,7 @@ impl AdvancedExampleGenerator {
         for path in source_paths {
             match self.extract_from_file(path) {
                 Ok(count) => total_extracted += count,
-                Err(e) => extraction_errors.push(format!("Error extracting from {}: {}", path.display(), e)),
+                Err(e) => extraction_errors.push(format!("CursedError extracting from {}: {}", path.display(), e)),
             }
         }
 
@@ -264,7 +264,7 @@ impl AdvancedExampleGenerator {
             for pattern in &self.config.test_file_patterns {
                 match self.extract_from_test_pattern(pattern) {
                     Ok(count) => total_extracted += count,
-                    Err(e) => extraction_errors.push(format!("Error extracting from pattern {}: {}", pattern, e)),
+                    Err(e) => extraction_errors.push(format!("CursedError extracting from pattern {}: {}", pattern, e)),
                 }
             }
         }
@@ -292,9 +292,9 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from a single file
-    fn extract_from_file(&mut self, file_path: &Path) -> Result<(), Error> {
+    fn extract_from_file(&mut self, file_path: &Path) -> crate::error::Result<()> {
         let content = fs::read_to_string(file_path)
-            .map_err(|e| Error::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to read file {}: {}", file_path.display(), e)))?;
 
         let mut extracted_count = 0;
 
@@ -313,7 +313,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from documentation comments
-    fn extract_doc_examples(&mut self, content: &str, file_path: &Path) -> Result<(), Error> {
+    fn extract_doc_examples(&mut self, content: &str, file_path: &Path) -> crate::error::Result<()> {
         let mut count = 0;
         let lines: Vec<&str> = content.split("\n").collect();
 
@@ -410,7 +410,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from comment blocks
-    fn extract_comment_examples(&mut self, content: &str, file_path: &Path) -> Result<(), Error> {
+    fn extract_comment_examples(&mut self, content: &str, file_path: &Path) -> crate::error::Result<()> {
         let mut count = 0;
         
         // Use regex or simple pattern matching to find comment examples
@@ -483,7 +483,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract a standalone example file
-    fn extract_standalone_example(&mut self, content: &str, file_path: &Path) -> Result<(), Error> {
+    fn extract_standalone_example(&mut self, content: &str, file_path: &Path) -> crate::error::Result<()> {
         // Parse the file to understand its structure
         let example_id = format!("standalone_{}", file_path.file_stem().unwrap_or_default().to_string_lossy());
         
@@ -557,7 +557,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from test files
-    fn extract_from_test_pattern(&mut self, pattern: &str) -> Result<(), Error> {
+    fn extract_from_test_pattern(&mut self, pattern: &str) -> crate::error::Result<()> {
         // Simple glob pattern matching implementation
         let mut count = 0;
         
@@ -580,7 +580,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from a test directory
-    fn extract_from_test_directory(&mut self, dir: &Path) -> Result<(), Error> {
+    fn extract_from_test_directory(&mut self, dir: &Path) -> crate::error::Result<()> {
         let mut count = 0;
         
         if let Ok(entries) = fs::read_dir(dir) {
@@ -603,9 +603,9 @@ impl AdvancedExampleGenerator {
     }
 
     /// Extract examples from test files
-    fn extract_test_examples(&mut self, file_path: &Path) -> Result<(), Error> {
+    fn extract_test_examples(&mut self, file_path: &Path) -> crate::error::Result<()> {
         let content = fs::read_to_string(file_path)
-            .map_err(|e| Error::SystemError(format!("Failed to read test file {}: {}", file_path.display(), e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to read test file {}: {}", file_path.display(), e)))?;
 
         let mut count = 0;
 
@@ -720,7 +720,7 @@ impl AdvancedExampleGenerator {
             ("loop", "Control Flow"),
             ("if", "Conditionals"),
             ("match", "Pattern Matching"),
-            ("error", "Error Handling"),
+            ("error", "CursedError Handling"),
             ("test", "Testing"),
             ("http", "Web Development"),
             ("json", "JSON Processing"),
@@ -821,7 +821,7 @@ impl AdvancedExampleGenerator {
     }
 
     /// Validate a single example by attempting to compile and run it
-    fn validate_example(&self, example: &ExtractedExample) -> Result<(), Error> {
+    fn validate_example(&self, example: &ExtractedExample) -> crate::error::Result<()> {
         if !self.config.validate_examples {
             return Ok(ValidationResult {
                 success: true,
@@ -838,7 +838,7 @@ impl AdvancedExampleGenerator {
         // Create a temporary file for the example
         let temp_file = format!("/tmp/cursed_example_{}.csd", example.id);
         fs::write(&temp_file, &example.code)
-            .map_err(|e| Error::SystemError(format!("Failed to write temp file: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write temp file: {}", e)))?;
 
         // Try to compile the example
         let compile_result = Command::new("cargo")
@@ -946,13 +946,13 @@ impl AdvancedExampleGenerator {
     }
 
     /// Generate interactive examples in various formats
-    pub fn generate_interactive_examples(&self, output_dir: &Path) -> Result<(), Error> {
+    pub fn generate_interactive_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         if !self.config.generate_interactive {
             return Ok(());
         }
 
         fs::create_dir_all(output_dir)
-            .map_err(|e| Error::SystemError(format!("Failed to create output directory: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to create output directory: {}", e)))?;
 
         for format in &self.config.output_formats {
             match format {
@@ -968,22 +968,22 @@ impl AdvancedExampleGenerator {
     }
 
     /// Generate HTML examples with interactive features
-    fn generate_html_examples(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_html_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         let html_dir = output_dir.join("html");
         fs::create_dir_all(&html_dir)
-            .map_err(|e| Error::SystemError(format!("Failed to create HTML directory: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to create HTML directory: {}", e)))?;
 
         // Generate index page
         let index_html = self.generate_examples_index_html();
         fs::write(html_dir.join("index.html"), index_html)
-            .map_err(|e| Error::SystemError(format!("Failed to write index.html: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write index.html: {}", e)))?;
 
         // Generate individual example pages
         for (example_id, example) in &self.examples_db.examples {
             let example_html = self.generate_example_html(example);
             let filename = format!("{}.html", example_id);
             fs::write(html_dir.join(filename), example_html)
-                .map_err(|e| Error::SystemError(format!("Failed to write example HTML: {}", e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to write example HTML: {}", e)))?;
         }
 
         Ok(())
@@ -1165,22 +1165,22 @@ impl AdvancedExampleGenerator {
     }
 
     /// Generate markdown examples
-    fn generate_markdown_examples(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_markdown_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         let md_dir = output_dir.join("markdown");
         fs::create_dir_all(&md_dir)
-            .map_err(|e| Error::SystemError(format!("Failed to create markdown directory: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to create markdown directory: {}", e)))?;
 
         // Generate README
         let readme_content = self.generate_examples_readme();
         fs::write(md_dir.join("README.md"), readme_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write README.md: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write README.md: {}", e)))?;
 
         // Generate category-based markdown files
         for (category, example_ids) in &self.examples_db.by_category {
             let category_content = self.generate_category_markdown(category, example_ids);
             let filename = format!("{:?}.md", category).to_lowercase();
             fs::write(md_dir.join(filename), category_content)
-                .map_err(|e| Error::SystemError(format!("Failed to write category markdown: {}", e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to write category markdown: {}", e)))?;
         }
 
         Ok(())
@@ -1298,21 +1298,21 @@ Examples marked with ✓ have been automatically validated by compiling and runn
     }
 
     /// Generate playground-style interactive examples
-    fn generate_playground_examples(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_playground_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         let playground_dir = output_dir.join("playground");
         fs::create_dir_all(&playground_dir)
-            .map_err(|e| Error::SystemError(format!("Failed to create playground directory: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to create playground directory: {}", e)))?;
 
         // Generate a simple web-based playground
         let playground_html = self.generate_playground_html();
         fs::write(playground_dir.join("index.html"), playground_html)
-            .map_err(|e| Error::SystemError(format!("Failed to write playground HTML: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write playground HTML: {}", e)))?;
 
         // Generate examples data as JSON
         let examples_json = serde_json::to_string_pretty(&self.examples_db)
-            .map_err(|e| Error::SystemError(format!("Failed to serialize examples: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to serialize examples: {}", e)))?;
         fs::write(playground_dir.join("examples.json"), examples_json)
-            .map_err(|e| Error::SystemError(format!("Failed to write examples JSON: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write examples JSON: {}", e)))?;
 
         Ok(())
     }
@@ -1472,18 +1472,18 @@ Examples marked with ✓ have been automatically validated by compiling and runn
     }
 
     /// Generate advanced playground with more features
-    fn generate_advanced_playground(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_advanced_playground(&self, output_dir: &Path) -> crate::error::Result<()> {
         // This would implement a more sophisticated playground with features like:
         // - Code completion
         // - Syntax highlighting
         // - Step-by-step debugging
         // - Performance visualization
-        // - Error highlighting
+        // - CursedError highlighting
         // For now, we'll create a placeholder
         
         let advanced_dir = output_dir.join("advanced_playground");
         fs::create_dir_all(&advanced_dir)
-            .map_err(|e| Error::SystemError(format!("Failed to create advanced playground directory: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to create advanced playground directory: {}", e)))?;
 
         let placeholder_content = r#"# Advanced CURSED Playground
 
@@ -1496,7 +1496,7 @@ This directory is reserved for an advanced interactive playground that would inc
 - Performance profiling and visualization
 - Interactive tutorials with guided examples
 - Code completion and IntelliSense
-- Error highlighting and suggestions
+- CursedError highlighting and suggestions
 - Collaborative editing capabilities
 
 ## Implementation
@@ -1510,23 +1510,23 @@ The advanced playground would be implemented using:
 This represents the next evolution of the CURSED examples system."#;
 
         fs::write(advanced_dir.join("README.md"), placeholder_content)
-            .map_err(|e| Error::SystemError(format!("Failed to write advanced playground README: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to write advanced playground README: {}", e)))?;
 
         Ok(())
     }
 
     /// Generate Jupyter notebook examples
-    fn generate_jupyter_examples(&self, output_dir: &Path) -> Result<(), Error> {
+    fn generate_jupyter_examples(&self, output_dir: &Path) -> crate::error::Result<()> {
         let jupyter_dir = output_dir.join("jupyter");
         fs::create_dir_all(&jupyter_dir)
-            .map_err(|e| Error::SystemError(format!("Failed to create jupyter directory: {}", e)))?;
+            .map_err(|e| CursedError::SystemError(format!("Failed to create jupyter directory: {}", e)))?;
 
         // Generate a sample Jupyter notebook for CURSED
         for (category, example_ids) in &self.examples_db.by_category {
             let notebook_content = self.generate_jupyter_notebook(category, example_ids);
             let filename = format!("{:?}_examples.ipynb", category).to_lowercase();
             fs::write(jupyter_dir.join(filename), notebook_content)
-                .map_err(|e| Error::SystemError(format!("Failed to write Jupyter notebook: {}", e)))?;
+                .map_err(|e| CursedError::SystemError(format!("Failed to write Jupyter notebook: {}", e)))?;
         }
 
         Ok(())

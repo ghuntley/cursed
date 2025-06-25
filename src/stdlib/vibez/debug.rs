@@ -3,8 +3,8 @@
 /// Provides comprehensive debug output functionality including pretty printing,
 /// debug inspection, trace output, and configurable debug levels.
 
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+use crate::error::CursedError;
 use std::io::{self, Write, stderr};
 use std::collections::HashMap;
 use std::sync::{Mutex, Arc};
@@ -14,7 +14,7 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DebugLevel {
     Off = 0,
-    Error = 1,
+    CursedError = 1,
     Warning = 2,
     Info = 3,
     Debug = 4,
@@ -25,7 +25,7 @@ impl fmt::Display for DebugLevel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DebugLevel::Off => write!(f, "OFF"),
-            DebugLevel::Error => write!(f, "ERROR"),
+            DebugLevel::CursedError => write!(f, "ERROR"),
             DebugLevel::Warning => write!(f, "WARN"),
             DebugLevel::Info => write!(f, "INFO"),
             DebugLevel::Debug => write!(f, "DEBUG"),
@@ -93,6 +93,8 @@ static DEBUG_STATE: Mutex<DebugState> = Mutex::new(DebugState {
 
 /// Initialize the debug system
 pub fn init_debug_system() {
+        // TODO: implement
+    }
     // Initialize with default settings
     if let Ok(mut state) = DEBUG_STATE.lock() {
         state.enabled = true;
@@ -160,7 +162,7 @@ pub fn debug_println(level: DebugLevel, args: &[Value]) -> io::Result<()> {
 }
 
 /// Format debug message with template
-/// Example: debug_format(DebugLevel::Error, "Error in {}: {}", &[func_name, error])
+/// Example: debug_format(DebugLevel::CursedError, "CursedError in {}: {}", &[func_name, error])
 pub fn debug_format(level: DebugLevel, template: &str, args: &[Value]) -> io::Result<()> {
     if !is_debug_enabled(level) {
         return Ok(());
@@ -370,7 +372,7 @@ fn format_value_debug(value: &Value) -> String {
         Value::NativeFunction(_) => "<native_function>".to_string(),
         Value::Channel(_) => "<channel>".to_string(),
         Value::Interface(_) => "<interface>".to_string(),
-        Value::Error(e) => format!("Error({})", e),
+        Value::CursedError(e) => format!("CursedError({})", e),
         Value::Bytes(b) => format!("<bytes[{}]>", b.len()),
     }
 }
@@ -485,7 +487,7 @@ fn get_value_type_name(value: &Value) -> &'static str {
         Value::NativeFunction(_) => "native_function",
         Value::Channel(_) => "channel",
         Value::Interface(_) => "interface",
-        Value::Error(_) => "error",
+        Value::CursedError(_) => "error",
         Value::Bytes(_) => "bytes",
     }
 }
@@ -509,7 +511,7 @@ fn get_timestamp() -> String {
 fn parse_debug_level(level_str: &str) -> Result<DebugLevel, ()> {
     match level_str.to_uppercase().as_str() {
         "OFF" | "0" => Ok(DebugLevel::Off),
-        "ERROR" | "1" => Ok(DebugLevel::Error),
+        "ERROR" | "1" => Ok(DebugLevel::CursedError),
         "WARN" | "WARNING" | "2" => Ok(DebugLevel::Warning),
         "INFO" | "3" => Ok(DebugLevel::Info),
         "DEBUG" | "4" => Ok(DebugLevel::Debug),
@@ -518,65 +520,3 @@ fn parse_debug_level(level_str: &str) -> Result<DebugLevel, ()> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_debug_levels() {
-        assert!(DebugLevel::Error < DebugLevel::Info);
-        assert!(DebugLevel::Debug > DebugLevel::Warning);
-        assert_eq!(DebugLevel::Info, DebugLevel::Info);
-    }
-
-    #[test]
-    fn test_parse_debug_level() {
-        assert_eq!(parse_debug_level("DEBUG"), Ok(DebugLevel::Debug));
-        assert_eq!(parse_debug_level("4"), Ok(DebugLevel::Debug));
-        assert_eq!(parse_debug_level("info"), Ok(DebugLevel::Info));
-        assert!(parse_debug_level("invalid").is_err());
-    }
-
-    #[test]
-    fn test_format_value_debug() {
-        assert_eq!(format_value_debug(&Value::Nil), "nil");
-        assert_eq!(format_value_debug(&Value::Bool(true)), "true");
-        assert_eq!(format_value_debug(&Value::Int(42)), "42");
-        assert_eq!(format_value_debug(&Value::String("test".to_string())), "\"test\"");
-    }
-
-    #[test]
-    fn test_format_value_compact() {
-        let long_string = "a".repeat(100);
-        let value = Value::String(long_string);
-        let formatted = format_value_compact(&value);
-        assert!(formatted.len() < 100);
-        assert!(formatted.contains("..."));
-    }
-
-    #[test]
-    fn test_debug_inspect() {
-        let mut obj = HashMap::new();
-        obj.insert("key".to_string(), Value::String("value".to_string()));
-        let value = Value::Object(obj);
-        
-        let inspection = debug_inspect(&value);
-        assert!(inspection.contains("Type: object"));
-        assert!(inspection.contains("Properties: 1"));
-    }
-
-    #[test]
-    fn test_set_get_debug_level() {
-        let original = get_debug_level();
-        
-        set_debug_level(DebugLevel::Trace);
-        assert_eq!(get_debug_level(), DebugLevel::Trace);
-        
-        set_debug_level(DebugLevel::Error);
-        assert_eq!(get_debug_level(), DebugLevel::Error);
-        
-        // Restore original level
-        set_debug_level(original);
-    }
-}

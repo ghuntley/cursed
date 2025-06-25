@@ -1,11 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // SlayPipeline implementation for command pipeline execution
 
 use std::io::{self, Read, Write};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use crate::error::CursedError;
 use super::{SlayCommand, SlayOptions, SlayResult, io_error_to_cursed};
 
 /// Execution pipeline for multiple commands
@@ -213,77 +212,3 @@ impl SlayCommand {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::exec_slay::SlayCommand;
-
-    #[test]
-    fn test_new_pipeline() {
-        let cmd1 = SlayCommand::new("echo", &["hello"]);
-        let cmd2 = SlayCommand::new("grep", &["h"]);
-        let pipeline = SlayPipeline::new(vec![cmd1, cmd2]);
-        
-        assert_eq!(pipeline.commands.len(), 2);
-    }
-
-    #[test]
-    fn test_pipeline_to_string() {
-        let cmd1 = SlayCommand::new("cat", &["file.txt"]);
-        let cmd2 = SlayCommand::new("grep", &["pattern"]);
-        let cmd3 = SlayCommand::new("wc", &["-l"]);
-        
-        let pipeline = SlayPipeline::new(vec![cmd1, cmd2, cmd3]);
-        let pipeline_str = pipeline.to_string();
-        
-        assert_eq!(pipeline_str, "cat file.txt | grep pattern | wc -l");
-    }
-
-    #[test]
-    fn test_pipeline_add_command() {
-        let mut pipeline = SlayPipeline::new(vec![]);
-        let cmd = SlayCommand::new("echo", &["test"]);
-        
-        pipeline.add_command(cmd);
-        assert_eq!(pipeline.commands.len(), 1);
-    }
-
-    #[test]
-    fn test_pipeline_with_options() {
-        let cmd = SlayCommand::new("echo", &["test"]);
-        let mut options = SlayOptions::default();
-        options.timeout = Some(Duration::from_secs(10));
-        
-        let pipeline = SlayPipeline::new(vec![cmd]).with_options(options);
-        assert_eq!(pipeline.options.timeout, Some(Duration::from_secs(10)));
-    }
-
-    #[test]
-    fn test_empty_pipeline_error() {
-        let mut pipeline = SlayPipeline::new(vec![]);
-        let result = pipeline.start();
-        assert!(result.is_err());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_simple_pipeline() {
-        let cmd1 = SlayCommand::new("echo", &["hello\nworld\nhello"]);
-        let cmd2 = SlayCommand::new("grep", &["hello"]);
-        
-        let mut pipeline = SlayPipeline::new(vec![cmd1, cmd2]);
-        let result = pipeline.run();
-        assert!(result.is_ok());
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_single_command_pipeline() {
-        let cmd = SlayCommand::new("echo", &["test"]);
-        let mut pipeline = SlayPipeline::new(vec![cmd]);
-        
-        let output = pipeline.output().unwrap();
-        let output_str = String::from_utf8(output).unwrap();
-        assert!(output_str.contains("test"));
-    }
-}

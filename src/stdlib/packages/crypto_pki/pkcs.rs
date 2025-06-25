@@ -1,7 +1,7 @@
 /// PKCS Standards Support
 
-use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError};
+use crate::error::CursedError;
 
 pub struct Pkcs1;
 pub struct Pkcs7;

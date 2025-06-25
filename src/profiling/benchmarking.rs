@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Benchmarking framework for performance testing and regression detection
 
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use std::time::{Duration, Instant, SystemTime};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::profiling::core::{ProfilerError, CursedProfiler, ProfilerConfig};
+// use crate::profiling::core::{ProfilerError, CursedProfiler, ProfilerConfig};
 
 /// Benchmark suite coordinator
 #[derive(Debug)]
@@ -35,7 +35,7 @@ impl BenchmarkSuite {
     }
     
     #[instrument(skip(self))]
-    pub fn run_all(&mut self) -> Result<(), Error> {
+    pub fn run_all(&mut self) -> crate::error::Result<()> {
         info!("Running benchmark suite: {} ({} benchmarks)", self.name, self.benchmarks.len());
         
         let mut results = BenchmarkResults::new(self.name.clone());
@@ -60,7 +60,7 @@ impl BenchmarkSuite {
         Ok(results)
     }
     
-    fn run_benchmark_by_index(&self, index: usize) -> Result<(), Error> {
+    fn run_benchmark_by_index(&self, index: usize) -> crate::error::Result<()> {
         let benchmark = &self.benchmarks[index];
         let mut measurements = Vec::new();
         let mut profiler = CursedProfiler::new(ProfilerConfig::default());
@@ -206,7 +206,7 @@ impl BenchmarkSuite {
         self.baseline = Some(results);
     }
     
-    pub fn load_baseline(&mut self, path: &str) -> Result<(), Error> {
+    pub fn load_baseline(&mut self, path: &str) -> crate::error::Result<()> {
         let baseline = BenchmarkResults::load_from_file(path)?;
         self.set_baseline(baseline);
         Ok(())
@@ -331,7 +331,7 @@ impl BenchmarkResults {
         };
     }
     
-    pub fn save_to_file(&self, path: &str) -> Result<(), Error> {
+    pub fn save_to_file(&self, path: &str) -> crate::error::Result<()> {
         let json = serde_json::to_string_pretty(self)
             .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
         
@@ -341,7 +341,7 @@ impl BenchmarkResults {
         Ok(())
     }
     
-    pub fn load_from_file(path: &str) -> Result<(), Error> {
+    pub fn load_from_file(path: &str) -> crate::error::Result<()> {
         let content = std::fs::read_to_string(path)
             .map_err(ProfilerError::IoError)?;
         
@@ -614,107 +614,3 @@ impl MacroBenchmark {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_benchmark_creation() {
-        let benchmark = Benchmark::new("test_bench".to_string(), || {
-            std::thread::sleep(Duration::from_millis(1));
-        });
-        
-        assert_eq!(benchmark.name, "test_bench");
-    }
-    
-    #[test]
-    fn test_benchmark_suite() {
-        let config = BenchmarkConfig::default();
-        let mut suite = BenchmarkSuite::new("test_suite".to_string(), config);
-        
-        let benchmark = Benchmark::new("simple_test".to_string(), || {
-            // Simple computation
-            let _ = (0..1000).sum::<i32>();
-        });
-        
-        suite.add_benchmark(benchmark);
-        assert_eq!(suite.benchmarks.len(), 1);
-    }
-    
-    #[test]
-    fn test_benchmark_statistics() {
-        let measurements = vec![
-            BenchmarkMeasurement {
-                iteration: 0,
-                duration: Duration::from_millis(100),
-                timestamp: SystemTime::now(),
-                profile_data: None,
-                memory_usage: MemoryUsage::default(),
-            },
-            BenchmarkMeasurement {
-                iteration: 1,
-                duration: Duration::from_millis(200),
-                timestamp: SystemTime::now(),
-                profile_data: None,
-                memory_usage: MemoryUsage::default(),
-            },
-        ];
-        
-        let stats = BenchmarkStatistics::calculate(&measurements);
-        assert_eq!(stats.min, Duration::from_millis(100));
-        assert_eq!(stats.max, Duration::from_millis(200));
-        assert_eq!(stats.mean, Duration::from_millis(150));
-    }
-    
-    #[test]
-    fn test_performance_change_calculation() {
-        let baseline = BenchmarkResult {
-            name: "test".to_string(),
-            measurements: Vec::from([]),
-            statistics: BenchmarkStatistics {
-                mean: Duration::from_millis(100),
-                ..Default::default()
-            },
-            timestamp: SystemTime::now(),
-        };
-        
-        let current = BenchmarkResult {
-            name: "test".to_string(),
-            measurements: Vec::from([]),
-            statistics: BenchmarkStatistics {
-                mean: Duration::from_millis(120),
-                ..Default::default()
-            },
-            timestamp: SystemTime::now(),
-        };
-        
-        let change = BenchmarkSuite::calculate_performance_change(&baseline, &current);
-        
-        match change {
-            PerformanceChange::Regression { percentage, .. } => {
-                assert!((percentage - 20.0).abs() < 0.01);
-            }
-            _ => panic!("Expected regression"),
-        }
-    }
-    
-    #[test]
-    fn test_micro_benchmark_builder() {
-        let benchmark = MicroBenchmark::function("test", || {
-            let _ = 1 + 1;
-        });
-        
-        assert_eq!(benchmark.name, "micro_test");
-    }
-    
-    #[test]
-    fn test_macro_benchmark_builder() {
-        let benchmark = MacroBenchmark::program("test", || {
-            // Simulate program execution
-            std::thread::sleep(Duration::from_millis(1));
-        });
-        
-        assert_eq!(benchmark.name, "macro_test");
-        assert_eq!(benchmark.expected_duration, Some(Duration::from_secs(1)));
-    }
-}

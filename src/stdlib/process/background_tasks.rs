@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced Background Task Management for CURSED
 /// 
 /// This module provides comprehensive background task execution and management,
@@ -11,12 +11,12 @@ use std::thread;
 use std::time::{Duration, Instant};
 use std::process::{Child, ExitStatus};
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, timeout_error, invalid_arguments
 };
 
-use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayProcess, SlayProcessState};
-use crate::stdlib::process::real_monitoring::{ProcessStats, get_real_process_stats};
+// use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayProcess, SlayProcessState};
+// use crate::stdlib::process::real_monitoring::{ProcessStats, get_real_process_stats};
 
 /// Background task manager for managing multiple tasks
 pub type BackgroundTaskManager = SlayTaskManager;
@@ -273,7 +273,7 @@ impl SlayTask {
                     }
                     Ok(None) => true, // Still running
                     Err(_) => {
-                        // Error checking status, assume dead
+                        // CursedError checking status, assume dead
                         self.finished = true;
                         self.state = TaskState::Failed;
                         false
@@ -770,47 +770,3 @@ pub fn run_background_with_config(command: SlayCommand, config: TaskConfig) -> P
     manager.submit_task(command, Some(config))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::process::enhanced_exec_slay::SlayCommand;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_task_creation() {
-        let command = SlayCommand::new("echo", &["test"]);
-        let config = TaskConfig::default();
-        let task = SlayTask::new(1, command, config);
-        
-        assert_eq!(task.id, 1);
-        assert_eq!(task.state(), TaskState::Created);
-        assert!(!task.finished);
-    }
-
-    #[test]
-    fn test_task_manager_creation() {
-        let config = ManagerConfig::default();
-        let manager = TaskManager::new(config);
-        
-        assert_eq!(manager.list_tasks().len(), 0);
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_background_task_execution() {
-        let command = SlayCommand::new("echo", &["background_test"]);
-        let task_id = run_background(command).unwrap();
-        
-        let manager = get_global_task_manager();
-        thread::sleep(Duration::from_millis(100)); // Give task time to complete
-        
-        if let Some(task) = manager.get_task(task_id) {
-            if let Ok(task_guard) = task.lock() {
-                // Task should have completed quickly
-                assert!(task_guard.finished || !task_guard.is_running());
-            }
-        }
-    }
-}

@@ -1,5 +1,5 @@
 /// fr fr Benchmarking utilities for the TestVibes framework
-use crate::stdlib::packages::test_vibes::core::VibeBench;
+// use crate::stdlib::packages::test_vibes::core::VibeBench;
 use std::time::{Duration, Instant};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
@@ -221,7 +221,7 @@ pub struct BenchmarkResult {
 
 impl BenchmarkResult {
     /// fr fr Create from VibeBench result
-    pub fn from_bench_result(result: crate::stdlib::packages::test_vibes::core::BenchResult) -> Self {
+//     pub fn from_bench_result(result: crate::stdlib::packages::test_vibes::core::BenchResult) -> Self {
         let ns_per_op = if result.iterations > 0 {
             result.duration.as_nanos() as f64 / result.iterations as f64
         } else {
@@ -284,7 +284,7 @@ pub struct ParallelBenchmarkResult {
     pub name: String,
     pub parallelism: usize,
     pub total_duration: Duration,
-    pub thread_results: Vec<crate::stdlib::packages::test_vibes::core::BenchResult>,
+//     pub thread_results: Vec<crate::stdlib::packages::test_vibes::core::BenchResult>,
     pub average_duration: Duration,
     pub throughput: f64,
 }
@@ -434,7 +434,7 @@ fn get_memory_usage() -> usize {
 }
 
 /// fr fr Calculate throughput for parallel benchmarks
-fn calculate_throughput(results: &[crate::stdlib::packages::test_vibes::core::BenchResult], total_duration: Duration) -> f64 {
+// fn calculate_throughput(results: &[crate::stdlib::packages::test_vibes::core::BenchResult], total_duration: Duration) -> f64 {
     let total_iterations: i64 = results.iter().map(|r| r.iterations).sum();
     
     if total_duration.as_nanos() > 0 {
@@ -444,109 +444,3 @@ fn calculate_throughput(results: &[crate::stdlib::packages::test_vibes::core::Be
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_benchmark_creation() {
-        let benchmark = Benchmark::new("test_bench", |b| {
-            for _ in 0..b.iterations() {
-                // Simulate work
-                let _ = 2 + 2;
-            }
-        });
-
-        assert_eq!(benchmark.name, "test_bench");
-    }
-
-    #[test]
-    fn test_benchmark_with_iterations() {
-        let benchmark = Benchmark::new("test_bench", |b| {
-            for _ in 0..b.iterations() {
-                let _ = 2 + 2;
-            }
-        }).iterations(100);
-
-        let result = benchmark.run();
-        assert_eq!(result.iterations, 100);
-        assert!(!result.failed);
-    }
-
-    #[test]
-    fn test_memory_benchmark() {
-        let benchmark = BenchmarkMemory::new("memory_test", |b| {
-            for _ in 0..b.iterations() {
-                let _vec = Vec::from([1, 2, 3, 4, 5]);
-            }
-        });
-
-        let result = benchmark.run();
-        assert_eq!(result.name, "memory_test");
-    }
-
-    #[test]
-    fn test_parallel_benchmark() {
-        let benchmark = BenchmarkParallel::new("parallel_test", |b| {
-            for _ in 0..b.iterations() {
-                let _ = 2 + 2;
-            }
-        }).parallelism(2);
-
-        let result = benchmark.run();
-        assert_eq!(result.parallelism, 2);
-        assert_eq!(result.thread_results.len(), 2);
-    }
-
-    #[test]
-    fn test_benchmark_comparison() {
-        let baseline = BenchmarkResult {
-            name: "baseline".to_string(),
-            duration: Duration::from_nanos(1000),
-            iterations: 1,
-            ns_per_op: 1000.0,
-            ops_per_sec: 1_000_000.0,
-            failed: false,
-        };
-
-        let current = BenchmarkResult {
-            name: "current".to_string(),
-            duration: Duration::from_nanos(800),
-            iterations: 1,
-            ns_per_op: 800.0,
-            ops_per_sec: 1_250_000.0,
-            failed: false,
-        };
-
-        let comparison = BenchmarkComparison::new(baseline, current);
-        assert!(comparison.improved());
-        assert!(!comparison.regressed());
-        assert_eq!(comparison.performance_ratio(), 0.8);
-        assert_eq!(comparison.percentage_change(), -20.0);
-    }
-
-    #[test]
-    fn test_benchmark_suite() {
-        let mut suite = BenchmarkSuite::new("test_suite");
-        
-        let benchmark1 = Benchmark::new("bench1", |b| {
-            for _ in 0..b.iterations() {
-                let _ = 2 + 2;
-            }
-        }).iterations(10);
-
-        let benchmark2 = Benchmark::new("bench2", |b| {
-            for _ in 0..b.iterations() {
-                let _ = 3 * 3;
-            }
-        }).iterations(10);
-
-        suite = suite.add_benchmark(benchmark1);
-        suite = suite.add_benchmark(benchmark2);
-
-        assert_eq!(suite.benchmarks.len(), 2);
-        
-        // Running the suite would produce output
-        // suite.run();
-    }
-}

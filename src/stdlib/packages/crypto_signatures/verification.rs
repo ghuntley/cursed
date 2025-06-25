@@ -3,15 +3,15 @@
 /// Unified verification interface for all signature algorithms supported by CURSED crypto.
 /// Provides algorithm detection, batch verification, and comprehensive error handling.
 
-use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
-use crate::stdlib::packages::crypto_signatures::key_management::{PublicKey, KeyType};
-use crate::stdlib::packages::crypto_signatures::ed25519::{Ed25519Verifier, utils as ed25519_utils};
-use crate::stdlib::packages::crypto_signatures::ecdsa::{EcdsaVerifier, EcdsaCurve, utils as ecdsa_utils};
-use crate::stdlib::packages::crypto_signatures::rsa_signatures::{
+// use crate::stdlib::packages::crypto_signatures::errors::{SignatureError, SignatureResult};
+// use crate::stdlib::packages::crypto_signatures::key_management::{PublicKey, KeyType};
+// use crate::stdlib::packages::crypto_signatures::ed25519::{Ed25519Verifier, utils as ed25519_utils};
+// use crate::stdlib::packages::crypto_signatures::ecdsa::{EcdsaVerifier, EcdsaCurve, utils as ecdsa_utils};
+// use crate::stdlib::packages::crypto_signatures::rsa_signatures::{
     RsaVerifier, RsaSignatureScheme, RsaKeySize, RsaHashAlgorithm, utils as rsa_utils
 };
-use crate::error::Error;
-use crate::stdlib::packages::crypto_signatures::multisig::{MultiSigSigner, MultiSignature};
+use crate::error::CursedError;
+// use crate::stdlib::packages::crypto_signatures::multisig::{MultiSigSigner, MultiSignature};
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

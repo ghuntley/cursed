@@ -1,6 +1,6 @@
 // Minimal lexer for CURSED minimal build
 
-use crate::error::{Error, Result};
+use crate::error::{CursedError, Result};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {

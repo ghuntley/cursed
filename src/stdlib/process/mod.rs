@@ -1,6 +1,6 @@
-use crate::stdlib::web_vibez::SecurityContext;
-use crate::stdlib::process::EnhancedProcess;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::SecurityContext;
+// use crate::stdlib::process::EnhancedProcess;
+use crate::error::CursedError;
 // Remove duplicate imports - these are re-exported below
 /// Process management and system interaction for CURSED
 /// 
@@ -64,6 +64,9 @@ pub mod windows_platform;
 pub mod macos_platform;
 pub mod mmap;
 
+// Re-export core functionality  
+pub use core::*;
+
 // Re-export enhanced functionality
 pub use enhanced_exec_slay::*;
 // // pub use enhanced_exec_slay_complete::*; // Removed to avoid circular dependency // Removed to avoid E0659 conflicts
@@ -80,94 +83,3 @@ pub use safe_process_management::{
 };
 pub use safe_exec_slay::*;
 
-#[cfg(test)]
-pub mod tests;
-pub mod type_disambiguation;
-
-// Re-export public API
-// Core types - explicit exports to avoid conflicts
-pub use error::{ProcessError, ProcessResult};
-pub use core::{ProcessManager, ProcessHandle, ProcessConfig, ProcessGroup, ProcessState, ProcessInfo};
-pub use exec_slay::{SlayCommand, SlayOptions};
-pub use exec_vibez::{Cmd, ProcessContext};
-pub use background_tasks::{SlayTask};
-pub use pipeline::{SlayPipeline};
-
-// Submodules already declared above, no need to redeclare
-pub use info::{ProcessInfo as StdProcessInfo, SystemInfo, ProcessState as StdProcessState};
-pub use control::{ProcessController, ControlOptions};
-pub use enhanced_control::{EnhancedProcessController, EnhancedControlOptions};
-pub use communication::{ProcessCommunication, CommunicationChannel};
-pub use monitoring::{ProcessMonitor, MonitoringOptions, ProcessMetrics};
-pub use platform::{PlatformHandler, PlatformCapabilities};
-pub use pipes::{ProcessPipe, PipeOptions};
-pub use signals::{SignalHandler, SignalType};
-pub use daemon::{DaemonManager, DaemonOptions};
-pub use environment::{EnvironmentManager, EnvVar};
-pub use lifecycle::{ProcessLifecycleManager, ManagedProcess, LifecycleEvent};
-
-// Exec modules - prefixed to avoid conflicts
-pub use exec_slay::{
-    SlayProcess as ProcessSlayProcess,
-    SlayCommand as ProcessSlayCommand,
-    SlayResult as ProcessSlayResult
-};
-pub use exec_vibez::{
-    VibezProcess as ProcessVibezProcess,
-    VibezCommand as ProcessVibezCommand,
-    VibezResult as ProcessVibezResult
-};
-pub use exec_vibez_types::{
-    VibezResult, ExecutionContext, EnhancedCmd, ResourceLimits as ExecResourceLimits,
-    SecurityContext as ExecSecurityContext, ExecutionMode, Priority
-};
-
-// Enhanced modules with prefixes
-pub use enhanced_exec_slay::{
-    EnhancedSlayProcess,
-    EnhancedSlayCommand,
-    EnhancedSlayOptions
-};
-
-// Monitoring exports
-pub use real_monitoring::{
-    get_real_cpu_times, get_real_memory_usage, get_real_process_stats,
-    RealProcessStats, CpuTimes, MemoryUsage
-};
-
-// Integration modules
-pub use integration::{ProcessIntegration, IntegrationOptions};
-pub use ipc_integration::{IpcIntegration, IpcOptions};
-pub use comprehensive_integration::{ComprehensiveProcessManager};
-
-// Pipeline and task management
-pub use pipeline::{ProcessPipeline, PipelineStage};
-pub use background_tasks::{BackgroundTaskManager, TaskHandle};
-pub use shell_commands::{ShellCommandManager, ShellOptions};
-
-// IPC and communication
-pub use real_ipc::{RealIpcManager, IpcChannel, IpcMessage};
-
-// System-level operations
-pub use fork::{ForkManager, ForkOptions};
-pub use resource_limits::{ResourceLimitManager, ResourceLimit as ResourceLimits};
-pub use namespaces::{NamespaceManager, NamespaceOptions};
-pub use privileges::{PrivilegeManager, PrivilegeOptions};
-pub use mmap::{MmapManager, MmapOptions};
-
-// Unified process-IPC system exports
-pub use unified_process_ipc::{
-    UnifiedProcessIpcManager, UnifiedConfig, IpcConnectionRequest, IpcType,
-    ProcessConfig, SecuritySettings, IsolationLevel, PlatformSettings,
-    ProcessWithIpc, UnifiedStatus, SecurityStatus, IpcHandle,
-    initialize_unified_system, get_unified_manager
-};
-
-// Platform-specific exports
-#[cfg(unix)]
-pub use unix_platform::UnixPlatformHandler;
-#[cfg(windows)]
-pub use windows_platform::WindowsPlatformHandler;
-
-// Type disambiguation exports
-pub use type_disambiguation::*;

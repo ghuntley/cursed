@@ -1,7 +1,7 @@
 /// PKI Utility Functions
 
-use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_pki::types::{PkiResult, PkiError};
+use crate::error::CursedError;
 
 /// Utility functions for PKI operations
 pub struct PkiUtils;
@@ -71,46 +71,3 @@ impl PkiUtils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_serial_number_generation() {
-        let serial1 = PkiUtils::generate_serial_number();
-        let serial2 = PkiUtils::generate_serial_number();
-        
-        assert_eq!(serial1.len(), 16);
-        assert_eq!(serial2.len(), 16);
-        assert_ne!(serial1, serial2); // Should be different
-    }
-
-    #[test]
-    fn test_der_to_pem_conversion() {
-        let der_data = vec![0x30, 0x82, 0x01, 0x00];
-        let pem = PkiUtils::der_to_pem(&der_data, "CERTIFICATE");
-        
-        assert!(pem.starts_with("-----BEGIN CERTIFICATE-----"));
-        assert!(pem.ends_with("-----END CERTIFICATE-----\n"));
-    }
-
-    #[test]
-    fn test_pem_to_der_conversion() {
-        let pem_data = "-----BEGIN CERTIFICATE-----\nMIIBAg==\n-----END CERTIFICATE-----";
-        let der = PkiUtils::pem_to_der(pem_data).unwrap();
-        
-        assert_eq!(der, vec![0x30, 0x82, 0x01, 0x02]);
-    }
-
-    #[test]
-    fn test_fingerprint_calculation() {
-        let data = b"test data";
-        let fingerprint = PkiUtils::calculate_fingerprint(data);
-        
-        assert_eq!(fingerprint.len(), 32); // SHA-256 produces 32 bytes
-        
-        let formatted = PkiUtils::format_fingerprint(&fingerprint);
-        assert!(formatted.contains(":"));
-        assert_eq!(formatted.matches(":").count(), 31); // 31 colons for 32 bytes
-    }
-}

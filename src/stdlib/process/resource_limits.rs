@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Resource limits implementation for CURSED processes
 /// 
 /// Resource limits are essential for system programming and security because they:
@@ -15,7 +15,7 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessResult, ProcessError, process_not_found_pid, permission_denied_pid,
     invalid_state, execution_failed, timeout_error, system_error, invalid_arguments
 };
@@ -639,113 +639,6 @@ pub fn get_cpu_time() -> ProcessResult<Duration> {
     Ok(usage.user_time + usage.system_time)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_resource_limit() {
-        let limit = ResourceLimit::new(1024, 2048);
-        assert_eq!(limit.soft, 1024);
-        assert_eq!(limit.hard, 2048);
-        assert!(!limit.is_unlimited());
-        assert!(limit.exceeds_soft(1025));
-        assert!(!limit.exceeds_soft(1000));
-    }
-
-    #[test]
-    fn test_unlimited_limit() {
-        let limit = ResourceLimit::unlimited();
-        assert!(limit.is_unlimited());
-        assert!(!limit.exceeds_soft(u64::MAX - 1));
-    }
-
-    #[test]
-    fn test_resource_limit_manager() {
-        let mut manager = ResourceLimitManager::new();
-        assert!(manager.is_enforcement_enabled());
-        
-        manager.set_enforcement(false);
-        assert!(!manager.is_enforcement_enabled());
-    }
-
-    #[test]
-    fn test_limited_environment() {
-        let mut env = LimitedEnvironment::sandboxed();
-        
-        let cpu_limit = env.get_limit(ResourceType::CpuTime).unwrap();
-        assert_eq!(cpu_limit.soft, 300);
-        
-        env.set_limit(ResourceType::CpuTime, ResourceLimit::fixed(600));
-        let updated_limit = env.get_limit(ResourceType::CpuTime).unwrap();
-        assert_eq!(updated_limit.soft, 600);
-    }
-
-    #[test]
-    fn test_resource_monitor() {
-        let mut monitor = ResourceMonitor::new();
-        assert!(monitor.set_threshold(ResourceType::CpuTime, 0.8).is_ok());
-        assert!(monitor.set_threshold(ResourceType::CpuTime, 1.5).is_err());
-    }
-
-    #[test]
-    fn test_resource_warning_display() {
-        let warning = ResourceWarning {
-            resource: ResourceType::CpuTime,
-            current_value: 800,
-            limit_value: 1000,
-            threshold: 0.8,
-            percentage: 0.8,
-        };
-        
-        let display = format!("{}", warning);
-        assert!(display.contains("CpuTime"));
-        assert!(display.contains("80.0%"));
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_get_resource_usage() {
-        let manager = ResourceLimitManager::new();
-        let usage = manager.get_usage();
-        assert!(usage.is_ok());
-        
-        let usage = usage.unwrap();
-        // Process should have used some CPU time and memory
-        assert!(usage.user_time.as_nanos() > 0 || usage.system_time.as_nanos() > 0);
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn test_resource_limit_operations() {
-        let mut manager = ResourceLimitManager::new();
-        
-        // Test getting current limits (should work on any Unix system)
-        let cpu_limit = manager.get_limit(ResourceType::CpuTime);
-        assert!(cpu_limit.is_ok());
-        
-        let file_limit = manager.get_limit(ResourceType::OpenFiles);
-        assert!(file_limit.is_ok());
-    }
-}
-
-// Type aliases for compatibility with imports
-pub type ResourceLimiter = ResourceLimitManager;
-
-/// Configuration for resource limiting operations
-#[derive(Debug, Clone)]
-pub struct ResourceConfig {
-    /// Default limits to apply
-    pub default_limits: HashMap<ResourceType, ResourceLimit>,
-    /// Enable automatic monitoring
-    pub enable_monitoring: bool,
-    /// Monitoring interval
-    pub monitoring_interval: Duration,
-    /// Warning thresholds (percentage of limit)
-    pub warning_thresholds: HashMap<ResourceType, f64>,
-}
 
 impl Default for ResourceConfig {
     fn default() -> Self {

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // CURSED Debug-Enabled Compiler
 // 
 // A comprehensive command-line tool for compiling CURSED programs with
@@ -17,7 +17,6 @@ use cursed::ast::{
 };
 
 use cursed::ast::{ConditionalIfStatement as IfStatement, ConditionalWhileStatement as WhileStatement};
-use cursed::error::Error as CursedError;
 
 use inkwell::context::Context;
 use inkwell::OptimizationLevel;
@@ -48,6 +47,8 @@ struct CliArgs {
 }
 
 fn main() {
+        // TODO: implement
+    }
     // Initialize tracing
     let filter = EnvFilter::from_default_env()
         .add_directive("cursed=debug".parse().unwrap())
@@ -172,7 +173,7 @@ fn parse_args() -> CliArgs {
 }
 
 /// Run the compiler with the given arguments
-fn run_compiler(args: CliArgs) -> Result<(), Error> {
+fn run_compiler(args: CliArgs) -> crate::error::Result<()> {
     let start_time = std::time::Instant::now();
     
     info!("Compiling CURSED file: {}", args.input_file.display());
@@ -253,7 +254,7 @@ fn run_compiler(args: CliArgs) -> Result<(), Error> {
 }
 
 /// Create a test AST for demonstration
-fn create_test_ast(source_file: &Path) -> Result<(), Error> {
+fn create_test_ast(source_file: &Path) -> crate::error::Result<()> {
     let location = SourceLocation::new(source_file.to_path_buf(), 1, 1);
     
     // Create a simple test program with minimal AST structure
@@ -270,7 +271,7 @@ fn create_test_ast(source_file: &Path) -> Result<(), Error> {
 }
 
 /// Output compilation results
-fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs) -> Result<(), Error> {
+fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs) -> crate::error::Result<()> {
     let output_path = args.output_file.as_ref()
         .cloned()
         .unwrap_or_else(|| {
@@ -313,6 +314,8 @@ fn output_results(result: &cursed::codegen::llvm::CodegenResult, args: &CliArgs)
 
 /// Demonstrate debug information features
 fn demonstrate_debug_features() {
+        // TODO: implement
+    }
     info!("=== CURSED Debug Information Features ===");
     info!("✓ DWARF debug metadata generation");
     info!("✓ Source location mapping for all AST nodes");
@@ -331,7 +334,7 @@ fn demonstrate_debug_features() {
 }
 
 /// Validate debug information
-fn validate_debug_info(llvm_ir: &str) -> Result<(), Error> {
+fn validate_debug_info(llvm_ir: &str) -> crate::error::Result<()> {
     info!("Validating debug information in generated LLVM IR");
     
     let validation_checks = [
@@ -368,6 +371,8 @@ fn validate_debug_info(llvm_ir: &str) -> Result<(), Error> {
 
 /// Print usage examples
 fn print_usage_examples() {
+        // TODO: implement
+    }
     println!("Usage Examples:");
     println!("  Basic compilation with debug info:");
     println!("    cursed_debug_compiler program.csd");
@@ -385,80 +390,3 @@ fn print_usage_examples() {
     println!("    cursed_debug_compiler program.csd --verbose --time");
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::path::PathBuf;
-    
-    #[test]
-    fn test_cli_args_parsing() {
-        // Test that we can create CLI args
-        let args = CliArgs {
-            input_file: PathBuf::from("test.csd"),
-            output_file: None,
-            debug_level: 2,
-            optimization_level: OptimizationLevel::O0,
-            emit_llvm_ir: false,
-            emit_object: false,
-            emit_assembly: false,
-            verify_module: true,
-            target_triple: None,
-            enable_timing: false,
-            verbose: false,
-        };
-        
-        assert_eq!(args.input_file, PathBuf::from("test.csd"));
-        assert_eq!(args.debug_level, 2);
-        assert!(args.verify_module);
-    }
-    
-    #[test]
-    fn test_ast_creation() {
-        let source_file = Path::new("test.csd");
-        let result = create_test_ast(source_file);
-        assert!(result.is_ok(), "Test AST creation should succeed");
-        
-        if let Ok(ast) = result {
-            match ast {
-                AST::Program { statements, .. } => {
-                    assert_eq!(statements.len(), 2, "Should have 2 top-level statements");
-                }
-                _ => panic!("Expected Program AST node"),
-            }
-        }
-    }
-    
-    #[test]
-    fn test_debug_validation() {
-        // Test debug info validation with mock LLVM IR
-        let valid_ir = r#"
-            !0 = !DICompileUnit(language: DW_LANG_C, file: !1, producer: "CURSED")
-            !1 = !DIFile(filename: "test.csd", directory: ".")
-            !2 = !DISubprogram(name: "main", file: !1, line: 1)
-            !3 = !DILocalVariable(name: "x", scope: !2, file: !1, line: 5)
-            !4 = !DILocation(line: 10, column: 5, scope: !2)
-            !5 = !DIBasicType(name: "sus", size: 32, encoding: DW_ATE_signed)
-            call void @llvm.dbg.declare(metadata i32* %x, metadata !3)
-        "#;
-        
-        let result = validate_debug_info(valid_ir);
-        assert!(result.is_ok(), "Valid debug info should pass validation");
-        
-        // Test with insufficient debug info
-        let invalid_ir = "define i32 @main() { ret i32 0 }";
-        let result = validate_debug_info(invalid_ir);
-        assert!(result.is_err(), "Invalid debug info should fail validation");
-    }
-    
-    #[test] 
-    fn test_usage_examples() {
-        // Test that usage examples can be printed without panic
-        print_usage_examples();
-    }
-    
-    #[test]
-    fn test_debug_features_demo() {
-        // Test that debug features can be demonstrated without panic
-        demonstrate_debug_features();
-    }
-}

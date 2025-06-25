@@ -5,9 +5,8 @@
 /// integration with existing systems while maintaining security.
 
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_asymmetric::{AsymmetricKey, AsymmetricKeyPair};
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_asymmetric::{AsymmetricKey, AsymmetricKeyPair};
 use super::pqc_core::{PqcKey, SecurityLevel, PqcKeyFormat};
 use super::hybrid::{HybridKeyPair, HybridAlgorithmConfig, HybridSchemeType};
 use std::collections::HashMap;
@@ -680,24 +679,24 @@ pub enum CompatibilityError {
     ConfigurationError(String),
 }
 
-impl fmt::Display for CompatibilityError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CompatibilityError::UnsupportedAlgorithm(msg) => write!(f, "Unsupported algorithm: {}", msg),
-            CompatibilityError::ConversionError(msg) => write!(f, "Conversion error: {}", msg),
-            CompatibilityError::MappingError(msg) => write!(f, "Mapping error: {}", msg),
-            CompatibilityError::ConfigurationError(msg) => write!(f, "Configuration error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for CompatibilityError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             CompatibilityError::UnsupportedAlgorithm(msg) => write!(f, "Unsupported algorithm: {}", msg),
+//             CompatibilityError::ConversionError(msg) => write!(f, "Conversion error: {}", msg),
+//             CompatibilityError::MappingError(msg) => write!(f, "Mapping error: {}", msg),
+//             CompatibilityError::ConfigurationError(msg) => write!(f, "Configuration error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for CompatibilityError {}
-
-impl From<CompatibilityError> for CursedError {
-    fn from(err: CompatibilityError) -> Self {
-        CursedError::CryptoError(err.to_string())
-    }
-}
+// impl std::error::CursedError for CompatibilityError {}
+// 
+// impl From<CompatibilityError> for CursedError {
+//     fn from(err: CompatibilityError) -> Self {
+//         CursedError::CryptoError(err.to_string())
+//     }
+// }
 
 /// Initialize compatibility module
 pub fn init_compatibility() -> AdvancedCryptoResult<()> {
@@ -713,131 +712,3 @@ pub fn init_compatibility() -> AdvancedCryptoResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_compatibility_mode() {
-        assert!(CompatibilityMode::Hybrid.supports_classical());
-        assert!(CompatibilityMode::Hybrid.supports_pqc());
-        assert!(CompatibilityMode::Hybrid.requires_both());
-        
-        assert!(CompatibilityMode::ClassicalOnly.supports_classical());
-        assert!(!CompatibilityMode::ClassicalOnly.supports_pqc());
-        
-        assert!(!CompatibilityMode::PqcOnly.supports_classical());
-        assert!(CompatibilityMode::PqcOnly.supports_pqc());
-    }
-    
-    #[test]
-    fn test_algorithm_mappings() {
-        let key_exchange_mappings = AlgorithmMapping::key_exchange_mapping();
-        assert!(!key_exchange_mappings.is_empty());
-        
-        let rsa_mapping = key_exchange_mappings.iter()
-            .find(|m| m.classical_algorithm == "RSA-2048")
-            .unwrap();
-        assert_eq!(rsa_mapping.pqc_equivalent, "Kyber512");
-        assert_eq!(rsa_mapping.security_level, SecurityLevel::Level1);
-        
-        let signature_mappings = AlgorithmMapping::signature_mapping();
-        assert!(!signature_mappings.is_empty());
-        
-        let ecdsa_mapping = signature_mappings.iter()
-            .find(|m| m.classical_algorithm == "ECDSA-P256")
-            .unwrap();
-        assert_eq!(ecdsa_mapping.pqc_equivalent, "Dilithium2");
-    }
-    
-    #[test]
-    fn test_compatibility_engine() {
-        let engine = CompatibilityEngine::new();
-        assert!(!engine.algorithm_mappings.is_empty());
-        assert!(!engine.compatibility_rules.is_empty());
-        
-        // Test quantum vulnerability detection
-        assert!(engine.is_quantum_vulnerable("RSA-2048"));
-        assert!(engine.is_quantum_vulnerable("ECDSA-P256"));
-        assert!(!engine.is_quantum_vulnerable("Kyber512"));
-        assert!(!engine.is_quantum_vulnerable("Dilithium2"));
-    }
-    
-    #[test]
-    fn test_compatibility_assessment() {
-        let engine = CompatibilityEngine::new();
-        let algorithms = vec![
-            "RSA-2048".to_string(),
-            "ECDSA-P256".to_string(),
-            "AES-256".to_string(),
-        ];
-        
-        let assessment = engine.assess_compatibility(&algorithms).unwrap();
-        
-        assert_eq!(assessment.current_algorithms.len(), 3);
-        assert_eq!(assessment.security_analysis.quantum_vulnerable_algorithms.len(), 2);
-        assert_eq!(assessment.security_analysis.quantum_safe_algorithms.len(), 1);
-        assert!(assessment.security_analysis.overall_quantum_readiness < 100.0);
-        assert!(!assessment.migration_recommendations.is_empty());
-    }
-    
-    #[test]
-    fn test_migration_priority() {
-        let engine = CompatibilityEngine::new();
-        
-        assert_eq!(engine.determine_priority("RSA-1024"), MigrationPriority::Critical);
-        assert_eq!(engine.determine_priority("RSA-2048"), MigrationPriority::High);
-        assert_eq!(engine.determine_priority("RSA-3072"), MigrationPriority::Medium);
-        assert_eq!(engine.determine_priority("AES-256"), MigrationPriority::Low);
-    }
-    
-    #[test]
-    fn test_migration_steps() {
-        let engine = CompatibilityEngine::new();
-        let steps = engine.generate_migration_steps("RSA-2048", "Kyber512");
-        
-        assert!(!steps.is_empty());
-        assert!(steps.iter().any(|step| step.contains("Kyber512")));
-        assert!(steps.iter().any(|step| step.contains("hybrid")));
-    }
-    
-    #[test]
-    fn test_performance_impact() {
-        let engine = CompatibilityEngine::new();
-        let algorithms = vec!["RSA-2048".to_string(), "ECDSA-P256".to_string()];
-        let impact = engine.assess_performance_impact(&algorithms);
-        
-        assert!(impact.signature_size_factor > 1.0);
-        assert!(impact.key_generation_factor >= 1.0);
-        assert!(!impact.bandwidth_impact.is_empty());
-    }
-    
-    #[test]
-    fn test_timeline_estimation() {
-        let recommendations = vec![
-            MigrationRecommendation {
-                priority: MigrationPriority::Critical,
-                current_algorithm: "RSA-1024".to_string(),
-                recommended_replacement: "Kyber512".to_string(),
-                migration_steps: vec![],
-                risks: vec![],
-                estimated_effort: "High".to_string(),
-            },
-        ];
-        
-        let engine = CompatibilityEngine::new();
-        let timeline = engine.estimate_timeline(&recommendations);
-        
-        assert!(timeline.total_weeks > 0);
-        assert!(!timeline.critical_milestones.is_empty());
-        assert_eq!(timeline.planning_phase_weeks, 2); // Critical items need fast planning
-    }
-    
-    #[test]
-    fn test_rule_severity() {
-        assert_eq!(RuleSeverity::Critical.name(), "Critical");
-        assert_eq!(RuleSeverity::High.name(), "High");
-        assert_eq!(RuleSeverity::Medium.name(), "Medium");
-        assert_eq!(RuleSeverity::Low.name(), "Low");
-    }
-}

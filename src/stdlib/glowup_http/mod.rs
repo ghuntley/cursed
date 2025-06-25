@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// GlowUpHTTP - HTTP client and server implementations with modern features
 ///
 /// This package provides HTTP client and server implementations with modern features

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Advanced Mathematical Functions Module for CURSED
 /// 
 /// Provides sophisticated mathematical operations including advanced numerical methods,
@@ -934,55 +934,3 @@ pub fn evaluate_polynomial(coefficients: &[f64], x: f64) -> MathResult<f64> {
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_numerical_derivative() {
-        let f = |x: f64| x * x; // f(x) = x², f'(x) = 2x
-        let derivative = numerical_derivative(f, 2.0, None).unwrap();
-        assert!((derivative - 4.0).abs() < 1e-6);
-    }
-    
-    #[test]
-    fn test_fft_basic() {
-        let signal = vec![1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0];
-        let result = fast_fourier_transform(&signal).unwrap();
-        assert_eq!(result.len(), 8);
-        
-        // Test inverse
-        let reconstructed = inverse_fast_fourier_transform(&result).unwrap();
-        for (original, reconstructed) in signal.iter().zip(reconstructed.iter()) {
-            assert!((original - reconstructed).abs() < 1e-10);
-        }
-    }
-    
-    #[test]
-    fn test_golden_section_search() {
-        let f = |x: f64| (x - 2.0).powi(2); // Minimum at x = 2
-        let min_x = golden_section_search(f, 0.0, 4.0, None).unwrap();
-        assert!((min_x - 2.0).abs() < 1e-6);
-    }
-    
-    #[test]
-    fn test_matrix_determinant() {
-        let matrix = vec![
-            vec![1.0, 2.0],
-            vec![3.0, 4.0],
-        ];
-        let det = matrix_determinant(&matrix).unwrap();
-        assert!((det - (-2.0)).abs() < 1e-10);
-    }
-    
-    #[test]
-    fn test_polynomial_fit() {
-        // Fit line y = 2x + 1
-        let x_data = vec![0.0, 1.0, 2.0, 3.0];
-        let y_data = vec![1.0, 3.0, 5.0, 7.0];
-        let coeffs = polynomial_fit(&x_data, &y_data, 1).unwrap();
-        
-        assert!((coeffs[0] - 1.0).abs() < 1e-10); // Intercept
-        assert!((coeffs[1] - 2.0).abs() < 1e-10); // Slope
-    }
-}

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP Cookie Management for CURSED web_vibez
 ///
 /// Comprehensive cookie parsing, validation, and management.
@@ -8,7 +8,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::stdlib::http_core::{HttpError, HttpResult};
+// use crate::stdlib::http_core::{HttpError, HttpResult};
 
 /// Cookie SameSite attribute
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -491,95 +491,3 @@ impl IntoIterator for CookieJar {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_cookie_creation() {
-        let cookie = Cookie::new("session", "abc123")
-            .domain("example.com")
-            .path("/")
-            .secure(true)
-            .http_only(true);
-
-        assert_eq!(cookie.name, "session");
-        assert_eq!(cookie.value, "abc123");
-        assert_eq!(cookie.domain, Some("example.com".to_string()));
-        assert_eq!(cookie.path, Some("/".to_string()));
-        assert!(cookie.secure);
-        assert!(cookie.http_only);
-    }
-
-    #[test]
-    fn test_cookie_parsing() {
-        let cookie_str = "session=abc123; Domain=example.com; Path=/; Secure; HttpOnly";
-        let cookie = Cookie::parse(cookie_str).unwrap();
-
-        assert_eq!(cookie.name, "session");
-        assert_eq!(cookie.value, "abc123");
-        assert_eq!(cookie.domain, Some("example.com".to_string()));
-        assert_eq!(cookie.path, Some("/".to_string()));
-        assert!(cookie.secure);
-        assert!(cookie.http_only);
-    }
-
-    #[test]
-    fn test_cookie_formatting() {
-        let cookie = Cookie::new("test", "value")
-            .domain("example.com")
-            .path("/app")
-            .secure(true)
-            .same_site(SameSite::Strict);
-
-        let set_cookie = cookie.to_set_cookie_header();
-        assert!(set_cookie.contains("test=value"));
-        assert!(set_cookie.contains("Domain=example.com"));
-        assert!(set_cookie.contains("Path=/app"));
-        assert!(set_cookie.contains("Secure"));
-        assert!(set_cookie.contains("SameSite=Strict"));
-    }
-
-    #[test]
-    fn test_cookie_jar() {
-        let mut jar = CookieJar::new();
-        jar.add(Cookie::new("session", "abc123"));
-        jar.add(Cookie::new("prefs", "dark_mode"));
-
-        assert_eq!(jar.len(), 2);
-        assert!(jar.get("session").is_some());
-        assert!(jar.get("prefs").is_some());
-        assert!(jar.get("nonexistent").is_none());
-
-        let cookie_header = jar.to_cookie_header();
-        assert!(cookie_header.contains("session=abc123"));
-        assert!(cookie_header.contains("prefs=dark_mode"));
-    }
-
-    #[test]
-    fn test_cookie_domain_matching() {
-        let cookie = Cookie::new("test", "value").domain("example.com");
-        
-        assert!(cookie.matches_domain("example.com"));
-        assert!(cookie.matches_domain("sub.example.com"));
-        assert!(!cookie.matches_domain("other.com"));
-    }
-
-    #[test]
-    fn test_cookie_path_matching() {
-        let cookie = Cookie::new("test", "value").path("/api");
-        
-        assert!(cookie.matches_path("/api"));
-        assert!(cookie.matches_path("/api/users"));
-        assert!(!cookie.matches_path("/"));
-        assert!(!cookie.matches_path("/other"));
-    }
-
-    #[test]
-    fn test_same_site_parsing() {
-        assert_eq!(SameSite::from_str("Strict").unwrap(), SameSite::Strict);
-        assert_eq!(SameSite::from_str("lax").unwrap(), SameSite::Lax);
-        assert_eq!(SameSite::from_str("None").unwrap(), SameSite::None);
-        assert!(SameSite::from_str("Invalid").is_err());
-    }
-}

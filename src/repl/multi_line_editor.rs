@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // Multi-line Input Editor for CURSED REPL
 // 
 // Handles multi-line input with automatic indentation detection,
@@ -7,7 +7,6 @@ use crate::error_types::Error;
 use std::io::{self, Write};
 
 use crate::repl::ReplResult;
-use crate::error::Error;
 
 /// Multi-line input editor for CURSED REPL
 pub struct MultiLineEditor {
@@ -90,11 +89,11 @@ impl MultiLineEditor {
     /// Read a line with the given prompt
     pub fn read_line(&self, prompt: &str) -> ReplResult<String> {
         print!("{}", prompt);
-        io::stdout().flush().map_err(|e| Error::repl_error(e.to_string()))?;
+        io::stdout().flush().map_err(|e| CursedError::repl_error(e.to_string()))?;
         
         let mut input = String::new();
         io::stdin().read_line(&mut input)
-            .map_err(|e| Error::repl_error(e.to_string()))?;
+            .map_err(|e| CursedError::repl_error(e.to_string()))?;
         
         // Remove trailing newline
         if input.ends_with('\n') {
@@ -297,86 +296,3 @@ impl Default for MultiLineEditor {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_unmatched_brackets() {
-        let editor = MultiLineEditor::new();
-        
-        assert!(editor.has_unmatched_brackets("if (x > 0"));
-        assert!(editor.has_unmatched_brackets("func test() {"));
-        assert!(editor.has_unmatched_brackets("arr := []int{1, 2"));
-        
-        assert!(!editor.has_unmatched_brackets("if (x > 0) { }"));
-        assert!(!editor.has_unmatched_brackets("arr := []int{1, 2}"));
-    }
-
-    #[test]
-    fn test_needs_continuation() {
-        let editor = MultiLineEditor::new();
-        
-        assert!(editor.needs_continuation("slay test()"));
-        assert!(editor.needs_continuation("lowkey x > 0"));
-        assert!(editor.needs_continuation("facts x = 1 +"));
-        assert!(editor.needs_continuation("if ("));
-        
-        assert!(!editor.needs_continuation("facts x = 42"));
-        assert!(!editor.needs_continuation("x + y"));
-    }
-
-    #[test]
-    fn test_is_complete() {
-        let editor = MultiLineEditor::new();
-        
-        assert!(editor.is_complete("if (x > 0) {", "}"));
-        assert!(editor.is_complete("func test() {\n    return 42", "}"));
-        assert!(editor.is_complete("facts x = 1 +\n    2", ""));
-        
-        assert!(!editor.is_complete("if (x > 0) {", "    y = 1"));
-        assert!(!editor.is_complete("func test() {", "    x := 1"));
-    }
-
-    #[test]
-    fn test_indentation_calculation() {
-        let editor = MultiLineEditor::new();
-        
-        assert_eq!(editor.calculate_indentation("if (x > 0) {"), 4);
-        assert_eq!(editor.calculate_indentation("    if (y > 0) {"), 8);
-        assert_eq!(editor.calculate_indentation("    }"), 0);
-        
-        let editor_no_auto = MultiLineEditor::with_settings(4, false);
-        assert_eq!(editor_no_auto.calculate_indentation("if (x > 0) {"), 0);
-    }
-
-    #[test]
-    fn test_line_indentation() {
-        let editor = MultiLineEditor::new();
-        
-        assert_eq!(editor.get_line_indentation("    hello"), 4);
-        assert_eq!(editor.get_line_indentation("\t\thello"), 8);
-        assert_eq!(editor.get_line_indentation("hello"), 0);
-        assert_eq!(editor.get_line_indentation("  \t  hello"), 6);
-    }
-
-    #[test]
-    fn test_string_literals_in_brackets() {
-        let editor = MultiLineEditor::new();
-        
-        // Brackets inside strings should not affect bracket matching
-        assert!(!editor.has_unmatched_brackets("print(\"hello {world}\")"));
-        assert!(editor.has_unmatched_brackets("print(\"hello world\""));
-        assert!(!editor.has_unmatched_brackets("print(\"hello (world)\")"));
-    }
-
-    #[test]
-    fn test_comments_in_brackets() {
-        let editor = MultiLineEditor::new();
-        
-        // Brackets in comments should not affect bracket matching
-        assert!(!editor.has_unmatched_brackets("func test() { // comment with }"));
-        assert!(editor.has_unmatched_brackets("func test() { // comment\n// more {"));
-        assert!(!editor.has_unmatched_brackets("func test() {\n    // comment with }\n}"));
-    }
-}

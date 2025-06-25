@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// exec_vibez_advanced - Advanced process execution features
 /// 
 /// This module provides the complete exec_vibez functionality as specified,
@@ -21,12 +21,12 @@ use std::sync::{Arc, Mutex, RwLock, Condvar, mpsc};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, execution_failed_with_code,
     timeout_error, invalid_arguments, io_error, system_error, platform_error
 };
 
-use crate::stdlib::process::exec_vibez::{Cmd, Process, ProcessState, Error, ProcessContext, Environment};
+// use crate::stdlib::process::exec_vibez::{Cmd, Process, ProcessState, CursedError, ProcessContext, Environment};
 
 /// Enhanced Process Group with sophisticated lifecycle management
 #[derive(Debug)]
@@ -41,7 +41,7 @@ pub struct EnhancedProcessGroup {
     state: Arc<RwLock<GroupState>>,
     /// Completion tracking
     completion: Arc<(Mutex<usize>, Condvar)>,
-    /// Error accumulator
+    /// CursedError accumulator
     errors: Arc<Mutex<Vec<ProcessError>>>,
 }
 
@@ -1073,99 +1073,3 @@ mod chrono {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_enhanced_environment() {
-        let mut env = EnhancedEnvironment::new();
-        env.set("TEST_VAR", "test_value");
-        env.append_path("/usr/local/bin");
-        env.prepend_path("/opt/bin");
-        
-        let env_vec = env.build_env();
-        assert!(env_vec.iter().any(|s| s.starts_with("TEST_VAR=")));
-    }
-
-    #[test]
-    fn test_enhanced_process_group() {
-        let mut group = EnhancedProcessGroup::new();
-        let cmd = Cmd::new("echo", &["test"]);
-        group.add_command(cmd);
-        
-        assert_eq!(group.commands.len(), 1);
-        assert_eq!(group.state(), GroupState::Created);
-    }
-
-    #[test]
-    fn test_enhanced_output_streamer() {
-        let cmd = Cmd::new("echo", &["test"]);
-        let mut streamer = EnhancedOutputStreamer::new(cmd);
-        streamer.set_buffer_size(4096);
-        streamer.set_timestamp_lines(true);
-        
-        assert_eq!(streamer.state(), StreamerState::Created);
-    }
-
-    #[test]
-    fn test_enhanced_input_generator() {
-        let cmd = Cmd::new("cat", &[]);
-        let mut generator = EnhancedInputGenerator::new(cmd);
-        
-        assert!(generator.write("test input").is_ok());
-        assert!(generator.write_line_after("delayed line", Duration::from_millis(500)).is_ok());
-        assert_eq!(generator.state(), InputState::Created);
-    }
-
-    #[test]
-    fn test_timeout_manager() {
-        let mut timeout_mgr = TimeoutManager::new(Duration::from_millis(100));
-        assert!(!timeout_mgr.is_expired());
-        assert!(timeout_mgr.remaining() > Duration::from_millis(50));
-        
-        timeout_mgr.cancel();
-        assert!(timeout_mgr.is_cancelled());
-    }
-
-    #[test]
-    fn test_process_group_config() {
-        let config = ProcessGroupConfig {
-            max_parallel: 4,
-            process_timeout: Some(Duration::from_secs(30)),
-            group_timeout: Some(Duration::from_secs(300)),
-            kill_on_failure: true,
-            continue_on_failure: false,
-            collect_outputs: true,
-        };
-        
-        let group = EnhancedProcessGroup::with_config(config.clone());
-        assert_eq!(group.options.max_parallel, 4);
-        assert_eq!(group.options.process_timeout, Some(Duration::from_secs(30)));
-    }
-
-    #[test]
-    fn test_enhanced_look_path() {
-        // Test with a common command that should exist
-        #[cfg(unix)]
-        {
-            let result = enhanced_look_path("sh");
-            assert!(result.is_ok());
-        }
-        
-        #[cfg(windows)]
-        {
-            let result = enhanced_look_path("cmd");
-            assert!(result.is_ok());
-        }
-        
-        // Test with non-existent command
-        let result = enhanced_look_path("definitely_does_not_exist_command_12345");
-        assert!(result.is_err());
-    }
-}

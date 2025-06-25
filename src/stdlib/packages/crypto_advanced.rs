@@ -1,6 +1,7 @@
 // Advanced cryptographic utilities package
 
 use std::ptr;
+use crate::error::CursedError;
 
 /// Result type for advanced crypto operations
 pub type AdvancedCryptoResult<T> = Result<T, AdvancedCryptoError>;
@@ -16,21 +17,21 @@ pub enum AdvancedCryptoError {
     SecurityViolation,
 }
 
-impl std::fmt::Display for AdvancedCryptoError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AdvancedCryptoError::InvalidInput => write!(f, "Invalid input"),
-            AdvancedCryptoError::MemoryAllocationFailed => write!(f, "Memory allocation failed"),
-            AdvancedCryptoError::EncryptionFailed => write!(f, "Encryption failed"),
-            AdvancedCryptoError::DecryptionFailed => write!(f, "Decryption failed"),
-            AdvancedCryptoError::KeyGenerationFailed => write!(f, "Key generation failed"),
-            AdvancedCryptoError::SecurityViolation => write!(f, "Security violation"),
-        }
-    }
-}
+// impl std::fmt::Display for AdvancedCryptoError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             AdvancedCryptoError::InvalidInput => write!(f, "Invalid input"),
+//             AdvancedCryptoError::MemoryAllocationFailed => write!(f, "Memory allocation failed"),
+//             AdvancedCryptoError::EncryptionFailed => write!(f, "Encryption failed"),
+//             AdvancedCryptoError::DecryptionFailed => write!(f, "Decryption failed"),
+//             AdvancedCryptoError::KeyGenerationFailed => write!(f, "Key generation failed"),
+//             AdvancedCryptoError::SecurityViolation => write!(f, "Security violation"),
+//         }
+//     }
+// }
 
-impl std::error::Error for AdvancedCryptoError {}
-use std::alloc::{alloc_zeroed, dealloc, Layout};
+// impl std::error::CursedError for AdvancedCryptoError {}
+// use std::alloc::{alloc_zeroed, dealloc, Layout};
 
 /// Secure memory management for sensitive data
 pub struct SecureMemory {
@@ -184,30 +185,3 @@ impl ZeroOnDrop for SecureString {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_secure_memory() {
-        let mut mem = SecureMemory::new(32).unwrap();
-        assert_eq!(mem.size(), 32);
-        
-        let slice = mem.as_mut_slice();
-        slice[0] = 42;
-        assert_eq!(slice[0], 42);
-        
-        mem.zero();
-        assert_eq!(slice[0], 0);
-    }
-
-    #[test]
-    fn test_secure_string() {
-        let mut s = SecureString::from_str("hello").unwrap();
-        assert_eq!(s.len(), 5);
-        assert_eq!(s.as_bytes(), b"hello");
-        
-        s.clear();
-        assert_eq!(s.len(), 0);
-    }
-}

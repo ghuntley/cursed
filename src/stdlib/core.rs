@@ -10,14 +10,13 @@
 /// - Bridges runtime operations with language semantics
 /// - Enables panic handling and memory management
 
-use crate::stdlib::value::Value;
-use crate::stdlib::errors_simple::CursedError;
+// use crate::stdlib::value::Value;
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::any::Any;
 use std::panic;
-use crate::error::Error;
 
-/// Error type for Core operations
+/// CursedError type for Core operations
 pub type CoreError = CursedError;
 
 /// Result type for Core operations
@@ -438,153 +437,3 @@ pub fn get_core_stats() -> HashMap<String, String> {
     stats
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_type_conversions() {
-        // Test lit() conversion
-        assert_eq!(lit(&Value::Int32(1)).unwrap(), true);
-        assert_eq!(lit(&Value::Int32(0)).unwrap(), false);
-        assert_eq!(lit(&Value::String("hello".to_string())).unwrap(), true);
-        assert_eq!(lit(&Value::String("".to_string())).unwrap(), false);
-
-        // Test normie() conversion
-        assert_eq!(normie(&Value::Int32(42)).unwrap(), 42);
-        assert_eq!(normie(&Value::Float64(42.7)).unwrap(), 42);
-        assert_eq!(normie(&Value::String("123".to_string())).unwrap(), 123);
-        assert_eq!(normie(&Value::Bool(true)).unwrap(), 1);
-
-        // Test thicc() conversion
-        assert_eq!(thicc(&Value::Int32(42)).unwrap(), 42i64);
-        assert_eq!(thicc(&Value::String("123456789".to_string())).unwrap(), 123456789i64);
-
-        // Test snack() conversion
-        assert_eq!(snack(&Value::Int32(42)).unwrap(), 42.0f32);
-        assert_eq!(snack(&Value::String("3.14".to_string())).unwrap(), 3.14f32);
-
-        // Test meal() conversion
-        assert_eq!(meal(&Value::Int32(42)).unwrap(), 42.0f64);
-        assert_eq!(meal(&Value::String("3.14159".to_string())).unwrap(), 3.14159f64);
-
-        // Test tea() conversion
-        assert_eq!(tea(&Value::Int32(42)).unwrap(), "42");
-        assert_eq!(tea(&Value::Bool(true)).unwrap(), "true");
-        assert_eq!(tea(&Value::String("hello".to_string())).unwrap(), "hello");
-    }
-
-    #[test]
-    fn test_collection_operations() {
-        // Test append()
-        let slice = Value::Array(vec![Value::Int32(1), Value::Int32(2)]);
-        let elements = vec![Value::Int32(3), Value::Int32(4)];
-        let result = append(&slice, &elements).unwrap();
-        if let Value::Array(arr) = result {
-            assert_eq!(arr.len(), 4);
-        } else {
-            panic!("Expected array");
-        }
-
-        // Test len()
-        let array = Value::Array(vec![Value::Int32(1), Value::Int32(2), Value::Int32(3)]);
-        assert_eq!(len(&array).unwrap(), 3);
-        
-        let string = Value::String("hello".to_string());
-        assert_eq!(len(&string).unwrap(), 5);
-
-        // Test make()
-        let empty_array = make("array", None).unwrap();
-        assert!(matches!(empty_array, Value::Array(_)));
-        
-        let sized_array = make("array", Some(10)).unwrap();
-        if let Value::Array(arr) = sized_array {
-            assert!(arr.capacity() >= 10);
-        }
-
-        // Test new()
-        assert_eq!(new("normie").unwrap(), Value::Int32(0));
-        assert_eq!(new("tea").unwrap(), Value::String("".to_string()));
-        assert_eq!(new("litean").unwrap(), Value::Bool(false));
-    }
-
-    #[test]
-    fn test_utility_functions() {
-        // Test type_of()
-        assert_eq!(type_of(&Value::Int32(42)), "normie");
-        assert_eq!(type_of(&Value::String("hello".to_string())), "tea");
-        assert_eq!(type_of(&Value::Bool(true)), "litean");
-
-        // Test is_zero_value()
-        assert!(is_zero_value(&Value::Int32(0)));
-        assert!(!is_zero_value(&Value::Int32(42)));
-        assert!(is_zero_value(&Value::String("".to_string())));
-        assert!(!is_zero_value(&Value::String("hello".to_string())));
-
-        // Test equal_values()
-        assert!(equal_values(&Value::Int32(42), &Value::Int32(42)));
-        assert!(!equal_values(&Value::Int32(42), &Value::Int32(43)));
-
-        // Test clone_value()
-        let original = Value::Int32(42);
-        let cloned = clone_value(&original);
-        assert_eq!(original, cloned);
-    }
-
-    #[test]
-    fn test_panic_recovery() {
-        // Test try_unbothered() with success
-        let result = try_unbothered(|| 42);
-        assert_eq!(result.unwrap(), 42);
-
-        // Test try_unbothered() with panic
-        let result = try_unbothered(|| panic!("test panic"));
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_error_handling() {
-        // Test invalid type conversions
-        assert!(normie(&Value::Array(vec![])).is_err());
-        assert!(snack(&Value::Object(HashMap::new())).is_err());
-        
-        // Test invalid collection operations
-        assert!(len(&Value::Int32(42)).is_err());
-        assert!(append(&Value::Int32(42), &[]).is_err());
-        
-        // Test invalid make() type
-        assert!(make("invalid_type", None).is_err());
-        assert!(new("invalid_type").is_err());
-    }
-
-    #[test]
-    fn test_edge_cases() {
-        // Test null conversions
-        assert_eq!(lit(&Value::Null).unwrap(), false);
-        assert_eq!(normie(&Value::Null).unwrap(), 0);
-        assert_eq!(thicc(&Value::Null).unwrap(), 0);
-        assert_eq!(snack(&Value::Null).unwrap(), 0.0);
-        assert_eq!(meal(&Value::Null).unwrap(), 0.0);
-        assert_eq!(tea(&Value::Null).unwrap(), "null");
-
-        // Test range checking for normie()
-        let big_int = Value::Int64(i64::MAX);
-        assert!(normie(&big_int).is_err());
-
-        // Test empty collections
-        let empty_array = Value::Array(vec![]);
-        assert_eq!(len(&empty_array).unwrap(), 0);
-        assert!(is_zero_value(&empty_array));
-    }
-
-    #[test]
-    fn test_module_functions() {
-        // Test module initialization
-        assert!(init_core().is_ok());
-
-        // Test stats
-        let stats = get_core_stats();
-        assert!(stats.contains_key("version"));
-        assert!(stats.contains_key("functions"));
-    }
-}

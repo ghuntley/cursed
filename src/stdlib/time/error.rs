@@ -1,7 +1,6 @@
-use crate::error::Error;
-/// Error handling for time and date operations
-use std::fmt;
 use crate::error::CursedError;
+/// CursedError handling for time and date operations
+use std::fmt;
 
 /// Result type for time operations
 pub type TimeResult<T> = std::result::Result<T, TimeError>;
@@ -67,68 +66,68 @@ pub enum TimeError {
     },
 }
 
-impl fmt::Display for TimeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TimeError::InvalidDate { year, month, day, message } => {
-                write!(f, "Invalid date")?;
-                if let (Some(y), Some(m), Some(d)) = (year, month, day) {
-                    write!(f, " {}-{}-{}", y, m, d)?;
-                }
-                write!(f, ": {}", message)
-            }
-            
-            TimeError::InvalidTime { hour, minute, second, message } => {
-                write!(f, "Invalid time")?;
-                if let (Some(h), Some(m), Some(s)) = (hour, minute, second) {
-                    write!(f, " {}:{}:{}", h, m, s)?;
-                }
-                write!(f, ": {}", message)
-            }
-            
-            TimeError::ParseError { input, expected_format, position, message } => {
-                write!(f, "Parse error: {}", message)?;
-                write!(f, " (input: '{}', expected format: '{}')", input, expected_format)?;
-                if let Some(pos) = position {
-                    write!(f, " at position {}", pos)?;
-                }
-                Ok(())
-            }
-            
-            TimeError::TimezoneError { timezone, message } => {
-                write!(f, "Timezone error for '{}': {}", timezone, message)
-            }
-            
-            TimeError::ArithmeticOverflow { operation, message } => {
-                write!(f, "Arithmetic overflow in {}: {}", operation, message)
-            }
-            
-            TimeError::FormatError { format_string, message } => {
-                write!(f, "Format error in '{}': {}", format_string, message)
-            }
-            
-            TimeError::SystemTimeError { message } => {
-                write!(f, "System time error: {}", message)
-            }
-            
-            TimeError::DurationError { message } => {
-                write!(f, "Duration error: {}", message)
-            }
-            
-            TimeError::General { message } => {
-                write!(f, "Time error: {}", message)
-            }
-        }
-    }
-}
+// impl fmt::Display for TimeError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             TimeError::InvalidDate { year, month, day, message } => {
+//                 write!(f, "Invalid date")?;
+//                 if let (Some(y), Some(m), Some(d)) = (year, month, day) {
+//                     write!(f, " {}-{}-{}", y, m, d)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             
+//             TimeError::InvalidTime { hour, minute, second, message } => {
+//                 write!(f, "Invalid time")?;
+//                 if let (Some(h), Some(m), Some(s)) = (hour, minute, second) {
+//                     write!(f, " {}:{}:{}", h, m, s)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             
+//             TimeError::ParseError { input, expected_format, position, message } => {
+//                 write!(f, "Parse error: {}", message)?;
+//                 write!(f, " (input: '{}', expected format: '{}')", input, expected_format)?;
+//                 if let Some(pos) = position {
+//                     write!(f, " at position {}", pos)?;
+//                 }
+//                 Ok(())
+//             }
+//             
+//             TimeError::TimezoneError { timezone, message } => {
+//                 write!(f, "Timezone error for '{}': {}", timezone, message)
+//             }
+//             
+//             TimeError::ArithmeticOverflow { operation, message } => {
+//                 write!(f, "Arithmetic overflow in {}: {}", operation, message)
+//             }
+//             
+//             TimeError::FormatError { format_string, message } => {
+//                 write!(f, "Format error in '{}': {}", format_string, message)
+//             }
+//             
+//             TimeError::SystemTimeError { message } => {
+//                 write!(f, "System time error: {}", message)
+//             }
+//             
+//             TimeError::DurationError { message } => {
+//                 write!(f, "Duration error: {}", message)
+//             }
+//             
+//             TimeError::General { message } => {
+//                 write!(f, "Time error: {}", message)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for TimeError {}
-
-impl From<TimeError> for CursedError {
-    fn from(err: TimeError) -> Self {
-        CursedError::Runtime(err.to_string())
-    }
-}
+// impl std::error::CursedError for TimeError {}
+// 
+// impl From<TimeError> for CursedError {
+//     fn from(err: TimeError) -> Self {
+//         CursedError::Runtime(err.to_string())
+//     }
+// }
 
 // Helper functions for creating specific error types
 pub fn time_error(message: &str) -> TimeError {

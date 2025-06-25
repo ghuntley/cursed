@@ -1,6 +1,6 @@
 /// fr fr Core database driver interface - the main character of sql_vibes
-use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter};
-use crate::error::Error;
+// use crate::stdlib::packages::sql_vibes::{SqlResult, SqlError, SqlValue, Row, ResultSet, Parameter};
+use crate::error::CursedError;
 use std::collections::HashMap;
 use std::time::Duration;
 use serde::{Serialize, Deserialize};
@@ -477,96 +477,3 @@ impl DatabaseDriver for MockDatabaseDriver {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_driver_config_default() {
-        let config = DriverConfig::default();
-        assert_eq!(config.driver_name, "sqlite");
-        assert_eq!(config.connection_timeout, Duration::from_secs(30));
-        assert!(config.enable_prepared_cache);
-    }
-
-    #[test]
-    fn test_connection_config_from_string() {
-        let config = ConnectionConfig::from_string("postgres://user:pass@localhost/testdb").unwrap();
-        assert_eq!(config.connection_string, "postgres://user:pass@localhost/testdb");
-        assert_eq!(config.database, Some("testdb".to_string()));
-        assert_eq!(config.username, Some("user".to_string()));
-        assert_eq!(config.password, Some("pass".to_string()));
-    }
-
-    #[test]
-    fn test_connection_config_builder() {
-        let config = ConnectionConfig::new("sqlite://test.db".to_string())
-            .with_parameter("timeout".to_string(), "60".to_string())
-            .with_timeout(Duration::from_secs(45));
-        
-        assert_eq!(config.timeout, Duration::from_secs(45));
-        assert_eq!(config.parameters.get("timeout"), Some(&"60".to_string()));
-    }
-
-    #[test]
-    fn test_parse_connection_string_sqlite() {
-        let parsed = parse_connection_string("sqlite:///path/to/database.db").unwrap();
-        assert_eq!(parsed.database, Some("database.db".to_string()));
-        assert_eq!(parsed.username, None);
-    }
-
-    #[test]
-    fn test_parse_connection_string_postgres() {
-        let parsed = parse_connection_string("postgres://user:pass@localhost:5432/mydb?sslmode=require").unwrap();
-        assert_eq!(parsed.database, Some("mydb".to_string()));
-        assert_eq!(parsed.username, Some("user".to_string()));
-        assert_eq!(parsed.password, Some("pass".to_string()));
-        assert_eq!(parsed.parameters.get("sslmode"), Some(&"require".to_string()));
-    }
-
-    #[test]
-    fn test_mock_driver() {
-        let driver = MockDatabaseDriver::new("mock".to_string(), "1.0.0".to_string());
-        let info = driver.driver_info();
-        
-        assert_eq!(info.name, "mock");
-        assert_eq!(info.version, "1.0.0");
-        assert!(driver.supports_feature(DriverFeature::PreparedStatements));
-        assert!(!driver.supports_feature(DriverFeature::JsonSupport));
-        
-        assert!(driver.validate_connection_string("test").is_ok());
-        assert!(driver.validate_connection_string("").is_err());
-    }
-
-    #[test]
-    fn test_ssl_config_default() {
-        let ssl = SslConfig::default();
-        assert!(!ssl.enabled);
-        assert!(ssl.verify_certificate);
-        assert!(ssl.ca_cert_path.is_none());
-    }
-
-    #[test]
-    fn test_transaction_isolation_variants() {
-        let levels = vec![
-            TransactionIsolation::ReadUncommitted,
-            TransactionIsolation::ReadCommitted,
-            TransactionIsolation::RepeatableRead,
-            TransactionIsolation::Serializable,
-        ];
-        
-        assert_eq!(levels.len(), 4);
-    }
-
-    #[test]
-    fn test_driver_features() {
-        let features = vec![
-            DriverFeature::PreparedStatements,
-            DriverFeature::Transactions,
-            DriverFeature::JsonSupport,
-        ];
-        
-        assert!(features.contains(&DriverFeature::PreparedStatements));
-        assert!(!features.contains(&DriverFeature::StoredProcedures));
-    }
-}

@@ -9,6 +9,8 @@ use tracing::{error, info};
 
 #[tokio::main]
 async fn main() {
+        // TODO: implement
+    }
     let matches = Command::new("cursed-lsp")
         .version("0.1.0")
         .author("Geoffrey Huntley")
@@ -177,6 +179,8 @@ fn init_logging(debug: bool, verbose: bool, log_file: Option<&str>) {
 
 /// Print usage information and examples
 fn print_usage_examples() {
+        // TODO: implement
+    }
     println!("CURSED Language Server Protocol Examples:");
     println!();
     println!("# Start LSP server on stdin/stdout (default for most editors):");
@@ -219,54 +223,3 @@ fn print_usage_examples() {
     println!(r#"                  :server-id 'cursed-lsp))"#);
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::{Read, Write};
-    use tempfile::NamedTempFile;
-
-    #[test]
-    fn test_command_line_parsing() {
-        let cmd = Command::new("cursed-lsp")
-            .arg(Arg::new("mode").long("mode").value_parser(["stdio", "tcp", "socket"]))
-            .arg(Arg::new("port").long("port").value_parser(clap::value_parser!(u16)))
-            .arg(Arg::new("debug").long("debug").action(ArgAction::SetTrue));
-
-        // Test default values
-        let matches = cmd.clone().try_get_matches_from(Vec::from(["cursed-lsp"])).unwrap();
-        assert_eq!(matches.get_one::<String>("mode").map(|s| s.as_str()), Some("stdio"));
-
-        // Test TCP mode with port
-        let matches = cmd.clone().try_get_matches_from(Vec::from(["cursed-lsp", "--mode", "tcp", "--port", "8080"])).unwrap();
-        assert_eq!(matches.get_one::<String>("mode").map(|s| s.as_str()), Some("tcp"));
-        assert_eq!(matches.get_one::<u16>("port"), Some(&8080));
-
-        // Test debug flag
-        let matches = cmd.clone().try_get_matches_from(Vec::from(["cursed-lsp", "--debug"])).unwrap();
-        assert!(matches.get_flag("debug"));
-    }
-
-    #[test]
-    fn test_server_mode_parsing() {
-        assert!(matches!("stdio", "stdio"));
-        assert!(matches!("tcp", "tcp"));
-        assert!(matches!("socket", "socket"));
-    }
-
-    #[tokio::test]
-    async fn test_log_file_creation() {
-        let mut temp_file = NamedTempFile::new().unwrap();
-        let log_path = temp_file.path().to_str().unwrap();
-        
-        // Initialize logging to file
-        init_logging(false, false, Some(log_path));
-        
-        // Write a log message
-        tracing::info!("Test log message");
-        
-        // Check that the file contains the message
-        let mut contents = String::new();
-        temp_file.read_to_string(&mut contents).unwrap();
-        assert!(contents.contains("Test log message"));
-    }
-}

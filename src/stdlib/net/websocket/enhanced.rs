@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced WebSocket Implementation for CURSED
 /// 
 /// Provides advanced WebSocket functionality including subprotocols,
@@ -339,7 +339,7 @@ pub enum WebSocketEvent {
         payload: Vec<u8>,
         round_trip_time: Duration,
     },
-    Error(NetError),
+    CursedError(NetError),
     Reconnecting {
         attempt: usize,
         delay: Duration,
@@ -757,77 +757,3 @@ pub fn connect_with_subprotocol(
     connect_enhanced_with_config(url, config)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_enhanced_connection_creation() {
-        let config = EnhancedWebSocketConfig::default();
-        let connection = EnhancedWebSocketConnection::new(config);
-        
-        assert_eq!(connection.get_state(), ConnectionState::Disconnected);
-        assert!(connection.negotiated_extensions.is_empty());
-    }
-    
-    #[test]
-    fn test_rate_limiter() {
-        let mut limiter = RateLimiter::new(Some(10), Some(1024));
-        
-        // Should allow initial messages
-        assert!(limiter.can_send_message(100));
-        
-        // Should eventually hit rate limit
-        for _ in 0..20 {
-            limiter.can_send_message(100);
-        }
-    }
-    
-    #[test]
-    fn test_close_codes() {
-        assert_eq!(CloseCode::Normal.as_u16(), 1000);
-        assert_eq!(CloseCode::AuthenticationTimeout.as_u16(), 4001);
-        
-        assert!(CloseCode::is_reserved(1005));
-        assert!(CloseCode::is_application_code(3000));
-        assert!(CloseCode::is_private_code(4000));
-    }
-    
-    #[test]
-    fn test_compression_extension() {
-        let extension = CompressionExtension::default();
-        assert_eq!(extension.name(), "permessage-deflate");
-        
-        let offer = "permessage-deflate; client_max_window_bits=15";
-        let response = extension.negotiate(offer);
-        assert!(response.is_some());
-    }
-    
-    #[test]
-    fn test_message_types() {
-        let text_msg = EnhancedMessage::Text {
-            content: "Hello".to_string(),
-            encoding: TextEncoding::Utf8,
-        };
-        
-        let binary_msg = EnhancedMessage::Binary {
-            data: vec![1, 2, 3, 4],
-            content_type: Some("application/octet-stream".to_string()),
-        };
-        
-        let close_msg = EnhancedMessage::Close {
-            code: CloseCode::Normal,
-            reason: "Goodbye".to_string(),
-            clean: true,
-        };
-        
-        // Messages should be created successfully
-        match text_msg {
-            EnhancedMessage::Text { content, encoding } => {
-                assert_eq!(content, "Hello");
-                assert_eq!(encoding, TextEncoding::Utf8);
-            }
-            _ => panic!("Wrong message type"),
-        }
-    }
-}

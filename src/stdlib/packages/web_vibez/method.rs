@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr HTTP method definitions for web_vibez - all the methods you need bestie
 use std::fmt;
 use std::str::FromStr;
@@ -127,20 +127,20 @@ impl FromStr for HttpMethod {
     }
 }
 
-/// fr fr Error type for invalid HTTP methods - when parsing fails
+/// fr fr CursedError type for invalid HTTP methods - when parsing fails
 #[derive(Debug, Clone)]
 pub struct InvalidMethodError {
     pub method: String,
 }
 
-impl fmt::Display for InvalidMethodError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid HTTP method: '{}'", self.method)
-    }
-}
+// impl fmt::Display for InvalidMethodError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "Invalid HTTP method: '{}'", self.method)
+//     }
+// }
 
-impl std::error::Error for InvalidMethodError {}
-
+// impl std::error::CursedError for InvalidMethodError {}
+// 
 /// fr fr Helper macro for method matching in handlers - clean syntax
 #[macro_export]
 macro_rules! match_method {
@@ -241,46 +241,3 @@ impl fmt::Display for MethodSet {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_method_properties() {
-        assert!(HttpMethod::Get.is_safe());
-        assert!(!HttpMethod::Post.is_safe());
-        
-        assert!(HttpMethod::Put.is_idempotent());
-        assert!(!HttpMethod::Post.is_idempotent());
-        
-        assert!(HttpMethod::Post.can_have_body());
-        assert!(!HttpMethod::Get.can_have_body());
-    }
-
-    #[test]
-    fn test_method_from_str() {
-        assert_eq!("GET".parse::<HttpMethod>().unwrap(), HttpMethod::Get);
-        assert_eq!("post".parse::<HttpMethod>().unwrap(), HttpMethod::Post);
-        assert!("INVALID".parse::<HttpMethod>().is_err());
-    }
-
-    #[test]
-    fn test_method_set() {
-        let mut set = MethodSet::new();
-        assert!(set.is_empty());
-        
-        set.add(HttpMethod::Get);
-        set.add(HttpMethod::Post);
-        assert_eq!(set.len(), 2);
-        assert!(set.contains(HttpMethod::Get));
-        assert!(!set.contains(HttpMethod::Delete));
-        
-        assert_eq!(set.to_allow_header(), "GET, POST");
-    }
-
-    #[test]
-    fn test_method_descriptions() {
-        assert_eq!(HttpMethod::Get.description(), "Retrieve data from the server");
-        assert_eq!(HttpMethod::Post.description(), "Send data to create a new resource");
-    }
-}

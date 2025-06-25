@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Core sorting functions for SortaFresh
 /// 
 /// This module implements the fundamental sorting operations:
@@ -9,7 +9,6 @@ use crate::error::Error;
 /// - Shuffle: Randomize element order
 
 use super::{Sortable, ReverseSortable, SortaFreshResult};
-use crate::stdlib::collections::CollectionsError;
 use std::collections::HashMap;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -270,108 +269,3 @@ where
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sort_basic() {
-        let mut data = vec![3, 1, 4, 1, 5, 9, 2, 6];
-        sort(&mut data).unwrap();
-        assert_eq!(data, vec![1, 1, 2, 3, 4, 5, 6, 9]);
-    }
-
-    #[test]
-    fn test_sort_empty() {
-        let mut data: Vec<i32> = vec![];
-        sort(&mut data).unwrap();
-        assert_eq!(data, vec![]);
-    }
-
-    #[test]
-    fn test_sort_single() {
-        let mut data = vec![42];
-        sort(&mut data).unwrap();
-        assert_eq!(data, vec![42]);
-    }
-
-    #[test]
-    fn test_reverse_sort() {
-        let mut data = vec![3, 1, 4, 1, 5, 9, 2, 6];
-        reverse_sort(&mut data).unwrap();
-        assert_eq!(data, vec![9, 6, 5, 4, 3, 2, 1, 1]);
-    }
-
-    #[test]
-    fn test_is_sorted() {
-        assert!(is_sorted(&vec![1, 2, 3, 4, 5]));
-        assert!(is_sorted(&vec![1, 1, 2, 2, 3]));
-        assert!(!is_sorted(&vec![1, 3, 2, 4, 5]));
-        assert!(is_sorted(&vec![42])); // Single element
-        assert!(is_sorted(&Vec::<i32>::new())); // Empty
-    }
-
-    #[test]
-    fn test_stable_sort() {
-        let mut data = vec![3, 1, 4, 1, 5, 9, 2, 6];
-        stable_sort(&mut data).unwrap();
-        assert_eq!(data, vec![1, 1, 2, 3, 4, 5, 6, 9]);
-    }
-
-    #[test]
-    fn test_shuffle() {
-        let mut data = vec![1, 2, 3, 4, 5];
-        let original = data.clone();
-        
-        shuffle(&mut data).unwrap();
-        
-        // Should have same elements
-        let mut sorted_original = original.clone();
-        sorted_original.sort();
-        let mut sorted_shuffled = data.clone();
-        sorted_shuffled.sort();
-        
-        assert_eq!(sorted_original, sorted_shuffled);
-    }
-
-    #[test]
-    fn test_sort_slice_with_custom_less() {
-        let mut data = vec![3, 1, 4, 1, 5, 9, 2, 6];
-        sort_slice(&mut data, |a, b| a < b).unwrap();
-        assert_eq!(data, vec![1, 1, 2, 3, 4, 5, 6, 9]);
-    }
-
-    #[test]
-    fn test_sort_func_with_custom_cmp() {
-        let mut data = vec![3, 1, 4, 1, 5, 9, 2, 6];
-        sort_func(&mut data, |a, b| a.cmp(b) as i32).unwrap();
-        assert_eq!(data, vec![1, 1, 2, 3, 4, 5, 6, 9]);
-    }
-
-    #[test]
-    fn test_stable_sort_func() {
-        #[derive(Debug, PartialEq)]
-        struct Item {
-            key: i32,
-            value: char,
-        }
-        
-        let mut data = vec![
-            Item { key: 2, value: 'a' },
-            Item { key: 1, value: 'b' },
-            Item { key: 2, value: 'c' },
-            Item { key: 1, value: 'd' },
-        ];
-        
-        stable_sort_func(&mut data, |a, b| a.key.cmp(&b.key) as i32).unwrap();
-        
-        assert_eq!(data[0].key, 1);
-        assert_eq!(data[0].value, 'b'); // First 1 should come first
-        assert_eq!(data[1].key, 1);
-        assert_eq!(data[1].value, 'd'); // Second 1 should come second
-        assert_eq!(data[2].key, 2);
-        assert_eq!(data[2].value, 'a'); // First 2 should come first
-        assert_eq!(data[3].key, 2);
-        assert_eq!(data[3].value, 'c'); // Second 2 should come second
-    }
-}

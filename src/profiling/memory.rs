@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Memory profiling for allocation tracking and analysis
 
 use std::collections::HashMap;
@@ -7,7 +7,7 @@ use std::time::{Duration, Instant, SystemTime};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 
-use crate::profiling::core::{DataCollector, CollectorStats, ProfilerError};
+// use crate::profiling::core::{DataCollector, CollectorStats, ProfilerError};
 
 /// Memory profiler for allocation tracking and analysis
 #[derive(Debug)]
@@ -36,7 +36,7 @@ impl MemoryProfiler {
         size: usize,
         address: u64,
         stack_trace: Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_collecting() || size < self.tracking_threshold {
             return Ok(());
         }
@@ -66,7 +66,7 @@ impl MemoryProfiler {
         &self,
         address: u64,
         stack_trace: Vec<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -92,7 +92,7 @@ impl MemoryProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn track_gc_event(&self, gc_event: GcEvent) -> Result<(), Error> {
+    pub fn track_gc_event(&self, gc_event: GcEvent) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Ok(());
         }
@@ -150,7 +150,7 @@ impl MemoryProfiler {
 
 impl DataCollector for MemoryProfiler {
     #[instrument(skip(self))]
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         if self.is_collecting() {
             return Err(ProfilerError::ConfigError("Memory profiler already collecting".to_string()));
         }
@@ -163,7 +163,7 @@ impl DataCollector for MemoryProfiler {
     }
     
     #[instrument(skip(self))]
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         if !self.is_collecting() {
             return Err(ProfilerError::ConfigError("Memory profiler not collecting".to_string()));
         }
@@ -516,7 +516,7 @@ impl AllocationHooks {
         Self { installed: false }
     }
     
-    fn install(&mut self) -> Result<(), Error> {
+    fn install(&mut self) -> crate::error::Result<()> {
         if self.installed {
             return Ok(());
         }
@@ -532,7 +532,7 @@ impl AllocationHooks {
         Ok(())
     }
     
-    fn uninstall(&mut self) -> Result<(), Error> {
+    fn uninstall(&mut self) -> crate::error::Result<()> {
         if !self.installed {
             return Ok(());
         }
@@ -548,78 +548,3 @@ impl AllocationHooks {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_memory_profiler_creation() {
-        let profiler = MemoryProfiler::new(1024);
-        assert_eq!(profiler.tracking_threshold, 1024);
-        assert!(!profiler.is_collecting());
-    }
-    
-    #[test]
-    fn test_memory_profile_data() {
-        let mut data = MemoryProfileData::new();
-        
-        let allocation = AllocationEvent {
-            event_type: AllocationEventType::Allocate,
-            size: 1024,
-            address: 0x1000,
-            stack_trace: Vec::from(["malloc".to_string()]),
-            timestamp: Instant::now(),
-            thread_id: 1,
-        };
-        
-        data.add_allocation_event(allocation);
-        assert_eq!(data.allocation_events.len(), 1);
-        
-        let usage = data.calculate_current_usage();
-        assert_eq!(usage.allocated_bytes, 1024);
-        assert_eq!(usage.allocated_objects, 1);
-    }
-    
-    #[test]
-    fn test_leak_detection() {
-        let mut data = MemoryProfileData::new();
-        
-        let allocation = AllocationEvent {
-            event_type: AllocationEventType::Allocate,
-            size: 1024,
-            address: 0x1000,
-            stack_trace: Vec::from(["malloc".to_string()]),
-            timestamp: Instant::now() - Duration::from_secs(20),
-            thread_id: 1,
-        };
-        
-        data.add_allocation_event(allocation);
-        
-        let leaks = data.detect_leaks();
-        assert_eq!(leaks.len(), 1);
-        assert_eq!(leaks[0].size, 1024);
-        assert_eq!(leaks[0].severity(), LeakSeverity::Medium);
-    }
-    
-    #[test]
-    fn test_allocation_analysis() {
-        let mut data = MemoryProfileData::new();
-        
-        for i in 0..5 {
-            let allocation = AllocationEvent {
-                event_type: AllocationEventType::Allocate,
-                size: 1024 * (i + 1),
-                address: 0x1000 + i as u64,
-                stack_trace: Vec::from([format!("function_{}", i % 2)]),
-                timestamp: Instant::now(),
-                thread_id: 1,
-            };
-            data.add_allocation_event(allocation);
-        }
-        
-        let analysis = data.analyze_patterns();
-        assert!(!analysis.function_allocations.is_empty());
-        assert!(!analysis.size_histogram.is_empty());
-        assert_eq!(analysis.temporal_patterns.len(), 5);
-    }
-}

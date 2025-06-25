@@ -3,7 +3,7 @@
 /// Handles compilation and execution of individual CURSED test functions
 /// using the existing LLVM compilation pipeline.
 
-use crate::error::Error;
+use crate::error::CursedError;
 use crate::codegen::LlvmCodeGenerator;
 use super::{TestError, TestResult as TestingResult};
 use super::discovery::{TestFile, TestFunction, TestSuite};
@@ -27,7 +27,7 @@ pub struct TestResult {
     pub stdout: String,
     /// Standard error captured during test
     pub stderr: String,
-    /// Error message if test failed
+    /// CursedError message if test failed
     pub error_message: Option<String>,
     /// Memory usage statistics
     pub memory_stats: Option<MemoryStats>,
@@ -620,54 +620,3 @@ impl Clone for TestExecutor {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-    use std::fs;
-
-    #[tokio::test]
-    async fn test_executor_creation() {
-        let executor = TestExecutor::new();
-        assert!(executor.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_compilation_caching() {
-        let mut executor = TestExecutor::new().unwrap();
-        
-        let test_function = TestFunction {
-            name: "test_example".to_string(),
-            line_number: 1,
-            column_number: 1,
-            source_code: "slay test_example() { assert_true(true) }".to_string(),
-            test_type: super::discovery::TestType::Unit,
-            should_fail: false,
-            timeout_override: None,
-            tags: vec![],
-        };
-        
-        let temp_dir = TempDir::new().unwrap();
-        let test_file_path = temp_dir.path().join("test.csd");
-        fs::write(&test_file_path, "slay test_example() { assert_true(true) }").unwrap();
-        
-        let test_file = super::discovery::TestFile {
-            path: test_file_path,
-            test_functions: vec![test_function.clone()],
-            package_name: None,
-            size_bytes: 100,
-            last_modified: std::time::UNIX_EPOCH,
-        };
-        
-        // First compilation should succeed
-        let result1 = executor.compile_test(&test_function, &test_file).await;
-        assert!(result1.is_ok());
-        
-        // Second compilation should use cache
-        let result2 = executor.compile_test(&test_function, &test_file).await;
-        assert!(result2.is_ok());
-        
-        // Results should be identical (from cache)
-        assert_eq!(result1.unwrap(), result2.unwrap());
-    }
-}

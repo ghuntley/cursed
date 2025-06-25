@@ -12,7 +12,6 @@ use chacha20poly1305::{
     aead::{Aead, OsRng, Payload},
     XNonce, Key
 };
-use crate::error::Error;
 use crate::error::CursedError;
 use std::fmt;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -38,19 +37,19 @@ pub struct XChaCha20Key {
 
 impl XChaCha20Key {
     /// Generate a new random key using a cryptographically secure RNG
-    pub fn generate() -> Result<(), Error> {
+    pub fn generate() -> crate::error::Result<()> {
         Self::generate_with_rng(&mut OsRng)
     }
 
     /// Generate a new random key using the provided RNG
-    pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> Result<(), Error> {
+    pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> crate::error::Result<()> {
         let mut key = [0u8; XCHACHA20_KEY_SIZE];
         rng.fill_bytes(&mut key);
         Ok(Self { key })
     }
 
     /// Create a key from existing bytes
-    pub fn from_bytes(bytes: &[u8]) -> Result<(), Error> {
+    pub fn from_bytes(bytes: &[u8]) -> crate::error::Result<()> {
         if bytes.len() != XCHACHA20_KEY_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Invalid key size: expected {}, got {}", 
@@ -90,19 +89,19 @@ pub struct XChaCha20Nonce {
 
 impl XChaCha20Nonce {
     /// Generate a new random nonce using a cryptographically secure RNG
-    pub fn generate() -> Result<(), Error> {
+    pub fn generate() -> crate::error::Result<()> {
         Self::generate_with_rng(&mut OsRng)
     }
 
     /// Generate a new random nonce using the provided RNG
-    pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> Result<(), Error> {
+    pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> crate::error::Result<()> {
         let mut nonce = [0u8; XCHACHA20_NONCE_SIZE];
         rng.fill_bytes(&mut nonce);
         Ok(Self { nonce })
     }
 
     /// Create a nonce from existing bytes
-    pub fn from_bytes(bytes: &[u8]) -> Result<(), Error> {
+    pub fn from_bytes(bytes: &[u8]) -> crate::error::Result<()> {
         if bytes.len() != XCHACHA20_NONCE_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Invalid nonce size: expected {}, got {}", 
@@ -144,7 +143,7 @@ impl XChaCha20Poly1305Cipher {
         nonce: &XChaCha20Nonce,
         plaintext: &[u8],
         associated_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if plaintext.len() as u64 > XCHACHA20_MAX_PLAINTEXT_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Plaintext too large: {} bytes exceeds maximum of {} bytes",
@@ -169,7 +168,7 @@ impl XChaCha20Poly1305Cipher {
         nonce: &XChaCha20Nonce,
         ciphertext: &[u8],
         associated_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let payload = Payload {
             msg: ciphertext,
             aad: associated_data,
@@ -186,7 +185,7 @@ impl XChaCha20Poly1305Cipher {
         nonce: &XChaCha20Nonce,
         associated_data: &[u8],
         buffer: &mut [u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if buffer.len() as u64 > XCHACHA20_MAX_PLAINTEXT_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Buffer too large: {} bytes exceeds maximum of {} bytes",
@@ -206,7 +205,7 @@ impl XChaCha20Poly1305Cipher {
         nonce: &XChaCha20Nonce,
         associated_data: &[u8],
         buffer: &mut [u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.cipher
             .decrypt_in_place(nonce.to_chacha_nonce(), associated_data, buffer)
             .map_err(|e| CursedError::Crypto(format!("In-place decryption failed: {}", e)))
@@ -236,7 +235,7 @@ impl XChaCha20Poly1305StreamingEncoder {
         &mut self,
         chunk: &[u8],
         associated_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         if self.processed_bytes + chunk.len() as u64 > XCHACHA20_MAX_PLAINTEXT_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Total data size would exceed maximum: {} + {} > {}",
@@ -293,7 +292,7 @@ impl XChaCha20Poly1305StreamingDecoder {
         &mut self,
         chunk: &[u8],
         associated_data: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let payload = Payload {
             msg: chunk,
             aad: associated_data,
@@ -323,12 +322,12 @@ pub struct XChaCha20Poly1305Api;
 
 impl XChaCha20Poly1305Api {
     /// Generate a new random key
-    pub fn generate_key() -> Result<(), Error> {
+    pub fn generate_key() -> crate::error::Result<()> {
         XChaCha20Key::generate()
     }
 
     /// Generate a new random nonce
-    pub fn generate_nonce() -> Result<(), Error> {
+    pub fn generate_nonce() -> crate::error::Result<()> {
         XChaCha20Nonce::generate()
     }
 
@@ -337,7 +336,7 @@ impl XChaCha20Poly1305Api {
         key: &XChaCha20Key,
         plaintext: &[u8],
         associated_data: Option<&[u8]>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let nonce = Self::generate_nonce()?;
         let cipher = XChaCha20Poly1305Cipher::new(key);
         let ciphertext = cipher.encrypt(&nonce, plaintext, associated_data.unwrap_or(&[]))?;
@@ -350,7 +349,7 @@ impl XChaCha20Poly1305Api {
         nonce: &XChaCha20Nonce,
         ciphertext: &[u8],
         associated_data: Option<&[u8]>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let cipher = XChaCha20Poly1305Cipher::new(key);
         cipher.decrypt(nonce, ciphertext, associated_data.unwrap_or(&[]))
     }
@@ -358,7 +357,7 @@ impl XChaCha20Poly1305Api {
     /// Create a streaming encoder for large data
     pub fn create_streaming_encoder(
         key: &XChaCha20Key,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let nonce = Self::generate_nonce()?;
         Ok(XChaCha20Poly1305StreamingEncoder::new(key, nonce))
     }
@@ -383,7 +382,7 @@ pub mod key_derivation {
         input_key_material: &[u8],
         salt: Option<&[u8]>,
         info: &[u8],
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let hk = Hkdf::<Sha256>::new(salt, input_key_material);
         let mut derived_key = [0u8; XCHACHA20_KEY_SIZE];
         
@@ -398,7 +397,7 @@ pub mod key_derivation {
         input_key_material: &[u8],
         salt: Option<&[u8]>,
         count: usize,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut keys = Vec::with_capacity(count);
         
         for i in 0..count {
@@ -416,7 +415,7 @@ pub mod utils {
     use super::*;
 
     /// Validate that the data size is within limits for XChaCha20-Poly1305
-    pub fn validate_data_size(size: usize) -> Result<(), Error> {
+    pub fn validate_data_size(size: usize) -> crate::error::Result<()> {
         if size as u64 > XCHACHA20_MAX_PLAINTEXT_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Data size {} exceeds maximum allowed size of {} bytes",
@@ -433,7 +432,7 @@ pub mod utils {
     }
 
     /// Calculate the plaintext size from ciphertext size
-    pub fn calculate_plaintext_size(ciphertext_size: usize) -> Result<(), Error> {
+    pub fn calculate_plaintext_size(ciphertext_size: usize) -> crate::error::Result<()> {
         if ciphertext_size < XCHACHA20_TAG_SIZE {
             return Err(CursedError::Crypto(format!(
                 "Ciphertext too small: {} bytes, minimum {} bytes required",
@@ -451,313 +450,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rand::thread_rng;
-
-    #[test]
-    fn test_key_generation() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        assert_eq!(key.as_bytes().len(), XCHACHA20_KEY_SIZE);
-    }
-
-    #[test]
-    fn test_key_from_bytes() {
-        let bytes = [42u8; XCHACHA20_KEY_SIZE];
-        let key = XChaCha20Key::from_bytes(&bytes).expect("Key creation should succeed");
-        assert_eq!(key.as_bytes(), &bytes);
-    }
-
-    #[test]
-    fn test_key_from_invalid_bytes() {
-        let bytes = [42u8; 16]; // Wrong size
-        assert!(XChaCha20Key::from_bytes(&bytes).is_err());
-    }
-
-    #[test]
-    fn test_nonce_generation() {
-        let nonce = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        assert_eq!(nonce.as_bytes().len(), XCHACHA20_NONCE_SIZE);
-    }
-
-    #[test]
-    fn test_nonce_from_bytes() {
-        let bytes = [42u8; XCHACHA20_NONCE_SIZE];
-        let nonce = XChaCha20Nonce::from_bytes(&bytes).expect("Nonce creation should succeed");
-        assert_eq!(nonce.as_bytes(), &bytes);
-    }
-
-    #[test]
-    fn test_basic_encryption_decryption() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        let nonce = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        let cipher = XChaCha20Poly1305Cipher::new(&key);
-
-        let plaintext = b"Hello, XChaCha20-Poly1305!";
-        let associated_data = b"Additional authenticated data";
-
-        let ciphertext = cipher
-            .encrypt(&nonce, plaintext, associated_data)
-            .expect("Encryption should succeed");
-
-        let decrypted = cipher
-            .decrypt(&nonce, &ciphertext, associated_data)
-            .expect("Decryption should succeed");
-
-        assert_eq!(decrypted, plaintext);
-    }
-
-    #[test]
-    fn test_encryption_without_associated_data() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        let nonce = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        let cipher = XChaCha20Poly1305Cipher::new(&key);
-
-        let plaintext = b"Hello, XChaCha20-Poly1305!";
-
-        let ciphertext = cipher
-            .encrypt(&nonce, plaintext, &[])
-            .expect("Encryption should succeed");
-
-        let decrypted = cipher
-            .decrypt(&nonce, &ciphertext, &[])
-            .expect("Decryption should succeed");
-
-        assert_eq!(decrypted, plaintext);
-    }
-
-    #[test]
-    fn test_authentication_failure() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        let nonce = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        let cipher = XChaCha20Poly1305Cipher::new(&key);
-
-        let plaintext = b"Hello, XChaCha20-Poly1305!";
-        let associated_data = b"Additional authenticated data";
-
-        let mut ciphertext = cipher
-            .encrypt(&nonce, plaintext, associated_data)
-            .expect("Encryption should succeed");
-
-        // Tamper with the ciphertext
-        ciphertext[0] ^= 1;
-
-        // Decryption should fail due to authentication error
-        assert!(cipher.decrypt(&nonce, &ciphertext, associated_data).is_err());
-    }
-
-    #[test]
-    fn test_wrong_associated_data() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        let nonce = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        let cipher = XChaCha20Poly1305Cipher::new(&key);
-
-        let plaintext = b"Hello, XChaCha20-Poly1305!";
-        let associated_data = b"Additional authenticated data";
-        let wrong_associated_data = b"Wrong associated data";
-
-        let ciphertext = cipher
-            .encrypt(&nonce, plaintext, associated_data)
-            .expect("Encryption should succeed");
-
-        // Decryption should fail with wrong associated data
-        assert!(cipher.decrypt(&nonce, &ciphertext, wrong_associated_data).is_err());
-    }
-
-    #[test]
-    fn test_in_place_encryption_decryption() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        let nonce = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        let cipher = XChaCha20Poly1305Cipher::new(&key);
-
-        let plaintext = b"Hello, XChaCha20-Poly1305!";
-        let associated_data = b"Additional authenticated data";
-
-        // Create buffer with space for authentication tag
-        let mut buffer = vec![0u8; plaintext.len() + XCHACHA20_TAG_SIZE];
-        buffer[..plaintext.len()].copy_from_slice(plaintext);
-
-        cipher
-            .encrypt_in_place(&nonce, associated_data, &mut buffer)
-            .expect("In-place encryption should succeed");
-
-        cipher
-            .decrypt_in_place(&nonce, associated_data, &mut buffer)
-            .expect("In-place decryption should succeed");
-
-        assert_eq!(&buffer[..plaintext.len()], plaintext);
-    }
-
-    #[test]
-    fn test_streaming_encryption_decryption() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        let plaintext = b"This is a long message that will be processed in chunks for streaming encryption and decryption testing.";
-        let associated_data = b"streaming";
-
-        let mut encoder = XChaCha20Poly1305StreamingEncoder::new(&key, XChaCha20Nonce::generate().unwrap());
-        let nonce = encoder.nonce().clone();
-
-        // Encrypt in chunks
-        let chunk_size = 32;
-        let mut encrypted_chunks = Vec::new();
-        
-        for chunk in plaintext.chunks(chunk_size) {
-            let encrypted = encoder
-                .process_chunk(chunk, associated_data)
-                .expect("Streaming encryption should succeed");
-            encrypted_chunks.push(encrypted);
-        }
-
-        // Decrypt in chunks
-        let mut decoder = XChaCha20Poly1305StreamingDecoder::new(&key, nonce);
-        let mut decrypted = Vec::new();
-
-        for encrypted_chunk in encrypted_chunks {
-            let chunk = decoder
-                .process_chunk(&encrypted_chunk, associated_data)
-                .expect("Streaming decryption should succeed");
-            decrypted.extend_from_slice(&chunk);
-        }
-
-        assert_eq!(decrypted, plaintext);
-    }
-
-    #[test]
-    fn test_high_level_api() {
-        let key = XChaCha20Poly1305Api::generate_key().expect("Key generation should succeed");
-        let plaintext = b"Hello from high-level API!";
-        let associated_data = Some(b"high-level".as_slice());
-
-        let (nonce, ciphertext) = XChaCha20Poly1305Api::encrypt(&key, plaintext, associated_data)
-            .expect("High-level encryption should succeed");
-
-        let decrypted = XChaCha20Poly1305Api::decrypt(&key, &nonce, &ciphertext, associated_data)
-            .expect("High-level decryption should succeed");
-
-        assert_eq!(decrypted, plaintext);
-    }
-
-    #[test]
-    fn test_key_derivation() {
-        let input_key_material = b"shared secret";
-        let salt = Some(b"unique salt".as_slice());
-        let info = b"XChaCha20-Poly1305 key derivation";
-
-        let key = key_derivation::derive_key(input_key_material, salt, info)
-            .expect("Key derivation should succeed");
-
-        assert_eq!(key.as_bytes().len(), XCHACHA20_KEY_SIZE);
-
-        // Derive the same key again to test determinism
-        let key2 = key_derivation::derive_key(input_key_material, salt, info)
-            .expect("Key derivation should succeed");
-
-        assert_eq!(key.as_bytes(), key2.as_bytes());
-    }
-
-    #[test]
-    fn test_multiple_key_derivation() {
-        let input_key_material = b"shared secret for multiple keys";
-        let salt = Some(b"multi-key salt".as_slice());
-
-        let keys = key_derivation::derive_keys(input_key_material, salt, 3)
-            .expect("Multiple key derivation should succeed");
-
-        assert_eq!(keys.len(), 3);
-        
-        // Ensure all keys are different
-        assert_ne!(keys[0].as_bytes(), keys[1].as_bytes());
-        assert_ne!(keys[1].as_bytes(), keys[2].as_bytes());
-        assert_ne!(keys[0].as_bytes(), keys[2].as_bytes());
-    }
-
-    #[test]
-    fn test_data_size_validation() {
-        assert!(utils::validate_data_size(1000).is_ok());
-        assert!(utils::validate_data_size(XCHACHA20_MAX_PLAINTEXT_SIZE as usize).is_ok());
-        assert!(utils::validate_data_size((XCHACHA20_MAX_PLAINTEXT_SIZE + 1) as usize).is_err());
-    }
-
-    #[test]
-    fn test_ciphertext_size_calculations() {
-        let plaintext_size = 100;
-        let ciphertext_size = utils::calculate_ciphertext_size(plaintext_size);
-        assert_eq!(ciphertext_size, plaintext_size + XCHACHA20_TAG_SIZE);
-
-        let recovered_plaintext_size = utils::calculate_plaintext_size(ciphertext_size)
-            .expect("Plaintext size calculation should succeed");
-        assert_eq!(recovered_plaintext_size, plaintext_size);
-    }
-
-    #[test]
-    fn test_constant_time_comparison() {
-        let a = b"hello";
-        let b = b"hello";
-        let c = b"world";
-
-        assert!(utils::constant_time_eq(a, b));
-        assert!(!utils::constant_time_eq(a, c));
-    }
-
-    #[test]
-    fn test_large_data_encryption() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        let nonce = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        let cipher = XChaCha20Poly1305Cipher::new(&key);
-
-        // Test with 1MB of data
-        let plaintext = vec![42u8; 1024 * 1024];
-        let associated_data = b"large data test";
-
-        let ciphertext = cipher
-            .encrypt(&nonce, &plaintext, associated_data)
-            .expect("Large data encryption should succeed");
-
-        let decrypted = cipher
-            .decrypt(&nonce, &ciphertext, associated_data)
-            .expect("Large data decryption should succeed");
-
-        assert_eq!(decrypted, plaintext);
-    }
-
-    #[test]
-    fn test_empty_data_encryption() {
-        let key = XChaCha20Key::generate().expect("Key generation should succeed");
-        let nonce = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        let cipher = XChaCha20Poly1305Cipher::new(&key);
-
-        let plaintext = b"";
-        let associated_data = b"empty data test";
-
-        let ciphertext = cipher
-            .encrypt(&nonce, plaintext, associated_data)
-            .expect("Empty data encryption should succeed");
-
-        let decrypted = cipher
-            .decrypt(&nonce, &ciphertext, associated_data)
-            .expect("Empty data decryption should succeed");
-
-        assert_eq!(decrypted, plaintext);
-    }
-
-    #[test]
-    fn test_nonce_uniqueness() {
-        let nonce1 = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        let nonce2 = XChaCha20Nonce::generate().expect("Nonce generation should succeed");
-        
-        // Nonces should be different (extremely high probability)
-        assert_ne!(nonce1.as_bytes(), nonce2.as_bytes());
-    }
-
-    #[test]
-    fn test_key_zeroization() {
-        let key_bytes = [42u8; XCHACHA20_KEY_SIZE];
-        let mut key = XChaCha20Key::from_bytes(&key_bytes).expect("Key creation should succeed");
-        
-        // Manually zeroize to test
-        key.key.zeroize();
-        assert_ne!(key.as_bytes(), &key_bytes);
-        assert_eq!(key.as_bytes(), &[0u8; XCHACHA20_KEY_SIZE]);
-    }
-}

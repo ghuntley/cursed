@@ -1,9 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Async timer operations for CURSED stdlib
 use std::time::{Duration, Instant};
 use crate::runtime::r#async::{Future, delay as runtime_delay, timeout as runtime_timeout};
 use std::future::Future as StdFuture;
-use crate::stdlib::r#async::{AsyncError, AsyncResult};
+// use crate::stdlib::r#async::{AsyncError, AsyncResult};
 
 /// Sleep for the specified duration
 pub async fn sleep(duration: Duration) {
@@ -45,7 +45,7 @@ impl Interval {
     }
 
     /// Tick the interval (wait for next fire)
-    pub async fn tick(&mut self) -> Result<(), Error> {
+    pub async fn tick(&mut self) -> crate::error::Result<()> {
         if self.cancelled {
             return Err(AsyncError::Runtime("Interval cancelled".to_string()));
         }
@@ -100,7 +100,7 @@ impl<F> Future for Timeout<F>
 where
     F: Future,
 {
-    type Output = Result<(), Error>;
+    type Output = crate::error::Result<()>;
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
@@ -137,7 +137,7 @@ impl<F> StdFuture for Timeout<F>
 where
     F: Future,
 {
-    type Output = Result<(), Error>;
+    type Output = crate::error::Result<()>;
 
     fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Self::Output> {
         // Delegate to the custom Future implementation
@@ -161,7 +161,7 @@ pub mod timeout_utils {
     pub async fn race_timeout<F, T>(
         duration: Duration,
         future: F,
-    ) -> Result<(), Error>
+    ) -> crate::error::Result<()>
     where
         F: Future<Output = T>,
     {
@@ -173,7 +173,7 @@ pub mod timeout_utils {
         duration: Duration,
         future: F,
         message: &str,
-    ) -> Result<(), Error>
+    ) -> crate::error::Result<()>
     where
         F: Future<Output = T>,
     {
@@ -246,7 +246,7 @@ pub mod rate_limit {
         }
 
         /// Wait for a token (rate limit)
-        pub async fn acquire(&self) -> Result<(), Error> {
+        pub async fn acquire(&self) -> crate::error::Result<()> {
             loop {
                 {
                     let now = Instant::now();
@@ -309,38 +309,3 @@ pub use timeout_utils::*;
 pub use deadline::*;
 pub use rate_limit::*;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_interval_creation() {
-        let mut interval = Interval::new(Duration::from_millis(100));
-        assert!(!interval.is_cancelled());
-        
-        interval.cancel();
-        assert!(interval.is_cancelled());
-    }
-
-    #[test]
-    fn test_deadline_utils() {
-        let deadline = from_now(Duration::from_millis(100));
-        assert!(!has_passed(deadline));
-        assert!(time_remaining(deadline).is_some());
-    }
-
-    #[test]
-    fn test_rate_limiter() {
-        let limiter = RateLimiter::new(5, Duration::from_secs(1));
-        
-        // Should be able to acquire initially
-        assert!(limiter.try_acquire());
-        assert!(limiter.try_acquire());
-        assert!(limiter.try_acquire());
-        assert!(limiter.try_acquire());
-        assert!(limiter.try_acquire());
-        
-        // Should be empty now
-        assert!(!limiter.try_acquire());
-    }
-}

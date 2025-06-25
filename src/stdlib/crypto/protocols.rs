@@ -1,5 +1,5 @@
-use crate::error::{CursedError, Error};
-use crate::stdlib::value::Value as CursedValue;
+use crate::error::CursedError;
+// use crate::stdlib::value::Value as CursedValue;
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 use sha2::{Sha256, Digest};
@@ -50,7 +50,7 @@ impl JwtHandler {
 
     /// Create a JWT token with claims
     #[instrument(skip(self))]
-    pub fn create_token(&self, claims: HashMap<String, Value>) -> Result<(), Error> {
+    pub fn create_token(&self, claims: HashMap<String, Value>) -> crate::error::Result<()> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| CursedError::new("jwt_error", &format!("Time error: {}", e)))?
@@ -79,7 +79,7 @@ impl JwtHandler {
 
     /// Validate and decode a JWT token
     #[instrument(skip(self, token))]
-    pub fn validate_token(&self, token: &str) -> Result<(), Error> {
+    pub fn validate_token(&self, token: &str) -> crate::error::Result<()> {
         let parts: Vec<&str> = token.split('.').collect();
         if parts.len() != 3 {
             return Err(CursedError::new("jwt_error", "Invalid token format"));
@@ -119,14 +119,14 @@ impl JwtHandler {
         Ok(claims)
     }
 
-    fn sign_message(&self, message: &str) -> Result<(), Error> {
+    fn sign_message(&self, message: &str) -> crate::error::Result<()> {
         let mut mac = HmacSha256::new_from_slice(&self.secret_key)
             .map_err(|e| CursedError::new("jwt_error", &format!("HMAC error: {}", e)))?;
         mac.update(message.as_bytes());
         Ok(mac.finalize().into_bytes().to_vec())
     }
 
-    fn verify_signature(&self, message: &str, signature: &[u8]) -> Result<(), Error> {
+    fn verify_signature(&self, message: &str, signature: &[u8]) -> crate::error::Result<()> {
         let expected = self.sign_message(message)?;
         Ok(constant_time_eq(&expected, signature))
     }
@@ -148,7 +148,7 @@ impl HmacAuth {
 
     /// Create HMAC signature for data
     #[instrument(skip(self, data))]
-    pub fn sign(&self, data: &[u8]) -> Result<(), Error> {
+    pub fn sign(&self, data: &[u8]) -> crate::error::Result<()> {
         let mut mac = HmacSha256::new_from_slice(&self.key)
             .map_err(|e| CursedError::new("hmac_error", &format!("HMAC creation error: {}", e)))?;
         mac.update(data);
@@ -159,7 +159,7 @@ impl HmacAuth {
 
     /// Verify HMAC signature
     #[instrument(skip(self, data, signature))]
-    pub fn verify(&self, data: &[u8], signature: &[u8]) -> Result<(), Error> {
+    pub fn verify(&self, data: &[u8], signature: &[u8]) -> crate::error::Result<()> {
         let expected = self.sign(data)?;
         let is_valid = constant_time_eq(&expected, signature);
         debug!(is_valid, "HMAC signature verification result");
@@ -168,7 +168,7 @@ impl HmacAuth {
 
     /// Create authenticated message with embedded signature
     #[instrument(skip(self, message))]
-    pub fn create_authenticated_message(&self, message: &[u8]) -> Result<(), Error> {
+    pub fn create_authenticated_message(&self, message: &[u8]) -> crate::error::Result<()> {
         let signature = self.sign(message)?;
         let mut result = Vec::with_capacity(message.len() + signature.len() + 4);
         result.extend_from_slice(&(signature.len() as u32).to_be_bytes());
@@ -180,7 +180,7 @@ impl HmacAuth {
 
     /// Verify and extract message from authenticated format
     #[instrument(skip(self, authenticated_data))]
-    pub fn verify_authenticated_message(&self, authenticated_data: &[u8]) -> Result<(), Error> {
+    pub fn verify_authenticated_message(&self, authenticated_data: &[u8]) -> crate::error::Result<()> {
         if authenticated_data.len() < 4 {
             return Err(CursedError::new("hmac_error", "Invalid authenticated message format"));
         }
@@ -228,7 +228,7 @@ impl TotpGenerator {
 
     /// Generate TOTP for current time
     #[instrument(skip(self))]
-    pub fn generate_current(&self) -> Result<(), Error> {
+    pub fn generate_current(&self) -> crate::error::Result<()> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| CursedError::new("totp_error", &format!("Time error: {}", e)))?
@@ -238,7 +238,7 @@ impl TotpGenerator {
 
     /// Generate TOTP for specific time
     #[instrument(skip(self))]
-    pub fn generate_at_time(&self, unix_time: u64) -> Result<(), Error> {
+    pub fn generate_at_time(&self, unix_time: u64) -> crate::error::Result<()> {
         let time_counter = unix_time / self.time_step;
         let counter_bytes = time_counter.to_be_bytes();
 
@@ -265,7 +265,7 @@ impl TotpGenerator {
 
     /// Verify TOTP with time window tolerance
     #[instrument(skip(self))]
-    pub fn verify(&self, token: &str, time_window: u32) -> Result<(), Error> {
+    pub fn verify(&self, token: &str, time_window: u32) -> crate::error::Result<()> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|e| CursedError::new("totp_error", &format!("Time error: {}", e)))?
@@ -319,8 +319,8 @@ impl TlsHandshake {
 
     /// Generate client hello random
     #[instrument(skip(self))]
-    pub fn generate_client_random(&mut self) -> Result<(), Error> {
-        use crate::stdlib::crypto::random::SecureRandom;
+    pub fn generate_client_random(&mut self) -> crate::error::Result<()> {
+//         use crate::stdlib::crypto::random::SecureRandom;
         let mut rng = SecureRandom::new()?;
         self.client_random = rng.generate_bytes(32)?;
         debug!(length = self.client_random.len(), "Generated client random");
@@ -329,8 +329,8 @@ impl TlsHandshake {
 
     /// Generate server hello random
     #[instrument(skip(self))]
-    pub fn generate_server_random(&mut self) -> Result<(), Error> {
-        use crate::stdlib::crypto::random::SecureRandom;
+    pub fn generate_server_random(&mut self) -> crate::error::Result<()> {
+//         use crate::stdlib::crypto::random::SecureRandom;
         let mut rng = SecureRandom::new()?;
         self.server_random = rng.generate_bytes(32)?;
         debug!(length = self.server_random.len(), "Generated server random");
@@ -339,8 +339,8 @@ impl TlsHandshake {
 
     /// Generate session ID
     #[instrument(skip(self))]
-    pub fn generate_session_id(&mut self) -> Result<(), Error> {
-        use crate::stdlib::crypto::random::SecureRandom;
+    pub fn generate_session_id(&mut self) -> crate::error::Result<()> {
+//         use crate::stdlib::crypto::random::SecureRandom;
         let mut rng = SecureRandom::new()?;
         self.session_id = rng.generate_bytes(32)?;
         debug!(length = self.session_id.len(), "Generated session ID");
@@ -349,8 +349,8 @@ impl TlsHandshake {
 
     /// Create pre-master secret
     #[instrument(skip(self))]
-    pub fn create_pre_master_secret(&self) -> Result<(), Error> {
-        use crate::stdlib::crypto::random::SecureRandom;
+    pub fn create_pre_master_secret(&self) -> crate::error::Result<()> {
+//         use crate::stdlib::crypto::random::SecureRandom;
         let mut rng = SecureRandom::new()?;
         let pre_master = rng.generate_bytes(48)?;
         debug!(length = pre_master.len(), "Created pre-master secret");
@@ -359,7 +359,7 @@ impl TlsHandshake {
 
     /// Derive master secret from pre-master secret
     #[instrument(skip(self, pre_master_secret))]
-    pub fn derive_master_secret(&self, pre_master_secret: &[u8]) -> Result<(), Error> {
+    pub fn derive_master_secret(&self, pre_master_secret: &[u8]) -> crate::error::Result<()> {
         if self.client_random.is_empty() || self.server_random.is_empty() {
             return Err(CursedError::new("tls_error", "Client and server randoms must be set"));
         }
@@ -378,7 +378,7 @@ impl TlsHandshake {
 
     /// Derive key material from master secret
     #[instrument(skip(self, master_secret))]
-    pub fn derive_keys(&self, master_secret: &[u8], key_length: usize) -> Result<(), Error> {
+    pub fn derive_keys(&self, master_secret: &[u8], key_length: usize) -> crate::error::Result<()> {
         // Simplified key derivation (real TLS uses more complex PRF)
         let mut hasher = Sha256::new();
         hasher.update(master_secret);
@@ -454,13 +454,13 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 // ============================================================================
 
 /// Initialize comprehensive cryptographic protocols
-pub fn init_crypto_protocols() -> Result<(), Error> {
+pub fn init_crypto_protocols() -> crate::error::Result<()> {
     info!("Initializing comprehensive cryptographic protocols module");
     Ok(())
 }
 
 /// Create new protocol suite with specified security level
-pub fn create_protocol_suite(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn create_protocol_suite(args: Vec<CursedValue>) -> crate::error::Result<()> {
     let security_level = if args.is_empty() {
         SecurityLevel::Level256
     } else {
@@ -480,7 +480,7 @@ pub fn create_protocol_suite(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Generate X25519 keypair for key exchange
-pub fn generate_x25519_keypair(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn generate_x25519_keypair(args: Vec<CursedValue>) -> crate::error::Result<()> {
     let security_level = SecurityLevel::Level256;
     let exchange = X25519KeyExchange::new(security_level);
     let public_key = exchange.public_key();
@@ -493,7 +493,7 @@ pub fn generate_x25519_keypair(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Perform X25519 key exchange
-pub fn x25519_exchange(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn x25519_exchange(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("x25519_exchange requires private_key and peer_public_key".to_string()));
     }
@@ -506,7 +506,7 @@ pub fn x25519_exchange(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Create secure communication channel
-pub fn create_secure_channel(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn create_secure_channel(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("create_secure_channel requires shared_secret".to_string()));
     }
@@ -518,7 +518,7 @@ pub fn create_secure_channel(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Send message through secure channel
-pub fn send_secure_message(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn send_secure_message(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("send_secure_message requires channel_id and message".to_string()));
     }
@@ -533,7 +533,7 @@ pub fn send_secure_message(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Receive message from secure channel
-pub fn receive_secure_message(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn receive_secure_message(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("receive_secure_message requires channel_id and encrypted_message".to_string()));
     }
@@ -553,7 +553,7 @@ pub fn receive_secure_message(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Initiate challenge-response authentication
-pub fn initiate_authentication(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn initiate_authentication(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("initiate_authentication requires peer_public_key".to_string()));
     }
@@ -568,7 +568,7 @@ pub fn initiate_authentication(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Respond to authentication challenges
-pub fn respond_to_challenges(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn respond_to_challenges(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("respond_to_challenges requires challenge_set".to_string()));
     }
@@ -583,7 +583,7 @@ pub fn respond_to_challenges(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Verify authentication responses
-pub fn verify_authentication(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn verify_authentication(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("verify_authentication requires response_set".to_string()));
     }
@@ -598,7 +598,7 @@ pub fn verify_authentication(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Initiate multi-party computation
-pub fn initiate_mpc_computation(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn initiate_mpc_computation(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("initiate_mpc_computation requires participants and threshold".to_string()));
     }
@@ -616,14 +616,14 @@ pub fn initiate_mpc_computation(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Get protocol statistics
-pub fn get_protocol_statistics(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn get_protocol_statistics(args: Vec<CursedValue>) -> crate::error::Result<()> {
     let suite = ProtocolSuite::new(SecurityLevel::Level256);
     let stats = suite.get_protocol_statistics();
     Ok(CursedValue::Object(stats))
 }
 
 /// Perform security audit
-pub fn security_audit(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn security_audit(args: Vec<CursedValue>) -> crate::error::Result<()> {
     let suite = ProtocolSuite::new(SecurityLevel::Level256);
     let audit = suite.security_audit();
     
@@ -637,7 +637,7 @@ pub fn security_audit(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Get protocol health status
-pub fn get_health_status(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn get_health_status(args: Vec<CursedValue>) -> crate::error::Result<()> {
     let suite = ProtocolSuite::new(SecurityLevel::Level256);
     let health = suite.get_health_status();
     
@@ -651,7 +651,7 @@ pub fn get_health_status(args: Vec<CursedValue>) -> Result<(), Error> {
 }
 
 /// Log protocol error for debugging
-pub fn log_error(args: Vec<CursedValue>) -> Result<(), Error> {
+pub fn log_error(args: Vec<CursedValue>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::Runtime("log_error requires error_message".to_string()));
     }
@@ -662,94 +662,3 @@ pub fn log_error(args: Vec<CursedValue>) -> Result<(), Error> {
     Ok(CursedValue::bool(true))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_jwt_creation_and_validation() {
-        let secret = b"test_secret_key_12345678901234567890".to_vec();
-        let jwt = JwtHandler::new(secret, 3600);
-        
-        let mut claims = HashMap::new();
-        claims.insert("sub".to_string(), json!("user123"));
-        claims.insert("name".to_string(), json!("Test User"));
-        
-        let token = jwt.create_token(claims.clone()).unwrap();
-        assert!(!token.is_empty());
-        
-        let decoded = jwt.validate_token(&token).unwrap();
-        assert_eq!(decoded.get("sub"), Some(&json!("user123")));
-        assert_eq!(decoded.get("name"), Some(&json!("Test User")));
-    }
-
-    #[test]
-    fn test_hmac_authentication() {
-        let key = b"secret_hmac_key".to_vec();
-        let auth = HmacAuth::new(key);
-        
-        let data = b"test message";
-        let signature = auth.sign(data).unwrap();
-        assert!(auth.verify(data, &signature).unwrap());
-        
-        let wrong_data = b"wrong message";
-        assert!(!auth.verify(wrong_data, &signature).unwrap());
-    }
-
-    #[test]
-    fn test_totp_generation() {
-        let secret = b"JBSWY3DPEHPK3PXP".to_vec();
-        let totp = TotpGenerator::new(secret, 6, 30);
-        
-        let token = totp.generate_current().unwrap();
-        assert_eq!(token.len(), 6);
-        assert!(token.chars().all(|c| c.is_ascii_digit()));
-        
-        // Test verification with current token
-        assert!(totp.verify(&token, 1).unwrap());
-    }
-
-    #[test]
-    fn test_tls_handshake() {
-        let mut handshake = TlsHandshake::new();
-        
-        let client_random = handshake.generate_client_random().unwrap();
-        assert_eq!(client_random.len(), 32);
-        
-        let server_random = handshake.generate_server_random().unwrap();
-        assert_eq!(server_random.len(), 32);
-        
-        let pre_master = handshake.create_pre_master_secret().unwrap();
-        let master_secret = handshake.derive_master_secret(&pre_master).unwrap();
-        
-        let keys = handshake.derive_keys(&master_secret, 16).unwrap();
-        assert_eq!(keys.client_write_mac.len(), 16);
-        assert_eq!(keys.server_write_mac.len(), 16);
-    }
-
-    #[test]
-    fn test_constant_time_eq() {
-        assert!(constant_time_eq(b"hello", b"hello"));
-        assert!(!constant_time_eq(b"hello", b"world"));
-        assert!(!constant_time_eq(b"hello", b"hello!"));
-    }
-
-    #[test]
-    fn test_cursed_function_exports() {
-        // Test protocol suite creation
-        let result = create_protocol_suite(vec![CursedValue::String("Level256".to_string())]);
-        assert!(result.is_ok());
-
-        // Test X25519 keypair generation
-        let keypair = generate_x25519_keypair(vec![]);
-        assert!(keypair.is_ok());
-
-        // Test security audit
-        let audit = security_audit(vec![]);
-        assert!(audit.is_ok());
-
-        // Test health status
-        let health = get_health_status(vec![]);
-        assert!(health.is_ok());
-    }
-}

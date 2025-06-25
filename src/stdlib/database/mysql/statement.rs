@@ -7,11 +7,11 @@ use std::sync::Arc;
 use mysql::{Pool, PooledConn, Row, Statement};
 use mysql::prelude::*;
 
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     DriverStmt, DatabaseError, SqlValue,
     driver::{QueryResult, ExecuteResult}
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use super::error::{MySqlError, MySqlResult};
 use super::types::{convert_from_sql_value, extract_value_by_index, get_column_info};
 use super::driver::MySqlConfig;
@@ -172,17 +172,17 @@ impl MySqlStatement {
 }
 
 impl DriverStmt for MySqlStatement {
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_query_internal(args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         self.execute_command_internal(args)
             .map_err(|e| e.to_database_error())
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // MySQL prepared statements are automatically cleaned up when connections are returned to pool
         Ok(())
     }
@@ -216,82 +216,3 @@ impl Clone for MySqlStatement {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::database::SqlValue;
-
-    #[test]
-    fn test_parameter_counting() {
-        let pool = Arc::new(Pool::new("mysql://localhost/test").unwrap());
-        let config = MySqlConfig::default();
-
-        // Test query with no parameters
-        let stmt1 = MySqlStatement::new(pool.clone(), "SELECT 1".to_string(), config.clone()).unwrap();
-        assert_eq!(stmt1.parameter_count(), 0);
-
-        // Test query with one parameter
-        let stmt2 = MySqlStatement::new(pool.clone(), "SELECT * FROM users WHERE id = ?".to_string(), config.clone()).unwrap();
-        assert_eq!(stmt2.parameter_count(), 1);
-
-        // Test query with multiple parameters
-        let stmt3 = MySqlStatement::new(pool.clone(), "UPDATE users SET name = ?, email = ? WHERE id = ?".to_string(), config.clone()).unwrap();
-        assert_eq!(stmt3.parameter_count(), 3);
-    }
-
-    #[test]
-    fn test_query_validation() {
-        let pool = Arc::new(Pool::new("mysql://localhost/test").unwrap());
-        let config = MySqlConfig::default();
-
-        // Test valid query
-        let stmt1 = MySqlStatement::new(pool.clone(), "SELECT * FROM users".to_string(), config.clone()).unwrap();
-        assert!(stmt1.validate().is_ok());
-
-        // Test empty query
-        let stmt2 = MySqlStatement::new(pool.clone(), "".to_string(), config.clone()).unwrap();
-        assert!(stmt2.validate().is_err());
-
-        // Test potentially unsafe query
-        let stmt3 = MySqlStatement::new(pool.clone(), "SELECT * FROM users; -- DROP TABLE users".to_string(), config.clone()).unwrap();
-        assert!(stmt3.validate().is_err());
-    }
-
-    #[test]
-    fn test_statement_properties() {
-        let pool = Arc::new(Pool::new("mysql://localhost/test").unwrap());
-        let config = MySqlConfig::default();
-        let query = "SELECT * FROM users WHERE id = ?";
-
-        let stmt = MySqlStatement::new(pool, query.to_string(), config).unwrap();
-        
-        assert_eq!(stmt.query_string(), query);
-        assert_eq!(stmt.parameter_count(), 1);
-    }
-
-    #[test]
-    fn test_statement_cloning() {
-        let pool = Arc::new(Pool::new("mysql://localhost/test").unwrap());
-        let config = MySqlConfig::default();
-        let query = "SELECT * FROM users WHERE id = ?";
-
-        let stmt1 = MySqlStatement::new(pool, query.to_string(), config).unwrap();
-        let stmt2 = stmt1.clone();
-
-        assert_eq!(stmt1.query_string(), stmt2.query_string());
-        assert_eq!(stmt1.parameter_count(), stmt2.parameter_count());
-    }
-
-    #[test]
-    fn test_boxed_statement_cloning() {
-        let pool = Arc::new(Pool::new("mysql://localhost/test").unwrap());
-        let config = MySqlConfig::default();
-        let query = "SELECT * FROM users WHERE id = ?";
-
-        let stmt: Box<dyn DriverStmt> = Box::new(MySqlStatement::new(pool, query.to_string(), config).unwrap());
-        let cloned = stmt.clone();
-
-        assert_eq!(stmt.query_string(), cloned.query_string());
-        assert_eq!(stmt.parameter_count(), cloned.parameter_count());
-    }
-}

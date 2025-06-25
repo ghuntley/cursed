@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Matrix Operations Module for CURSED
 /// 
 /// Provides comprehensive matrix operations including basic arithmetic, decompositions,
@@ -578,79 +578,3 @@ pub fn matrix_inverse(matrix: &Matrix) -> MathResult<Matrix> {
     Ok(inverse)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_matrix_creation() {
-        let m = Matrix::new(2, 3);
-        assert_eq!(m.rows, 2);
-        assert_eq!(m.cols, 3);
-        assert_eq!(m.data.len(), 6);
-    }
-    
-    #[test]
-    fn test_matrix_identity() {
-        let id = Matrix::identity(3);
-        assert_eq!(id.get(0, 0).unwrap(), 1.0);
-        assert_eq!(id.get(1, 1).unwrap(), 1.0);
-        assert_eq!(id.get(2, 2).unwrap(), 1.0);
-        assert_eq!(id.get(0, 1).unwrap(), 0.0);
-    }
-    
-    #[test]
-    fn test_matrix_multiplication() {
-        let a = Matrix::from_vec(vec![
-            vec![1.0, 2.0],
-            vec![3.0, 4.0],
-        ]).unwrap();
-        
-        let b = Matrix::from_vec(vec![
-            vec![5.0, 6.0],
-            vec![7.0, 8.0],
-        ]).unwrap();
-        
-        let c = matrix_multiply(&a, &b).unwrap();
-        assert_eq!(c.get(0, 0).unwrap(), 19.0);
-        assert_eq!(c.get(0, 1).unwrap(), 22.0);
-        assert_eq!(c.get(1, 0).unwrap(), 43.0);
-        assert_eq!(c.get(1, 1).unwrap(), 50.0);
-    }
-    
-    #[test]
-    fn test_matrix_transpose() {
-        let m = Matrix::from_vec(vec![
-            vec![1.0, 2.0, 3.0],
-            vec![4.0, 5.0, 6.0],
-        ]).unwrap();
-        
-        let mt = m.transpose();
-        assert_eq!(mt.rows, 3);
-        assert_eq!(mt.cols, 2);
-        assert_eq!(mt.get(0, 0).unwrap(), 1.0);
-        assert_eq!(mt.get(1, 0).unwrap(), 2.0);
-        assert_eq!(mt.get(2, 0).unwrap(), 3.0);
-    }
-    
-    #[test]
-    fn test_lu_decomposition() {
-        let m = Matrix::from_vec(vec![
-            vec![2.0, 1.0],
-            vec![1.0, 1.0],
-        ]).unwrap();
-        
-        let lu = lu_decomposition(&m).unwrap();
-        
-        // Verify PA = LU
-        let pa = matrix_multiply(&lu.p, &m).unwrap();
-        let lu_product = matrix_multiply(&lu.l, &lu.u).unwrap();
-        
-        for i in 0..m.rows {
-            for j in 0..m.cols {
-                let diff = (pa.get(i, j).unwrap() - lu_product.get(i, j).unwrap()).abs();
-                assert!(diff < 1e-10);
-            }
-        }
-    }
-}

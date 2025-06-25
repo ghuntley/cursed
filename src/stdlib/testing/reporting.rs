@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Test reporting system for CURSED testing framework
 /// 
 /// Provides multiple report formats and comprehensive test result reporting
@@ -7,7 +7,6 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::time::Duration;
-use crate::crate::stdlib::errors_simple::CursedError;
 use super::{
     discovery::TestInfo,
     executor::{TestResult, TestStatus},

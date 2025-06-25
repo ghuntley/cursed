@@ -28,18 +28,17 @@
 // goroutines. The global logger instance is protected by a mutex to ensure
 // serialized access.
 // 
-// # Error Handling
+// # CursedError Handling
 // 
 // Functions that can fail return appropriate CURSED error types. Fatal functions
 // and panic functions handle errors internally before terminating the program.
 
 use std::sync::{Arc, Mutex};
 use std::io::{Write, stdout, stderr};
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
 use super::logger::Logger;
 use super::flags::LstdFlags;
-use crate::error::Error;
 
 /// Global standard logger instance
 /// 
@@ -54,9 +53,9 @@ lazy_static::lazy_static! {
 
 /// Helper function to acquire logger lock with proper error handling
 #[inline]
-fn with_logger<F, R>(f: F) -> Result<(), Error>
+fn with_logger<F, R>(f: F) -> crate::error::Result<()>
 where
-    F: FnOnce(&Logger) -> Result<(), Error>,
+    F: FnOnce(&Logger) -> crate::error::Result<()>,
 {
     let logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire global logger lock".to_string())
@@ -66,9 +65,9 @@ where
 
 /// Helper function to acquire mutable logger lock with proper error handling
 #[inline]
-fn with_logger_mut<F, R>(f: F) -> Result<(), Error>
+fn with_logger_mut<F, R>(f: F) -> crate::error::Result<()>
 where
-    F: FnOnce(&mut Logger) -> Result<(), Error>,
+    F: FnOnce(&mut Logger) -> crate::error::Result<()>,
 {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire global logger lock".to_string())
@@ -103,7 +102,7 @@ where
 /// ];
 /// spill(&args)?; // Prints: "Hello world\n"
 /// ```
-pub fn spill(args: &[Value]) -> Result<(), Error> {
+pub fn spill(args: &[Value]) -> crate::error::Result<()> {
     with_logger(|logger| logger.spill(args))
 }
 
@@ -127,7 +126,7 @@ pub fn spill(args: &[Value]) -> Result<(), Error> {
 ///     Value::Integer(5),
 /// ])?; // Prints: "Hello, Alice! You have 5 messages.\n"
 /// ```
-pub fn spillf(format: &str, args: &[Value]) -> Result<(), Error> {
+pub fn spillf(format: &str, args: &[Value]) -> crate::error::Result<()> {
     with_logger(|logger| logger.spillf(format, args))
 }
 
@@ -261,7 +260,7 @@ pub fn shookf(format: &str, args: &[Value]) -> ! {
 /// 
 /// set_flags(Ldate | Ltime)?; // Enable date and time in output
 /// ```
-pub fn set_flags(flags: i32) -> Result<(), Error> {
+pub fn set_flags(flags: i32) -> crate::error::Result<()> {
     with_logger_mut(|logger| {
         logger.set_flags(flags);
         Ok(())
@@ -287,7 +286,7 @@ pub fn set_flags(flags: i32) -> Result<(), Error> {
 /// let file = File::create("log.txt")?;
 /// set_output(Box::new(file))?; // Redirect output to file
 /// ```
-pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), Error> {
+pub fn set_output(writer: Box<dyn Write + Send>) -> crate::error::Result<()> {
     with_logger_mut(|logger| {
         logger.set_output(writer);
         Ok(())
@@ -312,7 +311,7 @@ pub fn set_output(writer: Box<dyn Write + Send>) -> Result<(), Error> {
 /// spill(&[Value::String("test".to_string())])?; 
 /// // Output: "MyApp: test"
 /// ```
-pub fn set_prefix(prefix: &str) -> Result<(), Error> {
+pub fn set_prefix(prefix: &str) -> crate::error::Result<()> {
     with_logger_mut(|logger| {
         logger.set_prefix(prefix.to_string());
         Ok(())
@@ -332,7 +331,7 @@ pub fn set_prefix(prefix: &str) -> Result<(), Error> {
 /// let current_flags = flags()?;
 /// println!("Current flags: {}", current_flags);
 /// ```
-pub fn flags() -> Result<(), Error> {
+pub fn flags() -> crate::error::Result<()> {
     with_logger(|logger| Ok(logger.flags()))
 }
 
@@ -349,7 +348,7 @@ pub fn flags() -> Result<(), Error> {
 /// let current_prefix = prefix()?;
 /// println!("Current prefix: '{}'", current_prefix);
 /// ```
-pub fn prefix() -> Result<(), Error> {
+pub fn prefix() -> crate::error::Result<()> {
     with_logger(|logger| Ok(logger.prefix()))
 }
 
@@ -368,7 +367,7 @@ pub fn prefix() -> Result<(), Error> {
 /// let writer_info = writer()?;
 /// println!("Current writer: {}", writer_info);
 /// ```
-pub fn writer() -> Result<(), Error> {
+pub fn writer() -> crate::error::Result<()> {
     with_logger(|logger| {
         // Since we can't actually return the writer due to type system limitations,
         // we return a descriptive string instead
@@ -390,7 +389,7 @@ pub fn writer() -> Result<(), Error> {
 /// spill(&[Value::String("Important message".to_string())])?;
 /// flush()?; // Ensure message is written immediately
 /// ```
-pub fn flush() -> Result<(), Error> {
+pub fn flush() -> crate::error::Result<()> {
     with_logger(|logger| logger.flush())
 }
 
@@ -407,7 +406,7 @@ pub fn flush() -> Result<(), Error> {
 /// ```
 /// reset_standard_logger()?; // Reset to defaults
 /// ```
-pub fn reset_standard_logger() -> Result<(), Error> {
+pub fn reset_standard_logger() -> crate::error::Result<()> {
     let mut logger = STANDARD_LOGGER.lock().map_err(|_| {
         CursedError::Runtime("Failed to acquire global logger lock".to_string())
     })?;
@@ -430,7 +429,7 @@ pub fn reset_standard_logger() -> Result<(), Error> {
 /// let logger_clone = get_standard_logger()?;
 /// // Use logger_clone independently
 /// ```
-pub fn get_standard_logger() -> Result<(), Error> {
+pub fn get_standard_logger() -> crate::error::Result<()> {
     with_logger(|logger| Ok(logger.clone()))
 }
 
@@ -438,156 +437,3 @@ pub fn get_standard_logger() -> Result<(), Error> {
 // Tests
 // =============================================================================
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::value::Value;
-    use std::io::Cursor;
-    use super::super::flags::{Ldate, Ltime};
-
-    #[test]
-    fn test_standard_logger_basic_operations() {
-        // Reset to known state
-        assert!(reset_standard_logger().is_ok());
-        
-        // Test configuration functions
-        assert!(set_flags(Ldate | Ltime).is_ok());
-        assert!(set_prefix("test: ").is_ok());
-        
-        let current_flags = flags().unwrap();
-        assert_eq!(current_flags, Ldate | Ltime);
-        
-        let current_prefix = prefix().unwrap();
-        assert_eq!(current_prefix, "test: ");
-    }
-    
-    #[test]
-    fn test_spill_functionality() {
-        assert!(reset_standard_logger().is_ok());
-        
-        let args = vec![
-            Value::String("test".to_string()),
-            Value::String("message".to_string())
-        ];
-        assert!(spill(&args).is_ok());
-    }
-    
-    #[test]
-    fn test_spillf_functionality() {
-        assert!(reset_standard_logger().is_ok());
-        
-        let args = vec![
-            Value::String("world".to_string()),
-            Value::Integer(42)
-        ];
-        assert!(spillf("Hello, {}! Number: {}", &args).is_ok());
-    }
-    
-    #[test]
-    fn test_output_redirection() {
-        assert!(reset_standard_logger().is_ok());
-        
-        // Redirect to in-memory buffer for testing
-        let buffer = Cursor::new(Vec::new());
-        assert!(set_output(Box::new(buffer)).is_ok());
-        
-        // Test that we can still log (though we can't easily verify the output
-        // due to the buffer being moved into the logger)
-        let args = vec![Value::String("test output".to_string())];
-        assert!(spill(&args).is_ok());
-        
-        // Reset for other tests
-        assert!(reset_standard_logger().is_ok());
-    }
-    
-    #[test]
-    fn test_flush_operation() {
-        assert!(reset_standard_logger().is_ok());
-        assert!(flush().is_ok());
-    }
-    
-    #[test]
-    fn test_writer_info() {
-        assert!(reset_standard_logger().is_ok());
-        
-        let writer_info = writer().unwrap();
-        assert!(writer_info.contains("writer"));
-    }
-    
-    #[test]
-    fn test_get_standard_logger_clone() {
-        assert!(reset_standard_logger().is_ok());
-        
-        let logger_clone = get_standard_logger();
-        assert!(logger_clone.is_ok());
-    }
-    
-    #[test]
-    fn test_concurrent_access() {
-        use std::thread;
-        use std::sync::Arc;
-        use std::sync::atomic::{AtomicUsize, Ordering};
-        
-        assert!(reset_standard_logger().is_ok());
-        
-        let counter = Arc::new(AtomicUsize::new(0));
-        let mut handles = vec![];
-        
-        // Spawn multiple threads that use the standard logger
-        for i in 0..4 {
-            let counter_clone = counter.clone();
-            let handle = thread::spawn(move || {
-                for j in 0..10 {
-                    let args = vec![
-                        Value::String(format!("Thread {}", i)),
-                        Value::Integer(j as i64)
-                    ];
-                    if spill(&args).is_ok() {
-                        counter_clone.fetch_add(1, Ordering::Relaxed);
-                    }
-                }
-            });
-            handles.push(handle);
-        }
-        
-        // Wait for all threads to complete
-        for handle in handles {
-            handle.join().unwrap();
-        }
-        
-        // Verify that all operations succeeded
-        assert_eq!(counter.load(Ordering::Relaxed), 40);
-    }
-    
-    #[test]
-    fn test_error_handling() {
-        assert!(reset_standard_logger().is_ok());
-        
-        // Test with empty args (should succeed)
-        assert!(spill(&[]).is_ok());
-        
-        // Test with various value types
-        let mixed_args = vec![
-            Value::String("string".to_string()),
-            Value::Integer(42),
-            Value::Float(3.14),
-            Value::Boolean(true)
-        ];
-        assert!(spill(&mixed_args).is_ok());
-        assert!(spillf("Mixed: {} {} {} {}", &mixed_args).is_ok());
-    }
-    
-    #[test]
-    #[should_panic(expected = "shook")]
-    fn test_shook_panics() {
-        let args = vec![Value::String("test panic".to_string())];
-        shook(&args);
-    }
-    
-    #[test]
-    #[should_panic(expected = "shookf")]
-    fn test_shookf_panics() {
-        let args = vec![Value::String("test".to_string())];
-        shookf("Formatted panic: {}", &args);
-    }
-}

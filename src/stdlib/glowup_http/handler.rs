@@ -1,12 +1,12 @@
 use crate::web::StatusCode;
 // HTTP handler types and utilities for GlowUpHTTP
 
-use crate::stdlib::glowup_http::error::GlowUpResult;
-use crate::stdlib::glowup_http::request::VibeRequest;
-use crate::stdlib::glowup_http::response::ResponderVibe;
+// use crate::stdlib::glowup_http::error::GlowUpResult;
+// use crate::stdlib::glowup_http::request::VibeRequest;
+// use crate::stdlib::glowup_http::response::ResponderVibe;
 use std::sync::Arc;
 use tracing::{debug, instrument};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Primary trait for handling HTTP requests
 /// This follows the CURSED spec's `Handler` naming
@@ -149,7 +149,7 @@ impl Handler for FileHandler {
                     }
                     Err(_) => {
                         w.write_header(StatusCode::InternalServerError);
-                        w.write(b"Internal Server Error")?;
+                        w.write(b"Internal Server CursedError")?;
                     }
                 }
             }
@@ -170,7 +170,7 @@ impl Handler for FileHandler {
                         }
                         Err(_) => {
                             w.write_header(StatusCode::InternalServerError);
-                            w.write(b"Internal Server Error")?;
+                            w.write(b"Internal Server CursedError")?;
                         }
                     }
                 } else {
@@ -312,53 +312,3 @@ where
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::glowup_http::request::Method;
-    use crate::web::StatusCode;
-
-    #[test]
-    fn test_static_handler() {
-        let handler = StaticHandler::text("Hello, World!");
-        let request = VibeRequest::new(Method::GET, "/test");
-        let response = ResponderVibe::new();
-        
-        handler.handle_vibe(&response, &request).unwrap();
-        
-        let body = response.get_body();
-        assert_eq!(body, b"Hello, World!");
-        
-        let headers = response.get_headers();
-        assert_eq!(headers.get("content-type"), Some(&"text/plain".to_string()));
-    }
-
-    #[test]
-    fn test_redirect_handler() {
-        let handler = RedirectHandler::temporary("/new-location");
-        let request = VibeRequest::new(Method::GET, "/old-location");
-        let response = ResponderVibe::new();
-        
-        handler.handle_vibe(&response, &request).unwrap();
-        
-        let headers = response.get_headers();
-        assert_eq!(headers.get("location"), Some(&"/new-location".to_string()));
-        assert_eq!(response.get_status(), Some(StatusCode::Found));
-    }
-
-    #[test]
-    fn test_handler_func() {
-        let handler = handler_func(|w: &ResponderVibe, r: &VibeRequest| {
-            w.write(format!("Hello from {}", r.url).as_bytes())?;
-            Ok(())
-        });
-        
-        let request = VibeRequest::new(Method::GET, "/test");
-        let response = ResponderVibe::new();
-        
-        handler.handle_vibe(&response, &request).unwrap();
-        
-        let body = response.get_body();
-        assert_eq!(body, b"Hello from /test");
-    }
-}

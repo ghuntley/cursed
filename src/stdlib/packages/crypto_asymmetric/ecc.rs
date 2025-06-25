@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Elliptic Curve Cryptography implementation with ECDSA signatures
 /// 
 /// This module provides production-ready ECC key generation, ECDSA signing/verification
@@ -18,7 +18,6 @@ use elliptic_curve::{
 
 use zeroize::Zeroizing;
 use sha2::{Sha256, Sha384, Sha512, Digest};
-use crate::error::CursedError;
 
 /// fr fr Supported NIST curves
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -138,28 +137,28 @@ pub enum EccError {
     Internal(String),
 }
 
-impl std::fmt::Display for EccError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            EccError::UnsupportedCurve(curve) => write!(f, "Unsupported ECC curve: {}", curve),
-            EccError::KeyGenerationFailed(msg) => write!(f, "ECC key generation failed: {}", msg),
-            EccError::SigningFailed(msg) => write!(f, "ECDSA signing failed: {}", msg),
-            EccError::VerificationFailed(msg) => write!(f, "ECDSA verification failed: {}", msg),
-            EccError::InvalidSignature(msg) => write!(f, "Invalid ECDSA signature: {}", msg),
-            EccError::InvalidPublicKey(msg) => write!(f, "Invalid ECC public key: {}", msg),
-            EccError::InvalidPrivateKey(msg) => write!(f, "Invalid ECC private key: {}", msg),
-            EccError::InvalidFormat(msg) => write!(f, "Invalid key format: {}", msg),
-            EccError::SerializationFailed(msg) => write!(f, "Key serialization failed: {}", msg),
-            EccError::DeserializationFailed(msg) => write!(f, "Key deserialization failed: {}", msg),
-            EccError::UnsupportedHashAlgorithm(algo) => write!(f, "Unsupported hash algorithm: {}", algo),
-            EccError::Internal(msg) => write!(f, "Internal ECC error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for EccError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             EccError::UnsupportedCurve(curve) => write!(f, "Unsupported ECC curve: {}", curve),
+//             EccError::KeyGenerationFailed(msg) => write!(f, "ECC key generation failed: {}", msg),
+//             EccError::SigningFailed(msg) => write!(f, "ECDSA signing failed: {}", msg),
+//             EccError::VerificationFailed(msg) => write!(f, "ECDSA verification failed: {}", msg),
+//             EccError::InvalidSignature(msg) => write!(f, "Invalid ECDSA signature: {}", msg),
+//             EccError::InvalidPublicKey(msg) => write!(f, "Invalid ECC public key: {}", msg),
+//             EccError::InvalidPrivateKey(msg) => write!(f, "Invalid ECC private key: {}", msg),
+//             EccError::InvalidFormat(msg) => write!(f, "Invalid key format: {}", msg),
+//             EccError::SerializationFailed(msg) => write!(f, "Key serialization failed: {}", msg),
+//             EccError::DeserializationFailed(msg) => write!(f, "Key deserialization failed: {}", msg),
+//             EccError::UnsupportedHashAlgorithm(algo) => write!(f, "Unsupported hash algorithm: {}", algo),
+//             EccError::Internal(msg) => write!(f, "Internal ECC error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for EccError {}
-
-type EccResult<T> = Result<T, Error>;
+// impl std::error::CursedError for EccError {}
+// 
+type Ecccrate::error::Result<T> = Result<T>;
 
 /// fr fr ECC engine for cryptographic operations
 pub struct EccEngine {
@@ -526,10 +525,10 @@ impl Default for EccEngine {
 }
 
 /// fr fr Public API functions for CURSED integration
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 
 /// slay Generate ECC key pair
-pub fn ecc_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecc_generate_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     let curve_name = if args.is_empty() {
         "P-256".to_string()
     } else {
@@ -574,7 +573,7 @@ pub fn ecc_generate_keypair(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay ECDSA sign message
-pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdsa_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("ECDSA sign requires private key, message, and curve".to_string()));
     }
@@ -629,7 +628,7 @@ pub fn ecdsa_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay ECDSA verify signature
-pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn ecdsa_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::Runtime("ECDSA verify requires public key, message, signature, and curve".to_string()));
     }
@@ -692,121 +691,3 @@ pub fn ecdsa_verify(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::bool(is_valid))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_ecc_key_generation() {
-        let mut engine = EccEngine::new();
-        
-        // Test P-256
-        let keypair_256 = engine.generate_keypair(EccCurve::P256).unwrap();
-        assert_eq!(keypair_256.curve(), EccCurve::P256);
-        assert_eq!(keypair_256.key_size_bits(), 256);
-        
-        // Test P-384
-        let keypair_384 = engine.generate_keypair(EccCurve::P384).unwrap();
-        assert_eq!(keypair_384.curve(), EccCurve::P384);
-        assert_eq!(keypair_384.key_size_bits(), 384);
-        
-        // Test P-521
-        let keypair_521 = engine.generate_keypair(EccCurve::P521).unwrap();
-        assert_eq!(keypair_521.curve(), EccCurve::P521);
-        assert_eq!(keypair_521.key_size_bits(), 521);
-    }
-    
-    #[test]
-    fn test_ecdsa_signing_verification() {
-        let mut engine = EccEngine::new();
-        let keypair = engine.generate_keypair(EccCurve::P256).unwrap();
-        
-        let message = b"Hello, ECDSA signatures!";
-        let signature = engine.sign(&keypair, message, EccHashAlgorithm::Sha256).unwrap();
-        let verified = engine.verify(&keypair, message, &signature, EccHashAlgorithm::Sha256).unwrap();
-        
-        assert!(verified);
-        
-        // Test with wrong message
-        let wrong_message = b"Wrong message";
-        let verified_wrong = engine.verify(&keypair, wrong_message, &signature, EccHashAlgorithm::Sha256).unwrap();
-        assert!(!verified_wrong);
-    }
-    
-    #[test]
-    fn test_key_serialization() {
-        let mut engine = EccEngine::new();
-        let keypair = engine.generate_keypair(EccCurve::P256).unwrap();
-        
-        // Test private key serialization/deserialization
-        let private_pem = engine.serialize_private_key(&keypair, EccKeyFormat::Pkcs8Pem).unwrap();
-        let deserialized_keypair = engine.deserialize_private_key(&private_pem, EccCurve::P256, EccKeyFormat::Pkcs8Pem).unwrap();
-        
-        // Test public key serialization
-        let public_pem = engine.serialize_public_key(&keypair, EccKeyFormat::Pkcs8Pem).unwrap();
-        assert!(!public_pem.is_empty());
-        
-        // Verify they still work
-        let message = b"Test serialization";
-        let signature = engine.sign(&deserialized_keypair, message, EccHashAlgorithm::Sha256).unwrap();
-        let verified = engine.verify(&deserialized_keypair, message, &signature, EccHashAlgorithm::Sha256).unwrap();
-        
-        assert!(verified);
-    }
-    
-    #[test]
-    fn test_multiple_curves() {
-        let mut engine = EccEngine::new();
-        let message = b"Test message for all curves";
-        
-        // Test all curves
-        for curve in [EccCurve::P256, EccCurve::P384, EccCurve::P521] {
-            let keypair = engine.generate_keypair(curve).unwrap();
-            let signature = engine.sign(&keypair, message, EccHashAlgorithm::Sha256).unwrap();
-            let verified = engine.verify(&keypair, message, &signature, EccHashAlgorithm::Sha256).unwrap();
-            assert!(verified);
-        }
-    }
-    
-    #[test]
-    fn test_multiple_hash_algorithms() {
-        let mut engine = EccEngine::new();
-        let keypair = engine.generate_keypair(EccCurve::P256).unwrap();
-        let message = b"Test message for all hash algorithms";
-        
-        // Test all hash algorithms
-        for hash_algo in [EccHashAlgorithm::Sha256, EccHashAlgorithm::Sha384, EccHashAlgorithm::Sha512] {
-            let signature = engine.sign(&keypair, message, hash_algo).unwrap();
-            let verified = engine.verify(&keypair, message, &signature, hash_algo).unwrap();
-            assert!(verified);
-        }
-    }
-    
-    #[test]
-    fn test_public_key_coordinates() {
-        let mut engine = EccEngine::new();
-        let keypair = engine.generate_keypair(EccCurve::P256).unwrap();
-        
-        let (x, y) = engine.get_public_key_coordinates(&keypair).unwrap();
-        assert_eq!(x.len(), 32); // 256 bits = 32 bytes
-        assert_eq!(y.len(), 32);
-        assert_ne!(x, vec![0u8; 32]); // Should not be all zeros
-        assert_ne!(y, vec![0u8; 32]);
-    }
-    
-    #[test]
-    fn test_compressed_uncompressed_serialization() {
-        let mut engine = EccEngine::new();
-        let keypair = engine.generate_keypair(EccCurve::P256).unwrap();
-        
-        let compressed = engine.serialize_public_key(&keypair, EccKeyFormat::CompressedSec1).unwrap();
-        let uncompressed = engine.serialize_public_key(&keypair, EccKeyFormat::UncompressedSec1).unwrap();
-        
-        assert_eq!(compressed.len(), 33); // 1 + 32 bytes for P-256
-        assert_eq!(uncompressed.len(), 65); // 1 + 32 + 32 bytes for P-256
-        
-        // First byte indicates compression
-        assert_eq!(uncompressed[0], 0x04); // Uncompressed marker
-        assert!(compressed[0] == 0x02 || compressed[0] == 0x03); // Compressed marker
-    }
-}

@@ -1,7 +1,6 @@
-/// Error handling for SignalBoost module
+/// CursedError handling for SignalBoost module
 use std::fmt;
 use crate::error::CursedError;
-use crate::error::Error;
 
 /// Result type for SignalBoost operations
 pub type SignalBoostResult<T> = std::result::Result<T, SignalBoostError>;
@@ -33,37 +32,37 @@ pub enum SignalBoostError {
     General(String),
 }
 
-impl fmt::Display for SignalBoostError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SignalBoostError::InvalidSignal(msg) => write!(f, "Invalid signal: {}", msg),
-            SignalBoostError::SystemError(msg) => write!(f, "System error: {}", msg),
-            SignalBoostError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
-            SignalBoostError::NotSupported(msg) => write!(f, "Not supported: {}", msg),
-            SignalBoostError::Timeout(msg) => write!(f, "Timeout: {}", msg),
-            SignalBoostError::HandlerExists(msg) => write!(f, "Handler exists: {}", msg),
-            SignalBoostError::NoHandler(msg) => write!(f, "No handler: {}", msg),
-            SignalBoostError::ProcessingError(msg) => write!(f, "Processing error: {}", msg),
-            SignalBoostError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
-            SignalBoostError::IoError(msg) => write!(f, "I/O error: {}", msg),
-            SignalBoostError::General(msg) => write!(f, "SignalBoost error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for SignalBoostError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             SignalBoostError::InvalidSignal(msg) => write!(f, "Invalid signal: {}", msg),
+//             SignalBoostError::SystemError(msg) => write!(f, "System error: {}", msg),
+//             SignalBoostError::PermissionDenied(msg) => write!(f, "Permission denied: {}", msg),
+//             SignalBoostError::NotSupported(msg) => write!(f, "Not supported: {}", msg),
+//             SignalBoostError::Timeout(msg) => write!(f, "Timeout: {}", msg),
+//             SignalBoostError::HandlerExists(msg) => write!(f, "Handler exists: {}", msg),
+//             SignalBoostError::NoHandler(msg) => write!(f, "No handler: {}", msg),
+//             SignalBoostError::ProcessingError(msg) => write!(f, "Processing error: {}", msg),
+//             SignalBoostError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
+//             SignalBoostError::IoError(msg) => write!(f, "I/O error: {}", msg),
+//             SignalBoostError::General(msg) => write!(f, "SignalBoost error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for SignalBoostError {}
+// impl std::error::CursedError for SignalBoostError {}
+// 
+// impl From<SignalBoostError> for CursedError {
+//     fn from(err: SignalBoostError) -> Self {
+//         CursedError::Runtime(err.to_string())
+//     }
+// }
 
-impl From<SignalBoostError> for CursedError {
-    fn from(err: SignalBoostError) -> Self {
-        CursedError::Runtime(err.to_string())
-    }
-}
-
-impl From<std::io::Error> for SignalBoostError {
-    fn from(err: std::io::Error) -> Self {
-        SignalBoostError::IoError(err.to_string())
-    }
-}
+// impl From<std::io::Error> for SignalBoostError {
+//     fn from(err: std::io::Error) -> Self {
+//         SignalBoostError::IoError(err.to_string())
+//     }
+// }
 
 impl From<std::time::SystemTimeError> for SignalBoostError {
     fn from(err: std::time::SystemTimeError) -> Self {

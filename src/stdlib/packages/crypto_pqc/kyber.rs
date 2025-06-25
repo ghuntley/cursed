@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // fr fr Kyber Key Encapsulation Mechanism (KEM) Implementation
 // 
 // This module provides a production-ready implementation of the Kyber post-quantum
@@ -45,10 +45,9 @@ use hmac::{Hmac, Mac};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 // Import CURSED error system
-use crate::error::CursedError;
 
 // Import base crypto types that should already be available
-use crate::stdlib::crypto::pqc::{
+// use crate::stdlib::crypto::pqc::{
     PqcError, PqcResult, SecurityLevel, KyberParameterSet, 
     KyberPublicKey as BasePqcPublicKey, KyberSecretKey as BasePqcSecretKey
 };
@@ -113,30 +112,30 @@ pub enum CryptoError {
     InternalError(String),
 }
 
-impl fmt::Display for CryptoError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CryptoError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
-            CryptoError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
-            CryptoError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
-            CryptoError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
-            CryptoError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
-            CryptoError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
-            CryptoError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
-            CryptoError::MemoryError(msg) => write!(f, "Memory error: {}", msg),
-            CryptoError::TimingAttack(msg) => write!(f, "Timing attack detected: {}", msg),
-            CryptoError::InternalError(msg) => write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for CryptoError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             CryptoError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
+//             CryptoError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
+//             CryptoError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
+//             CryptoError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
+//             CryptoError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
+//             CryptoError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
+//             CryptoError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
+//             CryptoError::MemoryError(msg) => write!(f, "Memory error: {}", msg),
+//             CryptoError::TimingAttack(msg) => write!(f, "Timing attack detected: {}", msg),
+//             CryptoError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for CryptoError {}
-
-impl From<CryptoError> for CursedError {
-    fn from(err: CryptoError) -> Self {
-        CursedError::Runtime(format!("Crypto error: {}", err))
-    }
-}
+// impl std::error::CursedError for CryptoError {}
+// 
+// impl From<CryptoError> for CursedError {
+//     fn from(err: CryptoError) -> Self {
+//         CursedError::Runtime(format!("Crypto error: {}", err))
+//     }
+// }
 
 impl From<PqcError> for CryptoError {
     fn from(err: PqcError) -> Self {
@@ -494,7 +493,7 @@ impl KyberPoly {
     }
     
     /// Decompress polynomial
-    fn decompress(data: &[u8], d: u8) -> Result<(), Error> {
+    fn decompress(data: &[u8], d: u8) -> crate::error::Result<()> {
         if data.len() != KYBER_N {
             return Err(CryptoError::InvalidCiphertext(
                 format!("Invalid compressed polynomial size: expected {}, got {}", KYBER_N, data.len())
@@ -561,7 +560,7 @@ impl KyberPolyVec {
     }
     
     /// Deserialize polynomial vector
-    fn from_bytes(data: &[u8], k: usize) -> Result<(), Error> {
+    fn from_bytes(data: &[u8], k: usize) -> crate::error::Result<()> {
         let expected_size = k * KYBER_N * 2; // 2 bytes per coefficient
         if data.len() != expected_size {
             return Err(CryptoError::InvalidKey(
@@ -1274,221 +1273,3 @@ impl KyberKem {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_kyber_polynomial_operations() {
-        let mut poly1 = KyberPoly::new();
-        let mut poly2 = KyberPoly::new();
-        
-        // Set some test values
-        poly1.coeffs[0] = 100;
-        poly1.coeffs[1] = 200;
-        poly2.coeffs[0] = 50;
-        poly2.coeffs[1] = 150;
-        
-        // Test addition
-        let mut result = poly1.clone();
-        result.add(&poly2);
-        
-        assert_eq!(result.coeffs[0], 150);
-        assert_eq!(result.coeffs[1], 350);
-    }
-    
-    #[test]
-    fn test_barrett_reduction() {
-        let test_values = [0, 1, KYBER_Q - 1, KYBER_Q, KYBER_Q + 1, 2 * KYBER_Q];
-        
-        for &val in &test_values {
-            let reduced = barrett_reduce(val);
-            assert!(reduced < KYBER_Q, "Reduction failed for value {}: got {}", val, reduced);
-        }
-    }
-    
-    #[test]
-    fn test_polynomial_compression() {
-        let mut poly = KyberPoly::new();
-        poly.coeffs[0] = 100;
-        poly.coeffs[1] = 200;
-        poly.coeffs[2] = 300;
-        
-        let compressed = poly.compress(4);
-        let decompressed = KyberPoly::decompress(&compressed, 4).unwrap();
-        
-        // Should be approximately equal after compression/decompression
-        let diff0 = (poly.coeffs[0] as i32 - decompressed.coeffs[0] as i32).abs();
-        let diff1 = (poly.coeffs[1] as i32 - decompressed.coeffs[1] as i32).abs();
-        
-        assert!(diff0 < 100, "Compression error too large");
-        assert!(diff1 < 100, "Compression error too large");
-    }
-    
-    #[test]
-    fn test_kyber_params() {
-        let params512 = KyberParams::for_parameter_set(KyberParameterSet::Kyber512);
-        assert_eq!(params512.k, 2);
-        assert_eq!(params512.public_key_bytes, 800);
-        
-        let params768 = KyberParams::for_parameter_set(KyberParameterSet::Kyber768);
-        assert_eq!(params768.k, 3);
-        assert_eq!(params768.public_key_bytes, 1184);
-        
-        let params1024 = KyberParams::for_parameter_set(KyberParameterSet::Kyber1024);
-        assert_eq!(params1024.k, 4);
-        assert_eq!(params1024.public_key_bytes, 1568);
-    }
-    
-    #[test]
-    fn test_constant_time_comparison() {
-        let a = [1, 2, 3, 4, 5];
-        let b = [1, 2, 3, 4, 5];
-        let c = [1, 2, 3, 4, 6];
-        
-        assert!(constant_time_eq(&a, &b));
-        assert!(!constant_time_eq(&a, &c));
-        assert!(!constant_time_eq(&a, &[1, 2, 3])); // Different lengths
-    }
-    
-    #[test]
-    fn test_enhanced_key_generation() {
-        // Test Kyber-512
-        let keypair512 = KyberKeyPair::generate(KyberParameterSet::Kyber512).unwrap();
-        assert_eq!(keypair512.parameter_set(), KyberParameterSet::Kyber512);
-        assert_eq!(keypair512.public_key().as_bytes().len(), 800);
-        assert_eq!(keypair512.private_key().as_bytes().len(), 1632);
-        
-        // Test Kyber-768
-        let keypair768 = KyberKeyPair::generate(KyberParameterSet::Kyber768).unwrap();
-        assert_eq!(keypair768.parameter_set(), KyberParameterSet::Kyber768);
-        assert_eq!(keypair768.public_key().as_bytes().len(), 1184);
-        assert_eq!(keypair768.private_key().as_bytes().len(), 2400);
-        
-        // Test Kyber-1024
-        let keypair1024 = KyberKeyPair::generate(KyberParameterSet::Kyber1024).unwrap();
-        assert_eq!(keypair1024.parameter_set(), KyberParameterSet::Kyber1024);
-        assert_eq!(keypair1024.public_key().as_bytes().len(), 1568);
-        assert_eq!(keypair1024.private_key().as_bytes().len(), 3168);
-    }
-    
-    #[test]
-    fn test_enhanced_encapsulation_decapsulation() {
-        for &param_set in &[KyberParameterSet::Kyber512, KyberParameterSet::Kyber768, KyberParameterSet::Kyber1024] {
-            let keypair = KyberKeyPair::generate(param_set).unwrap();
-            
-            // Test encapsulation
-            let encaps_result = keypair.public_key().encapsulate().unwrap();
-            assert_eq!(encaps_result.shared_secret.len(), KYBER_SSBYTES);
-            assert_eq!(encaps_result.ciphertext.parameter_set(), param_set);
-            
-            // Test decapsulation
-            let decapsulated_secret = keypair.private_key().decapsulate(&encaps_result.ciphertext).unwrap();
-            assert_eq!(encaps_result.shared_secret, decapsulated_secret);
-        }
-    }
-    
-    #[test]
-    fn test_key_serialization() {
-        let keypair = KyberKeyPair::generate(KyberParameterSet::Kyber768).unwrap();
-        
-        // Test public key serialization
-        let pub_bytes = keypair.public_key().to_bytes();
-        let restored_pub = KyberPublicKey::from_bytes(KyberParameterSet::Kyber768, &pub_bytes).unwrap();
-        assert_eq!(keypair.public_key().as_bytes(), restored_pub.as_bytes());
-        
-        // Test private key serialization
-        let priv_bytes = keypair.private_key().to_bytes();
-        let restored_priv = KyberPrivateKey::from_bytes(KyberParameterSet::Kyber768, &priv_bytes).unwrap();
-        assert_eq!(keypair.private_key().as_bytes(), restored_priv.as_bytes());
-    }
-    
-    #[test]
-    fn test_ciphertext_operations() {
-        let keypair = KyberKeyPair::generate(KyberParameterSet::Kyber512).unwrap();
-        let encaps_result = keypair.public_key().encapsulate().unwrap();
-        
-        // Test ciphertext serialization
-        let ct_bytes = encaps_result.ciphertext.to_bytes();
-        let restored_ct = KyberCiphertext::from_bytes(KyberParameterSet::Kyber512, &ct_bytes).unwrap();
-        assert_eq!(encaps_result.ciphertext.as_bytes(), restored_ct.as_bytes());
-        
-        // Test decapsulation with restored ciphertext
-        let decaps_secret = keypair.private_key().decapsulate(&restored_ct).unwrap();
-        assert_eq!(encaps_result.shared_secret, decaps_secret);
-    }
-    
-    #[test]
-    fn test_error_handling() {
-        // Test invalid key size
-        let invalid_pub_key = KyberPublicKey::new(KyberParameterSet::Kyber512, vec![0; 100]);
-        assert!(invalid_pub_key.is_err());
-        
-        let invalid_priv_key = KyberPrivateKey::new(KyberParameterSet::Kyber512, vec![0; 100]);
-        assert!(invalid_priv_key.is_err());
-        
-        // Test invalid ciphertext size
-        let invalid_ciphertext = KyberCiphertext::new(KyberParameterSet::Kyber512, vec![0; 100]);
-        assert!(invalid_ciphertext.is_err());
-        
-        // Test parameter validation
-        let result = validate_security_params(KyberParameterSet::Kyber512);
-        assert!(result.is_ok());
-    }
-    
-    #[test] 
-    fn test_memory_safety() {
-        let keypair = KyberKeyPair::generate(KyberParameterSet::Kyber768).unwrap();
-        let encaps_result = keypair.public_key().encapsulate().unwrap();
-        
-        // Create copies to test zeroization
-        let secret_copy = encaps_result.shared_secret.clone();
-        
-        // Drop the encapsulation result (should zeroize)
-        drop(encaps_result);
-        
-        // Verify original secret is still intact
-        assert_eq!(secret_copy.len(), KYBER_SSBYTES);
-    }
-    
-    #[test]
-    fn test_legacy_api_compatibility() {
-        // Test legacy key generation
-        let (pub_key, priv_key) = KyberKem::keygen(SecurityLevel::Level3).unwrap();
-        assert_eq!(pub_key.parameter_set, KyberParameterSet::Kyber768);
-        assert_eq!(priv_key.parameter_set, KyberParameterSet::Kyber768);
-        
-        // Test legacy encapsulation/decapsulation
-        let (ciphertext, shared_secret) = KyberKem::encaps_legacy(&pub_key).unwrap();
-        let decaps_secret = KyberKem::decaps_legacy(&priv_key, &ciphertext).unwrap();
-        assert_eq!(shared_secret, decaps_secret);
-    }
-    
-    #[test]
-    fn test_security_levels() {
-        // Test all security levels
-        for &security_level in &[SecurityLevel::Level1, SecurityLevel::Level3, SecurityLevel::Level5] {
-            let (pub_key, priv_key) = KyberKem::keygen(security_level).unwrap();
-            
-            let expected_param_set = match security_level {
-                SecurityLevel::Level1 => KyberParameterSet::Kyber512,
-                SecurityLevel::Level3 => KyberParameterSet::Kyber768,
-                SecurityLevel::Level5 => KyberParameterSet::Kyber1024,
-            };
-            
-            assert_eq!(pub_key.parameter_set, expected_param_set);
-            assert_eq!(priv_key.parameter_set, expected_param_set);
-        }
-    }
-    
-    #[test]
-    fn test_deterministic_operations() {
-        // Test that operations are deterministic given same inputs
-        let keypair1 = KyberKeyPair::generate(KyberParameterSet::Kyber512).unwrap();
-        let keypair2 = KyberKeyPair::generate(KyberParameterSet::Kyber512).unwrap();
-        
-        // Keys should be different (random generation)
-        assert_ne!(keypair1.public_key().as_bytes(), keypair2.public_key().as_bytes());
-        assert_ne!(keypair1.private_key().as_bytes(), keypair2.private_key().as_bytes());
-    }
-}

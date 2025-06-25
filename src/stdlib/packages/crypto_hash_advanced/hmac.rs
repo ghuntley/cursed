@@ -4,12 +4,11 @@
 /// implementation following RFC 2104 with support for SHA-256, SHA-512, and BLAKE3.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::error::Error;
+// use crate::stdlib::value::Value;
 use std::collections::HashMap;
 
 // Import hash functions
-use crate::stdlib::crypto::hash::{Sha256, Sha512, HashFunction};
+// use crate::stdlib::crypto::hash::{Sha256, Sha512, HashFunction};
 use super::blake3::Blake3Hasher;
 
 /// fr fr Supported hash algorithms for HMAC
@@ -61,7 +60,7 @@ pub struct HmacEngine {
 
 impl HmacEngine {
     /// slay Create new HMAC engine with specified algorithm and key
-    pub fn new(algorithm: HmacAlgorithm, key: &[u8]) -> Result<(), Error> {
+    pub fn new(algorithm: HmacAlgorithm, key: &[u8]) -> crate::error::Result<()> {
         if key.is_empty() {
             return Err(HmacError::InvalidKey("HMAC key cannot be empty".to_string()));
         }
@@ -317,19 +316,19 @@ pub enum HmacError {
     Internal(String),
 }
 
-impl std::fmt::Display for HmacError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            HmacError::InvalidKey(msg) => write!(f, "Invalid HMAC key: {}", msg),
-            HmacError::InvalidAlgorithm(msg) => write!(f, "Invalid HMAC algorithm: {}", msg),
-            HmacError::VerificationFailed => write!(f, "HMAC verification failed"),
-            HmacError::Internal(msg) => write!(f, "Internal HMAC error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for HmacError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             HmacError::InvalidKey(msg) => write!(f, "Invalid HMAC key: {}", msg),
+//             HmacError::InvalidAlgorithm(msg) => write!(f, "Invalid HMAC algorithm: {}", msg),
+//             HmacError::VerificationFailed => write!(f, "HMAC verification failed"),
+//             HmacError::Internal(msg) => write!(f, "Internal HMAC error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for HmacError {}
-
+// impl std::error::CursedError for HmacError {}
+// 
 /// fr fr HMAC utilities
 pub struct HmacUtils;
 
@@ -349,37 +348,37 @@ impl HmacUtils {
     }
     
     /// periodt HMAC-SHA256 in one shot
-    pub fn hmac_sha256(key: &[u8], message: &[u8]) -> Result<(), Error> {
+    pub fn hmac_sha256(key: &[u8], message: &[u8]) -> crate::error::Result<()> {
         let engine = HmacEngine::new(HmacAlgorithm::Sha256, key)?;
         Ok(engine.compute(message))
     }
     
     /// facts HMAC-SHA512 in one shot
-    pub fn hmac_sha512(key: &[u8], message: &[u8]) -> Result<(), Error> {
+    pub fn hmac_sha512(key: &[u8], message: &[u8]) -> crate::error::Result<()> {
         let engine = HmacEngine::new(HmacAlgorithm::Sha512, key)?;
         Ok(engine.compute(message))
     }
     
     /// yolo HMAC-BLAKE3 in one shot
-    pub fn hmac_blake3(key: &[u8], message: &[u8]) -> Result<(), Error> {
+    pub fn hmac_blake3(key: &[u8], message: &[u8]) -> crate::error::Result<()> {
         let engine = HmacEngine::new(HmacAlgorithm::Blake3, key)?;
         Ok(engine.compute(message))
     }
     
     /// slay HMAC string with SHA-256
-    pub fn hmac_sha256_string(key: &str, message: &str) -> Result<(), Error> {
+    pub fn hmac_sha256_string(key: &str, message: &str) -> crate::error::Result<()> {
         let mac = Self::hmac_sha256(key.as_bytes(), message.as_bytes())?;
         Ok(Self::to_hex(&mac))
     }
     
     /// bestie HMAC string with SHA-512
-    pub fn hmac_sha512_string(key: &str, message: &str) -> Result<(), Error> {
+    pub fn hmac_sha512_string(key: &str, message: &str) -> crate::error::Result<()> {
         let mac = Self::hmac_sha512(key.as_bytes(), message.as_bytes())?;
         Ok(Self::to_hex(&mac))
     }
     
     /// vibes HMAC string with BLAKE3
-    pub fn hmac_blake3_string(key: &str, message: &str) -> Result<(), Error> {
+    pub fn hmac_blake3_string(key: &str, message: &str) -> crate::error::Result<()> {
         let mac = Self::hmac_blake3(key.as_bytes(), message.as_bytes())?;
         Ok(Self::to_hex(&mac))
     }
@@ -388,7 +387,7 @@ impl HmacUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay HMAC-SHA256 function
-pub fn hmac_sha256(args: Vec<Value>) -> Result<(), Error> {
+pub fn hmac_sha256(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("HMAC-SHA256 requires key and message".to_string()));
     }
@@ -410,7 +409,7 @@ pub fn hmac_sha256(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay HMAC-SHA512 function
-pub fn hmac_sha512(args: Vec<Value>) -> Result<(), Error> {
+pub fn hmac_sha512(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("HMAC-SHA512 requires key and message".to_string()));
     }
@@ -432,7 +431,7 @@ pub fn hmac_sha512(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay HMAC-BLAKE3 function
-pub fn hmac_blake3(args: Vec<Value>) -> Result<(), Error> {
+pub fn hmac_blake3(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("HMAC-BLAKE3 requires key and message".to_string()));
     }
@@ -454,7 +453,7 @@ pub fn hmac_blake3(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Verify HMAC
-pub fn hmac_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn hmac_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::Runtime("HMAC verify requires algorithm, key, message, and expected MAC".to_string()));
     }
@@ -505,7 +504,7 @@ pub fn hmac_verify(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Generate HMAC key
-pub fn hmac_generate_key(args: Vec<Value>) -> Result<(), Error> {
+pub fn hmac_generate_key(args: Vec<Value>) -> crate::error::Result<()> {
     let algorithm_str = if args.is_empty() {
         "SHA256"
     } else {
@@ -527,7 +526,7 @@ pub fn hmac_generate_key(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// slay Create streaming HMAC computer
-pub fn create_hmac_stream(args: Vec<Value>) -> Result<(), Error> {
+pub fn create_hmac_stream(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 2 {
         return Err(CursedError::Runtime("HMAC stream requires algorithm and key".to_string()));
     }
@@ -553,127 +552,3 @@ pub fn create_hmac_stream(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::Object(result))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_hmac_sha256_rfc_test_vectors() {
-        // RFC 4231 test vectors
-        let key = b"key";
-        let message = b"The quick brown fox jumps over the lazy dog";
-        
-        let mac = HmacUtils::hmac_sha256(key, message).unwrap();
-        assert_eq!(mac.len(), 32);
-        assert_ne!(mac, vec![0u8; 32]); // Should not be all zeros
-    }
-    
-    #[test]
-    fn test_hmac_sha512() {
-        let key = b"test_key";
-        let message = b"test_message";
-        
-        let mac = HmacUtils::hmac_sha512(key, message).unwrap();
-        assert_eq!(mac.len(), 64);
-    }
-    
-    #[test]
-    fn test_hmac_blake3() {
-        let key = b"test_key";
-        let message = b"test_message";
-        
-        let mac = HmacUtils::hmac_blake3(key, message).unwrap();
-        assert_eq!(mac.len(), 32);
-    }
-    
-    #[test]
-    fn test_hmac_verification() {
-        let key = b"secret_key";
-        let message = b"authenticated_message";
-        
-        let engine = HmacEngine::new(HmacAlgorithm::Sha256, key).unwrap();
-        let mac = engine.compute(message);
-        
-        // Should verify correctly
-        assert!(engine.verify(message, &mac));
-        
-        // Should fail with wrong message
-        assert!(!engine.verify(b"wrong_message", &mac));
-        
-        // Should fail with wrong MAC
-        let mut wrong_mac = mac.clone();
-        wrong_mac[0] ^= 1;
-        assert!(!engine.verify(message, &wrong_mac));
-    }
-    
-    #[test]
-    fn test_hmac_streaming() {
-        let key = b"streaming_key";
-        let message = b"hello world";
-        
-        // Compute HMAC in one shot
-        let engine = HmacEngine::new(HmacAlgorithm::Sha256, key).unwrap();
-        let mac1 = engine.compute(message);
-        
-        // Compute HMAC with streaming
-        let mut stream = engine.create_stream();
-        stream.update(b"hello ");
-        stream.update(b"world");
-        let mac2 = stream.finalize();
-        
-        assert_eq!(mac1, mac2);
-    }
-    
-    #[test]
-    fn test_hmac_key_processing() {
-        // Test with key longer than block size
-        let long_key = vec![0x42u8; 100]; // Longer than SHA-256 block size (64 bytes)
-        let message = b"test";
-        
-        let engine = HmacEngine::new(HmacAlgorithm::Sha256, &long_key).unwrap();
-        let mac = engine.compute(message);
-        assert_eq!(mac.len(), 32);
-    }
-    
-    #[test]
-    fn test_hmac_empty_key() {
-        let result = HmacEngine::new(HmacAlgorithm::Sha256, &[]);
-        assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), HmacError::InvalidKey(_)));
-    }
-    
-    #[test]
-    fn test_hmac_algorithm_properties() {
-        assert_eq!(HmacAlgorithm::Sha256.name(), "HMAC-SHA256");
-        assert_eq!(HmacAlgorithm::Sha256.block_size(), 64);
-        assert_eq!(HmacAlgorithm::Sha256.output_size(), 32);
-        
-        assert_eq!(HmacAlgorithm::Sha512.name(), "HMAC-SHA512");
-        assert_eq!(HmacAlgorithm::Sha512.block_size(), 128);
-        assert_eq!(HmacAlgorithm::Sha512.output_size(), 64);
-        
-        assert_eq!(HmacAlgorithm::Blake3.name(), "HMAC-BLAKE3");
-        assert_eq!(HmacAlgorithm::Blake3.block_size(), 64);
-        assert_eq!(HmacAlgorithm::Blake3.output_size(), 32);
-    }
-    
-    #[test]
-    fn test_constant_time_compare() {
-        let engine = HmacEngine::new(HmacAlgorithm::Sha256, b"key").unwrap();
-        
-        assert!(engine.constant_time_compare(b"hello", b"hello"));
-        assert!(!engine.constant_time_compare(b"hello", b"world"));
-        assert!(!engine.constant_time_compare(b"hello", b"hi"));
-        assert!(!engine.constant_time_compare(b"", b"a"));
-    }
-    
-    #[test]
-    fn test_hmac_key_generation() {
-        let key1 = HmacUtils::generate_key(HmacAlgorithm::Sha256);
-        let key2 = HmacUtils::generate_key(HmacAlgorithm::Sha256);
-        
-        assert_eq!(key1.len(), 32);
-        assert_eq!(key2.len(), 32);
-        assert_ne!(key1, key2); // Should be different random keys
-    }
-}

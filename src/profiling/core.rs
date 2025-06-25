@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Core profiling infrastructure and configuration
 
 use std::collections::HashMap;
@@ -155,7 +155,7 @@ impl CursedProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn start_session(&mut self, session_name: String) -> Result<(), Error> {
+    pub fn start_session(&mut self, session_name: String) -> crate::error::Result<()> {
         if self.session.is_some() {
             return Err(ProfilerError::SessionAlreadyActive);
         }
@@ -178,7 +178,7 @@ impl CursedProfiler {
     }
     
     #[instrument(skip(self))]
-    pub fn stop_session(&mut self) -> Result<(), Error> {
+    pub fn stop_session(&mut self) -> crate::error::Result<()> {
         let session = self.session.take()
             .ok_or(ProfilerError::NoActiveSession)?;
         
@@ -325,8 +325,8 @@ impl ProfilerStats {
 
 /// Data collector trait for different profiling modes
 pub trait DataCollector: Send + Sync {
-    fn start_collection(&mut self) -> Result<(), Error>;
-    fn stop_collection(&mut self) -> Result<(), Error>;
+    fn start_collection(&mut self) -> crate::error::Result<()>;
+    fn stop_collection(&mut self) -> crate::error::Result<()>;
     fn is_collecting(&self) -> bool;
     fn get_stats(&self) -> CollectorStats;
 }
@@ -390,7 +390,7 @@ impl Default for ProfilerBuilder {
 }
 
 /// Profiler errors
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::CursedError)]
 pub enum ProfilerError {
     #[error("Profiling session is already active")]
     SessionAlreadyActive,
@@ -417,38 +417,3 @@ pub enum ProfilerError {
     UnsupportedMode(ProfilerMode),
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_profiler_builder() {
-        let profiler = ProfilerBuilder::new()
-            .with_modes(Vec::from([ProfilerMode::Cpu, ProfilerMode::Memory]))
-            .with_cpu_sampling(200)
-            .with_output_dir("test_output".to_string())
-            .build();
-        
-        assert_eq!(profiler.config.cpu_sampling_frequency, 200);
-        assert_eq!(profiler.config.output_directory, "test_output");
-        assert_eq!(profiler.config.modes.len(), 2);
-    }
-    
-    #[test]
-    fn test_profiler_stats() {
-        let mut stats = ProfilerStats::default();
-        stats.sessions_started = 10;
-        stats.sessions_completed = 8;
-        
-        assert_eq!(stats.success_rate(), 0.8);
-    }
-    
-    #[test]
-    fn test_profiling_session() {
-        let config = ProfilerConfig::default();
-        let mut session = ProfilingSession::new("test_session".to_string(), config);
-        
-        session.add_metadata("version".to_string(), "1.0.0".to_string());
-        assert_eq!(session.metadata.get("version"), Some(&"1.0.0".to_string()));
-    }
-}

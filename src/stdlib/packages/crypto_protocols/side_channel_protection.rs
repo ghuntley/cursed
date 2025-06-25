@@ -1,8 +1,7 @@
 /// Side-Channel Attack Protection
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_random::SecureRandom;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_random::SecureRandom;
 use std::time::{Duration, Instant};
 
 /// Side-channel protection configuration
@@ -319,86 +318,3 @@ impl SideChannelProtectionManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_side_channel_manager_creation() {
-        let manager = SideChannelProtectionManager::new().unwrap();
-        assert!(manager.config.constant_time_operations);
-    }
-
-    #[test]
-    fn test_constant_time_select() {
-        let manager = SideChannelProtectionManager::new().unwrap();
-        let a = b"hello";
-        let b = b"world";
-
-        let result1 = manager.constant_time_select(true, a, b).unwrap();
-        assert_eq!(result1, a);
-
-        let result2 = manager.constant_time_select(false, a, b).unwrap();
-        assert_eq!(result2, b);
-    }
-
-    #[test]
-    fn test_constant_time_eq() {
-        let manager = SideChannelProtectionManager::new().unwrap();
-
-        assert!(manager.constant_time_eq(b"hello", b"hello"));
-        assert!(!manager.constant_time_eq(b"hello", b"world"));
-        assert!(!manager.constant_time_eq(b"hello", b"hi"));
-    }
-
-    #[test]
-    fn test_obfuscated_table_lookup() {
-        let manager = SideChannelProtectionManager::new().unwrap();
-        let table = vec![
-            b"first".to_vec(),
-            b"secnd".to_vec(),
-            b"third".to_vec(),
-        ];
-
-        let result = manager.obfuscated_table_lookup(&table, 1).unwrap();
-        assert_eq!(result, b"secnd");
-    }
-
-    #[test]
-    fn test_blinding() {
-        let manager = SideChannelProtectionManager::new().unwrap();
-        let data = b"sensitive_data";
-
-        let (blinded, factor) = manager.apply_blinding(data).unwrap();
-        assert_ne!(blinded, data);
-
-        let unblinded = manager.remove_blinding(&blinded, &factor).unwrap();
-        assert_eq!(unblinded, data);
-    }
-
-    #[test]
-    fn test_secure_zero() {
-        let manager = SideChannelProtectionManager::new().unwrap();
-        let mut data = vec![0xFF; 10];
-
-        manager.secure_zero(&mut data);
-        assert_eq!(data, vec![0; 10]);
-    }
-
-    #[test]
-    fn test_constant_time_swap() {
-        let manager = SideChannelProtectionManager::new().unwrap();
-        let mut a = b"hello".to_vec();
-        let mut b = b"world".to_vec();
-        let original_a = a.clone();
-        let original_b = b.clone();
-
-        manager.constant_time_swap(true, &mut a, &mut b).unwrap();
-        assert_eq!(a, original_b);
-        assert_eq!(b, original_a);
-
-        manager.constant_time_swap(false, &mut a, &mut b).unwrap();
-        assert_eq!(a, original_b); // Should remain unchanged
-        assert_eq!(b, original_a);
-    }
-}

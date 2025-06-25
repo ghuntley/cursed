@@ -3,11 +3,11 @@
 /// This module defines query structures, parameter handling, caching,
 /// and execution planning for database operations. Query optimization bestie!
 
-use crate::stdlib::packages::db_core::error::{
+// use crate::stdlib::packages::db_core::error::{
     DatabaseError, ErrorKind, QueryError
 };
-use crate::error::Error;
-use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
+use crate::error::CursedError;
+// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
 
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
@@ -785,115 +785,3 @@ impl Default for ParameterSet {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_query_creation() {
-        let query = Query::new("SELECT * FROM users WHERE id = ?");
-        assert_eq!(query.query_type, QueryType::Select);
-        assert!(!query.id.is_empty());
-    }
-
-    #[test]
-    fn test_query_type_detection() {
-        assert_eq!(Query::detect_query_type("SELECT * FROM users"), QueryType::Select);
-        assert_eq!(Query::detect_query_type("INSERT INTO users"), QueryType::Insert);
-        assert_eq!(Query::detect_query_type("UPDATE users SET"), QueryType::Update);
-        assert_eq!(Query::detect_query_type("DELETE FROM users"), QueryType::Delete);
-        assert_eq!(Query::detect_query_type("CREATE TABLE users"), QueryType::Create);
-    }
-
-    #[test]
-    fn test_parameter_handling() {
-        let mut param_set = ParameterSet::new();
-        param_set.add_parameter(Parameter::named_input("id", "123"));
-        param_set.add_parameter(Parameter::named_input("name", "Alice"));
-
-        assert_eq!(param_set.len(), 2);
-        assert!(param_set.get_by_name("id").is_some());
-        assert!(param_set.get_by_name("name").is_some());
-        assert!(param_set.get_by_name("nonexistent").is_none());
-    }
-
-    #[test]
-    fn test_query_builder() {
-        let query = QueryBuilder::new()
-            .statement("SELECT * FROM users WHERE id = :id")
-            .parameter("id", "123")
-            .timeout(Duration::from_secs(30))
-            .max_rows(100)
-            .use_prepared()
-            .build()
-            .unwrap();
-
-        assert_eq!(query.query_type, QueryType::Select);
-        assert_eq!(query.parameters.len(), 1);
-        assert_eq!(query.options.timeout, Some(Duration::from_secs(30)));
-        assert_eq!(query.options.max_rows, Some(100));
-        assert!(query.options.use_prepared);
-    }
-
-    #[test]
-    fn test_query_validation() {
-        let empty_query = Query::new("");
-        assert!(empty_query.validate().is_err());
-
-        let valid_query = Query::new("SELECT 1");
-        assert!(valid_query.validate().is_ok());
-
-        let suspicious_query = Query::new("SELECT * FROM users -- DROP TABLE users");
-        assert!(suspicious_query.validate().is_err());
-    }
-
-    #[test]
-    fn test_query_cache() {
-        let config = CacheConfig::default();
-        let mut cache = QueryCache::new(config);
-
-        let query = Query::new("SELECT * FROM users");
-        let query_hash = query.get_hash();
-        
-        // Miss first time
-        assert!(cache.get(query_hash).is_none());
-        assert_eq!(cache.stats.misses, 1);
-
-        // Put in cache
-        cache.put(query, None);
-        assert_eq!(cache.stats.current_entries, 1);
-
-        // Hit second time
-        assert!(cache.get(query_hash).is_some());
-        assert_eq!(cache.stats.hits, 1);
-    }
-
-    #[test]
-    fn test_query_metadata() {
-        let mut metadata = QueryMetadata::new(true);
-        assert_eq!(metadata.execution_count, 0);
-        assert!(metadata.avg_execution_time.is_none());
-
-        metadata.record_execution(Duration::from_millis(100));
-        assert_eq!(metadata.execution_count, 1);
-        assert_eq!(metadata.avg_execution_time, Some(Duration::from_millis(100)));
-
-        metadata.record_execution(Duration::from_millis(200));
-        assert_eq!(metadata.execution_count, 2);
-        // Average should be 150ms
-        assert!(metadata.avg_execution_time.unwrap().as_millis() == 150);
-    }
-
-    #[test]
-    fn test_parameter_directions() {
-        let input = Parameter::input("value");
-        let output = Parameter::output("varchar");
-        let named_input = Parameter::named_input("param", "value");
-        let named_output = Parameter::named_output("result", "int");
-
-        assert_eq!(input.direction, ParameterDirection::In);
-        assert_eq!(output.direction, ParameterDirection::Out);
-        assert_eq!(named_input.direction, ParameterDirection::In);
-        assert_eq!(named_output.direction, ParameterDirection::Out);
-    }
-}

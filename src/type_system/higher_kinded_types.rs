@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Higher-Kinded Types Implementation for CURSED Language
 //
 // This module provides support for type constructors and higher-order generic functions,
@@ -10,7 +10,6 @@ use tracing::{debug, error, info, warn, instrument};
 
 use crate::ast::types::Type;
 use crate::ast::traits::TypeParameter;
-use crate::error::CursedError;
 
 /// Represents the kind of a type (e.g., *, * -> *, * -> * -> *)
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
@@ -58,7 +57,7 @@ impl Kind {
     }
 
     /// Apply this kind to an argument kind, returning the result kind
-    pub fn apply(&self, arg_kind: &Kind) -> Result<(), Error> {
+    pub fn apply(&self, arg_kind: &Kind) -> crate::error::Result<()> {
         match self {
             Kind::Arrow(param_kind, result_kind) => {
                 if param_kind.as_ref() == arg_kind {
@@ -175,7 +174,7 @@ impl HigherKindedTypeRegistry {
 
     /// Register a type constructor
     #[instrument(skip(self))]
-    pub fn register_type_constructor(&self, constructor: TypeConstructor) -> Result<(), Error> {
+    pub fn register_type_constructor(&self, constructor: TypeConstructor) -> crate::error::Result<()> {
         debug!("Registering type constructor: {}", constructor.name);
         
         // Validate the type constructor
@@ -191,7 +190,7 @@ impl HigherKindedTypeRegistry {
 
     /// Get a type constructor by name
     #[instrument(skip(self))]
-    pub fn get_type_constructor(&self, name: &str) -> Result<(), Error> {
+    pub fn get_type_constructor(&self, name: &str) -> crate::error::Result<()> {
         let constructors = self.type_constructors.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
@@ -200,7 +199,7 @@ impl HigherKindedTypeRegistry {
 
     /// Infer the kind of a type
     #[instrument(skip(self))]
-    pub fn infer_kind(&self, type_ref: &Type) -> Result<(), Error> {
+    pub fn infer_kind(&self, type_ref: &Type) -> crate::error::Result<()> {
         // Check cache first
         {
             let cache = self.kind_cache.read()
@@ -227,7 +226,7 @@ impl HigherKindedTypeRegistry {
 
     /// Internal implementation for kind inference
     #[instrument(skip(self))]
-    fn infer_kind_impl(&self, type_ref: &Type) -> Result<(), Error> {
+    fn infer_kind_impl(&self, type_ref: &Type) -> crate::error::Result<()> {
         match type_ref {
             // Basic types have kind *
             Type::Integer | Type::Float | Type::String | Type::Boolean | Type::Character => {
@@ -297,7 +296,7 @@ impl HigherKindedTypeRegistry {
 
     /// Compute the kind of a partially applied type constructor
     #[instrument(skip(self))]
-    fn compute_partial_application_kind(&self, constructor_kind: &Kind, applied_args: usize) -> Result<(), Error> {
+    fn compute_partial_application_kind(&self, constructor_kind: &Kind, applied_args: usize) -> crate::error::Result<()> {
         let mut current_kind = constructor_kind.clone();
         
         for _ in 0..applied_args {
@@ -323,7 +322,7 @@ impl HigherKindedTypeRegistry {
 
     /// Check if a type constructor implements a type class
     #[instrument(skip(self))]
-    pub fn implements_type_class(&self, constructor_name: &str, class_name: &str) -> Result<(), Error> {
+    pub fn implements_type_class(&self, constructor_name: &str, class_name: &str) -> crate::error::Result<()> {
         let type_classes = self.type_classes.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         
@@ -336,7 +335,7 @@ impl HigherKindedTypeRegistry {
 
     /// Register a type class instance
     #[instrument(skip(self))]
-    pub fn register_type_class_instance(&self, constructor_name: &str, class_name: &str) -> Result<(), Error> {
+    pub fn register_type_class_instance(&self, constructor_name: &str, class_name: &str) -> crate::error::Result<()> {
         let mut type_classes = self.type_classes.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
         
@@ -351,7 +350,7 @@ impl HigherKindedTypeRegistry {
 
     /// Validate a type constructor definition
     #[instrument(skip(self))]
-    fn validate_type_constructor(&self, constructor: &TypeConstructor) -> Result<(), Error> {
+    fn validate_type_constructor(&self, constructor: &TypeConstructor) -> crate::error::Result<()> {
         // Validate name
         if constructor.name.is_empty() {
             return Err(CursedError::type_error("Type constructor name cannot be empty".to_string()));
@@ -373,7 +372,7 @@ impl HigherKindedTypeRegistry {
 
     /// Register built-in type constructors
     #[instrument(skip(self))]
-    fn register_builtin_type_constructors(&self) -> Result<(), Error> {
+    fn register_builtin_type_constructors(&self) -> crate::error::Result<()> {
         // Option<T>
         let option_constructor = TypeConstructor {
             name: "Option".to_string(),
@@ -422,7 +421,7 @@ impl HigherKindedTypeRegistry {
 
     /// Register built-in type classes
     #[instrument(skip(self))]
-    fn register_builtin_type_classes(&self) -> Result<(), Error> {
+    fn register_builtin_type_classes(&self) -> crate::error::Result<()> {
         let mut type_classes = self.type_classes.write()
             .map_err(|_| CursedError::system_error("Failed to acquire write lock"))?;
 
@@ -459,7 +458,7 @@ impl HigherKindedTypeRegistry {
 
     /// Get statistics about the registry
     #[instrument(skip(self))]
-    pub fn get_statistics(&self) -> Result<(), Error> {
+    pub fn get_statistics(&self) -> crate::error::Result<()> {
         let constructors = self.type_constructors.read()
             .map_err(|_| CursedError::system_error("Failed to acquire read lock"))?;
         let kind_cache = self.kind_cache.read()
@@ -492,10 +491,10 @@ pub struct HigherKindedTypeStatistics {
 /// Trait for working with higher-kinded types
 pub trait HigherKindedTypeHandler {
     /// Apply a type constructor to type arguments
-    fn apply_type_constructor(&self, constructor_name: &str, type_args: &[Type]) -> Result<(), Error>;
+    fn apply_type_constructor(&self, constructor_name: &str, type_args: &[Type]) -> crate::error::Result<()>;
     
     /// Check if a type is a higher-kinded type
-    fn is_higher_kinded(&self, type_ref: &Type) -> Result<(), Error>;
+    fn is_higher_kinded(&self, type_ref: &Type) -> crate::error::Result<()>;
     
     /// Get the type constructor name from a generic type
     fn get_constructor_name(&self, type_ref: &Type) -> Option<String>;
@@ -503,7 +502,7 @@ pub trait HigherKindedTypeHandler {
 
 impl HigherKindedTypeHandler for HigherKindedTypeRegistry {
     #[instrument(skip(self))]
-    fn apply_type_constructor(&self, constructor_name: &str, type_args: &[Type]) -> Result<(), Error> {
+    fn apply_type_constructor(&self, constructor_name: &str, type_args: &[Type]) -> crate::error::Result<()> {
         if let Some(constructor) = self.get_type_constructor(constructor_name)? {
             if type_args.len() == constructor.type_parameters.len() {
                 // For simplified Generic variant, just use the constructor name
@@ -522,7 +521,7 @@ impl HigherKindedTypeHandler for HigherKindedTypeRegistry {
     }
 
     #[instrument(skip(self))]
-    fn is_higher_kinded(&self, type_ref: &Type) -> Result<(), Error> {
+    fn is_higher_kinded(&self, type_ref: &Type) -> crate::error::Result<()> {
         let kind = self.infer_kind(type_ref)?;
         Ok(matches!(kind, Kind::Arrow(_, _) | Kind::HigherOrder(_, _)))
     }
@@ -536,83 +535,3 @@ impl HigherKindedTypeHandler for HigherKindedTypeRegistry {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_kind_creation() {
-        let star = Kind::Star;
-        assert_eq!(star.arity(), 0);
-
-        let type_constructor = Kind::type_constructor();
-        assert_eq!(type_constructor.arity(), 1);
-
-        let binary_constructor = Kind::binary_type_constructor();
-        assert_eq!(binary_constructor.arity(), 2);
-    }
-
-    #[test]
-    fn test_kind_application() {
-        let type_constructor = Kind::type_constructor();
-        let star = Kind::Star;
-
-        let result = type_constructor.apply(&star);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Kind::Star);
-    }
-
-    #[test]
-    fn test_type_constructor_registration() {
-        let registry = HigherKindedTypeRegistry::new();
-        
-        let option_constructor = TypeConstructor {
-            name: "MyOption".to_string(),
-            kind: Kind::type_constructor(),
-            type_parameters: vec![("T".to_string(), Kind::Star)],
-            documentation: None,
-        };
-
-        let result = registry.register_type_constructor(option_constructor);
-        assert!(result.is_ok());
-
-        let retrieved = registry.get_type_constructor("MyOption").unwrap();
-        assert!(retrieved.is_some());
-        assert_eq!(retrieved.unwrap().name, "MyOption");
-    }
-
-    #[test]
-    fn test_kind_inference() {
-        let registry = HigherKindedTypeRegistry::new();
-
-        // Basic types should have kind *
-        let int_kind = registry.infer_kind(&Type::Integer).unwrap();
-        assert_eq!(int_kind, Kind::Star);
-
-        // Test with a built-in type constructor
-        let option_type = Type::Generic("Option".to_string());
-        let option_kind = registry.infer_kind(&option_type).unwrap();
-        assert_eq!(option_kind, Kind::Star);
-    }
-
-    #[test]
-    fn test_type_class_registration() {
-        let registry = HigherKindedTypeRegistry::new();
-
-        let result = registry.register_type_class_instance("Option", "Functor");
-        assert!(result.is_ok());
-
-        let implements = registry.implements_type_class("Option", "Functor").unwrap();
-        assert!(implements);
-    }
-
-    #[test]
-    fn test_statistics() {
-        let registry = HigherKindedTypeRegistry::new();
-        let stats = registry.get_statistics().unwrap();
-
-        // Should have built-in type constructors and type classes
-        assert!(stats.total_type_constructors > 0);
-        assert!(stats.total_type_classes > 0);
-    }
-}

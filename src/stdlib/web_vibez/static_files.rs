@@ -1,9 +1,9 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Static file serving with caching utilities
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
-use crate::stdlib::web_vibez::config::StaticFileConfig;
+// use crate::stdlib::web_vibez::config::StaticFileConfig;
 
 /// Static file server with caching
 pub struct StaticFileServer {
@@ -38,7 +38,7 @@ impl StaticFileServer {
         }
     }
 
-    pub fn serve_file(&mut self, path: &str) -> Result<(), Error> {
+    pub fn serve_file(&mut self, path: &str) -> crate::error::Result<()> {
         // Check if file extension is allowed
         if !self.is_allowed_extension(path) {
             return Err(StaticFileError::NotAllowed);
@@ -219,15 +219,16 @@ pub enum StaticFileError {
     CacheError(String),
 }
 
-impl std::fmt::Display for StaticFileError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            StaticFileError::NotFound => write!(f, "File not found"),
-            StaticFileError::NotAllowed => write!(f, "File type not allowed"),
-            StaticFileError::IoError(msg) => write!(f, "IO error: {}", msg),
-            StaticFileError::CacheError(msg) => write!(f, "Cache error: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for StaticFileError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         match self {
+//             StaticFileError::NotFound => write!(f, "File not found"),
+//             StaticFileError::NotAllowed => write!(f, "File type not allowed"),
+//             StaticFileError::IoError(msg) => write!(f, "IO error: {}", msg),
+//             StaticFileError::CacheError(msg) => write!(f, "Cache error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for StaticFileError {}
+// impl std::error::CursedError for StaticFileError {}
+// 

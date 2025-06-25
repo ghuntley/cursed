@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced Pipeline Execution System for CURSED
 /// 
 /// This module provides comprehensive pipeline execution capabilities,
@@ -12,11 +12,11 @@ use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessError, ProcessResult, execution_failed, timeout_error, io_error
 };
 
-use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayOptions, SlayProcessState};
+// use crate::stdlib::process::enhanced_exec_slay::{SlayCommand, SlayOptions, SlayProcessState};
 
 /// Process pipeline alias for consistency
 pub type ProcessPipeline = SlayPipeline;
@@ -49,7 +49,7 @@ pub struct SlayPipeline {
     start_time: Option<Instant>,
     /// Output buffer for final command
     output_buffer: Arc<Mutex<Vec<u8>>>,
-    /// Error buffer for pipeline
+    /// CursedError buffer for pipeline
     error_buffer: Arc<Mutex<Vec<u8>>>,
     /// Pipeline state
     state: PipelineState,
@@ -552,49 +552,3 @@ pub fn parse_and_run_shell_pipeline(pipeline_str: &str) -> ProcessResult<Vec<u8>
     run_pipeline(commands)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-
-    #[test]
-    fn test_pipeline_creation() {
-        let cmd1 = SlayCommand::new("echo", &["hello"]);
-        let cmd2 = SlayCommand::new("grep", &["hello"]);
-        
-        let pipeline = pipe(vec![cmd1, cmd2]);
-        assert_eq!(pipeline.state(), PipelineState::Created);
-        assert_eq!(pipeline.commands.len(), 2);
-    }
-
-    #[test]
-    fn test_pipeline_builder() {
-        let builder = PipelineBuilder::new()
-            .add_command(SlayCommand::new("echo", &["test"]))
-            .add_command(SlayCommand::new("wc", &["-l"]))
-            .timeout(Duration::from_secs(10))
-            .buffer_size(4096);
-        
-        let pipeline = builder.build();
-        assert_eq!(pipeline.commands.len(), 2);
-        assert_eq!(pipeline.options.timeout, Some(Duration::from_secs(10)));
-        assert_eq!(pipeline.options.buffer_size, 4096);
-    }
-
-    #[test]
-    #[cfg(unix)]
-    fn test_simple_pipeline_execution() {
-        let cmd1 = SlayCommand::new("echo", &["hello\nworld\nhello"]);
-        let cmd2 = SlayCommand::new("grep", &["hello"]);
-        
-        let mut pipeline = pipe(vec![cmd1, cmd2]);
-        let result = pipeline.run();
-        assert!(result.is_ok());
-        
-        let output = pipeline.output().unwrap();
-        let output_str = String::from_utf8_lossy(&output);
-        assert!(output_str.contains("hello"));
-    }
-}

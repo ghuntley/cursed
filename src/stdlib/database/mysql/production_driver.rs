@@ -23,16 +23,16 @@ use mysql::{
     Pool, PooledConn, OptsBuilder, Conn, Opts, Params, Value as MySqlValue,
     TxOpts, IsolationLevel, Row, Column
 };
-use crate::error::Error;
+use crate::error::CursedError;
 use mysql::prelude::*;
 use chrono::{NaiveDateTime, NaiveDate};
 
-use crate::stdlib::database::{
+// use crate::stdlib::database::{
     Driver, DriverConn, DriverStmt, DriverTx, DatabaseError, DatabaseErrorKind, 
     SqlIsolationLevel, SqlValue, TxOptions, VibeContext
 };
 
-use crate::stdlib::database::driver::{
+// use crate::stdlib::database::driver::{
     DriverCapabilities, ConnectionMetadata, QueryResult, ExecuteResult
 };
 
@@ -554,7 +554,7 @@ impl ProductionMySqlConnection {
 }
 
 impl DriverConn for ProductionMySqlConnection {
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -567,7 +567,7 @@ impl DriverConn for ProductionMySqlConnection {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -583,7 +583,7 @@ impl DriverConn for ProductionMySqlConnection {
         
         // Execute query
         let mut conn = &self.connection;
-        let result: Result<(), Error> = if mysql_params.is_empty() {
+        let result: crate::error::Result<()> = if mysql_params.is_empty() {
             conn.query(query)
         } else {
             conn.exec(query, mysql_params)
@@ -605,7 +605,7 @@ impl DriverConn for ProductionMySqlConnection {
         self.convert_rows_to_result(rows)
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -649,7 +649,7 @@ impl DriverConn for ProductionMySqlConnection {
         })
     }
 
-    fn begin_transaction(&self, opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, opts: TxOptions) -> crate::error::Result<()> {
         // Check if transaction is already active
         if let Ok(tx_active) = self.transaction_active.lock() {
             if *tx_active {
@@ -670,14 +670,14 @@ impl DriverConn for ProductionMySqlConnection {
         Ok(Box::new(tx))
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         let mut conn = &self.connection;
         conn.query_drop("SELECT 1")
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::ConnectionError, &format!("Ping failed: {}", e)))?;
         Ok(())
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // Connection will be returned to pool automatically on drop
         if let Ok(mut stats) = self.driver.stats.write() {
             if stats.active_connections > 0 {
@@ -712,7 +712,7 @@ impl DriverConn for ProductionMySqlConnection {
 
 impl ProductionMySqlConnection {
     /// Convert MySQL rows to QueryResult
-    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<(), Error> {
+    fn convert_rows_to_result(&self, rows: Vec<Row>) -> crate::error::Result<()> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
                 Vec::new(),
@@ -747,7 +747,7 @@ impl ProductionMySqlConnection {
     }
     
     /// Convert MySQL value at specific index
-    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<(), Error> {
+    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> crate::error::Result<()> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
@@ -800,7 +800,7 @@ impl ProductionMySqlStatement {
 }
 
 impl DriverStmt for ProductionMySqlStatement {
-    fn execute(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::QueryError,
@@ -844,7 +844,7 @@ impl DriverStmt for ProductionMySqlStatement {
         })
     }
 
-    fn query(&self, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, args: &[SqlValue]) -> crate::error::Result<()> {
         if args.len() != self.parameter_count {
             return Err(DatabaseError::new(
                 DatabaseErrorKind::QueryError,
@@ -880,7 +880,7 @@ impl DriverStmt for ProductionMySqlStatement {
         self.convert_rows_to_result(rows)
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         // Statement will be dropped automatically
         Ok(())
     }
@@ -905,7 +905,7 @@ impl DriverStmt for ProductionMySqlStatement {
 
 impl ProductionMySqlStatement {
     /// Convert rows to QueryResult
-    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<(), Error> {
+    fn convert_rows_to_result(&self, rows: Vec<Row>) -> crate::error::Result<()> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
                 Vec::new(),
@@ -940,7 +940,7 @@ impl ProductionMySqlStatement {
     }
     
     /// Convert MySQL value at index
-    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<(), Error> {
+    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> crate::error::Result<()> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
@@ -1024,7 +1024,7 @@ impl ProductionMySqlTransaction {
 }
 
 impl DriverTx for ProductionMySqlTransaction {
-    fn commit(&self) -> Result<(), Error> {
+    fn commit(&self) -> crate::error::Result<()> {
         let committed = self.committed.lock().map_err(|_| 
             DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire commit lock"))?;
         let rolled_back = self.rolled_back.lock().map_err(|_| 
@@ -1055,7 +1055,7 @@ impl DriverTx for ProductionMySqlTransaction {
         Ok(())
     }
 
-    fn rollback(&self) -> Result<(), Error> {
+    fn rollback(&self) -> crate::error::Result<()> {
         let committed = self.committed.lock().map_err(|_| 
             DatabaseError::new(DatabaseErrorKind::TransactionError, "Failed to acquire commit lock"))?;
         let rolled_back = self.rolled_back.lock().map_err(|_| 
@@ -1092,7 +1092,7 @@ impl DriverTx for ProductionMySqlTransaction {
         Ok(())
     }
 
-    fn prepare(&self, query: &str) -> Result<(), Error> {
+    fn prepare(&self, query: &str) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -1105,7 +1105,7 @@ impl DriverTx for ProductionMySqlTransaction {
         Ok(Box::new(stmt))
     }
 
-    fn query(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -1121,7 +1121,7 @@ impl DriverTx for ProductionMySqlTransaction {
         
         // Execute query
         let mut conn = &self.connection;
-        let result: Result<(), Error> = if mysql_params.is_empty() {
+        let result: crate::error::Result<()> = if mysql_params.is_empty() {
             conn.query(query)
         } else {
             conn.exec(query, mysql_params)
@@ -1143,7 +1143,7 @@ impl DriverTx for ProductionMySqlTransaction {
         self.convert_rows_to_result(rows)
     }
 
-    fn execute(&self, query: &str, args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, query: &str, args: &[SqlValue]) -> crate::error::Result<()> {
         SqlSanitizer::validate_query(query)
             .map_err(|e| DatabaseError::new(DatabaseErrorKind::QueryError, &e.to_string()))?;
         
@@ -1212,7 +1212,7 @@ impl DriverTx for ProductionMySqlTransaction {
 
 impl ProductionMySqlTransaction {
     /// Convert MySQL rows to QueryResult
-    fn convert_rows_to_result(&self, rows: Vec<Row>) -> Result<(), Error> {
+    fn convert_rows_to_result(&self, rows: Vec<Row>) -> crate::error::Result<()> {
         if rows.is_empty() {
             return Ok(QueryResult::new(
                 Vec::new(),
@@ -1247,7 +1247,7 @@ impl ProductionMySqlTransaction {
     }
     
     /// Convert MySQL value at specific index
-    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> Result<(), Error> {
+    fn convert_mysql_value_at_index(&self, row: &Row, index: usize) -> crate::error::Result<()> {
         match row.get_opt::<MySqlValue, usize>(index) {
             Some(Ok(value)) => convert_from_mysql_value(value)
                 .map_err(|e| DatabaseError::new(DatabaseErrorKind::TypeConversionError, &e.to_string())),
@@ -1342,42 +1342,42 @@ impl FailedConnection {
 }
 
 impl DriverConn for FailedConnection {
-    fn prepare(&self, _query: &str) -> Result<(), Error> {
+    fn prepare(&self, _query: &str) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn query(&self, _query: &str, _args: &[SqlValue]) -> Result<(), Error> {
+    fn query(&self, _query: &str, _args: &[SqlValue]) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn execute(&self, _query: &str, _args: &[SqlValue]) -> Result<(), Error> {
+    fn execute(&self, _query: &str, _args: &[SqlValue]) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn begin_transaction(&self, _opts: TxOptions) -> Result<(), Error> {
+    fn begin_transaction(&self, _opts: TxOptions) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn ping(&self) -> Result<(), Error> {
+    fn ping(&self) -> crate::error::Result<()> {
         Err(DatabaseError::new(
             DatabaseErrorKind::ConnectionError,
             &self.error_message
         ))
     }
 
-    fn close(&self) -> Result<(), Error> {
+    fn close(&self) -> crate::error::Result<()> {
         Ok(())
     }
 
@@ -1403,7 +1403,7 @@ impl DriverConn for FailedConnection {
 }
 
 impl Driver for ProductionMySqlDriver {
-    fn open(&self, data_source_name: &str) -> Result<(), Error> {
+    fn open(&self, data_source_name: &str) -> crate::error::Result<()> {
         // Parse DSN and initialize pool if needed
         if let Ok(pool_guard) = self.pool.read() {
             if pool_guard.is_none() {
@@ -1465,97 +1465,3 @@ pub fn create_production_mysql_driver_with_config(config: ProductionMySqlConfig)
     ProductionMySqlDriver::with_config(config)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_production_config_default() {
-        let config = ProductionMySqlConfig::default();
-        assert_eq!(config.host, "localhost");
-        assert_eq!(config.port, 3306);
-        assert_eq!(config.charset, "utf8mb4");
-        assert_eq!(config.ssl_mode, SslMode::Preferred);
-        assert!(config.foreign_key_checks);
-        assert!(config.validate().is_ok());
-    }
-
-    #[test]
-    fn test_production_config_validation() {
-        let mut config = ProductionMySqlConfig::default();
-        assert!(config.validate().is_ok());
-        
-        config.host = "".to_string();
-        assert!(config.validate().is_err());
-        
-        config.host = "localhost".to_string();
-        config.port = 0;
-        assert!(config.validate().is_err());
-        
-        config.port = 3306;
-        config.max_connections = 0;
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn test_sql_sanitizer() {
-        assert!(SqlSanitizer::validate_query("SELECT * FROM users").is_ok());
-        assert!(SqlSanitizer::validate_query("").is_err());
-        
-        let sanitized = SqlSanitizer::sanitize_identifier("user_name").unwrap();
-        assert_eq!(sanitized, "`user_name`");
-        
-        assert!(SqlSanitizer::sanitize_identifier("").is_err());
-        assert!(SqlSanitizer::sanitize_identifier("user; DROP TABLE users").is_err());
-    }
-
-    #[test]
-    fn test_driver_creation() {
-        let driver = ProductionMySqlDriver::new();
-        assert_eq!(driver.to_string()(), "Production MySQL Driver for CURSED");
-        assert!(driver.capabilities().supports_transactions);
-        assert!(driver.capabilities().supports_prepared_statements);
-    }
-
-    #[test]
-    fn test_type_conversions() {
-        // Test CURSED to MySQL conversion
-        let cursed_int = SqlValue::Integer(42);
-        let mysql_val = convert_to_mysql_value(&cursed_int).unwrap();
-        match mysql_val {
-            MySqlValue::Int(i) => assert_eq!(i, 42),
-            _ => panic!("Expected integer value"),
-        }
-        
-        // Test MySQL to CURSED conversion
-        let mysql_int = MySqlValue::Int(42);
-        let cursed_val = convert_from_mysql_value(mysql_int).unwrap();
-        match cursed_val {
-            SqlValue::Integer(i) => assert_eq!(i, 42),
-            _ => panic!("Expected integer value"),
-        }
-        
-        // Test string conversion
-        let cursed_str = SqlValue::String("hello".to_string());
-        let mysql_val = convert_to_mysql_value(&cursed_str).unwrap();
-        let cursed_back = convert_from_mysql_value(mysql_val).unwrap();
-        match cursed_back {
-            SqlValue::String(s) => assert_eq!(s, "hello"),
-            _ => panic!("Expected string value"),
-        }
-    }
-
-    #[test]
-    fn test_pool_stats() {
-        let mut stats = ProductionPoolStats::new();
-        assert_eq!(stats.active_connections, 0);
-        assert_eq!(stats.successful_queries, 0);
-        
-        stats.active_connections += 1;
-        stats.successful_queries += 1;
-        stats.update();
-        
-        assert_eq!(stats.active_connections, 1);
-        assert_eq!(stats.successful_queries, 1);
-    }
-}

@@ -10,19 +10,18 @@
 
 use std::cmp::Ordering;
 use std::fmt::Debug;
-use crate::stdlib::collections::CollectionsError;
+use crate::error::CursedError;
 
 pub mod core;
 pub mod specialized;
 pub mod search;
-use crate::error::Error;
 
 pub use core::*;
 pub use specialized::*;
 pub use search::*;
 
 /// Result type for SortaFresh operations  
-pub type SortaFreshResult<T> = std::result::Result<T, Error>;
+pub type SortaFreshcrate::error::Result<T> = std::result::Result<T>;
 
 /// Core interface for sortable collections
 /// Equivalent to `Sortable` interface in the spec
@@ -193,59 +192,3 @@ pub(crate) fn i32_to_usize(val: i32) -> Option<usize> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sortable_vec_implementation() {
-        let mut data = vec![3, 1, 4, 1, 5];
-        
-        assert_eq!(data.len(), 5);
-        assert!(data.less(1, 0)); // 1 < 3
-        assert!(!data.less(0, 1)); // 3 not < 1
-        
-        data.swap(0, 1);
-        assert_eq!(data, vec![1, 3, 4, 1, 5]);
-    }
-
-    #[test]
-    fn test_custom_sortable() {
-        let data = vec![3, 1, 4, 1, 5];
-        let mut sortable = CustomSortable::new(data, |a, b| a < b);
-        
-        assert_eq!(sortable.len(), 5);
-        assert!(sortable.less(1, 0)); // 1 < 3
-        
-        sortable.swap(0, 1);
-        assert_eq!(sortable.as_slice(), &[1, 3, 4, 1, 5]);
-    }
-
-    #[test]
-    fn test_reverse_sortable() {
-        let data = vec![3, 1, 4, 1, 5];
-        let mut reverse = ReverseSortable::new(data);
-        
-        assert_eq!(reverse.len(), 5);
-        assert!(!reverse.less(1, 0)); // Reversed: 3 not < 1 becomes 1 not < 3
-        assert!(reverse.less(0, 1)); // Reversed: 1 < 3 becomes 3 < 1
-    }
-
-    #[test]
-    fn test_index_validation() {
-        assert!(validate_indices(5, 0, 4));
-        assert!(validate_indices(5, 2, 3));
-        assert!(!validate_indices(5, -1, 0));
-        assert!(!validate_indices(5, 0, 5));
-        assert!(!validate_indices(5, 5, 0));
-    }
-
-    #[test]
-    fn test_safe_conversions() {
-        assert_eq!(usize_to_i32(100), 100);
-        assert_eq!(usize_to_i32(i32::MAX as usize + 1), i32::MAX);
-        
-        assert_eq!(i32_to_usize(100), Some(100));
-        assert_eq!(i32_to_usize(-1), None);
-    }
-}

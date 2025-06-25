@@ -94,11 +94,11 @@ impl Default for TypeEnvironment {
     }
 }
 
-impl Default for TypeInference {
-    fn default() -> Self {
-        Self {}
-    }
-}
+// impl Default for TypeInference {
+//     fn default() -> Self {
+//         Self {}
+//     }
+// }
 
 // Re-exports
 pub use generic_instantiator::GenericInstantiator;

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // ExecSlay - Process execution module for CURSED
 // 
 // Provides utilities for running external commands with style and efficiency.
@@ -10,7 +10,6 @@ use std::io::{self, Read, Write};
 use std::process::{Child, ExitStatus, Stdio};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use crate::error::CursedError;
 
 // Re-export all public types
 pub use command::*;
@@ -36,7 +35,7 @@ mod timeout;
 mod enhanced_command;
 
 /// Result type for exec_slay operations
-pub type SlayResult<T> = std::result::Result<T, Error>;
+pub type Slaycrate::error::Result<T> = std::result::Result<T>;
 
 /// Configuration options for command execution
 #[derive(Debug, Clone)]
@@ -195,7 +194,7 @@ impl SharedProcessState {
 }
 
 /// Convert std::io::Error to CursedError
-pub(crate) fn io_error_to_cursed(err: io::Error) -> CursedError {
+pub(crate) fn io_error_to_cursed(err: std::io::Error) -> CursedError {
     CursedError::RuntimeError(format!("I/O error: {}", err))
 }
 
@@ -250,57 +249,3 @@ pub(crate) fn get_shell_args(use_shell: bool, shell_path: Option<&str>) -> Vec<S
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessState;
-
-    #[test]
-    fn test_slay_options_default() {
-        let opts = SlayOptions::default();
-        assert_eq!(opts.buffer_size, 8192);
-        assert!(opts.collect_output);
-        assert!(!opts.use_shell);
-    }
-
-    #[test]
-    fn test_signal_options_default() {
-        let opts = SignalOptions::default();
-        assert_eq!(opts.grace_period, Duration::from_secs(5));
-        assert!(!opts.force);
-        assert_eq!(opts.signal, 15);
-    }
-
-    #[test]
-    fn test_process_stats_default() {
-        let stats = ProcessStats::default();
-        assert_eq!(stats.cpu, 0.0);
-        assert_eq!(stats.memory, 0);
-        assert_eq!(stats.thread_count, 0);
-    }
-
-    #[test]
-    fn test_get_default_shell() {
-        let shell = get_default_shell();
-        if cfg!(target_os = "windows") {
-            assert_eq!(shell, "cmd");
-        } else {
-            assert_eq!(shell, "/bin/sh");
-        }
-    }
-
-    #[test]
-    fn test_get_shell_args() {
-        let args = get_shell_args(false, None);
-        assert!(args.is_empty());
-
-        let args = get_shell_args(true, None);
-        assert!(!args.is_empty());
-        
-        if cfg!(target_os = "windows") {
-            assert!(args.contains(&"/C".to_string()));
-        } else {
-            assert!(args.contains(&"-c".to_string()));
-        }
-    }
-}

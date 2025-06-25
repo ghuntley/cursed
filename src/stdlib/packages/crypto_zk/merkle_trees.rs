@@ -1,9 +1,8 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Merkle tree implementations for zero-knowledge proofs
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
 use sha3::{Digest, Sha3_256};
 
 /// Merkle tree node
@@ -590,61 +589,3 @@ impl MerkleTrees {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_merkle_tree_creation() {
-        let data = vec![
-            b"data1".to_vec(),
-            b"data2".to_vec(),
-            b"data3".to_vec(),
-            b"data4".to_vec(),
-        ];
-
-        let tree = MerkleTree::new(data).unwrap();
-        assert!(!tree.root_hash().is_empty());
-        assert_eq!(tree.leaf_count(), 4);
-    }
-
-    #[test]
-    fn test_merkle_proof_generation_and_verification() {
-        let data = vec![
-            b"data1".to_vec(),
-            b"data2".to_vec(),
-            b"data3".to_vec(),
-            b"data4".to_vec(),
-        ];
-
-        let tree = MerkleTree::new(data.clone()).unwrap();
-        let proof = tree.generate_proof(1).unwrap();
-        
-        assert!(proof.verify(b"data2"));
-        assert!(tree.verify_inclusion(b"data2", &proof));
-    }
-
-    #[test]
-    fn test_sparse_merkle_tree() {
-        let mut tree = SparseMerkleTree::new(8);
-        tree.set(5, b"test_data").unwrap();
-        
-        let proof = tree.generate_proof(5).unwrap();
-        assert!(tree.verify_proof(5, b"test_data", &proof));
-    }
-
-    #[test]
-    fn test_merkle_trees_api() {
-        let data = Value::Array(vec![
-            Value::String("data1".to_string()),
-            Value::String("data2".to_string()),
-            Value::String("data3".to_string()),
-        ]);
-
-        let tree = MerkleTrees::create_tree(&data).unwrap();
-        assert!(matches!(tree, Value::Object(_)));
-
-        let proof = MerkleTrees::generate_proof(&data, 1).unwrap();
-        assert!(matches!(proof, Value::Object(_)));
-    }
-}

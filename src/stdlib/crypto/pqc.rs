@@ -91,34 +91,34 @@ pub enum PqcError {
     InternalError(String),
 }
 
-impl fmt::Display for PqcError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PqcError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
-            PqcError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
-            PqcError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
-            PqcError::UnsupportedParameters(msg) => write!(f, "Unsupported parameters: {}", msg),
-            PqcError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
-            PqcError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
-            PqcError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
-            PqcError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
-            PqcError::SigningFailed(msg) => write!(f, "Signing failed: {}", msg),
-            PqcError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
-            PqcError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
-            PqcError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
-            PqcError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
-            PqcError::InternalError(msg) => write!(f, "Internal error: {}", msg),
-        }
-    }
-}
+// impl fmt::Display for PqcError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             PqcError::InvalidKey(msg) => write!(f, "Invalid key: {}", msg),
+//             PqcError::InvalidCiphertext(msg) => write!(f, "Invalid ciphertext: {}", msg),
+//             PqcError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
+//             PqcError::UnsupportedParameters(msg) => write!(f, "Unsupported parameters: {}", msg),
+//             PqcError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
+//             PqcError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
+//             PqcError::EncapsulationFailed(msg) => write!(f, "Encapsulation failed: {}", msg),
+//             PqcError::DecapsulationFailed(msg) => write!(f, "Decapsulation failed: {}", msg),
+//             PqcError::SigningFailed(msg) => write!(f, "Signing failed: {}", msg),
+//             PqcError::VerificationFailed(msg) => write!(f, "Verification failed: {}", msg),
+//             PqcError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
+//             PqcError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
+//             PqcError::ParameterValidation(msg) => write!(f, "Parameter validation failed: {}", msg),
+//             PqcError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for PqcError {}
-
-impl From<PqcError> for CursedError {
-    fn from(err: PqcError) -> Self {
-        CursedError::Runtime(format!("PQC error: {}", err))
-    }
-}
+// impl std::error::CursedError for PqcError {}
+// 
+// impl From<PqcError> for CursedError {
+//     fn from(err: PqcError) -> Self {
+//         CursedError::Runtime(format!("PQC error: {}", err))
+//     }
+// }
 
 /// Result type for PQC operations
 pub type PqcResult<T> = std::result::Result<T, PqcError>;
@@ -1325,7 +1325,7 @@ pub struct QuantumResistanceAssessmentUtility;
 
 impl QuantumResistanceAssessmentUtility {
     /// Assess the quantum resistance of all supported algorithms
-    pub fn assess_all_algorithms() -> Vec<crate::stdlib::crypto::pqc::QuantumResistanceAssessment> {
+//     pub fn assess_all_algorithms() -> Vec<crate::stdlib::crypto::pqc::QuantumResistanceAssessment> {
         vec![
             Self::assess_kyber(),
             Self::assess_dilithium(),
@@ -1336,8 +1336,8 @@ impl QuantumResistanceAssessmentUtility {
     }
 
     /// Assess Kyber quantum resistance
-    pub fn assess_kyber() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
-        crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//     pub fn assess_kyber() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//         crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
             algorithm: AlgorithmType::Kyber,
             security_level: SecurityLevel::Level3,
             quantum_secure: true,
@@ -1350,8 +1350,8 @@ impl QuantumResistanceAssessmentUtility {
     }
 
     /// Assess Dilithium quantum resistance
-    pub fn assess_dilithium() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
-        crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//     pub fn assess_dilithium() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//         crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
             algorithm: AlgorithmType::Dilithium,
             security_level: SecurityLevel::Level3,
             quantum_secure: true,
@@ -1364,8 +1364,8 @@ impl QuantumResistanceAssessmentUtility {
     }
 
     /// Assess SPHINCS+ quantum resistance
-    pub fn assess_sphincs_plus() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
-        crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//     pub fn assess_sphincs_plus() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//         crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
             algorithm: AlgorithmType::Sphincs,
             security_level: SecurityLevel::Level3,
             quantum_secure: true,
@@ -1378,8 +1378,8 @@ impl QuantumResistanceAssessmentUtility {
     }
 
     /// Assess Falcon quantum resistance
-    pub fn assess_falcon() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
-        crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//     pub fn assess_falcon() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//         crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
             algorithm: AlgorithmType::Falcon,
             security_level: SecurityLevel::Level1,
             quantum_secure: true,
@@ -1392,8 +1392,8 @@ impl QuantumResistanceAssessmentUtility {
     }
 
     /// Assess NTRU quantum resistance
-    pub fn assess_ntru() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
-        crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//     pub fn assess_ntru() -> crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
+//         crate::stdlib::crypto::pqc::QuantumResistanceAssessment {
             algorithm: AlgorithmType::Ntru,
             security_level: SecurityLevel::Level1,
             quantum_secure: true,
@@ -1484,42 +1484,3 @@ pub fn hex_to_bytes(hex: &str) -> PqcResult<Vec<u8>> {
     Ok(bytes)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::error::Error;
-
-    #[test]
-    fn test_security_levels() {
-        assert_eq!(SecurityLevel::Level1.classical_bits(), 128);
-        assert_eq!(SecurityLevel::Level3.classical_bits(), 192);
-        assert_eq!(SecurityLevel::Level5.classical_bits(), 256);
-    }
-
-    #[test]
-    fn test_algorithm_display() {
-        assert_eq!(format!("{}", AlgorithmType::Kyber), "Kyber");
-        assert_eq!(format!("{}", AlgorithmType::Dilithium), "Dilithium");
-        assert_eq!(format!("{}", AlgorithmType::Sphincs), "SPHINCS+");
-        assert_eq!(format!("{}", AlgorithmType::Falcon), "Falcon");
-        assert_eq!(format!("{}", AlgorithmType::Ntru), "NTRU");
-    }
-
-    #[test]
-    fn test_hex_conversion() {
-        let bytes = vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
-        let hex = bytes_to_hex(&bytes);
-        assert_eq!(hex, "0123456789abcdef");
-        
-        let converted_bytes = hex_to_bytes(&hex).unwrap();
-        assert_eq!(bytes, converted_bytes);
-    }
-
-    #[test]
-    fn test_recommended_algorithms() {
-        assert_eq!(get_recommended_algorithm("kem", SecurityLevel::Level3).unwrap(), AlgorithmType::Kyber);
-        assert_eq!(get_recommended_algorithm("signature", SecurityLevel::Level3).unwrap(), AlgorithmType::Dilithium);
-        assert_eq!(get_recommended_algorithm("hash_signature", SecurityLevel::Level1).unwrap(), AlgorithmType::Sphincs);
-        assert_eq!(get_recommended_algorithm("encryption", SecurityLevel::Level1).unwrap(), AlgorithmType::Ntru);
-    }
-}

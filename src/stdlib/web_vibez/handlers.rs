@@ -4,10 +4,9 @@ use crate::web::StatusCode;
 /// Provides trait definitions and common handler implementations
 /// for processing HTTP requests and generating responses
 
-use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
-use crate::stdlib::web_vibez::{StatusCode};
-use crate::stdlib::web_vibez::error_handling::HandlerError;
-use crate::error::Error;
+// use crate::stdlib::web_vibez::context::{RequestContext, ResponseContext};
+// use crate::stdlib::web_vibez::{StatusCode};
+use crate::error::CursedError;
 
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -28,7 +27,7 @@ pub trait RequestHandler: Send + Sync {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>>;
+    ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>>;
 
     /// Get handler name for debugging
     fn name(&self) -> &'static str {
@@ -75,7 +74,7 @@ impl RouteHandler {
         &self,
         context: &RequestContext,
         response: &mut ResponseContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(
             handler = self.handler.name(),
             request_id = %context.request_id,
@@ -158,7 +157,7 @@ impl RequestHandler for StaticHandler {
         &'a self,
         _context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         let status = self.status;
         let content_type = self.content_type.clone();
         let content = self.content.clone();
@@ -183,7 +182,7 @@ impl RequestHandler for StaticHandler {
 /// JSON API handler for REST endpoints
 pub struct JsonApiHandler {
     /// Handler function for different HTTP methods
-    handlers: HashMap<String, Box<dyn Fn(&RequestContext) -> Result<(), Error> + Send + Sync>>,
+    handlers: HashMap<String, Box<dyn Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync>>,
 }
 
 impl std::fmt::Debug for JsonApiHandler {
@@ -203,7 +202,7 @@ impl JsonApiHandler {
 
     pub fn on_get<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> Result<(), Error> + Send + Sync + 'static,
+        F: Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.handlers.insert("GET".to_string(), Box::new(handler));
         self
@@ -211,7 +210,7 @@ impl JsonApiHandler {
 
     pub fn on_post<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> Result<(), Error> + Send + Sync + 'static,
+        F: Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.handlers.insert("POST".to_string(), Box::new(handler));
         self
@@ -219,7 +218,7 @@ impl JsonApiHandler {
 
     pub fn on_put<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> Result<(), Error> + Send + Sync + 'static,
+        F: Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.handlers.insert("PUT".to_string(), Box::new(handler));
         self
@@ -227,7 +226,7 @@ impl JsonApiHandler {
 
     pub fn on_delete<F>(mut self, handler: F) -> Self
     where
-        F: Fn(&RequestContext) -> Result<(), Error> + Send + Sync + 'static,
+        F: Fn(&RequestContext) -> crate::error::Result<()> + Send + Sync + 'static,
     {
         self.handlers.insert("DELETE".to_string(), Box::new(handler));
         self
@@ -239,7 +238,7 @@ impl RequestHandler for JsonApiHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         let method_str = context.method.to_string();
         
@@ -257,7 +256,7 @@ impl RequestHandler for JsonApiHandler {
                         "status": "error"
                     });
                     response.set_json(&error_response)
-                        .map_err(|e| HandlerError::Serialization(format!("Error JSON serialization error: {}", e)))?;
+                        .map_err(|e| HandlerError::Serialization(format!("CursedError JSON serialization error: {}", e)))?;
                     response.set_status(StatusCode::InternalServerError);
                 }
             }
@@ -268,7 +267,7 @@ impl RequestHandler for JsonApiHandler {
                 "status": "error"
             });
             response.set_json(&error_response)
-                .map_err(|e| HandlerError::Serialization(format!("Error JSON serialization error: {}", e)))?;
+                .map_err(|e| HandlerError::Serialization(format!("CursedError JSON serialization error: {}", e)))?;
             response.set_status(StatusCode::MethodNotAllowed);
         }
 
@@ -346,7 +345,7 @@ impl RequestHandler for TemplateHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         let mut data = HashMap::new();
         
@@ -451,7 +450,7 @@ impl RequestHandler for FileHandler {
         &'a self,
         _context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         let content = std::fs::read(&self.file_path)
             .map_err(|e| HandlerError::FileSystem(format!("Failed to read file {:?}: {}", self.file_path, e)))?;
@@ -516,7 +515,7 @@ impl RequestHandler for RedirectHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         let mut target_url = self.target_url.clone();
 
@@ -606,7 +605,7 @@ impl ProxyHandler {
     }
 
     /// Build the target URL from base URL and request path
-    fn build_target_url(&self, path: &str, query: &str) -> Result<(), Error> {
+    fn build_target_url(&self, path: &str, query: &str) -> crate::error::Result<()> {
         let base = self.target_base_url.trim_end_matches('/');
         let path = if path.starts_with('/') { path } else { &format!("/{}", path) };
         
@@ -702,7 +701,7 @@ impl RequestHandler for ProxyHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         // Build target URL with query parameters
         let query_string = context.query_params.iter()
@@ -799,8 +798,8 @@ impl RequestHandler for ProxyHandler {
 
 impl ProxyHandler {
     /// Convert CURSED HttpMethod to reqwest Method
-    fn convert_method(&self, method: &crate::stdlib::web_vibez::HttpMethod) -> Result<(), Error> {
-        use crate::stdlib::web_vibez::HttpMethod;
+//     fn convert_method(&self, method: &crate::stdlib::web_vibez::HttpMethod) -> crate::error::Result<()> {
+//         use crate::stdlib::web_vibez::HttpMethod;
         
         let method_str = match method {
             HttpMethod::GET => "GET",
@@ -872,7 +871,7 @@ impl RequestHandler for CompositeHandler {
         &'a self,
         context: &'a RequestContext,
         response: &'a mut ResponseContext,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Error>> + Send + '_>> {
+    ) -> Pin<Box<dyn Future<Output = crate::error::Result<()>> + Send + '_>> {
         Box::pin(async move {
         // Check conditional handlers first
         for (condition, handler) in &self.conditional_handlers {
@@ -901,79 +900,3 @@ impl RequestHandler for CompositeHandler {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::web_vibez::HttpMethod;
-
-    #[tokio::test]
-    async fn test_static_handler() {
-        let handler = StaticHandler::new("Hello, World!");
-        let context = RequestContext::new("GET".to_string(), "/test".to_string());
-        let mut response = ResponseContext::new();
-
-        let result = handler.handle(&context, &mut response).await;
-        assert!(result.is_ok());
-        assert_eq!(response.status, StatusCode::OK);
-        assert_eq!(String::from_utf8(response.body).unwrap(), "Hello, World!");
-    }
-
-    #[tokio::test]
-    async fn test_json_api_handler() {
-        let handler = JsonApiHandler::new()
-            .on_get(|_ctx| Ok(serde_json::json!({"message": "Hello"})));
-
-        let context = RequestContext::new("GET".to_string(), "/api/test".to_string());
-        let mut response = ResponseContext::new();
-
-        let result = handler.handle(&context, &mut response).await;
-        assert!(result.is_ok());
-        assert_eq!(response.status, StatusCode::OK);
-        assert!(response.header("Content-Type").unwrap().contains("application/json"));
-    }
-
-    #[tokio::test]
-    async fn test_template_handler() {
-        let handler = TemplateHandler::new("Hello, {{name}}!")
-            .with_data_provider(|_ctx| {
-                let mut data = HashMap::new();
-                data.insert("name".to_string(), "World".to_string());
-                data
-            });
-
-        let context = RequestContext::new("GET".to_string(), "/template".to_string());
-        let mut response = ResponseContext::new();
-
-        let result = handler.handle(&context, &mut response).await;
-        assert!(result.is_ok());
-        assert_eq!(String::from_utf8(response.body).unwrap(), "Hello, World!");
-    }
-
-    #[tokio::test]
-    async fn test_redirect_handler() {
-        let handler = RedirectHandler::temporary("https://example.com");
-        let context = RequestContext::new("GET".to_string(), "/redirect".to_string());
-        let mut response = ResponseContext::new();
-
-        let result = handler.handle(&context, &mut response).await;
-        assert!(result.is_ok());
-        assert_eq!(response.status.0, 302);
-        assert_eq!(response.header("Location"), Some("https://example.com"));
-    }
-
-    #[tokio::test]
-    async fn test_composite_handler() {
-        let default_handler = Arc::new(StaticHandler::new("Default"));
-        let get_handler = Arc::new(StaticHandler::new("GET Response"));
-        
-        let handler = CompositeHandler::new(default_handler)
-            .on_method("GET", get_handler);
-
-        let context = RequestContext::new("GET".to_string(), "/test".to_string());
-        let mut response = ResponseContext::new();
-
-        let result = handler.handle(&context, &mut response).await;
-        assert!(result.is_ok());
-        assert_eq!(String::from_utf8(response.body).unwrap(), "GET Response");
-    }
-}

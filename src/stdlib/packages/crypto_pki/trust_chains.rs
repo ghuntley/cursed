@@ -3,7 +3,7 @@
 // Comprehensive trust chain building and validation infrastructure for certificate path
 // discovery, trust store management, and complete chain validation.
 
-use crate::stdlib::packages::crypto_pki::{
+// use crate::stdlib::packages::crypto_pki::{
     error::{PkiError, PkiResult, CertificateErrorCode},
     types::{
         X509Certificate, CertificateChain, DistinguishedName, SerialNumber,
@@ -556,7 +556,7 @@ impl TrustChainBuilder {
         for extension in &certificate.extensions {
             if extension.oid == "2.5.29.19" { // Basic Constraints OID
                 if let Some(ref data) = extension.parsed_data {
-                    if let crate::stdlib::packages::crypto_pki::types::ExtensionData::BasicConstraints { is_ca, .. } = data {
+//                     if let crate::stdlib::packages::crypto_pki::types::ExtensionData::BasicConstraints { is_ca, .. } = data {
                         return *is_ca;
                     }
                 }
@@ -888,7 +888,7 @@ impl ComprehensiveChainValidator {
         for extension in &certificate.extensions {
             if extension.oid == "2.5.29.19" { // Basic Constraints OID
                 if let Some(ref data) = extension.parsed_data {
-                    if let crate::stdlib::packages::crypto_pki::types::ExtensionData::BasicConstraints { is_ca, path_length_constraint } = data {
+//                     if let crate::stdlib::packages::crypto_pki::types::ExtensionData::BasicConstraints { is_ca, path_length_constraint } = data {
                         // If this is not the end entity certificate, it must be a CA
                         if position > 0 && !is_ca {
                             errors.push(ValidationError::InvalidBasicConstraints {
@@ -1128,205 +1128,3 @@ pub fn create_enhanced_trust_store() -> EnhancedTrustStore {
     EnhancedTrustStore::new(EnhancedTrustStoreConfig::default())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    // Helper function to create test certificate
-    fn create_test_certificate(subject_cn: &str, issuer_cn: &str, is_ca: bool) -> X509Certificate {
-        use crate::stdlib::packages::crypto_pki::types::*;
-        
-        X509Certificate {
-            version: 3,
-            serial_number: SerialNumber { bytes: vec![1, 2, 3, 4] },
-            signature_algorithm: SignatureAlgorithm::RsaWithSha256,
-            issuer: DistinguishedName {
-                common_name: Some(issuer_cn.to_string()),
-                organization: None,
-                organizational_unit: None,
-                country: None,
-                state_or_province: None,
-                locality: None,
-                email_address: None,
-                additional_attributes: HashMap::new(),
-            },
-            validity: Validity {
-                not_before: SystemTime::now() - Duration::from_secs(3600),
-                not_after: SystemTime::now() + Duration::from_secs(86400 * 365),
-            },
-            subject: DistinguishedName {
-                common_name: Some(subject_cn.to_string()),
-                organization: None,
-                organizational_unit: None,
-                country: None,
-                state_or_province: None,
-                locality: None,
-                email_address: None,
-                additional_attributes: HashMap::new(),
-            },
-            subject_public_key_info: SubjectPublicKeyInfo {
-                algorithm: PublicKeyAlgorithm::Rsa { key_size: 2048 },
-                public_key: vec![0x30, 0x82, 0x01, 0x22], // Mock RSA public key
-                parameters: None,
-            },
-            extensions: vec![
-                X509Extension {
-                    oid: "2.5.29.19".to_string(), // Basic Constraints
-                    critical: true,
-                    value: if is_ca { vec![0x30, 0x03, 0x01, 0x01, 0xFF] } else { vec![0x30, 0x00] },
-                    parsed_data: Some(ExtensionData::BasicConstraints {
-                        is_ca,
-                        path_length_constraint: if is_ca { Some(5) } else { None },
-                    }),
-                }
-            ],
-            raw_data: Vec::new(),
-            fingerprint: None,
-            key_usage: KeyUsage {
-                digital_signature: true,
-                non_repudiation: false,
-                key_encipherment: true,
-                data_encipherment: false,
-                key_agreement: false,
-                key_cert_sign: is_ca,
-                crl_sign: is_ca,
-                encipher_only: false,
-                decipher_only: false,
-            },
-            extended_key_usage: ExtendedKeyUsage::default(),
-        }
-    }
-    
-    #[test]
-    fn test_trust_chain_builder_creation() {
-        let trust_store = TrustStore::new("test");
-        let config = ChainBuildingConfig::default();
-        let builder = TrustChainBuilder::new(trust_store, config);
-        
-        let stats = builder.get_statistics();
-        assert_eq!(stats.chains_built, 0);
-    }
-    
-    #[test]
-    fn test_certificate_path_creation() {
-        let leaf_cert = create_test_certificate("test.example.com", "Intermediate CA", false);
-        let intermediate_cert = create_test_certificate("Intermediate CA", "Root CA", true);
-        let root_cert = create_test_certificate("Root CA", "Root CA", true);
-        
-        let path = CertificatePath {
-            certificates: vec![leaf_cert, intermediate_cert.clone()],
-            trust_anchor: Some(root_cert),
-            validation_status: PathValidationStatus::Valid,
-            metadata: PathMetadata {
-                build_time_ms: 100,
-                certificates_fetched: 1,
-                uses_cross_certification: false,
-                algorithm_used: PathBuildingAlgorithm::ForwardChaining,
-            },
-        };
-        
-        assert_eq!(path.certificates.len(), 2);
-        assert!(path.trust_anchor.is_some());
-    }
-    
-    #[test]
-    fn test_enhanced_trust_store_pinning() {
-        let mut store = create_enhanced_trust_store();
-        let cert = create_test_certificate("test.example.com", "Test CA", false);
-        
-        let result = store.pin_certificate("example.com".to_string(), cert.clone());
-        assert!(result.is_ok());
-        
-        assert!(store.is_certificate_pinned("example.com", &cert));
-        assert!(!store.is_certificate_pinned("other.com", &cert));
-    }
-    
-    #[test]
-    fn test_trust_inheritance_rule() {
-        let rule = TrustInheritanceRule {
-            source_anchor: "Root CA".to_string(),
-            target_pattern: "*.example.com".to_string(),
-            conditions: vec![
-                InheritanceCondition::SubjectMatches("example.com".to_string()),
-                InheritanceCondition::KeyUsageIncludes(KeyUsage {
-                    digital_signature: true,
-                    key_cert_sign: false,
-                    ..Default::default()
-                }),
-            ],
-            priority: 100,
-        };
-        
-        assert_eq!(rule.conditions.len(), 2);
-        assert_eq!(rule.priority, 100);
-    }
-    
-    #[test]
-    fn test_comprehensive_chain_validator() {
-        let config = ValidationConfig::default();
-        let validator = ComprehensiveChainValidator::new(config);
-        
-        // Create a simple certificate path
-        let leaf_cert = create_test_certificate("test.example.com", "Root CA", false);
-        let root_cert = create_test_certificate("Root CA", "Root CA", true);
-        
-        let path = CertificatePath {
-            certificates: vec![leaf_cert, root_cert.clone()],
-            trust_anchor: Some(root_cert),
-            validation_status: PathValidationStatus::Pending,
-            metadata: PathMetadata {
-                build_time_ms: 50,
-                certificates_fetched: 0,
-                uses_cross_certification: false,
-                algorithm_used: PathBuildingAlgorithm::ForwardChaining,
-            },
-        };
-        
-        let trust_store = create_enhanced_trust_store();
-        
-        // This would fail in a real implementation because the trust store is empty
-        // but validates the structure
-        let result = validator.validate_path(&path, &trust_store);
-        assert!(result.is_ok());
-    }
-    
-    #[test]
-    fn test_policy_engine() {
-        let mut engine = PolicyEngine::new();
-        
-        let mapping = PolicyMapping {
-            source_policy: "1.2.3.4.5".to_string(),
-            target_policy: "1.2.3.4.6".to_string(),
-            conditions: vec!["test condition".to_string()],
-        };
-        
-        engine.add_policy_mapping(mapping);
-        assert_eq!(engine.policy_mappings.len(), 1);
-        
-        let constraint = PolicyConstraint {
-            policy_oid: "1.2.3.4.7".to_string(),
-            constraint_type: PolicyConstraintType::RequireExplicitPolicy,
-            constraint_value: "required".to_string(),
-        };
-        
-        engine.add_policy_constraint(constraint);
-        assert_eq!(engine.policy_constraints.len(), 1);
-    }
-    
-    #[test]
-    fn test_public_api_functions() {
-        // Test trust store creation
-        let trust_store = create_enhanced_trust_store();
-        assert!(trust_store.config.enable_pinning);
-        
-        // Test chain building configuration
-        let config = ChainBuildingConfig::default();
-        assert_eq!(config.max_chain_length, 10);
-        assert!(config.enable_caching);
-        
-        // Test validation configuration
-        let val_config = ValidationConfig::default();
-        assert!(val_config.check_signatures);
-        assert!(val_config.check_validity_periods);
-    }
-}

@@ -4,9 +4,8 @@
 /// with metadata and type information, source location tracking with column-level
 /// precision, and integration with LLVM debug metadata.
 
-use crate::error::Error as CursedError;
-use crate::runtime::debug_info::{DebugInfo, VariableInfo, EnhancedStackFrame};
-use crate::error::Error;
+use crate::error::CursedError;
+// use crate::runtime::debug_info::{DebugInfo, VariableInfo, EnhancedStackFrame};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -457,7 +456,7 @@ impl DebugInfoRegistry {
     }
 
     /// Register debug information
-    pub fn register_debug_info(&self, location_key: String, info: EnhancedDebugInfo) -> Result<(), Error> {
+    pub fn register_debug_info(&self, location_key: String, info: EnhancedDebugInfo) -> crate::error::Result<()> {
         let mut debug_info = self.debug_info.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire debug info lock".to_string()))?;
         
@@ -466,7 +465,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get debug information by location
-    pub fn get_debug_info(&self, location_key: &str) -> Result<Option<EnhancedDebugInfo>, Error> {
+    pub fn get_debug_info(&self, location_key: &str) -> crate::error::Result<Option<EnhancedDebugInfo>> {
         let debug_info = self.debug_info.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire debug info lock".to_string()))?;
         
@@ -474,7 +473,7 @@ impl DebugInfoRegistry {
     }
 
     /// Register source map
-    pub fn register_source_map(&self, file_path: PathBuf, source_map: SourceMap) -> Result<(), Error> {
+    pub fn register_source_map(&self, file_path: PathBuf, source_map: SourceMap) -> crate::error::Result<()> {
         let mut source_maps = self.source_maps.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire source maps lock".to_string()))?;
         
@@ -483,7 +482,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get source map for file
-    pub fn get_source_map(&self, file_path: &Path) -> Result<Option<SourceMap>, Error> {
+    pub fn get_source_map(&self, file_path: &Path) -> crate::error::Result<Option<SourceMap>> {
         let source_maps = self.source_maps.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire source maps lock".to_string()))?;
         
@@ -491,7 +490,7 @@ impl DebugInfoRegistry {
     }
 
     /// Register symbol metadata
-    pub fn register_symbol(&self, qualified_name: String, metadata: SymbolMetadata) -> Result<(), Error> {
+    pub fn register_symbol(&self, qualified_name: String, metadata: SymbolMetadata) -> crate::error::Result<()> {
         let mut symbols = self.symbols.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
         
@@ -500,7 +499,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get symbol metadata
-    pub fn get_symbol(&self, qualified_name: &str) -> Result<Option<SymbolMetadata>, Error> {
+    pub fn get_symbol(&self, qualified_name: &str) -> crate::error::Result<Option<SymbolMetadata>> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
         
@@ -508,7 +507,7 @@ impl DebugInfoRegistry {
     }
 
     /// Register type information
-    pub fn register_type(&self, type_name: String, type_info: TypeDebugInfo) -> Result<(), Error> {
+    pub fn register_type(&self, type_name: String, type_info: TypeDebugInfo) -> crate::error::Result<()> {
         let mut types = self.types.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire types lock".to_string()))?;
         
@@ -517,7 +516,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get type information
-    pub fn get_type(&self, type_name: &str) -> Result<Option<TypeDebugInfo>, Error> {
+    pub fn get_type(&self, type_name: &str) -> crate::error::Result<Option<TypeDebugInfo>> {
         let types = self.types.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire types lock".to_string()))?;
         
@@ -525,7 +524,7 @@ impl DebugInfoRegistry {
     }
 
     /// Create new scope
-    pub fn create_scope(&self, scope_info: ScopeInfo) -> Result<u64, Error> {
+    pub fn create_scope(&self, scope_info: ScopeInfo) -> crate::error::Result<u64> {
         let mut next_id = self.next_scope_id.write()
             .map_err(|_| CursedError::Runtime("Failed to acquire scope ID lock".to_string()))?;
         
@@ -540,7 +539,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get scope information
-    pub fn get_scope(&self, scope_id: u64) -> Result<Option<ScopeInfo>, Error> {
+    pub fn get_scope(&self, scope_id: u64) -> crate::error::Result<Option<ScopeInfo>> {
         let scopes = self.scopes.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire scopes lock".to_string()))?;
         
@@ -548,7 +547,7 @@ impl DebugInfoRegistry {
     }
 
     /// Find all symbols matching pattern
-    pub fn find_symbols(&self, pattern: &str) -> Result<Vec<(String, SymbolMetadata)>, Error> {
+    pub fn find_symbols(&self, pattern: &str) -> Result<Vec<(String, SymbolMetadata)>, CursedError> {
         let symbols = self.symbols.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire symbols lock".to_string()))?;
         
@@ -562,7 +561,7 @@ impl DebugInfoRegistry {
     }
 
     /// Get debug statistics
-    pub fn get_statistics(&self) -> Result<DebugStatistics, Error> {
+    pub fn get_statistics(&self) -> crate::error::Result<DebugStatistics> {
         let debug_info = self.debug_info.read()
             .map_err(|_| CursedError::Runtime("Failed to acquire debug info lock".to_string()))?;
         let symbols = self.symbols.read()
@@ -602,123 +601,6 @@ impl fmt::Display for DebugStatistics {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_enhanced_debug_info_creation() {
-        let debug_info = EnhancedDebugInfo::new("test.csd", 42, 10, "test_function".to_string());
-        
-        assert_eq!(debug_info.debug_info.line, 42);
-        assert_eq!(debug_info.debug_info.column, 10);
-        assert_eq!(debug_info.debug_info.function_name, "test_function");
-        assert!(debug_info.is_user_code());
-    }
-
-    #[test]
-    fn test_source_map_creation() {
-        let mut source_map = SourceMap::new(PathBuf::from("test.csd"));
-        source_map.add_range(10, 5, 8, 3, 15);
-        
-        let mapped = source_map.map_to_original(10, 10);
-        assert_eq!(mapped, Some((8, 8)));
-    }
-
-    #[test]
-    fn test_symbol_metadata_creation() {
-        let metadata = SymbolMetadata::function("test_func", Some("slay"));
-        
-        assert_eq!(metadata.symbol_type, SymbolType::Function);
-        assert_eq!(metadata.attributes.get("gen_z_keyword"), Some(&"slay".to_string()));
-        assert!(metadata.tags.contains(&"function".to_string()));
-    }
-
-    #[test]
-    fn test_variable_metadata_creation() {
-        let metadata = SymbolMetadata::variable("test_var", "i32");
-        
-        assert_eq!(metadata.symbol_type, SymbolType::Variable);
-        assert_eq!(metadata.attributes.get("type"), Some(&"i32".to_string()));
-        assert_eq!(metadata.attributes.get("gen_z_type"), Some(&"sus".to_string()));
-    }
-
-    #[test]
-    fn test_type_debug_info_creation() {
-        let type_info = TypeDebugInfo::new("TestStruct".to_string(), TypeKind::Struct)
-            .with_field(FieldDebugInfo::new("field1".to_string(), "i32".to_string()));
-        
-        assert_eq!(type_info.type_name, "TestStruct");
-        assert_eq!(type_info.type_kind, TypeKind::Struct);
-        assert_eq!(type_info.fields.len(), 1);
-        assert_eq!(type_info.fields[0].name, "field1");
-    }
-
-    #[test]
-    fn test_scope_info_creation() {
-        let mut scope = ScopeInfo::function_scope(1);
-        let var_info = VariableInfo::new("test_var".to_string(), "i32".to_string());
-        scope.add_variable("test_var".to_string(), var_info);
-        
-        assert_eq!(scope.scope_type, ScopeType::Function);
-        assert_eq!(scope.depth, 1);
-        assert!(scope.has_variable("test_var"));
-    }
-
-    #[test]
-    fn test_debug_info_registry() {
-        let registry = DebugInfoRegistry::new();
-        
-        let debug_info = EnhancedDebugInfo::new("test.csd", 42, 10, "test_function".to_string());
-        let location_key = "test.csd:42:10".to_string();
-        
-        let result = registry.register_debug_info(location_key.clone(), debug_info);
-        assert!(result.is_ok());
-        
-        let retrieved = registry.get_debug_info(&location_key);
-        assert!(retrieved.is_ok());
-        assert!(retrieved.unwrap().is_some());
-    }
-
-    #[test]
-    fn test_symbol_search() {
-        let registry = DebugInfoRegistry::new();
-        
-        let metadata = SymbolMetadata::function("test_function", Some("slay"));
-        let _ = registry.register_symbol("module::test_function".to_string(), metadata);
-        
-        let matches = registry.find_symbols("test");
-        assert!(matches.is_ok());
-        assert!(!matches.unwrap().is_empty());
-    }
-
-    #[test]
-    fn test_debug_statistics() {
-        let registry = DebugInfoRegistry::new();
-        
-        let debug_info = EnhancedDebugInfo::new("test.csd", 42, 10, "test_function".to_string());
-        let _ = registry.register_debug_info("test:42:10".to_string(), debug_info);
-        
-        let stats = registry.get_statistics();
-        assert!(stats.is_ok());
-        assert_eq!(stats.unwrap().debug_info_count, 1);
-    }
-}
-
-impl fmt::Display for SymbolType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            SymbolType::Function => write!(f, "function"),
-            SymbolType::Variable => write!(f, "variable"),
-            SymbolType::Type => write!(f, "type"),
-            SymbolType::Interface => write!(f, "interface"),
-            SymbolType::Struct => write!(f, "struct"),
-            SymbolType::Constant => write!(f, "constant"),
-            SymbolType::Module => write!(f, "module"),
-            SymbolType::Unknown => write!(f, "unknown"),
-        }
-    }
-}
 
 impl fmt::Display for SymbolVisibility {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

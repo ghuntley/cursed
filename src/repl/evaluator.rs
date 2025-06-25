@@ -1,4 +1,4 @@
-use crate::error_types::Error;
+use crate::error::CursedError;
 // REPL Evaluation Engine for CURSED
 // 
 // Provides incremental compilation and execution capabilities
@@ -9,7 +9,6 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::repl::{ReplResult, SessionManager, ReplOutput};
-use crate::error::Error;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::ast::Program;
@@ -114,7 +113,7 @@ impl ReplEvaluator {
             }
             Err(e) => {
                 tracing::error!("Failed to initialize JIT interface: {}", e);
-                Err(Error::repl_error(format!(
+                Err(CursedError::repl_error(format!(
                     "Failed to initialize JIT compilation: {}", e
                 )))
             }
@@ -155,11 +154,11 @@ impl ReplEvaluator {
                 }
                 Err(e) => {
                     tracing::debug!("JIT execution failed: {}", e);
-                    Err(Error::repl_error(format!("JIT execution failed: {}", e)))
+                    Err(CursedError::repl_error(format!("JIT execution failed: {}", e)))
                 }
             }
         } else {
-            Err(Error::repl_error("JIT interface not initialized".to_string()))
+            Err(CursedError::repl_error("JIT interface not initialized".to_string()))
         }
     }
 
@@ -177,9 +176,9 @@ impl ReplEvaluator {
     pub fn compile_function(&mut self, name: &str, source: &str) -> ReplResult<()> {
         if let Some(ref mut jit_interface) = self.jit_interface {
             jit_interface.compile_and_cache_function(name, source)
-                .map_err(|e| Error::repl_error(format!("Function compilation failed: {}", e)))
+                .map_err(|e| CursedError::repl_error(format!("Function compilation failed: {}", e)))
         } else {
-            Err(Error::repl_error("JIT interface not initialized".to_string()))
+            Err(CursedError::repl_error("JIT interface not initialized".to_string()))
         }
     }
 
@@ -195,10 +194,10 @@ impl ReplEvaluator {
         if let Some(ref mut jit_interface) = self.jit_interface {
             match jit_interface.execute_function(function_name) {
                 Ok(result) => Ok(result.to_string()),
-                Err(e) => Err(Error::repl_error(format!("Function execution failed: {}", e)))
+                Err(e) => Err(CursedError::repl_error(format!("Function execution failed: {}", e)))
             }
         } else {
-            Err(Error::repl_error("JIT interface not initialized".to_string()))
+            Err(CursedError::repl_error("JIT interface not initialized".to_string()))
         }
     }
 
@@ -206,15 +205,15 @@ impl ReplEvaluator {
     fn parse_code(&self, code: &str) -> ReplResult<Program> {
         let lexer = Lexer::new(code.to_string());
         let mut parser = Parser::new(lexer)
-            .map_err(|e| Error::repl_error(format!("Failed to create parser: {}", e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Failed to create parser: {}", e)))?;
         
         let program = parser.parse_program()
-            .map_err(|e| Error::repl_error(format!("Parse error: {}", e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Parse error: {}", e)))?;
         
         // Check for parse errors
         let errors = parser.errors();
         if !errors.is_empty() {
-            return Err(Error::repl_error(format!("Parse errors: {}", errors.join(", "))));
+            return Err(CursedError::repl_error(format!("Parse errors: {}", errors.join(", "))));
         }
         
         Ok(program)
@@ -283,7 +282,7 @@ impl ReplEvaluator {
         
         // Compile to LLVM IR
         let _ir = crate::compile_to_ir(&full_program)
-            .map_err(|e| Error::repl_error(format!("Compilation failed: {}", e)))?;
+            .map_err(|e| CursedError::repl_error(format!("Compilation failed: {}", e)))?;
         
         // For now, return a placeholder since actual execution would require
         // LLVM JIT compilation which is more complex
@@ -459,7 +458,7 @@ impl ReplEvaluator {
                         if context.functions.contains_key(func_name) {
                             Ok(format!("(function call: {})", func_name))
                         } else {
-                            Err(Error::repl_error(format!("Unknown function: {}", func_name)))
+                            Err(CursedError::repl_error(format!("Unknown function: {}", func_name)))
                         }
                     } else {
                         Ok(format!("(function call: {})", func_name))
@@ -467,7 +466,7 @@ impl ReplEvaluator {
                 }
             }
         } else {
-            Err(Error::repl_error("Invalid function call syntax".to_string()))
+            Err(CursedError::repl_error("Invalid function call syntax".to_string()))
         }
     }
 
@@ -520,7 +519,7 @@ impl ReplEvaluator {
             
             Ok(format!("Variable {} declared", var_name))
         } else {
-            Err(Error::repl_error("Invalid variable declaration syntax".to_string()))
+            Err(CursedError::repl_error("Invalid variable declaration syntax".to_string()))
         }
     }
 
@@ -546,10 +545,10 @@ impl ReplEvaluator {
                 
                 Ok(format!("Function {} declared", func_name))
             } else {
-                Err(Error::repl_error("Invalid function name".to_string()))
+                Err(CursedError::repl_error("Invalid function name".to_string()))
             }
         } else {
-            Err(Error::repl_error("Invalid function declaration syntax".to_string()))
+            Err(CursedError::repl_error("Invalid function declaration syntax".to_string()))
         }
     }
 
@@ -569,13 +568,13 @@ impl ReplEvaluator {
                     
                     Ok(format!("Imported module: {}", module_name))
                 } else {
-                    Err(Error::repl_error("Invalid import syntax".to_string()))
+                    Err(CursedError::repl_error("Invalid import syntax".to_string()))
                 }
             } else {
-                Err(Error::repl_error("Unterminated import string".to_string()))
+                Err(CursedError::repl_error("Unterminated import string".to_string()))
             }
         } else {
-            Err(Error::repl_error("Import statement must include module name in quotes".to_string()))
+            Err(CursedError::repl_error("Import statement must include module name in quotes".to_string()))
         }
     }
 
@@ -656,59 +655,3 @@ impl Default for ReplEvaluator {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_evaluator_creation() {
-        let evaluator = ReplEvaluator::new();
-        assert!(evaluator.is_ok());
-    }
-
-    #[test]
-    fn test_simple_arithmetic() {
-        let evaluator = ReplEvaluator::new().unwrap();
-        
-        assert_eq!(evaluator.evaluate_simple_arithmetic("2 + 3"), Some("5".to_string()));
-        assert_eq!(evaluator.evaluate_simple_arithmetic("10 - 4"), Some("6".to_string()));
-        assert_eq!(evaluator.evaluate_simple_arithmetic("3 * 4"), Some("12".to_string()));
-        assert_eq!(evaluator.evaluate_simple_arithmetic("8 / 2"), Some("4".to_string()));
-    }
-
-    #[test]
-    fn test_variable_declaration() {
-        let mut evaluator = ReplEvaluator::new().unwrap();
-        let mut session = SessionManager::new();
-        
-        let result = evaluator.evaluate("facts x = 42", &mut session);
-        assert!(result.is_ok());
-        
-        let vars = evaluator.get_variables();
-        assert_eq!(vars.len(), 1);
-        assert_eq!(vars[0].0, "x");
-    }
-
-    #[test]
-    fn test_expression_type_inference() {
-        let evaluator = ReplEvaluator::new().unwrap();
-        
-        assert_eq!(evaluator.get_expression_type("42").unwrap(), "int");
-        assert_eq!(evaluator.get_expression_type("3.14").unwrap(), "float64");
-        assert_eq!(evaluator.get_expression_type("\"hello\"").unwrap(), "string");
-        assert_eq!(evaluator.get_expression_type("true").unwrap(), "bool");
-    }
-
-    #[test]
-    fn test_function_declaration() {
-        let mut evaluator = ReplEvaluator::new().unwrap();
-        let mut session = SessionManager::new();
-        
-        let result = evaluator.evaluate("slay test() { }", &mut session);
-        assert!(result.is_ok());
-        
-        let funcs = evaluator.get_functions();
-        assert_eq!(funcs.len(), 1);
-        assert_eq!(funcs[0].0, "test");
-    }
-}

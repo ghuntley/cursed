@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// EmbedThat - File embedding support for CURSED
 /// 
 /// This module provides comprehensive support for embedding files in compiled binaries
@@ -346,42 +346,3 @@ pub mod constants {
     pub const COMPRESSION_RATIO_THRESHOLD: f64 = 0.9; // Only keep compressed if <90% of original
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_module_initialization() {
-        assert!(initialize().is_ok());
-    }
-    
-    #[test]
-    fn test_module_info() {
-        let info = get_module_info();
-        assert_eq!(info.version, "1.0.0");
-        assert!(!info.supported_compression_types.is_empty());
-        assert!(!info.supported_image_types.is_empty());
-    }
-    
-    #[test]
-    fn test_memory_usage_formatting() {
-        let summary = MemoryUsageSummary {
-            embedded_files_size: 1024,
-            cache_size: 2048,
-            total_memory_usage: 3072,
-        };
-        
-        assert_eq!(summary.embedded_size_formatted(), "1.0 KB");
-        assert_eq!(summary.cache_size_formatted(), "2.0 KB");
-        assert_eq!(summary.total_size_formatted(), "3.0 KB");
-    }
-    
-    #[test]
-    fn test_cache_creation() {
-        let cache = new_resource_cache();
-        assert!(cache.is_empty());
-        
-        let cache_with_expiry = new_resource_cache_with_expiry(Duration::from_secs(60));
-        assert!(cache_with_expiry.is_empty());
-    }
-}

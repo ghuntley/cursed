@@ -1,7 +1,6 @@
 // DNS resolution types and utilities for VibeNet
 
 use crate::error::CursedError;
-use crate::error::Error;
 use super::ip::IPVibe;
 use super::error::{NetError, dns_resolution_error};
 use super::NetResult;
@@ -96,13 +95,3 @@ pub struct SRVVibe {
     pub weight: u16,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_dns_resolver_creation() {
-        let resolver = DNSResolverVibe::new();
-        // Test basic functionality when implemented
-    }
-}

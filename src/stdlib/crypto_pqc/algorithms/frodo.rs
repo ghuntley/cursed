@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// FrodoKEM Lattice-based Key Encapsulation Implementation
 /// 
 /// FrodoKEM is a lattice-based KEM based on the Learning with Errors (LWE) problem.
@@ -7,7 +7,7 @@ use crate::error::Error;
 use std::fmt;
 use rand::rngs::OsRng;
 use sha3::{Sha3_256, Digest};
-use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, PqcError, SecurityLevel, AlgorithmType};
 use super::{KeyEncapsulation, ParameterSet, AlgorithmPerformance, KeySizes};
 
 /// FrodoKEM parameter sets

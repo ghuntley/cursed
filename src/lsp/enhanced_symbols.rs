@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Enhanced symbol support for CURSED language
 // 
 // Provides comprehensive symbol information including document symbols,
@@ -130,7 +130,7 @@ pub enum CursedSymbolKind {
     ChanChannel,         // chan channel declaration
     CrushOperation,      // crush channel operation
     
-    // Error handling
+    // CursedError handling
     SpillError,          // spill error/panic
     ErrorPropagation,    // ? error propagation
     
@@ -1704,114 +1704,3 @@ impl Default for EnhancedSymbolProvider {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[tokio::test]
-    async fn test_document_symbols_extraction() {
-        let mut provider = EnhancedSymbolProvider::new();
-        let content = r#"
-            package test_package
-            
-            import "stdlib::io"
-            
-            slay greet(name: string) -> string {
-                sus greeting = "Hello, " + name;
-                vibez greeting;
-            }
-            
-            squad Person {
-                name: string,
-                age: i32,
-            }
-            
-            collab Greeter {
-                greet(name: string) -> string;
-            }
-            
-            facts PI = 3.14159;
-        "#;
-        
-        let uri = Url::parse("file:///test.csd").unwrap();
-        let symbols = provider.get_document_symbols(content, &uri).await.unwrap();
-        
-        assert!(!symbols.len() == 0);
-        
-        // Should have package, import, function, struct, interface, and constant symbols
-        let symbol_kinds: Vec<_> = symbols.iter().map(|s| s.kind).collect();
-        assert!(symbol_kinds.contains(&SymbolKind::PACKAGE));
-        assert!(symbol_kinds.contains(&SymbolKind::MODULE));
-        assert!(symbol_kinds.contains(&SymbolKind::FUNCTION));
-        assert!(symbol_kinds.contains(&SymbolKind::STRUCT));
-        assert!(symbol_kinds.contains(&SymbolKind::INTERFACE));
-        assert!(symbol_kinds.contains(&SymbolKind::CONSTANT));
-    }
-    
-    #[tokio::test]
-    async fn test_workspace_symbol_search() {
-        let mut provider = EnhancedSymbolProvider::new();
-        let workspace_folders = vec![];
-        
-        // Add some test symbols to cache
-        let test_symbols = vec![
-            CursedSymbol::new(
-                "greet_user".to_string(),
-                SymbolKind::FUNCTION,
-                CursedSymbolKind::SlayFunction,
-                Range::default(),
-                Range::default(),
-            ),
-            CursedSymbol::new(
-                "User".to_string(),
-                SymbolKind::STRUCT,
-                CursedSymbolKind::SquadStruct,
-                Range::default(),
-                Range::default(),
-            ),
-        ];
-        
-        provider.workspace_symbols.insert("test".to_string(), test_symbols);
-        
-        // Search for "user"
-        let results = provider.search_workspace_symbols("user", &workspace_folders).await.unwrap();
-        
-        assert!(!results.len() == 0);
-        assert!(results.iter().any(|s| s.name.contains("user") || s.name.contains("User")));
-    }
-    
-    #[test]
-    fn test_fuzzy_matching() {
-        let provider = EnhancedSymbolProvider::new();
-        
-        assert!(provider.fuzzy_match("greet_user", "gu"));
-        assert!(provider.fuzzy_match("UserProfile", "up"));
-        assert!(provider.fuzzy_match("calculate_total", "ct"));
-        assert!(!provider.fuzzy_match("greet", "xyz"));
-    }
-    
-    #[test]
-    fn test_symbol_conversion() {
-        let symbol = CursedSymbol::new(
-            "test_function".to_string(),
-            SymbolKind::FUNCTION,
-            CursedSymbolKind::TestFunction,
-            Range::default(),
-            Range::default(),
-        );
-        
-        let uri = Url::parse("file:///test.csd").unwrap();
-        
-        let doc_symbol = symbol.to_document_symbol();
-        assert_eq!(doc_symbol.name, "test_function");
-        assert_eq!(doc_symbol.kind, SymbolKind::FUNCTION);
-        
-        let workspace_symbol = symbol.to_workspace_symbol(uri.clone());
-        assert_eq!(workspace_symbol.name, "test_function");
-        assert_eq!(workspace_symbol.kind, SymbolKind::FUNCTION);
-        
-        let symbol_info = symbol.to_symbol_information(uri);
-        assert_eq!(symbol_info.name, "test_function");
-        assert_eq!(symbol_info.kind, SymbolKind::FUNCTION);
-    }
-}

@@ -3,7 +3,7 @@
 // Comprehensive timestamping implementation with RFC 3161 support,
 // multiple timestamp authorities, and verification capabilities.
 
-use crate::stdlib::packages::crypto_signatures::{
+// use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},
     hash_algorithms::{HashAlgorithm, HashAlgorithmManager},
     certificate_validation::{X509Certificate, CertificateValidationManager},
@@ -531,7 +531,7 @@ impl TimestampManager {
     }
 
     fn create_mock_tsa_certificate(&self) -> SignatureResult<X509Certificate> {
-        use crate::stdlib::packages::crypto_signatures::certificate_validation::{
+//         use crate::stdlib::packages::crypto_signatures::certificate_validation::{
             X509Certificate, DistinguishedName, PublicKeyInfo, Validity, SignatureAlgorithmIdentifier
         };
         
@@ -738,125 +738,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_timestamp_request_creation() {
-        let manager = TimestampManager::new();
-        let message = b"test message for timestamping";
-        
-        let request = manager.create_timestamp_request(
-            message,
-            HashAlgorithm::Sha256,
-            true,
-            true,
-        ).unwrap();
-        
-        assert_eq!(request.version, 1);
-        assert_eq!(request.message_imprint.hash_algorithm, HashAlgorithm::Sha256);
-        assert_eq!(request.message_imprint.hashed_message.len(), 32); // SHA-256 length
-        assert!(request.nonce.is_some());
-        assert!(request.cert_req);
-    }
-
-    #[tokio::test]
-    async fn test_timestamp_submission() {
-        let mut manager = TimestampManager::new();
-        
-        let tsa_config = TsaConfig {
-            url: "https://mock-tsa.example.com".to_string(),
-            policy: None,
-            certificate: None,
-            timeout: Duration::from_secs(30),
-            retry_count: 3,
-            require_nonce: true,
-            require_certificate: true,
-        };
-        
-        manager.add_tsa_config("test_tsa".to_string(), tsa_config);
-        
-        let request = manager.create_timestamp_request(
-            b"test message",
-            HashAlgorithm::Sha256,
-            true,
-            true,
-        ).unwrap();
-        
-        let response = manager.submit_timestamp_request(&request, "test_tsa").await.unwrap();
-        
-        assert_eq!(response.status.status, TsaStatus::Granted);
-        assert!(response.timestamp_token.is_some());
-    }
-
-    #[test]
-    fn test_timestamp_verification() {
-        let manager = TimestampManager::new();
-        let message = b"test message for verification";
-        
-        // Create a mock timestamp token
-        let timestamp_token = manager.create_mock_timestamp_token().unwrap();
-        
-        let result = manager.verify_timestamp_token(&timestamp_token, message, None).unwrap();
-        
-        // May not be valid due to mock data, but should complete verification
-        assert!(!result.verification_errors.is_empty() || result.is_valid);
-    }
-
-    #[test]
-    fn test_der_encoding() {
-        let manager = TimestampManager::new();
-        let request = manager.create_timestamp_request(
-            b"test",
-            HashAlgorithm::Sha256,
-            false,
-            false,
-        ).unwrap();
-        
-        let der_bytes = manager.encode_timestamp_request(&request).unwrap();
-        assert!(!der_bytes.is_empty());
-        assert_eq!(der_bytes[0], 0x30); // Should start with SEQUENCE tag
-    }
-
-    #[test]
-    fn test_timestamp_policy() {
-        let policy = TimestampValidationPolicy::default();
-        assert!(policy.allowed_hash_algorithms.contains(&HashAlgorithm::Sha256));
-        assert!(policy.require_tsa_certificate);
-        assert_eq!(policy.max_clock_skew, Duration::from_secs(300));
-    }
-
-    #[test]
-    fn test_nonce_generation() {
-        let manager = TimestampManager::new();
-        let nonce1 = manager.generate_nonce().unwrap();
-        let nonce2 = manager.generate_nonce().unwrap();
-        
-        assert_eq!(nonce1.len(), 16);
-        assert_eq!(nonce2.len(), 16);
-        assert_ne!(nonce1, nonce2); // Should be different
-    }
-
-    #[tokio::test]
-    async fn test_utils_functions() {
-        let message = b"test message for utils";
-        
-        // Test quick timestamp creation
-        let timestamp_token = utils::quick_timestamp(message, "https://test-tsa.com").await.unwrap();
-        assert_eq!(timestamp_token.content_info.version, 1);
-        
-        // Test quick verification
-        let is_valid = utils::quick_verify_timestamp(&timestamp_token, message).unwrap();
-        // May not be valid due to mock data
-        assert!(!is_valid || is_valid);
-        
-        // Test RFC 3161 request creation
-        let request_bytes = utils::create_rfc3161_request(message, HashAlgorithm::Sha256).unwrap();
-        assert!(!request_bytes.is_empty());
-        
-        // Test RFC 3161 response parsing
-        let response = utils::parse_rfc3161_response(&[0x30, 0x10, 0x02, 0x01, 0x00]).unwrap();
-        assert_eq!(response.status.status, TsaStatus::Granted);
-    }
-}

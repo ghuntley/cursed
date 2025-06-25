@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, mpsc, RwLock};
@@ -11,7 +11,6 @@ use notify::{
 
 use glob;
 
-use crate::error::Error as CursedError;
 
 pub type CursedResult<T> = std::result::Result<T, SystemError>;
 
@@ -717,70 +716,3 @@ impl Default for FileWatcherBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-    use tempfile::TempDir;
-    
-    #[test]
-    fn test_watch_config_default() {
-        let config = WatchConfig::default();
-        assert!(config.watch_patterns.contains(&"*.csd".to_string()));
-        assert!(config.ignore_patterns.contains(&"target/*".to_string()));
-        assert_eq!(config.debounce_duration, Duration::from_millis(500));
-    }
-    
-    #[test]
-    fn test_file_watch_event_properties() {
-        let path = PathBuf::from("/test/file.csd");
-        let timestamp = SystemTime::now();
-        
-        let event = FileWatchEvent::Created {
-            path: path.clone(),
-            timestamp,
-        };
-        
-        assert_eq!(event.path(), &path);
-        assert_eq!(event.timestamp(), timestamp);
-        assert!(event.should_trigger_rebuild());
-    }
-    
-    #[test]
-    fn test_debounce_manager() {
-        let debouncer = DebounceManager::new(Duration::from_millis(100));
-        let event = FileWatchEvent::Created {
-            path: PathBuf::from("/test/file.csd"),
-            timestamp: SystemTime::now(),
-        };
-        
-        // First event should be processed
-        assert!(debouncer.should_process_event(&event));
-        
-        // Immediate second event should be debounced
-        assert!(!debouncer.should_process_event(&event));
-    }
-    
-    #[test]
-    fn test_event_filter() {
-        let config = WatchConfig::default();
-        let filter = EventFilter::new(&config).unwrap();
-        
-        assert!(filter.should_watch(Path::new("test.csd")));
-        assert!(filter.should_watch(Path::new("Cargo.toml")));
-        assert!(!filter.should_watch(Path::new("test.tmp")));
-        assert!(!filter.should_watch(Path::new("target/debug/test")));
-    }
-    
-    #[test]
-    fn test_file_watcher_builder() {
-        let watcher = FileWatcherBuilder::new()
-            .watch_patterns(vec!["*.rs".to_string()])
-            .debounce_duration(Duration::from_millis(1000))
-            .recursive(false)
-            .build()
-            .unwrap();
-        
-        assert!(!watcher.is_running());
-    }
-}

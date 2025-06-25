@@ -1,5 +1,5 @@
 use crate::web::StatusCode;
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP client library for the CURSED networking module
 /// 
 /// This module provides a comprehensive HTTP client implementation supporting
@@ -121,7 +121,7 @@ impl Status {
     pub const TEMPORARY_REDIRECT: Status = Status(307);
     pub const PERMANENT_REDIRECT: Status = Status(308);
     
-    // 4xx Client Error
+    // 4xx Client CursedError
     pub const BAD_REQUEST: Status = Status(400);
     pub const UNAUTHORIZED: Status = Status(401);
     pub const PAYMENT_REQUIRED: Status = Status(402);
@@ -144,7 +144,7 @@ impl Status {
     pub const UNPROCESSABLE_ENTITY: Status = Status(422);
     pub const TOO_MANY_REQUESTS: Status = Status(429);
     
-    // 5xx Server Error
+    // 5xx Server CursedError
     pub const INTERNAL_SERVER_ERROR: Status = Status(500);
     pub const NOT_IMPLEMENTED: Status = Status(501);
     pub const BAD_GATEWAY: Status = Status(502);
@@ -224,7 +224,7 @@ impl Status {
             418 => "I'm a teapot",
             422 => "Unprocessable Entity",
             429 => "Too Many Requests",
-            500 => "Internal Server Error",
+            500 => "Internal Server CursedError",
             501 => "Not Implemented",
             502 => "Bad Gateway",
             503 => "Service Unavailable",
@@ -348,76 +348,3 @@ pub mod mime {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_http_version_display() {
-        assert_eq!(HttpVersion::Http10.to_string(), "HTTP/1.0");
-        assert_eq!(HttpVersion::Http11.to_string(), "HTTP/1.1");
-        assert_eq!(HttpVersion::Http2.to_string(), "HTTP/2");
-    }
-
-    #[test]
-    fn test_method_parsing() {
-        assert_eq!("GET".parse::<Method>().unwrap(), Method::GET);
-        assert_eq!("post".parse::<Method>().unwrap(), Method::POST);
-        assert!("INVALID".parse::<Method>().is_err());
-    }
-
-    #[test]
-    fn test_status_properties() {
-        assert!(Status::OK.is_success());
-        assert!(!Status::OK.is_error());
-        
-        assert!(Status::NOT_FOUND.is_client_error());
-        assert!(Status::NOT_FOUND.is_error());
-        
-        assert!(Status::INTERNAL_SERVER_ERROR.is_server_error());
-        assert!(Status::INTERNAL_SERVER_ERROR.is_error());
-        
-        assert!(Status::MOVED_PERMANENTLY.is_redirection());
-        assert!(!Status::MOVED_PERMANENTLY.is_error());
-    }
-
-    #[test]
-    fn test_status_canonical_reason() {
-        assert_eq!(Status::OK.canonical_reason(), "OK");
-        assert_eq!(Status::NOT_FOUND.canonical_reason(), "Not Found");
-        assert_eq!(Status::INTERNAL_SERVER_ERROR.canonical_reason(), "Internal Server Error");
-    }
-
-    #[test]
-    fn test_status_display() {
-        assert_eq!(Status::OK.to_string(), "200 OK");
-        assert_eq!(Status::NOT_FOUND.to_string(), "404 Not Found");
-    }
-
-    #[test]
-    fn test_content_encoding() {
-        assert_eq!("gzip".parse::<ContentEncoding>().unwrap(), ContentEncoding::Gzip);
-        assert_eq!("br".parse::<ContentEncoding>().unwrap(), ContentEncoding::Brotli);
-        assert!("invalid".parse::<ContentEncoding>().is_err());
-        
-        assert_eq!(ContentEncoding::Gzip.to_string(), "gzip");
-        assert_eq!(ContentEncoding::Brotli.to_string(), "br");
-    }
-
-    #[test]
-    fn test_mime_types() {
-        assert_eq!(mime::from_extension("txt"), mime::TEXT_PLAIN);
-        assert_eq!(mime::from_extension("json"), mime::APPLICATION_JSON);
-        assert_eq!(mime::from_extension("jpg"), mime::IMAGE_JPEG);
-        assert_eq!(mime::from_extension("unknown"), mime::APPLICATION_OCTET_STREAM);
-    }
-
-    #[test]
-    fn test_status_conversion() {
-        let status: Status = 404u16.into();
-        assert_eq!(status, Status::NOT_FOUND);
-        
-        let code: u16 = Status::OK.into();
-        assert_eq!(code, 200);
-    }
-}

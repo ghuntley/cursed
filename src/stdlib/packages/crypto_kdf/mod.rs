@@ -24,7 +24,6 @@ pub use salt_generation::*;
 pub use timing_attacks::*;
 
 use crate::error::CursedError;
-use crate::error::Error;
 
 /// fr fr Common KDF result type
 pub type KdfResult<T> = std::result::Result<T, KdfError>;
@@ -39,22 +38,22 @@ pub enum KdfError {
     NotImplemented,
 }
 
-impl std::fmt::Display for KdfError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            KdfError::InvalidInput(msg) => write!(f, "Invalid KDF input: {}", msg),
-            KdfError::InvalidConfig(msg) => write!(f, "Invalid KDF configuration: {}", msg),
-            KdfError::CryptographicError(msg) => write!(f, "KDF cryptographic error: {}", msg),
-            KdfError::InsufficientMemory => write!(f, "Insufficient memory for KDF operation"),
-            KdfError::NotImplemented => write!(f, "KDF function not yet implemented"),
-        }
-    }
-}
+// impl std::fmt::Display for KdfError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             KdfError::InvalidInput(msg) => write!(f, "Invalid KDF input: {}", msg),
+//             KdfError::InvalidConfig(msg) => write!(f, "Invalid KDF configuration: {}", msg),
+//             KdfError::CryptographicError(msg) => write!(f, "KDF cryptographic error: {}", msg),
+//             KdfError::InsufficientMemory => write!(f, "Insufficient memory for KDF operation"),
+//             KdfError::NotImplemented => write!(f, "KDF function not yet implemented"),
+//         }
+//     }
+// }
 
-impl std::error::Error for KdfError {}
-
+// impl std::error::CursedError for KdfError {}
+// 
 /// fr fr Initialize KDF package with production implementations
-pub fn init_crypto_kdf() -> Result<(), Error> {
+pub fn init_crypto_kdf() -> crate::error::Result<()> {
     // Test PBKDF2 implementation (fully implemented)
     let _pbkdf2_config = pbkdf2::Pbkdf2Config::new();
     let _pbkdf2_engine = pbkdf2::Pbkdf2Engine::default();

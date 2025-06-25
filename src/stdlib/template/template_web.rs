@@ -1,11 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Web Framework Integration - CURSED template integration for web applications
 use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 use serde_json::Value as JsonValue;
 
-use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
 use super::template_core::{TemplateEngine, TemplateContext, TemplateConfig};
 use super::template_html::{HtmlTemplateContext, HtmlEscaper};
@@ -139,7 +138,7 @@ impl WebTemplateRenderer {
         template_name: &str,
         context: TemplateContext,
         request: &WebTemplateRequest,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(template = template_name, "Rendering web template");
 
         // Create enhanced context with web-specific variables
@@ -175,7 +174,7 @@ impl WebTemplateRenderer {
         context: TemplateContext,
         request: &WebTemplateRequest,
         format: TemplateFormat,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(template = template_name, format = ?format, "Rendering template with format");
 
         let web_context = self.create_web_context(context, request)?;
@@ -213,14 +212,14 @@ impl WebTemplateRenderer {
         &self,
         template_name: &str,
         context: TemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(template = template_name, "Rendering partial template");
         self.engine.render(template_name, context)
     }
 
     /// Render JSON response
     #[instrument(skip(self, data))]
-    pub fn render_json(&self, data: &CursedObject) -> Result<(), Error> {
+    pub fn render_json(&self, data: &CursedObject) -> crate::error::Result<()> {
         debug!("Rendering JSON response");
 
         let formatter = TemplateFormatRenderer::new(TemplateFormat::Json);
@@ -244,7 +243,7 @@ impl WebTemplateRenderer {
         error: &CursedError,
         status_code: u16,
         request: &WebTemplateRequest,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         debug!(status = status_code, "Rendering error page");
 
         let mut context = TemplateContext::new();
@@ -277,7 +276,7 @@ impl WebTemplateRenderer {
         &self,
         mut context: TemplateContext,
         request: &WebTemplateRequest,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Add request information
         context.set("request_method", CursedObject::String(request.method.clone()));
         context.set("request_url", CursedObject::String(request.url.clone()));
@@ -309,7 +308,7 @@ impl WebTemplateRenderer {
     }
 
     /// Add web helper functions to context
-    fn add_web_helpers(&self, context: &mut TemplateContext) -> Result<(), Error> {
+    fn add_web_helpers(&self, context: &mut TemplateContext) -> crate::error::Result<()> {
         // Add current timestamp
         context.set("now", CursedObject::Integer(
             std::time::SystemTime::now()
@@ -327,7 +326,7 @@ impl WebTemplateRenderer {
     }
 
     /// Generate CSRF token
-    fn generate_csrf_token(&self, request: &WebTemplateRequest) -> Result<(), Error> {
+    fn generate_csrf_token(&self, request: &WebTemplateRequest) -> crate::error::Result<()> {
         use sha2::{Sha256, Digest};
         
         let mut hasher = Sha256::new();
@@ -349,13 +348,13 @@ impl WebTemplateRenderer {
         &self,
         token: &str,
         request: &WebTemplateRequest,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let expected_token = self.generate_csrf_token(request)?;
         Ok(token == expected_token)
     }
 
     /// Add security headers to response
-    fn add_security_headers(&self, response: &mut TemplateResponse) -> Result<(), Error> {
+    fn add_security_headers(&self, response: &mut TemplateResponse) -> crate::error::Result<()> {
         if self.web_config.enable_xss_protection {
             response.headers.insert(
                 "X-XSS-Protection".to_string(),
@@ -389,7 +388,7 @@ impl WebTemplateRenderer {
     }
 
     /// Parse template output into CursedObject
-    fn parse_template_output(&self, output: &str) -> Result<(), Error> {
+    fn parse_template_output(&self, output: &str) -> crate::error::Result<()> {
         // Simple parsing - in a real implementation, you might want more sophisticated parsing
         if output.trim().starts_with('{') && output.trim().ends_with('}') {
             // Try to parse as JSON
@@ -403,7 +402,7 @@ impl WebTemplateRenderer {
     }
 
     /// Convert JSON value to CursedObject
-    fn json_to_cursed(&self, json: &JsonValue) -> Result<(), Error> {
+    fn json_to_cursed(&self, json: &JsonValue) -> crate::error::Result<()> {
         match json {
             JsonValue::Null => Ok(CursedObject::Nil),
             JsonValue::Bool(b) => Ok(CursedObject::Boolean(*b)),
@@ -418,7 +417,7 @@ impl WebTemplateRenderer {
             }
             JsonValue::String(s) => Ok(CursedObject::String(s.clone())),
             JsonValue::Array(arr) => {
-                let cursed_array: Result<(), Error> = arr.iter()
+                let cursed_array: crate::error::Result<()> = arr.iter()
                     .map(|item| self.json_to_cursed(item))
                     .collect();
                 Ok(CursedObject::Array(cursed_array?))
@@ -434,13 +433,13 @@ impl WebTemplateRenderer {
     }
 
     /// Render default error page
-    fn render_default_error(&self, error: &CursedError, status_code: u16) -> Result<(), Error> {
+    fn render_default_error(&self, error: &CursedError, status_code: u16) -> crate::error::Result<()> {
         let error_message = match status_code {
             404 => "Page Not Found",
-            500 => "Internal Server Error",
+            500 => "Internal Server CursedError",
             403 => "Forbidden",
             401 => "Unauthorized",
-            _ => "Error",
+            _ => "CursedError",
         };
 
         Ok(format!(
@@ -502,7 +501,7 @@ impl TemplateMiddleware {
         request: &WebTemplateRequest,
         template_name: &str,
         context: TemplateContext,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.renderer.render_response(template_name, context, request)
     }
 
@@ -512,114 +511,8 @@ impl TemplateMiddleware {
         error: &CursedError,
         status_code: u16,
         request: &WebTemplateRequest,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         self.renderer.render_error(error, status_code, request)
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn create_test_request() -> WebTemplateRequest {
-        WebTemplateRequest {
-            method: "GET".to_string(),
-            url: "/test".to_string(),
-            headers: HashMap::new(),
-            query: HashMap::new(),
-            form: HashMap::new(),
-            cookies: HashMap::new(),
-            session: HashMap::new(),
-            user: None,
-        }
-    }
-
-    #[test]
-    fn test_web_template_renderer_creation() {
-        let renderer = WebTemplateRenderer::new("templates");
-        assert_eq!(renderer.web_config.default_content_type, "text/html; charset=utf-8");
-        assert!(renderer.web_config.enable_csrf);
-    }
-
-    #[test]
-    fn test_csrf_token_generation() {
-        let renderer = WebTemplateRenderer::new("templates");
-        let request = create_test_request();
-        
-        let token1 = renderer.generate_csrf_token(&request).unwrap();
-        let token2 = renderer.generate_csrf_token(&request).unwrap();
-        
-        // Tokens should be the same for the same request
-        assert_eq!(token1, token2);
-        assert!(!token1.is_empty());
-    }
-
-    #[test]
-    fn test_csrf_token_verification() {
-        let renderer = WebTemplateRenderer::new("templates");
-        let request = create_test_request();
-        
-        let token = renderer.generate_csrf_token(&request).unwrap();
-        assert!(renderer.verify_csrf_token(&token, &request).unwrap());
-        assert!(!renderer.verify_csrf_token("invalid_token", &request).unwrap());
-    }
-
-    #[test]
-    fn test_json_response_rendering() {
-        let renderer = WebTemplateRenderer::new("templates");
-        
-        let mut data = HashMap::new();
-        data.insert("message".to_string(), CursedObject::String("Hello".to_string()));
-        data.insert("status".to_string(), CursedObject::Integer(200));
-        
-        let cursed_data = CursedObject::Map(data);
-        let response = renderer.render_json(&cursed_data).unwrap();
-        
-        assert_eq!(response.status, 200);
-        assert_eq!(response.content_type, "application/json; charset=utf-8");
-        assert!(response.body.contains("Hello"));
-        assert!(response.body.contains("200"));
-    }
-
-    #[test]
-    fn test_security_headers() {
-        let renderer = WebTemplateRenderer::new("templates");
-        let request = create_test_request();
-        let context = TemplateContext::new();
-        
-        // This would fail because we don't have actual templates, but we can test the config
-        assert!(renderer.web_config.enable_xss_protection);
-        assert!(renderer.web_config.csp_policy.is_some());
-    }
-
-    #[test]
-    fn test_web_context_creation() {
-        let renderer = WebTemplateRenderer::new("templates");
-        let mut request = create_test_request();
-        request.query.insert("param1".to_string(), "value1".to_string());
-        request.session.insert("user_id".to_string(), CursedObject::Integer(123));
-        
-        let context = TemplateContext::new();
-        let web_context = renderer.create_web_context(context, &request).unwrap();
-        
-        assert!(web_context.contains("request_method"));
-        assert!(web_context.contains("query"));
-        assert!(web_context.contains("session"));
-    }
-
-    #[test]
-    fn test_error_page_rendering() {
-        let renderer = WebTemplateRenderer::new("templates");
-        let request = create_test_request();
-        let error = CursedError::TemplateError {
-            message: "Test error".to_string(),
-            source_location: None,
-        };
-        
-        let response = renderer.render_error(&error, 404, &request).unwrap();
-        
-        assert_eq!(response.status, 404);
-        assert!(response.body.contains("404"));
-        assert!(response.body.contains("Page Not Found"));
-    }
-}

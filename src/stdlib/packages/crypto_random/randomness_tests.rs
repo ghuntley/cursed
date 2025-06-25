@@ -1,6 +1,6 @@
 /// Randomness testing suite for validating cryptographic random number generators
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
 
 /// Test result for a randomness test
 #[derive(Debug, Clone)]

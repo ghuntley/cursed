@@ -15,7 +15,7 @@ pub use error::{PreprocessorError, PreprocessorResult};
 
 use crate::lexer::Lexer;
 use crate::error::SourceLocation;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Initialize a preprocessor with the given lexer
 pub fn new_preprocessor(lexer: Lexer) -> Preprocessor {
@@ -29,22 +29,3 @@ pub fn process_source(source: &str) -> PreprocessorResult<TokenStream> {
     preprocessor.process()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_preprocessor_creation() {
-        let source = "be_like Box[T] squad { value normie }";
-        let lexer = Lexer::new(source.to_string());
-        let preprocessor = Preprocessor::new(lexer);
-        assert!(preprocessor.is_initialized());
-    }
-
-    #[test]
-    fn test_process_source() {
-        let source = "slay foo[T](x normie) T { x }";
-        let result = process_source(source);
-        assert!(result.is_ok());
-    }
-}

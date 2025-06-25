@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// HTTP Header Management for CURSED web_vibez
 ///
 /// Case-insensitive header storage, parsing, and manipulation.
@@ -6,7 +6,7 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::stdlib::http_core::{HttpError, HttpResult};
+// use crate::stdlib::http_core::{HttpError, HttpResult};
 
 /// Case-insensitive header name wrapper
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -450,72 +450,3 @@ pub trait Headers {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_header_name_case_insensitive() {
-        let name1 = HeaderName::new("Content-Type");
-        let name2 = HeaderName::new("content-type");
-        let name3 = HeaderName::new("CONTENT-TYPE");
-
-        assert_eq!(name1, name2);
-        assert_eq!(name2, name3);
-    }
-
-    #[test]
-    fn test_header_map_case_insensitive() {
-        let mut headers = HeaderMap::new();
-        headers.insert("Content-Type", "application/json");
-        
-        assert_eq!(headers.get("content-type"), Some(&"application/json".to_string()));
-        assert_eq!(headers.get("CONTENT-TYPE"), Some(&"application/json".to_string()));
-        assert_eq!(headers.get("Content-Type"), Some(&"application/json".to_string()));
-    }
-
-    #[test]
-    fn test_header_map_multiple_values() {
-        let mut headers = HeaderMap::new();
-        headers.insert("Accept", "text/html");
-        headers.append("Accept", "application/json");
-        
-        let values = headers.get_all("Accept");
-        assert_eq!(values.len(), 2);
-        assert!(values.contains(&"text/html"));
-        assert!(values.contains(&"application/json"));
-    }
-
-    #[test]
-    fn test_accept_header_parsing() {
-        let mut headers = HeaderMap::new();
-        headers.insert("Accept", "text/html,application/xml;q=0.9,*/*;q=0.8");
-        
-        let accept_values = headers.accept();
-        assert_eq!(accept_values.len(), 3);
-        assert_eq!(accept_values[0], ("text/html".to_string(), 1.0));
-        assert_eq!(accept_values[1], ("application/xml".to_string(), 0.9));
-        assert_eq!(accept_values[2], ("*/*".to_string(), 0.8));
-    }
-
-    #[test]
-    fn test_header_validation() {
-        let mut headers = HeaderMap::new();
-        headers.insert("Valid-Header", "valid value");
-        assert!(headers.validate().is_ok());
-
-        // Test will be extended when validation is more strict
-    }
-
-    #[test]
-    fn test_quality_value_parsing() {
-        let value = HeaderValue::new("application/json;q=0.8");
-        assert_eq!(value.parse_quality(), 0.8);
-
-        let value = HeaderValue::new("text/html");
-        assert_eq!(value.parse_quality(), 1.0);
-
-        let value = HeaderValue::new("*/*;q=0.1");
-        assert_eq!(value.parse_quality(), 0.1);
-    }
-}

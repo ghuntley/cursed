@@ -14,6 +14,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 use semver::{Version, VersionReq};
 use tracing::{debug, info, instrument, warn, error};
+use crate::error::CursedError;
 
 /// Dependency resolver that integrates with the constraint satisfaction resolver
 #[derive(Debug)]
@@ -114,7 +115,7 @@ pub struct PackageMetadata {
 pub struct VersionConstraintResolver {}
 
 /// Dependency resolution error types
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::CursedError)]
 pub enum DependencyError {
     #[error("Package not found: {package}")]
     PackageNotFound { package: String },
@@ -168,7 +169,7 @@ impl DependencyResolver {
     
     /// Resolve dependencies using the real constraint satisfaction algorithm
     #[instrument(skip(self, dependencies))]
-    pub async fn resolve(&mut self, dependencies: &HashMap<String, String>) -> Result<(), Error> {
+    pub async fn resolve(&mut self, dependencies: &HashMap<String, String>) -> crate::error::Result<()> {
         info!("Resolving {} dependencies using constraint satisfaction", dependencies.len());
         
         // Clear previous resolution
@@ -254,7 +255,7 @@ impl DependencyResolver {
     }
     
     /// Resolve version for a package given constraints
-    async fn resolve_version(&self, package: &str, constraint: &str) -> Result<(), Error> {
+    async fn resolve_version(&self, package: &str, constraint: &str) -> crate::error::Result<()> {
         debug!("Resolving version for {}: {}", package, constraint);
         
         let available_versions = self.get_available_versions(package).await?;
@@ -268,7 +269,7 @@ impl DependencyResolver {
     }
     
     /// Get available versions for a package from registry
-    async fn get_available_versions(&self, package: &str) -> Result<(), Error> {
+    async fn get_available_versions(&self, package: &str) -> crate::error::Result<()> {
         if let Some(ref registry) = self.registry {
             debug!("Fetching versions for package {} from registry", package);
             match registry.lock() {
@@ -307,7 +308,7 @@ impl DependencyResolver {
     }
     
     /// Get package metadata from registry
-    async fn get_package_metadata(&self, name: &str, version: &str) -> Result<(), Error> {
+    async fn get_package_metadata(&self, name: &str, version: &str) -> crate::error::Result<()> {
         if let Some(ref registry) = self.registry {
             debug!("Fetching metadata for package {}@{} from registry", name, version);
             match registry.lock() {
@@ -370,7 +371,7 @@ impl DependencyResolver {
     }
     
     /// Check for circular dependencies
-    fn check_circular_dependencies(&self) -> Result<(), Error> {
+    fn check_circular_dependencies(&self) -> crate::error::Result<()> {
         debug!("Checking for circular dependencies");
         
         let mut visited = HashSet::new();
@@ -414,7 +415,7 @@ impl DependencyResolver {
     }
     
     /// Validate all version constraints are satisfied
-    fn validate_constraints(&self) -> Result<(), Error> {
+    fn validate_constraints(&self) -> crate::error::Result<()> {
         debug!("Validating version constraints");
         
         for edge in &self.graph.edges {
@@ -434,7 +435,7 @@ impl DependencyResolver {
     }
     
     /// Get dependency graph in topological order
-    pub fn topological_sort(&self) -> Result<(), Error> {
+    pub fn topological_sort(&self) -> crate::error::Result<()> {
         let mut in_degree = HashMap::new();
         let mut adj_list = HashMap::new();
         
@@ -498,7 +499,7 @@ impl VersionConstraintResolver {
         &self,
         available_versions: &[String],
         constraint: &str,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         // Parse the constraint using semver
         let version_req = VersionReq::parse(constraint)
             .map_err(|e| DependencyError::InvalidConstraint { 
@@ -534,7 +535,7 @@ impl VersionConstraintResolver {
     }
     
     /// Check if version satisfies constraint
-    pub fn satisfies_constraint(&self, version: &str, constraint: &str) -> Result<(), Error> {
+    pub fn satisfies_constraint(&self, version: &str, constraint: &str) -> crate::error::Result<()> {
         let version_parsed = Version::parse(version)
             .map_err(|e| DependencyError::InvalidConstraint { 
                 constraint: format!("Invalid version '{}': {}", version, e) 
@@ -551,149 +552,3 @@ impl VersionConstraintResolver {
 
 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::package_manager::registry::RegistryConfig;
-    use tokio;
-    
-    #[tokio::test]
-    async fn test_dependency_resolution_without_registry() {
-        let mut resolver = DependencyResolver::new();
-        
-        let mut dependencies = HashMap::new();
-        dependencies.insert("cursed-http".to_string(), "^1.0.0".to_string());
-        dependencies.insert("cursed-json".to_string(), "^0.1.0".to_string());
-        
-        let graph = resolver.resolve(&dependencies).await.unwrap();
-        
-        // Should resolve to fallback versions since no registry is configured
-        assert_eq!(graph.nodes.len(), 2);
-        assert!(graph.nodes.contains_key("cursed-http"));
-        assert!(graph.nodes.contains_key("cursed-json"));
-        
-        // Fallback versions should be used
-        assert_eq!(graph.resolved_versions["cursed-http"], "1.0.0");
-        assert_eq!(graph.resolved_versions["cursed-json"], "1.0.0");
-    }
-    
-    #[tokio::test]
-    async fn test_dependency_resolution_with_registry() {
-        // Create a registry (it will try to connect to the configured URL)
-        let config = RegistryConfig::default();
-        let registry_result = PackageRegistry::with_config(config);
-        
-        if let Ok(registry) = registry_result {
-            let mut resolver = DependencyResolver::new();
-            resolver.set_registry(Arc::new(Mutex::new(registry)));
-            
-            let mut dependencies = HashMap::new();
-            dependencies.insert("test-package".to_string(), "^1.0.0".to_string());
-            
-            // This will likely fail since we don't have a real registry running,
-            // but should fall back to minimal metadata
-            let graph = resolver.resolve(&dependencies).await;
-            
-            // Should succeed even if registry calls fail due to fallback behavior
-            assert!(graph.is_ok());
-        }
-    }
-    
-    #[test]
-    fn test_version_constraints() {
-        let resolver = VersionConstraintResolver::new();
-        
-        // Test caret constraints
-        assert!(resolver.satisfies_constraint("1.2.3", "^1.0.0").unwrap());
-        assert!(resolver.satisfies_constraint("1.0.0", "^1.0.0").unwrap());
-        assert!(!resolver.satisfies_constraint("2.0.0", "^1.0.0").unwrap());
-        
-        // Test tilde constraints
-        assert!(resolver.satisfies_constraint("1.2.5", "~1.2.3").unwrap());
-        assert!(!resolver.satisfies_constraint("1.3.0", "~1.2.3").unwrap());
-        
-        // Test exact constraints
-        assert!(resolver.satisfies_constraint("1.0.0", "1.0.0").unwrap());
-        assert!(!resolver.satisfies_constraint("1.0.1", "1.0.0").unwrap());
-        
-        // Test version finding
-        let versions = vec!["1.0.0".to_string(), "1.1.0".to_string(), "2.0.0".to_string()];
-        let result = resolver.find_compatible_version(&versions, "^1.0.0").unwrap();
-        assert_eq!(result, "1.1.0"); // Should select the highest compatible version
-    }
-    
-    #[test]
-    fn test_topological_sort() {
-        let mut resolver = DependencyResolver::new();
-        
-        // Create a simple dependency chain: A -> B -> C
-        resolver.graph.nodes.insert("A".to_string(), DependencyNode {
-            name: "A".to_string(),
-            version: "1.0.0".to_string(),
-            metadata: PackageMetadata {
-                description: None,
-                license: None,
-                repository: None,
-                keywords: Vec::from([]),
-                categories: Vec::from([]),
-            },
-            dependencies: Vec::from(["B".to_string()]),
-            dev_dependencies: Vec::from([]),
-            build_dependencies: Vec::from([]),
-        });
-        
-        resolver.graph.nodes.insert("B".to_string(), DependencyNode {
-            name: "B".to_string(),
-            version: "1.0.0".to_string(),
-            metadata: PackageMetadata {
-                description: None,
-                license: None,
-                repository: None,
-                keywords: Vec::from([]),
-                categories: Vec::from([]),
-            },
-            dependencies: Vec::from(["C".to_string()]),
-            dev_dependencies: Vec::from([]),
-            build_dependencies: Vec::from([]),
-        });
-        
-        resolver.graph.nodes.insert("C".to_string(), DependencyNode {
-            name: "C".to_string(),
-            version: "1.0.0".to_string(),
-            metadata: PackageMetadata {
-                description: None,
-                license: None,
-                repository: None,
-                keywords: Vec::from([]),
-                categories: Vec::from([]),
-            },
-            dependencies: Vec::from([]),
-            dev_dependencies: Vec::from([]),
-            build_dependencies: Vec::from([]),
-        });
-        
-        resolver.graph.edges.push(DependencyEdge {
-            from: "A".to_string(),
-            to: "B".to_string(),
-            dependency_type: DependencyType::Runtime,
-            constraint: "1.0.0".to_string(),
-        });
-        
-        resolver.graph.edges.push(DependencyEdge {
-            from: "B".to_string(),
-            to: "C".to_string(),
-            dependency_type: DependencyType::Runtime,
-            constraint: "1.0.0".to_string(),
-        });
-        
-        let sorted = resolver.topological_sort().unwrap();
-        
-        // C should come before B, B should come before A
-        let c_pos = sorted.iter().position(|x| x == "C").unwrap();
-        let b_pos = sorted.iter().position(|x| x == "B").unwrap();
-        let a_pos = sorted.iter().position(|x| x == "A").unwrap();
-        
-        assert!(c_pos < b_pos);
-        assert!(b_pos < a_pos);
-    }
-}

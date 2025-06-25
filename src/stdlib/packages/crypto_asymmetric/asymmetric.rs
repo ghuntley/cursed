@@ -3,9 +3,8 @@
 /// This module provides unified asymmetric cryptography operations with
 /// comprehensive algorithm support including RSA, ECDSA, Ed25519, X25519, and X448.
 
-use crate::stdlib::value::Value;
+// use crate::stdlib::value::Value;
 use crate::error::CursedError;
-use crate::error::Error;
 use std::collections::HashMap;
 use rand::rngs::OsRng;
 
@@ -73,7 +72,7 @@ impl AsymmetricCrypto {
     }
 
     /// Generate a key pair for the specified algorithm
-    pub fn generate_keypair(&mut self, algorithm: &str) -> Result<(), Error> {
+    pub fn generate_keypair(&mut self, algorithm: &str) -> crate::error::Result<()> {
         match algorithm.to_uppercase().as_str() {
             "RSA-2048" => {
                 let keypair = self.rsa_engine.generate_keypair(2048)?;
@@ -112,7 +111,7 @@ impl AsymmetricCrypto {
     }
 
     /// Sign a message with the specified algorithm and private key
-    pub fn sign(&self, algorithm: &str, private_key: &str, message: &[u8]) -> Result<(), Error> {
+    pub fn sign(&self, algorithm: &str, private_key: &str, message: &[u8]) -> crate::error::Result<()> {
         match algorithm.to_uppercase().as_str() {
             "RSA-2048" | "RSA-3072" | "RSA-4096" => {
                 // Parse private key and sign
@@ -157,7 +156,7 @@ impl AsymmetricCrypto {
     }
 
     /// Verify a signature with the specified algorithm and public key
-    pub fn verify(&self, algorithm: &str, public_key: &str, message: &[u8], signature: &[u8]) -> Result<(), Error> {
+    pub fn verify(&self, algorithm: &str, public_key: &str, message: &[u8], signature: &[u8]) -> crate::error::Result<()> {
         match algorithm.to_uppercase().as_str() {
             "RSA-2048" | "RSA-3072" | "RSA-4096" => {
                 super::rsa::rsa_verify(vec![
@@ -200,7 +199,7 @@ impl AsymmetricCrypto {
     }
 
     /// Perform key exchange with the specified algorithm
-    pub fn key_exchange(&self, algorithm: &str, private_key: &str, public_key: &str) -> Result<(), Error> {
+    pub fn key_exchange(&self, algorithm: &str, private_key: &str, public_key: &str) -> crate::error::Result<()> {
         match algorithm.to_uppercase().as_str() {
             "X25519" => {
                 x25519_key_exchange(vec![
@@ -238,14 +237,14 @@ impl AsymmetricCrypto {
             },
             "X448" => {
                 // Use the new X448 implementation
-                crate::stdlib::crypto::x448_implementation::x448_key_exchange(args)
+//                 crate::stdlib::crypto::x448_implementation::x448_key_exchange(args)
             },
             _ => Err(CursedError::InvalidArgument(format!("Unsupported key exchange algorithm: {}", algorithm))),
         }
     }
 
     /// Encrypt data with RSA
-    pub fn rsa_encrypt(&self, public_key: &str, data: &[u8]) -> Result<(), Error> {
+    pub fn rsa_encrypt(&self, public_key: &str, data: &[u8]) -> crate::error::Result<()> {
         super::rsa::rsa_encrypt(vec![
             Value::String(public_key.to_string()),
             Value::String(base64::encode(data)),
@@ -259,7 +258,7 @@ impl AsymmetricCrypto {
     }
 
     /// Decrypt data with RSA
-    pub fn rsa_decrypt(&self, private_key: &str, encrypted_data: &[u8]) -> Result<(), Error> {
+    pub fn rsa_decrypt(&self, private_key: &str, encrypted_data: &[u8]) -> crate::error::Result<()> {
         super::rsa::rsa_decrypt(vec![
             Value::String(private_key.to_string()),
             Value::String(base64::encode(encrypted_data)),
@@ -273,7 +272,7 @@ impl AsymmetricCrypto {
     }
 
     /// Parse a private key from string format
-    fn parse_private_key(&self, private_key: &str) -> Result<(), Error> {
+    fn parse_private_key(&self, private_key: &str) -> crate::error::Result<()> {
         // Try different formats
         if private_key.starts_with("-----BEGIN") {
             // PEM format
@@ -290,7 +289,7 @@ impl AsymmetricCrypto {
     }
 
     /// Parse PEM private key
-    fn parse_pem_private_key(&self, pem_data: &str) -> Result<(), Error> {
+    fn parse_pem_private_key(&self, pem_data: &str) -> crate::error::Result<()> {
         // Basic PEM parsing - extract base64 content
         let lines: Vec<&str> = pem_data.split("\n").collect();
         let mut base64_content = String::new();
@@ -332,7 +331,7 @@ impl AsymmetricCrypto {
     }
 
     /// Get algorithm capabilities
-    pub fn get_algorithm_info(&self, algorithm: &str) -> Result<(), Error> {
+    pub fn get_algorithm_info(&self, algorithm: &str) -> crate::error::Result<()> {
         let mut info = HashMap::new();
         
         match algorithm.to_uppercase().as_str() {
@@ -424,7 +423,7 @@ impl Default for AsymmetricCrypto {
 // High-level API functions for CURSED stdlib
 
 /// Generate an asymmetric key pair
-pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<(), Error> {
+pub fn generate_asymmetric_keypair(args: Vec<Value>) -> crate::error::Result<()> {
     if args.is_empty() {
         return Err(CursedError::InvalidArgument("Algorithm name required".to_string()));
     }
@@ -439,7 +438,7 @@ pub fn generate_asymmetric_keypair(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Sign a message with asymmetric cryptography
-pub fn asymmetric_sign(args: Vec<Value>) -> Result<(), Error> {
+pub fn asymmetric_sign(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("Required: algorithm, private_key, message".to_string()));
     }
@@ -476,7 +475,7 @@ pub fn asymmetric_sign(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Verify a signature with asymmetric cryptography
-pub fn asymmetric_verify(args: Vec<Value>) -> Result<(), Error> {
+pub fn asymmetric_verify(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 4 {
         return Err(CursedError::InvalidArgument("Required: algorithm, public_key, message, signature".to_string()));
     }
@@ -529,7 +528,7 @@ pub fn asymmetric_verify(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Perform asymmetric key exchange
-pub fn asymmetric_key_exchange(args: Vec<Value>) -> Result<(), Error> {
+pub fn asymmetric_key_exchange(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::InvalidArgument("Required: algorithm, private_key, public_key".to_string()));
     }
@@ -556,7 +555,7 @@ pub fn asymmetric_key_exchange(args: Vec<Value>) -> Result<(), Error> {
 }
 
 /// Get information about supported algorithms
-pub fn get_asymmetric_algorithms() -> Result<(), Error> {
+pub fn get_asymmetric_algorithms() -> crate::error::Result<()> {
     let crypto = AsymmetricCrypto::new();
     let algorithms = crypto.supported_algorithms();
     
@@ -571,7 +570,7 @@ pub fn get_asymmetric_algorithms() -> Result<(), Error> {
 }
 
 /// Get comprehensive asymmetric crypto capabilities
-pub fn get_asymmetric_capabilities() -> Result<(), Error> {
+pub fn get_asymmetric_capabilities() -> crate::error::Result<()> {
     let mut capabilities = HashMap::new();
     
     capabilities.insert("algorithms".to_string(), Value::Array(vec![

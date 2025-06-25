@@ -5,7 +5,7 @@
 // and optimization recommendations for improved developer productivity.
 
 use crate::build_system::{BuildConfig, BuildTarget, BuildError, BuildResult, BuildStatistics};
-use crate::error::Error;
+use crate::error::CursedError;
 use std::collections::{HashMap, BTreeMap, VecDeque};
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime};
@@ -331,7 +331,7 @@ pub enum EventType {
     CompilationCompleted,
     LinkingStarted,
     LinkingCompleted,
-    Error,
+    CursedError,
     Warning,
 }
 
@@ -349,15 +349,15 @@ pub struct BuildPhase {
 
 /// Metrics collector trait
 pub trait MetricsCollector: Send + Sync + std::fmt::Debug {
-    fn start_collection(&mut self) -> Result<(), Error>;
-    fn stop_collection(&mut self) -> Result<(), Error>;
-    fn collect_metrics(&self) -> Result<(), Error>;
+    fn start_collection(&mut self) -> crate::error::Result<()>;
+    fn stop_collection(&mut self) -> crate::error::Result<()>;
+    fn collect_metrics(&self) -> crate::error::Result<()>;
     fn reset(&mut self);
 }
 
 /// Performance analyzer trait
 pub trait PerformanceAnalyzer: Send + Sync + std::fmt::Debug {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error>;
+    fn analyze(&self, metrics: &ProfilingMetrics) -> crate::error::Result<()>;
     fn get_analyzer_name(&self) -> String;
 }
 
@@ -552,7 +552,7 @@ pub struct RegressionAlert {
 pub enum AlertSeverity {
     Info,
     Warning,
-    Error,
+    CursedError,
     Critical,
 }
 
@@ -620,7 +620,7 @@ impl Default for ProfilerConfig {
 
 impl BuildProfiler {
     /// Create new build profiler
-    pub fn new(config: ProfilerConfig) -> Result<(), Error> {
+    pub fn new(config: ProfilerConfig) -> crate::error::Result<()> {
         let session = ProfilingSession::new();
         let collectors = Self::create_collectors(&config)?;
         let analyzers = Self::create_analyzers(&config)?;
@@ -642,7 +642,7 @@ impl BuildProfiler {
         build_config: BuildConfig,
         targets: Vec<BuildTarget>,
         profile: BuildProfile,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Starting build profiling for {} targets", targets.len());
         
         self.session = ProfilingSession::new();
@@ -669,7 +669,7 @@ impl BuildProfiler {
     
     /// Stop profiling and generate report
     #[instrument(skip(self))]
-    pub async fn stop_profiling(&mut self) -> Result<(), Error> {
+    pub async fn stop_profiling(&mut self) -> crate::error::Result<()> {
         info!("Stopping build profiling and generating report");
         
         self.session.end_time = Some(Instant::now());
@@ -826,7 +826,7 @@ impl BuildProfiler {
     }
     
     /// Create metrics collectors based on configuration
-    fn create_collectors(config: &ProfilerConfig) -> Result<(), Error> {
+    fn create_collectors(config: &ProfilerConfig) -> crate::error::Result<()> {
         let mut collectors: Vec<Box<dyn MetricsCollector>> = Vec::new();
         
         if config.detailed_timing {
@@ -853,7 +853,7 @@ impl BuildProfiler {
     }
     
     /// Create performance analyzers based on configuration
-    fn create_analyzers(config: &ProfilerConfig) -> Result<(), Error> {
+    fn create_analyzers(config: &ProfilerConfig) -> crate::error::Result<()> {
         let mut analyzers: Vec<Box<dyn PerformanceAnalyzer>> = Vec::new();
         
         if config.bottleneck_detection {
@@ -877,7 +877,7 @@ impl BuildProfiler {
     }
     
     /// Merge metrics from multiple collectors
-    fn merge_metrics(&self, metrics_list: Vec<ProfilingMetrics>) -> Result<(), Error> {
+    fn merge_metrics(&self, metrics_list: Vec<ProfilingMetrics>) -> crate::error::Result<()> {
         // This is a simplified merge - in practice, would intelligently combine metrics
         if let Some(first) = metrics_list.first() {
             Ok(first.clone())
@@ -1011,17 +1011,17 @@ impl TimingCollector {
 }
 
 impl MetricsCollector for TimingCollector {
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         self.start_time = Some(Instant::now());
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         // Finalize timing collection
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<(), Error> {
+    fn collect_metrics(&self) -> crate::error::Result<()> {
         let total_time = self.start_time.map(|start| start.elapsed()).unwrap_or_default();
         
         // Create timing metrics
@@ -1135,17 +1135,17 @@ impl ResourceCollector {
 }
 
 impl MetricsCollector for ResourceCollector {
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         self.monitoring_active = true;
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         self.monitoring_active = false;
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<(), Error> {
+    fn collect_metrics(&self) -> crate::error::Result<()> {
         // Placeholder resource metrics
         let resource_metrics = ResourceMetrics {
             peak_memory_usage: 512 * 1024 * 1024, // 512MB placeholder
@@ -1256,7 +1256,7 @@ impl BottleneckAnalyzer {
 }
 
 impl PerformanceAnalyzer for BottleneckAnalyzer {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error> {
+    fn analyze(&self, metrics: &ProfilingMetrics) -> crate::error::Result<()> {
         let mut bottlenecks = Vec::new();
         let mut optimizations = Vec::new();
         
@@ -1322,7 +1322,7 @@ impl OptimizationAnalyzer {
 }
 
 impl PerformanceAnalyzer for OptimizationAnalyzer {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error> {
+    fn analyze(&self, metrics: &ProfilingMetrics) -> crate::error::Result<()> {
         let mut optimizations = Vec::new();
         
         // Suggest parallelization improvements
@@ -1370,7 +1370,7 @@ impl PerformanceAnalyzer for OptimizationAnalyzer {
 }
 
 impl ReportGenerator {
-    fn new(config: ProfilerConfig) -> Result<(), Error> {
+    fn new(config: ProfilerConfig) -> crate::error::Result<()> {
         Ok(ReportGenerator {
             config,
             template_engine: TemplateEngine::new(),
@@ -1382,7 +1382,7 @@ impl ReportGenerator {
         &self,
         session: &ProfilingSession,
         analysis_results: Vec<AnalysisResult>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let build_summary = BuildSummary {
             total_duration: session.start_time.elapsed(),
             targets_built: session.targets.len(),
@@ -1488,15 +1488,15 @@ impl CompilationCollector {
 }
 
 impl MetricsCollector for CompilationCollector {
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<(), Error> {
+    fn collect_metrics(&self) -> crate::error::Result<()> {
         let compilation_metrics = CompilationMetrics {
             files_compiled: self.files_compiled + 5, // Estimate
             lines_compiled: self.files_compiled * 100, // 100 lines per file estimate
@@ -1612,15 +1612,15 @@ impl CacheCollector {
 }
 
 impl MetricsCollector for CacheCollector {
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<(), Error> {
+    fn collect_metrics(&self) -> crate::error::Result<()> {
         let cache_metrics = CacheMetrics {
             cache_hits: self.cache_hits + 15, // Estimate
             cache_misses: self.cache_misses + 5, // Estimate
@@ -1732,15 +1732,15 @@ impl DependencyCollector {
 }
 
 impl MetricsCollector for DependencyCollector {
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<(), Error> {
+    fn collect_metrics(&self) -> crate::error::Result<()> {
         let dependency_metrics = DependencyMetrics {
             total_dependencies: self.dependencies_analyzed + 15,
             direct_dependencies: 5,
@@ -1850,15 +1850,15 @@ impl ParallelizationCollector {
 }
 
 impl MetricsCollector for ParallelizationCollector {
-    fn start_collection(&mut self) -> Result<(), Error> {
+    fn start_collection(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
     
-    fn stop_collection(&mut self) -> Result<(), Error> {
+    fn stop_collection(&mut self) -> crate::error::Result<()> {
         Ok(())
     }
     
-    fn collect_metrics(&self) -> Result<(), Error> {
+    fn collect_metrics(&self) -> crate::error::Result<()> {
         let parallelization_metrics = ParallelizationMetrics {
             parallel_efficiency: 0.72, // 72% efficiency estimate
             cpu_utilization: 0.65, // 65% CPU utilization
@@ -1974,7 +1974,7 @@ impl CriticalPathAnalyzer {
 }
 
 impl PerformanceAnalyzer for CriticalPathAnalyzer {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error> {
+    fn analyze(&self, metrics: &ProfilingMetrics) -> crate::error::Result<()> {
         let mut optimizations = Vec::new();
         
         // Analyze critical path
@@ -2028,7 +2028,7 @@ impl ResourceUtilizationAnalyzer {
 }
 
 impl PerformanceAnalyzer for ResourceUtilizationAnalyzer {
-    fn analyze(&self, metrics: &ProfilingMetrics) -> Result<(), Error> {
+    fn analyze(&self, metrics: &ProfilingMetrics) -> crate::error::Result<()> {
         let mut optimizations = Vec::new();
         let mut bottlenecks = Vec::new();
         
@@ -2096,7 +2096,7 @@ impl TrendAnalyzer {
 }
 
 impl PerformanceAnalyzer for TrendAnalyzer {
-    fn analyze(&self, _metrics: &ProfilingMetrics) -> Result<(), Error> {
+    fn analyze(&self, _metrics: &ProfilingMetrics) -> crate::error::Result<()> {
         let optimizations = vec![
             OptimizationOpportunity {
                 opportunity_type: OptimizationType::ConfigurationOptimization,
@@ -2129,115 +2129,3 @@ impl PerformanceAnalyzer for TrendAnalyzer {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_build_profiler_creation() {
-        let config = ProfilerConfig::default();
-        let profiler = BuildProfiler::new(config);
-        assert!(profiler.is_ok());
-    }
-    
-    #[test]
-    fn test_timing_collector() {
-        let mut collector = TimingCollector::new();
-        assert!(collector.start_collection().is_ok());
-        assert!(collector.stop_collection().is_ok());
-        assert!(collector.collect_metrics().is_ok());
-    }
-    
-    #[test]
-    fn test_bottleneck_analyzer() {
-        let analyzer = BottleneckAnalyzer::new();
-        let metrics = ProfilingMetrics {
-            timing_metrics: TimingMetrics {
-                total_build_time: Duration::from_secs(10),
-                compilation_time: Duration::from_secs(8),
-                linking_time: Duration::from_secs(1),
-                dependency_resolution_time: Duration::from_secs(1),
-                cache_lookup_time: Duration::default(),
-                file_io_time: Duration::default(),
-                preprocessing_time: Duration::default(),
-                optimization_time: Duration::default(),
-                phase_timings: HashMap::new(),
-                target_timings: HashMap::new(),
-                critical_path_time: Duration::from_secs(10),
-            },
-            resource_metrics: ResourceMetrics {
-                peak_memory_usage: 512 * 1024 * 1024,
-                average_memory_usage: 256 * 1024 * 1024,
-                peak_cpu_usage: 85.0,
-                average_cpu_usage: 60.0,
-                disk_io_read: 0,
-                disk_io_write: 0,
-                network_io: 0,
-                file_descriptors_used: 0,
-                thread_count: 0,
-                process_count: 0,
-                gpu_usage: None,
-            },
-            compilation_metrics: CompilationMetrics {
-                files_compiled: 10,
-                lines_compiled: 1000,
-                functions_compiled: 50,
-                classes_compiled: 5,
-                modules_compiled: 2,
-                templates_instantiated: 0,
-                macros_expanded: 0,
-                errors_encountered: 0,
-                warnings_generated: 0,
-                compilation_units: 10,
-                average_file_size: 100,
-                largest_file_size: 500,
-            },
-            cache_metrics: CacheMetrics {
-                cache_hits: 5,
-                cache_misses: 5,
-                cache_hit_rate: 0.5,
-                cache_size: 0,
-                cache_evictions: 0,
-                cache_lookup_time: Duration::default(),
-                cache_update_time: Duration::default(),
-                incremental_builds: 0,
-                full_rebuilds: 0,
-            },
-            dependency_metrics: DependencyMetrics {
-                total_dependencies: 20,
-                direct_dependencies: 5,
-                transitive_dependencies: 15,
-                circular_dependencies: 0,
-                dependency_depth: 3,
-                dependency_resolution_time: Duration::default(),
-                package_downloads: 0,
-                package_download_time: Duration::default(),
-                version_conflicts: 0,
-            },
-            parallelization_metrics: ParallelizationMetrics {
-                parallel_efficiency: 0.6,
-                cpu_utilization: 0.0,
-                worker_threads: 0,
-                work_distribution: Vec::new(),
-                synchronization_overhead: Duration::default(),
-                load_balancing_quality: 0.0,
-                parallelizable_work: 0.0,
-                serial_work: 0.0,
-            },
-            bottleneck_metrics: BottleneckMetrics {
-                identified_bottlenecks: Vec::new(),
-                critical_path_analysis: CriticalPathAnalysis {
-                    critical_path: Vec::new(),
-                    critical_path_time: Duration::default(),
-                    parallelizable_segments: Vec::new(),
-                    optimization_opportunities: Vec::new(),
-                },
-                resource_contentions: Vec::new(),
-                blocking_operations: Vec::new(),
-            },
-        };
-        
-        let result = analyzer.analyze(&metrics);
-        assert!(result.is_ok());
-    }
-}

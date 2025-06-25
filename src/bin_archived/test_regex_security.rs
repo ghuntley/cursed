@@ -1,9 +1,11 @@
-use crate::error::Error;
+use crate::error::CursedError;
 use regex::Regex;
 use std::collections::HashMap;
 
 /// Test the exact regex patterns used in the security module
 fn test_security_regex_patterns() {
+        // TODO: implement
+    }
     println!("Testing regex patterns from security module...");
     
     // Test email pattern
@@ -116,6 +118,8 @@ fn test_security_regex_patterns() {
 }
 
 fn test_pattern_caching_simulation() {
+        // TODO: implement
+    }
     println!("Testing pattern compilation and caching simulation...");
     
     let mut patterns: HashMap<String, Regex> = HashMap::new();
@@ -154,6 +158,8 @@ fn test_pattern_caching_simulation() {
 }
 
 fn test_invalid_patterns() {
+        // TODO: implement
+    }
     println!("Testing invalid pattern handling...");
     
     // Test invalid regex patterns that would cause compilation errors
@@ -177,6 +183,8 @@ fn test_invalid_patterns() {
 }
 
 fn test_security_xss_patterns() {
+        // TODO: implement
+    }
     println!("Testing XSS detection patterns...");
     
     // Test patterns that would be used for XSS detection
@@ -222,6 +230,8 @@ fn test_security_xss_patterns() {
 }
 
 fn test_custom_regex_patterns() {
+        // TODO: implement
+    }
     println!("Testing custom regex patterns...");
     
     // Test various custom patterns that might be used in the security module
@@ -251,6 +261,8 @@ fn test_custom_regex_patterns() {
 }
 
 fn main() {
+        // TODO: implement
+    }
     println!("=== Security Module Regex Integration Verification ===\n");
     
     test_security_regex_patterns();
@@ -274,7 +286,7 @@ fn main() {
     println!("✅ Pattern validation works as expected");
     println!("✅ XSS detection patterns are functional");
     println!("✅ Custom regex patterns are supported");
-    println!("✅ Error handling for invalid patterns is robust");
+    println!("✅ CursedError handling for invalid patterns is robust");
     println!("✅ Pattern caching functionality is working");
     println!("\n🎉 The regex integration in security.rs is fully functional!");
 }

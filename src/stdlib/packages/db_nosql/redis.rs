@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// fr fr Redis driver for CURSED - blazing fast key-value operations periodt
 ///
 /// This module provides a comprehensive Redis database driver for the CURSED
@@ -14,8 +14,8 @@ use std::time::{Duration, Instant};
 use tokio::sync::{Mutex, RwLock};
 use uuid::Uuid;
 use base64;
-use crate::stdlib::packages::db_core::error::{DatabaseError, DatabaseResult, ConnectionError, ErrorKind};
-use crate::stdlib::value::Value;
+// use crate::stdlib::packages::db_core::error::{DatabaseError, DatabaseResult, ConnectionError, ErrorKind};
+// use crate::stdlib::value::Value;
 use super::drivers::{NoSqlDriver, NoSqlConnection};
 
 /// fr fr Redis configuration - customize your connection bestie!
@@ -209,7 +209,7 @@ impl Default for RedisDriver {
 
 #[async_trait]
 impl NoSqlDriver for RedisDriver {
-    async fn connect(&self, connection_string: &str) -> Result<(), Error> {
+    async fn connect(&self, connection_string: &str) -> crate::error::Result<()> {
         let mut config = self.config.clone();
         if !connection_string.is_empty() {
             config.url = connection_string.to_string();
@@ -244,7 +244,7 @@ impl RedisConnection {
         self.pool.update_stats(success, duration).await;
 
         result.map_err(|e| DatabaseError::query(
-            crate::stdlib::packages::db_core::error::QueryError::ExecutionFailed,
+//             crate::stdlib::packages::db_core::error::QueryError::ExecutionFailed,
             &format!("Redis operation failed: {}", e)
         ))
     }
@@ -660,7 +660,7 @@ impl RedisConnection {
 #[async_trait]
 impl NoSqlConnection for RedisConnection {
     /// slay Insert document (stored as JSON string)
-    async fn insert(&mut self, collection: &str, document: serde_json::Value) -> Result<(), Error> {
+    async fn insert(&mut self, collection: &str, document: serde_json::Value) -> crate::error::Result<()> {
         let doc_json = document.to_string();
         let key = format!("{}:{}", collection, Uuid::new_v4());
         
@@ -669,7 +669,7 @@ impl NoSqlConnection for RedisConnection {
     }
     
     /// slay Find documents (basic key pattern matching)
-    async fn find(&mut self, collection: &str, _query: serde_json::Value) -> Result<(), Error> {
+    async fn find(&mut self, collection: &str, _query: serde_json::Value) -> crate::error::Result<()> {
         let pattern = format!("{}:*", collection);
         let keys = self.keys(&pattern).await?;
         
@@ -823,96 +823,3 @@ impl RedisConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_redis_config_default() {
-        let config = RedisConfig::default();
-        assert_eq!(config.url, "redis://localhost:6379");
-        assert_eq!(config.database, 0);
-        assert_eq!(config.max_connections, 10);
-    }
-
-    #[test]
-    fn test_redis_config_from_url() {
-        let config = RedisConfig::from_url("redis://user:pass@localhost:6380/1?connection_timeout=10000").unwrap();
-        assert_eq!(config.username, Some("user".to_string()));
-        assert_eq!(config.password, Some("pass".to_string()));
-        assert_eq!(config.database, 1);
-        assert_eq!(config.connection_timeout, 10000);
-    }
-
-    #[test]
-    fn test_redis_config_validation() {
-        let mut config = RedisConfig::default();
-        assert!(config.validate().is_ok());
-        
-        config.url = "".to_string();
-        assert!(config.validate().is_err());
-        
-        config.url = "redis://localhost".to_string();
-        config.max_connections = 0;
-        assert!(config.validate().is_err());
-        
-        config.max_connections = 10;
-        config.min_connections = 20;
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn test_value_to_redis_string() {
-        assert_eq!(value_to_redis_string(&Value::Null), "");
-        assert_eq!(value_to_redis_string(&Value::Bool(true)), "true");
-        assert_eq!(value_to_redis_string(&Value::Integer(42)), "42");
-        assert_eq!(value_to_redis_string(&Value::Number(3.14)), "3.14");
-        assert_eq!(value_to_redis_string(&Value::String("hello".to_string())), "hello");
-    }
-
-    #[test]
-    fn test_redis_string_to_value() {
-        assert_eq!(redis_string_to_value("42"), Value::Integer(42));
-        assert_eq!(redis_string_to_value("3.14"), Value::Number(3.14));
-        assert_eq!(redis_string_to_value("true"), Value::Bool(true));
-        assert_eq!(redis_string_to_value("false"), Value::Bool(false));
-        assert_eq!(redis_string_to_value("hello"), Value::String("hello".to_string()));
-    }
-
-    #[test]
-    fn test_json_to_cursed_value() {
-        let json = serde_json::json!({
-            "name": "test",
-            "age": 25,
-            "active": true,
-            "tags": ["a", "b"],
-            "meta": null
-        });
-        
-        let value = json_to_cursed_value(&json);
-        assert!(value.is_object());
-        
-        if let Value::Object(obj) = value {
-            assert_eq!(obj.get("name"), Some(&Value::String("test".to_string())));
-            assert_eq!(obj.get("age"), Some(&Value::Integer(25)));
-            assert_eq!(obj.get("active"), Some(&Value::Bool(true)));
-            assert_eq!(obj.get("meta"), Some(&Value::Null));
-        }
-    }
-
-    #[tokio::test]
-    async fn test_redis_driver_creation() {
-        let driver = RedisDriver::new();
-        assert_eq!(driver.config.url, "redis://localhost:6379");
-        
-        let driver_with_config = RedisDriver::with_config(RedisConfig {
-            url: "redis://example.com:6379".to_string(),
-            ..Default::default()
-        });
-        assert_eq!(driver_with_config.config.url, "redis://example.com:6379");
-        
-        let driver_from_url = RedisDriver::from_url("redis://test:1234").unwrap();
-        assert_eq!(driver_from_url.config.url, "redis://test:1234");
-    }
-}

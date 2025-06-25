@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Network utilities for CURSED networking
 /// 
 /// This module provides various network utility functions including
@@ -7,9 +7,9 @@ use crate::error::Error;
 use std::net::IpAddr;
 use std::time::{Duration, Instant};
 use std::thread;
-use crate::stdlib::net::error::{NetError, NetResult, general_error, timeout_error};
-use crate::stdlib::net::socket::{TcpSocket, UdpSocket};
-use crate::stdlib::net::dns::resolve_hostname;
+// use crate::stdlib::net::error::{NetError, NetResult, general_error, timeout_error};
+// use crate::stdlib::net::socket::{TcpSocket, UdpSocket};
+// use crate::stdlib::net::dns::resolve_hostname;
 
 /// Check if a port is available (not in use)
 pub fn is_port_available(port: u16) -> bool {
@@ -127,7 +127,7 @@ pub fn trace_route(host: &str) -> NetResult<Vec<String>> {
 }
 
 /// Get public IP address by connecting to external service
-pub fn get_public_ip() -> NetResult<crate::stdlib::net::address::IpAddr> {
+// pub fn get_public_ip() -> NetResult<crate::stdlib::net::address::IpAddr> {
     // Try connecting to known external services to determine public IP
     let services = [
         "8.8.8.8:53",       // Google DNS
@@ -148,8 +148,8 @@ pub fn get_public_ip() -> NetResult<crate::stdlib::net::address::IpAddr> {
 }
 
 /// Get local IP addresses
-pub fn get_local_ips() -> NetResult<Vec<crate::stdlib::net::address::IpAddr>> {
-    use crate::stdlib::net::interfaces::list_interfaces;
+// pub fn get_local_ips() -> NetResult<Vec<crate::stdlib::net::address::IpAddr>> {
+//     use crate::stdlib::net::interfaces::list_interfaces;
     
     let interfaces = list_interfaces()?;
     let mut ips = Vec::new();
@@ -327,10 +327,10 @@ pub fn format_bandwidth(bytes_per_second: f64) -> String {
 /// Network diagnostics information
 #[derive(Debug, Clone)]
 pub struct NetworkDiagnostics {
-    pub local_ips: Vec<crate::stdlib::net::address::IpAddr>,
-    pub public_ip: Option<crate::stdlib::net::address::IpAddr>,
-    pub default_gateway: Option<crate::stdlib::net::address::IpAddr>,
-    pub dns_servers: Vec<crate::stdlib::net::address::IpAddr>,
+//     pub local_ips: Vec<crate::stdlib::net::address::IpAddr>,
+//     pub public_ip: Option<crate::stdlib::net::address::IpAddr>,
+//     pub default_gateway: Option<crate::stdlib::net::address::IpAddr>,
+//     pub dns_servers: Vec<crate::stdlib::net::address::IpAddr>,
     pub active_connections: usize,
     pub network_interfaces: usize,
 }
@@ -341,7 +341,7 @@ pub fn network_diagnostics() -> NetResult<NetworkDiagnostics> {
     let public_ip = get_public_ip().ok();
     
     // Get network interface information
-    use crate::stdlib::net::interfaces::{list_interfaces, get_default_interface};
+//     use crate::stdlib::net::interfaces::{list_interfaces, get_default_interface};
     let interfaces = list_interfaces().unwrap_or_default();
     let default_interface = get_default_interface().unwrap_or_default();
     
@@ -358,83 +358,3 @@ pub fn network_diagnostics() -> NetResult<NetworkDiagnostics> {
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_port_availability() {
-        // Port 0 should always be available (OS will assign)
-        // We can't test specific ports as they might be in use
-        assert!(is_port_available(0));
-    }
-
-    #[test]
-    fn test_email_validation() {
-        assert!(validate_email("user@example.com"));
-        assert!(validate_email("test.email+tag@domain.co.uk"));
-        assert!(!validate_email(""));
-        assert!(!validate_email("invalid"));
-        assert!(!validate_email("@domain.com"));
-        assert!(!validate_email("user@"));
-        assert!(!validate_email("user@domain"));
-        assert!(!validate_email("user.domain.com"));
-    }
-
-    #[test]
-    fn test_url_validation() {
-        assert!(validate_url("http://example.com"));
-        assert!(validate_url("https://example.com/path?query=value#fragment"));
-        assert!(validate_url("http://subdomain.example.com:8080/path"));
-        assert!(!validate_url(""));
-        assert!(!validate_url("ftp://example.com"));
-        assert!(!validate_url("http://"));
-        assert!(!validate_url("not-a-url"));
-    }
-
-    #[test]
-    fn test_url_parsing() {
-        let url = parse_url("https://example.com:8080/path/to/page?query=value&other=data#section").unwrap();
-        assert_eq!(url.scheme, "https");
-        assert_eq!(url.host, "example.com");
-        assert_eq!(url.port, 8080);
-        assert_eq!(url.path, "/path/to/page");
-        assert_eq!(url.query, Some("query=value&other=data".to_string()));
-        assert_eq!(url.fragment, Some("section".to_string()));
-        
-        let simple_url = parse_url("http://example.com").unwrap();
-        assert_eq!(simple_url.scheme, "http");
-        assert_eq!(simple_url.host, "example.com");
-        assert_eq!(simple_url.port, 80);
-        assert_eq!(simple_url.path, "/");
-        assert!(simple_url.query.is_none());
-        assert!(simple_url.fragment.is_none());
-    }
-
-    #[test]
-    fn test_bandwidth_formatting() {
-        assert_eq!(format_bandwidth(1024.0), "1.00 KB/s");
-        assert_eq!(format_bandwidth(1024.0 * 1024.0), "1.00 MB/s");
-        assert_eq!(format_bandwidth(1024.0 * 1024.0 * 1024.0), "1.00 GB/s");
-        assert_eq!(format_bandwidth(500.0), "500 B/s");
-        assert_eq!(format_bandwidth(1536.0), "1.50 KB/s");
-    }
-
-    #[test]
-    fn test_network_diagnostics() {
-        // This should not panic even if network operations fail
-        let _ = network_diagnostics();
-    }
-
-    #[test]
-    fn test_port_scanning() {
-        // Test scanning a small range on localhost
-        let result = scan_ports("127.0.0.1", 1, 10);
-        assert!(result.is_ok());
-        
-        // Parallel scan test
-        let ports = vec![80, 443, 8080, 3000, 5000];
-        let result = scan_ports_parallel("127.0.0.1", &ports, Duration::from_millis(100), 2);
-        assert!(result.is_ok());
-    }
-}

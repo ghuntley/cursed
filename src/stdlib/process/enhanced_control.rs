@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Enhanced process control and management operations
 /// 
 /// This module provides comprehensive process control functionality including advanced
@@ -9,16 +9,16 @@ use std::sync::{Arc, RwLock, Mutex};
 use std::time::{Duration, Instant, SystemTime};
 use std::thread;
 
-use crate::stdlib::process::error::{
+// use crate::stdlib::process::error::{
     ProcessResult, ProcessError, process_not_found_pid, permission_denied_pid,
     invalid_state, execution_failed, timeout_error, system_error
 };
 
-use crate::stdlib::process::core::{ProcessConfig, Process};
-use crate::stdlib::process::control::{Signal, Priority};
-use crate::stdlib::process::fork::{JobControlManager, fork_process, exec_program};
-use crate::stdlib::process::resource_limits::{ResourceLimitManager, ResourceType, ResourceLimit};
-use crate::stdlib::process::privileges::{PrivilegeManager, SecureEnvironment};
+// use crate::stdlib::process::core::{ProcessConfig, Process};
+// use crate::stdlib::process::control::{Signal, Priority};
+// use crate::stdlib::process::fork::{JobControlManager, fork_process, exec_program};
+// use crate::stdlib::process::resource_limits::{ResourceLimitManager, ResourceType, ResourceLimit};
+// use crate::stdlib::process::privileges::{PrivilegeManager, SecureEnvironment};
 
 /// Options for enhanced process control operations
 #[derive(Debug, Clone)]
@@ -254,7 +254,7 @@ pub struct ProcessExitInfo {
 pub enum ExitReason {
     Normal,
     Signal(i32),
-    Error(String),
+    CursedError(String),
 }
 
 // Priority enum is imported from control module to avoid duplication
@@ -384,7 +384,7 @@ impl EnhancedProcessController {
         }
 
         // Create the process
-        let mut process = crate::stdlib::process::core::spawn_process(config.clone())?;
+//         let mut process = crate::stdlib::process::core::spawn_process(config.clone())?;
         let pid = process.id();
 
         // Create enhanced process info
@@ -479,7 +479,7 @@ impl EnhancedProcessController {
         }
 
         // Use existing signal sending implementation
-        crate::stdlib::process::control::send_signal_to_pid(pid, signal)?;
+//         crate::stdlib::process::control::send_signal_to_pid(pid, signal)?;
 
         // Update statistics
         {
@@ -680,7 +680,7 @@ impl EnhancedProcessController {
                 metadata: HashMap::new(),
                 io_statistics: IoStatistics::default(),
                 security_context: SecurityContext::default(),
-                resource_limits: crate::stdlib::process::enhanced_control::ResourceLimits::default(),
+//                 resource_limits: crate::stdlib::process::enhanced_control::ResourceLimits::default(),
             };
 
             {
@@ -704,7 +704,7 @@ impl EnhancedProcessController {
     /// Set process priority  
     pub fn set_process_priority(&self, pid: u32, priority: Priority) -> ProcessResult<()> {
         // Use existing priority setting implementation
-        crate::stdlib::process::control::set_process_priority(pid, priority)?;
+//         crate::stdlib::process::control::set_process_priority(pid, priority)?;
 
         // Update our internal info
         {
@@ -833,7 +833,7 @@ impl EnhancedProcessController {
     // Helper methods
 
     fn update_process_status(&self, pid: u32, new_status: ProcessStatus) -> ProcessResult<()> {
-        let old_status;
+        let old_status: (); // TODO: add proper type
         {
             let mut processes = self.processes.write().unwrap();
             if let Some(info) = processes.get_mut(&pid) {
@@ -1338,10 +1338,9 @@ fn count_connections_for_protocol(pid: u32, protocol: &str) -> u32 {
 #[cfg(unix)]
 fn count_threads(pid: u32) -> u32 {
     use std::fs;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-use crate::stdlib::process::enhanced_control::EnhancedProcessInfo;
+// use crate::stdlib::process::info::ProcessInfo;
+// use crate::stdlib::process::error::ProcessResult;
+// use crate::stdlib::process::enhanced_control::EnhancedProcessInfo;
     
     let task_path = format!("/proc/{}/task", pid);
     if let Ok(entries) = fs::read_dir(&task_path) {

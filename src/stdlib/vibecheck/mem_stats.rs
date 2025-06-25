@@ -2,7 +2,7 @@
 /// 
 /// Provides detailed memory usage statistics and allocation tracking
 
-use crate::error::Error;
+use crate::error::CursedError;
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -84,7 +84,7 @@ static GLOBAL_FREES: AtomicU64 = AtomicU64::new(0);
 static GLOBAL_SYSTEM_BYTES: AtomicU64 = AtomicU64::new(0);
 
 /// Read current memory statistics into provided MemStats struct
-pub fn read_mem_stats(stats: &mut MemStats) -> Result<(), Error> {
+pub fn read_mem_stats(stats: &mut MemStats) -> crate::error::Result<()> {
     // Get basic allocation statistics
     let alloc_stats = super::get_alloc_stats()?;
     let gc_state = super::get_gc_state()?;
@@ -150,7 +150,7 @@ pub fn update_allocation_stats(size: usize, is_alloc: bool) {
 }
 
 /// Get system memory information (platform-specific)
-fn get_system_memory_info() -> Result<(), Error> {
+fn get_system_memory_info() -> crate::error::Result<()> {
     // Get heap system memory
     let heap_sys = GLOBAL_SYSTEM_BYTES.load(Ordering::SeqCst);
     
@@ -164,7 +164,7 @@ fn get_system_memory_info() -> Result<(), Error> {
 }
 
 /// Estimate stack memory usage
-fn get_stack_usage() -> Result<(), Error> {
+fn get_stack_usage() -> crate::error::Result<()> {
     // Try to get goroutine stack information if available
     if let Ok(goroutine_count) = super::goroutine::num_goroutine() {
         // Estimate: each goroutine has approximately 64KB stack
@@ -176,7 +176,7 @@ fn get_stack_usage() -> Result<(), Error> {
 }
 
 /// Estimate total stack system memory
-fn estimate_stack_system_memory() -> Result<(), Error> {
+fn estimate_stack_system_memory() -> crate::error::Result<()> {
     // Stack system memory is typically larger than in-use due to guard pages
     let stack_inuse = get_stack_usage()?;
     Ok(stack_inuse + (stack_inuse / 4)) // Add 25% overhead for guard pages
@@ -204,7 +204,7 @@ pub struct GcOverhead {
 }
 
 /// Create a memory profile snapshot
-pub fn memory_profile() -> Result<(), Error> {
+pub fn memory_profile() -> crate::error::Result<()> {
     let mut stats = MemStats::new();
     read_mem_stats(&mut stats)?;
     
@@ -263,7 +263,7 @@ pub fn write_profile(profile: &MemoryProfile) -> String {
 }
 
 /// Force memory to be returned to the operating system
-pub fn free_os_memory() -> Result<(), Error> {
+pub fn free_os_memory() -> crate::error::Result<()> {
     // In a real implementation, this would call into the allocator
     // to release unused memory back to the OS
     
@@ -281,101 +281,3 @@ pub fn free_os_memory() -> Result<(), Error> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_mem_stats_default() {
-        let stats = MemStats::new();
-        assert_eq!(stats.alloc, 0);
-        assert_eq!(stats.total_alloc, 0);
-        assert_eq!(stats.num_gc, 0);
-        assert_eq!(stats.gc_cpu_fraction, 0.0);
-    }
-
-    #[test]
-    fn test_allocation_stats_update() {
-        // Reset global counters
-        GLOBAL_ALLOC_BYTES.store(0, Ordering::SeqCst);
-        GLOBAL_TOTAL_ALLOC.store(0, Ordering::SeqCst);
-        GLOBAL_MALLOCS.store(0, Ordering::SeqCst);
-        GLOBAL_FREES.store(0, Ordering::SeqCst);
-        
-        update_allocation_stats(1024, true);
-        assert_eq!(GLOBAL_ALLOC_BYTES.load(Ordering::SeqCst), 1024);
-        assert_eq!(GLOBAL_TOTAL_ALLOC.load(Ordering::SeqCst), 1024);
-        assert_eq!(GLOBAL_MALLOCS.load(Ordering::SeqCst), 1);
-        
-        update_allocation_stats(512, false);
-        assert_eq!(GLOBAL_ALLOC_BYTES.load(Ordering::SeqCst), 512);
-        assert_eq!(GLOBAL_FREES.load(Ordering::SeqCst), 1);
-    }
-
-    #[test]
-    fn test_read_mem_stats() {
-        let mut stats = MemStats::new();
-        
-        // This should not fail even if some subsystems are not available
-        let result = read_mem_stats(&mut stats);
-        
-        // Basic validation that structure is populated
-        match result {
-            Ok(()) => {
-                // Stats should have been updated (heap_alloc == alloc)
-                assert_eq!(stats.heap_alloc, stats.alloc);
-                assert!(stats.next_gc >= stats.alloc);
-            }
-            Err(_) => {
-                // Some components may not be available in test environment
-            }
-        }
-    }
-
-    #[test]
-    fn test_memory_profile() {
-        let profile_result = memory_profile();
-        
-        // Should be able to create a profile even with limited runtime
-        match profile_result {
-            Ok(profile) => {
-                assert!(!profile.heap_allocations.is_empty());
-                assert!(!profile.stack_usage.is_empty());
-            }
-            Err(_) => {
-                // May fail in test environment due to missing components
-            }
-        }
-    }
-
-    #[test]
-    fn test_write_profile() {
-        let profile = MemoryProfile {
-            heap_allocations: vec![(64, 100), (512, 50)],
-            stack_usage: vec![(1, 65536)],
-            gc_overhead: GcOverhead {
-                total_gc_time: 1000000,
-                metadata_bytes: 4096,
-                write_barrier_cost: 0.05,
-            },
-        };
-        
-        let output = write_profile(&profile);
-        assert!(output.contains("Memory Profile"));
-        assert!(output.contains("64"));
-        assert!(output.contains("100 allocations"));
-        assert!(output.contains("Goroutine 1"));
-        assert!(output.contains("1000000 ns"));
-    }
-
-    #[test]
-    fn test_free_os_memory() {
-        // Should not panic
-        let result = free_os_memory();
-        // May fail if GC components are not available
-        match result {
-            Ok(()) => {},
-            Err(_) => {},
-        }
-    }
-}

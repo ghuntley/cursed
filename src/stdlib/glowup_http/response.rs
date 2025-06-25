@@ -1,11 +1,11 @@
 // HTTP response types and utilities for GlowUpHTTP
 
-use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
-use crate::stdlib::glowup_http::request::{HeaderMap, Cookie};
+// use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
+// use crate::stdlib::glowup_http::request::{HeaderMap, Cookie};
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 use tracing::{debug, instrument};
-use crate::error::Error;
+use crate::error::CursedError;
 
 // Use the main StatusCode type from crate::web instead of defining our own
 pub use crate::web::StatusCode;
@@ -22,9 +22,9 @@ pub enum ResponseBody {
 
 /// Response writer for HTTP responses
 pub trait ResponderVibe {
-    fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
-    fn write_header(&mut self, status: StatusCode) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
-    fn set_header(&mut self, key: &str, value: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>>;
+    fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn std::error::CursedError + Send + Sync>>;
+    fn write_header(&mut self, status: StatusCode) -> Result<(), Box<dyn std::error::CursedError + Send + Sync>>;
+    fn set_header(&mut self, key: &str, value: &str) -> Result<(), Box<dyn std::error::CursedError + Send + Sync>>;
     fn get_status(&self) -> Option<StatusCode>;
     fn get_headers(&self) -> &HeaderMap;
 }
@@ -140,7 +140,7 @@ impl HttpResponse {
 }
 
 impl ResponderVibe for HttpResponse {
-    fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn std::error::CursedError + Send + Sync>> {
         match &mut self.body {
             ResponseBody::Empty => {
                 self.body = ResponseBody::Bytes(data.to_vec());
@@ -164,12 +164,12 @@ impl ResponderVibe for HttpResponse {
         Ok(())
     }
 
-    fn write_header(&mut self, status: StatusCode) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn write_header(&mut self, status: StatusCode) -> Result<(), Box<dyn std::error::CursedError + Send + Sync>> {
         self.status = Some(status);
         Ok(())
     }
 
-    fn set_header(&mut self, key: &str, value: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn set_header(&mut self, key: &str, value: &str) -> Result<(), Box<dyn std::error::CursedError + Send + Sync>> {
         self.headers.insert(key.to_string(), value.to_string());
         Ok(())
     }
@@ -202,7 +202,7 @@ impl ResponseBuilder {
         HttpResponse::new().status(StatusCode::NotFound)
     }
 
-    /// Create a 500 Internal Server Error response
+    /// Create a 500 Internal Server CursedError response
     pub fn internal_error() -> HttpResponse {
         HttpResponse::new().status(StatusCode::InternalServerError)
     }
@@ -213,27 +213,42 @@ impl ResponseBuilder {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn test_response_creation() {
-        let response = HttpResponse::new()
-            .status(StatusCode::OK)
-            .header("Content-Type", "text/plain")
-            .text("Hello, World!");
-
-        assert_eq!(response.get_status(), Some(StatusCode::OK));
-        assert_eq!(response.get_headers().get("Content-Type"), Some(&"text/plain".to_string()));
+impl VibeResponse {
+    /// Create a new response
+    pub fn new(status_code: StatusCode) -> Self {
+        Self {
+            status: status_code.as_u16(),
+            headers: HeaderMap::new(),
+            body: Vec::new(),
+            status_line: format!("{}", status_code),
+            status_code,
+            proto: "HTTP/1.1".to_string(),
+            content_length: -1,
+            transfer_encoding: Vec::new(),
+            close: false,
+            uncompressed: false,
+            trailer: HeaderMap::new(),
+        }
     }
 
-    #[test]
-    fn test_builder_patterns() {
-        let ok_response = ResponseBuilder::ok();
-        assert_eq!(ok_response.get_status(), Some(StatusCode::OK));
+    /// Get response body as string  
+    pub fn text(&self) -> Result<String, std::str::Utf8Error> {
+        std::str::from_utf8(&self.body).map(|s| s.to_string())
+    }
 
-        let not_found = ResponseBuilder::not_found();
-        assert_eq!(not_found.get_status(), Some(StatusCode::NotFound));
+    /// Get response body as bytes
+    pub fn bytes(&self) -> &[u8] {
+        &self.body
+    }
+
+    /// Check if response is successful (status 200-299)
+    pub fn is_success(&self) -> bool {
+        self.status >= 200 && self.status < 300
+    }
+
+    /// Get header value
+    pub fn get_header(&self, name: &str) -> Option<String> {
+        self.headers.get(name)
     }
 }

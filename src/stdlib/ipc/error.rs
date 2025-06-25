@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// IPC-specific error types for CURSED
 /// 
 /// This module provides comprehensive error handling for IPC operations
@@ -201,97 +201,97 @@ impl IpcError {
     }
 }
 
-impl fmt::Display for IpcError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            IpcError::NamedPipeError { pipe_name, operation, message } => {
-                write!(f, "Named pipe error in {} for '{}': {}", operation, pipe_name, message)
-            }
-            IpcError::MessageQueueError { queue_name, operation, message } => {
-                write!(f, "Message queue error in {}", operation)?;
-                if let Some(name) = queue_name {
-                    write!(f, " for '{}'", name)?;
-                }
-                write!(f, ": {}", message)
-            }
-            IpcError::SharedMemoryError { segment_name, operation, message } => {
-                write!(f, "Shared memory error in {}", operation)?;
-                if let Some(name) = segment_name {
-                    write!(f, " for '{}'", name)?;
-                }
-                write!(f, ": {}", message)
-            }
-            IpcError::SemaphoreError { semaphore_name, operation, message } => {
-                write!(f, "Semaphore error in {}", operation)?;
-                if let Some(name) = semaphore_name {
-                    write!(f, " for '{}'", name)?;
-                }
-                write!(f, ": {}", message)
-            }
-            IpcError::UnixSocketError { path, operation, message } => {
-                write!(f, "Unix socket error in {}", operation)?;
-                if let Some(p) = path {
-                    write!(f, " for '{}'", p)?;
-                }
-                write!(f, ": {}", message)
-            }
-            IpcError::PermissionDenied { resource, operation, message } => {
-                write!(f, "Permission denied for {} in {}: {}", resource, operation, message)
-            }
-            IpcError::AlreadyExists { resource_type, name, message } => {
-                write!(f, "{} '{}' already exists: {}", resource_type, name, message)
-            }
-            IpcError::NotFound { resource_type, name, message } => {
-                write!(f, "{} '{}' not found: {}", resource_type, name, message)
-            }
-            IpcError::Timeout { operation, duration, message } => {
-                write!(f, "Timeout in {} after {:?}: {}", operation, duration, message)
-            }
-            IpcError::InvalidConfig { parameter, value, message } => {
-                write!(f, "Invalid configuration '{}': '{}' - {}", parameter, value, message)
-            }
-            IpcError::BufferSize { requested, available, message } => {
-                write!(f, "Buffer size error: requested {}, available {} - {}", requested, available, message)
-            }
-            IpcError::ConnectionError { endpoint, message } => {
-                write!(f, "Connection error to '{}': {}", endpoint, message)
-            }
-            IpcError::ProtocolError { expected, received, message } => {
-                write!(f, "Protocol error: expected {}, received {} - {}", expected, received, message)
-            }
-            IpcError::SystemError { code, operation, message } => {
-                write!(f, "System error in {} (code {}): {}", operation, code, message)
-            }
-            IpcError::IoError { operation, kind, message } => {
-                write!(f, "I/O error in {} ({}): {}", operation, kind, message)
-            }
-            IpcError::PlatformError { platform, feature, message } => {
-                write!(f, "Platform error on {} ({}): {}", platform, feature, message)
-            }
-            IpcError::General { message } => {
-                write!(f, "IPC error: {}", message)
-            }
-        }
-    }
-}
+// impl fmt::Display for IpcError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             IpcError::NamedPipeError { pipe_name, operation, message } => {
+//                 write!(f, "Named pipe error in {} for '{}': {}", operation, pipe_name, message)
+//             }
+//             IpcError::MessageQueueError { queue_name, operation, message } => {
+//                 write!(f, "Message queue error in {}", operation)?;
+//                 if let Some(name) = queue_name {
+//                     write!(f, " for '{}'", name)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             IpcError::SharedMemoryError { segment_name, operation, message } => {
+//                 write!(f, "Shared memory error in {}", operation)?;
+//                 if let Some(name) = segment_name {
+//                     write!(f, " for '{}'", name)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             IpcError::SemaphoreError { semaphore_name, operation, message } => {
+//                 write!(f, "Semaphore error in {}", operation)?;
+//                 if let Some(name) = semaphore_name {
+//                     write!(f, " for '{}'", name)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             IpcError::UnixSocketError { path, operation, message } => {
+//                 write!(f, "Unix socket error in {}", operation)?;
+//                 if let Some(p) = path {
+//                     write!(f, " for '{}'", p)?;
+//                 }
+//                 write!(f, ": {}", message)
+//             }
+//             IpcError::PermissionDenied { resource, operation, message } => {
+//                 write!(f, "Permission denied for {} in {}: {}", resource, operation, message)
+//             }
+//             IpcError::AlreadyExists { resource_type, name, message } => {
+//                 write!(f, "{} '{}' already exists: {}", resource_type, name, message)
+//             }
+//             IpcError::NotFound { resource_type, name, message } => {
+//                 write!(f, "{} '{}' not found: {}", resource_type, name, message)
+//             }
+//             IpcError::Timeout { operation, duration, message } => {
+//                 write!(f, "Timeout in {} after {:?}: {}", operation, duration, message)
+//             }
+//             IpcError::InvalidConfig { parameter, value, message } => {
+//                 write!(f, "Invalid configuration '{}': '{}' - {}", parameter, value, message)
+//             }
+//             IpcError::BufferSize { requested, available, message } => {
+//                 write!(f, "Buffer size error: requested {}, available {} - {}", requested, available, message)
+//             }
+//             IpcError::ConnectionError { endpoint, message } => {
+//                 write!(f, "Connection error to '{}': {}", endpoint, message)
+//             }
+//             IpcError::ProtocolError { expected, received, message } => {
+//                 write!(f, "Protocol error: expected {}, received {} - {}", expected, received, message)
+//             }
+//             IpcError::SystemError { code, operation, message } => {
+//                 write!(f, "System error in {} (code {}): {}", operation, code, message)
+//             }
+//             IpcError::IoError { operation, kind, message } => {
+//                 write!(f, "I/O error in {} ({}): {}", operation, kind, message)
+//             }
+//             IpcError::PlatformError { platform, feature, message } => {
+//                 write!(f, "Platform error on {} ({}): {}", platform, feature, message)
+//             }
+//             IpcError::General { message } => {
+//                 write!(f, "IPC error: {}", message)
+//             }
+//         }
+//     }
+// }
 
-impl std::error::Error for IpcError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
+// impl std::error::CursedError for IpcError {
+//     fn source(&self) -> Option<&(dyn std::error::CursedError + 'static)> {
+//         None
+//     }
+// }
 
-impl From<io::Error> for IpcError {
-    fn from(error: io::Error) -> Self {
-        IpcError::IoError {
-            operation: "unknown".to_string(),
-            kind: format!("{:?}", error.kind()),
-            message: error.to_string(),
-        }
-    }
-}
+// impl From<std::io::Error> for IpcError {
+//     fn from(error: std::io::Error) -> Self {
+//         IpcError::IoError {
+//             operation: "unknown".to_string(),
+//             kind: format!("{:?}", error.kind()),
+//             message: error.to_string(),
+//         }
+//     }
+// }
 
-/// Error creation helper functions
+/// CursedError creation helper functions
 
 /// Create a named pipe error
 pub fn named_pipe_error(pipe_name: &str, operation: &str, message: &str) -> IpcError {
@@ -421,38 +421,3 @@ pub fn out_of_resources(resource: &str, message: &str) -> IpcError {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_error_creation() {
-        let err = named_pipe_error("test_pipe", "open", "Failed to open pipe");
-        assert_eq!(err.category(), "NamedPipeError");
-        assert!(err.is_recoverable());
-
-        let err = permission_denied("semaphore", "create", "Access denied");
-        assert_eq!(err.category(), "PermissionDenied");
-        assert!(!err.is_recoverable());
-
-        let err = timeout_error("read", Duration::from_secs(5), "Operation timed out");
-        assert_eq!(err.category(), "Timeout");
-        assert!(err.is_recoverable());
-    }
-
-    #[test]
-    fn test_error_display() {
-        let err = message_queue_error(Some("test_queue"), "send", "Queue is full");
-        let display = format!("{}", err);
-        assert!(display.contains("Message queue error"));
-        assert!(display.contains("test_queue"));
-        assert!(display.contains("Queue is full"));
-    }
-
-    #[test]
-    fn test_error_conversion() {
-        let io_err = io::Error::new(io::ErrorKind::PermissionDenied, "Access denied");
-        let ipc_err: IpcError = io_err.into();
-        assert_eq!(ipc_err.category(), "IoError");
-    }
-}

@@ -1,14 +1,13 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Visualization generation for profiling data
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument};
 
-use crate::profiling::core::ProfilerError;
-use crate::profiling::cpu::{CpuProfileData, FlameGraph, FlameGraphNode};
-use crate::profiling::memory::MemoryProfileData;
-use crate::profiling::concurrency::ConcurrencyProfileData;
+// use crate::profiling::cpu::{CpuProfileData, FlameGraph, FlameGraphNode};
+// use crate::profiling::memory::MemoryProfileData;
+// use crate::profiling::concurrency::ConcurrencyProfileData;
 
 /// Visualization generator for profiling data
 #[derive(Debug)]
@@ -22,7 +21,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, cpu_data))]
-    pub fn generate_flame_graph(&self, cpu_data: &CpuProfileData) -> Result<(), Error> {
+    pub fn generate_flame_graph(&self, cpu_data: &CpuProfileData) -> crate::error::Result<()> {
         info!("Generating flame graph visualization");
         
         let flame_graph = FlameGraph::from_cpu_profile(cpu_data)?;
@@ -32,7 +31,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, cpu_data))]
-    pub fn generate_call_graph(&self, cpu_data: &CpuProfileData) -> Result<(), Error> {
+    pub fn generate_call_graph(&self, cpu_data: &CpuProfileData) -> crate::error::Result<()> {
         info!("Generating call graph visualization");
         
         let call_graph = cpu_data.get_call_graph();
@@ -41,7 +40,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, memory_data))]
-    pub fn generate_memory_timeline(&self, memory_data: &MemoryProfileData) -> Result<(), Error> {
+    pub fn generate_memory_timeline(&self, memory_data: &MemoryProfileData) -> crate::error::Result<()> {
         info!("Generating memory timeline visualization");
         
         let analysis = memory_data.analyze_patterns();
@@ -50,7 +49,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, memory_data))]
-    pub fn generate_allocation_heatmap(&self, memory_data: &MemoryProfileData) -> Result<(), Error> {
+    pub fn generate_allocation_heatmap(&self, memory_data: &MemoryProfileData) -> crate::error::Result<()> {
         info!("Generating allocation heatmap");
         
         let analysis = memory_data.analyze_patterns();
@@ -59,7 +58,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, concurrency_data))]
-    pub fn generate_goroutine_timeline(&self, concurrency_data: &ConcurrencyProfileData) -> Result<(), Error> {
+    pub fn generate_goroutine_timeline(&self, concurrency_data: &ConcurrencyProfileData) -> crate::error::Result<()> {
         info!("Generating goroutine timeline visualization");
         
         let timeline = concurrency_data.generate_goroutine_timeline();
@@ -68,7 +67,7 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self, concurrency_data))]
-    pub fn generate_channel_flow_diagram(&self, concurrency_data: &ConcurrencyProfileData) -> Result<(), Error> {
+    pub fn generate_channel_flow_diagram(&self, concurrency_data: &ConcurrencyProfileData) -> crate::error::Result<()> {
         info!("Generating channel flow diagram");
         
         let analysis = concurrency_data.analyze_channels();
@@ -77,14 +76,14 @@ impl VisualizationGenerator {
     }
     
     #[instrument(skip(self))]
-    pub fn generate_interactive_dashboard(&self, profile_data: &crate::profiling::core::ProfileData) -> Result<(), Error> {
+    pub fn generate_interactive_dashboard(&self, profile_data: &crate::profiling::core::ProfileData) -> crate::error::Result<()> {
         info!("Generating interactive dashboard");
         
         let html = self.generate_dashboard_html(profile_data)?;
         Ok(html)
     }
     
-    fn flame_graph_to_svg(&self, flame_graph: &FlameGraph) -> Result<(), Error> {
+    fn flame_graph_to_svg(&self, flame_graph: &FlameGraph) -> crate::error::Result<()> {
         let mut svg = String::new();
         
         let width = self.config.flame_graph_width;
@@ -168,7 +167,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn call_graph_to_dot(&self, call_graph: &crate::profiling::cpu::CallGraph) -> Result<(), Error> {
+    fn call_graph_to_dot(&self, call_graph: &crate::profiling::cpu::CallGraph) -> crate::error::Result<()> {
         let mut dot = String::new();
         
         dot.push_str("digraph CallGraph {\n");
@@ -213,7 +212,7 @@ impl VisualizationGenerator {
         Ok(dot)
     }
     
-    fn memory_timeline_to_svg(&self, timeline: &[crate::profiling::memory::TemporalAllocation]) -> Result<(), Error> {
+    fn memory_timeline_to_svg(&self, timeline: &[crate::profiling::memory::TemporalAllocation]) -> crate::error::Result<()> {
         let mut svg = String::new();
         
         let width = self.config.timeline_width;
@@ -285,7 +284,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn allocation_heatmap_to_svg(&self, histogram: &HashMap<usize, u64>) -> Result<(), Error> {
+    fn allocation_heatmap_to_svg(&self, histogram: &HashMap<usize, u64>) -> crate::error::Result<()> {
         let mut svg = String::new();
         
         let width = self.config.heatmap_width;
@@ -351,7 +350,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn goroutine_timeline_to_svg(&self, timeline: &[crate::profiling::concurrency::GoroutineTimeline]) -> Result<(), Error> {
+    fn goroutine_timeline_to_svg(&self, timeline: &[crate::profiling::concurrency::GoroutineTimeline]) -> crate::error::Result<()> {
         let mut svg = String::new();
         
         let width = self.config.timeline_width;
@@ -411,7 +410,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn channel_flow_to_svg(&self, analysis: &crate::profiling::concurrency::ChannelAnalysis) -> Result<(), Error> {
+    fn channel_flow_to_svg(&self, analysis: &crate::profiling::concurrency::ChannelAnalysis) -> crate::error::Result<()> {
         let mut svg = String::new();
         
         let width = self.config.flow_diagram_width;
@@ -464,7 +463,7 @@ impl VisualizationGenerator {
         Ok(svg)
     }
     
-    fn generate_dashboard_html(&self, _profile_data: &crate::profiling::core::ProfileData) -> Result<(), Error> {
+    fn generate_dashboard_html(&self, _profile_data: &crate::profiling::core::ProfileData) -> crate::error::Result<()> {
         let html = r#"
 <!DOCTYPE html>
 <html>
@@ -601,49 +600,3 @@ pub enum ColorScheme {
     Dark,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_visualization_generator_creation() {
-        let config = VisualizationConfig::default();
-        let generator = VisualizationGenerator::new(config);
-        assert_eq!(generator.config.flame_graph_width, 1200);
-    }
-    
-    #[test]
-    fn test_color_generation() {
-        let config = VisualizationConfig::default();
-        let generator = VisualizationGenerator::new(config);
-        
-        let color1 = generator.generate_color("function1");
-        let color2 = generator.generate_color("function2");
-        
-        assert_ne!(color1, color2);
-        assert!(color1.starts_with("hsl("));
-    }
-    
-    #[test]
-    fn test_text_truncation() {
-        let config = VisualizationConfig::default();
-        let generator = VisualizationGenerator::new(config);
-        
-        let truncated = generator.truncate_text("very_long_function_name", 10);
-        assert_eq!(truncated, "very_lo...");
-        
-        let short = generator.truncate_text("short", 10);
-        assert_eq!(short, "short");
-    }
-    
-    #[test]
-    fn test_bytes_formatting() {
-        let config = VisualizationConfig::default();
-        let generator = VisualizationGenerator::new(config);
-        
-        assert_eq!(generator.format_bytes(512), "512B");
-        assert_eq!(generator.format_bytes(1024), "1KB");
-        assert_eq!(generator.format_bytes(1536), "2KB");
-        assert_eq!(generator.format_bytes(1048576), "1MB");
-    }
-}

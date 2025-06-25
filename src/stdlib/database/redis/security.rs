@@ -8,8 +8,7 @@ use std::time::{Duration, Instant};
 use tracing::{debug, error, info, instrument, warn};
 use serde::{Deserialize, Serialize};
 
-use super::DatabaseError;
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Redis security manager
 #[derive(Debug)]
@@ -161,7 +160,7 @@ impl Default for RateLimitConfig {
 impl RedisSecurityManager {
     /// Create new security manager
     #[instrument]
-    pub fn new(config: SecurityConfiguration) -> Result<(), Error> {
+    pub fn new(config: SecurityConfiguration) -> crate::error::Result<()> {
         info!("Creating Redis security manager");
         
         // Validate configuration
@@ -177,7 +176,7 @@ impl RedisSecurityManager {
     
     /// Authenticate user
     #[instrument(skip(self, credentials))]
-    pub async fn authenticate(&self, credentials: &AuthCredentials) -> Result<(), Error> {
+    pub async fn authenticate(&self, credentials: &AuthCredentials) -> crate::error::Result<()> {
         debug!(username = %credentials.username, ip = %credentials.ip_address, "Authenticating user");
         
         // Check if IP is blocked
@@ -248,7 +247,7 @@ impl RedisSecurityManager {
     
     /// Validate session
     #[instrument(skip(self))]
-    pub async fn validate_session(&self, session_id: &str) -> Result<(), Error> {
+    pub async fn validate_session(&self, session_id: &str) -> crate::error::Result<()> {
         debug!(session_id = session_id, "Validating session");
         
         let mut sessions = self.active_sessions.lock().unwrap();
@@ -273,7 +272,7 @@ impl RedisSecurityManager {
     
     /// Revoke session
     #[instrument(skip(self))]
-    pub async fn revoke_session(&self, session_id: &str) -> Result<(), Error> {
+    pub async fn revoke_session(&self, session_id: &str) -> crate::error::Result<()> {
         debug!(session_id = session_id, "Revoking session");
         
         let mut sessions = self.active_sessions.lock().unwrap();
@@ -288,7 +287,7 @@ impl RedisSecurityManager {
     
     /// Block IP address
     #[instrument(skip(self))]
-    pub async fn block_ip(&self, ip_address: &str) -> Result<(), Error> {
+    pub async fn block_ip(&self, ip_address: &str) -> crate::error::Result<()> {
         info!(ip = ip_address, "Blocking IP address");
         
         let mut blocked_ips = self.blocked_ips.lock().unwrap();
@@ -299,7 +298,7 @@ impl RedisSecurityManager {
     
     /// Unblock IP address
     #[instrument(skip(self))]
-    pub async fn unblock_ip(&self, ip_address: &str) -> Result<(), Error> {
+    pub async fn unblock_ip(&self, ip_address: &str) -> crate::error::Result<()> {
         info!(ip = ip_address, "Unblocking IP address");
         
         let mut blocked_ips = self.blocked_ips.lock().unwrap();
@@ -323,7 +322,7 @@ impl RedisSecurityManager {
     }
     
     /// Verify credentials (placeholder implementation)
-    async fn verify_credentials(&self, credentials: &AuthCredentials) -> Result<(), Error> {
+    async fn verify_credentials(&self, credentials: &AuthCredentials) -> crate::error::Result<()> {
         // Placeholder - in real implementation, verify against user database
         tokio::time::sleep(Duration::from_millis(10)).await;
         
@@ -332,7 +331,7 @@ impl RedisSecurityManager {
     }
     
     /// Create new session
-    async fn create_session(&self, credentials: &AuthCredentials) -> Result<(), Error> {
+    async fn create_session(&self, credentials: &AuthCredentials) -> crate::error::Result<()> {
         let session_id = format!("sess_{}", rand::random::<u64>());
         
         let session = SecuritySession {
@@ -420,7 +419,7 @@ pub struct SecurityStats {
 
 impl SecurityConfiguration {
     /// Validate security configuration
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         if self.max_failed_attempts == 0 {
             return Err(DatabaseError::Configuration("Max failed attempts must be greater than 0".to_string()));
         }

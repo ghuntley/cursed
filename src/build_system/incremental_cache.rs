@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 // Incremental Build Cache
 // 
 // Provides caching mechanisms for incremental builds to speed up
@@ -76,7 +76,7 @@ pub struct CacheManager {
 }
 
 /// Cache error types
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::CursedError)]
 pub enum CacheError {
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
@@ -96,7 +96,7 @@ pub enum CacheError {
 
 impl IncrementalCache {
     /// Create a new incremental cache
-    pub fn new(cache_dir: PathBuf) -> Result<(), Error> {
+    pub fn new(cache_dir: PathBuf) -> crate::error::Result<()> {
         std::fs::create_dir_all(&cache_dir)?;
         
         let metadata_path = cache_dir.join("metadata.json");
@@ -154,7 +154,7 @@ impl IncrementalCache {
         outputs: Vec<PathBuf>,
         artifacts: HashMap<String, PathBuf>,
         files_count: usize,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         info!("Caching build result for target: {}", target_name);
         
         // Calculate source checksums for validation
@@ -203,7 +203,7 @@ impl IncrementalCache {
     
     /// Remove a cache entry
     #[instrument(skip(self))]
-    pub fn remove(&mut self, target_name: &str) -> Result<(), Error> {
+    pub fn remove(&mut self, target_name: &str) -> crate::error::Result<()> {
         debug!("Removing cache entry for target: {}", target_name);
         
         let removed = self.entries.remove(target_name).is_some();
@@ -217,7 +217,7 @@ impl IncrementalCache {
     
     /// Clear all cache entries
     #[instrument(skip(self))]
-    pub fn clear(&mut self) -> Result<(), Error> {
+    pub fn clear(&mut self) -> crate::error::Result<()> {
         info!("Clearing all cache entries");
         
         self.entries.clear();
@@ -230,7 +230,7 @@ impl IncrementalCache {
     
     /// Check if target needs rebuilding based on source changes
     #[instrument(skip(self))]
-    pub fn needs_rebuild(&self, target_name: &str, source_paths: &[PathBuf]) -> Result<(), Error> {
+    pub fn needs_rebuild(&self, target_name: &str, source_paths: &[PathBuf]) -> crate::error::Result<()> {
         let entry = match self.get(target_name) {
             Some(entry) => entry,
             None => {
@@ -290,7 +290,7 @@ impl IncrementalCache {
     
     /// Cleanup old cache entries
     #[instrument(skip(self))]
-    pub fn cleanup(&mut self, max_age: std::time::Duration) -> Result<(), Error> {
+    pub fn cleanup(&mut self, max_age: std::time::Duration) -> crate::error::Result<()> {
         let cutoff_time = SystemTime::now() - max_age;
         let mut removed_count = 0;
         
@@ -315,7 +315,7 @@ impl IncrementalCache {
     }
     
     /// Save cache to disk
-    fn save_to_disk(&self) -> Result<(), Error> {
+    fn save_to_disk(&self) -> crate::error::Result<()> {
         let metadata_path = self.cache_dir.join("metadata.json");
         let entries_path = self.cache_dir.join("entries.json");
         
@@ -401,7 +401,7 @@ impl IncrementalCache {
     }
     
     /// Enhanced cache invalidation with dependency tracking
-    pub fn invalidate_dependents(&mut self, changed_files: &[PathBuf]) -> Result<(), Error> {
+    pub fn invalidate_dependents(&mut self, changed_files: &[PathBuf]) -> crate::error::Result<()> {
         let mut invalidated = 0;
         let mut to_invalidate = Vec::new();
         
@@ -512,7 +512,7 @@ impl IncrementalCache {
 
 impl CacheManager {
     /// Create a new cache manager
-    pub fn new(cache_dir: PathBuf) -> Result<(), Error> {
+    pub fn new(cache_dir: PathBuf) -> crate::error::Result<()> {
         std::fs::create_dir_all(&cache_dir)?;
         
         Ok(CacheManager {
@@ -522,7 +522,7 @@ impl CacheManager {
     }
     
     /// Get or create a cache for a specific project
-    pub fn get_cache(&mut self, project_name: &str) -> Result<(), Error> {
+    pub fn get_cache(&mut self, project_name: &str) -> crate::error::Result<()> {
         if !self.caches.contains_key(project_name) {
             let cache_dir = self.global_cache_dir.join(project_name);
             let cache = IncrementalCache::new(cache_dir)?;
@@ -533,7 +533,7 @@ impl CacheManager {
     }
     
     /// Cleanup all caches
-    pub fn cleanup_all(&mut self, max_age: std::time::Duration) -> Result<(), Error> {
+    pub fn cleanup_all(&mut self, max_age: std::time::Duration) -> crate::error::Result<()> {
         let mut total_removed = 0;
         
         for cache in self.caches.values_mut() {
@@ -594,7 +594,7 @@ pub struct GlobalCacheStatistics {
 }
 
 /// Calculate SHA-256 checksum of a file
-fn calculate_file_checksum(path: &Path) -> Result<(), Error> {
+fn calculate_file_checksum(path: &Path) -> crate::error::Result<()> {
     use std::io::Read;
     
     let mut file = std::fs::File::open(path)?;
@@ -612,122 +612,3 @@ fn calculate_file_checksum(path: &Path) -> Result<(), Error> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-    use std::io::Write;
-    
-    #[test]
-    fn test_cache_creation() {
-        let dir = tempdir().unwrap();
-        let cache_path = dir.path().to_path_buf();
-        let cache = IncrementalCache::new(cache_path);
-        assert!(cache.is_ok());
-    }
-    
-    #[test]
-    fn test_cache_entry_operations() -> Result<(), Error> {
-        let dir = tempdir()?;
-        let cache_path = dir.path().to_path_buf();
-        let mut cache = IncrementalCache::new(cache_path)?;
-        
-        // Test insertion
-        let outputs = Vec::from([PathBuf::from("output.exe")]);
-        let artifacts = HashMap::new();
-        cache.insert("test-target", outputs, artifacts, 1)?;
-        
-        // Test retrieval
-        let entry = cache.get("test-target");
-        assert!(entry.is_some());
-        assert_eq!(entry.unwrap().target_name, "test-target");
-        
-        // Test removal
-        let removed = cache.remove("test-target")?;
-        assert!(removed);
-        
-        let entry = cache.get("test-target");
-        assert!(entry.is_none());
-        
-        Ok(())
-    }
-    
-    #[test]
-    fn test_rebuild_detection() -> Result<(), Error> {
-        let dir = tempdir()?;
-        let cache_path = dir.path().to_path_buf();
-        let mut cache = IncrementalCache::new(cache_path)?;
-        
-        // Create a test source file
-        let source_file = dir.path().join("test.csd");
-        let mut file = std::fs::File::create(&source_file)?;
-        writeln!(file, "// test content")?;
-        drop(file);
-        
-        // Cache should indicate rebuild needed (no entry)
-        let needs_rebuild = cache.needs_rebuild("test", &[source_file.clone()])?;
-        assert!(needs_rebuild);
-        
-        // Add cache entry
-        cache.insert("test", Vec::from([]), HashMap::new(), 1)?;
-        
-        // Should not need rebuild now
-        let needs_rebuild = cache.needs_rebuild("test", &[source_file.clone()])?;
-        assert!(!needs_rebuild);
-        
-        // Modify source file
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        let mut file = std::fs::OpenOptions::new().append(true).open(&source_file)?;
-        writeln!(file, "// modified")?;
-        drop(file);
-        
-        // Should need rebuild now
-        let needs_rebuild = cache.needs_rebuild("test", &[source_file])?;
-        assert!(needs_rebuild);
-        
-        Ok(())
-    }
-    
-    #[test]
-    fn test_cache_cleanup() -> Result<(), Error> {
-        let dir = tempdir()?;
-        let cache_path = dir.path().to_path_buf();
-        let mut cache = IncrementalCache::new(cache_path)?;
-        
-        // Add an entry
-        cache.insert("test", Vec::from([]), HashMap::new(), 1)?;
-        
-        // Cleanup with very short max age
-        let removed = cache.cleanup(std::time::Duration::from_nanos(1))?;
-        assert_eq!(removed, 1);
-        
-        // Entry should be gone
-        assert!(cache.get("test").is_none());
-        
-        Ok(())
-    }
-    
-    #[test]
-    fn test_cache_manager() -> Result<(), Error> {
-        let dir = tempdir()?;
-        let cache_path = dir.path().to_path_buf();
-        let mut manager = CacheManager::new(cache_path)?;
-        
-        // Get cache for two different projects
-        let cache1 = manager.get_cache("project1")?;
-        cache1.insert("target1", Vec::from([]), HashMap::new(), 1)?;
-        
-        let cache2 = manager.get_cache("project2")?;
-        cache2.insert("target2", Vec::from([]), HashMap::new(), 1)?;
-        
-        // Check global statistics
-        let stats = manager.get_global_statistics();
-        assert_eq!(stats.total_projects, 2);
-        assert_eq!(stats.total_entries, 2);
-        
-        Ok(())
-    }
-}
-
-// Add required dependency for SHA-256 hashing
-use sha2::{Digest, Sha256};

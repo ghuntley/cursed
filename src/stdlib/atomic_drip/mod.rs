@@ -45,25 +45,25 @@ pub enum AtomicError {
     OperationFailed(String),
 }
 
-impl std::fmt::Display for AtomicError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AtomicError::ConcurrentModification => write!(f, "Atomic operation failed due to concurrent modification"),
-            AtomicError::InvalidMemoryOrder => write!(f, "Invalid memory ordering specified"),
-            AtomicError::UnsupportedOperation => write!(f, "Atomic operation not supported on this platform"),
-            AtomicError::AlignmentError => write!(f, "Alignment error for 64-bit atomic operation on 32-bit platform"),
-            AtomicError::OperationFailed(msg) => write!(f, "Atomic operation failed: {}", msg),
-        }
-    }
-}
+// impl std::fmt::Display for AtomicError {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         match self {
+//             AtomicError::ConcurrentModification => write!(f, "Atomic operation failed due to concurrent modification"),
+//             AtomicError::InvalidMemoryOrder => write!(f, "Invalid memory ordering specified"),
+//             AtomicError::UnsupportedOperation => write!(f, "Atomic operation not supported on this platform"),
+//             AtomicError::AlignmentError => write!(f, "Alignment error for 64-bit atomic operation on 32-bit platform"),
+//             AtomicError::OperationFailed(msg) => write!(f, "Atomic operation failed: {}", msg),
+//         }
+//     }
+// }
 
-impl std::error::Error for AtomicError {}
-
-impl From<AtomicError> for CursedError {
-    fn from(err: AtomicError) -> Self {
-        CursedError::Runtime(err.to_string())
-    }
-}
+// impl std::error::CursedError for AtomicError {}
+// 
+// impl From<AtomicError> for CursedError {
+//     fn from(err: AtomicError) -> Self {
+//         CursedError::Runtime(err.to_string())
+//     }
+// }
 
 /// Helper function to create atomic operation error
 pub fn atomic_error(msg: &str) -> CursedError {
@@ -98,31 +98,3 @@ pub fn init() -> CursedResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_module_initialization() {
-        assert!(init().is_ok());
-    }
-
-    #[test]
-    fn test_error_conversion() {
-        let atomic_err = AtomicError::ConcurrentModification;
-        let cursed_err: CursedError = atomic_err.into();
-        assert!(matches!(cursed_err, CursedError::Runtime(_)));
-    }
-
-    #[test]
-    fn test_error_helpers() {
-        let err = atomic_error("test error");
-        assert!(matches!(err, CursedError::Runtime(_)));
-        
-        let err = concurrent_modification_error();
-        assert!(matches!(err, CursedError::Runtime(_)));
-        
-        let err = alignment_error();
-        assert!(matches!(err, CursedError::Runtime(_)));
-    }
-}

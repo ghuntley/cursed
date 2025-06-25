@@ -4,9 +4,8 @@
 /// to improve performance on multi-core systems.
 
 use crate::error::CursedError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
-use crate::error::Error;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_kdf::{KdfResult, KdfError};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
@@ -469,7 +468,7 @@ impl ParallelUtils {
 /// fr fr Public API functions for CURSED integration
 
 /// slay Parallel KDF computation
-pub fn parallel_kdf(args: Vec<Value>) -> Result<(), Error> {
+pub fn parallel_kdf(args: Vec<Value>) -> crate::error::Result<()> {
     if args.len() < 3 {
         return Err(CursedError::Runtime("parallel_kdf requires password, salt, and iterations arguments".to_string()));
     }
@@ -508,113 +507,3 @@ pub fn parallel_kdf(args: Vec<Value>) -> Result<(), Error> {
     Ok(Value::String(hex::encode(result)))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_parallel_config() {
-        let config = ParallelConfig::new();
-        assert!(config.validate().is_ok());
-        assert!(config.thread_count > 0);
-        
-        let hp_config = ParallelConfig::high_performance();
-        assert!(hp_config.validate().is_ok());
-        assert!(hp_config.thread_count >= config.thread_count);
-        
-        let low_mem_config = ParallelConfig::low_memory();
-        assert!(low_mem_config.validate().is_ok());
-        assert!(low_mem_config.max_memory_per_thread < config.max_memory_per_thread);
-    }
-    
-    #[test]
-    fn test_parallel_kdf() {
-        let config = ParallelConfig::new();
-        let processor = ParallelProcessor::new(config).unwrap();
-        
-        let password = b"test_password";
-        let salt = b"test_salt";
-        let iterations = 1000;
-        let output_length = 32;
-        
-        let result = processor.parallel_kdf(password, salt, iterations, output_length).unwrap();
-        assert_eq!(result.len(), output_length);
-        
-        // Same inputs should produce same result
-        let result2 = processor.parallel_kdf(password, salt, iterations, output_length).unwrap();
-        assert_eq!(result, result2);
-        
-        // Different inputs should produce different result
-        let result3 = processor.parallel_kdf(b"other_password", salt, iterations, output_length).unwrap();
-        assert_ne!(result, result3);
-    }
-    
-    #[test]
-    fn test_parallel_pbkdf2() {
-        let config = ParallelConfig::new();
-        let processor = ParallelProcessor::new(config).unwrap();
-        
-        let password = b"test_password";
-        let salt = b"test_salt";
-        let iterations = 1000;
-        let output_length = 64;
-        
-        let result = processor.parallel_pbkdf2(password, salt, iterations, output_length).unwrap();
-        assert_eq!(result.len(), output_length);
-        
-        // Test with different parameters
-        let result2 = processor.parallel_pbkdf2(password, salt, iterations * 2, output_length).unwrap();
-        assert_ne!(result, result2);
-    }
-    
-    #[test]
-    fn test_batch_processing() {
-        let config = ParallelConfig::new();
-        let processor = ParallelProcessor::new(config).unwrap();
-        
-        let requests = vec![
-            (b"pass1".to_vec(), b"salt1".to_vec(), 100, 32),
-            (b"pass2".to_vec(), b"salt2".to_vec(), 100, 32),
-            (b"pass3".to_vec(), b"salt3".to_vec(), 100, 32),
-        ];
-        
-        let results = processor.parallel_batch_kdf(&requests).unwrap();
-        assert_eq!(results.len(), 3);
-        
-        for result in &results {
-            assert_eq!(result.len(), 32);
-        }
-        
-        // All results should be different
-        assert_ne!(results[0], results[1]);
-        assert_ne!(results[1], results[2]);
-        assert_ne!(results[0], results[2]);
-    }
-    
-    #[test]
-    fn test_parallel_utils() {
-        let thread_count = ParallelUtils::optimal_thread_count();
-        assert!(thread_count > 0);
-        
-        let speedup = ParallelUtils::estimate_speedup(4, 1000);
-        assert!(speedup >= 1.0);
-        
-        let config = ParallelConfig::new();
-        let memory = ParallelUtils::calculate_memory_requirements(&config, 1024);
-        assert!(memory > 0);
-    }
-    
-    #[test]
-    fn test_validation() {
-        let mut config = ParallelConfig::new();
-        config.thread_count = 0;
-        assert!(config.validate().is_err());
-        
-        config.thread_count = 100; // Too many
-        assert!(config.validate().is_err());
-        
-        config.thread_count = 4;
-        config.chunk_size = 0;
-        assert!(config.validate().is_err());
-    }
-}

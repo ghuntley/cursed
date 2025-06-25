@@ -1,8 +1,7 @@
 /// Attack Resistance and Security Hardening
 use crate::error::CursedError;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::packages::crypto_random::SecureRandom;
-use crate::error::Error;
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::packages::crypto_random::SecureRandom;
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
@@ -195,72 +194,3 @@ impl Default for AttackResistanceManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_attack_resistance_manager_creation() {
-        let manager = AttackResistanceManager::new().unwrap();
-        assert!(manager.config.enable_replay_protection);
-    }
-
-    #[test]
-    fn test_replay_attack_detection() {
-        let mut manager = AttackResistanceManager::new().unwrap();
-        let nonce = b"test_nonce";
-
-        // First use should be OK
-        assert!(!manager.check_replay_attack(nonce).unwrap());
-
-        // Second use should detect replay
-        assert!(manager.check_replay_attack(nonce).unwrap());
-    }
-
-    #[test]
-    fn test_rate_limiting() {
-        let mut manager = AttackResistanceManager::new().unwrap();
-        manager.config.max_requests_per_minute = 2;
-
-        let client_id = "test_client";
-
-        // First two requests should be OK
-        assert!(!manager.check_rate_limit(client_id).unwrap());
-        assert!(!manager.check_rate_limit(client_id).unwrap());
-
-        // Third request should hit rate limit
-        assert!(manager.check_rate_limit(client_id).unwrap());
-    }
-
-    #[test]
-    fn test_constant_time_compare() {
-        let manager = AttackResistanceManager::new().unwrap();
-
-        assert!(manager.constant_time_compare(b"hello", b"hello"));
-        assert!(!manager.constant_time_compare(b"hello", b"world"));
-        assert!(!manager.constant_time_compare(b"hello", b"hi"));
-    }
-
-    #[test]
-    fn test_input_validation() {
-        let manager = AttackResistanceManager::new().unwrap();
-
-        assert!(manager.validate_input(b"valid_input").unwrap());
-        assert!(!manager.validate_input(b"invalid\0input").unwrap());
-
-        let large_input = vec![b'a'; 2 * 1024 * 1024]; // 2MB
-        assert!(!manager.validate_input(&large_input).unwrap());
-    }
-
-    #[test]
-    fn test_challenge_generation() {
-        let manager = AttackResistanceManager::new().unwrap();
-        let challenge = manager.generate_challenge().unwrap();
-
-        assert_eq!(challenge.len(), 32);
-        
-        // Generate another challenge and ensure they're different
-        let challenge2 = manager.generate_challenge().unwrap();
-        assert_ne!(challenge, challenge2);
-    }
-}

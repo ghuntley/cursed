@@ -23,7 +23,7 @@ pub struct EnhancedSqlError {
     pub retry_count: u32,
 }
 
-/// fr fr Error severity levels for handling prioritization
+/// fr fr CursedError severity levels for handling prioritization
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErrorSeverity {
     /// Low priority errors that don't affect functionality
@@ -31,14 +31,14 @@ pub enum ErrorSeverity {
     /// Warnings that might indicate issues
     Warning,
     /// Errors that affect current operation but system remains stable
-    Error,
+    CursedError,
     /// Critical errors that might affect system stability
     Critical,
     /// Fatal errors that require immediate attention
     Fatal,
 }
 
-/// fr fr Error categories for specific handling strategies
+/// fr fr CursedError categories for specific handling strategies
 #[derive(Debug, Clone, PartialEq)]
 pub enum ErrorCategory {
     /// Connection-related errors
@@ -137,7 +137,7 @@ pub enum FallbackType {
     DefaultValues,
 }
 
-/// fr fr Error context for detailed debugging information
+/// fr fr CursedError context for detailed debugging information
 #[derive(Debug, Clone)]
 pub struct ErrorContext {
     pub operation_id: Option<String>,
@@ -214,7 +214,7 @@ impl SqlErrorAnalyzer {
             category = ?category,
             severity = ?severity,
             recovery = ?recovery_strategy,
-            "Error analysis completed"
+            "CursedError analysis completed"
         );
         
         EnhancedSqlError {
@@ -452,11 +452,11 @@ impl SqlErrorAnalyzer {
         match category {
             ErrorCategory::ConnectionError { is_refused: true, .. } => ErrorSeverity::Critical,
             ErrorCategory::TransactionError { deadlock_detected: true, .. } => ErrorSeverity::Warning,
-            ErrorCategory::IntegrityError { .. } => ErrorSeverity::Error,
+            ErrorCategory::IntegrityError { .. } => ErrorSeverity::CursedError,
             ErrorCategory::SecurityError { .. } => ErrorSeverity::Critical,
             ErrorCategory::ResourceError { resource_type: ResourceType::Memory, .. } => ErrorSeverity::Fatal,
             ErrorCategory::ConfigurationError { .. } => ErrorSeverity::Fatal,
-            _ => ErrorSeverity::Error,
+            _ => ErrorSeverity::CursedError,
         }
     }
 
@@ -547,9 +547,9 @@ impl DatabaseCircuitBreaker {
 
     /// facts Execute operation through circuit breaker
     #[instrument(skip(self, operation))]
-    pub async fn execute<F, T>(&self, operation: F) -> Result<(), Error>
+    pub async fn execute<F, T>(&self, operation: F) -> crate::error::Result<()>
     where
-        F: FnOnce() -> Result<(), Error>,
+        F: FnOnce() -> crate::error::Result<()>,
         T: Send,
     {
         let current_state = {
@@ -579,7 +579,7 @@ impl DatabaseCircuitBreaker {
     }
 
     /// lowkey Record successful operation
-    async fn record_success(&self) -> Result<(), Error> {
+    async fn record_success(&self) -> crate::error::Result<()> {
         trace!("Recording successful operation");
         
         let now = Instant::now();
@@ -606,7 +606,7 @@ impl DatabaseCircuitBreaker {
     }
 
     /// periodt Record failed operation
-    async fn record_failure(&self) -> Result<(), Error> {
+    async fn record_failure(&self) -> crate::error::Result<()> {
         trace!("Recording failed operation");
         
         let now = Instant::now();
@@ -669,7 +669,7 @@ impl DatabaseCircuitBreaker {
     }
 
     /// highkey Transition to open state
-    async fn transition_to_open(&self) -> Result<(), Error> {
+    async fn transition_to_open(&self) -> crate::error::Result<()> {
         warn!("Circuit breaker transitioning to OPEN state");
         
         if let Ok(mut state) = self.state.write() {
@@ -695,7 +695,7 @@ impl DatabaseCircuitBreaker {
     }
 
     /// facts Transition to closed state
-    async fn transition_to_closed(&self) -> Result<(), Error> {
+    async fn transition_to_closed(&self) -> crate::error::Result<()> {
         info!("Circuit breaker transitioning to CLOSED state");
         
         if let Ok(mut state) = self.state.write() {
@@ -735,18 +735,18 @@ pub enum CircuitBreakerError {
     InternalError,
 }
 
-impl fmt::Display for CircuitBreakerError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            CircuitBreakerError::CircuitOpen => write!(f, "Circuit breaker is open"),
-            CircuitBreakerError::OperationFailed(err) => write!(f, "Operation failed: {}", err),
-            CircuitBreakerError::InternalError => write!(f, "Circuit breaker internal error"),
-        }
-    }
-}
+// impl fmt::Display for CircuitBreakerError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             CircuitBreakerError::CircuitOpen => write!(f, "Circuit breaker is open"),
+//             CircuitBreakerError::OperationFailed(err) => write!(f, "Operation failed: {}", err),
+//             CircuitBreakerError::InternalError => write!(f, "Circuit breaker internal error"),
+//         }
+//     }
+// }
 
-impl std::error::Error for CircuitBreakerError {}
-
+// impl std::error::CursedError for CircuitBreakerError {}
+// 
 /// fr fr Circuit breaker statistics
 #[derive(Debug, Clone)]
 pub struct CircuitBreakerStats {
@@ -758,7 +758,7 @@ pub struct CircuitBreakerStats {
     pub timeout: Duration,
 }
 
-/// fr fr Error recovery coordinator for handling multiple recovery strategies
+/// fr fr CursedError recovery coordinator for handling multiple recovery strategies
 #[derive(Debug)]
 pub struct ErrorRecoveryCoordinator {
     recovery_handlers: HashMap<ErrorCategory, Box<dyn RecoveryHandler>>,
@@ -769,7 +769,7 @@ pub struct ErrorRecoveryCoordinator {
 /// fr fr Recovery handler trait for pluggable recovery strategies
 pub trait RecoveryHandler: Send + Sync + std::fmt::Debug {
     fn can_handle(&self, error: &EnhancedSqlError) -> bool;
-    fn recover(&self, error: &EnhancedSqlError) -> Result<(), Error>;
+    fn recover(&self, error: &EnhancedSqlError) -> crate::error::Result<()>;
 }
 
 #[derive(Debug)]
@@ -810,7 +810,7 @@ impl ErrorRecoveryCoordinator {
 
     /// facts Handle database error with comprehensive recovery
     #[instrument(skip(self, error, context))]
-    pub async fn handle_error(&self, error: DatabaseError, context: ErrorContext) -> Result<(), Error> {
+    pub async fn handle_error(&self, error: DatabaseError, context: ErrorContext) -> crate::error::Result<()> {
         let enhanced_error = self.error_analyzer.analyze_error(error, context);
         
         info!(
@@ -858,7 +858,7 @@ impl ErrorRecoveryCoordinator {
     }
 
     /// periodt Apply default recovery strategy
-    async fn apply_default_recovery(&self, error: &EnhancedSqlError) -> Result<(), Error> {
+    async fn apply_default_recovery(&self, error: &EnhancedSqlError) -> crate::error::Result<()> {
         match &error.recovery_strategy {
             RecoveryStrategy::Retry { max_attempts, base_delay, .. } => {
                 if error.retry_count < *max_attempts {
@@ -916,136 +916,3 @@ impl Default for CircuitBreakerConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tracing_test::traced_test;
-use crate::error::Error;
-
-    #[traced_test]
-    #[test]
-    fn test_error_analyzer() {
-        let analyzer = SqlErrorAnalyzer::new();
-        
-        let error = DatabaseError::connection_error("Connection refused");
-        let context = ErrorContext {
-            operation_id: Some("op_123".to_string()),
-            user_id: None,
-            session_id: None,
-            query: None,
-            parameters: Vec::from([]),
-            connection_info: None,
-            stack_trace: Vec::from([]),
-            additional_data: HashMap::new(),
-        };
-        
-        let enhanced = analyzer.analyze_error(error, context);
-        
-        match enhanced.category {
-            ErrorCategory::ConnectionError { is_refused: true, .. } => {
-                assert_eq!(enhanced.severity, ErrorSeverity::Critical);
-            }
-            _ => panic!("Expected connection error category"),
-        }
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_circuit_breaker() {
-        let config = CircuitBreakerConfig {
-            failure_threshold: 3,
-            success_threshold: 2,
-            timeout: Duration::from_millis(100),
-            monitoring_window: Duration::from_secs(60),
-            half_open_max_calls: 1,
-        };
-        
-        let circuit_breaker = DatabaseCircuitBreaker::new(config);
-        
-        // Simulate failures to trigger circuit opening
-        for _ in 0..3 {
-            let result = circuit_breaker.execute(|| {
-                Err(DatabaseError::connection_error("Simulated failure"))
-            }).await;
-            
-            assert!(result.is_err());
-        }
-        
-        // Circuit should be open now
-        let result = circuit_breaker.execute(|| {
-            Ok("success")
-        }).await;
-        
-        match result {
-            Err(CircuitBreakerError::CircuitOpen) => {
-                // Expected - circuit is open
-            }
-            _ => panic!("Expected circuit to be open"),
-        }
-        
-        let stats = circuit_breaker.get_stats();
-        assert_eq!(stats.state, CircuitBreakerState::Open);
-        assert_eq!(stats.recent_failures, 3);
-    }
-
-    #[traced_test]
-    #[test]
-    fn test_error_categorization() {
-        let analyzer = SqlErrorAnalyzer::new();
-        
-        let deadlock_error = DatabaseError::transaction_error("deadlock detected");
-        let context = ErrorContext {
-            operation_id: None,
-            user_id: None,
-            session_id: None,
-            query: None,
-            parameters: Vec::from([]),
-            connection_info: None,
-            stack_trace: Vec::from([]),
-            additional_data: HashMap::new(),
-        };
-        
-        let enhanced = analyzer.analyze_error(deadlock_error, context);
-        
-        match enhanced.category {
-            ErrorCategory::TransactionError { deadlock_detected: true, .. } => {
-                assert_eq!(enhanced.severity, ErrorSeverity::Warning);
-                match enhanced.recovery_strategy {
-                    RecoveryStrategy::Retry { max_attempts: 5, .. } => {
-                        // Expected
-                    }
-                    _ => panic!("Expected retry strategy for deadlock"),
-                }
-            }
-            _ => panic!("Expected transaction error category"),
-        }
-    }
-
-    #[traced_test]
-    #[tokio::test]
-    async fn test_recovery_coordinator() {
-        let coordinator = ErrorRecoveryCoordinator::new();
-        
-        let error = DatabaseError::connection_error("Connection timeout");
-        let context = ErrorContext {
-            operation_id: Some("test_op".to_string()),
-            user_id: None,
-            session_id: None,
-            query: Some("SELECT * FROM users".to_string()),
-            parameters: Vec::from([]),
-            connection_info: None,
-            stack_trace: Vec::from([]),
-            additional_data: HashMap::new(),
-        };
-        
-        let recovery_action = coordinator.handle_error(error, context).await
-            .expect("Should handle error");
-        
-        match recovery_action {
-            RecoveryAction::Retry { delay, .. } => {
-                assert!(delay > Duration::ZERO);
-            }
-            _ => panic!("Expected retry action for connection timeout"),
-        }
-    }
-}

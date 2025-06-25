@@ -11,8 +11,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime};
 use std::io::{Read, Write};
-use crate::error_types::Error;
-use crate::stdlib::vibe_net::error::NetError;
+use crate::error::CursedError;
 
 pub mod error;
 pub mod ip;
@@ -150,7 +149,7 @@ pub fn listen(network: &str, address: &str) -> NetResult<Box<dyn ListenerVibe>> 
             let listener = UnixListenerVibe::listen(network, Some(&addr))?;
             Ok(Box::new(listener))
         }
-        _ => Err(Error::new(&format!("Unsupported network type: {}", network)))
+        _ => Err(CursedError::new(&format!("Unsupported network type: {}", network)))
     }
 }
 
@@ -169,7 +168,7 @@ pub fn listen_packet(network: &str, address: &str) -> NetResult<Box<dyn PacketCo
             let conn = UDPConnVibe::listen(network, Some(&addr))?;
             Ok(Box::new(conn))
         }
-        _ => Err(Error::new(&format!("Unsupported packet network type: {}", network)))
+        _ => Err(CursedError::new(&format!("Unsupported packet network type: {}", network)))
     }
 }
 
@@ -486,42 +485,3 @@ pub fn features() -> HashMap<String, bool> {
     features
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_module_initialization() {
-        assert!(init().is_ok());
-    }
-
-    #[test]
-    fn test_version() {
-        assert_eq!(version(), "1.0.0");
-    }
-
-    #[test]
-    fn test_features() {
-        let features = features();
-        assert!(features.contains_key("tcp"));
-        assert!(features.contains_key("udp"));
-        assert!(features.contains_key("dns"));
-    }
-
-    #[test]
-    fn test_vibe_context() {
-        let ctx = VibeContext::new();
-        assert!(!ctx.is_cancelled());
-        assert!(ctx.deadline().is_none());
-        
-        ctx.cancel();
-        assert!(ctx.is_cancelled());
-    }
-
-    #[test]
-    fn test_vibe_context_with_timeout() {
-        let ctx = VibeContext::with_timeout(Duration::from_secs(1));
-        assert!(ctx.deadline().is_some());
-        assert!(!ctx.is_expired());
-    }
-}

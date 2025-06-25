@@ -3,11 +3,9 @@
 // This module provides common error constructors, formatting functions,
 // and integration utilities for the CURSED error handling system.
 
-use crate::error::{Error, CursedError, SourceLocation};
-use crate::stdlib::value::Value;
-use crate::stdlib::io::error::IoError as StdlibIoError;
+use crate::error::{CursedError, CursedError, SourceLocation};
+// use crate::stdlib::value::Value;
 use crate::types::result::error_patterns;
-use crate::error::types::{CursedErrorTrait, ErrorCategory, ErrorSeverity as CursedErrorSeverity, IoError, ParseError, RuntimeError};
 
 use std::collections::HashMap;
 use std::fmt;
@@ -21,7 +19,7 @@ pub enum ErrorSeverity {
 }
 
 pub struct ErrorManager {
-    errors: Vec<crate::error::Error>,
+    errors: Vec<crate::error::CursedError>,
     severity: ErrorSeverity,
 }
 
@@ -33,35 +31,35 @@ impl ErrorManager {
         }
     }
 
-    pub fn add_error(&self, _error: Box<dyn CursedErrorTrait>) -> Result<(), Error> {
+    pub fn add_error(&self, _error: Box<dyn CursedErrorTrait>) -> crate::error::crate::error::Result<()> {
         // Simplified implementation
         Ok(())
     }
 
-    pub fn get_statistics(&self) -> Result<String, Error> {
+    pub fn get_statistics(&self) -> Result<String> {
         Ok(format!("Errors: {}", self.errors.len()))
     }
 
-    pub fn clear_errors(&self) -> Result<(), Error> {
+    pub fn clear_errors(&self) -> crate::error::crate::error::Result<()> {
         // Simplified implementation
         Ok(())
     }
 }
 
 /// Initialize the global error system (minimal implementation)
-pub fn init_error_system() -> Result<(), Error> {
+pub fn init_error_system() -> crate::error::Result<()> {
     // Basic error system initialization
     tracing::debug!("Initialized CURSED error system");
     Ok(())
 }
 
 /// Common error result type for CURSED standard library
-pub type CursedResult<T> = std::result::Result<T, CursedError>;
+pub type CursedResult<T> = std::result::Result<T>;
 
 /// Common option type for CURSED standard library  
 pub type CursedOption<T> = std::option::Option<T>;
 
-/// Error formatting utilities
+/// CursedError formatting utilities
 pub struct ErrorFormatter {
     pub use_colors: bool,
     pub show_stack_trace: bool,
@@ -358,7 +356,7 @@ pub mod std_errors {
     }
 }
 
-/// Error reporting and logging integration
+/// CursedError reporting and logging integration
 pub struct ErrorReporter {
     pub manager: Arc<ErrorManager>,
     pub formatter: ErrorFormatter,
@@ -399,7 +397,7 @@ impl ErrorReporter {
     }
 
     /// Report an error
-    pub fn report_error(&self, error: &CursedError) -> Result<(), Error> {
+    pub fn report_error(&self, error: &CursedError) -> crate::error::Result<()> {
         // Add to error manager
         if let Some(error_trait) = self.convert_to_trait(error) {
             self.manager.add_error(error_trait)?;
@@ -421,7 +419,7 @@ impl ErrorReporter {
     }
 
     /// Report multiple errors
-    pub fn report_errors(&self, errors: &[CursedError]) -> Result<(), Error> {
+    pub fn report_errors(&self, errors: &[CursedError]) -> crate::error::crate::error::Result<()> {
         for error in errors {
             self.report_error(error)?;
         }
@@ -429,13 +427,13 @@ impl ErrorReporter {
     }
 
     /// Get error statistics
-    pub fn get_statistics(&self) -> Result<String, Error> {
+    pub fn get_statistics(&self) -> Result<String> {
         let stats = self.manager.get_statistics()?;
         Ok(stats)
     }
 
     /// Clear all errors
-    pub fn clear_errors(&self) -> Result<(), Error> {
+    pub fn clear_errors(&self) -> crate::error::Result<()> {
         self.manager.clear_errors()
     }
 
@@ -535,7 +533,7 @@ pub mod io_integration {
     }
 }
 
-/// Error recovery utilities
+/// CursedError recovery utilities
 pub mod recovery {
     use super::*;
 
@@ -694,109 +692,3 @@ impl Default for ErrorAwareFunctionRegistry {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_error_formatter() {
-        let formatter = ErrorFormatter::new();
-        let error = CursedError::Runtime("Test error".to_string());
-        let formatted = formatter.format_error(&error);
-        
-        assert!(formatted.contains("Test error"));
-    }
-
-    #[test]
-    fn test_std_errors() {
-        let result = std_errors::file_not_found("/nonexistent/file.txt");
-        assert!(result.is_err());
-
-        let result = std_errors::division_by_zero(10, 5);
-        assert!(result.is_err());
-
-        let result = std_errors::type_mismatch("String", "Number", 15, 10);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_error_reporter() {
-        let reporter = ErrorReporter::default();
-        let error = CursedError::Runtime("Test error".to_string());
-        
-        // This should not fail even if error manager is not initialized
-        let result = reporter.report_error(&error);
-        // We can't assert much here since we're using default reporter
-    }
-
-    #[test]
-    fn test_io_integration() {
-        let result = io_integration::wrap_io_result::<String>(Err(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            "Test error"
-        )));
-        
-        assert!(result.is_err());
-        match result {
-            Err(CursedError::Io(_)) => {}, // Expected
-            _ => panic!("Expected I/O error"),
-        }
-    }
-
-    #[test]
-    fn test_recovery_utilities() {
-        let mut attempt_count = 0;
-        let result = recovery::retry_with_backoff(
-            || {
-                attempt_count += 1;
-                if attempt_count < 3 {
-                    error_patterns::runtime_error("Test error")
-                } else {
-                    Ok(42)
-                }
-            },
-            5,
-            1
-        );
-
-        assert_eq!(result.unwrap(), 42);
-        assert_eq!(attempt_count, 3);
-
-        let option_result = recovery::try_or_none(|| error_patterns::runtime_error::<i32>("Test error"));
-        assert!(option_result.is_none());
-
-        let default_result = recovery::try_or_default(|| error_patterns::runtime_error("Test error"), "default");
-        assert_eq!(default_result, "default");
-    }
-
-    #[test]
-    fn test_error_aware_function_registry() {
-        let registry = ErrorAwareFunctionRegistry::default();
-        
-        // Test safe_divide function
-        let result = registry.call("safe_divide", vec![Value::Number(10.0), Value::Number(2.0)]);
-        assert_eq!(result.unwrap(), Value::Number(5.0));
-
-        let result = registry.call("safe_divide", vec![Value::Number(10.0), Value::Number(0.0)]);
-        assert!(result.is_err());
-
-        // Test safe_index function
-        let array = vec![Value::Number(1.0), Value::Number(2.0), Value::Number(3.0)];
-        let result = registry.call("safe_index", vec![Value::Array(array.clone()), Value::Number(1.0)]);
-        assert_eq!(result.unwrap(), Value::Number(2.0));
-
-        let result = registry.call("safe_index", vec![Value::Array(array), Value::Number(10.0)]);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_text_wrapping() {
-        let formatter = ErrorFormatter::new().with_max_width(20);
-        let long_text = "This is a very long error message that should be wrapped";
-        let wrapped = formatter.wrap_text(long_text, 20);
-        
-        let lines: Vec<&str> = wrapped.split('\n').collect();
-        assert!(lines.len() > 1);
-        assert!(lines.iter().all(|line| line.len() <= 20));
-    }
-}

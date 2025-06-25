@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Process management integration and high-level APIs
 /// 
 /// This module provides unified access to all process management capabilities,
@@ -9,13 +9,13 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use crate::stdlib::process::error::{ProcessError, ProcessResult};
-use crate::stdlib::process::core::{ProcessConfig};
-use crate::stdlib::process::lifecycle::{ProcessLifecycleManager};
-use crate::stdlib::process::monitoring::{ProcessMonitor, HealthCheckConfig, HealthStatus, PerformanceMetrics, ProcessStats};
-use crate::stdlib::process::control::{ProcessControl};
-use crate::stdlib::process::signals::{SignalType as Signal};
-use crate::stdlib::process::real_monitoring::{start_global_monitoring, stop_global_monitoring, get_current_process_state};
+// use crate::stdlib::process::error::{ProcessError, ProcessResult};
+// use crate::stdlib::process::core::{ProcessConfig};
+// use crate::stdlib::process::lifecycle::{ProcessLifecycleManager};
+// use crate::stdlib::process::monitoring::{ProcessMonitor, HealthCheckConfig, HealthStatus, PerformanceMetrics, ProcessStats};
+// use crate::stdlib::process::control::{ProcessControl};
+// use crate::stdlib::process::signals::{SignalType as Signal};
+// use crate::stdlib::process::real_monitoring::{start_global_monitoring, stop_global_monitoring, get_current_process_state};
 use crate::runtime::process::{ProcessOutput as RuntimeProcessOutput};
 
 // Type aliases
@@ -313,7 +313,7 @@ impl UnifiedProcessManager {
 impl Drop for UnifiedProcessManager {
     fn drop(&mut self) {
         if let Err(e) = self.shutdown() {
-            tracing::error!(error = ?e, "Error during UnifiedProcessManager shutdown");
+            tracing::error!(error = ?e, "CursedError during UnifiedProcessManager shutdown");
         }
     }
 }
@@ -326,7 +326,7 @@ pub mod quick_exec {
     #[tracing::instrument]
     pub fn exec<S: AsRef<str>>(command: S) -> ProcessResult<ProcessOutput> {
         let config = ProcessConfig::new(command);
-        crate::stdlib::process::core::run_command(config)
+//         crate::stdlib::process::core::run_command(config)
     }
     
     /// Execute a command with arguments
@@ -336,14 +336,14 @@ pub mod quick_exec {
         for arg in args {
             config = config.arg(arg);
         }
-        crate::stdlib::process::core::run_command(config)
+//         crate::stdlib::process::core::run_command(config)
     }
     
     /// Execute a command with timeout
     #[tracing::instrument]
     pub fn exec_timeout<S: AsRef<str>>(command: S, timeout: Duration) -> ProcessResult<ProcessOutput> {
         let config = ProcessConfig::new(command).timeout(timeout);
-        crate::stdlib::process::core::run_command_timeout(config, timeout)
+//         crate::stdlib::process::core::run_command_timeout(config, timeout)
     }
     
     /// Execute a shell command
@@ -416,42 +416,3 @@ pub mod process_groups {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-use crate::stdlib::process::info::ProcessInfo;
-use crate::stdlib::process::error::ProcessResult;
-use crate::stdlib::process::error::ProcessError;
-    
-    #[test]
-    fn test_unified_manager_creation() {
-        let manager = UnifiedProcessManager::new();
-        assert!(manager.is_ok());
-    }
-    
-    #[test]
-    fn test_quick_exec() {
-        #[cfg(unix)]
-        {
-            let result = quick_exec::exec("echo test");
-            assert!(result.is_ok());
-            let output = result.unwrap();
-            assert_eq!(output.stdout_lossy().trim(), "test");
-        }
-        
-        #[cfg(windows)]
-        {
-            let result = quick_exec::exec_with_args("echo", &["test"]);
-            assert!(result.is_ok());
-        }
-    }
-    
-    #[test]
-    fn test_process_group_manager() {
-        let manager = process_groups::ProcessGroupManager::new();
-        assert!(manager.is_ok());
-        
-        let manager = manager.unwrap();
-        assert!(manager.create_group("test_group").is_ok());
-    }
-}

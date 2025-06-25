@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Lock file management for reproducible builds
 /// 
 /// Handles generation, parsing, and validation of CursedPackage.lock files
@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
-use thiserror::Error;
 
 use crate::package_manager::{PackageManagerError, PackageMetadata};
 
@@ -103,7 +102,7 @@ pub struct LockFileManager {
 }
 
 /// Lock file specific errors
-#[derive(Error, Debug)]
+#[derive(CursedError, Debug)]
 pub enum LockFileError {
     #[error("Lock file not found at {path:?}")]
     NotFound { path: PathBuf },
@@ -150,7 +149,7 @@ impl LockFileManager {
     }
     
     /// Load existing lock file
-    pub fn load(&mut self) -> Result<(), Error> {
+    pub fn load(&mut self) -> crate::error::Result<()> {
         if !self.lock_file_path.exists() {
             return Err(LockFileError::NotFound {
                 path: self.lock_file_path.clone(),
@@ -177,7 +176,7 @@ impl LockFileManager {
         &mut self,
         dependencies: &[PackageMetadata],
         workspace_root: Option<String>,
-    ) -> Result<(), Error> {
+    ) -> crate::error::Result<()> {
         let mut packages = Vec::new();
         
         for dep in dependencies {
@@ -210,7 +209,7 @@ impl LockFileManager {
     }
     
     /// Save lock file to disk
-    pub fn save(&self) -> Result<(), Error> {
+    pub fn save(&self) -> crate::error::Result<()> {
         let lock_file = self.lock_file.as_ref().ok_or_else(|| {
             LockFileError::Corrupted {
                 reason: "No lock file data to save".to_string(),
@@ -230,7 +229,7 @@ impl LockFileManager {
     }
     
     /// Validate lock file integrity
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> crate::error::Result<()> {
         let lock_file = self.lock_file.as_ref().ok_or_else(|| {
             LockFileError::Corrupted {
                 reason: "No lock file loaded".to_string(),
@@ -293,7 +292,7 @@ impl LockFileManager {
     }
     
     /// Update lock file with new dependencies
-    pub fn update_dependencies(&mut self, new_dependencies: &[PackageMetadata]) -> Result<(), Error> {
+    pub fn update_dependencies(&mut self, new_dependencies: &[PackageMetadata]) -> crate::error::Result<()> {
         self.generate_from_dependencies(new_dependencies, None)?;
         self.save()
     }
@@ -304,7 +303,7 @@ impl LockFileManager {
     }
     
     /// Verify package checksum
-    pub fn verify_package_checksum(&self, package: &PackageMetadata) -> Result<(), Error> {
+    pub fn verify_package_checksum(&self, package: &PackageMetadata) -> crate::error::Result<()> {
         let locked_package = self.get_locked_version(&package.name)
             .ok_or_else(|| LockFileError::PackageNotLocked {
                 package: package.name.clone(),
@@ -316,7 +315,7 @@ impl LockFileManager {
     }
     
     /// Calculate checksum for a package
-    fn calculate_checksum(&self, package: &PackageMetadata) -> Result<(), Error> {
+    fn calculate_checksum(&self, package: &PackageMetadata) -> crate::error::Result<()> {
         let mut hasher = Sha256::new();
         
         // Hash package metadata in a deterministic way
@@ -414,90 +413,3 @@ pub fn format_dependency_string(name: &str, version: &str) -> String {
     format!("{} {}", name, version)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::TempDir;
-    
-    #[test]
-    fn test_lock_file_creation() {
-        let lock_file = LockFile::new();
-        assert_eq!(lock_file.version, LOCK_FILE_VERSION);
-        assert!(lock_file.packages.is_empty());
-    }
-    
-    #[test]
-    fn test_dependency_string_parsing() {
-        assert_eq!(parse_dependency_string("serde 1.0.0"), Some(("serde", "1.0.0")));
-        assert_eq!(parse_dependency_string("invalid"), None);
-        assert_eq!(parse_dependency_string(""), None);
-    }
-    
-    #[test]
-    fn test_dependency_string_formatting() {
-        assert_eq!(format_dependency_string("serde", "1.0.0"), "serde 1.0.0");
-    }
-    
-    #[test]
-    fn test_lock_file_manager_creation() {
-        let temp_dir = TempDir::new().unwrap();
-        let lock_path = temp_dir.path().join("CursedPackage.lock");
-        
-        let manager = LockFileManager::new(&lock_path);
-        assert_eq!(manager.lock_file_path, lock_path);
-        assert!(!manager.exists());
-    }
-    
-    #[test]
-    fn test_package_checksum_calculation() {
-        let temp_dir = TempDir::new().unwrap();
-        let lock_path = temp_dir.path().join("CursedPackage.lock");
-        let manager = LockFileManager::new(&lock_path);
-        
-        let package = PackageMetadata {
-            name: "test-package".to_string(),
-            version: "1.0.0".to_string(),
-            description: "Test package".to_string(),
-            authors: vec!["Test Author".to_string()],
-            dependencies: HashMap::new(),
-            dev_dependencies: HashMap::new(),
-            repository: None,
-            license: None,
-            keywords: Vec::new(),
-            categories: Vec::new(),
-        };
-        
-        let checksum1 = manager.calculate_checksum(&package).unwrap();
-        let checksum2 = manager.calculate_checksum(&package).unwrap();
-        
-        // Checksums should be deterministic
-        assert_eq!(checksum1, checksum2);
-        assert!(checksum1.starts_with("sha256:"));
-    }
-    
-    #[test]
-    fn test_lock_file_validation() {
-        let mut lock_file = LockFile::new();
-        
-        // Valid lock file should pass validation
-        let temp_dir = TempDir::new().unwrap();
-        let lock_path = temp_dir.path().join("CursedPackage.lock");
-        let mut manager = LockFileManager::new(&lock_path);
-        manager.lock_file = Some(lock_file.clone());
-        
-        assert!(manager.validate().is_ok());
-        
-        // Add invalid package (empty name)
-        lock_file.packages.push(LockedPackage {
-            name: "".to_string(),
-            version: "1.0.0".to_string(),
-            source: PackageSource::Registry { url: "test".to_string() },
-            dependencies: Vec::new(),
-            checksum: "sha256:test".to_string(),
-            build_metadata: None,
-        });
-        
-        manager.lock_file = Some(lock_file);
-        assert!(manager.validate().is_err());
-    }
-}

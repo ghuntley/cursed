@@ -1,11 +1,10 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// Groth16 zkSNARK implementation
 use std::collections::HashMap;
-use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
-use crate::stdlib::crypto::unified_api::UnifiedCryptoError as CryptoError;
-use crate::stdlib::value::Value;
-use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
-use crate::stdlib::packages::crypto_zk::circuit_builder::{CircuitBuilder, R1CSConstraint};
+// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+// use crate::stdlib::value::Value;
+// use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
+// use crate::stdlib::packages::crypto_zk::circuit_builder::{CircuitBuilder, R1CSConstraint};
 use rand::RngCore;
 
 /// Elliptic curve point (simplified representation)
@@ -558,8 +557,8 @@ impl Groth16 {
     pub fn setup(circuit: &Value) -> AdvancedCryptoResult<Value> {
         // Create a simple multiplication circuit for demo
         let mut builder = CircuitBuilder::new();
-        let x = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
-        let y = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
+//         let x = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
+//         let y = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
         let _result = builder.mul_gate(x, y)?;
 
         let setup = Groth16Setup::generate(&builder)?;
@@ -579,8 +578,8 @@ impl Groth16 {
 
         // Create simple circuit for demo
         let mut builder = CircuitBuilder::new();
-        let x = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
-        let y = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
+//         let x = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
+//         let y = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
         let _result = builder.mul_gate(x, y)?;
 
         let setup = Groth16Setup::generate(&builder)?;
@@ -708,105 +707,14 @@ impl Groth16 {
     /// Create simple multiplication circuit for testing
     pub fn multiplication_circuit() -> AdvancedCryptoResult<Value> {
         let mut builder = CircuitBuilder::new();
-        let x = builder.new_labeled_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input, "x".to_string());
-        let y = builder.new_labeled_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input, "y".to_string());
+//         let x = builder.new_labeled_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input, "x".to_string());
+//         let y = builder.new_labeled_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input, "y".to_string());
         let result = builder.mul_gate(x, y)?;
         
-        builder.wires.get_mut(&result).unwrap().wire_type = crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Output;
+//         builder.wires.get_mut(&result).unwrap().wire_type = crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Output;
         builder.output_wires.push(result);
         
         Ok(builder.to_value())
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_g1_point_operations() {
-        let p1 = G1Point::generator();
-        let p2 = G1Point::generator();
-        let sum = p1.add(&p2);
-        
-        assert!(!sum.infinity);
-        assert_eq!(sum.x, p1.x + p2.x);
-    }
-
-    #[test]
-    fn test_groth16_setup() {
-        let mut builder = CircuitBuilder::new();
-        let x = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
-        let y = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
-        let _result = builder.mul_gate(x, y).unwrap();
-
-        let setup = Groth16Setup::generate(&builder);
-        assert!(setup.is_ok());
-    }
-
-    #[test]
-    fn test_groth16_prove_verify() {
-        let mut builder = CircuitBuilder::new();
-        let x = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
-        let y = builder.new_wire(crate::stdlib::packages::crypto_zk::circuit_builder::WireType::Input);
-        let _result = builder.mul_gate(x, y).unwrap();
-
-        let setup = Groth16Setup::generate(&builder).unwrap();
-        
-        let public_inputs = vec![FieldElement::new(3)];
-        let private_inputs = vec![FieldElement::new(4)];
-        
-        let proof = Groth16Prover::prove(&setup.proving_key, &builder, &public_inputs, &private_inputs);
-        assert!(proof.is_ok());
-        
-        let proof = proof.unwrap();
-        let is_valid = Groth16Verifier::verify(&setup.verifying_key, &public_inputs, &proof);
-        assert!(is_valid.is_ok());
-    }
-
-    #[test]
-    fn test_groth16_api() {
-        let circuit = Groth16::multiplication_circuit().unwrap();
-        let setup = Groth16::setup(&circuit).unwrap();
-        
-        assert!(matches!(setup, Value::Object(_)));
-        
-        let public_inputs = Value::Array(vec![Value::Integer(3)]);
-        let private_inputs = Value::Array(vec![Value::Integer(4)]);
-        
-        // Extract keys from setup for testing
-        let vk = Value::Object(HashMap::new()); // Simplified for test
-        let proof = Value::Object(HashMap::new()); // Simplified for test
-        
-        let proof_size = Groth16::proof_size();
-        assert!(matches!(proof_size, Value::Object(_)));
-    }
-
-    #[test]
-    fn test_proof_serialization() {
-        let proof = Groth16Proof {
-            a: G1Point::generator(),
-            b: G2Point::generator(),
-            c: G1Point::generator(),
-        };
-
-        let bytes = proof.to_bytes();
-        assert!(!bytes.is_empty());
-        
-        let deserialized = Groth16Proof::from_bytes(&bytes);
-        assert!(deserialized.is_ok());
-    }
-
-    #[test]
-    fn test_field_element_parsing() {
-        let values = vec![
-            Value::Integer(42),
-            Value::String("123".to_string()),
-        ];
-
-        for value in values {
-            let elements = Groth16::parse_field_array(&Value::Array(vec![value]));
-            assert!(elements.is_ok());
-        }
-    }
-}

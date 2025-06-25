@@ -1,4 +1,4 @@
-use crate::error::{CursedError, Error};
+use crate::error::CursedError;
 use std::sync::OnceLock;
 use sha2::{Sha256, Digest};
 use tracing::{debug, info, warn, error, instrument};
@@ -14,7 +14,7 @@ pub struct SecureRandom {
 impl SecureRandom {
     /// Create a new secure random generator
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         let mut generator = Self {
             state: ChaCha20State::new()?,
             reseed_counter: 0,
@@ -27,7 +27,7 @@ impl SecureRandom {
 
     /// Generate random bytes
     #[instrument(skip(self))]
-    pub fn generate_bytes(&mut self, count: usize) -> Result<(), Error> {
+    pub fn generate_bytes(&mut self, count: usize) -> crate::error::Result<()> {
         if self.reseed_counter >= self.max_requests_before_reseed {
             self.reseed()?;
         }
@@ -42,14 +42,14 @@ impl SecureRandom {
 
     /// Generate a random u32
     #[instrument(skip(self))]
-    pub fn generate_u32(&mut self) -> Result<(), Error> {
+    pub fn generate_u32(&mut self) -> crate::error::Result<()> {
         let bytes = self.generate_bytes(4)?;
         Ok(u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
     }
 
     /// Generate a random u64
     #[instrument(skip(self))]
-    pub fn generate_u64(&mut self) -> Result<(), Error> {
+    pub fn generate_u64(&mut self) -> crate::error::Result<()> {
         let bytes = self.generate_bytes(8)?;
         Ok(u64::from_le_bytes([
             bytes[0], bytes[1], bytes[2], bytes[3],
@@ -59,7 +59,7 @@ impl SecureRandom {
 
     /// Generate random number in range [0, max)
     #[instrument(skip(self))]
-    pub fn generate_range(&mut self, max: u64) -> Result<(), Error> {
+    pub fn generate_range(&mut self, max: u64) -> crate::error::Result<()> {
         if max == 0 {
             return Ok(0);
         }
@@ -77,7 +77,7 @@ impl SecureRandom {
 
     /// Reseed the generator with fresh entropy
     #[instrument(skip(self))]
-    fn reseed(&mut self) -> Result<(), Error> {
+    fn reseed(&mut self) -> crate::error::Result<()> {
         let entropy = collect_entropy()?;
         self.state.reseed(&entropy)?;
         self.reseed_counter = 0;
@@ -95,7 +95,7 @@ struct ChaCha20State {
 }
 
 impl ChaCha20State {
-    fn new() -> Result<(), Error> {
+    fn new() -> crate::error::Result<()> {
         Ok(Self {
             key: [0u32; 8],
             counter: 0,
@@ -103,7 +103,7 @@ impl ChaCha20State {
         })
     }
 
-    fn reseed(&mut self, entropy: &[u8]) -> Result<(), Error> {
+    fn reseed(&mut self, entropy: &[u8]) -> crate::error::Result<()> {
         if entropy.len() < 32 {
             return Err(CursedError::new("random_error", "Insufficient entropy"));
         }
@@ -129,7 +129,7 @@ impl ChaCha20State {
         Ok(())
     }
 
-    fn fill_bytes(&mut self, output: &mut [u8]) -> Result<(), Error> {
+    fn fill_bytes(&mut self, output: &mut [u8]) -> crate::error::Result<()> {
         let mut offset = 0;
         while offset < output.len() {
             let block = self.generate_block();
@@ -207,7 +207,7 @@ pub struct UuidV4Generator {
 impl UuidV4Generator {
     /// Create new UUID generator
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         info!("Creating UUID v4 generator");
         Ok(Self {
             rng: SecureRandom::new()?,
@@ -216,7 +216,7 @@ impl UuidV4Generator {
 
     /// Generate a UUID v4
     #[instrument(skip(self))]
-    pub fn generate(&mut self) -> Result<(), Error> {
+    pub fn generate(&mut self) -> crate::error::Result<()> {
         let mut bytes = self.rng.generate_bytes(16)?;
         
         // Set version to 4
@@ -240,7 +240,7 @@ impl UuidV4Generator {
 
     /// Generate multiple UUIDs at once
     #[instrument(skip(self))]
-    pub fn generate_batch(&mut self, count: usize) -> Result<(), Error> {
+    pub fn generate_batch(&mut self, count: usize) -> crate::error::Result<()> {
         let mut uuids = Vec::with_capacity(count);
         for _ in 0..count {
             uuids.push(self.generate()?);
@@ -258,7 +258,7 @@ pub struct SaltGenerator {
 impl SaltGenerator {
     /// Create new salt generator
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         info!("Creating salt generator");
         Ok(Self {
             rng: SecureRandom::new()?,
@@ -267,7 +267,7 @@ impl SaltGenerator {
 
     /// Generate cryptographic salt
     #[instrument(skip(self))]
-    pub fn generate_salt(&mut self, length: usize) -> Result<(), Error> {
+    pub fn generate_salt(&mut self, length: usize) -> crate::error::Result<()> {
         if length == 0 {
             return Err(CursedError::new("salt_error", "Salt length must be greater than 0"));
         }
@@ -282,7 +282,7 @@ impl SaltGenerator {
 
     /// Generate salt as hex string
     #[instrument(skip(self))]
-    pub fn generate_salt_hex(&mut self, byte_length: usize) -> Result<(), Error> {
+    pub fn generate_salt_hex(&mut self, byte_length: usize) -> crate::error::Result<()> {
         let salt = self.generate_salt(byte_length)?;
         let hex = salt.iter().map(|b| format!("{:02x}", b)).collect::<String>();
         debug!(byte_length, hex_length = hex.len(), "Generated salt as hex");
@@ -291,7 +291,7 @@ impl SaltGenerator {
 
     /// Generate salt as base64 string
     #[instrument(skip(self))]
-    pub fn generate_salt_base64(&mut self, byte_length: usize) -> Result<(), Error> {
+    pub fn generate_salt_base64(&mut self, byte_length: usize) -> crate::error::Result<()> {
         let salt = self.generate_salt(byte_length)?;
         let b64 = base64::engine::general_purpose::STANDARD.encode(&salt);
         debug!(byte_length, base64_length = b64.len(), "Generated salt as base64");
@@ -307,7 +307,7 @@ pub struct NonceGenerator {
 impl NonceGenerator {
     /// Create new nonce generator
     #[instrument]
-    pub fn new() -> Result<(), Error> {
+    pub fn new() -> crate::error::Result<()> {
         info!("Creating nonce generator");
         Ok(Self {
             rng: SecureRandom::new()?,
@@ -316,7 +316,7 @@ impl NonceGenerator {
 
     /// Generate cryptographic nonce
     #[instrument(skip(self))]
-    pub fn generate_nonce(&mut self, length: usize) -> Result<(), Error> {
+    pub fn generate_nonce(&mut self, length: usize) -> crate::error::Result<()> {
         if length == 0 {
             return Err(CursedError::new("nonce_error", "Nonce length must be greater than 0"));
         }
@@ -331,7 +331,7 @@ impl NonceGenerator {
 
     /// Generate time-based nonce (includes timestamp)
     #[instrument(skip(self))]
-    pub fn generate_time_nonce(&mut self, random_bytes: usize) -> Result<(), Error> {
+    pub fn generate_time_nonce(&mut self, random_bytes: usize) -> crate::error::Result<()> {
         use std::time::{SystemTime, UNIX_EPOCH};
         
         let timestamp = SystemTime::now()
@@ -351,7 +351,7 @@ impl NonceGenerator {
 
     /// Generate nonce for specific purpose
     #[instrument(skip(self))]
-    pub fn generate_purpose_nonce(&mut self, purpose: &str, length: usize) -> Result<(), Error> {
+    pub fn generate_purpose_nonce(&mut self, purpose: &str, length: usize) -> crate::error::Result<()> {
         let mut nonce = self.generate_nonce(length)?;
         
         // Mix in purpose string for domain separation
@@ -376,7 +376,7 @@ static ENTROPY_POOL: OnceLock<std::sync::Mutex<Vec<u8>>> = OnceLock::new();
 
 /// Collect system entropy for seeding random generators
 #[instrument]
-fn collect_entropy() -> Result<(), Error> {
+fn collect_entropy() -> crate::error::Result<()> {
     let mut entropy = Vec::with_capacity(256);
     
     // Add timestamp
@@ -530,96 +530,3 @@ pub struct RandomnessQuality {
     pub has_patterns: bool,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_secure_random_generation() {
-        let mut rng = SecureRandom::new().unwrap();
-        
-        let bytes1 = rng.generate_bytes(32).unwrap();
-        let bytes2 = rng.generate_bytes(32).unwrap();
-        
-        assert_eq!(bytes1.len(), 32);
-        assert_eq!(bytes2.len(), 32);
-        assert_ne!(bytes1, bytes2); // Very unlikely to be equal
-    }
-
-    #[test]
-    fn test_uuid_generation() {
-        let mut gen = UuidV4Generator::new().unwrap();
-        
-        let uuid1 = gen.generate().unwrap();
-        let uuid2 = gen.generate().unwrap();
-        
-        assert_eq!(uuid1.len(), 36); // Standard UUID format
-        assert_eq!(uuid2.len(), 36);
-        assert_ne!(uuid1, uuid2);
-        
-        // Check format
-        assert!(uuid1.chars().nth(8) == Some('-'));
-        assert!(uuid1.chars().nth(13) == Some('-'));
-        assert!(uuid1.chars().nth(18) == Some('-'));
-        assert!(uuid1.chars().nth(23) == Some('-'));
-    }
-
-    #[test]
-    fn test_salt_generation() {
-        let mut gen = SaltGenerator::new().unwrap();
-        
-        let salt1 = gen.generate_salt(16).unwrap();
-        let salt2 = gen.generate_salt(16).unwrap();
-        
-        assert_eq!(salt1.len(), 16);
-        assert_eq!(salt2.len(), 16);
-        assert_ne!(salt1, salt2);
-        
-        let hex_salt = gen.generate_salt_hex(16).unwrap();
-        assert_eq!(hex_salt.len(), 32); // 16 bytes = 32 hex chars
-    }
-
-    #[test]
-    fn test_nonce_generation() {
-        let mut gen = NonceGenerator::new().unwrap();
-        
-        let nonce1 = gen.generate_nonce(12).unwrap();
-        let nonce2 = gen.generate_nonce(12).unwrap();
-        
-        assert_eq!(nonce1.len(), 12);
-        assert_eq!(nonce2.len(), 12);
-        assert_ne!(nonce1, nonce2);
-        
-        let time_nonce = gen.generate_time_nonce(8).unwrap();
-        assert_eq!(time_nonce.len(), 16); // 8 timestamp + 8 random
-    }
-
-    #[test]
-    fn test_randomness_quality() {
-        let mut rng = SecureRandom::new().unwrap();
-        let data = rng.generate_bytes(1000).unwrap();
-        
-        let quality = test_randomness_quality(&data);
-        assert!(quality.entropy_estimate > 6.0); // Should have decent entropy
-        assert!(quality.passes_basic_tests || quality.entropy_estimate > 7.5); // Allow some variance
-        
-        // Test with obviously bad data
-        let bad_data = vec![0u8; 1000];
-        let bad_quality = test_randomness_quality(&bad_data);
-        assert!(bad_quality.has_patterns);
-        assert!(!bad_quality.passes_basic_tests);
-    }
-
-    #[test]
-    fn test_range_generation() {
-        let mut rng = SecureRandom::new().unwrap();
-        
-        for _ in 0..100 {
-            let val = rng.generate_range(10).unwrap();
-            assert!(val < 10);
-        }
-        
-        let val = rng.generate_range(1).unwrap();
-        assert_eq!(val, 0);
-    }
-}

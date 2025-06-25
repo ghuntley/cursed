@@ -2,7 +2,7 @@
 // 
 // BIKE is a code-based KEM using quasi-cyclic moderate density parity check codes.
 
-use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
+// use crate::stdlib::crypto_pqc::{PqcResult, SecurityLevel, AlgorithmType};
 use super::KeyEncapsulation;
 
 // Placeholder structures

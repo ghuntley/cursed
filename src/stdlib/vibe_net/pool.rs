@@ -1,7 +1,6 @@
 // Connection pool implementation for VibeNet
 
 use crate::error::CursedError;
-use crate::error::Error;
 use super::conn::ConnVibe;
 use super::NetResult;
 

@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::CursedError;
 /// NoCap - String conversion utilities with Gen Z flair
 /// 
 /// Provides comprehensive string conversion functions equivalent to Go's strconv package,

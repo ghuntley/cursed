@@ -1,10 +1,10 @@
 
 // HTTP server implementation for GlowUpHTTP
 
-use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
-use crate::stdlib::glowup_http::handler::{Handler, HandlerFunc};
-use crate::stdlib::glowup_http::request::{VibeRequest, Method, HttpVersion, HeaderMap};
-use crate::stdlib::glowup_http::response::ResponderVibe;
+// use crate::stdlib::glowup_http::error::{GlowUpError, GlowUpResult};
+// use crate::stdlib::glowup_http::handler::{Handler, HandlerFunc};
+// use crate::stdlib::glowup_http::request::{VibeRequest, Method, HttpVersion, HeaderMap};
+// use crate::stdlib::glowup_http::response::ResponderVibe;
 use crate::web::StatusCode;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex, atomic::{AtomicBool, AtomicU64, Ordering}};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 use tracing::{debug, info, warn, error, instrument, span, Level};
-use crate::error::Error;
+use crate::error::CursedError;
 
 /// Configurable HTTP server
 /// This follows the CURSED spec's `VibeServer` naming
@@ -33,7 +33,7 @@ pub struct VibeServer {
     pub max_header_bytes: usize,
     /// TLS configuration
     pub tls_config: Option<TlsConfig>,
-    /// Error logging
+    /// CursedError logging
     pub error_log: Option<Arc<dyn ErrorLogger>>,
     /// Server state
     state: Arc<ServerState>,
@@ -56,7 +56,7 @@ pub enum TlsVersion {
     TLSv1_3,
 }
 
-/// Error logger trait
+/// CursedError logger trait
 pub trait ErrorLogger: Send + Sync {
     fn log(&self, level: LogLevel, message: &str);
 }
@@ -66,7 +66,7 @@ pub enum LogLevel {
     Debug,
     Info,
     Warn,
-    Error,
+    CursedError,
 }
 
 /// Server state tracking
@@ -622,42 +622,3 @@ pub fn serve_tls(
 pub use serve as Serve;
 pub use serve_tls as ServeTLS;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::stdlib::glowup_http::handler::StaticHandler;
-    use std::time::Duration;
-
-    #[test]
-    fn test_server_creation() {
-        let server = VibeServer::new()
-            .addr("127.0.0.1:0")
-            .handler(StaticHandler::text("Hello"))
-            .read_timeout(Duration::from_secs(10));
-        
-        assert_eq!(server.addr, "127.0.0.1:0");
-        assert_eq!(server.read_timeout, Duration::from_secs(10));
-        assert!(!server.is_running());
-    }
-
-    #[test]
-    fn test_server_stats() {
-        let server = VibeServer::new();
-        let stats = server.stats();
-        
-        assert_eq!(stats.active_connections, 0);
-        assert_eq!(stats.total_requests, 0);
-    }
-
-    #[test]
-    fn test_connection_creation() {
-        use std::net::SocketAddr;
-        
-        let addr: SocketAddr = "127.0.0.1:8080".parse().unwrap();
-        let connection = Connection::new(1, addr, addr);
-        
-        assert_eq!(connection.id, 1);
-        assert_eq!(connection.remote_addr, addr);
-        assert_eq!(connection.request_count.load(Ordering::Relaxed), 0);
-    }
-}

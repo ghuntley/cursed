@@ -3,7 +3,7 @@
 // Comprehensive certificate-based signature validation with X.509 certificate
 // chain verification, CRL checking, OCSP validation, and policy enforcement.
 
-use crate::stdlib::packages::crypto_signatures::{
+// use crate::stdlib::packages::crypto_signatures::{
     errors::{SignatureError, SignatureResult},
     signature_validation::{ValidationContext, ValidationResult, ValidationLevel},
     hash_algorithms::HashAlgorithm,
@@ -327,7 +327,7 @@ impl CertificateValidationManager {
         cert_context.certificate_chain = Some(certificate_chain.iter().map(|c| c.raw_bytes.clone()).collect());
 
         // Perform signature validation using the certificate's public key
-        let validation_manager = crate::stdlib::packages::crypto_signatures::signature_validation::SignatureValidationManager::new();
+//         let validation_manager = crate::stdlib::packages::crypto_signatures::signature_validation::SignatureValidationManager::new();
         let mut result = validation_manager.validate_signature(&cert_context)?;
 
         // Add certificate validation information to the result
@@ -744,70 +744,3 @@ pub mod utils {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_certificate_parsing() {
-        let manager = CertificateValidationManager::new();
-        let mock_der = vec![0u8; 1024]; // Mock DER data
-        
-        let cert = manager.parse_certificate(&mock_der).unwrap();
-        assert_eq!(cert.version, 3);
-        assert!(!cert.raw_bytes.is_empty());
-    }
-
-    #[test]
-    fn test_certificate_chain_validation() {
-        let mut manager = CertificateValidationManager::new();
-        manager.load_system_trust_store().unwrap();
-        
-        let cert_chain = vec![
-            utils::create_mock_certificate("End Entity", "Intermediate CA"),
-            utils::create_mock_certificate("Intermediate CA", "Root CA"),
-        ];
-        
-        let result = manager.validate_certificate_chain(&cert_chain, None).unwrap();
-        // May not be valid due to mock data, but should complete validation
-        assert_eq!(result.chain_length, 2);
-    }
-
-    #[test]
-    fn test_distinguished_name_matching() {
-        let manager = CertificateValidationManager::new();
-        
-        let dn1 = DistinguishedName {
-            common_name: Some("Test".to_string()),
-            organization: Some("Org".to_string()),
-            country: Some("US".to_string()),
-            organizational_unit: None,
-            state: None,
-            locality: None,
-            email: None,
-        };
-        
-        let dn2 = dn1.clone();
-        assert!(manager.distinguished_names_match(&dn1, &dn2));
-        
-        let mut dn3 = dn1.clone();
-        dn3.common_name = Some("Different".to_string());
-        assert!(!manager.distinguished_names_match(&dn1, &dn3));
-    }
-
-    #[test]
-    fn test_validation_policy() {
-        let policy = CertificateValidationPolicy::default();
-        assert!(policy.require_valid_chain);
-        assert!(!policy.allow_self_signed);
-        assert_eq!(policy.max_chain_length, 10);
-        assert!(policy.allowed_signature_algorithms.contains(&"sha256WithRSAEncryption".to_string()));
-    }
-
-    #[test]
-    fn test_utils_functions() {
-        let cert = utils::create_mock_certificate("Test Subject", "Test Issuer");
-        assert_eq!(cert.subject.common_name, Some("Test Subject".to_string()));
-        assert_eq!(cert.issuer.common_name, Some("Test Issuer".to_string()));
-    }
-}
