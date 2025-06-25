@@ -36,8 +36,7 @@ NC = \033[0m # No Color
 .PHONY: perf-clean perf-setup perf-dev perf-release
 .PHONY: perf-analyze perf-optimize perf-demo perf-report
 
-# Default target
-help: perf-help
+# Default target for performance (removed help override to avoid conflicts)
 
 # Performance optimization help
 perf-help:

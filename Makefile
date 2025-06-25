@@ -322,6 +322,8 @@ error-propagation-help: ## Show error propagation test help
 # Core Build Targets
 # =============================================================================
 .PHONY: all build build-release build-dev clean help
+.PHONY: dev release debug fast-build production-build
+.PHONY: list-common-targets quick-help
 
 all: build test ## Build and test everything
 
@@ -335,7 +337,37 @@ build-release: ## Build the project in release mode
 	$(AT)$(CARGO_CMD) build --release $(V) $(CARGO_FLAGS)
 	$(AT)echo -e "$(GREEN)✅ Release build completed$(RESET)"
 
+# Descriptive aliases for build targets
 build-dev: build ## Alias for debug build
+dev: build ## Build for development (debug mode, fast compilation)
+debug: build ## Build in debug mode with full debugging info
+fast-build: build ## Fast debug build for development iteration
+release: build-release ## Build optimized release version
+production-build: build-release ## Build production-ready optimized version
+
+# Quick help for common tasks
+list-common-targets: ## Show most commonly used targets
+	$(AT)echo -e "$(BOLD)$(CYAN)Most Common CURSED Build Targets:$(RESET)"
+	$(AT)echo -e "$(CYAN)====================================$(RESET)"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Quick Development:$(RESET)"
+	$(AT)echo -e "  $(GREEN)dev$(RESET)                 - Build for development (fast compilation)"
+	$(AT)echo -e "  $(GREEN)run-tests$(RESET)           - Run all tests quickly"
+	$(AT)echo -e "  $(GREEN)code-quality$(RESET)        - Check code quality and format"
+	$(AT)echo -e "  $(GREEN)format$(RESET)              - Format all source files"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Production Ready:$(RESET)"
+	$(AT)echo -e "  $(GREEN)release$(RESET)             - Build optimized production version"
+	$(AT)echo -e "  $(GREEN)full-test-suite$(RESET)     - Run comprehensive test suite"
+	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Demonstrations:$(RESET)"
+	$(AT)echo -e "  $(GREEN)run-mmap-demo$(RESET)       - Memory mapping demonstration"
+	$(AT)echo -e "  $(GREEN)run-vectorization-demo$(RESET) - SIMD optimization demo"
+	$(AT)echo -e "  $(GREEN)benchmark-llvm-performance$(RESET) - LLVM performance benchmarks"
+	$(AT)echo ""
+	$(AT)echo -e "Use $(CYAN)make help$(RESET) for complete documentation"
+
+quick-help: list-common-targets ## Alias for list-common-targets
 
 clean: ## Clean all build artifacts
 	$(AT)echo -e "$(YELLOW)🧹 Cleaning build artifacts...$(RESET)"
@@ -347,6 +379,7 @@ clean: ## Clean all build artifacts
 # =============================================================================
 .PHONY: test test-all test-unit test-integration test-ignored test-verbose test-quiet
 .PHONY: test-filter test-file test-name test-coverage test-report
+.PHONY: run-tests run-all-tests check verify validate full-test-suite
 
 test: build ## Run all tests
 	$(AT)echo -e "$(BLUE)🧪 Running tests...$(RESET)"
@@ -355,6 +388,14 @@ test: build ## Run all tests
 test-all: build ## Run all tests including ignored ones
 	$(AT)echo -e "$(BLUE)🧪 Running all tests (including ignored)...$(RESET)"
 	$(AT)$(CARGO_CMD) test $(V) -- --ignored --include-ignored
+
+# Descriptive aliases for testing
+run-tests: test ## Run standard test suite
+run-all-tests: test-all ## Run comprehensive test suite including ignored tests
+check: test ## Quick validation of code correctness
+verify: test ## Verify code functionality through tests
+validate: test-all ## Comprehensive validation including edge cases
+full-test-suite: test-all ## Execute complete test suite
 
 test-unit: build ## Run unit tests only
 	$(AT)echo -e "$(BLUE)📝 Running unit tests...$(RESET)"
@@ -427,6 +468,11 @@ mmap-example: build ## Run mmap demonstration example
 	$(AT)echo -e "$(MAGENTA)🎯 Building mmap demo example...$(RESET)"
 	$(AT)echo "Note: mmap_demo.csd is a CURSED language example"
 	$(AT)echo "To run: ./target/debug/cursed examples/mmap_demo.csd"
+
+# Descriptive aliases for mmap
+run-mmap-demo: mmap-example ## Run memory-mapped file demonstration
+demo-memory-mapping: mmap-example ## Demonstrate memory mapping functionality
+memory-map-example: mmap-example ## Execute memory mapping example program
 
 mmap-clean: ## Clean mmap-related test artifacts
 	$(AT)echo -e "$(YELLOW)🧹 Cleaning mmap test artifacts...$(RESET)"
@@ -523,6 +569,11 @@ advanced-llvm-benchmark: build ## Run advanced LLVM performance benchmarks
 	$(AT)echo -e "$(YELLOW)⚡ Running Advanced LLVM Performance Benchmarks...$(RESET)"
 	$(AT)$(CARGO_CMD) test $(V) --test advanced_llvm_integration_test test_performance_benchmarks --release
 
+# Descriptive aliases for LLVM
+benchmark-llvm-performance: advanced-llvm-benchmark ## Benchmark LLVM optimization performance
+run-llvm-benchmarks: advanced-llvm-benchmark ## Execute LLVM performance benchmarks
+test-llvm-performance: advanced-llvm-benchmark ## Test LLVM compiler performance
+
 advanced-llvm-test-verbose: build ## Run advanced LLVM tests with verbose output
 	$(AT)echo -e "$(BLUE)🔧 Running Advanced LLVM Tests (verbose)...$(RESET)"
 	$(AT)$(CARGO_CMD) test --test advanced_llvm_integration_test -- --nocapture
@@ -612,6 +663,11 @@ vectorization-example: build ## Compile vectorization example
 	$(AT)echo -e "$(MAGENTA)⚡ Compiling vectorization example...$(RESET)"
 	$(AT)./target/debug/cursed compile examples/vectorization_demo.csd --output target/vectorization_demo --optimize
 
+# Descriptive aliases for vectorization
+compile-vectorization-example: vectorization-example ## Compile SIMD vectorization example
+run-vectorization-demo: vectorization-demo ## Run vectorization demonstration program
+demo-simd-optimization: vectorization-demo ## Demonstrate SIMD optimization features
+
 vectorization-benchmark: build ## Run vectorization performance benchmark
 	$(AT)echo -e "$(MAGENTA)📈 Running vectorization benchmarks...$(RESET)"
 	$(AT)$(CARGO_CMD) bench --bench vectorization_benchmark || echo "Benchmark not found, creating placeholder..."
@@ -648,6 +704,7 @@ vectorization-info: ## Show vectorization system information
 # Code Quality and Formatting
 # =============================================================================
 .PHONY: lint lint-fix fmt fmt-check fmt-diff fmt-cursed-check fmt-cursed-fix rust-fmt-check
+.PHONY: code-quality format format-check fix-style fix-lint quality-check style-check
 
 lint: build ## Run clippy linting
 	$(AT)echo -e "$(YELLOW)🔍 Running linting...$(RESET)"
@@ -660,6 +717,15 @@ lint-fix: build ## Fix linting issues automatically
 fmt: fmt-cursed-fix rust-fmt-fix ## Format all source files
 
 fmt-check: fmt-cursed-check rust-fmt-check ## Check formatting of all files
+
+# Descriptive aliases for code quality
+code-quality: lint test ## Run comprehensive code quality checks
+format: fmt ## Format all source code files
+format-check: fmt-check ## Check if code formatting is correct
+fix-style: fmt lint-fix ## Fix code style and formatting issues
+fix-lint: lint-fix ## Automatically fix linting violations
+quality-check: lint fmt-check ## Check code quality and formatting
+style-check: fmt-check ## Verify code style compliance
 
 fmt-diff: ## Show formatting differences
 	$(AT)echo -e "$(CYAN)📋 Showing CURSED formatting differences...$(RESET)"
@@ -1352,19 +1418,28 @@ help: ## Show this help message
 	$(AT)echo -e "$(CYAN)============================================$(RESET)"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Core Targets:$(RESET)"
-	$(AT)grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}' | \
-		grep -E "(build|test|clean|lint|fmt|help)" | head -10
+	$(AT)echo -e "  $(CYAN)build$(RESET)                Build the project in debug mode"
+	$(AT)echo -e "  $(CYAN)build-release$(RESET)        Build the project in release mode"
+	$(AT)echo -e "  $(CYAN)test$(RESET)                 Run all tests"
+	$(AT)echo -e "  $(CYAN)test-all$(RESET)             Run all tests including ignored ones"
+	$(AT)echo -e "  $(CYAN)clean$(RESET)                Clean all build artifacts"
+	$(AT)echo -e "  $(CYAN)lint$(RESET)                 Run clippy linting"
+	$(AT)echo -e "  $(CYAN)fmt$(RESET)                  Format all source files"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Module Testing:$(RESET)"
-	$(AT)grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}' | \
-		grep -E "(math|crypto|gc|collections|type-system|advanced-llvm)" | head -10
+	$(AT)echo -e "  $(CYAN)math-test$(RESET)            Run all math tests"
+	$(AT)echo -e "  $(CYAN)crypto-test$(RESET)          Run core crypto tests"
+	$(AT)echo -e "  $(CYAN)gc-test$(RESET)              Run all GC tests"
+	$(AT)echo -e "  $(CYAN)collections-test$(RESET)     Test all collections"
+	$(AT)echo -e "  $(CYAN)type-system-test$(RESET)     Test type system"
+	$(AT)echo -e "  $(CYAN)advanced-llvm-test$(RESET)   Run advanced LLVM integration tests"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Development:$(RESET)"
-	$(AT)grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}' | \
-		grep -E "(dev|debug|docs|example|bench)" | head -10
+	$(AT)echo -e "  $(CYAN)dev$(RESET)                  Build for development (fast compilation)"
+	$(AT)echo -e "  $(CYAN)debug$(RESET)                Build in debug mode with full debugging info"
+	$(AT)echo -e "  $(CYAN)docs$(RESET)                 Generate Rust documentation"
+	$(AT)echo -e "  $(CYAN)mmap-example$(RESET)         Run mmap demonstration example"
+	$(AT)echo -e "  $(CYAN)vectorization-demo$(RESET)   Run vectorization demo program"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Performance Optimization:$(RESET)"
 	$(AT)echo -e "  $(CYAN)perf-help        $(RESET) Show performance optimization help"
@@ -1375,15 +1450,27 @@ help: ## Show this help message
 	$(AT)echo -e "  $(CYAN)perf-optimize    $(RESET) Run optimization analysis"
 	$(AT)echo -e "  $(CYAN)perf-full        $(RESET) Complete performance optimization suite"
 	$(AT)echo ""
+	$(AT)echo -e "$(BOLD)Descriptive Command Aliases:$(RESET)"
+	$(AT)echo -e "  $(GREEN)dev$(RESET)                      # Build for development (same as build)"
+	$(AT)echo -e "  $(GREEN)release$(RESET)                  # Build optimized release version"
+	$(AT)echo -e "  $(GREEN)fast-build$(RESET)               # Fast debug build for development"
+	$(AT)echo -e "  $(GREEN)production-build$(RESET)         # Build production-ready version"
+	$(AT)echo -e "  $(GREEN)run-tests$(RESET)                # Run standard test suite"
+	$(AT)echo -e "  $(GREEN)full-test-suite$(RESET)          # Execute complete test suite"
+	$(AT)echo -e "  $(GREEN)code-quality$(RESET)             # Run comprehensive quality checks"
+	$(AT)echo -e "  $(GREEN)format$(RESET)                   # Format all source code"
+	$(AT)echo -e "  $(GREEN)fix-style$(RESET)                # Fix code style and formatting"
+	$(AT)echo -e "  $(GREEN)run-mmap-demo$(RESET)            # Run memory mapping demonstration"
+	$(AT)echo -e "  $(GREEN)benchmark-llvm-performance$(RESET) # Benchmark LLVM optimizations"
+	$(AT)echo -e "  $(GREEN)run-vectorization-demo$(RESET)   # Run SIMD optimization demo"
+	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Usage Examples:$(RESET)"
-	$(AT)echo -e "  $(YELLOW)make build$(RESET)                    # Build the project"
-	$(AT)echo -e "  $(YELLOW)make test$(RESET)                     # Run all tests"
-	$(AT)echo -e "  $(YELLOW)make test-filter TEST_PATTERN=math$(RESET) # Run math tests"
-	$(AT)echo -e "  $(YELLOW)make crypto-test$(RESET)              # Test crypto module"
-	$(AT)echo -e "  $(YELLOW)make dev$(RESET)                      # Development workflow"
-	$(AT)echo -e "  $(YELLOW)make ci$(RESET)                       # Full CI pipeline"
-	$(AT)echo -e "  $(YELLOW)make perf-release$(RESET)             # Optimized build"
-	$(AT)echo -e "  $(YELLOW)make perf-benchmark$(RESET)           # Performance benchmarks"
+	$(AT)echo -e "  $(YELLOW)make dev$(RESET)                      # Quick development build"
+	$(AT)echo -e "  $(YELLOW)make run-tests$(RESET)               # Run all tests"
+	$(AT)echo -e "  $(YELLOW)make code-quality$(RESET)            # Check code quality"
+	$(AT)echo -e "  $(YELLOW)make crypto-test$(RESET)             # Test crypto module"
+	$(AT)echo -e "  $(YELLOW)make release$(RESET)                 # Optimized production build"
+	$(AT)echo -e "  $(YELLOW)make benchmark-llvm-performance$(RESET) # Performance benchmarks"
 	$(AT)echo ""
 	$(AT)echo -e "$(BOLD)Configuration:$(RESET)"
 	$(AT)echo -e "  $(YELLOW)VERBOSE=1$(RESET)                    # Enable verbose output"

@@ -1,4 +1,5 @@
-/// Minimal AST for CURSED - just enough to parse basic programs
+//! Minimal AST for CURSED - just enough to parse basic programs
+
 /// Identifier module for compatibility
 pub mod identifiers {
     #[derive(Debug, Clone, PartialEq)]
