@@ -3,7 +3,7 @@ name = "cursed"
 version = "0.1.0"
 edition = "2021"
 authors = ["Geoffrey Huntley"]
-description = "CURSED Programming Language - Gen Z slang meets Go-like grammar (Minimal Build)"
+description = "CURSED Programming Language - Gen Z slang meets Go-like grammar"
 repository = "https://github.com/ghuntley/cursed"
 license = "MIT"
 readme = "README.md"
@@ -17,274 +17,359 @@ unused_assignments = "allow"
 unused_unsafe = "allow"
 unused_mut = "allow"
 
-# Minimal core dependencies for basic compiler functionality
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [dependencies]
 thiserror = "1.0"  # For ergonomic error handling
 clap = { version = "4.4", features = ["derive"] }  # For command-line argument parsing
+rustyline = "12.0"  # For REPL functionality
 log = "0.4"  # Logging facade
 env_logger = "0.10"  # Logging implementation
+dirs = "5.0"  # For finding home directory
 num-traits = "0.2"  # For numerical traits
 num_cpus = "1.16"    # For detecting CPU core count
 libc = "0.2"  # For C functions like strlen
 inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
+atty = "0.2"  # For checking if stdin/stdout is a terminal
+libloading = "0.8"  # Dynamic library loading for plugins
 
-# Basic serialization
-serde = { version = "1.0", features = ["derive"] }  
-serde_json = "1.0" 
-toml = "0.8"        
 
-# Basic cryptography for core functionality only
+# Stack walking and debug information dependencies
+# rustc-demangle already included above
+
+# Documentation generation dependencies
+serde = { version = "1.0", features = ["derive"] }  # Serialization for config and output
+serde_json = "1.0"  # JSON serialization
+toml = "0.8"        # TOML configuration files
+chrono = { version = "0.4", features = ["serde"] }  # Date/time handling
+async-trait = "0.1" # Async traits for output generators
+open = "5.0"        # Opening files/URLs in system applications
+regex = "1.10"      # Regular expressions for documentation quality checks
+
+# Basic cryptography dependencies
 getrandom = "0.2"  # Secure random number generation
 hex = "0.4"     # Hex encoding/decoding
+crc32fast = "1.3"  # Fast CRC32 computation for ZIP archives
+rand = "0.8"    # Random number generation
+rand_distr = "0.4"  # Random distributions
 sha2 = "0.10"   # SHA-2 hashing for build cache
+base64 = "0.21" # Base64 encoding/decoding for database binary data
+hmac = "0.12"   # HMAC message authentication
+md5 = "0.7"     # For CSRF token generation and simple hashing
 
-# Essential system interaction
-nix = { version = "0.27", features = ["process", "signal"] }  # Basic Unix system calls
-parking_lot = "0.12"  # Better RwLock implementation
+# Advanced cryptography dependencies (for foundational crypto packages)
+sha3 = "0.10"   # SHA-3 and Keccak hashing
+blake3 = "1.5"  # BLAKE3 hashing
+argon2 = "0.5"  # Argon2 password hashing
+scrypt = "0.11" # scrypt password hashing
+pbkdf2 = "0.12" # PBKDF2 key derivation
+bcrypt = "0.15" # Bcrypt password hashing
+openssl = { version = "0.10", features = ["vendored"] } # OpenSSL for TLS/crypto support
+rustls = { version = "0.21", features = ["dangerous_configuration"] } # Pure Rust TLS implementation
+rustls-webpki = "0.101" # WebPKI for rustls certificate validation  
+native-tls = "0.2" # Native TLS support
+rustls-connector = "0.17" # TLS connector for rustls
+rsa = { version = "0.9", features = ["sha2"] }     # RSA public key cryptography
+p256 = { version = "0.13", features = ["ecdh"] }   # NIST P-256 elliptic curve
+p384 = { version = "0.13", features = ["ecdh"] }   # NIST P-384 elliptic curve
+p521 = { version = "0.13", features = ["ecdh"] }   # NIST P-521 elliptic curve
+k256 = "0.13"   # secp256k1 elliptic curve (Bitcoin/Ethereum)
+ed25519-dalek = "2.0"  # Ed25519 digital signatures
+x25519-dalek = "2.0"   # X25519 key exchange
+aes = "0.8"     # AES block cipher
+aes-gcm = "0.10"  # AES-GCM authenticated encryption
+chacha20 = "0.9" # ChaCha20 stream cipher
+chacha20poly1305 = "0.10.1"  # ChaCha20-Poly1305 authenticated encryption
+curve25519-dalek = "4.1.1"   # Curve25519 elliptic curve operations
+num-bigint = { version = "0.4", features = ["rand"] }   # Big integer arithmetic
+hkdf = "0.12.3"   # HMAC-based Key Derivation Function
+subtle = "2.5.0"  # Constant-time utilities
+num-rational = "0.4" # Rational number arithmetic for big_mood module
+num-complex = "0.4"  # Complex number arithmetic for big_mood module
+signature = "2.1"   # Digital signature traits
+elliptic-curve = "0.13"  # Elliptic curve traits and utilities
+
+# Additional crypto dependencies for real implementations
+ring = "0.17"    # Comprehensive crypto library (alternative to RustCrypto)
+# aes-cbc = "0.1"  # AES-CBC mode (use cbc + aes instead)
+cbc = "0.1"      # CBC mode traits
+
+# Missing procedural macro dependencies
+zeroize = { version = "1.7", features = ["derive"] }  # Secure memory zeroing with derive
+zerofrom = { version = "0.1", features = ["derive"] }  # Zero-copy deserialization with derive
+pinned = "0.1"   # For pin_project_internal
+pin-project = "1.0"  # Pin projection for async code
+pkcs8 = "0.10"   # PKCS#8 private key encoding
+pkcs1 = "0.7"    # PKCS#1 RSA key encoding
+spki = "0.7"     # Subject Public Key Info encoding
+der = "0.7"      # DER encoding
+pem = "3.0"      # PEM encoding
+x509-parser = "0.15"  # X.509 certificate parsing
+sec1 = "0.7"     # SEC1 elliptic curve key encoding
+
+# PKI and certificate validation dependencies
+rustls-native-certs = "0.6"  # System certificate store access
+webpki = "0.22"              # Certificate validation
+rustls-pemfile = "1.0"       # PEM file parsing
+oid-registry = "0.6"         # OID registry for X.509 extensions
+asn1-rs = "0.5"              # ASN.1 parsing
+sha1 = "0.10"                # SHA-1 for certificate fingerprints
+time = { version = "0.3.30", features = ["macros", "parsing", "formatting"] }  # Time handling for certificate validity
+
+# Post-quantum cryptography
+pqcrypto-kyber = "0.7"      # Kyber KEM
+pqcrypto-dilithium = "0.5"  # Dilithium signatures  
+pqcrypto-sphincsplus = "0.7" # SPHINCS+ hash-based signatures
+pqcrypto-falcon = "0.3"     # Falcon compact signatures
+pqcrypto-ntru = "0.5"       # NTRU encryption
+pqcrypto-traits = "0.3"     # Common traits for PQC algorithms
+
+# ECDSA signature support for PKI
+ecdsa = "0.16"              # ECDSA signature traits
+
+# Zero-knowledge proofs dependencies 
+ark-ff = "0.3"          # Finite field arithmetic
+ark-ec = "0.3"          # Elliptic curve arithmetic  
+ark-std = "0.3"         # Standard library for arkworks
+ark-poly = "0.3"        # Polynomial arithmetic
+ark-serialize = { version = "0.3", features = ["derive"] }   # Serialization for arkworks with derive support
+ark-bn254 = "0.3"       # BN254 curve for pairings
+ark-bls12-381 = "0.3"   # BLS12-381 curve for pairings
+ark-relations = "0.3"   # Constraint systems
+ark-r1cs-std = "0.3"    # R1CS standard library
+ark-groth16 = "0.3"     # Groth16 zk-SNARK
+ark-marlin = "0.3"      # Marlin universal SNARK
+ark-poly-commit = "0.3" # Polynomial commitment schemes
+
+# Package management dependencies
+tokio = { version = "1.0", features = ["full"] }  # Async runtime
+indicatif = "0.17"  # Progress bars for CLI
+
+# System interaction dependencies
+nix = { version = "0.27", features = ["process", "signal", "mman", "fs"] }  # Unix system calls and utilities
+num-integer = "0.1"       # Integer operations and algorithms 
+lz4_flex = "0.11"         # LZ4 compression
+
+# Optimization system dependencies
+# num_cpus = "1.16"         # For detecting number of CPU cores (already included above)
+crossbeam = "0.8"          # For optimization system parallel processing
+crossbeam-channel = "0.5" # For thread communication in parallel compilation
+rayon = "1.7"              # For enhanced parallel processing
+sysinfo = "0.30"           # For system resource monitoring
+tracing = { version = "0.1", features = ["attributes"] }  # For structured logging and instrumentation
+tracing-subscriber = { version = "0.3", features = ["env-filter"] } # For tracing subscriber implementations
+
+# Session store dependencies
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }  # Redis client and session store
+
+# MongoDB dependencies (temporarily disabled to resolve build issues)
+# mongodb = { version = "2.7", features = ["tokio-runtime", "bson-chrono-0_4"] }  # MongoDB driver
+# bson = "2.7"           # BSON serialization/deserialization
+derivative = "2.2"     # Enhanced derive macros
+
+# Math dependencies
+libm = "0.2"    # Mathematical functions
+rand_chacha = "0.3"  # ChaCha random number generator
+
+
+# Linter dependencies
+colored = "2.0"        # For colored terminal output
+
+# File system dependencies
+fs2 = "0.4"     # File locking support
+html-escape = "0.2"  # HTML escaping for syntax highlighting
+urlencoding = "2.1"  # URL encoding/decoding
+
+# Build system analytics dependencies
+# sysinfo = "0.29"    # System information and resource monitoring (already included above with 0.30)
+
+# Terminal support
+# atty = "0.2"    # TTY detection - duplicate removed
+walkdir = "2.4"  # Recursive directory traversal
 once_cell = "1.17"  # Lazy static initialization
+lazy_static = "1.4"  # Lazy static initialization support
 
-# Additional dependencies for build error fixes
-base64 = "0.21"  # Base64 encoding/decoding
-rand = "0.8"  # Random number generation
-sha1 = "0.10"  # SHA1 hashing
-md5 = "0.7"  # MD5 hashing
-fastrand = "2.0"  # Fast random number generation
-reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }  # HTTP client
-chrono = { version = "0.4", features = ["serde"] }  # Date/time handling
-libloading = "0.8"  # Dynamic library loading
-serde_yaml = "0.9"  # YAML serialization
-zstd = "0.13"  # Compression
-urlencoding = "2.1"  # URL encoding
-httpdate = "1.0"  # HTTP date formatting
-bincode = "1.3"  # Binary serialization
-tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "macros"] }  # Async runtime (minimal features)
-regex = "1.10"  # Regular expressions
-cbc = "0.1"  # CBC encryption
+# Testing framework dependencies
+globwalk = "0.9"     # For test file discovery with glob patterns
+# serde already defined above for documentation
+# serde_json already defined above for documentation
+serde_yaml = "0.9"  # YAML serialization/deserialization
+# toml already defined above for documentation
+# chrono already defined above for documentation
 
-# Structured logging (minimal)
-tracing = { version = "0.1", features = ["attributes"] }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# Optimization system dependencies (num_cpus already included above)
+# rayon = "1.8"           # For data parallelism in optimization (already included above with 1.7)
+tempfile = "3.8"        # For temporary files in incremental compilation
+bincode = "1.3"  # Binary serialization for profiling data
+thread_local = "1.1"  # Thread-local storage
+parking_lot = "0.12"  # Better RwLock implementation with timeout support
 
-# Basic error handling
+# Memory profiling
 backtrace = "0.3.69"  # For stack trace capture
 rustc-demangle = "0.1"  # For demangling Rust symbols
 
-# Essential utilities
-walkdir = "2.4"  # Recursive directory traversal
+# Colored terminal output (already defined above)
+
+# Glob pattern matching
 glob = "0.3"    # For file path pattern matching
-dirs = "5.0"    # Directory handling utilities
 
-# Database drivers (minimal features)
-rusqlite = { version = "0.29", features = ["bundled"] }  # SQLite database access
-tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }  # PostgreSQL async driver
-bb8 = "0.8"     # Connection pooling
+# Cache implementation
+lru = "0.10.0"  # LRU cache implementation
 
-# Additional networking utilities
-url = "2.4"     # URL parsing utilities
+# Structured logging
+# tracing = "0.1"  # Structured logging framework (already included above)
+# tracing-subscriber = { version = "0.3", features = ["env-filter"] }  # Subscriber implementation (already included above)
 
-# Essential cryptography
-ed25519-dalek = "2.0"  # Ed25519 cryptographic signatures
+# Performance and optimization dependencies
+# rayon = "1.8"         # Data parallelism for parallel compilation (already included above)
+# num_cpus = "1.16"     # CPU core detection for parallel jobs (already included above)
+# crossbeam = "0.8"     # Concurrent data structures (already included above)
 
-# DISABLED: Heavy dependencies that slow down compilation
-# Database drivers
-# redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
-# rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trace", "backup"] }
-# tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }
-# postgres-types = { version = "0.2", features = ["derive", "with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }
-# mysql = { version = "25.0", default-features = false, features = ["native-tls"] }
-# bb8 = "0.8"
-# bb8-postgres = "0.8"
+# Date and time handling
 
-# Heavy crypto dependencies
-# argon2 = "0.5"
-# scrypt = "0.11"
-# pbkdf2 = "0.12"
-# rsa = { version = "0.9", features = ["sha2"] }
-# p256 = { version = "0.13", features = ["ecdh"] }
-# p384 = { version = "0.13", features = ["ecdh"] }
-# p521 = { version = "0.13", features = ["ecdh"] }
-# k256 = "0.13"
-# ed25519-dalek = "2.0"
-# x25519-dalek = "2.0"
-# aes = "0.8"
-# aes-gcm = "0.10"
-# chacha20 = "0.9"
-# chacha20poly1305 = "0.10.1"
-# curve25519-dalek = "4.1.1"
-# num-bigint = { version = "0.4", features = ["rand"] }
-# hkdf = "0.12.3"
-# subtle = "2.5.0"
-# signature = "2.1"
-# elliptic-curve = "0.13"
-# ring = "0.17"
+hostname = "0.4.1"
 
-# Post-quantum cryptography
-# pqcrypto-kyber = "0.7"
-# pqcrypto-dilithium = "0.5"
-# pqcrypto-sphincsplus = "0.7"
-# pqcrypto-falcon = "0.3"
-# pqcrypto-ntru = "0.5"
-# pqcrypto-traits = "0.3"
+# Build optimization CLI dependencies
+sys-info = "0.9"       # System information detection
+webbrowser = "0.8"     # Browser integration for HTML reports
+fastrand = "2.0"       # Fast random number generation for benchmarks
 
-# Zero-knowledge proofs
-# ark-ff = "0.3"
-# ark-ec = "0.3"
-# ark-std = "0.3"
-# ark-poly = "0.3"
-# ark-serialize = { version = "0.3", features = ["derive"] }
-# ark-bn254 = "0.3"
-# ark-bls12-381 = "0.3"
-# ark-relations = "0.3"
-# ark-r1cs-std = "0.3"
-# ark-groth16 = "0.3"
-# ark-marlin = "0.3"
-# ark-poly-commit = "0.3"
+# For the bootstrap verification system
+# sha2 already included above for cryptography
+# tempfile = "3.8"  # Temporary directories for testing (already included above)
 
-# Heavy async runtime
-# tokio = { version = "1.0", features = ["full"] }
+# Documentation generation dependencies
+pulldown-cmark = "0.9"  # Markdown parsing and HTML generation
+handlebars = "4.4"      # Template engine for HTML generation
 
-# Web framework dependencies
-# warp = "0.3"
-# httpdate = "1.0"
+# IPC dependencies
+uuid = { version = "1.6", features = ["v4", "serde"] }  # For generating unique IDs in RPC and build events
 
-# Package management heavy dependencies
-# reqwest = { version = "0.11", features = ["json", "stream", "rustls-tls"], default-features = false }
-# bytes = "1.5"
-# flate2 = "1.0.28"
-# bzip2 = "0.4"
-# tar = "0.4.40"
-# zip = "0.6.6"
-# brotli = "3.4"
-# zstd = "0.13"
+# Package management dependencies (simplified for now)
+semver = "1.0"          # Semantic version parsing and comparison
+url = "2.4"             # URL parsing and manipulation
+reqwest = { version = "0.11", features = ["json", "stream", "rustls-tls"], default-features = false }  # HTTP client for package registry
+bytes = "1.5"           # Byte manipulation for package data
 
-# SSH and distributed compilation
-# ssh2 = { version = "0.9", features = ["vendored-openssl"] }
+# Archive and compression dependencies
+flate2 = "1.0.28"       # Gzip compression/decompression
+bzip2 = "0.4"           # BZIP2 compression/decompression
+tar = "0.4.40"          # TAR archive handling
+zip = "0.6.6"           # ZIP archive handling
+brotli = "3.4"          # Brotli compression/decompression
+zstd = "0.13"           # Zstandard compression (high performance alternative)
 
-# LSP and development tools
-# tower-lsp = "0.20"
-# tower = "0.4"
-# dashmap = "5.5"
-# ropey = "1.6"
-# tree-sitter = "0.20"
+# Distributed compilation dependencies (dependencies already included above)
 
-# Heavy optimization dependencies
-# rayon = "1.7"
-# crossbeam = "0.8"
-# crossbeam-channel = "0.5"
-# sysinfo = "0.30"
-# indicatif = "0.17"
+# SSH client dependencies
+ssh2 = { version = "0.9", features = ["vendored-openssl"] }  # SSH client library with bundled OpenSSL
 
-# Template and documentation systems
-# pulldown-cmark = "0.9"
-# handlebars = "4.4"
+# Force older version to avoid edition2024 requirement
+base64ct = "=1.6.0"     # Base64 encoding (force specific version)
+arrayref = "0.3"        # Array reference utilities for PKI
+either = "=1.8.0"       # Force compatible version to avoid import errors
 
-# Archive utilities
-# lz4_flex = "0.11"
-# tempfile = "3.8"
-# bincode = "1.3"
+# Database driver dependencies
+rusqlite = { version = "0.29", features = ["bundled", "blob", "functions", "trace", "backup"] }  # SQLite
+# redis already defined above
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }  # PostgreSQL async driver
+postgres-types = { version = "0.2", features = ["derive", "with-chrono-0_4", "with-uuid-1", "with-serde_json-1"] }  # PostgreSQL type system
+mysql = { version = "25.0", default-features = false, features = ["native-tls"] }  # MySQL driver
+bb8 = "0.8"                                        # Connection pooling
+bb8-postgres = "0.8"                               # PostgreSQL connection pool
 
-# Math libraries
-# libm = "0.2"
-# num-rational = "0.4"
-# num-complex = "0.4"
-# num-integer = "0.1"
+# Missing dependencies for web_vibez (uuid already defined above)
 
-# Web and networking
-# uuid = { version = "1.6", features = ["v4", "serde"] }
-# semver = "1.0"
-# url = "2.4"
+httpdate = "1.0"                                   # For HTTP date formatting  
+warp = "0.3"                                       # HTTP server for documentation serving
+# async-trait already defined above for documentation
 
-# File system utilities
-# fs2 = "0.4"
-# notify = "6.1"
-# futures = "0.3"
+# Language Server Protocol dependencies
+tower-lsp = "0.20"         # LSP server framework
+tower = "0.4"             # Service trait and utilities
+dashmap = "5.5"           # Concurrent HashMap for document storage
+ropey = "1.6"             # Rope data structure for efficient text editing
+tree-sitter = "0.20"      # Tree-sitter parsing for incremental updates
 
-# Additional utilities
-# dirs = "5.0"
-# atty = "0.2"
-# libloading = "0.8"
-# rustyline = "12.0"
-# chrono = { version = "0.4", features = ["serde"] }
-# async-trait = "0.1"
-# open = "5.0"
-# regex = "1.10"
-# colored = "2.0"
-# html-escape = "0.2"
-# urlencoding = "2.1"
-# hostname = "0.4.1"
-# sys-info = "0.9"
-# webbrowser = "0.8"
-# fastrand = "2.0"
-# thread_local = "1.1"
-# lazy_static = "1.4"
-# derivative = "2.2"
-# lru = "0.10.0"
+# File watching for development tools and build orchestrator
+notify = "6.1"    # Cross-platform file system notifications
+futures = "0.3"   # Futures utilities for async operations
+
+# Platform-specific dependencies for shared memory
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["memoryapi", "handleapi", "errhandlingapi", "winnt", "minwindef", "processthreadsapi", "psapi", "tlhelp32", "winbase", "fileapi", "wincon", "namedpipeapi", "synchapi", "jobapi2"] }
+windows-sys = { version = "0.52", features = ["Win32_System_Memory", "Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Pipes", "Win32_System_Threading"] }
+
+# Linux-specific dependencies
+[target.'cfg(target_os = "linux")'.dependencies]
+# Linux-specific dependencies for system integration
+libc = "0.2"  # Already included above but needed for Linux system calls
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS-specific dependencies for shared memory and system integration
+core-foundation = "0.9"  # Core Foundation framework
+core-foundation-sys = "0.8"  # Core Foundation system bindings
+libc = "0.2"  # Already included above but needed for macOS system calls
+mach2 = "0.4"  # Mach kernel interface for shared memory
+
+# Template system dependencies (moved above)
+# md5, dashmap, ropey, tree-sitter moved to main dependencies section
 
 [features]
-default = ["minimal"]
-minimal = []  # Minimal feature set for core compiler functionality
-
-# Temporarily disabled features 
-# binary_compiler = []
-# enhanced_dynamic_dispatch = []
-# concurrent_gc = []
-# benchmarks = []
+# Enable binary compilation support
+binary_compiler = []
+# Enable enhanced dynamic dispatch for interfaces
+enhanced_dynamic_dispatch = []
+# Enable concurrent garbage collection
+concurrent_gc = []
+# Enable benchmark features
+benchmarks = []
+# Enable optimization features
+optimization = []
+# Enable crypto features
+crypto = []
 
 [dev-dependencies]
-# Keep minimal test dependencies only
+criterion = "0.5"  # For benchmarking
 tempfile = "3.8"   # For temporary directories in tests
 pretty_assertions = "1.4"  # For nicer test output
+proptest = "1.3"  # For property-based testing
+rand = "0.8.5"  # For randomization in tests
+# tempfile = "3.8"  # For temporary files in tests (already included above)
+clap = { version = "4.4", features = ["derive"] }  # For command-line argument parsing
+tracing-test = "0.2"  # For tracing in tests
+# notify = "6.1"  # For file watching in tests (already included above)
 
 [workspace]
 members = [
     "."
 ]
 
-# Core binary only - disable other binaries that require heavy dependencies
 [[bin]]
 name = "cursed"
 path = "src/main.rs"
 
-# Temporarily disable other binaries
-# [[bin]]
-# name = "cursed-pkg"
-# path = "src/bin/cursed_pkg.rs"
 
-# [[bin]]
-# name = "cursed-build"
-# path = "src/bin/cursed_build.rs"
 
-# [[bin]]
-# name = "cursed-repl"
-# path = "src/bin/cursed_repl.rs"
+[[bin]]
+name = "cursed-pkg"
+path = "src/bin/cursed_pkg.rs"
 
-# [[bin]]
-# name = "cursed-test"
-# path = "src/bin/cursed_test.rs"
+[[bin]]
+name = "cursed-pkg-simple"
+path = "src/bin/cursed_pkg_simple.rs"
 
-# [[bin]]
-# name = "cursed-debug"
-# path = "src/bin/cursed_debug.rs"
+[[bin]]
+name = "cursed-build"
+path = "src/bin/cursed_build.rs"
 
-# [[bin]]
-# name = "cursed-lsp"
-# path = "src/bin/cursed_lsp.rs"
+[[bin]]
+name = "cursed-repl"
+path = "src/bin/cursed_repl.rs"
 
-# [[bin]]
-# name = "bootstrap-verify"
-# path = "src/bin/bootstrap_verify.rs"
-
-# [[bin]]
-# name = "cursed-doc"
-# path = "src/bin/cursed_doc.rs"
-
-# [[bin]]
-# name = "cursed-compile-fast"
-# path = "src/bin/cursed_compile_fast.rs"
-
-[profile.dev]
-opt-level = 0  # No optimization for faster compilation
-debug = true   # Full debug info
+[[bin]]
+name = "cursed-test"
+path = "src/bin/cursed_test.rs"
 
 [profile.release]
 lto = true  # Enable Link Time Optimization for smaller binaries
@@ -292,3 +377,56 @@ codegen-units = 1  # Optimize for size and performance
 opt-level = 3  # Maximum optimization
 panic = "abort"  # Remove panic unwinding code in release builds
 strip = true  # Strip symbols from the binary
+
+[profile.dev]
+opt-level = 0  # No optimization for faster compilation
+debug = true  # Full debug info
+
+[[test]]
+name = "jit_integration_tests"
+path = "tests/jit_integration_tests.rs"
+harness = true
+
+# [[test]]
+# name = "dynamic_worker_sizing_test"
+# path = "tests/async_constraint_checker/dynamic_worker_sizing_test.rs"
+
+[[bin]]
+name = "cursed-debug"
+path = "src/bin/cursed_debug.rs"
+harness = true
+
+[[bin]]
+name = "cursed-lsp"
+path = "src/bin/cursed_lsp.rs"
+
+[[bin]]
+name = "bootstrap-verify"
+path = "src/bin/bootstrap_verify.rs"
+
+[[bin]]
+name = "cursed-doc"
+path = "src/bin/cursed_doc.rs"
+
+[[bin]]
+name = "cursed-compile-fast"
+path = "src/bin/cursed_compile_fast.rs"
+
+[[example]]
+name = "minimal_demo"
+path = "examples/minimal_demo.rs"
+
+[[bench]]
+name = "optimization_benchmark"
+harness = false
+required-features = ["benchmarks"]
+
+[[bench]]
+name = "compression_benchmark"
+harness = false
+required-features = ["benchmarks"]
+
+[[bench]]
+name = "system_monitoring_benchmark"
+harness = false
+required-features = ["benchmarks"]

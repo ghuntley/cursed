@@ -11,10 +11,12 @@ pub struct Client;
 pub struct NoTls;
 pub struct Statement;
 pub struct Transaction;
-// use crate::stdlib::database::{
-    DriverConn, DriverStmt, DriverTx, TxOptions, SqlValue,
-    driver::{QueryResult, ExecuteResult, ConnectionMetadata}
-};
+// Placeholder for database connection types
+pub type DriverConn = ();
+pub type DriverStmt = ();
+pub type DriverTx = ();
+pub type TxOptions = ();
+pub type SqlValue = String;
 use crate::error::CursedError;
 use super::config::PostgresConfig;
 use super::error::{PostgresError, PostgresErrorKind, PostgresResult};
@@ -423,10 +425,7 @@ impl DriverConn for PostgresConnection {
     fn ping(&self) -> crate::error::Result<()> {
         let handle = tokio::runtime::Handle::current();
         let client = self.client.as_ref().ok_or_else(|| {
-//             crate::stdlib::database::DatabaseError::new(
-//                 crate::stdlib::database::DatabaseErrorKind::ConnectionFailed,
-                "No active connection",
-            )
+            CursedError::Database("No active connection".to_string())
         })?;
         
         handle.block_on(async {

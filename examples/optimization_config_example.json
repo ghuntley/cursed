@@ -1,0 +1,40 @@
+{
+  "default_level": "O2",
+  "enabled_passes": [
+    "inline",
+    "dce",
+    "mem2reg",
+    "gvn",
+    "loop-unroll",
+    "vectorize",
+    "constant-fold",
+    "licm"
+  ],
+  "disabled_passes": [
+    "aggressive-inline",
+    "experimental-vectorize"
+  ],
+  "custom_params": {
+    "inline_threshold": "500",
+    "loop_unroll_factor": "4",
+    "vectorize_width": "8",
+    "optimization_remarks": "true",
+    "target_cpu": "native"
+  },
+  "benchmark_config": {
+    "iterations": 10,
+    "timeout_seconds": 300,
+    "warmup_iterations": 3,
+    "test_files": [
+      "benchmarks/fibonacci.csd",
+      "benchmarks/sort_algorithms.csd",
+      "benchmarks/matrix_multiply.csd"
+    ]
+  },
+  "profiling_config": {
+    "detailed_timing": true,
+    "memory_tracking": true,
+    "sample_rate": 1000,
+    "output_format": "markdown"
+  }
+}

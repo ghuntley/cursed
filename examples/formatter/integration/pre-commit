@@ -1,0 +1,53 @@
+#!/bin/bash
+# Git pre-commit hook for CURSED formatter
+# Install this to .git/hooks/pre-commit and make it executable
+
+# Exit on any error
+set -e
+
+# Check if cursed-fmt is available
+if ! command -v cursed-fmt &> /dev/null; then
+    echo "❌ cursed-fmt not found. Please install the CURSED formatter:"
+    echo "   cargo install --path . --bin cursed-fmt"
+    exit 1
+fi
+
+# Get list of staged .csd files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.csd$' || true)
+
+if [ -z "$STAGED_FILES" ]; then
+    # No CURSED files staged, nothing to do
+    exit 0
+fi
+
+echo "🔍 Checking CURSED code formatting..."
+
+# Create a temporary directory for checking
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf $TEMP_DIR" EXIT
+
+# Copy staged files to temp directory and check formatting
+NEEDS_FORMATTING=false
+for FILE in $STAGED_FILES; do
+    # Copy the staged version to temp directory
+    git show ":$FILE" > "$TEMP_DIR/$(basename $FILE)"
+    
+    # Check if the file needs formatting
+    if ! cursed-fmt --check "$TEMP_DIR/$(basename $FILE)" >/dev/null 2>&1; then
+        echo "❌ $FILE needs formatting"
+        NEEDS_FORMATTING=true
+    fi
+done
+
+if [ "$NEEDS_FORMATTING" = true ]; then
+    echo ""
+    echo "Some files need formatting. Options:"
+    echo "1. Format automatically: git add . && cursed-fmt -w $STAGED_FILES && git add $STAGED_FILES"
+    echo "2. Format manually and re-stage your changes"
+    echo "3. Skip formatting check: git commit --no-verify"
+    echo ""
+    exit 1
+fi
+
+echo "✅ All CURSED files are properly formatted!"
+exit 0

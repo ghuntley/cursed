@@ -1,4 +1,4 @@
-use crate::error::{CursedError, SourceLocation};
+use crate::error::SourceLocation;
 
 #[derive(Debug, Clone)]
 pub struct DebugContext {

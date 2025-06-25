@@ -1,0 +1,86 @@
+# CURSED Documentation Publishing Configuration
+#
+# This file demonstrates how to configure documentation publishing
+# for the CURSED programming language documentation system.
+
+[target]
+# Publishing target configuration
+type = "local"
+path = "./published_docs"
+
+# For S3 publishing:
+# type = "s3"
+# bucket = "cursed-docs"
+# region = "us-west-2"
+# prefix = "docs"
+
+# For GitHub Pages:
+# type = "github-pages" 
+# repo = "user/cursed-docs"
+# branch = "gh-pages"
+# token = "${GITHUB_TOKEN}"
+
+# For custom endpoint:
+# type = "custom"
+# endpoint = "https://api.docs.cursed.dev/upload"
+# [target.credentials]
+# api_key = "${API_KEY}"
+# secret = "${SECRET_KEY}"
+
+# Base URL for published documentation
+base_url = "https://docs.cursed.dev"
+
+# CDN configuration (optional)
+[cdn]
+provider = "cloudflare"
+domain = "docs.cursed.dev"
+regions = ["us", "eu", "asia"]
+
+[cdn.cache_settings]
+html_cache = 3600      # 1 hour
+assets_cache = 86400   # 24 hours  
+api_cache = 300        # 5 minutes
+
+# Optimization settings
+[optimization]
+minify_html = true
+minify_css = true
+minify_js = true
+optimize_images = true
+gzip_compression = true
+brotli_compression = false
+
+# Authentication (optional)
+[auth]
+api_key = "${DOC_API_KEY}"
+secret_key = "${DOC_SECRET_KEY}"
+
+[auth.headers]
+"X-Publisher" = "cursed-cli"
+"X-Version" = "1.0"
+
+# Custom domain configuration (optional)
+[domain]
+domain = "docs.cursed.dev"
+
+[domain.ssl]
+cert_type = "letsencrypt"
+# For custom certificates:
+# cert_type = "custom"
+# cert_path = "/path/to/cert.pem"
+# key_path = "/path/to/private.key"
+
+[domain.dns]
+provider = "cloudflare"
+
+[[domain.dns.records]]
+record_type = "CNAME"
+name = "docs"
+value = "cursed-docs.github.io"
+ttl = 300
+
+[[domain.dns.records]]
+record_type = "TXT"
+name = "_cursed-docs"
+value = "verification=abc123"
+ttl = 300

@@ -224,7 +224,8 @@ pub struct DatabaseError {
     pub query: Option<String>,
     /// fr fr Additional context information
     pub context: std::collections::HashMap<String, String>,
-    /// fr fr Underlying cause error
+    /// fr fr Underlying cause error  
+    pub cause: Option<Box<dyn std::error::Error + Send + Sync>>,
 }
 
 impl Clone for DatabaseError {
@@ -324,6 +325,7 @@ impl DatabaseError {
     }
 
     /// slay Add underlying cause
+    pub fn with_cause(mut self, cause: Box<dyn std::error::Error + Send + Sync>) -> Self {
         self.cause = Some(cause);
         self
     }

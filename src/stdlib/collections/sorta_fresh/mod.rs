@@ -21,7 +21,7 @@ pub use specialized::*;
 pub use search::*;
 
 /// Result type for SortaFresh operations  
-pub type SortaFreshcrate::error::Result<T> = std::result::Result<T>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 /// Core interface for sortable collections
 /// Equivalent to `Sortable` interface in the spec

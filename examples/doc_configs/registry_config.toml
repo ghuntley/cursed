@@ -1,0 +1,80 @@
+# CURSED Documentation Registry Configuration
+#
+# This file demonstrates how to configure the documentation registry
+# for managing package documentation metadata.
+
+# Registry data directory
+data_dir = "./registry"
+
+# Registry index file
+index_file = "./registry/index.json"
+
+# Package metadata cache size
+cache_size = 1000
+
+# Metadata refresh interval (seconds)
+refresh_interval = 3600  # 1 hour
+
+# Enable automatic dependency resolution
+auto_resolve_deps = true
+
+# Maximum dependency depth for resolution
+max_dependency_depth = 10
+
+# Development configuration
+[development]
+data_dir = "./dev_registry"
+index_file = "./dev_registry/index.json"
+cache_size = 100
+refresh_interval = 300   # 5 minutes
+auto_resolve_deps = true
+max_dependency_depth = 5
+
+# Production configuration
+[production]
+data_dir = "/var/lib/cursed-registry"
+index_file = "/var/lib/cursed-registry/index.json"
+cache_size = 10000
+refresh_interval = 1800  # 30 minutes
+auto_resolve_deps = true
+max_dependency_depth = 15
+
+# Backup configuration
+[backup]
+enabled = true
+interval = 86400        # Daily backups
+retention_days = 30
+backup_location = "/var/backups/cursed-registry"
+compress = true
+
+# Search index configuration
+[search]
+enabled = true
+index_file = "./registry/search_index.json"
+rebuild_interval = 3600  # 1 hour
+max_results = 1000
+
+# Quality metrics configuration
+[quality]
+enabled = true
+min_coverage_threshold = 50.0
+example_coverage_weight = 0.3
+api_coverage_weight = 0.4
+freshness_weight = 0.2
+link_health_weight = 0.1
+
+# Cleanup configuration
+[cleanup]
+enabled = true
+old_version_retention_days = 365  # Keep old versions for 1 year
+orphaned_cleanup_interval = 86400 # Daily cleanup
+max_versions_per_package = 50
+
+# Statistics configuration
+[statistics]
+enabled = true
+update_interval = 3600   # 1 hour
+retention_days = 90
+track_popular_packages = true
+track_search_queries = true
+track_download_counts = true

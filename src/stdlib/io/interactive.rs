@@ -1,8 +1,8 @@
 /// Interactive console utilities for CURSED
 // use crate::stdlib::io::{
-    error::{IoError, IoResult},
-    console::{print, println, read_line}
-};
+//     error::{IoError, IoResult},
+//     console::{print, println, read_line}
+// };
 
 /// Show a prompt and read user input
 pub fn prompt(message: &str) -> IoResult<String> {

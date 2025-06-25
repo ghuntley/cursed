@@ -1,0 +1,133 @@
+// Hot Reload Development Server Demo
+// This example demonstrates the hot reload functionality for CURSED development
+
+import "stdlib::web_vibez::debug";
+import "stdlib::fs";
+import "stdlib::time";
+import "stdlib::io";
+
+sus main() {
+    println("🔥 CURSED Hot Reload Demo")?;
+    println("Watch for changes in .csd files and auto-reload")?;
+
+    // Create a hot reload watcher
+    let mut watcher = debug::HotReloadWatcher::new()
+        .with_patterns(vec![
+            "*.csd".to_string(),
+            "*.cursed".to_string(),
+            "*.toml".to_string(),
+        ])
+        .with_debounce(time::Duration::from_millis(500));
+
+    // Add current directory to watch
+    facts current_dir = std::env::current_dir()?;
+    watcher.watch_path(current_dir)?;
+
+    // Enable watching
+    watcher.enable()?;
+    println("✅ File watcher enabled")?;
+    println("📁 Watching: {:?}", watcher.get_watched_paths())?;
+    println("🔍 Patterns: {:?}", watcher.get_file_patterns())?;
+    println("⏱️ Debounce: {:?}", watcher.get_debounce_duration())?;
+
+    // Main development loop
+    println("\n🚀 Starting development server...")?;
+    println("💡 Edit any .csd file to see hot reload in action")?;
+    println("💡 Press Ctrl+C to stop\n")?;
+
+    lowkey (facts i = 0; i < 1000; i++) {
+        // Check for file changes
+        facts changed_files = watcher.check_for_changes();
+
+        if !changed_files.is_empty() {
+            println("🔥 Hot reload triggered!")?;
+            sus file in changed_files {
+                println("📝 Changed: {}", file.display())?;
+            }
+            
+            // Simulate reload process
+            println("🔄 Recompiling...")?;
+            time::sleep(time::Duration::from_millis(100))?;
+            println("✅ Reload complete!\n")?;
+        }
+
+        // Sleep for a bit to avoid busy waiting
+        time::sleep(time::Duration::from_millis(100))?;
+    }
+
+    // Cleanup
+    watcher.disable()?;
+    println("🛑 Hot reload watcher stopped")?;
+}
+
+// Example of a development middleware that integrates hot reload
+squad DevServer {
+    hot_reload: debug::HotReloadWatcher,
+    request_debugger: debug::RequestDebugger,
+    response_debugger: debug::ResponseDebugger,
+}
+
+impl DevServer {
+    sus fn new() -> Result<Self, Error> {
+        facts mut hot_reload = debug::HotReloadWatcher::new()
+            .with_patterns(vec![
+                "*.csd".to_string(),
+                "src/**/*.csd".to_string(),
+                "templates/**/*.html".to_string(),
+                "static/**/*.css".to_string(),
+                "static/**/*.js".to_string(),
+            ])
+            .with_debounce(time::Duration::from_millis(300));
+
+        // Watch source directories
+        hot_reload.watch_path(std::path::PathBuf::from("src"))?;
+        hot_reload.watch_path(std::path::PathBuf::from("templates"))?;
+        hot_reload.watch_path(std::path::PathBuf::from("static"))?;
+        hot_reload.enable()?;
+
+        Ok(Self {
+            hot_reload,
+            request_debugger: debug::RequestDebugger::new(),
+            response_debugger: debug::ResponseDebugger::new(),
+        })
+    }
+
+    sus fn handle_request(&mut self, method: &str, path: &str) -> Result<String, Error> {
+        // Check for hot reload first
+        facts changed_files = self.hot_reload.check_for_changes();
+        if !changed_files.is_empty() {
+            println("🔥 Hot reload detected, recompiling...")?;
+            sus file in changed_files {
+                println("📝 {}", file.display())?;
+            }
+            // Trigger recompilation here
+        }
+
+        // Debug request
+        facts headers = std::collections::HashMap::new();
+        facts body = b"";
+        facts debug_info = self.request_debugger.log_request(method, path, &headers, body);
+        if !debug_info.is_empty() {
+            print(&debug_info)?;
+        }
+
+        // Process request (simplified)
+        facts response_body = format!("Hello from {} {}", method, path);
+        facts response_headers = std::collections::HashMap::new();
+        facts duration = time::Duration::from_millis(50);
+
+        // Debug response
+        facts response_debug = self.response_debugger.log_response(
+            200, &response_headers, response_body.as_bytes(), duration
+        );
+        if !response_debug.is_empty() {
+            print(&response_debug)?;
+        }
+
+        Ok(response_body)
+    }
+
+    sus fn check_hot_reload(&mut self) -> Vec<std::path::PathBuf> {
+        self.hot_reload.check_for_changes()
+    }
+}
