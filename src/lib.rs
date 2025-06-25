@@ -159,13 +159,17 @@ pub fn run_file(path: &str) -> Result<(), Error> {
     run(&source)
 }
 
-/// Stub functions for CLI compatibility (always error for now)
-pub fn compile_to_ir(_source: &str) -> Result<String, Error> {
-    Err(Error::NotImplemented("LLVM codegen not available in minimal build".to_string()))
+/// Compile CURSED source directly to LLVM IR
+pub fn compile_to_ir(source: &str) -> Result<String, Error> {
+    let program = parse(source)?;
+    codegen::compile_cursed_to_llvm(&program, "cursed_program")
 }
 
-pub fn compile_to_ir_with_optimization(_source: &str, _opt_level: Option<&str>) -> Result<String, Error> {
-    Err(Error::NotImplemented("LLVM codegen not available in minimal build".to_string()))
+/// Compile CURSED source to LLVM IR with optimization
+pub fn compile_to_ir_with_optimization(source: &str, _opt_level: Option<&str>) -> Result<String, Error> {
+    // For now, optimization levels are ignored - we use default LLVM optimization
+    let program = parse(source)?;
+    codegen::compile_cursed_to_llvm(&program, "cursed_program")
 }
 
 /// Parse a CURSED source file and return the AST
@@ -185,6 +189,11 @@ pub fn compile_to_llvm_ir(program: &minimal_ast::Program, module_name: &str, out
 /// Compile a CURSED program to an object file
 pub fn compile_to_object(program: &minimal_ast::Program, module_name: &str, output_file: &str) -> Result<(), Error> {
     codegen::compile_cursed_to_object(program, module_name, output_file)
+}
+
+/// Compile a CURSED program to an executable
+pub fn compile_to_executable(program: &minimal_ast::Program, module_name: &str, output_file: &str) -> Result<(), Error> {
+    codegen::compile_cursed_to_executable(program, module_name, output_file)
 }
 
 

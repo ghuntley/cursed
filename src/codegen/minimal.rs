@@ -64,25 +64,58 @@ impl<'ctx> MinimalCodegen<'ctx> {
                 Ok(())
             }
             Statement::Slay(name, _params, body) => {
-                // Create a function
-                let void_type = self.context.void_type();
-                let fn_type = void_type.fn_type(&[], false);
+                // Create a function - if name is "main", make it return i32, otherwise void
+                let (fn_type, returns_value) = if name == "main" {
+                    let i32_type = self.context.i32_type();
+                    (i32_type.fn_type(&[], false), true)
+                } else {
+                    let void_type = self.context.void_type();
+                    (void_type.fn_type(&[], false), false)
+                };
+                
                 let function = self.module.add_function(name, fn_type, None);
                 let basic_block = self.context.append_basic_block(function, "entry");
                 
                 let old_insertion_point = self.builder.get_insert_block();
                 self.builder.position_at_end(basic_block);
                 
+                let mut last_value = None;
+                
                 // Compile function body
                 for stmt in body {
-                    if let Statement::Expression(expr) = stmt {
-                        self.compile_expression(expr)?;
+                    match stmt {
+                        Statement::Expression(expr) => {
+                            last_value = Some(self.compile_expression(expr)?);
+                        }
+                        Statement::Facts(var_name, expr) => {
+                            // Create local variable
+                            let value = self.compile_expression(expr)?;
+                            let alloca = self.builder.build_alloca(value.get_type(), var_name).map_err(|e| {
+                                Error::Compile(format!("Failed to create alloca: {}", e))
+                            })?;
+                            self.builder.build_store(alloca, value).map_err(|e| {
+                                Error::Compile(format!("Failed to store value: {}", e))
+                            })?;
+                            self.variables.insert(var_name.clone(), alloca);
+                        }
+                        _ => {
+                            self.compile_statement(stmt)?;
+                        }
                     }
                 }
                 
-                self.builder.build_return(None).map_err(|e| {
-                    Error::Compile(format!("Failed to build return: {}", e))
-                })?;
+                // Build return
+                if returns_value && name == "main" {
+                    // For main function, return 0
+                    let zero = self.context.i32_type().const_int(0, false);
+                    self.builder.build_return(Some(&zero)).map_err(|e| {
+                        Error::Compile(format!("Failed to build return: {}", e))
+                    })?;
+                } else {
+                    self.builder.build_return(None).map_err(|e| {
+                        Error::Compile(format!("Failed to build return: {}", e))
+                    })?;
+                }
                 
                 // Restore insertion point
                 if let Some(block) = old_insertion_point {
@@ -113,9 +146,15 @@ impl<'ctx> MinimalCodegen<'ctx> {
                 Ok(bool_value.into())
             }
             Expression::Identifier(name) => {
-                // For now, just return a placeholder
-                let int_value = self.context.i64_type().const_int(42, false);
-                Ok(int_value.into())
+                // For now, just check if we have the variable and return the global value
+                if let Some(global) = self.module.get_global(name) {
+                    // Return the global value directly (it's a constant initializer)
+                    Ok(global.get_initializer().unwrap())
+                } else {
+                    // Return a placeholder if variable not found
+                    let int_value = self.context.i64_type().const_int(42, false);
+                    Ok(int_value.into())
+                }
             }
             Expression::FunctionCall(name, _args) => {
                 // For now, just return a placeholder
@@ -172,4 +211,40 @@ pub fn compile_cursed_to_object(program: &Program, module_name: &str, output_fil
     // Get the target triple for the current platform
     let target_triple = TargetMachine::get_default_triple();
     codegen.compile_to_object_file(&target_triple.as_str().to_str().unwrap(), output_file)
+}
+
+pub fn compile_cursed_to_executable(program: &Program, module_name: &str, output_file: &str) -> Result<(), Error> {
+    let context = Context::create();
+    let mut codegen = MinimalCodegen::new(&context, module_name);
+    
+    codegen.compile_program(program)?;
+    
+    // Get the target triple for the current platform
+    let target_triple = TargetMachine::get_default_triple();
+    
+    // First create an object file
+    let temp_obj = format!("{}.o", output_file);
+    codegen.compile_to_object_file(&target_triple.as_str().to_str().unwrap(), &temp_obj)?;
+    
+    // Then link it into an executable using gcc
+    let link_result = std::process::Command::new("gcc")
+        .arg(&temp_obj)
+        .arg("-o")
+        .arg(output_file)
+        .output();
+    
+    // Clean up temporary object file
+    let _ = std::fs::remove_file(&temp_obj);
+    
+    match link_result {
+        Ok(output) => {
+            if output.status.success() {
+                Ok(())
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(Error::Compile(format!("Linking failed: {}", stderr)))
+            }
+        }
+        Err(e) => Err(Error::Compile(format!("Failed to run linker: {}", e)))
+    }
 }
