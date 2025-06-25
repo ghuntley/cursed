@@ -9,7 +9,7 @@ pub struct TemplateIntegration;
 
 impl TemplateIntegration {
     /// Parse embedded templates from patterns
-    pub fn parse_templates(patterns: &[tea]) -> EmbedResult<Box<dyn TemplateEngine>> {
+    pub fn parse_templates(patterns: &[tea]) -> EmbedResult<Box<TemplateEngine>> {
         Self::parse_templates_with_funcs(HashMap::new(), patterns)
     }
     
@@ -17,7 +17,7 @@ impl TemplateIntegration {
     pub fn parse_templates_with_funcs(
         func_map: HashMap<tea, fn(&[tea]) -> tea>, 
         patterns: &[tea]
-    ) -> EmbedResult<Box<dyn TemplateEngine>> {
+    ) -> EmbedResult<Box<TemplateEngine>> {
         let mut all_files = ThatFiles::new();
         
         // Load files matching all patterns
@@ -80,7 +80,7 @@ impl TemplateIntegration {
     }
     
     /// Parse a single embedded template file
-    pub fn parse_template_file(path: &tea) -> EmbedResult<Box<dyn TemplateEngine>> {
+    pub fn parse_template_file(path: &tea) -> EmbedResult<Box<TemplateEngine>> {
         let file = super::resource_loader::load_that_file(path)?;
         
         let content = file.content_string()
@@ -136,7 +136,7 @@ impl TemplateIntegration {
     
     /// Render a template with data
     pub fn render_template(
-        engine: &dyn TemplateEngine, 
+        engine: &TemplateEngine, 
         template_name: &tea, 
         data: &HashMap<tea, serde_json::Value>
     ) -> EmbedResult<tea> {
@@ -150,7 +150,7 @@ impl TemplateIntegration {
     pub fn create_configured_engine(
         patterns: &[tea], 
         config: TemplateConfig
-    ) -> EmbedResult<Box<dyn TemplateEngine>> {
+    ) -> EmbedResult<Box<TemplateEngine>> {
         let mut all_files = ThatFiles::new();
         
         // Load files matching all patterns
@@ -372,14 +372,14 @@ impl TemplateHelpers {
 }
 
 /// Public API functions for template integration
-pub fn parse_templates(patterns: &[tea]) -> EmbedResult<Box<dyn TemplateEngine>> {
+pub fn parse_templates(patterns: &[tea]) -> EmbedResult<Box<TemplateEngine>> {
     TemplateIntegration::parse_templates(patterns)
 }
 
 pub fn parse_templates_with_funcs(
     func_map: HashMap<tea, fn(&[tea]) -> tea>, 
     patterns: &[tea]
-) -> EmbedResult<Box<dyn TemplateEngine>> {
+) -> EmbedResult<Box<TemplateEngine>> {
     TemplateIntegration::parse_templates_with_funcs(func_map, patterns)
 }
 

@@ -3,7 +3,7 @@
 /// This module provides the core JIT execution functionality using LLVM's execution engine
 /// to run compiled CURSED code and return actual results.
 
-use crate::error::Error;
+use crate::error_types::Error;
 use crate::execution::{CursedValue, ValueType, ExecutionContext};
 use crate::codegen::llvm::{CursedJitEngine, JitEngineConfig, JitEngineStats};
 use inkwell::{context::Context, OptimizationLevel};

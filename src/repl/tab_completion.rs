@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // Tab Completion for CURSED REPL
 // 
 // Provides intelligent tab completion for CURSED keywords,

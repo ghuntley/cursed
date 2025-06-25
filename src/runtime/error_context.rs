@@ -4,7 +4,7 @@
 // source location management, function call chains, and error propagation
 // history for enhanced debugging and error reporting.
 
-use crate::error::{CursedError, SourceLocation};
+use crate::error_types::Error;
 use crate::runtime::error_propagation::{ErrorPropagationContext, PropagationError};
 
 use std::collections::{HashMap, BTreeMap, VecDeque};
@@ -50,7 +50,7 @@ impl ErrorContextManager {
     #[instrument(skip(self, context))]
     pub fn register_context(&self, context: EnhancedErrorContext) -> Result<(), Error> {
         let mut registry = self.context_registry.write()
-            .map_err(|_| CursedError::system_error("Failed to acquire context registry lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire context registry lock"))?;
 
         let context_id = registry.add_context(context);
         
@@ -67,7 +67,7 @@ impl ErrorContextManager {
         parameters: Option<HashMap<String, String>>,
     ) -> Result<(), Error> {
         let mut call_stack = self.call_stack.lock()
-            .map_err(|_| CursedError::system_error("Failed to acquire call stack lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire call stack lock"))?;
 
         let call_context = FunctionCallContext {
             function_name: function_name.clone(),
@@ -87,7 +87,7 @@ impl ErrorContextManager {
     #[instrument(skip(self))]
     pub fn pop_function_context(&self) -> Result<(), Error> {
         let mut call_stack = self.call_stack.lock()
-            .map_err(|_| CursedError::system_error("Failed to acquire call stack lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire call stack lock"))?;
 
         let context = call_stack.pop();
         
@@ -136,7 +136,7 @@ impl ErrorContextManager {
         file_content: String,
     ) -> Result<(), Error> {
         let mut mapper = self.source_mapper.write()
-            .map_err(|_| CursedError::system_error("Failed to acquire source mapper lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire source mapper lock"))?;
 
         mapper.add_file(file_path, file_content);
         Ok(())
@@ -145,7 +145,7 @@ impl ErrorContextManager {
     /// Get detailed error context by ID
     pub fn get_context(&self, context_id: &str) -> Result<(), Error> {
         let registry = self.context_registry.read()
-            .map_err(|_| CursedError::system_error("Failed to acquire context registry lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire context registry lock"))?;
 
         Ok(registry.get_context(context_id))
     }
@@ -153,7 +153,7 @@ impl ErrorContextManager {
     /// Get current function call stack
     pub fn get_current_call_stack(&self) -> Result<(), Error> {
         let call_stack = self.call_stack.lock()
-            .map_err(|_| CursedError::system_error("Failed to acquire call stack lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire call stack lock"))?;
 
         Ok(call_stack.get_stack())
     }
@@ -166,7 +166,7 @@ impl ErrorContextManager {
         related_context_ids: Vec<String>,
     ) -> Result<(), Error> {
         let mut chains = self.error_chains.lock()
-            .map_err(|_| CursedError::system_error("Failed to acquire error chains lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire error chains lock"))?;
 
         let chain_id = chains.create_chain(root_context_id, related_context_ids);
         
@@ -178,11 +178,11 @@ impl ErrorContextManager {
     #[instrument(skip(self))]
     pub fn generate_error_report(&self, context_id: &str) -> Result<(), Error> {
         let context = self.get_context(context_id)?
-            .ok_or_else(|| CursedError::Runtime(format!("Context not found: {}", context_id)))?;
+            .ok_or_else(|| Error::Runtime(format!("Context not found: {}", context_id)))?;
 
         // Get related error chains
         let chains = self.error_chains.lock()
-            .map_err(|_| CursedError::system_error("Failed to acquire error chains lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire error chains lock"))?;
         
         let related_chains = chains.get_chains_containing_context(context_id);
 
@@ -200,7 +200,7 @@ impl ErrorContextManager {
     /// Resolve source location to detailed information
     fn resolve_source_location(&self, location: &SourceLocation) -> Result<(), Error> {
         let mapper = self.source_mapper.read()
-            .map_err(|_| CursedError::system_error("Failed to acquire source mapper lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire source mapper lock"))?;
 
         Ok(mapper.get_source_info(location))
     }

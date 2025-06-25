@@ -4,9 +4,22 @@
 /// and components must implement. Think of them as the rules of the game bestie!
 
 use crate::stdlib::packages::db_core::{
-    ConnectionConfig, Query, Transaction, 
-    Row, Column, ColumnType, ExecuteResult, TransactionOptions,
-    DatabaseError, QueryStats, ResultMetadata, SavePoint as CoreSavePoint
+    Row, Column, ColumnType, Parameter
+};
+use crate::stdlib::packages::db_core::result::{
+    ExecuteResult, QueryStats, ResultMetadata
+};
+use crate::stdlib::packages::db_core::query::{
+    Query, QueryPlan as ImportedQueryPlan, ExecutionStep as ImportedExecutionStep
+};
+use crate::stdlib::packages::db_core::transaction::{
+    TransactionOptions, TransactionState, TransactionIsolation
+};
+
+// Export SavePoint for external use (TransactionState already imported above)
+pub use crate::stdlib::packages::db_core::transaction::{SavePoint as TransactionSavePoint};
+use crate::stdlib::packages::db_core::connection::{
+    ConnectionConfig, ConnectionInfo as ImportedConnectionInfo
 };
 use crate::error::Error;
 use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
@@ -38,10 +51,10 @@ pub trait DatabaseDriver: std::fmt::Debug + Send + Sync {
 #[async_trait]
 pub trait DatabaseConnection: std::fmt::Debug + Send + Sync {
     /// slay Execute a query and return results
-    async fn query(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<Box<dyn ResultSet>>;
+    async fn query(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<Box<dyn ResultSet>>;
     
     /// slay Execute a statement that doesn't return data
-    async fn execute(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<ExecuteResult>;
+    async fn execute(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<ExecuteResult>;
     
     /// slay Prepare a statement for multiple executions
     async fn prepare(&mut self, sql: &str) -> DbResult<Box<dyn PreparedStatement>>;
@@ -56,7 +69,7 @@ pub trait DatabaseConnection: std::fmt::Debug + Send + Sync {
     async fn close(self: Box<Self>) -> DbResult<()>;
     
     /// slay Get connection metadata
-    fn connection_info(&self) -> ConnectionInfo;
+    fn connection_info(&self) -> ImportedConnectionInfo;
 }
 
 /// fr fr Transaction management trait
@@ -69,16 +82,16 @@ pub trait DatabaseTransaction: std::fmt::Debug + Send + Sync {
     async fn rollback(self: Box<Self>) -> DbResult<()>;
     
     /// slay Create a savepoint
-    async fn savepoint(&mut self, name: &str) -> DbResult<CoreSavePoint>;
+    async fn savepoint(&mut self, name: &str) -> DbResult<SavePoint>;
     
     /// slay Rollback to a savepoint
-    async fn rollback_to_savepoint(&mut self, savepoint: &CoreSavePoint) -> DbResult<()>;
+    async fn rollback_to_savepoint(&mut self, savepoint: &SavePoint) -> DbResult<()>;
     
     /// slay Execute query within transaction
-    async fn query(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<Box<dyn ResultSet>>;
+    async fn query(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<Box<dyn ResultSet>>;
     
     /// slay Execute statement within transaction
-    async fn execute(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<ExecuteResult>;
+    async fn execute(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<ExecuteResult>;
     
     /// slay Get transaction state
     fn state(&self) -> TransactionState;
@@ -88,13 +101,13 @@ pub trait DatabaseTransaction: std::fmt::Debug + Send + Sync {
 #[async_trait]
 pub trait QueryExecutor: std::fmt::Debug + Send + Sync {
     /// slay Execute a query plan
-    async fn execute_plan(&mut self, plan: QueryPlan) -> DbResult<Box<dyn ResultSet>>;
+    async fn execute_plan(&mut self, plan: ImportedQueryPlan) -> DbResult<Box<dyn ResultSet>>;
     
     /// slay Execute batch of queries
     async fn execute_batch(&mut self, queries: Vec<Query>) -> DbResult<Vec<ExecuteResult>>;
     
     /// slay Stream large result sets
-    async fn stream_query(&mut self, sql: &str, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<Box<dyn QueryStream>>;
+    async fn stream_query(&mut self, sql: &str, parameters: &[Parameter]) -> DbResult<Box<dyn QueryStream>>;
     
     /// slay Get query execution statistics
     async fn query_stats(&self, query_id: &str) -> DbResult<QueryStats>;
@@ -119,16 +132,21 @@ pub trait ResultSet: std::fmt::Debug + Send + Sync {
     
     /// slay Get row count (if available)
     fn row_count(&self) -> Option<usize>;
+    
+    /// slay Check if result set is empty
+    fn is_empty(&self) -> bool {
+        self.row_count().unwrap_or(0) == 0
+    }
 }
 
 /// fr fr Prepared statement trait for efficient repeated execution
 #[async_trait]
 pub trait PreparedStatement: std::fmt::Debug + Send + Sync {
     /// slay Execute with parameters
-    async fn execute(&mut self, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<ExecuteResult>;
+    async fn execute(&mut self, parameters: &[Parameter]) -> DbResult<ExecuteResult>;
     
     /// slay Query with parameters
-    async fn query(&mut self, parameters: &[crate::stdlib::packages::db_core::Parameter]) -> DbResult<Box<dyn ResultSet>>;
+    async fn query(&mut self, parameters: &[Parameter]) -> DbResult<Box<dyn ResultSet>>;
     
     /// slay Get parameter metadata
     fn parameter_metadata(&self) -> &[ParameterMetadata];
@@ -225,7 +243,7 @@ pub struct QueryPlan {
     pub query: Query,
     pub estimated_cost: f64,
     pub estimated_rows: Option<usize>,
-    pub execution_steps: Vec<ExecutionStep>,
+    pub execution_steps: Vec<ImportedExecutionStep>,
 }
 
 /// fr fr Execution step in a query plan
@@ -270,23 +288,7 @@ pub enum SqlDialect {
     Custom(String),
 }
 
-/// fr fr Transaction states
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TransactionState {
-    Active,
-    Committed,
-    RolledBack,
-    Failed,
-}
-
-/// fr fr Transaction isolation levels
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TransactionIsolation {
-    ReadUncommitted,
-    ReadCommitted,
-    RepeatableRead,
-    Serializable,
-}
+// Transaction types moved to transaction module to avoid conflicts
 
 impl DriverInfo {
     /// slay Create new driver info
@@ -307,7 +309,7 @@ impl DriverInfo {
     }
 }
 
-impl ConnectionInfo {
+impl ImportedConnectionInfo {
     /// slay Create new connection info
     pub fn new(database_name: &str, server_version: &str) -> Self {
         Self {
@@ -348,7 +350,7 @@ mod tests {
     
     #[test]
     fn test_connection_info() {
-        let info = ConnectionInfo::new("test_db", "1.0");
+        let info = ImportedConnectionInfo::new("test_db", "1.0");
         assert_eq!(info.database_name, "test_db");
         assert!(!info.connection_id.is_empty());
     }

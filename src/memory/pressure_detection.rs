@@ -12,6 +12,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::memory::heap_manager::HeapStats;
 use crate::memory::gc::CollectionStats;
+use crate::error_types::Error;
 
 /// Different levels of memory pressure
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]

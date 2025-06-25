@@ -21,6 +21,7 @@ use tracing::{instrument, debug, warn, error, info};
 
 use crate::memory::object_id::{ObjectId, ObjectIdGenerator, ObjectMetadata, SharedObjectRegistry};
 use crate::profiling::memory::{MemoryProfiler, GcEvent, AllocationEvent};
+use crate::error_types::Error;
 
 /// Raw memory block allocated from the system
 /// 

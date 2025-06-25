@@ -19,6 +19,7 @@ pub mod object_id;
 pub mod heap_manager;
 pub mod object_store;
 pub mod gc;
+pub mod gc_types;
 pub mod root_set;
 pub mod heap;
 pub mod allocator;
@@ -58,6 +59,7 @@ pub mod test_real_heap;
 
 // Re-export main types for convenience
 pub use gc::{GarbageCollector, Gc, WeakGc, CollectionStats, GcStats};
+pub use gc_types::{CollectionAlgorithm, CollectionTrigger, EnhancedCollectionStats, HeapStats as GcHeapStats, AlgorithmStats, ComprehensiveGcStats};
 pub use object_id::{ObjectId, ObjectIdGenerator, ObjectMetadata, ObjectRegistry, SharedObjectRegistry};
 pub use heap_manager::{HeapManager, HeapConfig, HeapStats, AllocationInfo};
 pub use object_store::{ObjectStore, ObjectHandle, Storable, StoredObjectInfo, ObjectStoreStats};

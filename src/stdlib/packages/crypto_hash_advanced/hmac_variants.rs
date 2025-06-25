@@ -1,7 +1,7 @@
 /// Production-ready HMAC variants and advanced MAC implementations
-use crate::error::CursedError;
+use crate::error_types::Error;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::error::Error;
+use crate::stdlib::crypto::types::CryptoError;
 use std::collections::HashMap;
 
 /// Result type for HMAC operations
@@ -178,7 +178,7 @@ impl<H: Hasher + Clone> Hasher for HmacEngine<H> {
 
 impl<H: Hasher + Clone> KeyedHasher for HmacEngine<H> {
     fn set_key(&mut self, key: &[u8]) -> HashResult<()> {
-        self.set_key(key).map_err(|e| CursedError::InvalidArgument(e.to_string()))
+        self.set_key(key).map_err(|e| Error::InvalidArgument(e.to_string()))
     }
     
     fn key_length(&self) -> usize {

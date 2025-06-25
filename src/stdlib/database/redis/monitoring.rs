@@ -229,7 +229,7 @@ impl RedisMonitor {
             info!(alert_id = alert_id, "Alert acknowledged");
             Ok(())
         } else {
-            Err(DatabaseError::General("Alert not found".to_string()))
+            Err(DatabaseError::General("Alert not found".to_string()).into())
         }
     }
     

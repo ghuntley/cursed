@@ -30,9 +30,10 @@ pub use value::{ValueManager, CursedValue};
 pub use runtime::{Runtime, RuntimeConfig, RuntimeStats, RuntimeError, RuntimeErrorType};
 
 // Additional exports needed by other modules
-pub use goroutine::GoroutineScheduler;
+pub use goroutine::{GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};
 pub use panic::PanicRuntime;
 pub use error_handling::ErrorRuntime;
 pub use jit_runtime::JitRuntime;
-pub use debug_manager::DebugManager;
+pub use debug_manager::{DebugManager, DebugManagerConfig, DebugManagerStats, FunctionDebugInfo, SourceFile};
 pub use debug_runtime::PerformanceMonitor;
+pub use debug_info::{EnhancedDebugInfo, EnhancedStackFrame, EnhancedStackTrace, VariableInfo, StackTraceCapture, EnhancedStackTraceConfig, SymbolInfo, SymbolResolver};

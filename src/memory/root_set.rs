@@ -19,6 +19,7 @@ use std::thread::{self, ThreadId};
 use tracing::{instrument, debug, info, warn};
 
 use crate::memory::object_id::ObjectId;
+use crate::error_types::Error;
 
 /// Types of roots in the garbage collection system
 /// 

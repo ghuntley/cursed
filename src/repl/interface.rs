@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // REPL User Interface Module
 // 
 // Provides the main interface components for the CURSED REPL,
@@ -8,7 +8,7 @@ use std::io::{self, Write};
 use colored::Colorize;
 
 use crate::repl::{ReplOutput, ReplResult};
-use crate::error::CursedError;
+use crate::error::Error;
 
 /// REPL interface configuration
 #[derive(Debug, Clone)]
@@ -203,11 +203,11 @@ impl ReplInterface {
         } else {
             print!("{} ", message);
         }
-        io::stdout().flush().map_err(|e| CursedError::repl_error(e.to_string()))?;
+        io::stdout().flush().map_err(|e| Error::repl_error(e.to_string()))?;
 
         let mut input = String::new();
         io::stdin().read_line(&mut input)
-            .map_err(|e| CursedError::repl_error(e.to_string()))?;
+            .map_err(|e| Error::repl_error(e.to_string()))?;
 
         Ok(input.trim().to_string())
     }

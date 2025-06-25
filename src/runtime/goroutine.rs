@@ -387,6 +387,20 @@ pub fn init_scheduler() -> Result<(), String> {
     Ok(())
 }
 
+/// Initialize the global scheduler (alias for init_scheduler)
+pub fn initialize_global_scheduler() -> Result<(), String> {
+    init_scheduler()
+}
+
+/// Shutdown the global scheduler
+pub fn shutdown_global_scheduler() {
+    unsafe {
+        if let Some(mut scheduler) = GLOBAL_SCHEDULER.take() {
+            scheduler.shutdown();
+        }
+    }
+}
+
 pub fn spawn_goroutine<F>(task: F) -> Result<usize, String>
 where
     F: FnOnce() -> Result<(), String> + Send + 'static,

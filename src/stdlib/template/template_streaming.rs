@@ -8,7 +8,7 @@ use tokio::io::{AsyncWrite, AsyncWriteExt, BufWriter as AsyncBufWriter};
 use tokio::sync::{mpsc, Semaphore};
 use tokio::task::JoinHandle;
 use futures::{Stream, StreamExt};
-use tracing::{debug, error, info, instrument, span, Level};
+use tracing::{debug, error, info, instrument, span, warn, Level};
 
 use crate::error::Error as CursedError;
 use crate::object::Object as CursedObject;
@@ -160,7 +160,7 @@ impl StreamingTemplateRenderer {
         ast: &TemplateAst,
         context: RenderContext,
         writer: W,
-    ) -> Result<(), Error> {
+    ) -> Result<StreamingResult, Error> {
         let start_time = Instant::now();
         info!("Starting streaming template render");
         
@@ -297,7 +297,7 @@ impl StreamingTemplateRenderer {
         ast: TemplateAst,
         context: RenderContext,
         chunk_sender: mpsc::Sender<StreamChunk>,
-    ) -> Result<(), CursedError> {
+    ) -> Result<tokio::task::JoinHandle<Result<bool, Error>>, CursedError> {
         let config = self.config.clone();
         
         let handle = tokio::spawn(async move {
@@ -346,7 +346,7 @@ impl StreamingTemplateRenderer {
         node: &TemplateNode,
         context: &RenderContext,
         config: &StreamingConfig,
-    ) -> Result<(), Error> {
+    ) -> Result<Vec<StreamChunk>, Error> {
         let mut chunks = Vec::new();
         
         match node {
@@ -364,7 +364,7 @@ impl StreamingTemplateRenderer {
             TemplateNode::Variable { expression, filters, .. } => {
                 // Resolve variable and apply filters  
                 let name = match expression {
-                    TemplateExpression::Variable(var_name) => var_name,
+                    TemplateExpression::Variable(var_name) => var_name.clone(),
                     _ => "unknown".to_string(),
                 };
                 if let Some(value) = context.get(&name) {
@@ -393,13 +393,40 @@ impl StreamingTemplateRenderer {
                 };
                 if !content_nodes.is_empty() {
                     for content_node in content_nodes {
-                        let mut node_chunks = Self::process_node_to_chunks(content_node, context, config).await?;
+                        let mut node_chunks = Self::process_node_to_chunks(&content_node, context, config).await?;
                         chunks.append(&mut node_chunks);
                     }
                 }
             }
             TemplateNode::Comment { .. } => {
                 // Comments produce no output
+            }
+            TemplateNode::Include { .. } => {
+                // Include templates - for streaming we'll skip this for now
+                chunks.push(StreamChunk::Text("<!-- Include not supported in streaming mode -->".to_string()));
+            }
+            TemplateNode::Extends { .. } => {
+                // Template inheritance - for streaming we'll skip this for now  
+                chunks.push(StreamChunk::Text("<!-- Extends not supported in streaming mode -->".to_string()));
+            }
+            TemplateNode::BlockDef { .. } => {
+                // Block definitions - for streaming we'll skip this for now
+                chunks.push(StreamChunk::Text("<!-- BlockDef not supported in streaming mode -->".to_string()));
+            }
+            TemplateNode::Set { .. } => {
+                // Variable assignment - for streaming we'll skip this for now
+            }
+            TemplateNode::Raw { .. } => {
+                // Raw content - for streaming we'll skip this for now
+                chunks.push(StreamChunk::Text("<!-- Raw not supported in streaming mode -->".to_string()));
+            }
+            TemplateNode::Filter { .. } => {
+                // Filter blocks - for streaming we'll skip this for now
+                chunks.push(StreamChunk::Text("<!-- Filter blocks not supported in streaming mode -->".to_string()));
+            }
+            TemplateNode::Macro { .. } => {
+                // Macro definitions - for streaming we'll skip this for now
+                chunks.push(StreamChunk::Text("<!-- Macros not supported in streaming mode -->".to_string()));
             }
         }
         
@@ -411,14 +438,14 @@ impl StreamingTemplateRenderer {
         value: &CursedObject,
         _filters: &[String],
         _context: &RenderContext,
-    ) -> Result<(), Error> {
+    ) -> Result<CursedObject, Error> {
         // For streaming, we'll use a simplified filter application
         // In a full implementation, this would use the FilterRegistry
         Ok(value.clone())
     }
     
     /// Apply security escaping
-    fn apply_security_escaping(text: &str, context: &RenderContext) -> Result<(), Error> {
+    fn apply_security_escaping(text: &str, context: &RenderContext) -> Result<String, Error> {
         match context.security_level {
             SecurityLevel::Strict | SecurityLevel::Moderate => {
                 match context.output_format {
@@ -433,7 +460,7 @@ impl StreamingTemplateRenderer {
     }
     
     /// Convert object to string
-    fn object_to_string(obj: &CursedObject) -> Result<(), Error> {
+    fn object_to_string(obj: &CursedObject) -> Result<String, Error> {
         match obj {
             CursedObject::String(s) => Ok(s.clone()),
             CursedObject::Integer(n) => Ok(n.to_string()),
@@ -533,7 +560,7 @@ impl TemplateStream {
         renderer: &StreamingTemplateRenderer,
         ast: TemplateAst,
         context: RenderContext,
-    ) -> Result<(), Error> {
+    ) -> Result<Self, Error> {
         let (chunk_sender, chunk_receiver) = mpsc::channel::<StreamChunk>(renderer.config.max_concurrent_operations);
         let processing_handle = renderer.start_background_processing(ast, context, chunk_sender).await?;
         
@@ -545,7 +572,7 @@ impl TemplateStream {
 }
 
 impl Stream for TemplateStream {
-    type Item = Result<(), Error>;
+    type Item = Result<StreamChunk, Error>;
     
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,

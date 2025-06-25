@@ -22,6 +22,7 @@ use tracing::{instrument, debug, warn, error};
 use crate::memory::object_id::{ObjectId, SharedObjectRegistry};
 use crate::memory::heap_manager::{HeapManager, AllocationInfo};
 use crate::memory::{Traceable, Visitor};
+use crate::error_types::Error;
 
 /// Thread-safe wrapper for raw pointers to Any objects
 /// 

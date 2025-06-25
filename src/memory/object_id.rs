@@ -17,6 +17,7 @@ use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use std::fmt;
 use tracing::{instrument, debug, warn};
+use crate::error_types::Error;
 
 /// Unique identifier for objects in the heap
 /// 

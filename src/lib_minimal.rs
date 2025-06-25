@@ -17,7 +17,7 @@ pub use error::Error;
 
 /// Prelude module for minimal imports
 pub mod prelude {
-    pub use crate::error::Error;
+    pub use crate::error_types::Error;
     pub use crate::lexer::Lexer;
     pub use crate::parser::Parser;
     pub use crate::ast::*;

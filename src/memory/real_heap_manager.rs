@@ -23,6 +23,7 @@ use crate::memory::object_id::{ObjectId, SharedObjectRegistry};
 use crate::memory::metadata::{MetadataManager, ObjectHeader, MemoryLayout};
 use crate::memory::allocator::{Allocator, AllocationResult};
 use crate::profiling::memory::MemoryProfiler;
+use crate::error_types::Error;
 
 /// Real heap block with proper memory management
 /// 

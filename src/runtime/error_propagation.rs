@@ -4,7 +4,7 @@
 // including error context management, propagation chains, and integration
 // with CURSED's Result and Option types.
 
-use crate::error::{CursedError, SourceLocation};
+use crate::error_types::{Error, SourceLocation};
 // use crate::runtime::value::Value;
 use crate::types::result::{Result as CursedResult, Option as CursedOption};
 
@@ -158,14 +158,14 @@ impl ErrorPropagationOperator {
     /// Get the current error context chain
     pub fn get_error_context_chain(&self) -> Result<(), Error> {
         let stack = self.context_stack.lock()
-            .map_err(|_| CursedError::system_error("Failed to acquire context stack lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire context stack lock"))?;
         Ok(stack.get_contexts())
     }
 
     /// Clear the error context stack
     pub fn clear_context_stack(&self) -> Result<(), Error> {
         let mut stack = self.context_stack.lock()
-            .map_err(|_| CursedError::system_error("Failed to acquire context stack lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire context stack lock"))?;
         stack.clear();
         Ok(())
     }
@@ -173,7 +173,7 @@ impl ErrorPropagationOperator {
     /// Get propagation statistics
     pub fn get_statistics(&self) -> Result<(), Error> {
         let stats = self.statistics.read()
-            .map_err(|_| CursedError::system_error("Failed to acquire statistics lock"))?;
+            .map_err(|_| Error::system_error("Failed to acquire statistics lock"))?;
         Ok(stats.clone())
     }
 
@@ -527,8 +527,8 @@ pub mod helpers {
     /// Create a CURSED error from a propagation error
     pub fn to_cursed_error<E: fmt::Display>(
         propagation_error: PropagationError<E>,
-    ) -> CursedError {
-        CursedError::ErrorPropagation {
+    ) -> Error {
+        Error::ErrorPropagation {
             message: format!("Error propagation failed: {}", propagation_error),
             line: Some(propagation_error.propagation_site.line),
             column: Some(propagation_error.propagation_site.column),

@@ -33,7 +33,7 @@ pub enum FutureState {
 }
 
 /// Result type for futures
-pub type FutureResult<T> = std::result::Result<T, AsyncError>;
+pub type FutureResult<T> = std::result::Result<T, FutureError>;
 
 /// Error types specific to futures
 #[derive(Debug, Clone)]
@@ -524,5 +524,37 @@ pub mod utils {
         F: Future<Output = T>,
     {
         MapFuture::new(future, map_fn)
+    }
+}
+
+/// Yield control back to the async executor (alternative implementation)
+pub fn yield_control() -> YieldNow {
+    YieldNow { yielded: false }
+}
+
+/// Future that yields control once and then completes
+pub struct YieldNow {
+    yielded: bool,
+}
+
+impl Future for YieldNow {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if self.yielded {
+            Poll::Ready(())
+        } else {
+            self.yielded = true;
+            cx.waker().wake_by_ref();
+            Poll::Pending
+        }
+    }
+}
+
+impl StdFuture for YieldNow {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Future::poll(self, cx)
     }
 }

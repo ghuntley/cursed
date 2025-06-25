@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // Multi-line Input Editor for CURSED REPL
 // 
 // Handles multi-line input with automatic indentation detection,
@@ -7,7 +7,7 @@ use crate::error::Error;
 use std::io::{self, Write};
 
 use crate::repl::ReplResult;
-use crate::error::CursedError;
+use crate::error::Error;
 
 /// Multi-line input editor for CURSED REPL
 pub struct MultiLineEditor {
@@ -90,11 +90,11 @@ impl MultiLineEditor {
     /// Read a line with the given prompt
     pub fn read_line(&self, prompt: &str) -> ReplResult<String> {
         print!("{}", prompt);
-        io::stdout().flush().map_err(|e| CursedError::repl_error(e.to_string()))?;
+        io::stdout().flush().map_err(|e| Error::repl_error(e.to_string()))?;
         
         let mut input = String::new();
         io::stdin().read_line(&mut input)
-            .map_err(|e| CursedError::repl_error(e.to_string()))?;
+            .map_err(|e| Error::repl_error(e.to_string()))?;
         
         // Remove trailing newline
         if input.ends_with('\n') {

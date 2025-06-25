@@ -132,6 +132,9 @@ pub trait DriverStmt: Send + Sync + std::fmt::Debug {
     /// slay Get parameter count for this statement
     fn parameter_count(&self) -> usize;
     
+    /// slay Get column count for this statement
+    fn column_count(&self) -> usize;
+    
     /// slay Clone this statement
     fn clone(&self) -> Box<dyn DriverStmt>;
 }

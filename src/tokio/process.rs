@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error_types::Error;
 // Tokio process integration for CURSED async runtime
 use std::process::Stdio;
 use std::collections::HashMap;

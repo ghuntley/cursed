@@ -10,6 +10,7 @@ use tracing::{instrument, debug, info, warn};
 
 use crate::memory::{Traceable, Visitor};
 use crate::memory::object_id::{ObjectId, ObjectRegistry, SharedObjectRegistry};
+use crate::error_types::Error;
 
 /// Different cycle detection algorithms
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

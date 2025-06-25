@@ -106,6 +106,11 @@ use super::optimization_passes::{
     PassRegistry
 };
 
+// Import missing optimization classes
+use crate::optimization::real_llvm_passes::RealLlvmPassManager;
+use crate::optimization::enhanced_llvm_passes_manager::EnhancedLlvmPassManager;
+use crate::optimization::coordinator::{OptimizationCoordinator, CoordinatorConfiguration};
+
 use super::ipc::{IpcCompiler, SharedMemoryOperation, PipeOperation, MessageQueueOperation, SemaphoreOperation, SignalOperation};
 use super::type_switch::{TypeSwitchCompilation, TypeSwitchContext, LlvmTypeSwitchCompiler, TypeSwitchUtils};
 use super::jit_engine::{CursedJitEngine, JitEngineConfig, JitEngineStats, JitError, create_optimized_jit_engine, create_debug_jit_engine, create_production_jit_engine};

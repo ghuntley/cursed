@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 use tracing::{instrument, debug, info, warn};
 
 use crate::memory::heap_manager::{HeapStats, MemoryPressure, AllocationMetrics};
+use crate::error_types::Error;
 
 /// Types of collection triggers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

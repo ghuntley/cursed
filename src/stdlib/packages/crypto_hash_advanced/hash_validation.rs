@@ -1,7 +1,7 @@
 /// Production-ready hash validation and verification system
-use crate::error::CursedError;
+use crate::error_types::Error;
 use crate::stdlib::packages::crypto_hash_advanced::hash_traits::*;
-use crate::error::Error;
+use crate::stdlib::crypto::types::CryptoError;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -431,14 +431,14 @@ pub struct ChainBlockFailure {
 /// Comprehensive hash validation utilities
 pub fn validate_hash_format(hash: &[u8], expected_size: usize) -> ValidationResult<()> {
     if hash.len() != expected_size {
-        return Err(CursedError::InvalidArgument(
+        return Err(Error::InvalidArgument(
             format!("Invalid hash size: expected {} bytes, got {}", expected_size, hash.len())
         ));
     }
     
     // Check for obvious invalid patterns
     if hash.iter().all(|&b| b == 0) {
-        return Err(CursedError::InvalidArgument("Hash appears to be all zeros".to_string()));
+        return Err(Error::InvalidArgument("Hash appears to be all zeros".to_string()));
     }
     
     Ok(())
@@ -452,16 +452,16 @@ pub fn hash_to_hex(hash: &[u8]) -> String {
 /// Parse hex string to hash bytes
 pub fn hex_to_hash(hex: &str) -> ValidationResult<Vec<u8>> {
     if hex.len() % 2 != 0 {
-        return Err(CursedError::InvalidArgument("Hex string must have even length".to_string()));
+        return Err(Error::InvalidArgument("Hex string must have even length".to_string()));
     }
     
     let mut result = Vec::new();
     for chunk in hex.as_bytes().chunks(2) {
         let hex_byte = std::str::from_utf8(chunk)
-            .map_err(|_| CursedError::InvalidArgument("Invalid UTF-8 in hex string".to_string()))?;
+            .map_err(|_| Error::InvalidArgument("Invalid UTF-8 in hex string".to_string()))?;
         
         let byte = u8::from_str_radix(hex_byte, 16)
-            .map_err(|_| CursedError::InvalidArgument(format!("Invalid hex byte: {}", hex_byte)))?;
+            .map_err(|_| Error::InvalidArgument(format!("Invalid hex byte: {}", hex_byte)))?;
         
         result.push(byte);
     }

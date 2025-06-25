@@ -3,6 +3,14 @@ use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt;
 
+/// Template system for CURSED web applications
+pub mod template;
+
+pub use template::{
+    Template, TemplateEngine, TemplateContext, TemplateError,
+    TemplateRenderer, TemplateCache, TemplateLoader
+};
+
 /// HTTP status codes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum StatusCode {

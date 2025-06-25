@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 use tracing::{instrument, debug, info, warn, error};
 
 use super::super::{DatabaseError, DatabaseErrorKind, SqlValue, DB};
+use crate::error::Error;
 use super::validation::{ValidationError, ValidationContext};
 use super::relationships::Relationship;
 

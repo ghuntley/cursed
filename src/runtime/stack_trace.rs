@@ -7,7 +7,7 @@
 /// - Integration with Rust backtraces
 /// - Thread-safe stack frame management
 
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error_types::Error;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
@@ -392,7 +392,7 @@ impl StackTraceManager {
             debug!("Entered function: {} (depth: {})", function_name, depth);
             Ok(())
         } else {
-            Err(CursedError::Runtime("Failed to access thread stack".to_string()))
+            Err(Error::Runtime("Failed to access thread stack".to_string()))
         }
     }
 
@@ -425,7 +425,7 @@ impl StackTraceManager {
                 Ok(()) // No stack for thread
             }
         } else {
-            Err(CursedError::Runtime("Failed to access thread stack".to_string()))
+            Err(Error::Runtime("Failed to access thread stack".to_string()))
         }
     }
 
@@ -508,7 +508,7 @@ impl StackTraceManager {
             
             Ok(())
         } else {
-            Err(CursedError::Runtime("Failed to add debug information".to_string()))
+            Err(Error::Runtime("Failed to add debug information".to_string()))
         }
     }
 
@@ -553,7 +553,7 @@ impl StackTraceManager {
     pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.lock()
             .map(|stats| stats.clone())
-            .map_err(|_| CursedError::Runtime("Failed to access stack trace statistics".to_string()))
+            .map_err(|_| Error::Runtime("Failed to access stack trace statistics".to_string()))
     }
 
     /// Update configuration
@@ -565,7 +565,7 @@ impl StackTraceManager {
             updater(&mut *config);
             Ok(())
         } else {
-            Err(CursedError::Runtime("Failed to update stack trace configuration".to_string()))
+            Err(Error::Runtime("Failed to update stack trace configuration".to_string()))
         }
     }
 

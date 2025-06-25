@@ -1,7 +1,7 @@
 
 use std::any::Any;
 use crate::ast::traits::{Expression, Node};
-use crate::error::{CursedError, Error, SourceLocation};
+use crate::{Error, SourceLocation};
 use std::fmt;
 
 /// Enhanced error propagation AST node for the `?` operator
@@ -191,33 +191,21 @@ impl PropagationValidator {
     ) -> Result<(), Error> {
         // Check if we're in a valid function context
         if context.current_function.is_none() {
-            return Err(CursedError::ErrorPropagation {
-                message: "Error propagation with '?' can only be used within functions".to_string(),
-                line: Some(expr.location.line),
-                column: Some(expr.location.column),
-            });
+            return Err(Error::Runtime("Error propagation with '?' can only be used within functions".to_string()));
         }
         
         // Check for excessive propagation depth (potential infinite recursion)
         if context.propagation_depth() > 100 {
-            return Err(CursedError::ErrorPropagation {
-                message: "Error propagation depth exceeded maximum limit (100)".to_string(),
-                line: Some(expr.location.line),
-                column: Some(expr.location.column),
-            });
+            return Err(Error::Runtime("Error propagation depth exceeded maximum limit (100)".to_string()));
         }
         
         // Validate type compatibility if available
         if let (Some(expected), Some(current)) = (&expr.expected_type, &context.expected_return_type) {
             if !Self::types_compatible(expected, current) {
-                return Err(CursedError::ErrorPropagation {
-                    message: format!(
-                        "Error propagation type mismatch: expected '{}', found '{}'",
-                        current, expected
-                    ),
-                    line: Some(expr.location.line),
-                    column: Some(expr.location.column),
-                });
+                return Err(Error::Runtime(format!(
+                    "Error propagation type mismatch: expected '{}', found '{}'",
+                    current, expected
+                )));
             }
         }
         

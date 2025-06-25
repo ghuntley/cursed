@@ -174,18 +174,18 @@ impl RedisTransactionManager {
         if let Some(transaction) = transactions.get_mut(transaction_id) {
             // Check transaction state
             if transaction.state != TransactionState::Active {
-                return Err(DatabaseError::Transaction("Transaction is not active".to_string()));
+                return Err(DatabaseError::Transaction("Transaction is not active".to_string()).into());
             }
             
             // Check command limit
             if transaction.commands.len() >= self.config.max_commands {
-                return Err(DatabaseError::Transaction("Transaction command limit exceeded".to_string()));
+                return Err(DatabaseError::Transaction("Transaction command limit exceeded".to_string()).into());
             }
             
             // Check timeout
             if transaction.created_at.elapsed() > transaction.timeout {
                 transaction.state = TransactionState::TimedOut;
-                return Err(DatabaseError::Transaction("Transaction timed out".to_string()));
+                return Err(DatabaseError::Transaction("Transaction timed out".to_string()).into());
             }
             
             // Add command to queue
@@ -201,7 +201,7 @@ impl RedisTransactionManager {
             debug!(transaction_id = transaction_id, command = command, queue_size = transaction.commands.len(), "Command queued");
             Ok(())
         } else {
-            Err(DatabaseError::Transaction("Transaction not found".to_string()))
+            Err(DatabaseError::Transaction("Transaction not found".to_string()).into())
         }
     }
     
@@ -227,7 +227,7 @@ impl RedisTransactionManager {
             info!(transaction_id = transaction_id, keys = ?keys, "Keys are now watched");
             Ok(())
         } else {
-            Err(DatabaseError::Transaction("Transaction not found".to_string()))
+            Err(DatabaseError::Transaction("Transaction not found".to_string()).into())
         }
     }
     
@@ -291,7 +291,7 @@ impl RedisTransactionManager {
                 }
             }
         } else {
-            Err(DatabaseError::Transaction("Transaction not found".to_string()))
+            Err(DatabaseError::Transaction("Transaction not found".to_string()).into())
         }
     }
     
@@ -318,7 +318,7 @@ impl RedisTransactionManager {
             info!(transaction_id = transaction_id, "Transaction aborted successfully");
             Ok(())
         } else {
-            Err(DatabaseError::Transaction("Transaction not found".to_string()))
+            Err(DatabaseError::Transaction("Transaction not found".to_string()).into())
         }
     }
     

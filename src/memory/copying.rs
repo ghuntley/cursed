@@ -14,6 +14,7 @@ use crate::memory::{Traceable, Visitor};
 use crate::memory::object_id::{ObjectId, ObjectIdGenerator, ObjectMetadata, ObjectRegistry, SharedObjectRegistry};
 use crate::memory::roots::{RootSetManager, RootType};
 use crate::memory::heap_manager::HeapManager;
+use crate::error_types::Error;
 
 /// Configuration for copying collection
 #[derive(Debug, Clone)]

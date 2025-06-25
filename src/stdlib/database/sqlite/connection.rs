@@ -272,7 +272,7 @@ impl DriverConn for SqliteConnection {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
+use crate::error_types::Error;
 
     #[test]
     fn test_connection_info() {

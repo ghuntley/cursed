@@ -1,0 +1,566 @@
+    Checking cursed v0.1.0 (/home/ghuntley/code/cursed)
+src/stdlib/packages/crypto_advanced/security_analysis/vulnerability_scanner.rs:9:5: error[E0252]: the name `SecurityContext` is defined multiple times: `SecurityContext` reimported here
+src/imports/mod.rs:16:30: error[E0432]: unresolved imports `crate::package_manager::PackageManager`, `crate::package_manager::PackageMetadata`, `crate::package_manager::PackageManagerError`: no `PackageManager` in `package_manager`, no `PackageMetadata` in `package_manager`, no `PackageManagerError` in `package_manager`
+src/imports/package_resolver.rs:8:30: error[E0432]: unresolved imports `crate::package_manager::PackageManager`, `crate::package_manager::PackageMetadata`: no `PackageManager` in `package_manager`, no `PackageMetadata` in `package_manager`
+src/runtime/jit_runtime.rs:9:21: error[E0433]: failed to resolve: could not find `llvm` in `codegen`: could not find `llvm` in `codegen`
+src/codegen/minimal.rs:2:12: error[E0432]: unresolved import `crate::minimal_ast`: could not find `minimal_ast` in the crate root
+src/lib.rs:31:34: error[E0432]: unresolved imports `runtime::get_global_scheduler`, `runtime::initialize_global_scheduler`, `runtime::shutdown_global_scheduler`, `runtime::EnhancedDebugInfo`, `runtime::EnhancedStackFrame`, `runtime::EnhancedStackTrace`, `runtime::VariableInfo`, `runtime::StackTraceCapture`, `runtime::EnhancedStackTraceConfig`, `runtime::SymbolResolver`, `runtime::SymbolInfo`, `runtime::SourceFile`, `runtime::FunctionDebugInfo`, `runtime::DebugManagerConfig`, `runtime::DebugManagerStats`: no `get_global_scheduler` in `runtime`, no `initialize_global_scheduler` in `runtime`, no `shutdown_global_scheduler` in `runtime`, no `EnhancedDebugInfo` in `runtime`, no `EnhancedStackFrame` in `runtime`, no `EnhancedStackTrace` in `runtime`, no `VariableInfo` in `runtime`, no `StackTraceCapture` in `runtime`, no `EnhancedStackTraceConfig` in `runtime`, no `SymbolResolver` in `runtime`
+src/lib.rs:65:30: error[E0432]: unresolved imports `optimization::CoordinatedOptimizationResults`, `optimization::PgoSystem`, `optimization::PgoSystemConfig`, `optimization::ProfileGuidedOptimizer`, `optimization::MemoryLayoutOptimizer`, `optimization::BenchmarkRunner`, `optimization::BaselineComparator`, `optimization::TimeSavingsCalculator`, `optimization::ProductionPerformanceOptimizationSystem`, `optimization::ComprehensivePerformanceSystem`, `optimization::EnhancedLlvmOptimizationSystem`, `optimization::LinkTimeOptimizer`, `optimization::AdvancedOptimizationCoordinator`, `optimization::ComprehensiveOptimizationSystem`, `optimization::OptimizationEnablementSystem`: no `CoordinatedOptimizationResults` in `optimization`, no `PgoSystem` in `optimization`, no `PgoSystemConfig` in `optimization`, no `ProfileGuidedOptimizer` in `optimization`, no `MemoryLayoutOptimizer` in `optimization`, no `BenchmarkRunner` in `optimization`, no `BaselineComparator` in `optimization`, no `TimeSavingsCalculator` in `optimization`, no `ProductionPerformanceOptimizationSystem` in `optimization`, no `ComprehensivePerformanceSystem` in `optimization`, help: a similar name exists in the module: `BenchmarkSuite`
+src/stdlib/packages/web_vibez/mod.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/packages/web_vibez/server.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/packages/web_vibez/response.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/packages/web_vibez/handler.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/packages/web_vibez/router.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/packages/web_vibez/middleware.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/packages/web_vibez/ratelimit/config.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/packages/web_vibez/status.rs:1:16: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/packages/web_vibez/error.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/crypto/ed25519_keys.rs:1:12: error[E0432]: unresolved import `crate::crypto`: unresolved import, help: a similar path exists: `stdlib::crypto`
+src/stdlib/template/template_render.rs:1:5: error[E0432]: unresolved import `crate::types::SecurityContext`: no `SecurityContext` in `types`
+src/stdlib/http_core/mod.rs:6:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/http_core/response.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/http_core/integration.rs:2:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/server.rs:8:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/client.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/handler.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/response.rs:11:16: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/router.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/middleware.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/websocket.rs:1:12: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/lib.rs:77:9: error[E0432]: unresolved import `stdlib::bytefit`: no `bytefit` in `stdlib`
+src/lib.rs:111:13: error[E0432]: unresolved import `crate::repl::CursedRepl`: no `CursedRepl` in `repl`
+src/lib.rs:487:9: error[E0432]: unresolved import `crate::repl::SessionManager`: no `SessionManager` in `repl`
+src/ast/mod.rs:46:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/expressions/error_propagation_enhanced.rs:4:40: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/enum_statement.rs:6:27: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/constant_statement.rs:6:27: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/type_alias_statement.rs:6:27: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/module_statement.rs:6:27: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/basic_statements.rs:5:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/declaration_statements.rs:5:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/channel_statements.rs:5:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/panic_statements.rs:5:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/statements/control_flow.rs:5:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/declarations/main.rs:8:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/ast_node.rs:5:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/documentation.rs:9:27: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/ast/core_types.rs:11:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/preprocessor/core.rs:7:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/preprocessor/token_stream.rs:7:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/preprocessor/error.rs:6:27: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/preprocessor/mod.rs:17:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/parser/error_propagation_enhanced.rs:5:40: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/parser/async_await.rs:18:27: error[E0432]: unresolved import `crate::error::types`: could not find `types` in `error`
+src/parser/mod.rs:19:27: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/memory/production_gc.rs:22:38: error[E0432]: unresolved imports `crate::memory::gc::EnhancedCollectionStats`, `crate::memory::gc::CollectionTrigger`, `crate::memory::gc::CollectionAlgorithm`: no `EnhancedCollectionStats` in `memory::gc`, no `CollectionTrigger` in `memory::gc`, no `CollectionAlgorithm` in `memory::gc`
+src/memory/pressure_detection.rs:14:5: error[E0432]: unresolved import `crate::memory::gc::CollectionStats`: no `CollectionStats` in `memory::gc`
+src/memory/adaptive_gc.rs:14:28: error[E0432]: unresolved imports `crate::memory::gc::CollectionAlgorithm`, `crate::memory::gc::CollectionTrigger`: no `CollectionAlgorithm` in `memory::gc`, no `CollectionTrigger` in `memory::gc`
+src/memory/enhanced_gc.rs:14:33: error[E0432]: unresolved imports `crate::memory::gc::EnhancedCollectionStats`, `crate::memory::gc::CollectionAlgorithm`, `crate::memory::gc::CollectionTrigger`, `crate::memory::gc::AlgorithmStats`, `crate::memory::gc::HeapStats`, `crate::memory::gc::ComprehensiveGcStats`: no `EnhancedCollectionStats` in `memory::gc`, no `CollectionAlgorithm` in `memory::gc`, no `CollectionTrigger` in `memory::gc`, no `AlgorithmStats` in `memory::gc`, no `HeapStats` in `memory::gc`, no `ComprehensiveGcStats` in `memory::gc`
+src/memory/mod.rs:60:36: error[E0432]: unresolved imports `gc::WeakGc`, `gc::CollectionStats`, `gc::GcStats`: no `WeakGc` in `memory::gc`, no `CollectionStats` in `memory::gc`, no `GcStats` in `memory::gc`
+src/runtime/runtime.rs:6:36: error[E0432]: unresolved import `crate::runtime::CursedValue`: no `CursedValue` in `runtime`
+src/runtime/debug_info.rs:6:42: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/panic.rs:6:42: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/error_handling.rs:10:42: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/error_propagation.rs:7:33: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/recovery.rs:6:42: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/stack_trace.rs:10:42: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/stack_walker.rs:10:42: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/runtime_error.rs:10:42: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/error_context.rs:7:33: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/runtime/mod.rs:29:17: error[E0432]: unresolved imports `value::ValueManager`, `value::CursedValue`: no `ValueManager` in `runtime::value`, no `CursedValue` in `runtime::value`
+src/lib.rs:37:16: error[E0432]: unresolved import `error::debug_context`: could not find `debug_context` in `error`
+src/lib.rs:55:5: error[E0432]: unresolved imports `debug::EnhancedDebugInfo`, `debug::DebugInfoRegistry`, `debug::SymbolMetadata`, `debug::TypeDebugInfo`, `debug::SourceMap`, `debug::SymbolType`, `debug::TypeKind`: no `EnhancedDebugInfo` in `debug`, no `DebugInfoRegistry` in `debug`, no `SymbolMetadata` in `debug`, no `TypeDebugInfo` in `debug`, no `SourceMap` in `debug`, no `SymbolType` in `debug`, no `TypeKind` in `debug`, help: a similar name exists in the module: `DebugInfo`
+src/stdlib/io/error.rs:4:33: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/stdlib/errors.rs:6:40: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/stdlib/errors.rs:10:19: error[E0432]: unresolved import `crate::error::types`: could not find `types` in `error`
+src/stdlib/errors_simple.rs:6:5: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/stdlib/errors_simple.rs:10:19: error[E0432]: unresolved import `crate::error::types`: could not find `types` in `error`
+src/stdlib/crypto/symmetric.rs:21:5: error[E0432]: unresolved import `pbkdf2::pbkdf2_hmac`: no `pbkdf2_hmac` in `stdlib::packages::crypto_kdf::pbkdf2`
+src/stdlib/squish_core/mod.rs:24:5: error[E0432]: unresolved imports `utils::validate_compression_level`, `utils::convert_quality_to_level`, `utils::use_parallel_compression`, `utils::get_optimal_chunk_size`: no `validate_compression_level` in `stdlib::squish_core::utils`, no `convert_quality_to_level` in `stdlib::squish_core::utils`, no `use_parallel_compression` in `stdlib::squish_core::utils`, no `get_optimal_chunk_size` in `stdlib::squish_core::utils`
+src/stdlib/squish_core/mod.rs:45:5: error[E0432]: unresolved imports `utils::validate_compression_level`, `utils::convert_quality_to_level`, `utils::use_parallel_compression`, `utils::get_optimal_chunk_size`: no `validate_compression_level` in `stdlib::squish_core::utils`, no `convert_quality_to_level` in `stdlib::squish_core::utils`, no `use_parallel_compression` in `stdlib::squish_core::utils`, no `get_optimal_chunk_size` in `stdlib::squish_core::utils`, help: a similar name exists in the module: `validate_compressed_data`
+src/stdlib/squish_core/mod.rs:90:5: error[E0432]: unresolved imports `enhanced::EnhancedCompressor`, `enhanced::CompressionMode`, `enhanced::CompressionOptions`, `enhanced::fast_compressor`, `enhanced::max_compressor`, `enhanced::parallel_compressor`, `enhanced::smart_compress`, `enhanced::compress_with_mode`, `enhanced::ultra_compress`: no `EnhancedCompressor` in `stdlib::squish_core::enhanced`, no `CompressionMode` in `stdlib::squish_core::enhanced`, no `CompressionOptions` in `stdlib::squish_core::enhanced`, no `fast_compressor` in `stdlib::squish_core::enhanced`, no `max_compressor` in `stdlib::squish_core::enhanced`, no `parallel_compressor` in `stdlib::squish_core::enhanced`, no `smart_compress` in `stdlib::squish_core::enhanced`, no `compress_with_mode` in `stdlib::squish_core::enhanced`, no `ultra_compress` in `stdlib::squish_core::enhanced`
+src/stdlib/template/template_syntax.rs:7:42: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/stdlib/glowup_http/client.rs:7:9: error[E0432]: unresolved import `crate::stdlib::glowup_http::response::VibeResponse`: no `VibeResponse` in `stdlib::glowup_http::response`
+src/stdlib/sync/parallel.rs:7:88: error[E0432]: unresolved import `crate::stdlib::sync::primitives::CondVar`: no `CondVar` in `stdlib::sync::primitives`, help: a similar name exists in the module (notice the capitalization): `Condvar`
+src/stdlib/time/sleep.rs:2:57: error[E0432]: unresolved import `crate::stdlib::time::error::time_error`: no `time_error` in `stdlib::time::error`, help: a similar name exists in the module: `TimeError`
+src/stdlib/time/timezone.rs:2:57: error[E0432]: unresolved import `crate::stdlib::time::error::timezone_error`: no `timezone_error` in `stdlib::time::error`
+src/stdlib/time/relative.rs:2:57: error[E0432]: unresolved import `crate::stdlib::time::error::time_error`: no `time_error` in `stdlib::time::error`, help: a similar name exists in the module: `TimeError`
+src/stdlib/time/benchmarking.rs:2:57: error[E0432]: unresolved import `crate::stdlib::time::error::time_error`: no `time_error` in `stdlib::time::error`, help: a similar name exists in the module: `TimeError`
+src/stdlib/time/formatting.rs:2:57: error[E0432]: unresolved imports `crate::stdlib::time::error::parse_error`, `crate::stdlib::time::error::format_error`: no `parse_error` in `stdlib::time::error`, no `format_error` in `stdlib::time::error`
+src/debug/mod.rs:6:9: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/debug/mod.rs:7:9: error[E0432]: unresolved import `enhanced_debug::EnhancedDebug`: no `EnhancedDebug` in `debug::enhanced_debug`
+src/debug/mod.rs:8:9: error[E0432]: unresolved import `source_location::SourceLocationInfo`: no `SourceLocationInfo` in `debug::source_location`
+src/types/result.rs:7:40: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/lib.rs:106:24: error[E0432]: unresolved import `error::SourceLocation`: no `SourceLocation` in `error`
+src/lib.rs:110:35: error[E0432]: unresolved import `crate::error::SourceLocation`: no `SourceLocation` in `error`
+src/stdlib/glowup_http/handler.rs:115:20: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/handler.rs:243:20: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/router.rs:135:24: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/middleware.rs:52:24: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/middleware.rs:102:24: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/middleware.rs:158:28: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/glowup_http/websocket.rs:75:20: error[E0432]: unresolved import `crate::web`: could not find `web` in the crate root
+src/stdlib/database/postgres/types.rs:290:5: error: cannot find macro `to_sql_checked` in this scope
+src/optimization/llvm_passes.rs:445:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:439:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:433:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:427:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:421:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:415:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:409:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:403:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:397:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:391:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:383:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:377:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:371:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:365:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:359:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:353:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:335:21: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:324:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:307:21: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:295:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:276:25: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:263:9: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:254:17: error: cannot find macro `debug` in this scope
+src/optimization/llvm_passes.rs:234:17: error: cannot find macro `debug` in this scope
+src/runtime/channels/select.rs:576:29: error: cannot find macro `trace` in this scope
+src/runtime/channels/select.rs:539:29: error: cannot find macro `trace` in this scope
+src/optimization/pgo/mod.rs:74:23: error[E0106]: missing lifetime specifier: expected named lifetime parameter
+src/optimization/pgo/mod.rs:78:26: error[E0106]: missing lifetime specifier: expected named lifetime parameter
+src/optimization/pgo/mod.rs:80:22: error[E0106]: missing lifetime specifier: expected named lifetime parameter
+src/stdlib/packages/db_sql/postgresql.rs:70:35: error[E0106]: missing lifetime specifier: expected named lifetime parameter
+src/stdlib/packages/crypto_random/random_bytes.rs:67:37: error[E0435]: attempt to use a non-constant value in a constant: non-constant value
+src/stdlib/packages/db_sql/mysql.rs:189:42: error[E0659]: `types` is ambiguous: ambiguous name
+src/stdlib/packages/db_sql/sqlite.rs:264:42: error[E0659]: `types` is ambiguous: ambiguous name
+src/stdlib/packages/db_sql/sqlite.rs:369:42: error[E0659]: `types` is ambiguous: ambiguous name
+src/stdlib/packages/db_sql/sqlite.rs:741:42: error[E0659]: `types` is ambiguous: ambiguous name
+src/stdlib/packages/db_sql/sqlite.rs:776:42: error[E0659]: `types` is ambiguous: ambiguous name
+src/stdlib/packages/db_sql/sqlite.rs:996:42: error[E0659]: `types` is ambiguous: ambiguous name
+src/stdlib/packages/db_sql/sqlite.rs:1101:42: error[E0659]: `types` is ambiguous: ambiguous name
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:206:17: error[E0659]: `x25519_key_exchange` is ambiguous: ambiguous name
+src/stdlib/packages/crypto_pqc/mod.rs:172:23: error[E0659]: `GaussianSampler` is ambiguous: ambiguous name
+src/stdlib/packages/crypto_pqc/mod.rs:175:21: error[E0659]: `PqcMigrationTool` is ambiguous: ambiguous name
+src/stdlib/packages/crypto_pqc/mod.rs:184:31: error[E0659]: `GaussianSampler` is ambiguous: ambiguous name
+src/stdlib/packages/crypto_pqc/mod.rs:187:29: error[E0659]: `PqcMigrationTool` is ambiguous: ambiguous name
+src/stdlib/packages/quick_test/mod.rs:26:28: error[E0603]: type alias import `CursedError` is private: private type alias import
+src/optimization/mod.rs:24:38: error[E0603]: enum import `OptimizationLevel` is private: private enum import
+src/ast/mod.rs:96:9: warning: ambiguous glob re-exports: the name `BlockExpression` in the type namespace is first re-exported here
+src/ast/mod.rs:105:9: warning: ambiguous glob re-exports: the name `ChannelSend` in the type namespace is first re-exported here
+src/ast/mod.rs:105:9: warning: ambiguous glob re-exports: the name `ChannelReceive` in the type namespace is first re-exported here
+src/ast/mod.rs:105:9: warning: ambiguous glob re-exports: the name `GoroutineSpawn` in the type namespace is first re-exported here
+src/runtime/channels/mod.rs:29:9: warning: ambiguous glob re-exports: the name `ChannelSelector` in the type namespace is first re-exported here
+src/runtime/channels/mod.rs:29:9: warning: ambiguous glob re-exports: the name `SelectResult` in the type namespace is first re-exported here
+src/optimization/performance_analysis.rs:1785:50: warning: unnecessary parentheses around assigned value
+src/optimization/pgo/instrumentation.rs:706:1: warning: unused doc comment
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `MapIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `RangeIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `FilterIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `TakeIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `SkipIterator` in the type namespace is first re-exported here
+src/stdlib/collections/mod.rs:31:9: warning: ambiguous glob re-exports: the name `VecIterator` in the type namespace is first re-exported here
+src/stdlib/database/driver.rs:332:1: warning: unused doc comment: rustdoc does not generate documentation for macro invocations
+src/stdlib/packages/db_migrate/runner.rs:17:5: warning: variant `Rolled_back` should have an upper camel case name: help: convert the identifier to upper camel case: `RolledBack`
+src/stdlib/packages/crypto_advanced/security_analysis/vulnerability_scanner.rs:323:5: warning: variant `PCI_DSS` should have an upper camel case name: help: convert the identifier to upper camel case: `PciDss`
+src/stdlib/packages/crypto_advanced/security_analysis/vulnerability_scanner.rs:328:5: warning: variant `NIST_Cybersecurity_Framework` should have an upper camel case name: help: convert the identifier to upper camel case: `NistCybersecurityFramework`
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:16:9: warning: ambiguous glob re-exports: the name `x25519_generate_keypair` in the value namespace is first re-exported here
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:16:9: warning: ambiguous glob re-exports: the name `x25519_generate_ephemeral_keypair` in the value namespace is first re-exported here
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:16:9: warning: ambiguous glob re-exports: the name `x25519_key_exchange` in the value namespace is first re-exported here
+src/stdlib/packages/crypto_signatures/rsa_pss.rs:349:29: warning: unnecessary parentheses around assigned value
+src/stdlib/packages/crypto_hash_advanced/mod.rs:32:9: warning: ambiguous glob re-exports: the name `hmac_sha256` in the value namespace is first re-exported here
+src/stdlib/packages/crypto_hash_advanced/mod.rs:32:9: warning: ambiguous glob re-exports: the name `hmac_sha512` in the value namespace is first re-exported here
+src/stdlib/packages/crypto_hash_advanced/mod.rs:32:9: warning: ambiguous glob re-exports: the name `hmac_blake3` in the value namespace is first re-exported here
+src/stdlib/packages/crypto_hash_advanced/mod.rs:32:9: warning: ambiguous glob re-exports: the name `HmacEngine` in the type namespace is first re-exported here
+src/stdlib/packages/crypto_pqc/utils.rs:657:56: warning: unnecessary parentheses around function argument
+src/stdlib/packages/crypto_pqc/dilithium.rs:722:21: warning: unnecessary parentheses around assigned value
+src/stdlib/packages/crypto_pqc/dilithium.rs:755:21: warning: unnecessary parentheses around assigned value
+src/stdlib/packages/crypto_pqc/mod.rs:28:9: warning: ambiguous glob re-exports: the name `PqcMigrationTool` in the type namespace is first re-exported here
+src/stdlib/packages/crypto_pqc/mod.rs:28:9: warning: ambiguous glob re-exports: the name `PerformanceImpact` in the type namespace is first re-exported here
+src/stdlib/packages/crypto_pqc/mod.rs:30:9: warning: ambiguous glob re-exports: the name `GaussianSampler` in the type namespace is first re-exported here
+src/stdlib/packages/crypto_pqc/mod.rs:30:9: warning: ambiguous glob re-exports: the name `Polynomial` in the type namespace is first re-exported here
+src/stdlib/packages/crypto_pqc/mod.rs:30:9: warning: ambiguous glob re-exports: the name `Matrix` in the type namespace is first re-exported here
+src/stdlib/packages/crypto_pqc/mod.rs:38:9: warning: ambiguous glob re-exports: the name `MigrationPhase` in the type namespace is first re-exported here
+src/stdlib/packages/web_vibez/middleware.rs:21:122: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:24:150: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:200:123: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:204:150: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:325:122: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:363:150: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:461:123: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:465:151: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:673:122: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/web_vibez/middleware.rs:714:150: warning: elided lifetime has a name: this elided lifetime gets resolved as `'a`
+src/stdlib/packages/test_vibes/runners.rs:409:1: warning: unused doc comment: rustdoc does not generate documentation for macro invocations
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `connection` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `result` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `error` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `ResultSet` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `utils` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `PreparedStatement` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `SqlDialect` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `Parameter` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:34:9: warning: ambiguous glob re-exports: the name `Row` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:35:9: warning: ambiguous glob re-exports: the name `types` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:35:9: warning: ambiguous glob re-exports: the name `SqlValue` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:35:9: warning: ambiguous glob re-exports: the name `SqlType` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:39:9: warning: ambiguous glob re-exports: the name `errors` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:39:9: warning: ambiguous glob re-exports: the name `key_management` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:39:9: warning: ambiguous glob re-exports: the name `security_analysis` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:39:9: warning: ambiguous glob re-exports: the name `constant_time_compare` in the value namespace is first re-exported here
+src/stdlib/packages/mod.rs:40:9: warning: ambiguous glob re-exports: the name `algorithms` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:40:9: warning: ambiguous glob re-exports: the name `ed25519` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:40:9: warning: ambiguous glob re-exports: the name `key_exchange` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:40:9: warning: ambiguous glob re-exports: the name `key_agreement` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:40:9: warning: ambiguous glob re-exports: the name `KeyGenerator` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:40:9: warning: ambiguous glob re-exports: the name `RsaKeyPair` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:40:9: warning: ambiguous glob re-exports: the name `KeyExchangeResult` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:40:9: warning: ambiguous glob re-exports: the name `DhKeyPair` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:41:9: warning: ambiguous glob re-exports: the name `SecurityLevel` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:41:9: warning: ambiguous glob re-exports: the name `RevocationStatus` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:42:9: warning: ambiguous glob re-exports: the name `PasswordHasher` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:42:9: warning: ambiguous glob re-exports: the name `PasswordStrength` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:43:9: warning: ambiguous glob re-exports: the name `HashResult` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:43:9: warning: ambiguous glob re-exports: the name `ValidationResult` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:43:9: warning: ambiguous glob re-exports: the name `PerformanceResult` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:43:9: warning: ambiguous glob re-exports: the name `ValidationStatus` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:43:9: warning: ambiguous glob re-exports: the name `PerformanceMetrics` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:43:9: warning: ambiguous glob re-exports: the name `MerkleTree` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:43:9: warning: ambiguous glob re-exports: the name `MerkleProof` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:44:9: warning: ambiguous glob re-exports: the name `random_bytes` in the value namespace is first re-exported here
+src/stdlib/packages/mod.rs:44:9: warning: ambiguous glob re-exports: the name `random_string` in the value namespace is first re-exported here
+src/stdlib/packages/mod.rs:44:9: warning: ambiguous glob re-exports: the name `NonceGenerator` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:46:9: warning: ambiguous glob re-exports: the name `SecureMemory` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:46:9: warning: ambiguous glob re-exports: the name `FieldElement` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:46:9: warning: ambiguous glob re-exports: the name `SecurityAnalysis` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:46:9: warning: ambiguous glob re-exports: the name `RiskLevel` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:46:9: warning: ambiguous glob re-exports: the name `MigrationStatus` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:47:9: warning: ambiguous glob re-exports: the name `CertificateInfo` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:47:9: warning: ambiguous glob re-exports: the name `ValidationPolicy` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:47:9: warning: ambiguous glob re-exports: the name `ValidationContext` in the type namespace is first re-exported here
+src/stdlib/packages/mod.rs:47:9: warning: ambiguous glob re-exports: the name `ValidationLevel` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:160:9: warning: ambiguous glob re-exports: the name `algorithms` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:160:9: warning: ambiguous glob re-exports: the name `ed25519` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:160:9: warning: ambiguous glob re-exports: the name `key_exchange` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:160:9: warning: ambiguous glob re-exports: the name `key_agreement` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:160:9: warning: ambiguous glob re-exports: the name `KeyGenerator` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:160:9: warning: ambiguous glob re-exports: the name `KeyExchangeResult` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:160:9: warning: ambiguous glob re-exports: the name `DhKeyPair` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:161:9: warning: ambiguous glob re-exports: the name `errors` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:161:9: warning: ambiguous glob re-exports: the name `CertificateInfo` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:161:9: warning: ambiguous glob re-exports: the name `ValidationPolicy` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:161:9: warning: ambiguous glob re-exports: the name `ValidationContext` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:161:9: warning: ambiguous glob re-exports: the name `ValidationLevel` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:162:9: warning: ambiguous glob re-exports: the name `key_management` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:162:9: warning: ambiguous glob re-exports: the name `security_analysis` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:162:9: warning: ambiguous glob re-exports: the name `constant_time_compare` in the value namespace is first re-exported here
+src/stdlib/crypto/mod.rs:163:9: warning: ambiguous glob re-exports: the name `HashResult` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:163:9: warning: ambiguous glob re-exports: the name `ValidationResult` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:163:9: warning: ambiguous glob re-exports: the name `PasswordHasher` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:163:9: warning: ambiguous glob re-exports: the name `PerformanceResult` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:163:9: warning: ambiguous glob re-exports: the name `ValidationStatus` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:163:9: warning: ambiguous glob re-exports: the name `MerkleTree` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:163:9: warning: ambiguous glob re-exports: the name `MerkleProof` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:164:9: warning: ambiguous glob re-exports: the name `PasswordStrength` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:166:9: warning: ambiguous glob re-exports: the name `RevocationStatus` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:168:9: warning: ambiguous glob re-exports: the name `SecureMemory` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:168:9: warning: ambiguous glob re-exports: the name `FieldElement` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:168:9: warning: ambiguous glob re-exports: the name `SecurityAnalysis` in the type namespace is first re-exported here
+src/stdlib/crypto/mod.rs:168:9: warning: ambiguous glob re-exports: the name `RiskLevel` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:45:9: warning: ambiguous glob re-exports: the name `LmsPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:45:9: warning: ambiguous glob re-exports: the name `LmsSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:45:9: warning: ambiguous glob re-exports: the name `LmsSignature` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:46:9: warning: ambiguous glob re-exports: the name `XmssPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:46:9: warning: ambiguous glob re-exports: the name `XmssSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:46:9: warning: ambiguous glob re-exports: the name `XmssSignature` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:52:9: warning: ambiguous glob re-exports: the name `KyberPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:52:9: warning: ambiguous glob re-exports: the name `KyberSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:52:9: warning: ambiguous glob re-exports: the name `KyberCiphertext` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:52:9: warning: ambiguous glob re-exports: the name `KyberSharedSecret` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:53:9: warning: ambiguous glob re-exports: the name `DilithiumPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:53:9: warning: ambiguous glob re-exports: the name `DilithiumSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:53:9: warning: ambiguous glob re-exports: the name `DilithiumSignature` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:54:9: warning: ambiguous glob re-exports: the name `NtruPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:54:9: warning: ambiguous glob re-exports: the name `NtruSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:54:9: warning: ambiguous glob re-exports: the name `NtruCiphertext` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:55:9: warning: ambiguous glob re-exports: the name `FrodoPublicKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:55:9: warning: ambiguous glob re-exports: the name `FrodoSecretKey` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:55:9: warning: ambiguous glob re-exports: the name `FrodoCiphertext` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:55:9: warning: ambiguous glob re-exports: the name `FrodoSharedSecret` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:68:9: warning: ambiguous glob re-exports: the name `KeySizeBenchmark` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:69:9: warning: ambiguous glob re-exports: the name `BenchmarkResults` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:69:9: warning: ambiguous glob re-exports: the name `AttackComplexity` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:70:9: warning: ambiguous glob re-exports: the name `ClassicalAlgorithm` in the type namespace is first re-exported here
+src/stdlib/crypto_pqc/mod.rs:71:9: warning: ambiguous glob re-exports: the name `ThreatLevel` in the type namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `is_running_as_plugin` in the value namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `get_host_info` in the value namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `get_plugin_api` in the value namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `register_export` in the value namespace is first re-exported here
+src/stdlib/plug_vibes/mod.rs:33:9: warning: ambiguous glob re-exports: the name `register_hook` in the value namespace is first re-exported here
+src/stdlib/embed_that/core.rs:9:10: warning: type `tea` should have an upper camel case name: help: convert the identifier to upper camel case: `Tea`
+src/stdlib/embed_that/core.rs:10:10: warning: type `normie` should have an upper camel case name: help: convert the identifier to upper camel case: `Normie`
+src/stdlib/embed_that/core.rs:11:10: warning: type `lit` should have an upper camel case name: help: convert the identifier to upper camel case: `Lit`
+src/stdlib/embed_that/resource_loader.rs:162:11: warning: unexpected `cfg` condition value: `filesystem_embedding`
+src/stdlib/template/mod.rs:27:9: warning: ambiguous glob re-exports: the name `TemplateError` in the type namespace is first re-exported here
+src/stdlib/system/platform.rs:29:5: warning: variant `iOS` should have an upper camel case name: help: convert the identifier to upper camel case (notice the capitalization): `IOs`
+src/stdlib/glowup_http/client.rs:9:7: warning: unexpected `cfg` condition value: `multipart`
+src/stdlib/glowup_http/client.rs:221:19: warning: unexpected `cfg` condition value: `multipart`
+src/stdlib/glowup_http/client.rs:231:23: warning: unexpected `cfg` condition value: `multipart`
+src/stdlib/oglogging/standard.rs:44:1: warning: unused doc comment
+src/stdlib/vibe_net/security.rs:38:5: warning: variant `TLS_AES_128_GCM_SHA256` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsAes128GcmSha256`
+src/stdlib/vibe_net/security.rs:39:5: warning: variant `TLS_AES_256_GCM_SHA384` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsAes256GcmSha384`
+src/stdlib/vibe_net/security.rs:40:5: warning: variant `TLS_CHACHA20_POLY1305_SHA256` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsChacha20Poly1305Sha256`
+src/stdlib/vibe_net/security.rs:41:5: warning: variant `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsEcdheRsaWithAes128GcmSha256`
+src/stdlib/vibe_net/security.rs:42:5: warning: variant `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsEcdheRsaWithAes256GcmSha384`
+src/stdlib/vibe_net/security.rs:43:5: warning: variant `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsEcdheEcdsaWithAes128GcmSha256`
+src/stdlib/vibe_net/security.rs:44:5: warning: variant `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384` should have an upper camel case name: help: convert the identifier to upper camel case: `TlsEcdheEcdsaWithAes256GcmSha384`
+src/stdlib/vibecheck/goroutine.rs:14:1: warning: unused doc comment: rustdoc does not generate documentation for macro invocations
+src/stdlib/vibecheck/version.rs:213:26: warning: unexpected `cfg` condition value: `gc`
+src/stdlib/vibecheck/version.rs:214:27: warning: unexpected `cfg` condition value: `jit`
+src/stdlib/vibecheck/version.rs:215:34: warning: unexpected `cfg` condition value: `goroutines`
+src/stdlib/vibecheck/version.rs:216:32: warning: unexpected `cfg` condition value: `channels`
+src/stdlib/vibecheck/version.rs:217:29: warning: unexpected `cfg` condition value: `r#async`
+src/stdlib/vibecheck/gc.rs:55:11: warning: unexpected `cfg` condition value: `gc`
+src/stdlib/sys_core/syscalls.rs:88:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:104:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:121:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:139:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:158:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:178:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/sys_core/syscalls.rs:199:9: error: register `rax` conflicts with register `rax`: register `rax`
+src/stdlib/packages/crypto_asymmetric/ed25519.rs:418:30: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/ed25519.rs:449:29: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/ed25519.rs:487:29: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/rsa.rs:561:30: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/rsa.rs:602:30: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/rsa.rs:653:30: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/rsa.rs:699:29: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/ecc.rs:628:30: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/ecc.rs:685:29: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/x25519.rs:368:82: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/x25519.rs:390:82: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/x25519.rs:425:82: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/x25519.rs:466:77: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/x25519.rs:219:51: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/x25519.rs:235:66: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/x25519.rs:252:25: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/x25519.rs:285:25: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:475:30: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:510:37: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:555:30: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:122:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:127:51: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:135:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:139:51: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:147:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:150:51: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:165:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:166:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:178:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:179:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:190:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:191:43: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:251:35: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:255:49: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:265:35: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:269:49: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:287:21: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/asymmetric.rs:316:17: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/key_validation.rs:779:47: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_asymmetric/key_validation.rs:811:13: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/stdlib/packages/crypto_pki/utils.rs:20:31: warning: use of deprecated function `base64::encode`: Use Engine::encode
+src/stdlib/packages/crypto_pki/utils.rs:52:17: warning: use of deprecated function `base64::decode`: Use Engine::decode
+src/optimization/passes.rs:15:15: error[E0782]: expected a type, found a trait
+src/optimization/passes.rs:22:20: error[E0782]: expected a type, found a trait
+src/optimization/passes.rs:23:26: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:19:15: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:26:20: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:27:26: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:100:25: error[E0782]: expected a type, found a trait
+src/stdlib/database/postgres/transaction.rs:23:25: error[E0107]: struct takes 0 lifetime arguments but 1 lifetime argument was supplied: expected 0 lifetime arguments
+src/stdlib/glowup_http/handler.rs:20:36: error[E0782]: expected a type, found a trait
+src/core/type_checker.rs:48:1: error[E0072]: recursive types `TypeChecker` and `TypeSystem` have infinite size
+src/stdlib/database/error.rs:443:1: error[E0119]: conflicting implementations of trait `From<database::error::DatabaseError>` for type `error::Error`: conflicting implementation for `error::Error`
+src/stdlib/json_tea/encoder.rs:436:1: error[E0119]: conflicting implementations of trait `From<std::io::Error>` for type `error::Error`: conflicting implementation for `error::Error`
+src/type_system/mod.rs:97:1: error[E0119]: conflicting implementations of trait `std::default::Default` for type `TypeInference`: conflicting implementation for `TypeInference`
+src/stdlib/packages/web_vibez/types.rs:17:1: error[E0116]: cannot define inherent `impl` for a type outside of the crate where the type is defined: impl for type defined outside of crate
+src/stdlib/glowup_http/handler.rs:15:31: error[E0782]: expected a type, found a trait
+src/imports/mod.rs:106:12: error[E0308]: mismatched types: expected `()`, found `Vec<()>`
+src/imports/mod.rs:120:23: error[E0308]: mismatched types: expected `()`, found `ResolvedImport`
+src/imports/mod.rs:125:24: error[E0308]: mismatched types: expected `Error`, found `ImportError`
+src/imports/mod.rs:146:65: error[E0308]: mismatched types: expected `ResolvedImport`, found `()`
+src/imports/mod.rs:160:23: error[E0308]: mismatched types: expected `()`, found `Arc<LoadedModule>`
+src/imports/mod.rs:168:54: error[E0308]: mismatched types: expected `Arc<LoadedModule>`, found `Arc<()>`
+src/imports/mod.rs:170:12: error[E0308]: mismatched types: expected `()`, found `Arc<()>`
+src/imports/module_loader.rs:63:23: error[E0308]: mismatched types: expected `()`, found `LoadedModule`
+src/imports/module_loader.rs:68:24: error[E0308]: mismatched types: expected `Error`, found `ImportError`
+src/imports/module_loader.rs:92:13: error[E0308]: `if` and `else` have incompatible types: expected `String`, found `()`
+src/imports/module_loader.rs:107:11: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<ImportError>` is not implemented for `error::Error`
+src/imports/module_loader.rs:109:30: error[E0599]: no method named `parse_program` found for unit type `()` in the current scope
+src/imports/module_loader.rs:115:29: error[E0599]: no method named `errors` found for unit type `()` in the current scope: method not found in `()`
+src/imports/module_loader.rs:117:24: error[E0308]: mismatched types: expected `Error`, found `ImportError`
+src/imports/module_loader.rs:136:19: error[E0308]: mismatched types: expected `ModuleInfo`, found `()`
+src/imports/module_loader.rs:148:12: error[E0308]: mismatched types: expected `()`, found `LoadedModule`
+src/imports/package_resolver.rs:150:24: error[E0308]: mismatched types: expected `Error`, found `ImportError`
+src/imports/package_resolver.rs:166:15: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<ImportError>` is not implemented for `error::Error`
+src/imports/package_resolver.rs:177:15: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<ImportError>` is not implemented for `error::Error`
+src/imports/package_resolver.rs:181:80: error[E0609]: no field `version` on type `()`: unknown field
+src/imports/package_resolver.rs:188:12: error[E0308]: mismatched types: expected `()`, found `ResolvedImport`
+src/optimization/enhanced_llvm_passes_manager.rs:1179:66: error[E0107]: type alias takes 1 generic argument but 2 generic arguments were supplied: expected 1 generic argument
+src/stdlib/database/postgres/transaction.rs:61:22: error[E0107]: struct takes 0 lifetime arguments but 1 lifetime argument was supplied: expected 0 lifetime arguments
+src/stdlib/database/postgres/transaction.rs:272:65: error[E0107]: struct takes 0 lifetime arguments but 1 lifetime argument was supplied: expected 0 lifetime arguments
+src/parser/error_propagation.rs:62:21: error[E0277]: the trait bound `TypedErrorPropagation: ast::traits::Node` is not satisfied: the trait `ast::traits::Node` is not implemented for `TypedErrorPropagation`
+src/parser/error_propagation.rs:62:1: error[E0046]: not all trait items implemented, missing: `clone_box`: missing `clone_box` in implementation
+src/core/performance_pipeline.rs:378:28: error[E0061]: this function takes 0 arguments but 1 argument was supplied
+src/optimization/passes.rs:288:69: error[E0782]: expected a type, found a trait
+src/optimization/passes.rs:379:69: error[E0782]: expected a type, found a trait
+src/optimization/passes.rs:433:59: error[E0782]: expected a type, found a trait
+src/optimization/passes.rs:651:48: error[E0277]: the size for values of type `dyn ast::traits::Statement` cannot be known at compilation time: doesn't have a size known at compile-time
+src/optimization/passes/cse.rs:373:38: error[E0277]: the size for values of type `dyn ast::traits::Statement` cannot be known at compilation time: doesn't have a size known at compile-time
+src/optimization/passes/cse.rs:409:63: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:420:62: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:436:54: error[E0277]: the size for values of type `dyn ast::traits::Statement` cannot be known at compilation time: doesn't have a size known at compile-time
+src/optimization/passes/cse.rs:561:61: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:590:58: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:590:187: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:644:54: error[E0782]: expected a type, found a trait
+src/optimization/passes/cse.rs:644:184: error[E0782]: expected a type, found a trait
+src/stdlib/collections/iterator_utils.rs:251:12: error[E0207]: the type parameter `T` is not constrained by the impl trait, self type, or predicates: unconstrained type parameter
+src/stdlib/io/async_io.rs:163:26: error[E0308]: mismatched types: expected `()`, found associated type
+src/stdlib/io/async_io.rs:164:23: error[E0308]: mismatched types: expected `Error`, found `FutureError`
+src/stdlib/database/orm/mod.rs:193:27: error[E0308]: mismatched types: expected `()`, found `Option<T>`
+src/stdlib/database/orm/mod.rs:208:45: error[E0282]: type annotations needed: cannot infer type for type parameter `T` declared on the enum `Option`
+src/stdlib/database/orm/mod.rs:253:32: error[E0308]: mismatched types: expected `&T`, found `&()`
+src/stdlib/database/orm/mod.rs:277:36: error[E0599]: no method named `rows_affected` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/mod.rs:288:12: error[E0308]: mismatched types: expected `()`, found `bool`
+src/stdlib/database/orm/mod.rs:309:23: error[E0308]: mismatched types: expected `()`, found `Vec<_>`
+src/stdlib/database/orm/mod.rs:354:29: error[E0599]: no method named `exec` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/mod.rs:366:12: error[E0599]: no method named `commit` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/mod.rs:374:12: error[E0308]: mismatched types: expected `()`, found `Vec<T>`
+src/stdlib/database/orm/mod.rs:404:20: error[E0308]: mismatched types: expected `()`, found `Vec<_>`
+src/stdlib/database/orm/mod.rs:408:20: error[E0308]: mismatched types: expected `()`, found `Vec<_>`
+src/stdlib/database/orm/mod.rs:440:39: error[E0599]: no method named `last_insert_id` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/mod.rs:445:12: error[E0308]: mismatched types: expected `()`, found type parameter `T`
+src/stdlib/database/orm/mod.rs:484:19: error[E0599]: no method named `rows_affected` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/mod.rs:485:24: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/orm/mod.rs:489:12: error[E0308]: mismatched types: expected `()`, found type parameter `T`
+src/stdlib/database/orm/query_builder.rs:301:45: error[E0614]: type `i64` cannot be dereferenced
+src/stdlib/database/orm/query_builder.rs:302:43: error[E0614]: type `f64` cannot be dereferenced
+src/stdlib/database/orm/query_builder.rs:408:34: error[E0599]: no method named `len` found for unit type `()` in the current scope
+src/stdlib/database/orm/migration.rs:199:13: error[E0277]: the size for values of type `str` cannot be known at compilation time: doesn't have a size known at compile-time
+src/stdlib/database/orm/migration.rs:199:9: error[E0277]: the size for values of type `str` cannot be known at compilation time: doesn't have a size known at compile-time
+src/stdlib/database/orm/migration.rs:199:34: error[E0277]: the size for values of type `str` cannot be known at compilation time: doesn't have a size known at compile-time
+src/stdlib/database/orm/migration.rs:234:13: error[E0277]: the size for values of type `str` cannot be known at compilation time: doesn't have a size known at compile-time
+src/stdlib/database/orm/migration.rs:234:9: error[E0277]: the size for values of type `str` cannot be known at compilation time: doesn't have a size known at compile-time
+src/stdlib/database/orm/migration.rs:234:34: error[E0277]: the size for values of type `str` cannot be known at compilation time: doesn't have a size known at compile-time
+src/stdlib/database/orm/migration.rs:359:24: error[E0308]: mismatched types: expected `()`, found `MigrationStatus`
+src/stdlib/database/orm/migration.rs:406:16: error[E0308]: mismatched types: expected `()`, found `MigrationStatus`
+src/stdlib/database/orm/migration.rs:429:16: error[E0599]: no method named `exec` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/migration.rs:435:12: error[E0599]: no method named `commit` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/migration.rs:460:16: error[E0599]: no method named `exec` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/migration.rs:466:12: error[E0599]: no method named `commit` found for unit type `()` in the current scope: method not found in `()`
+src/stdlib/database/orm/relationships.rs:251:20: error[E0308]: mismatched types: expected `()`, found `Vec<HashMap<String, SqlValue>>`
+src/stdlib/database/orm/relationships.rs:270:20: error[E0308]: mismatched types: expected `()`, found `Vec<HashMap<String, SqlValue>>`
+src/stdlib/database/orm/relationships.rs:298:20: error[E0308]: mismatched types: expected `()`, found `Vec<HashMap<String, SqlValue>>`
+src/stdlib/database/orm/relationships.rs:302:20: error[E0308]: mismatched types: expected `()`, found `Vec<_>`
+src/stdlib/database/orm/relationships.rs:421:20: error[E0308]: mismatched types: expected `()`, found `Vec<_>`
+src/stdlib/database/orm/relationships.rs:573:20: error[E0308]: mismatched types: expected `()`, found `Vec<_>`
+src/stdlib/database/orm/relationships.rs:592:23: error[E0308]: mismatched types: expected `()`, found `Vec<_>`
+src/stdlib/database/orm/relationships.rs:635:20: error[E0308]: mismatched types: expected `()`, found `Vec<_>`
+src/stdlib/database/orm/transaction_ops.rs:77:46: error[E0615]: attempted to take value of method `driver` on type `&Arc<DB>`: method, not a field
+src/stdlib/database/orm/transaction_ops.rs:78:27: error[E0061]: this function takes 2 arguments but 1 argument was supplied
+src/stdlib/database/orm/transaction_ops.rs:194:33: error[E0308]: mismatched types: expected `Arc<Tx>`, found `Arc<()>`
+src/stdlib/database/postgres/driver.rs:105:39: error[E0599]: no associated item named `ConnectionLost` found for struct `PostgresError` in the current scope: associated item not found in `PostgresError`
+src/stdlib/database/postgres/driver.rs:141:29: error[E0599]: no method named `into_client` found for struct `PooledPostgresConnection` in the current scope
+src/stdlib/database/postgres/connection.rs:102:34: error[E0277]: the trait bound `postgres::connection::NoTls: MakeTlsConnect<Socket>` is not satisfied: the trait `MakeTlsConnect<Socket>` is not implemented for `postgres::connection::NoTls`
+src/stdlib/database/postgres/connection.rs:100:36: error[E0277]: the trait bound `postgres::connection::NoTls: MakeTlsConnect<Socket>` is not satisfied: the trait `MakeTlsConnect<Socket>` is not implemented for `postgres::connection::NoTls`
+src/stdlib/database/postgres/connection.rs:104:10: error[E0277]: the trait bound `postgres::connection::NoTls: MakeTlsConnect<Socket>` is not satisfied: the trait `MakeTlsConnect<Socket>` is not implemented for `postgres::connection::NoTls`
+src/stdlib/database/postgres/connection.rs:118:28: error[E0308]: mismatched types: expected `postgres::connection::Client`, found `tokio_postgres::Client`
+src/stdlib/database/postgres/connection.rs:163:71: error[E0599]: no method named `execute` found for reference `&postgres::connection::Client` in the current scope: method not found in `&Client`
+src/stdlib/database/postgres/connection.rs:188:47: error[E0277]: a value of type `Vec<&dyn postgres_types::ToSql + std::marker::Sync>` cannot be built from an iterator over elements of type `&dyn postgres_types::ToSql + std::marker::Send + std::marker::Sync`: value of type `Vec<&dyn postgres_types::ToSql + std::marker::Sync>` cannot be built from `std::iter::Iterator<Item=&dyn postgres_types::ToSql + std::marker::Send + std::marker::Sync>`
+src/stdlib/database/postgres/connection.rs:192:20: error[E0599]: no method named `query` found for reference `&postgres::connection::Client` in the current scope: method not found in `&Client`
+src/stdlib/database/postgres/connection.rs:230:13: error[E0560]: struct `database::driver::QueryResult` has no field named `columns`: `database::driver::QueryResult` does not have this field
+src/stdlib/database/postgres/connection.rs:231:13: error[E0560]: struct `database::driver::QueryResult` has no field named `rows_affected`: `database::driver::QueryResult` does not have this field
+src/stdlib/database/postgres/connection.rs:242:47: error[E0277]: a value of type `Vec<&dyn postgres_types::ToSql + std::marker::Sync>` cannot be built from an iterator over elements of type `&dyn postgres_types::ToSql + std::marker::Send + std::marker::Sync`: value of type `Vec<&dyn postgres_types::ToSql + std::marker::Sync>` cannot be built from `std::iter::Iterator<Item=&dyn postgres_types::ToSql + std::marker::Send + std::marker::Sync>`
+src/stdlib/database/postgres/connection.rs:246:20: error[E0599]: no method named `execute` found for reference `&postgres::connection::Client` in the current scope: method not found in `&Client`
+src/stdlib/database/postgres/connection.rs:275:14: error[E0599]: no method named `prepare` found for reference `&postgres::connection::Client` in the current scope: method not found in `&Client`
+src/stdlib/database/postgres/connection.rs:299:14: error[E0599]: no method named `transaction` found for reference `&postgres::connection::Client` in the current scope: method not found in `&Client`
+src/stdlib/database/postgres/connection.rs:311:48: error[E0609]: no field `isolation_level` on type `TxOptions`: unknown field
+src/stdlib/database/postgres/connection.rs:337:65: error[E0599]: no method named `execute` found for reference `&postgres::connection::Client` in the current scope: method not found in `&Client`
+src/stdlib/database/postgres/transaction.rs:84:47: error[E0277]: a value of type `Vec<&dyn postgres_types::ToSql + std::marker::Sync>` cannot be built from an iterator over elements of type `&dyn postgres_types::ToSql + std::marker::Send + std::marker::Sync`: value of type `Vec<&dyn postgres_types::ToSql + std::marker::Sync>` cannot be built from `std::iter::Iterator<Item=&dyn postgres_types::ToSql + std::marker::Send + std::marker::Sync>`
+src/stdlib/database/postgres/transaction.rs:87:14: error[E0599]: no method named `query` found for mutable reference `&mut postgres::connection::Transaction` in the current scope: method not found in `&mut Transaction`
+src/stdlib/database/postgres/transaction.rs:116:13: error[E0560]: struct `database::driver::QueryResult` has no field named `columns`: `database::driver::QueryResult` does not have this field
+src/stdlib/database/postgres/transaction.rs:117:13: error[E0560]: struct `database::driver::QueryResult` has no field named `rows_affected`: `database::driver::QueryResult` does not have this field
+src/stdlib/database/postgres/transaction.rs:127:47: error[E0277]: a value of type `Vec<&dyn postgres_types::ToSql + std::marker::Sync>` cannot be built from an iterator over elements of type `&dyn postgres_types::ToSql + std::marker::Send + std::marker::Sync`: value of type `Vec<&dyn postgres_types::ToSql + std::marker::Sync>` cannot be built from `std::iter::Iterator<Item=&dyn postgres_types::ToSql + std::marker::Send + std::marker::Sync>`
+src/stdlib/database/postgres/transaction.rs:130:14: error[E0599]: no method named `execute` found for mutable reference `&mut postgres::connection::Transaction` in the current scope: method not found in `&mut Transaction`
+src/stdlib/database/postgres/transaction.rs:196:21: error[E0599]: no method named `execute` found for mutable reference `&mut postgres::connection::Transaction` in the current scope: method not found in `&mut Transaction`
+src/stdlib/database/postgres/transaction.rs:207:21: error[E0599]: no method named `execute` found for mutable reference `&mut postgres::connection::Transaction` in the current scope: method not found in `&mut Transaction`
+src/stdlib/database/postgres/transaction.rs:218:21: error[E0599]: no method named `execute` found for mutable reference `&mut postgres::connection::Transaction` in the current scope: method not found in `&mut Transaction`
+src/stdlib/database/postgres/transaction.rs:229:21: error[E0599]: no method named `execute` found for mutable reference `&mut postgres::connection::Transaction` in the current scope: method not found in `&mut Transaction`
+src/stdlib/database/postgres/transaction.rs:244:21: error[E0599]: no method named `execute` found for mutable reference `&mut postgres::connection::Transaction` in the current scope: method not found in `&mut Transaction`
+src/stdlib/database/postgres/pool.rs:196:13: error: lifetime may not live long enough: this usage requires that `'1` must outlive `'static`
+src/stdlib/database/redis/mod.rs:130:16: error[E0308]: mismatched types: expected `()`, found `Option<_>`
+src/stdlib/database/redis/mod.rs:137:14: error[E0282]: type annotations needed: cannot infer type for type parameter `T` declared on the method `execute_with_timing`
+src/stdlib/database/redis/mod.rs:148:16: error[E0308]: mismatched types: expected `()`, found `bool`
+src/stdlib/database/redis/mod.rs:157:16: error[E0308]: mismatched types: expected `()`, found `bool`
+src/stdlib/database/redis/mod.rs:166:16: error[E0308]: mismatched types: expected `()`, found `bool`
+src/stdlib/database/redis/mod.rs:175:16: error[E0308]: mismatched types: expected `()`, found integer
+src/stdlib/database/redis/connection.rs:226:27: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/connection.rs:263:21: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/connection.rs:285:20: error[E0308]: mismatched types: expected `()`, found `String`
+src/stdlib/database/redis/connection.rs:295:21: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/monitoring.rs:232:17: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/security.rs:186:23: error[E0308]: mismatched types: expected `()`, found `AuthResult`
+src/stdlib/database/redis/security.rs:197:23: error[E0308]: mismatched types: expected `()`, found `AuthResult`
+src/stdlib/database/redis/security.rs:208:23: error[E0308]: mismatched types: expected `()`, found `AuthResult`
+src/stdlib/database/redis/security.rs:228:16: error[E0308]: mismatched types: expected `()`, found `AuthResult`
+src/stdlib/database/redis/security.rs:240:16: error[E0308]: mismatched types: expected `()`, found `AuthResult`
+src/stdlib/database/redis/security.rs:261:27: error[E0308]: mismatched types: expected `()`, found `bool`
+src/stdlib/database/redis/security.rs:267:16: error[E0308]: mismatched types: expected `()`, found `bool`
+src/stdlib/database/redis/security.rs:270:16: error[E0308]: mismatched types: expected `()`, found `bool`
+src/stdlib/database/redis/transactions.rs:164:12: error[E0308]: mismatched types: expected `()`, found `String`
+src/stdlib/database/redis/transactions.rs:177:28: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/transactions.rs:182:28: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/transactions.rs:188:28: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/transactions.rs:204:17: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/transactions.rs:214:24: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/transactions.rs:230:17: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/transactions.rs:272:24: error[E0308]: mismatched types: expected `()`, found `TransactionResult`
+src/stdlib/database/redis/transactions.rs:290:24: error[E0308]: mismatched types: expected `()`, found `TransactionResult`
+src/stdlib/database/redis/transactions.rs:294:17: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/transactions.rs:321:17: error[E0308]: mismatched types: expected `Error`, found `DatabaseError`
+src/stdlib/database/redis/transactions.rs:375:12: error[E0308]: mismatched types: expected `()`, found `usize`
+src/stdlib/packages/db_sql/drivers.rs:159:75: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<db_core::error::DatabaseError>` is not implemented for `error::Error`
+src/stdlib/packages/db_sql/drivers.rs:166:98: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<db_core::error::DatabaseError>` is not implemented for `error::Error`
+src/stdlib/packages/db_sql/postgresql.rs:113:103: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<db_core::error::DatabaseError>` is not implemented for `error::Error`
+src/stdlib/packages/db_sql/postgresql.rs:119:98: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<db_core::error::DatabaseError>` is not implemented for `error::Error`
+src/stdlib/packages/db_nosql/redis.rs:110:15: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<db_core::error::DatabaseError>` is not implemented for `error::Error`
+src/stdlib/packages/db_nosql/redis.rs:138:15: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<db_core::error::DatabaseError>` is not implemented for `error::Error`
+src/stdlib/packages/db_nosql/redis.rs:246:9: error[E0308]: mismatched types: expected `Result<T, Error>`, found `Result<T, DatabaseError>`
+src/stdlib/packages/db_nosql/redis.rs:642:20: error: lifetime may not live long enough: returning this value requires that `'1` must outlive `'2`
+src/stdlib/packages/db_nosql/redis.rs:642:20: error[E0515]: cannot return value referencing temporary value: returns a value referencing data owned by the current function
+src/stdlib/packages/crypto_protocols/session_management.rs:518:46: error[E0053]: method `serialize` has an incompatible type for trait: expected associated type, found `()`
+src/stdlib/packages/crypto_protocols/session_management.rs:533:43: error[E0053]: method `deserialize` has an incompatible type for trait: expected `SessionResumptionData`, found `()`
+src/stdlib/packages/crypto_protocols/session_management.rs:550:50: error[E0053]: method `visit_map` has an incompatible type for trait: expected `SessionResumptionData`, found `()`
+src/stdlib/template/template_cache.rs:898:40: error[E0308]: mismatched types: expected `RwLockWriteGuard<'_, HashMap<..., ...>>`, found `Result<_, _>`
+src/stdlib/template/template_cache.rs:916:32: error[E0308]: mismatched types: expected `RwLockWriteGuard<'_, HashMap<..., ...>>`, found `Result<_, _>`
+src/stdlib/template/template_streaming.rs:352:15: error[E0004]: non-exhaustive patterns: `&TemplateNode::Include { .. }`, `&TemplateNode::Extends { .. }`, `&TemplateNode::BlockDef { .. }` and 4 more not covered: patterns `&TemplateNode::Include { .. }`, `&TemplateNode::Extends { .. }`, `&TemplateNode::BlockDef { .. }` and 4 more not covered
+src/stdlib/template/template_streaming.rs:518:12: error[E0308]: mismatched types: expected `()`, found `(String, StreamingResult)`
+src/stdlib/template/template_streaming.rs:542:33: error[E0308]: mismatched types: expected `JoinHandle<Result<(), Error>>`, found `JoinHandle<Result<bool, Error>>`
+src/stdlib/template/template_streaming.rs:540:12: error[E0308]: mismatched types: expected `()`, found `TemplateStream`
+src/stdlib/template/template_bundler.rs:515:17: error[E0308]: mismatched types: expected `usize`, found `()`
+src/profiling/cli.rs:478:75: error[E0609]: no field `session_duration` on type `()`: unknown field
+src/profiling/cli.rs:483:47: error[E0609]: no field `session_name` on type `()`: unknown field
+src/profiling/cli.rs:485:68: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<serde_json::Error>` is not implemented for `error::Error`
+src/profiling/cli.rs:528:39: error[E0609]: no field `suite_name` on type `()`: unknown field
+src/profiling/cli.rs:529:50: error[E0609]: no field `summary` on type `()`: unknown field
+src/profiling/cli.rs:530:50: error[E0609]: no field `summary` on type `()`: unknown field
+src/profiling/cli.rs:532:40: error[E0609]: no field `summary` on type `()`: unknown field
+src/profiling/cli.rs:536:40: error[E0609]: no field `summary` on type `()`: unknown field
+src/profiling/cli.rs:541:42: error[E0609]: no field `regression_analysis` on type `()`: unknown field
+src/profiling/cli.rs:558:17: error[E0599]: no method named `save_to_file` found for unit type `()` in the current scope: method not found in `()`
+src/profiling/cli.rs:561:69: error[E0609]: no field `suite_name` on type `()`: unknown field
+src/profiling/cli.rs:562:21: error[E0599]: no method named `save_to_file` found for unit type `()` in the current scope: method not found in `()`
+src/profiling/cli.rs:577:100: error[E0277]: `?` couldn't convert the error to `error::Error`: the trait `From<serde_json::Error>` is not implemented for `error::Error`
+warning: `cursed` (lib) generated 217 warnings
+error: could not compile `cursed` (lib) due to 347 previous errors; 217 warnings emitted

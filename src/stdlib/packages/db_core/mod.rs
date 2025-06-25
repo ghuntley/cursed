@@ -13,28 +13,30 @@ pub mod result;
 pub mod metadata;
 pub mod error;
 pub mod config;
+pub mod core_types;
 
 // Re-export all the important types for easy access - periodt
 pub use traits::{
     DatabaseDriver, DatabaseConnection, DatabaseTransaction, 
     QueryExecutor, ResultSet, PreparedStatement, ConnectionManager,
-    DriverInfo, ParameterMetadata, PoolStats, QueryStream, DriverFeature, SqlDialect
+    DriverInfo, ParameterMetadata, PoolStats, QueryStream, DriverFeature, SqlDialect,
+    SavePoint, TransactionState
 };
 pub use connection::{
     ConnectionConfig, ConnectionInfo, ConnectionState, 
     DatabaseConnectionImpl, ConnectionOptions
 };
 pub use query::{
-    Query, QueryBuilder, QueryType, Parameter, ParameterSet,
+    Query, QueryBuilder, QueryType, ParameterSet,
     SqlQuery, NoSqlQuery, QueryPlan, QueryCache, ExecutionStep
 };
 pub use transaction::{
     Transaction, TransactionIsolation, TransactionState,
-    TransactionOptions, SavePoint, TransactionManager
+    TransactionOptions, TransactionManager
 };
 pub use result::{
-    DatabaseQueryResult, Row, Column, ColumnType, ResultSetImpl,
-    ResultMetadata, ExecuteResult, QueryStats, ColumnValue, RowMetadata
+    DatabaseQueryResult, ResultSetImpl, ResultType,
+    ResultMetadata, ExecuteResult, QueryStats, RowMetadata
 };
 pub use metadata::{
     DatabaseMetadata, TableMetadata, ColumnInfo, IndexInfo,
@@ -48,6 +50,20 @@ pub use config::{
     DatabaseConfig, DriverConfig, PoolConfig, 
     SecurityConfig, PerformanceConfig, LoggingConfig
 };
+pub use core_types::{
+    ColumnMetadata, RowValue, QueryParameter
+};
+
+// Import SavePoint from traits (commented out to avoid conflict)
+// pub use traits::SavePoint;
+
+// Type aliases for compatibility - providing the missing types that are being imported
+pub type Row = core_types::RowValue;
+pub type Column = core_types::ColumnMetadata; 
+pub type ColumnType = core_types::ColumnType;
+pub type Parameter = core_types::QueryParameter;
+pub type ColumnValue = core_types::DatabaseValue;
+pub type DatabaseValue = core_types::DatabaseValue;
 
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};

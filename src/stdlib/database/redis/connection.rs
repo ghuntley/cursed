@@ -223,7 +223,7 @@ impl RedisConnection {
                 })
             }
             Ok(Err(e)) => Err(e),
-            Err(_) => Err(DatabaseError::Connection("Connection timeout".to_string())),
+            Err(_) => Err(DatabaseError::Connection("Connection timeout".to_string()).into()),
         }
     }
     
@@ -260,7 +260,7 @@ impl RedisConnection {
             }
             Err(_) => {
                 error!(connection_id = self.id, "Connection health check timed out");
-                Err(DatabaseError::Connection("Health check timeout".to_string()))
+                Err(DatabaseError::Connection("Health check timeout".to_string()).into())
             }
         }
     }
@@ -292,7 +292,7 @@ impl RedisConnection {
             Err(_) => {
                 error!(connection_id = self.id, command = command, "Command execution timed out");
                 self.is_healthy = false;
-                Err(DatabaseError::Query("Command timeout".to_string()))
+                Err(DatabaseError::Query("Command timeout".to_string()).into())
             }
         }
     }

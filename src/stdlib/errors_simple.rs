@@ -4,9 +4,11 @@
 // with the CURSED error handling system without type conflicts.
 
 use crate::error::SourceLocation;
+use crate::error_types::Error;
+use crate::cursed_error::CursedError;
 
-// Re-export CursedError for use by other stdlib modules
-pub use crate::error::CursedError;
+// Re-export Error for use by other stdlib modules
+// (Commented out to avoid duplicate import)
 use crate::error::types::{
     ErrorManager, ErrorManagerConfig, ErrorCategory, ErrorSeverity
 };
@@ -28,7 +30,7 @@ pub fn init_error_system() -> std::result::Result<(), Error> {
     let manager = Arc::new(ErrorManager::with_config(config));
     
     GLOBAL_ERROR_MANAGER.set(manager)
-        .map_err(|_| CursedError::system_error("Error manager already initialized"))?;
+        .map_err(|_| Error::system_error("Error manager already initialized"))?;
 
     Ok(())
 }
@@ -37,7 +39,7 @@ pub fn init_error_system() -> std::result::Result<(), Error> {
 pub fn get_error_manager() -> std::result::Result<(), Error> {
     GLOBAL_ERROR_MANAGER.get()
         .cloned()
-        .ok_or_else(|| CursedError::system_error("Error manager not initialized"))
+        .ok_or_else(|| Error::system_error("Error manager not initialized"))
 }
 
 /// Standard error constructors for common scenarios
@@ -46,14 +48,14 @@ pub mod std_errors {
 
     /// File system errors
     pub fn file_not_found(path: &str) -> std::result::Result<(), Error> {
-        Err(CursedError::Io(std::io::Error::new(
+        Err(Error::Io(std::io::Error::new(
             std::io::ErrorKind::NotFound,
             format!("File not found: {}", path)
         )))
     }
 
     pub fn permission_denied(path: &str) -> std::result::Result<(), Error> {
-        Err(CursedError::Io(std::io::Error::new(
+        Err(Error::Io(std::io::Error::new(
             std::io::ErrorKind::PermissionDenied,
             format!("Permission denied: {}", path)
         )))
@@ -61,7 +63,7 @@ pub mod std_errors {
 
     /// Parsing errors
     pub fn syntax_error(message: &str, line: usize, column: usize) -> std::result::Result<(), Error> {
-        Err(CursedError::parse_error_with_location(
+        Err(Error::parse_error_with_location(
             message.to_string(),
             line,
             column
@@ -70,7 +72,7 @@ pub mod std_errors {
 
     /// Runtime errors
     pub fn division_by_zero(line: usize, column: usize) -> std::result::Result<(), Error> {
-        Err(CursedError::parse_error_with_location(
+        Err(Error::parse_error_with_location(
             "Division by zero".to_string(),
             line,
             column
@@ -78,7 +80,7 @@ pub mod std_errors {
     }
 
     pub fn type_mismatch(expected: &str, actual: &str) -> std::result::Result<(), Error> {
-        Err(CursedError::Type(format!("Type mismatch: expected {}, got {}", expected, actual)))
+        Err(Error::Type(format!("Type mismatch: expected {}, got {}", expected, actual)))
     }
 }
 
@@ -149,7 +151,7 @@ impl ErrorFormatter {
         Self { use_colors: true }
     }
 
-    pub fn format_error(&self, error: &CursedError) -> String {
+    pub fn format_error(&self, error: &Error) -> String {
         if self.use_colors {
             format!("\x1b[31mError:\x1b[0m {}", error)
         } else {
@@ -183,7 +185,7 @@ mod tests {
     #[test]
     fn test_error_formatter() {
         let formatter = ErrorFormatter::new();
-        let error = CursedError::Runtime("Test error".to_string());
+        let error = Error::Runtime("Test error".to_string());
         let formatted = formatter.format_error(&error);
         
         assert!(formatted.contains("Test error"));
@@ -196,7 +198,7 @@ mod tests {
             || {
                 attempt_count += 1;
                 if attempt_count < 3 {
-                    Err(CursedError::Runtime("Test error".to_string()))
+                    Err(Error::Runtime("Test error".to_string()))
                 } else {
                     Ok(42)
                 }
@@ -208,10 +210,10 @@ mod tests {
         assert_eq!(result.unwrap(), 42);
         assert_eq!(attempt_count, 3);
 
-        let option_result = recovery::try_or_none(|| Err::<i32, CursedError>(CursedError::Runtime("Test error".to_string())));
+        let option_result = recovery::try_or_none(|| Err::<i32, Error>(Error::Runtime("Test error".to_string())));
         assert!(option_result.is_none());
 
-        let default_result = recovery::try_or_default(|| Err::<&str, CursedError>(CursedError::Runtime("Test error".to_string())), "default");
+        let default_result = recovery::try_or_default(|| Err::<&str, Error>(Error::Runtime("Test error".to_string())), "default");
         assert_eq!(default_result, "default");
     }
 }

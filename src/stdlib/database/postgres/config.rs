@@ -396,7 +396,7 @@ impl PostgresConnectionString {
 #[cfg(test)]
 mod tests {
     use super::*;
-use crate::error::Error;
+use crate::error_types::Error;
 
     #[test]
     fn test_ssl_mode_parsing() {

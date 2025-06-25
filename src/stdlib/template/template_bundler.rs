@@ -712,7 +712,7 @@ impl TemplateBundler {
     }
     
     /// Serialize bundle to bytes
-    pub fn serialize_bundle(&self, bundle: &TemplateBundle) -> Result<(), Error> {
+    pub fn serialize_bundle(&self, bundle: &TemplateBundle) -> Result<Vec<u8>, Error> {
         serde_json::to_vec(bundle).map_err(|e| CursedError::TemplateError {
             message: format!("Failed to serialize bundle: {}", e),
             source_location: None,
@@ -720,7 +720,7 @@ impl TemplateBundler {
     }
     
     /// Deserialize bundle from bytes
-    pub fn deserialize_bundle(&self, data: &[u8]) -> Result<(), Error> {
+    pub fn deserialize_bundle(&self, data: &[u8]) -> Result<TemplateBundle, Error> {
         serde_json::from_slice(data).map_err(|e| CursedError::TemplateError {
             message: format!("Failed to deserialize bundle: {}", e),
             source_location: None,
@@ -803,7 +803,7 @@ impl MinificationOptimizer {
 }
 
 impl TemplateOptimizer for MinificationOptimizer {
-    fn optimize(&self, content: &mut String, _ast: &mut TemplateAst) -> Result<(), Error> {
+    fn optimize(&self, content: &mut String, _ast: &mut TemplateAst) -> Result<OptimizationResult, Error> {
         let original_size = content.len();
         let mut optimizations_applied = 0;
         
@@ -1253,7 +1253,7 @@ impl DeadCodeEliminationOptimizer {
 }
 
 impl TemplateOptimizer for DeadCodeEliminationOptimizer {
-    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<(), Error> {
+    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<OptimizationResult, Error> {
         let original_size = content.len();
         let mut optimizations_applied = 0;
         let mut warnings = Vec::new();
@@ -1611,7 +1611,7 @@ impl DependencyOptimizer {
 }
 
 impl TemplateOptimizer for DependencyOptimizer {
-    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<(), Error> {
+    fn optimize(&self, content: &mut String, ast: &mut TemplateAst) -> Result<OptimizationResult, Error> {
         let original_size = content.len();
         let mut optimizations_applied = 0;
         let mut warnings = Vec::new();

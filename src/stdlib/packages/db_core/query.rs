@@ -3,7 +3,7 @@
 /// This module defines query structures, parameter handling, caching,
 /// and execution planning for database operations. Query optimization bestie!
 
-use crate::stdlib::packages::db_core::{
+use crate::stdlib::packages::db_core::error::{
     DatabaseError, ErrorKind, QueryError
 };
 use crate::error::Error;

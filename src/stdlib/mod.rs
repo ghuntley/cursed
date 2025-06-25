@@ -12,6 +12,7 @@ pub mod fs;
 pub mod errors;
 pub mod errors_simple;
 pub mod exec_vibez;
+pub mod bytefit;
 
 // Value types
 pub mod value;

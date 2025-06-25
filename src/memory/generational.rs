@@ -28,6 +28,7 @@ use crate::memory::cycle_detection::{CycleDetector, CycleDetectionConfig};
 use crate::memory::mark_sweep::{MarkSweepCollector, MarkSweepConfig};
 use crate::memory::copying::{CopyingCollector, CopyingConfig};
 use crate::memory::incremental::{IncrementalCollector, IncrementalConfig};
+use crate::error_types::Error;
 
 /// Generation types in the generational collector
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

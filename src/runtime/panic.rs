@@ -3,7 +3,7 @@
 /// Provides panic handling with customizable behavior, recovery mechanisms,
 /// stack frame tracking, and thread-safe operations for concurrent environments.
 
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error_types::{Error, SourceLocation};
 use crate::runtime::debug_info::{EnhancedStackTrace, StackTraceCapture, StackTraceConfig};
 use crate::runtime::debug_manager::DebugManager;
 
@@ -226,7 +226,7 @@ impl fmt::Display for CursedPanicInfo {
 #[derive(Debug)]
 pub enum RecoveryAction {
     /// Continue execution, treating panic as a regular error
-    Continue(CursedError),
+    Continue(Error),
     /// Terminate the current goroutine cleanly
     TerminateGoroutine,
     /// Restart the current operation
@@ -357,7 +357,7 @@ impl PanicRuntime {
     /// Initialize the panic runtime system
     pub fn initialize(&self) -> Result<(), Error> {
         if self.active.load(Ordering::SeqCst) {
-            return Err(CursedError::Runtime("Panic runtime already initialized".to_string()));
+            return Err(Error::Runtime("Panic runtime already initialized".to_string()));
         }
 
         // Set up Rust panic hook to integrate with our system

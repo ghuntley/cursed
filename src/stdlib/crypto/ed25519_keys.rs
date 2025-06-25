@@ -1,4 +1,4 @@
-use crate::crypto::Ed25519PublicKey as ImportedEd25519PublicKey;
+// Note: Ed25519PublicKey is defined in this module
 /// Ed25519 cryptographic key types for CURSED
 
 use crate::error::{Error, Result};

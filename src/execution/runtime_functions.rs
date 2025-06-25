@@ -4,7 +4,7 @@
 /// including built-in functions, standard library integration, and FFI support.
 
 use crate::execution::{CursedValue, ValueType, ExecutionContext};
-use crate::error::Error;
+use crate::error_types::Error;
 use std::collections::HashMap;
 
 /// Registry for runtime functions

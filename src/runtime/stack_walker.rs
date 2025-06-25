@@ -7,7 +7,7 @@
 /// - Integration with Rust's backtrace crate
 /// - Support for CURSED function name resolution
 
-use crate::error::{Error as CursedError, SourceLocation};
+use crate::error_types::Error;
 use crate::runtime::debug_info::{DebugInfo, SymbolInfo, SymbolResolver};
 
 use std::collections::HashMap;
@@ -300,7 +300,7 @@ impl StackWalker {
         };
         
         if num_frames < 0 {
-            return Err(CursedError::Runtime("Failed to capture backtrace".to_string()));
+            return Err(Error::Runtime("Failed to capture backtrace".to_string()));
         }
         
         debug!("Captured {} frames on Linux", num_frames);
@@ -376,7 +376,7 @@ impl StackWalker {
         };
         
         if num_frames < 0 {
-            return Err(CursedError::Runtime("Failed to capture backtrace on macOS".to_string()));
+            return Err(Error::Runtime("Failed to capture backtrace on macOS".to_string()));
         }
         
         debug!("Captured {} frames on macOS", num_frames);
@@ -647,7 +647,7 @@ impl StackWalker {
         
         // Get the current executable path
         let exe_path = std::env::current_exe()
-            .map_err(|e| CursedError::Runtime(format!("Failed to get executable path: {}", e)))?;
+            .map_err(|e| Error::Runtime(format!("Failed to get executable path: {}", e)))?;
         
         // Run addr2line to resolve the symbol
         let output = Command::new("addr2line")
@@ -736,7 +736,7 @@ impl StackWalker {
         
         // Get the current executable path
         let exe_path = std::env::current_exe()
-            .map_err(|e| CursedError::Runtime(format!("Failed to get executable path: {}", e)))?;
+            .map_err(|e| Error::Runtime(format!("Failed to get executable path: {}", e)))?;
         
         // Run addr2line to get source location
         let output = Command::new("addr2line")
@@ -928,7 +928,7 @@ impl StackWalker {
     pub fn get_statistics(&self) -> Result<(), Error> {
         self.stats.lock()
             .map(|stats| stats.clone())
-            .map_err(|_| CursedError::Runtime("Failed to access stack walk statistics".to_string()))
+            .map_err(|_| Error::Runtime("Failed to access stack walk statistics".to_string()))
     }
 
     /// Clear symbol cache
@@ -1023,7 +1023,7 @@ pub fn walk_current_stack() -> Result<(), Error> {
     let result = if let Ok(w) = walker.lock() {
         w.walk_stack()
     } else {
-        Err(CursedError::Runtime("Failed to access global stack walker".to_string()))
+        Err(Error::Runtime("Failed to access global stack walker".to_string()))
     };
     result
 }

@@ -674,7 +674,7 @@ mod tests {
     use std::thread;
     use std::time::Duration;
     use tracing_test::traced_test;
-use crate::error::Error;
+use crate::error_types::Error;
 
     #[traced_test]
     #[test]

@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex};
 use thiserror::Error;
 
 use crate::ast::ImportStatement;
-use crate::package_manager::{PackageManager, PackageMetadata, PackageManagerError};
+// use crate::package_manager::{PackageManager, PackageMetadata, PackageManagerError};
 
 pub mod resolver;
 pub mod module_loader;
@@ -42,7 +42,7 @@ pub enum ImportError {
     ModuleLoadError { module: String, error: String },
     
     #[error("Package manager error: {0}")]
-    PackageManager(#[from] PackageManagerError),
+    PackageManager(String),
     
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
@@ -54,7 +54,7 @@ pub struct ImportManager {
     resolver: ImportResolver,
     package_resolver: PackageImportResolver,
     module_loader: ModuleLoader,
-    package_manager: Arc<Mutex<PackageManager>>,
+    // package_manager: Arc<Mutex<PackageManager>>, // Disabled for minimal build
     cache: ImportCache,
 }
 
@@ -68,11 +68,11 @@ pub struct ImportCache {
 impl ImportManager {
     /// Create new import manager with package manager integration
     pub fn new(
-        package_manager: Arc<Mutex<PackageManager>>,
+        // package_manager: Arc<Mutex<PackageManager>>, // Disabled for minimal build
         config: ImportResolverConfig,
-    ) -> Result<(), Error> {
+    ) -> Result<Self, Error> {
         let resolver = ImportResolver::new(config);
-        let package_resolver = PackageImportResolver::new(package_manager.clone());
+        let package_resolver = PackageImportResolver::new(/* package_manager.clone() */);
         let module_loader = ModuleLoader::new();
         let cache = ImportCache::default();
         
@@ -80,7 +80,7 @@ impl ImportManager {
             resolver,
             package_resolver,
             module_loader,
-            package_manager,
+            // package_manager, // Disabled for minimal build
             cache,
         })
     }
@@ -95,15 +95,14 @@ impl ImportManager {
         let mut processing = std::collections::HashSet::new();
         
         for import in imports {
-            let resolved_import = self.resolve_single_import(
+            self.resolve_single_import(
                 import, 
                 context_path, 
                 &mut processing
             ).await?;
-            resolved.push(resolved_import);
         }
         
-        Ok(resolved)
+        Ok(())
     }
     
     /// Resolve a single import statement
@@ -116,15 +115,14 @@ impl ImportManager {
         let import_path = &import.path;
         
         // Check cache first
-        if let Some(cached) = self.cache.resolved_imports.get(import_path) {
-            return Ok(cached.clone());
+        if let Some(_cached) = self.cache.resolved_imports.get(import_path) {
+            return Ok(());
         }
         
         // Detect circular imports
         if processing.contains(import_path) {
-            return Err(ImportError::CircularImport {
-                cycle: processing.iter().cloned().collect(),
-            });
+            return Err(Error::Import(format!("Circular import detected: {:?}", 
+                processing.iter().cloned().collect::<Vec<_>>())));
         }
         processing.insert(import_path.clone());
         
