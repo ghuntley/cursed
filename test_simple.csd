@@ -1,4 +1,5 @@
-facts msg = "Hello, CURSED world!"
-slay greet() {
-    msg
+facts msg = "Hello";
+
+slay main() {
+  yolo 0;
 }
