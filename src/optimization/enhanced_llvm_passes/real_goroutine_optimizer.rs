@@ -242,7 +242,7 @@ enum StackGrowthPattern {
 }
 
 /// Stack risk levels
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum StackRiskLevel {
     Safe,
     Moderate,

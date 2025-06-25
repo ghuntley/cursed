@@ -313,10 +313,10 @@ mod tests {
         let simple_email = r"\w+@\w+\.\w+";
         let complex_email = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}";
 
-        let simple_result = benchmark_pattern(simple_email, &test_texts.iter().map(|s| s.as_str()).collect::<Vec<_>>(), 1000)
+        let simple_result = benchmark_pattern(simple_email, &test_texts.iter().map(|s| s.as_ref()).collect::<Vec<_>>(), 1000)
             .expect("Should benchmark simple pattern");
 
-        let complex_result = benchmark_pattern(complex_email, &test_texts.iter().map(|s| s.as_str()).collect::<Vec<_>>(), 1000)
+        let complex_result = benchmark_pattern(complex_email, &test_texts.iter().map(|s| s.as_ref()).collect::<Vec<_>>(), 1000)
             .expect("Should benchmark complex pattern");
 
         assert!(simple_result.operations_per_second > 0);
