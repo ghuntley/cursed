@@ -1,15 +1,12 @@
-//! Minimal working module for CURSED compilation
+//! Scalar Replacement of Aggregates pass
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 
-pub struct MinimalImplementation;
+/// SROA pass
+pub struct SroaPass;
 
-impl MinimalImplementation {
+impl SroaPass {
     pub fn new() -> Self {
         Self
     }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
 }

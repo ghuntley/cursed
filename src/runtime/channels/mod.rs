@@ -7,21 +7,51 @@
 // - Channel closing and error handling
 // - Memory management for channel buffers
 
-// TODO: Enable these modules once they are implemented
-// pub mod buffer;
-// pub mod select;
-// pub mod channel;
-// pub mod operations;
-// pub mod memory;
-// pub mod sync;
+// Simple working channel implementation (main interface)
+pub mod simple_channel;
 
-// TODO: Import these once modules are implemented
-// pub use buffer::{ChannelBuffer, BufferType};
-// pub use select::{SelectOperation, SelectResult};
-// pub use channel::{Channel, ChannelSender, ChannelReceiver};
-// pub use operations::{SendOperation, ReceiveOperation};
-// pub use memory::{ChannelMemoryManager, ChannelAllocation};
-// pub use sync::{ChannelSync, SyncPrimitive};
+// Advanced channel implementation modules (work in progress)
+#[allow(dead_code)]
+pub mod buffer;
+#[allow(dead_code)]
+pub mod select;
+#[allow(dead_code)]
+pub mod channel;
+#[allow(dead_code)]
+pub mod operations;
+#[allow(dead_code)]
+pub mod memory;
+#[allow(dead_code)]
+pub mod sync;
+
+// Re-export the simple implementation as the main interface
+pub use simple_channel::{
+    SimpleChannel,
+    SimpleChannelSender,
+    SimpleChannelReceiver,
+    simple_channel,
+    simple_buffered_channel,
+};
+
+// Main channel API using simple implementation
+pub type Channel<T> = SimpleChannel<T>;
+pub type ChannelSender<T> = SimpleChannelSender<T>;
+pub type ChannelReceiver<T> = SimpleChannelReceiver<T>;
+pub fn channel<T>() -> (ChannelSender<T>, ChannelReceiver<T>) {
+    simple_channel()
+}
+pub fn buffered_channel<T>(capacity: usize) -> (ChannelSender<T>, ChannelReceiver<T>) {
+    simple_buffered_channel(capacity)
+}
+
+// CURSED syntax support
+pub type Dm<T> = Channel<T>;
+pub fn dm<T>() -> (ChannelSender<T>, ChannelReceiver<T>) {
+    channel()
+}
+pub fn dm_buffered<T>(capacity: usize) -> (ChannelSender<T>, ChannelReceiver<T>) {
+    buffered_channel(capacity)
+}
 
 use std::fmt;
 use std::sync::{Arc, Mutex};
@@ -90,169 +120,113 @@ pub enum ReceiveResult<T> {
     WouldBlock,
 }
 
-/// Channel wrapper for CURSED runtime
-pub struct Channel<T> {
-    sender: mpsc::Sender<T>,
-    receiver: Arc<Mutex<mpsc::Receiver<T>>>,
-    is_closed: Arc<Mutex<bool>>,
-    buffer_size: usize,
+// Legacy compatibility wrapper - keeping old interface for backward compatibility
+// The new full-featured implementation is in the channel module
+
+/// Legacy channel wrapper - redirects to new implementation
+#[deprecated(note = "Use the new Channel type from channel module")]
+pub struct LegacyChannel<T> {
+    inner: channel::Channel<T>,
 }
 
-impl<T> Channel<T> {
+impl<T: Send + 'static> LegacyChannel<T> {
     /// Create a new unbuffered channel
     pub fn new() -> Self {
-        let (sender, receiver) = mpsc::channel();
         Self {
-            sender,
-            receiver: Arc::new(Mutex::new(receiver)),
-            is_closed: Arc::new(Mutex::new(false)),
-            buffer_size: 0,
+            inner: channel::Channel::new(),
         }
     }
 
     /// Create a new buffered channel with specified capacity
     pub fn with_capacity(capacity: usize) -> Self {
-        let (sender, receiver) = mpsc::channel();
         Self {
-            sender,
-            receiver: Arc::new(Mutex::new(receiver)),
-            is_closed: Arc::new(Mutex::new(false)),
-            buffer_size: capacity,
+            inner: channel::Channel::with_capacity(capacity),
         }
     }
 
     /// Send a value into the channel
     pub fn send(&self, value: T) -> SendResult<T> {
-        if *self.is_closed.lock().unwrap() {
-            return SendResult::Closed(value);
-        }
-
-        match self.sender.send(value) {
-            Ok(()) => SendResult::Sent,
-            Err(mpsc::SendError(value)) => SendResult::Closed(value),
-        }
+        self.inner.send(value)
     }
 
     /// Try to receive a value from the channel (non-blocking)
     pub fn try_recv(&self) -> ReceiveResult<T> {
-        if let Ok(receiver) = self.receiver.lock() {
-            match receiver.try_recv() {
-                Ok(value) => ReceiveResult::Received(value),
-                Err(mpsc::TryRecvError::Empty) => ReceiveResult::WouldBlock,
-                Err(mpsc::TryRecvError::Disconnected) => ReceiveResult::Closed,
-            }
-        } else {
-            ReceiveResult::Closed
-        }
+        self.inner.try_recv()
     }
 
     /// Receive a value from the channel (blocking)
     pub fn recv(&self) -> ReceiveResult<T> {
-        if let Ok(receiver) = self.receiver.lock() {
-            match receiver.recv() {
-                Ok(value) => ReceiveResult::Received(value),
-                Err(mpsc::RecvError) => ReceiveResult::Closed,
-            }
-        } else {
-            ReceiveResult::Closed
-        }
+        self.inner.recv()
     }
 
     /// Close the channel
     pub fn close(&self) {
-        *self.is_closed.lock().unwrap() = true;
+        self.inner.close();
     }
 
     /// Check if channel is closed
     pub fn is_closed(&self) -> bool {
-        *self.is_closed.lock().unwrap()
+        self.inner.is_closed()
     }
 
     /// Get buffer size
     pub fn buffer_size(&self) -> usize {
-        self.buffer_size
+        self.inner.capacity()
     }
 }
 
-impl<T> Default for Channel<T> {
+impl<T: Send + 'static> Default for LegacyChannel<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Channel sender handle
-pub struct ChannelSender<T> {
-    sender: mpsc::Sender<T>,
-    is_closed: Arc<Mutex<bool>>,
+/// Legacy channel sender handle - redirects to new implementation
+#[deprecated(note = "Use ChannelSender from channel module")]
+pub struct LegacyChannelSender<T> {
+    inner: channel::ChannelSender<T>,
 }
 
-impl<T> ChannelSender<T> {
-    pub fn new(sender: mpsc::Sender<T>, is_closed: Arc<Mutex<bool>>) -> Self {
-        Self { sender, is_closed }
+impl<T: Send + 'static> LegacyChannelSender<T> {
+    pub fn new(inner: channel::ChannelSender<T>) -> Self {
+        Self { inner }
     }
 
     pub fn send(&self, value: T) -> SendResult<T> {
-        if *self.is_closed.lock().unwrap() {
-            return SendResult::Closed(value);
-        }
-
-        match self.sender.send(value) {
-            Ok(()) => SendResult::Sent,
-            Err(mpsc::SendError(value)) => SendResult::Closed(value),
-        }
+        self.inner.send(value)
     }
 }
 
-/// Channel receiver handle
-pub struct ChannelReceiver<T> {
-    receiver: Arc<Mutex<mpsc::Receiver<T>>>,
-    is_closed: Arc<Mutex<bool>>,
+/// Legacy channel receiver handle - redirects to new implementation
+#[deprecated(note = "Use ChannelReceiver from channel module")]
+pub struct LegacyChannelReceiver<T> {
+    inner: channel::ChannelReceiver<T>,
 }
 
-impl<T> ChannelReceiver<T> {
-    pub fn new(receiver: Arc<Mutex<mpsc::Receiver<T>>>, is_closed: Arc<Mutex<bool>>) -> Self {
-        Self { receiver, is_closed }
+impl<T: Send + 'static> LegacyChannelReceiver<T> {
+    pub fn new(inner: channel::ChannelReceiver<T>) -> Self {
+        Self { inner }
     }
 
     pub fn recv(&self) -> ReceiveResult<T> {
-        if let Ok(receiver) = self.receiver.lock() {
-            match receiver.recv() {
-                Ok(value) => ReceiveResult::Received(value),
-                Err(mpsc::RecvError) => ReceiveResult::Closed,
-            }
-        } else {
-            ReceiveResult::Closed
-        }
+        self.inner.recv()
     }
 
     pub fn try_recv(&self) -> ReceiveResult<T> {
-        if let Ok(receiver) = self.receiver.lock() {
-            match receiver.try_recv() {
-                Ok(value) => ReceiveResult::Received(value),
-                Err(mpsc::TryRecvError::Empty) => ReceiveResult::WouldBlock,
-                Err(mpsc::TryRecvError::Disconnected) => ReceiveResult::Closed,
-            }
-        } else {
-            ReceiveResult::Closed
-        }
+        self.inner.try_recv()
     }
 }
 
-/// Create a channel pair (sender, receiver)
-pub fn channel<T>() -> (ChannelSender<T>, ChannelReceiver<T>) {
-    let (sender, receiver) = mpsc::channel();
-    let is_closed = Arc::new(Mutex::new(false));
-    let receiver = Arc::new(Mutex::new(receiver));
-
-    let sender_handle = ChannelSender::new(sender, is_closed.clone());
-    let receiver_handle = ChannelReceiver::new(receiver, is_closed);
-
-    (sender_handle, receiver_handle)
+/// Legacy channel creation function - redirects to new implementation
+#[deprecated(note = "Use channel::channel() instead")]
+pub fn legacy_channel<T: Send + 'static>() -> (LegacyChannelSender<T>, LegacyChannelReceiver<T>) {
+    let (sender, receiver) = channel::channel();
+    (LegacyChannelSender::new(sender), LegacyChannelReceiver::new(receiver))
 }
 
-/// Create a buffered channel pair with specified capacity
-pub fn buffered_channel<T>(capacity: usize) -> (ChannelSender<T>, ChannelReceiver<T>) {
-    // For now, using unbounded channels as std::sync::mpsc doesn't support bounded channels
-    // TODO: Implement proper buffered channels when needed
-    channel()
+/// Legacy buffered channel creation function - redirects to new implementation
+#[deprecated(note = "Use channel::buffered_channel() instead")]
+pub fn legacy_buffered_channel<T: Send + 'static>(capacity: usize) -> (LegacyChannelSender<T>, LegacyChannelReceiver<T>) {
+    let (sender, receiver) = channel::buffered_channel(capacity);
+    (LegacyChannelSender::new(sender), LegacyChannelReceiver::new(receiver))
 }

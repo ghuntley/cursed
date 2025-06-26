@@ -1,15 +1,12 @@
-//! Minimal working module for CURSED compilation
+//! Memory to Register promotion pass
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 
-pub struct MinimalImplementation;
+/// Mem2Reg pass
+pub struct Mem2RegPass;
 
-impl MinimalImplementation {
+impl Mem2RegPass {
     pub fn new() -> Self {
         Self
     }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
 }

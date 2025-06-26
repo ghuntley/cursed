@@ -1,15 +1,29 @@
-//! Minimal working module for CURSED compilation
+//! Pass registry for managing optimization passes
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
+use std::collections::HashMap;
 
-pub struct MinimalImplementation;
+/// Registry for optimization passes
+pub struct PassRegistry {
+    passes: HashMap<String, PassRegistration>,
+}
 
-impl MinimalImplementation {
+impl PassRegistry {
     pub fn new() -> Self {
-        Self
+        Self {
+            passes: HashMap::new(),
+        }
     }
 }
 
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+/// Pass registration information
+pub struct PassRegistration {
+    pub name: String,
+    pub description: String,
+}
+
+/// Pass dependencies
+pub struct PassDependency {
+    pub name: String,
+    pub required: bool,
 }

@@ -2,13 +2,14 @@
 
 use crate::error::CursedError;
 use crate::optimization::config::{OptimizationConfig, OptimizationLevel};
-use crate::optimization::real_llvm_passes::{RealLlvmPassManager, PassInfo, PassCategory};
+use crate::optimization::real_llvm_passes::{RealLlvmPassManager, CustomPassInfo, PassCategory};
+use inkwell::context::Context;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 #[derive(Debug)]
-pub struct EnhancedLlvmPassManager {
-    real_pass_manager: RealLlvmPassManager,
+pub struct EnhancedLlvmPassManager<'ctx> {
+    real_pass_manager: RealLlvmPassManager<'ctx>,
     config: OptimizationConfig,
     pass_statistics: HashMap<String, PassStatistics>,
     execution_history: Vec<PassExecution>,
@@ -42,17 +43,17 @@ pub struct ExecutionContext {
     pub complexity_score: f64,
 }
 
-impl EnhancedLlvmPassManager {
-    pub fn new(config: OptimizationConfig) -> Self {
-        let real_pass_manager = RealLlvmPassManager::new(config.clone());
+impl<'ctx> EnhancedLlvmPassManager<'ctx> {
+    pub fn new(context: &'ctx Context, config: OptimizationConfig) -> Result<Self, CursedError> {
+        let real_pass_manager = RealLlvmPassManager::new(context, config.clone())?;
         
-        Self {
+        Ok(Self {
             real_pass_manager,
             config,
             pass_statistics: HashMap::new(),
             execution_history: Vec::new(),
             adaptive_optimization: true,
-        }
+        })
     }
 
     pub fn with_adaptive_optimization(mut self, enable: bool) -> Self {

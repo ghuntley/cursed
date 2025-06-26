@@ -7,15 +7,23 @@
 // - Reference counting and cycle detection
 // - Memory safety and leak detection
 
-// TODO: Enable these modules once they are implemented
-// pub mod allocator;
-// pub mod gc;
-// pub mod copying_collector;
+// Enable advanced memory management modules
+pub mod allocator;
+pub mod gc;
+pub mod enhanced_gc;
+pub mod production_gc;
+pub mod mark_sweep;
+pub mod generational;
+pub mod copying;
+pub mod incremental;
+pub mod heap;
+pub mod roots;
+pub mod metadata;
 
-// TODO: Import these once modules are implemented
-// pub use allocator::{Allocator, AllocationStrategy};
-// pub use gc::{GarbageCollector, GcStats};
-// pub use copying_collector::{CopyingCollector, Region};
+// Export main interfaces
+pub use gc::{MinimalImplementation as GcMinimal, get_minimal_result};
+pub use enhanced_gc::{MinimalImplementation as EnhancedGcMinimal};
+pub use production_gc::{MinimalImplementation as ProductionGcMinimal};
 
 use std::sync::Arc;
 

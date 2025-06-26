@@ -13,6 +13,9 @@
 
 // Core stdlib modules
 pub mod string;
+pub mod math;
+pub mod mathz;
+pub mod stringz;
 
 // TODO: Enable these modules once they are implemented
 // pub mod prelude;

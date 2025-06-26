@@ -1,186 +1,360 @@
 //! Real LLVM pass management and execution
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 use crate::optimization::config::OptimizationConfig;
+use crate::optimization::llvm_passes::{LlvmPassManager, OptimizationStatistics};
+use crate::codegen::llvm::passes::{
+    InliningPass, LoopOptimizationPass, DeadCodeEliminationPass, 
+    ConstantPropagationPass, GvnPass, InliningResult, LoopInfo,
+    DeadCodeResult, ConstantPropagationResult, GvnResult
+};
+use inkwell::{context::Context, module::Module};
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
-#[derive(Debug)]
-pub struct RealLlvmPassManager {
+/// Real LLVM pass manager that integrates with actual LLVM passes
+pub struct RealLlvmPassManager<'ctx> {
+    context: &'ctx Context,
     config: OptimizationConfig,
-    registered_passes: HashMap<String, PassInfo>,
-    enabled_passes: Vec<String>,
+    llvm_pass_manager: Option<LlvmPassManager<'ctx>>,
+    custom_passes: CustomPassRegistry<'ctx>,
+    statistics: PassManagerStatistics,
 }
 
+impl<'ctx> std::fmt::Debug for RealLlvmPassManager<'ctx> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RealLlvmPassManager")
+            .field("config", &self.config)
+            .field("llvm_pass_manager", &"<LlvmPassManager>")
+            .field("custom_passes", &"<CustomPassRegistry>")
+            .field("statistics", &self.statistics)
+            .finish()
+    }
+}
+
+impl<'ctx> RealLlvmPassManager<'ctx> {
+    /// Create a new real LLVM pass manager
+    pub fn new(context: &'ctx Context, config: OptimizationConfig) -> Result<Self> {
+        let llvm_pass_manager = LlvmPassManager::new(context, config.clone())?;
+        
+        Ok(Self {
+            context,
+            config,
+            llvm_pass_manager: Some(llvm_pass_manager),
+            custom_passes: CustomPassRegistry::new(context),
+            statistics: PassManagerStatistics::default(),
+        })
+    }
+    
+    /// Run all optimization passes on a module
+    pub fn optimize_module(&mut self, module: &Module<'ctx>) -> Result<ComprehensiveOptimizationResult> {
+        let start_time = Instant::now();
+        let mut result = ComprehensiveOptimizationResult::default();
+        
+        // Validate module before optimization
+        if let Err(err) = module.verify() {
+            return Err(CursedError::runtime_error(&format!("Module validation failed: {}", err)));
+        }
+        
+        // Run LLVM standard passes first
+        if let Some(ref llvm_manager) = self.llvm_pass_manager {
+            let llvm_changed = llvm_manager.optimize_module(module)?;
+            result.llvm_passes_changed = llvm_changed;
+            result.llvm_statistics = Some(llvm_manager.get_statistics());
+        }
+        
+        // Run custom optimization passes based on configuration
+        result.inlining_result = self.run_inlining_pass(module)?;
+        result.loop_optimization_result = self.run_loop_optimization_pass(module)?;
+        result.dead_code_result = self.run_dead_code_elimination_pass(module)?;
+        result.constant_propagation_result = self.run_constant_propagation_pass(module)?;
+        result.gvn_result = self.run_gvn_pass(module)?;
+        
+        // Calculate total execution time
+        result.total_execution_time = start_time.elapsed();
+        
+        // Update statistics
+        self.statistics.update(&result);
+        
+        // Validate module after optimization
+        if let Err(err) = module.verify() {
+            return Err(CursedError::runtime_error(&format!("Module validation failed after optimization: {}", err)));
+        }
+        
+        Ok(result)
+    }
+    
+    /// Run function inlining pass
+    fn run_inlining_pass(&self, module: &Module<'ctx>) -> Result<Option<InliningResult>> {
+        if self.config.inline_threshold == 0 {
+            return Ok(None);
+        }
+        
+        let mut inlining_pass = InliningPass::new(self.context, self.config.inline_threshold);
+        let result = inlining_pass.run(module)?;
+        Ok(Some(result))
+    }
+    
+    /// Run loop optimization pass
+    fn run_loop_optimization_pass(&self, module: &Module<'ctx>) -> Result<Option<LoopInfo>> {
+        if self.config.unroll_threshold == 0 && !self.config.vectorize {
+            return Ok(None);
+        }
+        
+        let loop_pass = LoopOptimizationPass::new(&self.config);
+        
+        loop_pass.run(module)?;
+        
+        // Return a default LoopInfo since the actual optimization details
+        // would be collected during the pass execution
+        Ok(Some(LoopInfo::default()))
+    }
+    
+    /// Run dead code elimination pass
+    fn run_dead_code_elimination_pass(&self, module: &Module<'ctx>) -> Result<Option<DeadCodeResult>> {
+        let aggressive = matches!(
+            self.config.level,
+            crate::optimization::config::OptimizationLevel::Aggressive |
+            crate::optimization::config::OptimizationLevel::Default
+        );
+        
+        let mut dce_pass = DeadCodeEliminationPass::new(self.context, aggressive)
+            .with_debug_preservation(self.config.debug_info);
+        
+        let result = dce_pass.run(module)?;
+        Ok(Some(result))
+    }
+    
+    /// Run constant propagation pass
+    fn run_constant_propagation_pass(&self, module: &Module<'ctx>) -> Result<Option<ConstantPropagationResult>> {
+        let aggressive = matches!(
+            self.config.level,
+            crate::optimization::config::OptimizationLevel::Aggressive
+        );
+        
+        let mut const_prop_pass = ConstantPropagationPass::new(self.context, aggressive);
+        
+        // Enable sparse analysis for higher optimization levels
+        if !matches!(self.config.level, crate::optimization::config::OptimizationLevel::None) {
+            const_prop_pass = const_prop_pass.with_sparse_analysis(true);
+        }
+        
+        let result = const_prop_pass.run(module)?;
+        Ok(Some(result))
+    }
+    
+    /// Run Global Value Numbering pass
+    fn run_gvn_pass(&self, module: &Module<'ctx>) -> Result<Option<GvnResult>> {
+        // Only run GVN for higher optimization levels
+        if matches!(self.config.level, crate::optimization::config::OptimizationLevel::None |
+                                      crate::optimization::config::OptimizationLevel::Less) {
+            return Ok(None);
+        }
+        
+        let load_pre = matches!(
+            self.config.level,
+            crate::optimization::config::OptimizationLevel::Default |
+            crate::optimization::config::OptimizationLevel::Aggressive
+        );
+        
+        let aggressive = matches!(
+            self.config.level,
+            crate::optimization::config::OptimizationLevel::Aggressive
+        );
+        
+        let mut gvn_pass = GvnPass::new(self.context, load_pre, aggressive);
+        let result = gvn_pass.run(module)?;
+        Ok(Some(result))
+    }
+    
+    /// Run Link Time Optimization
+    pub fn run_lto(&self, modules: &[&Module<'ctx>]) -> Result<()> {
+        if !self.config.lto {
+            return Ok(());
+        }
+        
+        if let Some(ref llvm_manager) = self.llvm_pass_manager {
+            llvm_manager.run_lto(modules)?;
+        }
+        
+        Ok(())
+    }
+    
+    /// Get pass manager statistics
+    pub fn get_statistics(&self) -> &PassManagerStatistics {
+        &self.statistics
+    }
+    
+    /// Get LLVM-specific statistics
+    pub fn get_llvm_statistics(&self) -> Option<OptimizationStatistics> {
+        self.llvm_pass_manager.as_ref().map(|pm| pm.get_statistics())
+    }
+    
+    /// Configure passes for a specific optimization level
+    pub fn configure_for_level(&mut self, level: &crate::optimization::config::OptimizationLevel) -> Result<()> {
+        // Update configuration
+        self.config.level = level.clone();
+        
+        // Recreate LLVM pass manager with new configuration
+        self.llvm_pass_manager = Some(LlvmPassManager::new(self.context, self.config.clone())?);
+        
+        Ok(())
+    }
+    
+    /// Add a custom pass to the registry
+    pub fn register_custom_pass(&mut self, name: String, pass_info: CustomPassInfo) {
+        self.custom_passes.register_pass(name, pass_info);
+    }
+}
+
+/// Registry for custom optimization passes
+pub struct CustomPassRegistry<'ctx> {
+    context: &'ctx Context,
+    registered_passes: HashMap<String, CustomPassInfo>,
+}
+
+impl<'ctx> CustomPassRegistry<'ctx> {
+    pub fn new(context: &'ctx Context) -> Self {
+        Self {
+            context,
+            registered_passes: HashMap::new(),
+        }
+    }
+    
+    pub fn register_pass(&mut self, name: String, info: CustomPassInfo) {
+        self.registered_passes.insert(name, info);
+    }
+    
+    pub fn get_pass(&self, name: &str) -> Option<&CustomPassInfo> {
+        self.registered_passes.get(name)
+    }
+}
+
+/// Information about a custom pass
 #[derive(Debug, Clone)]
-pub struct PassInfo {
+pub struct CustomPassInfo {
     pub name: String,
     pub description: String,
     pub category: PassCategory,
     pub prerequisites: Vec<String>,
+    pub optimization_level_requirement: crate::optimization::config::OptimizationLevel,
 }
 
+/// Categories of optimization passes
 #[derive(Debug, Clone)]
 pub enum PassCategory {
     Analysis,
     Transform,
     Optimization,
     Utility,
+    Custom,
 }
 
-impl RealLlvmPassManager {
-    pub fn new(config: OptimizationConfig) -> Self {
-        let mut manager = Self {
-            config,
-            registered_passes: HashMap::new(),
-            enabled_passes: Vec::new(),
-        };
-        manager.register_default_passes();
-        manager
+/// Comprehensive result from all optimization passes
+#[derive(Debug, Default)]
+pub struct ComprehensiveOptimizationResult {
+    pub total_execution_time: Duration,
+    pub llvm_passes_changed: bool,
+    pub llvm_statistics: Option<OptimizationStatistics>,
+    pub inlining_result: Option<InliningResult>,
+    pub loop_optimization_result: Option<LoopInfo>,
+    pub dead_code_result: Option<DeadCodeResult>,
+    pub constant_propagation_result: Option<ConstantPropagationResult>,
+    pub gvn_result: Option<GvnResult>,
+}
+
+impl ComprehensiveOptimizationResult {
+    /// Calculate total number of optimizations applied
+    pub fn total_optimizations(&self) -> u32 {
+        let mut total = 0;
+        
+        if let Some(ref inlining) = self.inlining_result {
+            total += inlining.functions_inlined + inlining.total_calls_inlined;
+        }
+        
+        if let Some(ref loops) = self.loop_optimization_result {
+            total += loops.loops_unrolled + loops.loops_vectorized + loops.invariants_hoisted;
+        }
+        
+        if let Some(ref dce) = self.dead_code_result {
+            total += dce.total_eliminated();
+        }
+        
+        if let Some(ref const_prop) = self.constant_propagation_result {
+            total += const_prop.total_optimizations();
+        }
+        
+        if let Some(ref gvn) = self.gvn_result {
+            total += gvn.total_optimizations();
+        }
+        
+        total
     }
+    
+    /// Calculate optimization effectiveness score
+    pub fn effectiveness_score(&self) -> f64 {
+        if self.total_execution_time.as_millis() == 0 {
+            return 0.0;
+        }
+        
+        let optimizations = self.total_optimizations() as f64;
+        let time_seconds = self.total_execution_time.as_secs_f64();
+        
+        optimizations / time_seconds.max(0.001)
+    }
+}
 
-    fn register_default_passes(&mut self) {
-        let passes = vec![
-            PassInfo {
-                name: "mem2reg".to_string(),
-                description: "Promote Memory to Register".to_string(),
-                category: PassCategory::Transform,
-                prerequisites: vec![],
-            },
-            PassInfo {
-                name: "instcombine".to_string(),
-                description: "Combine redundant instructions".to_string(),
-                category: PassCategory::Optimization,
-                prerequisites: vec!["mem2reg".to_string()],
-            },
-            PassInfo {
-                name: "reassociate".to_string(),
-                description: "Reassociate expressions".to_string(),
-                category: PassCategory::Optimization,
-                prerequisites: vec![],
-            },
-            PassInfo {
-                name: "gvn".to_string(),
-                description: "Global Value Numbering".to_string(),
-                category: PassCategory::Optimization,
-                prerequisites: vec!["mem2reg".to_string()],
-            },
-            PassInfo {
-                name: "simplifycfg".to_string(),
-                description: "Simplify the CFG".to_string(),
-                category: PassCategory::Optimization,
-                prerequisites: vec![],
-            },
-        ];
+/// Statistics for the pass manager
+#[derive(Debug, Default)]
+pub struct PassManagerStatistics {
+    pub total_runs: u32,
+    pub total_execution_time: Duration,
+    pub average_execution_time: Duration,
+    pub total_optimizations: u64,
+    pub effectiveness_scores: Vec<f64>,
+}
 
-        for pass in passes {
-            self.registered_passes.insert(pass.name.clone(), pass);
+impl PassManagerStatistics {
+    /// Update statistics with a new result
+    pub fn update(&mut self, result: &ComprehensiveOptimizationResult) {
+        self.total_runs += 1;
+        self.total_execution_time += result.total_execution_time;
+        self.average_execution_time = self.total_execution_time / self.total_runs;
+        self.total_optimizations += result.total_optimizations() as u64;
+        self.effectiveness_scores.push(result.effectiveness_score());
+    }
+    
+    /// Get average effectiveness score
+    pub fn average_effectiveness(&self) -> f64 {
+        if self.effectiveness_scores.is_empty() {
+            0.0
+        } else {
+            self.effectiveness_scores.iter().sum::<f64>() / self.effectiveness_scores.len() as f64
         }
     }
 
-    pub fn add_pass(&mut self, pass_name: String) -> Result<(), CursedError> {
-        if !self.registered_passes.contains_key(&pass_name) {
-            return Err(CursedError::runtime_error(&format!("Unknown pass: {}", pass_name)));
+    /// Get enabled passes
+    pub fn get_enabled_passes(&self) -> Vec<String> {
+        if let Some(ref manager) = self.llvm_pass_manager {
+            manager.get_enabled_passes()
+        } else {
+            Vec::new()
         }
-        
-        if !self.enabled_passes.contains(&pass_name) {
-            self.enabled_passes.push(pass_name);
-        }
-        
-        Ok(())
     }
 
-    pub fn run_passes(&mut self) -> Result<(), CursedError> {
-        // Sort passes by dependencies
-        let ordered_passes = self.resolve_pass_dependencies()?;
-        
-        for pass_name in ordered_passes {
-            self.run_single_pass(&pass_name)?;
-        }
-        
-        Ok(())
-    }
-
-    fn resolve_pass_dependencies(&self) -> Result<Vec<String>, CursedError> {
-        let mut resolved = Vec::new();
-        let mut remaining: Vec<String> = self.enabled_passes.clone();
-        
-        while !remaining.is_empty() {
-            let mut made_progress = false;
-            
-            let mut i = 0;
-            while i < remaining.len() {
-                let pass_name = &remaining[i];
-                let pass_info = self.registered_passes.get(pass_name).unwrap();
-                
-                // Check if all prerequisites are satisfied
-                let prerequisites_satisfied = pass_info.prerequisites.iter()
-                    .all(|prereq| resolved.contains(prereq) || !self.enabled_passes.contains(prereq));
-                
-                if prerequisites_satisfied {
-                    resolved.push(remaining.remove(i));
-                    made_progress = true;
-                } else {
-                    i += 1;
-                }
-            }
-            
-            if !made_progress {
-                return Err(CursedError::runtime_error("Circular dependency in passes"));
-            }
-        }
-        
-        Ok(resolved)
-    }
-
-    fn run_single_pass(&self, pass_name: &str) -> Result<(), CursedError> {
-        // In a real implementation, this would interface with LLVM
-        println!("Running pass: {}", pass_name);
-        Ok(())
-    }
-
-    pub fn get_enabled_passes(&self) -> &[String] {
-        &self.enabled_passes
-    }
-
+    /// Clear all passes
     pub fn clear_passes(&mut self) {
-        self.enabled_passes.clear();
+        if let Some(ref mut manager) = self.llvm_pass_manager {
+            manager.clear_passes();
+        }
     }
 
-    pub fn configure_for_level(&mut self, level: &crate::optimization::config::OptimizationLevel) {
-        self.clear_passes();
-        
-        match level {
-            crate::optimization::config::OptimizationLevel::None => {
-                // No optimizations
-            },
-            crate::optimization::config::OptimizationLevel::Less => {
-                let _ = self.add_pass("mem2reg".to_string());
-                let _ = self.add_pass("simplifycfg".to_string());
-            },
-            crate::optimization::config::OptimizationLevel::Default => {
-                let _ = self.add_pass("mem2reg".to_string());
-                let _ = self.add_pass("instcombine".to_string());
-                let _ = self.add_pass("simplifycfg".to_string());
-            },
-            crate::optimization::config::OptimizationLevel::Aggressive => {
-                let _ = self.add_pass("mem2reg".to_string());
-                let _ = self.add_pass("instcombine".to_string());
-                let _ = self.add_pass("reassociate".to_string());
-                let _ = self.add_pass("gvn".to_string());
-                let _ = self.add_pass("simplifycfg".to_string());
-            },
-            crate::optimization::config::OptimizationLevel::Size | 
-            crate::optimization::config::OptimizationLevel::SizeZ => {
-                let _ = self.add_pass("mem2reg".to_string());
-                let _ = self.add_pass("simplifycfg".to_string());
-            },
-            crate::optimization::config::OptimizationLevel::Custom(_) => {
-                // Use custom passes from config
-                let custom_passes = self.config.custom_passes.clone();
-                for pass in custom_passes.iter() {
-                    let _ = self.add_pass(pass.clone());
-                }
-            },
+    /// Add a pass
+    pub fn add_pass(&mut self, pass_name: String) -> Result<()> {
+        if let Some(ref mut manager) = self.llvm_pass_manager {
+            manager.add_pass(pass_name)
+        } else {
+            Err(CursedError::compilation_error("No LLVM pass manager available"))
         }
     }
 }

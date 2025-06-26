@@ -1,0 +1,2 @@
+hashbrown::map::HashMap<usize, std::collections::VecDeque<std::ptr::NonNull<u8>>, std::hash::RandomState>
+std::sync::RwLock<std::collections::HashMap<usize, std::collections::VecDeque<std::ptr::NonNull<u8>>>>

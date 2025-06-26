@@ -9,7 +9,7 @@
 //! - LLVM FFI integration for compiled code
 
 use crate::error::CursedError;
-use crate::runtime::channels::{Channel, ChannelSender, ChannelReceiver, ChannelResult};
+use crate::runtime::channels::{ChannelSender, ChannelReceiver};
 use crate::runtime::stack::{RuntimeStack, StackId, StackFrame};
 
 use std::collections::{HashMap, VecDeque};
