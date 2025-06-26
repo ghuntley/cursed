@@ -1,6 +1,5 @@
-facts msg: "Hello, CURSED!" 
+vibe hello_world
 
 slay main() {
-  vibez.spill(msg)
-  yolo 0
+    vibez.println("Hello, CURSED World! 🔥")
 }

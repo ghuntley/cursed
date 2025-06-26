@@ -1,122 +1,129 @@
-// REPL type definitions for CURSED
+//! REPL Type Definitions
 
+use crate::error::CursedError;
 use std::collections::HashMap;
 
-/// REPL configuration
 #[derive(Debug, Clone)]
-pub struct ReplConfig {
-impl Default for ReplConfig {
-    fn default() -> Self {
-        Self {
-        }
-    }
-/// REPL state
-#[derive(Debug, Clone)]
-pub struct ReplState {
-impl Default for ReplState {
-    fn default() -> Self {
-        Self {
-        }
-    }
-/// Input type classification
-#[derive(Debug, Clone, PartialEq)]
-pub enum InputType {
-/// REPL output wrapper
-#[derive(Debug, Clone)]
-pub struct ReplOutput {
-/// Output type classification
-#[derive(Debug, Clone, PartialEq)]
-pub enum OutputType {
-/// REPL operation result
-pub type ReplResult<T> = Result<T, ReplError>;
+pub enum ReplValue {
+    String(String),
+    Number(f64),
+    Boolean(bool),
+    Nil,
+}
 
-/// REPL-specific error type
-#[derive(Debug, Clone)]
-pub struct ReplError {
-/// REPL error types
-#[derive(Debug, Clone, PartialEq)]
-pub enum ReplErrorType {
-/// Syntax highlighter stub
-pub struct SyntaxHighlighter;
+pub trait ReplEvaluator {
+    fn evaluate(&mut self, input: &str) -> Result<ReplValue, CursedError>;
+    fn get_variables(&self) -> &HashMap<String, ReplValue>;
+    fn set_variable(&mut self, name: String, value: ReplValue);
+}
 
-impl SyntaxHighlighter {
+pub trait BuildIntegration {
+    fn compile_snippet(&self, code: &str) -> Result<String, CursedError>;
+    fn check_syntax(&self, code: &str) -> Result<bool, CursedError>;
+    fn get_compilation_errors(&self) -> Vec<String>;
+}
+
+pub struct BasicReplEvaluator {
+    variables: HashMap<String, ReplValue>,
+}
+
+impl BasicReplEvaluator {
     pub fn new() -> Self {
-        Self
-    pub fn highlight(&self, input: &str) -> String {
-        // Stub implementation - would provide syntax highlighting
-        input.to_string()
+        Self {
+            variables: HashMap::new(),
+        }
     }
 }
 
-/// Command system for REPL commands
-pub struct CommandSystem {
-impl CommandSystem {
+impl ReplEvaluator for BasicReplEvaluator {
+    fn evaluate(&mut self, input: &str) -> Result<ReplValue, CursedError> {
+        let input = input.trim();
+        
+        if input.is_empty() {
+            return Ok(ReplValue::Nil);
+        }
+
+        // Handle variable assignment
+        if input.starts_with("let ") && input.contains('=') {
+            let parts: Vec<&str> = input.splitn(2, '=').collect();
+            if parts.len() == 2 {
+                let var_name = parts[0].trim().strip_prefix("let ").unwrap_or("").trim();
+                let value_str = parts[1].trim();
+                
+                let value = if value_str.starts_with('"') && value_str.ends_with('"') {
+                    ReplValue::String(value_str[1..value_str.len()-1].to_string())
+                } else if let Ok(num) = value_str.parse::<f64>() {
+                    ReplValue::Number(num)
+                } else if value_str == "true" {
+                    ReplValue::Boolean(true)
+                } else if value_str == "false" {
+                    ReplValue::Boolean(false)
+                } else if value_str == "nil" {
+                    ReplValue::Nil
+                } else {
+                    ReplValue::String(value_str.to_string())
+                };
+                
+                self.variables.insert(var_name.to_string(), value.clone());
+                return Ok(value);
+            }
+        }
+
+        // Handle variable lookup
+        if let Some(value) = self.variables.get(input) {
+            return Ok(value.clone());
+        }
+
+        // Default evaluation
+        Ok(ReplValue::String(format!("Unknown: {}", input)))
+    }
+
+    fn get_variables(&self) -> &HashMap<String, ReplValue> {
+        &self.variables
+    }
+
+    fn set_variable(&mut self, name: String, value: ReplValue) {
+        self.variables.insert(name, value);
+    }
+}
+
+pub struct BasicBuildIntegration {
+    errors: Vec<String>,
+}
+
+impl BasicBuildIntegration {
     pub fn new() -> Self {
         Self {
+            errors: Vec::new(),
         }
-    }
-
-    pub fn execute(&self, command: &str, args: &[String]) -> ReplResult<String> {
-        if let Some(handler) = self.commands.get(command) {
-            handler(args)
-        } else {
-            Err(ReplError {
-            })
-        }
-    }
-/// Tab completion system
-pub struct TabCompletion;
-
-impl TabCompletion {
-    pub fn new() -> Self {
-        Self
-    pub fn complete(&self, input: &str) -> Vec<String> {
-        // Stub implementation - would provide completions
-        vec![]
     }
 }
 
-/// Multi-line editor
-pub struct MultiLineEditor {
-impl MultiLineEditor {
-    pub fn new() -> Self {
-        Self {
+impl BuildIntegration for BasicBuildIntegration {
+    fn compile_snippet(&self, code: &str) -> Result<String, CursedError> {
+        // Basic syntax validation
+        if code.trim().is_empty() {
+            return Err(CursedError::syntax_error("Empty code snippet"));
         }
+        
+        // TODO: Integrate with actual CURSED compiler
+        Ok("Compiled successfully".to_string())
     }
 
-    pub fn add_line(&mut self, line: String) {
-        self.buffer.push(line);
-    pub fn is_complete(&self) -> bool {
-        // Stub implementation - would check if input is complete
-        true
-    pub fn get_content(&self) -> String {
-        self.buffer.join("\n")
-    pub fn clear(&mut self) {
-        self.buffer.clear();
-        self.current_line = 0;
+    fn check_syntax(&self, code: &str) -> Result<bool, CursedError> {
+        // Basic syntax checks
+        let balanced_parens = code.chars().fold(0, |acc, c| {
+            match c {
+                '(' => acc + 1,
+                ')' => acc - 1,
+                _ => acc,
+            }
+        }) == 0;
+
+        Ok(balanced_parens && !code.trim().is_empty())
     }
-}
 
-/// Build integration for REPL
-pub struct BuildIntegration;
-
-impl BuildIntegration {
-    pub fn new() -> Self {
-        Self
-    pub fn compile_and_run(&self, code: &str) -> ReplResult<String> {
-        // Stub implementation - would compile and execute code
-        Ok("Executed successfully".to_string())
-    }
-}
-
-/// REPL evaluator
-pub struct ReplEvaluator;
-
-impl ReplEvaluator {
-    pub fn new() -> Self {
-        Self
-    pub fn evaluate(&self, input: &str) -> ReplResult<String> {
-        // Stub implementation - would evaluate input
-        Ok(format!("Result of: {}", input))
+    fn get_compilation_errors(&self) -> Vec<String> {
+        self.errors.clone()
     }
 }

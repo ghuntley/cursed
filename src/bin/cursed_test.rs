@@ -1,7 +1,15 @@
-// CURSED Test Runner
-use std::process;
+//! CURSED Test Runner binary
+
+use std::env;
 
 fn main() {
-    eprintln!("CURSED test runner - not yet implemented");
-    process::exit(1);
+    let args: Vec<String> = env::args().collect();
+    
+    if args.len() > 1 && args[1] == "--version" {
+        println!("CURSED Test Runner - Run CURSED tests");
+        return;
+    }
+    
+    println!("CURSED Test Runner");
+    println!("Test running not yet implemented");
 }

@@ -1,470 +1,895 @@
-/// Comprehensive CursedError Handling Runtime for CURSED
-///
-/// This module provides a complete error handling infrastructure including:
-/// - CursedError propagation with the `?` operator
-/// - Integration with panic/recovery system
-/// - Stack trace generation and management
-/// - Thread-safe error coordination
-/// - Goroutine-aware error handling
+//! CURSED Error Handling Runtime System
+//!
+//! This module provides comprehensive error handling for the CURSED runtime:
+//! - Error detection, classification, and propagation
+//! - Recovery mechanisms and graceful degradation
+//! - Integration with panic runtime and goroutine scheduler
+//! - Error statistics and performance monitoring
+//! - Contextual error information and debugging support
 
-use crate::error::{CursedError, SourceLocation};
-use crate::runtime::panic::{
-    RecoveryAction, get_panic_runtime
-// };
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock, OnceLock};
-use std::thread::{self, ThreadId};
-use std::time::{Duration, Instant, SystemTime};
-use std::sync::atomic::{AtomicU64, AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicU64, AtomicBool, Ordering}};
+use std::collections::{HashMap, VecDeque};
+use std::time::{Duration, Instant};
+use std::thread::ThreadId;
 use std::fmt;
-use tracing::{debug, error, info, instrument, warn};
+
+use crate::error_types::{Error, Result};
+use crate::runtime::{RuntimeError, RuntimeErrorType};
+use crate::runtime::goroutine::GoroutineId;
 
 /// Global error runtime instance
-static ERROR_RUNTIME: OnceLock<Arc<ErrorRuntime>> = OnceLock::new();
+static GLOBAL_ERROR_RUNTIME: once_cell::sync::OnceCell<Arc<ErrorRuntime>> = once_cell::sync::OnceCell::new();
 
-/// Global error ID counter for tracking individual error instances
-static ERROR_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
+/// Error severity levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ErrorSeverity {
+    /// Informational errors
+    Info = 0,
+    /// Warning errors that should be noted
+    Warning = 1,
+    /// Non-critical errors that can be recovered
+    Error = 2,
+    /// Critical errors requiring immediate attention
+    Critical = 3,
+    /// Fatal errors that may cause system instability
+    Fatal = 4,
+}
 
-/// Generate a unique error ID
-pub fn next_error_id() -> u64 {
-    ERROR_ID_COUNTER.fetch_add(1, Ordering::SeqCst)
-/// CursedError propagation context for the `?` operator
-#[derive(Debug, Clone)]
+/// Error categories for classification
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ErrorCategory {
+    /// Memory-related errors
+    Memory,
+    /// I/O and file system errors
+    IO,
+    /// Network and communication errors
+    Network,
+    /// Parsing and syntax errors
+    Parsing,
+    /// Type system and validation errors
+    Type,
+    /// Runtime and execution errors
+    Runtime,
+    /// Security and permission errors
+    Security,
+    /// Performance and resource errors
+    Performance,
+    /// Unknown or uncategorized errors
+    Unknown,
+}
+
+/// Error recovery action
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum RecoveryAction {
+    /// Continue execution without action
+    Continue,
+    /// Retry the operation
+    Retry,
+    /// Skip the current operation
+    Skip,
+    /// Use fallback/default value
+    UseFallback,
+    /// Restart the current goroutine
+    RestartGoroutine,
+    /// Escalate to panic handler
+    EscalateToPanic,
+    /// Request graceful shutdown
+    GracefulShutdown,
+}
+
+/// Comprehensive error context
+#[derive(Debug)]
 pub struct ErrorContext {
-    /// Unique identifier for this error context
-    /// Source location where error originated
-    /// Chain of error contexts (for nested errors)
-    /// Associated goroutine ID (if any)
+    /// Original error
+    pub error: Error,
+    /// Error severity level
+    pub severity: ErrorSeverity,
+    /// Error category
+    pub category: ErrorCategory,
+    /// Location where error occurred
+    pub location: Option<String>,
+    /// Goroutine ID where error occurred
+    pub goroutine_id: Option<GoroutineId>,
     /// Thread ID where error occurred
-    /// Timestamp when error context was created
-    /// Custom metadata for error context
-/// Entry in the error chain for tracking error propagation
-#[derive(Debug, Clone)]
-pub struct ErrorChainEntry {
-    /// CursedError message at this level
-    /// Source location for this level
-    /// Function name where error occurred
-    /// Timestamp for this level
-impl ErrorContext {
-    pub fn new() -> Self {
-        ErrorContext {
-        }
-    }
+    pub thread_id: Option<ThreadId>,
+    /// Stack trace at error
+    pub stack_trace: Vec<String>,
+    /// Timestamp of error
+    pub timestamp: Instant,
+    /// Custom metadata
+    pub metadata: HashMap<String, String>,
+    /// Recovery attempts made
+    pub recovery_attempts: u32,
+    /// Maximum recovery attempts allowed
+    pub max_recovery_attempts: u32,
+    /// Suggested recovery action
+    pub suggested_recovery: RecoveryAction,
+}
 
-    pub fn with_location(mut self, location: SourceLocation) -> Self {
-        self.source_location = Some(location);
-        self
-    pub fn with_goroutine(mut self, goroutine_id: u64) -> Self {
-        self.goroutine_id = Some(goroutine_id);
-        self
-    pub fn with_metadata(mut self, key: String, value: String) -> Self {
-        self.metadata.insert(key, value);
-        self
-    pub fn add_to_chain(&mut self, message: String, location: Option<SourceLocation>, function: Option<String>) {
-        self.error_chain.push(ErrorChainEntry {
-        });
+impl Clone for ErrorContext {
+    fn clone(&self) -> Self {
+        Self {
+            error: self.error.clone(),
+            severity: self.severity,
+            category: self.category,
+            location: self.location.clone(),
+            goroutine_id: self.goroutine_id,
+            thread_id: self.thread_id, // ThreadId is Copy
+            stack_trace: self.stack_trace.clone(),
+            timestamp: self.timestamp,
+            metadata: self.metadata.clone(),
+            recovery_attempts: self.recovery_attempts,
+            max_recovery_attempts: self.max_recovery_attempts,
+            suggested_recovery: self.suggested_recovery,
+        }
     }
 }
 
-// impl fmt::Display for ErrorContext {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         writeln!(f, "CursedError Context #{}", self.context_id)?;
-//         
-//         if let Some(location) = &self.source_location {
-//             writeln!(f, "  at {}", location)?;
-//         }
-//         
-//         if let Some(goroutine_id) = self.goroutine_id {
-//             writeln!(f, "  in goroutine #{}", goroutine_id)?;
-//         }
-//         
-//         if !self.error_chain.is_empty() {
-//             writeln!(f, "CursedError chain:")?;
-//             for (i, entry) in self.error_chain.iter().enumerate() {
-//                 write!(f, "  {}: {}", i, entry.message)?;
-//                 if let Some(loc) = &entry.source_location {
-//                     write!(f, " at {}", loc)?;
-//                 }
-//                 if let Some(func) = &entry.function_name {
-//                     write!(f, " in {}", func)?;
-//                 }
-//                 writeln!(f)?;
-//             }
-//         }
-//         
-//         Ok(())
-//     }
-// }
+/// Error handler function type
+pub type ErrorHandler = dyn Fn(&ErrorContext) -> RecoveryAction + Send + Sync;
 
-/// CursedError propagation configuration
+/// Error runtime configuration
 #[derive(Debug, Clone)]
-pub struct ErrorPropagationConfig {
-    /// Whether to capture stack traces on error propagation
-    /// Maximum error chain depth
-    /// Whether to log error propagation
-    /// Timeout for error propagation operations
-    /// Whether to auto-convert errors to panics in certain conditions
-impl Default for ErrorPropagationConfig {
+pub struct ErrorRuntimeConfig {
+    /// Maximum errors per goroutine before escalation
+    pub max_errors_per_goroutine: usize,
+    /// Maximum total errors before system action 
+    pub max_total_errors: usize,
+    /// Time window for error rate limiting
+    pub error_rate_window: Duration,
+    /// Maximum error history to maintain
+    pub max_error_history: usize,
+    /// Enable stack trace capture
+    pub capture_stack_traces: bool,
+    /// Maximum stack trace depth
+    pub max_stack_trace_depth: usize,
+    /// Default recovery action
+    pub default_recovery_action: RecoveryAction,
+    /// Enable error statistics
+    pub enable_statistics: bool,
+    /// Enable error correlation analysis
+    pub enable_correlation_analysis: bool,
+    /// Error log level threshold
+    pub log_level_threshold: ErrorSeverity,
+}
+
+impl Default for ErrorRuntimeConfig {
     fn default() -> Self {
-        ErrorPropagationConfig {
-            auto_panic_threshold: Some(100), // Convert to panic after 100 error levels
+        Self {
+            max_errors_per_goroutine: 50,
+            max_total_errors: 1000,
+            error_rate_window: Duration::from_secs(60),
+            max_error_history: 500,
+            capture_stack_traces: true,
+            max_stack_trace_depth: 30,
+            default_recovery_action: RecoveryAction::Continue,
+            enable_statistics: true,
+            enable_correlation_analysis: true,
+            log_level_threshold: ErrorSeverity::Warning,
         }
     }
-/// Per-thread error state for tracking error propagation
-struct ThreadErrorState {
-    /// Current error context stack
-    /// Number of active error propagations
-    /// Whether thread is in error handling mode
-    /// CursedError propagation statistics
-    /// Last error timestamp
-impl ThreadErrorState {
-    fn new() -> Self {
-        ThreadErrorState {
-        }
-    }
-/// CursedError handling statistics
-#[derive(Debug, Default, Clone)]
-pub struct ErrorHandlingStatistics {
-    /// Total number of errors handled
-    /// Number of successful error propagations
-    /// Number of failed error propagations
-    /// Number of errors converted to panics
-    /// Average error propagation time
+}
+
+/// Error statistics and metrics
+#[derive(Debug, Clone)]
+pub struct ErrorStatistics {
+    /// Total errors encountered
+    pub total_errors: u64,
+    /// Errors by severity
+    pub errors_by_severity: HashMap<ErrorSeverity, u64>,
     /// Errors by category
-    /// CursedError chain depth statistics
-/// Main CursedError Handling Runtime System
+    pub errors_by_category: HashMap<ErrorCategory, u64>,
+    /// Errors by goroutine
+    pub errors_by_goroutine: HashMap<GoroutineId, u64>,
+    /// Recovery actions used
+    pub recovery_actions_used: HashMap<RecoveryAction, u64>,
+    /// Error rate over time
+    pub error_rate: f64,
+    /// First error time
+    pub first_error_time: Option<Instant>,
+    /// Last error time
+    pub last_error_time: Option<Instant>,
+    /// Error-free duration
+    pub error_free_duration: Duration,
+    /// Recovery success rate
+    pub recovery_success_rate: f64,
+    /// Most common error patterns
+    pub common_error_patterns: Vec<(String, u64)>,
+}
+
+impl Default for ErrorStatistics {
+    fn default() -> Self {
+        Self {
+            total_errors: 0,
+            errors_by_severity: HashMap::new(),
+            errors_by_category: HashMap::new(),
+            errors_by_goroutine: HashMap::new(),
+            recovery_actions_used: HashMap::new(),
+            error_rate: 0.0,
+            first_error_time: None,
+            last_error_time: None,
+            error_free_duration: Duration::from_secs(0),
+            recovery_success_rate: 1.0,
+            common_error_patterns: Vec::new(),
+        }
+    }
+}
+
+/// Error correlation information
+#[derive(Debug, Clone)]
+pub struct ErrorCorrelation {
+    /// Related errors that occurred together
+    pub related_errors: Vec<String>,
+    /// Correlation strength (0.0 to 1.0)
+    pub correlation_strength: f64,
+    /// Temporal correlation (errors within time window)
+    pub temporal_correlation: bool,
+    /// Spatial correlation (errors in same goroutine/thread)
+    pub spatial_correlation: bool,
+}
+
+/// Performance monitoring trait for error runtime
+pub trait ErrorPerformanceMonitor: Send + Sync {
+    /// Record error event
+    fn record_error(&self, context: &ErrorContext, recovery: RecoveryAction);
+    /// Record recovery success
+    fn record_recovery_success(&self, context: &ErrorContext);
+    /// Record recovery failure
+    fn record_recovery_failure(&self, context: &ErrorContext, failure_reason: &str);
+    /// Get performance metrics
+    fn get_error_metrics(&self) -> HashMap<String, f64>;
+    /// Analyze error patterns
+    fn analyze_error_patterns(&self) -> Vec<String>;
+}
+
+/// Main error handling runtime system
 pub struct ErrorRuntime {
-    /// Configuration for error propagation
-    /// Per-thread error states
-    /// CursedError handling statistics
-    /// Integration with panic runtime
-    /// Whether the runtime is active
+    /// Configuration
+    config: ErrorRuntimeConfig,
+    /// Error handlers by priority (higher numbers = higher priority)
+    handlers: RwLock<Vec<(i32, Arc<ErrorHandler>)>>,
+    /// Error statistics
+    stats: RwLock<ErrorStatistics>,
+    /// Error history for analysis
+    error_history: RwLock<VecDeque<ErrorContext>>,
+    /// Error correlations
+    correlations: RwLock<HashMap<String, ErrorCorrelation>>,
+    /// Currently processing error flag
+    processing_error: AtomicBool,
+    /// Shutdown flag
+    shutdown: AtomicBool,
+    /// Runtime start time
+    start_time: Instant,
+    /// Performance monitor
+    performance_monitor: Option<Arc<dyn ErrorPerformanceMonitor>>,
+    /// Error sequence counter
+    error_sequence: AtomicU64,
+}
+
 impl ErrorRuntime {
     /// Create a new error runtime with default configuration
     pub fn new() -> Self {
-        ErrorRuntime {
+        Self::with_config(ErrorRuntimeConfig::default())
+    }
+
+    /// Create a new error runtime with custom configuration
+    pub fn with_config(config: ErrorRuntimeConfig) -> Self {
+        Self {
+            config,
+            handlers: RwLock::new(Vec::new()),
+            stats: RwLock::new(ErrorStatistics::default()),
+            error_history: RwLock::new(VecDeque::new()),
+            correlations: RwLock::new(HashMap::new()),
+            processing_error: AtomicBool::new(false),
+            shutdown: AtomicBool::new(false),
+            start_time: Instant::now(),
+            performance_monitor: None,
+            error_sequence: AtomicU64::new(1),
         }
     }
 
-    /// Create error runtime with custom configuration
-    pub fn with_config(config: ErrorPropagationConfig) -> Self {
-        ErrorRuntime {
-        }
+    /// Initialize the error runtime
+    pub fn initialize(&self) -> Result<()> {
+        // Initialize default error handlers if needed
+        self.register_default_handlers()?;
+        Ok(())
     }
 
-    /// Initialize the error runtime system
-    #[instrument(skip(self))]
-    pub fn initialize(&self) -> crate::error::Result<()> {
-        if self.active.load(Ordering::SeqCst) {
-            return Err(CursedError::Runtime("CursedError runtime already initialized".to_string()));
-        info!("Initializing CURSED error handling runtime");
-        self.active.store(true, Ordering::SeqCst);
-        Ok(())
-    /// Shutdown the error runtime system
-    #[instrument(skip(self))]
-    pub fn shutdown(&self) -> crate::error::Result<()> {
-        if !self.active.load(Ordering::SeqCst) {
-            return Ok(());
-        info!("Shutting down CURSED error handling runtime");
+    /// Shutdown the error runtime
+    pub fn shutdown(&self) -> Result<()> {
+        if self.shutdown.swap(true, Ordering::SeqCst) {
+            return Ok(()); // Already shutdown
+        }
 
-        // Clear all thread states
-        if let Ok(mut states) = self.thread_states.lock() {
-            states.clear();
-        self.active.store(false, Ordering::SeqCst);
-        Ok(())
-    /// Propagate an error using the `?` operator semantics
-    #[instrument(skip(self, error), fields(error_id = %next_error_id()))]
-    pub fn propagate_error(
-    ) -> crate::error::Result<()> {
-        let thread_id = thread::current().id();
-        let start_time = Instant::now();
+        // Clear handlers and history
+        if let Ok(mut handlers) = self.handlers.write() {
+            handlers.clear();
+        }
 
-        debug!("Propagating error: {}", error);
+        if let Ok(mut history) = self.error_history.write() {
+            history.clear();
+        }
+
+        Ok(())
+    }
+
+    /// Handle an error with full context and recovery
+    pub fn handle_error(&self, error: Error) -> Result<RecoveryAction> {
+        self.handle_error_with_context(error, None, None)
+    }
+
+    /// Handle an error with additional context
+    pub fn handle_error_with_context(
+        &self,
+        error: Error,
+        goroutine_id: Option<GoroutineId>,
+        custom_metadata: Option<HashMap<String, String>>,
+    ) -> Result<RecoveryAction> {
+        if self.shutdown.load(Ordering::Acquire) {
+            return Err(Error::Runtime("Error runtime is shutdown".to_string()));
+        }
+
+        // Prevent recursive error handling
+        if self.processing_error.swap(true, Ordering::AcqRel) {
+            eprintln!("Recursive error handling detected: {:?}", error);
+            return Ok(RecoveryAction::EscalateToPanic);
+        }
+
+        let result = self.process_error(error, goroutine_id, custom_metadata);
+        self.processing_error.store(false, Ordering::Release);
+        result
+    }
+
+    /// Register an error handler with priority
+    pub fn register_handler(&self, priority: i32, handler: Arc<ErrorHandler>) -> Result<()> {
+        let mut handlers = self.handlers.write().map_err(|_| {
+            Error::Runtime("Failed to acquire error handlers lock".to_string())
+        })?;
+
+        handlers.push((priority, handler));
+        handlers.sort_by_key(|(priority, _)| -priority); // Sort by descending priority
+
+        Ok(())
+    }
+
+    /// Remove an error handler
+    pub fn remove_handler(&self, priority: i32) -> Result<bool> {
+        let mut handlers = self.handlers.write().map_err(|_| {
+            Error::Runtime("Failed to acquire error handlers lock".to_string())
+        })?;
+
+        let original_len = handlers.len();
+        handlers.retain(|(p, _)| *p != priority);
+        
+        Ok(handlers.len() != original_len)
+    }
+
+    /// Get current error statistics
+    pub fn get_statistics(&self) -> Result<ErrorStatistics> {
+        let stats = self.stats.read().map_err(|_| {
+            Error::Runtime("Failed to read error statistics".to_string())
+        })?;
+
+        let mut stats_copy = stats.clone();
+        
+        // Update error-free duration
+        if let Some(last_error) = stats_copy.last_error_time {
+            stats_copy.error_free_duration = last_error.elapsed();
+        } else {
+            stats_copy.error_free_duration = self.start_time.elapsed();
+        }
+
+        Ok(stats_copy)
+    }
+
+    /// Get error history for analysis
+    pub fn get_error_history(&self) -> Result<Vec<ErrorContext>> {
+        let history = self.error_history.read().map_err(|_| {
+            Error::Runtime("Failed to read error history".to_string())
+        })?;
+
+        Ok(history.iter().cloned().collect())
+    }
+
+    /// Get error correlations
+    pub fn get_error_correlations(&self) -> Result<HashMap<String, ErrorCorrelation>> {
+        let correlations = self.correlations.read().map_err(|_| {
+            Error::Runtime("Failed to read error correlations".to_string())
+        })?;
+
+        Ok(correlations.clone())
+    }
+
+    /// Analyze error patterns and suggest improvements
+    pub fn analyze_error_patterns(&self) -> Result<Vec<String>> {
+        let history = self.get_error_history()?;
+        let mut patterns = Vec::new();
+
+        // Analyze common error locations
+        let mut location_counts: HashMap<String, usize> = HashMap::new();
+        for context in &history {
+            if let Some(location) = &context.location {
+                *location_counts.entry(location.clone()).or_insert(0) += 1;
+            }
+        }
+
+        for (location, count) in location_counts {
+            if count > 5 {
+                patterns.push(format!("Frequent errors at location: {} ({} occurrences)", location, count));
+            }
+        }
+
+        // Analyze error categories
+        let mut category_counts: HashMap<ErrorCategory, usize> = HashMap::new();
+        for context in &history {
+            *category_counts.entry(context.category).or_insert(0) += 1;
+        }
+
+        for (category, count) in category_counts {
+            if count > 10 {
+                patterns.push(format!("High frequency of {:?} errors: {} occurrences", category, count));
+            }
+        }
+
+        // Use performance monitor if available
+        if let Some(monitor) = &self.performance_monitor {
+            patterns.extend(monitor.analyze_error_patterns());
+        }
+
+        Ok(patterns)
+    }
+
+    /// Force error recovery for a specific goroutine
+    pub fn force_recovery(&self, goroutine_id: GoroutineId) -> Result<()> {
+        // Clear error count for the goroutine
+        if let Ok(mut stats) = self.stats.write() {
+            stats.errors_by_goroutine.remove(&goroutine_id);
+        }
+
+        if let Some(monitor) = &self.performance_monitor {
+            let dummy_context = ErrorContext {
+                error: Error::Runtime("Force recovery".to_string()),
+                severity: ErrorSeverity::Info,
+                category: ErrorCategory::Runtime,
+                location: None,
+                goroutine_id: Some(goroutine_id),
+                thread_id: None,
+                stack_trace: Vec::new(),
+                timestamp: Instant::now(),
+                metadata: HashMap::new(),
+                recovery_attempts: 0,
+                max_recovery_attempts: 0,
+                suggested_recovery: RecoveryAction::Continue,
+            };
+            monitor.record_recovery_success(&dummy_context);
+        }
+
+        Ok(())
+    }
+
+    /// Set performance monitor
+    pub fn set_performance_monitor(&mut self, monitor: Arc<dyn ErrorPerformanceMonitor>) {
+        self.performance_monitor = Some(monitor);
+    }
+
+    /// Check if error runtime is currently processing an error
+    pub fn is_processing_error(&self) -> bool {
+        self.processing_error.load(Ordering::Acquire)
+    }
+
+    /// Get configuration
+    pub fn get_config(&self) -> &ErrorRuntimeConfig {
+        &self.config
+    }
+
+    // Private methods
+
+    fn process_error(
+        &self,
+        error: Error,
+        goroutine_id: Option<GoroutineId>,
+        custom_metadata: Option<HashMap<String, String>>,
+    ) -> Result<RecoveryAction> {
+        // Create error context
+        let context = self.create_error_context(error, goroutine_id, custom_metadata)?;
 
         // Update statistics
-        if let Ok(mut stats) = self.stats.lock() {
-            stats.total_errors += 1;
-        // Get or create thread state
-        let mut should_convert_to_panic = false;
-        if let Ok(mut states) = self.thread_states.lock() {
-            let state = states.entry(thread_id).or_insert_with(ThreadErrorState::new);
-            state.active_propagations += 1;
-            state.propagation_count += 1;
-            state.last_error_time = Some(SystemTime::now());
-            state.in_error_handling = true;
+        self.update_statistics(&context)?;
 
-            // Create error context
-            let mut context = ErrorContext::new();
-            if let Some(location) = source_location.clone() {
-                context = context.with_location(location.clone());
-            // Add to error chain
-            context.add_to_chain(
-            );
+        // Add to history
+        self.add_to_history(context.clone())?;
 
-            // Check chain depth limits
-            let config = self.config.read().unwrap();
-            if context.error_chain.len() > config.max_chain_depth {
-                warn!(
-                    config.max_chain_depth
-                );
-                should_convert_to_panic = true;
-            // Check auto-panic threshold
-            if let Some(threshold) = config.auto_panic_threshold {
-                if state.active_propagations as usize > threshold {
-                    warn!(
-                        threshold
-                    );
-                    should_convert_to_panic = true;
+        // Update correlations if enabled
+        if self.config.enable_correlation_analysis {
+            self.update_correlations(&context)?;
+        }
+
+        // Log error if it meets threshold
+        if context.severity >= self.config.log_level_threshold {
+            self.log_error(&context);
+        }
+
+        // Determine recovery action
+        let recovery_action = self.determine_recovery_action(&context)?;
+
+        // Record performance metrics
+        if let Some(monitor) = &self.performance_monitor {
+            monitor.record_error(&context, recovery_action);
+        }
+
+        // Execute recovery action
+        self.execute_recovery_action(&context, recovery_action)?;
+
+        Ok(recovery_action)
+    }
+
+    fn create_error_context(
+        &self,
+        error: Error,
+        goroutine_id: Option<GoroutineId>,
+        custom_metadata: Option<HashMap<String, String>>,
+    ) -> Result<ErrorContext> {
+        let severity = self.classify_error_severity(&error);
+        let category = self.classify_error_category(&error);
+        let location = self.extract_error_location(&error);
+        let stack_trace = if self.config.capture_stack_traces {
+            self.capture_stack_trace()
+        } else {
+            Vec::new()
+        };
+
+        Ok(ErrorContext {
+            error,
+            severity,
+            category,
+            location,
+            goroutine_id,
+            thread_id: Some(std::thread::current().id()),
+            stack_trace,
+            timestamp: Instant::now(),
+            metadata: custom_metadata.unwrap_or_default(),
+            recovery_attempts: 0,
+            max_recovery_attempts: 3, // Default value
+            suggested_recovery: self.config.default_recovery_action,
+        })
+    }
+
+    fn classify_error_severity(&self, error: &Error) -> ErrorSeverity {
+        match error {
+            Error::Runtime(msg) if msg.contains("panic") => ErrorSeverity::Fatal,
+            Error::Runtime(msg) if msg.contains("memory") => ErrorSeverity::Critical,
+            Error::Runtime(msg) if msg.contains("parse") => ErrorSeverity::Warning,
+            Error::Io(_) => ErrorSeverity::Error,
+            Error::Runtime(_) => ErrorSeverity::Error,
+            _ => ErrorSeverity::Error,
+        }
+    }
+
+    fn classify_error_category(&self, error: &Error) -> ErrorCategory {
+        match error {
+            Error::Runtime(msg) if msg.contains("memory") => ErrorCategory::Memory,
+            Error::Runtime(msg) if msg.contains("parse") => ErrorCategory::Parsing,
+            Error::Io(_) => ErrorCategory::IO,
+            Error::Runtime(_) => ErrorCategory::Runtime,
+            _ => ErrorCategory::Unknown,
+        }
+    }
+
+    fn extract_error_location(&self, _error: &Error) -> Option<String> {
+        // In a real implementation, this would extract location information from the error
+        None
+    }
+
+    fn capture_stack_trace(&self) -> Vec<String> {
+        // Simple stack trace capture for now
+        vec!["Stack trace capture not implemented yet".to_string()]
+    }
+
+    fn update_statistics(&self, context: &ErrorContext) -> Result<()> {
+        let mut stats = self.stats.write().map_err(|_| {
+            Error::Runtime("Failed to write error statistics".to_string())
+        })?;
+
+        stats.total_errors += 1;
+        
+        if stats.first_error_time.is_none() {
+            stats.first_error_time = Some(context.timestamp);
+        }
+        stats.last_error_time = Some(context.timestamp);
+
+        // Update per-severity statistics
+        *stats.errors_by_severity.entry(context.severity).or_insert(0) += 1;
+
+        // Update per-category statistics
+        *stats.errors_by_category.entry(context.category).or_insert(0) += 1;
+
+        // Update per-goroutine statistics
+        if let Some(goroutine_id) = context.goroutine_id {
+            *stats.errors_by_goroutine.entry(goroutine_id).or_insert(0) += 1;
+        }
+
+        // Calculate error rate
+        let window_start = context.timestamp - self.config.error_rate_window;
+        let recent_errors = 1; // Simplified - would count errors in window
+        stats.error_rate = recent_errors as f64 / self.config.error_rate_window.as_secs_f64();
+
+        Ok(())
+    }
+
+    fn add_to_history(&self, context: ErrorContext) -> Result<()> {
+        let mut history = self.error_history.write().map_err(|_| {
+            Error::Runtime("Failed to write error history".to_string())
+        })?;
+
+        history.push_back(context);
+
+        // Maintain history size limit
+        while history.len() > self.config.max_error_history {
+            history.pop_front();
+        }
+
+        Ok(())
+    }
+
+    fn update_correlations(&self, context: &ErrorContext) -> Result<()> {
+        let error_key = format!("{:?}:{:?}", context.category, context.severity);
+        
+        let mut correlations = self.correlations.write().map_err(|_| {
+            Error::Runtime("Failed to write error correlations".to_string())
+        })?;
+
+        // Simple correlation analysis - would be more sophisticated in practice
+        let correlation = ErrorCorrelation {
+            related_errors: vec![context.error.to_string()],
+            correlation_strength: 0.5,
+            temporal_correlation: true,
+            spatial_correlation: context.goroutine_id.is_some(),
+        };
+
+        correlations.insert(error_key, correlation);
+
+        Ok(())
+    }
+
+    fn determine_recovery_action(&self, context: &ErrorContext) -> Result<RecoveryAction> {
+        // Check handlers in priority order
+        let handlers = self.handlers.read().map_err(|_| {
+            Error::Runtime("Failed to read error handlers".to_string())
+        })?;
+
+        for (_, handler) in handlers.iter() {
+            let action = handler(context);
+            if action != self.config.default_recovery_action {
+                return Ok(action);
+            }
+        }
+
+        // Check error thresholds
+        let stats = self.stats.read().map_err(|_| {
+            Error::Runtime("Failed to read error statistics".to_string())
+        })?;
+
+        if stats.total_errors >= self.config.max_total_errors as u64 {
+            return Ok(RecoveryAction::GracefulShutdown);
+        }
+
+        if let Some(goroutine_id) = context.goroutine_id {
+            if let Some(&error_count) = stats.errors_by_goroutine.get(&goroutine_id) {
+                if error_count >= self.config.max_errors_per_goroutine as u64 {
+                    return Ok(RecoveryAction::RestartGoroutine);
                 }
             }
+        }
 
-            state.error_contexts.push(context);
-
-            // Update statistics
-            if let Ok(mut stats) = self.stats.lock() {
-                stats.successful_propagations += 1;
-                
-                let propagation_time = start_time.elapsed();
-                let total_time = stats.average_propagation_time.as_nanos() as u64 * stats.successful_propagations.saturating_sub(1)
-                    + propagation_time.as_nanos() as u64;
-                stats.average_propagation_time = Duration::from_nanos(total_time / stats.successful_propagations);
-
-                // Update chain depth statistics
-                let chain_depth = state.error_contexts.last().map(|ctx| ctx.error_chain.len()).unwrap_or(0);
-                if chain_depth > stats.max_chain_depth {
-                    stats.max_chain_depth = chain_depth;
-                // Update average chain depth
-                let total_depth = stats.average_chain_depth * (stats.successful_propagations - 1) as f64 + chain_depth as f64;
-                stats.average_chain_depth = total_depth / stats.successful_propagations as f64;
-            state.active_propagations = state.active_propagations.saturating_sub(1);
-            state.in_error_handling = false;
-        // Convert to panic if necessary
-        if should_convert_to_panic {
-            self.convert_error_to_panic(error.clone(), source_location, function_name)?;
-        Err(error)
-    /// Convert an error to a panic (for severe error conditions)
-    #[instrument(skip(self, error))]
-    pub fn convert_error_to_panic(
-    ) -> crate::error::Result<()> {
-        warn!("Converting error to panic: {}", error);
-
-        // Update statistics
-        if let Ok(mut stats) = self.stats.lock() {
-            stats.errors_to_panics += 1;
-        // Create panic info
-        let message = if let Some(func) = function_name {
-            format!("CursedError in {}: {}", func, error)
-        } else {
-            format!("CursedError converted to panic: {}", error)
-
-        let category = match &error {
-
-        let mut panic_info = CursedPanicInfo::new(
-        );
-
-        if let Some(location) = source_location {
-            panic_info = panic_info.with_location(location);
-        // Use panic runtime if available
-        if let Some(panic_runtime) = &self.panic_runtime {
-            panic_runtime.panic(panic_info);
-        } else {
-            // Fallback panic
-            panic!("CURSED error converted to panic: {}", error);
+        // Check severity
+        match context.severity {
+            ErrorSeverity::Fatal => Ok(RecoveryAction::EscalateToPanic),
+            ErrorSeverity::Critical => Ok(RecoveryAction::RestartGoroutine),
+            _ => Ok(self.config.default_recovery_action),
         }
     }
 
-    /// Handle error in current context (for `?` operator implementation)
-    #[instrument(skip(self, error))]
-    pub fn handle_question_mark_error(
-    ) -> CursedError {
-        match self.propagate_error(error.clone(), source_location, function_name) {
-            Ok(()) => {
-                // This shouldn't happen as propagate_error always returns Err
-                error
+    fn execute_recovery_action(&self, context: &ErrorContext, action: RecoveryAction) -> Result<()> {
+        match action {
+            RecoveryAction::Continue => {
+                // Do nothing, continue execution
+            }
+            RecoveryAction::Retry => {
+                // Mark for retry (would be handled by caller)
+            }
+            RecoveryAction::Skip => {
+                // Skip current operation (would be handled by caller)
+            }
+            RecoveryAction::UseFallback => {
+                // Use fallback value (would be handled by caller)
+            }
+            RecoveryAction::RestartGoroutine => {
+                // Signal goroutine restart
+                if let Some(goroutine_id) = context.goroutine_id {
+                    eprintln!("Requesting restart of goroutine {}", goroutine_id);
+                }
+            }
+            RecoveryAction::EscalateToPanic => {
+                // Escalate to panic runtime
+                eprintln!("Escalating error to panic runtime: {:?}", context.error);
+            }
+            RecoveryAction::GracefulShutdown => {
+                // Request graceful shutdown
+                eprintln!("Requesting graceful shutdown due to error: {:?}", context.error);
             }
         }
-    }
 
-    /// Check if current thread is in error handling mode
-    pub fn is_in_error_handling(&self) -> bool {
-        let thread_id = thread::current().id();
-        
-        if let Ok(states) = self.thread_states.lock() {
-            states.get(&thread_id).map(|s| s.in_error_handling).unwrap_or(false)
-        } else {
-            false
+        // Update recovery statistics
+        if let Ok(mut stats) = self.stats.write() {
+            *stats.recovery_actions_used.entry(action).or_insert(0) += 1;
         }
-    }
 
-    /// Get current error context for thread
-    pub fn get_current_error_context(&self) -> Option<ErrorContext> {
-        let thread_id = thread::current().id();
-        
-        if let Ok(states) = self.thread_states.lock() {
-            states.get(&thread_id)
-                .and_then(|s| s.error_contexts.last())
-                .cloned()
-        } else {
-            None
+        // Record success/failure with performance monitor
+        if let Some(monitor) = &self.performance_monitor {
+            monitor.record_recovery_success(context);
         }
+
+        Ok(())
     }
 
-    /// Get error handling statistics
-    pub fn get_statistics(&self) -> crate::error::Result<()> {
-        self.stats.lock()
-            .map(|stats| stats.clone())
-            .map_err(|_| CursedError::Runtime("Failed to access error handling statistics".to_string()))
-    /// Update error propagation configuration
-    pub fn update_config<F>(&self, updater: F) -> crate::error::Result<()>
-    where
-    {
-        if let Ok(mut config) = self.config.write() {
-            updater(&mut *config);
-            Ok(())
-        } else {
-            Err(CursedError::Runtime("Failed to update error propagation configuration".to_string()))
-        }
-    }
-
-    /// Clear error context for current thread (for recovery scenarios)
-    #[instrument(skip(self))]
-    pub fn clear_error_context(&self) {
-        let thread_id = thread::current().id();
-        
-        if let Ok(mut states) = self.thread_states.lock() {
-            if let Some(state) = states.get_mut(&thread_id) {
-                state.error_contexts.clear();
-                state.active_propagations = 0;
-                state.in_error_handling = false;
+    fn register_default_handlers(&self) -> Result<()> {
+        // Register a default handler for memory errors
+        let memory_handler = Arc::new(|context: &ErrorContext| -> RecoveryAction {
+            if context.category == ErrorCategory::Memory {
+                match context.severity {
+                    ErrorSeverity::Fatal => RecoveryAction::EscalateToPanic,
+                    ErrorSeverity::Critical => RecoveryAction::RestartGoroutine,
+                    _ => RecoveryAction::Continue,
+                }
+            } else {
+                RecoveryAction::Continue
             }
-        }
-    /// Create an enhanced error with context information
-    pub fn create_contextual_error(
-    ) -> CursedError {
-        let mut context = ErrorContext::new();
-        
-        if let Some(location) = source_location {
-            context = context.with_location(location);
-        context.add_to_chain(
-        );
-        
-        context.add_to_chain(
-        );
+        });
 
-        // For now, return the base error with additional context
-        // In a full implementation, we might create a new error variant
-        CursedError::Runtime(format!("{}: {}", additional_context, base_error))
+        self.register_handler(100, memory_handler)?;
+
+        Ok(())
+    }
+
+    fn log_error(&self, context: &ErrorContext) {
+        match context.severity {
+            ErrorSeverity::Fatal => eprintln!("FATAL ERROR: {}", context.error),
+            ErrorSeverity::Critical => eprintln!("CRITICAL ERROR: {}", context.error),
+            ErrorSeverity::Error => eprintln!("ERROR: {}", context.error),
+            ErrorSeverity::Warning => eprintln!("WARNING: {}", context.error),
+            ErrorSeverity::Info => println!("INFO: {}", context.error),
+        }
     }
 }
 
-impl Default for ErrorRuntime {
-    fn default() -> Self {
-        Self::new()
+impl fmt::Display for ErrorContext {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Error [{:?}:{:?}]: {}", self.severity, self.category, self.error)?;
+        
+        if let Some(location) = &self.location {
+            write!(f, " at {}", location)?;
+        }
+        
+        if let Some(goroutine_id) = self.goroutine_id {
+            write!(f, " [goroutine: {}]", goroutine_id)?;
+        }
+        
+        if self.recovery_attempts > 0 {
+            write!(f, " [attempts: {}/{}]", self.recovery_attempts, self.max_recovery_attempts)?;
+        }
+        
+        Ok(())
     }
 }
+
+// Global error runtime management
 
 /// Initialize the global error runtime
-pub fn initialize_error_runtime() -> crate::error::Result<()> {
-    let runtime = Arc::new(ErrorRuntime::new());
-    runtime.initialize()?;
+pub fn initialize_global_error_runtime() -> Result<()> {
+    initialize_global_error_runtime_with_config(ErrorRuntimeConfig::default())
+}
+
+/// Initialize the global error runtime with custom configuration
+pub fn initialize_global_error_runtime_with_config(config: ErrorRuntimeConfig) -> Result<()> {
+    let runtime = Arc::new(ErrorRuntime::with_config(config));
     
-    ERROR_RUNTIME.set(runtime)
-        .map_err(|_| CursedError::Runtime("Failed to initialize error runtime".to_string()))?;
-    
-    Ok(())
+    GLOBAL_ERROR_RUNTIME
+        .set(runtime.clone())
+        .map_err(|_| Error::Runtime("Global error runtime already initialized".to_string()))?;
+
+    runtime.initialize()
+}
+
 /// Get the global error runtime
-pub fn get_error_runtime() -> Option<&'static Arc<ErrorRuntime>> {
-    ERROR_RUNTIME.get()
+pub fn get_global_error_runtime() -> Option<Arc<ErrorRuntime>> {
+    GLOBAL_ERROR_RUNTIME.get().cloned()
+}
+
 /// Shutdown the global error runtime
-pub fn shutdown_error_runtime() -> crate::error::Result<()> {
-    if let Some(runtime) = get_error_runtime() {
+pub fn shutdown_global_error_runtime() -> Result<()> {
+    if let Some(runtime) = get_global_error_runtime() {
         runtime.shutdown()
     } else {
         Ok(())
     }
 }
 
-// FFI functions for LLVM integration
+// Utility functions
 
-/// Handle error propagation from compiled code (for `?` operator)
-#[no_mangle]
-pub extern "C" fn cursed_propagate_error(
-) -> u8 {
-    // Safety: We trust LLVM-generated code to provide valid pointers and lengths
-    let error_message = if error_message_ptr.is_null() || error_message_len == 0 {
-        "Unknown error".to_string()
-    } else {
-        unsafe {
-            let slice = std::slice::from_raw_parts(error_message_ptr, error_message_len);
-            String::from_utf8_lossy(slice).to_string()
-        }
+/// Handle a global error
+pub fn handle_global_error(error: Error) -> Result<RecoveryAction> {
+    get_global_error_runtime()
+        .ok_or_else(|| Error::Runtime("Global error runtime not initialized".to_string()))?
+        .handle_error(error)
+}
 
-    let source_location = if file_ptr.is_null() || file_len == 0 {
-        Some(SourceLocation::new(line as usize, column as usize))
-    } else {
-        unsafe {
-            let file_slice = std::slice::from_raw_parts(file_ptr, file_len);
-            let file_name = String::from_utf8_lossy(file_slice).to_string();
-            Some(SourceLocation::new(line as usize, column as usize).with_file(&file_name))
-        }
+/// Register a global error handler
+pub fn register_global_error_handler(priority: i32, handler: Arc<ErrorHandler>) -> Result<()> {
+    get_global_error_runtime()
+        .ok_or_else(|| Error::Runtime("Global error runtime not initialized".to_string()))?
+        .register_handler(priority, handler)
+}
 
-    let function_name = if function_ptr.is_null() || function_len == 0 {
-        None
-    } else {
-        unsafe {
-            let function_slice = std::slice::from_raw_parts(function_ptr, function_len);
-            Some(String::from_utf8_lossy(function_slice).to_string())
-        }
+/// Get global error statistics
+pub fn get_global_error_statistics() -> Result<ErrorStatistics> {
+    get_global_error_runtime()
+        .ok_or_else(|| Error::Runtime("Global error runtime not initialized".to_string()))?
+        .get_statistics()
+}
 
-    // Create appropriate error based on error code
-    let error = match error_code {
-
-    if let Some(runtime) = get_error_runtime() {
-        match runtime.propagate_error(error, source_location, function_name) {
-            Ok(()) => 0, // Success (shouldn't happen)
-            Err(_) => 1,  // CursedError propagated
-        }
-    } else {
-        1 // Runtime not available, indicate error
+// Default implementation
+impl Default for ErrorRuntime {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-/// Check if thread is in error handling mode
-#[no_mangle]
-pub extern "C" fn cursed_is_in_error_handling() -> u8 {
-    if let Some(runtime) = get_error_runtime() {
-        if runtime.is_in_error_handling() {
-            1
-        } else {
-            0
-        }
-    } else {
-        0
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_runtime_creation() {
+        let runtime = ErrorRuntime::new();
+        assert!(!runtime.is_processing_error());
+    }
+
+    #[test]
+    fn test_error_context_display() {
+        let context = ErrorContext {
+            error: Error::Runtime("Test error".to_string()),
+            severity: ErrorSeverity::Error,
+            category: ErrorCategory::Runtime,
+            location: Some("test.rs:123".to_string()),
+            goroutine_id: Some(42),
+            thread_id: None,
+            stack_trace: Vec::new(),
+            timestamp: Instant::now(),
+            metadata: HashMap::new(),
+            recovery_attempts: 1,
+            max_recovery_attempts: 3,
+            suggested_recovery: RecoveryAction::Retry,
+        };
+
+        let display = format!("{}", context);
+        assert!(display.contains("Test error"));
+        assert!(display.contains("goroutine: 42"));
+        assert!(display.contains("attempts: 1/3"));
+    }
+
+    #[test]
+    fn test_error_severity_ordering() {
+        assert!(ErrorSeverity::Fatal > ErrorSeverity::Critical);
+        assert!(ErrorSeverity::Critical > ErrorSeverity::Error);
+        assert!(ErrorSeverity::Error > ErrorSeverity::Warning);
+        assert!(ErrorSeverity::Warning > ErrorSeverity::Info);
+    }
+
+    #[test]
+    fn test_error_statistics() {
+        let runtime = ErrorRuntime::new();
+        let stats = runtime.get_statistics().unwrap();
+        assert_eq!(stats.total_errors, 0);
+        assert_eq!(stats.recovery_success_rate, 1.0);
     }
 }
-
-/// Clear error context for current thread
-#[no_mangle]
-pub extern "C" fn cursed_clear_error_context() {
-    if let Some(runtime) = get_error_runtime() {
-        runtime.clear_error_context();
-    }
-}
-
-/// Get error context information
-#[no_mangle]
-pub extern "C" fn cursed_get_error_context_info(
-) -> u8 {
-    if context_id_out.is_null() || chain_depth_out.is_null() {
-        return 0;
-    if let Some(runtime) = get_error_runtime() {
-        if let Some(context) = runtime.get_current_error_context() {
-            unsafe {
-                *context_id_out = context.context_id;
-                *chain_depth_out = context.error_chain.len() as u32;
-            }
-            return 1;
-        }
-    }
-    
-    0

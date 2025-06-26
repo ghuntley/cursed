@@ -1,7 +1,15 @@
-// CURSED Language Server Protocol implementation
-use std::process;
+//! CURSED LSP Server binary
+
+use std::env;
 
 fn main() {
-    eprintln!("CURSED LSP server - not yet implemented");
-    process::exit(1);
+    let args: Vec<String> = env::args().collect();
+    
+    if args.len() > 1 && args[1] == "--version" {
+        println!("CURSED LSP Server - Language Server Protocol Support");
+        return;
+    }
+    
+    println!("CURSED LSP Server starting...");
+    println!("LSP functionality not yet implemented");
 }

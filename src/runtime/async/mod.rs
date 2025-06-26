@@ -1,29 +1,75 @@
-use crate::error::CursedError;
-/// Async/await runtime system for CURSED
-/// 
-/// Provides Future/Promise types, async executors, and integration with
-/// the existing goroutine scheduler for comprehensive concurrency support.
+// Async Runtime Module for CURSED
+//
+// This module provides asynchronous runtime support including:
+// - Task spawning and scheduling
+// - Future/promise handling
+// - Timeout and delay functionality
+// - Integration with LLVM generated code
+// - FFI bindings for compiled async operations
 
-pub mod future;
-pub mod promise;
-pub mod executor;
 pub mod runtime;
 pub mod task;
 pub mod scheduler;
-pub mod timer;
-pub mod event_loop;
 
-// Re-export core types
-pub use future::{Future, FutureState, FutureResult, FutureError, BoxFuture, LocalFuture};
-pub use promise::{Promise, PromiseResolver, PromiseRejecter, PromiseState};
-pub use executor::{AsyncExecutor, ExecutorConfig, ExecutorStatistics, TaskQueue};
-pub use runtime::{AsyncRuntime, AsyncRuntimeConfig, RuntimeStatistics, RuntimeCoordinator};
-pub use task::{Task, TaskId, TaskState, TaskHandle, TaskContext, TaskWaker, TaskPriority, TaskStatistics, TaskManager, TaskHandleNotifier};
-pub use scheduler::{AsyncScheduler, SchedulerConfig as AsyncSchedulerConfig, WorkStealingQueue};
-pub use timer::{Timer, Delay, Timeout, Interval, TimerWheel, TimerHandle};
-pub use event_loop::{EventLoop, EventLoopConfig, EventLoopStats};
+// TODO: Import these once modules are implemented
+// pub use runtime::{AsyncRuntime, RuntimeConfig};
+// pub use task::{AsyncTask, TaskHandle, TaskStatus};
+// pub use scheduler::{AsyncScheduler, SchedulerStats};
 
-// FFI functions for LLVM integration
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+
+/// Handle to an async task
+pub struct TaskHandle<T> {
+    task_id: u64,
+    _phantom: std::marker::PhantomData<T>,
+}
+
+impl<T> TaskHandle<T> {
+    pub fn new(task_id: u64) -> Self {
+        Self {
+            task_id,
+            _phantom: std::marker::PhantomData,
+        }
+    }
+
+    pub fn task_id(&self) -> u64 {
+        self.task_id
+    }
+}
+
+impl<T> Future for TaskHandle<T> {
+    type Output = T;
+
+    fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // TODO: Implement actual polling once runtime is ready
+        Poll::Pending
+    }
+}
+
+/// Async runtime wrapper
+pub struct AsyncRuntime {
+    runtime_id: u64,
+}
+
+impl AsyncRuntime {
+    pub fn new() -> Self {
+        Self { runtime_id: 0 }
+    }
+
+    pub fn runtime_id(&self) -> u64 {
+        self.runtime_id
+    }
+}
+
+impl Default for AsyncRuntime {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// FFI functions for LLVM integration - TODO: Implement these when needed
 extern "C" {
     /// Spawn an async task from compiled code
     pub fn cursed_spawn_async_task(task_fn: extern "C" fn(), context: *mut std::ffi::c_void) -> u64;
@@ -42,50 +88,119 @@ extern "C" {
     
     /// Create a timeout wrapper
     pub fn cursed_create_timeout(future_id: u64, timeout_ms: u64) -> u64;
+}
+
 /// Initialize the async runtime system
 pub fn initialize_async_runtime() -> crate::error::Result<()> {
-    runtime::initialize_global_async_runtime()
+    // TODO: Initialize runtime once implemented
+    // runtime::initialize_global_async_runtime()
+    Ok(())
+}
+
 /// Get the global async runtime
 pub fn get_async_runtime() -> Option<std::sync::Arc<AsyncRuntime>> {
-    runtime::get_global_async_runtime()
+    // TODO: Get runtime once implemented
+    // runtime::get_global_async_runtime()
+    None
+}
+
 /// Shutdown the async runtime system
 pub fn shutdown_async_runtime() {
-    runtime::shutdown_global_async_runtime()
+    // TODO: Shutdown runtime once implemented
+    // runtime::shutdown_global_async_runtime()
+}
+
 /// Spawn a future on the async runtime
-pub fn spawn<F>(future: F) -> TaskHandle<F::Output>
+pub fn spawn<F>(_future: F) -> TaskHandle<F::Output>
 where
+    F: Future + Send + 'static,
+    F::Output: Send + 'static,
 {
-    if let Some(runtime) = get_async_runtime() {
-        runtime.spawn(future)
-    } else {
-        // Create a placeholder handle for when runtime is not available
-        TaskHandle::placeholder()
-    }
+    // TODO: Implement actual spawning once runtime is ready
+    TaskHandle::new(0)
 }
 
-/// Block on a future until completion
-pub fn block_on<F>(future: F) -> F::Output
-where
-{
-    if let Some(runtime) = get_async_runtime() {
-        runtime.block_on(future)
-    } else {
-        // Fallback: create minimal executor for this future
-        let executor = AsyncExecutor::new(ExecutorConfig::default());
-        executor.block_on(future)
-    }
+/// Sleep for the specified duration
+pub async fn sleep(_duration: std::time::Duration) {
+    // TODO: Implement actual sleep once runtime is ready
 }
 
-/// Yield control back to the async executor
+/// Yield control to the scheduler
 pub async fn yield_now() {
-    // Implementation will yield to the async scheduler
-    future::yield_now().await
-/// Create a delay future
-pub fn delay(duration: std::time::Duration) -> Delay {
-    Timer::delay(duration)
-/// Create a timeout wrapper for a future
-pub fn timeout<F>(duration: std::time::Duration, future: F) -> Timeout<F>
+    // TODO: Implement actual yielding once runtime is ready
+}
+
+/// Timeout wrapper for futures
+pub async fn timeout<F>(_duration: std::time::Duration, _future: F) -> Result<F::Output, TimeoutError>
 where
+    F: Future,
 {
-    Timer::timeout(duration, future)
+    // TODO: Implement actual timeout once runtime is ready
+    Err(TimeoutError)
+}
+
+/// Error type for timeout operations
+#[derive(Debug, Clone)]
+pub struct TimeoutError;
+
+impl std::fmt::Display for TimeoutError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Operation timed out")
+    }
+}
+
+impl std::error::Error for TimeoutError {}
+
+/// Async task wrapper
+pub struct AsyncTask {
+    task_id: u64,
+    status: TaskStatus,
+}
+
+impl AsyncTask {
+    pub fn new(task_id: u64) -> Self {
+        Self {
+            task_id,
+            status: TaskStatus::Pending,
+        }
+    }
+
+    pub fn task_id(&self) -> u64 {
+        self.task_id
+    }
+
+    pub fn status(&self) -> TaskStatus {
+        self.status
+    }
+}
+
+/// Status of an async task
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TaskStatus {
+    Pending,
+    Running,
+    Completed,
+    Cancelled,
+    Failed,
+}
+
+/// Async scheduler for managing tasks
+pub struct AsyncScheduler {
+    scheduler_id: u64,
+}
+
+impl AsyncScheduler {
+    pub fn new() -> Self {
+        Self { scheduler_id: 0 }
+    }
+
+    pub fn scheduler_id(&self) -> u64 {
+        self.scheduler_id
+    }
+}
+
+impl Default for AsyncScheduler {
+    fn default() -> Self {
+        Self::new()
+    }
 }

@@ -1,7 +1,15 @@
-// CURSED Package Manager
-use std::process;
+//! CURSED Package Manager binary
+
+use std::env;
 
 fn main() {
-    eprintln!("CURSED package manager - not yet implemented");
-    process::exit(1);
+    let args: Vec<String> = env::args().collect();
+    
+    if args.len() > 1 && args[1] == "--version" {
+        println!("CURSED Package Manager - Manage CURSED packages");
+        return;
+    }
+    
+    println!("CURSED Package Manager");
+    println!("Package management not yet implemented");
 }

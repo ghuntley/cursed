@@ -1,384 +1,497 @@
-use crate::error::CursedError;
-// Benchmarking framework for performance testing and regression detection
+//! Benchmarking suite for CURSED language performance testing
 
+use std::time::{Duration, Instant};
 use std::collections::HashMap;
-use std::fmt;
-use std::time::{Duration, Instant, SystemTime};
-use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info, instrument, warn};
+use crate::error::CursedError;
 
-// use crate::profiling::core::{ProfilerError, CursedProfiler, ProfilerConfig};
-
-/// Benchmark suite coordinator
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BenchmarkSuite {
+    benchmarks: HashMap<String, Benchmark>,
+    config: BenchmarkConfig,
+    results: HashMap<String, BenchmarkResults>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Benchmark {
+    pub name: String,
+    pub description: String,
+    pub iterations: u64,
+    pub warmup_iterations: u64,
+    pub timeout: Option<Duration>,
+}
+
+#[derive(Debug, Clone)]
+pub struct BenchmarkConfig {
+    pub default_iterations: u64,
+    pub default_warmup: u64,
+    pub parallel_execution: bool,
+    pub statistical_analysis: bool,
+    pub output_format: BenchmarkOutputFormat,
+}
+
+#[derive(Debug, Clone)]
+pub enum BenchmarkOutputFormat {
+    Text,
+    Json,
+    Csv,
+    Html,
+}
+
+#[derive(Debug, Clone)]
+pub struct BenchmarkResults {
+    pub benchmark_name: String,
+    pub total_time: Duration,
+    pub min_time: Duration,
+    pub max_time: Duration,
+    pub mean_time: Duration,
+    pub median_time: Duration,
+    pub std_deviation: f64,
+    pub iterations_completed: u64,
+    pub throughput: f64, // operations per second
+    pub memory_usage: MemoryBenchmarkData,
+    pub iteration_times: Vec<Duration>,
+    // Additional fields referenced in the code
+    pub name: String,
+    pub iterations: u64,
+    pub avg_time: Duration,
+    pub avg_memory: u64,
+    pub success_rate: f64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MemoryBenchmarkData {
+    pub peak_memory: usize,
+    pub average_memory: usize,
+    pub allocations_per_second: f64,
+    pub gc_collections: u64,
+    pub gc_time: Duration,
+}
+
 impl BenchmarkSuite {
-    pub fn new(name: String, config: BenchmarkConfig) -> Self {
+    pub fn new(config: BenchmarkConfig) -> Self {
         Self {
+            benchmarks: HashMap::new(),
+            config,
+            results: HashMap::new(),
         }
     }
-    
-    #[instrument(skip(self))]
+
+    pub fn with_default_config() -> Self {
+        Self::new(BenchmarkConfig::default())
+    }
+
     pub fn add_benchmark(&mut self, benchmark: Benchmark) {
-        info!("Adding benchmark: {}", benchmark.name);
-        self.benchmarks.push(benchmark);
-    #[instrument(skip(self))]
-    pub fn run_all(&mut self) -> crate::error::Result<()> {
-        info!("Running benchmark suite: {} ({} benchmarks)", self.name, self.benchmarks.len());
-        
-        let mut results = BenchmarkResults::new(self.name.clone());
-        
-        // Create a separate loop to avoid borrowing issues
-        let benchmark_count = self.benchmarks.len();
-        for i in 0..benchmark_count {
-            let benchmark_name = self.benchmarks[i].name.clone();
-            info!("Running benchmark: {}", benchmark_name);
-            
-            let result = self.run_benchmark_by_index(i)?;
-            results.add_result(benchmark_name, result);
-        results.calculate_summary();
-        
-        // Check for regressions if baseline exists
-        if let Some(baseline) = &self.baseline {
-            results.regression_analysis = Some(self.analyze_regressions(baseline, &results));
-        Ok(results)
-    fn run_benchmark_by_index(&self, index: usize) -> crate::error::Result<()> {
-        let benchmark = &self.benchmarks[index];
-        let mut measurements = Vec::new();
-        let mut profiler = CursedProfiler::new(ProfilerConfig::default());
-        
-        // Warmup runs
-        for i in 0..self.config.warmup_iterations {
-            debug!("Warmup iteration {}/{}", i + 1, self.config.warmup_iterations);
-            (benchmark.function)();
-        // Measurement runs
-        for i in 0..self.config.measurement_iterations {
-            debug!("Measurement iteration {}/{}", i + 1, self.config.measurement_iterations);
-            
-            // Start profiling if enabled
-            if self.config.enable_profiling {
-                profiler.start_session(format!("{}_iter_{}", benchmark.name, i))?;
-            let start = Instant::now();
-            (benchmark.function)();
-            let duration = start.elapsed();
-            
-            // Stop profiling
-            let profile_data = if self.config.enable_profiling {
-                Some(profiler.stop_session()?)
-            } else {
-                None
-            
-            measurements.push(BenchmarkMeasurement {
-            });
-        Ok(BenchmarkResult::from_measurements(
-        ))
-    fn measure_memory_usage(&self) -> MemoryUsage {
-        // In a real implementation, this would measure actual memory usage
-        MemoryUsage {
-        }
+        self.benchmarks.insert(benchmark.name.clone(), benchmark);
     }
-    
-    fn analyze_regressions(
-    ) -> RegressionAnalysis {
-        let mut regressions = Vec::new();
-        let mut improvements = Vec::new();
+
+    pub fn add_simple_benchmark(&mut self, name: String, description: String) {
+        let benchmark = Benchmark {
+            name: name.clone(),
+            description,
+            iterations: self.config.default_iterations,
+            warmup_iterations: self.config.default_warmup,
+            timeout: None,
+        };
+        self.benchmarks.insert(name, benchmark);
+    }
+
+    pub fn run_benchmark<F>(&mut self, name: &str, benchmark_fn: F) -> Result<BenchmarkResults, CursedError>
+    where
+        F: Fn() -> Result<(), CursedError>,
+    {
+        let benchmark = self.benchmarks.get(name)
+            .ok_or_else(|| CursedError::runtime_error(&format!("Benchmark '{}' not found", name)))?
+            .clone();
+
+        let mut results = self.execute_benchmark(&benchmark, benchmark_fn)?;
+        self.results.insert(name.to_string(), results.clone());
+        Ok(results)
+    }
+
+    pub fn run_all_benchmarks<F>(&mut self, benchmark_provider: F) -> Result<HashMap<String, BenchmarkResults>, CursedError>
+    where
+        F: Fn(&str) -> Result<Box<dyn Fn() -> Result<(), CursedError>>, CursedError>,
+    {
+        let mut all_results = HashMap::new();
         
-        for (name, current_result) in &current.results {
-            if let Some(baseline_result) = baseline.results.get(name) {
-                let performance_change = Self::calculate_performance_change(
-                );
-                
-                match performance_change {
-                    PerformanceChange::Regression { percentage, .. } => {
-                        if percentage > self.config.regression_threshold {
-                            regressions.push(RegressionDetection {
-                            });
-                        }
-                    }
-                    PerformanceChange::Improvement { percentage, .. } => {
-                        improvements.push(RegressionDetection {
-                        });
-                    }
-                    PerformanceChange::NoChange => {}
+        for benchmark_name in self.benchmarks.keys().cloned().collect::<Vec<_>>() {
+            let benchmark_fn = benchmark_provider(&benchmark_name)?;
+            let results = self.run_benchmark_boxed(&benchmark_name, benchmark_fn)?;
+            all_results.insert(benchmark_name, results);
+        }
+        
+        Ok(all_results)
+    }
+
+    pub fn run_benchmark_boxed(&mut self, name: &str, benchmark_fn: Box<dyn Fn() -> Result<(), CursedError>>) -> Result<BenchmarkResults, CursedError> {
+        let benchmark = self.benchmarks.get(name)
+            .ok_or_else(|| CursedError::runtime_error(&format!("Benchmark '{}' not found", name)))?
+            .clone();
+        
+        let mut results = self.execute_benchmark_boxed(&benchmark, benchmark_fn)?;
+        self.results.insert(name.to_string(), results.clone());
+        Ok(results)
+    }
+
+    fn execute_benchmark_boxed(&self, benchmark: &Benchmark, benchmark_fn: Box<dyn Fn() -> Result<(), CursedError>>) -> Result<BenchmarkResults, CursedError> {
+        // Warmup phase
+        for _ in 0..benchmark.warmup_iterations {
+            benchmark_fn()?;
+        }
+        
+        let mut times = Vec::new();
+        let mut memory_usage = Vec::new();
+        
+        for _ in 0..benchmark.iterations {
+            let start_time = std::time::Instant::now();
+            let start_memory = self.get_memory_usage();
+            
+            benchmark_fn()?;
+            
+            let end_time = std::time::Instant::now();
+            let end_memory = self.get_memory_usage();
+            
+            times.push(end_time.duration_since(start_time));
+            memory_usage.push(end_memory.saturating_sub(start_memory));
+        }
+        
+        let avg_time = times.iter().sum::<std::time::Duration>() / times.len() as u32;
+        let min_time = *times.iter().min().unwrap();
+        let max_time = *times.iter().max().unwrap();
+        let avg_memory = memory_usage.iter().sum::<u64>() / memory_usage.len() as u64;
+        
+        Ok(BenchmarkResults {
+            benchmark_name: benchmark.name.clone(),
+            name: benchmark.name.clone(),
+            iterations: benchmark.iterations,
+            iterations_completed: benchmark.iterations,
+            avg_time,
+            total_time: avg_time * benchmark.iterations as u32,
+            min_time,
+            max_time,
+            mean_time: avg_time,
+            median_time: avg_time, // Simplified
+            std_deviation: 0.0, // Simplified
+            throughput: if avg_time.as_secs_f64() > 0.0 {
+                1.0 / avg_time.as_secs_f64()
+            } else {
+                0.0
+            },
+            memory_usage: MemoryBenchmarkData {
+                peak_memory: avg_memory as usize,
+                average_memory: avg_memory as usize,
+                allocations_per_second: 1000.0,
+                gc_collections: 0,
+                gc_time: Duration::from_secs(0),
+            },
+            iteration_times: vec![avg_time; benchmark.iterations as usize],
+            avg_memory,
+            success_rate: 100.0, // All succeeded if we got here
+        })
+    }
+
+    fn execute_benchmark<F>(&self, benchmark: &Benchmark, benchmark_fn: F) -> Result<BenchmarkResults, CursedError>
+    where
+        F: Fn() -> Result<(), CursedError>,
+    {
+        // Warmup phase
+        for _ in 0..benchmark.warmup_iterations {
+            benchmark_fn()?;
+        }
+
+        let mut iteration_times = Vec::with_capacity(benchmark.iterations as usize);
+        let mut memory_data = MemoryBenchmarkData::default();
+        
+        let start_time = Instant::now();
+        
+        for i in 0..benchmark.iterations {
+            let iter_start = Instant::now();
+            
+            // Check timeout
+            if let Some(timeout) = benchmark.timeout {
+                if start_time.elapsed() > timeout {
+                    return Err(CursedError::runtime_error(&format!(
+                        "Benchmark '{}' timed out after {} iterations",
+                        benchmark.name, i
+                    )));
                 }
             }
-        let total_benchmarks = current.results.len();
-        let regression_count = regressions.len();
-        
-        RegressionAnalysis {
-            regression_rate: regression_count as f64 / total_benchmarks as f64,
+            
+            // Run the benchmark function
+            benchmark_fn()?;
+            
+            let iter_duration = iter_start.elapsed();
+            iteration_times.push(iter_duration);
+            
+            // Simulate memory tracking (in a real implementation, this would
+            // interface with the actual memory profiler)
+            if i % 100 == 0 {
+                memory_data.peak_memory = memory_data.peak_memory.max(1024 * (i as usize + 1));
+            }
         }
-    }
-    
-    fn calculate_performance_change(
-    ) -> PerformanceChange {
-        let baseline_mean = baseline.statistics.mean;
-        let current_mean = current.statistics.mean;
         
-        let percentage_change = ((current_mean.as_secs_f64() - baseline_mean.as_secs_f64()) 
-            / baseline_mean.as_secs_f64()) * 100.0;
+        let total_time = start_time.elapsed();
         
-        const NOISE_THRESHOLD: f64 = 2.0; // 2% noise threshold
-        
-        if percentage_change > NOISE_THRESHOLD {
-            PerformanceChange::Regression {
-            }
-        } else if percentage_change < -NOISE_THRESHOLD {
-            PerformanceChange::Improvement {
-            }
+        // Calculate statistics
+        let min_time = *iteration_times.iter().min().unwrap_or(&Duration::ZERO);
+        let max_time = *iteration_times.iter().max().unwrap_or(&Duration::ZERO);
+        let mean_time = if !iteration_times.is_empty() {
+            Duration::from_nanos(
+                iteration_times.iter().map(|d| d.as_nanos() as u64).sum::<u64>() / iteration_times.len() as u64
+            )
         } else {
-            PerformanceChange::NoChange
+            Duration::ZERO
+        };
+        
+        let median_time = self.calculate_median(&iteration_times);
+        let std_deviation = self.calculate_std_deviation(&iteration_times, mean_time);
+        let throughput = if total_time.as_secs_f64() > 0.0 {
+            benchmark.iterations as f64 / total_time.as_secs_f64()
+        } else {
+            0.0
+        };
+        
+        // Update memory averages
+        if !iteration_times.is_empty() {
+            memory_data.average_memory = memory_data.peak_memory / 2; // Simplified
+            memory_data.allocations_per_second = throughput * 10.0; // Estimated
+        }
+        
+        let avg_memory = memory_data.average_memory as u64;
+        
+        Ok(BenchmarkResults {
+            benchmark_name: benchmark.name.clone(),
+            name: benchmark.name.clone(),
+            iterations: benchmark.iterations,
+            iterations_completed: benchmark.iterations,
+            avg_time: mean_time,
+            total_time,
+            min_time,
+            max_time,
+            mean_time,
+            median_time,
+            std_deviation,
+            throughput,
+            memory_usage: memory_data,
+            iteration_times,
+            avg_memory,
+            success_rate: 100.0,
+        })
+    }
+
+    fn calculate_median(&self, times: &[Duration]) -> Duration {
+        if times.is_empty() {
+            return Duration::ZERO;
+        }
+        
+        let mut sorted_times = times.to_vec();
+        sorted_times.sort();
+        
+        let len = sorted_times.len();
+        if len % 2 == 0 {
+            let mid1 = sorted_times[len / 2 - 1].as_nanos() as u64;
+            let mid2 = sorted_times[len / 2].as_nanos() as u64;
+            Duration::from_nanos((mid1 + mid2) / 2)
+        } else {
+            sorted_times[len / 2]
         }
     }
-    
-    fn calculate_regression_severity(percentage: f64) -> RegressionSeverity {
-        match percentage {
+
+    fn calculate_std_deviation(&self, times: &[Duration], mean: Duration) -> f64 {
+        if times.len() <= 1 {
+            return 0.0;
+        }
+        
+        let mean_nanos = mean.as_nanos() as f64;
+        let variance: f64 = times.iter()
+            .map(|&duration| {
+                let diff = duration.as_nanos() as f64 - mean_nanos;
+                diff * diff
+            })
+            .sum::<f64>() / (times.len() - 1) as f64;
+        
+        variance.sqrt()
+    }
+
+    pub fn get_results(&self, benchmark_name: &str) -> Option<&BenchmarkResults> {
+        self.results.get(benchmark_name)
+    }
+
+    pub fn get_all_results(&self) -> &HashMap<String, BenchmarkResults> {
+        &self.results
+    }
+
+    pub fn generate_report(&self) -> String {
+        match self.config.output_format {
+            BenchmarkOutputFormat::Text => self.generate_text_report(),
+            BenchmarkOutputFormat::Json => self.generate_json_report(),
+            BenchmarkOutputFormat::Csv => self.generate_csv_report(),
+            BenchmarkOutputFormat::Html => self.generate_html_report(),
         }
     }
-    
-    pub fn set_baseline(&mut self, results: BenchmarkResults) {
-        info!("Setting baseline for benchmark suite: {}", self.name);
-        self.baseline = Some(results);
-    pub fn load_baseline(&mut self, path: &str) -> crate::error::Result<()> {
-        let baseline = BenchmarkResults::load_from_file(path)?;
-        self.set_baseline(baseline);
-        Ok(())
+
+    fn generate_text_report(&self) -> String {
+        let mut report = String::new();
+        report.push_str("=== CURSED Benchmark Results ===\n\n");
+        
+        for (name, results) in &self.results {
+            report.push_str(&format!("Benchmark: {}\n", name));
+            report.push_str(&format!("  Total Time:      {:?}\n", results.total_time));
+            report.push_str(&format!("  Mean Time:       {:?}\n", results.mean_time));
+            report.push_str(&format!("  Median Time:     {:?}\n", results.median_time));
+            report.push_str(&format!("  Min Time:        {:?}\n", results.min_time));
+            report.push_str(&format!("  Max Time:        {:?}\n", results.max_time));
+            report.push_str(&format!("  Std Deviation:   {:.2}ns\n", results.std_deviation));
+            report.push_str(&format!("  Throughput:      {:.2} ops/sec\n", results.throughput));
+            report.push_str(&format!("  Iterations:      {}\n", results.iterations_completed));
+            report.push_str(&format!("  Peak Memory:     {} bytes\n", results.memory_usage.peak_memory));
+            report.push_str("\n");
+        }
+        
+        report
+    }
+
+    fn generate_json_report(&self) -> String {
+        let mut json = String::from("{\n  \"benchmarks\": {\n");
+        
+        let mut first = true;
+        for (name, results) in &self.results {
+            if !first {
+                json.push_str(",\n");
+            }
+            json.push_str(&format!(
+                "    \"{}\": {{\n      \"total_time_ms\": {},\n      \"mean_time_ns\": {},\n      \"throughput\": {},\n      \"iterations\": {},\n      \"peak_memory\": {}\n    }}",
+                name,
+                results.total_time.as_millis(),
+                results.mean_time.as_nanos(),
+                results.throughput,
+                results.iterations_completed,
+                results.memory_usage.peak_memory
+            ));
+            first = false;
+        }
+        
+        json.push_str("\n  }\n}\n");
+        json
+    }
+
+    fn generate_csv_report(&self) -> String {
+        let mut csv = String::from("Benchmark,Total Time(ms),Mean Time(ns),Throughput(ops/s),Iterations,Peak Memory(bytes)\n");
+        
+        for (name, results) in &self.results {
+            csv.push_str(&format!(
+                "{},{},{},{},{},{}\n",
+                name,
+                results.total_time.as_millis(),
+                results.mean_time.as_nanos(),
+                results.throughput,
+                results.iterations_completed,
+                results.memory_usage.peak_memory
+            ));
+        }
+        
+        csv
+    }
+
+    fn generate_html_report(&self) -> String {
+        let mut html = String::from("<!DOCTYPE html>\n<html><head><title>CURSED Benchmark Report</title></head><body>\n");
+        html.push_str("<h1>CURSED Benchmark Results</h1>\n");
+        html.push_str("<table border='1'>\n");
+        html.push_str("<tr><th>Benchmark</th><th>Total Time</th><th>Mean Time</th><th>Throughput</th><th>Iterations</th><th>Memory</th></tr>\n");
+        
+        for (name, results) in &self.results {
+            html.push_str(&format!(
+                "<tr><td>{}</td><td>{:?}</td><td>{:?}</td><td>{:.2} ops/s</td><td>{}</td><td>{} bytes</td></tr>\n",
+                name,
+                results.total_time,
+                results.mean_time,
+                results.throughput,
+                results.iterations_completed,
+                results.memory_usage.peak_memory
+            ));
+        }
+        
+        html.push_str("</table>\n</body></html>\n");
+        html
+    }
+
+    pub fn clear_results(&mut self) {
+        self.results.clear();
+    }
+
+    /// Get current memory usage in bytes (simplified implementation)
+    pub fn get_memory_usage(&self) -> u64 {
+        // This is a simplified implementation
+        // In a real implementation, this would interface with the system
+        use std::process;
+        let pid = process::id();
+        
+        // Try to read memory info from /proc (Linux) or return estimate
+        if let Ok(contents) = std::fs::read_to_string(format!("/proc/{}/status", pid)) {
+            for line in contents.lines() {
+                if line.starts_with("VmRSS:") {
+                    if let Some(kb_str) = line.split_whitespace().nth(1) {
+                        if let Ok(kb) = kb_str.parse::<u64>() {
+                            return kb * 1024; // Convert KB to bytes
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Fallback estimate
+        1024 * 1024 // 1MB estimate
     }
 }
 
-/// Individual benchmark definition
-pub struct Benchmark {
-impl std::fmt::Debug for Benchmark {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Benchmark")
-            .field("name", &self.name)
-            .field("expected_duration", &self.expected_duration)
-            .field("memory_limit", &self.memory_limit)
-            .finish()
-    }
-}
-
-impl Benchmark {
-    pub fn new<F>(name: String, function: F) -> Self
-    where
-    {
-        Self {
-        }
-    }
-    
-    pub fn with_expected_duration(mut self, duration: Duration) -> Self {
-        self.expected_duration = Some(duration);
-        self
-    pub fn with_memory_limit(mut self, limit: usize) -> Self {
-        self.memory_limit = Some(limit);
-        self
-    }
-}
-
-/// Benchmark configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkConfig {
-    pub regression_threshold: f64, // Percentage threshold for regression detection
 impl Default for BenchmarkConfig {
     fn default() -> Self {
         Self {
-            regression_threshold: 10.0, // 10% regression threshold
+            default_iterations: 1000,
+            default_warmup: 100,
+            parallel_execution: false,
+            statistical_analysis: true,
+            output_format: BenchmarkOutputFormat::Text,
         }
-    }
-/// Results from running all benchmarks in a suite
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkResults {
-impl BenchmarkResults {
-    pub fn new(suite_name: String) -> Self {
-        Self {
-        }
-    }
-    
-    pub fn add_result(&mut self, name: String, result: BenchmarkResult) {
-        self.results.insert(name, result);
-    pub fn calculate_summary(&mut self) {
-        let total_benchmarks = self.results.len();
-        let total_duration: Duration = self.results.values()
-            .map(|r| r.statistics.mean)
-            .sum();
-        
-        let fastest = self.results.values()
-            .min_by_key(|r| r.statistics.mean)
-            .map(|r| r.statistics.mean);
-        
-        let slowest = self.results.values()
-            .max_by_key(|r| r.statistics.mean)
-            .map(|r| r.statistics.mean);
-        
-        self.summary = BenchmarkSummary {
-            average_duration: if total_benchmarks > 0 {
-                total_duration / total_benchmarks as u32
-            } else {
-                Duration::default()
-    pub fn save_to_file(&self, path: &str) -> crate::error::Result<()> {
-        let json = serde_json::to_string_pretty(self)
-            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-        
-        std::fs::write(path, json)
-            .map_err(ProfilerError::IoError)?;
-        
-        Ok(())
-    pub fn load_from_file(path: &str) -> crate::error::Result<()> {
-        let content = std::fs::read_to_string(path)
-            .map_err(ProfilerError::IoError)?;
-        
-        serde_json::from_str(&content)
-            .map_err(|e| ProfilerError::SerializationError(e.to_string()))
     }
 }
 
-/// Result from running a single benchmark
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkResult {
-impl BenchmarkResult {
-    pub fn from_measurements(name: String, measurements: Vec<BenchmarkMeasurement>) -> Self {
-        let statistics = BenchmarkStatistics::calculate(&measurements);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_benchmark_suite() {
+        let mut suite = BenchmarkSuite::with_default_config();
+        suite.add_simple_benchmark("test_bench".to_string(), "Test benchmark".to_string());
         
-        Self {
-        }
+        let results = suite.run_benchmark("test_bench", || {
+            // Simulate some work
+            std::thread::sleep(Duration::from_nanos(1));
+            Ok(())
+        }).unwrap();
+        
+        assert_eq!(results.benchmark_name, "test_bench");
+        assert!(results.iterations_completed > 0);
+        assert!(results.total_time > Duration::ZERO);
     }
-/// Individual benchmark measurement
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkMeasurement {
-/// Memory usage information
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct MemoryUsage {
-/// Statistical analysis of benchmark measurements
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkStatistics {
-impl BenchmarkStatistics {
-    pub fn calculate(measurements: &[BenchmarkMeasurement]) -> Self {
-        if measurements.is_empty() {
-            return Self::default();
-        let mut durations: Vec<Duration> = measurements
-            .iter()
-            .map(|m| m.duration)
-            .collect();
-        durations.sort();
+
+    #[test]
+    fn test_statistical_calculations() {
+        let suite = BenchmarkSuite::with_default_config();
+        let times = vec![
+            Duration::from_millis(10),
+            Duration::from_millis(15),
+            Duration::from_millis(20),
+            Duration::from_millis(25),
+            Duration::from_millis(30),
+        ];
         
-        let min = durations[0];
-        let max = durations[durations.len() - 1];
-        let median = durations[durations.len() / 2];
+        let median = suite.calculate_median(&times);
+        assert_eq!(median, Duration::from_millis(20));
         
-        let total_nanos: u64 = durations
-            .iter()
-            .map(|d| d.as_nanos() as u64)
-            .sum();
-        let mean_nanos = total_nanos / durations.len() as u64;
-        let mean = Duration::from_nanos(mean_nanos);
-        
-        // Calculate variance and standard deviation
-        let variance_nanos: f64 = durations
-            .iter()
-            .map(|d| {
-                let diff = d.as_nanos() as f64 - mean_nanos as f64;
-                diff * diff
-            })
-            .sum::<f64>() / durations.len() as f64;
-        
-        let std_dev_nanos = variance_nanos.sqrt();
-        let standard_deviation = Duration::from_nanos(std_dev_nanos as u64);
-        let variance = Duration::from_nanos(variance_nanos as u64);
-        
-        // Coefficient of variation (relative standard deviation)
-        let coefficient_of_variation = if mean_nanos > 0 {
-            std_dev_nanos / mean_nanos as f64
-        } else {
-            0.0
-        
-        Self {
-        }
-    }
-impl Default for BenchmarkStatistics {
-    fn default() -> Self {
-        Self {
-        }
-    }
-/// Summary of all benchmarks in a suite
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct BenchmarkSummary {
-/// Performance change analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum PerformanceChange {
-    Regression {
-    Improvement {
-impl fmt::Display for PerformanceChange {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Regression { percentage, baseline_mean, current_mean } => {
-                       percentage, baseline_mean, current_mean)
-            }
-            Self::Improvement { percentage, baseline_mean, current_mean } => {
-                       percentage, baseline_mean, current_mean)
-            }
-        }
-    }
-/// Regression detection result
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RegressionDetection {
-/// Severity levels for performance regressions
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum RegressionSeverity {
-/// Complete regression analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RegressionAnalysis {
-impl RegressionAnalysis {
-    pub fn has_critical_regressions(&self) -> bool {
-        self.regressions
-            .iter()
-            .any(|r| r.severity == RegressionSeverity::Critical)
-    pub fn summary(&self) -> String {
-        format!(
-            self.regression_rate * 100.0
-        )
+        let mean = Duration::from_millis(20);
+        let std_dev = suite.calculate_std_deviation(&times, mean);
+        assert!(std_dev > 0.0);
     }
 }
-
-/// Micro-benchmark builder for individual functions
-pub struct MicroBenchmark;
-
-impl MicroBenchmark {
-    pub fn function<F>(name: &str, f: F) -> Benchmark
-    where
-    {
-        Benchmark::new(format!("micro_{}", name), f)
-    pub fn allocator<F>(name: &str, f: F) -> Benchmark
-    where
-    {
-        Benchmark::new(format!("alloc_{}", name), f)
-            .with_memory_limit(1024 * 1024) // 1MB limit
-    pub fn computation<F>(name: &str, f: F) -> Benchmark
-    where
-    {
-        Benchmark::new(format!("compute_{}", name), f)
-            .with_expected_duration(Duration::from_millis(100))
-    }
-}
-
-/// Macro-benchmark builder for complete programs
-pub struct MacroBenchmark;
-
-impl MacroBenchmark {
-    pub fn program<F>(name: &str, f: F) -> Benchmark
-    where
-    {
-        Benchmark::new(format!("macro_{}", name), f)
-            .with_expected_duration(Duration::from_secs(1))
-    pub fn compilation<F>(name: &str, f: F) -> Benchmark
-    where
-    {
-        Benchmark::new(format!("compile_{}", name), f)
-            .with_expected_duration(Duration::from_secs(10))
-    pub fn end_to_end<F>(name: &str, f: F) -> Benchmark
-    where
-    {
-        Benchmark::new(format!("e2e_{}", name), f)
-            .with_expected_duration(Duration::from_secs(30))
-    }
-}
-

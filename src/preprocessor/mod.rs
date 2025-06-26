@@ -20,8 +20,11 @@ use crate::error::CursedError;
 /// Initialize a preprocessor with the given lexer
 pub fn new_preprocessor(lexer: Lexer) -> Preprocessor {
     Preprocessor::new(lexer)
+}
+
 /// Process source code through the preprocessor pipeline
 pub fn process_source(source: &str) -> PreprocessorResult<TokenStream> {
     let lexer = Lexer::new(source.to_string());
     let mut preprocessor = Preprocessor::new(lexer);
     preprocessor.process()
+}

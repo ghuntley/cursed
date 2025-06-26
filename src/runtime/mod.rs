@@ -38,7 +38,7 @@ pub use debug_manager::{DebugManager, DebugManagerConfig, DebugManagerStats, Fun
 pub use debug_runtime::{PerformanceMonitor, RuntimeDebugger, VariableInspection, RuntimeStackFrame, Breakpoint};
 pub use debug_info::{
     StackTraceCapture, EnhancedStackTraceConfig, SymbolInfo, SymbolResolver
-// };
+};
 
 // Re-export channels and async runtime for goroutine system
 pub use channels::{Channel, ChannelSender, ChannelReceiver, ChannelError};

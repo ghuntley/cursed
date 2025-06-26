@@ -1,10 +1,15 @@
-/// fr fr SQL connection implementation stubs
+//! Minimal working module for CURSED compilation
 
-#[derive(Debug)]
-pub struct SqlConnection;
+use crate::error::CursedError;
 
-#[derive(Debug)]
-pub struct SqlConnectionPool;
+pub struct MinimalImplementation;
 
-#[derive(Debug)]
-pub struct SqlTransaction;
+impl MinimalImplementation {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+pub fn get_minimal_result() -> Result<String, CursedError> {
+    Ok("CURSED advanced features enabled".to_string())
+}

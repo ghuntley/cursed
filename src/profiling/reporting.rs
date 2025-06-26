@@ -1,518 +1,340 @@
-use crate::error::CursedError;
-// Performance reporting and visualization generation
+//! Report generation for profiling data
 
+use std::time::Duration;
 use std::collections::HashMap;
-use std::path::Path;
-use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info, instrument};
+use crate::error::CursedError;
+use crate::profiling::core::ProfileData;
+use crate::profiling::performance::{CompilationPhase, PhaseMetrics};
+use crate::profiling::memory::{GcStatistics, AllocationStats};
 
-// use crate::profiling::core::{ProfileData, ProfilerError};
-// use crate::profiling::cpu::{CpuProfileData, FlameGraph};
-// use crate::profiling::memory::MemoryProfileData;
-// use crate::profiling::concurrency::ConcurrencyProfileData;
-// use crate::profiling::benchmarking::BenchmarkResults;
-
-/// Performance report generator
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ReportGenerator {
+    config: ReportConfiguration,
+}
+
+#[derive(Debug, Clone)]
+pub struct ReportConfiguration {
+    pub output_format: OutputFormat,
+    pub include_memory: bool,
+    pub include_performance: bool,
+    pub include_gc_stats: bool,
+    pub detailed_breakdown: bool,
+    pub sort_by: SortCriteria,
+}
+
+#[derive(Debug, Clone)]
+pub enum OutputFormat {
+    Text,
+    Json,
+    Csv,
+    Html,
+    Markdown,
+}
+
+#[derive(Debug, Clone)]
+pub enum SortCriteria {
+    Duration,
+    MemoryUsage,
+    CallCount,
+    Alphabetical,
+}
+
+#[derive(Debug, Clone)]
+pub struct ComprehensiveReport {
+    pub performance_data: HashMap<CompilationPhase, PhaseMetrics>,
+    pub memory_stats: MemoryReport,
+    pub gc_statistics: GcStatistics,
+    pub allocation_histogram: HashMap<String, AllocationStats>,
+    pub total_duration: Duration,
+    pub peak_memory: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct MemoryReport {
+    pub total_allocated: usize,
+    pub total_freed: usize,
+    pub current_usage: usize,
+    pub peak_usage: usize,
+    pub leak_count: usize,
+    pub average_allocation_size: usize,
+}
+
 impl ReportGenerator {
-    pub fn new(config: ReportConfig) -> Self {
+    pub fn new(config: ReportConfiguration) -> Self {
         Self { config }
     }
-    
-    #[instrument(skip(self, profile_data))]
-    pub fn generate_report(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
-        info!("Generating performance report for session: {}", profile_data.session_name);
-        
-        let mut report = PerformanceReport::new(
-        );
-        
-        // Generate sections based on available data
-        if let Some(cpu_data) = self.extract_cpu_data(profile_data)? {
-            report.cpu_analysis = Some(self.generate_cpu_analysis(&cpu_data)?);
-        if let Some(memory_data) = self.extract_memory_data(profile_data)? {
-            report.memory_analysis = Some(self.generate_memory_analysis(&memory_data)?);
-        if let Some(concurrency_data) = self.extract_concurrency_data(profile_data)? {
-            report.concurrency_analysis = Some(self.generate_concurrency_analysis(&concurrency_data)?);
-        // Generate summary
-        report.summary = self.generate_summary(&report);
-        
-        info!("Performance report generated successfully");
-        Ok(report)
-    #[instrument(skip(self, benchmark_results))]
-    pub fn generate_benchmark_report(&self, benchmark_results: &BenchmarkResults) -> crate::error::Result<()> {
-        info!("Generating benchmark report for suite: {}", benchmark_results.suite_name);
-        
-        let report = BenchmarkReport {
-        
-        Ok(report)
-    #[instrument(skip(self, report))]
-    pub fn export_html(&self, report: &PerformanceReport, output_path: &str) -> crate::error::Result<()> {
-        let html = self.generate_html_report(report)?;
-        std::fs::write(output_path, html).map_err(ProfilerError::IoError)?;
-        info!("HTML report exported to: {}", output_path);
-        Ok(())
-    #[instrument(skip(self, report))]
-    pub fn export_markdown(&self, report: &PerformanceReport, output_path: &str) -> crate::error::Result<()> {
-        let markdown = self.generate_markdown_report(report)?;
-        std::fs::write(output_path, markdown).map_err(ProfilerError::IoError)?;
-        info!("Markdown report exported to: {}", output_path);
-        Ok(())
-    #[instrument(skip(self, report))]
-    pub fn export_json(&self, report: &PerformanceReport, output_path: &str) -> crate::error::Result<()> {
-        let json = serde_json::to_string_pretty(report)
-            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-        std::fs::write(output_path, json).map_err(ProfilerError::IoError)?;
-        info!("JSON report exported to: {}", output_path);
-        Ok(())
-    /// Import a performance report from JSON file
-    #[instrument(skip(self))]
-    pub fn import_json(&self, input_path: &str) -> crate::error::Result<()> {
-        let json = std::fs::read_to_string(input_path)
-            .map_err(ProfilerError::IoError)?;
-        let report: PerformanceReport = serde_json::from_str(&json)
-            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-        info!("JSON report imported from: {}", input_path);
-        Ok(report)
-    /// Import a benchmark report from JSON file
-    #[instrument(skip(self))]
-    pub fn import_benchmark_json(&self, input_path: &str) -> crate::error::Result<()> {
-        let json = std::fs::read_to_string(input_path)
-            .map_err(ProfilerError::IoError)?;
-        let report: BenchmarkReport = serde_json::from_str(&json)
-            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-        info!("Benchmark report imported from: {}", input_path);
-        Ok(report)
-    /// Import a performance report from binary format
-    #[instrument(skip(self))]
-    pub fn import_binary(&self, input_path: &str) -> crate::error::Result<()> {
-        let data = std::fs::read(input_path)
-            .map_err(ProfilerError::IoError)?;
-        let report: PerformanceReport = bincode::deserialize(&data)
-            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-        info!("Binary report imported from: {}", input_path);
-        Ok(report)
-    /// Export a performance report to binary format
-    #[instrument(skip(self, report))]
-    pub fn export_binary(&self, report: &PerformanceReport, output_path: &str) -> crate::error::Result<()> {
-        let data = bincode::serialize(report)
-            .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-        std::fs::write(output_path, data).map_err(ProfilerError::IoError)?;
-        info!("Binary report exported to: {}", output_path);
-        Ok(())
-    fn extract_cpu_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
-        if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Cpu) {
-            let cpu_data: CpuProfileData = bincode::deserialize(data)
-                .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-            Ok(Some(cpu_data))
-        } else {
-            Ok(None)
+
+    pub fn with_default_config() -> Self {
+        Self {
+            config: ReportConfiguration::default(),
         }
     }
-    
-    fn extract_memory_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
-        if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Memory) {
-            let memory_data: MemoryProfileData = bincode::deserialize(data)
-                .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-            Ok(Some(memory_data))
-        } else {
-            Ok(None)
+
+    pub fn generate_comprehensive_report(&self, report_data: &ComprehensiveReport) -> Result<String, CursedError> {
+        match self.config.output_format {
+            OutputFormat::Text => Ok(self.generate_text_report(report_data)),
+            OutputFormat::Json => Ok(self.generate_json_report(report_data)),
+            OutputFormat::Csv => Ok(self.generate_csv_report(report_data)),
+            OutputFormat::Html => Ok(self.generate_html_report(report_data)),
+            OutputFormat::Markdown => Ok(self.generate_markdown_report(report_data)),
         }
     }
-    
-    fn extract_concurrency_data(&self, profile_data: &ProfileData) -> crate::error::Result<()> {
-        if let Some(data) = profile_data.get_mode_data(&crate::profiling::core::ProfilerMode::Concurrency) {
-            let concurrency_data: ConcurrencyProfileData = bincode::deserialize(data)
-                .map_err(|e| ProfilerError::SerializationError(e.to_string()))?;
-            Ok(Some(concurrency_data))
-        } else {
-            Ok(None)
-        }
-    }
-    
-    fn generate_cpu_analysis(&self, cpu_data: &CpuProfileData) -> crate::error::Result<()> {
-        let hot_functions = cpu_data.get_hot_functions(self.config.max_functions);
-        let call_graph = cpu_data.get_call_graph();
-        let flame_graph = FlameGraph::from_cpu_profile(cpu_data)?;
+
+    pub fn generate_performance_summary(&self, performance_data: &HashMap<CompilationPhase, PhaseMetrics>) -> String {
+        let mut summary = String::new();
         
-        Ok(CpuAnalysisReport {
-            hot_functions: hot_functions.into_iter()
-                .map(|(name, stats)| HotFunction {
-                })
-            call_graph_summary: CallGraphSummary {
-            flame_graph: if self.config.include_flame_graphs {
-                Some(flame_graph)
-            } else {
-                None
-        })
-    fn generate_memory_analysis(&self, memory_data: &MemoryProfileData) -> crate::error::Result<()> {
-        let current_usage = memory_data.calculate_current_usage();
-        let allocation_analysis = memory_data.analyze_patterns();
-        let memory_leaks = memory_data.detect_leaks();
-        
-        Ok(MemoryAnalysisReport {
-            memory_leaks: memory_leaks.iter()
-                .take(self.config.max_memory_leaks)
-                .map(SerializableMemoryLeak::from)
-        })
-    fn generate_concurrency_analysis(&self, concurrency_data: &ConcurrencyProfileData) -> crate::error::Result<()> {
-        let goroutine_timeline = concurrency_data.generate_goroutine_timeline();
-        let channel_analysis = concurrency_data.analyze_channels();
-        let deadlocks = concurrency_data.detect_deadlocks();
-        let scheduler_analysis = concurrency_data.analyze_scheduler();
-        
-        Ok(ConcurrencyAnalysisReport {
-            goroutine_timeline: goroutine_timeline.iter()
-                .take(self.config.max_goroutines)
-                .map(SerializableGoroutineTimeline::from)
-        })
-    fn generate_summary(&self, report: &PerformanceReport) -> PerformanceSummary {
-        let mut issues = Vec::new();
-        let mut recommendations = Vec::new();
-        
-        // Analyze CPU performance
-        if let Some(cpu_analysis) = &report.cpu_analysis {
-            if cpu_analysis.hot_functions.len() > 0 {
-                let top_function = &cpu_analysis.hot_functions[0];
-                if top_function.percentage > 30.0 {
-                    issues.push(format!(
-                        top_function.name, top_function.percentage
-                    ));
-                    recommendations.push(
-                        "Consider optimizing the most CPU-intensive function".to_string()
-                    );
-                }
+        if self.config.output_format == OutputFormat::Text {
+            summary.push_str("=== Performance Summary ===\n");
+            
+            let mut sorted_phases: Vec<_> = performance_data.iter().collect();
+            match self.config.sort_by {
+                SortCriteria::Duration => sorted_phases.sort_by(|a, b| b.1.duration.cmp(&a.1.duration)),
+                SortCriteria::MemoryUsage => sorted_phases.sort_by(|a, b| b.1.memory_usage.cmp(&a.1.memory_usage)),
+                SortCriteria::CallCount => sorted_phases.sort_by(|a, b| b.1.iterations.cmp(&a.1.iterations)),
+                SortCriteria::Alphabetical => sorted_phases.sort_by(|a, b| format!("{:?}", a.0).cmp(&format!("{:?}", b.0))),
             }
-        // Analyze memory performance
-        if let Some(memory_analysis) = &report.memory_analysis {
-            if !memory_analysis.memory_leaks.is_empty() {
-                issues.push(format!(
-                    memory_analysis.memory_leaks.len()
+            
+            for (phase, metrics) in sorted_phases {
+                summary.push_str(&format!(
+                    "{:15} {:>8.2}ms {:>8} bytes {:>6} calls\n",
+                    format!("{:?}", phase),
+                    metrics.duration.as_secs_f64() * 1000.0,
+                    metrics.memory_usage,
+                    metrics.iterations
                 ));
-                recommendations.push(
-                    "Review memory leak analysis and fix allocation/deallocation patterns".to_string()
-                );
             }
         }
         
-        // Analyze concurrency performance
-        if let Some(concurrency_analysis) = &report.concurrency_analysis {
-            if !concurrency_analysis.deadlock_detections.is_empty() {
-                issues.push(format!(
-                    concurrency_analysis.deadlock_detections.len()
+        summary
+    }
+
+    pub fn generate_memory_summary(&self, memory_report: &MemoryReport) -> String {
+        let mut summary = String::new();
+        
+        if self.config.output_format == OutputFormat::Text {
+            summary.push_str("=== Memory Summary ===\n");
+            summary.push_str(&format!("Total Allocated: {} bytes\n", memory_report.total_allocated));
+            summary.push_str(&format!("Total Freed:     {} bytes\n", memory_report.total_freed));
+            summary.push_str(&format!("Current Usage:   {} bytes\n", memory_report.current_usage));
+            summary.push_str(&format!("Peak Usage:      {} bytes\n", memory_report.peak_usage));
+            summary.push_str(&format!("Memory Leaks:    {}\n", memory_report.leak_count));
+            summary.push_str(&format!("Avg Alloc Size:  {} bytes\n", memory_report.average_allocation_size));
+        }
+        
+        summary
+    }
+
+    fn generate_text_report(&self, report: &ComprehensiveReport) -> String {
+        let mut output = String::new();
+        
+        output.push_str("==========================================\n");
+        output.push_str("         CURSED PROFILING REPORT\n");
+        output.push_str("==========================================\n\n");
+        
+        // Overall summary
+        output.push_str(&format!("Total Compilation Time: {:.2}ms\n", report.total_duration.as_secs_f64() * 1000.0));
+        output.push_str(&format!("Peak Memory Usage: {} bytes\n\n", report.peak_memory));
+        
+        if self.config.include_performance {
+            output.push_str(&self.generate_performance_summary(&report.performance_data));
+            output.push('\n');
+        }
+        
+        if self.config.include_memory {
+            output.push_str(&self.generate_memory_summary(&report.memory_stats));
+            output.push('\n');
+        }
+        
+        if self.config.include_gc_stats {
+            output.push_str("=== Garbage Collection ===\n");
+            output.push_str(&format!("Total Collections: {}\n", report.gc_statistics.total_collections));
+            output.push_str(&format!("GC Time:          {:.2}ms\n", report.gc_statistics.total_collection_time.as_secs_f64() * 1000.0));
+            output.push_str(&format!("Avg GC Time:      {:.2}ms\n", report.gc_statistics.average_collection_time.as_secs_f64() * 1000.0));
+            output.push_str(&format!("Bytes Collected:  {}\n", report.gc_statistics.total_bytes_collected));
+            output.push('\n');
+        }
+        
+        if self.config.detailed_breakdown && !report.allocation_histogram.is_empty() {
+            output.push_str("=== Allocation Breakdown ===\n");
+            let mut sorted_types: Vec<_> = report.allocation_histogram.iter().collect();
+            sorted_types.sort_by(|a, b| b.1.total_size.cmp(&a.1.total_size));
+            
+            for (type_name, stats) in sorted_types {
+                output.push_str(&format!(
+                    "{:20} {:>6} allocs {:>10} bytes avg:{:>6} bytes\n",
+                    type_name,
+                    stats.count,
+                    stats.total_size,
+                    stats.average_size
                 ));
-                recommendations.push(
-                    "Review goroutine synchronization and channel usage".to_string()
-                );
             }
         }
         
-        let overall_score = self.calculate_performance_score(report);
-        
-        PerformanceSummary {
-            execution_time: report.cpu_analysis
-                .as_ref()
-                .map(|cpu| cpu.total_duration)
-            memory_usage: report.memory_analysis
-                .as_ref()
-                .map(|mem| mem.current_usage.allocated_bytes)
-            concurrency_utilization: report.concurrency_analysis
-                .as_ref()
-                .map(|conc| conc.scheduler_analysis.scheduler_efficiency)
-        }
+        output
     }
-    
-    fn calculate_performance_score(&self, report: &PerformanceReport) -> f64 {
-        let mut score = 100.0;
+
+    fn generate_json_report(&self, report: &ComprehensiveReport) -> String {
+        let mut json = String::from("{\n");
+        json.push_str(&format!("  \"total_duration_ms\": {},\n", report.total_duration.as_millis()));
+        json.push_str(&format!("  \"peak_memory_bytes\": {},\n", report.peak_memory));
         
-        // Deduct points for CPU hotspots
-        if let Some(cpu_analysis) = &report.cpu_analysis {
-            if let Some(top_function) = cpu_analysis.hot_functions.first() {
-                if top_function.percentage > 50.0 {
-                    score -= 20.0;
-                } else if top_function.percentage > 30.0 {
-                    score -= 10.0;
-                }
+        if self.config.include_performance {
+            json.push_str("  \"performance\": {\n");
+            let mut first = true;
+            for (phase, metrics) in &report.performance_data {
+                if !first { json.push_str(",\n"); }
+                json.push_str(&format!(
+                    "    \"{:?}\": {{\"duration_ms\": {}, \"memory_bytes\": {}, \"iterations\": {}}}",
+                    phase, metrics.duration.as_millis(), metrics.memory_usage, metrics.iterations
+                ));
+                first = false;
             }
-        // Deduct points for memory issues
-        if let Some(memory_analysis) = &report.memory_analysis {
-            let leak_penalty = (memory_analysis.memory_leaks.len() as f64) * 5.0;
-            score -= leak_penalty.min(30.0);
-        // Deduct points for concurrency issues
-        if let Some(concurrency_analysis) = &report.concurrency_analysis {
-            let deadlock_penalty = (concurrency_analysis.deadlock_detections.len() as f64) * 15.0;
-            score -= deadlock_penalty.min(40.0);
-            
-            let efficiency = concurrency_analysis.scheduler_analysis.scheduler_efficiency;
-            if efficiency < 0.8 {
-                score -= (0.8 - efficiency) * 50.0;
-            }
+            json.push_str("\n  },\n");
         }
         
-        score.max(0.0).min(100.0)
-    fn calculate_max_call_depth(&self, call_graph: &crate::profiling::cpu::CallGraph) -> usize {
-        // Simplified depth calculation
-        call_graph.edges.len()
-    fn generate_cpu_insights(&self, _cpu_data: &CpuProfileData) -> Vec<String> {
-        vec![
-        ]
-    fn generate_memory_insights(&self, _memory_data: &MemoryProfileData) -> Vec<String> {
-        vec![
-        ]
-    fn generate_concurrency_insights(&self, _concurrency_data: &ConcurrencyProfileData) -> Vec<String> {
-        vec![
-        ]
-    fn analyze_gc_performance(&self, memory_data: &MemoryProfileData) -> GcPerformanceAnalysis {
-        let total_collections = memory_data.gc_events.len() as u64;
-        let total_gc_time: std::time::Duration = memory_data.gc_events
-            .iter()
-            .map(|event| event.duration)
-            .sum();
+        if self.config.include_memory {
+            json.push_str("  \"memory\": {\n");
+            json.push_str(&format!("    \"total_allocated\": {},\n", report.memory_stats.total_allocated));
+            json.push_str(&format!("    \"total_freed\": {},\n", report.memory_stats.total_freed));
+            json.push_str(&format!("    \"current_usage\": {},\n", report.memory_stats.current_usage));
+            json.push_str(&format!("    \"peak_usage\": {},\n", report.memory_stats.peak_usage));
+            json.push_str(&format!("    \"leak_count\": {}\n", report.memory_stats.leak_count));
+            json.push_str("  },\n");
+        }
         
-        let average_pause_time = if total_collections > 0 {
-            total_gc_time / total_collections as u32
+        if self.config.include_gc_stats {
+            json.push_str("  \"gc_statistics\": {\n");
+            json.push_str(&format!("    \"total_collections\": {},\n", report.gc_statistics.total_collections));
+            json.push_str(&format!("    \"total_time_ms\": {},\n", report.gc_statistics.total_collection_time.as_millis()));
+            json.push_str(&format!("    \"average_time_ms\": {},\n", report.gc_statistics.average_collection_time.as_millis()));
+            json.push_str(&format!("    \"bytes_collected\": {}\n", report.gc_statistics.total_bytes_collected));
+            json.push_str("  }\n");
         } else {
-            std::time::Duration::default()
-        
-        let total_bytes_collected: usize = memory_data.gc_events
-            .iter()
-            .map(|event| event.bytes_collected)
-            .sum();
-        
-        GcPerformanceAnalysis {
-            gc_efficiency: if total_gc_time.as_millis() > 0 {
-                total_bytes_collected as f64 / total_gc_time.as_millis() as f64
-            } else {
-                0.0
+            // Remove trailing comma
+            json.pop();
+            json.pop();
+            json.push('\n');
         }
+        
+        json.push_str("}\n");
+        json
     }
-    
-    fn generate_performance_insights(&self, _benchmark_results: &BenchmarkResults) -> Vec<String> {
-        vec![
-        ]
-    fn generate_recommendations(&self, _benchmark_results: &BenchmarkResults) -> Vec<String> {
-        vec![
-        ]
-    fn generate_html_report(&self, report: &PerformanceReport) -> crate::error::Result<()> {
-        let mut html = String::new();
+
+    fn generate_csv_report(&self, report: &ComprehensiveReport) -> String {
+        let mut csv = String::from("Metric,Value\n");
+        csv.push_str(&format!("Total Duration (ms),{}\n", report.total_duration.as_millis()));
+        csv.push_str(&format!("Peak Memory (bytes),{}\n", report.peak_memory));
         
-        html.push_str("<!DOCTYPE html><html><head>");
-        html.push_str("<title>CURSED Performance Report</title>");
-        html.push_str("<style>");
-        html.push_str(include_str!("templates/report.css"));
-        html.push_str("</style></head><body>");
+        if self.config.include_performance {
+            csv.push_str("\nPhase,Duration(ms),Memory(bytes),Iterations\n");
+            for (phase, metrics) in &report.performance_data {
+                csv.push_str(&format!(
+                    "{:?},{},{},{}\n",
+                    phase, metrics.duration.as_millis(), metrics.memory_usage, metrics.iterations
+                ));
+            }
+        }
         
-        // Header
-        html.push_str(&format!(
-            "<h1>Performance Report: {}</h1>",
-            report.session_name
-        ));
+        csv
+    }
+
+    fn generate_html_report(&self, report: &ComprehensiveReport) -> String {
+        let mut html = String::from("<!DOCTYPE html>\n<html><head>\n");
+        html.push_str("<title>CURSED Profiling Report</title>\n");
+        html.push_str("<style>body{font-family:Arial,sans-serif}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background-color:#f2f2f2}</style>\n");
+        html.push_str("</head><body>\n");
+        html.push_str("<h1>CURSED Profiling Report</h1>\n");
         
-        // Summary section
-        html.push_str("<section class='summary'>");
-        html.push_str("<h2>Summary</h2>");
-        html.push_str(&format!(
-            "<div class='score'>Overall Score: {:.1}/100</div>",
-            report.summary.overall_score
-        ));
-        html.push_str("</section>");
+        html.push_str("<h2>Summary</h2>\n");
+        html.push_str(&format!("<p>Total Duration: {:.2}ms</p>\n", report.total_duration.as_secs_f64() * 1000.0));
+        html.push_str(&format!("<p>Peak Memory: {} bytes</p>\n", report.peak_memory));
         
-        // CPU Analysis
-        if let Some(cpu_analysis) = &report.cpu_analysis {
-            html.push_str("<section class='cpu-analysis'>");
-            html.push_str("<h2>CPU Analysis</h2>");
-            html.push_str(&format!(
-                "<p>Total Samples: {}</p>",
-                cpu_analysis.total_samples
-            ));
-            
-            html.push_str("<h3>Hot Functions</h3>");
-            html.push_str("<table><tr><th>Function</th><th>Percentage</th><th>Samples</th></tr>");
-            
-            for func in &cpu_analysis.hot_functions {
+        if self.config.include_performance {
+            html.push_str("<h2>Performance Breakdown</h2>\n");
+            html.push_str("<table>\n<tr><th>Phase</th><th>Duration</th><th>Memory</th><th>Iterations</th></tr>\n");
+            for (phase, metrics) in &report.performance_data {
                 html.push_str(&format!(
-                    "<tr><td>{}</td><td>{:.1}%</td><td>{}</td></tr>",
-                    func.name, func.percentage, func.sample_count
+                    "<tr><td>{:?}</td><td>{:.2}ms</td><td>{} bytes</td><td>{}</td></tr>\n",
+                    phase, metrics.duration.as_secs_f64() * 1000.0, metrics.memory_usage, metrics.iterations
                 ));
-            html.push_str("</table>");
-            html.push_str("</section>");
-        // Memory Analysis
-        if let Some(memory_analysis) = &report.memory_analysis {
-            html.push_str("<section class='memory-analysis'>");
-            html.push_str("<h2>Memory Analysis</h2>");
-            html.push_str(&format!(
-                "<p>Current Usage: {} bytes</p>",
-                memory_analysis.current_usage.allocated_bytes
-            ));
-            
-            if !memory_analysis.memory_leaks.is_empty() {
-                html.push_str("<h3>Memory Leaks</h3>");
-                html.push_str("<ul>");
-                for leak in &memory_analysis.memory_leaks {
-                    html.push_str(&format!(
-                        "<li>Address: 0x{:x}, Size: {} bytes, Age: {:?}</li>",
-                        leak.address, leak.size, leak.age
-                    ));
-                }
-                html.push_str("</ul>");
-            html.push_str("</section>");
-        html.push_str("</body></html>");
+            }
+            html.push_str("</table>\n");
+        }
         
-        Ok(html)
-    fn generate_markdown_report(&self, report: &PerformanceReport) -> crate::error::Result<()> {
-        let mut md = String::new();
+        html.push_str("</body></html>\n");
+        html
+    }
+
+    fn generate_markdown_report(&self, report: &ComprehensiveReport) -> String {
+        let mut md = String::from("# CURSED Profiling Report\n\n");
         
-        md.push_str(&format!("# Performance Report: {}\n\n", report.session_name));
-        
-        // Summary
         md.push_str("## Summary\n\n");
-        md.push_str(&format!("**Overall Score:** {:.1}/100\n\n", report.summary.overall_score));
+        md.push_str(&format!("- **Total Duration**: {:.2}ms\n", report.total_duration.as_secs_f64() * 1000.0));
+        md.push_str(&format!("- **Peak Memory**: {} bytes\n\n", report.peak_memory));
         
-        if !report.summary.key_issues.is_empty() {
-            md.push_str("### Key Issues\n\n");
-            for issue in &report.summary.key_issues {
-                md.push_str(&format!("- {}\n", issue));
+        if self.config.include_performance {
+            md.push_str("## Performance Breakdown\n\n");
+            md.push_str("| Phase | Duration | Memory | Iterations |\n");
+            md.push_str("|-------|----------|--------|------------|\n");
+            for (phase, metrics) in &report.performance_data {
+                md.push_str(&format!(
+                    "| {:?} | {:.2}ms | {} bytes | {} |\n",
+                    phase, metrics.duration.as_secs_f64() * 1000.0, metrics.memory_usage, metrics.iterations
+                ));
             }
-            md.push_str("\n");
-        if !report.summary.recommendations.is_empty() {
-            md.push_str("### Recommendations\n\n");
-            for rec in &report.summary.recommendations {
-                md.push_str(&format!("- {}\n", rec));
-            }
-            md.push_str("\n");
-        // CPU Analysis
-        if let Some(cpu_analysis) = &report.cpu_analysis {
-            md.push_str("## CPU Analysis\n\n");
-            md.push_str(&format!("- **Total Samples:** {}\n", cpu_analysis.total_samples));
-            md.push_str(&format!("- **Total Duration:** {:?}\n\n", cpu_analysis.total_duration));
-            
-            if !cpu_analysis.hot_functions.is_empty() {
-                md.push_str("### Hot Functions\n\n");
-                md.push_str("| Function | Percentage | Samples |\n");
-                md.push_str("|----------|------------|----------|\n");
-                
-                for func in &cpu_analysis.hot_functions {
-                    md.push_str(&format!(
-                        func.name, func.percentage, func.sample_count
-                    ));
-                }
-                md.push_str("\n");
-            }
+            md.push('\n');
         }
         
-        // Memory Analysis
-        if let Some(memory_analysis) = &report.memory_analysis {
-            md.push_str("## Memory Analysis\n\n");
-            md.push_str(&format!(
-                memory_analysis.current_usage.allocated_bytes
-            ));
-            md.push_str(&format!(
-                memory_analysis.current_usage.active_allocations
-            ));
-            
-            if !memory_analysis.memory_leaks.is_empty() {
-                md.push_str("### Memory Leaks\n\n");
-                for leak in &memory_analysis.memory_leaks {
-                    md.push_str(&format!(
-                        leak.address, leak.size, leak.age
-                    ));
-                }
-                md.push_str("\n");
-            }
-        }
-        
-        Ok(md)
+        md
     }
 }
 
-/// Report configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ReportConfig {
-impl Default for ReportConfig {
+impl Default for ReportConfiguration {
     fn default() -> Self {
         Self {
+            output_format: OutputFormat::Text,
+            include_memory: true,
+            include_performance: true,
+            include_gc_stats: true,
+            detailed_breakdown: false,
+            sort_by: SortCriteria::Duration,
         }
     }
-/// Complete performance report
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PerformanceReport {
-impl PerformanceReport {
-    pub fn new(session_name: String, config: ReportConfig) -> Self {
-        Self {
-        }
+}
+
+impl PartialEq for OutputFormat {
+    fn eq(&self, other: &Self) -> bool {
+        matches!(
+            (self, other),
+            (OutputFormat::Text, OutputFormat::Text) |
+            (OutputFormat::Json, OutputFormat::Json) |
+            (OutputFormat::Csv, OutputFormat::Csv) |
+            (OutputFormat::Html, OutputFormat::Html) |
+            (OutputFormat::Markdown, OutputFormat::Markdown)
+        )
     }
-/// Performance summary
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct PerformanceSummary {
-/// CPU analysis report section
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CpuAnalysisReport {
-/// Hot function information
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HotFunction {
-/// Call graph summary
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CallGraphSummary {
-/// Memory analysis report section
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MemoryAnalysisReport {
-/// GC performance analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GcPerformanceAnalysis {
-/// Concurrency analysis report section
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConcurrencyAnalysisReport {
-/// Benchmark report
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BenchmarkReport {
-/// Serializable wrapper for memory leak data
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializableMemoryLeak {
-    pub allocation_timestamp_millis: u64, // Instant converted to milliseconds since start
-impl From<&crate::profiling::memory::MemoryLeak> for SerializableMemoryLeak {
-    fn from(leak: &crate::profiling::memory::MemoryLeak) -> Self {
-        Self {
-        }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn test_report_generation() {
+        let generator = ReportGenerator::with_default_config();
+        let mut performance_data = HashMap::new();
+        
+        let metrics = PhaseMetrics {
+            start_time: std::time::Instant::now(),
+            duration: Duration::from_millis(100),
+            memory_usage: 1024,
+            iterations: 5,
+        };
+        performance_data.insert(CompilationPhase::Parsing, metrics);
+        
+        let summary = generator.generate_performance_summary(&performance_data);
+        assert!(summary.contains("Parsing"));
+        assert!(summary.contains("Performance Summary"));
     }
-/// Serializable wrapper for goroutine timeline data
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializableGoroutineTimeline {
-impl From<&crate::profiling::concurrency::GoroutineTimeline> for SerializableGoroutineTimeline {
-    fn from(timeline: &crate::profiling::concurrency::GoroutineTimeline) -> Self {
-        Self {
-        }
-    }
-/// Serializable wrapper for goroutine events
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializableGoroutineEvent {
-impl From<&crate::profiling::concurrency::GoroutineEvent> for SerializableGoroutineEvent {
-    fn from(event: &crate::profiling::concurrency::GoroutineEvent) -> Self {
-        Self {
-        }
-    }
-/// Serializable wrapper for state transitions
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializableStateTransition {
-impl From<&crate::profiling::concurrency::StateTransition> for SerializableStateTransition {
-    fn from(transition: &crate::profiling::concurrency::StateTransition) -> Self {
-        Self {
-        }
-    }
-/// Serializable wrapper for channel analysis
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializableChannelAnalysis {
-impl From<&crate::profiling::concurrency::ChannelAnalysis> for SerializableChannelAnalysis {
-    fn from(analysis: &crate::profiling::concurrency::ChannelAnalysis) -> Self {
-        Self {
-            channel_statistics: analysis.channel_statistics.iter()
-                .map(|(k, v)| (k.clone(), SerializableChannelStats::from(v)))
-        }
-    }
-/// Serializable wrapper for channel statistics
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializableChannelStats {
-impl From<&crate::profiling::concurrency::ChannelStats> for SerializableChannelStats {
-    fn from(stats: &crate::profiling::concurrency::ChannelStats) -> Self {
-        Self {
-        }
-    }
+}

@@ -1,453 +1,380 @@
-/// Optimization Configuration System
-/// 
-/// Provides comprehensive configuration for all optimization features including
-/// LLVM passes, parallel compilation, caching, and performance monitoring.
+//! Optimization configuration and level management
 
-use crate::error::{CursedError, Result};
-use crate::common_types::optimization_level::OptimizationLevel;
-
-use serde::{Deserialize, Serialize};
+use crate::error::CursedError;
 use std::collections::HashMap;
-use std::path::PathBuf;
-use std::fs;
-use toml;
 
-/// Main optimization configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct OptimizationConfig {
-    // General settings
-    
-    // Parallel compilation
-    
-    // Incremental compilation
-    pub cache_max_size: usize, // MB
-    
-    // LLVM optimization settings
-    
-    // Performance monitoring
-    
-    // Analysis and reporting
-    
-    // Custom optimization settings
-impl Default for OptimizationConfig {
-    fn default() -> Self {
-        let cpu_count = num_cpus::get();
-        
-        Self {
-            optimization_level: OptimizationLevel::O2, // Balanced default for better dev experience
-            parallel_workers: cpu_count.max(2), // Ensure at least 2 workers for parallel benefits
-            enable_parallel: cpu_count > 1, // Enable parallel only if beneficial
-            cache_max_size: 2048, // 2GB default for better caching
-        }
-    }
-// OptimizationLevel is imported at the top of the file
+    pub level: OptimizationLevel,
+    pub target_features: Vec<String>,
+    pub inline_threshold: u32,
+    pub unroll_threshold: u32,
+    pub vectorize: bool,
+    pub parallel_codegen: bool,
+    pub lto: bool,
+    pub debug_info: bool,
+    pub custom_passes: Vec<String>,
+    pub pass_manager_config: PassManagerConfig,
+}
 
-/// LLVM pass configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LlvmPassConfig {
-impl Default for LlvmPassConfig {
-    fn default() -> Self {
-        Self {
-            function_passes: vec![
-            module_passes: vec![
-            enable_numa_optimization: false, // Disabled by default as not all systems are NUMA
-        }
-    }
-impl LlvmPassConfig {
-    /// Enhanced default configuration with more aggressive optimizations
-    pub fn enhanced_default() -> Self {
-        Self {
-            function_passes: vec![
-                "sroa".to_string(),          // Scalar replacement of aggregates
-                "mem2reg".to_string(),       // Promote memory to register
-                "licm".to_string(),          // Loop invariant code motion
-                "indvars".to_string(),       // Canonicalize induction variables
-                "loop-unroll".to_string(),   // Loop unrolling
-                "early-cse".to_string(),     // Early common subexpression elimination
-            module_passes: vec![
-                "deadargelim".to_string(),   // Dead argument elimination
-                "function-attrs".to_string(), // Function attribute inference
-                "inline".to_string(),        // Function inlining
-                "argpromotion".to_string(),  // Argument promotion
-                "sccp".to_string(),          // Sparse conditional constant propagation
-            enable_link_time_optimization: false, // LTO can be expensive, disabled by default
-            enable_prefetch_insertion: false, // Conservative for enhanced default
-        }
-    }
-    
-    /// Lightweight configuration for debug builds
-    pub fn debug_friendly() -> Self {
-        Self {
-            function_passes: vec![
-            module_passes: vec![
-            enable_interprocedural_analysis: false, // Disabled for debug builds
-        }
-    }
-    
-    /// Aggressive configuration for release builds
-    pub fn aggressive_release() -> Self {
-        Self {
-            function_passes: vec![
-            module_passes: vec![
-            enable_prefetch_insertion: true, // Aggressive mode enables all optimizations
-            enable_numa_optimization: true, // Enable for aggressive release builds
-        }
-    }
-/// Predefined optimization profiles
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OptimizationProfile {
-impl OptimizationProfile {
-    pub fn to_config(&self) -> OptimizationConfig {
-        match self {
-        }
-    }
-    
-    fn development_config() -> OptimizationConfig {
-        OptimizationConfig {
-            llvm_passes: LlvmPassConfig {
-                ..Default::default()
-            ..Default::default()
-        }
-    }
-    
-    fn release_config() -> OptimizationConfig {
-        OptimizationConfig {
-            llvm_passes: LlvmPassConfig {
-                ..Default::default()
-            ..Default::default()
-        }
-    }
-    
-    fn debug_config() -> OptimizationConfig {
-        OptimizationConfig {
-            llvm_passes: LlvmPassConfig {
-                ..Default::default()
-            ..Default::default()
-        }
-    }
-    
-    fn size_config() -> OptimizationConfig {
-        OptimizationConfig {
-            llvm_passes: LlvmPassConfig {
-                ..Default::default()
-            ..Default::default()
-        }
-    }
-    
-    fn performance_config() -> OptimizationConfig {
-        OptimizationConfig {
-            llvm_passes: LlvmPassConfig {
-                ..Default::default()
-            ..Default::default()
-        }
-    }
+#[derive(Debug, Clone, PartialEq)]
+pub enum OptimizationLevel {
+    None,        // -O0: No optimizations
+    Less,        // -O1: Basic optimizations
+    Default,     // -O2: Standard optimizations
+    Aggressive,  // -O3: Aggressive optimizations
+    Size,        // -Os: Optimize for size
+    SizeZ,       // -Oz: Optimize aggressively for size
+    Custom(HashMap<String, bool>),  // Custom optimization settings
+}
+
+#[derive(Debug, Clone)]
+pub struct PassManagerConfig {
+    pub enable_function_passes: bool,
+    pub enable_module_passes: bool,
+    pub enable_loop_passes: bool,
+    pub enable_cgsc_passes: bool,
+    pub verification_level: VerificationLevel,
+    pub pass_timing: bool,
+}
+
+#[derive(Debug, Clone)]
+pub enum VerificationLevel {
+    None,
+    Basic,
+    Full,
+    Debug,
+}
+
 impl OptimizationConfig {
-    /// Load configuration from TOML file
-    pub fn from_file(path: &PathBuf) -> Result<Self> {
-        let content = fs::read_to_string(path)
-            .map_err(|e| CursedError::General(format!("Failed to read config file: {}", e)))?;
-        
-        let config: OptimizationConfig = toml::from_str(&content)
-            .map_err(|e| CursedError::General(format!("Failed to parse config file: {}", e)))?;
-        
-        Ok(config)
-    /// Save configuration to TOML file
-    pub fn to_file(&self, path: &PathBuf) -> Result<()> {
-        let content = toml::to_string_pretty(self)
-            .map_err(|e| CursedError::General(format!("Failed to serialize config: {}", e)))?;
-        
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| CursedError::General(format!("Failed to create config directory: {}", e)))?;
-        fs::write(path, content)
-            .map_err(|e| CursedError::General(format!("Failed to write config file: {}", e)))?;
-        
-        Ok(())
-    /// Create configuration from command line arguments
-    pub fn from_args(args: &OptimizationArgs) -> Result<Self> {
-        let mut config = if let Some(ref profile) = args.profile {
-            profile.to_config()
-        } else {
-            OptimizationConfig::default()
-        
-        // Override with command line arguments
-        if let Some(ref level) = args.optimization_level {
-            config.optimization_level = OptimizationLevel::from_str(level)?;
-        if let Some(workers) = args.parallel_workers {
-            config.parallel_workers = workers;
-        if let Some(parallel) = args.enable_parallel {
-            config.enable_parallel = parallel;
-        if let Some(incremental) = args.enable_incremental {
-            config.enable_incremental = incremental;
-        if let Some(ref cache_dir) = args.cache_directory {
-            config.cache_directory = Some(cache_dir.clone());
-        if let Some(profiling) = args.enable_profiling {
-            config.enable_profiling = profiling;
-        if let Some(verbose) = args.verbose {
-            config.verbose_optimization = verbose;
-        if let Some(ref target_cpu) = args.target_cpu {
-            config.target_cpu = Some(target_cpu.clone());
-        config.target_features.extend(args.target_features.clone());
-        
-        Ok(config)
-    /// Validate configuration
-    pub fn validate(&self) -> Result<()> {
-        if self.parallel_workers == 0 {
-            return Err(CursedError::General("Parallel workers must be greater than 0".to_string()));
-        if self.cache_max_size < 10 {
-            return Err(CursedError::General("Cache max size must be at least 10 MB".to_string()));
-        if self.benchmark_iterations == 0 {
-            return Err(CursedError::General("Benchmark iterations must be greater than 0".to_string()));
-        // Validate cache directory if specified
-        if let Some(ref cache_dir) = self.cache_directory {
-            if let Some(parent) = cache_dir.parent() {
-                if !parent.exists() {
-                    return Err(CursedError::General(format!(
-                        parent.display()
-                    )));
-                }
-            }
-        Ok(())
-    /// Get effective number of workers
-    pub fn effective_workers(&self) -> usize {
-        if self.enable_parallel {
-            self.parallel_workers.max(1)
-        } else {
-            1
+    pub fn new(level: OptimizationLevel) -> Self {
+        Self {
+            level,
+            target_features: Vec::new(),
+            inline_threshold: 225,
+            unroll_threshold: 150,
+            vectorize: true,
+            parallel_codegen: true,
+            lto: false,
+            debug_info: false,
+            custom_passes: Vec::new(),
+            pass_manager_config: PassManagerConfig::default(),
         }
     }
-    
-    /// Check if optimization is enabled
-    pub fn is_optimized(&self) -> bool {
-        !matches!(self.optimization_level, OptimizationLevel::O0)
-    /// Get cache directory with fallback
-    pub fn cache_dir(&self) -> PathBuf {
-        self.cache_directory.clone()
-            .unwrap_or_else(|| PathBuf::from(".cursed_cache"))
-    /// Get profile output directory with fallback
-    pub fn profile_dir(&self) -> PathBuf {
-        self.profile_output_dir.clone()
-            .unwrap_or_else(|| PathBuf::from(".cursed_profiles"))
-    /// Get report output directory with fallback
-    pub fn report_dir(&self) -> PathBuf {
-        self.report_output_dir.clone()
-            .unwrap_or_else(|| PathBuf::from(".cursed_reports"))
-    /// Detect target CPU for optimizations
-    fn detect_target_cpu() -> Option<String> {
-        // Try to detect the native CPU for better optimization
-        if let Ok(cpu_info) = std::env::var("CURSED_TARGET_CPU") {
-            Some(cpu_info)
-        } else {
-            // Use native detection on supported platforms
-            #[cfg(target_arch = "x86_64")]
-            {
-                Some("x86-64".to_string())
-            }
-            #[cfg(target_arch = "aarch64")]
-            {
-                Some("generic".to_string())
-            }
-            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-            {
-                None
+
+    pub fn debug() -> Self {
+        Self {
+            level: OptimizationLevel::None,
+            target_features: Vec::new(),
+            inline_threshold: 0,
+            unroll_threshold: 0,
+            vectorize: false,
+            parallel_codegen: false,
+            lto: false,
+            debug_info: true,
+            custom_passes: Vec::new(),
+            pass_manager_config: PassManagerConfig::debug(),
+        }
+    }
+
+    pub fn release() -> Self {
+        Self {
+            level: OptimizationLevel::Aggressive,
+            target_features: vec!["sse2".to_string(), "sse3".to_string()],
+            inline_threshold: 275,
+            unroll_threshold: 200,
+            vectorize: true,
+            parallel_codegen: true,
+            lto: true,
+            debug_info: false,
+            custom_passes: vec![
+                "mem2reg".to_string(),
+                "instcombine".to_string(),
+                "reassociate".to_string(),
+                "gvn".to_string(),
+                "simplifycfg".to_string(),
+            ],
+            pass_manager_config: PassManagerConfig::release(),
+        }
+    }
+
+    pub fn size_optimized() -> Self {
+        Self {
+            level: OptimizationLevel::Size,
+            target_features: Vec::new(),
+            inline_threshold: 75,
+            unroll_threshold: 50,
+            vectorize: false,
+            parallel_codegen: false,
+            lto: true,
+            debug_info: false,
+            custom_passes: vec![
+                "mem2reg".to_string(),
+                "simplifycfg".to_string(),
+                "deadargelim".to_string(),
+            ],
+            pass_manager_config: PassManagerConfig::default(),
+        }
+    }
+
+    pub fn add_target_feature(&mut self, feature: String) {
+        if !self.target_features.contains(&feature) {
+            self.target_features.push(feature);
+        }
+    }
+
+    pub fn add_custom_pass(&mut self, pass_name: String) {
+        if !self.custom_passes.contains(&pass_name) {
+            self.custom_passes.push(pass_name);
+        }
+    }
+
+    pub fn set_inline_threshold(&mut self, threshold: u32) {
+        self.inline_threshold = threshold;
+    }
+
+    pub fn set_unroll_threshold(&mut self, threshold: u32) {
+        self.unroll_threshold = threshold;
+    }
+
+    pub fn enable_lto(&mut self) {
+        self.lto = true;
+    }
+
+    pub fn disable_lto(&mut self) {
+        self.lto = false;
+    }
+
+    pub fn enable_debug_info(&mut self) {
+        self.debug_info = true;
+    }
+
+    pub fn disable_debug_info(&mut self) {
+        self.debug_info = false;
+    }
+
+    pub fn get_optimization_flags(&self) -> Vec<String> {
+        let mut flags = Vec::new();
+
+        match self.level {
+            OptimizationLevel::None => flags.push("-O0".to_string()),
+            OptimizationLevel::Less => flags.push("-O1".to_string()),
+            OptimizationLevel::Default => flags.push("-O2".to_string()),
+            OptimizationLevel::Aggressive => flags.push("-O3".to_string()),
+            OptimizationLevel::Size => flags.push("-Os".to_string()),
+            OptimizationLevel::SizeZ => flags.push("-Oz".to_string()),
+            OptimizationLevel::Custom(_) => flags.push("-O2".to_string()), // Default fallback
+        }
+
+        if self.lto {
+            flags.push("-flto".to_string());
+        }
+
+        if self.debug_info {
+            flags.push("-g".to_string());
+        }
+
+        if self.vectorize {
+            flags.push("-vectorize-loops".to_string());
+            flags.push("-vectorize-slp".to_string());
+        }
+
+        for feature in &self.target_features {
+            flags.push(format!("-mattr=+{}", feature));
+        }
+
+        flags
+    }
+
+    pub fn should_inline(&self, function_size: u32) -> bool {
+        match self.level {
+            OptimizationLevel::None => false,
+            OptimizationLevel::Size | OptimizationLevel::SizeZ => function_size <= (self.inline_threshold / 3),
+            _ => function_size <= self.inline_threshold,
+        }
+    }
+
+    pub fn should_unroll(&self, loop_size: u32) -> bool {
+        match self.level {
+            OptimizationLevel::None => false,
+            OptimizationLevel::Size | OptimizationLevel::SizeZ => false,
+            _ => loop_size <= self.unroll_threshold,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), CursedError> {
+        if self.inline_threshold > 10000 {
+            return Err(CursedError::runtime_error("Inline threshold too high (max 10000)"));
+        }
+
+        if self.unroll_threshold > 1000 {
+            return Err(CursedError::runtime_error("Unroll threshold too high (max 1000)"));
+        }
+
+        // Validate target features
+        for feature in &self.target_features {
+            if feature.is_empty() {
+                return Err(CursedError::runtime_error("Empty target feature not allowed"));
             }
         }
-    /// Detect target features for optimizations
-    fn detect_target_features() -> Vec<String> {
-        let mut features = Vec::new();
-        
-        // Check environment variable first
-        if let Ok(features_str) = std::env::var("CURSED_TARGET_FEATURES") {
-            return features_str.split(',').map(|s| s.trim().to_string()).collect();
-        // Detect common features based on architecture
-        #[cfg(target_arch = "x86_64")]
-        {
-            features.extend_from_slice(&[
-            ]);
-            
-            // Check for additional features based on CPUID (simplified)
-            if std::env::var("CURSED_ENABLE_AVX").is_ok() {
-                features.push("avx".to_string());
-                features.push("avx2".to_string());
+
+        // Validate custom passes
+        for pass in &self.custom_passes {
+            if pass.is_empty() {
+                return Err(CursedError::runtime_error("Empty pass name not allowed"));
             }
         }
-        
-        #[cfg(target_arch = "aarch64")]
-        {
-            features.extend_from_slice(&[
-            ]);
-        features
-    /// Create optimized configuration for the current environment
-    pub fn for_environment() -> Self {
-        let mut config = Self::default();
-        
-        // Adjust based on available resources
-        let cpu_count = num_cpus::get();
-        config.parallel_workers = match cpu_count {
-            5..=8 => cpu_count - 1, // Leave one core for OS
-            _ => cpu_count / 2,     // Don't overwhelm on high-core systems
-        
-        // Adjust cache size based on available memory (simplified)
-        if let Ok(memory_info) = std::env::var("CURSED_MEMORY_HINT") {
-            if let Ok(memory_gb) = memory_info.parse::<usize>() {
-                config.cache_max_size = match memory_gb {
-                    0..=4 => 512,   // 512MB cache for low memory
-                    5..=8 => 1024,  // 1GB cache for medium memory
-                    9..=16 => 2048, // 2GB cache for high memory
-                    _ => 4096,      // 4GB cache for very high memory
-            }
-        }
-        
-        // Enable LTO only for release builds with sufficient resources
-        if cpu_count >= 4 && !config.debug_mode {
-            config.llvm_passes.enable_link_time_optimization = true;
-        config
-    /// Create configuration optimized for fast development cycles
-    pub fn for_development() -> Self {
-        let mut config = OptimizationProfile::Development.to_config();
-        
-        // Use enhanced LLVM passes but keep them lightweight
-        config.llvm_passes = LlvmPassConfig::debug_friendly();
-        
-        // Optimize for fast incremental builds
-        config.enable_incremental = true;
-        config.dependency_tracking = true;
-        config.enable_parallel = true;
-        config.parallel_workers = num_cpus::get().min(4); // Cap workers for development
-        
-        // Smaller cache for faster iteration
-        config.cache_max_size = 512;
-        
-        config
-    /// Create configuration optimized for production builds
-    pub fn for_production() -> Self {
-        let mut config = OptimizationProfile::Performance.to_config();
-        
-        // Use aggressive LLVM passes for maximum performance
-        config.llvm_passes = LlvmPassConfig::aggressive_release();
-        
-        // Enable all optimizations
-        config.enable_parallel = true;
-        config.parallel_workers = num_cpus::get();
-        config.enable_incremental = true; // Still beneficial for large projects
-        config.profile_guided = true;
-        
-        // Large cache for complex optimizations
-        config.cache_max_size = 4096;
-        
-        // Enable comprehensive profiling and reporting
-        config.enable_profiling = true;
-        config.generate_reports = true;
-        config.benchmark_iterations = 5;
-        
-        config
+
+        Ok(())
     }
 }
 
-/// Command line arguments for optimization
-#[derive(Debug, Clone)]
-pub struct OptimizationArgs {
-impl Default for OptimizationArgs {
-    fn default() -> Self {
+impl PassManagerConfig {
+    pub fn new() -> Self {
         Self {
+            enable_function_passes: true,
+            enable_module_passes: true,
+            enable_loop_passes: true,
+            enable_cgsc_passes: true,
+            verification_level: VerificationLevel::Basic,
+            pass_timing: false,
         }
     }
 
-/// Parallel compilation configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ParallelCompilationConfig {
-/// Incremental compilation configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IncrementalCompilationConfig {
-/// Link-time optimization configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LtoConfig {
-/// Debug information configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DebugInfoConfig {
-/// Caching configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CachingConfig {
-/// Runtime optimization configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RuntimeOptimizationConfig {
-/// JIT optimization configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JitOptimizationConfig {
-/// Profile-guided optimization configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PgoConfig {
-/// Load balancing strategy
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum LoadBalancingStrategy {
-/// Dependency granularity level
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum DependencyGranularity {
-/// Change detection strategy
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum ChangeDetectionStrategy {
-/// Cache invalidation strategy
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum CacheInvalidationStrategy {
-/// LTO mode
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum LtoMode {
-/// Debug info level
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum DebugInfoLevel {
-/// Cache eviction strategy
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum CacheEvictionStrategy {
-/// Instrumentation mode for PGO
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum InstrumentationMode {
-/// Collection mode for PGO
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum CollectionMode {
-impl Default for BuildOptimizationConfig {
-    fn default() -> Self {
+    pub fn debug() -> Self {
         Self {
+            enable_function_passes: true,
+            enable_module_passes: true,
+            enable_loop_passes: false,
+            enable_cgsc_passes: false,
+            verification_level: VerificationLevel::Full,
+            pass_timing: true,
         }
     }
-impl Default for ParallelCompilationConfig {
-    fn default() -> Self {
+
+    pub fn release() -> Self {
         Self {
+            enable_function_passes: true,
+            enable_module_passes: true,
+            enable_loop_passes: true,
+            enable_cgsc_passes: true,
+            verification_level: VerificationLevel::Basic,
+            pass_timing: false,
         }
     }
-impl Default for IncrementalCompilationConfig {
-    fn default() -> Self {
+
+    pub fn minimal() -> Self {
         Self {
+            enable_function_passes: true,
+            enable_module_passes: false,
+            enable_loop_passes: false,
+            enable_cgsc_passes: false,
+            verification_level: VerificationLevel::None,
+            pass_timing: false,
         }
     }
-impl Default for LtoConfig {
+}
+
+impl Default for PassManagerConfig {
     fn default() -> Self {
-        Self {
+        Self::new()
+    }
+}
+
+impl Default for OptimizationConfig {
+    fn default() -> Self {
+        Self::new(OptimizationLevel::Default)
+    }
+}
+
+impl From<u8> for OptimizationLevel {
+    fn from(level: u8) -> Self {
+        match level {
+            0 => OptimizationLevel::None,
+            1 => OptimizationLevel::Less,
+            2 => OptimizationLevel::Default,
+            3 => OptimizationLevel::Aggressive,
+            _ => OptimizationLevel::Default,
         }
     }
-impl Default for DebugInfoConfig {
-    fn default() -> Self {
-        Self {
+}
+
+impl OptimizationConfig {
+    /// Convert to LLVM optimization config
+    pub fn to_llvm_config(&self) -> crate::codegen::llvm::optimization::OptimizationConfig {
+        let level = match self.level {
+            OptimizationLevel::None => 0,
+            OptimizationLevel::Less => 1,
+            OptimizationLevel::Default => 2,
+            OptimizationLevel::Aggressive => 3,
+            OptimizationLevel::Size => 2,
+            OptimizationLevel::SizeZ => 2,
+            OptimizationLevel::Custom(_) => 2,
+        };
+
+        crate::codegen::llvm::optimization::OptimizationConfig {
+            level,
+            enable_inlining: self.inline_threshold > 0,
+            enable_vectorization: self.vectorize,
         }
     }
-impl Default for CachingConfig {
-    fn default() -> Self {
-        Self {
-            max_cache_size: 1024, // 1GB
+}
+
+impl From<&str> for OptimizationLevel {
+    fn from(level: &str) -> Self {
+        match level.to_lowercase().as_str() {
+            "none" | "0" | "o0" => OptimizationLevel::None,
+            "less" | "1" | "o1" => OptimizationLevel::Less,
+            "default" | "2" | "o2" => OptimizationLevel::Default,
+            "aggressive" | "3" | "o3" => OptimizationLevel::Aggressive,
+            "size" | "s" | "os" => OptimizationLevel::Size,
+            "sizez" | "z" | "oz" => OptimizationLevel::SizeZ,
+            _ => OptimizationLevel::Default,
         }
     }
-impl Default for RuntimeOptimizationConfig {
-    fn default() -> Self {
-        Self {
-        }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_optimization_config_creation() {
+        let config = OptimizationConfig::debug();
+        assert_eq!(config.level, OptimizationLevel::None);
+        assert!(config.debug_info);
+        assert!(!config.lto);
+
+        let config = OptimizationConfig::release();
+        assert_eq!(config.level, OptimizationLevel::Aggressive);
+        assert!(!config.debug_info);
+        assert!(config.lto);
     }
-impl Default for JitOptimizationConfig {
-    fn default() -> Self {
-        Self {
-        }
+
+    #[test]
+    fn test_optimization_level_conversion() {
+        assert_eq!(OptimizationLevel::from(0u8), OptimizationLevel::None);
+        assert_eq!(OptimizationLevel::from(3u8), OptimizationLevel::Aggressive);
+        assert_eq!(OptimizationLevel::from("O2"), OptimizationLevel::Default);
+        assert_eq!(OptimizationLevel::from("size"), OptimizationLevel::Size);
     }
-impl Default for PgoConfig {
-    fn default() -> Self {
-        Self {
-        }
+
+    #[test]
+    fn test_should_inline() {
+        let config = OptimizationConfig::debug();
+        assert!(!config.should_inline(100));
+
+        let config = OptimizationConfig::release();
+        assert!(config.should_inline(100));
+        assert!(!config.should_inline(1000));
+    }
+
+    #[test]
+    fn test_config_validation() {
+        let mut config = OptimizationConfig::default();
+        assert!(config.validate().is_ok());
+
+        config.inline_threshold = 20000;
+        assert!(config.validate().is_err());
     }
 }
