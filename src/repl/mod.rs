@@ -7,5 +7,5 @@ pub mod types;
 pub use cursed_repl::CursedRepl;
 pub use session_manager::SessionManager;
 pub use types::{
-    BuildIntegration, ReplEvaluator
-// };
+    BuildIntegration, ReplEvaluator, BasicReplEvaluator, BasicBuildIntegration, ReplValue
+};

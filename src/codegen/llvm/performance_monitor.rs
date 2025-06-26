@@ -1,46 +1,102 @@
-/// Performance monitoring for LLVM code generation
-/// 
-/// This module provides performance monitoring capabilities for the LLVM backend.
+//! Performance monitoring for LLVM compilation
 
-use std::collections::HashMap;
+use crate::error_types::Result;
 use std::time::{Duration, Instant};
 
-/// Performance metrics for LLVM compilation
 #[derive(Debug, Clone)]
-pub struct PerformanceMetrics {
-/// Performance monitor for LLVM operations
-pub struct PerformanceMonitor {
-impl PerformanceMonitor {
-    /// Create a new performance monitor
-    pub fn new() -> Self {
+pub struct MonitoringConfig {
+    pub enable_timing: bool,
+    pub enable_memory_tracking: bool,
+    pub enable_metrics: bool,
+}
+
+impl Default for MonitoringConfig {
+    fn default() -> Self {
         Self {
+            enable_timing: true,
+            enable_memory_tracking: true,
+            enable_metrics: true,
         }
-    }
-    
-    /// Start monitoring a compilation phase
-    pub fn start_phase(&mut self, phase_name: &str) {
-        self.start_time = Some(Instant::now());
-    /// End monitoring and record metrics
-    pub fn end_phase(&mut self, phase_name: &str, code_size: usize, memory_usage: usize) {
-        if let Some(start) = self.start_time.take() {
-            let elapsed = start.elapsed();
-            let metrics = PerformanceMetrics {
-                optimization_time: Duration::from_millis(0), // TODO: track separately
-            self.metrics.insert(phase_name.to_string(), metrics);
-        }
-    }
-    
-    /// Get metrics for a specific phase
-    pub fn get_metrics(&self, phase_name: &str) -> Option<&PerformanceMetrics> {
-        self.metrics.get(phase_name)
-    /// Get all recorded metrics
-    pub fn get_all_metrics(&self) -> &HashMap<String, PerformanceMetrics> {
-        &self.metrics
     }
 }
 
-impl Default for PerformanceMonitor {
+#[derive(Debug, Clone)]
+pub struct CodeMetrics {
+    pub lines_of_code: usize,
+    pub functions: usize,
+    pub complexity: f64,
+}
+
+impl Default for CodeMetrics {
     fn default() -> Self {
-        Self::new()
+        Self {
+            lines_of_code: 0,
+            functions: 0,
+            complexity: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BaselineMetrics {
+    pub compilation_time: Duration,
+    pub memory_usage: usize,
+    pub code_size: usize,
+}
+
+impl Default for BaselineMetrics {
+    fn default() -> Self {
+        Self {
+            compilation_time: Duration::from_secs(0),
+            memory_usage: 0,
+            code_size: 0,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct PerformanceReport {
+    pub metrics: CodeMetrics,
+    pub baseline: BaselineMetrics,
+    pub improvements: Vec<String>,
+}
+
+impl PerformanceReport {
+    pub fn new(metrics: CodeMetrics, baseline: BaselineMetrics) -> Self {
+        Self {
+            metrics,
+            baseline,
+            improvements: Vec::new(),
+        }
+    }
+}
+
+pub struct PerformanceMonitor {
+    config: MonitoringConfig,
+    start_time: Option<Instant>,
+}
+
+impl PerformanceMonitor {
+    pub fn new(config: MonitoringConfig) -> Self {
+        Self {
+            config,
+            start_time: None,
+        }
+    }
+
+    pub fn start_monitoring(&mut self) {
+        if self.config.enable_timing {
+            self.start_time = Some(Instant::now());
+        }
+    }
+
+    pub fn stop_monitoring(&mut self) -> Result<PerformanceReport> {
+        let metrics = CodeMetrics::default();
+        let baseline = BaselineMetrics::default();
+        Ok(PerformanceReport::new(metrics, baseline))
+    }
+
+    pub fn collect_metrics(&self) -> CodeMetrics {
+        CodeMetrics::default()
     }
 }

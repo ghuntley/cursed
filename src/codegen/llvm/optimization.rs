@@ -1,68 +1,59 @@
-// LLVM optimization module for CURSED codegen
-use std::collections::HashMap;
-use crate::error::CursedError;
+//! LLVM Optimization module
 
-pub use crate::common_types::optimization_level::OptimizationLevel;
+use crate::error_types::Result;
 
-/// LLVM optimization configuration
+/// Optimization preset configurations
+#[derive(Debug, Clone, Copy)]
+pub enum OptimizationPreset {
+    /// Development mode - fast compilation, minimal optimization
+    Development,
+    /// Balanced mode - good performance with reasonable compile times
+    Balanced,
+    /// Release mode - maximum optimization for production
+    Release,
+}
+
 #[derive(Debug, Clone)]
 pub struct OptimizationConfig {
+    pub level: u8,
+    pub enable_inlining: bool,
+    pub enable_vectorization: bool,
+}
+
 impl Default for OptimizationConfig {
     fn default() -> Self {
         Self {
+            level: 2,
+            enable_inlining: true,
+            enable_vectorization: true,
         }
     }
-/// Optimization statistics
-#[derive(Debug, Default)]
-pub struct OptimizationStats {
-/// Basic optimization manager
-#[derive(Debug)]
+}
+
 pub struct OptimizationManager {
+    config: OptimizationConfig,
+}
+
 impl OptimizationManager {
-    pub fn new(config: OptimizationConfig) -> Self {
-        Self {
-        }
-    }
-/// LLVM optimizer interface
-#[derive(Debug)]
-pub struct LlvmOptimizer {
-impl LlvmOptimizer {
     pub fn new(config: OptimizationConfig) -> Self {
         Self { config }
     }
-    
-    pub fn optimize(&mut self, _module: &inkwell::module::Module) -> Result<(), OptimizationError> {
-        // Stub implementation
+
+    pub fn optimize(&self) -> Result<()> {
         Ok(())
     }
 }
 
-impl Default for LlvmOptimizer {
-    fn default() -> Self {
-        Self::new(OptimizationConfig::default())
-    }
+pub struct LlvmOptimizer {
+    config: OptimizationConfig,
 }
 
-/// Optimization error type
-#[derive(Debug)]
-pub struct OptimizationError {
-// impl std::fmt::Display for OptimizationError {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "Optimization error: {}", self.message)
-//     }
-// }
+impl LlvmOptimizer {
+    pub fn new(config: OptimizationConfig) -> Self {
+        Self { config }
+    }
 
-// impl std::error::CursedError for OptimizationError {}
-// 
-/// Optimization utility functions
-pub mod utils {
-    use super::*;
-    
-    pub fn get_default_passes(_level: OptimizationLevel) -> Vec<String> {
-        vec![
-        ]
-    pub fn estimate_optimization_benefit(_module: &inkwell::module::Module) -> f64 {
-        // Stub implementation
-        1.2
+    pub fn run_passes(&self) -> Result<()> {
+        Ok(())
     }
 }

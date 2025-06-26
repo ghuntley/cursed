@@ -45,6 +45,7 @@ chrono = { version = "0.4", features = ["serde"] }  # Date/time handling
 async-trait = "0.1" # Async traits for output generators
 open = "5.0"        # Opening files/URLs in system applications
 regex = "1.10"      # Regular expressions for documentation quality checks
+once_cell = "1.19"  # For lazy static initialization
 
 # Basic cryptography dependencies
 getrandom = "0.2"  # Secure random number generation
@@ -186,7 +187,7 @@ urlencoding = "2.1"  # URL encoding/decoding
 # Terminal support
 # atty = "0.2"    # TTY detection - duplicate removed
 walkdir = "2.4"  # Recursive directory traversal
-once_cell = "1.17"  # Lazy static initialization
+
 lazy_static = "1.4"  # Lazy static initialization support
 
 # Testing framework dependencies

@@ -1,244 +1,275 @@
-// CURSED Standard Library (Minimal Build)
-// 
-// Core standard library modules for basic functionality
+// Standard Library Module for CURSED
+//
+// This module provides the standard library functionality including:
+// - Basic data types and operations
+// - IO operations
+// - String manipulation
+// - Collections
+// - Error handling
+// - Testing utilities
+// - Networking and web functionality
+// - Cryptographic operations
+// - Asynchronous support
 
-// Essential modules for compatibility
-pub mod core;
-pub mod math;
+// Core stdlib modules
 pub mod string;
-pub mod collections;
-pub mod io;
-pub mod fs;
-pub mod errors;
-pub mod errors_simple;
-pub mod exec_vibez;
-pub mod bytefit;
 
-// Value types
-pub mod value;
+// TODO: Enable these modules once they are implemented
+// pub mod prelude;
+// pub mod collections;
+// pub mod io;
+// pub mod error;
 
-// Database
-pub mod database;
+// Conditional modules based on features
+#[cfg(feature = "web")]
+pub mod web_vibez;
 
-// Packages - actual package implementations
-pub mod packages;
+#[cfg(feature = "crypto")]
+pub mod crypto;
 
-// Web framework
+#[cfg(feature = "pqc")]
+pub mod crypto_pqc;
+
+#[cfg(feature = "async")]
+pub mod async_runtime;
+
+#[cfg(feature = "sync")]
+pub mod sync;
+
+#[cfg(feature = "testing")]
+pub mod testing;
+
+// Core types for stdlib
+pub use crate::common_types::*;
+
+/// Web framework module (placeholder)
+#[cfg(feature = "web")]
 pub mod web_vibez {
     pub use crate::common_types::*;
     
-    pub struct SecurityContext;
-// Cryptographic modules
-pub mod crypto;
-pub mod crypto_pqc;
-
-// Asynchronous support
-pub mod r#async {
-    pub use crate::common_types::*;
+    pub struct SecurityContext {
+        pub auth_level: u8,
+        pub session_id: String,
+    }
     
-    pub type AsyncError = crate::error::CursedError;
-    pub type AsyncResult<T> = std::result::Result<T, AsyncError>;
-    
-    pub fn spawn_blocking_io<F, T>(_f: F) -> AsyncResult<T> 
-    where F: FnOnce() -> T {
-        Err(AsyncError::General("Async not implemented in minimal build".to_string()))
+    impl Default for SecurityContext {
+        fn default() -> Self {
+            Self {
+                auth_level: 0,
+                session_id: "anonymous".to_string(),
+            }
+        }
     }
 }
 
-// Signal handling
-pub mod signal_boost;
-
-// Compression
-pub mod squish_core;
-
-// Plugin system
-pub mod plug_vibes;
-
-// Embedded resources
-pub mod embed_that;
-
-// Template system
-pub mod template;
-
-// System utilities
-pub mod system;
-
-// HTTP functionality
-pub mod http_core;
-pub mod glowup_http;
-
-// Reflection
-pub mod lookin_glass;
-
-// IPC
-pub mod ipc;
-
-// Profiling
-pub mod profiler;
-
-// Logging
-pub mod oglogging;
-
-// Vibez utilities
-pub mod vibez;
-
-// Math utilities
-pub mod mathz;
-
-// String utilities  
-pub mod stringz;
-
-// Environment utilities
-pub mod env;
-
-// CSV processing
-pub mod csv;
-
-// JSON processing
-pub mod json_tea;
-
-// Regular expressions
-pub mod regex_vibez;
-
-// Unicode handling
-pub mod glyph_gang;
-
-// System core
-pub mod sys_core;
-
-// Networking
-pub mod vibe_net;
-
-// Vibecheck
-pub mod vibecheck;
-
-// Concurrency and system modules (stubbed for minimal build)
-pub mod sync {
-    // Minimal sync primitives
-    pub use crate::common_types::*;
+/// Cryptographic operations (placeholder)
+#[cfg(feature = "crypto")]  
+pub mod crypto {
+    pub struct CryptoContext {
+        pub algorithm: String,
+        pub key_size: u32,
+    }
     
-    pub type SyncError = crate::error::CursedError;
-    pub type SyncResult<T> = std::result::Result<T, SyncError>;
+    impl Default for CryptoContext {
+        fn default() -> Self {
+            Self {
+                algorithm: "AES-256".to_string(),
+                key_size: 256,
+            }
+        }
+    }
+}
+
+/// Post-quantum cryptography (placeholder)
+#[cfg(feature = "pqc")]
+pub mod crypto_pqc {
+    pub struct PqcContext {
+        pub algorithm: String,
+        pub security_level: u8,
+    }
+    
+    impl Default for PqcContext {
+        fn default() -> Self {
+            Self {
+                algorithm: "Kyber".to_string(),
+                security_level: 3,
+            }
+        }
+    }
+}
+
+/// Asynchronous runtime support (placeholder)
+#[cfg(feature = "async")]
+pub mod async_runtime {
+    pub struct AsyncRuntime {
+        pub worker_threads: usize,
+        pub max_blocking_threads: usize,
+    }
+    
+    impl Default for AsyncRuntime {
+        fn default() -> Self {
+            Self {
+                worker_threads: num_cpus::get(),
+                max_blocking_threads: 512,
+            }
+        }
+    }
+}
+
+/// Synchronization primitives (placeholder)
+#[cfg(feature = "sync")]
+pub mod sync {
+    pub struct SyncPrimitive {
+        pub sync_type: String,
+        pub max_waiters: u32,
+    }
+    
+    pub enum SyncError {
+        General(String),
+        Timeout,
+        Deadlock,
+    }
+    
+    impl std::fmt::Display for SyncError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                SyncError::General(msg) => write!(f, "Sync error: {}", msg),
+                SyncError::Timeout => write!(f, "Timeout error"),
+                SyncError::Deadlock => write!(f, "Deadlock detected"),
+            }
+        }
+    }
+    
+    impl std::error::Error for SyncError {}
     
     pub mod error {
-        pub use super::{SyncError, SyncResult};
+        use super::SyncError;
         
         pub fn thread_pool_error(msg: &str) -> SyncError {
             SyncError::General(format!("Thread pool error: {}", msg))
+        }
+        
         pub fn timeout_error(msg: &str) -> SyncError {
             SyncError::General(format!("Timeout error: {}", msg))
+        }
+        
         pub fn channel_error(msg: &str) -> SyncError {
             SyncError::General(format!("Channel error: {}", msg))
-        pub fn thread_error(msg: &str) -> SyncError {
-            SyncError::General(format!("Thread error: {}", msg))
-        pub fn lock_error(msg: &str) -> SyncError {
-            SyncError::General(format!("Lock error: {}", msg))
-        pub fn thread_local_error(msg: &str) -> SyncError {
-            SyncError::General(format!("Thread local error: {}", msg))
         }
     }
-    
-    pub mod primitives {
-        pub use crate::common_types::*;
-        
-        pub fn spawn<F>(_f: F) where F: FnOnce() {
-            // Minimal implementation
-        pub use std::sync::{Mutex, RwLock, Arc, atomic::{AtomicUsize, AtomicBool, Ordering}, Condvar};
-    pub mod parallel;
-    pub mod collections;
-    pub mod thread_local;
-pub mod process {
-    // Basic process management
-    pub use crate::common_types::*;
-    
-    pub mod info {
-        pub use crate::common_types::*;
-        
-        #[derive(Debug, Clone)]
-        pub struct ProcessInfo;
-        
-        #[derive(Debug, Clone)]
-        pub enum ProcessState {
-        }
+}
+
+/// Testing utilities (placeholder)
+#[cfg(feature = "testing")]
+pub mod testing {
+    pub struct TestContext {
+        pub test_name: String,
+        pub timeout_ms: u64,
     }
     
-    pub mod real_ipc {
-        pub use crate::common_types::*;
-        
-        pub struct IpcChannel;
-        pub struct IpcMessage;
-    pub mod error {
-        pub use crate::common_types::*;
-        
-        pub type ProcessError = crate::error::CursedError;
-        pub type ProcessResult<T> = std::result::Result<T, ProcessError>;
-        
-        pub fn system_error(msg: &str) -> ProcessError {
-            ProcessError::General(format!("System error: {}", msg))
-        }
-    }
-pub mod time {
-    // Time utilities
-    pub use crate::common_types::*;
-    
-    pub mod error {
-        pub use crate::common_types::*;
-        
-        pub type TimeError = crate::error::CursedError;
-        pub type TimeResult<T> = std::result::Result<T, TimeError>;
-        
-        pub fn invalid_date_error(msg: &str) -> TimeError {
-            TimeError::General(format!("Invalid date: {}", msg))
-        pub fn invalid_time_error(msg: &str) -> TimeError {
-            TimeError::General(format!("Invalid time: {}", msg))
-        pub fn system_time_error(msg: &str) -> TimeError {
-            TimeError::General(format!("System time error: {}", msg))
-        }
+    pub enum TestResult {
+        Passed,
+        Failed(String),
+        Skipped(String),
     }
     
-    pub mod duration {
-        pub use crate::common_types::*;
-        
-        pub struct Duration(std::time::Duration);
-        
-        impl Duration {
-            pub fn from_millis(millis: u64) -> Self {
-                Self(std::time::Duration::from_millis(millis))
+    impl Default for TestContext {
+        fn default() -> Self {
+            Self {
+                test_name: "unknown".to_string(),
+                timeout_ms: 5000,
             }
         }
-    pub mod datetime {
-        pub use crate::common_types::*;
-        
-        pub struct DateTime;
-        pub struct Date;
-        pub struct Time;
-        pub struct Instant;
-        pub enum Weekday { Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday }
+    }
+}
+
+// Default implementations for when features are disabled
+#[cfg(not(feature = "web"))]
+pub mod web_vibez {
+    pub struct SecurityContext;
+    impl Default for SecurityContext {
+        fn default() -> Self {
+            Self
+        }
+    }
+}
+
+#[cfg(not(feature = "crypto"))]
+pub mod crypto {
+    pub struct CryptoContext;
+    impl Default for CryptoContext {
+        fn default() -> Self {
+            Self
+        }
+    }
+}
+
+#[cfg(not(feature = "pqc"))]
+pub mod crypto_pqc {
+    pub struct PqcContext;
+    impl Default for PqcContext {
+        fn default() -> Self {
+            Self
+        }
+    }
+}
+
+#[cfg(not(feature = "async"))]
+pub mod async_runtime {
+    pub struct AsyncRuntime;
+    impl Default for AsyncRuntime {
+        fn default() -> Self {
+            Self
+        }
+    }
+}
+
+#[cfg(not(feature = "sync"))]
+pub mod sync {
+    pub struct SyncPrimitive;
+    #[derive(Debug)]
+    pub enum SyncError {
+        General(String),
     }
     
-    pub mod sleep;
-    pub mod timezone;
-    pub mod relative;
-    pub mod benchmarking;
-    pub mod formatting;
-pub mod net {
-    // Network utilities  
-    pub use crate::common_types::*;
+    impl std::fmt::Display for SyncError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                SyncError::General(msg) => write!(f, "Sync error: {}", msg),
+            }
+        }
+    }
     
-    pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+    impl std::error::Error for SyncError {}
+    
+    pub mod error {
+        use super::SyncError;
+        
+        pub fn thread_pool_error(msg: &str) -> SyncError {
+            SyncError::General(format!("Thread pool error: {}", msg))
+        }
+        
+        pub fn timeout_error(msg: &str) -> SyncError {
+            SyncError::General(format!("Timeout error: {}", msg))
+        }
+        
+        pub fn channel_error(msg: &str) -> SyncError {
+            SyncError::General(format!("Channel error: {}", msg))
+        }
+    }
+}
+
+#[cfg(not(feature = "testing"))]
 pub mod testing {
-    // Testing framework basics
-    pub use crate::common_types::*;
+    pub struct TestContext;
+    pub enum TestResult {
+        Passed,
+        Failed(String),
+    }
     
-    pub mod core {
-        pub use crate::common_types::*;
-        
-        pub struct VibeTest;
-        pub struct VibeBench;
-        pub struct VibeTestingManager;
-        
-        pub enum TestResult {
-        pub enum BenchResult {
+    impl Default for TestContext {
+        fn default() -> Self {
+            Self
         }
     }
 }

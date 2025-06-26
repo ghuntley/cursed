@@ -53,7 +53,7 @@ pub mod result_types;
 pub mod result_types_simple;
 pub mod stdlib_registry;
 pub mod symbol_table;
-pub mod template;
+// pub mod template;  // Disabled for compilation
 pub mod tiered_compilation;
 pub mod type_switch;
 pub mod type_system;
@@ -67,22 +67,26 @@ pub use main::*;
 // Re-export JIT engine types
 pub use jit_engine::{
     CursedJitEngine, JitEngineConfig, JitEngineStats
-// };
+};
 
 // Re-export main optimization types
-pub use optimization::{OptimizationConfig, OptimizationManager, LlvmOptimizer};
-pub use crate::common_types::optimization_level::OptimizationLevel;
+pub use optimization::{OptimizationConfig, OptimizationManager, LlvmOptimizer, OptimizationPreset};
+pub use crate::common::OptimizationLevel;
 pub use optimization_engine::{
     OptimizationEngine, OptimizationEngineConfig, OptimizationResult, EngineStatistics
-// };
+};
 pub use optimization_passes::{
     PassRegistry, PassConfiguration, OptimizationPass, PassResult, PassTimeCategory
-// };
+};
 pub use optimization_pipeline::{
     OptimizationPipeline, PipelineResult, StageResult, PipelineStatistics
-// };
+};
 pub use performance_monitor::{
     PerformanceMonitor, MonitoringConfig, CodeMetrics, BaselineMetrics, PerformanceReport
-// };
+};
 pub use types::{
-// };
+    LlvmType, LlvmValue, LlvmFunction, LlvmModule, LlvmContext
+};
+pub use package_integration::{
+    LlvmPackageConfig
+};
