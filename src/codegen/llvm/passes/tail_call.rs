@@ -1,15 +1,12 @@
-//! Minimal working module for CURSED compilation
+//! Tail call optimization pass
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 
-pub struct MinimalImplementation;
+/// Tail call pass
+pub struct TailCallPass;
 
-impl MinimalImplementation {
+impl TailCallPass {
     pub fn new() -> Self {
         Self
     }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
 }

@@ -652,6 +652,50 @@ pub fn initialize_runtime_with_config(config: RuntimeConfig) -> Result<Arc<Runti
     Ok(runtime)
 }
 
+/// Initialize complete runtime system with memory management
+pub fn initialize_complete_runtime(
+    runtime_config: RuntimeConfig, 
+    memory_config: crate::runtime::memory::MemoryConfig
+) -> Result<Arc<Runtime>> {
+    use crate::runtime::{initialize_memory_manager, gc::initialize_gc};
+    
+    // Create stack manager
+    let stack_manager = Arc::new(crate::runtime::RuntimeStack::new());
+    
+    // Initialize garbage collector
+    initialize_gc(memory_config.gc_config.clone(), Arc::clone(&stack_manager))
+        .map_err(|e| Error::Runtime(e.to_string()))?;
+    
+    // Initialize memory manager
+    initialize_memory_manager(memory_config, Arc::clone(&stack_manager))
+        .map_err(|e| Error::Runtime(e.to_string()))?;
+    
+    // Create and start runtime
+    let runtime = Arc::new(Runtime::with_config(runtime_config)?);
+    
+    // Set up memory manager integration
+    if let Some(_memory_manager) = crate::runtime::get_global_memory_manager() {
+        // Note: Direct integration would require trait object compatibility
+        // For now, the memory manager is available through global functions
+    }
+    
+    runtime.start()?;
+    Ok(runtime)
+}
+
+/// Shutdown complete runtime system
+pub fn shutdown_complete_runtime() -> Result<()> {
+    // Shutdown memory manager
+    crate::runtime::shutdown_memory_manager()
+        .map_err(|e| Error::Runtime(e.to_string()))?;
+    
+    // Shutdown GC
+    crate::runtime::gc::shutdown_gc()
+        .map_err(|e| Error::Runtime(e.to_string()))?;
+    
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

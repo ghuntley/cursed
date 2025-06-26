@@ -1,15 +1,12 @@
-//! Minimal working module for CURSED compilation
+//! Loop Invariant Code Motion pass
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 
-pub struct MinimalImplementation;
+/// LICM pass
+pub struct LicmPass;
 
-impl MinimalImplementation {
+impl LicmPass {
     pub fn new() -> Self {
         Self
     }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
 }

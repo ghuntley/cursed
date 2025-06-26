@@ -40,7 +40,14 @@ pub use runtime::{
     PanicRuntime, ErrorRuntime, JitRuntime,
     StackTraceCapture, EnhancedStackTraceConfig, SymbolResolver, SymbolInfo,
     DebugManager, SourceFile, FunctionDebugInfo, DebugManagerConfig, DebugManagerStats,
-    PerformanceMonitor, RuntimeDebugger, VariableInspection, RuntimeStackFrame, Breakpoint
+    PerformanceMonitor, RuntimeDebugger, VariableInspection, RuntimeStackFrame, Breakpoint,
+    // Memory management system
+    GarbageCollector, GcConfig, GcStats, GcState, RootType, GcMemoryManager, RuntimeMemoryManager,
+    MemoryManager, MemoryConfig, MemoryStats, MemoryError, ObjectHandle,
+    initialize_memory_manager, get_global_memory_manager, shutdown_memory_manager,
+    allocate, allocate_raw, collect_garbage,
+    // Complete runtime initialization with GC
+    initialize_complete_runtime, shutdown_complete_runtime
 };
 
 // Debug context module is minimal implementation for now

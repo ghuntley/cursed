@@ -1,15 +1,12 @@
-//! Minimal working module for CURSED compilation
+//! Jump threading optimization pass
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 
-pub struct MinimalImplementation;
+/// Jump threading pass
+pub struct JumpThreadingPass;
 
-impl MinimalImplementation {
+impl JumpThreadingPass {
     pub fn new() -> Self {
         Self
     }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
 }

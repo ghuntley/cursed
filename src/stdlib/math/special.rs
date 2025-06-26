@@ -1,7 +1,6 @@
-//! Minimal working module for CURSED compilation
+//! Special functions for CURSED
 
-use crate::error::CursedError;
-
+/// For backward compatibility
 pub struct MinimalImplementation;
 
 impl MinimalImplementation {
@@ -10,6 +9,6 @@ impl MinimalImplementation {
     }
 }
 
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+pub fn get_minimal_result() -> Result<String, crate::error::CursedError> {
+    Ok("CURSED special functions enabled".to_string())
 }

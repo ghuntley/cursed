@@ -1,15 +1,12 @@
-//! Minimal working module for CURSED compilation
+//! Sparse Conditional Constant Propagation pass
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 
-pub struct MinimalImplementation;
+/// SCCP pass
+pub struct SccpPass;
 
-impl MinimalImplementation {
+impl SccpPass {
     pub fn new() -> Self {
         Self
     }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
 }

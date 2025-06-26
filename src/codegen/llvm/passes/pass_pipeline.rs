@@ -1,15 +1,15 @@
-//! Minimal working module for CURSED compilation
+//! Optimization pass pipeline management
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 
-pub struct MinimalImplementation;
+/// Optimization pipeline
+pub struct OptimizationPipeline;
 
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
-}
+/// Pipeline builder
+pub struct PipelineBuilder;
 
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
-}
+/// Optimization stage
+pub struct OptimizationStage;
+
+/// Pass execution context
+pub struct PassExecutionContext;

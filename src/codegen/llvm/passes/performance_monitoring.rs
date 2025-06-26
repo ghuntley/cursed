@@ -1,15 +1,12 @@
-//! Minimal working module for CURSED compilation
+//! Performance monitoring for optimization passes
 
-use crate::error::CursedError;
+use crate::error::{CursedError, Result};
 
-pub struct MinimalImplementation;
+/// Performance monitor
+pub struct PerformanceMonitor;
 
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
-}
+/// Optimization metrics
+pub struct OptimizationMetrics;
 
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
-}
+/// Pass execution statistics
+pub struct PassExecutionStats;

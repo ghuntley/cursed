@@ -20,6 +20,10 @@ pub mod error_context;
 pub mod process;
 pub mod jit_runtime;
 
+// Memory management system
+pub mod gc;          // Comprehensive garbage collection system
+pub mod memory;      // Memory manager that integrates GC with runtime
+
 // Async and channels
 pub mod r#async;
 pub mod channels;
@@ -28,6 +32,13 @@ pub mod channels;
 pub use stack::RuntimeStack;
 pub use value::{ValueManager, CursedValue, Value};
 pub use runtime::{Runtime, RuntimeConfig, RuntimeStats, RuntimeError, RuntimeErrorType};
+
+// Memory management exports
+pub use gc::{GarbageCollector, GcConfig, GcStats, GcState, RootType,
+             GcMemoryManager, RuntimeMemoryManager};
+pub use memory::{MemoryManager, MemoryConfig, MemoryStats, MemoryError, ObjectHandle, 
+                initialize_memory_manager, get_global_memory_manager, shutdown_memory_manager,
+                allocate, allocate_raw, collect_garbage};
 
 // Additional exports needed by other modules - ADVANCED FEATURES ENABLED
 pub use goroutine::{GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};
@@ -39,6 +50,9 @@ pub use debug_runtime::{PerformanceMonitor, RuntimeDebugger, VariableInspection,
 pub use debug_info::{
     StackTraceCapture, EnhancedStackTraceConfig, SymbolInfo, SymbolResolver
 };
+
+// Complete runtime system initialization
+pub use runtime::{initialize_complete_runtime, shutdown_complete_runtime};
 
 // Re-export channels and async runtime for goroutine system
 pub use channels::{Channel, ChannelSender, ChannelReceiver, ChannelError};

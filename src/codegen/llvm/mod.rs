@@ -41,6 +41,7 @@ pub mod lto_integration;
 pub mod osr;
 pub mod package_integration;
 pub mod panic;
+pub mod passes;
 pub mod process;
 pub mod process_execution;
 pub mod process_execution_ffi;
