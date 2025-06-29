@@ -28,6 +28,11 @@ pub use config::{HttpConfig, TimeoutConfig, RetryConfig, CompressionConfig};
 /// HTTP version enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpVersion {
+    Http10,
+    Http11,
+    Http2,
+}
+
 impl std::fmt::Display for HttpVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -36,21 +41,56 @@ impl std::fmt::Display for HttpVersion {
             HttpVersion::Http2 => write!(f, "HTTP/2"),
         }
     }
+}
+
 /// HTTP methods
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Method {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    HEAD,
+    OPTIONS,
+    PATCH,
+    TRACE,
+    CONNECT,
+}
+
 impl std::fmt::Display for Method {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Method::GET => write!(f, "GET"),
+            Method::POST => write!(f, "POST"),
+            Method::PUT => write!(f, "PUT"),
+            Method::DELETE => write!(f, "DELETE"),
+            Method::HEAD => write!(f, "HEAD"),
+            Method::OPTIONS => write!(f, "OPTIONS"),
+            Method::PATCH => write!(f, "PATCH"),
+            Method::TRACE => write!(f, "TRACE"),
+            Method::CONNECT => write!(f, "CONNECT"),
         }
     }
+}
+
 impl std::str::FromStr for Method {
     type Err = String;
     
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
+            "GET" => Ok(Method::GET),
+            "POST" => Ok(Method::POST),
+            "PUT" => Ok(Method::PUT),
+            "DELETE" => Ok(Method::DELETE),
+            "HEAD" => Ok(Method::HEAD),
+            "OPTIONS" => Ok(Method::OPTIONS),
+            "PATCH" => Ok(Method::PATCH),
+            "TRACE" => Ok(Method::TRACE),
+            "CONNECT" => Ok(Method::CONNECT),
+            _ => Err(format!("Unknown HTTP method: {}", s)),
         }
     }
+}
 /// HTTP status codes
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Status(pub u16);
@@ -114,26 +154,54 @@ impl Status {
     /// Get status code as number
     pub fn as_u16(&self) -> u16 {
         self.0
+    }
+    
     /// Check if status indicates success (2xx)
     pub fn is_success(&self) -> bool {
         self.0 >= 200 && self.0 < 300
+    }
+    
     /// Check if status indicates redirection (3xx)
     pub fn is_redirection(&self) -> bool {
         self.0 >= 300 && self.0 < 400
+    }
+    
     /// Check if status indicates client error (4xx)
     pub fn is_client_error(&self) -> bool {
         self.0 >= 400 && self.0 < 500
+    }
+    
     /// Check if status indicates server error (5xx)
     pub fn is_server_error(&self) -> bool {
         self.0 >= 500 && self.0 < 600
+    }
+    
     /// Check if status indicates error (4xx or 5xx)
     pub fn is_error(&self) -> bool {
         self.is_client_error() || self.is_server_error()
+    }
+    
     /// Get canonical reason phrase for status code
     pub fn canonical_reason(&self) -> &'static str {
         match self.0 {
+            200 => "OK",
+            201 => "Created",
+            204 => "No Content",
+            301 => "Moved Permanently",
+            302 => "Found",
+            304 => "Not Modified",
+            400 => "Bad Request",
+            401 => "Unauthorized",
+            403 => "Forbidden",
+            404 => "Not Found",
+            405 => "Method Not Allowed",
+            500 => "Internal Server Error",
+            502 => "Bad Gateway",
+            503 => "Service Unavailable",
+            _ => "Unknown",
         }
     }
+}
 impl std::fmt::Display for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} {}", self.0, self.canonical_reason())

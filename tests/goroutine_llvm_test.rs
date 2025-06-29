@@ -7,8 +7,8 @@ use cursed::runtime::goroutine::GoroutineScheduler;
 mod tests {
     use super::*;
 
-    fn setup_llvm() -> LlvmCodeGenerator {
-        LlvmCodeGenerator::new().unwrap()
+    fn setup_llvm() -> ((), (), LlvmCodeGenerator) {
+        ((), (), LlvmCodeGenerator::new().unwrap())
     }
 
     #[test]
@@ -43,7 +43,7 @@ mod tests {
         
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
-        let mut parser = Parser::new(tokens);
+        let mut parser = Parser::from_tokens(tokens);
         let ast = parser.parse().unwrap();
         
         let (_context, _module, mut codegen) = setup_llvm();
@@ -67,7 +67,7 @@ mod tests {
         
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
-        let mut parser = Parser::new(tokens);
+        let mut parser = Parser::from_tokens(tokens);
         let ast = parser.parse().unwrap();
         
         let (_context, _module, mut codegen) = setup_llvm();
@@ -99,7 +99,7 @@ mod tests {
         
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
-        let mut parser = Parser::new(tokens);
+        let mut parser = Parser::from_tokens(tokens);
         let ast = parser.parse().unwrap();
         
         let (_context, _module, mut codegen) = setup_llvm();
@@ -126,7 +126,7 @@ mod tests {
         
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
-        let mut parser = Parser::new(tokens);
+        let mut parser = Parser::from_tokens(tokens);
         let ast = parser.parse().unwrap();
         
         let (_context, _module, mut codegen) = setup_llvm();
@@ -168,7 +168,7 @@ mod tests {
         
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
-        let mut parser = Parser::new(tokens);
+        let mut parser = Parser::from_tokens(tokens);
         let ast = parser.parse().unwrap();
         
         let (_context, _module, mut codegen) = setup_llvm();
@@ -187,7 +187,7 @@ mod tests {
         
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
-        let mut parser = Parser::new(tokens);
+        let mut parser = Parser::from_tokens(tokens);
         let ast = parser.parse().unwrap();
         
         let (_context, _module, mut codegen) = setup_llvm();
@@ -215,7 +215,7 @@ mod tests {
         
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
-        let mut parser = Parser::new(tokens);
+        let mut parser = Parser::from_tokens(tokens);
         let ast = parser.parse().unwrap();
         
         let (_context, _module, mut codegen) = setup_llvm();

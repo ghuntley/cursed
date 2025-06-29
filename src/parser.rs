@@ -20,6 +20,20 @@ impl Parser {
         })
     }
 
+    /// Alternative constructor for direct token input (used by tests)
+    pub fn from_tokens(tokens: Vec<Token>) -> Self {
+        Self {
+            tokens,
+            current: 0,
+            errors: Vec::new(),
+        }
+    }
+
+    /// Alias for parse_program() to match test expectations
+    pub fn parse(&mut self) -> Result<Program, CursedError> {
+        self.parse_program()
+    }
+
     pub fn parse_program(&mut self) -> Result<Program, CursedError> {
         let mut statements = Vec::new();
         let mut imports = Vec::new();
