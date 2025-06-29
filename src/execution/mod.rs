@@ -14,6 +14,8 @@ pub mod jit_executor;
 pub mod runtime_functions;
 pub mod value_manager;
 
+pub use execution_context::ExecutionContext;
+
 /// Advanced execution engine for CURSED
 pub struct CursedExecutionEngine {
     jit_enabled: bool,
@@ -63,13 +65,23 @@ impl CursedExecutionEngine {
         let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
         let _ir = codegen.generate_ir(program)?;
         
-        // For now, return a simple result
-        Ok(CursedValue::Integer(42))
+        // Execute interpreted for now (since JIT compilation is complex)
+        self.execute_interpreted(program)
     }
     
-    fn execute_interpreted(&mut self, _program: &Program) -> Result<CursedValue, CursedError> {
+    fn execute_interpreted(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
         tracing::info!("🔄 Interpreted execution");
-        Ok(CursedValue::Integer(0))
+        
+        // Create execution context
+        let mut context = ExecutionContext::new();
+        
+        // Execute each statement
+        let mut last_value = CursedValue::Nil;
+        for statement in &program.statements {
+            last_value = self.execute_statement(statement, &mut context)?;
+        }
+        
+        Ok(last_value)
     }
     
     pub fn get_value_manager(&self) -> ValueManager {
@@ -83,6 +95,326 @@ impl CursedExecutionEngine {
             CursedValue::String(s) => format!("\"{}\"", s),
             CursedValue::Boolean(b) => b.to_string(),
             CursedValue::Nil => "nil".to_string(),
+        }
+    }
+    
+    fn execute_statement(&mut self, statement: &crate::ast::Statement, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        use crate::ast::Statement;
+        
+        println!("DEBUG: Executing statement: {:?}", statement);
+        match statement {
+            Statement::Expression(expr) => {
+                self.evaluate_expression(expr, context)
+            },
+            Statement::Let(let_stmt) => {
+                let value = self.evaluate_expression(&let_stmt.value, context)?;
+                println!("DEBUG: Setting variable {} = {:?}", let_stmt.name, value);
+                context.set_variable(let_stmt.name.clone(), value.clone());
+                Ok(value)
+            },
+            Statement::Return(return_stmt) => {
+                if let Some(expr) = &return_stmt.value {
+                    self.evaluate_expression(expr, context)
+                } else {
+                    Ok(CursedValue::Nil)
+                }
+            },
+            Statement::Function(func_stmt) => {
+                // Store function definition in context
+                context.set_function(func_stmt.name.clone(), func_stmt.clone());
+                Ok(CursedValue::Nil)
+            },
+            Statement::If(if_stmt) => {
+                let condition = self.evaluate_expression(&if_stmt.condition, context)?;
+                if self.is_truthy(&condition) {
+                    let mut last_value = CursedValue::Nil;
+                    for stmt in &if_stmt.then_branch {
+                        last_value = self.execute_statement(stmt, context)?;
+                    }
+                    Ok(last_value)
+                } else if let Some(else_branch) = &if_stmt.else_branch {
+                    let mut last_value = CursedValue::Nil;
+                    for stmt in else_branch {
+                        last_value = self.execute_statement(stmt, context)?;
+                    }
+                    Ok(last_value)
+                } else {
+                    Ok(CursedValue::Nil)
+                }
+            },
+            Statement::While(while_stmt) => {
+                let mut last_value = CursedValue::Nil;
+                loop {
+                    let condition = self.evaluate_expression(&while_stmt.condition, context)?;
+                    if !self.is_truthy(&condition) {
+                        break;
+                    }
+                    for stmt in &while_stmt.body {
+                        last_value = self.execute_statement(stmt, context)?;
+                    }
+                }
+                Ok(last_value)
+            },
+            Statement::For(for_stmt) => {
+                // Initialize
+                if let Some(init) = &for_stmt.init {
+                    self.execute_statement(init, context)?;
+                }
+                
+                let mut last_value = CursedValue::Nil;
+                loop {
+                    // Check condition
+                    if let Some(condition) = &for_stmt.condition {
+                        let cond_value = self.evaluate_expression(condition, context)?;
+                        if !self.is_truthy(&cond_value) {
+                            break;
+                        }
+                    }
+                    
+                    // Execute body
+                    for stmt in &for_stmt.body {
+                        last_value = self.execute_statement(stmt, context)?;
+                    }
+                    
+                    // Update
+                    if let Some(update) = &for_stmt.update {
+                        self.evaluate_expression(update, context)?;
+                    }
+                }
+                Ok(last_value)
+            },
+            Statement::Goroutine(_) => {
+                // For now, just return nil - goroutines need more complex implementation
+                Ok(CursedValue::Nil)
+            },
+            Statement::Channel(_) => {
+                // For now, just return nil - channels need more complex implementation
+                Ok(CursedValue::Nil)
+            },
+        }
+    }
+    
+    fn evaluate_expression(&mut self, expression: &crate::ast::Expression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        use crate::ast::Expression;
+        
+        match expression {
+            Expression::Integer(i) => Ok(CursedValue::Integer(*i)),
+            Expression::String(s) => Ok(CursedValue::String(s.clone())),
+            Expression::Boolean(b) => Ok(CursedValue::Boolean(*b)),
+            Expression::Identifier(name) => {
+                println!("DEBUG: Looking up variable: {}", name);
+                context.get_variable(name)
+                    .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)))
+            },
+            Expression::Binary(binary_expr) => {
+                let left = self.evaluate_expression(&binary_expr.left, context)?;
+                let right = self.evaluate_expression(&binary_expr.right, context)?;
+                self.apply_binary_operator(&left, &binary_expr.operator, &right)
+            },
+            Expression::Call(call_expr) => {
+                self.evaluate_call(call_expr, context)
+            },
+            Expression::MemberAccess(member_expr) => {
+                self.evaluate_member_access(member_expr, context)
+            },
+            Expression::Literal(literal) => {
+                match literal {
+                    crate::ast::Literal::Integer(i) => Ok(CursedValue::Integer(*i)),
+                    crate::ast::Literal::Float(f) => Ok(CursedValue::Float(*f)),
+                    crate::ast::Literal::String(s) => Ok(CursedValue::String(s.clone())),
+                    crate::ast::Literal::Boolean(b) => Ok(CursedValue::Boolean(*b)),
+                    crate::ast::Literal::Nil | crate::ast::Literal::Null => Ok(CursedValue::Nil),
+                }
+            },
+            Expression::Unary(unary_expr) => {
+                let operand = self.evaluate_expression(&unary_expr.operand, context)?;
+                self.apply_unary_operator(&unary_expr.operator, &operand)
+            },
+            Expression::Array(elements) => {
+                // For now, just return the length as an integer
+                Ok(CursedValue::Integer(elements.len() as i64))
+            },
+            Expression::Map(pairs) => {
+                // For now, just return the size as an integer
+                Ok(CursedValue::Integer(pairs.len() as i64))
+            },
+        }
+    }
+    
+    fn apply_binary_operator(&self, left: &CursedValue, operator: &str, right: &CursedValue) -> Result<CursedValue, CursedError> {
+        match (left, right) {
+            (CursedValue::Integer(l), CursedValue::Integer(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::Integer(l + r)),
+                    "-" => Ok(CursedValue::Integer(l - r)),
+                    "*" => Ok(CursedValue::Integer(l * r)),
+                    "/" => {
+                        if *r == 0 {
+                            Err(CursedError::RuntimeError("Division by zero".to_string()))
+                        } else {
+                            Ok(CursedValue::Integer(l / r))
+                        }
+                    },
+                    "==" => Ok(CursedValue::Boolean(l == r)),
+                    "!=" => Ok(CursedValue::Boolean(l != r)),
+                    "<" => Ok(CursedValue::Boolean(l < r)),
+                    ">" => Ok(CursedValue::Boolean(l > r)),
+                    "<=" => Ok(CursedValue::Boolean(l <= r)),
+                    ">=" => Ok(CursedValue::Boolean(l >= r)),
+                    _ => Err(CursedError::RuntimeError(format!("Unknown binary operator: {}", operator))),
+                }
+            },
+            (CursedValue::Float(l), CursedValue::Float(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::Float(l + r)),
+                    "-" => Ok(CursedValue::Float(l - r)),
+                    "*" => Ok(CursedValue::Float(l * r)),
+                    "/" => {
+                        if *r == 0.0 {
+                            Err(CursedError::RuntimeError("Division by zero".to_string()))
+                        } else {
+                            Ok(CursedValue::Float(l / r))
+                        }
+                    },
+                    "==" => Ok(CursedValue::Boolean((l - r).abs() < f64::EPSILON)),
+                    "!=" => Ok(CursedValue::Boolean((l - r).abs() >= f64::EPSILON)),
+                    "<" => Ok(CursedValue::Boolean(l < r)),
+                    ">" => Ok(CursedValue::Boolean(l > r)),
+                    "<=" => Ok(CursedValue::Boolean(l <= r)),
+                    ">=" => Ok(CursedValue::Boolean(l >= r)),
+                    _ => Err(CursedError::RuntimeError(format!("Unknown binary operator: {}", operator))),
+                }
+            },
+            (CursedValue::String(l), CursedValue::String(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    "==" => Ok(CursedValue::Boolean(l == r)),
+                    "!=" => Ok(CursedValue::Boolean(l != r)),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported string operator: {}", operator))),
+                }
+            },
+            _ => Err(CursedError::RuntimeError(format!("Type mismatch in binary operation: {:?} {} {:?}", left, operator, right))),
+        }
+    }
+    
+    fn apply_unary_operator(&self, operator: &crate::ast::UnaryOperator, operand: &CursedValue) -> Result<CursedValue, CursedError> {
+        match operator {
+            crate::ast::UnaryOperator::Not => {
+                Ok(CursedValue::Boolean(!self.is_truthy(operand)))
+            },
+            crate::ast::UnaryOperator::Minus => {
+                match operand {
+                    CursedValue::Integer(i) => Ok(CursedValue::Integer(-i)),
+                    CursedValue::Float(f) => Ok(CursedValue::Float(-f)),
+                    _ => Err(CursedError::RuntimeError("Cannot negate non-numeric value".to_string())),
+                }
+            },
+            crate::ast::UnaryOperator::Plus => {
+                match operand {
+                    CursedValue::Integer(_) | CursedValue::Float(_) => Ok(operand.clone()),
+                    _ => Err(CursedError::RuntimeError("Cannot apply unary plus to non-numeric value".to_string())),
+                }
+            },
+        }
+    }
+    
+    fn evaluate_call(&mut self, call_expr: &crate::ast::CallExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        match &*call_expr.function {
+            crate::ast::Expression::Identifier(func_name) => {
+                // Handle built-in functions
+                match func_name.as_str() {
+                    "print" | "println" => {
+                        for arg in &call_expr.arguments {
+                            let value = self.evaluate_expression(arg, context)?;
+                            println!("{}", self.format_value(&value));
+                        }
+                        Ok(CursedValue::Nil)
+                    },
+                    _ => {
+                        // User-defined function
+                        if let Some(func_def) = context.get_function(func_name) {
+                            // Create new context for function execution
+                            let mut func_context = ExecutionContext::new();
+                            
+                            // Bind parameters
+                            if call_expr.arguments.len() != func_def.parameters.len() {
+                                return Err(CursedError::RuntimeError(format!(
+                                    "Function {} expects {} arguments, got {}",
+                                    func_name, func_def.parameters.len(), call_expr.arguments.len()
+                                )));
+                            }
+                            
+                            for (param, arg) in func_def.parameters.iter().zip(&call_expr.arguments) {
+                                let arg_value = self.evaluate_expression(arg, context)?;
+                                func_context.set_variable(param.clone(), arg_value);
+                            }
+                            
+                            // Execute function body
+                            let mut result = CursedValue::Nil;
+                            for stmt in &func_def.body {
+                                result = self.execute_statement(stmt, &mut func_context)?;
+                            }
+                            
+                            Ok(result)
+                        } else {
+                            Err(CursedError::RuntimeError(format!("Undefined function: {}", func_name)))
+                        }
+                    }
+                }
+            },
+            crate::ast::Expression::MemberAccess(member_expr) => {
+                // Handle member function calls like vibez.spill()
+                if let crate::ast::Expression::Identifier(obj_name) = &*member_expr.object {
+                    match (obj_name.as_str(), member_expr.property.as_str()) {
+                        ("vibez", "spill") => {
+                            for arg in &call_expr.arguments {
+                                let value = self.evaluate_expression(arg, context)?;
+                                print!("{}", self.format_value(&value));
+                            }
+                            println!(); // Add newline
+                            Ok(CursedValue::Nil)
+                        },
+                        ("vibez", "spillf") => {
+                            // Format string print
+                            if let Some(first_arg) = call_expr.arguments.first() {
+                                let format_str = self.evaluate_expression(first_arg, context)?;
+                                if let CursedValue::String(fmt) = format_str {
+                                    let mut output = fmt;
+                                    // Simple format string replacement
+                                    for (i, arg) in call_expr.arguments.iter().skip(1).enumerate() {
+                                        let value = self.evaluate_expression(arg, context)?;
+                                        let placeholder = format!("{{{}}}", i);
+                                        output = output.replace(&placeholder, &self.format_value(&value));
+                                    }
+                                    print!("{}", output);
+                                } else {
+                                    return Err(CursedError::RuntimeError("First argument to spillf must be a string".to_string()));
+                                }
+                            }
+                            Ok(CursedValue::Nil)
+                        },
+                        _ => Err(CursedError::RuntimeError(format!("Unknown method: {}.{}", obj_name, member_expr.property))),
+                    }
+                } else {
+                    Err(CursedError::RuntimeError("Complex member access not supported yet".to_string()))
+                }
+            },
+            _ => Err(CursedError::RuntimeError("Unsupported function call type".to_string())),
+        }
+    }
+    
+    fn evaluate_member_access(&mut self, member_expr: &crate::ast::MemberAccessExpression, _context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        // For now, just return a placeholder - member access without calls is complex
+        Ok(CursedValue::Nil)
+    }
+    
+    fn is_truthy(&self, value: &CursedValue) -> bool {
+        match value {
+            CursedValue::Boolean(b) => *b,
+            CursedValue::Integer(i) => *i != 0,
+            CursedValue::Float(f) => *f != 0.0,
+            CursedValue::String(s) => !s.is_empty(),
+            CursedValue::Nil => false,
         }
     }
 }

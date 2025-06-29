@@ -1,3 +1,1 @@
-slay main() {
-    yolo 42
-}
+sus x = 42

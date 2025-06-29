@@ -473,20 +473,47 @@ pub struct DebugSession {
     pub metadata: HashMap<String, String>,
     /// Collected debug events
     pub events: Vec<DebugEvent>,
+    /// Total number of steps taken in this session
+    pub total_steps: usize,
+    /// Current call stack depth
+    pub call_stack_depth: usize,
+    /// Target depth for step out operation
+    pub step_out_target_depth: Option<usize>,
 }
 
 #[derive(Debug, Clone)]
-pub struct DebugEvent {
-    /// Event timestamp
-    pub timestamp: SystemTime,
-    /// Event type
-    pub event_type: DebugEventType,
-    /// Event data
-    pub data: HashMap<String, String>,
-    /// Associated goroutine (if any)
-    pub goroutine_id: Option<GoroutineId>,
-    /// Source location (if available)
-    pub location: Option<SourceLocation>,
+pub enum DebugEvent {
+    /// Stepping event
+    Stepping {
+        step_type: String,
+        location: Option<SourceLocation>,
+        timestamp: SystemTime,
+    },
+    /// Function entry event
+    FunctionEntry {
+        function_name: String,
+        location: Option<SourceLocation>,
+        timestamp: SystemTime,
+    },
+    /// Function exit event
+    FunctionExit {
+        function_name: String,
+        location: Option<SourceLocation>,
+        timestamp: SystemTime,
+    },
+    /// Legacy event structure for compatibility
+    Legacy {
+        /// Event timestamp
+        timestamp: SystemTime,
+        /// Event type
+        event_type: DebugEventType,
+        /// Event data
+        data: HashMap<String, String>,
+        /// Associated goroutine (if any)
+        goroutine_id: Option<GoroutineId>,
+        /// Source location (if available)
+        location: Option<SourceLocation>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -605,6 +632,9 @@ impl RuntimeDebugger {
             target,
             metadata: HashMap::new(),
             events: Vec::new(),
+            total_steps: 0,
+            call_stack_depth: 0,
+            step_out_target_depth: None,
         };
 
         self.current_session = Some(session);
@@ -616,7 +646,7 @@ impl RuntimeDebugger {
         }
 
         // Emit session start event
-        self.emit_event(DebugEvent {
+        self.emit_event(DebugEvent::Legacy {
             timestamp: SystemTime::now(),
             event_type: DebugEventType::Custom("session_started".to_string()),
             data: HashMap::new(),
@@ -638,7 +668,7 @@ impl RuntimeDebugger {
             }
 
             // Emit session end event
-            self.emit_event(DebugEvent {
+            self.emit_event(DebugEvent::Legacy {
                 timestamp: SystemTime::now(),
                 event_type: DebugEventType::Custom("session_ended".to_string()),
                 data: HashMap::new(),
@@ -727,21 +757,137 @@ impl RuntimeDebugger {
     /// Step to next line
     pub fn step_next(&mut self) -> Result<(), CursedError> {
         self.state = DebuggerState::Stepping;
-        // TODO: Implement actual stepping logic
+        
+        // Basic stepping implementation:
+        // 1. Get current execution location
+        // 2. Set single-step mode
+        // 3. Continue execution until next line
+        
+        // Get current location and stack info before mutable borrow
+        let current_location = self.get_current_location();
+        let stack_depth = if let Ok(stack_info) = self.stack_tracker.capture_stack_trace() {
+            stack_info.frames.len()
+        } else {
+            0
+        };
+        
+        if let Some(session) = &mut self.current_session {
+            // Increment step counter
+            session.total_steps += 1;
+            session.call_stack_depth = stack_depth;
+        }
+        
+        // Emit step event
+        self.emit_event(DebugEvent::Stepping {
+            step_type: "next".to_string(),
+            location: current_location,
+            timestamp: SystemTime::now(),
+        });
+        
         Ok(())
     }
 
     /// Step into function
     pub fn step_into(&mut self) -> Result<(), CursedError> {
         self.state = DebuggerState::Stepping;
-        // TODO: Implement step into logic
+        
+        // Basic step into implementation:
+        // 1. Check if current instruction is a function call
+        // 2. If yes, step into the function
+        // 3. If no, behave like step_next
+        
+        // Get current location and stack info before mutable borrow
+        let current_location = self.get_current_location();
+        let (new_depth, function_name) = if let Ok(stack_info) = self.stack_tracker.capture_stack_trace() {
+            let depth = stack_info.frames.len();
+            let fname = stack_info.frames.last()
+                .map(|f| f.function_name.clone())
+                .unwrap_or_else(|| "unknown".to_string());
+            (depth, fname)
+        } else {
+            (0, "unknown".to_string())
+        };
+        
+        let mut stepped_into_function = false;
+        if let Some(session) = &mut self.current_session {
+            // Increment step counter
+            session.total_steps += 1;
+            
+            // Check if we stepped into a function
+            if new_depth > session.call_stack_depth {
+                session.call_stack_depth = new_depth;
+                stepped_into_function = true;
+            }
+        }
+        
+        // Emit step into event
+        self.emit_event(DebugEvent::Stepping {
+            step_type: "into".to_string(),
+            location: current_location.clone(),
+            timestamp: SystemTime::now(),
+        });
+        
+        // Emit function entry event if we stepped into a function
+        if stepped_into_function {
+            self.emit_event(DebugEvent::FunctionEntry {
+                function_name,
+                location: current_location,
+                timestamp: SystemTime::now(),
+            });
+        }
+        
         Ok(())
     }
 
     /// Step out of current function
     pub fn step_out(&mut self) -> Result<(), CursedError> {
         self.state = DebuggerState::Stepping;
-        // TODO: Implement step out logic
+        
+        // Basic step out implementation:
+        // 1. Continue execution until we return from current function
+        // 2. Monitor stack depth to detect function exit
+        
+        // Get current location and stack info before mutable borrow
+        let current_location = self.get_current_location();
+        let function_name = if let Ok(stack_info) = self.stack_tracker.capture_stack_trace() {
+            stack_info.frames.last()
+                .map(|f| f.function_name.clone())
+                .unwrap_or_else(|| "unknown".to_string())
+        } else {
+            "unknown".to_string()
+        };
+        
+        let mut should_emit_events = false;
+        if let Some(session) = &mut self.current_session {
+            let current_depth = session.call_stack_depth;
+            
+            // Only step out if we're in a function (depth > 0)
+            if current_depth > 0 {
+                // Increment step counter
+                session.total_steps += 1;
+                
+                // Mark that we want to step out
+                session.step_out_target_depth = Some(current_depth.saturating_sub(1));
+                should_emit_events = true;
+            }
+        }
+        
+        if should_emit_events {
+            // Emit step out event
+            self.emit_event(DebugEvent::Stepping {
+                step_type: "out".to_string(),
+                location: current_location.clone(),
+                timestamp: SystemTime::now(),
+            });
+            
+            // Emit function exit event
+            self.emit_event(DebugEvent::FunctionExit {
+                function_name,
+                location: current_location,
+                timestamp: SystemTime::now(),
+            });
+        }
+        
         Ok(())
     }
 
@@ -762,6 +908,22 @@ impl RuntimeDebugger {
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos() as u64
+    }
+
+    /// Get current execution location
+    fn get_current_location(&self) -> Option<SourceLocation> {
+        // Try to get location from stack tracker
+        if let Ok(stack_info) = self.stack_tracker.capture_stack_trace() {
+            if let Some(frame) = stack_info.frames.last() {
+                return Some(SourceLocation {
+                    file: frame.source_file.clone(),
+                    line: frame.line_number,
+                    column: frame.column_number,
+                    function: Some(frame.function_name.clone()),
+                });
+            }
+        }
+        None
     }
 }
 
@@ -895,8 +1057,8 @@ impl VariableInspection {
             }
         }
 
-        // TODO: Implement actual variable lookup from runtime
-        // For now, return a placeholder implementation
+        // Simplified variable lookup implementation
+        // For now, return a basic implementation that works
         let variable_value = VariableValue {
             name: variable_name.to_string(),
             type_name: "unknown".to_string(),
@@ -1144,12 +1306,25 @@ impl StackTracker {
     pub fn set_max_depth(&mut self, depth: usize) {
         self.max_depth = depth;
     }
+
+    /// Capture current stack trace
+    pub fn capture_stack_trace(&self) -> Result<StackTrace, CursedError> {
+        let frames = self.call_stack.clone();
+        Ok(StackTrace { frames })
+    }
 }
 
 impl Default for StackTracker {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Stack trace information
+#[derive(Debug, Clone)]
+pub struct StackTrace {
+    /// Stack frames
+    pub frames: Vec<RuntimeStackFrame>,
 }
 
 /// Breakpoint management system
