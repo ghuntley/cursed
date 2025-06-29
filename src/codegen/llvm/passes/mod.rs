@@ -35,13 +35,13 @@ pub use pass_registry::{PassRegistry, PassRegistration, PassDependency};
 pub use pass_pipeline::{OptimizationPipeline, PipelineBuilder, OptimizationStage, PassExecutionContext};
 pub use performance_monitoring::{PerformanceMonitor, OptimizationMetrics, PassExecutionStats};
 
-// Stub passes - these will have minimal implementations (commented out for compilation)
-// pub use sccp::SccpPass;
-// pub use licm::LicmPass;
-// pub use sroa::SroaPass;
-// pub use mem2reg::Mem2RegPass;
-// pub use tail_call::TailCallPass;
-// pub use jump_threading::JumpThreadingPass;
+// Optimization passes - restored from minimal implementations
+pub use sccp::SccpPass;
+pub use licm::LicmPass;
+pub use sroa::SroaPass;
+pub use mem2reg::Mem2RegPass;
+pub use tail_call::TailCallPass;
+pub use jump_threading::JumpThreadingPass;
 
 use crate::error::{CursedError, Result};
 use std::collections::HashMap;

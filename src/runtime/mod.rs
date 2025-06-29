@@ -18,6 +18,9 @@ pub mod stack_walker;
 pub mod runtime_error;
 pub mod error_context;
 pub mod process;
+pub mod runtime_value;
+pub mod debug_output;
+pub mod unicode_char;
 pub mod jit_runtime;
 
 // Memory management system

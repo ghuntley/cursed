@@ -57,7 +57,7 @@ impl PartialOrd for WorkItem {
 impl Ord for WorkItem {
     fn cmp(&self, other: &Self) -> CmpOrdering {
         // First compare by priority (higher priority first)
-        match other.priority.cmp(&self.priority) {
+        match self.priority.cmp(&other.priority) {
             CmpOrdering::Equal => {
                 // Then by scheduled time (earlier first)
                 self.scheduled_at.cmp(&other.scheduled_at)

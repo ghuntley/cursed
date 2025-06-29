@@ -308,8 +308,15 @@ impl<T: Entity> Repository<T> {
                 );
                 
                 // Execute query and map results
-                // Note: Actual database execution would happen here
-                Ok(Vec::new()) // Placeholder
+                let sql = format!("SELECT * FROM {} WHERE {} = $1", T::table_name(), foreign_key);
+                let results = self.db.query(sql, vec![pk_value])?;
+                
+                // Convert results to entities
+                let related_entities: Vec<T> = results.into_iter()
+                    .filter_map(|row| T::from_row(&row).ok())
+                    .collect();
+                
+                Ok(related_entities)
             }
             _ => {
                 warn!("Relationship type not yet implemented for eager loading");

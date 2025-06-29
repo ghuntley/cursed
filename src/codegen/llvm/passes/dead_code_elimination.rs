@@ -1,5 +1,5 @@
 use crate::error::{CursedError, Result};
-use inkwell::values::{FunctionValue, InstructionValue, BasicValueEnum};
+use inkwell::values::{FunctionValue, InstructionValue, BasicValueEnum, InstructionOpcode, BasicValue};
 use inkwell::context::Context;
 use inkwell::module::Module;
 use std::collections::{HashSet, VecDeque};
@@ -157,14 +157,118 @@ impl<'ctx> DeadCodeEliminationPass<'ctx> {
     }
 }
 
-/// Dead code analyzer (stub)
+/// Dead code analyzer - real implementation
 pub struct DeadCodeAnalyzer<'ctx> {
-    _context: &'ctx Context,
+    context: &'ctx Context,
+    live_instructions: std::collections::HashSet<InstructionValue<'ctx>>,
+    work_list: Vec<InstructionValue<'ctx>>,
 }
 
 impl<'ctx> DeadCodeAnalyzer<'ctx> {
     pub fn new(context: &'ctx Context) -> Self {
-        Self { _context: context }
+        Self { 
+            context,
+            live_instructions: std::collections::HashSet::new(),
+            work_list: Vec::new(),
+        }
+    }
+    
+    /// Analyze function and identify dead code
+    pub fn analyze_function(&mut self, function: FunctionValue<'ctx>) -> crate::error::Result<DeadCodeResult> {
+        self.live_instructions.clear();
+        self.work_list.clear();
+        
+        let mut result = DeadCodeResult::default();
+        
+        // Mark critical instructions as live (those with side effects)
+        self.mark_critical_instructions(function);
+        
+        // Propagate liveness backwards
+        while let Some(inst) = self.work_list.pop() {
+            self.mark_operands_live(inst);
+        }
+        
+        // Remove dead instructions
+        let eliminated = self.remove_dead_instructions(function)?;
+        result.total_eliminated = eliminated;
+        result.functions_processed = 1;
+        result.iterations_total = 1;
+        
+        Ok(result)
+    }
+    
+    /// Mark instructions with side effects as critical
+    fn mark_critical_instructions(&mut self, function: FunctionValue<'ctx>) {
+        for basic_block in function.get_basic_blocks() {
+            for instruction in basic_block.get_instructions() {
+                if self.is_critical_instruction(&instruction) {
+                    self.mark_live(instruction);
+                }
+            }
+        }
+    }
+    
+    /// Check if instruction has side effects and cannot be eliminated
+    fn is_critical_instruction(&self, instruction: &InstructionValue<'ctx>) -> bool {
+        match instruction.get_opcode() {
+            // Function calls might have side effects
+            InstructionOpcode::Call => true,
+            // Store operations have side effects
+            InstructionOpcode::Store => true,
+            // Return statements are critical
+            InstructionOpcode::Return => true,
+            // Branch instructions are critical for control flow
+            InstructionOpcode::Br => true,
+            // Switch statements
+            InstructionOpcode::Switch => true,
+            // Unreachable blocks
+            InstructionOpcode::Unreachable => true,
+            // Most other instructions can potentially be eliminated
+            _ => false,
+        }
+    }
+    
+    /// Mark instruction and its operands as live
+    fn mark_live(&mut self, instruction: InstructionValue<'ctx>) {
+        if self.live_instructions.insert(instruction) {
+            self.work_list.push(instruction);
+        }
+    }
+    
+    /// Mark all operands of an instruction as live
+    fn mark_operands_live(&mut self, instruction: InstructionValue<'ctx>) {
+        for i in 0..instruction.get_num_operands() {
+            if let Some(operand) = instruction.get_operand(i) {
+                if let Some(inst_operand) = operand.left().and_then(|v| v.as_instruction_value()) {
+                    self.mark_live(inst_operand);
+                }
+            }
+        }
+    }
+    
+    /// Remove instructions that are not marked as live
+    fn remove_dead_instructions(&self, function: FunctionValue<'ctx>) -> crate::error::Result<u32> {
+        let mut eliminated = 0;
+        
+        for basic_block in function.get_basic_blocks() {
+            let mut instructions_to_remove = Vec::new();
+            
+            for instruction in basic_block.get_instructions() {
+                if !self.live_instructions.contains(&instruction) && !self.is_critical_instruction(&instruction) {
+                    instructions_to_remove.push(instruction);
+                }
+            }
+            
+            // Remove dead instructions
+            for instruction in instructions_to_remove {
+                unsafe {
+                    instruction.erase_from_basic_block();
+                }
+                eliminated += 1;
+            }
+        }
+        
+        Ok(eliminated)
     }
 }
 

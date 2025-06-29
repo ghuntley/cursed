@@ -5,6 +5,7 @@ pub mod constraint_resolver;
 pub mod associated_types;
 pub mod variance;
 pub mod higher_kinded_types;
+pub mod generic_optimization;
 
 #[cfg(test)]
 mod tests;
@@ -256,7 +257,7 @@ impl TypeSubstitution {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeExpression {
     pub kind: TypeKind,
     pub name: Option<String>,
@@ -330,7 +331,7 @@ pub struct TypeDefinition {
     pub is_builtin: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TypeKind {
     Struct,
     Enum,
