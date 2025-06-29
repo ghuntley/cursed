@@ -61,7 +61,7 @@ linux_build_task:
 macos_build_task:
   name: Build macOS
   macos_instance:
-    image: ghcr.io/cirruslabs/macos-ventura-base:latest
+    image: ghcr.io/cirruslabs/macos-runner:sequoia
     cpu: 4
     memory: 8G
     
