@@ -1,0 +1,131 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: cursed-linux
+            asset_name: cursed-linux-x86_64
+          - os: macos-latest
+            artifact_name: cursed-macos
+            asset_name: cursed-macos-x86_64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@v9
+
+    - name: Enable Nix cache
+      uses: DeterminateSystems/magic-nix-cache-action@v2
+
+    - name: Install devenv
+      run: |
+        nix profile install --accept-flake-config github:cachix/devenv/latest
+
+    - name: Setup development environment
+      run: |
+        devenv shell echo "Development environment ready"
+
+    - name: Build release
+      run: |
+        devenv shell cargo build --release
+
+    - name: Run tests
+      run: |
+        devenv shell cargo test
+
+    - name: Create artifact directory
+      run: mkdir -p artifacts
+
+    - name: Prepare binaries (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        # Copy main executables
+        cp target/release/cursed artifacts/cursed
+        cp target/release/cursed-doc artifacts/cursed-doc
+        cp target/release/cursed-build artifacts/cursed-build
+        cp target/release/cursed-pkg artifacts/cursed-pkg
+        cp target/release/cursed-repl artifacts/cursed-repl
+        cp target/release/cursed-test artifacts/cursed-test
+        cp target/release/cursed-lsp artifacts/cursed-lsp
+        cp target/release/cursed-debug artifacts/cursed-debug
+        cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
+        
+        # Strip binaries
+        strip artifacts/*
+        
+        # Create tarball
+        tar -czf ${{ matrix.asset_name }}.tar.gz -C artifacts .
+
+    - name: Prepare binaries (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        # Copy main executables
+        cp target/release/cursed artifacts/cursed
+        cp target/release/cursed-doc artifacts/cursed-doc
+        cp target/release/cursed-build artifacts/cursed-build
+        cp target/release/cursed-pkg artifacts/cursed-pkg
+        cp target/release/cursed-repl artifacts/cursed-repl
+        cp target/release/cursed-test artifacts/cursed-test
+        cp target/release/cursed-lsp artifacts/cursed-lsp
+        cp target/release/cursed-debug artifacts/cursed-debug
+        cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
+        
+        # Strip binaries
+        strip artifacts/*
+        
+        # Create tarball
+        tar -czf ${{ matrix.asset_name }}.tar.gz -C artifacts .
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: ${{ matrix.asset_name }}.tar.gz
+        retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        files: |
+          ./artifacts/cursed-linux/*.tar.gz
+          ./artifacts/cursed-macos/*.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
