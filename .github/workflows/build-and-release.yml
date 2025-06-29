@@ -18,12 +18,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest-8-cores, macos-13-large]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-latest-8-cores
             artifact_name: cursed-linux
             asset_name: cursed-linux-x86_64
-          - os: macos-latest
+          - os: macos-13-large
             artifact_name: cursed-macos
             asset_name: cursed-macos-x86_64
 
@@ -60,33 +60,33 @@ jobs:
     - name: Check disk space before build
       run: df -h
 
-    - name: Build main cursed binary
+    - name: Build all release binaries
       run: |
-        devenv shell cargo build --release --bin cursed
-
-    - name: Build essential tools
-      run: |
-        devenv shell cargo build --release --bin cursed-doc --bin cursed-build --bin cursed-pkg --bin cursed-repl
+        devenv shell cargo build --release
 
     - name: Check disk space after build
       run: df -h
 
-    - name: Run minimal tests
+    - name: Run tests
       run: |
-        devenv shell cargo test --release --lib
+        devenv shell cargo test
 
     - name: Create artifact directory
       run: mkdir -p artifacts
 
     - name: Prepare binaries (Linux)
-      if: matrix.os == 'ubuntu-latest'
+      if: runner.os == 'Linux'
       run: |
-        # Copy essential executables
+        # Copy all executables
         cp target/release/cursed artifacts/cursed
         cp target/release/cursed-doc artifacts/cursed-doc
         cp target/release/cursed-build artifacts/cursed-build
         cp target/release/cursed-pkg artifacts/cursed-pkg
         cp target/release/cursed-repl artifacts/cursed-repl
+        cp target/release/cursed-test artifacts/cursed-test
+        cp target/release/cursed-lsp artifacts/cursed-lsp
+        cp target/release/cursed-debug artifacts/cursed-debug
+        cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
         
         # Strip binaries
         strip artifacts/*
@@ -95,14 +95,18 @@ jobs:
         tar -czf ${{ matrix.asset_name }}.tar.gz -C artifacts .
 
     - name: Prepare binaries (macOS)
-      if: matrix.os == 'macos-latest'
+      if: runner.os == 'macOS'
       run: |
-        # Copy essential executables
+        # Copy all executables
         cp target/release/cursed artifacts/cursed
         cp target/release/cursed-doc artifacts/cursed-doc
         cp target/release/cursed-build artifacts/cursed-build
         cp target/release/cursed-pkg artifacts/cursed-pkg
         cp target/release/cursed-repl artifacts/cursed-repl
+        cp target/release/cursed-test artifacts/cursed-test
+        cp target/release/cursed-lsp artifacts/cursed-lsp
+        cp target/release/cursed-debug artifacts/cursed-debug
+        cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
         
         # Strip binaries
         strip artifacts/*
