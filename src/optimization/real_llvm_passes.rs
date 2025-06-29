@@ -3,9 +3,10 @@
 use crate::error::{CursedError, Result};
 use crate::optimization::config::OptimizationConfig;
 use crate::optimization::llvm_passes::{LlvmPassManager, OptimizationStatistics};
+use crate::optimization::simple_passes::{SimpleConstantPropagationPass, SimpleDeadCodeEliminationPass, SimpleOptimizationResult};
 use crate::codegen::llvm::passes::{
-    InliningPass, LoopOptimizationPass, DeadCodeEliminationPass, 
-    ConstantPropagationPass, GvnPass, InliningResult, LoopInfo,
+    InliningPass, DeadCodeEliminationPass, 
+    GvnPass, InliningResult, LoopInfo,
     DeadCodeResult, GvnResult, LoopOptimizationResult
 };
 use inkwell::{context::Context, module::Module};
@@ -101,26 +102,32 @@ impl<'ctx> RealLlvmPassManager<'ctx> {
             return Ok(None);
         }
         
-        let loop_pass = LoopOptimizationPass::new(&self.config);
+        let loop_pass = crate::codegen::llvm::passes::loop_optimization_old::LoopOptimizationPass::new(&self.config);
         
-        loop_pass.run(module)?;
+        let result = loop_pass.run(module)?;
         
-        // Return a default LoopOptimizationResult since the actual optimization details
-        // would be collected during the pass execution
-        Ok(Some(LoopOptimizationResult::default()))
+        Ok(Some(result))
     }
     
     /// Run dead code elimination pass
     fn run_dead_code_elimination_pass(&self, module: &Module<'ctx>) -> Result<Option<DeadCodeResult>> {
-        let aggressive = matches!(
+        let _aggressive = matches!(
             self.config.level,
             crate::optimization::config::OptimizationLevel::Aggressive |
             crate::optimization::config::OptimizationLevel::Default
         );
         
-        let mut dce_pass = DeadCodeEliminationPass::new(self.context);
+        let dce_pass = SimpleDeadCodeEliminationPass::new(self.context);
         
-        let result = dce_pass.run(module)?;
+        let simple_result = dce_pass.run(module)?;
+        
+        // Convert to expected result format
+        let result = DeadCodeResult {
+            total_eliminated: simple_result.optimization_opportunities,
+            functions_processed: simple_result.functions_processed,
+            iterations_total: 1,
+        };
+        
         Ok(Some(result))
     }
     
@@ -131,12 +138,12 @@ impl<'ctx> RealLlvmPassManager<'ctx> {
             crate::optimization::config::OptimizationLevel::Aggressive
         );
         
-        let _const_prop_pass = ConstantPropagationPass::new(self.context);
+        let mut const_prop_pass = SimpleConstantPropagationPass::new(self.context, aggressive);
         
-        // TODO: Re-enable sparse analysis and run methods once API is fixed
-        // let result = const_prop_pass.optimize_function(&function)?;
-        let _result = false; // Placeholder until proper implementation
-        Ok(None) // Placeholder return
+        // Run the simplified constant propagation pass on the module
+        let result = const_prop_pass.run(module)?;
+        
+        Ok(Some(result.has_optimizations()))
     }
     
     /// Run Global Value Numbering pass
@@ -216,16 +223,34 @@ impl<'ctx> RealLlvmPassManager<'ctx> {
     
     /// Add a pass by name
     pub fn add_pass(&mut self, pass_name: String) -> Result<()> {
-        // For now, just register as a custom pass
-        if !self.custom_passes.registered_passes.contains_key(&pass_name) {
-            let info = CustomPassInfo {
-                name: pass_name.clone(),
-                description: format!("Pass: {}", pass_name),
-                category: PassCategory::Custom,
-                prerequisites: Vec::new(),
-                optimization_level_requirement: crate::optimization::config::OptimizationLevel::Default,
-            };
-            self.custom_passes.register_pass(pass_name, info);
+        match pass_name.as_str() {
+            "inlining" => {
+                if self.config.inline_threshold == 0 {
+                    self.config.inline_threshold = 225;
+                }
+            }
+            "loop-optimization" => {
+                if self.config.unroll_threshold == 0 {
+                    self.config.unroll_threshold = 150;
+                }
+                self.config.vectorize = true;
+            }
+            "dead-code-elimination" | "constant-propagation" | "gvn" => {
+                // These are always enabled
+            }
+            _ => {
+                // Register as custom pass
+                if !self.custom_passes.registered_passes.contains_key(&pass_name) {
+                    let info = CustomPassInfo {
+                        name: pass_name.clone(),
+                        description: format!("Pass: {}", pass_name),
+                        category: PassCategory::Custom,
+                        prerequisites: Vec::new(),
+                        optimization_level_requirement: crate::optimization::config::OptimizationLevel::Default,
+                    };
+                    self.custom_passes.register_pass(pass_name, info);
+                }
+            }
         }
         Ok(())
     }
@@ -305,8 +330,7 @@ impl ComprehensiveOptimizationResult {
         }
         
         if let Some(ref const_prop) = self.constant_propagation_result {
-            // TODO: Fix when const_prop returns proper result type
-            // total += const_prop.total_optimizations();
+            // Convert boolean result to optimization count
             if *const_prop { total += 1; }
         }
         
@@ -359,22 +383,7 @@ impl PassManagerStatistics {
         }
     }
 
-    /// Get enabled passes
-    pub fn get_enabled_passes(&self) -> Vec<String> {
-        // TODO: Implement when pass manager is properly integrated
-        Vec::new()
-    }
 
-    /// Clear all passes
-    pub fn clear_passes(&mut self) {
-        // TODO: Implement when pass manager is properly integrated
-    }
-
-    /// Add a pass
-    pub fn add_pass(&mut self, pass_name: String) -> Result<()> {
-        // TODO: Implement when pass manager is properly integrated
-        Ok(())
-    }
 }
 
 #[cfg(test)]

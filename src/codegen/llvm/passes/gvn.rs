@@ -219,7 +219,9 @@ impl<'ctx> GvnPass<'ctx> {
             // We can replace this load with the existing value
             match existing_value.as_any_value_enum() {
                 inkwell::values::AnyValueEnum::InstructionValue(existing_instruction) => {
-                    instruction.replace_all_uses_with(&existing_instruction);
+                    unsafe {
+                        instruction.replace_all_uses_with(&existing_instruction);
+                    }
                     self.redundant_instructions.insert(instruction);
                     result.redundant_loads += 1;
                 }
@@ -253,7 +255,9 @@ impl<'ctx> GvnPass<'ctx> {
                 // We can replace this instruction with the existing value
                 match existing_value.as_any_value_enum() {
                     inkwell::values::AnyValueEnum::InstructionValue(existing_instruction) => {
-                        instruction.replace_all_uses_with(&existing_instruction);
+                        unsafe {
+                            instruction.replace_all_uses_with(&existing_instruction);
+                        }
                         self.redundant_instructions.insert(instruction);
                         result.redundant_expressions += 1;
                     }
@@ -287,7 +291,9 @@ impl<'ctx> GvnPass<'ctx> {
         if let Some(&existing_value) = expressions_in_block.get(&expr) {
             match existing_value.as_any_value_enum() {
                 inkwell::values::AnyValueEnum::InstructionValue(existing_instruction) => {
-                    instruction.replace_all_uses_with(&existing_instruction);
+                    unsafe {
+                        instruction.replace_all_uses_with(&existing_instruction);
+                    }
                     self.redundant_instructions.insert(instruction);
                     result.redundant_expressions += 1;
                 }

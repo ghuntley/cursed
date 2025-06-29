@@ -3,15 +3,20 @@
 /// This module provides ZLIB compression and decompression functionality
 /// using the flate2 crate, with CURSED-style interfaces and error handling.
 
-// use crate::stdlib::squish_core::{SquishError, SquishResult, CompressionLevel, CompressionStats};
-// use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishWriter};
+use crate::stdlib::squish_core::{SquishError, SquishResult, constants::CompressionLevel, core::CompressionStats};
+use crate::stdlib::squish_core::core::{Reader as SquishReader, Writer as SquishWriter};
 use std::io::{Read, Write, BufWriter, BufReader};
 use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 use std::time::Instant;
-use crate::error::CursedError;
+use crate::error_types::CursedError;
 
 /// ZLIB reader that decompresses data on read
 pub struct ZlibReader<R: Read> {
+    inner: ZlibDecoder<BufReader<R>>,
+    bytes_read: usize,
+    start_time: Instant,
+}
+
 impl<R: Read> ZlibReader<R> {
     /// Create a new ZLIB reader
     pub fn new(reader: R) -> SquishResult<Self> {
@@ -19,6 +24,9 @@ impl<R: Read> ZlibReader<R> {
         let decoder = ZlibDecoder::new(buffered);
         
         Ok(Self {
+            inner: decoder,
+            bytes_read: 0,
+            start_time: Instant::now(),
         })
     }
 }
@@ -35,14 +43,24 @@ impl<R: Read> SquishReader for ZlibReader<R> {
     fn close(&mut self) -> SquishResult<()> {
         // ZLIB decoder closes automatically when dropped
         Ok(())
+    }
+    
     fn stats(&self) -> Option<CompressionStats> {
         Some(CompressionStats::new(
+            self.bytes_read as u64,
+            0, // We don't track compressed size here
+            self.start_time.elapsed(),
         ))
     }
 }
 
 /// ZLIB writer that compresses data on write
 pub struct ZlibWriter<W: Write> {
+    inner: Option<ZlibEncoder<BufWriter<W>>>,
+    uncompressed_size: usize,
+    start_time: Instant,
+}
+
 impl<W: Write> ZlibWriter<W> {
     /// Create a new ZLIB writer with default compression
     pub fn new(writer: W) -> Self {
@@ -54,6 +72,9 @@ impl<W: Write> ZlibWriter<W> {
         let encoder = ZlibEncoder::new(buffered, compression);
         
         Self {
+            inner: Some(encoder),
+            uncompressed_size: 0,
+            start_time: Instant::now(),
         }
     }
 impl<W: Write> Write for ZlibWriter<W> {
@@ -64,6 +85,7 @@ impl<W: Write> Write for ZlibWriter<W> {
             Ok(bytes)
         } else {
             Err(std::io::Error::new(
+                std::io::ErrorKind::BrokenPipe,
                 "Writer has been closed"
             ))
         }
@@ -93,6 +115,9 @@ impl<W: Write> SquishWriter for ZlibWriter<W> {
         Err(SquishError::generic("Reset not supported for ZLIB writer in this implementation"))
     fn stats(&self) -> Option<CompressionStats> {
         Some(CompressionStats::new(
+            self.uncompressed_size as u64,
+            0, // We don't track compressed size here
+            self.start_time.elapsed(),
         ))
     }
 }
@@ -142,14 +167,13 @@ pub fn is_valid_compression_level(level: i32) -> bool {
     level >= 0 && level <= 9 || level == -1
 /// Initialize ZLIB module
 pub fn initialize() {
-        // TODO: implement
-    }
     // No specific initialization needed for ZLIB
+}
 
 /// bestie Create new ZLIB writer with default compression
 pub fn new_writer<W: Write>(writer: W) -> SquishResult<ZlibWriter<W>> {
-    ZlibWriter::new(writer)
+    Ok(ZlibWriter::new(writer))
 /// periodt Create new ZLIB writer with specified compression level
 pub fn new_writer_level<W: Write>(writer: W, level: CompressionLevel) -> SquishResult<ZlibWriter<W>> {
-    ZlibWriter::with_level(writer, level)
+    Ok(ZlibWriter::with_level(writer, level))
 }

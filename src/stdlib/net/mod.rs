@@ -1,5 +1,6 @@
-use crate::web::StatusCode;
-use crate::error::CursedError;
+use crate::error_types::CursedError;
+use std::sync::{RwLock, Mutex};
+use std::sync::atomic::{AtomicU64, Ordering};
 /// Comprehensive networking and protocol support module for CURSED programming language
 /// 
 /// This module provides production-ready networking capabilities including:
@@ -182,15 +183,87 @@ pub fn shutdown() -> NetResult<()> {
     Ok(())
 /// Get networking module statistics
 pub fn get_network_statistics() -> NetworkStatistics {
-    NetworkStatistics {
-        active_connections: 0, // TODO: Track active connections
-        total_bytes_sent: 0,   // TODO: Track bytes sent
-        total_bytes_received: 0, // TODO: Track bytes received
-        dns_queries: 0,        // TODO: Track DNS queries
-        failed_connections: 0, // TODO: Track failed connections
-    }
+    NETWORK_STATS.read().unwrap().clone()
 }
 
 /// Network statistics for monitoring
 #[derive(Debug, Clone)]
 pub struct NetworkStatistics {
+    pub active_connections: u64,
+    pub total_bytes_sent: u64,
+    pub total_bytes_received: u64,
+    pub dns_queries: u64,
+    pub failed_connections: u64,
+}
+
+impl Default for NetworkStatistics {
+    fn default() -> Self {
+        Self {
+            active_connections: 0,
+            total_bytes_sent: 0,
+            total_bytes_received: 0,
+            dns_queries: 0,
+            failed_connections: 0,
+        }
+    }
+}
+
+/// Global network statistics
+static NETWORK_STATS: RwLock<NetworkStatistics> = RwLock::new(NetworkStatistics {
+    active_connections: 0,
+    total_bytes_sent: 0,
+    total_bytes_received: 0,
+    dns_queries: 0,
+    failed_connections: 0,
+});
+
+/// Update network statistics - track new connection
+pub fn track_connection_opened() {
+    if let Ok(mut stats) = NETWORK_STATS.write() {
+        stats.active_connections += 1;
+    }
+}
+
+/// Update network statistics - track closed connection
+pub fn track_connection_closed() {
+    if let Ok(mut stats) = NETWORK_STATS.write() {
+        if stats.active_connections > 0 {
+            stats.active_connections -= 1;
+        }
+    }
+}
+
+/// Update network statistics - track failed connection
+pub fn track_connection_failed() {
+    if let Ok(mut stats) = NETWORK_STATS.write() {
+        stats.failed_connections += 1;
+    }
+}
+
+/// Update network statistics - track bytes sent
+pub fn track_bytes_sent(bytes: u64) {
+    if let Ok(mut stats) = NETWORK_STATS.write() {
+        stats.total_bytes_sent += bytes;
+    }
+}
+
+/// Update network statistics - track bytes received
+pub fn track_bytes_received(bytes: u64) {
+    if let Ok(mut stats) = NETWORK_STATS.write() {
+        stats.total_bytes_received += bytes;
+    }
+}
+
+/// Update network statistics - track DNS query
+pub fn track_dns_query() {
+    if let Ok(mut stats) = NETWORK_STATS.write() {
+        stats.dns_queries += 1;
+    }
+}
+
+/// Reset network statistics
+pub fn reset_network_statistics() {
+    if let Ok(mut stats) = NETWORK_STATS.write() {
+        *stats = NetworkStatistics::default();
+    }
+}
