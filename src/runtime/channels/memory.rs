@@ -63,6 +63,10 @@ pub struct MemoryPool {
     pool_sizes: Vec<usize>,
 }
 
+// Safety: MemoryPool is designed to be thread-safe with proper synchronization
+unsafe impl Send for MemoryPool {}
+unsafe impl Sync for MemoryPool {}
+
 impl MemoryPool {
     /// Create a new memory pool
     pub fn new() -> Self {

@@ -60,7 +60,7 @@ pub trait ChannelBuffer<T>: Send + Sync {
 }
 
 /// Unbuffered channel implementation (synchronous)
-pub struct UnbufferedChannel<T> {
+pub struct UnbufferedChannel<T: Send> {
     /// Pending value from sender
     pending_value: Mutex<Option<T>>,
     /// Sender waiting condition
@@ -75,7 +75,7 @@ pub struct UnbufferedChannel<T> {
     closed: Mutex<bool>,
 }
 
-impl<T> UnbufferedChannel<T> {
+impl<T: Send> UnbufferedChannel<T> {
     pub fn new() -> Self {
         Self {
             pending_value: Mutex::new(None),
@@ -139,7 +139,7 @@ impl<T> UnbufferedChannel<T> {
     }
 }
 
-impl<T> ChannelBuffer<T> for UnbufferedChannel<T> {
+impl<T: Send> ChannelBuffer<T> for UnbufferedChannel<T> {
     fn try_push(&self, value: T) -> Result<(), (T, ChannelError)> {
         // For unbuffered channels, we need a receiver to be waiting
         if self.pending_receivers.load(Ordering::SeqCst) == 0 {
@@ -198,7 +198,7 @@ impl<T> ChannelBuffer<T> for UnbufferedChannel<T> {
 }
 
 /// Ring buffer implementation for fixed-size channels
-pub struct RingBuffer<T> {
+pub struct RingBuffer<T: Send> {
     /// Buffer data
     buffer: Mutex<RingBufferData<T>>,
     /// Not empty condition
@@ -209,7 +209,7 @@ pub struct RingBuffer<T> {
     closed: Mutex<bool>,
 }
 
-struct RingBufferData<T> {
+struct RingBufferData<T: Send> {
     /// Underlying storage
     data: Vec<MaybeUninit<T>>,
     /// Write position
@@ -222,7 +222,7 @@ struct RingBufferData<T> {
     capacity: usize,
 }
 
-impl<T> RingBuffer<T> {
+impl<T: Send> RingBuffer<T> {
     pub fn new(capacity: usize) -> Self {
         let mut data = Vec::with_capacity(capacity);
         // Initialize with uninitialized memory
@@ -297,7 +297,7 @@ impl<T> RingBuffer<T> {
     }
 }
 
-impl<T> ChannelBuffer<T> for RingBuffer<T> {
+impl<T: Send> ChannelBuffer<T> for RingBuffer<T> {
     fn try_push(&self, value: T) -> Result<(), (T, ChannelError)> {
         let mut buffer = self.buffer.lock().unwrap();
         
@@ -366,7 +366,7 @@ impl<T> ChannelBuffer<T> for RingBuffer<T> {
 }
 
 /// Dynamic buffer that can grow as needed
-pub struct DynamicBuffer<T> {
+pub struct DynamicBuffer<T: Send> {
     /// Buffer data
     buffer: Mutex<VecDeque<T>>,
     /// Not empty condition
@@ -377,7 +377,7 @@ pub struct DynamicBuffer<T> {
     closed: Mutex<bool>,
 }
 
-impl<T> DynamicBuffer<T> {
+impl<T: Send> DynamicBuffer<T> {
     pub fn new(initial_capacity: usize, max_capacity: Option<usize>) -> Self {
         Self {
             buffer: Mutex::new(VecDeque::with_capacity(initial_capacity)),
@@ -388,7 +388,7 @@ impl<T> DynamicBuffer<T> {
     }
 }
 
-impl<T> ChannelBuffer<T> for DynamicBuffer<T> {
+impl<T: Send> ChannelBuffer<T> for DynamicBuffer<T> {
     fn try_push(&self, value: T) -> Result<(), (T, ChannelError)> {
         let mut buffer = self.buffer.lock().unwrap();
         
@@ -440,7 +440,7 @@ impl<T> ChannelBuffer<T> for DynamicBuffer<T> {
 }
 
 /// Create a buffer based on the buffer type
-pub fn create_buffer<T: 'static>(buffer_type: BufferType) -> Box<dyn ChannelBuffer<T>> {
+pub fn create_buffer<T: Send + 'static>(buffer_type: BufferType) -> Box<dyn ChannelBuffer<T>> {
     match buffer_type {
         BufferType::Unbuffered => Box::new(UnbufferedChannel::new()),
         BufferType::Fixed(capacity) => Box::new(RingBuffer::new(capacity)),
@@ -453,7 +453,7 @@ pub fn create_buffer<T: 'static>(buffer_type: BufferType) -> Box<dyn ChannelBuff
 }
 
 // Drop implementation for RingBuffer to properly clean up uninitialized memory
-impl<T> Drop for RingBufferData<T> {
+impl<T: Send> Drop for RingBufferData<T> {
     fn drop(&mut self) {
         // Drop any initialized values
         let mut read_pos = self.read_pos;

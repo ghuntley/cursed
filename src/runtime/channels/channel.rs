@@ -66,7 +66,7 @@ impl Default for ChannelStats {
 }
 
 /// Full-featured channel implementation
-pub struct Channel<T> {
+pub struct Channel<T: Send + 'static> {
     /// Unique channel identifier
     id: ChannelId,
     /// Channel buffer
@@ -343,7 +343,7 @@ impl<T: Send + 'static> Drop for Channel<T> {
 }
 
 /// Channel sender handle
-pub struct ChannelSender<T> {
+pub struct ChannelSender<T: Send + 'static> {
     channel: Channel<T>,
     _phantom: PhantomData<T>,
 }
@@ -402,7 +402,7 @@ impl<T: Send + 'static> Drop for ChannelSender<T> {
 }
 
 /// Channel receiver handle
-pub struct ChannelReceiver<T> {
+pub struct ChannelReceiver<T: Send + 'static> {
     channel: Channel<T>,
     _phantom: PhantomData<T>,
 }
@@ -451,14 +451,14 @@ impl<T: Send + 'static> Clone for ChannelReceiver<T> {
     }
 }
 
-impl<T: Send + 'static> Drop for ChannelReceiver<T> {
+impl<T: Send> Drop for ChannelReceiver<T> {
     fn drop(&mut self) {
         self.channel.receiver_count.fetch_sub(1, Ordering::SeqCst);
     }
 }
 
 /// Iterator for channel range operations
-pub struct ChannelIterator<T> {
+pub struct ChannelIterator<T: Send + 'static> {
     receiver: ChannelReceiver<T>,
 }
 
@@ -490,7 +490,7 @@ pub fn buffered_channel<T: Send + 'static>(capacity: usize) -> (ChannelSender<T>
 }
 
 /// CURSED syntax support - dm<T> type alias for channels
-pub type Dm<T> = Channel<T>;
+pub type Dm<T: Send> = Channel<T>;
 
 /// CURSED syntax support - channel creation with dm keyword
 pub fn dm<T: Send + 'static>() -> (ChannelSender<T>, ChannelReceiver<T>) {

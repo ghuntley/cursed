@@ -123,8 +123,8 @@ pub struct EventLoop {
     ready_events: Arc<Mutex<Vec<EventId>>>,
     high_priority_events: Arc<Mutex<Vec<EventId>>>,
     stats: Arc<Mutex<EventLoopStats>>,
-    running: AtomicBool,
-    shutdown: AtomicBool,
+    running: Arc<AtomicBool>,
+    shutdown: Arc<AtomicBool>,
     thread_handle: Mutex<Option<thread::JoinHandle<()>>>,
 }
 
@@ -146,8 +146,8 @@ impl EventLoop {
             ready_events: Arc::new(Mutex::new(Vec::new())),
             high_priority_events: Arc::new(Mutex::new(Vec::new())),
             stats: Arc::new(Mutex::new(stats)),
-            running: AtomicBool::new(false),
-            shutdown: AtomicBool::new(false),
+            running: Arc::new(AtomicBool::new(false)),
+            shutdown: Arc::new(AtomicBool::new(false)),
             thread_handle: Mutex::new(None),
         })
     }
@@ -309,8 +309,8 @@ impl EventLoop {
         high_priority_events: Arc<Mutex<Vec<EventId>>>,
         stats: Arc<Mutex<EventLoopStats>>,
         config: EventLoopConfig,
-        running: AtomicBool,
-        shutdown: AtomicBool,
+        running: Arc<AtomicBool>,
+        shutdown: Arc<AtomicBool>,
     ) {
         let mut tick_timer = Instant::now();
         

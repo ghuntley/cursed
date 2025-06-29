@@ -11,13 +11,24 @@ pub type TimerId = u64;
 pub type TimerCallback = Box<dyn FnOnce() + Send + 'static>;
 
 /// Timer entry in the timer wheel
-#[derive(Debug)]
 pub struct TimerEntry {
     pub id: TimerId,
     pub expires_at: Instant,
     pub callback: TimerCallback,
     pub repeating: bool,
     pub interval: Option<Duration>,
+}
+
+impl std::fmt::Debug for TimerEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TimerEntry")
+            .field("id", &self.id)
+            .field("expires_at", &self.expires_at)
+            .field("repeating", &self.repeating)
+            .field("interval", &self.interval)
+            .field("callback", &"<callback>")
+            .finish()
+    }
 }
 
 impl TimerEntry {

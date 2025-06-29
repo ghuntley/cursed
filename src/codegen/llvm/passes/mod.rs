@@ -3,9 +3,11 @@
 /// This module contains all optimization pass implementations specific to the CURSED language,
 /// as well as wrappers for standard LLVM passes with CURSED-specific configurations.
 
+// Core optimization passes
 pub mod dead_code_elimination;
 pub mod constant_propagation;
 pub mod loop_optimization;
+pub mod loop_optimization_old;
 pub mod inlining;
 pub mod gvn;
 
@@ -22,8 +24,9 @@ pub mod jump_threading;
 
 // Re-export main pass types with their results
 pub use dead_code_elimination::{DeadCodeEliminationPass, DeadCodeAnalyzer, DeadCodeResult};
-pub use constant_propagation::{ConstantPropagationPass, ConstantFolder, ConstantPropagationResult};
+pub use constant_propagation::ConstantPropagationPass;
 pub use loop_optimization::{LoopOptimizationPass, LoopInfo};
+pub use loop_optimization_old::LoopOptimizationResult;
 pub use inlining::{InliningPass, InliningHeuristics, CallSiteAnalyzer, InliningResult};
 pub use gvn::{GvnPass, GvnResult};
 

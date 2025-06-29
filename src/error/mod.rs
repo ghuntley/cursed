@@ -109,3 +109,9 @@ impl From<crate::error_types::Error> for CursedError {
         CursedError::General(error.to_string())
     }
 }
+
+impl From<inkwell::builder::BuilderError> for CursedError {
+    fn from(error: inkwell::builder::BuilderError) -> Self {
+        CursedError::compiler_error(&format!("LLVM builder error: {}", error))
+    }
+}

@@ -200,7 +200,6 @@ pub struct MemoryManager {
 }
 
 /// Memory pressure state
-#[derive(Debug, Clone)]
 struct PressureState {
     /// Current pressure level (0.0-1.0)
     level: f64,
@@ -208,6 +207,16 @@ struct PressureState {
     last_check: Instant,
     /// Pressure callbacks
     callbacks: Vec<Box<dyn Fn(f64) + Send + Sync>>,
+}
+
+impl std::fmt::Debug for PressureState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PressureState")
+            .field("level", &self.level)
+            .field("last_check", &self.last_check)
+            .field("callbacks", &format!("Vec<Box<dyn Fn(f64)>> with {} callbacks", self.callbacks.len()))
+            .finish()
+    }
 }
 
 impl MemoryManager {

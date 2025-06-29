@@ -7,9 +7,16 @@ use std::collections::VecDeque;
 use crate::error::CursedError;
 
 /// A future that is immediately ready with a value
-#[derive(Debug)]
 pub struct ReadyFuture<T> {
     value: Option<T>,
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for ReadyFuture<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ReadyFuture")
+            .field("value", &self.value)
+            .finish()
+    }
 }
 
 impl<T> ReadyFuture<T> {
@@ -127,7 +134,7 @@ where
         let len = futures.len();
         Self {
             futures,
-            results: vec![None; len],
+            results: (0..len).map(|_| None).collect(),
             completed: 0,
         }
     }
@@ -398,7 +405,7 @@ where
         // Poll the timeout
         let delay_pin = unsafe { Pin::new_unchecked(&mut this.delay) };
         if let Poll::Ready(()) = delay_pin.poll(cx) {
-            return Poll::Ready(Err(CursedError::Runtime("Future timed out".to_string())));
+            return Poll::Ready(Err(CursedError::runtime_error("Future timed out")));
         }
         
         Poll::Pending
