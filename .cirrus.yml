@@ -18,15 +18,7 @@ linux_build_task:
     folder: /nix
     fingerprint_script: cat devenv.nix devenv.lock
     
-  # Cache Cargo dependencies
-  cargo_cache:
-    folder: ~/.cargo
-    fingerprint_script: cat Cargo.lock
-    
-  # Cache build artifacts (with care)
-  target_cache:
-    folder: target
-    fingerprint_script: cat Cargo.lock src/**/*.rs | head -c 1000
+
     
   install_nix_script: |
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
@@ -85,15 +77,7 @@ macos_build_task:
     folder: /nix
     fingerprint_script: cat devenv.nix devenv.lock
     
-  # Cache Cargo dependencies
-  cargo_cache:
-    folder: ~/.cargo
-    fingerprint_script: cat Cargo.lock
-    
-  # Cache build artifacts (with care)
-  target_cache:
-    folder: target
-    fingerprint_script: cat Cargo.lock src/**/*.rs | head -c 1000
+
     
   install_nix_script: |
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
