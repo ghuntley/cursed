@@ -1,7 +1,6 @@
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  GITHUB_TOKEN: ENCRYPTED[df4cea961775aeb6475f012a135b0249089fdfc0ebba4d69f9e5a61e9dce037d2af7604b4cec1c9feed3958e475900c1]
 
 # Linux build with more disk space and CPU
 linux_build_task:
@@ -140,13 +139,16 @@ macos_build_task:
   artifacts:
     path: "cursed-macos-x86_64.tar.gz"
 
-# Release task - only runs on tags
+# Release task - only runs on tags on trunk branch
 release_task:
   name: Create Release
   depends_on:
     - linux_build
     - macos_build
-  only_if: $CIRRUS_TAG != ""
+  only_if: $CIRRUS_TAG != "" && $CIRRUS_BRANCH == "trunk"
+  
+  env:
+    GITHUB_TOKEN: ENCRYPTED[df4cea961775aeb6475f012a135b0249089fdfc0ebba4d69f9e5a61e9dce037d2af7604b4cec1c9feed3958e475900c1]
   
   container:
     image: alpine:latest
