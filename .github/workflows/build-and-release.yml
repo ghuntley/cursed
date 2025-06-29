@@ -28,14 +28,16 @@ jobs:
             asset_name: cursed-macos-x86_64
 
     steps:
-    - name: Free disk space
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /opt/ghc
-        sudo rm -rf /opt/hostedtoolcache/CodeQL
-        sudo docker image prune --all --force
-        df -h
+    - name: Maximize build space
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 512
+        swap-size-mb: 1024
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
+        remove-docker-images: 'true'
 
     - name: Checkout code
       uses: actions/checkout@v4
@@ -56,11 +58,11 @@ jobs:
 
     - name: Build release
       run: |
-        devenv shell cargo build --release --bin cursed --bin cursed-doc --bin cursed-build --bin cursed-pkg --bin cursed-repl
+        devenv shell cargo build --release
 
-    - name: Run essential tests
+    - name: Run tests
       run: |
-        devenv shell cargo test --lib --bins
+        devenv shell cargo test
 
     - name: Create artifact directory
       run: mkdir -p artifacts
@@ -74,6 +76,10 @@ jobs:
         cp target/release/cursed-build artifacts/cursed-build
         cp target/release/cursed-pkg artifacts/cursed-pkg
         cp target/release/cursed-repl artifacts/cursed-repl
+        cp target/release/cursed-test artifacts/cursed-test
+        cp target/release/cursed-lsp artifacts/cursed-lsp
+        cp target/release/cursed-debug artifacts/cursed-debug
+        cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
         
         # Strip binaries
         strip artifacts/*
@@ -90,6 +96,10 @@ jobs:
         cp target/release/cursed-build artifacts/cursed-build
         cp target/release/cursed-pkg artifacts/cursed-pkg
         cp target/release/cursed-repl artifacts/cursed-repl
+        cp target/release/cursed-test artifacts/cursed-test
+        cp target/release/cursed-lsp artifacts/cursed-lsp
+        cp target/release/cursed-debug artifacts/cursed-debug
+        cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
         
         # Strip binaries
         strip artifacts/*
