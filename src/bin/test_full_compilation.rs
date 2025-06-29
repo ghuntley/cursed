@@ -4,16 +4,19 @@ use std::fs;
 fn main() {
     println!("Testing CURSED full compilation pipeline...");
     
-    // Read the demo program
-    let source = match fs::read_to_string("test_cursed_demo.csd") {
+    // Get filename from command line or use default
+    let filename = std::env::args().nth(1).unwrap_or_else(|| "test_cursed_demo.csd".to_string());
+    
+    // Read the program
+    let source = match fs::read_to_string(&filename) {
         Ok(content) => content,
         Err(e) => {
-            println!("Error reading test_cursed_demo.csd: {}", e);
+            println!("Error reading {}: {}", filename, e);
             return;
         }
     };
 
-    println!("Source code from test_cursed_demo.csd:");
+    println!("Source code from {}:", filename);
     println!("{}", source);
     println!("\nStarting compilation...");
     

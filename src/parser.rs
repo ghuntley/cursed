@@ -359,8 +359,18 @@ impl Parser {
     fn parse_call(&mut self) -> Result<Expression, CursedError> {
         let mut expr = self.parse_primary()?;
 
-        while self.match_tokens(&[TokenKind::LeftParen]) {
-            expr = self.finish_call(expr)?;
+        loop {
+            if self.match_tokens(&[TokenKind::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else if self.match_tokens(&[TokenKind::Dot]) {
+                let property = self.consume(TokenKind::Identifier, "Expected property name after '.'")?;
+                expr = Expression::MemberAccess(MemberAccessExpression {
+                    object: Box::new(expr),
+                    property: property.lexeme.clone(),
+                });
+            } else {
+                break;
+            }
         }
 
         Ok(expr)

@@ -32,10 +32,147 @@
 - ✅ **COMMENT HANDLING** - Line comments with `//`
 - ✅ **NEWLINE MANAGEMENT** - Proper whitespace and newline handling
 
-**CURRENTLY WORKING ON:**
-- 🔄 Fixing minor parsing edge cases (UTF-8 character handling)
-- 🔄 Member access expression parsing (for `vibez.spill()` calls)
-- 🔄 Standard library function resolution
+## 🎯 COMPREHENSIVE STUB & TODO RESOLUTION PLAN
+
+**ANALYSIS COMPLETE**: After deploying 5 subagents to systematically scan the codebase, we've identified **130+ TODOs**, **99% stub implementations** in stdlib, and **major disabled functionality**. Here's the complete resolution plan:
+
+### 🔥 **PHASE 1: CRITICAL CORE FUNCTIONALITY** (Required for basic programs)
+
+#### **1.1 Type System Implementation** - [`src/type_system/`](file:///home/ghuntley/code/cursed/src/type_system/)
+**Status**: 95% stubbed, blocks all type checking
+**Priority**: CRITICAL - Required for variable declarations, function calls
+**TODOs**: 30+ across all type system modules
+
+**Implementation Plan**:
+```rust
+// Fix TypeExpression core data structures
+impl TypeExpression {
+    fn new_named(name: String) -> Self { /* real implementation */ }
+    fn new_function(params: Vec<Type>, return_type: Type) -> Self { /* real implementation */ }
+    fn unify(&self, other: &TypeExpression) -> Result<TypeSubstitution, TypeError> { /* real logic */ }
+}
+
+// Connect TypeChecker to AST traversal
+impl TypeChecker {
+    fn check_function(&mut self, func: &FunctionStatement) -> Result<Type, TypeError> { /* real checking */ }
+    fn check_expression(&mut self, expr: &Expression) -> Result<Type, TypeError> { /* real inference */ }
+}
+```
+
+#### **1.2 Standard Library Core** - [`src/stdlib/`](file:///home/ghuntley/code/cursed/src/stdlib/)
+**Status**: 99% minimal stubs, blocks basic program execution
+**Priority**: CRITICAL - `vibez.spill()` needed for demo program
+
+**Implementation Plan**:
+```rust
+// Fix vibez.spill() for basic output
+// src/stdlib/vibez/print.rs
+pub fn spill(value: &dyn std::fmt::Display) -> Result<(), CursedError> {
+    println!("{}", value);
+    Ok(())
+}
+
+// Basic string operations
+// src/stdlib/string/core.rs  
+pub fn length(s: &str) -> usize { s.len() }
+pub fn concat(a: &str, b: &str) -> String { format!("{}{}", a, b) }
+
+// Console I/O
+// src/stdlib/io/console.rs
+pub fn read_line() -> Result<String, CursedError> { /* real stdin reading */ }
+```
+
+#### **1.3 Member Access Parsing** - [`src/parser.rs`](file:///home/ghuntley/code/cursed/src/parser.rs)
+**Status**: Missing dot operator expression parsing
+**Priority**: CRITICAL - Blocks `vibez.spill()` calls
+
+**Implementation Plan**:
+```rust
+// Add member access to Expression enum
+pub enum Expression {
+    MemberAccess(MemberAccessExpression),
+    // ... existing variants
+}
+
+// Parse dot operations in parse_call()
+fn parse_member_access(&mut self) -> Result<Expression, CursedError> {
+    let mut expr = self.parse_primary()?;
+    while self.match_tokens(&[TokenKind::Dot]) {
+        let member = self.consume(TokenKind::Identifier, "Expected member name")?;
+        expr = Expression::MemberAccess(MemberAccessExpression {
+            object: Box::new(expr),
+            member: member.lexeme.clone(),
+        });
+    }
+    Ok(expr)
+}
+```
+
+### 🚀 **PHASE 2: DISABLED FUNCTIONALITY RESTORATION** (Medium Priority)
+
+#### **2.1 LLVM Optimization Passes** - [`src/optimization/real_llvm_passes.rs`](file:///home/ghuntley/code/cursed/src/optimization/real_llvm_passes.rs)
+**Status**: Disabled due to inkwell API incompatibilities
+**TODOs**: 5 critical optimization functions
+
+**Resolution Strategy**:
+1. Update inkwell dependency to latest version
+2. Fix API compatibility issues in constant propagation
+3. Re-enable dead code elimination passes
+4. Restore inlining optimization
+5. Test with simple CURSED programs
+
+#### **2.2 Import/Module System** - [`src/imports/mod.rs`](file:///home/ghuntley/code/cursed/src/imports/mod.rs)
+**Status**: Complete stub implementation
+**TODOs**: 8 core import resolution functions
+
+**Implementation Plan**:
+```rust
+pub fn resolve_import(path: &str) -> Result<Module, CursedError> {
+    // 1. Parse import path
+    // 2. Locate module file (.csd)
+    // 3. Parse and compile module
+    // 4. Add to symbol table
+    // 5. Return module handle
+}
+```
+
+#### **2.3 Package Manager** - [`src/package_manager/mod.rs`](file:///home/ghuntley/code/cursed/src/package_manager/mod.rs)
+**Status**: All functions are stubs
+**TODOs**: 6 package management operations
+
+### 🛠️ **PHASE 3: RUNTIME SYSTEM COMPLETION** (Lower Priority)
+
+#### **3.1 Garbage Collection** - [`src/runtime/gc.rs`](file:///home/ghuntley/code/cursed/src/runtime/gc.rs)
+**Status**: Advanced GC features stubbed
+**TODOs**: Root collection, cycle detection
+
+#### **3.2 Debug Information** - [`src/runtime/debug_info.rs`](file:///home/ghuntley/code/cursed/src/runtime/debug_info.rs)
+**Status**: DWARF generation stubs
+**TODOs**: Debug metadata extraction
+
+#### **3.3 Async/Channel System** - [`src/runtime/channels/`](file:///home/ghuntley/code/cursed/src/runtime/channels/)
+**Status**: Type conversion issues in select operations
+**TODOs**: Arc type fixes
+
+### 📊 **IMPLEMENTATION METRICS**
+
+**Total Issues Identified**:
+- 🔴 **130+ TODO comments** requiring implementation
+- 🔴 **99% of stdlib modules** are minimal stubs  
+- 🔴 **5 major disabled subsystems** due to API issues
+- 🔴 **Type system 95% incomplete** - blocks type checking
+- 🔴 **Critical parser gaps** - member access missing
+
+**Estimated Effort**:
+- **Phase 1 (Critical)**: 40-60 hours - Required for basic program execution
+- **Phase 2 (Restoration)**: 20-30 hours - Advanced language features  
+- **Phase 3 (Polish)**: 30-40 hours - Enterprise-grade features
+
+**Success Criteria**:
+- ✅ `test_cursed_demo.csd` executes successfully with real output
+- ✅ All critical TODOs resolved
+- ✅ Type checking functional for basic programs
+- ✅ Standard library provides essential operations
 
 **Goal**: Restore full CURSED language implementation with all advanced features from minimal working state.
 

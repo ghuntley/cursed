@@ -1,15 +1,10 @@
-//! Minimal working module for CURSED compilation
+//! Format module stub for vibez
 
 use crate::error::CursedError;
 
-pub struct MinimalImplementation;
-
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
-}
+// Stub implementations - TODO: implement properly
+pub struct FormatPlaceholder;
+pub struct FormatSpec;
+pub struct PlaceholderType;
+pub struct FormatAlignment;
+pub struct FormatSign;
