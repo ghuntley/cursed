@@ -315,17 +315,18 @@ mod tests {
 
     #[test]
     fn test_enhanced_pass_manager() {
+        let context = inkwell::context::Context::create();
         let config = OptimizationConfig::default();
-        let mut manager = EnhancedLlvmPassManager::new(config);
+        let mut manager = EnhancedLlvmPassManager::new(&context, config).unwrap();
         
-        let context = ExecutionContext {
+        let exec_context = ExecutionContext {
             optimization_level: OptimizationLevel::Default,
             module_size: 50000,
             function_count: 100,
             complexity_score: 0.5,
         };
         
-        let result = manager.run_enhanced_passes(context).unwrap();
+        let result = manager.run_enhanced_passes(exec_context).unwrap();
         assert!(result.total_time >= Duration::new(0, 0));
     }
 }
