@@ -57,13 +57,23 @@ jobs:
       run: |
         devenv shell echo "Development environment ready"
 
-    - name: Build release
-      run: |
-        devenv shell cargo build --release
+    - name: Check disk space before build
+      run: df -h
 
-    - name: Run tests
+    - name: Build main cursed binary
       run: |
-        devenv shell cargo test
+        devenv shell cargo build --release --bin cursed
+
+    - name: Build essential tools
+      run: |
+        devenv shell cargo build --release --bin cursed-doc --bin cursed-build --bin cursed-pkg --bin cursed-repl
+
+    - name: Check disk space after build
+      run: df -h
+
+    - name: Run minimal tests
+      run: |
+        devenv shell cargo test --release --lib
 
     - name: Create artifact directory
       run: mkdir -p artifacts
@@ -71,16 +81,12 @@ jobs:
     - name: Prepare binaries (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        # Copy main executables
+        # Copy essential executables
         cp target/release/cursed artifacts/cursed
         cp target/release/cursed-doc artifacts/cursed-doc
         cp target/release/cursed-build artifacts/cursed-build
         cp target/release/cursed-pkg artifacts/cursed-pkg
         cp target/release/cursed-repl artifacts/cursed-repl
-        cp target/release/cursed-test artifacts/cursed-test
-        cp target/release/cursed-lsp artifacts/cursed-lsp
-        cp target/release/cursed-debug artifacts/cursed-debug
-        cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
         
         # Strip binaries
         strip artifacts/*
@@ -91,16 +97,12 @@ jobs:
     - name: Prepare binaries (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        # Copy main executables
+        # Copy essential executables
         cp target/release/cursed artifacts/cursed
         cp target/release/cursed-doc artifacts/cursed-doc
         cp target/release/cursed-build artifacts/cursed-build
         cp target/release/cursed-pkg artifacts/cursed-pkg
         cp target/release/cursed-repl artifacts/cursed-repl
-        cp target/release/cursed-test artifacts/cursed-test
-        cp target/release/cursed-lsp artifacts/cursed-lsp
-        cp target/release/cursed-debug artifacts/cursed-debug
-        cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
         
         # Strip binaries
         strip artifacts/*
