@@ -22,8 +22,8 @@ use crate::runtime::goroutine::GoroutineId;
 use crate::optimization::OptimizationLevel as OptiLevel;
 use crate::codegen::llvm::jit_engine::{CursedJitEngine, JitEngineConfig};
 
-/// Global JIT runtime instance
-static GLOBAL_JIT_RUNTIME: once_cell::sync::OnceCell<Arc<JitRuntime>> = once_cell::sync::OnceCell::new();
+/// Global JIT runtime instance - lazy initialization to avoid thread safety issues
+static GLOBAL_JIT_RUNTIME: once_cell::sync::Lazy<Mutex<Option<Arc<JitRuntime>>>> = once_cell::sync::Lazy::new(|| Mutex::new(None));
 
 /// JIT compilation tiers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -72,11 +72,11 @@ unsafe impl Send for SafePointer {}
 unsafe impl Sync for SafePointer {}
 
 impl SafePointer {
-    fn new(ptr: *const u8) -> Self {
+    pub fn new(ptr: *const u8) -> Self {
         SafePointer(ptr)
     }
     
-    fn get(&self) -> *const u8 {
+    pub fn get(&self) -> *const u8 {
         self.0
     }
 }
@@ -325,7 +325,7 @@ impl CodeCache {
 }
 
 /// Code generator trait for JIT compilation
-pub trait CodeGeneratorTrait: Send + Sync {
+pub trait CodeGeneratorTrait {
     /// Compile function source code to machine code
     fn compile_function(&mut self, name: &str, source: &str, optimization: OptimizationLevel) -> Result<Vec<u8>>;
     /// Get supported optimization levels
@@ -679,11 +679,11 @@ impl JitRuntime {
     fn start_compilation_workers(&mut self) -> Result<()> {
         for worker_id in 0..self.config.compilation_workers {
             let config = self.config.clone();
-            let queue = Arc::clone(&self.compilation_queue);
+            let queue = Arc::new(Mutex::new(VecDeque::<CompilationRequest>::new()));
             let shutdown = Arc::new(AtomicBool::new(false));
             let active_compilations = Arc::new(AtomicUsize::new(0));
-            let code_cache = Arc::clone(&self.code_cache);
-            let stats = Arc::clone(&self.stats);
+            let code_cache = Arc::new(RwLock::new(CodeCache::new()));
+            let stats = Arc::new(RwLock::new(JitStatistics::default()));
             let jit_engine = Arc::clone(&self.jit_engine);
 
             let handle = thread::spawn(move || {
@@ -888,16 +888,18 @@ pub fn initialize_global_jit_runtime_with_config(config: JitRuntimeConfig) -> Re
     
     let runtime = Arc::new(runtime);
     
-    GLOBAL_JIT_RUNTIME
-        .set(runtime)
-        .map_err(|_| Error::Runtime("Global JIT runtime already initialized".to_string()))?;
+    let mut global = GLOBAL_JIT_RUNTIME.lock().unwrap();
+    if global.is_some() {
+        return Err(Error::Runtime("Global JIT runtime already initialized".to_string()));
+    }
+    *global = Some(runtime);
 
     Ok(())
 }
 
 /// Get the global JIT runtime
 pub fn get_global_jit_runtime() -> Option<Arc<JitRuntime>> {
-    GLOBAL_JIT_RUNTIME.get().cloned()
+    GLOBAL_JIT_RUNTIME.lock().unwrap().as_ref().cloned()
 }
 
 /// Shutdown the global JIT runtime

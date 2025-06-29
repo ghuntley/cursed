@@ -12,6 +12,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use std::thread;
 use std::collections::VecDeque;
+use std::marker::PhantomData;
 
 use crate::runtime::channels::{ChannelError, ChannelResult, SendResult, ReceiveResult};
 use crate::runtime::channels::buffer::ChannelBuffer;
@@ -122,7 +123,7 @@ impl<T> SendOperation<T> {
     }
     
     /// Execute the send operation
-    pub fn execute<B: ChannelBuffer<T>>(
+    pub fn execute<B: ChannelBuffer<T> + ?Sized>(
         mut self,
         buffer: &Arc<B>,
     ) -> SendResult<T> {
@@ -140,7 +141,7 @@ impl<T> SendOperation<T> {
     }
     
     /// Non-blocking send
-    fn try_send_nonblocking<B: ChannelBuffer<T>>(
+    fn try_send_nonblocking<B: ChannelBuffer<T> + ?Sized>(
         &self,
         buffer: &Arc<B>,
         value: T,
@@ -153,7 +154,7 @@ impl<T> SendOperation<T> {
     }
     
     /// Blocking send
-    fn send_blocking<B: ChannelBuffer<T>>(
+    fn send_blocking<B: ChannelBuffer<T> + ?Sized>(
         &self,
         buffer: &Arc<B>,
         mut value: T,
@@ -183,7 +184,7 @@ impl<T> SendOperation<T> {
     }
     
     /// Send with timeout
-    fn send_with_timeout<B: ChannelBuffer<T>>(
+    fn send_with_timeout<B: ChannelBuffer<T> + ?Sized>(
         &self,
         buffer: &Arc<B>,
         mut value: T,
@@ -247,6 +248,8 @@ pub struct ReceiveOperation<T> {
     completed: Arc<Mutex<bool>>,
     /// Completion notifier
     completion_notify: Arc<Condvar>,
+    /// Phantom data to hold type parameter
+    _phantom: std::marker::PhantomData<T>,
 }
 
 impl<T> ReceiveOperation<T> {
@@ -257,11 +260,12 @@ impl<T> ReceiveOperation<T> {
             start_time: Instant::now(),
             completed: Arc::new(Mutex::new(false)),
             completion_notify: Arc::new(Condvar::new()),
+            _phantom: std::marker::PhantomData,
         }
     }
     
     /// Execute the receive operation
-    pub fn execute<B: ChannelBuffer<T>>(
+    pub fn execute<B: ChannelBuffer<T> + ?Sized>(
         self,
         buffer: &Arc<B>,
     ) -> ReceiveResult<T> {
@@ -277,7 +281,7 @@ impl<T> ReceiveOperation<T> {
     }
     
     /// Non-blocking receive
-    fn try_receive_nonblocking<B: ChannelBuffer<T>>(
+    fn try_receive_nonblocking<B: ChannelBuffer<T> + ?Sized>(
         &self,
         buffer: &Arc<B>,
     ) -> ReceiveResult<T> {
@@ -290,14 +294,14 @@ impl<T> ReceiveOperation<T> {
     }
     
     /// Blocking receive
-    fn receive_blocking<B: ChannelBuffer<T>>(
+    fn receive_blocking<B: ChannelBuffer<T> + ?Sized>(
         &self,
         buffer: &Arc<B>,
     ) -> ReceiveResult<T> {
         loop {
             match buffer.try_pop() {
                 Ok(Some(value)) => {
-                    self.mark_completed();
+                    ReceiveOperation::<T>::mark_completed(self);
                     return ReceiveResult::Received(value);
                 }
                 Ok(None) => {
@@ -305,12 +309,12 @@ impl<T> ReceiveOperation<T> {
                     thread::sleep(Duration::from_millis(1));
                     
                     if buffer.is_closed() && buffer.is_empty() {
-                        self.mark_completed();
+                        ReceiveOperation::<T>::mark_completed(self);
                         return ReceiveResult::Closed;
                     }
                 }
                 Err(ChannelError::Closed) => {
-                    self.mark_completed();
+                    ReceiveOperation::<T>::mark_completed(self);
                     return ReceiveResult::Closed;
                 }
                 Err(_) => {
@@ -321,7 +325,7 @@ impl<T> ReceiveOperation<T> {
     }
     
     /// Receive with timeout
-    fn receive_with_timeout<B: ChannelBuffer<T>>(
+    fn receive_with_timeout<B: ChannelBuffer<T> + ?Sized>(
         &self,
         buffer: &Arc<B>,
         timeout: Duration,
@@ -331,24 +335,24 @@ impl<T> ReceiveOperation<T> {
         loop {
             match buffer.try_pop() {
                 Ok(Some(value)) => {
-                    self.mark_completed();
+                    ReceiveOperation::<T>::mark_completed(self);
                     return ReceiveResult::Received(value);
                 }
                 Ok(None) => {
                     if Instant::now() >= deadline {
-                        self.mark_completed();
+                        ReceiveOperation::<T>::mark_completed(self);
                         return ReceiveResult::WouldBlock;
                     }
                     
                     thread::sleep(Duration::from_millis(1));
                 }
                 Err(ChannelError::Closed) => {
-                    self.mark_completed();
+                    ReceiveOperation::<T>::mark_completed(self);
                     return ReceiveResult::Closed;
                 }
                 Err(_) => {
                     if Instant::now() >= deadline {
-                        self.mark_completed();
+                        ReceiveOperation::<T>::mark_completed(self);
                         return ReceiveResult::WouldBlock;
                     }
                     
@@ -400,7 +404,7 @@ impl<T> BatchSendOperation<T> {
     }
     
     /// Execute the batch send operation
-    pub fn execute<B: ChannelBuffer<T>>(
+    pub fn execute<B: ChannelBuffer<T> + ?Sized>(
         mut self,
         buffer: &Arc<B>,
     ) -> Result<usize, (Vec<T>, ChannelError)> {
@@ -457,7 +461,7 @@ impl<T> BatchReceiveOperation<T> {
     }
     
     /// Execute the batch receive operation
-    pub fn execute<B: ChannelBuffer<T>>(
+    pub fn execute<B: ChannelBuffer<T> + ?Sized>(
         self,
         buffer: &Arc<B>,
     ) -> Result<Vec<T>, ChannelError> {
@@ -521,7 +525,7 @@ pub struct RangeReceiveOperation<T> {
     completed: Arc<Mutex<bool>>,
 }
 
-impl<T> RangeReceiveOperation<T> {
+impl<T: Send> RangeReceiveOperation<T> {
     /// Create a new range receive operation
     pub fn new(options: ReceiveOptions) -> Self {
         Self {
@@ -540,18 +544,20 @@ impl<T> RangeReceiveOperation<T> {
             buffer: buffer.clone(),
             options: self.options,
             completed: self.completed,
+            _phantom: PhantomData,
         }
     }
 }
 
 /// Iterator for range-based receive operations
-pub struct RangeReceiveIterator<T, B: ChannelBuffer<T>> {
+pub struct RangeReceiveIterator<T: Send, B: ChannelBuffer<T>> {
     buffer: Arc<B>,
     options: ReceiveOptions,
     completed: Arc<Mutex<bool>>,
+    _phantom: PhantomData<T>,
 }
 
-impl<T, B: ChannelBuffer<T>> Iterator for RangeReceiveIterator<T, B> {
+impl<T: Send, B: ChannelBuffer<T>> Iterator for RangeReceiveIterator<T, B> {
     type Item = Result<T, ChannelError>;
     
     fn next(&mut self) -> Option<Self::Item> {
@@ -598,7 +604,7 @@ impl<T, B: ChannelBuffer<T>> Iterator for RangeReceiveIterator<T, B> {
 /// Utility functions for common operations
 
 /// Send a value with default options
-pub fn send<T, B: ChannelBuffer<T> + ?Sized>(
+pub fn send<T, B: ChannelBuffer<T>>(
     buffer: &Arc<B>,
     value: T,
 ) -> SendResult<T> {
@@ -607,7 +613,7 @@ pub fn send<T, B: ChannelBuffer<T> + ?Sized>(
 }
 
 /// Send a value with timeout
-pub fn send_timeout<T, B: ChannelBuffer<T> + ?Sized>(
+pub fn send_timeout<T, B: ChannelBuffer<T>>(
     buffer: &Arc<B>,
     value: T,
     timeout: Duration,
@@ -619,7 +625,7 @@ pub fn send_timeout<T, B: ChannelBuffer<T> + ?Sized>(
 }
 
 /// Try to send a value (non-blocking)
-pub fn try_send<T, B: ChannelBuffer<T> + ?Sized>(
+pub fn try_send<T, B: ChannelBuffer<T>>(
     buffer: &Arc<B>,
     value: T,
 ) -> SendResult<T> {
@@ -630,7 +636,7 @@ pub fn try_send<T, B: ChannelBuffer<T> + ?Sized>(
 }
 
 /// Receive a value with default options
-pub fn receive<T, B: ChannelBuffer<T> + ?Sized>(
+pub fn receive<T, B: ChannelBuffer<T>>(
     buffer: &Arc<B>,
 ) -> ReceiveResult<T> {
     let operation = ReceiveOperation::<T>::new(ReceiveOptions::default());
@@ -638,7 +644,7 @@ pub fn receive<T, B: ChannelBuffer<T> + ?Sized>(
 }
 
 /// Receive a value with timeout
-pub fn receive_timeout<T, B: ChannelBuffer<T> + ?Sized>(
+pub fn receive_timeout<T, B: ChannelBuffer<T>>(
     buffer: &Arc<B>,
     timeout: Duration,
 ) -> ReceiveResult<T> {
@@ -649,7 +655,7 @@ pub fn receive_timeout<T, B: ChannelBuffer<T> + ?Sized>(
 }
 
 /// Try to receive a value (non-blocking)
-pub fn try_receive<T, B: ChannelBuffer<T> + ?Sized>(
+pub fn try_receive<T, B: ChannelBuffer<T>>(
     buffer: &Arc<B>,
 ) -> ReceiveResult<T> {
     let mut options = ReceiveOptions::default();

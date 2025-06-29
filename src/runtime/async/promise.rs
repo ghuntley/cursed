@@ -103,11 +103,14 @@ where
         tokio::spawn(async move {
             let result = {
                 loop {
-                    let guard = inner.lock().unwrap();
-                    match &guard.result {
-                        Some(result) => break result.clone(),
+                    let result_opt = {
+                        let guard = inner.lock().unwrap();
+                        guard.result.clone()
+                    }; // Guard is dropped here before await
+                    
+                    match result_opt {
+                        Some(result) => break result,
                         None => {
-                            drop(guard);
                             tokio::task::yield_now().await;
                         }
                     }
@@ -141,11 +144,14 @@ where
         tokio::spawn(async move {
             let result = {
                 loop {
-                    let guard = inner.lock().unwrap();
-                    match &guard.result {
-                        Some(result) => break result.clone(),
+                    let result_opt = {
+                        let guard = inner.lock().unwrap();
+                        guard.result.clone()
+                    }; // Guard is dropped here before await
+                    
+                    match result_opt {
+                        Some(result) => break result,
                         None => {
-                            drop(guard);
                             tokio::task::yield_now().await;
                         }
                     }
@@ -180,11 +186,14 @@ where
         tokio::spawn(async move {
             let result = {
                 loop {
-                    let guard = inner.lock().unwrap();
-                    match &guard.result {
-                        Some(result) => break result.clone(),
+                    let result_opt = {
+                        let guard = inner.lock().unwrap();
+                        guard.result.clone()
+                    }; // Guard is dropped here before await
+                    
+                    match result_opt {
+                        Some(result) => break result,
                         None => {
-                            drop(guard);
                             tokio::task::yield_now().await;
                         }
                     }
@@ -219,11 +228,14 @@ where
         tokio::spawn(async move {
             let result = {
                 loop {
-                    let guard = inner.lock().unwrap();
-                    match &guard.result {
-                        Some(result) => break result.clone(),
+                    let result_opt = {
+                        let guard = inner.lock().unwrap();
+                        guard.result.clone()
+                    }; // Guard is dropped here before await
+                    
+                    match result_opt {
+                        Some(result) => break result,
                         None => {
-                            drop(guard);
                             tokio::task::yield_now().await;
                         }
                     }
@@ -359,9 +371,12 @@ where
     }
 
     /// Wait for the first promise to complete (either resolve or reject)
-    pub async fn race(promises: Vec<Promise<T, E>>) -> Result<T, E> {
+    pub async fn race(promises: Vec<Promise<T, E>>) -> Result<T, E> 
+    where 
+        E: Default
+    {
         if promises.is_empty() {
-            return Err(E::default()); // This assumes E: Default, we may need to adjust
+            return Err(E::default());
         }
 
         // For simplicity, we'll await the first promise

@@ -109,6 +109,20 @@ pub enum SendResult<T> {
     WouldBlock(T),
 }
 
+impl<T> SendResult<T> {
+    pub fn unwrap(self) -> T {
+        match self {
+            SendResult::Sent => panic!("called `SendResult::unwrap()` on a `Sent` value"),
+            SendResult::Closed(t) => t,
+            SendResult::WouldBlock(t) => t,
+        }
+    }
+    
+    pub fn is_ok(&self) -> bool {
+        matches!(self, SendResult::Sent)
+    }
+}
+
 /// Result of a receive operation
 #[derive(Debug, Clone)]
 pub enum ReceiveResult<T> {
@@ -120,12 +134,26 @@ pub enum ReceiveResult<T> {
     WouldBlock,
 }
 
+impl<T> ReceiveResult<T> {
+    pub fn unwrap(self) -> T {
+        match self {
+            ReceiveResult::Received(t) => t,
+            ReceiveResult::Closed => panic!("called `ReceiveResult::unwrap()` on a `Closed` value"),
+            ReceiveResult::WouldBlock => panic!("called `ReceiveResult::unwrap()` on a `WouldBlock` value"),
+        }
+    }
+    
+    pub fn is_ok(&self) -> bool {
+        matches!(self, ReceiveResult::Received(_))
+    }
+}
+
 // Legacy compatibility wrapper - keeping old interface for backward compatibility
 // The new full-featured implementation is in the channel module
 
 /// Legacy channel wrapper - redirects to new implementation
 #[deprecated(note = "Use the new Channel type from channel module")]
-pub struct LegacyChannel<T> {
+pub struct LegacyChannel<T: Send + 'static> {
     inner: channel::Channel<T>,
 }
 
@@ -183,7 +211,7 @@ impl<T: Send + 'static> Default for LegacyChannel<T> {
 
 /// Legacy channel sender handle - redirects to new implementation
 #[deprecated(note = "Use ChannelSender from channel module")]
-pub struct LegacyChannelSender<T> {
+pub struct LegacyChannelSender<T: Send + 'static> {
     inner: channel::ChannelSender<T>,
 }
 
@@ -199,7 +227,7 @@ impl<T: Send + 'static> LegacyChannelSender<T> {
 
 /// Legacy channel receiver handle - redirects to new implementation
 #[deprecated(note = "Use ChannelReceiver from channel module")]
-pub struct LegacyChannelReceiver<T> {
+pub struct LegacyChannelReceiver<T: Send + 'static> {
     inner: channel::ChannelReceiver<T>,
 }
 

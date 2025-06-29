@@ -44,7 +44,7 @@ impl<'ctx> LlvmPassManager<'ctx> {
             .map_err(|e| CursedError::runtime_error(&format!("Failed to get target: {}", e)))?;
         
         let target_machine = target.create_target_machine(
-            &target.get_default_triple(),
+            &triple,
             "generic",
             "",
             self.config.level.to_llvm_level(),

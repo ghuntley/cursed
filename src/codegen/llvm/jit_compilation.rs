@@ -32,32 +32,30 @@ use inkwell::{
     AddressSpace,
 };
 
+use std::cell::RefCell;
+
 use crate::error::CursedError;
 use crate::runtime::jit_runtime::{
     CompilationTier, OptimizationLevel, CompiledFunction, ExecutionMetrics,
     JitRuntimeConfig, SafePointer, CodeGeneratorTrait
 };
 
-/// LLVM OrcJIT-based compilation engine for CURSED
-pub struct CursedJitCompiler {
-    /// LLVM Context (thread-local)
-    context: Context,
-    /// Current module being compiled
-    current_module: Option<Module<'static>>,
-    /// LLVM IR Builder
-    builder: Builder<'static>,
-    /// LLVM Execution Engine with JIT support
-    execution_engine: Option<ExecutionEngine<'static>>,
-    /// Target machine for code generation
-    target_machine: Option<TargetMachine>,
+/// Thread-local LLVM context wrapper
+thread_local! {
+    static LLVM_CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
+}
+
+/// Safe wrapper for LLVM compilation state
+#[derive(Debug)]
+struct ThreadSafeCompilerState {
+    /// Compilation configuration
+    config: JitRuntimeConfig,
     /// Compiled function cache
     function_cache: RwLock<HashMap<String, Arc<CompiledJitFunction>>>,
     /// Hot path detection
     hot_paths: RwLock<HashMap<String, HotPathInfo>>,
     /// Background compilation queue
     compilation_queue: Mutex<Vec<CompilationRequest>>,
-    /// JIT engine configuration
-    config: JitRuntimeConfig,
     /// Active compilation counter
     active_compilations: AtomicU64,
     /// Shutdown flag
@@ -66,6 +64,12 @@ pub struct CursedJitCompiler {
     stats: RwLock<JitCompilationStats>,
     /// Symbol resolver for dynamic linking
     symbol_resolver: Arc<Mutex<SymbolResolver>>,
+}
+
+/// LLVM OrcJIT-based compilation engine for CURSED
+pub struct CursedJitCompiler {
+    /// Thread-safe state
+    state: Arc<ThreadSafeCompilerState>,
 }
 
 /// Compiled JIT function with metadata
@@ -79,8 +83,6 @@ pub struct CompiledJitFunction {
     pub optimization_level: OptimizationLevel,
     /// Function pointer (safe wrapper)
     pub function_ptr: SafePointer,
-    /// LLVM Function value
-    pub llvm_function: Option<FunctionValue<'static>>,
     /// Machine code size
     pub code_size: usize,
     /// Compilation time
@@ -144,13 +146,13 @@ pub struct JitCompilationStats {
     pub code_size_reduction: f64,
 }
 
-/// Symbol resolver for dynamic linking
+/// Thread-safe symbol resolver for dynamic linking
 #[derive(Debug)]
 struct SymbolResolver {
-    /// External symbol mappings
-    symbols: HashMap<String, *const u8>,
+    /// External symbol mappings (using usize instead of raw pointers for Send/Sync)
+    symbols: HashMap<String, usize>,
     /// Runtime system functions
-    runtime_functions: HashMap<String, extern "C" fn()>,
+    runtime_functions: HashMap<String, usize>,
 }
 
 impl SymbolResolver {
@@ -167,35 +169,35 @@ impl SymbolResolver {
     
     fn register_cursed_runtime_functions(&mut self) {
         // Register goroutine runtime functions
-        self.register_symbol("cursed_goroutine_spawn", cursed_goroutine_spawn as *const u8);
-        self.register_symbol("cursed_goroutine_yield", cursed_goroutine_yield as *const u8);
-        self.register_symbol("cursed_goroutine_join", cursed_goroutine_join as *const u8);
+        self.register_symbol("cursed_goroutine_spawn", cursed_goroutine_spawn as usize);
+        self.register_symbol("cursed_goroutine_yield", cursed_goroutine_yield as usize);
+        self.register_symbol("cursed_goroutine_join", cursed_goroutine_join as usize);
         
         // Register channel runtime functions
-        self.register_symbol("cursed_channel_create", cursed_channel_create as *const u8);
-        self.register_symbol("cursed_channel_send", cursed_channel_send as *const u8);
-        self.register_symbol("cursed_channel_recv", cursed_channel_recv as *const u8);
-        self.register_symbol("cursed_channel_close", cursed_channel_close as *const u8);
+        self.register_symbol("cursed_channel_create", cursed_channel_create as usize);
+        self.register_symbol("cursed_channel_send", cursed_channel_send as usize);
+        self.register_symbol("cursed_channel_recv", cursed_channel_recv as usize);
+        self.register_symbol("cursed_channel_close", cursed_channel_close as usize);
         
         // Register async/await runtime functions
-        self.register_symbol("cursed_async_spawn", cursed_async_spawn as *const u8);
-        self.register_symbol("cursed_await_future", cursed_await_future as *const u8);
+        self.register_symbol("cursed_async_spawn", cursed_async_spawn as usize);
+        self.register_symbol("cursed_await_future", cursed_await_future as usize);
         
         // Register memory management functions
-        self.register_symbol("cursed_gc_alloc", cursed_gc_alloc as *const u8);
-        self.register_symbol("cursed_gc_free", cursed_gc_free as *const u8);
+        self.register_symbol("cursed_gc_alloc", cursed_gc_alloc as usize);
+        self.register_symbol("cursed_gc_free", cursed_gc_free as usize);
         
         // Register error handling functions
-        self.register_symbol("cursed_panic", cursed_panic as *const u8);
-        self.register_symbol("cursed_error_propagate", cursed_error_propagate as *const u8);
+        self.register_symbol("cursed_panic", cursed_panic as usize);
+        self.register_symbol("cursed_error_propagate", cursed_error_propagate as usize);
     }
     
-    fn register_symbol(&mut self, name: &str, ptr: *const u8) {
-        self.symbols.insert(name.to_string(), ptr);
+    fn register_symbol(&mut self, name: &str, addr: usize) {
+        self.symbols.insert(name.to_string(), addr);
     }
     
     fn resolve_symbol(&self, name: &str) -> Option<*const u8> {
-        self.symbols.get(name).copied()
+        self.symbols.get(name).map(|&addr| addr as *const u8)
     }
 }
 
@@ -204,54 +206,28 @@ impl CursedJitCompiler {
     pub fn new(config: JitRuntimeConfig) -> Result<Self, CursedError> {
         // Initialize LLVM targets
         Target::initialize_native(&Default::default())
-            .map_err(|e| CursedError::CompilationError(format!("LLVM target initialization failed: {}", e)))?;
+            .map_err(|e| CursedError::compiler_error(&format!("LLVM target initialization failed: {}", e)))?;
         
-        let context = Context::create();
-        let builder = context.create_builder();
-        
-        // Create target machine for native compilation
-        let target_triple = TargetMachine::get_default_triple();
-        let target = Target::from_triple(&target_triple)
-            .map_err(|e| CursedError::CompilationError(format!("Failed to create target: {}", e)))?;
-        
-        let target_machine = target.create_target_machine(
-            &target_triple,
-            TargetMachine::get_host_cpu_name().to_str().unwrap_or("generic"),
-            TargetMachine::get_host_cpu_features().to_str().unwrap_or(""),
-            LLVMOptLevel::Default,
-            RelocMode::PIC,
-            CodeModel::Default,
-        ).ok_or_else(|| CursedError::CompilationError("Failed to create target machine".to_string()))?;
-        
-        Ok(Self {
-            context,
-            current_module: None,
-            builder,
-            execution_engine: None,
-            target_machine: Some(target_machine),
+        let state = Arc::new(ThreadSafeCompilerState {
+            config,
             function_cache: RwLock::new(HashMap::new()),
             hot_paths: RwLock::new(HashMap::new()),
             compilation_queue: Mutex::new(Vec::new()),
-            config,
             active_compilations: AtomicU64::new(0),
             shutdown: AtomicBool::new(false),
             stats: RwLock::new(JitCompilationStats::default()),
             symbol_resolver: Arc::new(Mutex::new(SymbolResolver::new())),
-        })
+        });
+        
+        Ok(Self { state })
     }
     
     /// Initialize the JIT compiler
     pub fn initialize(&mut self) -> Result<(), CursedError> {
-        // Create initial module
-        let module = self.context.create_module("cursed_jit");
-        
-        // Create execution engine with JIT support
-        let execution_engine = module.create_jit_execution_engine(LLVMOptLevel::None)
-            .map_err(|e| CursedError::CompilationError(format!("Failed to create execution engine: {}", e)))?;
-        
-        // Store the module and execution engine
-        self.current_module = Some(unsafe { mem::transmute(module) });
-        self.execution_engine = Some(unsafe { mem::transmute(execution_engine) });
+        // Initialize thread-local LLVM context
+        LLVM_CONTEXT.with(|context| {
+            *context.borrow_mut() = Some(Context::create());
+        });
         
         Ok(())
     }
@@ -273,11 +249,11 @@ impl CursedJitCompiler {
             }
         }
         
-        self.active_compilations.fetch_add(1, Ordering::SeqCst);
+        self.state.active_compilations.fetch_add(1, Ordering::SeqCst);
         
         let result = self.perform_compilation(name, source, tier, optimization_level);
         
-        self.active_compilations.fetch_sub(1, Ordering::SeqCst);
+        self.state.active_compilations.fetch_sub(1, Ordering::SeqCst);
         let compile_time = start_time.elapsed();
         
         match result {
@@ -307,7 +283,7 @@ impl CursedJitCompiler {
         
         // Get the compiled function
         let function = self.get_cached_function(name)
-            .ok_or_else(|| CursedError::CompilationError(format!("Function '{}' not found", name)))?;
+            .ok_or_else(|| CursedError::compiler_error(&format!("Function '{}' not found", name)))?;
         
         // Execute the function
         let result = self.call_compiled_function(&function, args)?;
@@ -336,8 +312,8 @@ impl CursedJitCompiler {
             requested_at: Instant::now(),
         };
         
-        let mut queue = self.compilation_queue.lock()
-            .map_err(|_| CursedError::CompilationError("Failed to acquire compilation queue".to_string()))?;
+        let mut queue = self.state.compilation_queue.lock()
+            .map_err(|_| CursedError::compiler_error("Failed to acquire compilation queue"))?;
         
         // Insert based on priority
         let insert_pos = queue.iter().position(|req| req.priority < priority).unwrap_or(queue.len());
@@ -348,13 +324,13 @@ impl CursedJitCompiler {
     
     /// Get compilation statistics
     pub fn get_statistics(&self) -> Result<JitCompilationStats, CursedError> {
-        let stats = self.stats.read()
-            .map_err(|_| CursedError::CompilationError("Failed to read statistics".to_string()))?;
+        let stats = self.state.stats.read()
+            .map_err(|_| CursedError::compiler_error("Failed to read statistics"))?;
         
         let mut stats_copy = stats.clone();
         
         // Update queue size
-        if let Ok(queue) = self.compilation_queue.lock() {
+        if let Ok(queue) = self.state.compilation_queue.lock() {
             stats_copy.queue_size = queue.len();
         }
         
@@ -370,72 +346,81 @@ impl CursedJitCompiler {
         tier: CompilationTier,
         optimization_level: OptimizationLevel,
     ) -> Result<CompiledJitFunction, CursedError> {
-        let module = self.current_module.as_ref()
-            .ok_or_else(|| CursedError::CompilationError("No active module".to_string()))?;
-        
-        // Parse CURSED source to LLVM IR
-        let llvm_function = self.compile_cursed_to_llvm(module, name, source)?;
-        
-        // Apply optimizations based on tier and level
-        self.apply_optimizations(module, &llvm_function, tier, optimization_level)?;
-        
-        // JIT compile to machine code
-        let execution_engine = self.execution_engine.as_ref()
-            .ok_or_else(|| CursedError::CompilationError("No execution engine".to_string()))?;
-        
-        // Get function pointer
-        let jit_fn: JitFunction<unsafe extern "C" fn()> = unsafe {
-            execution_engine.get_function(name)
-                .map_err(|e| CursedError::CompilationError(format!("Failed to get JIT function: {}", e)))?
-        };
-        
-        let function_ptr = SafePointer::new(jit_fn.as_raw() as *const u8);
-        
-        // Calculate code size (approximate)
-        let code_size = self.estimate_code_size(&llvm_function);
-        
-        Ok(CompiledJitFunction {
-            name: name.to_string(),
-            tier,
-            optimization_level,
-            function_ptr,
-            llvm_function: Some(llvm_function),
-            code_size,
-            compile_time: Duration::from_secs(0), // Will be set by caller
-            metrics: ExecutionMetrics::default(),
-            source_hash: self.hash_source(source),
-            dependencies: HashSet::new(),
+        // Use thread-local LLVM context for compilation
+        LLVM_CONTEXT.with(|context_cell| {
+            let mut context_opt = context_cell.borrow_mut();
+            let context = context_opt.get_or_insert_with(|| Context::create());
+            
+            // Create module for this compilation
+            let module = context.create_module("cursed_jit");
+            
+            // Parse CURSED source to LLVM IR
+            let llvm_function = self.compile_cursed_to_llvm(&module, context, name, source)?;
+            
+            // Apply optimizations based on tier and level
+            self.apply_optimizations(&module, &llvm_function, tier, optimization_level)?;
+            
+            // Create execution engine with JIT support
+            let execution_engine = module.create_jit_execution_engine(LLVMOptLevel::None)
+                .map_err(|e| CursedError::compiler_error(&format!("Failed to create execution engine: {}", e)))?;
+            
+            // Get function pointer
+            let jit_fn: JitFunction<unsafe extern "C" fn()> = unsafe {
+                execution_engine.get_function(name)
+                    .map_err(|e| CursedError::compiler_error(&format!("Failed to get JIT function: {}", e)))?
+            };
+            
+            let function_ptr = SafePointer::new(unsafe { jit_fn.as_raw() } as *const u8);
+            
+            // Calculate code size (approximate)
+            let code_size = self.estimate_code_size(&llvm_function);
+            
+            Ok(CompiledJitFunction {
+                name: name.to_string(),
+                tier,
+                optimization_level,
+                function_ptr,
+                code_size,
+                compile_time: Duration::from_secs(0), // Will be set by caller
+                metrics: ExecutionMetrics::default(),
+                source_hash: self.hash_source(source),
+                dependencies: HashSet::new(),
+            })
         })
     }
     
     fn compile_cursed_to_llvm<'a>(
         &self,
         module: &Module<'a>,
+        context: &'a Context,
         name: &str,
         source: &str,
     ) -> Result<FunctionValue<'a>, CursedError> {
         // This is a simplified compilation - in reality would parse CURSED AST
         // and generate appropriate LLVM IR for goroutines, channels, async/await, etc.
         
-        let i64_type = self.context.i64_type();
+        let builder = context.create_builder();
+        let i64_type = context.i64_type();
         let fn_type = i64_type.fn_type(&[], false);
         let function = module.add_function(name, fn_type, None);
         
-        let basic_block = self.context.append_basic_block(function, "entry");
-        self.builder.position_at_end(basic_block);
+        let basic_block = context.append_basic_block(function, "entry");
+        builder.position_at_end(basic_block);
         
         // Generate LLVM IR based on CURSED source
-        self.generate_llvm_for_cursed_constructs(function, source)?;
+        self.generate_llvm_for_cursed_constructs(&builder, context, function, source)?;
         
         // Return success value
         let return_value = i64_type.const_int(0, false);
-        self.builder.build_return(Some(&return_value));
+        builder.build_return(Some(&return_value));
         
         Ok(function)
     }
     
     fn generate_llvm_for_cursed_constructs(
         &self,
+        builder: &Builder,
+        context: &Context,
         function: FunctionValue,
         source: &str,
     ) -> Result<(), CursedError> {
@@ -444,38 +429,35 @@ impl CursedJitCompiler {
         
         // Check for goroutine spawn pattern
         if source.contains("go ") {
-            self.generate_goroutine_spawn(function)?;
+            self.generate_goroutine_spawn(builder, context, function)?;
         }
         
         // Check for channel operations
         if source.contains("chan ") || source.contains("<-") {
-            self.generate_channel_operations(function)?;
+            self.generate_channel_operations(builder, context, function)?;
         }
         
         // Check for async/await
         if source.contains("async ") || source.contains("await ") {
-            self.generate_async_await(function)?;
+            self.generate_async_await(builder, context, function)?;
         }
         
         Ok(())
     }
     
-    fn generate_goroutine_spawn(&self, function: FunctionValue) -> Result<(), CursedError> {
+    fn generate_goroutine_spawn(&self, builder: &Builder, context: &Context, function: FunctionValue) -> Result<(), CursedError> {
         // Generate LLVM IR for goroutine spawning
-        let resolver = self.symbol_resolver.lock()
-            .map_err(|_| CursedError::CompilationError("Failed to acquire symbol resolver".to_string()))?;
+        let resolver = self.state.symbol_resolver.lock()
+            .map_err(|_| CursedError::compiler_error("Failed to acquire symbol resolver"))?;
         
         if let Some(spawn_fn_ptr) = resolver.resolve_symbol("cursed_goroutine_spawn") {
-            let spawn_fn_type = self.context.void_type().fn_type(&[], false);
-            let spawn_fn = unsafe {
-                std::mem::transmute::<*const u8, extern "C" fn()>(spawn_fn_ptr)
-            };
+            let spawn_fn_type = context.void_type().fn_type(&[], false);
             
             // Create function call
-            let fn_ptr_value = self.context.i64_type().const_int(spawn_fn_ptr as u64, false);
-            let fn_ptr = self.builder.build_int_to_ptr(
+            let fn_ptr_value = context.i64_type().const_int(spawn_fn_ptr as u64, false);
+            let fn_ptr = builder.build_int_to_ptr(
                 fn_ptr_value,
-                self.context.i8_type().ptr_type(AddressSpace::Generic),
+                context.i8_type().ptr_type(AddressSpace::from(0)),
                 "spawn_fn_ptr",
             );
             
@@ -486,37 +468,37 @@ impl CursedJitCompiler {
         Ok(())
     }
     
-    fn generate_channel_operations(&self, function: FunctionValue) -> Result<(), CursedError> {
+    fn generate_channel_operations(&self, builder: &Builder, context: &Context, function: FunctionValue) -> Result<(), CursedError> {
         // Generate LLVM IR for channel operations (send/receive)
-        let resolver = self.symbol_resolver.lock()
-            .map_err(|_| CursedError::CompilationError("Failed to acquire symbol resolver".to_string()))?;
+        let resolver = self.state.symbol_resolver.lock()
+            .map_err(|_| CursedError::compiler_error("Failed to acquire symbol resolver"))?;
         
         // Handle channel creation, send, and receive operations
-        if let Some(create_fn_ptr) = resolver.resolve_symbol("cursed_channel_create") {
+        if let Some(_create_fn_ptr) = resolver.resolve_symbol("cursed_channel_create") {
             // Generate channel creation code
         }
         
-        if let Some(send_fn_ptr) = resolver.resolve_symbol("cursed_channel_send") {
+        if let Some(_send_fn_ptr) = resolver.resolve_symbol("cursed_channel_send") {
             // Generate channel send code
         }
         
-        if let Some(recv_fn_ptr) = resolver.resolve_symbol("cursed_channel_recv") {
+        if let Some(_recv_fn_ptr) = resolver.resolve_symbol("cursed_channel_recv") {
             // Generate channel receive code
         }
         
         Ok(())
     }
     
-    fn generate_async_await(&self, function: FunctionValue) -> Result<(), CursedError> {
+    fn generate_async_await(&self, builder: &Builder, context: &Context, function: FunctionValue) -> Result<(), CursedError> {
         // Generate LLVM IR for async/await constructs
-        let resolver = self.symbol_resolver.lock()
-            .map_err(|_| CursedError::CompilationError("Failed to acquire symbol resolver".to_string()))?;
+        let resolver = self.state.symbol_resolver.lock()
+            .map_err(|_| CursedError::compiler_error("Failed to acquire symbol resolver"))?;
         
-        if let Some(async_spawn_ptr) = resolver.resolve_symbol("cursed_async_spawn") {
+        if let Some(_async_spawn_ptr) = resolver.resolve_symbol("cursed_async_spawn") {
             // Generate async spawn code
         }
         
-        if let Some(await_ptr) = resolver.resolve_symbol("cursed_await_future") {
+        if let Some(_await_ptr) = resolver.resolve_symbol("cursed_await_future") {
             // Generate await code
         }
         
@@ -530,7 +512,7 @@ impl CursedJitCompiler {
         tier: CompilationTier,
         optimization_level: OptimizationLevel,
     ) -> Result<(), CursedError> {
-        let pass_manager = PassManager::create(());
+        let pass_manager = PassManager::create(module);
         
         // Configure optimization passes based on tier and level
         match tier {
@@ -539,44 +521,44 @@ impl CursedJitCompiler {
                 return Ok(());
             }
             CompilationTier::Tier1 => {
-                // Basic optimizations for fast compilation
-                pass_manager.add_instruction_combining_pass();
-                pass_manager.add_reassociate_pass();
+                // Basic optimizations for fast compilation - temporarily disabled due to API changes
+                // pass_manager.add_instruction_combining_pass();
+                // pass_manager.add_reassociate_pass();
             }
             CompilationTier::Tier2 => {
-                // Standard optimizations
-                pass_manager.add_instruction_combining_pass();
-                pass_manager.add_reassociate_pass();
-                pass_manager.add_gvn_pass();
-                pass_manager.add_cfg_simplification_pass();
+                // Standard optimizations - temporarily disabled due to API changes
+                // pass_manager.add_instruction_combining_pass();
+                // pass_manager.add_reassociate_pass();
+                // pass_manager.add_gvn_pass();
+                // pass_manager.add_cfg_simplification_pass();
             }
             CompilationTier::Tier3 => {
-                // Aggressive optimizations
-                pass_manager.add_instruction_combining_pass();
-                pass_manager.add_reassociate_pass();
-                pass_manager.add_gvn_pass();
-                pass_manager.add_cfg_simplification_pass();
-                pass_manager.add_promote_memory_to_register_pass();
-                pass_manager.add_aggressive_dce_pass();
-                pass_manager.add_jump_threading_pass();
+                // Aggressive optimizations - temporarily disabled due to API changes
+                // pass_manager.add_instruction_combining_pass();
+                // pass_manager.add_reassociate_pass();
+                // pass_manager.add_gvn_pass();
+                // pass_manager.add_cfg_simplification_pass();
+                // pass_manager.add_promote_memory_to_register_pass();
+                // pass_manager.add_aggressive_dce_pass();
+                // pass_manager.add_jump_threading_pass();
             }
         }
         
-        // Apply additional optimizations based on optimization level
+        // Apply additional optimizations based on optimization level - temporarily disabled
         match optimization_level {
             OptimizationLevel::None => {}
             OptimizationLevel::Basic => {
-                pass_manager.add_dead_code_elimination_pass();
+                // pass_manager.add_dead_code_elimination_pass();
             }
             OptimizationLevel::Standard => {
-                pass_manager.add_dead_code_elimination_pass();
-                pass_manager.add_constant_propagation_pass();
+                // pass_manager.add_dead_code_elimination_pass();
+                // pass_manager.add_constant_propagation_pass();
             }
             OptimizationLevel::Aggressive => {
-                pass_manager.add_dead_code_elimination_pass();
-                pass_manager.add_constant_propagation_pass();
-                pass_manager.add_aggressive_dce_pass();
-                pass_manager.add_jump_threading_pass();
+                // pass_manager.add_dead_code_elimination_pass();
+                // pass_manager.add_constant_propagation_pass();
+                // pass_manager.add_aggressive_dce_pass();
+                // pass_manager.add_jump_threading_pass();
             }
         }
         
@@ -588,12 +570,12 @@ impl CursedJitCompiler {
     }
     
     fn get_cached_function(&self, name: &str) -> Option<Arc<CompiledJitFunction>> {
-        let cache = self.function_cache.read().ok()?;
+        let cache = self.state.function_cache.read().ok()?;
         cache.get(name).cloned()
     }
     
     fn cache_function(&self, function: Arc<CompiledJitFunction>) {
-        if let Ok(mut cache) = self.function_cache.write() {
+        if let Ok(mut cache) = self.state.function_cache.write() {
             cache.insert(function.name.clone(), function);
         }
     }
@@ -609,8 +591,8 @@ impl CursedJitCompiler {
     }
     
     fn update_hot_path_info(&self, name: &str, execution_time: Duration) -> Result<(), CursedError> {
-        let mut hot_paths = self.hot_paths.write()
-            .map_err(|_| CursedError::CompilationError("Failed to update hot path info".to_string()))?;
+        let mut hot_paths = self.state.hot_paths.write()
+            .map_err(|_| CursedError::compiler_error("Failed to update hot path info"))?;
         
         let info = hot_paths.entry(name.to_string()).or_insert_with(|| HotPathInfo {
             execution_count: 0,
@@ -627,7 +609,7 @@ impl CursedJitCompiler {
         info.last_execution = Instant::now();
         
         // Check tier-up eligibility
-        if info.execution_count >= self.config.tier_up_threshold {
+        if info.execution_count >= self.state.config.tier_up_threshold {
             info.eligible_for_tier_up = true;
             
             // Request background compilation to higher tier
@@ -649,7 +631,7 @@ impl CursedJitCompiler {
     }
     
     fn update_stats(&self, tier: CompilationTier, compile_time: Duration) {
-        if let Ok(mut stats) = self.stats.write() {
+        if let Ok(mut stats) = self.state.stats.write() {
             stats.total_compilations += 1;
             *stats.tier_compilations.entry(tier).or_insert(0) += 1;
             stats.total_compile_time += compile_time;

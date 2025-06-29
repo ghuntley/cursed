@@ -1,0 +1,21 @@
+--- a/src/codegen/llvm/passes/constant_propagation.rs
++++ b/src/codegen/llvm/passes/constant_propagation.rs
+@@ -180,16 +180,16 @@
+             let lhs = instruction.get_operand(0)?.left()?;
+             let rhs = instruction.get_operand(1)?.left()?;
+             
+             // Check for x + 0
+-            if let Some(rhs_int) = rhs.as_int_value() {
++            if let Ok(rhs_int) = rhs.try_into() {
+                 if rhs_int.get_zero_extended_constant() == Some(0) {
+                     return Some(lhs);
+                 }
+             }
+             
+             // Check for 0 + x
+-            if let Some(lhs_int) = lhs.as_int_value() {
++            if let Ok(lhs_int) = lhs.try_into() {
+                 if lhs_int.get_zero_extended_constant() == Some(0) {
+                     return Some(rhs);
+                 }
+             }

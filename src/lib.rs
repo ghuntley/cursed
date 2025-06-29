@@ -27,10 +27,14 @@ pub mod common_types;
 
 // Newly enabled advanced modules
 pub mod types;
+pub mod crypto_pki_types;
 
 // Re-export common types for easy access
 pub use common::OptimizationLevel;
 use crate::error::CursedError;
+
+// Re-export crypto/PKI types for tests
+pub use crypto_pki_types::*;
 
 // Re-export runtime types that are actually implemented
 pub use runtime::{

@@ -162,9 +162,9 @@ impl<'ctx> PassManager<'ctx> {
         let original_level = self.config.level.clone();
         self.config.level = level;
         
-        // Create new LLVM manager with updated config
-        let context_ref = module.get_context();
-        self.llvm_manager = LlvmPassManager::new(context_ref, self.config.clone())?;
+        // Create new LLVM manager with updated config - skip for now
+        // let context = module.get_context();
+        // self.llvm_manager = LlvmPassManager::new(&context, self.config.clone())?;
         
         let result = self.optimize(module);
         

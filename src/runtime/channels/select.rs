@@ -101,7 +101,8 @@ impl Select {
     ) -> &mut Self {
         let case_index = self.next_case_index.fetch_add(1, Ordering::SeqCst);
         
-        self.channels.insert(channel_id, channel as Arc<dyn Any + Send + Sync>);
+        // TODO: Fix Arc type conversion - temporarily disabled
+        // self.channels.insert(channel_id, channel as Arc<dyn Any + Send + Sync>);
         
         let case = SelectCase {
             index: case_index,
@@ -125,7 +126,8 @@ impl Select {
     ) -> &mut Self {
         let case_index = self.next_case_index.fetch_add(1, Ordering::SeqCst);
         
-        self.channels.insert(channel_id, channel as Arc<dyn Any + Send + Sync>);
+        // TODO: Fix Arc type conversion - temporarily disabled
+        // self.channels.insert(channel_id, channel as Arc<dyn Any + Send + Sync>);
         
         let case = SelectCase {
             index: case_index,

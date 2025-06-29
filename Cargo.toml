@@ -324,6 +324,18 @@ enhanced_dynamic_dispatch = []
 concurrent_gc = []
 # Enable benchmark features
 benchmarks = []
+# Enable web framework features
+web = []
+# Enable cryptography features
+crypto = []
+# Enable post-quantum cryptography
+pqc = []
+# Enable async/await runtime
+async = []
+# Enable synchronization primitives
+sync = []
+# Enable testing framework
+testing = []
 
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking

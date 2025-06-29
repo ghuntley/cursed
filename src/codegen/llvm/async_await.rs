@@ -31,7 +31,7 @@ impl<'ctx> AsyncAwaitCodegen<'ctx> {
                 context.i64_type().into(),  // future_id
                 context.i8_type().ptr_type(AddressSpace::default()).into(), // state_ptr
                 context.i8_type().ptr_type(AddressSpace::default()).into(), // result_ptr
-                context.i1_type().into(),   // is_ready
+                context.bool_type().into(),   // is_ready
             ],
             false,
         );
@@ -43,7 +43,7 @@ impl<'ctx> AsyncAwaitCodegen<'ctx> {
                 context.i8_type().ptr_type(AddressSpace::default()).into(), // fn_ptr
                 context.i8_type().ptr_type(AddressSpace::default()).into(), // context_ptr
                 context.i32_type().into(),  // priority
-                context.i1_type().into(),   // is_completed
+                context.bool_type().into(),   // is_completed
             ],
             false,
         );
@@ -53,8 +53,8 @@ impl<'ctx> AsyncAwaitCodegen<'ctx> {
             &[
                 context.i64_type().into(),  // promise_id
                 context.i8_type().ptr_type(AddressSpace::default()).into(), // value_ptr
-                context.i1_type().into(),   // is_resolved
-                context.i1_type().into(),   // is_rejected
+                context.bool_type().into(),   // is_resolved
+                context.bool_type().into(),   // is_rejected
             ],
             false,
         );
