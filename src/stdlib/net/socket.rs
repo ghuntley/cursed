@@ -81,3 +81,30 @@ pub fn test_socket() -> NetworkResult<()> {
     }
     Ok(())
 }
+
+/// Socket type enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketType {
+    Tcp,
+    Udp,
+}
+
+/// Socket state enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SocketState {
+    Unconnected,
+    Connecting,
+    Connected,
+    Listening,
+    Closed,
+}
+
+/// Protocol type enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProtocolType {
+    Tcp,
+    Udp,
+    Http,
+    Https,
+    Websocket,
+}

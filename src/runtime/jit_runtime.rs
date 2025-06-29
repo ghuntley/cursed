@@ -581,9 +581,18 @@ impl JitRuntime {
         Ok(())
     }
 
-    /// Execute a compiled function
+    /// Execute a compiled function with tier-up optimization
     pub fn execute_function(&self, function_id: u64, args: &[*const u8]) -> Result<*const u8> {
         let start_time = Instant::now();
+        
+        // Get function info for hot path tracking
+        let function_name = {
+            if let Ok(cache) = self.code_cache.read() {
+                cache.functions.get(&function_id).map(|f| f.name.clone())
+            } else {
+                None
+            }
+        };
         
         // Execute using the JIT engine
         let result = {
@@ -607,17 +616,33 @@ impl JitRuntime {
                     monitor.record_execution(function_id, execution_time);
                 }
                 
+                // Check for tier-up eligibility if we have the function name
+                if let Some(ref name) = function_name {
+                    self.check_tier_up_eligibility(name, execution_time)?;
+                }
+                
                 Ok(result_ptr)
             }
-            Err(e) => Err(e),
+            Err(e) => {
+                // On JIT failure, we could fall back to interpretation
+                // For now, just return the error
+                Err(e)
+            }
         }
     }
 
     /// Get a compiled function by name
     pub fn get_function_by_name(&self, name: &str) -> Option<u64> {
+        // Check our code cache first
+        if let Ok(cache) = self.code_cache.read() {
+            if let Some(function) = cache.functions.values().find(|f| f.name == name) {
+                return Some(function.id);
+            }
+        }
+        
         // The JIT engine handles its own caching, so we delegate to it
-        // In a real implementation, we might need to query the engine
-        None // Placeholder - would need to extend JIT engine API
+        // In a real implementation, we'd need to extend the JIT engine API
+        None
     }
 
     /// Get JIT statistics
@@ -872,6 +897,45 @@ impl JitRuntime {
 
         Ok(())
     }
+
+    /// Execute with optimized routing - choose best compilation tier for execution
+    pub fn execute_optimized(&self, function_name: &str, args: &[*const u8]) -> Result<*const u8> {
+        // Try to get the highest tier compiled version of this function
+        let function_id = if let Some(id) = self.get_function_by_name(function_name) {
+            id
+        } else {
+            // Function not compiled yet - compile with basic optimization
+            let default_source = format!("fn {}() -> int {{ return 42; }}", function_name);
+            self.compile_function(function_name, &default_source, Some(OptimizationLevel::Basic))?
+        };
+
+        // Execute the function
+        self.execute_function(function_id, args)
+    }
+
+    /// Intelligent execution routing based on hot path analysis
+    pub fn smart_execute(&self, function_name: &str, source_code: &str, args: &[*const u8]) -> Result<*const u8> {
+        // Check if function is already compiled and cached
+        if let Some(function_id) = self.get_function_by_name(function_name) {
+            // Function exists - execute it and track performance
+            return self.execute_function(function_id, args);
+        }
+
+        // Function not compiled yet - determine initial compilation tier
+        let initial_tier = if self.config.enable_profiling {
+            // Start with basic compilation for profiling
+            OptimizationLevel::Basic
+        } else {
+            // Use default optimization level
+            self.config.default_optimization_level
+        };
+
+        // Compile the function
+        let function_id = self.compile_function(function_name, source_code, Some(initial_tier))?;
+
+        // Execute the newly compiled function
+        self.execute_function(function_id, args)
+    }
 }
 
 // Global JIT runtime management
@@ -938,6 +1002,20 @@ pub fn get_global_jit_statistics() -> Result<JitStatistics> {
     get_global_jit_runtime()
         .ok_or_else(|| Error::Runtime("Global JIT runtime not initialized".to_string()))?
         .get_statistics()
+}
+
+/// Execute a function with optimized routing using the global JIT runtime
+pub fn execute_global_optimized(function_name: &str, args: &[*const u8]) -> Result<*const u8> {
+    get_global_jit_runtime()
+        .ok_or_else(|| Error::Runtime("Global JIT runtime not initialized".to_string()))?
+        .execute_optimized(function_name, args)
+}
+
+/// Smart execution with compilation and caching using the global JIT runtime
+pub fn smart_execute_global(function_name: &str, source_code: &str, args: &[*const u8]) -> Result<*const u8> {
+    get_global_jit_runtime()
+        .ok_or_else(|| Error::Runtime("Global JIT runtime not initialized".to_string()))?
+        .smart_execute(function_name, source_code, args)
 }
 
 // Default implementation

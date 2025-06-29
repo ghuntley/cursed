@@ -1,83 +1,114 @@
-//! Network functionality for smtp
+//! SMTP client implementation
 
 use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// SMTP client
+#[derive(Debug)]
+pub struct SmtpClient {
+    config: SmtpConfig,
+    connected: bool,
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
+impl SmtpClient {
+    pub fn new(config: SmtpConfig) -> Self {
         Self {
-            timeout_seconds: 30,
+            config,
+            connected: false,
         }
     }
     
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
+    pub fn connect(&mut self) -> Result<(), CursedError> {
+        // Stub implementation
+        self.connected = true;
+        Ok(())
+    }
+    
+    pub fn disconnect(&mut self) -> Result<(), CursedError> {
+        // Stub implementation
+        self.connected = false;
+        Ok(())
+    }
+    
+    pub fn send_email(&self, email: &EmailMessage) -> Result<(), CursedError> {
+        // Stub implementation
+        if !self.connected {
+            return Err(CursedError::runtime_error("SMTP client not connected"));
+        }
+        println!("Sending email to: {}", email.to);
+        Ok(())
+    }
+}
+
+/// SMTP configuration
+#[derive(Debug, Clone)]
+pub struct SmtpConfig {
+    pub server: String,
+    pub port: u16,
+    pub username: String,
+    pub password: String,
+    pub use_tls: bool,
+}
+
+impl SmtpConfig {
+    pub fn new(server: &str, port: u16, username: &str, password: &str) -> Self {
+        Self {
+            server: server.to_string(),
+            port,
+            username: username.to_string(),
+            password: password.to_string(),
+            use_tls: true,
+        }
+    }
+}
+
+/// Email message structure
+#[derive(Debug, Clone)]
+pub struct EmailMessage {
+    pub from: String,
+    pub to: String,
+    pub subject: String,
+    pub body: String,
+    pub html_body: Option<String>,
+    pub attachments: Vec<EmailAttachment>,
+}
+
+impl EmailMessage {
+    pub fn new(from: &str, to: &str, subject: &str, body: &str) -> Self {
+        Self {
+            from: from.to_string(),
+            to: to.to_string(),
+            subject: subject.to_string(),
+            body: body.to_string(),
+            html_body: None,
+            attachments: Vec::new(),
+        }
+    }
+    
+    pub fn html_body(mut self, html: &str) -> Self {
+        self.html_body = Some(html.to_string());
         self
     }
     
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
+    pub fn attach_file(mut self, attachment: EmailAttachment) -> Self {
+        self.attachments.push(attachment);
+        self
     }
-    
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
-    }
-    
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
-    }
-    
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
+}
+
+/// Email attachment
+#[derive(Debug, Clone)]
+pub struct EmailAttachment {
+    pub filename: String,
+    pub content_type: String,
+    pub data: Vec<u8>,
+}
+
+impl EmailAttachment {
+    pub fn new(filename: &str, content_type: &str, data: Vec<u8>) -> Self {
+        Self {
+            filename: filename.to_string(),
+            content_type: content_type.to_string(),
+            data,
         }
     }
-    
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
-    }
-}
-
-impl Default for NetworkHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Initialize network processing
-pub fn init_smtp() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
-    }
-    println!("🌐 Network processing (smtp) initialized");
-    Ok(())
-}
-
-/// Test network functionality
-pub fn test_smtp() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
-    }
-    Ok(())
 }

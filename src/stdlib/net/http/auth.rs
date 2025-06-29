@@ -1,83 +1,68 @@
-//! Network functionality for auth
+//! HTTP authentication functionality
 
-use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// HTTP authentication types
+#[derive(Debug, Clone)]
+pub enum HttpAuth {
+    Basic(BasicAuth),
+    Bearer(BearerAuth),
+    OAuth2(OAuth2Auth),
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
+/// Basic authentication
+#[derive(Debug, Clone)]
+pub struct BasicAuth {
+    pub username: String,
+    pub password: String,
+}
+
+impl BasicAuth {
+    pub fn new(username: &str, password: &str) -> Self {
         Self {
-            timeout_seconds: 30,
+            username: username.to_string(),
+            password: password.to_string(),
         }
     }
     
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
+    pub fn encode(&self) -> String {
+        use std::collections::HashMap;
+        // Stub implementation - would use base64 encoding
+        format!("{}:{}", self.username, self.password)
+    }
+}
+
+/// Bearer token authentication
+#[derive(Debug, Clone)]
+pub struct BearerAuth {
+    pub token: String,
+}
+
+impl BearerAuth {
+    pub fn new(token: &str) -> Self {
+        Self {
+            token: token.to_string(),
+        }
+    }
+}
+
+/// OAuth2 authentication
+#[derive(Debug, Clone)]
+pub struct OAuth2Auth {
+    pub access_token: String,
+    pub token_type: String,
+    pub expires_in: Option<u64>,
+}
+
+impl OAuth2Auth {
+    pub fn new(access_token: &str, token_type: &str) -> Self {
+        Self {
+            access_token: access_token.to_string(),
+            token_type: token_type.to_string(),
+            expires_in: None,
+        }
+    }
+    
+    pub fn with_expiry(mut self, expires_in: u64) -> Self {
+        self.expires_in = Some(expires_in);
         self
     }
-    
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
-    }
-    
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
-    }
-    
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
-    }
-    
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
-        }
-    }
-    
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
-    }
-}
-
-impl Default for NetworkHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Initialize network processing
-pub fn init_auth() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
-    }
-    println!("🌐 Network processing (auth) initialized");
-    Ok(())
-}
-
-/// Test network functionality
-pub fn test_auth() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
-    }
-    Ok(())
 }

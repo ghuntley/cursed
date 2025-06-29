@@ -4,11 +4,13 @@
 
 use crate::error::{CursedError, Result};
 use crate::package_manager::version::{Version, VersionReq};
+use reqwest;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 
 /// Information about a package in the registry
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageInfo {
     pub name: String,
     pub version: Version,
@@ -25,7 +27,7 @@ pub struct PackageInfo {
 }
 
 /// Package dependency specification
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dependency {
     pub name: String,
     pub version_req: VersionReq,
@@ -46,32 +48,26 @@ pub struct RegistryConfig {
 #[derive(Debug, Clone)]
 pub struct PackageRegistry {
     config: RegistryConfig,
-    client: MockHttpClient, // In a real implementation, this would be a proper HTTP client
+    client: reqwest::Client,
 }
 
-/// Mock HTTP client for compilation purposes
-/// In a real implementation, this would use reqwest or similar
-#[derive(Debug, Clone)]
-struct MockHttpClient {
-    timeout: Duration,
+/// Registry search response
+#[derive(Debug, Deserialize)]
+struct SearchResponse {
+    packages: Vec<PackageInfo>,
+    total: Option<usize>,
 }
 
-impl MockHttpClient {
-    fn new(timeout: Duration) -> Self {
-        Self { timeout }
-    }
+/// Registry package response
+#[derive(Debug, Deserialize)]
+struct PackageResponse {
+    package: PackageInfo,
+}
 
-    async fn get(&self, _url: &str) -> Result<String> {
-        // Mock implementation - in reality would make HTTP request
-        tokio::time::sleep(Duration::from_millis(100)).await;
-        Ok(r#"{"packages": []}"#.to_string())
-    }
-
-    async fn post(&self, _url: &str, _body: &str) -> Result<String> {
-        // Mock implementation
-        tokio::time::sleep(Duration::from_millis(150)).await;
-        Ok(r#"{"success": true}"#.to_string())
-    }
+/// Registry versions response
+#[derive(Debug, Deserialize)]
+struct VersionsResponse {
+    versions: Vec<String>,
 }
 
 impl Default for RegistryConfig {
@@ -88,7 +84,26 @@ impl Default for RegistryConfig {
 impl PackageRegistry {
     /// Create a new registry client
     pub fn new(config: RegistryConfig) -> Result<Self> {
-        let client = MockHttpClient::new(config.timeout);
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(
+            reqwest::header::USER_AGENT,
+            reqwest::header::HeaderValue::from_static("cursed-package-manager/1.0"),
+        );
+        
+        if let Some(api_key) = &config.api_key {
+            let auth_value = format!("Bearer {}", api_key);
+            headers.insert(
+                reqwest::header::AUTHORIZATION,
+                reqwest::header::HeaderValue::from_str(&auth_value)
+                    .map_err(|e| CursedError::General(format!("Invalid API key: {}", e)))?,
+            );
+        }
+
+        let client = reqwest::Client::builder()
+            .timeout(config.timeout)
+            .default_headers(headers)
+            .build()
+            .map_err(|e| CursedError::General(format!("Failed to create HTTP client: {}", e)))?;
         
         Ok(Self {
             config,
@@ -100,11 +115,13 @@ impl PackageRegistry {
     pub async fn search_packages(&self, query: &str) -> Result<Vec<PackageInfo>> {
         tracing::info!("Searching packages for query: {}", query);
 
-        let url = format!("{}/api/v1/search?q={}", self.config.url, query);
-        let response = self.client.get(&url).await?;
+        let url = format!("{}/api/v1/search", self.config.url);
+        let response = self.make_request_with_retries(&url, Some(&[("q", query)])).await?;
         
-        // In a real implementation, would parse JSON response
-        self.parse_search_response(&response)
+        let search_response: SearchResponse = serde_json::from_str(&response)
+            .map_err(|e| CursedError::General(format!("Failed to parse search response: {}", e)))?;
+        
+        Ok(search_response.packages)
     }
 
     /// Get package metadata for a specific package and version
@@ -117,8 +134,12 @@ impl PackageRegistry {
             format!("{}/api/v1/packages/{}", self.config.url, name)
         };
 
-        let response = self.client.get(&url).await?;
-        self.parse_package_info(&response, name)
+        let response = self.make_request_with_retries(&url, None).await?;
+        
+        let package_response: PackageResponse = serde_json::from_str(&response)
+            .map_err(|e| CursedError::General(format!("Failed to parse package info response: {}", e)))?;
+        
+        Ok(package_response.package)
     }
 
     /// Get all available versions for a package
@@ -126,9 +147,20 @@ impl PackageRegistry {
         tracing::info!("Getting versions for package: {}", name);
 
         let url = format!("{}/api/v1/packages/{}/versions", self.config.url, name);
-        let response = self.client.get(&url).await?;
+        let response = self.make_request_with_retries(&url, None).await?;
         
-        self.parse_versions_response(&response)
+        let versions_response: VersionsResponse = serde_json::from_str(&response)
+            .map_err(|e| CursedError::General(format!("Failed to parse versions response: {}", e)))?;
+        
+        let mut versions = Vec::new();
+        for version_str in versions_response.versions {
+            match Version::parse(&version_str) {
+                Ok(version) => versions.push(version),
+                Err(e) => tracing::warn!("Failed to parse version '{}': {}", version_str, e),
+            }
+        }
+        
+        Ok(versions)
     }
 
     /// Get the latest version of a package
@@ -173,61 +205,57 @@ impl PackageRegistry {
         })
     }
 
-    /// Parse search response (mock implementation)
-    fn parse_search_response(&self, response: &str) -> Result<Vec<PackageInfo>> {
-        // Mock implementation - would parse actual JSON in reality
-        tracing::debug!("Parsing search response: {}", response);
+    /// Make HTTP request with retries and error handling
+    async fn make_request_with_retries(&self, url: &str, query_params: Option<&[(&str, &str)]>) -> Result<String> {
+        let mut last_error = None;
         
-        // Return some mock results for demonstration
-        Ok(vec![
-            PackageInfo {
-                name: "example-package".to_string(),
-                version: Version::new(1, 0, 0),
-                description: "An example package".to_string(),
-                authors: vec!["Example Author".to_string()],
-                dependencies: vec![],
-                keywords: vec!["example".to_string()],
-                license: Some("MIT".to_string()),
-                homepage: None,
-                repository: None,
-                download_url: "https://packages.cursed-lang.org/example-package-1.0.0.tar.gz".to_string(),
-                checksum: "sha256:abc123".to_string(),
-                file_size: 1024,
+        for attempt in 1..=self.config.max_retries {
+            tracing::debug!("HTTP request attempt {} to {}", attempt, url);
+            
+            let mut request = self.client.get(url);
+            
+            if let Some(params) = query_params {
+                request = request.query(params);
             }
-        ])
-    }
+            
+            match request.send().await {
+                Ok(response) => {
+                    match response.error_for_status() {
+                        Ok(resp) => {
+                            match resp.text().await {
+                                Ok(text) => {
+                                    tracing::debug!("HTTP request successful on attempt {}", attempt);
+                                    return Ok(text);
+                                }
+                                Err(e) => {
+                                    let error = CursedError::General(format!("Failed to read response body: {}", e));
+                                    tracing::warn!("Request attempt {} failed: {}", attempt, error);
+                                    last_error = Some(error);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            let error = CursedError::General(format!("HTTP error: {}", e));
+                            tracing::warn!("Request attempt {} failed: {}", attempt, error);
+                            last_error = Some(error);
+                        }
+                    }
+                }
+                Err(e) => {
+                    let error = CursedError::General(format!("Request failed: {}", e));
+                    tracing::warn!("Request attempt {} failed: {}", attempt, error);
+                    last_error = Some(error);
+                }
+            }
+            
+            if attempt < self.config.max_retries {
+                // Exponential backoff
+                let delay = Duration::from_millis(1000 * 2_u64.pow(attempt - 1));
+                tokio::time::sleep(delay).await;
+            }
+        }
 
-    /// Parse package info response (mock implementation)
-    fn parse_package_info(&self, response: &str, name: &str) -> Result<PackageInfo> {
-        tracing::debug!("Parsing package info response for {}: {}", name, response);
-        
-        // Mock response
-        Ok(PackageInfo {
-            name: name.to_string(),
-            version: Version::new(1, 0, 0),
-            description: format!("Package: {}", name),
-            authors: vec!["CURSED Team".to_string()],
-            dependencies: vec![],
-            keywords: vec![],
-            license: Some("MIT".to_string()),
-            homepage: None,
-            repository: None,
-            download_url: format!("https://packages.cursed-lang.org/{}-1.0.0.tar.gz", name),
-            checksum: "sha256:mock_checksum".to_string(),
-            file_size: 2048,
-        })
-    }
-
-    /// Parse versions response (mock implementation)
-    fn parse_versions_response(&self, response: &str) -> Result<Vec<Version>> {
-        tracing::debug!("Parsing versions response: {}", response);
-        
-        // Mock versions
-        Ok(vec![
-            Version::new(1, 0, 0),
-            Version::new(1, 0, 1),
-            Version::new(1, 1, 0),
-        ])
+        Err(last_error.unwrap_or_else(|| CursedError::General("Request failed after all retries".to_string())))
     }
 }
 

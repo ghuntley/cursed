@@ -282,7 +282,7 @@ impl Parser {
         Ok(ReturnStatement { value })
     }
 
-    fn parse_expression(&mut self) -> Result<Expression, CursedError> {
+    pub fn parse_expression(&mut self) -> Result<Expression, CursedError> {
         self.parse_equality()
     }
 

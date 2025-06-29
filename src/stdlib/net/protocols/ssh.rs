@@ -1,83 +1,145 @@
-//! Network functionality for ssh
+//! SSH client implementation
 
 use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// SSH client
+#[derive(Debug)]
+pub struct SshClient {
+    config: SshConfig,
+    connected: bool,
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
+impl SshClient {
+    pub fn new(config: SshConfig) -> Self {
         Self {
-            timeout_seconds: 30,
+            config,
+            connected: false,
         }
     }
     
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
+    pub fn connect(&mut self) -> Result<(), CursedError> {
+        // Stub implementation
+        println!("Connecting to {}:{} as {}", self.config.host, self.config.port, self.config.username);
+        self.connected = true;
+        Ok(())
+    }
+    
+    pub fn disconnect(&mut self) -> Result<(), CursedError> {
+        // Stub implementation
+        self.connected = false;
+        Ok(())
+    }
+    
+    pub fn execute_command(&self, command: &SshCommand) -> Result<String, CursedError> {
+        // Stub implementation
+        if !self.connected {
+            return Err(CursedError::runtime_error("SSH client not connected"));
+        }
+        
+        Ok(format!("Executed: {}", command.command))
+    }
+    
+    pub fn upload_file(&self, local_path: &str, remote_path: &str) -> Result<(), CursedError> {
+        // Stub implementation
+        if !self.connected {
+            return Err(CursedError::runtime_error("SSH client not connected"));
+        }
+        
+        println!("Uploading {} to {}", local_path, remote_path);
+        Ok(())
+    }
+    
+    pub fn download_file(&self, remote_path: &str, local_path: &str) -> Result<(), CursedError> {
+        // Stub implementation
+        if !self.connected {
+            return Err(CursedError::runtime_error("SSH client not connected"));
+        }
+        
+        println!("Downloading {} to {}", remote_path, local_path);
+        Ok(())
+    }
+}
+
+/// SSH configuration
+#[derive(Debug, Clone)]
+pub struct SshConfig {
+    pub host: String,
+    pub port: u16,
+    pub username: String,
+    pub auth_method: SshAuthMethod,
+}
+
+impl SshConfig {
+    pub fn new(host: &str, port: u16, username: &str, auth_method: SshAuthMethod) -> Self {
+        Self {
+            host: host.to_string(),
+            port,
+            username: username.to_string(),
+            auth_method,
+        }
+    }
+}
+
+/// SSH authentication methods
+#[derive(Debug, Clone)]
+pub enum SshAuthMethod {
+    Password(String),
+    PublicKey(SshKey),
+    Agent,
+}
+
+/// SSH command
+#[derive(Debug, Clone)]
+pub struct SshCommand {
+    pub command: String,
+    pub timeout_ms: Option<u64>,
+    pub working_directory: Option<String>,
+}
+
+impl SshCommand {
+    pub fn new(command: &str) -> Self {
+        Self {
+            command: command.to_string(),
+            timeout_ms: None,
+            working_directory: None,
+        }
+    }
+    
+    pub fn timeout(mut self, ms: u64) -> Self {
+        self.timeout_ms = Some(ms);
         self
     }
     
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
+    pub fn working_directory(mut self, dir: &str) -> Self {
+        self.working_directory = Some(dir.to_string());
+        self
     }
-    
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
-    }
-    
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
-    }
-    
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
+}
+
+/// SSH key for authentication
+#[derive(Debug, Clone)]
+pub struct SshKey {
+    pub private_key_path: String,
+    pub public_key_path: Option<String>,
+    pub passphrase: Option<String>,
+}
+
+impl SshKey {
+    pub fn from_file(private_key_path: &str) -> Self {
+        Self {
+            private_key_path: private_key_path.to_string(),
+            public_key_path: None,
+            passphrase: None,
         }
     }
     
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
+    pub fn with_public_key(mut self, public_key_path: &str) -> Self {
+        self.public_key_path = Some(public_key_path.to_string());
+        self
     }
-}
-
-impl Default for NetworkHandler {
-    fn default() -> Self {
-        Self::new()
+    
+    pub fn with_passphrase(mut self, passphrase: &str) -> Self {
+        self.passphrase = Some(passphrase.to_string());
+        self
     }
-}
-
-/// Initialize network processing
-pub fn init_ssh() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
-    }
-    println!("🌐 Network processing (ssh) initialized");
-    Ok(())
-}
-
-/// Test network functionality
-pub fn test_ssh() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
-    }
-    Ok(())
 }

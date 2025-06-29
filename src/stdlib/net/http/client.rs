@@ -3,6 +3,41 @@
 use crate::error::CursedError;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
+/// HTTP client for making requests
+#[derive(Debug, Clone)]
+pub struct HttpClient {
+    timeout: u64,
+}
+
+impl HttpClient {
+    pub fn new() -> Self {
+        Self { timeout: 30 }
+    }
+}
+
+/// HTTP client builder for configuration
+#[derive(Debug, Default)]
+pub struct HttpClientBuilder {
+    timeout: Option<u64>,
+}
+
+impl HttpClientBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    
+    pub fn timeout(mut self, timeout: u64) -> Self {
+        self.timeout = Some(timeout);
+        self
+    }
+    
+    pub fn build(self) -> HttpClient {
+        HttpClient {
+            timeout: self.timeout.unwrap_or(30),
+        }
+    }
+}
+
 /// Result type for network operations
 pub type NetworkResult<T> = Result<T, CursedError>;
 

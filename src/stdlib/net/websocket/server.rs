@@ -1,83 +1,79 @@
-//! Network functionality for server
+//! WebSocket server functionality
 
 use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// WebSocket server
+#[derive(Debug)]
+pub struct WebSocketServer {
+    port: u16,
+    is_running: bool,
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
+impl WebSocketServer {
+    pub fn new(port: u16) -> Self {
         Self {
-            timeout_seconds: 30,
+            port,
+            is_running: false,
         }
     }
     
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
-        self
+    pub fn start(&mut self) -> Result<(), CursedError> {
+        // Stub implementation
+        self.is_running = true;
+        Ok(())
     }
     
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
+    pub fn stop(&mut self) -> Result<(), CursedError> {
+        // Stub implementation
+        self.is_running = false;
+        Ok(())
     }
     
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
-    }
-    
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
-    }
-    
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
-        }
-    }
-    
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
+    pub fn is_running(&self) -> bool {
+        self.is_running
     }
 }
 
-impl Default for NetworkHandler {
-    fn default() -> Self {
-        Self::new()
+/// WebSocket listener for incoming connections
+#[derive(Debug)]
+pub struct WebSocketListener {
+    port: u16,
+}
+
+impl WebSocketListener {
+    pub fn new(port: u16) -> Self {
+        Self { port }
+    }
+    
+    pub fn bind(&self) -> Result<(), CursedError> {
+        // Stub implementation
+        Ok(())
+    }
+    
+    pub fn accept(&self) -> Result<WebSocketConnection, CursedError> {
+        // Stub implementation
+        Ok(WebSocketConnection::new())
     }
 }
 
-/// Initialize network processing
-pub fn init_server() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
-    }
-    println!("🌐 Network processing (server) initialized");
-    Ok(())
+/// WebSocket connection
+#[derive(Debug)]
+pub struct WebSocketConnection {
+    // Stub implementation
 }
 
-/// Test network functionality
-pub fn test_server() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
+impl WebSocketConnection {
+    pub fn new() -> Self {
+        Self {}
     }
-    Ok(())
+    
+    pub fn send_text(&self, _text: &str) -> Result<(), CursedError> {
+        // Stub implementation
+        Ok(())
+    }
+    
+    pub fn close(&self) -> Result<(), CursedError> {
+        // Stub implementation
+        Ok(())
+    }
 }

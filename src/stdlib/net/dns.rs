@@ -81,3 +81,36 @@ pub fn test_dns() -> NetworkResult<()> {
     }
     Ok(())
 }
+
+/// Resolve hostname to IP addresses
+pub fn resolve_hostname(hostname: &str) -> NetworkResult<Vec<IpAddr>> {
+    // Stub implementation
+    match hostname {
+        "localhost" => Ok(vec![IpAddr::V4(Ipv4Addr::LOCALHOST)]),
+        _ => Err(CursedError::runtime_error("DNS resolution not implemented")),
+    }
+}
+
+/// Resolve IP to hostname
+pub fn resolve_ip(_ip: &IpAddr) -> NetworkResult<String> {
+    // Stub implementation
+    Err(CursedError::runtime_error("Reverse DNS not implemented"))
+}
+
+/// Lookup MX records
+pub fn lookup_mx(_domain: &str) -> NetworkResult<Vec<String>> {
+    // Stub implementation
+    Err(CursedError::runtime_error("MX record lookup not implemented"))
+}
+
+/// Lookup TXT records
+pub fn lookup_txt(_domain: &str) -> NetworkResult<Vec<String>> {
+    // Stub implementation
+    Err(CursedError::runtime_error("TXT record lookup not implemented"))
+}
+
+/// Lookup CNAME records
+pub fn lookup_cname(_domain: &str) -> NetworkResult<String> {
+    // Stub implementation
+    Err(CursedError::runtime_error("CNAME record lookup not implemented"))
+}

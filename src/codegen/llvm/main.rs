@@ -24,6 +24,7 @@ pub struct LlvmCodeGenerator {
     variable_counter: usize,
     label_counter: usize,
     string_constants: Vec<String>,
+    variables: HashMap<String, String>, // variable name -> register mapping
     package_manager: Option<Arc<Mutex<PackageManager>>>,
     package_config: Option<LlvmPackageConfig>,
     optimization_config: OptimizationConfig,
@@ -40,6 +41,7 @@ impl LlvmCodeGenerator {
             variable_counter: 0,
             label_counter: 0,
             string_constants: Vec::new(),
+            variables: HashMap::new(),
             package_manager: None,
             package_config: None,
             optimization_config: OptimizationConfig::default(),
@@ -61,6 +63,7 @@ impl LlvmCodeGenerator {
         self.ir_code.clear();
         self.variable_counter = 0;
         self.label_counter = 0;
+        self.variables.clear();
         
         // Generate header
         self.ir_code.push_str(&format!(
@@ -72,9 +75,18 @@ impl LlvmCodeGenerator {
         // Generate runtime function declarations
         self.generate_runtime_declarations();
         
-        // Generate code for each statement
+        // First pass: Generate all function definitions
         for statement in &program.statements {
-            self.generate_statement(statement)?;
+            if let Statement::Function(func_stmt) = statement {
+                self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.body)?;
+            }
+        }
+        
+        // Second pass: Generate other statements (non-function)
+        for statement in &program.statements {
+            if !matches!(statement, Statement::Function(_)) {
+                self.generate_statement(statement)?;
+            }
         }
         
         // Add string constants
@@ -86,7 +98,7 @@ impl LlvmCodeGenerator {
         }
         
         // Add main function if not present
-        if !self.ir_code.contains("define i32 @main") {
+        if !self.ir_code.contains("define i32 @main(") {
             self.ir_code.push_str("\ndefine i32 @main() {\n");
             self.ir_code.push_str("  ret i32 0\n");
             self.ir_code.push_str("}\n");
@@ -123,6 +135,8 @@ declare i8* @cursed_channel_receive(i8*)
             },
             Statement::Let(let_stmt) => {
                 let value_reg = self.generate_expression(&let_stmt.value)?;
+                // Store the variable mapping
+                self.variables.insert(let_stmt.name.clone(), value_reg.clone());
                 self.ir_code.push_str(&format!("  ; Variable: {} = {}\n", let_stmt.name, value_reg));
             },
             Statement::Function(func_stmt) => {
@@ -157,39 +171,31 @@ declare i8* @cursed_channel_receive(i8*)
     }
     
     fn generate_expression(&mut self, expression: &Expression) -> Result<String, CursedError> {
-        match expression {
-            Expression::Literal(lit) => self.generate_literal(lit),
-            Expression::Identifier(name) => Ok(format!("%{}", name)),
-            Expression::Integer(val) => Ok(val.to_string()),
-            Expression::String(val) => {
-                let reg = self.next_register();
-                self.ir_code.push_str(&format!("  {} = alloca [{}x i8]\n", reg, val.len() + 1));
-                self.ir_code.push_str(&format!("  ; String: \"{}\"\n", val));
-                Ok(reg)
-            },
-            Expression::Boolean(val) => Ok(if *val { "1" } else { "0" }.to_string()),
-            Expression::Binary(binary_expr) => {
-                self.generate_binary_expression(&binary_expr.left, &binary_expr.operator, &binary_expr.right)
-            },
-            Expression::Call(call_expr) => {
-                self.generate_call(&call_expr.function, &call_expr.arguments)
-            },
-            Expression::MemberAccess(member_expr) => {
-                // Real implementation for member access with proper runtime support
-                self.generate_member_access(&member_expr.object, &member_expr.property)
-            },
-            Expression::Unary(unary_expr) => {
-                self.generate_unary_expression(&unary_expr.operator, &unary_expr.operand)
-            },
-            Expression::Array(elements) => {
-                self.ir_code.push_str("  ; Array literal\n");
-                Ok("%array".to_string())
-            },
-            Expression::Map(pairs) => {
-                self.ir_code.push_str("  ; Map literal\n");
-                Ok("%map".to_string())
-            },
+        // Use the dedicated expression compiler for complete IR generation
+        let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
+        
+        // Copy current variables to the expression compiler
+        for (name, reg) in &self.variables {
+            expression_compiler.set_variable(name.clone(), reg.clone());
         }
+        
+        // Compile the expression to complete LLVM IR
+        let result_reg = expression_compiler.compile_expression(expression)?;
+        
+        // Add the generated IR to our main IR code
+        let expression_ir = expression_compiler.get_ir();
+        if !expression_ir.is_empty() {
+            self.ir_code.push_str(expression_ir);
+        }
+        
+        // Add any string constants to our pool
+        for constant in expression_compiler.get_string_constants() {
+            if !self.string_constants.contains(constant) {
+                self.string_constants.push(constant.clone());
+            }
+        }
+        
+        Ok(result_reg)
     }
     
     fn generate_literal(&mut self, literal: &Literal) -> Result<String, CursedError> {
@@ -322,10 +328,10 @@ declare i8* @cursed_channel_receive(i8*)
     fn generate_stdlib_call(&mut self, function_name: &str, arguments: &[Expression]) -> Result<String, CursedError> {
         let result_reg = self.next_register();
         
-        // Generate stdlib call with printf for now - this is a simplified implementation
+        // Generate stdlib call with proper runtime integration
         match function_name {
             "vibez_spill" => {
-                // For each argument, generate a printf call
+                // For each argument, generate a vibez_spill call
                 for arg in arguments {
                     let arg_reg = self.generate_expression(arg)?;
                     match arg {
@@ -333,18 +339,39 @@ declare i8* @cursed_channel_receive(i8*)
                             // String arguments - use puts for simpler output
                             self.ir_code.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
                         },
-                        Expression::Integer(_) => {
+                        Expression::Integer(_) | Expression::Identifier(_) => {
                             // Integer arguments - use printf with %d
                             let format_str = self.add_string_constant("%d\\n");
                             self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_str, arg_reg));
                         },
                         _ => {
-                            // Default to string output for other types
-                            self.ir_code.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
+                            // For complex expressions, convert to string and print
+                            self.ir_code.push_str(&format!("  ; Converting complex expression to output\n"));
+                            let format_str = self.add_string_constant("%d\\n");
+                            self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_str, arg_reg));
                         }
                     }
                 }
                 self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; stdlib call result\n", result_reg));
+            },
+            "vibez_spillf" => {
+                // Format string printing
+                if !arguments.is_empty() {
+                    let format_arg = self.generate_expression(&arguments[0])?;
+                    let mut printf_args = vec![format_arg];
+                    
+                    for arg in &arguments[1..] {
+                        let arg_reg = self.generate_expression(arg)?;
+                        printf_args.push(arg_reg);
+                    }
+                    
+                    self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}", printf_args[0]));
+                    for arg in &printf_args[1..] {
+                        self.ir_code.push_str(&format!(", i32 {}", arg));
+                    }
+                    self.ir_code.push_str(")\n");
+                }
+                self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; spillf result\n", result_reg));
             },
             _ => {
                 return Err(CursedError::CompilerError(format!("Unknown stdlib function: {}", function_name)));
@@ -363,26 +390,27 @@ declare i8* @cursed_channel_receive(i8*)
     }
     
     fn generate_function(&mut self, name: &str, params: &[String], body: &[Statement]) -> Result<(), CursedError> {
-        self.ir_code.push_str(&format!("define i32 @{}(", name));
+        // Use the dedicated function compiler for complete IR generation
+        let mut function_compiler = crate::codegen::llvm::function_compilation::FunctionCompiler::new();
         
-        for (i, param) in params.iter().enumerate() {
-            if i > 0 {
-                self.ir_code.push_str(", ");
-            }
-            self.ir_code.push_str(&format!("i32 %{}", param));
+        // Compile the complete function with all statements and expressions
+        let function_ir = function_compiler.compile_function(
+            name,
+            params,
+            None, // param types
+            None, // return type
+            body
+        )?;
+        
+        // Add the generated IR to our main IR code
+        self.ir_code.push_str(&function_ir);
+        
+        // Merge any IR generated during expression compilation
+        let expression_ir = function_compiler.get_ir();
+        if !expression_ir.is_empty() {
+            self.ir_code.push_str(expression_ir);
         }
         
-        self.ir_code.push_str(") {\n");
-        
-        for statement in body {
-            self.generate_statement(statement)?;
-        }
-        
-        if !self.ir_code.ends_with("ret i32") {
-            self.ir_code.push_str("  ret i32 0\n");
-        }
-        
-        self.ir_code.push_str("}\n\n");
         Ok(())
     }
     

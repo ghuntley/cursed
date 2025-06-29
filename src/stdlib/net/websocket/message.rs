@@ -1,83 +1,69 @@
-//! Network functionality for message
+//! WebSocket message handling
 
-use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// WebSocket message
+#[derive(Debug, Clone)]
+pub struct WebSocketMessage {
+    pub message_type: MessageType,
+    pub data: Vec<u8>,
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
+impl WebSocketMessage {
+    pub fn text(text: &str) -> Self {
         Self {
-            timeout_seconds: 30,
+            message_type: MessageType::Text,
+            data: text.as_bytes().to_vec(),
         }
     }
     
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
-        self
-    }
-    
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
-    }
-    
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
-    }
-    
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
-    }
-    
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
+    pub fn binary(data: &[u8]) -> Self {
+        Self {
+            message_type: MessageType::Binary,
+            data: data.to_vec(),
         }
     }
     
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
+    pub fn close() -> Self {
+        Self {
+            message_type: MessageType::Close,
+            data: Vec::new(),
+        }
+    }
+    
+    pub fn as_text(&self) -> Option<String> {
+        if self.message_type == MessageType::Text {
+            String::from_utf8(self.data.clone()).ok()
+        } else {
+            None
+        }
+    }
+    
+    pub fn as_binary(&self) -> Option<&[u8]> {
+        if self.message_type == MessageType::Binary {
+            Some(&self.data)
+        } else {
+            None
+        }
     }
 }
 
-impl Default for NetworkHandler {
-    fn default() -> Self {
-        Self::new()
-    }
+/// WebSocket message type
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageType {
+    Text,
+    Binary,
+    Close,
+    Ping,
+    Pong,
 }
 
-/// Initialize network processing
-pub fn init_message() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
+impl std::fmt::Display for MessageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MessageType::Text => write!(f, "Text"),
+            MessageType::Binary => write!(f, "Binary"),
+            MessageType::Close => write!(f, "Close"),
+            MessageType::Ping => write!(f, "Ping"),
+            MessageType::Pong => write!(f, "Pong"),
+        }
     }
-    println!("🌐 Network processing (message) initialized");
-    Ok(())
-}
-
-/// Test network functionality
-pub fn test_message() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
-    }
-    Ok(())
 }

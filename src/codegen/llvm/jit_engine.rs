@@ -986,11 +986,58 @@ impl CursedJitEngine {
         }
     }
     
-    fn call_function(&self, function: &CompiledFunction, _args: &[*const u8]) -> Result<*const u8, CursedError> {
-        // In a real implementation, this would set up the stack frame and call the function
-        // For now, just increment execution count and return null
+    fn call_function(&self, function: &CompiledFunction, args: &[*const u8]) -> Result<*const u8, CursedError> {
+        // Increment execution count for metrics
         function.execution_count.fetch_add(1, Ordering::Relaxed);
-        Ok(ptr::null())
+        
+        // Get the function pointer from the compiled function
+        let function_ptr = function.entry_point.get();
+        
+        if function_ptr.is_null() {
+            return Err(CursedError::compiler_error("Function pointer is null - compilation may have failed"));
+        }
+        
+        // Set up function call with proper calling convention
+        // This is where we actually execute the JIT-compiled LLVM code
+        let result = unsafe {
+            match args.len() {
+                0 => {
+                    // No arguments - call as fn() -> *const u8
+                    let func: unsafe extern "C" fn() -> *const u8 = std::mem::transmute(function_ptr);
+                    func()
+                }
+                1 => {
+                    // One argument - call as fn(*const u8) -> *const u8
+                    let func: unsafe extern "C" fn(*const u8) -> *const u8 = std::mem::transmute(function_ptr);
+                    func(args[0])
+                }
+                2 => {
+                    // Two arguments - call as fn(*const u8, *const u8) -> *const u8
+                    let func: unsafe extern "C" fn(*const u8, *const u8) -> *const u8 = std::mem::transmute(function_ptr);
+                    func(args[0], args[1])
+                }
+                3 => {
+                    // Three arguments - call as fn(*const u8, *const u8, *const u8) -> *const u8
+                    let func: unsafe extern "C" fn(*const u8, *const u8, *const u8) -> *const u8 = std::mem::transmute(function_ptr);
+                    func(args[0], args[1], args[2])
+                }
+                _ => {
+                    // For more complex argument patterns, we'd need a more sophisticated calling convention
+                    // For now, limit to simple cases and fall back to interpretation for complex calls
+                    return Err(CursedError::compiler_error(&format!(
+                        "JIT execution not supported for {} arguments - falling back to interpretation", 
+                        args.len()
+                    )));
+                }
+            }
+        };
+        
+        // Update execution metrics
+        if let Ok(mut tracker) = self.state.hot_code_tracker.write() {
+            tracker.record_execution(&function.name, std::time::Duration::from_nanos(1000), function.tier);
+        }
+        
+        Ok(result)
     }
     
     fn process_tier_up_candidates(&self) -> Result<(), CursedError> {

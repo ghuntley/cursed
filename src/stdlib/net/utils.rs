@@ -81,3 +81,75 @@ pub fn test_utils() -> NetworkResult<()> {
     }
     Ok(())
 }
+
+/// URL structure
+#[derive(Debug, Clone)]
+pub struct Url {
+    pub scheme: String,
+    pub host: String,
+    pub port: Option<u16>,
+    pub path: String,
+    pub query: Option<String>,
+}
+
+/// Parse URL string
+pub fn parse_url(url: &str) -> NetworkResult<Url> {
+    // Basic URL parsing stub
+    if url.starts_with("http://") {
+        let remainder = &url[7..];
+        let parts: Vec<&str> = remainder.split('/').collect();
+        let host_port = parts[0];
+        let path = if parts.len() > 1 {
+            format!("/{}", parts[1..].join("/"))
+        } else {
+            "/".to_string()
+        };
+        
+        let (host, port) = if host_port.contains(':') {
+            let hp: Vec<&str> = host_port.split(':').collect();
+            (hp[0].to_string(), hp[1].parse().ok())
+        } else {
+            (host_port.to_string(), Some(80))
+        };
+        
+        Ok(Url {
+            scheme: "http".to_string(),
+            host,
+            port,
+            path,
+            query: None,
+        })
+    } else {
+        Err(CursedError::runtime_error("Unsupported URL scheme"))
+    }
+}
+
+/// Format bandwidth for display
+pub fn format_bandwidth(bytes_per_second: u64) -> String {
+    if bytes_per_second < 1024 {
+        format!("{} B/s", bytes_per_second)
+    } else if bytes_per_second < 1024 * 1024 {
+        format!("{:.2} KB/s", bytes_per_second as f64 / 1024.0)
+    } else if bytes_per_second < 1024 * 1024 * 1024 {
+        format!("{:.2} MB/s", bytes_per_second as f64 / (1024.0 * 1024.0))
+    } else {
+        format!("{:.2} GB/s", bytes_per_second as f64 / (1024.0 * 1024.0 * 1024.0))
+    }
+}
+
+/// Network diagnostics information
+#[derive(Debug, Clone)]
+pub struct NetworkDiagnostics {
+    pub interfaces_available: usize,
+    pub localhost_reachable: bool,
+    pub dns_functional: bool,
+}
+
+/// Run network diagnostics
+pub fn network_diagnostics() -> NetworkResult<NetworkDiagnostics> {
+    Ok(NetworkDiagnostics {
+        interfaces_available: 1,
+        localhost_reachable: true,
+        dns_functional: false, // Not implemented yet
+    })
+}

@@ -37,6 +37,21 @@ pub mod test_member_access;
 pub use common::OptimizationLevel;
 use crate::error::CursedError;
 
+// CRITICAL: Re-export core components for tests and external access
+pub use lexer::{Lexer, Token, TokenKind};
+pub use parser::{Parser};
+pub use codegen::LlvmCodeGenerator as LlvmCodeGeneratorReal;
+pub use package_manager::*;
+
+// Re-export error types for external access
+pub use error_types::{Error as CursedErrorType, Result as CursedResult};
+
+// Re-export specific optimization types to avoid conflicts
+pub use optimization::{
+    OptimizationConfig, PerformanceMetrics, AdvancedOptimizationManager,
+    RealLlvmPassManager, EnhancedLlvmPassManager, OptimizationCoordinator
+};
+
 // Re-export crypto/PKI types for tests
 pub use crypto_pki_types::*;
 
@@ -63,7 +78,7 @@ pub use runtime::{
 // Re-export import system
 pub use imports::{
     ImportManager, ImportResolver, ImportError, ResolvedImport, LoadedModule,
-    ImportResolverConfig, ImportSource, ModuleLoader, PackageImportResolver
+    ImportConfig, ImportSource, ModuleLoader, PackageResolver
 };
 
 // Re-export preprocessor system
@@ -80,15 +95,13 @@ pub use debug::{
 
 // Runtime debug types are already exported above
 
-// Re-export optimization components
+// Re-export optimization components (note: some types are re-exported above)
 pub use optimization::{
-    OptimizationCoordinator, CoordinatorConfig,
-    RealLlvmPassManager, EnhancedLlvmPassManager,
-    OptimizationStats, OptimizationResult, PerformanceMetrics, AdvancedOptimizationManager
+    CoordinatorConfig,
+    OptimizationStats, OptimizationResult
 };
 
-// Re-export the correct OptimizationConfig from optimization module
-pub use optimization::config::OptimizationConfig;
+// OptimizationConfig is already re-exported above
 
 pub mod stdlib;
 
@@ -120,7 +133,35 @@ pub mod testing;
 // Type system
 pub mod type_system;
 
-// Re-export commonly used types for convenience
+// Re-export AST types for external access
+pub use ast::{
+    Program, Statement, Expression, ImportStatement, PackageDeclaration,
+    BinaryExpression, CallExpression, MemberAccessExpression,
+    LetStatement, ReturnStatement, IfStatement, FunctionStatement,
+    WhileStatement, ForStatement, GoroutineStatement, ChannelStatement
+};
+
+// Re-export execution types
+pub use execution::{CursedExecutionEngine, ExecutionContext};
+
+// Re-export type system components
+pub use type_system::{
+    TypeSystem, TypeCheckError, TypeErrorKind,
+    TypeEnvironment, TypeDefinition, TypeKind as TypeSystemKind, InferenceContext,
+    TypedCompilationPipeline, CompilationError, TypedProgram
+};
+
+// Re-export tools
+pub use tools::{CursedFormatter, FormatterConfig, FormattingOptions, CursedLinter, LinterConfig, LintRule, LintResult};
+
+// Re-export core types that are actually implemented  
+pub use core::{Type as CoreType, CharMethods, CharObject, PerformancePipeline, ParallelConfig, IncrementalConfig, ProgressConfig};
+
+// Re-export memory management types that are properly implemented
+pub use memory::{
+    Traceable, Visitor, Tag, GcRoot,
+    GcMinimal, EnhancedGcMinimal, ProductionGcMinimal, get_minimal_result
+};
 
 /// Prelude module for common imports
 pub mod prelude {

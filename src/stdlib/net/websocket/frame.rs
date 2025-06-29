@@ -1,83 +1,106 @@
-//! Network functionality for frame
+//! WebSocket frame handling
 
-use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// WebSocket frame structure
+#[derive(Debug, Clone)]
+pub struct WebSocketFrame {
+    pub opcode: Opcode,
+    pub payload: Vec<u8>,
+    pub is_final: bool,
+    pub is_masked: bool,
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
+impl WebSocketFrame {
+    pub fn new_text(text: &str) -> Self {
         Self {
-            timeout_seconds: 30,
+            opcode: Opcode::Text,
+            payload: text.as_bytes().to_vec(),
+            is_final: true,
+            is_masked: false,
         }
     }
     
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
-        self
-    }
-    
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
-    }
-    
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
-    }
-    
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
-    }
-    
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
+    pub fn new_binary(data: &[u8]) -> Self {
+        Self {
+            opcode: Opcode::Binary,
+            payload: data.to_vec(),
+            is_final: true,
+            is_masked: false,
         }
     }
     
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
+    pub fn new_close() -> Self {
+        Self {
+            opcode: Opcode::Close,
+            payload: Vec::new(),
+            is_final: true,
+            is_masked: false,
+        }
+    }
+    
+    pub fn new_ping(data: &[u8]) -> Self {
+        Self {
+            opcode: Opcode::Ping,
+            payload: data.to_vec(),
+            is_final: true,
+            is_masked: false,
+        }
+    }
+    
+    pub fn new_pong(data: &[u8]) -> Self {
+        Self {
+            opcode: Opcode::Pong,
+            payload: data.to_vec(),
+            is_final: true,
+            is_masked: false,
+        }
     }
 }
 
-impl Default for NetworkHandler {
-    fn default() -> Self {
-        Self::new()
+/// WebSocket opcodes
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Opcode {
+    Continuation = 0x0,
+    Text = 0x1,
+    Binary = 0x2,
+    Close = 0x8,
+    Ping = 0x9,
+    Pong = 0xA,
+}
+
+impl From<u8> for Opcode {
+    fn from(byte: u8) -> Self {
+        match byte & 0x0F {
+            0x0 => Opcode::Continuation,
+            0x1 => Opcode::Text,
+            0x2 => Opcode::Binary,
+            0x8 => Opcode::Close,
+            0x9 => Opcode::Ping,
+            0xA => Opcode::Pong,
+            _ => Opcode::Close, // Default to close for unknown opcodes
+        }
     }
 }
 
-/// Initialize network processing
-pub fn init_frame() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
-    }
-    println!("🌐 Network processing (frame) initialized");
-    Ok(())
+/// Frame type enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FrameType {
+    Text,
+    Binary,
+    Close,
+    Ping,
+    Pong,
+    Continuation,
 }
 
-/// Test network functionality
-pub fn test_frame() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
+impl From<Opcode> for FrameType {
+    fn from(opcode: Opcode) -> Self {
+        match opcode {
+            Opcode::Text => FrameType::Text,
+            Opcode::Binary => FrameType::Binary,
+            Opcode::Close => FrameType::Close,
+            Opcode::Ping => FrameType::Ping,
+            Opcode::Pong => FrameType::Pong,
+            Opcode::Continuation => FrameType::Continuation,
+        }
     }
-    Ok(())
 }

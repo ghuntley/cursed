@@ -2,6 +2,42 @@
 
 use crate::error::CursedError;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::collections::HashMap;
+
+/// HTTP header value
+#[derive(Debug, Clone)]
+pub struct HeaderValue(String);
+
+impl HeaderValue {
+    pub fn new(value: String) -> Self {
+        Self(value)
+    }
+    
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// HTTP headers map
+pub type HeaderMap = HashMap<String, HeaderValue>;
+
+/// HTTP headers utility
+#[derive(Debug, Clone)]
+pub struct HttpHeaders(HeaderMap);
+
+impl HttpHeaders {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+    
+    pub fn insert(&mut self, key: String, value: HeaderValue) {
+        self.0.insert(key, value);
+    }
+    
+    pub fn get(&self, key: &str) -> Option<&HeaderValue> {
+        self.0.get(key)
+    }
+}
 
 /// Result type for network operations
 pub type NetworkResult<T> = Result<T, CursedError>;

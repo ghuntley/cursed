@@ -6,16 +6,23 @@ pub mod associated_types;
 pub mod variance;
 pub mod higher_kinded_types;
 pub mod generic_optimization;
+pub mod checker;
+pub mod compilation_integration;
 
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+pub mod integration_tests;
+
 // Import base types from core and AST
-pub use crate::core::{Type, TypeChecker};
+pub use crate::core::{Type};
 pub use crate::ast::Type as AstType;
 
 // Re-export key types
 pub use type_inference::TypeInference;
+pub use checker::{TypeChecker, TypeCheckError, TypeErrorKind};
+pub use compilation_integration::{TypedCompilationPipeline, CompilationError, TypedProgram};
 
 // Core type system structures
 #[derive(Debug, Clone)]

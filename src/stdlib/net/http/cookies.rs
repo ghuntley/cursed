@@ -1,83 +1,99 @@
-//! Network functionality for cookies
+//! HTTP cookie functionality
 
-use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::collections::HashMap;
 
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// HTTP cookie
+#[derive(Debug, Clone)]
+pub struct Cookie {
+    pub name: String,
+    pub value: String,
+    pub domain: Option<String>,
+    pub path: Option<String>,
+    pub secure: bool,
+    pub http_only: bool,
+    pub max_age: Option<u64>,
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
+impl Cookie {
+    pub fn new(name: &str, value: &str) -> Self {
         Self {
-            timeout_seconds: 30,
+            name: name.to_string(),
+            value: value.to_string(),
+            domain: None,
+            path: None,
+            secure: false,
+            http_only: false,
+            max_age: None,
         }
     }
     
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
+    pub fn domain(mut self, domain: &str) -> Self {
+        self.domain = Some(domain.to_string());
         self
     }
     
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
+    pub fn path(mut self, path: &str) -> Self {
+        self.path = Some(path.to_string());
+        self
     }
     
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
+    pub fn secure(mut self, secure: bool) -> Self {
+        self.secure = secure;
+        self
     }
     
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
-    }
-    
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
-        }
-    }
-    
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
+    pub fn http_only(mut self, http_only: bool) -> Self {
+        self.http_only = http_only;
+        self
     }
 }
 
-impl Default for NetworkHandler {
-    fn default() -> Self {
-        Self::new()
+/// Cookie jar for managing cookies
+#[derive(Debug, Clone, Default)]
+pub struct CookieJar {
+    cookies: HashMap<String, Cookie>,
+}
+
+impl CookieJar {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    
+    pub fn add(&mut self, cookie: Cookie) {
+        self.cookies.insert(cookie.name.clone(), cookie);
+    }
+    
+    pub fn get(&self, name: &str) -> Option<&Cookie> {
+        self.cookies.get(name)
+    }
+    
+    pub fn remove(&mut self, name: &str) -> Option<Cookie> {
+        self.cookies.remove(name)
+    }
+    
+    pub fn clear(&mut self) {
+        self.cookies.clear();
     }
 }
 
-/// Initialize network processing
-pub fn init_cookies() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
-    }
-    println!("🌐 Network processing (cookies) initialized");
-    Ok(())
+/// Cookie store interface
+pub trait CookieStore {
+    fn store_cookie(&mut self, cookie: Cookie);
+    fn get_cookies_for_url(&self, url: &str) -> Vec<Cookie>;
+    fn clear_cookies(&mut self);
 }
 
-/// Test network functionality
-pub fn test_cookies() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
+impl CookieStore for CookieJar {
+    fn store_cookie(&mut self, cookie: Cookie) {
+        self.add(cookie);
     }
-    Ok(())
+    
+    fn get_cookies_for_url(&self, _url: &str) -> Vec<Cookie> {
+        // Stub implementation - would filter by domain/path
+        self.cookies.values().cloned().collect()
+    }
+    
+    fn clear_cookies(&mut self) {
+        self.clear();
+    }
 }

@@ -2,6 +2,86 @@
 
 use crate::error::CursedError;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::collections::HashMap;
+
+/// HTTP methods
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HttpMethod {
+    Get,
+    Post,
+    Put,
+    Delete,
+    Head,
+    Options,
+    Patch,
+}
+
+/// HTTP request structure
+#[derive(Debug, Clone)]
+pub struct HttpRequest {
+    method: HttpMethod,
+    url: String,
+    headers: HashMap<String, String>,
+    body: Option<Vec<u8>>,
+}
+
+impl HttpRequest {
+    pub fn new(method: HttpMethod, url: String) -> Self {
+        Self {
+            method,
+            url,
+            headers: HashMap::new(),
+            body: None,
+        }
+    }
+}
+
+/// Request builder for constructing HTTP requests
+#[derive(Debug, Default)]
+pub struct RequestBuilder {
+    method: Option<HttpMethod>,
+    url: Option<String>,
+    headers: HashMap<String, String>,
+    body: Option<Vec<u8>>,
+}
+
+impl RequestBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    
+    pub fn method(mut self, method: HttpMethod) -> Self {
+        self.method = Some(method);
+        self
+    }
+    
+    pub fn url(mut self, url: String) -> Self {
+        self.url = Some(url);
+        self
+    }
+    
+    pub fn header(mut self, key: String, value: String) -> Self {
+        self.headers.insert(key, value);
+        self
+    }
+    
+    pub fn body(mut self, body: Vec<u8>) -> Self {
+        self.body = Some(body);
+        self
+    }
+    
+    pub fn build(self) -> Result<HttpRequest, CursedError> {
+        let method = self.method.ok_or_else(|| CursedError::Parse("Method required".to_string()))?;
+        let url = self.url.ok_or_else(|| CursedError::Parse("URL required".to_string()))?;
+        
+        Ok(HttpRequest {
+            method,
+            url,
+            headers: self.headers,
+            body: self.body,
+        })
+    }
+}
 
 /// Result type for network operations
 pub type NetworkResult<T> = Result<T, CursedError>;

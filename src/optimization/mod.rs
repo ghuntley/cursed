@@ -31,5 +31,5 @@ pub use coordinator::{OptimizationCoordinator, CoordinatorConfiguration as Coord
 pub use performance_monitor::PerformanceMonitor;
 pub use types::{OptimizationStats, OptimizationResult};
 pub use optimization_manager::{
-    PerformanceMetrics, AdvancedOptimizationManager
+    PerformanceMetrics, AdvancedOptimizationManager, OptimizationManager
 };

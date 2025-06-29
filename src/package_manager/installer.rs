@@ -6,6 +6,7 @@ use crate::error::{CursedError, Result};
 use crate::package_manager::version::Version;
 use crate::package_manager::downloader::{DownloadedPackage, PackageDownloader, PackageDownloadRequest};
 use crate::package_manager::resolver::{ResolvedPackage, ResolutionResult};
+use crate::package_manager::archive::{extract_archive, ExtractionConfig};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -313,23 +314,39 @@ impl PackageInstaller {
     async fn extract_package(&self, archive_path: &Path, install_path: &Path) -> Result<Vec<PathBuf>> {
         tracing::debug!("Extracting {} to {:?}", archive_path.display(), install_path);
 
-        // Mock extraction - in real implementation would use tar/zip libraries
-        let mock_files = vec![
-            install_path.join("lib.csd"),
-            install_path.join("README.md"),
-            install_path.join("package.toml"),
-        ];
+        // Ensure install directory exists
+        async_fs::create_dir_all(install_path).await?;
 
-        // Create mock files
-        for file_path in &mock_files {
-            if let Some(parent) = file_path.parent() {
-                async_fs::create_dir_all(parent).await?;
-            }
-            async_fs::write(file_path, "// Mock package file\n").await?;
-        }
+        // Configure extraction
+        let extraction_config = ExtractionConfig {
+            overwrite_existing: true,
+            preserve_permissions: true,
+            strip_components: 1, // Strip top-level directory from archives
+        };
 
-        tracing::debug!("Extracted {} files", mock_files.len());
-        Ok(mock_files)
+        // Extract archive using blocking task to avoid blocking async runtime
+        let archive_path = archive_path.to_path_buf();
+        let install_path_clone = install_path.to_path_buf();
+        
+        let extraction_result = tokio::task::spawn_blocking(move || {
+            extract_archive(&archive_path, &install_path_clone, extraction_config)
+        }).await
+        .map_err(|e| CursedError::General(format!("Extraction task failed: {}", e)))??;
+
+        // Convert relative paths to absolute paths
+        let extracted_files: Vec<PathBuf> = extraction_result.extracted_files
+            .into_iter()
+            .map(|relative_path| install_path.join(relative_path))
+            .collect();
+
+        tracing::info!(
+            "Extracted {} files ({} bytes total) from {:?}",
+            extracted_files.len(),
+            extraction_result.total_size,
+            extraction_result.format
+        );
+
+        Ok(extracted_files)
     }
 
     /// Verify package installation integrity
