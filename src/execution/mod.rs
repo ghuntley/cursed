@@ -101,14 +101,12 @@ impl CursedExecutionEngine {
     fn execute_statement(&mut self, statement: &crate::ast::Statement, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
         use crate::ast::Statement;
         
-        println!("DEBUG: Executing statement: {:?}", statement);
         match statement {
             Statement::Expression(expr) => {
                 self.evaluate_expression(expr, context)
             },
             Statement::Let(let_stmt) => {
                 let value = self.evaluate_expression(&let_stmt.value, context)?;
-                println!("DEBUG: Setting variable {} = {:?}", let_stmt.name, value);
                 context.set_variable(let_stmt.name.clone(), value.clone());
                 Ok(value)
             },
@@ -202,7 +200,6 @@ impl CursedExecutionEngine {
             Expression::String(s) => Ok(CursedValue::String(s.clone())),
             Expression::Boolean(b) => Ok(CursedValue::Boolean(*b)),
             Expression::Identifier(name) => {
-                println!("DEBUG: Looking up variable: {}", name);
                 context.get_variable(name)
                     .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)))
             },

@@ -107,37 +107,37 @@ pub use error::{NetError, NetResult, connection_error, timeout_error, dns_error,
 pub use address::{IpAddr, IpAddrV4, IpAddrV6, SocketAddr, SocketAddrV4, SocketAddrV6};
 pub use socket::{
     SocketType, SocketState, ProtocolType
-// };
+};
 
 // DNS operations
 pub use dns::{
     resolve_hostname, resolve_ip, lookup_mx, lookup_txt, lookup_cname
-// };
+};
 
 // Network interface utilities
 pub use interfaces::{
     list_interfaces, get_interface_by_name, get_default_interface
-// };
+};
 
 // HTTP client functionality
 pub use http::{
     RequestBuilder, ConnectionPool, Cookie, HttpAuth, HttpConfig
-// };
+};
 
 // WebSocket functionality
 pub use websocket::{
     MessageType, CloseCode, WebSocketConfig, CompressionConfig
-// };
+};
 
 // Protocol implementations
 pub use protocols::{
     EmailMessage, FtpTransferMode, SshCommand, SshKey
-// };
+};
 
 // Utility functions
 pub use utils::{
     parse_url, format_bandwidth, network_diagnostics
-// };
+};
 
 /// Initialize the networking subsystem
 /// 
@@ -152,18 +152,32 @@ pub fn initialize() -> NetResult<()> {
         
         #[repr(C)]
         struct WSAData {
+            wVersion: u16,
+            wHighVersion: u16,
+            szDescription: [u8; 257],
+            szSystemStatus: [u8; 129],
+            iMaxSockets: u16,
+            iMaxUdpDg: u16,
+            lpVendorInfo: *mut u8,
+        }
+        
         extern "system" {
             fn WSAStartup(version_requested: u16, wsa_data: *mut WSAData) -> i32;
+        }
+        
         let mut wsa_data: WSAData = unsafe { mem::zeroed() };
         let result = unsafe { WSAStartup(0x0202, &mut wsa_data) };
         
         if result != 0 {
             return Err(NetError::System {
+                message: "Failed to initialize Winsock".to_string(),
             });
         }
     }
     
     Ok(())
+}
+
 /// Shutdown the networking subsystem
 /// 
 /// This function should be called at program shutdown to properly clean up
@@ -173,14 +187,19 @@ pub fn shutdown() -> NetResult<()> {
     {
         extern "system" {
             fn WSACleanup() -> i32;
+        }
+        
         let result = unsafe { WSACleanup() };
         if result != 0 {
             return Err(NetError::System {
+                message: "Failed to cleanup Winsock".to_string(),
             });
         }
     }
     
     Ok(())
+}
+
 /// Get networking module statistics
 pub fn get_network_statistics() -> NetworkStatistics {
     NETWORK_STATS.read().unwrap().clone()

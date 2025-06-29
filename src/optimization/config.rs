@@ -15,6 +15,18 @@ pub struct OptimizationConfig {
     pub debug_info: bool,
     pub custom_passes: Vec<String>,
     pub pass_manager_config: PassManagerConfig,
+    
+    // Compatibility fields for examples/tests
+    pub optimization_level: OptimizationLevel,
+    pub enable_profiling: bool,
+    pub profile_data_dir: Option<std::path::PathBuf>,
+    pub profile_guided: bool,
+    pub parallel_workers: u32,
+    pub enable_parallel: bool,
+    pub enable_incremental: bool,
+    pub cache_directory: Option<std::path::PathBuf>,
+    pub generate_reports: bool,
+    pub verbose_optimization: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,6 +38,20 @@ pub enum OptimizationLevel {
     Size,        // -Os: Optimize for size
     SizeZ,       // -Oz: Optimize aggressively for size
     Custom(HashMap<String, bool>),  // Custom optimization settings
+}
+
+impl OptimizationLevel {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            OptimizationLevel::None => "O0",
+            OptimizationLevel::Less => "O1",
+            OptimizationLevel::Default => "O2", 
+            OptimizationLevel::Aggressive => "O3",
+            OptimizationLevel::Size => "Os",
+            OptimizationLevel::SizeZ => "Oz",
+            OptimizationLevel::Custom(_) => "Custom",
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -49,7 +75,7 @@ pub enum VerificationLevel {
 impl OptimizationConfig {
     pub fn new(level: OptimizationLevel) -> Self {
         Self {
-            level,
+            level: level.clone(),
             target_features: Vec::new(),
             inline_threshold: 225,
             unroll_threshold: 150,
@@ -59,6 +85,16 @@ impl OptimizationConfig {
             debug_info: false,
             custom_passes: Vec::new(),
             pass_manager_config: PassManagerConfig::default(),
+            optimization_level: level,
+            enable_profiling: false,
+            profile_data_dir: None,
+            profile_guided: false,
+            parallel_workers: 4,
+            enable_parallel: true,
+            enable_incremental: false,
+            cache_directory: None,
+            generate_reports: false,
+            verbose_optimization: false,
         }
     }
 
@@ -74,6 +110,16 @@ impl OptimizationConfig {
             debug_info: true,
             custom_passes: Vec::new(),
             pass_manager_config: PassManagerConfig::debug(),
+            optimization_level: OptimizationLevel::None,
+            enable_profiling: false,
+            profile_data_dir: None,
+            profile_guided: false,
+            parallel_workers: 1,
+            enable_parallel: false,
+            enable_incremental: false,
+            cache_directory: None,
+            generate_reports: true,
+            verbose_optimization: true,
         }
     }
 
@@ -95,6 +141,16 @@ impl OptimizationConfig {
                 "simplifycfg".to_string(),
             ],
             pass_manager_config: PassManagerConfig::release(),
+            optimization_level: OptimizationLevel::Aggressive,
+            enable_profiling: true,
+            profile_data_dir: None,
+            profile_guided: false,
+            parallel_workers: 8,
+            enable_parallel: true,
+            enable_incremental: true,
+            cache_directory: None,
+            generate_reports: false,
+            verbose_optimization: false,
         }
     }
 
@@ -114,6 +170,16 @@ impl OptimizationConfig {
                 "deadargelim".to_string(),
             ],
             pass_manager_config: PassManagerConfig::default(),
+            optimization_level: OptimizationLevel::Size,
+            enable_profiling: false,
+            profile_data_dir: None,
+            profile_guided: false,
+            parallel_workers: 1,
+            enable_parallel: false,
+            enable_incremental: false,
+            cache_directory: None,
+            generate_reports: false,
+            verbose_optimization: false,
         }
     }
 
@@ -226,6 +292,37 @@ impl OptimizationConfig {
         }
 
         Ok(())
+    }
+
+    /// Get effective number of workers for parallel optimization
+    pub fn effective_workers(&self) -> u32 {
+        if self.enable_parallel {
+            self.parallel_workers
+        } else {
+            1
+        }
+    }
+
+    /// Get cache directory path
+    pub fn cache_dir(&self) -> std::path::PathBuf {
+        self.cache_directory.clone()
+            .unwrap_or_else(|| std::env::temp_dir().join("cursed_cache"))
+    }
+
+    /// Create configuration from command line arguments
+    pub fn from_args(args: &[String]) -> Result<Self, CursedError> {
+        let mut config = Self::new(OptimizationLevel::Default);
+        
+        for arg in args {
+            match arg.as_str() {
+                "--debug" | "-g" => config = Self::debug(),
+                "--release" | "-O3" => config = Self::release(),
+                "--size" | "-Os" => config = Self::size_optimized(),
+                _ => {} // Ignore unknown args
+            }
+        }
+        
+        Ok(config)
     }
 }
 

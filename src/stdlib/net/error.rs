@@ -6,6 +6,29 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 /// Result type for network operations
 pub type NetworkResult<T> = Result<T, CursedError>;
 
+/// Network-specific error types
+#[derive(Debug, Clone)]
+pub enum NetError {
+    System {
+        message: String,
+    },
+    Timeout {
+        message: String,
+    },
+    Connection {
+        message: String,
+    },
+    Dns {
+        message: String,
+    },
+    Protocol {
+        message: String,
+    },
+}
+
+/// Result type for network operations (NetError version)
+pub type NetResult<T> = Result<T, NetError>;
+
 /// Network operations handler
 pub struct NetworkHandler {
     timeout_seconds: u64,
@@ -80,4 +103,32 @@ pub fn test_error() -> NetworkResult<()> {
         return Err(CursedError::runtime_error("Network socket test failed"));
     }
     Ok(())
+}
+
+/// Create a connection error
+pub fn connection_error(message: &str) -> NetError {
+    NetError::Connection {
+        message: message.to_string(),
+    }
+}
+
+/// Create a timeout error
+pub fn timeout_error(message: &str) -> NetError {
+    NetError::Timeout {
+        message: message.to_string(),
+    }
+}
+
+/// Create a DNS error
+pub fn dns_error(message: &str) -> NetError {
+    NetError::Dns {
+        message: message.to_string(),
+    }
+}
+
+/// Create a protocol error
+pub fn protocol_error(message: &str) -> NetError {
+    NetError::Protocol {
+        message: message.to_string(),
+    }
 }
