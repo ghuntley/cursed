@@ -12,6 +12,21 @@ linux_build_task:
     cpu: 8
     memory: 16G
     disk: 100
+  
+  # Cache Nix store
+  nix_cache:
+    folder: /nix
+    fingerprint_script: cat devenv.nix devenv.lock
+    
+  # Cache Cargo dependencies
+  cargo_cache:
+    folder: ~/.cargo
+    fingerprint_script: cat Cargo.lock
+    
+  # Cache build artifacts (with care)
+  target_cache:
+    folder: target
+    fingerprint_script: cat Cargo.lock src/**/*.rs | head -c 1000
     
   install_nix_script: |
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
@@ -64,6 +79,21 @@ macos_build_task:
     image: ghcr.io/cirruslabs/macos-runner:sequoia
     cpu: 4
     memory: 8G
+  
+  # Cache Nix store
+  nix_cache:
+    folder: /nix
+    fingerprint_script: cat devenv.nix devenv.lock
+    
+  # Cache Cargo dependencies
+  cargo_cache:
+    folder: ~/.cargo
+    fingerprint_script: cat Cargo.lock
+    
+  # Cache build artifacts (with care)
+  target_cache:
+    folder: target
+    fingerprint_script: cat Cargo.lock src/**/*.rs | head -c 1000
     
   install_nix_script: |
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
