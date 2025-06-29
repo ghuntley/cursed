@@ -115,7 +115,7 @@ jobs:
         esac
         
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: bootstrap-test-results-${{ matrix.os }}-${{ matrix.mode }}
@@ -123,7 +123,7 @@ jobs:
         retention-days: 30
         
     - name: Upload test logs
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: bootstrap-test-logs-${{ matrix.os }}-${{ matrix.mode }}
@@ -172,7 +172,7 @@ jobs:
         # This would run specific tests under valgrind
         
     - name: Upload memory test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: memory-test-results
@@ -214,7 +214,7 @@ jobs:
         ./scripts/run_bootstrap_tests.sh --category performance --verbose
         
     - name: Upload performance results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: performance-test-results
@@ -255,7 +255,7 @@ jobs:
         ./scripts/run_bootstrap_tests.sh --category regression --verbose
         
     - name: Upload regression results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: regression-test-results
@@ -297,7 +297,7 @@ jobs:
         ./scripts/run_bootstrap_tests.sh --category self_compilation --verbose
         
     - name: Upload self-compilation results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: self-compilation-test-results
@@ -312,7 +312,7 @@ jobs:
     
     steps:
     - name: Download all test results
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: all-test-results/
         
@@ -351,7 +351,7 @@ jobs:
         cat test-summary.md
         
     - name: Upload test summary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-summary
         path: test-summary.md
