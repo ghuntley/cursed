@@ -28,7 +28,8 @@ jobs:
             asset_name: cursed-macos-x86_64
 
     steps:
-    - name: Maximize build space
+    - name: Maximize build space (Linux only)
+      if: runner.os == 'Linux'
       uses: easimon/maximize-build-space@master
       with:
         root-reserve-mb: 512
