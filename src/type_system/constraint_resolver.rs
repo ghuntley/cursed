@@ -19,12 +19,18 @@ pub fn get_minimal_result() -> Result<String, CursedError> {
 // Missing types for tests
 #[derive(Debug, Clone)]
 pub struct ConstraintResolver {
-    // TODO: implement
+    // Store type variable bindings
+    bindings: HashMap<String, TypeExpression>,
+    // Track visited constraints for cycle detection
+    visited_constraints: std::collections::HashSet<String>,
 }
 
 impl ConstraintResolver {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            bindings: HashMap::new(),
+            visited_constraints: std::collections::HashSet::new(),
+        }
     }
     
     pub fn validate_constraint(&self, constraint: &GenericConstraint, env: &TypeEnvironment) -> Result<(), ConstraintViolation> {
@@ -129,8 +135,28 @@ impl ConstraintResolver {
     }
     
     // Helper methods
-    fn has_circular_dependency(&self, _constraint: &GenericConstraint, _env: &TypeEnvironment) -> bool {
-        // TODO: Implement cycle detection
+    fn has_circular_dependency(&self, constraint: &GenericConstraint, env: &TypeEnvironment) -> bool {
+        // Create a unique key for this constraint
+        let constraint_key = format!("{}:{}", constraint.constraint_name, constraint.bounds.join("+"));
+        
+        // If we've already visited this constraint in the current path, we have a cycle
+        if self.visited_constraints.contains(&constraint_key) {
+            return true;
+        }
+        
+        // Check dependencies recursively
+        for bound in &constraint.bounds {
+            if let Some(type_def) = env.get_type(bound) {
+                // Check if this type has constraints that could create cycles
+                for method in &type_def.methods {
+                    // Simple heuristic: if method name contains constraint name, potential cycle
+                    if method.name.contains(&constraint.constraint_name) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
         false
     }
     
@@ -174,8 +200,56 @@ impl ConstraintResolver {
         Ok(substitutions)
     }
     
-    fn has_conflicting_substitutions(&self, _substitutions: &HashMap<String, TypeExpression>) -> bool {
-        // TODO: Check for conflicting type bindings
+    fn has_conflicting_substitutions(&self, substitutions: &HashMap<String, TypeExpression>) -> bool {
+        // Check if the same type variable is bound to different types
+        for (var, binding) in substitutions {
+            if let Some(existing_binding) = self.bindings.get(var) {
+                // Simple type equality check - names must match
+                if let (Some(existing_name), Some(new_name)) = (&existing_binding.name, &binding.name) {
+                    if existing_name != new_name {
+                        return true; // Conflicting bindings
+                    }
+                }
+            }
+        }
+        
+        // Check for direct conflicts within the substitution set
+        let mut seen_variables = std::collections::HashSet::new();
+        for (var, binding) in substitutions {
+            if seen_variables.contains(var) {
+                return true;
+            }
+            seen_variables.insert(var.clone());
+            
+            // Check if binding creates a cycle
+            if self.binding_creates_cycle(var, binding, substitutions) {
+                return true;
+            }
+        }
+        
+        false
+    }
+    
+    fn binding_creates_cycle(&self, var: &str, binding: &TypeExpression, substitutions: &HashMap<String, TypeExpression>) -> bool {
+        // Simple cycle detection: check if var appears in the binding
+        if let Some(binding_name) = &binding.name {
+            if binding_name == var {
+                return true;
+            }
+            
+            // Check if any substitutions create indirect cycles
+            if let Some(indirect_binding) = substitutions.get(binding_name) {
+                return self.binding_creates_cycle(var, indirect_binding, substitutions);
+            }
+        }
+        
+        // Check parameters for cycles
+        for param in &binding.parameters {
+            if self.binding_creates_cycle(var, param, substitutions) {
+                return true;
+            }
+        }
+        
         false
     }
 }
@@ -205,12 +279,15 @@ pub enum ViolationReason {
 
 #[derive(Debug, Clone)]
 pub struct TypeUnifier {
-    // TODO: implement
+    // Store current substitutions during unification
+    substitutions: HashMap<String, TypeExpression>,
 }
 
 impl TypeUnifier {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            substitutions: HashMap::new(),
+        }
     }
     
     pub fn unify(&mut self, t1: &TypeExpression, t2: &TypeExpression) -> Result<HashMap<String, TypeExpression>, ConstraintViolation> {
@@ -315,12 +392,39 @@ impl TypeUnifier {
 
 #[derive(Debug, Clone)]
 pub struct ConstraintPropagator {
-    // TODO: implement
+    // Track constraint resolution state
+    resolved_constraints: std::collections::HashSet<String>,
+    pending_constraints: Vec<String>,
 }
 
 impl ConstraintPropagator {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            resolved_constraints: std::collections::HashSet::new(),
+            pending_constraints: Vec::new(),
+        }
+    }
+    
+    pub fn resolve_final(&mut self, constraints: &[GenericConstraint]) -> Result<HashMap<String, TypeExpression>, ConstraintViolation> {
+        let mut final_substitutions = HashMap::new();
+        
+        // Simple resolution strategy: process constraints in order
+        for constraint in constraints {
+            let constraint_id = format!("{}:{}", constraint.constraint_name, constraint.bounds.join("+"));
+            
+            if !self.resolved_constraints.contains(&constraint_id) {
+                // For basic functionality, just bind type parameters to their bounds
+                for (i, param) in constraint.type_parameters.iter().enumerate() {
+                    if let Some(bound) = constraint.bounds.get(i) {
+                        final_substitutions.insert(param.clone(), TypeExpression::named(bound));
+                    }
+                }
+                
+                self.resolved_constraints.insert(constraint_id);
+            }
+        }
+        
+        Ok(final_substitutions)
     }
     
     pub fn build_constraint_graph(&self, bindings: &[ConstraintBinding]) -> Result<ConstraintGraph, ConstraintViolation> {
