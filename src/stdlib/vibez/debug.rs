@@ -1,15 +1,20 @@
-//! Minimal working module for CURSED compilation
+//! Debug module stub for vibez
 
 use crate::error::CursedError;
 
-pub struct MinimalImplementation;
-
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
+// Stub implementations - TODO: implement properly
+pub fn set_debug_level(_level: u8) -> Result<(), CursedError> {
+    Ok(())
 }
 
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+pub fn get_debug_level() -> u8 {
+    0
+}
+
+pub fn is_debug_enabled() -> bool {
+    false
+}
+
+pub fn init_debug_system() {
+    // Stub implementation
 }

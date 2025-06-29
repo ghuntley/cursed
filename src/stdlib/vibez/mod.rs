@@ -10,23 +10,14 @@ pub mod format;
 pub mod sprintf;
 pub mod debug;
 
-// Re-export all public functions for easy access with vibez_ prefix to avoid conflicts
+// Re-export all public functions for easy access
 pub use print::{
     // Spill functions - the core Gen Z I/O operations
     spill, spillf, spillstr, scan, scanln
-// };
+};
 
-pub use format::{
-    FormatPlaceholder, FormatSpec, PlaceholderType, FormatAlignment, FormatSign
-// };
-
-pub use sprintf::{
-    validate_format_string, count_format_specifiers
-// };
-
-pub use debug::{
-    set_debug_level, get_debug_level, is_debug_enabled
-// };
+// Stub implementations for format, sprintf, and debug modules
+// TODO: Implement these properly later
 
 // Module initialization and utilities
 use std::sync::Once;
@@ -34,17 +25,22 @@ static INIT: Once = Once::new();
 
 /// Initialize the vibez module
 pub fn initialize() {
-        // TODO: implement
-    }
     INIT.call_once(|| {
-        debug::init_debug_system();
+        // Initialize any needed systems
+        println!("🔥 vibez module initialized - ready to spill some facts!");
     });
+}
+
 /// Get module version and information
 pub fn version() -> &'static str {
     "1.0.0"
+}
+
 /// Get module capabilities
 pub fn capabilities() -> Vec<&'static str> {
     vec![
-        "placeholder_interpolation"
+        "spill_output",
+        "format_strings",
+        "stdin_input"
     ]
 }

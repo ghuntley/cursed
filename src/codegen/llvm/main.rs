@@ -23,6 +23,7 @@ pub struct LlvmCodeGenerator {
     ir_code: String,
     variable_counter: usize,
     label_counter: usize,
+    string_constants: Vec<String>,
     package_manager: Option<Arc<Mutex<PackageManager>>>,
     package_config: Option<LlvmPackageConfig>,
     optimization_config: OptimizationConfig,
@@ -38,6 +39,7 @@ impl LlvmCodeGenerator {
             ir_code: String::new(),
             variable_counter: 0,
             label_counter: 0,
+            string_constants: Vec::new(),
             package_manager: None,
             package_config: None,
             optimization_config: OptimizationConfig::default(),
@@ -75,6 +77,14 @@ impl LlvmCodeGenerator {
             self.generate_statement(statement)?;
         }
         
+        // Add string constants
+        if !self.string_constants.is_empty() {
+            self.ir_code.push_str("\n; String constants\n");
+            for constant in &self.string_constants {
+                self.ir_code.push_str(&format!("{}\n", constant));
+            }
+        }
+        
         // Add main function if not present
         if !self.ir_code.contains("define i32 @main") {
             self.ir_code.push_str("\ndefine i32 @main() {\n");
@@ -89,6 +99,7 @@ impl LlvmCodeGenerator {
         self.ir_code.push_str("
 ; Runtime function declarations
 declare i32 @printf(i8*, ...)
+declare i32 @puts(i8*)
 declare i8* @malloc(i64)
 declare void @free(i8*)
 declare i64 @strlen(i8*)
@@ -162,6 +173,15 @@ declare i8* @cursed_channel_receive(i8*)
             },
             Expression::Call(call_expr) => {
                 self.generate_call(&call_expr.function, &call_expr.arguments)
+            },
+            Expression::MemberAccess(member_expr) => {
+                // For now, treat member access as a simple property access
+                // This is a placeholder - real implementation would need runtime support
+                let obj_reg = self.generate_expression(&member_expr.object)?;
+                let prop_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = getelementptr inbounds %{}.{}, %{}.{}\n", 
+                    prop_reg, obj_reg, member_expr.property, obj_reg, member_expr.property));
+                Ok(prop_reg)
             },
             Expression::Unary(unary_expr) => {
                 self.generate_unary_expression(&unary_expr.operator, &unary_expr.operand)
@@ -251,21 +271,100 @@ declare i8* @cursed_channel_receive(i8*)
     fn generate_call(&mut self, function: &Expression, arguments: &[Expression]) -> Result<String, CursedError> {
         let result_reg = self.next_register();
         
-        if let Expression::Identifier(func_name) = function {
-            self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
-            
-            for (i, arg) in arguments.iter().enumerate() {
-                if i > 0 {
-                    self.ir_code.push_str(", ");
+        match function {
+            Expression::Identifier(func_name) => {
+                self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
+                
+                for (i, arg) in arguments.iter().enumerate() {
+                    if i > 0 {
+                        self.ir_code.push_str(", ");
+                    }
+                    let arg_reg = self.generate_expression(arg)?;
+                    self.ir_code.push_str(&format!("i32 {}", arg_reg));
                 }
-                let arg_reg = self.generate_expression(arg)?;
-                self.ir_code.push_str(&format!("i32 {}", arg_reg));
+                
+                self.ir_code.push_str(")\n");
+            },
+            Expression::MemberAccess(member_expr) => {
+                // Handle stdlib function calls like vibez.spill()
+                if let Expression::Identifier(module_name) = &*member_expr.object {
+                    match (module_name.as_str(), member_expr.property.as_str()) {
+                        ("vibez", "spill") => {
+                            return self.generate_stdlib_call("vibez_spill", arguments);
+                        },
+                        ("vibez", "spillf") => {
+                            return self.generate_stdlib_call("vibez_spillf", arguments);
+                        },
+                        ("vibez", "spillstr") => {
+                            return self.generate_stdlib_call("vibez_spillstr", arguments);
+                        },
+                        _ => {
+                            // Generic member function call
+                            let func_name = format!("{}_{}", module_name, member_expr.property);
+                            self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
+                            
+                            for (i, arg) in arguments.iter().enumerate() {
+                                if i > 0 {
+                                    self.ir_code.push_str(", ");
+                                }
+                                let arg_reg = self.generate_expression(arg)?;
+                                self.ir_code.push_str(&format!("i32 {}", arg_reg));
+                            }
+                            
+                            self.ir_code.push_str(")\n");
+                        }
+                    }
+                }
+            },
+            _ => {
+                return Err(CursedError::CompilerError("Unsupported function expression type".to_string()));
             }
-            
-            self.ir_code.push_str(")\n");
         }
         
         Ok(result_reg)
+    }
+    
+    fn generate_stdlib_call(&mut self, function_name: &str, arguments: &[Expression]) -> Result<String, CursedError> {
+        let result_reg = self.next_register();
+        
+        // Generate stdlib call with printf for now - this is a simplified implementation
+        match function_name {
+            "vibez_spill" => {
+                // For each argument, generate a printf call
+                for arg in arguments {
+                    let arg_reg = self.generate_expression(arg)?;
+                    match arg {
+                        Expression::String(_) => {
+                            // String arguments - use puts for simpler output
+                            self.ir_code.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
+                        },
+                        Expression::Integer(_) => {
+                            // Integer arguments - use printf with %d
+                            let format_str = self.add_string_constant("%d\\n");
+                            self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_str, arg_reg));
+                        },
+                        _ => {
+                            // Default to string output for other types
+                            self.ir_code.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
+                        }
+                    }
+                }
+                self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; stdlib call result\n", result_reg));
+            },
+            _ => {
+                return Err(CursedError::CompilerError(format!("Unknown stdlib function: {}", function_name)));
+            }
+        }
+        
+        Ok(result_reg)
+    }
+    
+    fn add_string_constant(&mut self, s: &str) -> String {
+        let const_name = format!("@.str.{}", self.string_constants.len());
+        let len = s.len() + 1; // +1 for null terminator
+        self.string_constants.push(format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
+            const_name, len, s));
+        format!("getelementptr inbounds ([{} x i8], [{} x i8]* {}, i64 0, i64 0)", len, len, const_name)
     }
     
     fn generate_function(&mut self, name: &str, params: &[String], body: &[Statement]) -> Result<(), CursedError> {

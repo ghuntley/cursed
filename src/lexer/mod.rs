@@ -5,6 +5,7 @@ use crate::error::CursedError;
 #[derive(Debug, Clone)]
 pub struct Lexer {
     input: String,
+    chars: Vec<char>,
     position: usize,
     line: usize,
     column: usize,
@@ -103,8 +104,10 @@ pub enum TokenKind {
 
 impl Lexer {
     pub fn new(input: String) -> Self {
+        let chars: Vec<char> = input.chars().collect();
         Self {
             input,
+            chars,
             position: 0,
             line: 1,
             column: 1,
@@ -183,6 +186,12 @@ impl Lexer {
                 Ok(self.make_token(TokenKind::Newline, "\n".to_string(), start_column))
             },
             '"' => self.string_literal(start_column),
+            '\0' => Ok(Token {
+                kind: TokenKind::Eof,
+                lexeme: "".to_string(),
+                line: self.line,
+                column: start_column,
+            }),
             _ if c.is_ascii_digit() => self.number_literal(start_column),
             _ if c.is_ascii_alphabetic() || c == '_' => self.identifier(start_column),
             _ => Err(CursedError::syntax_error(&format!("Unexpected character: {}", c))),
@@ -229,7 +238,7 @@ impl Lexer {
 
     fn number_literal(&mut self, start_column: usize) -> Result<Token, CursedError> {
         let mut value = String::new();
-        value.push(self.input.chars().nth(self.position - 1).unwrap());
+        value.push(self.chars.get(self.position - 1).copied().unwrap());
         
         while !self.is_at_end() && self.peek().is_ascii_digit() {
             value.push(self.advance());
@@ -315,18 +324,18 @@ impl Lexer {
     }
 
     fn advance(&mut self) -> char {
-        let c = self.input.chars().nth(self.position).unwrap_or('\0');
+        let c = self.chars.get(self.position).copied().unwrap_or('\0');
         self.position += 1;
         self.column += 1;
         c
     }
 
     fn peek(&self) -> char {
-        self.input.chars().nth(self.position).unwrap_or('\0')
+        self.chars.get(self.position).copied().unwrap_or('\0')
     }
 
     fn peek_next(&self) -> char {
-        self.input.chars().nth(self.position + 1).unwrap_or('\0')
+        self.chars.get(self.position + 1).copied().unwrap_or('\0')
     }
 
     fn match_char(&mut self, expected: char) -> bool {
@@ -339,7 +348,7 @@ impl Lexer {
     }
 
     fn is_at_end(&self) -> bool {
-        self.position >= self.input.len()
+        self.position >= self.chars.len()
     }
 
     pub fn tokenize(&mut self) -> Result<Vec<Token>, CursedError> {

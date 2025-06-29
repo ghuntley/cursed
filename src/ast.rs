@@ -48,6 +48,7 @@ pub enum Expression {
     Boolean(bool),
     Binary(BinaryExpression),
     Call(CallExpression),
+    MemberAccess(MemberAccessExpression),
     Literal(Literal),
     Unary(UnaryExpression),
     Array(Vec<Expression>),
@@ -67,6 +68,13 @@ pub struct BinaryExpression {
 pub struct CallExpression {
     pub function: Box<Expression>,
     pub arguments: Vec<Expression>,
+}
+
+/// Member access expression (e.g., object.property)
+#[derive(Debug, Clone)]
+pub struct MemberAccessExpression {
+    pub object: Box<Expression>,
+    pub property: String,
 }
 
 /// Let statement

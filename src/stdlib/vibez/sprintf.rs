@@ -1,15 +1,12 @@
-//! Minimal working module for CURSED compilation
+//! Sprintf module stub for vibez
 
 use crate::error::CursedError;
 
-pub struct MinimalImplementation;
-
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
+// Stub implementations - TODO: implement properly
+pub fn validate_format_string(_format: &str) -> Result<bool, CursedError> {
+    Ok(true)
 }
 
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+pub fn count_format_specifiers(_format: &str) -> usize {
+    0
 }
