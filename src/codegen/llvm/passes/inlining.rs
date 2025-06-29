@@ -4,12 +4,23 @@ use crate::error::{CursedError, Result};
 use inkwell::{
     context::Context,
     module::Module,
-    values::{FunctionValue, BasicValueEnum, CallSiteValue, BasicValue},
+    values::{FunctionValue, BasicValueEnum, CallSiteValue, BasicValue, InstructionValue, InstructionOpcode},
     basic_block::BasicBlock,
     builder::Builder,
     IntPredicate,
 };
 use std::collections::{HashMap, HashSet};
+
+/// Call site information for inlining analysis
+#[derive(Debug)]
+struct CallSite<'ctx> {
+    instruction: InstructionValue<'ctx>,
+    caller: FunctionValue<'ctx>,
+    callee: FunctionValue<'ctx>,
+    basic_block: BasicBlock<'ctx>,
+    can_inline: bool,
+    inline_cost: u32,
+}
 
 /// Function inlining pass for CURSED
 pub struct InliningPass<'ctx> {
@@ -19,6 +30,7 @@ pub struct InliningPass<'ctx> {
     recursive_inline_limit: u32,
     call_graph: CallGraph,
     inlining_decisions: HashMap<String, InliningDecision>,
+    call_sites: Vec<CallSite<'ctx>>,
 }
 
 impl<'ctx> InliningPass<'ctx> {
@@ -31,6 +43,7 @@ impl<'ctx> InliningPass<'ctx> {
             recursive_inline_limit: 3,
             call_graph: CallGraph::new(),
             inlining_decisions: HashMap::new(),
+            call_sites: Vec::new(),
         }
     }
     
@@ -80,13 +93,85 @@ impl<'ctx> InliningPass<'ctx> {
             // Find all function calls
             for basic_block in function.get_basic_blocks() {
                 for instruction in basic_block.get_instructions() {
-                    // TODO: Re-implement call analysis when inkwell API is stabilized
-                    // Skip call site analysis for now due to API incompatibilities
+                    // Analyze call instructions for inlining opportunities
+                    if instruction.get_opcode() == InstructionOpcode::Call {
+                        if let Some(called_function) = self.get_called_function(&instruction) {
+                            let call_site = CallSite {
+                                instruction,
+                                caller: function.clone(),
+                                callee: called_function,
+                                basic_block,
+                                can_inline: self.can_inline_function(&called_function),
+                                inline_cost: self.calculate_inline_cost(&called_function),
+                            };
+                            self.call_sites.push(call_site);
+                        }
+                    }
                 }
             }
         }
         
         Ok(())
+    }
+    
+    /// Get the called function from a call instruction
+    fn get_called_function(&self, instruction: &InstructionValue<'ctx>) -> Option<FunctionValue<'ctx>> {
+        // Function extraction from call instructions is complex in inkwell
+        // For now, disable this optimization to fix compilation
+        // TODO: Implement proper function value extraction from call instructions
+        None
+    }
+    
+    /// Check if a function can be safely inlined
+    fn can_inline_function(&self, function: &FunctionValue<'ctx>) -> bool {
+        // Check for basic inlining restrictions
+        
+        // Don't inline recursive functions (simplified check)
+        let func_name = function.get_name().to_str().unwrap_or("");
+        for basic_block in function.get_basic_blocks() {
+            for instruction in basic_block.get_instructions() {
+                if instruction.get_opcode() == InstructionOpcode::Call {
+                    if let Some(called_func) = self.get_called_function(&instruction) {
+                        let called_name = called_func.get_name().to_str().unwrap_or("");
+                        if called_name == func_name {
+                            return false; // Recursive call
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Don't inline very large functions
+        let mut instruction_count = 0;
+        for basic_block in function.get_basic_blocks() {
+            for _ in basic_block.get_instructions() {
+                instruction_count += 1;
+                if instruction_count > self.size_threshold {
+                    return false;
+                }
+            }
+        }
+        
+        true
+    }
+    
+    /// Calculate the cost of inlining a function
+    fn calculate_inline_cost(&self, function: &FunctionValue<'ctx>) -> u32 {
+        let mut cost = 0;
+        
+        for basic_block in function.get_basic_blocks() {
+            for instruction in basic_block.get_instructions() {
+                // Simple cost model: each instruction has cost 1
+                // More complex instructions could have higher costs
+                cost += match instruction.get_opcode() {
+                    InstructionOpcode::Call => 5,  // Calls are expensive
+                    InstructionOpcode::Load | InstructionOpcode::Store => 2,  // Memory ops
+                    _ => 1,  // Basic instructions
+                };
+            }
+        }
+        
+        cost
     }
     
     /// Analyze functions and make inlining decisions

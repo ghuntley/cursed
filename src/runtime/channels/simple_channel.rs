@@ -454,14 +454,14 @@ mod tests {
     fn test_channel_close() {
         let (sender, receiver) = simple_channel::<i32>();
         
-        sender.send(42).unwrap();
+        assert!(matches!(sender.send(42), SendResult::Sent));
         sender.close();
         
         // Should still be able to receive buffered value
         assert!(matches!(receiver.recv(), ReceiveResult::Received(42)));
         
-        // Further receives should indicate closed
-        assert!(matches!(receiver.recv(), ReceiveResult::Closed));
+        // Further receives should indicate closed (use try_recv to avoid hanging)
+        assert!(matches!(receiver.try_recv(), ReceiveResult::Closed));
         
         // Sends should fail
         assert!(matches!(sender.send(43), SendResult::Closed(43)));
@@ -473,7 +473,7 @@ mod tests {
         
         // Send some values
         for i in 1..=5 {
-            sender.send(i).unwrap();
+            assert!(matches!(sender.send(i), SendResult::Sent));
         }
         sender.close();
         

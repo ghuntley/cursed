@@ -3,6 +3,7 @@ pub mod result;
 pub mod literal;
 pub mod module;
 pub mod line_ending;
+pub mod full;
 
 // Re-export public types for easier access
 pub use result::{
