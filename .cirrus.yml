@@ -96,8 +96,8 @@ macos_build_task:
     echo "extra-substituters = https://devenv.cachix.org" | sudo tee -a /etc/nix/nix.conf
     echo "extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=" | sudo tee -a /etc/nix/nix.conf
     
-    # Restart nix-daemon to pick up new config
-    sudo systemctl restart nix-daemon || true
+    # Restart nix-daemon to pick up new config (macOS)
+    sudo launchctl kickstart -k system/org.nixos.nix-daemon || true
     
   install_devenv_script: |
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
