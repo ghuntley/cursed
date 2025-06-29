@@ -1,15 +1,5 @@
-//! Minimal working module for CURSED compilation
+//! Parallel compression module
 
-use crate::error::CursedError;
-
-pub struct MinimalImplementation;
-
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+pub fn initialize() {
+    // Parallel compression initialization
 }

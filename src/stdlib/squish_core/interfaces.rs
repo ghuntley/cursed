@@ -1,15 +1,5 @@
-//! Minimal working module for CURSED compilation
+//! Compression interfaces
 
-use crate::error::CursedError;
-
-pub struct MinimalImplementation;
-
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+pub fn initialize() {
+    // Compression interfaces initialization
 }

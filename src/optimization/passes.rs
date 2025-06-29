@@ -126,7 +126,6 @@ impl<'ctx> PassManager<'ctx> {
                         inkwell::values::InstructionOpcode::Call => metrics.call_count += 1,
                         inkwell::values::InstructionOpcode::Load => metrics.load_count += 1,
                         inkwell::values::InstructionOpcode::Store => metrics.store_count += 1,
-                        inkwell::values::InstructionOpcode::Br | 
                         inkwell::values::InstructionOpcode::Br => metrics.branch_count += 1,
                         _ => {}
                     }

@@ -2,6 +2,7 @@
 pub mod config;
 pub mod optimization_manager;
 pub mod real_llvm_passes;
+pub mod simple_passes;
 pub mod enhanced_llvm_passes_manager;
 pub mod coordinator;
 pub mod passes;

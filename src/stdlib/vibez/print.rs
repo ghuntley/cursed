@@ -1,7 +1,9 @@
 //! Vibez print module - CURSED I/O operations with Gen Z flair
 
-use crate::error::CursedError;
+use crate::error_types::CursedError;
 use crate::runtime::value::Value;
+use super::format::{parse_format_string, format_value_with_spec};
+use super::sprintf::sprintf;
 use std::io::{self, Write};
 use std::collections::HashMap;
 
@@ -24,7 +26,7 @@ pub fn spill(args: &[Value]) -> Result<(), CursedError> {
 
 /// Spillf - Print formatted string to stdout with newline
 pub fn spillf(format: &str, args: &[Value]) -> Result<(), CursedError> {
-    let output = format_string(format, args)?;
+    let output = format_string_advanced(format, args)?;
     println!("{}", output);
     Ok(())
 }
@@ -81,7 +83,7 @@ fn format_value(value: &Value) -> String {
     }
 }
 
-/// Simple format string implementation
+/// Simple format string implementation (legacy)
 fn format_string(format: &str, args: &[Value]) -> Result<String, CursedError> {
     let mut result = String::new();
     let mut chars = format.chars().peekable();
@@ -94,7 +96,7 @@ fn format_string(format: &str, args: &[Value]) -> Result<String, CursedError> {
                 result.push_str(&format_value(&args[arg_index]));
                 arg_index += 1;
             } else {
-                return Err(CursedError::RuntimeError("Not enough arguments for format string".to_string()));
+                return Err(CursedError::Runtime("Not enough arguments for format string".to_string()));
             }
         } else {
             result.push(ch);
@@ -102,4 +104,90 @@ fn format_string(format: &str, args: &[Value]) -> Result<String, CursedError> {
     }
     
     Ok(result)
+}
+
+/// Advanced format string implementation with full format spec support
+fn format_string_advanced(format: &str, args: &[Value]) -> Result<String, CursedError> {
+    // Try to parse as advanced format string first
+    match parse_format_string(format) {
+        Ok((_, placeholders)) => {
+            if placeholders.is_empty() {
+                // No placeholders, return as-is
+                return Ok(format.to_string());
+            }
+            
+            let mut result = String::new();
+            let mut chars = format.chars().peekable();
+            let mut placeholder_index = 0;
+            let mut arg_index = 0;
+            
+            while let Some(ch) = chars.next() {
+                if ch == '{' {
+                    if chars.peek() == Some(&'{') {
+                        // Escaped brace
+                        chars.next();
+                        result.push('{');
+                    } else {
+                        // Find matching placeholder
+                        if placeholder_index < placeholders.len() {
+                            let placeholder = &placeholders[placeholder_index];
+                            
+                            // Determine which argument to use
+                            let arg_idx = if let Some(idx) = placeholder.arg_index {
+                                idx
+                            } else {
+                                arg_index
+                            };
+                            
+                            if arg_idx < args.len() {
+                                let formatted = format_value_with_spec(&args[arg_idx], &placeholder.spec)?;
+                                result.push_str(&formatted);
+                                arg_index += 1;
+                            } else {
+                                return Err(CursedError::Runtime("Not enough arguments for format string".to_string()));
+                            }
+                            
+                            placeholder_index += 1;
+                        }
+                        
+                        // Skip to end of placeholder
+                        let mut brace_count = 1;
+                        while let Some(ch) = chars.next() {
+                            if ch == '{' {
+                                brace_count += 1;
+                            } else if ch == '}' {
+                                brace_count -= 1;
+                                if brace_count == 0 {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } else if ch == '}' {
+                    if chars.peek() == Some(&'}') {
+                        // Escaped brace
+                        chars.next();
+                        result.push('}');
+                    } else {
+                        result.push(ch);
+                    }
+                } else {
+                    result.push(ch);
+                }
+            }
+            
+            Ok(result)
+        },
+        Err(_) => {
+            // Fall back to simple format string
+            format_string(format, args)
+        }
+    }
+}
+
+/// Printf-style formatting
+pub fn spillf_printf(format: &str, args: &[Value]) -> Result<(), CursedError> {
+    let output = sprintf(format, args)?;
+    println!("{}", output);
+    Ok(())
 }

@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex, Condvar};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
-use std::any::Any;
+use std::any::{Any, TypeId};
 
 use crate::runtime::channels::{ChannelError, ChannelResult};
 use crate::runtime::channels::buffer::ChannelBuffer;
@@ -55,23 +55,104 @@ pub enum SelectOperation {
 }
 
 /// Select case for building select statements
-pub struct SelectCase<T> {
+pub struct SelectCase {
     /// Case index
     pub index: usize,
     /// Operation type
     pub operation: SelectOperation,
-    /// Data for send operations
-    pub send_data: Option<T>,
+    /// Data for send operations (type-erased)
+    pub send_data: Option<Box<dyn Any + Send>>,
     /// Callback for when case is selected
     pub callback: Option<Box<dyn FnOnce() + Send>>,
+    /// Type ID for runtime type checking
+    pub type_id: TypeId,
+}
+
+/// Wrapper for type-erased channel operations
+pub struct ChannelWrapper {
+    /// Type ID for runtime type checking
+    pub type_id: TypeId,
+    /// Channel operations
+    pub ops: Box<dyn ChannelOps + Send + Sync>,
+}
+
+/// Trait for type-erased channel operations
+pub trait ChannelOps {
+    /// Try to send a value
+    fn try_send(&self, value: Box<dyn Any + Send>) -> Result<(), (Box<dyn Any + Send>, ChannelError)>;
+    /// Try to receive a value
+    fn try_receive(&self) -> Result<Option<Box<dyn Any + Send>>, ChannelError>;
+    /// Check if channel is ready for sending
+    fn can_send(&self) -> bool;
+    /// Check if channel is ready for receiving
+    fn can_receive(&self) -> bool;
+    /// Check if channel is closed
+    fn is_closed(&self) -> bool;
+    /// Clone the value (for send operations that need to retry)
+    fn clone_value(&self, value: &dyn Any) -> Option<Box<dyn Any + Send>>;
+}
+
+/// Implementation of ChannelOps for typed channels
+pub struct TypedChannelOps<T: Send + 'static> {
+    channel: Arc<dyn ChannelBuffer<T>>,
+}
+
+impl<T: Send + 'static> TypedChannelOps<T> {
+    pub fn new(channel: Arc<dyn ChannelBuffer<T>>) -> Self {
+        Self { channel }
+    }
+}
+
+impl<T: Send + Clone + 'static> ChannelOps for TypedChannelOps<T> {
+    fn try_send(&self, value: Box<dyn Any + Send>) -> Result<(), (Box<dyn Any + Send>, ChannelError)> {
+        match value.downcast::<T>() {
+            Ok(typed_value) => {
+                match self.channel.try_push(*typed_value) {
+                    Ok(()) => Ok(()),
+                    Err((val, err)) => Err((Box::new(val) as Box<dyn Any + Send>, err)),
+                }
+            }
+            Err(original_value) => {
+                Err((original_value, ChannelError::NoSenders)) // Type mismatch
+            }
+        }
+    }
+
+    fn try_receive(&self) -> Result<Option<Box<dyn Any + Send>>, ChannelError> {
+        match self.channel.try_pop() {
+            Ok(Some(value)) => Ok(Some(Box::new(value) as Box<dyn Any + Send>)),
+            Ok(None) => Ok(None),
+            Err(err) => Err(err),
+        }
+    }
+
+    fn can_send(&self) -> bool {
+        !self.channel.is_full() && !self.channel.is_closed()
+    }
+
+    fn can_receive(&self) -> bool {
+        !self.channel.is_empty()
+    }
+
+    fn is_closed(&self) -> bool {
+        self.channel.is_closed()
+    }
+
+    fn clone_value(&self, value: &dyn Any) -> Option<Box<dyn Any + Send>> {
+        if let Some(typed_value) = value.downcast_ref::<T>() {
+            Some(Box::new(typed_value.clone()) as Box<dyn Any + Send>)
+        } else {
+            None
+        }
+    }
 }
 
 /// Select statement builder and executor
 pub struct Select {
     /// Cases in the select statement
-    cases: Vec<SelectCase<Box<dyn Any + Send>>>,
-    /// Channel registry
-    channels: HashMap<usize, Arc<dyn Any + Send + Sync>>,
+    cases: Vec<SelectCase>,
+    /// Channel registry with type-erased wrappers
+    channels: HashMap<usize, ChannelWrapper>,
     /// Timeout duration
     timeout: Option<Duration>,
     /// Random seed for fair selection
@@ -93,7 +174,7 @@ impl Select {
     }
     
     /// Add a send case
-    pub fn send<T: Send + 'static>(
+    pub fn send<T: Send + Clone + 'static>(
         &mut self,
         channel_id: usize,
         channel: Arc<dyn ChannelBuffer<T>>,
@@ -101,8 +182,13 @@ impl Select {
     ) -> &mut Self {
         let case_index = self.next_case_index.fetch_add(1, Ordering::SeqCst);
         
-        // TODO: Fix Arc type conversion - temporarily disabled
-        // self.channels.insert(channel_id, channel as Arc<dyn Any + Send + Sync>);
+        // Create type-erased channel wrapper 
+        let wrapper = ChannelWrapper {
+            type_id: TypeId::of::<T>(),
+            ops: Box::new(TypedChannelOps::new(channel)),
+        };
+        
+        self.channels.insert(channel_id, wrapper);
         
         let case = SelectCase {
             index: case_index,
@@ -112,6 +198,7 @@ impl Select {
             },
             send_data: Some(Box::new(value) as Box<dyn Any + Send>),
             callback: None,
+            type_id: TypeId::of::<T>(),
         };
         
         self.cases.push(case);
@@ -119,15 +206,20 @@ impl Select {
     }
     
     /// Add a receive case
-    pub fn receive<T: Send + 'static>(
+    pub fn receive<T: Send + Clone + 'static>(
         &mut self,
         channel_id: usize,
         channel: Arc<dyn ChannelBuffer<T>>,
     ) -> &mut Self {
         let case_index = self.next_case_index.fetch_add(1, Ordering::SeqCst);
         
-        // TODO: Fix Arc type conversion - temporarily disabled
-        // self.channels.insert(channel_id, channel as Arc<dyn Any + Send + Sync>);
+        // Create type-erased channel wrapper 
+        let wrapper = ChannelWrapper {
+            type_id: TypeId::of::<T>(),
+            ops: Box::new(TypedChannelOps::new(channel)),
+        };
+        
+        self.channels.insert(channel_id, wrapper);
         
         let case = SelectCase {
             index: case_index,
@@ -137,6 +229,7 @@ impl Select {
             },
             send_data: None,
             callback: None,
+            type_id: TypeId::of::<T>(),
         };
         
         self.cases.push(case);
@@ -152,6 +245,7 @@ impl Select {
             operation: SelectOperation::Default { case_index },
             send_data: None,
             callback: None,
+            type_id: TypeId::of::<()>(), // Default case has no associated type
         };
         
         self.cases.push(case);
@@ -214,17 +308,17 @@ impl Select {
         for (i, case) in self.cases.iter().enumerate() {
             match &case.operation {
                 SelectOperation::Send { channel_id, .. } => {
-                    if let Some(channel) = self.channels.get(channel_id) {
+                    if let Some(wrapper) = self.channels.get(channel_id) {
                         // Check if we can send (buffer not full)
-                        if self.can_send_on_channel(channel)? {
+                        if wrapper.ops.can_send() {
                             ready_cases.push(i);
                         }
                     }
                 }
                 SelectOperation::Receive { channel_id, .. } => {
-                    if let Some(channel) = self.channels.get(channel_id) {
+                    if let Some(wrapper) = self.channels.get(channel_id) {
                         // Check if we can receive (buffer not empty)
-                        if self.can_receive_from_channel(channel)? {
+                        if wrapper.ops.can_receive() {
                             ready_cases.push(i);
                         }
                     }
@@ -252,22 +346,22 @@ impl Select {
     }
     
     /// Execute a selected case
-    fn execute_case(&mut self, case_index: usize) -> ChannelResult<SelectResult<Box<dyn Any + Send>>> {
-        let case = &self.cases[case_index];
+    fn execute_case(&mut self, select_case_index: usize) -> ChannelResult<SelectResult<Box<dyn Any + Send>>> {
+        let case = &self.cases[select_case_index];
         
         match &case.operation {
             SelectOperation::Send { channel_id, case_index } => {
-                if let Some(channel) = self.channels.get(channel_id) {
+                if let Some(wrapper) = self.channels.get(channel_id) {
                     // Execute send operation
-                    self.execute_send_case(channel, *case_index)
+                    self.execute_send_case(wrapper, *case_index, select_case_index)
                 } else {
                     Err(ChannelError::NoSenders)
                 }
             }
             SelectOperation::Receive { channel_id, case_index } => {
-                if let Some(channel) = self.channels.get(channel_id) {
+                if let Some(wrapper) = self.channels.get(channel_id) {
                     // Execute receive operation
-                    self.execute_receive_case(channel, *case_index)
+                    self.execute_receive_case(wrapper, *case_index)
                 } else {
                     Err(ChannelError::NoReceivers)
                 }
@@ -281,45 +375,46 @@ impl Select {
     /// Execute a send case
     fn execute_send_case(
         &self,
-        channel: &Arc<dyn Any + Send + Sync>,
-        case_index: usize,
+        wrapper: &ChannelWrapper,
+        operation_case_index: usize,
+        select_case_index: usize,
     ) -> ChannelResult<SelectResult<Box<dyn Any + Send>>> {
-        // This is a simplified implementation
-        // In a real implementation, we would need to handle the type safely
-        Ok(SelectResult::SendCompleted(case_index))
+        // Get the send data from the case
+        if let Some(case) = self.cases.get(select_case_index) {
+            if let Some(ref send_data) = case.send_data {
+                // Clone the data safely using the wrapper's clone_value method
+                if let Some(cloned_value) = wrapper.ops.clone_value(send_data.as_ref()) {
+                    match wrapper.ops.try_send(cloned_value) {
+                        Ok(()) => Ok(SelectResult::SendCompleted(operation_case_index)),
+                        Err((_, err)) => Err(err),
+                    }
+                } else {
+                    Err(ChannelError::NoSenders) // Type mismatch or clone failed
+                }
+            } else {
+                Err(ChannelError::NoSenders)
+            }
+        } else {
+            Err(ChannelError::NoSenders)
+        }
     }
     
     /// Execute a receive case
     fn execute_receive_case(
         &self,
-        channel: &Arc<dyn Any + Send + Sync>,
+        wrapper: &ChannelWrapper,
         case_index: usize,
     ) -> ChannelResult<SelectResult<Box<dyn Any + Send>>> {
-        // This is a simplified implementation
-        // In a real implementation, we would need to handle the type safely
-        let dummy_value = Box::new(42) as Box<dyn Any + Send>;
-        Ok(SelectResult::ReceiveCompleted(case_index, dummy_value))
-    }
-    
-    /// Check if we can send on a channel
-    fn can_send_on_channel(&self, channel: &Arc<dyn Any + Send + Sync>) -> ChannelResult<bool> {
-        // This is a simplified check
-        // In a real implementation, we would downcast to the appropriate type
-        Ok(true)
-    }
-    
-    /// Check if we can receive from a channel
-    fn can_receive_from_channel(&self, channel: &Arc<dyn Any + Send + Sync>) -> ChannelResult<bool> {
-        // This is a simplified check
-        // In a real implementation, we would downcast to the appropriate type
-        Ok(true)
+        match wrapper.ops.try_receive() {
+            Ok(Some(value)) => Ok(SelectResult::ReceiveCompleted(case_index, value)),
+            Ok(None) => Err(ChannelError::WouldBlock),
+            Err(err) => Err(err),
+        }
     }
     
     /// Check if all channels are closed
     fn all_channels_closed(&self) -> bool {
-        // This is a simplified check
-        // In a real implementation, we would check each channel's closed status
-        false
+        self.channels.values().all(|wrapper| wrapper.ops.is_closed())
     }
 }
 
@@ -369,7 +464,7 @@ macro_rules! select {
 }
 
 /// Blocking select function - waits for any operation to complete
-pub fn select_blocking<T: Send + 'static>(
+pub fn select_blocking<T: Send + Clone + 'static>(
     operations: Vec<(usize, Arc<dyn ChannelBuffer<T>>, SelectOperation)>,
 ) -> ChannelResult<SelectResult<T>> {
     let mut select = Select::new();
@@ -395,7 +490,7 @@ pub fn select_blocking<T: Send + 'static>(
 }
 
 /// Non-blocking select function - returns immediately with default if no operations ready
-pub fn select_nonblocking<T: Send + 'static>(
+pub fn select_nonblocking<T: Send + Clone + 'static>(
     operations: Vec<(usize, Arc<dyn ChannelBuffer<T>>, SelectOperation)>,
 ) -> ChannelResult<SelectResult<T>> {
     let mut select = Select::new();
@@ -421,7 +516,7 @@ pub fn select_nonblocking<T: Send + 'static>(
 }
 
 /// Select with timeout
-pub fn select_timeout<T: Send + 'static>(
+pub fn select_timeout<T: Send + Clone + 'static>(
     operations: Vec<(usize, Arc<dyn ChannelBuffer<T>>, SelectOperation)>,
     timeout: Duration,
 ) -> ChannelResult<SelectResult<T>> {

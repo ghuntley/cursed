@@ -1,15 +1,15 @@
-//! Minimal working module for CURSED compilation
+//! LZW compression module
 
-use crate::error::CursedError;
+use super::error::{SquishError, SquishResult};
 
-pub struct MinimalImplementation;
-
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
+pub fn initialize() {
+    // LZW module initialization
 }
 
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+pub fn lzw_compress(_data: &[u8]) -> SquishResult<Vec<u8>> {
+    Err(SquishError::Generic("LZW compression not implemented".to_string()))
+}
+
+pub fn lzw_decompress(_data: &[u8]) -> SquishResult<Vec<u8>> {
+    Err(SquishError::Generic("LZW decompression not implemented".to_string()))
 }

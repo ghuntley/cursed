@@ -82,17 +82,10 @@ static INIT: Once = Once::new();
 
 /// Initialize the squish_core module
 pub fn initialize() {
-        // TODO: implement
-    }
     INIT.call_once(|| {
-        // Initialize compression subsystems
-        gzip::initialize();
-        zlib::initialize();
-        flate::initialize();
-        bzip2::initialize();
-        lzw::initialize();
-        enhanced::initialize();
+        initialize_compression_system();
     });
+}
 /// Module version information
 pub const VERSION: &str = "1.0.0";
 pub const MODULE_NAME: &str = "squish_core";
@@ -105,9 +98,63 @@ pub fn squish(data: &[u8]) -> SquishResult<Vec<u8>> {
     smart_compress(data)
 /// Quick decompression function with automatic format detection  
 pub fn unsquish(data: &[u8]) -> SquishResult<Vec<u8>> {
-    let format = detect_format(data)?;
-    match format {
-        _ => Err(SquishError::UnsupportedFormat(format!("Format not supported for decompression: {:?}", format)))
+    detect_and_decompress(data)
+}
+
+/// Initialize compression system
+fn initialize_compression_system() {
+    // Initialize internal state for compression modules
+    println!("SquishCore compression system initialized");
+}
+
+/// Detect compression format and decompress
+fn detect_and_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
+    if data.len() < 2 {
+        return Err(SquishError::InvalidData("Data too short to determine format".to_string()));
     }
+    
+    // Try ZLIB first (most common)
+    if zlib::is_zlib_data(data) {
+        return zlib::zlib_decompress(data);
+    }
+    
+    // Try GZIP
+    if data.starts_with(&[0x1f, 0x8b]) {
+        return gzip_decompress(data);
+    }
+    
+    // Try to decompress as raw deflate
+    match flate_decompress(data) {
+        Ok(result) => return Ok(result),
+        Err(_) => {}
+    }
+    
+    Err(SquishError::UnsupportedFormat("Unknown compression format".to_string()))
+}
+
+/// Basic GZIP decompression
+fn gzip_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
+    use flate2::read::GzDecoder;
+    use std::io::Read;
+    
+    let mut decoder = GzDecoder::new(data);
+    let mut result = Vec::new();
+    decoder.read_to_end(&mut result)
+        .map_err(|e| SquishError::DecompressionError(e.to_string()))?;
+    
+    Ok(result)
+}
+
+/// Basic FLATE decompression
+fn flate_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
+    use flate2::read::DeflateDecoder;
+    use std::io::Read;
+    
+    let mut decoder = DeflateDecoder::new(data);
+    let mut result = Vec::new();
+    decoder.read_to_end(&mut result)
+        .map_err(|e| SquishError::DecompressionError(e.to_string()))?;
+    
+    Ok(result)
 }
 

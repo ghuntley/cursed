@@ -6,6 +6,9 @@ pub mod associated_types;
 pub mod variance;
 pub mod higher_kinded_types;
 
+#[cfg(test)]
+mod tests;
+
 // Import base types from core and AST
 pub use crate::core::{Type, TypeChecker};
 pub use crate::ast::Type as AstType;
@@ -16,7 +19,165 @@ pub use type_inference::TypeInference;
 // Core type system structures
 #[derive(Debug, Clone)]
 pub struct TypeSystem {
-    // TODO: Add fields once implementation is complete
+    pub environment: TypeEnvironment,
+    pub inference: InferenceContext,
+}
+
+impl TypeSystem {
+    pub fn new() -> Self {
+        let mut environment = TypeEnvironment::new();
+        
+        // Add built-in types
+        environment.add_builtin_type("int", TypeKind::Primitive);
+        environment.add_builtin_type("string", TypeKind::Primitive);
+        environment.add_builtin_type("bool", TypeKind::Primitive);
+        environment.add_builtin_type("void", TypeKind::Primitive);
+        
+        // Add built-in objects like 'vibez'
+        let vibez_type = TypeDefinition {
+            name: "vibez".to_string(),
+            kind: TypeKind::Struct,
+            type_parameters: Vec::new(),
+            constraints: Vec::new(),
+            methods: vec![
+                MethodSignature {
+                    name: "spill".to_string(),
+                    parameters: vec![TypeExpression::named("string")],
+                    return_type: Some(TypeExpression::named("void")),
+                    type_parameters: Vec::new(),
+                    constraints: Vec::new(),
+                }
+            ],
+            is_builtin: true,
+        };
+        environment.type_definitions.insert("vibez".to_string(), vibez_type);
+        
+        Self {
+            environment,
+            inference: InferenceContext::new(),
+        }
+    }
+    
+    pub fn check_expression(&mut self, expr: &crate::ast::Expression) -> Result<TypeExpression, String> {
+        use crate::ast::Expression;
+        
+        match expr {
+            Expression::Integer(_) => Ok(TypeExpression::named("int")),
+            Expression::String(_) => Ok(TypeExpression::named("string")),
+            Expression::Boolean(_) => Ok(TypeExpression::named("bool")),
+            Expression::Identifier(name) => {
+                if let Some(type_def) = self.environment.type_definitions.get(name) {
+                    Ok(TypeExpression::named(&type_def.name))
+                } else {
+                    Err(format!("Unknown identifier: {}", name))
+                }
+            }
+            Expression::MemberAccess(member_access) => {
+                let object_type = self.check_expression(&member_access.object)?;
+                self.check_member_access(&object_type, &member_access.property)
+            }
+            Expression::Call(call_expr) => {
+                self.check_call_expression(call_expr)
+            }
+            Expression::Binary(binary) => {
+                let left_type = self.check_expression(&binary.left)?;
+                let right_type = self.check_expression(&binary.right)?;
+                self.check_binary_operation(&left_type, &binary.operator, &right_type)
+            }
+            _ => Ok(TypeExpression::named("unknown")),
+        }
+    }
+    
+    fn check_member_access(&self, object_type: &TypeExpression, property: &str) -> Result<TypeExpression, String> {
+        if let Some(object_name) = &object_type.name {
+            if let Some(type_def) = self.environment.type_definitions.get(object_name) {
+                for method in &type_def.methods {
+                    if method.name == property {
+                        if let Some(return_type) = &method.return_type {
+                            return Ok(return_type.clone());
+                        } else {
+                            return Ok(TypeExpression::named("void"));
+                        }
+                    }
+                }
+                return Err(format!("Property '{}' not found on type '{}'", property, object_name));
+            }
+        }
+        Err(format!("Cannot access property '{}' on unknown type", property))
+    }
+    
+    fn check_call_expression(&mut self, call_expr: &crate::ast::CallExpression) -> Result<TypeExpression, String> {
+        if let crate::ast::Expression::MemberAccess(member_access) = &*call_expr.function {
+            let object_type = self.check_expression(&member_access.object)?;
+            if let Some(object_name) = &object_type.name {
+                // Clone the method information to avoid borrowing issues
+                let method_info = self.environment.type_definitions.get(object_name)
+                    .and_then(|type_def| {
+                        type_def.methods.iter()
+                            .find(|method| method.name == member_access.property)
+                            .map(|method| (method.name.clone(), method.parameters.clone(), method.return_type.clone()))
+                    });
+                
+                if let Some((method_name, parameters, return_type)) = method_info {
+                    // Type check arguments
+                    if call_expr.arguments.len() != parameters.len() {
+                        return Err(format!("Method '{}' expects {} arguments, got {}", 
+                            method_name, parameters.len(), call_expr.arguments.len()));
+                    }
+                    
+                    // Basic argument type checking
+                    for (i, arg) in call_expr.arguments.iter().enumerate() {
+                        let arg_type = self.check_expression(arg)?;
+                        let expected_type = &parameters[i];
+                        if !self.types_compatible(&arg_type, expected_type) {
+                            return Err(format!("Argument {} type mismatch: expected {:?}, got {:?}", 
+                                i, expected_type, arg_type));
+                        }
+                    }
+                    
+                    return Ok(return_type.unwrap_or(TypeExpression::named("void")));
+                } else {
+                    return Err(format!("Method '{}' not found on type '{}'", member_access.property, object_name));
+                }
+            }
+        }
+        
+        Ok(TypeExpression::named("unknown"))
+    }
+    
+    fn check_binary_operation(&self, left: &TypeExpression, op: &str, right: &TypeExpression) -> Result<TypeExpression, String> {
+        match op {
+            "+" | "-" | "*" | "/" => {
+                if self.types_compatible(left, &TypeExpression::named("int")) && 
+                   self.types_compatible(right, &TypeExpression::named("int")) {
+                    Ok(TypeExpression::named("int"))
+                } else {
+                    Err(format!("Arithmetic operation requires int types, got {:?} and {:?}", left, right))
+                }
+            }
+            "==" | "!=" | "<" | ">" | "<=" | ">=" => {
+                if self.types_compatible(left, right) {
+                    Ok(TypeExpression::named("bool"))
+                } else {
+                    Err(format!("Comparison requires compatible types, got {:?} and {:?}", left, right))
+                }
+            }
+            "&&" | "||" => {
+                if self.types_compatible(left, &TypeExpression::named("bool")) && 
+                   self.types_compatible(right, &TypeExpression::named("bool")) {
+                    Ok(TypeExpression::named("bool"))
+                } else {
+                    Err(format!("Logical operation requires bool types, got {:?} and {:?}", left, right))
+                }
+            }
+            _ => Err(format!("Unknown binary operator: {}", op))
+        }
+    }
+    
+    fn types_compatible(&self, t1: &TypeExpression, t2: &TypeExpression) -> bool {
+        // Simple compatibility check for now
+        t1.name == t2.name
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -26,37 +187,136 @@ pub struct TypeEnvironment {
 
 #[derive(Debug, Clone)]
 pub struct TypeSubstitution {
-    // TODO: Add fields for type substitution
+    pub mappings: std::collections::HashMap<String, TypeExpression>,
+}
+
+impl TypeSubstitution {
+    pub fn new() -> Self {
+        Self {
+            mappings: std::collections::HashMap::new(),
+        }
+    }
+    
+    pub fn add(&mut self, from: String, to: TypeExpression) {
+        self.mappings.insert(from, to);
+    }
+    
+    pub fn apply(&self, type_expr: &TypeExpression) -> TypeExpression {
+        if let Some(name) = &type_expr.name {
+            if let Some(replacement) = self.mappings.get(name) {
+                return replacement.clone();
+            }
+        }
+        
+        TypeExpression {
+            kind: type_expr.kind.clone(),
+            name: type_expr.name.clone(),
+            parameters: type_expr.parameters.iter().map(|p| self.apply(p)).collect(),
+            return_type: type_expr.return_type.as_ref().map(|rt| Box::new(self.apply(rt))),
+        }
+    }
+    
+    pub fn unify(&mut self, t1: &TypeExpression, t2: &TypeExpression) -> Result<(), String> {
+        match (&t1.name, &t2.name) {
+            (Some(n1), Some(n2)) if n1 == n2 => {
+                // Same named types, check parameters
+                if t1.parameters.len() != t2.parameters.len() {
+                    return Err(format!("Parameter count mismatch: {} vs {}", t1.parameters.len(), t2.parameters.len()));
+                }
+                
+                for (p1, p2) in t1.parameters.iter().zip(t2.parameters.iter()) {
+                    self.unify(p1, p2)?;
+                }
+                
+                if let (Some(rt1), Some(rt2)) = (&t1.return_type, &t2.return_type) {
+                    self.unify(rt1, rt2)?;
+                }
+                
+                Ok(())
+            }
+            (Some(name), _) => {
+                // t1 is a type variable, bind it to t2
+                self.add(name.clone(), t2.clone());
+                Ok(())
+            }
+            (_, Some(name)) => {
+                // t2 is a type variable, bind it to t1
+                self.add(name.clone(), t1.clone());
+                Ok(())
+            }
+            _ => {
+                // Both are concrete types, must match exactly
+                if t1 == t2 {
+                    Ok(())
+                } else {
+                    Err(format!("Cannot unify {:?} with {:?}", t1, t2))
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeExpression {
-    // TODO: Add fields for type expression
+    pub kind: TypeKind,
+    pub name: Option<String>,
+    pub parameters: Vec<TypeExpression>,
+    pub return_type: Option<Box<TypeExpression>>,
 }
 
 impl TypeExpression {
     pub fn named(name: &str) -> Self {
-        Self { /* TODO: implement */ }
+        Self {
+            kind: TypeKind::Primitive,
+            name: Some(name.to_string()),
+            parameters: Vec::new(),
+            return_type: None,
+        }
     }
     
     pub fn parameter(name: &str) -> Self {
-        Self { /* TODO: implement */ }
+        Self {
+            kind: TypeKind::Primitive,
+            name: Some(name.to_string()),
+            parameters: Vec::new(),
+            return_type: None,
+        }
     }
     
-    pub fn generic(name: &str, _params: Vec<TypeExpression>) -> Self {
-        Self { /* TODO: implement */ }
+    pub fn generic(name: &str, params: Vec<TypeExpression>) -> Self {
+        Self {
+            kind: TypeKind::Struct,
+            name: Some(name.to_string()),
+            parameters: params,
+            return_type: None,
+        }
     }
     
-    pub fn function(_params: Vec<TypeExpression>, _return_type: TypeExpression) -> Self {
-        Self { /* TODO: implement */ }
+    pub fn function(params: Vec<TypeExpression>, return_type: TypeExpression) -> Self {
+        Self {
+            kind: TypeKind::Function,
+            name: None,
+            parameters: params,
+            return_type: Some(Box::new(return_type)),
+        }
     }
     
-    pub fn array(_element_type: TypeExpression) -> Self {
-        Self { /* TODO: implement */ }
+    pub fn array(element_type: TypeExpression) -> Self {
+        Self {
+            kind: TypeKind::Struct,
+            name: Some("Array".to_string()),
+            parameters: vec![element_type],
+            return_type: None,
+        }
     }
     
-    pub fn map(_key_type: TypeExpression, _value_type: TypeExpression) -> Self {
-        Self { /* TODO: implement */ }
+    pub fn map(key_type: TypeExpression, value_type: TypeExpression) -> Self {
+        Self {
+            kind: TypeKind::Struct,
+            name: Some("Map".to_string()),
+            parameters: vec![key_type, value_type],
+            return_type: None,
+        }
     }
 }
 
@@ -70,7 +330,7 @@ pub struct TypeDefinition {
     pub is_builtin: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeKind {
     Struct,
     Enum,
@@ -81,7 +341,34 @@ pub enum TypeKind {
 
 #[derive(Debug, Clone)]
 pub struct InstantiatedType {
-    // TODO: Add fields for instantiated type
+    pub base_type: TypeExpression,
+    pub type_arguments: Vec<TypeExpression>,
+    pub substitutions: TypeSubstitution,
+}
+
+impl InstantiatedType {
+    pub fn new(base_type: TypeExpression, type_arguments: Vec<TypeExpression>) -> Self {
+        let mut substitutions = TypeSubstitution::new();
+        
+        // Apply type arguments to base type if it has parameters
+        if base_type.parameters.len() == type_arguments.len() {
+            for (i, param) in base_type.parameters.iter().enumerate() {
+                if let Some(param_name) = &param.name {
+                    substitutions.add(param_name.clone(), type_arguments[i].clone());
+                }
+            }
+        }
+        
+        Self {
+            base_type,
+            type_arguments,
+            substitutions,
+        }
+    }
+    
+    pub fn instantiate(&self) -> TypeExpression {
+        self.substitutions.apply(&self.base_type)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -124,11 +411,38 @@ pub enum ConstraintStatus {
 
 #[derive(Debug, Clone)]
 pub struct InferenceContext {
-    // TODO: Add fields for inference context
+    pub substitutions: TypeSubstitution,
+    pub type_vars: std::collections::HashMap<String, TypeExpression>,
+    pub next_var_id: usize,
+}
+
+impl InferenceContext {
+    pub fn new() -> Self {
+        Self {
+            substitutions: TypeSubstitution::new(),
+            type_vars: std::collections::HashMap::new(),
+            next_var_id: 0,
+        }
+    }
+    
+    pub fn fresh_type_var(&mut self) -> TypeExpression {
+        let var_name = format!("T{}", self.next_var_id);
+        self.next_var_id += 1;
+        TypeExpression::named(&var_name)
+    }
+    
+    pub fn bind_type_var(&mut self, var_name: &str, type_expr: TypeExpression) {
+        self.type_vars.insert(var_name.to_string(), type_expr.clone());
+        self.substitutions.add(var_name.to_string(), type_expr);
+    }
+    
+    pub fn resolve_type(&self, type_expr: &TypeExpression) -> TypeExpression {
+        self.substitutions.apply(type_expr)
+    }
 }
 impl Default for TypeSystem {
     fn default() -> Self {
-        Self {}
+        Self::new()
     }
 }
 
@@ -137,6 +451,26 @@ impl TypeEnvironment {
         Self {
             type_definitions: std::collections::HashMap::new(),
         }
+    }
+    
+    pub fn add_builtin_type(&mut self, name: &str, kind: TypeKind) {
+        let type_def = TypeDefinition {
+            name: name.to_string(),
+            kind,
+            type_parameters: Vec::new(),
+            constraints: Vec::new(),
+            methods: Vec::new(),
+            is_builtin: true,
+        };
+        self.type_definitions.insert(name.to_string(), type_def);
+    }
+    
+    pub fn add_type_definition(&mut self, type_def: TypeDefinition) {
+        self.type_definitions.insert(type_def.name.clone(), type_def);
+    }
+    
+    pub fn get_type(&self, name: &str) -> Option<&TypeDefinition> {
+        self.type_definitions.get(name)
     }
 }
 

@@ -29,6 +29,10 @@ pub mod common_types;
 pub mod types;
 pub mod crypto_pki_types;
 
+// Test modules  
+#[cfg(test)]
+pub mod test_member_access;
+
 // Re-export common types for easy access
 pub use common::OptimizationLevel;
 use crate::error::CursedError;

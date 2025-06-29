@@ -205,9 +205,11 @@ bincode = "1.3"  # Binary serialization for profiling data
 thread_local = "1.1"  # Thread-local storage
 parking_lot = "0.12"  # Better RwLock implementation with timeout support
 
-# Memory profiling
+# Memory profiling and debug information
 backtrace = "0.3.69"  # For stack trace capture
 rustc-demangle = "0.1"  # For demangling Rust symbols
+gimli = "0.28"  # DWARF debug information parsing and generation
+object = "0.32"  # Object file parsing for debug information
 
 # Colored terminal output (already defined above)
 
