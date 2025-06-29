@@ -28,7 +28,7 @@ pub enum TokenKind {
     // Identifiers
     Identifier,
     
-    // Keywords
+    // Traditional Keywords (for compatibility)
     Let,
     Mut,
     Fn,
@@ -37,6 +37,38 @@ pub enum TokenKind {
     While,
     For,
     Return,
+    
+    // CURSED Gen Z Keywords
+    Slay,        // function definition
+    Yolo,        // return statement
+    Sus,         // mutable variable
+    Facts,       // immutable constant
+    Lowkey,      // if statement
+    Highkey,     // else statement
+    Periodt,     // while loop
+    Stan,        // goroutine
+    Bestie,      // for loop
+    Flex,        // while loop (alternative)
+    Ghosted,     // break
+    Simp,        // continue
+    Squad,       // struct
+    Collab,      // interface
+    Vibe,        // package
+    Yeet,        // import
+    BeLike,      // assignment operator
+    VibeCheck,   // switch statement
+    Mood,        // case
+    Basic,       // default case
+    YeetError,   // throw error
+    Catch,       // catch error
+    Normie,      // integer type
+    Tea,         // string type
+    Cap,         // null/nil
+    NoCap,       // not null
+    Truth,       // true
+    Lies,        // false (NoTruth)
+    MainCharacter, // main function
+    Dm,          // channel type
     
     // Operators
     Plus,
@@ -62,6 +94,7 @@ pub enum TokenKind {
     Comma,
     Semicolon,
     Colon,
+    Dot,
     
     // Special
     Newline,
@@ -97,7 +130,15 @@ impl Lexer {
             '+' => Ok(self.make_token(TokenKind::Plus, "+".to_string(), start_column)),
             '-' => Ok(self.make_token(TokenKind::Minus, "-".to_string(), start_column)),
             '*' => Ok(self.make_token(TokenKind::Star, "*".to_string(), start_column)),
-            '/' => Ok(self.make_token(TokenKind::Slash, "/".to_string(), start_column)),
+            '/' => {
+                if self.match_char('/') {
+                    // Line comment - skip until newline
+                    self.skip_line_comment();
+                    self.next_token() // Get next token after comment
+                } else {
+                    Ok(self.make_token(TokenKind::Slash, "/".to_string(), start_column))
+                }
+            },
             '(' => Ok(self.make_token(TokenKind::LeftParen, "(".to_string(), start_column)),
             ')' => Ok(self.make_token(TokenKind::RightParen, ")".to_string(), start_column)),
             '{' => Ok(self.make_token(TokenKind::LeftBrace, "{".to_string(), start_column)),
@@ -107,6 +148,7 @@ impl Lexer {
             ',' => Ok(self.make_token(TokenKind::Comma, ",".to_string(), start_column)),
             ';' => Ok(self.make_token(TokenKind::Semicolon, ";".to_string(), start_column)),
             ':' => Ok(self.make_token(TokenKind::Colon, ":".to_string(), start_column)),
+            '.' => Ok(self.make_token(TokenKind::Dot, ".".to_string(), start_column)),
             '=' => {
                 if self.match_char('=') {
                     Ok(self.make_token(TokenKind::EqualEqual, "==".to_string(), start_column))
@@ -155,6 +197,12 @@ impl Lexer {
                 },
                 _ => break,
             }
+        }
+    }
+
+    fn skip_line_comment(&mut self) {
+        while !self.is_at_end() && self.peek() != '\n' {
+            self.advance();
         }
     }
 
@@ -207,6 +255,7 @@ impl Lexer {
         }
         
         let kind = match value.as_str() {
+            // Traditional keywords (for compatibility)
             "let" => TokenKind::Let,
             "mut" => TokenKind::Mut,
             "fn" => TokenKind::Fn,
@@ -215,7 +264,41 @@ impl Lexer {
             "while" => TokenKind::While,
             "for" => TokenKind::For,
             "return" => TokenKind::Return,
-            "true" | "false" => TokenKind::Boolean,
+            
+            // CURSED Gen Z keywords
+            "slay" => TokenKind::Slay,
+            "yolo" => TokenKind::Yolo,
+            "sus" => TokenKind::Sus,
+            "facts" => TokenKind::Facts,
+            "lowkey" => TokenKind::Lowkey,
+            "highkey" => TokenKind::Highkey,
+            "periodt" => TokenKind::Periodt,
+            "stan" => TokenKind::Stan,
+            "bestie" => TokenKind::Bestie,
+            "flex" => TokenKind::Flex,
+            "ghosted" => TokenKind::Ghosted,
+            "simp" => TokenKind::Simp,
+            "squad" => TokenKind::Squad,
+            "collab" => TokenKind::Collab,
+            "vibe" => TokenKind::Vibe,
+            "yeet" => TokenKind::Yeet,
+            "be_like" => TokenKind::BeLike,
+            "vibe_check" => TokenKind::VibeCheck,
+            "mood" => TokenKind::Mood,
+            "basic" => TokenKind::Basic,
+            "yeet_error" => TokenKind::YeetError,
+            "catch" => TokenKind::Catch,
+            "normie" => TokenKind::Normie,
+            "tea" => TokenKind::Tea,
+            "cap" => TokenKind::Cap,
+            "nocap" => TokenKind::NoCap,
+            "main_character" => TokenKind::MainCharacter,
+            "dm" => TokenKind::Dm,
+            
+            // Boolean literals
+            "true" | "based" => TokenKind::Boolean,
+            "false" | "lies" => TokenKind::Boolean,
+            
             _ => TokenKind::Identifier,
         };
         
