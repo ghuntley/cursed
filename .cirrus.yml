@@ -24,6 +24,14 @@ linux_build_task:
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
     
+    # Configure binary caches for devenv
+    sudo mkdir -p /etc/nix
+    echo "extra-substituters = https://devenv.cachix.org" | sudo tee -a /etc/nix/nix.conf
+    echo "extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=" | sudo tee -a /etc/nix/nix.conf
+    
+    # Restart nix-daemon to pick up new config
+    sudo systemctl restart nix-daemon || true
+    
   install_devenv_script: |
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
     nix profile install --accept-flake-config github:cachix/devenv/latest
@@ -82,6 +90,14 @@ macos_build_task:
   install_nix_script: |
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    
+    # Configure binary caches for devenv
+    sudo mkdir -p /etc/nix
+    echo "extra-substituters = https://devenv.cachix.org" | sudo tee -a /etc/nix/nix.conf
+    echo "extra-trusted-public-keys = devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=" | sudo tee -a /etc/nix/nix.conf
+    
+    # Restart nix-daemon to pick up new config
+    sudo systemctl restart nix-daemon || true
     
   install_devenv_script: |
     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
