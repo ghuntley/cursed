@@ -1,0 +1,167 @@
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+# Linux build with more disk space and CPU
+linux_build_task:
+  name: Build Linux
+  compute_engine_instance:
+    image_project: cirrus-images
+    image: family/docker-kvm
+    platform: linux
+    cpu: 8
+    memory: 16G
+    disk: 100
+    
+  install_nix_script: |
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    
+  install_devenv_script: |
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    nix profile install --accept-flake-config github:cachix/devenv/latest
+    
+  setup_environment_script: |
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    devenv shell echo "Development environment ready"
+    
+  build_script: |
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    df -h
+    devenv shell cargo build --release
+    df -h
+    
+  test_script: |
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    devenv shell cargo test
+    
+  package_script: |
+    mkdir -p artifacts
+    # Copy all executables
+    cp target/release/cursed artifacts/cursed
+    cp target/release/cursed-doc artifacts/cursed-doc
+    cp target/release/cursed-build artifacts/cursed-build
+    cp target/release/cursed-pkg artifacts/cursed-pkg
+    cp target/release/cursed-repl artifacts/cursed-repl
+    cp target/release/cursed-test artifacts/cursed-test
+    cp target/release/cursed-lsp artifacts/cursed-lsp
+    cp target/release/cursed-debug artifacts/cursed-debug
+    cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
+    
+    # Strip binaries
+    strip artifacts/*
+    
+    # Create tarball
+    tar -czf cursed-linux-x86_64.tar.gz -C artifacts .
+    
+  artifacts:
+    path: "cursed-linux-x86_64.tar.gz"
+
+# macOS build
+macos_build_task:
+  name: Build macOS
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-ventura-base:latest
+    cpu: 4
+    memory: 8G
+    
+  install_nix_script: |
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    
+  install_devenv_script: |
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    nix profile install --accept-flake-config github:cachix/devenv/latest
+    
+  setup_environment_script: |
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    devenv shell echo "Development environment ready"
+    
+  build_script: |
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    df -h
+    devenv shell cargo build --release
+    df -h
+    
+  test_script: |
+    . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    devenv shell cargo test
+    
+  package_script: |
+    mkdir -p artifacts
+    # Copy all executables
+    cp target/release/cursed artifacts/cursed
+    cp target/release/cursed-doc artifacts/cursed-doc
+    cp target/release/cursed-build artifacts/cursed-build
+    cp target/release/cursed-pkg artifacts/cursed-pkg
+    cp target/release/cursed-repl artifacts/cursed-repl
+    cp target/release/cursed-test artifacts/cursed-test
+    cp target/release/cursed-lsp artifacts/cursed-lsp
+    cp target/release/cursed-debug artifacts/cursed-debug
+    cp target/release/cursed-compile-fast artifacts/cursed-compile-fast
+    
+    # Strip binaries
+    strip artifacts/*
+    
+    # Create tarball
+    tar -czf cursed-macos-x86_64.tar.gz -C artifacts .
+    
+  artifacts:
+    path: "cursed-macos-x86_64.tar.gz"
+
+# Release task - only runs on tags
+release_task:
+  name: Create Release
+  depends_on:
+    - linux_build
+    - macos_build
+  only_if: $CIRRUS_TAG != ""
+  
+  container:
+    image: alpine:latest
+    
+  install_tools_script: |
+    apk add --no-cache curl jq
+    
+  create_release_script: |
+    # Download artifacts from previous tasks
+    curl -o cursed-linux-x86_64.tar.gz \
+      "https://api.cirrus-ci.com/v1/artifact/build/$CIRRUS_BUILD_ID/linux_build/cursed-linux-x86_64.tar.gz"
+    curl -o cursed-macos-x86_64.tar.gz \
+      "https://api.cirrus-ci.com/v1/artifact/build/$CIRRUS_BUILD_ID/macos_build/cursed-macos-x86_64.tar.gz"
+    
+    # Create GitHub release using GitHub CLI or API
+    # This requires GITHUB_TOKEN to be set as an encrypted variable
+    if [ -n "$GITHUB_TOKEN" ]; then
+      # Create release
+      curl -X POST \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Accept: application/vnd.github.v3+json" \
+        "https://api.github.com/repos/$CIRRUS_REPO_FULL_NAME/releases" \
+        -d "{
+          \"tag_name\": \"$CIRRUS_TAG\",
+          \"name\": \"Release $CIRRUS_TAG\",
+          \"body\": \"Automated release created by Cirrus CI\",
+          \"draft\": false,
+          \"prerelease\": false
+        }" > release.json
+      
+      # Get upload URL
+      UPLOAD_URL=$(jq -r '.upload_url' release.json | sed 's/{?name,label}//')
+      
+      # Upload Linux artifact
+      curl -X POST \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Content-Type: application/gzip" \
+        --data-binary @cursed-linux-x86_64.tar.gz \
+        "$UPLOAD_URL?name=cursed-linux-x86_64.tar.gz"
+      
+      # Upload macOS artifact
+      curl -X POST \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Content-Type: application/gzip" \
+        --data-binary @cursed-macos-x86_64.tar.gz \
+        "$UPLOAD_URL?name=cursed-macos-x86_64.tar.gz"
+    else
+      echo "GITHUB_TOKEN not set, skipping release creation"
+    fi
