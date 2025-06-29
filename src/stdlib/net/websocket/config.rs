@@ -1,83 +1,55 @@
-//! Network functionality for config
+//! WebSocket configuration
 
-use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// WebSocket configuration
+#[derive(Debug, Clone)]
+pub struct WebSocketConfig {
+    pub max_frame_size: usize,
+    pub max_message_size: usize,
+    pub ping_interval_ms: u64,
+    pub pong_timeout_ms: u64,
+    pub compression: Option<CompressionConfig>,
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
-        Self {
-            timeout_seconds: 30,
-        }
-    }
-    
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
-        self
-    }
-    
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
-    }
-    
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
-    }
-    
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
-    }
-    
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
-        }
-    }
-    
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
-    }
-}
-
-impl Default for NetworkHandler {
+impl Default for WebSocketConfig {
     fn default() -> Self {
-        Self::new()
+        Self {
+            max_frame_size: 16 * 1024 * 1024, // 16MB
+            max_message_size: 64 * 1024 * 1024, // 64MB
+            ping_interval_ms: 30000, // 30 seconds
+            pong_timeout_ms: 10000, // 10 seconds
+            compression: None,
+        }
     }
 }
 
-/// Initialize network processing
-pub fn init_config() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
-    }
-    println!("🌐 Network processing (config) initialized");
-    Ok(())
+/// WebSocket compression configuration
+#[derive(Debug, Clone)]
+pub struct CompressionConfig {
+    pub method: CompressionMethod,
+    pub window_bits: u8,
+    pub no_context_takeover: bool,
 }
 
-/// Test network functionality
-pub fn test_config() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
+impl Default for CompressionConfig {
+    fn default() -> Self {
+        Self {
+            method: CompressionMethod::PerMessageDeflate,
+            window_bits: 15,
+            no_context_takeover: false,
+        }
     }
-    Ok(())
+}
+
+/// WebSocket compression methods
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompressionMethod {
+    PerMessageDeflate,
+}
+
+impl std::fmt::Display for CompressionMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CompressionMethod::PerMessageDeflate => write!(f, "per-message-deflate"),
+        }
+    }
 }

@@ -4,6 +4,9 @@
 
 use crate::error::{CursedError, Result};
 use crate::package_manager::version::Version;
+use futures::StreamExt;
+use reqwest;
+use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 use std::time::Duration;
 use tokio::fs;
@@ -44,34 +47,7 @@ pub struct DownloadProgress {
 #[derive(Debug)]
 pub struct PackageDownloader {
     config: DownloadConfig,
-    client: MockHttpClient,
-}
-
-/// Mock HTTP client for compilation
-/// In a real implementation, this would use reqwest or similar
-#[derive(Debug)]
-struct MockHttpClient {
-    timeout: Duration,
-}
-
-impl MockHttpClient {
-    fn new(timeout: Duration) -> Self {
-        Self { timeout }
-    }
-
-    async fn download(&self, url: &str, _output_path: &PathBuf) -> Result<DownloadResult> {
-        tracing::info!("Mock downloading from: {}", url);
-        
-        // Simulate download delay
-        tokio::time::sleep(Duration::from_millis(200)).await;
-        
-        // Return mock download result
-        Ok(DownloadResult {
-            bytes_downloaded: 1024,
-            checksum: "sha256:mock_checksum".to_string(),
-            verified: true,
-        })
-    }
+    client: reqwest::Client,
 }
 
 #[derive(Debug)]
@@ -96,7 +72,11 @@ impl Default for DownloadConfig {
 impl PackageDownloader {
     /// Create a new package downloader
     pub fn new(config: DownloadConfig) -> Result<Self> {
-        let client = MockHttpClient::new(config.timeout);
+        let client = reqwest::Client::builder()
+            .timeout(config.timeout)
+            .user_agent(&config.user_agent)
+            .build()
+            .map_err(|e| CursedError::General(format!("Failed to create HTTP client: {}", e)))?;
         
         Ok(Self {
             config,
@@ -183,7 +163,7 @@ impl PackageDownloader {
         for attempt in 1..=self.config.max_retries {
             tracing::debug!("Download attempt {} for {}", attempt, url);
             
-            match self.client.download(url, output_path).await {
+            match self.download_file(url, output_path).await {
                 Ok(result) => {
                     tracing::debug!("Download successful on attempt {}", attempt);
                     return Ok(result);
@@ -202,6 +182,51 @@ impl PackageDownloader {
         }
 
         Err(last_error.unwrap_or_else(|| CursedError::General("Download failed".to_string())))
+    }
+
+    /// Download a file from URL to local path
+    async fn download_file(&self, url: &str, output_path: &PathBuf) -> Result<DownloadResult> {
+        tracing::info!("Downloading from: {} to: {:?}", url, output_path);
+        
+        let response = self.client.get(url).send().await
+            .map_err(|e| CursedError::General(format!("Failed to start download: {}", e)))?;
+        
+        if !response.status().is_success() {
+            return Err(CursedError::General(format!(
+                "Download failed with status: {}", response.status()
+            )));
+        }
+
+        let mut file = fs::File::create(output_path).await
+            .map_err(|e| CursedError::General(format!("Failed to create output file: {}", e)))?;
+        
+        let mut stream = response.bytes_stream();
+        let mut hasher = Sha256::new();
+        let mut bytes_downloaded = 0u64;
+        
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk
+                .map_err(|e| CursedError::General(format!("Download stream error: {}", e)))?;
+            
+            hasher.update(&chunk);
+            bytes_downloaded += chunk.len() as u64;
+            
+            file.write_all(&chunk).await
+                .map_err(|e| CursedError::General(format!("Failed to write to file: {}", e)))?;
+        }
+        
+        file.flush().await
+            .map_err(|e| CursedError::General(format!("Failed to flush file: {}", e)))?;
+        
+        let checksum = format!("sha256:{:x}", hasher.finalize());
+        
+        tracing::info!("Downloaded {} bytes with checksum: {}", bytes_downloaded, checksum);
+        
+        Ok(DownloadResult {
+            bytes_downloaded,
+            checksum,
+            verified: false, // Will be verified later if expected checksum is provided
+        })
     }
 
     /// Verify checksum of downloaded file

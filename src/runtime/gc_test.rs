@@ -25,7 +25,7 @@ mod tests {
             compaction_threshold: 0.3,
         };
         
-        let stack_manager = Arc::new(RuntimeStack::new(64 * 1024).unwrap());
+        let stack_manager = Arc::new(RuntimeStack::new());
         GarbageCollector::new(config, stack_manager).unwrap()
     }
 
@@ -119,7 +119,7 @@ mod tests {
             ..Default::default()
         };
         
-        let stack_manager = Arc::new(RuntimeStack::new(64 * 1024).unwrap());
+        let stack_manager = Arc::new(RuntimeStack::new());
         let gc = GarbageCollector::new(config, stack_manager).unwrap();
         
         // Test that concurrent GC can be created
@@ -205,7 +205,7 @@ mod tests {
             ..Default::default()
         };
         
-        let stack_manager = Arc::new(RuntimeStack::new(64 * 1024).unwrap());
+        let stack_manager = Arc::new(RuntimeStack::new());
         let gc = GarbageCollector::new(config, stack_manager).unwrap();
         
         // Shutdown should complete without error
@@ -239,7 +239,7 @@ mod tests {
             ..Default::default()
         };
         
-        let stack_manager = Arc::new(RuntimeStack::new(64 * 1024).unwrap());
+        let stack_manager = Arc::new(RuntimeStack::new());
         let gc = GarbageCollector::new(config, stack_manager).unwrap();
         
         // Try to allocate more than the heap size
@@ -308,7 +308,7 @@ mod tests {
         ];
         
         for config in configs {
-            let stack_manager = Arc::new(RuntimeStack::new(64 * 1024).unwrap());
+            let stack_manager = Arc::new(RuntimeStack::new());
             let gc = GarbageCollector::new(config, stack_manager).unwrap();
             
             // Basic allocation test for each configuration

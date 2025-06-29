@@ -1,7 +1,7 @@
 //! Network functionality for address
 
 use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::Ipv4Addr;
 
 /// Result type for network operations
 pub type NetworkResult<T> = Result<T, CursedError>;
@@ -26,31 +26,31 @@ impl NetworkHandler {
     }
     
     /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
+    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<std::net::IpAddr> {
         ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
     }
     
     /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
+    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<std::net::SocketAddr> {
         addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
     }
     
     /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
+    pub fn localhost_ip(&self) -> std::net::IpAddr {
+        std::net::IpAddr::V4(Ipv4Addr::LOCALHOST)
     }
     
     /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
+    pub fn is_localhost(&self, ip: &std::net::IpAddr) -> bool {
         match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
+            std::net::IpAddr::V4(ipv4) => ipv4.is_loopback(),
+            std::net::IpAddr::V6(ipv6) => ipv6.is_loopback(),
         }
     }
     
     /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
+    pub fn create_socket_addr(&self, ip: std::net::IpAddr, port: u16) -> std::net::SocketAddr {
+        std::net::SocketAddr::new(ip, port)
     }
 }
 
@@ -81,3 +81,8 @@ pub fn test_address() -> NetworkResult<()> {
     }
     Ok(())
 }
+
+// Re-export standard library types for compatibility
+pub use std::net::{IpAddr, SocketAddr};
+pub use std::net::{Ipv4Addr as IpAddrV4, Ipv6Addr as IpAddrV6};
+pub use std::net::{SocketAddrV4, SocketAddrV6};

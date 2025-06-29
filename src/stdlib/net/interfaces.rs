@@ -81,3 +81,49 @@ pub fn test_interfaces() -> NetworkResult<()> {
     }
     Ok(())
 }
+
+/// Network interface information
+#[derive(Debug, Clone)]
+pub struct NetworkInterface {
+    pub name: String,
+    pub addr: IpAddr,
+    pub is_up: bool,
+    pub is_loopback: bool,
+}
+
+/// List all network interfaces
+pub fn list_interfaces() -> NetworkResult<Vec<NetworkInterface>> {
+    // Stub implementation
+    Ok(vec![NetworkInterface {
+        name: "lo".to_string(),
+        addr: IpAddr::V4(Ipv4Addr::LOCALHOST),
+        is_up: true,
+        is_loopback: true,
+    }])
+}
+
+/// Get network interface by name
+pub fn get_interface_by_name(name: &str) -> NetworkResult<Option<NetworkInterface>> {
+    // Stub implementation
+    if name == "lo" {
+        Ok(Some(NetworkInterface {
+            name: "lo".to_string(),
+            addr: IpAddr::V4(Ipv4Addr::LOCALHOST),
+            is_up: true,
+            is_loopback: true,
+        }))
+    } else {
+        Ok(None)
+    }
+}
+
+/// Get default network interface
+pub fn get_default_interface() -> NetworkResult<Option<NetworkInterface>> {
+    // Stub implementation
+    Ok(Some(NetworkInterface {
+        name: "eth0".to_string(),
+        addr: IpAddr::V4(Ipv4Addr::new(192, 168, 1, 100)),
+        is_up: true,
+        is_loopback: false,
+    }))
+}

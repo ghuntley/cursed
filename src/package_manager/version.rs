@@ -40,6 +40,23 @@ impl Version {
         }
     }
 
+    /// Parse version from string
+    pub fn parse(version_str: &str) -> crate::error::Result<Self> {
+        let parts: Vec<&str> = version_str.split('.').collect();
+        if parts.len() < 3 {
+            return Err(crate::error::CursedError::General(format!("Invalid version format: {}", version_str)));
+        }
+
+        let major = parts[0].parse::<u32>()
+            .map_err(|_| crate::error::CursedError::General(format!("Invalid major version: {}", parts[0])))?;
+        let minor = parts[1].parse::<u32>()
+            .map_err(|_| crate::error::CursedError::General(format!("Invalid minor version: {}", parts[1])))?;
+        let patch = parts[2].parse::<u32>()
+            .map_err(|_| crate::error::CursedError::General(format!("Invalid patch version: {}", parts[2])))?;
+
+        Ok(Self::new(major, minor, patch))
+    }
+
     pub fn with_pre_release(mut self, pre_release: String) -> Self {
         self.pre_release = Some(pre_release);
         self
@@ -114,6 +131,20 @@ impl fmt::Display for Version {
             write!(f, "+{}", build)?;
         }
         Ok(())
+    }
+}
+
+impl fmt::Display for VersionReq {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VersionReq::Exact(v) => write!(f, "={}", v),
+            VersionReq::Range(start, end) => write!(f, ">={}, <{}", start, end),
+            VersionReq::Caret(v) => write!(f, "^{}", v),
+            VersionReq::Tilde(v) => write!(f, "~{}", v),
+            VersionReq::Wildcard(major, Some(minor)) => write!(f, "{}.{}.*", major, minor),
+            VersionReq::Wildcard(major, None) => write!(f, "{}.*", major),
+            VersionReq::Any => write!(f, "*"),
+        }
     }
 }
 

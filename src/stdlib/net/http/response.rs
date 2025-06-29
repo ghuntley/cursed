@@ -2,6 +2,57 @@
 
 use crate::error::CursedError;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::collections::HashMap;
+
+/// HTTP status codes
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StatusCode {
+    Ok = 200,
+    NotFound = 404,
+    InternalServerError = 500,
+}
+
+impl StatusCode {
+    pub fn as_u16(&self) -> u16 {
+        *self as u16
+    }
+}
+
+/// Response body types
+#[derive(Debug, Clone)]
+pub enum ResponseBody {
+    Text(String),
+    Binary(Vec<u8>),
+    Empty,
+}
+
+/// HTTP response structure
+#[derive(Debug, Clone)]
+pub struct HttpResponse {
+    status: StatusCode,
+    headers: HashMap<String, String>,
+    body: ResponseBody,
+}
+
+impl HttpResponse {
+    pub fn new(status: StatusCode) -> Self {
+        Self {
+            status,
+            headers: HashMap::new(),
+            body: ResponseBody::Empty,
+        }
+    }
+    
+    pub fn with_body(mut self, body: ResponseBody) -> Self {
+        self.body = body;
+        self
+    }
+    
+    pub fn header(mut self, key: String, value: String) -> Self {
+        self.headers.insert(key, value);
+        self
+    }
+}
 
 /// Result type for network operations
 pub type NetworkResult<T> = Result<T, CursedError>;

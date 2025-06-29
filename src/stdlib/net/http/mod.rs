@@ -1,4 +1,3 @@
-use crate::web::StatusCode;
 use crate::error::CursedError;
 /// HTTP client library for the CURSED networking module
 /// 
@@ -223,18 +222,39 @@ impl From<Status> for u16 {
 /// Content encoding types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContentEncoding {
+    Identity,
+    Gzip,
+    Deflate,
+    Brotli,
+    Compress,
+}
+
 impl std::fmt::Display for ContentEncoding {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            ContentEncoding::Identity => write!(f, "identity"),
+            ContentEncoding::Gzip => write!(f, "gzip"),
+            ContentEncoding::Deflate => write!(f, "deflate"),
+            ContentEncoding::Brotli => write!(f, "br"),
+            ContentEncoding::Compress => write!(f, "compress"),
         }
     }
+}
+
 impl std::str::FromStr for ContentEncoding {
     type Err = String;
     
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
+            "identity" => Ok(ContentEncoding::Identity),
+            "gzip" => Ok(ContentEncoding::Gzip),
+            "deflate" => Ok(ContentEncoding::Deflate),
+            "br" | "brotli" => Ok(ContentEncoding::Brotli),
+            "compress" => Ok(ContentEncoding::Compress),
+            _ => Err(format!("Unknown content encoding: {}", s)),
         }
     }
+}
 /// MIME types for common content types
 pub mod mime {
     pub const TEXT_PLAIN: &str = "text/plain";
@@ -270,5 +290,25 @@ pub mod mime {
     /// Get MIME type from file extension
     pub fn from_extension(ext: &str) -> &'static str {
         match ext.to_lowercase().as_str() {
+            "html" | "htm" => TEXT_HTML,
+            "css" => TEXT_CSS,
+            "js" => TEXT_JAVASCRIPT,
+            "json" => APPLICATION_JSON,
+            "xml" => APPLICATION_XML,
+            "pdf" => APPLICATION_PDF,
+            "zip" => APPLICATION_ZIP,
+            "jpg" | "jpeg" => IMAGE_JPEG,
+            "png" => IMAGE_PNG,
+            "gif" => IMAGE_GIF,
+            "svg" => IMAGE_SVG,
+            "webp" => IMAGE_WEBP,
+            "mp3" => AUDIO_MPEG,
+            "wav" => AUDIO_WAV,
+            "ogg" => AUDIO_OGG,
+            "mp4" => VIDEO_MP4,
+            "webm" => VIDEO_WEBM,
+            "txt" => TEXT_PLAIN,
+            _ => APPLICATION_OCTET_STREAM,
         }
     }
+}

@@ -21,7 +21,8 @@ pub mod utils;
 use crate::error::CursedError;
 
 pub use utils::{
-// };
+    CompressionUtils, DecompressionUtils
+};
 pub mod enhanced;
 pub mod adaptive;
 pub mod constants;
@@ -38,44 +39,44 @@ pub use error::{SquishError, SquishResult, CompressionError, DecompressionError}
 pub use constants::{MIN_COMPRESSION_LEVEL, MAX_COMPRESSION_LEVEL, CompressionQuality, CompressionStrategy, FlushMode};
 pub use utils::{
     use_parallel_compression, get_optimal_chunk_size
-// };
+};
 pub use statistics::{get_module_stats, cleanup};
 
 // Core interfaces and types
 pub use core::{
     compress, decompress, compress_with_level, decompress_with_validation
-// };
+};
 
 // Format-specific implementations
 pub use gzip::{
     new_reader as gzip_new_reader, new_writer as gzip_new_writer
-// };
+};
 
 pub use zlib::{
     new_reader as zlib_new_reader, new_writer as zlib_new_writer, new_writer_level as zlib_new_writer_level
-// };
+};
 
 pub use flate::{
     new_reader as flate_new_reader, new_writer as flate_new_writer
-// };
+};
 
 pub use bzip2::{
     new_reader as bzip2_new_reader, new_writer as bzip2_new_writer, new_writer_level as bzip2_new_writer_level
-// };
+};
 
 pub use lzw::{
     lzw_compress, lzw_decompress
-// };
+};
 
 // Enhanced features
 pub use enhanced::{
     smart_compress, compress_with_mode, ultra_compress
-// };
+};
 
 // Utility functions
 pub use utils::{
     validate_compressed_data, get_compression_info, format_compression_stats
-// };
+};
 
 use std::sync::Once;
 static INIT: Once = Once::new();
@@ -93,9 +94,13 @@ pub const MODULE_NAME: &str = "squish_core";
 /// Get module information
 pub fn module_info() -> String {
     format!("{} v{} - Compression utilities for CURSED", MODULE_NAME, VERSION)
+}
+
 /// Quick compression function with automatic format detection
 pub fn squish(data: &[u8]) -> SquishResult<Vec<u8>> {
     smart_compress(data)
+}
+
 /// Quick decompression function with automatic format detection  
 pub fn unsquish(data: &[u8]) -> SquishResult<Vec<u8>> {
     detect_and_decompress(data)
@@ -113,7 +118,7 @@ fn detect_and_decompress(data: &[u8]) -> SquishResult<Vec<u8>> {
         return Err(SquishError::InvalidData("Data too short to determine format".to_string()));
     }
     
-    // Try ZLIB first (most common)
+    // Try ZLIB first (most common)  
     if zlib::is_zlib_data(data) {
         return zlib::zlib_decompress(data);
     }

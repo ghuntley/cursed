@@ -2,6 +2,24 @@
 
 use super::error::{SquishError, SquishResult};
 
+/// Compression utilities
+pub struct CompressionUtils;
+
+impl CompressionUtils {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+/// Decompression utilities
+pub struct DecompressionUtils;
+
+impl DecompressionUtils {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
 pub fn validate_compressed_data(_data: &[u8]) -> SquishResult<bool> {
     Ok(true) // Basic validation
 }

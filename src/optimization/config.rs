@@ -27,6 +27,10 @@ pub struct OptimizationConfig {
     pub cache_directory: Option<std::path::PathBuf>,
     pub generate_reports: bool,
     pub verbose_optimization: bool,
+    
+    // Additional fields for package manager and workspace integration
+    pub workspace_dir: String,
+    pub max_cache_size: usize,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -95,6 +99,10 @@ impl OptimizationConfig {
             cache_directory: None,
             generate_reports: false,
             verbose_optimization: false,
+            workspace_dir: std::env::current_dir()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| ".".to_string()),
+            max_cache_size: 1024 * 1024 * 1024, // 1GB default
         }
     }
 
@@ -120,6 +128,10 @@ impl OptimizationConfig {
             cache_directory: None,
             generate_reports: true,
             verbose_optimization: true,
+            workspace_dir: std::env::current_dir()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| ".".to_string()),
+            max_cache_size: 512 * 1024 * 1024, // 512MB for debug
         }
     }
 
@@ -151,6 +163,10 @@ impl OptimizationConfig {
             cache_directory: None,
             generate_reports: false,
             verbose_optimization: false,
+            workspace_dir: std::env::current_dir()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| ".".to_string()),
+            max_cache_size: 2 * 1024 * 1024 * 1024, // 2GB for release
         }
     }
 
@@ -180,6 +196,10 @@ impl OptimizationConfig {
             cache_directory: None,
             generate_reports: false,
             verbose_optimization: false,
+            workspace_dir: std::env::current_dir()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| ".".to_string()),
+            max_cache_size: 256 * 1024 * 1024, // 256MB for size optimization
         }
     }
 
@@ -309,6 +329,31 @@ impl OptimizationConfig {
             .unwrap_or_else(|| std::env::temp_dir().join("cursed_cache"))
     }
 
+    /// Set workspace directory
+    pub fn set_workspace_dir(&mut self, dir: String) {
+        self.workspace_dir = dir;
+    }
+
+    /// Set maximum cache size
+    pub fn set_max_cache_size(&mut self, size: usize) {
+        self.max_cache_size = size;
+    }
+
+    /// Get workspace directory as PathBuf
+    pub fn workspace_path(&self) -> std::path::PathBuf {
+        std::path::PathBuf::from(&self.workspace_dir)
+    }
+
+    /// Check if cache is enabled
+    pub fn is_cache_enabled(&self) -> bool {
+        self.max_cache_size > 0
+    }
+
+    /// Get cache size in MB
+    pub fn cache_size_mb(&self) -> usize {
+        self.max_cache_size / (1024 * 1024)
+    }
+
     /// Create configuration from command line arguments
     pub fn from_args(args: &[String]) -> Result<Self, CursedError> {
         let mut config = Self::new(OptimizationLevel::Default);
@@ -397,6 +442,90 @@ impl From<u8> for OptimizationLevel {
 }
 
 impl OptimizationConfig {
+    /// Alias for release() method for compatibility
+    pub fn release_config() -> Self {
+        Self::release()
+    }
+
+    /// Create configuration optimized for development
+    pub fn for_development() -> Self {
+        Self {
+            level: OptimizationLevel::Less,
+            target_features: Vec::new(),
+            inline_threshold: 50,
+            unroll_threshold: 25,
+            vectorize: false,
+            parallel_codegen: false,
+            lto: false,
+            debug_info: true,
+            custom_passes: vec!["mem2reg".to_string()],
+            pass_manager_config: PassManagerConfig::debug(),
+            optimization_level: OptimizationLevel::Less,
+            enable_profiling: false,
+            profile_data_dir: None,
+            profile_guided: false,
+            parallel_workers: 2,
+            enable_parallel: false,
+            enable_incremental: true,
+            cache_directory: None,
+            generate_reports: true,
+            verbose_optimization: true,
+            workspace_dir: std::env::current_dir()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| ".".to_string()),
+            max_cache_size: 512 * 1024 * 1024, // 512MB for development
+        }
+    }
+
+    /// Create configuration optimized for production
+    pub fn for_production() -> Self {
+        Self {
+            level: OptimizationLevel::Aggressive,
+            target_features: vec!["sse2".to_string(), "sse3".to_string(), "sse4.1".to_string()],
+            inline_threshold: 300,
+            unroll_threshold: 250,
+            vectorize: true,
+            parallel_codegen: true,
+            lto: true,
+            debug_info: false,
+            custom_passes: vec![
+                "mem2reg".to_string(),
+                "instcombine".to_string(),
+                "reassociate".to_string(),
+                "gvn".to_string(),
+                "simplifycfg".to_string(),
+                "loop-unroll".to_string(),
+                "sroa".to_string(),
+            ],
+            pass_manager_config: PassManagerConfig::release(),
+            optimization_level: OptimizationLevel::Aggressive,
+            enable_profiling: true,
+            profile_data_dir: None,
+            profile_guided: true,
+            parallel_workers: 16,
+            enable_parallel: true,
+            enable_incremental: true,
+            cache_directory: None,
+            generate_reports: false,
+            verbose_optimization: false,
+            workspace_dir: std::env::current_dir()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| ".".to_string()),
+            max_cache_size: 4 * 1024 * 1024 * 1024, // 4GB for production
+        }
+    }
+
+    /// Create configuration based on environment
+    pub fn for_environment() -> Self {
+        match std::env::var("CURSED_ENV").unwrap_or_else(|_| "development".to_string()).as_str() {
+            "production" | "prod" => Self::for_production(),
+            "release" => Self::release(),
+            "debug" => Self::debug(),
+            "size" => Self::size_optimized(),
+            _ => Self::for_development(),
+        }
+    }
+
     /// Convert to LLVM optimization config
     pub fn to_llvm_config(&self) -> crate::codegen::llvm::optimization::OptimizationConfig {
         let level = match self.level {

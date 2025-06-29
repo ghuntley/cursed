@@ -1,83 +1,161 @@
-//! Network functionality for tls
+//! TLS/SSL functionality
 
 use crate::error::CursedError;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-/// Result type for network operations
-pub type NetworkResult<T> = Result<T, CursedError>;
-
-/// Network operations handler
-pub struct NetworkHandler {
-    timeout_seconds: u64,
+/// TLS configuration
+#[derive(Debug, Clone)]
+pub struct TlsConfig {
+    pub version: TlsVersion,
+    pub cipher_suites: Vec<CipherSuite>,
+    pub certificate_path: Option<String>,
+    pub private_key_path: Option<String>,
+    pub ca_certificate_path: Option<String>,
+    pub verify_peer: bool,
+    pub verify_hostname: bool,
 }
 
-impl NetworkHandler {
-    /// Create a new network handler
-    pub fn new() -> Self {
+impl Default for TlsConfig {
+    fn default() -> Self {
         Self {
-            timeout_seconds: 30,
+            version: TlsVersion::V1_2,
+            cipher_suites: vec![
+                CipherSuite::TLS_AES_256_GCM_SHA384,
+                CipherSuite::TLS_AES_128_GCM_SHA256,
+                CipherSuite::TLS_CHACHA20_POLY1305_SHA256,
+            ],
+            certificate_path: None,
+            private_key_path: None,
+            ca_certificate_path: None,
+            verify_peer: true,
+            verify_hostname: true,
         }
     }
+}
+
+impl TlsConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
     
-    /// Set timeout
-    pub fn timeout(mut self, seconds: u64) -> Self {
-        self.timeout_seconds = seconds;
+    pub fn version(mut self, version: TlsVersion) -> Self {
+        self.version = version;
         self
     }
     
-    /// Parse IP address
-    pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
+    pub fn certificate(mut self, cert_path: &str, key_path: &str) -> Self {
+        self.certificate_path = Some(cert_path.to_string());
+        self.private_key_path = Some(key_path.to_string());
+        self
     }
     
-    /// Parse socket address
-    pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
+    pub fn ca_certificate(mut self, ca_path: &str) -> Self {
+        self.ca_certificate_path = Some(ca_path.to_string());
+        self
     }
     
-    /// Get localhost IP
-    pub fn localhost_ip(&self) -> IpAddr {
-        IpAddr::V4(Ipv4Addr::LOCALHOST)
+    pub fn verify_peer(mut self, verify: bool) -> Self {
+        self.verify_peer = verify;
+        self
     }
     
-    /// Check if IP is localhost
-    pub fn is_localhost(&self, ip: &IpAddr) -> bool {
-        match ip {
-            IpAddr::V4(ipv4) => ipv4.is_loopback(),
-            IpAddr::V6(ipv6) => ipv6.is_loopback(),
+    pub fn verify_hostname(mut self, verify: bool) -> Self {
+        self.verify_hostname = verify;
+        self
+    }
+}
+
+/// TLS version enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TlsVersion {
+    V1_0,
+    V1_1,
+    V1_2,
+    V1_3,
+}
+
+impl std::fmt::Display for TlsVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TlsVersion::V1_0 => write!(f, "TLSv1.0"),
+            TlsVersion::V1_1 => write!(f, "TLSv1.1"),
+            TlsVersion::V1_2 => write!(f, "TLSv1.2"),
+            TlsVersion::V1_3 => write!(f, "TLSv1.3"),
+        }
+    }
+}
+
+/// TLS cipher suites
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CipherSuite {
+    // TLS 1.3 cipher suites
+    TLS_AES_128_GCM_SHA256,
+    TLS_AES_256_GCM_SHA384,
+    TLS_CHACHA20_POLY1305_SHA256,
+    
+    // TLS 1.2 cipher suites
+    TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+    TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+    TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+    TLS_RSA_WITH_AES_128_GCM_SHA256,
+    TLS_RSA_WITH_AES_256_GCM_SHA384,
+}
+
+impl std::fmt::Display for CipherSuite {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CipherSuite::TLS_AES_128_GCM_SHA256 => write!(f, "TLS_AES_128_GCM_SHA256"),
+            CipherSuite::TLS_AES_256_GCM_SHA384 => write!(f, "TLS_AES_256_GCM_SHA384"),
+            CipherSuite::TLS_CHACHA20_POLY1305_SHA256 => write!(f, "TLS_CHACHA20_POLY1305_SHA256"),
+            CipherSuite::TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 => write!(f, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"),
+            CipherSuite::TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 => write!(f, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+            CipherSuite::TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 => write!(f, "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"),
+            CipherSuite::TLS_RSA_WITH_AES_128_GCM_SHA256 => write!(f, "TLS_RSA_WITH_AES_128_GCM_SHA256"),
+            CipherSuite::TLS_RSA_WITH_AES_256_GCM_SHA384 => write!(f, "TLS_RSA_WITH_AES_256_GCM_SHA384"),
+        }
+    }
+}
+
+/// TLS connection wrapper
+#[derive(Debug)]
+pub struct TlsConnection {
+    config: TlsConfig,
+    connected: bool,
+}
+
+impl TlsConnection {
+    pub fn new(config: TlsConfig) -> Self {
+        Self {
+            config,
+            connected: false,
         }
     }
     
-    /// Create socket address
-    pub fn create_socket_addr(&self, ip: IpAddr, port: u16) -> SocketAddr {
-        SocketAddr::new(ip, port)
+    pub fn connect(&mut self, host: &str, port: u16) -> Result<(), CursedError> {
+        // Stub implementation
+        println!("Establishing TLS connection to {}:{}", host, port);
+        self.connected = true;
+        Ok(())
     }
-}
-
-impl Default for NetworkHandler {
-    fn default() -> Self {
-        Self::new()
+    
+    pub fn disconnect(&mut self) -> Result<(), CursedError> {
+        // Stub implementation
+        self.connected = false;
+        Ok(())
     }
-}
-
-/// Initialize network processing
-pub fn init_tls() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let localhost = handler.localhost_ip();
-    if !handler.is_localhost(&localhost) {
-        return Err(CursedError::runtime_error("Network localhost test failed"));
+    
+    pub fn write(&self, data: &[u8]) -> Result<usize, CursedError> {
+        // Stub implementation
+        if !self.connected {
+            return Err(CursedError::runtime_error("TLS connection not established"));
+        }
+        Ok(data.len())
     }
-    println!("🌐 Network processing (tls) initialized");
-    Ok(())
-}
-
-/// Test network functionality
-pub fn test_tls() -> NetworkResult<()> {
-    let handler = NetworkHandler::new();
-    let ip = handler.parse_ip("127.0.0.1")?;
-    let socket_addr = handler.create_socket_addr(ip, 8080);
-    if socket_addr.port() != 8080 {
-        return Err(CursedError::runtime_error("Network socket test failed"));
+    
+    pub fn read(&self, buffer: &mut [u8]) -> Result<usize, CursedError> {
+        // Stub implementation
+        if !self.connected {
+            return Err(CursedError::runtime_error("TLS connection not established"));
+        }
+        Ok(0)
     }
-    Ok(())
 }

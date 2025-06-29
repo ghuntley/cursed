@@ -2,6 +2,8 @@
 
 use crate::error::CursedError;
 use crate::core::Type;
+use crate::ast::{Expression, Statement, Program};
+use super::{TypeExpression, TypeSubstitution, ConstraintResolver};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -9,6 +11,8 @@ pub struct TypeInference {
     type_constraints: Vec<TypeConstraint>,
     type_variables: HashMap<String, Type>,
     substitutions: HashMap<String, Type>,
+    next_var_id: usize,
+    inference_context: InferenceState,
 }
 
 #[derive(Debug, Clone)]
@@ -18,12 +22,32 @@ pub struct TypeConstraint {
     pub location: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct InferenceState {
+    pub type_vars: HashMap<String, TypeExpression>,
+    pub constraints: Vec<UnificationConstraint>,
+    pub substitutions: TypeSubstitution,
+}
+
+#[derive(Debug, Clone)]
+pub struct UnificationConstraint {
+    pub left: TypeExpression,
+    pub right: TypeExpression,
+    pub source: String,
+}
+
 impl TypeInference {
     pub fn new() -> Self {
         Self {
             type_constraints: Vec::new(),
             type_variables: HashMap::new(),
             substitutions: HashMap::new(),
+            next_var_id: 0,
+            inference_context: InferenceState {
+                type_vars: HashMap::new(),
+                constraints: Vec::new(),
+                substitutions: TypeSubstitution::new(),
+            },
         }
     }
 
@@ -31,13 +55,273 @@ impl TypeInference {
         self.type_constraints.push(TypeConstraint { left, right, location });
     }
 
-    pub fn infer_types(&mut self) -> Result<HashMap<String, Type>, CursedError> {
-        // Simplified type inference algorithm
-        let constraints = self.type_constraints.clone();
-        for constraint in constraints.iter() {
-            self.unify(&constraint.left, &constraint.right)?;
+    /// Infer types for expressions with advanced constraint solving
+    pub fn infer_expression_type(&mut self, expr: &Expression) -> Result<TypeExpression, CursedError> {
+        match expr {
+            Expression::Integer(_) => Ok(TypeExpression::named("int")),
+            Expression::String(_) => Ok(TypeExpression::named("string")),
+            Expression::Boolean(_) => Ok(TypeExpression::named("bool")),
+            Expression::Identifier(name) => {
+                // Look up or create fresh type variable
+                if let Some(type_expr) = self.inference_context.type_vars.get(name) {
+                    Ok(type_expr.clone())
+                } else {
+                    let fresh_var = self.fresh_type_variable();
+                    self.inference_context.type_vars.insert(name.clone(), fresh_var.clone());
+                    Ok(fresh_var)
+                }
+            }
+            Expression::Binary(binary) => {
+                let left_type = self.infer_expression_type(&binary.left)?;
+                let right_type = self.infer_expression_type(&binary.right)?;
+                
+                // Create constraints for binary operations
+                let result_type = self.fresh_type_variable();
+                
+                match binary.operator.as_str() {
+                    "+" | "-" | "*" | "/" => {
+                        // Arithmetic operations: both operands must be numeric
+                        self.add_unification_constraint(left_type.clone(), TypeExpression::named("int"), "arithmetic left operand".to_string());
+                        self.add_unification_constraint(right_type.clone(), TypeExpression::named("int"), "arithmetic right operand".to_string());
+                        self.add_unification_constraint(result_type.clone(), TypeExpression::named("int"), "arithmetic result".to_string());
+                    }
+                    "==" | "!=" | "<" | ">" | "<=" | ">=" => {
+                        // Comparison operations: operands must be the same type
+                        self.add_unification_constraint(left_type, right_type, "comparison operands".to_string());
+                        self.add_unification_constraint(result_type.clone(), TypeExpression::named("bool"), "comparison result".to_string());
+                    }
+                    "&&" | "||" => {
+                        // Logical operations: both operands must be bool
+                        self.add_unification_constraint(left_type, TypeExpression::named("bool"), "logical left operand".to_string());
+                        self.add_unification_constraint(right_type, TypeExpression::named("bool"), "logical right operand".to_string());
+                        self.add_unification_constraint(result_type.clone(), TypeExpression::named("bool"), "logical result".to_string());
+                    }
+                    _ => return Err(CursedError::type_error(&format!("Unknown binary operator: {}", binary.operator))),
+                }
+                
+                Ok(result_type)
+            }
+            Expression::Array(elements) => {
+                if elements.is_empty() {
+                    // Empty array - create fresh type variable for element type
+                    let element_type = self.fresh_type_variable();
+                    Ok(TypeExpression::array(element_type))
+                } else {
+                    // Infer type from first element and unify with others
+                    let first_type = self.infer_expression_type(&elements[0])?;
+                    
+                    for (i, element) in elements.iter().enumerate().skip(1) {
+                        let element_type = self.infer_expression_type(element)?;
+                        self.add_unification_constraint(
+                            first_type.clone(), 
+                            element_type, 
+                            format!("array element {}", i)
+                        );
+                    }
+                    
+                    Ok(TypeExpression::array(first_type))
+                }
+            }
+            Expression::Call(call) => {
+                self.infer_call_type(call)
+            }
+            _ => {
+                // For other expressions, create fresh type variables
+                Ok(self.fresh_type_variable())
+            }
         }
-        Ok(self.substitutions.clone())
+    }
+    
+    fn infer_call_type(&mut self, call: &crate::ast::CallExpression) -> Result<TypeExpression, CursedError> {
+        let func_type = self.infer_expression_type(&call.function)?;
+        
+        // Create fresh type variables for parameters and return type
+        let param_types: Vec<TypeExpression> = call.arguments.iter()
+            .map(|_| self.fresh_type_variable())
+            .collect();
+        
+        let return_type = self.fresh_type_variable();
+        
+        // Infer argument types
+        for (i, arg) in call.arguments.iter().enumerate() {
+            let arg_type = self.infer_expression_type(arg)?;
+            self.add_unification_constraint(
+                arg_type, 
+                param_types[i].clone(), 
+                format!("function argument {}", i)
+            );
+        }
+        
+        // Create function type constraint
+        let expected_func_type = TypeExpression::function(param_types, return_type.clone());
+        self.add_unification_constraint(
+            func_type, 
+            expected_func_type, 
+            "function call".to_string()
+        );
+        
+        Ok(return_type)
+    }
+    
+    /// Infer types for statements
+    pub fn infer_statement_types(&mut self, stmt: &Statement) -> Result<(), CursedError> {
+        match stmt {
+            Statement::Let(let_stmt) => {
+                let value_type = self.infer_expression_type(&let_stmt.value)?;
+                self.inference_context.type_vars.insert(let_stmt.name.clone(), value_type);
+                Ok(())
+            }
+            Statement::Function(func_stmt) => {
+                // Create type variables for parameters
+                let param_types: Vec<TypeExpression> = func_stmt.parameters.iter()
+                    .map(|param| {
+                        let param_type = self.fresh_type_variable();
+                        self.inference_context.type_vars.insert(param.clone(), param_type.clone());
+                        param_type
+                    })
+                    .collect();
+                
+                // Infer return type from function body
+                let return_type = self.infer_function_return_type(&func_stmt.body)?;
+                
+                // Create function type
+                let func_type = TypeExpression::function(param_types, return_type);
+                self.inference_context.type_vars.insert(func_stmt.name.clone(), func_type);
+                
+                Ok(())
+            }
+            Statement::If(if_stmt) => {
+                // Condition must be bool
+                let condition_type = self.infer_expression_type(&if_stmt.condition)?;
+                self.add_unification_constraint(
+                    condition_type, 
+                    TypeExpression::named("bool"), 
+                    "if condition".to_string()
+                );
+                
+                // Process branches
+                for stmt in &if_stmt.then_branch {
+                    self.infer_statement_types(stmt)?;
+                }
+                
+                if let Some(else_branch) = &if_stmt.else_branch {
+                    for stmt in else_branch {
+                        self.infer_statement_types(stmt)?;
+                    }
+                }
+                
+                Ok(())
+            }
+            _ => Ok(()),
+        }
+    }
+    
+    fn infer_function_return_type(&mut self, body: &[Statement]) -> Result<TypeExpression, CursedError> {
+        let mut return_types = Vec::new();
+        
+        // Collect all return statements
+        for stmt in body {
+            self.collect_return_types(stmt, &mut return_types)?;
+        }
+        
+        if return_types.is_empty() {
+            Ok(TypeExpression::named("void"))
+        } else {
+            // Unify all return types
+            let mut unified_type = return_types[0].clone();
+            for return_type in return_types.iter().skip(1) {
+                self.add_unification_constraint(
+                    unified_type.clone(), 
+                    return_type.clone(), 
+                    "function return type".to_string()
+                );
+            }
+            Ok(unified_type)
+        }
+    }
+    
+    fn collect_return_types(&mut self, stmt: &Statement, return_types: &mut Vec<TypeExpression>) -> Result<(), CursedError> {
+        match stmt {
+            Statement::Return(return_stmt) => {
+                if let Some(value) = &return_stmt.value {
+                    let return_type = self.infer_expression_type(value)?;
+                    return_types.push(return_type);
+                } else {
+                    return_types.push(TypeExpression::named("void"));
+                }
+            }
+            Statement::If(if_stmt) => {
+                for stmt in &if_stmt.then_branch {
+                    self.collect_return_types(stmt, return_types)?;
+                }
+                if let Some(else_branch) = &if_stmt.else_branch {
+                    for stmt in else_branch {
+                        self.collect_return_types(stmt, return_types)?;
+                    }
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    pub fn infer_types(&mut self) -> Result<HashMap<String, Type>, CursedError> {
+        // Solve all unification constraints
+        self.solve_constraints()?;
+        
+        // Convert TypeExpression results back to Type for compatibility
+        let mut result = HashMap::new();
+        for (name, type_expr) in &self.inference_context.type_vars {
+            let resolved_type = self.inference_context.substitutions.apply(type_expr);
+            if let Some(type_name) = &resolved_type.name {
+                let core_type = match type_name.as_str() {
+                    "int" => Type::Int,
+                    "float" => Type::Float,
+                    "string" => Type::String,
+                    "bool" => Type::Bool,
+                    "void" => Type::Void,
+                    _ => Type::Custom(type_name.clone()),
+                };
+                result.insert(name.clone(), core_type);
+            }
+        }
+        
+        Ok(result)
+    }
+    
+    fn solve_constraints(&mut self) -> Result<(), CursedError> {
+        let resolver = ConstraintResolver::new();
+        
+        // Process each unification constraint
+        for constraint in &self.inference_context.constraints.clone() {
+            match self.inference_context.substitutions.unify(&constraint.left, &constraint.right) {
+                Ok(()) => {
+                    // Constraint solved successfully
+                }
+                Err(e) => {
+                    return Err(CursedError::type_error(&format!(
+                        "Type unification failed for {}: {}", 
+                        constraint.source, e
+                    )));
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fn add_unification_constraint(&mut self, left: TypeExpression, right: TypeExpression, source: String) {
+        self.inference_context.constraints.push(UnificationConstraint {
+            left,
+            right,
+            source,
+        });
+    }
+    
+    fn fresh_type_variable(&mut self) -> TypeExpression {
+        let var_name = format!("T{}", self.next_var_id);
+        self.next_var_id += 1;
+        TypeExpression::named(&var_name)
     }
 
     fn unify(&mut self, left: &Type, right: &Type) -> Result<(), CursedError> {
@@ -50,6 +334,20 @@ impl TypeInference {
             (Type::Float, Type::Float) => Ok(()),
             (Type::String, Type::String) => Ok(()),
             (Type::Bool, Type::Bool) => Ok(()),
+            (Type::Array(t1), Type::Array(t2)) => {
+                self.unify(t1, t2)
+            }
+            (Type::Function(params1, ret1), Type::Function(params2, ret2)) => {
+                if params1.len() != params2.len() {
+                    return Err(CursedError::type_error("Function parameter count mismatch"));
+                }
+                
+                for (p1, p2) in params1.iter().zip(params2.iter()) {
+                    self.unify(p1, p2)?;
+                }
+                
+                self.unify(ret1, ret2)
+            }
             _ => Err(CursedError::type_error(&format!("Cannot unify {:?} with {:?}", left, right))),
         }
     }

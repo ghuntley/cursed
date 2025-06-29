@@ -17,8 +17,8 @@ pub mod math;
 pub mod mathz;
 pub mod stringz;
 pub mod vibez;
-// pub mod net;  // Disabled due to syntax errors
-// pub mod squish_core;  // Disabled due to syntax errors
+pub mod net;
+pub mod squish_core;
 
 // TODO: Enable these modules once they are implemented
 // pub mod prelude;
