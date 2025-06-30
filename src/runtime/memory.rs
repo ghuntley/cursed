@@ -4,7 +4,7 @@
 //! the garbage collector with the CURSED runtime system, replacing the minimal
 //! memory management with a comprehensive GC-based system.
 
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock, OnceLock};
 use std::ptr::NonNull;
 use std::collections::HashMap;
 use std::time::{Instant, Duration};
@@ -92,6 +92,8 @@ pub enum MemoryError {
     StackOverflow { stack_id: StackId, size: usize },
     /// Channel allocation error
     ChannelError(String),
+    /// Initialization failed
+    InitializationFailed(String),
 }
 
 impl std::fmt::Display for MemoryError {
@@ -117,6 +119,9 @@ impl std::fmt::Display for MemoryError {
             }
             MemoryError::ChannelError(msg) => {
                 write!(f, "Channel allocation error: {}", msg)
+            }
+            MemoryError::InitializationFailed(msg) => {
+                write!(f, "Initialization failed: {}", msg)
             }
         }
     }
@@ -592,7 +597,14 @@ pub fn initialize_memory_manager(
 
 /// Get global memory manager
 pub fn get_global_memory_manager() -> Option<Arc<MemoryManager>> {
-    unsafe { GLOBAL_MEMORY_MANAGER.clone() }
+    unsafe { 
+        let ptr = &raw const GLOBAL_MEMORY_MANAGER;
+        if (*ptr).is_some() {
+            std::ptr::read(ptr)
+        } else {
+            None
+        }
+    }
 }
 
 /// Shutdown global memory manager
