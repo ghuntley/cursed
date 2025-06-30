@@ -1,26 +1,15 @@
-// Test control flow in CURSED
-vibe main
+// Test control flow with lowkey/highkey
+sus x = 15;
+sus y = 25;
 
-sus x = 10
-sus y = 5
+lowkey (x > 10) {
+    print("x is greater than 10");
+} highkey {
+    print("x is not greater than 10");
+}
 
-slay main() {
-    vibez.spill("Testing control flow");
-    
-    // Basic conditional
-    if (x > y) {
-        vibez.spill("x is greater than y");
-    } else {
-        vibez.spill("x is not greater than y");
-    }
-    
-    // Basic loop
-    sus i = 0
-    while (i < 3) {
-        vibez.spill("Loop iteration:");
-        vibez.spill(i);
-        i = i + 1
-    }
-    
-    vibez.spill("Control flow test completed");
+lowkey (y < 20) {
+    print("y is less than 20");
+} highkey {
+    print("y is greater than or equal to 20");
 }

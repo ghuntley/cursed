@@ -164,7 +164,7 @@ where
 #[deprecated(note = "Use TaskHandle from executor module instead")]
 pub struct AsyncTask {
     task_id: u64,
-    status: TaskStatus,
+    status: executor::TaskState,
 }
 
 #[allow(deprecated)]
@@ -172,7 +172,7 @@ impl AsyncTask {
     pub fn new(task_id: u64) -> Self {
         Self {
             task_id,
-            status: TaskStatus::Pending,
+            status: executor::TaskState::Pending,
         }
     }
 
@@ -180,7 +180,7 @@ impl AsyncTask {
         self.task_id
     }
 
-    pub fn status(&self) -> TaskStatus {
+    pub fn status(&self) -> executor::TaskState {
         self.status
     }
 }
@@ -246,7 +246,7 @@ pub extern "C" fn cursed_create_delay(duration_ms: u64) -> u64 {
     let future = delay(duration);
     
     match spawn(async move {
-        future.await;
+        let _ = future.await;
     }) {
         Ok(handle) => handle.task_id(),
         Err(_) => 0,
@@ -261,7 +261,7 @@ pub extern "C" fn cursed_create_timeout(future_id: u64, timeout_ms: u64) -> u64 
     let timeout_future = delay(timeout_duration);
     
     match spawn(async move {
-        timeout_future.await;
+        let _ = timeout_future.await;
     }) {
         Ok(handle) => handle.task_id(),
         Err(_) => 0,

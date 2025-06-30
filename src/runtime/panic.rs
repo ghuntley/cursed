@@ -10,7 +10,7 @@
 use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicU64, AtomicBool, Ordering}};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use std::panic::{PanicInfo, set_hook, take_hook};
+use std::panic::{PanicHookInfo, set_hook, take_hook};
 use std::thread::ThreadId;
 use std::fmt;
 
@@ -170,7 +170,7 @@ pub struct PanicRuntime {
     /// Runtime start time
     start_time: Instant,
     /// Previous panic hook
-    previous_hook: Mutex<Option<Box<dyn Fn(&PanicInfo<'_>) + 'static + Sync + Send>>>,
+    previous_hook: Mutex<Option<Box<dyn Fn(&PanicHookInfo<'_>) + 'static + Sync + Send>>>,
     /// Performance monitoring
     performance_monitor: Option<Arc<dyn PerformanceMonitor>>,
 }
@@ -326,7 +326,7 @@ impl PanicRuntime {
 
     // Private methods
 
-    fn handle_panic(&self, panic_info: &PanicInfo<'_>) {
+    fn handle_panic(&self, panic_info: &PanicHookInfo<'_>) {
         if self.shutdown.load(Ordering::Acquire) {
             return;
         }
@@ -346,7 +346,7 @@ impl PanicRuntime {
         self.in_panic.store(false, Ordering::Release);
     }
 
-    fn create_panic_context(&self, panic_info: &PanicInfo<'_>) -> PanicContext {
+    fn create_panic_context(&self, panic_info: &PanicHookInfo<'_>) -> PanicContext {
         let message = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
             s.to_string()
         } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {

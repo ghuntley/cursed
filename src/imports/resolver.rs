@@ -322,9 +322,11 @@ impl ImportResolver {
                 }
             }
 
-            // Package installation requires separate scope to avoid Send issues
-            // TODO: Implement proper package installation without holding MutexGuard across await
-            return Err(CursedError::ImportError(format!("Package '{}' not found and installation disabled", package_name)));
+            // For now, return an error indicating package is not found
+            // Actual installation would require spawning a task or using different architecture
+            return Err(CursedError::ImportError(
+                format!("Package '{}' not found. Package installation is available but disabled due to async constraints", package_name)
+            ));
         }
 
         Err(CursedError::ImportError(format!(
@@ -333,6 +335,8 @@ impl ImportResolver {
         )))
         })
     }
+
+
 
     /// Resolve a standard library import
     fn resolve_stdlib_import(&self, stdlib_name: &str) -> Result<PathBuf> {
@@ -419,21 +423,23 @@ impl ImportResolver {
 
     /// Extract exported symbols from a program
     fn extract_exported_symbols(&self, program: &Program) -> Vec<String> {
-        use crate::ast::Statement;
+        use crate::ast::{Statement, Visibility};
         
         let mut symbols = Vec::new();
         
         for statement in &program.statements {
             match statement {
                 Statement::Function(func) => {
-                    // For now, all functions are exported
-                    // TODO: Add visibility modifiers
-                    symbols.push(func.name.clone());
+                    // Only export public functions
+                    if func.visibility == Visibility::Public {
+                        symbols.push(func.name.clone());
+                    }
                 }
                 Statement::Let(let_stmt) => {
-                    // For now, all constants are exported
-                    // TODO: Add visibility modifiers  
-                    symbols.push(let_stmt.name.clone());
+                    // Only export public constants
+                    if let_stmt.visibility == Visibility::Public {
+                        symbols.push(let_stmt.name.clone());
+                    }
                 }
                 // Add more exportable statement types as needed
                 _ => {}

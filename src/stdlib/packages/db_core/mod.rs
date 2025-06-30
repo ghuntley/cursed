@@ -1,5 +1,8 @@
 use crate::error::CursedError;
 /// fr fr Core database interfaces and types - the foundation periodt
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+use lazy_static::lazy_static;
 /// 
 /// This module provides the fundamental database abstractions that all
 /// other database packages build upon. Think of it as the blueprint bestie!
@@ -18,31 +21,31 @@ pub mod core_types;
 // Re-export all the important types for easy access - periodt
 pub use traits::{
     SavePoint, TransactionState
-// };
+};
 pub use connection::{
     DatabaseConnectionImpl, ConnectionOptions
-// };
+};
 pub use query::{
     SqlQuery, NoSqlQuery, QueryPlan, QueryCache, ExecutionStep
-// };
+};
 pub use transaction::{
     TransactionOptions, TransactionManager
-// };
+};
 pub use result::{
     ResultMetadata, ExecuteResult, QueryStats, RowMetadata
-// };
+};
 pub use metadata::{
     SchemaInfo, ConstraintInfo, ForeignKeyInfo, StatisticsInfo
-// };
+};
 pub use error::{
     ConnectionError, QueryError, TransactionError, DriverError
-// };
+};
 pub use config::{
     SecurityConfig, PerformanceConfig, LoggingConfig
-// };
+};
 pub use core_types::{
     ColumnMetadata, RowValue, QueryParameter
-// };
+};
 
 // Import SavePoint from traits (commented out to avoid conflict)
 // pub use traits::SavePoint;
@@ -65,36 +68,52 @@ static DRIVER_REGISTRY: std::sync::LazyLock<Arc<RwLock<DriverRegistry>>> =
 /// fr fr Driver registry for managing database drivers
 #[derive(Debug, Default)]
 pub struct DriverRegistry {
+    drivers: HashMap<String, Arc<dyn DatabaseDriver + Send + Sync>>,
+}
+
 impl DriverRegistry {
     /// slay Create a new driver registry
     pub fn new() -> Self {
         Self {
+            drivers: HashMap::new(),
         }
     }
 
     /// slay Register a database driver
     pub fn register_driver<T>(&mut self, name: String, driver: T) 
     where
+        T: DatabaseDriver + Send + Sync + 'static,
     {
         self.drivers.insert(name, Arc::new(driver));
+    }
+
     /// slay Get a driver by name
     pub fn get_driver(&self, name: &str) -> Option<Arc<dyn DatabaseDriver + Send + Sync>> {
         self.drivers.get(name).map(|d| Arc::clone(d))
+    }
+
     /// slay List all available drivers
     pub fn list_drivers(&self) -> Vec<String> {
         self.drivers.keys().cloned().collect()
     }
 }
 
+lazy_static! {
+    static ref DRIVER_REGISTRY: RwLock<DriverRegistry> = RwLock::new(DriverRegistry::new());
+}
+
 /// slay Register a database driver globally
 pub fn register_driver<T>(name: &str, driver: T) -> DbResult<()>
 where
+    T: DatabaseDriver + Send + Sync + 'static,
 {
     let mut registry = DRIVER_REGISTRY.write()
         .map_err(|_| DatabaseError::driver("Failed to acquire driver registry lock"))?;
     
     registry.register_driver(name.to_string(), driver);
     Ok(())
+}
+
 /// slay Get a driver by name from global registry
 pub fn get_driver(name: &str) -> DbResult<Arc<dyn DatabaseDriver + Send + Sync>> {
     let registry = DRIVER_REGISTRY.read()
@@ -102,11 +121,15 @@ pub fn get_driver(name: &str) -> DbResult<Arc<dyn DatabaseDriver + Send + Sync>>
     
     registry.get_driver(name)
         .ok_or_else(|| DatabaseError::driver(&format!("Driver '{}' not found", name)))
+}
+
 /// slay List all available drivers globally
 pub fn list_drivers() -> Vec<String> {
     DRIVER_REGISTRY.read()
         .map(|registry| registry.list_drivers())
         .unwrap_or_default()
+}
+
 /// fr fr Database helper functions and utilities
 pub mod utils {
     use super::*;
@@ -116,12 +139,17 @@ pub mod utils {
         let driver = get_driver(driver_name)?;
         let config = ConnectionConfig::from_string(connection_string)?;
         driver.connect(config).await
+    }
+
     /// slay Quick query execution helper
     pub async fn quick_query(
+        driver_name: &str,
+        connection_string: &str,
         query: &str
     ) -> DbResult<Box<dyn ResultSet>> {
         let mut conn = connect(driver_name, connection_string).await?;
         conn.query(query, &[]).await
+    }
     /// slay Check if a driver is available
     pub fn is_driver_available(name: &str) -> bool {
         list_drivers().contains(&name.to_string())
@@ -132,3 +160,4 @@ pub mod utils {
 pub fn init_db_core() -> DbResult<()> {
     println!("🗄️ db_core package initialized - database foundation ready bestie!");
     Ok(())
+}

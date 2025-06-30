@@ -4,22 +4,16 @@
 /// basic generics, interface implementation, and type conversions.
 
 use cursed::*;
-use std::sync::Arc;
-use inkwell::context::Context;
+use cursed::error::CursedError;
 
 fn compile_to_ir(code: &str) -> Result<String, CursedError> {
-    let context = Context::create();
-    let module = context.create_module("test");
-    let builder = context.create_builder();
-    let runtime = Arc::new(Runtime::new());
-
-    let mut codegen = LlvmCodeGeneratorReal::new(&context, module, builder, runtime)?;
+    let mut codegen = LlvmCodeGeneratorReal::new()?;
 
     let mut lexer = Lexer::new(code.to_string());
     let mut parser = Parser::new(lexer)?;
     let ast = parser.parse()?;
 
-    codegen.compile(&ast)?;
+    codegen.compile_ast(&ast)?;
     Ok(codegen.module().print_to_string().to_string())
 }
 

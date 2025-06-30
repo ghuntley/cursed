@@ -71,11 +71,17 @@ pub enum TokenKind {
     MainCharacter, // main function
     Dm,          // channel type
     
+    // Visibility modifiers
+    Spill,       // pub (public)
+    Priv,        // private
+    Crew,        // pkg (package)
+    
     // Operators
     Plus,
     Minus,
     Star,
     Slash,
+    Percent,        // %
     Equal,
     EqualEqual,
     Bang,
@@ -84,6 +90,8 @@ pub enum TokenKind {
     LessEqual,
     Greater,
     GreaterEqual,
+    AmpAmp,         // &&
+    PipePipe,       // ||
     
     // Delimiters
     LeftParen,
@@ -142,6 +150,7 @@ impl Lexer {
                     Ok(self.make_token(TokenKind::Slash, "/".to_string(), start_column))
                 }
             },
+            '%' => Ok(self.make_token(TokenKind::Percent, "%".to_string(), start_column)),
             '(' => Ok(self.make_token(TokenKind::LeftParen, "(".to_string(), start_column)),
             ')' => Ok(self.make_token(TokenKind::RightParen, ")".to_string(), start_column)),
             '{' => Ok(self.make_token(TokenKind::LeftBrace, "{".to_string(), start_column)),
@@ -178,6 +187,20 @@ impl Lexer {
                     Ok(self.make_token(TokenKind::GreaterEqual, ">=".to_string(), start_column))
                 } else {
                     Ok(self.make_token(TokenKind::Greater, ">".to_string(), start_column))
+                }
+            },
+            '&' => {
+                if self.match_char('&') {
+                    Ok(self.make_token(TokenKind::AmpAmp, "&&".to_string(), start_column))
+                } else {
+                    Err(CursedError::syntax_error("Unexpected character: '&' (use '&&' for logical AND)"))
+                }
+            },
+            '|' => {
+                if self.match_char('|') {
+                    Ok(self.make_token(TokenKind::PipePipe, "||".to_string(), start_column))
+                } else {
+                    Err(CursedError::syntax_error("Unexpected character: '|' (use '||' for logical OR)"))
                 }
             },
             '\n' => {
@@ -303,6 +326,11 @@ impl Lexer {
             "nocap" => TokenKind::NoCap,
             "main_character" => TokenKind::MainCharacter,
             "dm" => TokenKind::Dm,
+            
+            // Visibility modifiers
+            "spill" => TokenKind::Spill,
+            "priv" => TokenKind::Priv,
+            "crew" => TokenKind::Crew,
             
             // Boolean literals
             "true" | "based" => TokenKind::Boolean,

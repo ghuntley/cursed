@@ -1,29 +1,18 @@
-// Test basic CURSED language features
-vibe main
+// Test basic CURSED features
+let x = 10;
+let y = 20;
+let z = x + y;
 
-// Basic variables
-sus number = 42
-sus text = "CURSED is working!"
-sus flag = true
+print("Basic math:", z);
 
-slay main() {
-    // Basic print statements
-    vibez.spill("Testing basic CURSED features");
-    vibez.spill(text);
-    
-    // Variable access
-    vibez.spill("Number value:");
-    vibez.spill(number);
-    
-    // Basic arithmetic
-    sus result = number + 8
-    vibez.spill("Arithmetic result (42 + 8):");
-    vibez.spill(result);
-    
-    // Function call
-    test_function()
+let name = "CURSED";
+print("Language:", name);
+
+// Test conditionals
+if (z > 25) {
+    print("Z is greater than 25");
+} else {
+    print("Z is not greater than 25");
 }
 
-slay test_function() {
-    vibez.spill("Function calls work!");
-}
+print("Basic features test completed!");

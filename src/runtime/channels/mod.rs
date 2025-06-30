@@ -154,9 +154,11 @@ impl<T> ReceiveResult<T> {
 /// Legacy channel wrapper - redirects to new implementation
 #[deprecated(note = "Use the new Channel type from channel module")]
 pub struct LegacyChannel<T: Send + 'static> {
+    #[allow(deprecated)]
     inner: channel::Channel<T>,
 }
 
+#[allow(deprecated)]
 impl<T: Send + 'static> LegacyChannel<T> {
     /// Create a new unbuffered channel
     pub fn new() -> Self {
@@ -203,6 +205,7 @@ impl<T: Send + 'static> LegacyChannel<T> {
     }
 }
 
+#[allow(deprecated)]
 impl<T: Send + 'static> Default for LegacyChannel<T> {
     fn default() -> Self {
         Self::new()
@@ -212,9 +215,11 @@ impl<T: Send + 'static> Default for LegacyChannel<T> {
 /// Legacy channel sender handle - redirects to new implementation
 #[deprecated(note = "Use ChannelSender from channel module")]
 pub struct LegacyChannelSender<T: Send + 'static> {
+    #[allow(deprecated)]
     inner: channel::ChannelSender<T>,
 }
 
+#[allow(deprecated)]
 impl<T: Send + 'static> LegacyChannelSender<T> {
     pub fn new(inner: channel::ChannelSender<T>) -> Self {
         Self { inner }
@@ -228,9 +233,11 @@ impl<T: Send + 'static> LegacyChannelSender<T> {
 /// Legacy channel receiver handle - redirects to new implementation
 #[deprecated(note = "Use ChannelReceiver from channel module")]
 pub struct LegacyChannelReceiver<T: Send + 'static> {
+    #[allow(deprecated)]
     inner: channel::ChannelReceiver<T>,
 }
 
+#[allow(deprecated)]
 impl<T: Send + 'static> LegacyChannelReceiver<T> {
     pub fn new(inner: channel::ChannelReceiver<T>) -> Self {
         Self { inner }
@@ -247,6 +254,7 @@ impl<T: Send + 'static> LegacyChannelReceiver<T> {
 
 /// Legacy channel creation function - redirects to new implementation
 #[deprecated(note = "Use channel::channel() instead")]
+#[allow(deprecated)]
 pub fn legacy_channel<T: Send + 'static>() -> (LegacyChannelSender<T>, LegacyChannelReceiver<T>) {
     let (sender, receiver) = channel::channel();
     (LegacyChannelSender::new(sender), LegacyChannelReceiver::new(receiver))
@@ -254,6 +262,7 @@ pub fn legacy_channel<T: Send + 'static>() -> (LegacyChannelSender<T>, LegacyCha
 
 /// Legacy buffered channel creation function - redirects to new implementation
 #[deprecated(note = "Use channel::buffered_channel() instead")]
+#[allow(deprecated)]
 pub fn legacy_buffered_channel<T: Send + 'static>(capacity: usize) -> (LegacyChannelSender<T>, LegacyChannelReceiver<T>) {
     let (sender, receiver) = channel::buffered_channel(capacity);
     (LegacyChannelSender::new(sender), LegacyChannelReceiver::new(receiver))

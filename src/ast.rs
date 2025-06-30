@@ -77,11 +77,26 @@ pub struct MemberAccessExpression {
     pub property: String,
 }
 
+/// Visibility level for symbols
+#[derive(Debug, Clone, PartialEq)]
+pub enum Visibility {
+    Public,    // pub - accessible from other modules
+    Private,   // private (default) - only accessible within current module
+    Package,   // pkg - accessible within current package
+}
+
+impl Default for Visibility {
+    fn default() -> Self {
+        Visibility::Private
+    }
+}
+
 /// Let statement
 #[derive(Debug, Clone)]
 pub struct LetStatement {
     pub name: String,
     pub value: Expression,
+    pub visibility: Visibility,
 }
 
 /// Return statement
@@ -104,6 +119,8 @@ pub struct FunctionStatement {
     pub name: String,
     pub parameters: Vec<String>,
     pub body: Vec<Statement>,
+    pub return_type: Option<String>,
+    pub visibility: Visibility,
 }
 
 /// While statement

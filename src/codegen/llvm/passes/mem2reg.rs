@@ -80,53 +80,26 @@ impl<'ctx> Mem2RegPass<'ctx> {
         // 2. Not address-taken
         // 3. Not volatile
         
-        // get_users() doesn't exist in inkwell 0.4, stub for now
-        let users: Vec<inkwell::values::InstructionValue> = vec![]; // TODO: implement user traversal
-        for user in users {
-            // as_instruction() doesn't exist in inkwell 0.4, stub for now
-            if false { // TODO: proper instruction check
-                let instruction = user;
-                // Check instruction type
-                let opcode = instruction.get_opcode();
-                match opcode {
-                    inkwell::values::InstructionOpcode::Load => {
-                        // Load is OK
-                    },
-                    inkwell::values::InstructionOpcode::Store => {
-                        // Store is OK if storing TO the alloca, not the alloca itself
-                        // as_store() doesn't exist, check via opcode
-                if instruction.get_opcode() == InstructionOpcode::Store {
-                            // Simplified - cannot get pointer operand without proper store instruction
-                            let dest = *alloca; // placeholder
-                            if dest != *alloca {
-                                return Ok(false); // Address taken
-                            }
-                        }
-                    },
-                    _ => {
-                        // Any other use means address is taken
-                        return Ok(false);
-                    }
-                }
-            }
-        }
+        // In inkwell 0.4, we can work around missing get_users() by scanning all instructions
+        // This is a simplified heuristic approach
         
+        // For now return true for simple allocas - real implementation would analyze uses
         Ok(true)
     }
     
     fn insert_phi_nodes(&mut self, function: &FunctionValue<'ctx>) -> Result<()> {
         // Insert phi nodes at join points for promotable allocas
-        // This is a simplified implementation
+        // Simplified implementation - would use dominance frontier analysis
         
         let blocks = function.get_basic_blocks();
         
         for alloca in &self.promotable_allocas {
-            // Find blocks that need phi nodes (simplified - would use dominance frontier)
+            // Find blocks that need phi nodes
             for block in &blocks {
                 // Check if block has multiple predecessors
                 let predecessors = self.get_predecessors(block);
                 if predecessors.len() > 1 {
-                    // Insert phi node (placeholder - would create actual phi)
+                    // Mark for phi insertion
                     if let Some(phi_list) = self.phi_locations.get_mut(block) {
                         phi_list.push(*alloca);
                     } else {
@@ -140,39 +113,13 @@ impl<'ctx> Mem2RegPass<'ctx> {
     }
     
     fn get_predecessors(&self, _block: &BasicBlock<'ctx>) -> Vec<BasicBlock<'ctx>> {
-        // Get predecessor blocks (simplified implementation)
-        // In practice, this would use CFG analysis
+        // Simplified - real implementation would analyze CFG
         Vec::new()
     }
     
-    fn promote_allocas(&mut self, function: &FunctionValue<'ctx>) -> Result<()> {
-        // Replace loads and stores with register operations
-        // This is a placeholder - in practice would rewrite the IR
-        
-        for block in function.get_basic_blocks() {
-            for instruction in block.get_instructions() {
-                match instruction.get_opcode() {
-                    inkwell::values::InstructionOpcode::Load => {
-                        // as_load() doesn't exist, check via opcode
-                        if instruction.get_opcode() == InstructionOpcode::Load {
-                            // Simplified - cannot get pointer operand without proper load instruction
-                            // Placeholder check - in practice would analyze operands
-                            // Replace load with register value (placeholder)
-                        }
-                    },
-                    inkwell::values::InstructionOpcode::Store => {
-                        // as_store() doesn't exist, check via opcode
-                        if instruction.get_opcode() == InstructionOpcode::Store {
-                            // Simplified - cannot get pointer operand without proper store instruction
-                            // Placeholder check - in practice would analyze operands
-                            // Remove store, update register value (placeholder)
-                        }
-                    },
-                    _ => {}
-                }
-            }
-        }
-        
+    fn promote_allocas(&mut self, _function: &FunctionValue<'ctx>) -> Result<()> {
+        // Simplified implementation - real implementation would rewrite IR
+        // This would replace load/store operations with SSA values
         Ok(())
     }
 }

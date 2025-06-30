@@ -13,8 +13,8 @@ pub mod ast;
 pub mod lexer;
 pub mod preprocessor;
 pub mod parser;
-pub mod core;
-pub mod codegen;
+pub mod core; // Re-enabled for type system integration
+pub mod codegen; // Re-enabled for type system integration
 pub mod memory;
 pub mod runtime;
 pub mod tools;
@@ -28,6 +28,7 @@ pub mod common_types;
 // Newly enabled advanced modules
 pub mod types;
 pub mod crypto_pki_types;
+// pub mod stdlib; // Temporarily disabled due to syntax errors
 
 // Test modules  
 #[cfg(test)]
@@ -103,7 +104,7 @@ pub use optimization::{
 
 // OptimizationConfig is already re-exported above
 
-pub mod stdlib;
+// pub mod stdlib; // Temporarily disabled due to syntax errors
 
 // Re-export ByteFit for easy access
 // pub use stdlib::bytefit;
@@ -276,16 +277,17 @@ pub fn run_file_enhanced(
         // Set enhanced passes preference
         codegen.set_use_enhanced_passes(use_enhanced_passes);
         
-        // Enable comprehensive optimization
-        let preset = match optimization_config.level {
-            crate::optimization::config::OptimizationLevel::None => crate::codegen::llvm::OptimizationPreset::Development,
-            crate::optimization::config::OptimizationLevel::Aggressive => crate::codegen::llvm::OptimizationPreset::Release,
-            _ => crate::codegen::llvm::OptimizationPreset::Balanced,
-        };
-        codegen.enable_comprehensive_optimization(preset)?;
+        // Enable comprehensive optimization (temporarily disabled while fixing optimization system)
+        // TODO: Re-enable once optimization system is working
+        // let preset = match optimization_config.level {
+        //     crate::optimization::config::OptimizationLevel::None => crate::codegen::llvm::OptimizationConfig::dev_config(),
+        //     crate::optimization::config::OptimizationLevel::Aggressive => crate::codegen::llvm::OptimizationConfig::release_config(),
+        //     _ => crate::codegen::llvm::OptimizationConfig::default(),
+        // };
+        // codegen.enable_comprehensive_optimization(preset)?;
         
         // Apply comprehensive optimization to source before compilation
-        let optimized_source = codegen.apply_comprehensive_optimization(&source)?;
+        let optimized_source = source.clone(); // codegen.apply_comprehensive_optimization(&source)?;
         
         // Compile with automatic package resolution and optimization
         let _ir = codegen.compile_with_packages(&optimized_source, Some(std::path::Path::new(path))).await?;

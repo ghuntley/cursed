@@ -20,6 +20,13 @@ pub mod vibez;
 pub mod net;
 pub mod squish_core;
 
+// Additional stdlib modules
+pub mod template;
+pub mod bytefit;
+pub mod packages;
+pub mod database;
+pub mod process;
+
 // TODO: Enable these modules once they are implemented
 // pub mod prelude;
 // pub mod collections;

@@ -121,6 +121,12 @@ pub struct PerformanceMetrics {
     pub function_call_rate: f64,
     /// Memory allocation rate (bytes per second)
     pub allocation_rate: f64,
+    /// JIT compilation time
+    pub jit_compilation_time: Duration,
+    /// GC collection frequency
+    pub gc_collection_count: u64,
+    /// Peak memory usage
+    pub peak_memory_usage: usize,
 }
 
 /// Runtime error types
@@ -499,6 +505,9 @@ impl PerformanceMetrics {
             avg_allocation_time: Duration::from_micros(50),
             function_call_rate: 0.0,
             allocation_rate: 0.0,
+            jit_compilation_time: Duration::from_secs(0),
+            gc_collection_count: 0,
+            peak_memory_usage: 0,
         }
     }
 }

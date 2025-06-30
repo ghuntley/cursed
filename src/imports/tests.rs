@@ -5,6 +5,7 @@
 
 use super::*;
 use crate::ast::{ImportStatement, Program, Statement, FunctionStatement, Expression, Literal};
+use crate::imports::resolver::ImportConfig;
 use std::fs;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -25,6 +26,7 @@ fn create_test_program_with_imports(imports: Vec<ImportStatement>) -> Program {
                 parameters: vec![],
                 body: vec![],
                 return_type: None,
+                visibility: crate::ast::Visibility::Private,
             })
         ],
         imports,

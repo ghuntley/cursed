@@ -43,22 +43,16 @@ impl<'ctx> SroaPass<'ctx> {
     }
     
     fn find_aggregates(&mut self, function: &FunctionValue<'ctx>) -> Result<()> {
-        // Find alloca instructions that allocate aggregate types
+        // Find alloca instructions that allocate aggregate types  
         if let Some(entry_block) = function.get_first_basic_block() {
             for instruction in entry_block.get_instructions() {
                 // Check if instruction is an alloca via opcode
                 if instruction.get_opcode() == InstructionOpcode::Alloca {
                     let alloca = instruction.as_any_value_enum().into_pointer_value();
-                    // get_element_type() doesn't exist on PointerType in inkwell 0.4
-                    // Skip checking type for now
-                    let alloca_type = alloca.get_type(); // simplified
                     
-                    // Check if it's an aggregate type (struct, array)
-                    // Note: PointerType doesn't have is_struct_type/is_array_type in inkwell 0.4
-                    // Simplified check - assume all allocas are candidates for now
-                    if true { // TODO: proper type checking
-                        self.aggregates.push(alloca);
-                    }
+                    // Simplified - assume all allocas are candidates for now
+                    // Real implementation would check for struct/array types
+                    self.aggregates.push(alloca);
                 }
             }
         }
@@ -77,44 +71,12 @@ impl<'ctx> SroaPass<'ctx> {
         Ok(())
     }
     
-    fn can_replace_aggregate(&self, aggregate: &PointerValue<'ctx>) -> Result<bool> {
+    fn can_replace_aggregate(&self, _aggregate: &PointerValue<'ctx>) -> Result<bool> {
         // Check if aggregate is only accessed via GEP instructions
         // and the GEP indices are constants
         
-        // get_users() doesn't exist in inkwell 0.4, stub for now
-        let users: Vec<inkwell::values::InstructionValue> = vec![]; // TODO: implement user traversal
-        for user in users {
-            // as_instruction() doesn't exist in inkwell 0.4, stub for now
-            if false { // TODO: proper instruction check
-                let instruction = user;
-                match instruction.get_opcode() {
-                    inkwell::values::InstructionOpcode::GetElementPtr => {
-                        // GEP is OK if indices are constant
-                        if !self.has_constant_indices(&instruction) {
-                            return Ok(false);
-                        }
-                    },
-                    inkwell::values::InstructionOpcode::Load => {
-                        // Direct load of aggregate is OK
-                    },
-                    inkwell::values::InstructionOpcode::Store => {
-                        // Direct store to aggregate is OK
-                    },
-                    _ => {
-                        // Other uses prevent replacement
-                        return Ok(false);
-                    }
-                }
-            }
-        }
-        
+        // Simplified heuristic - in real implementation would analyze uses
         Ok(true)
-    }
-    
-    fn has_constant_indices(&self, _instruction: &InstructionValue<'ctx>) -> bool {
-        // Check if GEP instruction has all constant indices
-        // Simplified - in practice would check all operands
-        true
     }
     
     fn replace_aggregates(&mut self, function: &FunctionValue<'ctx>) -> Result<()> {
@@ -132,28 +94,16 @@ impl<'ctx> SroaPass<'ctx> {
     
     fn create_scalar_replacements(&mut self, aggregate: &PointerValue<'ctx>) -> Result<()> {
         // Create individual allocas for each field/element
-        // This is a placeholder - in practice would analyze the type structure
-        
-        // get_element_type() doesn't exist on PointerType in inkwell 0.4
-        // For now, return without creating replacements
+        // Simplified implementation
         
         let replacements = Vec::new();
         self.scalar_replacements.insert(*aggregate, replacements);
         Ok(())
     }
     
-    fn rewrite_aggregate_uses(&self, function: &FunctionValue<'ctx>) -> Result<()> {
+    fn rewrite_aggregate_uses(&self, _function: &FunctionValue<'ctx>) -> Result<()> {
         // Rewrite all uses of aggregates to use scalar replacements
-        // This is a placeholder - in practice would rewrite the IR
-        
-        for block in function.get_basic_blocks() {
-            for instruction in block.get_instructions() {
-                if let inkwell::values::InstructionOpcode::GetElementPtr = instruction.get_opcode() {
-                    // Rewrite GEP to access scalar replacement
-                }
-            }
-        }
-        
+        // Simplified placeholder
         Ok(())
     }
 }

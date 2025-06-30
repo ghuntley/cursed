@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use base64::prelude::*;
 
 /// Global package manager configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -378,7 +379,7 @@ impl RegistryConfig {
                 }
                 AuthType::Basic => {
                     let username = auth_config.username.as_deref().unwrap_or("");
-                    let credentials = base64::encode(&format!("{}:{}", username, auth_config.credentials));
+                    let credentials = base64::prelude::BASE64_STANDARD.encode(&format!("{}:{}", username, auth_config.credentials));
                     let auth_value = format!("Basic {}", credentials);
                     headers.insert(
                         reqwest::header::AUTHORIZATION,

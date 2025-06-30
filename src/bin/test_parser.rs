@@ -1,10 +1,26 @@
 use cursed::parser::new_parser;
 use cursed::lexer::Lexer;
+use std::env;
+use std::fs;
 
 fn main() {
-    println!("Testing CURSED language parser...");
+    let args: Vec<String> = env::args().collect();
     
-    let source = r#"
+    let source = if args.len() > 1 {
+        // Read from file
+        let filename = &args[1];
+        println!("Testing CURSED language parser with file: {}", filename);
+        match fs::read_to_string(filename) {
+            Ok(content) => content,
+            Err(e) => {
+                println!("Error reading file {}: {}", filename, e);
+                return;
+            }
+        }
+    } else {
+        // Use default demo
+        println!("Testing CURSED language parser...");
+        r#"
 vibe main
 
 facts greeting = "Hello from CURSED!"
@@ -18,13 +34,14 @@ slay main() {
     greet()
     yolo 0
 }
-"#;
+"#.to_string()
+    };
 
     println!("Source code:");
     println!("{}", source);
     println!("\nTesting lexer...");
     
-    let mut lexer = Lexer::new(source.to_string());
+    let mut lexer = Lexer::new(source.clone());
     match lexer.tokenize() {
         Ok(tokens) => {
             println!("Tokens generated: {}", tokens.len());
@@ -40,7 +57,7 @@ slay main() {
     
     println!("\nTesting parser...");
     
-    match new_parser(source) {
+    match new_parser(&source) {
         Ok(mut parser) => {
             match parser.parse_program() {
                 Ok(program) => {
@@ -51,6 +68,15 @@ slay main() {
                     
                     for (i, stmt) in program.statements.iter().enumerate() {
                         println!("  Statement {}: {:?}", i + 1, stmt);
+                    }
+                    
+                    // Show parser errors if any
+                    let errors = parser.errors();
+                    if !errors.is_empty() {
+                        println!("\nParser errors during parsing:");
+                        for error in errors {
+                            println!("  - {}", error);
+                        }
                     }
                 }
                 Err(e) => {

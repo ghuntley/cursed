@@ -294,7 +294,7 @@ impl DeadCodeResult {
 
 /// Result of DCE on a single function
 #[derive(Debug, Default)]
-struct FunctionDceResult {
+pub struct FunctionDceResult {
     pub instructions_eliminated: u32,
     pub iterations: u32,
 }
