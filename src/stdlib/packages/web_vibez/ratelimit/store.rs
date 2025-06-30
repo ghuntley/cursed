@@ -1,71 +1,110 @@
-//! Functional implementation for store
-
-use crate::error::CursedError;
-
-/// Result type for store operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// store operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+use super::{ClientState, RateLimitError, RateLimitResult};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::future::Future;
+use std::pin::Pin;
+/// Rate limit store trait  
+pub trait RateLimitStore: Send + Sync {
+    fn get_client_state(&self, client_id: &str) -> Pin<Box<dyn Future<Output = RateLimitResult<ClientState>> + Send + '_>>;
+    fn update_client_state(&self, client_id: &str, state: &ClientState) -> Pin<Box<dyn Future<Output = RateLimitResult<()>> + Send + '_>>;
+    fn reset_client(&self, client_id: &str) -> Pin<Box<dyn Future<Output = RateLimitResult<()>> + Send + '_>>;
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
+/// In-memory store implementation
+pub struct InMemoryStore {
+    data: Arc<Mutex<HashMap<String, ClientState>>>,
+}
+
+impl InMemoryStore {
     pub fn new() -> Self {
         Self {
-            enabled: true,
+            data: Arc::new(Mutex::new(HashMap::new())),
         }
-    }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: store, Enabled: {}", self.enabled)
     }
 }
 
-impl Default for ModuleHandler {
+impl Default for InMemoryStore {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Initialize store processing
-pub fn init_store() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+impl RateLimitStore for InMemoryStore {
+    fn get_client_state(&self, client_id: &str) -> Pin<Box<dyn Future<Output = RateLimitResult<ClientState>> + Send + '_>> {
+        let data = self.data.clone();
+        let client_id = client_id.to_string();
+        Box::pin(async move {
+            let data = data.lock().unwrap();
+            Ok(data.get(&client_id).cloned().unwrap_or_else(ClientState::new))
+        })
     }
-    println!("⚙️  Module processing (store) initialized");
-    Ok(())
+    
+    fn update_client_state(&self, client_id: &str, state: &ClientState) -> Pin<Box<dyn Future<Output = RateLimitResult<()>> + Send + '_>> {
+        let data = self.data.clone();
+        let client_id = client_id.to_string();
+        let state = state.clone();
+        Box::pin(async move {
+            let mut data = data.lock().unwrap();
+            data.insert(client_id, state);
+            Ok(())
+        })
+    }
+    
+    fn reset_client(&self, client_id: &str) -> Pin<Box<dyn Future<Output = RateLimitResult<()>> + Send + '_>> {
+        let data = self.data.clone();
+        let client_id = client_id.to_string();
+        Box::pin(async move {
+            let mut data = data.lock().unwrap();
+            data.remove(&client_id);
+            Ok(())
+        })
+    }
 }
 
-/// Test store functionality
-pub fn test_store() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+/// Redis store implementation (placeholder)
+pub struct RedisStore;
+
+impl RedisStore {
+    pub fn new() -> Self {
+        Self
     }
-    Ok(())
+}
+
+impl RateLimitStore for RedisStore {
+    fn get_client_state(&self, _client_id: &str) -> Pin<Box<dyn Future<Output = RateLimitResult<ClientState>> + Send + '_>> {
+        Box::pin(async move {
+            // Placeholder implementation
+            Ok(ClientState::new())
+        })
+    }
+    
+    fn update_client_state(&self, _client_id: &str, _state: &ClientState) -> Pin<Box<dyn Future<Output = RateLimitResult<()>> + Send + '_>> {
+        Box::pin(async move {
+            // Placeholder implementation
+            Ok(())
+        })
+    }
+    
+    fn reset_client(&self, _client_id: &str) -> Pin<Box<dyn Future<Output = RateLimitResult<()>> + Send + '_>> {
+        Box::pin(async move {
+            // Placeholder implementation
+            Ok(())
+        })
+    }
+}
+
+/// Store backend enumeration
+pub enum StoreBackend {
+    InMemory(InMemoryStore),
+    Redis(RedisStore),
+}
+
+impl StoreBackend {
+    pub fn in_memory() -> Self {
+        StoreBackend::InMemory(InMemoryStore::new())
+    }
+    
+    pub fn redis() -> Self {
+        StoreBackend::Redis(RedisStore::new())
+    }
 }

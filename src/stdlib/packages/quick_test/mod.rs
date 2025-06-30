@@ -24,62 +24,145 @@ use rand_chacha::ChaCha20Rng;
 
 // use crate::stdlib::value::Value;
 
+// Placeholder Value type for compilation
+#[derive(Debug, Clone, PartialEq)]
+pub enum Value {
+    Null,
+    Bool(bool),
+    Integer(i64),
+    Number(f64),
+    String(String),
+    Array(Vec<Value>),
+}
+
 /// fr fr Result type for quick test operations
-pub type QuickTestcrate::error::Result<T> = std::result::Result<T>;
+pub type QuickTestResult<T> = std::result::Result<T, CursedError>;
 
 /// fr fr Configuration for how a test is run
 #[derive(Debug, Clone)]
 pub struct Config {
     /// Maximum number of test iterations
+    pub max_count: i32,
     /// Maximum size of generated values
+    pub max_size: i32,
     /// Minimum size of generated values
-    /// Random source for testing (using internal RNG if None)
-    /// Values generated and tested (populated during execution)
-    /// Whether the test should fail
-    /// Maximum failures before stopping
-    /// Maximum number of shrink iterations
-    /// Strategy for value shrinking
-    /// Maximum time spent shrinking
-    /// Do not log failure details
-    /// Preserve output during shrinking
+    pub min_size: i32,
     /// Random seed for reproducibility
+    pub seed: Option<u64>,
+    /// Values generated and tested (populated during execution)
+    pub values: Vec<Value>,
+    /// Whether the test should fail
+    pub expect_failure: bool,
+    /// Maximum failures before stopping
+    pub max_failure_count: i32,
+    /// Maximum number of shrink iterations
+    pub max_shrink_count: i32,
+    /// Strategy for value shrinking
+    pub shrink_strategy: ShrinkStrategy,
+    /// Maximum time spent shrinking
+    pub max_shrink_time: Duration,
+    /// Do not log failure details
+    pub quiet: bool,
+    /// Preserve output during shrinking
+    pub preserve_output: bool,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
+            max_count: 100,
+            max_size: 100,
+            min_size: 0,
+            seed: None,
+            values: Vec::new(),
+            expect_failure: false,
+            max_failure_count: 1,
+            max_shrink_count: 1000,
+            shrink_strategy: ShrinkStrategy::Bounded,
+            max_shrink_time: Duration::from_secs(30),
+            quiet: false,
+            preserve_output: false,
         }
     }
+}
+
 /// fr fr Strategy for value shrinking
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShrinkStrategy {
+    NoShrink,
+    Bounded,
+    Unbounded,
+}
+
 impl fmt::Display for ShrinkStrategy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ShrinkStrategy::NoShrink => write!(f, "NoShrink"),
+            ShrinkStrategy::Bounded => write!(f, "Bounded"),
+            ShrinkStrategy::Unbounded => write!(f, "Unbounded"),
         }
     }
+}
+
 /// fr fr Result of a test run
 #[derive(Debug, Clone)]
 pub struct Result {
     /// Did the test pass?
+    pub passed: bool,
     /// Number of iterations performed
+    pub count: i32,
     /// Iteration that caused failure
+    pub failure_iteration: Option<i32>,
     /// Input that caused failure
+    pub failure_input: Option<Value>,
     /// Shrunk version of input that still fails
+    pub shrunk_input: Option<Value>,
     /// Number of shrink iterations
+    pub shrink_count: i32,
     /// Total time spent testing
+    pub runtime: Duration,
     /// Random seed used for reproducibility
+    pub seed: u64,
+}
+
 impl Result {
     /// slay Create a passing test result
     pub fn pass(count: i32, runtime: Duration, seed: u64) -> Self {
         Self {
+            passed: true,
+            count,
+            failure_iteration: None,
+            failure_input: None,
+            shrunk_input: None,
+            shrink_count: 0,
+            runtime,
+            seed,
         }
     }
 
     /// slay Create a failing test result
     pub fn fail(
+        count: i32,
+        failure_iteration: i32,
+        failure_input: Value,
+        shrunk_input: Option<Value>,
+        shrink_count: i32,
+        runtime: Duration,
+        seed: u64,
     ) -> Self {
         Self {
+            passed: false,
+            count,
+            failure_iteration: Some(failure_iteration),
+            failure_input: Some(failure_input),
+            shrunk_input,
+            shrink_count,
+            runtime,
+            seed,
         }
     }
+}
+
 /// fr fr Interface for generating test data
 pub trait Generator: Send + Sync {
     /// Generate a random value
@@ -95,16 +178,24 @@ pub trait Generator: Send + Sync {
 /// fr fr Function type that implements Generator
 pub struct GeneratorFunc<F>
 where
+    F: Fn(&mut ChaCha20Rng, i32) -> Value + Send + Sync,
 {
+    func: F,
+}
+
 impl<F> GeneratorFunc<F>
 where
+    F: Fn(&mut ChaCha20Rng, i32) -> Value + Send + Sync,
 {
     /// slay Create a new generator from a function
     pub fn new(func: F) -> Self {
         Self { func }
     }
+}
+
 impl<F> Generator for GeneratorFunc<F>
 where
+    F: Fn(&mut ChaCha20Rng, i32) -> Value + Send + Sync,
 {
     fn generate(&self, rng: &mut ChaCha20Rng, size: i32) -> Value {
         (self.func)(rng, size)
@@ -113,11 +204,16 @@ where
 
 /// fr fr Generator that always returns the same value
 pub struct ValueGenerator {
+    value: Value,
+}
+
 impl ValueGenerator {
     /// slay Create a new value generator
     pub fn new(value: Value) -> Self {
         Self { value }
     }
+}
+
 impl Generator for ValueGenerator {
     fn generate(&self, _rng: &mut ChaCha20Rng, _size: i32) -> Value {
         self.value.clone()
@@ -126,18 +222,27 @@ impl Generator for ValueGenerator {
 
 /// fr fr Generator for integers in a range
 pub struct IntRangeGenerator {
+    min: i64,
+    max: i64,
+}
+
 impl IntRangeGenerator {
     /// slay Create a new integer range generator
     pub fn new(min: i64, max: i64) -> Self {
         Self { min, max }
     }
+}
+
 impl Generator for IntRangeGenerator {
     fn generate(&self, rng: &mut ChaCha20Rng, _size: i32) -> Value {
         let value = if self.min == self.max {
             self.min
         } else {
             rng.gen_range(self.min..=self.max)
+        };
         Value::Integer(value)
+    }
+
     fn shrink(&self, value: &Value) -> Vec<Value> {
         if let Value::Integer(n) = value {
             let mut shrunk = Vec::new();
@@ -171,20 +276,31 @@ impl Generator for IntRangeGenerator {
             Vec::new()
         }
     }
+}
+
 /// fr fr Generator for floating point numbers in a range
 pub struct FloatRangeGenerator {
+    min: f64,
+    max: f64,
+}
+
 impl FloatRangeGenerator {
     /// slay Create a new float range generator
     pub fn new(min: f64, max: f64) -> Self {
         Self { min, max }
     }
+}
+
 impl Generator for FloatRangeGenerator {
     fn generate(&self, rng: &mut ChaCha20Rng, _size: i32) -> Value {
         let value = if (self.max - self.min).abs() < f64::EPSILON {
             self.min
         } else {
             rng.gen_range(self.min..=self.max)
+        };
         Value::Number(value)
+    }
+
     fn shrink(&self, value: &Value) -> Vec<Value> {
         if let Value::Number(n) = value {
             let mut shrunk = Vec::new();
@@ -218,13 +334,22 @@ impl Generator for FloatRangeGenerator {
             Vec::new()
         }
     }
+}
+
 /// fr fr Generator for strings
 pub struct StringGenerator {
+    min_len: usize,
+    max_len: usize,
+    char_gen: Box<dyn Generator>,
+}
+
 impl StringGenerator {
     /// slay Create a new string generator
     pub fn new(min_len: usize, max_len: usize, char_gen: Box<dyn Generator>) -> Self {
         Self { min_len, max_len, char_gen }
     }
+}
+
 impl Generator for StringGenerator {
     fn generate(&self, rng: &mut ChaCha20Rng, size: i32) -> Value {
         let len = if self.min_len == self.max_len {
@@ -233,6 +358,7 @@ impl Generator for StringGenerator {
             let max_len = std::cmp::min(self.max_len, size as usize);
             let min_len = std::cmp::min(self.min_len, max_len);
             rng.gen_range(min_len..=max_len)
+        };
         
         let mut chars = Vec::new();
         for _ in 0..len {
@@ -242,7 +368,10 @@ impl Generator for StringGenerator {
                     chars.push(c);
                 }
             }
+        }
         Value::String(chars.into_iter().collect())
+    }
+
     fn shrink(&self, value: &Value) -> Vec<Value> {
         if let Value::String(s) = value {
             let mut shrunk = Vec::new();
@@ -250,6 +379,8 @@ impl Generator for StringGenerator {
             // Empty string
             if !s.is_empty() && self.min_len == 0 {
                 shrunk.push(Value::String(String::new()));
+            }
+            
             // Shorter strings
             let len = s.len();
             if len > self.min_len {
@@ -270,18 +401,29 @@ impl Generator for StringGenerator {
                         shrunk.push(Value::String(chars.into_iter().collect()));
                     }
                 }
+            }
+            
             shrunk
         } else {
             Vec::new()
         }
     }
+}
+
 /// fr fr Generator for slices/arrays
 pub struct SliceGenerator {
+    min_len: usize,
+    max_len: usize,
+    elem_gen: Box<dyn Generator>,
+}
+
 impl SliceGenerator {
     /// slay Create a new slice generator
     pub fn new(min_len: usize, max_len: usize, elem_gen: Box<dyn Generator>) -> Self {
         Self { min_len, max_len, elem_gen }
     }
+}
+
 impl Generator for SliceGenerator {
     fn generate(&self, rng: &mut ChaCha20Rng, size: i32) -> Value {
         let len = if self.min_len == self.max_len {
@@ -290,11 +432,15 @@ impl Generator for SliceGenerator {
             let max_len = std::cmp::min(self.max_len, size as usize);
             let min_len = std::cmp::min(self.min_len, max_len);
             rng.gen_range(min_len..=max_len)
+        };
         
         let mut elements = Vec::new();
         for _ in 0..len {
             elements.push(self.elem_gen.generate(rng, size));
+        }
         Value::Array(elements)
+    }
+
     fn shrink(&self, value: &Value) -> Vec<Value> {
         if let Value::Array(arr) = value {
             let mut shrunk = Vec::new();
@@ -302,6 +448,8 @@ impl Generator for SliceGenerator {
             // Empty array
             if !arr.is_empty() && self.min_len == 0 {
                 shrunk.push(Value::Array(Vec::new()));
+            }
+            
             let len = arr.len();
             if len > self.min_len {
                 // Try half length
@@ -319,6 +467,8 @@ impl Generator for SliceGenerator {
                         shrunk.push(Value::Array(arr.iter().take(len - 1).cloned().collect()));
                     }
                 }
+            }
+            
             // Try shrinking individual elements
             for (i, elem) in arr.iter().enumerate() {
                 let elem_shrunk = self.elem_gen.shrink(elem);
@@ -334,19 +484,29 @@ impl Generator for SliceGenerator {
             Vec::new()
         }
     }
+}
+
 /// fr fr Generator that chooses from multiple generators  
 pub struct AnyOfGenerator {
+    generators: Vec<Box<dyn Generator>>,
+}
+
 impl AnyOfGenerator {
     /// slay Create a new any-of generator
     pub fn new(generators: Vec<Box<dyn Generator>>) -> Self {
         Self { generators }
     }
+}
+
 impl Generator for AnyOfGenerator {
     fn generate(&self, rng: &mut ChaCha20Rng, size: i32) -> Value {
         if self.generators.is_empty() {
             return Value::Null;
+        }
         let idx = rng.gen_range(0..self.generators.len());
         self.generators[idx].generate(rng, size)
+    }
+
     fn shrink(&self, value: &Value) -> Vec<Value> {
         // Try shrinking with each generator that could have produced this value
         let mut shrunk = Vec::new();
@@ -360,17 +520,25 @@ impl Generator for AnyOfGenerator {
 
 /// fr fr Generator that chooses from fixed values
 pub struct OneOfGenerator {
+    values: Vec<Value>,
+}
+
 impl OneOfGenerator {
     /// slay Create a new one-of generator
     pub fn new(values: Vec<Value>) -> Self {
         Self { values }
     }
+}
+
 impl Generator for OneOfGenerator {
     fn generate(&self, rng: &mut ChaCha20Rng, _size: i32) -> Value {
         if self.values.is_empty() {
             return Value::Null;
+        }
         let idx = rng.gen_range(0..self.values.len());
         self.values[idx].clone()
+    }
+
     fn shrink(&self, value: &Value) -> Vec<Value> {
         // For one-of generators, shrinking means trying other values in the list
         // We'll return the first few values that are different from the current one
@@ -387,6 +555,7 @@ impl Generator for OneOfGenerator {
 /// fr fr Run a single test function with the given configuration
 pub fn check<F>(f: F, config: Option<Config>) -> QuickTestResult<Result>
 where
+    F: Fn(Value) -> bool + Send + Sync,
 {
     let mut config = config.unwrap_or_default();
     let seed = config.seed.unwrap_or_else(|| rand::random());
@@ -396,7 +565,7 @@ where
     
     for i in 0..config.max_count {
         // Generate test input (for now, using a simple integer generator)
-        let size = rng.gen_range(config.min_size..=config.max_size);
+        let _size = rng.gen_range(config.min_size..=config.max_size);
         let input = Value::Integer(rng.gen_range(-1000..=1000));
         
         config.values.push(input.clone());
@@ -413,18 +582,32 @@ where
                 shrink_value(&f, &input, &config)?
             } else {
                 (None, 0)
+            };
             
             return Ok(Result::fail(
+                i,
+                i,
+                input,
+                shrunk_input,
+                shrink_count,
+                runtime,
+                seed,
             ));
         }
     }
     
     let runtime = start_time.elapsed();
     Ok(Result::pass(config.max_count, runtime, seed))
+}
+
 /// fr fr Test a property for many random values using a specific generator
 pub fn check_with_generator<F>(
+    f: F,
+    generator: &dyn Generator,
+    config: Option<Config>,
 ) -> QuickTestResult<Result>
 where
+    F: Fn(Value) -> bool + Send + Sync,
 {
     let mut config = config.unwrap_or_default();
     let seed = config.seed.unwrap_or_else(|| rand::random());
@@ -447,25 +630,38 @@ where
             
             // Try to shrink the failing input
             let (shrunk_input, shrink_count) = if config.shrink_strategy != ShrinkStrategy::NoShrink {
-                shrink_value_with_generator(&f, &input, &generator, &config)?
+                shrink_value_with_generator(&f, &input, generator, &config)?
             } else {
                 (None, 0)
+            };
             
             return Ok(Result::fail(
+                i,
+                i,
+                input,
+                shrunk_input,
+                shrink_count,
+                runtime,
+                seed,
             ));
         }
     }
     
     let runtime = start_time.elapsed();
     Ok(Result::pass(config.max_count, runtime, seed))
+}
+
 /// fr fr Test a property that should always be true
 pub fn check_property<F>(prop: F) -> bool
 where
+    F: Fn(Value) -> bool + Send + Sync,
 {
     let config = Config::default();
     let result = check(prop, Some(config));
     
     match result {
+        Ok(res) => res.passed,
+        Err(_) => false,
     }
 }
 
@@ -473,20 +669,31 @@ where
 pub fn generate(size: i32, gen: Box<dyn Generator>) -> Value {
     let mut rng = ChaCha20Rng::from_entropy();
     gen.generate(&mut rng, size)
+}
+
 /// fr fr Value creates a generator that always returns the given value
 pub fn value(val: Value) -> Box<dyn Generator> {
     Box::new(ValueGenerator::new(val))
+}
+
 /// fr fr Function to shrink a failing case
 pub fn shrink<F>(f: F, input: Value, config: Option<Config>) -> QuickTestResult<Value>
 where
+    F: Fn(Value) -> bool + Send + Sync,
 {
     let config = config.unwrap_or_default();
     let (shrunk, _count) = shrink_value(&f, &input, &config)?;
     Ok(shrunk.unwrap_or(input))
+}
+
 /// fr fr Internal shrinking function
 fn shrink_value<F>(
+    f: &F,
+    input: &Value,
+    config: &Config,
 ) -> QuickTestResult<(Option<Value>, i32)>
 where
+    F: Fn(Value) -> bool + Send + Sync,
 {
     // Simple shrinking implementation - try to shrink integers towards zero
     if let Value::Integer(n) = input {
@@ -496,6 +703,8 @@ where
         while shrink_count < config.max_shrink_count {
             let candidates = vec![
                 current / 2,
+                current - 1,
+                0,
             ];
             
             let mut found_smaller = false;
@@ -509,6 +718,8 @@ where
                         break;
                     }
                 }
+            }
+            
             if !found_smaller {
                 break;
             }
@@ -520,10 +731,17 @@ where
     }
     
     Ok((None, 0))
+}
+
 /// fr fr Internal shrinking function with generator
 fn shrink_value_with_generator<F>(
+    f: &F,
+    input: &Value,
+    generator: &dyn Generator,
+    config: &Config,
 ) -> QuickTestResult<(Option<Value>, i32)>
 where
+    F: Fn(Value) -> bool + Send + Sync,
 {
     let mut current = input.clone();
     let mut shrink_count = 0;
@@ -534,6 +752,8 @@ where
         
         if candidates.is_empty() {
             break;
+        }
+        
         let mut found_smaller = false;
         for candidate in candidates {
             if !f(candidate.clone()) {
@@ -561,63 +781,103 @@ where
 /// fr fr Generate 8-bit integers
 pub fn int8() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(i8::MIN as i64, i8::MAX as i64))
+}
+
 /// fr fr Generate 8-bit integers in range
 pub fn int8_range(min: i8, max: i8) -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(min as i64, max as i64))
+}
+
 /// fr fr Generate 16-bit integers
 pub fn int16() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(i16::MIN as i64, i16::MAX as i64))
+}
+
 /// fr fr Generate 16-bit integers in range
 pub fn int16_range(min: i16, max: i16) -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(min as i64, max as i64))
+}
+
 /// fr fr Generate 32-bit integers
 pub fn int32() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(i32::MIN as i64, i32::MAX as i64))
+}
+
 /// fr fr Generate 32-bit integers in range
 pub fn int32_range(min: i32, max: i32) -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(min as i64, max as i64))
+}
+
 /// fr fr Generate 64-bit integers
 pub fn int64() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(i64::MIN, i64::MAX))
+}
+
 /// fr fr Generate 64-bit integers in range
 pub fn int64_range(min: i64, max: i64) -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(min, max))
+}
+
 /// fr fr Generate native integers
 pub fn int() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(-1000, 1000)) // Reasonable default range
+}
+
 /// fr fr Generate native integers in range
 pub fn int_range(min: i32, max: i32) -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(min as i64, max as i64))
+}
+
 /// fr fr Generate unsigned 8-bit integers
 pub fn uint8() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(0, u8::MAX as i64))
+}
+
 /// fr fr Generate unsigned 16-bit integers
 pub fn uint16() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(0, u16::MAX as i64))
+}
+
 /// fr fr Generate unsigned 32-bit integers
 pub fn uint32() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(0, u32::MAX as i64))
+}
+
 /// fr fr Generate unsigned 64-bit integers (limited to i64::MAX for simplicity)
 pub fn uint64() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(0, i64::MAX))
+}
+
 /// fr fr Generate unsigned native integers
 pub fn uint() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(0, 1000)) // Reasonable default range
+}
+
 /// fr fr Generate 32-bit floating point numbers
 pub fn float32() -> Box<dyn Generator> {
     Box::new(FloatRangeGenerator::new(-1000.0, 1000.0))
+}
+
 /// fr fr Generate 32-bit floating point numbers in range
 pub fn float32_range(min: f32, max: f32) -> Box<dyn Generator> {
     Box::new(FloatRangeGenerator::new(min as f64, max as f64))
+}
+
 /// fr fr Generate 64-bit floating point numbers
 pub fn float64() -> Box<dyn Generator> {
     Box::new(FloatRangeGenerator::new(-1000.0, 1000.0))
+}
+
 /// fr fr Generate 64-bit floating point numbers in range
 pub fn float64_range(min: f64, max: f64) -> Box<dyn Generator> {
     Box::new(FloatRangeGenerator::new(min, max))
+}
+
 /// fr fr Generate ASCII characters
 pub fn ascii() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(32, 126)) // Printable ASCII
+}
+
 /// fr fr Generate alphanumeric characters
 pub fn alphanumeric() -> Box<dyn Generator> {
     Box::new(GeneratorFunc::new(|rng, _size| {
@@ -625,58 +885,88 @@ pub fn alphanumeric() -> Box<dyn Generator> {
         let idx = rng.gen_range(0..chars.len());
         Value::Integer(chars[idx] as i64)
     }))
+}
+
 /// fr fr Generate strings
 pub fn string() -> Box<dyn Generator> {
     Box::new(StringGenerator::new(0, 20, ascii()))
+}
+
 /// fr fr Generate strings with specific character generator
 pub fn string_of(char_gen: Box<dyn Generator>) -> Box<dyn Generator> {
     Box::new(StringGenerator::new(0, 20, char_gen))
+}
+
 /// fr fr Generate strings with specific length range and character generator
 pub fn string_of_n(min_len: usize, max_len: usize, char_gen: Box<dyn Generator>) -> Box<dyn Generator> {
     Box::new(StringGenerator::new(min_len, max_len, char_gen))
+}
+
 /// fr fr Generate slices/arrays
 pub fn slice_of(elem_gen: Box<dyn Generator>) -> Box<dyn Generator> {
     Box::new(SliceGenerator::new(0, 10, elem_gen))
+}
+
 /// fr fr Generate slices/arrays with specific length range
 pub fn slice_of_n(min_len: usize, max_len: usize, elem_gen: Box<dyn Generator>) -> Box<dyn Generator> {
     Box::new(SliceGenerator::new(min_len, max_len, elem_gen))
+}
+
 /// fr fr Generate boolean values
 pub fn boolean() -> Box<dyn Generator> {
     Box::new(GeneratorFunc::new(|rng, _size| {
         Value::Bool(rng.gen())
     }))
+}
+
 /// fr fr Generate byte values
 pub fn byte() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(0, 255))
+}
+
 /// fr fr Generate rune values
 pub fn rune() -> Box<dyn Generator> {
     Box::new(IntRangeGenerator::new(0, 0x10FFFF)) // Valid Unicode range
+}
+
 /// fr fr Choose from multiple generators
 pub fn any_of(generators: Vec<Box<dyn Generator>>) -> Box<dyn Generator> {
     Box::new(AnyOfGenerator::new(generators))
+}
+
 /// fr fr Choose from specific values
 pub fn one_of(values: Vec<Value>) -> Box<dyn Generator> {
     Box::new(OneOfGenerator::new(values))
+}
+
 /// fr fr Advanced features for complex testing scenarios
 
 /// fr fr Custom shrinker function type
 pub type ShrinkerFunc<T> = Box<dyn Fn(T) -> Vec<T> + Send + Sync>;
 
 /// fr fr Weighted generator choice
-#[derive(Clone)]
 pub struct WeightedGenerator {
+    generators: Vec<(u32, Box<dyn Generator>)>,
+}
+
 impl WeightedGenerator {
     /// slay Create a new weighted generator
     pub fn new(generators: Vec<(u32, Box<dyn Generator>)>) -> Self {
         Self { generators }
     }
+}
+
 impl Generator for WeightedGenerator {
     fn generate(&self, rng: &mut ChaCha20Rng, size: i32) -> Value {
         if self.generators.is_empty() {
             return Value::Null;
+        }
+        
         let total_weight: u32 = self.generators.iter().map(|(w, _)| *w).sum();
         if total_weight == 0 {
             return Value::Null;
+        }
+        
         let mut target = rng.gen_range(0..total_weight);
         
         for (weight, gen) in &self.generators {
@@ -684,6 +974,8 @@ impl Generator for WeightedGenerator {
                 return gen.generate(rng, size);
             }
             target -= weight;
+        }
+        
         // Fallback to first generator
         self.generators[0].1.generate(rng, size)
     }
@@ -692,28 +984,58 @@ impl Generator for WeightedGenerator {
 /// fr fr Create a weighted generator from weight-generator pairs
 pub fn weighted(generators: Vec<(u32, Box<dyn Generator>)>) -> Box<dyn Generator> {
     Box::new(WeightedGenerator::new(generators))
+}
+
 /// fr fr State machine for stateful testing
 pub struct StateMachine<S> {
+    initial_state: Box<dyn Fn() -> S + Send + Sync>,
+    actions: Vec<StateMachineAction<S>>,
+}
+
 /// fr fr Action for state machine testing
 pub struct StateMachineAction<S> {
+    name: String,
+    precondition: Box<dyn Fn(&S) -> bool + Send + Sync>,
+    action: Box<dyn Fn(&mut S) + Send + Sync>,
+    invariant: Box<dyn Fn(&S) -> bool + Send + Sync>,
+}
+
 impl<S> StateMachine<S>
 where
+    S: Clone + Send + Sync + 'static,
 {
     /// slay Create a new state machine
     pub fn new<F>(initial_state: F) -> Self
     where
+        F: Fn() -> S + Send + Sync + 'static,
     {
         Self {
+            initial_state: Box::new(initial_state),
+            actions: Vec::new(),
         }
     }
     
     /// slay Add an action to the state machine
     pub fn add_action<A, P, I>(
+        &mut self,
+        name: String,
+        precondition: P,
+        action: A,
+        invariant: I,
     )
     where
+        A: Fn(&mut S) + Send + Sync + 'static,
+        P: Fn(&S) -> bool + Send + Sync + 'static,
+        I: Fn(&S) -> bool + Send + Sync + 'static,
     {
         self.actions.push(StateMachineAction {
+            name,
+            precondition: Box::new(precondition),
+            action: Box::new(action),
+            invariant: Box::new(invariant),
         });
+    }
+    
     /// slay Run the state machine
     pub fn run(&self, config: Option<Config>) -> QuickTestResult<Result> {
         let config = config.unwrap_or_default();
@@ -735,6 +1057,8 @@ where
                 
                 if applicable.is_empty() {
                     break;
+                }
+                
                 // Choose random action
                 let action_idx = rng.gen_range(0..applicable.len());
                 let chosen_action = applicable[action_idx];
@@ -751,9 +1075,18 @@ where
                     );
                     
                     return Ok(Result::fail(
+                        i,
+                        i,
+                        input,
+                        None,
+                        0,
+                        runtime,
+                        seed,
                     ));
                 }
             }
+        }
+        
         let runtime = start_time.elapsed();
         Ok(Result::pass(config.max_count, runtime, seed))
     }
@@ -762,10 +1095,18 @@ where
 /// fr fr Create a new state machine
 pub fn new_state_machine<S, F>(initial_state: F) -> StateMachine<S>
 where
+    S: Clone + Send + Sync + 'static,
+    F: Fn() -> S + Send + Sync + 'static,
 {
     StateMachine::new(initial_state)
+}
+
 /// fr fr Replay configuration for reproducing test failures
 pub struct ReplayConfig {
+    seed: u64,
+    failed_value: Value,
+}
+
 impl ReplayConfig {
     /// slay Create a replay configuration
     pub fn new(seed: u64, failed_value: Value) -> Self {
@@ -775,9 +1116,13 @@ impl ReplayConfig {
     /// slay Convert to regular config for replay
     pub fn to_config(&self) -> Config {
         Config {
+            seed: Some(self.seed),
             ..Default::default()
         }
     }
+}
+
 /// fr fr Create replay configuration from test result
 pub fn replay_config(seed: u64, failed_value: Value) -> ReplayConfig {
     ReplayConfig::new(seed, failed_value)
+}

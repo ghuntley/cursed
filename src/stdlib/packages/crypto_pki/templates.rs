@@ -84,3 +84,21 @@ pub fn test_templates() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Template specific types
+#[derive(Debug, Clone)]
+pub enum TemplateError {
+    InvalidTemplate,
+    ProcessingFailed,
+    ValidationError,
+}
+
+pub type TemplateResult<T> = Result<T, CursedError>;
+
+pub fn create_client_template() -> TemplateResult<String> {
+    Ok("client_template".to_string())
+}
+
+pub fn create_ca_template() -> TemplateResult<String> {
+    Ok("ca_template".to_string())
+}

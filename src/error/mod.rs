@@ -17,6 +17,10 @@ pub enum CursedError {
     Parse(String),
     InvalidOptimizationLevel(String),
     OptimizationError(String),
+    UnsupportedAlgorithm(String),
+    ValidationError(String),
+    RandomGenerationFailed(String),
+    InternalError(String),
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +54,10 @@ impl std::fmt::Display for CursedError {
             CursedError::Parse(msg) => write!(f, "Parse error: {}", msg),
             CursedError::InvalidOptimizationLevel(msg) => write!(f, "Invalid optimization level: {}", msg),
             CursedError::OptimizationError(msg) => write!(f, "Optimization error: {}", msg),
+            CursedError::UnsupportedAlgorithm(msg) => write!(f, "Unsupported algorithm: {}", msg),
+            CursedError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
+            CursedError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
+            CursedError::InternalError(msg) => write!(f, "Internal error: {}", msg),
         }
     }
 }
@@ -62,6 +70,23 @@ pub type Result<T> = std::result::Result<T, CursedError>;
 impl CursedError {
     pub fn syntax_error(msg: &str) -> Self {
         CursedError::SyntaxError(msg.to_string())
+    }
+
+    /// Random generation failed error
+    pub fn random_generation_failed(msg: &str) -> Self {
+        CursedError::RuntimeError(format!("Random generation failed: {}", msg))
+    }
+    
+
+    
+    /// Internal error
+    pub fn internal_error(msg: &str) -> Self {
+        CursedError::RuntimeError(format!("Internal error: {}", msg))
+    }
+    
+    /// Unsupported algorithm error  
+    pub fn unsupported_algorithm(algorithm: &str) -> Self {
+        CursedError::RuntimeError(format!("Unsupported algorithm: {}", algorithm))
     }
     
     pub fn type_error(msg: &str) -> Self {
@@ -86,6 +111,10 @@ impl CursedError {
     
     pub fn parse_error(msg: &str) -> Self {
         CursedError::Parse(msg.to_string())
+    }
+    
+    pub fn validation_error(msg: &str) -> Self {
+        CursedError::ValidationError(msg.to_string())
     }
 }
 

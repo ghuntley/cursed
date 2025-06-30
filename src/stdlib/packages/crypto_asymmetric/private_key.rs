@@ -84,3 +84,34 @@ pub fn test_private_key() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// Private Key specific types
+#[derive(Debug, Clone)]
+pub struct PrivateKeyEngine {
+    pub key_type: PrivateKeyType,
+}
+
+#[derive(Debug, Clone)]
+pub enum PrivateKeyType {
+    RSA,
+    ECC,
+    Ed25519,
+    X25519,
+}
+
+#[derive(Debug, Clone)]
+pub struct PrivateKeyInfo {
+    pub algorithm: String,
+    pub key_size: usize,
+    pub key_data: Vec<u8>,
+    pub is_encrypted: bool,
+}
+
+#[derive(Debug, Clone)]
+pub enum PrivateKeyError {
+    InvalidFormat,
+    DecryptionFailed,
+    UnsupportedAlgorithm,
+}

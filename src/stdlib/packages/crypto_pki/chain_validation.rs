@@ -84,3 +84,33 @@ pub fn test_chain_validation() -> IOResult<()> {
     }
     Ok(())
 }
+
+// Chain validation specific types
+#[derive(Debug, Clone)]
+pub enum ChainError {
+    InvalidChain,
+    TrustAnchorNotFound,
+    ValidationFailed,
+    ExpiredCertificate,
+}
+
+pub type ChainResult<T> = Result<T, CursedError>;
+
+#[derive(Debug, Clone)]
+pub struct ChainValidationPolicy {
+    pub max_depth: usize,
+    pub allow_self_signed: bool,
+    pub check_revocation: bool,
+    pub require_basic_constraints: bool,
+}
+
+impl Default for ChainValidationPolicy {
+    fn default() -> Self {
+        Self {
+            max_depth: 10,
+            allow_self_signed: false,
+            check_revocation: true,
+            require_basic_constraints: true,
+        }
+    }
+}

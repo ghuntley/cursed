@@ -84,3 +84,31 @@ pub fn test_secure_channels() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// Secure Channel specific types  
+#[derive(Debug, Clone)]
+pub struct SecureChannelManager {
+    pub channel_type: ChannelType,
+}
+
+#[derive(Debug, Clone)]
+pub enum ChannelType {
+    TLS,
+    SSH,
+    VPN,
+}
+
+#[derive(Debug, Clone)]
+pub enum SecurityLevel {
+    Low,
+    Medium,
+    High,
+}
+
+#[derive(Debug, Clone)]
+pub struct SecureChannel {
+    pub id: String,
+    pub security_level: SecurityLevel,
+}

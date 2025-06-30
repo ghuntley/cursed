@@ -1,86 +1,252 @@
-//! I/O functionality for assertions
+//! Testing functionality for assertions
 
 use crate::error::CursedError;
-use std::io::{self, Read, Write};
+use std::fmt::{Debug, Display};
 
-/// Result type for I/O operations
-pub type IOResult<T> = Result<T, CursedError>;
+/// Result type for test operations
+pub type TestResult<T> = Result<T, CursedError>;
 
-/// I/O operations handler
-pub struct IOHandler {
-    buffer_size: usize,
-}
+/// Standard assertion functions for testing
+pub struct Assertions;
 
-impl IOHandler {
-    /// Create a new I/O handler
-    pub fn new() -> Self {
-        Self {
-            buffer_size: 8192,
+impl Assertions {
+    /// Assert that two values are equal
+    pub fn assert_eq<T: PartialEq + Debug>(left: T, right: T) -> TestResult<()> {
+        if left == right {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: left == right\n  left: {:?}\n right: {:?}", left, right
+            )))
         }
     }
-    
-    /// Set buffer size
-    pub fn buffer_size(mut self, size: usize) -> Self {
-        self.buffer_size = size;
-        self
+
+    /// Assert that two values are not equal
+    pub fn assert_ne<T: PartialEq + Debug>(left: T, right: T) -> TestResult<()> {
+        if left != right {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: left != right\n  left: {:?}\n right: {:?}", left, right
+            )))
+        }
     }
-    
-    /// Read from a reader
-    pub fn read_all<R: Read>(&self, mut reader: R) -> IOResult<Vec<u8>> {
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)
-            .map_err(|e| CursedError::runtime_error(&format!("Read error: {}", e)))?;
-        Ok(buffer)
+
+    /// Assert that a condition is true
+    pub fn assert(condition: bool) -> TestResult<()> {
+        if condition {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error("Assertion failed: condition is false"))
+        }
     }
-    
-    /// Write to a writer
-    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> IOResult<()> {
-        writer.write_all(data)
-            .map_err(|e| CursedError::runtime_error(&format!("Write error: {}", e)))?;
-        Ok(())
+
+    /// Assert that a condition is true with custom message
+    pub fn assert_with_msg(condition: bool, message: &str) -> TestResult<()> {
+        if condition {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!("Assertion failed: {}", message)))
+        }
     }
-    
-    /// Read string from reader
-    pub fn read_string<R: Read>(&self, reader: R) -> IOResult<String> {
-        let bytes = self.read_all(reader)?;
-        String::from_utf8(bytes)
-            .map_err(|e| CursedError::runtime_error(&format!("UTF-8 decode error: {}", e)))
+
+    /// Assert that a value is Some
+    pub fn assert_some<T: Debug>(option: Option<T>) -> TestResult<T> {
+        match option {
+            Some(value) => Ok(value),
+            None => Err(CursedError::runtime_error("Assertion failed: expected Some, got None")),
+        }
     }
-    
-    /// Write string to writer
-    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> IOResult<()> {
-        self.write_all(writer, text.as_bytes())
+
+    /// Assert that a value is None
+    pub fn assert_none<T: Debug>(option: Option<T>) -> TestResult<()> {
+        match option {
+            None => Ok(()),
+            Some(value) => Err(CursedError::runtime_error(&format!(
+                "Assertion failed: expected None, got Some({:?})", value
+            ))),
+        }
+    }
+
+    /// Assert that a Result is Ok
+    pub fn assert_ok<T: Debug, E: Debug>(result: Result<T, E>) -> TestResult<T> {
+        match result {
+            Ok(value) => Ok(value),
+            Err(error) => Err(CursedError::runtime_error(&format!(
+                "Assertion failed: expected Ok, got Err({:?})", error
+            ))),
+        }
+    }
+
+    /// Assert that a Result is Err
+    pub fn assert_err<T: Debug, E: Debug>(result: Result<T, E>) -> TestResult<E> {
+        match result {
+            Err(error) => Ok(error),
+            Ok(value) => Err(CursedError::runtime_error(&format!(
+                "Assertion failed: expected Err, got Ok({:?})", value
+            ))),
+        }
+    }
+
+    /// Assert that a string contains a substring
+    pub fn assert_contains(haystack: &str, needle: &str) -> TestResult<()> {
+        if haystack.contains(needle) {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: '{}' does not contain '{}'", haystack, needle
+            )))
+        }
+    }
+
+    /// Assert that a string starts with a prefix
+    pub fn assert_starts_with(string: &str, prefix: &str) -> TestResult<()> {
+        if string.starts_with(prefix) {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: '{}' does not start with '{}'", string, prefix
+            )))
+        }
+    }
+
+    /// Assert that a string ends with a suffix
+    pub fn assert_ends_with(string: &str, suffix: &str) -> TestResult<()> {
+        if string.ends_with(suffix) {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: '{}' does not end with '{}'", string, suffix
+            )))
+        }
+    }
+
+    /// Assert that a value is greater than another
+    pub fn assert_gt<T: PartialOrd + Debug>(left: T, right: T) -> TestResult<()> {
+        if left > right {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: {:?} > {:?}", left, right
+            )))
+        }
+    }
+
+    /// Assert that a value is less than another
+    pub fn assert_lt<T: PartialOrd + Debug>(left: T, right: T) -> TestResult<()> {
+        if left < right {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: {:?} < {:?}", left, right
+            )))
+        }
+    }
+
+    /// Assert that a value is greater than or equal to another
+    pub fn assert_ge<T: PartialOrd + Debug>(left: T, right: T) -> TestResult<()> {
+        if left >= right {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: {:?} >= {:?}", left, right
+            )))
+        }
+    }
+
+    /// Assert that a value is less than or equal to another
+    pub fn assert_le<T: PartialOrd + Debug>(left: T, right: T) -> TestResult<()> {
+        if left <= right {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: {:?} <= {:?}", left, right
+            )))
+        }
+    }
+
+    /// Assert that a collection is empty
+    pub fn assert_empty<T>(collection: &[T]) -> TestResult<()> {
+        if collection.is_empty() {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: collection is not empty (length: {})", collection.len()
+            )))
+        }
+    }
+
+    /// Assert that a collection has a specific length
+    pub fn assert_len<T>(collection: &[T], expected_len: usize) -> TestResult<()> {
+        if collection.len() == expected_len {
+            Ok(())
+        } else {
+            Err(CursedError::runtime_error(&format!(
+                "Assertion failed: expected length {}, got {}", expected_len, collection.len()
+            )))
+        }
     }
 }
 
-impl Default for IOHandler {
-    fn default() -> Self {
-        Self::new()
-    }
+/// Convenience functions for common assertions
+pub fn assert_eq<T: PartialEq + Debug>(left: T, right: T) -> TestResult<()> {
+    Assertions::assert_eq(left, right)
 }
 
-/// Initialize I/O processing
-pub fn init_assertions() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_data = b"test data";
-    let mut cursor = std::io::Cursor::new(test_data);
-    let result = handler.read_all(&mut cursor)?;
-    if result != test_data {
-        return Err(CursedError::runtime_error("I/O test failed"));
-    }
-    println!("📁 I/O processing (assertions) initialized");
+pub fn assert_ne<T: PartialEq + Debug>(left: T, right: T) -> TestResult<()> {
+    Assertions::assert_ne(left, right)
+}
+
+pub fn assert(condition: bool) -> TestResult<()> {
+    Assertions::assert(condition)
+}
+
+pub fn assert_with_msg(condition: bool, message: &str) -> TestResult<()> {
+    Assertions::assert_with_msg(condition, message)
+}
+
+/// Initialize assertion processing
+pub fn init_assertions() -> TestResult<()> {
+    // Test basic assertions
+    assert_eq(2 + 2, 4)?;
+    assert_ne(1, 2)?;
+    assert(true)?;
+    assert_with_msg(2 > 1, "two should be greater than one")?;
+    
+    println!("🧪 Test assertions initialized");
     Ok(())
 }
 
-/// Test I/O functionality
-pub fn test_assertions() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_string = "Hello, CURSED I/O!";
-    let mut buffer = Vec::new();
-    handler.write_string(&mut buffer, test_string)?;
-    let result = handler.read_string(std::io::Cursor::new(&buffer))?;
-    if result != test_string {
-        return Err(CursedError::runtime_error("I/O string test failed"));
-    }
+/// Test assertion functionality
+pub fn test_assertions() -> TestResult<()> {
+    // Test various assertion types
+    assert_eq("hello", "hello")?;
+    assert_ne("hello", "world")?;
+    assert(5 > 3)?;
+    
+    let some_value = Some(42);
+    let none_value: Option<i32> = None;
+    Assertions::assert_some(some_value)?;
+    Assertions::assert_none(none_value)?;
+    
+    let ok_result: Result<i32, &str> = Ok(42);
+    let err_result: Result<i32, &str> = Err("error");
+    Assertions::assert_ok(ok_result)?;
+    Assertions::assert_err(err_result)?;
+    
+    Assertions::assert_contains("hello world", "world")?;
+    Assertions::assert_starts_with("hello world", "hello")?;
+    Assertions::assert_ends_with("hello world", "world")?;
+    
+    Assertions::assert_gt(5, 3)?;
+    Assertions::assert_lt(3, 5)?;
+    Assertions::assert_ge(5, 5)?;
+    Assertions::assert_le(3, 3)?;
+    
+    let empty_vec: Vec<i32> = vec![];
+    let vec_with_items = vec![1, 2, 3];
+    Assertions::assert_empty(&empty_vec)?;
+    Assertions::assert_len(&vec_with_items, 3)?;
+    
     Ok(())
 }

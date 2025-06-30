@@ -1,71 +1,63 @@
-//! Functional implementation for types
+use std::collections::HashMap;
 
-use crate::error::CursedError;
+/// HTTP headers
+pub type Headers = HashMap<String, String>;
 
-/// Result type for types operations
-pub type ModuleResult<T> = Result<T, CursedError>;
+/// Query parameters
+pub type QueryParams = HashMap<String, String>;
 
-/// types operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// Form data
+pub type FormData = HashMap<String, String>;
+
+/// JSON wrapper
+pub struct Json<T>(pub T);
+
+/// Content type enumeration
+#[derive(Debug, Clone)]
+pub enum ContentType {
+    Json,
+    Html,
+    Text,
+    Binary,
+    Form,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
-        Self {
-            enabled: true,
+impl ContentType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ContentType::Json => "application/json",
+            ContentType::Html => "text/html",
+            ContentType::Text => "text/plain",
+            ContentType::Binary => "application/octet-stream",
+            ContentType::Form => "application/x-www-form-urlencoded",
         }
     }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: types, Enabled: {}", self.enabled)
-    }
 }
 
-impl Default for ModuleHandler {
-    fn default() -> Self {
-        Self::new()
-    }
+/// Request body
+pub enum RequestBody {
+    Empty,
+    Text(String),
+    Binary(Vec<u8>),
+    Json(String), // JSON as string for now
+    Form(FormData),
 }
 
-/// Initialize types processing
-pub fn init_types() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (types) initialized");
-    Ok(())
+/// Cookie
+pub struct Cookie {
+    pub name: String,
+    pub value: String,
+    pub domain: Option<String>,
+    pub path: Option<String>,
+    pub secure: bool,
+    pub http_only: bool,
+    pub same_site: Option<SameSite>,
 }
 
-/// Test types functionality
-pub fn test_types() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
+/// SameSite attribute
+#[derive(Debug, Clone)]
+pub enum SameSite {
+    Strict,
+    Lax,
+    None,
 }

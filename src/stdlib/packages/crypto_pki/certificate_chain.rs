@@ -84,3 +84,50 @@ pub fn test_certificate_chain() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Certificate chain specific types
+#[derive(Debug, Clone)]
+pub enum ChainError {
+    InvalidChain,
+    TrustAnchorNotFound,
+    ValidationFailed,
+    ExpiredCertificate,
+}
+
+pub type ChainResult<T> = Result<T, CursedError>;
+
+#[derive(Debug, Clone)]
+pub struct ChainValidationPolicy {
+    pub max_depth: usize,
+    pub allow_self_signed: bool,
+    pub check_revocation: bool,
+    pub require_basic_constraints: bool,
+}
+
+impl Default for ChainValidationPolicy {
+    fn default() -> Self {
+        Self {
+            max_depth: 10,
+            allow_self_signed: false,
+            check_revocation: true,
+            require_basic_constraints: true,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ChainConstraints {
+    pub max_path_length: Option<usize>,
+    pub permitted_subtrees: Vec<String>,
+    pub excluded_subtrees: Vec<String>,
+}
+
+impl Default for ChainConstraints {
+    fn default() -> Self {
+        Self {
+            max_path_length: None,
+            permitted_subtrees: vec![],
+            excluded_subtrees: vec![],
+        }
+    }
+}

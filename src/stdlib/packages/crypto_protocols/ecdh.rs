@@ -84,3 +84,29 @@ pub fn test_ecdh() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// ECDH specific types
+#[derive(Debug, Clone)]
+pub struct EcdhManager {
+    pub curve: EcdhCurve,
+}
+
+#[derive(Debug, Clone)]
+pub enum EcdhCurve {
+    P256,
+    P384,
+    P521,
+}
+
+#[derive(Debug, Clone)]
+pub struct EcdhKeyPair {
+    pub private_key: Vec<u8>,
+    pub public_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct EcdhSharedSecret {
+    pub secret: Vec<u8>,
+}

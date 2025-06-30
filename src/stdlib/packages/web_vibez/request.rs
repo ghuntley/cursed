@@ -1,71 +1,48 @@
-//! Functional implementation for request
+use std::collections::HashMap;
 
-use crate::error::CursedError;
-
-/// Result type for request operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// request operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// HTTP Request
+#[derive(Debug)]
+pub struct HttpRequest {
+    pub method: String,
+    pub path: String,
+    pub headers: HashMap<String, String>,
+    pub body: Vec<u8>,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
+/// Request builder
+pub struct RequestBuilder {
+    request: HttpRequest,
+}
+
+impl RequestBuilder {
     pub fn new() -> Self {
         Self {
-            enabled: true,
+            request: HttpRequest {
+                method: "GET".to_string(),
+                path: "/".to_string(),
+                headers: HashMap::new(),
+                body: Vec::new(),
+            },
         }
     }
     
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
+    pub fn method(mut self, method: &str) -> Self {
+        self.request.method = method.to_string();
         self
     }
     
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
+    pub fn path(mut self, path: &str) -> Self {
+        self.request.path = path.to_string();
+        self
     }
     
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: request, Enabled: {}", self.enabled)
+    pub fn build(self) -> HttpRequest {
+        self.request
     }
 }
 
-impl Default for ModuleHandler {
+impl Default for RequestBuilder {
     fn default() -> Self {
         Self::new()
     }
-}
-
-/// Initialize request processing
-pub fn init_request() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (request) initialized");
-    Ok(())
-}
-
-/// Test request functionality
-pub fn test_request() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
 }

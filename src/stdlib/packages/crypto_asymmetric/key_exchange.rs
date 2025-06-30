@@ -63,6 +63,56 @@ impl Default for CryptoHandler {
     }
 }
 
+/// X25519 key pair generation
+pub fn x25519_generate_keypair(seed: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
+    // Placeholder implementation - in real implementation would use x25519-dalek
+    let private_key = if seed.is_empty() {
+        CryptoHandler::new().generate_key()?
+    } else {
+        seed
+    };
+    
+    // Generate public key from private key (simplified placeholder)
+    let mut public_key = private_key.clone();
+    public_key.reverse(); // Placeholder transformation
+    
+    Ok((private_key, public_key))
+}
+
+/// X448 key pair generation
+pub fn x448_generate_keypair(seed: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
+    // Placeholder implementation - in real implementation would use x448
+    let private_key = if seed.is_empty() {
+        let mut key = CryptoHandler::new().generate_key()?;
+        key.resize(56, 0); // X448 uses 56-byte keys
+        key
+    } else {
+        seed
+    };
+    
+    // Generate public key from private key (simplified placeholder)
+    let mut public_key = private_key.clone();
+    public_key.reverse(); // Placeholder transformation
+    
+    Ok((private_key, public_key))
+}
+
+/// Diffie-Hellman key pair generation
+pub fn dh_generate_keypair(params: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
+    // Placeholder implementation - in real implementation would use proper DH
+    let private_key = if params.is_empty() {
+        CryptoHandler::new().generate_key()?
+    } else {
+        params
+    };
+    
+    // Generate public key from private key (simplified placeholder)
+    let mut public_key = private_key.clone();
+    public_key.reverse(); // Placeholder transformation
+    
+    Ok((private_key, public_key))
+}
+
 /// Initialize crypto processing
 pub fn init_key_exchange() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
@@ -83,4 +133,20 @@ pub fn test_key_exchange() -> CryptoResult<()> {
         return Err(CursedError::runtime_error("Crypto hash test failed"));
     }
     Ok(())
+}
+
+// Additional key exchange functions
+pub fn validate_key_exchange_params(params: &[u8]) -> crate::error::Result<bool> {
+    Ok(!params.is_empty())
+}
+
+pub fn list_key_exchange_algorithms() -> Vec<String> {
+    vec!["ECDH".to_string(), "DH".to_string(), "X25519".to_string()]
+}
+
+pub fn derive_key_from_shared_secret(shared_secret: &[u8], length: usize) -> crate::error::Result<Vec<u8>> {
+    if shared_secret.is_empty() {
+        return Err(CursedError::validation_error("Empty shared secret"));
+    }
+    Ok(shared_secret[..std::cmp::min(length, shared_secret.len())].to_vec())
 }

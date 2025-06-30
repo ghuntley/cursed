@@ -16,29 +16,7 @@ pub enum DatabaseType {
     InMemory,
 }
 
-/// SQL value types
-#[derive(Debug, Clone)]
-pub enum SqlValue {
-    Null,
-    Bool(bool),
-    Integer(i64),
-    Real(f64),
-    Text(String),
-    Blob(Vec<u8>),
-}
-
-impl std::fmt::Display for SqlValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SqlValue::Null => write!(f, "NULL"),
-            SqlValue::Bool(b) => write!(f, "{}", b),
-            SqlValue::Integer(i) => write!(f, "{}", i),
-            SqlValue::Real(r) => write!(f, "{}", r),
-            SqlValue::Text(s) => write!(f, "'{}'", s.replace("'", "''")),
-            SqlValue::Blob(b) => write!(f, "BLOB({} bytes)", b.len()),
-        }
-    }
-}
+use super::core::SqlValue;
 
 /// Database row representation
 #[derive(Debug, Clone)]

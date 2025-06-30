@@ -69,3 +69,125 @@ pub fn test_safe_process_management() -> ModuleResult<()> {
     }
     Ok(())
 }
+
+// Missing process types
+#[derive(Debug, Clone)]
+pub struct SecurityContext {
+    pub user_id: String,
+    pub permissions: Vec<String>,
+    pub sandbox: bool,
+}
+
+impl SecurityContext {
+    pub fn new(user_id: String) -> Self {
+        Self {
+            user_id,
+            permissions: Vec::new(),
+            sandbox: false,
+        }
+    }
+    
+    pub fn with_permissions(mut self, permissions: Vec<String>) -> Self {
+        self.permissions = permissions;
+        self
+    }
+    
+    pub fn sandboxed(mut self) -> Self {
+        self.sandbox = true;
+        self
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ProcessIsolation {
+    pub namespace: String,
+    pub resource_limits: ResourceLimits,
+}
+
+impl ProcessIsolation {
+    pub fn new(namespace: String) -> Self {
+        Self {
+            namespace,
+            resource_limits: ResourceLimits::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ResourceLimits {
+    pub max_memory: u64,
+    pub max_cpu: f64,
+    pub max_file_descriptors: u32,
+}
+
+impl Default for ResourceLimits {
+    fn default() -> Self {
+        Self {
+            max_memory: 1024 * 1024 * 1024, // 1GB
+            max_cpu: 1.0,
+            max_file_descriptors: 1024,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SecurityCheck {
+    pub check_type: SecurityCheckType,
+    pub severity: SecuritySeverity,
+    pub message: String,
+}
+
+impl SecurityCheck {
+    pub fn new(check_type: SecurityCheckType, severity: SecuritySeverity, message: String) -> Self {
+        Self {
+            check_type,
+            severity,
+            message,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum SecurityCheckType {
+    PermissionCheck,
+    ResourceCheck,
+    SandboxCheck,
+}
+
+#[derive(Debug, Clone)]
+pub enum SecuritySeverity {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProcessGuard {
+    pub context: SecurityContext,
+    pub isolation: ProcessIsolation,
+    pub active_checks: Vec<SecurityCheck>,
+}
+
+impl ProcessGuard {
+    pub fn new(context: SecurityContext, isolation: ProcessIsolation) -> Self {
+        Self {
+            context,
+            isolation,
+            active_checks: Vec::new(),
+        }
+    }
+    
+    pub fn add_check(&mut self, check: SecurityCheck) {
+        self.active_checks.push(check);
+    }
+    
+    pub fn validate(&self) -> ModuleResult<()> {
+        for check in &self.active_checks {
+            if matches!(check.severity, SecuritySeverity::Critical) {
+                return Err(CursedError::runtime_error(&format!("Critical security check failed: {}", check.message)));
+            }
+        }
+        Ok(())
+    }
+}

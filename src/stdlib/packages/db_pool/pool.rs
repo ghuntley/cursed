@@ -1,9 +1,136 @@
 //! Functional implementation for pool
 
 use crate::error::CursedError;
+use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 /// Result type for pool operations
 pub type ModuleResult<T> = Result<T, CursedError>;
+
+/// Configuration for connection pool
+#[derive(Debug, Clone)]
+pub struct PoolConfig {
+    pub min_connections: usize,
+    pub max_connections: usize,
+    pub connection_timeout: Duration,
+    pub idle_timeout: Duration,
+    pub max_lifetime: Duration,
+}
+
+impl Default for PoolConfig {
+    fn default() -> Self {
+        Self {
+            min_connections: 5,
+            max_connections: 50,
+            connection_timeout: Duration::from_secs(30),
+            idle_timeout: Duration::from_secs(600),
+            max_lifetime: Duration::from_secs(3600),
+        }
+    }
+}
+
+/// Generic connection pool
+pub struct ConnectionPool<T> {
+    config: PoolConfig,
+    connections: Arc<Mutex<VecDeque<PooledConnection<T>>>>,
+    total_connections: Arc<Mutex<usize>>,
+}
+
+/// Pooled connection wrapper
+pub struct PooledConnection<T> {
+    connection: T,
+    created_at: Instant,
+    last_used: Instant,
+}
+
+impl<T> PooledConnection<T> {
+    pub fn new(connection: T) -> Self {
+        let now = Instant::now();
+        Self {
+            connection,
+            created_at: now,
+            last_used: now,
+        }
+    }
+    
+    pub fn get(&self) -> &T {
+        &self.connection
+    }
+    
+    pub fn get_mut(&mut self) -> &mut T {
+        self.last_used = Instant::now();
+        &mut self.connection
+    }
+    
+    pub fn is_expired(&self, config: &PoolConfig) -> bool {
+        let now = Instant::now();
+        now.duration_since(self.created_at) > config.max_lifetime ||
+        now.duration_since(self.last_used) > config.idle_timeout
+    }
+}
+
+impl<T> ConnectionPool<T> 
+where
+    T: Send + 'static,
+{
+    pub fn new(config: PoolConfig) -> Self {
+        Self {
+            config,
+            connections: Arc::new(Mutex::new(VecDeque::new())),
+            total_connections: Arc::new(Mutex::new(0)),
+        }
+    }
+    
+    pub fn get_connection(&self) -> ModuleResult<Option<PooledConnection<T>>> {
+        let mut connections = self.connections.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+        
+        // Remove expired connections
+        connections.retain(|conn| !conn.is_expired(&self.config));
+        
+        Ok(connections.pop_front())
+    }
+    
+    pub fn return_connection(&self, connection: PooledConnection<T>) -> ModuleResult<()> {
+        if connection.is_expired(&self.config) {
+            let mut total = self.total_connections.lock()
+                .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+            *total -= 1;
+            return Ok(());
+        }
+        
+        let mut connections = self.connections.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+        
+        connections.push_back(connection);
+        Ok(())
+    }
+    
+    pub fn add_connection(&self, connection: T) -> ModuleResult<()> {
+        let mut total = self.total_connections.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+        
+        if *total >= self.config.max_connections {
+            return Err(CursedError::runtime_error("Pool is at maximum capacity"));
+        }
+        
+        let mut connections = self.connections.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+        
+        connections.push_back(PooledConnection::new(connection));
+        *total += 1;
+        Ok(())
+    }
+    
+    pub fn size(&self) -> usize {
+        *self.total_connections.lock().unwrap_or_else(|_| panic!("Failed to lock total_connections"))
+    }
+    
+    pub fn available(&self) -> usize {
+        self.connections.lock().unwrap_or_else(|_| panic!("Failed to lock connections")).len()
+    }
+}
 
 /// pool operations handler
 pub struct ModuleHandler {

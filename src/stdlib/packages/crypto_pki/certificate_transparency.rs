@@ -84,3 +84,26 @@ pub fn test_certificate_transparency() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Certificate Transparency specific types
+#[derive(Debug, Clone)]
+pub struct CtLogList {
+    pub logs: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub enum CtError {
+    InvalidSct,
+    LogNotFound,
+    VerificationFailed,
+}
+
+pub type CtResult<T> = Result<T, CursedError>;
+
+pub fn parse_scts(data: &[u8]) -> CtResult<Vec<Vec<u8>>> {
+    Ok(vec![])
+}
+
+pub fn verify_sct(sct: &[u8], log_key: &[u8]) -> CtResult<bool> {
+    Ok(true)
+}

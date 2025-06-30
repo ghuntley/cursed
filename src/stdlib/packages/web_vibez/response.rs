@@ -1,71 +1,51 @@
-//! Functional implementation for response
+use std::collections::HashMap;
 
-use crate::error::CursedError;
-
-/// Result type for response operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// response operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// HTTP Response
+#[derive(Debug)]
+pub struct HttpResponse {
+    pub status: u16,
+    pub headers: HashMap<String, String>,
+    pub body: Vec<u8>,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
+/// Response builder
+pub struct ResponseBuilder {
+    response: HttpResponse,
+}
+
+impl ResponseBuilder {
     pub fn new() -> Self {
         Self {
-            enabled: true,
+            response: HttpResponse {
+                status: 200,
+                headers: HashMap::new(),
+                body: Vec::new(),
+            },
         }
     }
     
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
+    pub fn status(mut self, status: u16) -> Self {
+        self.response.status = status;
         self
     }
     
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
+    pub fn header(mut self, key: &str, value: &str) -> Self {
+        self.response.headers.insert(key.to_string(), value.to_string());
+        self
     }
     
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
+    pub fn body(mut self, body: Vec<u8>) -> Self {
+        self.response.body = body;
+        self
     }
     
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: response, Enabled: {}", self.enabled)
+    pub fn build(self) -> HttpResponse {
+        self.response
     }
 }
 
-impl Default for ModuleHandler {
+impl Default for ResponseBuilder {
     fn default() -> Self {
         Self::new()
     }
-}
-
-/// Initialize response processing
-pub fn init_response() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (response) initialized");
-    Ok(())
-}
-
-/// Test response functionality
-pub fn test_response() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
 }

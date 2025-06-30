@@ -84,3 +84,19 @@ pub fn test_ocsp_client() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// OCSP Client specific types
+#[derive(Debug, Clone)]
+pub struct OcspClient {
+    pub endpoint: String,
+    pub timeout: u32,
+}
+
+impl OcspClient {
+    pub fn new(endpoint: String) -> Self {
+        Self {
+            endpoint,
+            timeout: 30,
+        }
+    }
+}

@@ -1,9 +1,105 @@
 //! Functional implementation for entity
 
 use crate::error::CursedError;
+use std::collections::HashMap;
 
 /// Result type for entity operations
 pub type ModuleResult<T> = Result<T, CursedError>;
+
+/// Primary key attribute for entities
+#[derive(Debug, Clone)]
+pub struct PrimaryKey {
+    pub field_name: String,
+    pub auto_increment: bool,
+}
+
+impl PrimaryKey {
+    pub fn new(field_name: &str) -> Self {
+        Self {
+            field_name: field_name.to_string(),
+            auto_increment: true,
+        }
+    }
+    
+    pub fn manual(field_name: &str) -> Self {
+        Self {
+            field_name: field_name.to_string(),
+            auto_increment: false,
+        }
+    }
+}
+
+/// Foreign key attribute for entities
+#[derive(Debug, Clone)]
+pub struct ForeignKey {
+    pub field_name: String,
+    pub references_table: String,
+    pub references_column: String,
+    pub on_delete: ForeignKeyAction,
+    pub on_update: ForeignKeyAction,
+}
+
+#[derive(Debug, Clone)]
+pub enum ForeignKeyAction {
+    Cascade,
+    SetNull,
+    Restrict,
+    NoAction,
+}
+
+impl ForeignKey {
+    pub fn new(field_name: &str, references_table: &str, references_column: &str) -> Self {
+        Self {
+            field_name: field_name.to_string(),
+            references_table: references_table.to_string(),
+            references_column: references_column.to_string(),
+            on_delete: ForeignKeyAction::NoAction,
+            on_update: ForeignKeyAction::NoAction,
+        }
+    }
+    
+    pub fn on_delete(mut self, action: ForeignKeyAction) -> Self {
+        self.on_delete = action;
+        self
+    }
+    
+    pub fn on_update(mut self, action: ForeignKeyAction) -> Self {
+        self.on_update = action;
+        self
+    }
+}
+
+/// Timestamped trait for entities with created_at/updated_at fields
+#[derive(Debug, Clone)]
+pub struct Timestamped {
+    pub created_at_field: String,
+    pub updated_at_field: String,
+    pub auto_update: bool,
+}
+
+impl Timestamped {
+    pub fn new() -> Self {
+        Self {
+            created_at_field: "created_at".to_string(),
+            updated_at_field: "updated_at".to_string(),
+            auto_update: true,
+        }
+    }
+    
+    pub fn with_fields(created_at: &str, updated_at: &str) -> Self {
+        Self {
+            created_at_field: created_at.to_string(),
+            updated_at_field: updated_at.to_string(),
+            auto_update: true,
+        }
+    }
+}
+
+impl Default for Timestamped {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// entity operations handler
 pub struct ModuleHandler {

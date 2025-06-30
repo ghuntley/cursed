@@ -84,3 +84,14 @@ pub fn test_asymmetric() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// Asymmetric additional functions
+pub fn get_asymmetric_algorithms() -> Vec<String> {
+    vec!["RSA".to_string(), "ECC".to_string(), "Ed25519".to_string(), "X25519".to_string()]
+}
+
+pub fn get_asymmetric_capabilities() -> crate::error::Result<Vec<String>> {
+    Ok(vec!["signing".to_string(), "encryption".to_string(), "key_exchange".to_string()])
+}

@@ -63,6 +63,38 @@ impl Default for CryptoHandler {
     }
 }
 
+/// SipHash hasher
+pub struct SipHash {
+    handler: CryptoHandler,
+    key: [u8; 16],
+}
+
+impl SipHash {
+    pub fn new(key: &[u8; 16]) -> Self {
+        Self {
+            handler: CryptoHandler::new(),
+            key: *key,
+        }
+    }
+    
+    pub fn update(&mut self, data: &[u8]) {
+        // Placeholder implementation
+        self._process_data(data);
+    }
+    
+    pub fn finalize(self) -> u64 {
+        // Placeholder: return a simple hash based on key
+        u64::from_le_bytes([
+            self.key[0], self.key[1], self.key[2], self.key[3],
+            self.key[4], self.key[5], self.key[6], self.key[7],
+        ])
+    }
+    
+    fn _process_data(&self, _data: &[u8]) {
+        // Placeholder
+    }
+}
+
 /// Initialize crypto processing
 pub fn init_siphash() -> CryptoResult<()> {
     let handler = CryptoHandler::new();

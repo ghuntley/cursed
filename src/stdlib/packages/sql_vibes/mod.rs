@@ -16,6 +16,6 @@ pub use error::{SqlError, SqlResult, DatabaseErrorKind, QueryErrorKind, Connecti
 
 /// fr fr Initialize the sql_vibes package and register it with stdlib
 pub fn init_sql_vibes() {
-        // TODO: implement
-    }
     println!("🗄️ sql_vibes package initialized - ready to store some data bestie!");
+    // TODO: implement
+}

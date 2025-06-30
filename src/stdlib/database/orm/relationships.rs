@@ -2,9 +2,167 @@
 
 use crate::error::CursedError;
 use std::io::{self, Read, Write};
+use std::collections::HashMap;
+use std::marker::PhantomData;
 
 /// Result type for I/O operations
 pub type IOResult<T> = Result<T, CursedError>;
+
+/// One-to-one relationship definition
+#[derive(Debug, Clone)]
+pub struct HasOne<T, R> {
+    pub foreign_key: String,
+    pub local_key: String,
+    pub _parent: PhantomData<T>,
+    pub _related: PhantomData<R>,
+}
+
+/// One-to-many relationship definition
+#[derive(Debug, Clone)]
+pub struct HasMany<T, R> {
+    pub foreign_key: String,
+    pub local_key: String,
+    pub _parent: PhantomData<T>,
+    pub _related: PhantomData<R>,
+}
+
+/// Belongs-to (inverse one-to-many) relationship definition
+#[derive(Debug, Clone)]
+pub struct BelongsTo<T, R> {
+    pub foreign_key: String,
+    pub owner_key: String,
+    pub _child: PhantomData<T>,
+    pub _parent: PhantomData<R>,
+}
+
+/// Many-to-many relationship definition
+#[derive(Debug, Clone)]
+pub struct BelongsToMany<T, R> {
+    pub pivot_table: String,
+    pub foreign_pivot_key: String,
+    pub related_pivot_key: String,
+    pub parent_key: String,
+    pub related_key: String,
+    pub _parent: PhantomData<T>,
+    pub _related: PhantomData<R>,
+}
+
+/// Lazy loading strategy for relationships
+#[derive(Debug, Clone)]
+pub struct LazyLoader<T> {
+    pub loaded: bool,
+    pub query_builder: Option<String>,
+    pub _entity: PhantomData<T>,
+}
+
+/// Eager loading strategy for relationships
+#[derive(Debug, Clone)]
+pub struct EagerLoader<T> {
+    pub relationships: Vec<String>,
+    pub constraints: HashMap<String, String>,
+    pub _entity: PhantomData<T>,
+}
+
+impl<T, R> HasOne<T, R> {
+    pub fn new(foreign_key: &str, local_key: &str) -> Self {
+        Self {
+            foreign_key: foreign_key.to_string(),
+            local_key: local_key.to_string(),
+            _parent: PhantomData,
+            _related: PhantomData,
+        }
+    }
+}
+
+impl<T, R> HasMany<T, R> {
+    pub fn new(foreign_key: &str, local_key: &str) -> Self {
+        Self {
+            foreign_key: foreign_key.to_string(),
+            local_key: local_key.to_string(),
+            _parent: PhantomData,
+            _related: PhantomData,
+        }
+    }
+}
+
+impl<T, R> BelongsTo<T, R> {
+    pub fn new(foreign_key: &str, owner_key: &str) -> Self {
+        Self {
+            foreign_key: foreign_key.to_string(),
+            owner_key: owner_key.to_string(),
+            _child: PhantomData,
+            _parent: PhantomData,
+        }
+    }
+}
+
+impl<T, R> BelongsToMany<T, R> {
+    pub fn new(pivot_table: &str, foreign_pivot_key: &str, related_pivot_key: &str) -> Self {
+        Self {
+            pivot_table: pivot_table.to_string(),
+            foreign_pivot_key: foreign_pivot_key.to_string(),
+            related_pivot_key: related_pivot_key.to_string(),
+            parent_key: "id".to_string(),
+            related_key: "id".to_string(),
+            _parent: PhantomData,
+            _related: PhantomData,
+        }
+    }
+    
+    pub fn with_keys(mut self, parent_key: &str, related_key: &str) -> Self {
+        self.parent_key = parent_key.to_string();
+        self.related_key = related_key.to_string();
+        self
+    }
+}
+
+impl<T> LazyLoader<T> {
+    pub fn new() -> Self {
+        Self {
+            loaded: false,
+            query_builder: None,
+            _entity: PhantomData,
+        }
+    }
+    
+    pub fn with_query(mut self, query: &str) -> Self {
+        self.query_builder = Some(query.to_string());
+        self
+    }
+    
+    pub fn load(&mut self) -> Result<(), CursedError> {
+        if !self.loaded {
+            // TODO: Implement actual loading logic
+            self.loaded = true;
+        }
+        Ok(())
+    }
+}
+
+impl<T> EagerLoader<T> {
+    pub fn new() -> Self {
+        Self {
+            relationships: Vec::new(),
+            constraints: HashMap::new(),
+            _entity: PhantomData,
+        }
+    }
+    
+    pub fn with_relationship(mut self, relationship: &str) -> Self {
+        self.relationships.push(relationship.to_string());
+        self
+    }
+    
+    pub fn with_constraint(mut self, relationship: &str, constraint: &str) -> Self {
+        self.constraints.insert(relationship.to_string(), constraint.to_string());
+        self
+    }
+    
+    pub fn load(&self) -> Result<(), CursedError> {
+        // TODO: Implement actual eager loading logic
+        Ok(())
+    }
+}
 
 /// I/O operations handler
 pub struct IOHandler {

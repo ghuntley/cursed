@@ -49,6 +49,74 @@ impl Default for ModuleHandler {
     }
 }
 
+use super::{DatabaseConnection, ConnectionConfig, DbResult};
+
+/// SQL driver trait
+pub trait SqlDriver: Send + Sync {
+    fn name(&self) -> &str;
+    fn connect(&self, config: &ConnectionConfig) -> DbResult<Box<dyn DatabaseConnection>>;
+    fn supports_feature(&self, feature: &str) -> bool;
+}
+
+/// SQL driver manager
+pub struct SqlDriverManager {
+    drivers: std::collections::HashMap<String, Box<dyn SqlDriver>>,
+}
+
+impl SqlDriverManager {
+    pub fn new() -> Self {
+        SqlDriverManager {
+            drivers: std::collections::HashMap::new(),
+        }
+    }
+    
+    pub fn register_driver(&mut self, name: String, driver: Box<dyn SqlDriver>) {
+        self.drivers.insert(name, driver);
+    }
+    
+    pub fn get_driver(&self, name: &str) -> Option<&dyn SqlDriver> {
+        self.drivers.get(name).map(|d| d.as_ref())
+    }
+}
+
+/// Create a SQL driver
+pub fn create_sql_driver(name: &str) -> Option<Box<dyn SqlDriver>> {
+    match name {
+        "postgresql" | "postgres" => Some(Box::new(super::postgresql::PostgreSqlDriver::new())),
+        "sqlite" | "sqlite3" => Some(Box::new(super::sqlite::SqliteDriver::new())),
+        "mysql" => Some(Box::new(super::mysql::MySqlDriver::new())),
+        _ => None,
+    }
+}
+
+/// SQL feature enumeration
+#[derive(Debug, Clone)]
+pub enum SqlFeature {
+    Transactions,
+    PreparedStatements,
+    Returning,
+    Upsert,
+    ForeignKeys,
+    Triggers,
+    Views,
+    StoredProcedures,
+}
+
+impl SqlFeature {
+    pub fn as_str(&self) -> &str {
+        match self {
+            SqlFeature::Transactions => "transactions",
+            SqlFeature::PreparedStatements => "prepared_statements",
+            SqlFeature::Returning => "returning",
+            SqlFeature::Upsert => "upsert",
+            SqlFeature::ForeignKeys => "foreign_keys",
+            SqlFeature::Triggers => "triggers",
+            SqlFeature::Views => "views",
+            SqlFeature::StoredProcedures => "stored_procedures",
+        }
+    }
+}
+
 /// Initialize drivers processing
 pub fn init_drivers() -> ModuleResult<()> {
     let handler = ModuleHandler::new();

@@ -298,6 +298,9 @@ notify = "6.1"    # Cross-platform file system notifications
 futures = "0.3"   # Futures utilities for async operations
 
 # Platform-specific dependencies for shared memory
+tiny-keccak = { version = "2.0", features = ["sha3", "keccak"] }
+twox-hash = "1.6"
+siphasher = "0.3"
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["memoryapi", "handleapi", "errhandlingapi", "winnt", "minwindef", "processthreadsapi", "psapi", "tlhelp32", "winbase", "fileapi", "wincon", "namedpipeapi", "synchapi", "jobapi2"] }
 windows-sys = { version = "0.52", features = ["Win32_System_Memory", "Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_Pipes", "Win32_System_Threading"] }

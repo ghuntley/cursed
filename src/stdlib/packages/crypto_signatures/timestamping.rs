@@ -1,9 +1,69 @@
-//! Cryptographic functionality for timestamping
+//! Timestamping functionality for cryptographic signatures
 
 use crate::error::CursedError;
+use std::collections::HashMap;
 
 /// Result type for crypto operations
 pub type CryptoResult<T> = Result<T, CursedError>;
+
+/// Timestamp validation policy
+#[derive(Debug, Clone)]
+pub struct TimestampValidationPolicy {
+    pub require_rfc3161: bool,
+    pub max_age_seconds: u64,
+    pub allowed_tsa_sources: Vec<String>,
+    pub verify_chain: bool,
+    pub check_revocation: bool,
+}
+
+impl Default for TimestampValidationPolicy {
+    fn default() -> Self {
+        Self {
+            require_rfc3161: true,
+            max_age_seconds: 86400 * 30, // 30 days
+            allowed_tsa_sources: Vec::new(),
+            verify_chain: true,
+            check_revocation: true,
+        }
+    }
+}
+
+/// Timestamp verification result
+#[derive(Debug, Clone)]
+pub struct TimestampVerificationResult {
+    pub is_valid: bool,
+    pub timestamp: String,
+    pub tsa_source: String,
+    pub errors: Vec<String>,
+    pub warnings: Vec<String>,
+    pub metadata: HashMap<String, String>,
+}
+
+impl TimestampVerificationResult {
+    pub fn new(is_valid: bool, timestamp: String, tsa_source: String) -> Self {
+        Self {
+            is_valid,
+            timestamp,
+            tsa_source,
+            errors: Vec::new(),
+            warnings: Vec::new(),
+            metadata: HashMap::new(),
+        }
+    }
+
+    pub fn add_error(&mut self, error: String) {
+        self.errors.push(error);
+        self.is_valid = false;
+    }
+
+    pub fn add_warning(&mut self, warning: String) {
+        self.warnings.push(warning);
+    }
+
+    pub fn add_metadata(&mut self, key: String, value: String) {
+        self.metadata.insert(key, value);
+    }
+}
 
 /// Cryptographic operations handler
 pub struct CryptoHandler {

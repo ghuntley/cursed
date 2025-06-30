@@ -63,6 +63,44 @@ impl Default for CryptoHandler {
     }
 }
 
+/// SHA-3 variant enum
+#[derive(Debug, Clone, Copy)]
+pub enum Sha3Variant {
+    Sha3_224,
+    Sha3_256,
+    Sha3_384,
+    Sha3_512,
+}
+
+/// SHA-3 hasher
+pub struct Sha3Hasher {
+    variant: Sha3Variant,
+    handler: CryptoHandler,
+}
+
+impl Sha3Hasher {
+    pub fn new(variant: Sha3Variant) -> Self {
+        Self {
+            variant,
+            handler: CryptoHandler::new(),
+        }
+    }
+    
+    pub fn update(&mut self, data: &[u8]) {
+        // Placeholder - just store the data for processing
+        self._process_chunk(data);
+    }
+    
+    pub fn finalize(self) -> Vec<u8> {
+        // Placeholder implementation using SHA-256
+        self.handler.hash_sha256(b"sha3_placeholder")
+    }
+    
+    fn _process_chunk(&self, _data: &[u8]) {
+        // Placeholder for chunk processing
+    }
+}
+
 /// Initialize crypto processing
 pub fn init_sha3() -> CryptoResult<()> {
     let handler = CryptoHandler::new();

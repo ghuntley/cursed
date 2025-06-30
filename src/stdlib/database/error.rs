@@ -43,11 +43,90 @@ impl ModuleHandler {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum DatabaseErrorKind {
+    ConnectionFailed,
+    QueryFailed,
+    TransactionFailed,
+    InvalidSchema,
+    ConstraintViolation,
+    Timeout,
+    PermissionDenied,
+    Other(String),
+}
+
+impl std::fmt::Display for DatabaseErrorKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DatabaseErrorKind::ConnectionFailed => write!(f, "Connection failed"),
+            DatabaseErrorKind::QueryFailed => write!(f, "Query failed"),
+            DatabaseErrorKind::TransactionFailed => write!(f, "Transaction failed"),
+            DatabaseErrorKind::InvalidSchema => write!(f, "Invalid schema"),
+            DatabaseErrorKind::ConstraintViolation => write!(f, "Constraint violation"),
+            DatabaseErrorKind::Timeout => write!(f, "Timeout"),
+            DatabaseErrorKind::PermissionDenied => write!(f, "Permission denied"),
+            DatabaseErrorKind::Other(msg) => write!(f, "Other: {}", msg),
+        }
+    }
+}
+
 impl Default for ModuleHandler {
     fn default() -> Self {
         Self::new()
     }
 }
+
+/// Database-specific error types
+#[derive(Debug, Clone)]
+pub enum DatabaseError {
+    Driver(String),
+    Connection(String),
+    Query(String),
+    Transaction(String),
+    Migration(String),
+    Parse(String),
+    Timeout(String),
+    Auth(String),
+}
+
+impl DatabaseError {
+    pub fn driver(msg: &str) -> Self {
+        DatabaseError::Driver(msg.to_string())
+    }
+    
+    pub fn connection(msg: &str) -> Self {
+        DatabaseError::Connection(msg.to_string())
+    }
+    
+    pub fn query(msg: &str) -> Self {
+        DatabaseError::Query(msg.to_string())
+    }
+    
+    pub fn transaction(msg: &str) -> Self {
+        DatabaseError::Transaction(msg.to_string())
+    }
+    
+    pub fn migration(msg: &str) -> Self {
+        DatabaseError::Migration(msg.to_string())
+    }
+}
+
+impl std::fmt::Display for DatabaseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DatabaseError::Driver(msg) => write!(f, "Database driver error: {}", msg),
+            DatabaseError::Connection(msg) => write!(f, "Database connection error: {}", msg),
+            DatabaseError::Query(msg) => write!(f, "Database query error: {}", msg),
+            DatabaseError::Transaction(msg) => write!(f, "Database transaction error: {}", msg),
+            DatabaseError::Migration(msg) => write!(f, "Database migration error: {}", msg),
+            DatabaseError::Parse(msg) => write!(f, "Database parse error: {}", msg),
+            DatabaseError::Timeout(msg) => write!(f, "Database timeout error: {}", msg),
+            DatabaseError::Auth(msg) => write!(f, "Database auth error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for DatabaseError {}
 
 /// Initialize error processing
 pub fn init_error() -> ModuleResult<()> {

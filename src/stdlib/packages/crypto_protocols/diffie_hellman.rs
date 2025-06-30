@@ -84,3 +84,29 @@ pub fn test_diffie_hellman() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// Diffie-Hellman specific types
+#[derive(Debug, Clone)]
+pub struct DiffieHellmanManager {
+    pub group: DhGroup,
+}
+
+#[derive(Debug, Clone)]
+pub enum DhGroup {
+    Group14,
+    Group16,
+    Group18,
+}
+
+#[derive(Debug, Clone)]
+pub struct DhKeyPair {
+    pub private_key: Vec<u8>,
+    pub public_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DhSharedSecret {
+    pub secret: Vec<u8>,
+}

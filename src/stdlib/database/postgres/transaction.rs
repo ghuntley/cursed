@@ -1,86 +1,134 @@
-//! I/O functionality for transaction
+//! PostgreSQL transaction implementation
 
 use crate::error::CursedError;
-use std::io::{self, Read, Write};
+use super::connection::{PostgresConnection, PostgresQueryResult};
 
-/// Result type for I/O operations
-pub type IOResult<T> = Result<T, CursedError>;
+/// Result type for PostgreSQL transaction operations
+pub type PostgresTransactionResult<T> = Result<T, CursedError>;
 
-/// I/O operations handler
-pub struct IOHandler {
-    buffer_size: usize,
+/// PostgreSQL transaction
+pub struct PostgresTransaction {
+    connection: Option<PostgresConnection>,
+    is_active: bool,
+    savepoint_level: u32,
 }
 
-impl IOHandler {
-    /// Create a new I/O handler
-    pub fn new() -> Self {
+impl PostgresTransaction {
+    /// Create a new PostgreSQL transaction
+    pub fn new(connection: PostgresConnection) -> Self {
         Self {
-            buffer_size: 8192,
+            connection: Some(connection),
+            is_active: false,
+            savepoint_level: 0,
         }
     }
     
-    /// Set buffer size
-    pub fn buffer_size(mut self, size: usize) -> Self {
-        self.buffer_size = size;
-        self
-    }
-    
-    /// Read from a reader
-    pub fn read_all<R: Read>(&self, mut reader: R) -> IOResult<Vec<u8>> {
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)
-            .map_err(|e| CursedError::runtime_error(&format!("Read error: {}", e)))?;
-        Ok(buffer)
-    }
-    
-    /// Write to a writer
-    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> IOResult<()> {
-        writer.write_all(data)
-            .map_err(|e| CursedError::runtime_error(&format!("Write error: {}", e)))?;
+    /// Begin the transaction
+    pub fn begin(&mut self) -> PostgresTransactionResult<()> {
+        if self.is_active {
+            return Err(CursedError::runtime_error("Transaction already active"));
+        }
+        
+        if let Some(ref mut conn) = self.connection {
+            conn.begin_transaction()?;
+            self.is_active = true;
+            println!("🔄 PostgreSQL transaction begun");
+        } else {
+            return Err(CursedError::runtime_error("No connection available"));
+        }
+        
         Ok(())
     }
     
-    /// Read string from reader
-    pub fn read_string<R: Read>(&self, reader: R) -> IOResult<String> {
-        let bytes = self.read_all(reader)?;
-        String::from_utf8(bytes)
-            .map_err(|e| CursedError::runtime_error(&format!("UTF-8 decode error: {}", e)))
+    /// Commit the transaction
+    pub fn commit(&mut self) -> PostgresTransactionResult<()> {
+        if !self.is_active {
+            return Err(CursedError::runtime_error("No active transaction to commit"));
+        }
+        
+        if let Some(ref mut conn) = self.connection {
+            conn.commit()?;
+            self.is_active = false;
+            self.savepoint_level = 0;
+            println!("✅ PostgreSQL transaction committed");
+        } else {
+            return Err(CursedError::runtime_error("No connection available"));
+        }
+        
+        Ok(())
     }
     
-    /// Write string to writer
-    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> IOResult<()> {
-        self.write_all(writer, text.as_bytes())
+    /// Rollback the transaction
+    pub fn rollback(&mut self) -> PostgresTransactionResult<()> {
+        if !self.is_active {
+            return Err(CursedError::runtime_error("No active transaction to rollback"));
+        }
+        
+        if let Some(ref mut conn) = self.connection {
+            conn.rollback()?;
+            self.is_active = false;
+            self.savepoint_level = 0;
+            println!("🔄 PostgreSQL transaction rolled back");
+        } else {
+            return Err(CursedError::runtime_error("No connection available"));
+        }
+        
+        Ok(())
+    }
+    
+    /// Create a savepoint
+    pub fn savepoint(&mut self, name: &str) -> PostgresTransactionResult<()> {
+        if !self.is_active {
+            return Err(CursedError::runtime_error("No active transaction for savepoint"));
+        }
+        
+        self.savepoint_level += 1;
+        println!("💾 Created savepoint '{}' (level {})", name, self.savepoint_level);
+        Ok(())
+    }
+    
+    /// Rollback to a savepoint
+    pub fn rollback_to_savepoint(&mut self, name: &str) -> PostgresTransactionResult<()> {
+        if !self.is_active {
+            return Err(CursedError::runtime_error("No active transaction"));
+        }
+        
+        if self.savepoint_level > 0 {
+            self.savepoint_level -= 1;
+        }
+        println!("🔄 Rolled back to savepoint '{}'", name);
+        Ok(())
+    }
+    
+    /// Execute a query within the transaction
+    pub fn execute(&self, query: &str) -> PostgresTransactionResult<PostgresQueryResult> {
+        if !self.is_active {
+            return Err(CursedError::runtime_error("No active transaction"));
+        }
+        
+        if let Some(ref conn) = self.connection {
+            conn.execute(query).map_err(|e| e)
+        } else {
+            Err(CursedError::runtime_error("No connection available"))
+        }
+    }
+    
+    /// Check if transaction is active
+    pub fn is_active(&self) -> bool {
+        self.is_active
+    }
+    
+    /// Get current savepoint level
+    pub fn savepoint_level(&self) -> u32 {
+        self.savepoint_level
     }
 }
 
-impl Default for IOHandler {
-    fn default() -> Self {
-        Self::new()
+impl Drop for PostgresTransaction {
+    fn drop(&mut self) {
+        if self.is_active {
+            println!("⚠️ PostgreSQL transaction dropped while active - attempting rollback");
+            let _ = self.rollback();
+        }
     }
-}
-
-/// Initialize I/O processing
-pub fn init_transaction() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_data = b"test data";
-    let mut cursor = std::io::Cursor::new(test_data);
-    let result = handler.read_all(&mut cursor)?;
-    if result != test_data {
-        return Err(CursedError::runtime_error("I/O test failed"));
-    }
-    println!("📁 I/O processing (transaction) initialized");
-    Ok(())
-}
-
-/// Test I/O functionality
-pub fn test_transaction() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_string = "Hello, CURSED I/O!";
-    let mut buffer = Vec::new();
-    handler.write_string(&mut buffer, test_string)?;
-    let result = handler.read_string(std::io::Cursor::new(&buffer))?;
-    if result != test_string {
-        return Err(CursedError::runtime_error("I/O string test failed"));
-    }
-    Ok(())
 }

@@ -38,27 +38,28 @@ pub use rsa::{rsa_generate_keypair, rsa_encrypt, rsa_decrypt, rsa_sign, rsa_veri
 pub use ecc::{ecc_generate_keypair, ecdsa_sign, ecdsa_verify};
 pub use ed25519::{
     ed25519_verify, ed25519_verify_raw, ed25519_derive_public_key
-// };
+};
 pub use x25519::{
     x25519_key_exchange, x25519_derive_public_key, x25519_validate_public_key
-// };
+};
 pub use key_exchange::{
-    validate_key_exchange_params, list_key_exchange_algorithms, derive_key_from_shared_secret
-// };
+    validate_key_exchange_params, list_key_exchange_algorithms, derive_key_from_shared_secret,
+    x25519_generate_keypair, x448_generate_keypair, dh_generate_keypair
+};
 pub use key_agreement::{
     derive_key_from_shared_secret as derive_key_agreement
-// };
+};
 pub use key_generator::{generate_asymmetric_keypair, list_asymmetric_algorithms};
 pub use asymmetric::{
     get_asymmetric_algorithms, get_asymmetric_capabilities
-// };
+};
 pub use key_validation::{validate_key, validate_key_pair, validate_key_strength};
 pub use hardware_acceleration::{
     get_hardware_detector
-// };
+};
 pub use key_formats::{
     convert_public_key_format_enhanced, convert_private_key_format_enhanced
-// };
+};
 
 use crate::error::CursedError;
 
@@ -75,35 +76,75 @@ pub fn init_crypto_asymmetric() -> crate::error::Result<()> {
     // Test RSA engine
     let mut rsa_engine = RsaEngine::new();
     match rsa_engine.generate_keypair(2048) {
+        Ok(_) => println!("   RSA engine test passed"),
+        Err(e) => println!("   RSA engine test failed: {:?}", e),
+    }
+    
     // Test ECC engine  
     let mut ecc_engine = EccEngine::new();
     match ecc_engine.generate_keypair(EccCurve::P256) {
+        Ok(_) => println!("   ECC engine test passed"),
+        Err(e) => println!("   ECC engine test failed: {:?}", e),
+    }
+    
     // Test Ed25519 engine
     let mut ed25519_engine = Ed25519Engine::new();
     match ed25519_engine.generate_keypair() {
+        Ok(_) => println!("   Ed25519 engine test passed"),
+        Err(e) => println!("   Ed25519 engine test failed: {:?}", e),
+    }
+    
     // Test X25519 engine
     let mut x25519_engine = X25519Engine::new();
     match x25519_engine.generate_static_keypair() {
+        Ok(_) => println!("   X25519 engine test passed"),
+        Err(e) => println!("   X25519 engine test failed: {:?}", e),
+    }
+    
     // Test unified key generator
     for algorithm in [AsymmetricAlgorithm::Ed25519, AsymmetricAlgorithm::Rsa2048, AsymmetricAlgorithm::EcdsaP256] {
         match generator.generate_keypair(algorithm) {
+            Ok(_) => println!("   Unified generator test passed for {:?}", algorithm),
+            Err(e) => println!("   Unified generator test failed for {:?}: {:?}", algorithm, e),
         }
     }
     
     // Test key exchange algorithms
     println!("   Testing key exchange algorithms...");
     match x25519_generate_keypair(vec![]) {
+        Ok(_) => println!("   X25519 key exchange test passed"),
+        Err(e) => println!("   X25519 key exchange test failed: {:?}", e),
+    }
     match x448_generate_keypair(vec![]) {
+        Ok(_) => println!("   X448 key exchange test passed"),
+        Err(e) => println!("   X448 key exchange test failed: {:?}", e),
+    }
     match dh_generate_keypair(vec![]) {
+        Ok(_) => println!("   DH key exchange test passed"),
+        Err(e) => println!("   DH key exchange test failed: {:?}", e),
+    }
     println!("🔑 Asymmetric crypto package initialized successfully!");
     println!("   Features: RSA encryption/signatures, ECDSA signatures, Ed25519 signatures, X25519/X448/DH key exchange");
     println!("   Security: Production-ready cryptographic implementations with proper validation");
     
     Ok(())
+}
+
 /// fr fr Get asymmetric crypto package capabilities
 pub fn get_crypto_capabilities() -> Vec<String> {
     vec![
+        "RSA-2048".to_string(),
+        "RSA-3072".to_string(),
+        "RSA-4096".to_string(),
+        "ECDSA-P256".to_string(),
+        "ECDSA-P384".to_string(),
+        "ECDSA-P521".to_string(),
+        "Ed25519".to_string(),
+        "X25519".to_string(),
+        "X448".to_string(),
+        "DH".to_string(),
     ]
+}
 /// fr fr Crypto asymmetric package version info
 pub const CRYPTO_ASYMMETRIC_VERSION: &str = "1.0.0";
 pub const CRYPTO_ASYMMETRIC_FEATURES: &[&str] = &[

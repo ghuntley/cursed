@@ -22,18 +22,42 @@ use std::net::IpAddr;
 pub enum RateLimitDecision {
     /// fr fr Allow the request - within limits
     Allow {
+        remaining: u32,
+        reset_time: u64,
+    },
     /// fr fr Deny the request - rate limit exceeded
     Deny {
+        retry_after: u64,
+        reset_time: u64,
+    },
+}
 /// fr fr Rate limit context - information about limit status
 #[derive(Debug, Clone)]
 pub struct RateLimitContext {
+    pub remaining: u32,
+    pub reset_time: u64,
+    pub retry_after: Option<u64>,
+}
+
 /// fr fr Rate limiter - main coordination interface
 pub struct RateLimiter {
+    config: Arc<RateLimitConfig>,
+    store: Arc<dyn RateLimitStore>,
+    algorithm: Arc<dyn RateLimitAlgorithm>,
+    metrics: Arc<Mutex<RateLimitMetrics>>,
+}
 impl RateLimiter {
     /// fr fr Create new rate limiter - comprehensive setup
     pub fn new(
+        config: Arc<RateLimitConfig>,
+        store: Arc<dyn RateLimitStore>,
+        algorithm: Arc<dyn RateLimitAlgorithm>,
     ) -> Self {
         Self {
+            config,
+            store,
+            algorithm,
+            metrics: Arc::new(Mutex::new(RateLimitMetrics::new())),
         }
     }
 
@@ -54,6 +78,8 @@ impl RateLimiter {
         self.update_metrics(&decision).await;
         
         Ok(decision)
+    }
+
     /// fr fr Get rate limit context for client - detailed status
     pub async fn get_context(&self, client_id: &str) -> RateLimitResult<RateLimitContext> {
         let state = self.store.get_client_state(client_id).await?;
@@ -63,17 +89,30 @@ impl RateLimiter {
             0
         } else {
             self.config.max_requests - state.count
+        };
 
         let reset_time = match self.config.window_config {
+            WindowConfig::Fixed { duration } => state.window_start + duration,
+            WindowConfig::Sliding { duration } => now + duration,
+        };
 
         Ok(RateLimitContext {
+            remaining,
+            reset_time,
+            retry_after: if remaining == 0 { Some(reset_time - now) } else { None },
         })
+    }
+
     /// fr fr Get metrics - rate limiting statistics
     pub async fn get_metrics(&self) -> RateLimitMetrics {
         self.metrics.lock().unwrap().clone()
+    }
+
     /// fr fr Reset client state - administrative function
     pub async fn reset_client(&self, client_id: &str) -> RateLimitResult<()> {
         self.store.reset_client(client_id).await
+    }
+
     /// fr fr Update metrics with decision
     async fn update_metrics(&self, decision: &RateLimitDecision) {
         let mut metrics = self.metrics.lock().unwrap();
@@ -93,13 +132,20 @@ impl RateLimiter {
 /// fr fr Client state for rate limiting - request tracking
 #[derive(Debug, Clone)]
 pub struct ClientState {
+    pub count: u32,
+    pub window_start: u64,
     pub tokens: f64, // For token bucket algorithm
     pub requests: Vec<u64>, // For sliding window (timestamps)
+}
 impl ClientState {
     /// fr fr Create new client state - initial setup
     pub fn new() -> Self {
         let now = current_timestamp();
         Self {
+            count: 0,
+            window_start: now,
+            tokens: 0.0,
+            requests: Vec::new(),
         }
     }
 
@@ -123,9 +169,13 @@ pub fn current_timestamp() -> u64 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs()
+}
+
 /// fr fr Extract client identifier from IP - identification logic
 pub fn extract_client_id(ip: Option<IpAddr>) -> String {
     match ip {
+        Some(addr) => addr.to_string(),
+        None => "unknown".to_string(),
     }
 }
 

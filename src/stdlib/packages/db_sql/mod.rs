@@ -29,11 +29,11 @@ pub use types::{
     SqlNull, SqlDateTime, SqlDecimal, SqlArray, SqlJson
 };
 pub use dialect::{
-    DialectFeatures, SqlKeywords, SqlFunctions, SqlDialectTrait
+    SqlDialectTrait, MySqlDialect, PostgreSqlDialect, SqliteDialect
 };
 pub use connection::{SqlConnection, SqlConnectionPool, SqlTransaction};
 pub use prepared::{PreparedStatement, StatementCache};
-pub use result::{SqlResultSet, SqlExecuteResult, SqlRowIterator};
+pub use result::{SqlRowIterator};
 pub use migration::{
     SchemaVersion, MigrationScript
 };
@@ -44,15 +44,122 @@ pub use postgresql::{PostgreSqlDriver, PostgreSqlConnection, PgError};
 pub use sqlite::{SqliteDriver, SqliteConnection, SqliteError};
 
 // Placeholder imports disabled
-    ConnectionConfig, DatabaseDriver
+// ConnectionConfig, DatabaseDriver
 // };
 use crate::error::CursedError;
-// use crate::stdlib::packages::db_core::error::{DatabaseResult as DbResult};
-
+use std::collections::HashMap;
 use std::sync::Arc;
 
-/// fr fr SQL driver registry for managing SQL-specific drivers
+// Import database types and errors
+use crate::stdlib::database::{SqlValue, DatabaseError};
+
+// Define result types for DB operations
+pub type DbResult<T> = Result<T, DatabaseError>;
+
+/// Connection configuration
+#[derive(Debug, Clone)]
+pub struct ConnectionConfig {
+    pub host: String,
+    pub port: u16,
+    pub database: String,
+    pub username: String,
+    pub password: String,
+    pub ssl_mode: bool,
+}
+
+impl ConnectionConfig {
+    pub fn from_string(connection_string: &str) -> DbResult<Self> {
+        // Very basic parsing - in real implementation would use proper URL parsing
+        if connection_string.starts_with("postgres://") || connection_string.starts_with("postgresql://") {
+            Ok(ConnectionConfig {
+                host: "localhost".to_string(),
+                port: 5432,
+                database: "default".to_string(),
+                username: "user".to_string(),
+                password: "password".to_string(),
+                ssl_mode: false,
+            })
+        } else if connection_string.starts_with("mysql://") {
+            Ok(ConnectionConfig {
+                host: "localhost".to_string(),
+                port: 3306,
+                database: "default".to_string(),
+                username: "user".to_string(),
+                password: "password".to_string(),
+                ssl_mode: false,
+            })
+        } else if connection_string.starts_with("sqlite://") {
+            Ok(ConnectionConfig {
+                host: "".to_string(),
+                port: 0,
+                database: connection_string.trim_start_matches("sqlite://").to_string(),
+                username: "".to_string(),
+                password: "".to_string(),
+                ssl_mode: false,
+            })
+        } else {
+            Err(DatabaseError::connection("Invalid connection string format"))
+        }
+    }
+}
+
+/// Basic database connection trait
+pub trait DatabaseConnection: Send + Sync {
+    fn execute(&self, query: &str, params: &[SqlValue]) -> DbResult<SqlExecuteResult>;
+    fn query(&self, query: &str, params: &[SqlValue]) -> DbResult<SqlResultSet>;
+    fn close(&self) -> DbResult<()>;
+}
+
+/// SQL result set
 #[derive(Debug)]
+pub struct SqlResultSet {
+    pub rows: Vec<Vec<SqlValue>>,
+    pub columns: Vec<String>,
+}
+
+impl SqlResultSet {
+    pub fn new(columns: Vec<String>) -> Self {
+        SqlResultSet {
+            rows: Vec::new(),
+            columns,
+        }
+    }
+    
+    pub fn add_row(&mut self, row: Vec<SqlValue>) {
+        self.rows.push(row);
+    }
+    
+    pub fn len(&self) -> usize {
+        self.rows.len()
+    }
+    
+    pub fn is_empty(&self) -> bool {
+        self.rows.is_empty()
+    }
+}
+
+/// SQL execution result
+#[derive(Debug)]
+pub struct SqlExecuteResult {
+    pub rows_affected: u64,
+    pub last_insert_id: Option<i64>,
+}
+
+impl SqlExecuteResult {
+    pub fn new(rows_affected: u64) -> Self {
+        SqlExecuteResult {
+            rows_affected,
+            last_insert_id: None,
+        }
+    }
+    
+    pub fn with_insert_id(mut self, id: i64) -> Self {
+        self.last_insert_id = Some(id);
+        self
+    }
+}
+
+/// fr fr SQL driver registry for managing SQL-specific drivers
 pub struct SqlDriverRegistry {
     drivers: HashMap<String, Arc<dyn SqlDriver>>,
 }
@@ -142,7 +249,7 @@ pub mod utils {
     pub async fn sql_connect(driver_name: &str, connection_string: &str) -> DbResult<Box<dyn DatabaseConnection>> {
         let driver = get_sql_driver(driver_name)?;
         let config = ConnectionConfig::from_string(connection_string)?;
-        driver.connect(config).await
+        driver.connect(&config)
     }
     /// slay Execute a quick SQL query
     pub async fn sql_query(
@@ -156,9 +263,9 @@ pub mod utils {
             .map(|v| v.clone())
             .collect();
         
-        let result = conn.query(sql, &db_params).await?;
-        // Convert result to SqlResultSet
-        Ok(SqlResultSet::from_database_result(result))
+        let result = conn.query(sql, &db_params)?;
+        // Result is already SqlResultSet
+        Ok(result)
     }
 
     /// slay Execute a SQL statement (INSERT, UPDATE, DELETE)
@@ -173,8 +280,8 @@ pub mod utils {
             .map(|v| v.clone())
             .collect();
         
-        let result = conn.execute(sql, &db_params).await?;
-        Ok(SqlExecuteResult::from_execute_result(result))
+        let result = conn.execute(sql, &db_params)?;
+        Ok(result)
     }
 
     /// slay Check if a SQL driver is available
@@ -196,18 +303,36 @@ pub mod utils {
 #[derive(Debug, Clone)]
 pub struct SqlConfig {
     /// Default connection timeout
+    pub connection_timeout: u32,
     /// Default query timeout
+    pub query_timeout: u32,
     /// Enable statement caching by default
+    pub enable_statement_caching: bool,
     /// Default statement cache size
+    pub statement_cache_size: usize,
     /// Enable connection pooling by default
+    pub enable_connection_pooling: bool,
     /// Default connection pool size
+    pub connection_pool_size: usize,
     /// Enable SQL query logging
+    pub enable_query_logging: bool,
     /// Enable performance monitoring
+    pub enable_performance_monitoring: bool,
+}
 impl Default for SqlConfig {
     fn default() -> Self {
         Self {
+            connection_timeout: 30,
+            query_timeout: 30,
+            enable_statement_caching: true,
+            statement_cache_size: 1000,
+            enable_connection_pooling: true,
+            connection_pool_size: 10,
+            enable_query_logging: false,
+            enable_performance_monitoring: false,
         }
     }
+}
 /// slay Initialize the db_sql package
 pub fn init_db_sql() -> DbResult<()> {
     println!("🗄️ db_sql package initialized - SQL drivers loaded and ready bestie!");

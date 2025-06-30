@@ -10,6 +10,62 @@ pub struct CryptoHandler {
     key_size: usize,
 }
 
+#[derive(Debug, Clone)]
+pub enum SignatureFormat {
+    Der,
+    Pkcs7,
+    Jwk,
+    Raw,
+}
+
+#[derive(Debug, Clone)]
+pub struct SignatureFormatHandler {
+    format: SignatureFormat,
+    options: EncodingOptions,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct EncodingOptions {
+    pub compression: bool,
+    pub base64_encoding: bool,
+    pub metadata_included: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct SignatureMetadata {
+    pub timestamp: u64,
+    pub signer_info: String,
+    pub algorithm: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct EncodedSignature {
+    pub data: Vec<u8>,
+    pub format: SignatureFormat,
+    pub metadata: Option<SignatureMetadata>,
+}
+
+impl SignatureFormatHandler {
+    pub fn new(format: SignatureFormat) -> Self {
+        Self { 
+            format, 
+            options: EncodingOptions::default() 
+        }
+    }
+    
+    pub fn encode(&self, signature: &[u8]) -> CryptoResult<EncodedSignature> {
+        Ok(EncodedSignature {
+            data: signature.to_vec(),
+            format: self.format.clone(),
+            metadata: None,
+        })
+    }
+    
+    pub fn decode(&self, encoded: &EncodedSignature) -> CryptoResult<Vec<u8>> {
+        Ok(encoded.data.clone())
+    }
+}
+
 impl CryptoHandler {
     /// Create a new crypto handler
     pub fn new() -> Self {

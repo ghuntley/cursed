@@ -25,17 +25,27 @@ pub use signal_protocol::{SignalProtocolManager, SignalKeyBundle, SignalMessage}
 pub use tls_handshake::{TlsHandshakeManager, TlsVersion, TlsCipherSuite, TlsHandshakeSession};
 pub use session_management::{SessionManager, CryptoSession, SessionTicket, SessionConfig};
 
-// use crate::stdlib::packages::crypto_advanced::AdvancedCryptoResult;
+use crate::error::CursedError;
 
-/// Cryptographic protocols package initialization
-pub fn init_crypto_protocols() -> AdvancedCryptoResult<()> {
-    println!("🔐 Cryptographic protocols package initialized - secure communications ready!");
-    Ok(())
-/// Create a comprehensive cryptographic protocols suite
-pub fn create_protocol_suite() -> AdvancedCryptoResult<CryptoProtocolSuite> {
-    Ok(CryptoProtocolSuite {
-    })
 /// Comprehensive cryptographic protocols suite
 #[derive(Debug)]
 pub struct CryptoProtocolSuite {
+    pub key_exchange_manager: String,
+    pub authentication_manager: String,
+    pub secure_channel_manager: String,
+}
+
+/// Cryptographic protocols package initialization
+pub fn init_crypto_protocols() -> Result<(), CursedError> {
+    println!("🔐 Cryptographic protocols package initialized - secure communications ready!");
+    Ok(())
+}
+
+/// Create a comprehensive cryptographic protocols suite
+pub fn create_protocol_suite() -> Result<CryptoProtocolSuite, CursedError> {
+    Ok(CryptoProtocolSuite {
+        key_exchange_manager: "ecdh_manager".to_string(),
+        authentication_manager: "auth_manager".to_string(),
+        secure_channel_manager: "channel_manager".to_string(),
+    })
 }

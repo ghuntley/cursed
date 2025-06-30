@@ -1,9 +1,72 @@
 //! Functional implementation for mapper
 
 use crate::error::CursedError;
+use std::collections::HashMap;
 
 /// Result type for mapper operations
 pub type ModuleResult<T> = Result<T, CursedError>;
+
+/// Table mapper for ORM operations
+#[derive(Debug, Clone)]
+pub struct TableMapper {
+    pub table_name: String,
+    pub columns: HashMap<String, ColumnMapper>,
+    pub primary_key: Option<String>,
+}
+
+impl TableMapper {
+    pub fn new(table_name: String) -> Self {
+        Self {
+            table_name,
+            columns: HashMap::new(),
+            primary_key: None,
+        }
+    }
+    
+    pub fn add_column(&mut self, name: String, mapper: ColumnMapper) {
+        self.columns.insert(name, mapper);
+    }
+    
+    pub fn set_primary_key(&mut self, key: String) {
+        self.primary_key = Some(key);
+    }
+    
+    pub fn get_column(&self, name: &str) -> Option<&ColumnMapper> {
+        self.columns.get(name)
+    }
+}
+
+/// Column mapper for individual columns
+#[derive(Debug, Clone)]
+pub struct ColumnMapper {
+    pub column_name: String,
+    pub field_name: String,
+    pub data_type: String,
+    pub nullable: bool,
+    pub auto_increment: bool,
+}
+
+impl ColumnMapper {
+    pub fn new(column_name: String, field_name: String, data_type: String) -> Self {
+        Self {
+            column_name,
+            field_name,
+            data_type,
+            nullable: false,
+            auto_increment: false,
+        }
+    }
+    
+    pub fn nullable(mut self, nullable: bool) -> Self {
+        self.nullable = nullable;
+        self
+    }
+    
+    pub fn auto_increment(mut self, auto_increment: bool) -> Self {
+        self.auto_increment = auto_increment;
+        self
+    }
+}
 
 /// mapper operations handler
 pub struct ModuleHandler {

@@ -1,86 +1,113 @@
-//! I/O functionality for connection
+//! PostgreSQL connection implementation
 
 use crate::error::CursedError;
-use std::io::{self, Read, Write};
+use std::collections::HashMap;
 
-/// Result type for I/O operations
-pub type IOResult<T> = Result<T, CursedError>;
+/// Result type for PostgreSQL connection operations
+pub type PostgresConnectionResult<T> = Result<T, CursedError>;
 
-/// I/O operations handler
-pub struct IOHandler {
-    buffer_size: usize,
+/// PostgreSQL connection
+pub struct PostgresConnection {
+    connection_string: String,
+    is_connected: bool,
+    transaction_level: u32,
 }
 
-impl IOHandler {
-    /// Create a new I/O handler
-    pub fn new() -> Self {
+impl PostgresConnection {
+    /// Create a new PostgreSQL connection
+    pub fn new(connection_string: String) -> Self {
         Self {
-            buffer_size: 8192,
+            connection_string,
+            is_connected: false,
+            transaction_level: 0,
         }
     }
     
-    /// Set buffer size
-    pub fn buffer_size(mut self, size: usize) -> Self {
-        self.buffer_size = size;
-        self
-    }
-    
-    /// Read from a reader
-    pub fn read_all<R: Read>(&self, mut reader: R) -> IOResult<Vec<u8>> {
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)
-            .map_err(|e| CursedError::runtime_error(&format!("Read error: {}", e)))?;
-        Ok(buffer)
-    }
-    
-    /// Write to a writer
-    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> IOResult<()> {
-        writer.write_all(data)
-            .map_err(|e| CursedError::runtime_error(&format!("Write error: {}", e)))?;
+    /// Connect to PostgreSQL database
+    pub fn connect(&mut self) -> PostgresConnectionResult<()> {
+        // Stub implementation - would connect to actual PostgreSQL
+        println!("🔌 Connecting to PostgreSQL: {}", self.connection_string);
+        self.is_connected = true;
         Ok(())
     }
     
-    /// Read string from reader
-    pub fn read_string<R: Read>(&self, reader: R) -> IOResult<String> {
-        let bytes = self.read_all(reader)?;
-        String::from_utf8(bytes)
-            .map_err(|e| CursedError::runtime_error(&format!("UTF-8 decode error: {}", e)))
+    /// Disconnect from PostgreSQL database
+    pub fn disconnect(&mut self) -> PostgresConnectionResult<()> {
+        println!("🔌 Disconnecting from PostgreSQL");
+        self.is_connected = false;
+        Ok(())
     }
     
-    /// Write string to writer
-    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> IOResult<()> {
-        self.write_all(writer, text.as_bytes())
+    /// Check if connected
+    pub fn is_connected(&self) -> bool {
+        self.is_connected
+    }
+    
+    /// Execute a query
+    pub fn execute(&self, query: &str) -> PostgresConnectionResult<PostgresQueryResult> {
+        if !self.is_connected {
+            return Err(CursedError::runtime_error("Not connected to database"));
+        }
+        println!("🔍 Executing query: {}", query);
+        Ok(PostgresQueryResult::new(1, Vec::new()))
+    }
+    
+    /// Begin a transaction
+    pub fn begin_transaction(&mut self) -> PostgresConnectionResult<()> {
+        self.transaction_level += 1;
+        println!("🔄 Beginning transaction (level {})", self.transaction_level);
+        Ok(())
+    }
+    
+    /// Commit transaction
+    pub fn commit(&mut self) -> PostgresConnectionResult<()> {
+        if self.transaction_level > 0 {
+            self.transaction_level -= 1;
+            println!("✅ Committing transaction (level {})", self.transaction_level);
+        }
+        Ok(())
+    }
+    
+    /// Rollback transaction
+    pub fn rollback(&mut self) -> PostgresConnectionResult<()> {
+        if self.transaction_level > 0 {
+            self.transaction_level -= 1;
+            println!("🔄 Rolling back transaction (level {})", self.transaction_level);
+        }
+        Ok(())
     }
 }
 
-impl Default for IOHandler {
+impl Default for PostgresConnection {
     fn default() -> Self {
-        Self::new()
+        Self::new("postgresql://localhost:5432/postgres".to_string())
     }
 }
 
-/// Initialize I/O processing
-pub fn init_connection() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_data = b"test data";
-    let mut cursor = std::io::Cursor::new(test_data);
-    let result = handler.read_all(&mut cursor)?;
-    if result != test_data {
-        return Err(CursedError::runtime_error("I/O test failed"));
-    }
-    println!("📁 I/O processing (connection) initialized");
-    Ok(())
+/// PostgreSQL query result
+pub struct PostgresQueryResult {
+    pub rows_affected: u64,
+    pub rows: Vec<HashMap<String, PostgresValue>>,
 }
 
-/// Test I/O functionality
-pub fn test_connection() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_string = "Hello, CURSED I/O!";
-    let mut buffer = Vec::new();
-    handler.write_string(&mut buffer, test_string)?;
-    let result = handler.read_string(std::io::Cursor::new(&buffer))?;
-    if result != test_string {
-        return Err(CursedError::runtime_error("I/O string test failed"));
+impl PostgresQueryResult {
+    pub fn new(rows_affected: u64, rows: Vec<HashMap<String, PostgresValue>>) -> Self {
+        Self {
+            rows_affected,
+            rows,
+        }
     }
-    Ok(())
+}
+
+/// PostgreSQL value wrapper
+#[derive(Debug, Clone)]
+pub enum PostgresValue {
+    Null,
+    Bool(bool),
+    Int32(i32),
+    Int64(i64),
+    Float32(f32),
+    Float64(f64),
+    Text(String),
+    Bytes(Vec<u8>),
 }

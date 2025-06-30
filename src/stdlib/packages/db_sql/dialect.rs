@@ -49,6 +49,123 @@ impl Default for ModuleHandler {
     }
 }
 
+/// SQL dialect trait for different database implementations
+pub trait SqlDialectTrait: Send + Sync {
+    fn quote_identifier(&self, identifier: &str) -> String;
+    fn escape_string(&self, s: &str) -> String;
+    fn limit_clause(&self, limit: Option<usize>, offset: Option<usize>) -> String;
+    fn supports_returning(&self) -> bool;
+    fn supports_upsert(&self) -> bool;
+}
+
+/// MySQL SQL dialect
+pub struct MySqlDialect;
+
+impl MySqlDialect {
+    pub fn new() -> Self {
+        MySqlDialect
+    }
+}
+
+impl SqlDialectTrait for MySqlDialect {
+    fn quote_identifier(&self, identifier: &str) -> String {
+        format!("`{}`", identifier.replace("`", "``"))
+    }
+    
+    fn escape_string(&self, s: &str) -> String {
+        format!("'{}'", s.replace("'", "''"))
+    }
+    
+    fn limit_clause(&self, limit: Option<usize>, offset: Option<usize>) -> String {
+        match (limit, offset) {
+            (Some(l), Some(o)) => format!("LIMIT {} OFFSET {}", l, o),
+            (Some(l), None) => format!("LIMIT {}", l),
+            (None, Some(o)) => format!("LIMIT 18446744073709551615 OFFSET {}", o),
+            (None, None) => String::new(),
+        }
+    }
+    
+    fn supports_returning(&self) -> bool {
+        false
+    }
+    
+    fn supports_upsert(&self) -> bool {
+        true
+    }
+}
+
+/// PostgreSQL SQL dialect
+pub struct PostgreSqlDialect;
+
+impl PostgreSqlDialect {
+    pub fn new() -> Self {
+        PostgreSqlDialect
+    }
+}
+
+impl SqlDialectTrait for PostgreSqlDialect {
+    fn quote_identifier(&self, identifier: &str) -> String {
+        format!("\"{}\"", identifier.replace("\"", "\"\""))
+    }
+    
+    fn escape_string(&self, s: &str) -> String {
+        format!("'{}'", s.replace("'", "''"))
+    }
+    
+    fn limit_clause(&self, limit: Option<usize>, offset: Option<usize>) -> String {
+        match (limit, offset) {
+            (Some(l), Some(o)) => format!("LIMIT {} OFFSET {}", l, o),
+            (Some(l), None) => format!("LIMIT {}", l),
+            (None, Some(o)) => format!("OFFSET {}", o),
+            (None, None) => String::new(),
+        }
+    }
+    
+    fn supports_returning(&self) -> bool {
+        true
+    }
+    
+    fn supports_upsert(&self) -> bool {
+        true
+    }
+}
+
+/// SQLite SQL dialect
+pub struct SqliteDialect;
+
+impl SqliteDialect {
+    pub fn new() -> Self {
+        SqliteDialect
+    }
+}
+
+impl SqlDialectTrait for SqliteDialect {
+    fn quote_identifier(&self, identifier: &str) -> String {
+        format!("\"{}\"", identifier.replace("\"", "\"\""))
+    }
+    
+    fn escape_string(&self, s: &str) -> String {
+        format!("'{}'", s.replace("'", "''"))
+    }
+    
+    fn limit_clause(&self, limit: Option<usize>, offset: Option<usize>) -> String {
+        match (limit, offset) {
+            (Some(l), Some(o)) => format!("LIMIT {} OFFSET {}", l, o),
+            (Some(l), None) => format!("LIMIT {}", l),
+            (None, Some(o)) => format!("LIMIT -1 OFFSET {}", o),
+            (None, None) => String::new(),
+        }
+    }
+    
+    fn supports_returning(&self) -> bool {
+        true
+    }
+    
+    fn supports_upsert(&self) -> bool {
+        true
+    }
+}
+
 /// Initialize dialect processing
 pub fn init_dialect() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
