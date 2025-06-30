@@ -7,7 +7,7 @@
 /// - Concurrent collection for better performance
 /// - Integration with CURSED runtime components
 
-use std::sync::{Arc, Mutex, RwLock, Condvar};
+use std::sync::{Arc, Mutex, RwLock, Condvar, OnceLock};
 use std::sync::atomic::{AtomicUsize, AtomicBool, AtomicPtr, Ordering};
 use std::collections::{HashMap, VecDeque};
 use std::ptr::NonNull;
@@ -1722,7 +1722,14 @@ pub fn initialize_gc(config: GcConfig, stack_manager: Arc<RuntimeStack>) -> Resu
 
 /// Get global garbage collector
 pub fn get_global_gc() -> Option<Arc<GarbageCollector>> {
-    unsafe { GLOBAL_GC.clone() }
+    unsafe { 
+        let ptr = &raw const GLOBAL_GC;
+        if (*ptr).is_some() {
+            std::ptr::read(ptr)
+        } else {
+            None
+        }
+    }
 }
 
 /// Shutdown global garbage collector
