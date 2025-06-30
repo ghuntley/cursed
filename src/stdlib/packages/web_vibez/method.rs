@@ -1,71 +1,69 @@
-//! Functional implementation for method
+use std::fmt;
 
-use crate::error::CursedError;
-
-/// Result type for method operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// method operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// HTTP method enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum HttpMethod {
+    Get,
+    Post,
+    Put,
+    Delete,
+    Head,
+    Options,
+    Patch,
+    Trace,
+    Connect,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
+impl fmt::Display for HttpMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            HttpMethod::Get => write!(f, "GET"),
+            HttpMethod::Post => write!(f, "POST"),
+            HttpMethod::Put => write!(f, "PUT"),
+            HttpMethod::Delete => write!(f, "DELETE"),
+            HttpMethod::Head => write!(f, "HEAD"),
+            HttpMethod::Options => write!(f, "OPTIONS"),
+            HttpMethod::Patch => write!(f, "PATCH"),
+            HttpMethod::Trace => write!(f, "TRACE"),
+            HttpMethod::Connect => write!(f, "CONNECT"),
+        }
+    }
+}
+
+/// Set of HTTP methods
+pub struct MethodSet {
+    methods: Vec<HttpMethod>,
+}
+
+impl MethodSet {
     pub fn new() -> Self {
         Self {
-            enabled: true,
+            methods: Vec::new(),
         }
     }
     
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
+    pub fn add(mut self, method: HttpMethod) -> Self {
+        self.methods.push(method);
         self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: method, Enabled: {}", self.enabled)
     }
 }
 
-impl Default for ModuleHandler {
+impl Default for MethodSet {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Initialize method processing
-pub fn init_method() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (method) initialized");
-    Ok(())
+/// Invalid method error
+#[derive(Debug)]
+pub struct InvalidMethodError {
+    pub method: String,
 }
 
-/// Test method functionality
-pub fn test_method() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+impl fmt::Display for InvalidMethodError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Invalid HTTP method: {}", self.method)
     }
-    Ok(())
 }
+
+impl std::error::Error for InvalidMethodError {}

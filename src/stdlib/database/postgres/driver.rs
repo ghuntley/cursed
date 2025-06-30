@@ -1,71 +1,109 @@
-//! Functional implementation for driver
+//! PostgreSQL driver implementation
 
 use crate::error::CursedError;
+use std::collections::HashMap;
 
-/// Result type for driver operations
-pub type ModuleResult<T> = Result<T, CursedError>;
+/// Result type for PostgreSQL operations
+pub type PostgresResult<T> = Result<T, CursedError>;
 
-/// driver operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// PostgreSQL driver implementation
+pub struct PostgresDriver {
+    config: PostgresConfig,
+    connection_pool: Option<Box<dyn std::any::Any>>,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
+/// PostgreSQL configuration
+#[derive(Debug, Clone)]  
+pub struct PostgresConfig {
+    pub host: String,
+    pub port: u16,
+    pub database: String,
+    pub username: String,
+    pub password: String,
+    pub ssl_mode: SslMode,
+}
+
+/// SSL mode for PostgreSQL connections
+#[derive(Debug, Clone, Default)]
+pub enum SslMode {
+    #[default]
+    Disable,
+    Prefer, 
+    Require,
+    VerifyCa,
+    VerifyFull,
+}
+
+impl PostgresDriver {
+    /// Create a new PostgreSQL driver
+    pub fn new(config: PostgresConfig) -> Self {
         Self {
-            enabled: true,
+            config,
+            connection_pool: None,
         }
     }
     
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
+    /// Connect to PostgreSQL database
+    pub fn connect(&mut self) -> PostgresResult<()> {
+        // Stub implementation - would connect to actual PostgreSQL
+        println!("🐘 Connecting to PostgreSQL at {}:{}", self.config.host, self.config.port);
+        Ok(())
+    }
+    
+    /// Execute a query
+    pub fn execute(&self, query: &str) -> PostgresResult<u64> {
+        // Stub implementation - would execute actual query
+        println!("🔍 Executing PostgreSQL query: {}", query);
+        Ok(1)
+    }
+    
+    /// Prepare a statement
+    pub fn prepare(&self, query: &str) -> PostgresResult<PostgresStatement> {
+        println!("📝 Preparing PostgreSQL statement: {}", query);
+        Ok(PostgresStatement::new(query.to_string()))
+    }
+}
+
+impl Default for PostgresDriver {
+    fn default() -> Self {
+        Self::new(PostgresConfig::default())
+    }
+}
+
+impl Default for PostgresConfig {
+    fn default() -> Self {
+        Self {
+            host: "localhost".to_string(),
+            port: 5432,
+            database: "postgres".to_string(),
+            username: "postgres".to_string(),
+            password: "".to_string(),
+            ssl_mode: SslMode::Prefer,
+        }
+    }
+}
+
+/// PostgreSQL prepared statement
+pub struct PostgresStatement {
+    query: String,
+    params: Vec<Box<dyn std::any::Any>>,
+}
+
+impl PostgresStatement {
+    pub fn new(query: String) -> Self {
+        Self {
+            query,
+            params: Vec::new(),
+        }
+    }
+    
+    pub fn bind<T: 'static>(&mut self, value: T) -> &mut Self {
+        self.params.push(Box::new(value));
         self
     }
     
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
+    pub fn execute(&self) -> PostgresResult<u64> {
+        println!("⚡ Executing prepared statement: {}", self.query);
+        Ok(1)
     }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: driver, Enabled: {}", self.enabled)
-    }
-}
-
-impl Default for ModuleHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Initialize driver processing
-pub fn init_driver() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (driver) initialized");
-    Ok(())
-}
-
-/// Test driver functionality
-pub fn test_driver() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
 }

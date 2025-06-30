@@ -84,3 +84,24 @@ pub fn test_validation() -> IOResult<()> {
     }
     Ok(())
 }
+
+// Validation specific types
+#[derive(Debug, Clone)]
+pub enum ValidationLevel {
+    Basic,
+    Standard,
+    Strict,
+    Extended,
+}
+
+#[derive(Debug, Clone)]
+pub enum ValidationMode {
+    ClientAuth,
+    ServerAuth,
+    CodeSigning,
+    EmailProtection,
+}
+
+pub fn create_validation_context(level: ValidationLevel, mode: ValidationMode) -> IOResult<String> {
+    Ok(format!("ValidationContext: {:?} + {:?}", level, mode))
+}

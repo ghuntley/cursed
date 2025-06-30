@@ -84,3 +84,29 @@ pub fn test_tls_handshake() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// TLS Handshake specific types
+#[derive(Debug, Clone)]
+pub struct TlsHandshakeManager {
+    pub version: TlsVersion,
+}
+
+#[derive(Debug, Clone)]
+pub enum TlsVersion {
+    V1_2,
+    V1_3,
+}
+
+#[derive(Debug, Clone)]
+pub struct TlsCipherSuite {
+    pub id: u16,
+    pub name: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct TlsHandshakeSession {
+    pub session_id: Vec<u8>,
+    pub cipher_suite: TlsCipherSuite,
+}

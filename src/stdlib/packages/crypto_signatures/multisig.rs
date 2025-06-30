@@ -10,6 +10,34 @@ pub struct CryptoHandler {
     key_size: usize,
 }
 
+#[derive(Debug, Clone)]
+pub enum MultiSigAlgorithm {
+    Threshold,
+    WeightedThreshold,
+    BooleanOr,
+}
+
+#[derive(Debug, Clone)]
+pub struct IndividualSignature {
+    pub signer_index: usize,
+    pub signature: Vec<u8>,
+    pub public_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MultiSigStats {
+    pub multisig_created: u64,
+    pub verifications_performed: u64,
+    pub threshold_reached: u64,
+    pub errors: u64,
+}
+
+impl MultiSigAlgorithm {
+    pub fn verify_threshold(&self, signatures: &[IndividualSignature], threshold: usize) -> CryptoResult<bool> {
+        Ok(signatures.len() >= threshold)
+    }
+}
+
 impl CryptoHandler {
     /// Create a new crypto handler
     pub fn new() -> Self {

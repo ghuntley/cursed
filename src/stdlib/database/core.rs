@@ -49,6 +49,85 @@ impl Default for ModuleHandler {
     }
 }
 
+/// SQL value representation
+#[derive(Debug, Clone)]
+pub enum SqlValue {
+    Null,
+    Bool(bool),
+    Int(i64),
+    Float(f64),
+    Text(String),
+    Bytes(Vec<u8>),
+    DateTime(String),
+    Decimal(String),
+    Array(Vec<SqlValue>),
+    Json(String),
+}
+
+impl SqlValue {
+    pub fn is_null(&self) -> bool {
+        matches!(self, SqlValue::Null)
+    }
+    
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            SqlValue::Text(s) => Some(s),
+            _ => None,
+        }
+    }
+    
+    pub fn as_i64(&self) -> Option<i64> {
+        match self {
+            SqlValue::Int(i) => Some(*i),
+            _ => None,
+        }
+    }
+    
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            SqlValue::Float(f) => Some(*f),
+            _ => None,
+        }
+    }
+    
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            SqlValue::Bool(b) => Some(*b),
+            _ => None,
+        }
+    }
+}
+
+impl From<&str> for SqlValue {
+    fn from(s: &str) -> Self {
+        SqlValue::Text(s.to_string())
+    }
+}
+
+impl From<String> for SqlValue {
+    fn from(s: String) -> Self {
+        SqlValue::Text(s)
+    }
+}
+
+impl From<i64> for SqlValue {
+    fn from(i: i64) -> Self {
+        SqlValue::Int(i)
+    }
+}
+
+impl From<f64> for SqlValue {
+    fn from(f: f64) -> Self {
+        SqlValue::Float(f)
+    }
+}
+
+impl From<bool> for SqlValue {
+    fn from(b: bool) -> Self {
+        SqlValue::Bool(b)
+    }
+}
+
 /// Initialize core processing
 pub fn init_core() -> ModuleResult<()> {
     let handler = ModuleHandler::new();

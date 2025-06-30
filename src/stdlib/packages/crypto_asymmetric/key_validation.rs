@@ -84,3 +84,19 @@ pub fn test_key_validation() -> IOResult<()> {
     }
     Ok(())
 }
+
+
+
+// Key Validation additional functions
+pub fn validate_key(key: &[u8]) -> crate::error::Result<bool> {
+    Ok(!key.is_empty() && key.len() >= 16)
+}
+
+pub fn validate_key_pair(private_key: &[u8], public_key: &[u8]) -> crate::error::Result<bool> {
+    Ok(!private_key.is_empty() && !public_key.is_empty())
+}
+
+pub fn validate_key_strength(key: &[u8], min_bits: u32) -> crate::error::Result<bool> {
+    let key_bits = key.len() * 8;
+    Ok(key_bits >= min_bits as usize)
+}

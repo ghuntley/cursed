@@ -1,71 +1,54 @@
-//! Functional implementation for error
+use std::fmt;
 
-use crate::error::CursedError;
+/// Result type for rate limit operations
+pub type RateLimitResult<T> = Result<T, RateLimitError>;
 
-/// Result type for error operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// error operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// Rate limit specific error types
+#[derive(Debug, Clone)]
+pub enum RateLimitError {
+    StoreError(String),
+    ConfigurationError(String),
+    AlgorithmError(String),
+    NetworkError(String),
+    TimeoutError,
+    InternalError(String),
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
-        Self {
-            enabled: true,
+impl fmt::Display for RateLimitError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RateLimitError::StoreError(msg) => write!(f, "Store error: {}", msg),
+            RateLimitError::ConfigurationError(msg) => write!(f, "Configuration error: {}", msg),
+            RateLimitError::AlgorithmError(msg) => write!(f, "Algorithm error: {}", msg),
+            RateLimitError::NetworkError(msg) => write!(f, "Network error: {}", msg),
+            RateLimitError::TimeoutError => write!(f, "Timeout error"),
+            RateLimitError::InternalError(msg) => write!(f, "Internal error: {}", msg),
         }
     }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+}
+
+impl std::error::Error for RateLimitError {}
+
+/// Error category classification
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ErrorCategory {
+    Configuration,
+    Network,
+    Storage,
+    Algorithm,
+    Timeout,
+    Internal,
+}
+
+impl From<RateLimitError> for ErrorCategory {
+    fn from(error: RateLimitError) -> Self {
+        match error {
+            RateLimitError::StoreError(_) => ErrorCategory::Storage,
+            RateLimitError::ConfigurationError(_) => ErrorCategory::Configuration,
+            RateLimitError::AlgorithmError(_) => ErrorCategory::Algorithm,
+            RateLimitError::NetworkError(_) => ErrorCategory::Network,
+            RateLimitError::TimeoutError => ErrorCategory::Timeout,
+            RateLimitError::InternalError(_) => ErrorCategory::Internal,
         }
-        Ok(format!("Processed: {}", data))
     }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: error, Enabled: {}", self.enabled)
-    }
-}
-
-impl Default for ModuleHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Initialize error processing
-pub fn init_error() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (error) initialized");
-    Ok(())
-}
-
-/// Test error functionality
-pub fn test_error() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
 }

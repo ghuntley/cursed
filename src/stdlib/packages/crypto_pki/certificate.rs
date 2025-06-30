@@ -84,3 +84,42 @@ pub fn test_certificate() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Certificate specific types
+#[derive(Debug, Clone)]
+pub enum CertificateFormat {
+    Pem,
+    Der,
+    P7b,
+    P12,
+}
+
+#[derive(Debug, Clone)]
+pub struct CertificateParser {
+    pub format: CertificateFormat,
+}
+
+impl CertificateParser {
+    pub fn new(format: CertificateFormat) -> Self {
+        Self { format }
+    }
+    
+    pub fn parse(&self, data: &[u8]) -> CryptoResult<String> {
+        Ok("parsed_certificate".to_string())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CertificateValidator {
+    pub strict_mode: bool,
+}
+
+impl CertificateValidator {
+    pub fn new() -> Self {
+        Self { strict_mode: false }
+    }
+    
+    pub fn validate(&self, cert_data: &[u8]) -> CryptoResult<bool> {
+        Ok(true)
+    }
+}

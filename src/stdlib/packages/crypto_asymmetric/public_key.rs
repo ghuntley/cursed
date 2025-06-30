@@ -84,3 +84,33 @@ pub fn test_public_key() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// Public Key specific types
+#[derive(Debug, Clone)]
+pub struct PublicKeyEngine {
+    pub key_type: PublicKeyType,
+}
+
+#[derive(Debug, Clone)]
+pub enum PublicKeyType {
+    RSA,
+    ECC,
+    Ed25519,
+    X25519,
+}
+
+#[derive(Debug, Clone)]
+pub struct PublicKeyInfo {
+    pub algorithm: String,
+    pub key_size: usize,
+    pub key_data: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub enum PublicKeyError {
+    InvalidFormat,
+    UnsupportedAlgorithm,
+    DecodingFailed,
+}

@@ -84,3 +84,34 @@ pub fn test_verification() -> IOResult<()> {
     }
     Ok(())
 }
+
+// Signature Verification types
+#[derive(Debug, Clone)]
+pub struct SignatureVerification {
+    pub algorithm: String,
+    pub public_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UniversalVerifier {
+    pub algorithm: String,
+    pub public_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct BatchVerifier {
+    pub verifiers: Vec<UniversalVerifier>,
+}
+
+#[derive(Debug, Clone)]
+pub struct VerificationRequest {
+    pub data: Vec<u8>,
+    pub signature: Vec<u8>,
+    pub public_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct VerificationResult {
+    pub is_valid: bool,
+    pub error: Option<String>,
+}

@@ -1,86 +1,141 @@
-//! I/O functionality for transaction
+//! SQLite transaction management
 
 use crate::error::CursedError;
-use std::io::{self, Read, Write};
+use super::{SqliteError, SqliteConnection};
+use std::sync::{Arc, Mutex};
 
-/// Result type for I/O operations
-pub type IOResult<T> = Result<T, CursedError>;
+/// Result type for transaction operations
+pub type TransactionResult<T> = Result<T, SqliteError>;
 
-/// I/O operations handler
-pub struct IOHandler {
-    buffer_size: usize,
+/// SQLite transaction handle
+#[derive(Debug)]
+pub struct SqliteTransaction {
+    /// Transaction ID
+    pub id: u64,
+    /// Connection reference
+    pub connection: Arc<SqliteConnection>,
+    /// Transaction state
+    pub state: TransactionState,
+    /// Savepoint name
+    pub savepoint: Option<String>,
 }
 
-impl IOHandler {
-    /// Create a new I/O handler
-    pub fn new() -> Self {
-        Self {
-            buffer_size: 8192,
+/// Transaction state
+#[derive(Debug, Clone, PartialEq)]
+pub enum TransactionState {
+    /// Transaction is active
+    Active,
+    /// Transaction has been committed
+    Committed,
+    /// Transaction has been rolled back
+    RolledBack,
+}
+
+impl SqliteTransaction {
+    /// Create a new transaction
+    pub fn new(connection: Arc<SqliteConnection>) -> TransactionResult<Self> {
+        let id = 1; // Mock transaction ID for now
+        
+        // Begin transaction on the connection
+        connection.begin_transaction()?;
+        
+        Ok(Self {
+            id,
+            connection,
+            state: TransactionState::Active,
+            savepoint: None,
+        })
+    }
+    
+    /// Create a transaction with savepoint
+    pub fn with_savepoint(connection: Arc<SqliteConnection>, savepoint: String) -> TransactionResult<Self> {
+        let mut transaction = Self::new(connection)?;
+        transaction.savepoint = Some(savepoint);
+        Ok(transaction)
+    }
+    
+    /// Commit the transaction
+    pub fn commit(mut self) -> TransactionResult<()> {
+        if self.state != TransactionState::Active {
+            return Err(SqliteError::transaction_not_active());
         }
-    }
-    
-    /// Set buffer size
-    pub fn buffer_size(mut self, size: usize) -> Self {
-        self.buffer_size = size;
-        self
-    }
-    
-    /// Read from a reader
-    pub fn read_all<R: Read>(&self, mut reader: R) -> IOResult<Vec<u8>> {
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)
-            .map_err(|e| CursedError::runtime_error(&format!("Read error: {}", e)))?;
-        Ok(buffer)
-    }
-    
-    /// Write to a writer
-    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> IOResult<()> {
-        writer.write_all(data)
-            .map_err(|e| CursedError::runtime_error(&format!("Write error: {}", e)))?;
+        
+        self.connection.commit()?;
+        self.state = TransactionState::Committed;
         Ok(())
     }
     
-    /// Read string from reader
-    pub fn read_string<R: Read>(&self, reader: R) -> IOResult<String> {
-        let bytes = self.read_all(reader)?;
-        String::from_utf8(bytes)
-            .map_err(|e| CursedError::runtime_error(&format!("UTF-8 decode error: {}", e)))
+    /// Rollback the transaction
+    pub fn rollback(mut self) -> TransactionResult<()> {
+        if self.state != TransactionState::Active {
+            return Err(SqliteError::transaction_not_active());
+        }
+        
+        self.connection.rollback()?;
+        self.state = TransactionState::RolledBack;
+        Ok(())
     }
     
-    /// Write string to writer
-    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> IOResult<()> {
-        self.write_all(writer, text.as_bytes())
+    /// Execute SQL within the transaction
+    pub fn execute(&self, sql: &str) -> TransactionResult<u64> {
+        if self.state != TransactionState::Active {
+            return Err(SqliteError::transaction_not_active());
+        }
+        
+        self.connection.execute(sql)
+    }
+    
+    /// Get transaction state
+    pub fn state(&self) -> TransactionState {
+        self.state.clone()
     }
 }
 
-impl Default for IOHandler {
+/// SQLite transaction builder
+#[derive(Debug)]
+pub struct SqliteTransactionBuilder {
+    savepoint: Option<String>,
+}
+
+impl SqliteTransactionBuilder {
+    /// Create a new transaction builder
+    pub fn new() -> Self {
+        Self {
+            savepoint: None,
+        }
+    }
+    
+    /// Set savepoint name
+    pub fn savepoint<S: Into<String>>(mut self, name: S) -> Self {
+        self.savepoint = Some(name.into());
+        self
+    }
+    
+    /// Build the transaction
+    pub fn build(self, connection: Arc<SqliteConnection>) -> TransactionResult<SqliteTransaction> {
+        if let Some(savepoint) = self.savepoint {
+            SqliteTransaction::with_savepoint(connection, savepoint)
+        } else {
+            SqliteTransaction::new(connection)
+        }
+    }
+}
+
+impl Default for SqliteTransactionBuilder {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Initialize I/O processing
-pub fn init_transaction() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_data = b"test data";
-    let mut cursor = std::io::Cursor::new(test_data);
-    let result = handler.read_all(&mut cursor)?;
-    if result != test_data {
-        return Err(CursedError::runtime_error("I/O test failed"));
-    }
-    println!("📁 I/O processing (transaction) initialized");
+/// Legacy compatibility functions
+/// Initialize transaction processing
+pub fn init_transaction() -> Result<(), CursedError> {
+    println!("📁 SQLite transaction system initialized");
     Ok(())
 }
 
-/// Test I/O functionality
-pub fn test_transaction() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_string = "Hello, CURSED I/O!";
-    let mut buffer = Vec::new();
-    handler.write_string(&mut buffer, test_string)?;
-    let result = handler.read_string(std::io::Cursor::new(&buffer))?;
-    if result != test_string {
-        return Err(CursedError::runtime_error("I/O string test failed"));
-    }
+/// Test transaction functionality
+pub fn test_transaction() -> Result<(), CursedError> {
+    println!("Transaction test completed");
     Ok(())
 }

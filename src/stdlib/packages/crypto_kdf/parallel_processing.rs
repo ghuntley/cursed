@@ -63,6 +63,22 @@ impl Default for CryptoHandler {
     }
 }
 
+/// Parallel processing configuration
+#[derive(Debug, Clone)]
+pub struct ParallelConfig {
+    thread_count: usize,
+    chunk_size: usize,
+}
+
+impl Default for ParallelConfig {
+    fn default() -> Self {
+        Self {
+            thread_count: std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4),
+            chunk_size: 1024,
+        }
+    }
+}
+
 /// Initialize crypto processing
 pub fn init_parallel_processing() -> CryptoResult<()> {
     let handler = CryptoHandler::new();

@@ -84,3 +84,30 @@ pub fn test_authentication() -> IOResult<()> {
     }
     Ok(())
 }
+
+
+
+// Authentication specific types
+#[derive(Debug, Clone)]
+pub struct AuthenticationManager {
+    pub method: AuthMethod,
+}
+
+#[derive(Debug, Clone)]
+pub enum AuthMethod {
+    Password,
+    Certificate,
+    TwoFactor,
+}
+
+#[derive(Debug, Clone)]
+pub struct MfaConfig {
+    pub enabled: bool,
+    pub methods: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AuthResult {
+    pub success: bool,
+    pub user_id: Option<String>,
+}

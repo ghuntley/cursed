@@ -1,4 +1,4 @@
-use crate::web::StatusCode;
+use crate::stdlib::net::http::response::StatusCode;
 use crate::error::CursedError;
 /// fr fr HTTP server implementation for CURSED language - web_vibez package
 /// This module provides no-cap HTTP server functionality with Gen Z energy
@@ -23,7 +23,7 @@ pub use response::{HttpResponse, ResponseBuilder};
 pub use handler::{Handler, HandlerFunc, HandlerChain, FunctionHandler, StaticFileHandler, JsonApiHandler, RedirectHandler, HealthCheckHandler};
 pub use router::{Router, RouteEntry, PathParams};
 pub use middleware::{Middleware, MiddlewareChain, CorsMiddleware, LoggingMiddleware, SecurityHeadersMiddleware, RateLimitMiddleware, MiddlewareHandler};
-pub use status::{StatusCode as WebStatusCode, StatusClass};
+pub use status::{HttpStatusCode as WebStatusCode, StatusClass};
 pub use method::{HttpMethod, MethodSet, InvalidMethodError};
 pub use error::{WebError, WebResult, NetworkErrorKind, AuthErrorKind, ErrorContext};
 pub use types::{Headers, QueryParams, FormData, Json, ContentType, RequestBody, Cookie, SameSite};
@@ -39,8 +39,6 @@ pub fn init_web_vibez() {
 fn register_builtin_functions() {
     // Basic web functions registration
     // In a full implementation, these would register with the CURSED runtime
-    // For now, we provide a minimal working implementation
-}
     // This will integrate with the existing dot registry system
     // Common web functions that would be available globally:
     // - web_vibez.server() - create HTTP server
@@ -48,8 +46,7 @@ fn register_builtin_functions() {
     // - web_vibez.router() - create router
     // - web_vibez.cors() - create CORS middleware
     // Implementation will be added when we integrate with the main stdlib
-    
-    println!("🌐 web_vibez package initialized - ready to serve some content bestie!");
+}
 /// fr fr Quick server builder for common use cases - convenience function
 pub fn quick_server(port: u16) -> WebResult<HttpServer> {
     use std::net::{SocketAddr, IpAddr, Ipv4Addr};

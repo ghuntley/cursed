@@ -84,3 +84,79 @@ pub fn test_migration() -> IOResult<()> {
     }
     Ok(())
 }
+
+// Migration types
+
+use super::DbResult;
+
+/// Database schema version
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SchemaVersion {
+    pub major: u32,
+    pub minor: u32,
+    pub patch: u32,
+}
+
+impl SchemaVersion {
+    pub fn new(major: u32, minor: u32, patch: u32) -> Self {
+        SchemaVersion { major, minor, patch }
+    }
+    
+    pub fn from_string(version: &str) -> DbResult<Self> {
+        let parts: Vec<&str> = version.split('.').collect();
+        if parts.len() != 3 {
+            return Err(crate::stdlib::database::DatabaseError::migration("Invalid version format"));
+        }
+        
+        let major = parts[0].parse::<u32>()
+            .map_err(|_| crate::stdlib::database::DatabaseError::migration("Invalid major version"))?;
+        let minor = parts[1].parse::<u32>()
+            .map_err(|_| crate::stdlib::database::DatabaseError::migration("Invalid minor version"))?;
+        let patch = parts[2].parse::<u32>()
+            .map_err(|_| crate::stdlib::database::DatabaseError::migration("Invalid patch version"))?;
+            
+        Ok(SchemaVersion::new(major, minor, patch))
+    }
+}
+
+impl std::fmt::Display for SchemaVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
+/// Migration script
+#[derive(Debug, Clone)]
+pub struct MigrationScript {
+    pub version: SchemaVersion,
+    pub name: String,
+    pub up_sql: String,
+    pub down_sql: String,
+}
+
+impl MigrationScript {
+    pub fn new(version: SchemaVersion, name: &str, up_sql: &str, down_sql: &str) -> Self {
+        MigrationScript {
+            version,
+            name: name.to_string(),
+            up_sql: up_sql.to_string(),
+            down_sql: down_sql.to_string(),
+        }
+    }
+    
+    pub fn version(&self) -> &SchemaVersion {
+        &self.version
+    }
+    
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    
+    pub fn up_sql(&self) -> &str {
+        &self.up_sql
+    }
+    
+    pub fn down_sql(&self) -> &str {
+        &self.down_sql
+    }
+}

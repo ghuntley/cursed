@@ -1393,6 +1393,7 @@ dependencies = [
  "sha2",
  "sha3",
  "signature",
+ "siphasher 0.3.11",
  "spki",
  "ssh2",
  "subtle",
@@ -1403,6 +1404,7 @@ dependencies = [
  "thiserror 1.0.69",
  "thread_local",
  "time",
+ "tiny-keccak",
  "tokio",
  "tokio-postgres",
  "toml",
@@ -1412,6 +1414,7 @@ dependencies = [
  "tracing-subscriber 0.3.19",
  "tracing-test",
  "tree-sitter",
+ "twox-hash 1.6.3",
  "url",
  "urlencoding",
  "uuid",
@@ -3633,7 +3636,7 @@ version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5"
 dependencies = [
- "siphasher",
+ "siphasher 1.0.1",
 ]
 
 [[package]]
@@ -4802,6 +4805,12 @@ dependencies = [
 
 [[package]]
 name = "siphasher"
+version = "0.3.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38b58827f4464d87d377d175e90bf58eb00fd8716ff0a62f80356b5e61555d0d"
+
+[[package]]
+name = "siphasher"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
@@ -5137,6 +5146,15 @@ checksum = "3526739392ec93fd8b359c8e98514cb3e8e021beb4e5f597b00a0221f8ed8a49"
 dependencies = [
  "num-conv",
  "time-core",
+]
+
+[[package]]
+name = "tiny-keccak"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c9d3793400a45f954c52e73d068316d76b6f4e36977e3fcebb13a2721e80237"
+dependencies = [
+ "crunchy",
 ]
 
 [[package]]

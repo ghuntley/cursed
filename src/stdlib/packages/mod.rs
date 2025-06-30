@@ -1,3 +1,91 @@
+
+// Common crypto result types
+pub type CryptoResult<T> = std::result::Result<T, CryptoError>;
+pub type IOResult<T> = std::io::Result<T>;
+pub type ModuleResult<T> = std::result::Result<T, ModuleError>;
+pub type PkiResult<T> = std::result::Result<T, PkiError>;
+
+#[derive(Debug, Clone)]
+pub enum CryptoError {
+    InvalidInput,
+    EncryptionFailed,
+    DecryptionFailed,
+    KeyGenerationFailed,
+    SignatureFailed,
+    VerificationFailed,
+    Other(String),
+}
+
+#[derive(Debug, Clone)]
+pub enum ModuleError {
+    InitializationFailed,
+    ProcessingFailed,
+    InvalidConfiguration,
+    Other(String),
+}
+
+#[derive(Debug, Clone)]  
+pub enum PkiError {
+    CertificateInvalid,
+    KeyInvalid,
+    SigningFailed,
+    ValidationFailed,
+    Other(String),
+}
+
+impl std::fmt::Display for CryptoError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CryptoError::InvalidInput => write!(f, "Invalid input"),
+            CryptoError::EncryptionFailed => write!(f, "Encryption failed"),
+            CryptoError::DecryptionFailed => write!(f, "Decryption failed"),
+            CryptoError::KeyGenerationFailed => write!(f, "Key generation failed"),
+            CryptoError::SignatureFailed => write!(f, "Signature failed"),
+            CryptoError::VerificationFailed => write!(f, "Verification failed"),
+            CryptoError::Other(msg) => write!(f, "Other: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for CryptoError {}
+
+impl std::fmt::Display for ModuleError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ModuleError::InitializationFailed => write!(f, "Initialization failed"),
+            ModuleError::ProcessingFailed => write!(f, "Processing failed"),
+            ModuleError::InvalidConfiguration => write!(f, "Invalid configuration"),
+            ModuleError::Other(msg) => write!(f, "Other: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for ModuleError {}
+
+impl std::fmt::Display for PkiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PkiError::CertificateInvalid => write!(f, "Certificate invalid"),
+            PkiError::KeyInvalid => write!(f, "Key invalid"),
+            PkiError::SigningFailed => write!(f, "Signing failed"),
+            PkiError::ValidationFailed => write!(f, "Validation failed"),
+            PkiError::Other(msg) => write!(f, "Other: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for PkiError {}
+
+// Stub handler types
+#[derive(Debug, Clone, Default)]
+pub struct CryptoHandler;
+
+#[derive(Debug, Clone, Default)]  
+pub struct IOHandler;
+
+#[derive(Debug, Clone, Default)]
+pub struct ModuleHandler;
+
 /// fr fr Packages module for CURSED stdlib - modular library organization
 
 // Database packages - comprehensive database connectivity
@@ -33,6 +121,7 @@ pub mod test_vibes;
 // Re-export database packages for convenience
 // pub use db_core::*; // Temporarily disabled
 pub use db_sql::*;
+pub use db_nosql::*;
 
 // Re-export cryptography packages for convenience
 // TODO: Re-enable when all modules are properly implemented

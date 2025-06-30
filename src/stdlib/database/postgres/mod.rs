@@ -26,14 +26,21 @@ pub use config::{PostgresConfig, PostgresConnectionString, SslMode};
 
 /// Initialize PostgreSQL driver and register it with the database system
 pub fn init_postgres() -> crate::error::Result<()> {
-    let driver = PostgresDriver::new();
+    let config = driver::PostgresConfig::default();
+    let driver = PostgresDriver::new(config);
 //     crate::stdlib::database::driver::DriverRegistry::register("postgres", Box::new(driver))?;
 //     crate::stdlib::database::driver::DriverRegistry::register("postgresql", Box::new(driver.clone()))?;
     Ok(())
+}
+
 /// Create a new PostgreSQL driver instance
 pub fn new_postgres_driver() -> PostgresDriver {
-    PostgresDriver::new()
+    let config = driver::PostgresConfig::default();
+    PostgresDriver::new(config)
+}
+
 /// Parse PostgreSQL connection string and create config
 pub fn parse_connection_string(dsn: &str) -> crate::error::Result<()> {
-    PostgresConnectionString::parse(dsn)
+    let _config = PostgresConnectionString::parse(dsn)?;
+    Ok(())
 }

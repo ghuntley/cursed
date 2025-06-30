@@ -84,3 +84,13 @@ pub fn test_key_agreement() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// Key Agreement additional functions
+pub fn derive_key_from_shared_secret(shared_secret: &[u8], info: &[u8], length: usize) -> crate::error::Result<Vec<u8>> {
+    if shared_secret.is_empty() {
+        return Err(CursedError::validation_error("Empty shared secret"));
+    }
+    Ok(shared_secret[..std::cmp::min(length, shared_secret.len())].to_vec())
+}

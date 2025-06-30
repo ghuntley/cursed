@@ -1,71 +1,131 @@
-//! Functional implementation for algorithm
-
-use crate::error::CursedError;
-
-/// Result type for algorithm operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// algorithm operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+use super::{ClientState, RateLimitConfig, RateLimitDecision, RateLimitError, RateLimitResult, WindowConfig};
+/// Rate limit algorithm trait
+pub trait RateLimitAlgorithm: Send + Sync {
+    fn check_limit(&self, state: &mut ClientState, now: u64, config: &RateLimitConfig) -> RateLimitResult<RateLimitDecision>;
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
+/// Fixed window algorithm
+pub struct FixedWindow;
+
+impl FixedWindow {
     pub fn new() -> Self {
-        Self {
-            enabled: true,
-        }
-    }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: algorithm, Enabled: {}", self.enabled)
+        Self
     }
 }
 
-impl Default for ModuleHandler {
+impl Default for FixedWindow {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Initialize algorithm processing
-pub fn init_algorithm() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+impl RateLimitAlgorithm for FixedWindow {
+    fn check_limit(&self, state: &mut ClientState, now: u64, config: &RateLimitConfig) -> RateLimitResult<RateLimitDecision> {
+        // Check if we need to reset the window
+        let window_duration = match config.window_config {
+            WindowConfig::Fixed { duration } => duration,
+            _ => return Err(RateLimitError::ConfigurationError("Invalid window config for fixed window".to_string())),
+        };
+        
+        if now >= state.window_start + window_duration {
+            state.reset_window(now);
+        }
+        
+        if state.count >= config.max_requests {
+            Ok(RateLimitDecision::Deny {
+                retry_after: state.window_start + window_duration - now,
+                reset_time: state.window_start + window_duration,
+            })
+        } else {
+            state.count += 1;
+            Ok(RateLimitDecision::Allow {
+                remaining: config.max_requests - state.count,
+                reset_time: state.window_start + window_duration,
+            })
+        }
     }
-    println!("⚙️  Module processing (algorithm) initialized");
-    Ok(())
 }
 
-/// Test algorithm functionality
-pub fn test_algorithm() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+/// Sliding window algorithm
+pub struct SlidingWindow;
+
+impl SlidingWindow {
+    pub fn new() -> Self {
+        Self
     }
-    Ok(())
+}
+
+impl Default for SlidingWindow {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RateLimitAlgorithm for SlidingWindow {
+    fn check_limit(&self, state: &mut ClientState, now: u64, config: &RateLimitConfig) -> RateLimitResult<RateLimitDecision> {
+        let window_duration = match config.window_config {
+            WindowConfig::Sliding { duration } => duration,
+            _ => return Err(RateLimitError::ConfigurationError("Invalid window config for sliding window".to_string())),
+        };
+        
+        // Remove old requests outside the window
+        state.requests.retain(|&timestamp| timestamp > now - window_duration);
+        
+        if state.requests.len() as u32 >= config.max_requests {
+            let oldest_request = state.requests.iter().min().copied().unwrap_or(now);
+            Ok(RateLimitDecision::Deny {
+                retry_after: oldest_request + window_duration - now,
+                reset_time: now + window_duration,
+            })
+        } else {
+            state.requests.push(now);
+            Ok(RateLimitDecision::Allow {
+                remaining: config.max_requests - state.requests.len() as u32,
+                reset_time: now + window_duration,
+            })
+        }
+    }
+}
+
+/// Token bucket algorithm
+pub struct TokenBucket {
+    pub capacity: f64,
+    pub refill_rate: f64,
+}
+
+impl TokenBucket {
+    pub fn new(capacity: f64, refill_rate: f64) -> Self {
+        Self { capacity, refill_rate }
+    }
+}
+
+impl Default for TokenBucket {
+    fn default() -> Self {
+        Self::new(100.0, 10.0)
+    }
+}
+
+impl RateLimitAlgorithm for TokenBucket {
+    fn check_limit(&self, state: &mut ClientState, now: u64, _config: &RateLimitConfig) -> RateLimitResult<RateLimitDecision> {
+        // Calculate tokens to add based on time elapsed
+        let time_elapsed = now - state.window_start;
+        let tokens_to_add = time_elapsed as f64 * self.refill_rate / 3600.0; // per hour
+        
+        state.tokens = (state.tokens + tokens_to_add).min(self.capacity);
+        state.window_start = now;
+        
+        if state.tokens >= 1.0 {
+            state.tokens -= 1.0;
+            Ok(RateLimitDecision::Allow {
+                remaining: state.tokens as u32,
+                reset_time: now + ((self.capacity - state.tokens) / self.refill_rate * 3600.0) as u64,
+            })
+        } else {
+            let retry_after = ((1.0 - state.tokens) / self.refill_rate * 3600.0) as u64;
+            Ok(RateLimitDecision::Deny {
+                retry_after,
+                reset_time: now + retry_after,
+            })
+        }
+    }
 }

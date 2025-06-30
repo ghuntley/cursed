@@ -1,71 +1,35 @@
-//! Functional implementation for server
-
 use crate::error::CursedError;
+use std::net::SocketAddr;
 
-/// Result type for server operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// server operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// Server configuration
+#[derive(Debug, Clone)]
+pub struct ServerConfig {
+    pub addr: SocketAddr,
+    pub max_connections: usize,
+    pub timeout: std::time::Duration,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
+impl ServerConfig {
+    pub fn new(addr: SocketAddr) -> Self {
         Self {
-            enabled: true,
+            addr,
+            max_connections: 1000,
+            timeout: std::time::Duration::from_secs(30),
         }
     }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: server, Enabled: {}", self.enabled)
-    }
 }
 
-impl Default for ModuleHandler {
-    fn default() -> Self {
-        Self::new()
-    }
+/// HTTP Server
+pub struct HttpServer {
+    config: ServerConfig,
 }
 
-/// Initialize server processing
-pub fn init_server() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+impl HttpServer {
+    pub fn new(config: ServerConfig) -> Self {
+        Self { config }
     }
-    println!("⚙️  Module processing (server) initialized");
-    Ok(())
-}
-
-/// Test server functionality
-pub fn test_server() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+    
+    pub fn addr(&self) -> SocketAddr {
+        self.config.addr
     }
-    Ok(())
 }

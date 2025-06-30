@@ -84,3 +84,10 @@ pub fn test_hardware_acceleration() -> IOResult<()> {
     }
     Ok(())
 }
+
+
+
+// Hardware Acceleration additional functions
+pub fn get_hardware_detector() -> crate::error::Result<String> {
+    Ok("software".to_string()) // Default to software implementation
+}

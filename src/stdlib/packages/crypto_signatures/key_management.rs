@@ -84,3 +84,43 @@ pub fn test_key_management() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// Signature Key Management types
+#[derive(Debug, Clone)]
+pub enum KeyType {
+    RSA,
+    ECC,
+    Ed25519,
+}
+
+#[derive(Debug, Clone)]
+pub struct KeyPair {
+    pub private_key: Vec<u8>,
+    pub public_key: Vec<u8>,
+    pub key_type: KeyType,
+}
+
+#[derive(Debug, Clone)]
+pub struct PublicKey {
+    pub key_data: Vec<u8>,
+    pub key_type: KeyType,
+}
+
+#[derive(Debug, Clone)]
+pub struct KeyGenerator {
+    pub algorithm: KeyType,
+    pub key_size: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct KeyManager {
+    pub keys: Vec<KeyPair>,
+}
+
+impl KeyManager {
+    pub fn new() -> Self {
+        Self { keys: Vec::new() }
+    }
+}

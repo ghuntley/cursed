@@ -1,71 +1,57 @@
-//! Functional implementation for config
+use std::time::Duration;
 
-use crate::error::CursedError;
-
-/// Result type for config operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// config operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// Rate limit configuration
+#[derive(Debug, Clone)]
+pub struct RateLimitConfig {
+    pub max_requests: u32,
+    pub window_config: WindowConfig,
+    pub client_identification: ClientIdentification,
+    pub error_config: ErrorConfig,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
-        Self {
-            enabled: true,
-        }
-    }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: config, Enabled: {}", self.enabled)
-    }
+/// Window configuration
+#[derive(Debug, Clone)]
+pub enum WindowConfig {
+    Fixed { duration: u64 },
+    Sliding { duration: u64 },
 }
 
-impl Default for ModuleHandler {
+/// Bucket configuration for token bucket algorithm
+#[derive(Debug, Clone)]
+pub struct BucketConfig {
+    pub capacity: u32,
+    pub refill_rate: f64,
+    pub refill_period: Duration,
+}
+
+/// Client identification method
+#[derive(Debug, Clone)]
+pub enum ClientIdentification {
+    IpAddress,
+    ApiKey,
+    UserId,
+    Custom(String),
+}
+
+/// Error handling configuration
+#[derive(Debug, Clone)]
+pub struct ErrorConfig {
+    pub status_code: u16,
+    pub message: String,
+    pub include_retry_after: bool,
+}
+
+impl Default for RateLimitConfig {
     fn default() -> Self {
-        Self::new()
+        Self {
+            max_requests: 100,
+            window_config: WindowConfig::Fixed { duration: 3600 },
+            client_identification: ClientIdentification::IpAddress,
+            error_config: ErrorConfig {
+                status_code: 429,
+                message: "Rate limit exceeded".to_string(),
+                include_retry_after: true,
+            },
+        }
     }
-}
-
-/// Initialize config processing
-pub fn init_config() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (config) initialized");
-    Ok(())
-}
-
-/// Test config functionality
-pub fn test_config() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
 }

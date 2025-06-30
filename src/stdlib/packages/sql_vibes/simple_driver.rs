@@ -1,9 +1,56 @@
 //! Functional implementation for simple_driver
 
 use crate::error::CursedError;
+use super::types::{SqlValue, Row, ResultSet};
+use std::collections::HashMap;
 
 /// Result type for simple_driver operations
 pub type ModuleResult<T> = Result<T, CursedError>;
+
+/// Simple database connection
+pub struct SimpleConnection {
+    pub connection_string: String,
+    pub is_connected: bool,
+}
+
+impl SimpleConnection {
+    pub fn new(connection_string: String) -> Self {
+        Self {
+            connection_string,
+            is_connected: false,
+        }
+    }
+
+    pub fn execute(&mut self, query: &str) -> ModuleResult<ResultSet> {
+        if !self.is_connected {
+            return Err(CursedError::runtime_error("Not connected to database"));
+        }
+        
+        // Basic mock execution
+        let mut rows = Vec::new();
+        if query.to_lowercase().contains("select") {
+            let mut row = HashMap::new();
+            row.insert("id".to_string(), SqlValue::Integer(1));
+            row.insert("name".to_string(), SqlValue::Text("test".to_string()));
+            rows.push(Row { columns: row });
+        }
+        
+        Ok(ResultSet { rows, affected_rows: 0 })
+    }
+}
+
+/// Connect to a database
+pub fn connect(connection_string: &str) -> ModuleResult<SimpleConnection> {
+    let mut conn = SimpleConnection::new(connection_string.to_string());
+    conn.is_connected = true;
+    Ok(conn)
+}
+
+/// Execute a quick query
+pub fn quick_query(connection_string: &str, query: &str) -> ModuleResult<ResultSet> {
+    let mut conn = connect(connection_string)?;
+    conn.execute(query)
+}
 
 /// simple_driver operations handler
 pub struct ModuleHandler {

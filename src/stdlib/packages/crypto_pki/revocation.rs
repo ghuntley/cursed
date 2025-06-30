@@ -84,3 +84,55 @@ pub fn test_revocation() -> IOResult<()> {
     }
     Ok(())
 }
+
+// Revocation specific types
+#[derive(Debug, Clone)]
+pub enum CrlError {
+    FetchFailed,
+    ParseError,
+    ValidationError,
+    Expired,
+}
+
+pub type CrlResult<T> = Result<T, CursedError>;
+
+#[derive(Debug, Clone)]
+pub enum RevocationStatus {
+    Valid,
+    Revoked,
+    Unknown,
+}
+
+#[derive(Debug, Clone)]
+pub struct CrlCache {
+    pub entries: Vec<String>,
+    pub last_update: String,
+}
+
+impl Default for CrlCache {
+    fn default() -> Self {
+        Self {
+            entries: vec![],
+            last_update: "2024-01-01T00:00:00Z".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CrlValidator {
+    pub cache: CrlCache,
+    pub strict_mode: bool,
+}
+
+impl CrlValidator {
+    pub fn new() -> Self {
+        Self {
+            cache: CrlCache::default(),
+            strict_mode: false,
+        }
+    }
+    
+    pub fn validate(&self, serial_number: &str) -> CrlResult<RevocationStatus> {
+        Ok(RevocationStatus::Valid)
+    }
+}

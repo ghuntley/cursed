@@ -84,3 +84,24 @@ pub fn test_signal_protocol() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+
+
+// Signal Protocol specific types
+#[derive(Debug, Clone)]
+pub struct SignalProtocolManager {
+    pub session_id: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct SignalKeyBundle {
+    pub identity_key: Vec<u8>,
+    pub signed_prekey: Vec<u8>,
+    pub prekey: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SignalMessage {
+    pub ciphertext: Vec<u8>,
+    pub message_type: u8,
+}

@@ -84,3 +84,23 @@ pub fn test_ocsp() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// OCSP specific types
+#[derive(Debug, Clone)]
+pub enum OcspError {
+    RequestFailed,
+    InvalidResponse,
+    Expired,
+}
+
+pub type OcspResult<T> = Result<T, CursedError>;
+
+#[derive(Debug, Clone)]
+pub struct OcspCache {
+    pub entries: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct OcspValidator {
+    pub cache: OcspCache,
+}

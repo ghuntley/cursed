@@ -21,6 +21,7 @@ pub use document::{Document, Collection};
 pub use redis::{RedisDriver, RedisConnection, RedisConfig, RedisConnectionPool};
 
 /// slay Initialize the db_nosql package
-// pub fn init_db_nosql() -> crate::stdlib::packages::db_core::error::DatabaseResult<()> {
+pub fn init_db_nosql() -> Result<(), String> {
     println!("📄 db_nosql package initialized - NoSQL drivers ready bestie!");
     Ok(())
+}

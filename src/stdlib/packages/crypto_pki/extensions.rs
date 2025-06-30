@@ -84,3 +84,64 @@ pub fn test_extensions() -> IOResult<()> {
     }
     Ok(())
 }
+
+// Extension specific types
+#[derive(Debug, Clone)]
+pub enum ExtensionError {
+    InvalidOid,
+    ParseError,
+    UnsupportedExtension,
+    CriticalExtensionNotSupported,
+}
+
+pub type ExtensionResult<T> = Result<T, CursedError>;
+
+#[derive(Debug, Clone)]
+pub struct ExtensionBuilder {
+    pub critical: bool,
+    pub oid: String,
+    pub value: Vec<u8>,
+}
+
+impl ExtensionBuilder {
+    pub fn new(oid: &str) -> Self {
+        Self {
+            critical: false,
+            oid: oid.to_string(),
+            value: vec![],
+        }
+    }
+    
+    pub fn critical(mut self, critical: bool) -> Self {
+        self.critical = critical;
+        self
+    }
+    
+    pub fn value(mut self, value: Vec<u8>) -> Self {
+        self.value = value;
+        self
+    }
+    
+    pub fn build(&self) -> ExtensionResult<Vec<u8>> {
+        Ok(self.value.clone())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExtensionValidator {
+    pub strict_mode: bool,
+}
+
+impl ExtensionValidator {
+    pub fn new() -> Self {
+        Self { strict_mode: false }
+    }
+    
+    pub fn validate(&self, extension_data: &[u8]) -> ExtensionResult<bool> {
+        Ok(true)
+    }
+    
+    pub fn is_critical(&self, extension_data: &[u8]) -> ExtensionResult<bool> {
+        Ok(false)
+    }
+}

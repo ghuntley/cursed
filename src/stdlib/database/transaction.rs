@@ -1,86 +1,111 @@
-//! I/O functionality for transaction
+//! Database transaction management
 
 use crate::error::CursedError;
-use std::io::{self, Read, Write};
+use super::driver::{DriverConn, DriverTx};
 
-/// Result type for I/O operations
-pub type IOResult<T> = Result<T, CursedError>;
+/// Result type for transaction operations
+pub type TransactionResult<T> = Result<T, CursedError>;
 
-/// I/O operations handler
-pub struct IOHandler {
-    buffer_size: usize,
+/// Database transaction wrapper
+pub struct Tx {
+    transaction: Option<Box<dyn DriverTx>>,
+    is_active: bool,
 }
 
-impl IOHandler {
-    /// Create a new I/O handler
-    pub fn new() -> Self {
+/// Transaction manager
+pub struct TransactionManager {
+    connection: Option<Box<dyn DriverConn>>,
+    current_transaction: Option<Tx>,
+}
+
+impl Tx {
+    /// Create a new transaction
+    pub fn new(transaction: Box<dyn DriverTx>) -> Self {
         Self {
-            buffer_size: 8192,
+            transaction: Some(transaction),
+            is_active: true,
         }
     }
     
-    /// Set buffer size
-    pub fn buffer_size(mut self, size: usize) -> Self {
-        self.buffer_size = size;
-        self
-    }
-    
-    /// Read from a reader
-    pub fn read_all<R: Read>(&self, mut reader: R) -> IOResult<Vec<u8>> {
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)
-            .map_err(|e| CursedError::runtime_error(&format!("Read error: {}", e)))?;
-        Ok(buffer)
-    }
-    
-    /// Write to a writer
-    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> IOResult<()> {
-        writer.write_all(data)
-            .map_err(|e| CursedError::runtime_error(&format!("Write error: {}", e)))?;
+    /// Commit the transaction
+    pub fn commit(mut self) -> TransactionResult<()> {
+        if let Some(ref tx) = self.transaction {
+            tx.commit()?;
+            self.is_active = false;
+            println!("✅ Transaction committed");
+        }
         Ok(())
     }
     
-    /// Read string from reader
-    pub fn read_string<R: Read>(&self, reader: R) -> IOResult<String> {
-        let bytes = self.read_all(reader)?;
-        String::from_utf8(bytes)
-            .map_err(|e| CursedError::runtime_error(&format!("UTF-8 decode error: {}", e)))
+    /// Rollback the transaction
+    pub fn rollback(mut self) -> TransactionResult<()> {
+        if let Some(ref tx) = self.transaction {
+            tx.rollback()?;
+            self.is_active = false;
+            println!("🔄 Transaction rolled back");
+        }
+        Ok(())
     }
     
-    /// Write string to writer
-    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> IOResult<()> {
-        self.write_all(writer, text.as_bytes())
+    /// Execute a query within the transaction  
+    pub fn execute(&self, query: &str) -> TransactionResult<Box<dyn super::driver::DatabaseResult>> {
+        if let Some(ref tx) = self.transaction {
+            tx.execute(query).map_err(|e| e)
+        } else {
+            Err(CursedError::runtime_error("Transaction not available"))
+        }
+    }
+    
+    /// Check if transaction is active
+    pub fn is_active(&self) -> bool {
+        self.is_active
     }
 }
 
-impl Default for IOHandler {
+impl TransactionManager {
+    /// Create a new transaction manager
+    pub fn new() -> Self {
+        Self {
+            connection: None,
+            current_transaction: None,
+        }
+    }
+    
+    /// Set the database connection
+    pub fn with_connection(mut self, connection: Box<dyn DriverConn>) -> Self {
+        self.connection = Some(connection);
+        self
+    }
+    
+    /// Begin a new transaction
+    pub fn begin(&mut self) -> TransactionResult<&mut Tx> {
+        if self.current_transaction.is_some() {
+            return Err(CursedError::runtime_error("Transaction already active"));
+        }
+        
+        if let Some(ref conn) = self.connection {
+            let tx = conn.begin()?;
+            self.current_transaction = Some(Tx::new(tx));
+            println!("🔄 Transaction begun");
+            Ok(self.current_transaction.as_mut().unwrap())
+        } else {
+            Err(CursedError::runtime_error("No connection available"))
+        }
+    }
+    
+    /// Get the current transaction
+    pub fn current(&mut self) -> Option<&mut Tx> {
+        self.current_transaction.as_mut()
+    }
+    
+    /// Check if there's an active transaction
+    pub fn has_active_transaction(&self) -> bool {
+        self.current_transaction.as_ref().map_or(false, |tx| tx.is_active())
+    }
+}
+
+impl Default for TransactionManager {
     fn default() -> Self {
         Self::new()
     }
-}
-
-/// Initialize I/O processing
-pub fn init_transaction() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_data = b"test data";
-    let mut cursor = std::io::Cursor::new(test_data);
-    let result = handler.read_all(&mut cursor)?;
-    if result != test_data {
-        return Err(CursedError::runtime_error("I/O test failed"));
-    }
-    println!("📁 I/O processing (transaction) initialized");
-    Ok(())
-}
-
-/// Test I/O functionality
-pub fn test_transaction() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_string = "Hello, CURSED I/O!";
-    let mut buffer = Vec::new();
-    handler.write_string(&mut buffer, test_string)?;
-    let result = handler.read_string(std::io::Cursor::new(&buffer))?;
-    if result != test_string {
-        return Err(CursedError::runtime_error("I/O string test failed"));
-    }
-    Ok(())
 }

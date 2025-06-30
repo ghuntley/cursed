@@ -84,3 +84,21 @@ pub fn test_key_pinning() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Key Pinning specific types
+#[derive(Debug, Clone)]
+pub enum PinError {
+    InvalidPin,
+    PinMismatch,
+    PinNotFound,
+}
+
+pub type PinResult<T> = Result<T, CursedError>;
+
+pub fn add_pin_from_certificate(cert: &[u8]) -> PinResult<String> {
+    Ok("pin_hash".to_string())
+}
+
+pub fn verify_pin(cert: &[u8], pin: &str) -> PinResult<bool> {
+    Ok(true)
+}

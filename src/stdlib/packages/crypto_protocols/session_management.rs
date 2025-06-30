@@ -84,3 +84,29 @@ pub fn test_session_management() -> IOResult<()> {
     }
     Ok(())
 }
+
+
+
+// Session Management specific types
+#[derive(Debug, Clone)]
+pub struct SessionManager {
+    pub max_sessions: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct CryptoSession {
+    pub id: String,
+    pub created_at: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct SessionTicket {
+    pub ticket: Vec<u8>,
+    pub expiry: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct SessionConfig {
+    pub timeout: u32,
+    pub max_idle: u32,
+}

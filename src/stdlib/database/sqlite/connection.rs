@@ -1,86 +1,176 @@
-//! I/O functionality for connection
+//! SQLite connection management and pooling
 
 use crate::error::CursedError;
-use std::io::{self, Read, Write};
+use super::{SqliteConfig, SqliteStats, SqliteError};
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 
-/// Result type for I/O operations
-pub type IOResult<T> = Result<T, CursedError>;
+/// Result type for connection operations
+pub type ConnectionResult<T> = Result<T, SqliteError>;
 
-/// I/O operations handler
-pub struct IOHandler {
-    buffer_size: usize,
+/// SQLite connection handle
+#[derive(Debug)]
+pub struct SqliteConnection {
+    /// Connection ID
+    pub id: u64,
+    /// Database path
+    pub path: String,
+    /// Connection configuration
+    pub config: SqliteConfig,
+    /// Connection statistics
+    pub stats: Arc<Mutex<SqliteStats>>,
+    /// Is connection active
+    pub active: bool,
+    /// Prepared statement cache
+    pub statement_cache: Arc<Mutex<HashMap<String, u64>>>,
 }
 
-impl IOHandler {
-    /// Create a new I/O handler
-    pub fn new() -> Self {
-        Self {
-            buffer_size: 8192,
+impl SqliteConnection {
+    /// Create a new SQLite connection
+    pub fn new(path: &str, config: SqliteConfig) -> ConnectionResult<Self> {
+        Ok(Self {
+            id: 1, // Mock ID for now
+            path: path.to_string(),
+            config,
+            stats: Arc::new(Mutex::new(SqliteStats::default())),
+            active: true,
+            statement_cache: Arc::new(Mutex::new(HashMap::new())),
+        })
+    }
+    
+    /// Execute a SQL query
+    pub fn execute(&self, sql: &str) -> ConnectionResult<u64> {
+        if !self.active {
+            return Err(SqliteError::connection_closed());
         }
+        
+        // Update statistics
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.total_queries += 1;
+        }
+        
+        // Mock execution - return affected rows
+        Ok(1)
     }
     
-    /// Set buffer size
-    pub fn buffer_size(mut self, size: usize) -> Self {
-        self.buffer_size = size;
-        self
+    /// Prepare a SQL statement
+    pub fn prepare(&self, sql: &str) -> ConnectionResult<u64> {
+        if !self.active {
+            return Err(SqliteError::connection_closed());
+        }
+        
+        let statement_id = 1; // Mock statement ID for now
+        
+        // Cache the prepared statement
+        if let Ok(mut cache) = self.statement_cache.lock() {
+            cache.insert(sql.to_string(), statement_id);
+        }
+        
+        Ok(statement_id)
     }
     
-    /// Read from a reader
-    pub fn read_all<R: Read>(&self, mut reader: R) -> IOResult<Vec<u8>> {
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)
-            .map_err(|e| CursedError::runtime_error(&format!("Read error: {}", e)))?;
-        Ok(buffer)
-    }
-    
-    /// Write to a writer
-    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> IOResult<()> {
-        writer.write_all(data)
-            .map_err(|e| CursedError::runtime_error(&format!("Write error: {}", e)))?;
+    /// Begin a transaction
+    pub fn begin_transaction(&self) -> ConnectionResult<()> {
+        self.execute("BEGIN")?;
         Ok(())
     }
     
-    /// Read string from reader
-    pub fn read_string<R: Read>(&self, reader: R) -> IOResult<String> {
-        let bytes = self.read_all(reader)?;
-        String::from_utf8(bytes)
-            .map_err(|e| CursedError::runtime_error(&format!("UTF-8 decode error: {}", e)))
+    /// Commit a transaction
+    pub fn commit(&self) -> ConnectionResult<()> {
+        self.execute("COMMIT")?;
+        Ok(())
     }
     
-    /// Write string to writer
-    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> IOResult<()> {
-        self.write_all(writer, text.as_bytes())
+    /// Rollback a transaction
+    pub fn rollback(&self) -> ConnectionResult<()> {
+        self.execute("ROLLBACK")?;
+        Ok(())
+    }
+    
+    /// Close the connection
+    pub fn close(&mut self) -> ConnectionResult<()> {
+        self.active = false;
+        Ok(())
+    }
+    
+    /// Get connection statistics
+    pub fn stats(&self) -> SqliteStats {
+        self.stats.lock().unwrap_or_else(|poisoned| {
+            poisoned.into_inner()
+        }).clone()
     }
 }
 
-impl Default for IOHandler {
+/// SQLite connection builder for configuration
+#[derive(Debug, Clone)]
+pub struct SqliteConnectionBuilder {
+    config: SqliteConfig,
+}
+
+impl SqliteConnectionBuilder {
+    /// Create a new connection builder
+    pub fn new() -> Self {
+        Self {
+            config: SqliteConfig::default(),
+        }
+    }
+    
+    /// Set database path
+    pub fn path<P: AsRef<str>>(mut self, path: P) -> Self {
+        self.config.database_path = path.as_ref().to_string();
+        self
+    }
+    
+    /// Enable WAL mode
+    pub fn enable_wal(mut self, enable: bool) -> Self {
+        self.config.enable_wal = enable;
+        self
+    }
+    
+    /// Set cache size
+    pub fn cache_size(mut self, size: i32) -> Self {
+        self.config.cache_size = size;
+        self
+    }
+    
+    /// Set connection timeout
+    pub fn timeout_seconds(mut self, timeout: u32) -> Self {
+        self.config.timeout_seconds = timeout;
+        self
+    }
+    
+    /// Enable foreign keys
+    pub fn foreign_keys(mut self, enable: bool) -> Self {
+        self.config.foreign_keys = enable;
+        self
+    }
+    
+    /// Build the connection
+    pub fn build(self) -> ConnectionResult<SqliteConnection> {
+        let path = self.config.database_path.clone();
+        SqliteConnection::new(&path, self.config)
+    }
+}
+
+impl Default for SqliteConnectionBuilder {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Initialize I/O processing
-pub fn init_connection() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_data = b"test data";
-    let mut cursor = std::io::Cursor::new(test_data);
-    let result = handler.read_all(&mut cursor)?;
-    if result != test_data {
-        return Err(CursedError::runtime_error("I/O test failed"));
-    }
-    println!("📁 I/O processing (connection) initialized");
+/// Legacy compatibility functions
+/// Initialize connection processing
+pub fn init_connection() -> Result<(), CursedError> {
+    println!("📁 SQLite connection system initialized");
     Ok(())
 }
 
-/// Test I/O functionality
-pub fn test_connection() -> IOResult<()> {
-    let handler = IOHandler::new();
-    let test_string = "Hello, CURSED I/O!";
-    let mut buffer = Vec::new();
-    handler.write_string(&mut buffer, test_string)?;
-    let result = handler.read_string(std::io::Cursor::new(&buffer))?;
-    if result != test_string {
-        return Err(CursedError::runtime_error("I/O string test failed"));
+/// Test connection functionality
+pub fn test_connection() -> Result<(), CursedError> {
+    let config = SqliteConfig::default();
+    let connection = SqliteConnection::new(":memory:", config);
+    match connection {
+        Ok(_) => Ok(()),
+        Err(e) => Err(CursedError::runtime_error(&format!("Connection test failed: {}", e))),
     }
-    Ok(())
 }

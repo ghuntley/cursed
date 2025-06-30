@@ -84,3 +84,23 @@ pub fn test_trust_store() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Trust store specific types
+#[derive(Debug, Clone)]
+pub enum TrustStoreError {
+    CertificateNotFound,
+    InvalidCertificate,
+    AccessDenied,
+    StoreCorrupted,
+}
+
+pub type TrustStoreResult<T> = Result<T, CursedError>;
+
+pub fn remove_trusted_certificate(cert_id: &str) -> TrustStoreResult<()> {
+    println!("Removing trusted certificate: {}", cert_id);
+    Ok(())
+}
+
+pub fn verify_trust(cert_data: &[u8]) -> TrustStoreResult<bool> {
+    Ok(true)
+}

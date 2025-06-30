@@ -59,6 +59,24 @@ impl Default for IOHandler {
     }
 }
 
+/// Memory hard configuration
+#[derive(Debug, Clone)]
+pub struct MemoryHardConfig {
+    memory_cost: u32,
+    time_cost: u32,
+    parallelism: u32,
+}
+
+impl Default for MemoryHardConfig {
+    fn default() -> Self {
+        Self {
+            memory_cost: 4096,
+            time_cost: 10,
+            parallelism: 1,
+        }
+    }
+}
+
 /// Initialize I/O processing
 pub fn init_memory_hard_functions() -> IOResult<()> {
     let handler = IOHandler::new();

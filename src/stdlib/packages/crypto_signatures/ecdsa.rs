@@ -84,3 +84,8 @@ pub fn test_ecdsa() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// ECDSA constants  
+pub const ECDSA_SIGNATURE_SIZE: usize = 64; // For P-256
+pub const ECDSA_PRIVATE_KEY_SIZE: usize = 32; // For P-256
+pub const ECDSA_PUBLIC_KEY_SIZE: usize = 64; // For P-256 uncompressed

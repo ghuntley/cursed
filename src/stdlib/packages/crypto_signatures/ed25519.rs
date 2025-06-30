@@ -84,3 +84,8 @@ pub fn test_ed25519() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Ed25519 constants
+pub const ED25519_SIGNATURE_SIZE: usize = 64;
+pub const ED25519_PRIVATE_KEY_SIZE: usize = 32;  
+pub const ED25519_PUBLIC_KEY_SIZE: usize = 32;

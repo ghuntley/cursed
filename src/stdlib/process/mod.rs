@@ -77,6 +77,6 @@ pub use shell_commands::*;
 // Use explicit imports from safe_process_management to avoid conflicts
 pub use safe_process_management::{
     SecurityContext, ProcessIsolation, SecurityCheck, ProcessGuard
-// };
+};
 pub use safe_exec_slay::*;
 

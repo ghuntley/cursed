@@ -84,3 +84,26 @@ pub fn test_digital_signature() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Digital Signature types
+#[derive(Debug, Clone)]
+pub struct DigitalSignature {
+    pub algorithm: String,
+    pub signature: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct UniversalSigner {
+    pub algorithm: String,
+    pub private_key: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SignatureManager {
+    pub signers: Vec<UniversalSigner>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Ed25519Signature {
+    pub signature: Vec<u8>,
+}

@@ -63,6 +63,42 @@ impl Default for CryptoHandler {
     }
 }
 
+/// XxHash64 hasher
+pub struct XxHash64 {
+    handler: CryptoHandler,
+    seed: u64,
+}
+
+impl XxHash64 {
+    pub fn new() -> Self {
+        Self {
+            handler: CryptoHandler::new(),
+            seed: 0,
+        }
+    }
+    
+    pub fn with_seed(seed: u64) -> Self {
+        Self {
+            handler: CryptoHandler::new(),
+            seed,
+        }
+    }
+    
+    pub fn update(&mut self, data: &[u8]) {
+        // Placeholder implementation
+        self._process_chunk(data);
+    }
+    
+    pub fn finalize(self) -> u64 {
+        // Placeholder: return a simple hash based on seed
+        self.seed.wrapping_add(0x12345678)
+    }
+    
+    fn _process_chunk(&self, _data: &[u8]) {
+        // Placeholder
+    }
+}
+
 /// Initialize crypto processing
 pub fn init_xxhash() -> CryptoResult<()> {
     let handler = CryptoHandler::new();

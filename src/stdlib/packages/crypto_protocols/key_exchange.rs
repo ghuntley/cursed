@@ -84,3 +84,22 @@ pub fn test_key_exchange() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// Key Exchange specific types
+#[derive(Debug, Clone)]
+pub struct KeyExchangeManager {
+    pub algorithm: String,
+}
+
+#[derive(Debug, Clone)]
+pub enum KeyExchangeProtocol {
+    ECDH,
+    DiffieHellman,
+    X25519,
+}
+
+#[derive(Debug, Clone)]
+pub struct KeyExchangeResult {
+    pub shared_secret: Vec<u8>,
+    pub is_valid: bool,
+}

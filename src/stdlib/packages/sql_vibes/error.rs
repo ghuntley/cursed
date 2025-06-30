@@ -1,9 +1,67 @@
 //! Functional implementation for error
 
 use crate::error::CursedError;
+use std::fmt;
 
 /// Result type for error operations
 pub type ModuleResult<T> = Result<T, CursedError>;
+
+/// SQL-specific error type
+#[derive(Debug, Clone)]
+pub struct SqlError {
+    pub kind: DatabaseErrorKind,
+    pub message: String,
+}
+
+impl SqlError {
+    pub fn new(kind: DatabaseErrorKind, message: String) -> Self {
+        Self { kind, message }
+    }
+}
+
+impl fmt::Display for SqlError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}: {}", self.kind, self.message)
+    }
+}
+
+impl std::error::Error for SqlError {}
+
+/// SQL result type
+pub type SqlResult<T> = Result<T, SqlError>;
+
+/// Database error categories
+#[derive(Debug, Clone, PartialEq)]
+pub enum DatabaseErrorKind {
+    Connection(ConnectionErrorKind),
+    Query(QueryErrorKind),
+    Transaction,
+    Authentication,
+    Timeout,
+    Unknown,
+}
+
+/// Query-specific errors
+#[derive(Debug, Clone, PartialEq)]
+pub enum QueryErrorKind {
+    Syntax,
+    InvalidColumn,
+    InvalidTable,
+    ConstraintViolation,
+    TypeMismatch,
+    Unknown,
+}
+
+/// Connection-specific errors
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConnectionErrorKind {
+    Refused,
+    Timeout,
+    Lost,
+    InvalidCredentials,
+    DatabaseNotFound,
+    Unknown,
+}
 
 /// error operations handler
 pub struct ModuleHandler {

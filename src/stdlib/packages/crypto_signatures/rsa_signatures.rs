@@ -10,6 +10,69 @@ pub struct CryptoHandler {
     key_size: usize,
 }
 
+#[derive(Debug, Clone)]
+pub struct RsaSigner {
+    key_size: RsaKeySize,
+    hash_algorithm: RsaHashAlgorithm,
+    scheme: RsaSignatureScheme,
+}
+
+#[derive(Debug, Clone)]
+pub struct RsaVerifier {
+    public_key: Vec<u8>,
+    hash_algorithm: RsaHashAlgorithm,
+    scheme: RsaSignatureScheme,
+}
+
+#[derive(Debug, Clone)]
+pub enum RsaSignatureScheme {
+    Pkcs1v15,
+    Pss,
+}
+
+#[derive(Debug, Clone)]
+pub enum RsaKeySize {
+    Rsa2048,
+    Rsa3072,
+    Rsa4096,
+}
+
+#[derive(Debug, Clone)]
+pub enum RsaHashAlgorithm {
+    Sha256,
+    Sha384,
+    Sha512,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct RsaStats {
+    pub signatures_created: u64,
+    pub verifications_performed: u64,
+    pub errors: u64,
+}
+
+impl RsaSigner {
+    pub fn new(key_size: RsaKeySize, hash_algorithm: RsaHashAlgorithm, scheme: RsaSignatureScheme) -> Self {
+        Self { key_size, hash_algorithm, scheme }
+    }
+    
+    pub fn sign(&self, data: &[u8]) -> CryptoResult<Vec<u8>> {
+        // Stub implementation
+        Ok(data.to_vec())
+    }
+}
+
+impl RsaVerifier {
+    pub fn new(public_key: Vec<u8>, hash_algorithm: RsaHashAlgorithm, scheme: RsaSignatureScheme) -> Self {
+        Self { public_key, hash_algorithm, scheme }
+    }
+    
+    pub fn verify(&self, data: &[u8], signature: &[u8]) -> CryptoResult<bool> {
+        // Stub implementation
+        Ok(data.len() == signature.len())
+    }
+}
+
 impl CryptoHandler {
     /// Create a new crypto handler
     pub fn new() -> Self {

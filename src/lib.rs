@@ -28,7 +28,7 @@ pub mod common_types;
 // Newly enabled advanced modules
 pub mod types;
 pub mod crypto_pki_types;
-// pub mod stdlib; // Temporarily disabled due to syntax errors
+pub mod stdlib;
 
 // Test modules  
 #[cfg(test)]
@@ -107,7 +107,7 @@ pub use optimization::{
 // pub mod stdlib; // Temporarily disabled due to syntax errors
 
 // Re-export ByteFit for easy access
-// pub use stdlib::bytefit;
+pub use stdlib::bytefit;
 pub mod profiling;
 pub mod docs;
 pub mod documentation;

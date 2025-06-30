@@ -84,3 +84,31 @@ pub fn test_pkcs() -> CryptoResult<()> {
     }
     Ok(())
 }
+
+// PKCS specific types
+#[derive(Debug, Clone)]
+pub enum PkcsError {
+    EncryptionFailed,
+    DecryptionFailed,
+    InvalidFormat,
+    UnsupportedAlgorithm,
+}
+
+pub type PkcsResult<T> = Result<T, CursedError>;
+
+pub fn encrypt_private_key(key_data: &[u8], password: &str) -> PkcsResult<Vec<u8>> {
+    // Placeholder implementation
+    let mut encrypted = key_data.to_vec();
+    encrypted.extend_from_slice(password.as_bytes());
+    Ok(encrypted)
+}
+
+pub fn decrypt_private_key(encrypted_data: &[u8], password: &str) -> PkcsResult<Vec<u8>> {
+    // Placeholder implementation
+    let password_len = password.len();
+    if encrypted_data.len() > password_len {
+        Ok(encrypted_data[..encrypted_data.len() - password_len].to_vec())
+    } else {
+        Err(CursedError::runtime_error("Invalid encrypted data"))
+    }
+}

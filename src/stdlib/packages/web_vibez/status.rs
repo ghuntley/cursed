@@ -1,71 +1,25 @@
-//! Functional implementation for status
+/// Status code wrapper for web_vibez
+pub use crate::stdlib::net::http::response::StatusCode as HttpStatusCode;
 
-use crate::error::CursedError;
-
-/// Result type for status operations
-pub type ModuleResult<T> = Result<T, CursedError>;
-
-/// status operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// Status class enumeration
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum StatusClass {
+    Informational, // 1xx
+    Success,       // 2xx
+    Redirection,   // 3xx
+    ClientError,   // 4xx
+    ServerError,   // 5xx
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
-        Self {
-            enabled: true,
+impl From<u16> for StatusClass {
+    fn from(code: u16) -> Self {
+        match code {
+            100..=199 => StatusClass::Informational,
+            200..=299 => StatusClass::Success,
+            300..=399 => StatusClass::Redirection,
+            400..=499 => StatusClass::ClientError,
+            500..=599 => StatusClass::ServerError,
+            _ => StatusClass::ServerError,
         }
     }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: status, Enabled: {}", self.enabled)
-    }
-}
-
-impl Default for ModuleHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Initialize status processing
-pub fn init_status() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (status) initialized");
-    Ok(())
-}
-
-/// Test status functionality
-pub fn test_status() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
 }

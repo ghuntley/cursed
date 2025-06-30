@@ -1,71 +1,55 @@
-//! Functional implementation for error
-
 use crate::error::CursedError;
+use std::fmt;
 
-/// Result type for error operations
-pub type ModuleResult<T> = Result<T, CursedError>;
+/// Result type for web operations
+pub type WebResult<T> = Result<T, WebError>;
 
-/// error operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// Web-specific error types
+#[derive(Debug, Clone)]
+pub enum WebError {
+    Network(NetworkErrorKind),
+    Auth(AuthErrorKind),
+    Generic(String),
+    Runtime(CursedError),
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
-        Self {
-            enabled: true,
+#[derive(Debug, Clone)]
+pub enum NetworkErrorKind {
+    ConnectionFailed,
+    Timeout,
+    InvalidUrl,
+    HttpError(u16),
+}
+
+#[derive(Debug, Clone)]
+pub enum AuthErrorKind {
+    Unauthorized,
+    Forbidden,
+    InvalidToken,
+    ExpiredToken,
+}
+
+#[derive(Debug, Clone)]
+pub struct ErrorContext {
+    pub message: String,
+    pub source: Option<String>,
+}
+
+impl fmt::Display for WebError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            WebError::Network(kind) => write!(f, "Network error: {:?}", kind),
+            WebError::Auth(kind) => write!(f, "Auth error: {:?}", kind),
+            WebError::Generic(msg) => write!(f, "Web error: {}", msg),
+            WebError::Runtime(err) => write!(f, "Runtime error: {}", err),
         }
     }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: error, Enabled: {}", self.enabled)
-    }
 }
 
-impl Default for ModuleHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+impl std::error::Error for WebError {}
 
-/// Initialize error processing
-pub fn init_error() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+impl From<CursedError> for WebError {
+    fn from(err: CursedError) -> Self {
+        WebError::Runtime(err)
     }
-    println!("⚙️  Module processing (error) initialized");
-    Ok(())
-}
-
-/// Test error functionality
-pub fn test_error() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
 }

@@ -49,6 +49,90 @@ impl Default for ModuleHandler {
     }
 }
 
+use super::SqlValue;
+
+/// SQL result set
+#[derive(Debug)]
+pub struct SqlResultSet {
+    pub rows: Vec<Vec<SqlValue>>,
+    pub columns: Vec<String>,
+}
+
+impl SqlResultSet {
+    pub fn new(columns: Vec<String>) -> Self {
+        SqlResultSet {
+            rows: Vec::new(),
+            columns,
+        }
+    }
+    
+    pub fn add_row(&mut self, row: Vec<SqlValue>) {
+        self.rows.push(row);
+    }
+    
+    pub fn len(&self) -> usize {
+        self.rows.len()
+    }
+    
+    pub fn is_empty(&self) -> bool {
+        self.rows.is_empty()
+    }
+    
+    pub fn iter(&self) -> SqlRowIterator {
+        SqlRowIterator::new(self)
+    }
+}
+
+/// SQL execution result
+#[derive(Debug)]
+pub struct SqlExecuteResult {
+    pub rows_affected: u64,
+    pub last_insert_id: Option<i64>,
+}
+
+impl SqlExecuteResult {
+    pub fn new(rows_affected: u64) -> Self {
+        SqlExecuteResult {
+            rows_affected,
+            last_insert_id: None,
+        }
+    }
+    
+    pub fn with_insert_id(mut self, id: i64) -> Self {
+        self.last_insert_id = Some(id);
+        self
+    }
+}
+
+/// Iterator for SQL rows
+pub struct SqlRowIterator<'a> {
+    result_set: &'a SqlResultSet,
+    current_index: usize,
+}
+
+impl<'a> SqlRowIterator<'a> {
+    pub fn new(result_set: &'a SqlResultSet) -> Self {
+        SqlRowIterator {
+            result_set,
+            current_index: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for SqlRowIterator<'a> {
+    type Item = &'a Vec<SqlValue>;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_index < self.result_set.rows.len() {
+            let row = &self.result_set.rows[self.current_index];
+            self.current_index += 1;
+            Some(row)
+        } else {
+            None
+        }
+    }
+}
+
 /// Initialize result processing
 pub fn init_result() -> ModuleResult<()> {
     let handler = ModuleHandler::new();

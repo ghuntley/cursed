@@ -1,71 +1,77 @@
-//! Functional implementation for statement
+//! PostgreSQL prepared statement implementation
 
 use crate::error::CursedError;
+use super::connection::{PostgresValue, PostgresQueryResult};
 
-/// Result type for statement operations
-pub type ModuleResult<T> = Result<T, CursedError>;
+/// Result type for PostgreSQL statement operations
+pub type PostgresStatementResult<T> = Result<T, CursedError>;
 
-/// statement operations handler
-pub struct ModuleHandler {
-    enabled: bool,
+/// PostgreSQL prepared statement
+pub struct PostgresStatement {
+    query: String,
+    parameters: Vec<PostgresValue>,
+    is_prepared: bool,
 }
 
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
+impl PostgresStatement {
+    /// Create a new PostgreSQL prepared statement
+    pub fn new(query: String) -> Self {
         Self {
-            enabled: true,
+            query,
+            parameters: Vec::new(),
+            is_prepared: false,
         }
     }
     
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
+    /// Prepare the statement
+    pub fn prepare(&mut self) -> PostgresStatementResult<()> {
+        // Stub implementation - would prepare actual statement
+        println!("📝 Preparing PostgreSQL statement: {}", self.query);
+        self.is_prepared = true;
+        Ok(())
     }
     
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
+    /// Check if statement is prepared
+    pub fn is_prepared(&self) -> bool {
+        self.is_prepared
     }
     
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+    /// Bind a parameter to the statement
+    pub fn bind(&mut self, index: usize, value: PostgresValue) -> PostgresStatementResult<()> {
+        while self.parameters.len() <= index {
+            self.parameters.push(PostgresValue::Null);
         }
-        Ok(format!("Processed: {}", data))
+        self.parameters[index] = value;
+        Ok(())
     }
     
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: statement, Enabled: {}", self.enabled)
+    /// Execute the prepared statement
+    pub fn execute(&self) -> PostgresStatementResult<PostgresQueryResult> {
+        if !self.is_prepared {
+            return Err(CursedError::runtime_error("Statement not prepared"));
+        }
+        println!("⚡ Executing prepared statement with {} parameters", self.parameters.len());
+        Ok(PostgresQueryResult::new(1, Vec::new()))
+    }
+    
+    /// Get the query string
+    pub fn query(&self) -> &str {
+        &self.query
+    }
+    
+    /// Get parameter count
+    pub fn parameter_count(&self) -> usize {
+        self.parameters.len()
+    }
+    
+    /// Clear all parameters
+    pub fn clear_parameters(&mut self) {
+        self.parameters.clear();
     }
 }
 
-impl Default for ModuleHandler {
+impl Default for PostgresStatement {
     fn default() -> Self {
-        Self::new()
+        Self::new("SELECT 1".to_string())
     }
-}
-
-/// Initialize statement processing
-pub fn init_statement() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    println!("⚙️  Module processing (statement) initialized");
-    Ok(())
-}
-
-/// Test statement functionality
-pub fn test_statement() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
-    }
-    Ok(())
 }
