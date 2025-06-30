@@ -82,7 +82,6 @@ mod tests {
             ],
             return_type: None,
             visibility: crate::ast::Visibility::Private,
-            visibility: crate::ast::Visibility::Private,
         };
         
         let result = checker.check_function_complete(&func_stmt).unwrap();
