@@ -5,7 +5,8 @@
 
 use crate::ast::*;
 use crate::error::CursedError;
-use super::{TypeChecker, TypeSystem, TypeInference, VarianceAnalyzer};
+use super::{TypeChecker, TypeSystem, TypeInference};
+use crate::type_system::variance::VarianceAnalyzer;
 
 #[cfg(test)]
 mod tests {
@@ -79,6 +80,9 @@ mod tests {
                     })),
                 })
             ],
+            return_type: None,
+            visibility: crate::ast::Visibility::Private,
+            visibility: crate::ast::Visibility::Private,
         };
         
         let result = checker.check_function_complete(&func_stmt).unwrap();
@@ -250,6 +254,7 @@ mod tests {
         let let_stmt = LetStatement {
             name: "x".to_string(),
             value: Expression::Integer(42),
+            visibility: crate::ast::Visibility::Private,
         };
         
         let result = checker.check_let_statement(&let_stmt).unwrap();
@@ -320,10 +325,12 @@ mod tests {
                 Statement::Let(LetStatement {
                     name: "x".to_string(),
                     value: Expression::Integer(42),
+                    visibility: crate::ast::Visibility::Private,
                 }),
                 Statement::Let(LetStatement {
                     name: "message".to_string(),
                     value: Expression::String("Hello, CURSED!".to_string()),
+                    visibility: crate::ast::Visibility::Private,
                 }),
                 Statement::Expression(Expression::Call(CallExpression {
                     function: Box::new(Expression::MemberAccess(MemberAccessExpression {
@@ -344,6 +351,8 @@ mod tests {
                             })),
                         })
                     ],
+                    return_type: None,
+                    visibility: crate::ast::Visibility::Private,
                 }),
                 Statement::If(IfStatement {
                     condition: Expression::Binary(BinaryExpression {

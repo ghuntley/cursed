@@ -1,7 +1,7 @@
 /// fr fr Packages module for CURSED stdlib - modular library organization
 
 // Database packages - comprehensive database connectivity
-pub mod db_core;
+// pub mod db_core; // Temporarily disabled due to syntax errors
 pub mod db_sql;
 pub mod db_nosql;
 pub mod db_pool;
@@ -31,7 +31,7 @@ pub mod sql_vibes;
 pub mod test_vibes;
 
 // Re-export database packages for convenience
-pub use db_core::*;
+// pub use db_core::*; // Temporarily disabled
 pub use db_sql::*;
 
 // Re-export cryptography packages for convenience

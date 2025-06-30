@@ -1,9 +1,6 @@
-function add(a, b) {
-    return a + b
+// Simple function test
+slay sayHello() {
+    print("Hello World");
 }
 
-function main() {
-    let result = add(5, 3)
-    vibez.spill(result)
-    return 0
-}
+sayHello();

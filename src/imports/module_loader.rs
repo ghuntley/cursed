@@ -198,19 +198,22 @@ impl ModuleLoader {
 
     /// Extract exported symbols from a program
     fn extract_exported_symbols(&self, program: &Program) -> Vec<String> {
+        use crate::ast::Visibility;
         let mut symbols = Vec::new();
         
         for statement in &program.statements {
             match statement {
                 Statement::Function(func) => {
-                    // All functions are exported by default
-                    // TODO: Add visibility modifiers (pub, private, etc.)
-                    symbols.push(func.name.clone());
+                    // Only export public functions
+                    if func.visibility == Visibility::Public {
+                        symbols.push(func.name.clone());
+                    }
                 }
                 Statement::Let(let_stmt) => {
-                    // All constants are exported by default
-                    // TODO: Add visibility modifiers
-                    symbols.push(let_stmt.name.clone());
+                    // Only export public constants
+                    if let_stmt.visibility == Visibility::Public {
+                        symbols.push(let_stmt.name.clone());
+                    }
                 }
                 // Add more exportable types as needed
                 _ => {}

@@ -490,7 +490,7 @@ pub fn buffered_channel<T: Send + 'static>(capacity: usize) -> (ChannelSender<T>
 }
 
 /// CURSED syntax support - dm<T> type alias for channels
-pub type Dm<T: Send> = Channel<T>;
+pub type Dm<T> = Channel<T>;
 
 /// CURSED syntax support - channel creation with dm keyword
 pub fn dm<T: Send + 'static>() -> (ChannelSender<T>, ChannelReceiver<T>) {

@@ -32,7 +32,7 @@ pub use gvn::{GvnPass, GvnResult};
 
 // Placeholder exports for other passes
 pub use pass_registry::{PassRegistry, PassRegistration, PassDependency};
-pub use pass_pipeline::{OptimizationPipeline, PipelineBuilder, OptimizationStage, PassExecutionContext};
+pub use pass_pipeline::{OptimizationPipeline, PipelineBuilder};
 pub use performance_monitoring::{PerformanceMonitor, OptimizationMetrics, PassExecutionStats};
 
 // Optimization passes - restored from minimal implementations

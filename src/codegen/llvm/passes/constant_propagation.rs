@@ -972,7 +972,7 @@ impl ConstantPropagationResult {
 
 /// Result of constant propagation within a function
 #[derive(Debug, Default)]
-struct FunctionConstantResult {
+pub struct FunctionConstantResult {
     pub constants_folded: u32,
     pub values_propagated: u32,
     pub expressions_simplified: u32,

@@ -66,25 +66,8 @@ pub struct ImportCache {
     failed_imports: HashMap<String, ImportError>,
 }
 
-/// Configuration for import resolution
-#[derive(Debug, Clone)]
-pub struct ImportConfig {
-    pub search_paths: Vec<PathBuf>,
-    pub stdlib_path: PathBuf,
-    pub enable_package_manager: bool,
-    pub cache_enabled: bool,
-}
-
-impl Default for ImportConfig {
-    fn default() -> Self {
-        Self {
-            search_paths: vec![PathBuf::from(".")],
-            stdlib_path: PathBuf::from("stdlib"),
-            enable_package_manager: false, // Disabled for minimal build
-            cache_enabled: true,
-        }
-    }
-}
+/// Import configuration type alias for consistency with resolver
+pub use resolver::ImportConfig;
 
 impl ImportManager {
     /// Create new import manager with default configuration
@@ -94,15 +77,7 @@ impl ImportManager {
 
     /// Create new import manager with custom configuration  
     pub fn with_config(config: ImportConfig) -> Result<Self> {
-        let resolver_config = resolver::ImportConfig {
-            search_paths: config.search_paths.clone(),
-            stdlib_path: config.stdlib_path.clone(),
-            package_cache_dir: PathBuf::from(".cursed/packages"),
-            enable_package_manager: config.enable_package_manager,
-            cache_enabled: config.cache_enabled,
-            max_circular_depth: 64,
-        };
-        let resolver = ImportResolver::with_config(resolver_config)?;
+        let resolver = ImportResolver::with_config(config.clone())?;
         let cache = ImportCache::default();
         
         Ok(Self {

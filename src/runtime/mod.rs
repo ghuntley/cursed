@@ -59,4 +59,5 @@ pub use runtime::{initialize_complete_runtime, shutdown_complete_runtime};
 
 // Re-export channels and async runtime for goroutine system
 pub use channels::{Channel, ChannelSender, ChannelReceiver, ChannelError};
-pub use r#async::{AsyncRuntime, AsyncTask, AsyncScheduler};
+pub use r#async::{AsyncRuntime, AsyncScheduler};
+pub use r#async::executor::TaskHandle;

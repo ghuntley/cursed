@@ -538,10 +538,38 @@ impl OptimizationConfig {
             OptimizationLevel::Custom(_) => 2,
         };
 
+        // Convert to LLVM optimization config
+        let llvm_level = match self.level {
+            OptimizationLevel::None => crate::codegen::llvm::optimization::OptimizationLevel::O0,
+            OptimizationLevel::Less => crate::codegen::llvm::optimization::OptimizationLevel::O1,
+            OptimizationLevel::Default => crate::codegen::llvm::optimization::OptimizationLevel::O2,
+            OptimizationLevel::Aggressive => crate::codegen::llvm::optimization::OptimizationLevel::O3,
+            OptimizationLevel::Size => crate::codegen::llvm::optimization::OptimizationLevel::Os,
+            OptimizationLevel::SizeZ => crate::codegen::llvm::optimization::OptimizationLevel::Oz,
+            _ => crate::codegen::llvm::optimization::OptimizationLevel::O2, // Default for other levels
+        };
+        
         crate::codegen::llvm::optimization::OptimizationConfig {
-            level,
-            enable_inlining: self.inline_threshold > 0,
-            enable_vectorization: self.vectorize,
+            level: llvm_level,
+            target_cpu: None,
+            target_features: Vec::new(),
+            vectorize_loops: self.vectorize,
+            vectorize_slp: self.vectorize,
+            unroll_loops: self.level == OptimizationLevel::Aggressive,
+            merge_functions: self.level == OptimizationLevel::Aggressive,
+            inline_functions: self.inline_threshold > 0,
+            enable_lto: self.level == OptimizationLevel::Aggressive,
+            custom_passes: Vec::new(),
+            enable_parallel_optimization: true,
+            enable_caching: true,
+            enable_incremental: false,
+            enable_profiling: false,
+            cache_size_limit: 1000,
+            parallel_threshold: 4,
+            optimization_timeout: None,
+            enable_cursed_specific: false,
+            enable_auto_tuning: false,
+            profile_data_path: None,
         }
     }
 }

@@ -61,11 +61,13 @@ impl Parser {
                 break;
             }
             
-            if let Ok(stmt) = self.parse_statement() {
-                statements.push(stmt);
-            } else {
-                // Skip to next statement on error
-                self.synchronize();
+            match self.parse_statement() {
+                Ok(stmt) => statements.push(stmt),
+                Err(e) => {
+                    // Record error but continue parsing
+                    self.errors.push(format!("Parse error: {}", e));
+                    self.synchronize();
+                }
             }
             self.skip_newlines();
         }
@@ -143,7 +145,8 @@ impl Parser {
 
             match self.peek().kind {
                 TokenKind::Slay | TokenKind::Sus | TokenKind::Facts | TokenKind::Lowkey |
-                TokenKind::Bestie | TokenKind::Yolo => return,
+                TokenKind::Bestie | TokenKind::Yolo | TokenKind::Vibe | TokenKind::Yeet |
+                TokenKind::RightBrace | TokenKind::Newline => return,
                 _ => {}
             }
 
@@ -170,13 +173,31 @@ impl Parser {
     }
 
     fn parse_statement(&mut self) -> Result<Statement, CursedError> {
+        // Check for visibility modifiers
+        let visibility = self.parse_visibility()?;
+        
         match self.peek().kind {
-            TokenKind::Slay => Ok(Statement::Function(self.parse_function_statement()?)),
-            TokenKind::Sus => Ok(Statement::Let(self.parse_let_statement()?)),
-            TokenKind::Facts => Ok(Statement::Let(self.parse_const_statement()?)),
-            TokenKind::Lowkey => Ok(Statement::If(self.parse_if_statement()?)),
-            TokenKind::Yolo => Ok(Statement::Return(self.parse_return_statement()?)),
-            _ => Ok(Statement::Expression(self.parse_expression()?)),
+            TokenKind::Slay => Ok(Statement::Function(self.parse_function_statement_with_visibility(visibility)?)),
+            TokenKind::Sus => Ok(Statement::Let(self.parse_let_statement_with_visibility(visibility)?)),
+            TokenKind::Facts => Ok(Statement::Let(self.parse_const_statement_with_visibility(visibility)?)),
+            TokenKind::Lowkey => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on control flow statements"));
+                }
+                Ok(Statement::If(self.parse_if_statement()?))
+            },
+            TokenKind::Yolo => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on return statements"));
+                }
+                Ok(Statement::Return(self.parse_return_statement()?))
+            },
+            _ => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
+                }
+                Ok(Statement::Expression(self.parse_expression()?))
+            },
         }
     }
 
@@ -214,6 +235,47 @@ impl Parser {
             name,
             parameters,
             body,
+            return_type: None, // TODO: Add proper type parsing
+            visibility: crate::ast::Visibility::Private,
+        })
+    }
+
+    fn parse_function_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<FunctionStatement, CursedError> {
+        self.consume(TokenKind::Slay, "Expected 'slay'")?;
+        let name = self.consume(TokenKind::Identifier, "Expected function name")?.lexeme.clone();
+        
+        self.consume(TokenKind::LeftParen, "Expected '(' after function name")?;
+        let mut parameters = Vec::new();
+        
+        if !self.check(&TokenKind::RightParen) {
+            loop {
+                let param = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
+                parameters.push(param);
+                
+                if !self.match_tokens(&[TokenKind::Comma]) {
+                    break;
+                }
+            }
+        }
+        
+        self.consume(TokenKind::RightParen, "Expected ')' after parameters")?;
+        self.consume(TokenKind::LeftBrace, "Expected '{' before function body")?;
+        self.skip_newlines();
+        
+        let mut body = Vec::new();
+        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            body.push(self.parse_statement()?);
+            self.skip_newlines();
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' after function body")?;
+        
+        Ok(FunctionStatement {
+            name,
+            parameters,
+            body,
+            return_type: None, // TODO: Add proper type parsing
+            visibility,
         })
     }
 
@@ -226,6 +288,7 @@ impl Parser {
         Ok(LetStatement {
             name,
             value,
+            visibility: crate::ast::Visibility::Private,
         })
     }
 
@@ -238,7 +301,53 @@ impl Parser {
         Ok(LetStatement {
             name,
             value,
+            visibility: crate::ast::Visibility::Private,
         })
+    }
+
+    fn parse_let_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<LetStatement, CursedError> {
+        self.consume(TokenKind::Sus, "Expected 'sus'")?;
+        let name = self.consume(TokenKind::Identifier, "Expected variable name")?.lexeme.clone();
+        self.consume(TokenKind::Equal, "Expected '=' after variable name")?;
+        let value = self.parse_expression()?;
+        
+        Ok(LetStatement {
+            name,
+            value,
+            visibility,
+        })
+    }
+
+    fn parse_const_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<LetStatement, CursedError> {
+        self.consume(TokenKind::Facts, "Expected 'facts'")?;
+        let name = self.consume(TokenKind::Identifier, "Expected constant name")?.lexeme.clone();
+        self.consume(TokenKind::Equal, "Expected '=' after constant name")?;
+        let value = self.parse_expression()?;
+        
+        Ok(LetStatement {
+            name,
+            value,
+            visibility,
+        })
+    }
+
+    /// Parse visibility modifiers (spill = pub, priv = private, crew = pkg)
+    fn parse_visibility(&mut self) -> Result<crate::ast::Visibility, CursedError> {
+        match self.peek().kind {
+            TokenKind::Spill => {
+                self.advance();
+                Ok(crate::ast::Visibility::Public)
+            },
+            TokenKind::Priv => {
+                self.advance();
+                Ok(crate::ast::Visibility::Private)
+            },
+            TokenKind::Crew => {
+                self.advance();
+                Ok(crate::ast::Visibility::Package)
+            },
+            _ => Ok(crate::ast::Visibility::Private), // Default visibility
+        }
     }
 
     fn parse_if_statement(&mut self) -> Result<IfStatement, CursedError> {
@@ -283,7 +392,39 @@ impl Parser {
     }
 
     pub fn parse_expression(&mut self) -> Result<Expression, CursedError> {
-        self.parse_equality()
+        self.parse_logical_or()
+    }
+
+    fn parse_logical_or(&mut self) -> Result<Expression, CursedError> {
+        let mut expr = self.parse_logical_and()?;
+
+        while self.match_tokens(&[TokenKind::PipePipe]) {
+            let operator = self.previous().lexeme.clone();
+            let right = self.parse_logical_and()?;
+            expr = Expression::Binary(BinaryExpression {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            });
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_logical_and(&mut self) -> Result<Expression, CursedError> {
+        let mut expr = self.parse_equality()?;
+
+        while self.match_tokens(&[TokenKind::AmpAmp]) {
+            let operator = self.previous().lexeme.clone();
+            let right = self.parse_equality()?;
+            expr = Expression::Binary(BinaryExpression {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            });
+        }
+
+        Ok(expr)
     }
 
     fn parse_equality(&mut self) -> Result<Expression, CursedError> {
@@ -338,7 +479,7 @@ impl Parser {
     fn parse_factor(&mut self) -> Result<Expression, CursedError> {
         let mut expr = self.parse_unary()?;
 
-        while self.match_tokens(&[TokenKind::Slash, TokenKind::Star]) {
+        while self.match_tokens(&[TokenKind::Slash, TokenKind::Star, TokenKind::Percent]) {
             let operator = self.previous().lexeme.clone();
             let right = self.parse_unary()?;
             expr = Expression::Binary(BinaryExpression {

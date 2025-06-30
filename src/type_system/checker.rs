@@ -433,7 +433,7 @@ impl TypeChecker {
         Ok(TypeExpression::map(key_type, value_type))
     }
     
-    fn check_let_statement(&mut self, let_stmt: &LetStatement) -> Result<TypeExpression, TypeCheckError> {
+    pub fn check_let_statement(&mut self, let_stmt: &LetStatement) -> Result<TypeExpression, TypeCheckError> {
         let value_type = self.check_expression(&let_stmt.value)?;
         
         // Add variable to current scope
@@ -480,7 +480,7 @@ impl TypeChecker {
         Ok(func_type)
     }
     
-    fn check_if_statement(&mut self, if_stmt: &IfStatement) -> Result<TypeExpression, TypeCheckError> {
+    pub fn check_if_statement(&mut self, if_stmt: &IfStatement) -> Result<TypeExpression, TypeCheckError> {
         let condition_type = self.check_expression(&if_stmt.condition)?;
         
         if !self.is_bool_type(&condition_type) {
@@ -510,7 +510,7 @@ impl TypeChecker {
         Ok(TypeExpression::named("void"))
     }
     
-    fn check_while_statement(&mut self, while_stmt: &WhileStatement) -> Result<TypeExpression, TypeCheckError> {
+    pub fn check_while_statement(&mut self, while_stmt: &WhileStatement) -> Result<TypeExpression, TypeCheckError> {
         let condition_type = self.check_expression(&while_stmt.condition)?;
         
         if !self.is_bool_type(&condition_type) {
@@ -753,6 +753,9 @@ mod tests {
                     value: Some(Expression::Integer(42)),
                 })
             ],
+            visibility: crate::ast::Visibility::Private,
+            return_type: None,
+            visibility: crate::ast::Visibility::Private,
         };
         
         let result = checker.check_function_complete(&func_stmt).unwrap();

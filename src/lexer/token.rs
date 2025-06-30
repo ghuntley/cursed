@@ -1,15 +1,4 @@
-//! Minimal working module for CURSED compilation
+//! Token definitions for CURSED lexer
+//! This module exports the token types and related functionality
 
-use crate::error::CursedError;
-
-pub struct MinimalImplementation;
-
-impl MinimalImplementation {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
-}
+pub use super::{Token, TokenKind};

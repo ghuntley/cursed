@@ -181,7 +181,7 @@ impl SimpleOptimizationResult {
 
 /// Function-level optimization result
 #[derive(Debug, Default)]
-struct FunctionOptimizationResult {
+pub struct FunctionOptimizationResult {
     pub constants_found: u32,
     pub optimization_opportunities: u32,
 }

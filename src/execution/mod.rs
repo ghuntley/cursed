@@ -108,6 +108,7 @@ impl CursedExecutionEngine {
             Statement::Let(let_stmt) => {
                 let value = self.evaluate_expression(&let_stmt.value, context)?;
                 context.set_variable(let_stmt.name.clone(), value.clone());
+                // For assignment statements, return the value that was assigned
                 Ok(value)
             },
             Statement::Return(return_stmt) => {

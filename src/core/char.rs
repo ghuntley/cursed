@@ -1,5 +1,5 @@
 // Character manipulation functions and objects
-use crate::stdlib::string::CursedString;
+// // use crate::stdlib::string::CursedString; // Temporarily disabled
 use crate::error::CursedError;
 
 #[derive(Debug, Clone)]
@@ -12,8 +12,8 @@ impl CharObject {
         Self { value: c }
     }
 
-    pub fn to_string(&self) -> CursedString {
-        CursedString::from(self.value.to_string())
+    pub fn to_string(&self) -> String {
+        self.value.to_string()
     }
 
     pub fn is_ascii(&self) -> bool {
@@ -42,7 +42,7 @@ impl CharObject {
 }
 
 pub trait CharMethods {
-    fn to_string_repr(self) -> CursedString;
+    fn to_string_repr(self) -> String;
     fn is_ascii_char(self) -> bool;
     fn is_numeric_char(self) -> bool;
     fn is_alphabetic_char(self) -> bool;
@@ -52,8 +52,8 @@ pub trait CharMethods {
 }
 
 impl CharMethods for char {
-    fn to_string_repr(self) -> CursedString {
-        CursedString::from(self.to_string())
+    fn to_string_repr(self) -> String {
+        self.to_string()
     }
 
     fn is_ascii_char(self) -> bool {
@@ -81,8 +81,8 @@ impl CharMethods for char {
     }
 }
 
-pub fn to_string(c: char) -> CursedString {
-    CursedString::from(c.to_string())
+pub fn to_string(c: char) -> String {
+    c.to_string()
 }
 
 pub fn is_ascii(c: char) -> bool {

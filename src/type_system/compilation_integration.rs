@@ -460,6 +460,7 @@ mod tests {
                 Statement::Let(LetStatement {
                     name: "x".to_string(),
                     value: Expression::Integer(42),
+                    visibility: crate::ast::Visibility::Private,
                 }),
             ],
             imports: Vec::new(),
