@@ -112,6 +112,18 @@ impl FunctionCompiler {
                 self.variables.insert(let_stmt.name.clone(), var_reg);
                 ir.push_str(&format!("  ; Variable {} allocated\n", let_stmt.name));
             },
+            Statement::Assignment(assign_stmt) => {
+                let value_reg = self.compile_expression(&assign_stmt.value)?;
+                
+                // Look up existing variable
+                if let Some(var_reg) = self.variables.get(&assign_stmt.name).cloned() {
+                    // Store new value to existing variable
+                    ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", value_reg, var_reg));
+                    ir.push_str(&format!("  ; Assignment to {} = {}\n", assign_stmt.name, value_reg));
+                } else {
+                    return Err(CursedError::runtime_error(&format!("Undefined variable: {}", assign_stmt.name)));
+                }
+            },
             Statement::Return(return_stmt) => {
                 if let Some(val) = &return_stmt.value {
                     let return_reg = self.compile_expression(val)?;
