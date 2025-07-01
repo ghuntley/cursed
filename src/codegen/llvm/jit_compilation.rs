@@ -232,9 +232,42 @@ impl SymbolResolver {
         self.register_symbol("math_sqrt_impl", crate::execution::runtime_functions::math_sqrt_impl as usize);
         self.register_symbol("math_random_impl", crate::execution::runtime_functions::math_random_impl as usize);
         
-        // Register standard library collections functions (stubs)
+        // Register standard library collections functions
+        // Array/Vector operations
+        self.register_symbol("collections_array_new", crate::execution::runtime_functions::collections_array_new as usize);
+        self.register_symbol("collections_array_with_capacity", crate::execution::runtime_functions::collections_array_with_capacity as usize);
         self.register_symbol("collections_array_push", crate::execution::runtime_functions::collections_array_push as usize);
+        self.register_symbol("collections_array_pop", crate::execution::runtime_functions::collections_array_pop as usize);
+        self.register_symbol("collections_array_get", crate::execution::runtime_functions::collections_array_get as usize);
+        self.register_symbol("collections_array_set", crate::execution::runtime_functions::collections_array_set as usize);
+        self.register_symbol("collections_array_len", crate::execution::runtime_functions::collections_array_len as usize);
+        self.register_symbol("collections_array_insert", crate::execution::runtime_functions::collections_array_insert as usize);
+        self.register_symbol("collections_array_remove", crate::execution::runtime_functions::collections_array_remove as usize);
+        self.register_symbol("collections_array_clear", crate::execution::runtime_functions::collections_array_clear as usize);
+        self.register_symbol("collections_array_is_empty", crate::execution::runtime_functions::collections_array_is_empty as usize);
+        self.register_symbol("collections_array_contains", crate::execution::runtime_functions::collections_array_contains as usize);
+        self.register_symbol("collections_array_reverse", crate::execution::runtime_functions::collections_array_reverse as usize);
+        
+        // HashMap operations
+        self.register_symbol("collections_map_new", crate::execution::runtime_functions::collections_map_new as usize);
+        self.register_symbol("collections_map_with_capacity", crate::execution::runtime_functions::collections_map_with_capacity as usize);
         self.register_symbol("collections_map_set", crate::execution::runtime_functions::collections_map_set as usize);
+        self.register_symbol("collections_map_get", crate::execution::runtime_functions::collections_map_get as usize);
+        self.register_symbol("collections_map_remove", crate::execution::runtime_functions::collections_map_remove as usize);
+        self.register_symbol("collections_map_contains_key", crate::execution::runtime_functions::collections_map_contains_key as usize);
+        self.register_symbol("collections_map_len", crate::execution::runtime_functions::collections_map_len as usize);
+        self.register_symbol("collections_map_clear", crate::execution::runtime_functions::collections_map_clear as usize);
+        self.register_symbol("collections_map_is_empty", crate::execution::runtime_functions::collections_map_is_empty as usize);
+        
+        // HashSet operations
+        self.register_symbol("collections_set_new", crate::execution::runtime_functions::collections_set_new as usize);
+        self.register_symbol("collections_set_with_capacity", crate::execution::runtime_functions::collections_set_with_capacity as usize);
+        self.register_symbol("collections_set_insert", crate::execution::runtime_functions::collections_set_insert as usize);
+        self.register_symbol("collections_set_contains", crate::execution::runtime_functions::collections_set_contains as usize);
+        self.register_symbol("collections_set_remove", crate::execution::runtime_functions::collections_set_remove as usize);
+        self.register_symbol("collections_set_len", crate::execution::runtime_functions::collections_set_len as usize);
+        self.register_symbol("collections_set_clear", crate::execution::runtime_functions::collections_set_clear as usize);
+        self.register_symbol("collections_set_is_empty", crate::execution::runtime_functions::collections_set_is_empty as usize);
     }
     
     fn register_symbol(&mut self, name: &str, addr: usize) {
