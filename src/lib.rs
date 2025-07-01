@@ -40,7 +40,7 @@ use crate::error::CursedError;
 
 // CRITICAL: Re-export core components for tests and external access
 pub use lexer::{Lexer, Token, TokenKind};
-pub use parser::{Parser};
+pub use parser::{Parser, new_parser};
 pub use codegen::LlvmCodeGenerator as LlvmCodeGeneratorReal;
 pub use package_manager::*;
 
