@@ -287,6 +287,22 @@ impl SymbolResolver {
         self.register_symbol("string_base64_encode", crate::execution::runtime_functions::string_base64_encode as usize);
         self.register_symbol("string_base64_decode", crate::execution::runtime_functions::string_base64_decode as usize);
         self.register_symbol("string_levenshtein_distance", crate::execution::runtime_functions::string_levenshtein_distance as usize);
+        
+        // Register standard library networking functions
+        // TCP operations
+        self.register_symbol("network_tcp_connect", crate::execution::runtime_functions::network_tcp_connect as usize);
+        self.register_symbol("network_tcp_listen", crate::execution::runtime_functions::network_tcp_listen as usize);
+        self.register_symbol("network_tcp_send", crate::execution::runtime_functions::network_tcp_send as usize);
+        self.register_symbol("network_tcp_recv", crate::execution::runtime_functions::network_tcp_recv as usize);
+        self.register_symbol("network_tcp_close", crate::execution::runtime_functions::network_tcp_close as usize);
+        
+        // DNS operations
+        self.register_symbol("network_dns_resolve", crate::execution::runtime_functions::network_dns_resolve as usize);
+        
+        // HTTP operations
+        self.register_symbol("network_http_get", crate::execution::runtime_functions::network_http_get as usize);
+        self.register_symbol("network_http_post", crate::execution::runtime_functions::network_http_post as usize);
+        self.register_symbol("network_http_request", crate::execution::runtime_functions::network_http_request as usize);
     }
     
     fn register_symbol(&mut self, name: &str, addr: usize) {
