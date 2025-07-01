@@ -531,19 +531,346 @@ pub extern "C" fn io_change_directory(path_ptr: *const c_char) -> i32 {
 // Collections Implementation Functions  
 // ================================
 
-// Note: Collections functions will be implemented in next phase
-// For now, providing minimal stubs to prevent link errors
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::slice;
 
+// Array/Vector Operations
 #[no_mangle]
-pub extern "C" fn collections_array_push() -> i32 {
-    // TODO: Implement array push functionality
-    -1
+pub extern "C" fn collections_array_new() -> *mut Vec<i64> {
+    Box::into_raw(Box::new(Vec::<i64>::new()))
 }
 
 #[no_mangle]
-pub extern "C" fn collections_map_set() -> i32 {
-    // TODO: Implement map set functionality
-    -1
+pub extern "C" fn collections_array_with_capacity(capacity: usize) -> *mut Vec<i64> {
+    Box::into_raw(Box::new(Vec::<i64>::with_capacity(capacity)))
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_push(arr_ptr: *mut Vec<i64>, item: i64) -> i32 {
+    if arr_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let arr = &mut *arr_ptr;
+        arr.push(item);
+    }
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_pop(arr_ptr: *mut Vec<i64>) -> i64 {
+    if arr_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let arr = &mut *arr_ptr;
+        arr.pop().unwrap_or(-1)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_get(arr_ptr: *const Vec<i64>, index: usize) -> i64 {
+    if arr_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let arr = &*arr_ptr;
+        arr.get(index).copied().unwrap_or(-1)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_set(arr_ptr: *mut Vec<i64>, index: usize, value: i64) -> i32 {
+    if arr_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let arr = &mut *arr_ptr;
+        if index >= arr.len() {
+            return -1;
+        }
+        arr[index] = value;
+    }
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_len(arr_ptr: *const Vec<i64>) -> usize {
+    if arr_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let arr = &*arr_ptr;
+        arr.len()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_insert(arr_ptr: *mut Vec<i64>, index: usize, item: i64) -> i32 {
+    if arr_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let arr = &mut *arr_ptr;
+        if index > arr.len() {
+            return -1;
+        }
+        arr.insert(index, item);
+    }
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_remove(arr_ptr: *mut Vec<i64>, index: usize) -> i64 {
+    if arr_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let arr = &mut *arr_ptr;
+        if index >= arr.len() {
+            return -1;
+        }
+        arr.remove(index)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_clear(arr_ptr: *mut Vec<i64>) -> i32 {
+    if arr_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let arr = &mut *arr_ptr;
+        arr.clear();
+    }
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_is_empty(arr_ptr: *const Vec<i64>) -> i32 {
+    if arr_ptr.is_null() {
+        return 1;
+    }
+    
+    unsafe {
+        let arr = &*arr_ptr;
+        if arr.is_empty() { 1 } else { 0 }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_contains(arr_ptr: *const Vec<i64>, item: i64) -> i32 {
+    if arr_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let arr = &*arr_ptr;
+        if arr.contains(&item) { 1 } else { 0 }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_array_reverse(arr_ptr: *mut Vec<i64>) -> i32 {
+    if arr_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let arr = &mut *arr_ptr;
+        arr.reverse();
+    }
+    0
+}
+
+// HashMap Operations
+#[no_mangle]
+pub extern "C" fn collections_map_new() -> *mut HashMap<i64, i64> {
+    Box::into_raw(Box::new(HashMap::<i64, i64>::new()))
+}
+
+#[no_mangle]
+pub extern "C" fn collections_map_with_capacity(capacity: usize) -> *mut HashMap<i64, i64> {
+    Box::into_raw(Box::new(HashMap::<i64, i64>::with_capacity(capacity)))
+}
+
+#[no_mangle]
+pub extern "C" fn collections_map_set(map_ptr: *mut HashMap<i64, i64>, key: i64, value: i64) -> i32 {
+    if map_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let map = &mut *map_ptr;
+        map.insert(key, value);
+    }
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn collections_map_get(map_ptr: *const HashMap<i64, i64>, key: i64) -> i64 {
+    if map_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let map = &*map_ptr;
+        map.get(&key).copied().unwrap_or(-1)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_map_remove(map_ptr: *mut HashMap<i64, i64>, key: i64) -> i64 {
+    if map_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let map = &mut *map_ptr;
+        map.remove(&key).unwrap_or(-1)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_map_contains_key(map_ptr: *const HashMap<i64, i64>, key: i64) -> i32 {
+    if map_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let map = &*map_ptr;
+        if map.contains_key(&key) { 1 } else { 0 }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_map_len(map_ptr: *const HashMap<i64, i64>) -> usize {
+    if map_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let map = &*map_ptr;
+        map.len()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_map_clear(map_ptr: *mut HashMap<i64, i64>) -> i32 {
+    if map_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let map = &mut *map_ptr;
+        map.clear();
+    }
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn collections_map_is_empty(map_ptr: *const HashMap<i64, i64>) -> i32 {
+    if map_ptr.is_null() {
+        return 1;
+    }
+    
+    unsafe {
+        let map = &*map_ptr;
+        if map.is_empty() { 1 } else { 0 }
+    }
+}
+
+// HashSet Operations
+#[no_mangle]
+pub extern "C" fn collections_set_new() -> *mut HashSet<i64> {
+    Box::into_raw(Box::new(HashSet::<i64>::new()))
+}
+
+#[no_mangle]
+pub extern "C" fn collections_set_with_capacity(capacity: usize) -> *mut HashSet<i64> {
+    Box::into_raw(Box::new(HashSet::<i64>::with_capacity(capacity)))
+}
+
+#[no_mangle]
+pub extern "C" fn collections_set_insert(set_ptr: *mut HashSet<i64>, item: i64) -> i32 {
+    if set_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let set = &mut *set_ptr;
+        if set.insert(item) { 1 } else { 0 }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_set_contains(set_ptr: *const HashSet<i64>, item: i64) -> i32 {
+    if set_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let set = &*set_ptr;
+        if set.contains(&item) { 1 } else { 0 }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_set_remove(set_ptr: *mut HashSet<i64>, item: i64) -> i32 {
+    if set_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let set = &mut *set_ptr;
+        if set.remove(&item) { 1 } else { 0 }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_set_len(set_ptr: *const HashSet<i64>) -> usize {
+    if set_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let set = &*set_ptr;
+        set.len()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn collections_set_clear(set_ptr: *mut HashSet<i64>) -> i32 {
+    if set_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let set = &mut *set_ptr;
+        set.clear();
+    }
+    0
+}
+
+#[no_mangle]
+pub extern "C" fn collections_set_is_empty(set_ptr: *const HashSet<i64>) -> i32 {
+    if set_ptr.is_null() {
+        return 1;
+    }
+    
+    unsafe {
+        let set = &*set_ptr;
+        if set.is_empty() { 1 } else { 0 }
+    }
 }
 
 // ================================
