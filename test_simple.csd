@@ -1,1 +1,2 @@
-slay main() { yolo "Hello!"; }
+sus x = 42
+yolo x
