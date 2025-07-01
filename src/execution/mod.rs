@@ -193,6 +193,18 @@ impl CursedExecutionEngine {
                 // For now, just return nil - channels need more complex implementation
                 Ok(CursedValue::Nil)
             },
+            Statement::Struct(struct_stmt) => {
+                // Store struct definition in context for type checking
+                log::info!("📝 Storing struct definition: {} with {} fields", struct_stmt.name, struct_stmt.fields.len());
+                // TODO: Implement actual struct storage
+                Ok(CursedValue::Nil)
+            },
+            Statement::Interface(interface_stmt) => {
+                // Store interface definition in context for type checking
+                log::info!("📝 Storing interface definition: {} with {} methods", interface_stmt.name, interface_stmt.methods.len());
+                // TODO: Implement actual interface storage
+                Ok(CursedValue::Nil)
+            },
         }
     }
     

@@ -37,6 +37,8 @@ pub enum Statement {
     For(ForStatement),
     Goroutine(GoroutineStatement),
     Channel(ChannelStatement),
+    Struct(StructStatement),
+    Interface(InterfaceStatement),
 }
 
 /// Expression types
@@ -150,6 +152,45 @@ pub struct GoroutineStatement {
 pub struct ChannelStatement {
     pub name: String,
     pub buffer_size: Option<Expression>,
+}
+
+/// Struct statement (squad keyword)
+#[derive(Debug, Clone)]
+pub struct StructStatement {
+    pub name: String,
+    pub fields: Vec<StructField>,
+    pub visibility: Visibility,
+}
+
+/// Struct field definition
+#[derive(Debug, Clone)]
+pub struct StructField {
+    pub name: String,
+    pub field_type: Option<String>,
+    pub visibility: Visibility,
+}
+
+/// Interface statement (collab keyword)
+#[derive(Debug, Clone)]
+pub struct InterfaceStatement {
+    pub name: String,
+    pub methods: Vec<MethodSignature>,
+    pub visibility: Visibility,
+}
+
+/// Method signature for interfaces
+#[derive(Debug, Clone)]
+pub struct MethodSignature {
+    pub name: String,
+    pub parameters: Vec<Parameter>,
+    pub return_type: Option<String>,
+}
+
+/// Parameter definition
+#[derive(Debug, Clone)]
+pub struct Parameter {
+    pub name: String,
+    pub param_type: Option<String>,
 }
 
 /// Unary expression

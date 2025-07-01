@@ -233,6 +233,14 @@ declare i8* @cursed_channel_receive(i8*)
             Statement::Channel(channel_stmt) => {
                 self.ir_code.push_str(&format!("  ; Channel creation: {}\n", channel_stmt.name));
             },
+            Statement::Struct(struct_stmt) => {
+                self.ir_code.push_str(&format!("  ; Struct definition: {}\n", struct_stmt.name));
+                // TODO: Implement actual struct codegen
+            },
+            Statement::Interface(interface_stmt) => {
+                self.ir_code.push_str(&format!("  ; Interface definition: {}\n", interface_stmt.name));
+                // TODO: Implement actual interface codegen
+            },
         }
         Ok(())
     }

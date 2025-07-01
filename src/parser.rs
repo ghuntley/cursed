@@ -201,6 +201,14 @@ impl Parser {
                 }
                 Ok(Statement::Return(self.parse_return_statement()?))
             },
+            TokenKind::Squad => {
+                log::info!("📝 Parsing struct statement with 'squad' keyword");
+                Ok(Statement::Struct(self.parse_struct_statement_with_visibility(visibility)?))
+            },
+            TokenKind::Collab => {
+                log::info!("📝 Parsing interface statement with 'collab' keyword");
+                Ok(Statement::Interface(self.parse_interface_statement_with_visibility(visibility)?))
+            },
             _ => {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
@@ -597,6 +605,122 @@ impl Parser {
             },
             _ => Err(CursedError::syntax_error("Expected expression")),
         }
+    }
+
+    fn parse_struct_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::StructStatement, CursedError> {
+        self.consume(TokenKind::Squad, "Expected 'squad'")?;
+        let name = self.consume(TokenKind::Identifier, "Expected struct name")?.lexeme.clone();
+        
+        self.consume(TokenKind::LeftBrace, "Expected '{' after struct name")?;
+        let mut fields = Vec::new();
+        
+        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            let field = self.parse_struct_field()?;
+            fields.push(field);
+            
+            // Optional comma
+            if self.match_tokens(&[TokenKind::Comma]) {
+                // Consume comma
+            }
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' after struct fields")?;
+        
+        Ok(crate::ast::StructStatement {
+            name,
+            fields,
+            visibility,
+        })
+    }
+
+    fn parse_struct_field(&mut self) -> Result<crate::ast::StructField, CursedError> {
+        let name = self.consume(TokenKind::Identifier, "Expected field name")?.lexeme.clone();
+        
+        // Optional type annotation
+        let field_type = if self.match_tokens(&[TokenKind::Colon]) {
+            let type_name = self.consume(TokenKind::Identifier, "Expected type name")?.lexeme.clone();
+            Some(type_name)
+        } else {
+            None
+        };
+        
+        Ok(crate::ast::StructField {
+            name,
+            field_type,
+            visibility: crate::ast::Visibility::Private, // Default to private
+        })
+    }
+
+    fn parse_interface_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::InterfaceStatement, CursedError> {
+        self.consume(TokenKind::Collab, "Expected 'collab'")?;
+        let name = self.consume(TokenKind::Identifier, "Expected interface name")?.lexeme.clone();
+        
+        self.consume(TokenKind::LeftBrace, "Expected '{' after interface name")?;
+        let mut methods = Vec::new();
+        
+        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            let method = self.parse_method_signature()?;
+            methods.push(method);
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' after interface methods")?;
+        
+        Ok(crate::ast::InterfaceStatement {
+            name,
+            methods,
+            visibility,
+        })
+    }
+
+    fn parse_method_signature(&mut self) -> Result<crate::ast::MethodSignature, CursedError> {
+        let name = self.consume(TokenKind::Identifier, "Expected method name")?.lexeme.clone();
+        
+        self.consume(TokenKind::LeftParen, "Expected '(' after method name")?;
+        let mut parameters = Vec::new();
+        
+        if !self.check(&TokenKind::RightParen) {
+            loop {
+                let param = self.parse_parameter()?;
+                parameters.push(param);
+                
+                if !self.match_tokens(&[TokenKind::Comma]) {
+                    break;
+                }
+            }
+        }
+        
+        self.consume(TokenKind::RightParen, "Expected ')' after parameters")?;
+        
+        // Optional return type (using colon for now)
+        let return_type = if self.match_tokens(&[TokenKind::Colon]) {
+            let type_name = self.consume(TokenKind::Identifier, "Expected return type")?.lexeme.clone();
+            Some(type_name)
+        } else {
+            None
+        };
+        
+        Ok(crate::ast::MethodSignature {
+            name,
+            parameters,
+            return_type,
+        })
+    }
+
+    fn parse_parameter(&mut self) -> Result<crate::ast::Parameter, CursedError> {
+        let name = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
+        
+        // Optional type annotation
+        let param_type = if self.match_tokens(&[TokenKind::Colon]) {
+            let type_name = self.consume(TokenKind::Identifier, "Expected parameter type")?.lexeme.clone();
+            Some(type_name)
+        } else {
+            None
+        };
+        
+        Ok(crate::ast::Parameter {
+            name,
+            param_type,
+        })
     }
 }
 
