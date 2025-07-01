@@ -1,4 +1,6 @@
 /// Cryptographically secure random number generation package
+use crate::stdlib::packages::CryptoResult;
+
 pub mod random_bytes;
 pub mod random_generators;
 pub mod random_numbers;

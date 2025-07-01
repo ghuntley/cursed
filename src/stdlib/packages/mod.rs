@@ -161,7 +161,52 @@ pub mod crypto_protocols_exports {
 // Re-export testing packages for convenience
 pub use quick_test::*;
 
-// Re-export existing packages for convenience
-pub use web_vibez::*;
-pub use sql_vibes::*;
+// Re-export existing packages for convenience, avoiding 'error' and 'types' conflicts
+pub use web_vibez::{
+    middleware, 
+    ratelimit,
+    error as web_error,
+    types as web_types,
+    Handler,
+    RequestHandler,
+    ResponseHandler,
+    MiddlewareStack,
+    Route,
+    Router,
+    WebServer,
+    Config,
+    init_web_vibez,
+    setup_middleware_stack,
+    create_basic_server,
+    start_server,
+    stop_server,
+    get_server_info,
+    test_request_response,
+    test_middleware,
+    test_routing,
+    test_error_handling,
+    test_ratelimiting,
+    test_web_config
+};
+pub use sql_vibes::{
+    migration,
+    transaction,
+    connection_enum,
+    error as sql_error,
+    types as sql_types,
+    SimpleConnection,
+    ConnectionPool,
+    SqlQuery,
+    QueryBuilder,
+    DatabaseInfo,
+    MigrationInfo,
+    init_sql_vibes,
+    create_test_connection,
+    execute_test_query,
+    test_basic_operations,
+    test_transactions,
+    test_migrations,
+    test_connection_pooling,
+    test_sql_vibes
+};
 pub use test_vibes::*;
