@@ -24,6 +24,7 @@ pub mod transaction_ops;
 pub mod schema;
 pub mod mapping;
 pub mod fluent_query;
+pub mod example_entity;
 
 // Re-export main types for easy access
 pub use entity::{
@@ -146,7 +147,8 @@ impl<T: Entity> Repository<T> {
     
     pub async fn find_by_id(&self, id: &SqlValue) -> Result<Option<T>, DatabaseError> {
         let table_name = T::table_name();
-        let sql = format!("SELECT * FROM {} WHERE id = ? LIMIT 1", table_name);
+        let primary_key_name = T::primary_key_name();
+        let sql = format!("SELECT * FROM {} WHERE {} = ? LIMIT 1", table_name, primary_key_name);
         let params = vec![id.clone()];
         
         match self.connection.query(sql, params) {
@@ -154,28 +156,124 @@ impl<T: Entity> Repository<T> {
                 if result.rows().is_empty() {
                     Ok(None)
                 } else {
-                    // For now, return None since we can't deserialize without knowing the struct
-                    // In a full implementation, this would use reflection or macros to deserialize
-                    Ok(None)
+                    // Convert first row to HashMap and deserialize to entity
+                    let row = &result.rows()[0];
+                    let row_map = row.to_hashmap();
+                    match T::from_row(&row_map) {
+                        Ok(entity) => Ok(Some(entity)),
+                        Err(e) => Err(e)
+                    }
                 }
             }
             Err(e) => Err(DatabaseError::query(&format!("Failed to find entity by id: {}", e)))
         }
     }
     
-    pub async fn save(&self, entity: &T) -> Result<(), DatabaseError> {
+    pub async fn save(&self, entity: &mut T) -> Result<(), DatabaseError> {
         let table_name = T::table_name();
+        let primary_key_name = T::primary_key_name();
+        let fields = entity.to_fields();
+        
+        // Check if entity exists by primary key
+        if let Some(primary_key) = entity.primary_key_value() {
+            // Check if entity exists
+            let check_sql = format!("SELECT COUNT(*) as count FROM {} WHERE {} = ?", table_name, primary_key_name);
+            let check_params = vec![primary_key.clone()];
+            
+            match self.connection.query(check_sql, check_params) {
+                Ok(result) => {
+                    let exists = if let Some(row) = result.rows().first() {
+                        if let Some(count_val) = row.get("count") {
+                            count_val.as_i64().unwrap_or(0) > 0
+                        } else { false }
+                    } else { false };
+                    
+                    if exists {
+                        // UPDATE existing entity
+                        self.update_entity(entity, &fields).await
+                    } else {
+                        // INSERT new entity
+                        self.insert_entity(entity, &fields).await
+                    }
+                }
+                Err(_) => {
+                    // If check fails, try INSERT (might be new entity)
+                    self.insert_entity(entity, &fields).await
+                }
+            }
+        } else {
+            // No primary key, this is a new entity - INSERT
+            self.insert_entity(entity, &fields).await
+        }
+    }
+    
+    async fn insert_entity(&self, entity: &mut T, fields: &std::collections::HashMap<String, SqlValue>) -> Result<(), DatabaseError> {
+        let table_name = T::table_name();
+        let primary_key_name = T::primary_key_name();
+        
+        let mut field_names = Vec::new();
+        let mut field_values = Vec::new();
+        let mut placeholders = Vec::new();
+        
+        for (name, value) in fields {
+            field_names.push(name.clone());
+            field_values.push(value.clone());
+            placeholders.push("?".to_string());
+        }
+        
+        let sql = format!(
+            "INSERT INTO {} ({}) VALUES ({})",
+            table_name,
+            field_names.join(", "),
+            placeholders.join(", ")
+        );
+        
+        match self.connection.exec(sql, field_values) {
+            Ok(result) => {
+                // Set the primary key if it was auto-generated
+                if entity.primary_key_value().is_none() {
+                    if let Ok(insert_id) = result.last_insert_id() {
+                        entity.set_primary_key_value(SqlValue::Integer(insert_id));
+                    }
+                }
+                Ok(())
+            }
+            Err(e) => Err(DatabaseError::query(&format!("Failed to insert entity: {}", e)))
+        }
+    }
+    
+    async fn update_entity(&self, entity: &T, fields: &std::collections::HashMap<String, SqlValue>) -> Result<(), DatabaseError> {
+        let table_name = T::table_name();
+        let primary_key_name = T::primary_key_name();
         let primary_key = entity.primary_key_value().ok_or_else(|| 
-            DatabaseError::query("Entity has no primary key value"))?;
+            DatabaseError::query("Entity has no primary key value for update"))?;
         
-        // For this basic implementation, we'll do an INSERT
-        // In a full implementation, this would check if the entity exists and do UPDATE or INSERT
-        let sql = format!("INSERT INTO {} (id) VALUES (?)", table_name);
-        let params = vec![primary_key];
+        let mut set_clauses = Vec::new();
+        let mut field_values = Vec::new();
         
-        match self.connection.exec(sql, params) {
+        for (name, value) in fields {
+            if name != primary_key_name {  // Don't update primary key
+                set_clauses.push(format!("{} = ?", name));
+                field_values.push(value.clone());
+            }
+        }
+        
+        if set_clauses.is_empty() {
+            return Ok(()); // Nothing to update
+        }
+        
+        field_values.push(primary_key); // Add primary key for WHERE clause
+        
+        let sql = format!(
+            "UPDATE {} SET {} WHERE {} = ?",
+            table_name,
+            set_clauses.join(", "),
+            primary_key_name
+        );
+        
+        match self.connection.exec(sql, field_values) {
             Ok(_) => Ok(()),
-            Err(e) => Err(DatabaseError::query(&format!("Failed to save entity: {}", e)))
+            Err(e) => Err(DatabaseError::query(&format!("Failed to update entity: {}", e)))
         }
     }
     
@@ -185,10 +283,18 @@ impl<T: Entity> Repository<T> {
         let params = vec![];
         
         match self.connection.query(sql, params) {
-            Ok(_result) => {
-                // For now, return empty vector since we can't deserialize without knowing the struct
-                // In a full implementation, this would deserialize all rows
-                Ok(vec![])
+            Ok(result) => {
+                let mut entities = Vec::new();
+                
+                for row in result.rows() {
+                    let row_map = row.to_hashmap();
+                    match T::from_row(&row_map) {
+                        Ok(entity) => entities.push(entity),
+                        Err(e) => return Err(e)
+                    }
+                }
+                
+                Ok(entities)
             }
             Err(e) => Err(DatabaseError::query(&format!("Failed to find all entities: {}", e)))
         }
@@ -196,15 +302,106 @@ impl<T: Entity> Repository<T> {
     
     pub async fn delete(&self, entity: &T) -> Result<(), DatabaseError> {
         let table_name = T::table_name();
+        let primary_key_name = T::primary_key_name();
         let primary_key = entity.primary_key_value().ok_or_else(|| 
             DatabaseError::query("Entity has no primary key value"))?;
         
-        let sql = format!("DELETE FROM {} WHERE id = ?", table_name);
+        let sql = format!("DELETE FROM {} WHERE {} = ?", table_name, primary_key_name);
         let params = vec![primary_key];
         
         match self.connection.exec(sql, params) {
             Ok(_) => Ok(()),
             Err(e) => Err(DatabaseError::query(&format!("Failed to delete entity: {}", e)))
+        }
+    }
+    
+    /// Find entities matching the given WHERE clause
+    pub async fn find_where(&self, where_clause: &str, params: Vec<SqlValue>) -> Result<Vec<T>, DatabaseError> {
+        let table_name = T::table_name();
+        let sql = format!("SELECT * FROM {} WHERE {}", table_name, where_clause);
+        
+        match self.connection.query(sql, params) {
+            Ok(result) => {
+                let mut entities = Vec::new();
+                
+                for row in result.rows() {
+                    let row_map = row.to_hashmap();
+                    match T::from_row(&row_map) {
+                        Ok(entity) => entities.push(entity),
+                        Err(e) => return Err(e)
+                    }
+                }
+                
+                Ok(entities)
+            }
+            Err(e) => Err(DatabaseError::query(&format!("Failed to find entities: {}", e)))
+        }
+    }
+    
+    /// Count total entities in the table
+    pub async fn count(&self) -> Result<i64, DatabaseError> {
+        let table_name = T::table_name();
+        let sql = format!("SELECT COUNT(*) as count FROM {}", table_name);
+        
+        match self.connection.query(sql, vec![]) {
+            Ok(result) => {
+                if let Some(row) = result.rows().first() {
+                    if let Some(count_val) = row.get("count") {
+                        Ok(count_val.as_i64().unwrap_or(0))
+                    } else {
+                        Ok(0)
+                    }
+                } else {
+                    Ok(0)
+                }
+            }
+            Err(e) => Err(DatabaseError::query(&format!("Failed to count entities: {}", e)))
+        }
+    }
+    
+    /// Find entities with pagination
+    pub async fn find_paginated(&self, offset: i64, limit: i64) -> Result<Vec<T>, DatabaseError> {
+        let table_name = T::table_name();
+        let sql = format!("SELECT * FROM {} LIMIT {} OFFSET {}", table_name, limit, offset);
+        
+        match self.connection.query(sql, vec![]) {
+            Ok(result) => {
+                let mut entities = Vec::new();
+                
+                for row in result.rows() {
+                    let row_map = row.to_hashmap();
+                    match T::from_row(&row_map) {
+                        Ok(entity) => entities.push(entity),
+                        Err(e) => return Err(e)
+                    }
+                }
+                
+                Ok(entities)
+            }
+            Err(e) => Err(DatabaseError::query(&format!("Failed to find paginated entities: {}", e)))
+        }
+    }
+    
+    /// Check if an entity exists by primary key
+    pub async fn exists(&self, id: &SqlValue) -> Result<bool, DatabaseError> {
+        let table_name = T::table_name();
+        let primary_key_name = T::primary_key_name();
+        let sql = format!("SELECT COUNT(*) as count FROM {} WHERE {} = ?", table_name, primary_key_name);
+        let params = vec![id.clone()];
+        
+        match self.connection.query(sql, params) {
+            Ok(result) => {
+                if let Some(row) = result.rows().first() {
+                    if let Some(count_val) = row.get("count") {
+                        Ok(count_val.as_i64().unwrap_or(0) > 0)
+                    } else {
+                        Ok(false)
+                    }
+                } else {
+                    Ok(false)
+                }
+            }
+            Err(e) => Err(DatabaseError::query(&format!("Failed to check entity existence: {}", e)))
         }
     }
 }
