@@ -17,13 +17,17 @@ pub mod generational;
 pub mod copying;
 pub mod incremental;
 pub mod heap;
+pub mod heap_manager;
 pub mod roots;
 pub mod metadata;
+pub mod cycle_detection;
+pub mod regions;
 
 // Export main interfaces
 pub use gc::{MinimalImplementation as GcMinimal, get_minimal_result};
 pub use enhanced_gc::{MinimalImplementation as EnhancedGcMinimal};
 pub use production_gc::{MinimalImplementation as ProductionGcMinimal};
+pub use heap_manager::{HeapManager, HeapConfig, create_default_heap};
 
 use std::sync::Arc;
 
