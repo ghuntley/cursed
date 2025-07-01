@@ -210,6 +210,22 @@ impl SymbolResolver {
         self.register_symbol("io_create_directory_recursive", crate::execution::runtime_functions::io_create_directory_recursive as usize);
         self.register_symbol("io_delete_file", crate::execution::runtime_functions::io_delete_file as usize);
         
+        // Register additional I/O functions
+        self.register_symbol("io_printf", crate::execution::runtime_functions::io_printf as usize);
+        self.register_symbol("io_read_char", crate::execution::runtime_functions::io_read_char as usize);
+        self.register_symbol("io_read_int", crate::execution::runtime_functions::io_read_int as usize);
+        self.register_symbol("io_read_float", crate::execution::runtime_functions::io_read_float as usize);
+        self.register_symbol("io_append_file", crate::execution::runtime_functions::io_append_file as usize);
+        self.register_symbol("io_copy_file", crate::execution::runtime_functions::io_copy_file as usize);
+        self.register_symbol("io_move_file", crate::execution::runtime_functions::io_move_file as usize);
+        self.register_symbol("io_file_size", crate::execution::runtime_functions::io_file_size as usize);
+        self.register_symbol("io_is_file", crate::execution::runtime_functions::io_is_file as usize);
+        self.register_symbol("io_is_directory", crate::execution::runtime_functions::io_is_directory as usize);
+        self.register_symbol("io_remove_directory", crate::execution::runtime_functions::io_remove_directory as usize);
+        self.register_symbol("io_remove_directory_recursive", crate::execution::runtime_functions::io_remove_directory_recursive as usize);
+        self.register_symbol("io_current_directory", crate::execution::runtime_functions::io_current_directory as usize);
+        self.register_symbol("io_change_directory", crate::execution::runtime_functions::io_change_directory as usize);
+        
         // Register standard library math functions
         self.register_symbol("math_sin_impl", crate::execution::runtime_functions::math_sin_impl as usize);
         self.register_symbol("math_cos_impl", crate::execution::runtime_functions::math_cos_impl as usize);
