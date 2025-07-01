@@ -1,5 +1,4 @@
 use std::io::{Read, Write};
-use std::io::Result as IOResult;
 /// ORM relationship functionality for relations
 
 use crate::error::CursedError;
@@ -125,26 +124,26 @@ impl IOHandler {
     }
     
     /// Read from a reader
-    pub fn read_all<R: Read>(&self, mut reader: R) -> IOResult<Vec<u8>> {
+    pub fn read_all<R: Read>(&self, mut reader: R) -> Result<Vec<u8>, CursedError> {
         let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer)?;
+        reader.read_to_end(&mut buffer).map_err(CursedError::from)?;
         Ok(buffer)
     }
     
     /// Write to a writer
-    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> IOResult<()> {
-        writer.write_all(data)?;
+    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> Result<(), CursedError> {
+        writer.write_all(data).map_err(CursedError::from)?;
         Ok(())
     }
     
     /// Read string from reader
-    pub fn read_string<R: Read>(&self, reader: R) -> IOResult<String> {
+    pub fn read_string<R: Read>(&self, reader: R) -> Result<String, CursedError> {
         let bytes = self.read_all(reader)?;
-        String::from_utf8(bytes).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+        String::from_utf8(bytes).map_err(CursedError::from)
     }
     
     /// Write string to writer
-    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> IOResult<()> {
+    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> Result<(), CursedError> {
         self.write_all(writer, text.as_bytes())
     }
 }

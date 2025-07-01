@@ -21,6 +21,9 @@ pub enum CursedError {
     ValidationError(String),
     RandomGenerationFailed(String),
     InternalError(String),
+    // New error variants for stdlib integration
+    CollectionsError(String),
+    StringError(String),
 }
 
 #[derive(Debug, Clone)]
@@ -58,6 +61,8 @@ impl std::fmt::Display for CursedError {
             CursedError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
             CursedError::RandomGenerationFailed(msg) => write!(f, "Random generation failed: {}", msg),
             CursedError::InternalError(msg) => write!(f, "Internal error: {}", msg),
+            CursedError::CollectionsError(msg) => write!(f, "Collections error: {}", msg),
+            CursedError::StringError(msg) => write!(f, "String error: {}", msg),
         }
     }
 }
@@ -116,6 +121,14 @@ impl CursedError {
     pub fn validation_error(msg: &str) -> Self {
         CursedError::ValidationError(msg.to_string())
     }
+    
+    pub fn collections_error(msg: &str) -> Self {
+        CursedError::CollectionsError(msg.to_string())
+    }
+    
+    pub fn string_error(msg: &str) -> Self {
+        CursedError::StringError(msg.to_string())
+    }
 }
 
 // Add From trait implementations for common conversions
@@ -142,5 +155,37 @@ impl From<crate::error_types::Error> for CursedError {
 impl From<inkwell::builder::BuilderError> for CursedError {
     fn from(error: inkwell::builder::BuilderError) -> Self {
         CursedError::compiler_error(&format!("LLVM builder error: {}", error))
+    }
+}
+
+// Integration with stdlib error types
+impl From<crate::stdlib::collections::CollectionsError> for CursedError {
+    fn from(error: crate::stdlib::collections::CollectionsError) -> Self {
+        CursedError::CollectionsError(error.to_string())
+    }
+}
+
+impl From<crate::stdlib::string::StringError> for CursedError {
+    fn from(error: crate::stdlib::string::StringError) -> Self {
+        CursedError::StringError(error.to_string())
+    }
+}
+
+// Additional From trait implementations for standard library errors
+impl From<std::string::FromUtf8Error> for CursedError {
+    fn from(error: std::string::FromUtf8Error) -> Self {
+        CursedError::StringError(error.to_string())
+    }
+}
+
+impl From<std::net::AddrParseError> for CursedError {
+    fn from(error: std::net::AddrParseError) -> Self {
+        CursedError::Parse(error.to_string())
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for CursedError {
+    fn from(error: Box<dyn std::error::Error>) -> Self {
+        CursedError::General(error.to_string())
     }
 }
