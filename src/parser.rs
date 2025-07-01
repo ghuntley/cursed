@@ -286,6 +286,9 @@ impl Parser {
         self.consume(TokenKind::Slay, "Expected 'slay'")?;
         let name = self.consume(TokenKind::Identifier, "Expected function name")?.lexeme.clone();
         
+        // Parse optional generic parameters
+        let type_parameters = self.parse_generic_parameters()?;
+        
         self.consume(TokenKind::LeftParen, "Expected '(' after function name")?;
         let mut parameters = Vec::new();
         
@@ -301,6 +304,10 @@ impl Parser {
         }
         
         self.consume(TokenKind::RightParen, "Expected ')' after parameters")?;
+        
+        // Parse optional where clause
+        let where_clause = self.parse_where_clause()?;
+        
         self.consume(TokenKind::LeftBrace, "Expected '{' before function body")?;
         self.skip_newlines();
         
@@ -314,9 +321,11 @@ impl Parser {
         
         Ok(FunctionStatement {
             name,
+            type_parameters,
             parameters,
             body,
             return_type: None, // TODO: Add proper type parsing
+            where_clause,
             visibility: crate::ast::Visibility::Private,
         })
     }
@@ -324,6 +333,9 @@ impl Parser {
     fn parse_function_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<FunctionStatement, CursedError> {
         self.consume(TokenKind::Slay, "Expected 'slay'")?;
         let name = self.consume(TokenKind::Identifier, "Expected function name")?.lexeme.clone();
+        
+        // Parse optional generic parameters
+        let type_parameters = self.parse_generic_parameters()?;
         
         self.consume(TokenKind::LeftParen, "Expected '(' after function name")?;
         let mut parameters = Vec::new();
@@ -340,6 +352,10 @@ impl Parser {
         }
         
         self.consume(TokenKind::RightParen, "Expected ')' after parameters")?;
+        
+        // Parse optional where clause
+        let where_clause = self.parse_where_clause()?;
+        
         self.consume(TokenKind::LeftBrace, "Expected '{' before function body")?;
         self.skip_newlines();
         
@@ -357,9 +373,11 @@ impl Parser {
         
         Ok(FunctionStatement {
             name,
+            type_parameters,
             parameters,
             body,
             return_type: None, // TODO: Add proper type parsing
+            where_clause,
             visibility,
         })
     }
@@ -1126,6 +1144,198 @@ impl Parser {
             recovery_block,
             error_variable,
         })
+    }
+
+    /// Parse generic type parameters: <T, U: Clone, V: Debug + Send>
+    fn parse_generic_parameters(&mut self) -> Result<Vec<crate::ast::TypeParameter>, CursedError> {
+        let mut type_parameters = Vec::new();
+        
+        // Check if we have generic parameters
+        if !self.check(&TokenKind::LeftAngle) {
+            return Ok(type_parameters);
+        }
+        
+        self.consume(TokenKind::LeftAngle, "Expected '<'")?;
+        
+        if !self.check(&TokenKind::RightAngle) {
+            loop {
+                let name = self.consume(TokenKind::Identifier, "Expected type parameter name")?.lexeme.clone();
+                let mut bounds = Vec::new();
+                
+                // Parse bounds: T: Clone + Debug
+                if self.match_tokens(&[TokenKind::Colon]) {
+                    loop {
+                        let bound = self.consume(TokenKind::Identifier, "Expected trait bound")?.lexeme.clone();
+                        bounds.push(bound);
+                        
+                        if !self.match_tokens(&[TokenKind::Plus]) {
+                            break;
+                        }
+                    }
+                }
+                
+                type_parameters.push(crate::ast::TypeParameter { name, bounds });
+                
+                if !self.match_tokens(&[TokenKind::Comma]) {
+                    break;
+                }
+            }
+        }
+        
+        self.consume(TokenKind::RightAngle, "Expected '>'")?;
+        Ok(type_parameters)
+    }
+
+    /// Parse where clause: where T: Clone, U: Debug + Send
+    fn parse_where_clause(&mut self) -> Result<Option<crate::ast::WhereClause>, CursedError> {
+        if !self.check(&TokenKind::Where) {
+            return Ok(None);
+        }
+        
+        self.consume(TokenKind::Where, "Expected 'where'")?;
+        let mut constraints = Vec::new();
+        
+        loop {
+            let type_name = self.consume(TokenKind::Identifier, "Expected type name in where clause")?.lexeme.clone();
+            self.consume(TokenKind::Colon, "Expected ':' after type name in where clause")?;
+            
+            let mut bounds = Vec::new();
+            loop {
+                let bound = self.consume(TokenKind::Identifier, "Expected trait bound in where clause")?.lexeme.clone();
+                bounds.push(bound);
+                
+                if !self.match_tokens(&[TokenKind::Plus]) {
+                    break;
+                }
+            }
+            
+            constraints.push(crate::ast::TypeConstraint { type_name, bounds });
+            
+            if !self.match_tokens(&[TokenKind::Comma]) {
+                break;
+            }
+        }
+        
+        Ok(Some(crate::ast::WhereClause { constraints }))
+    }
+}
+
+#[cfg(test)]
+mod generic_tests {
+    use super::*;
+    use crate::lexer::Lexer;
+
+    #[test]
+    fn test_simple_generic_function() {
+        let source = r#"
+slay identity<T>(value) {
+    yolo value
+}
+"#;
+        
+        let lexer = Lexer::new(source.to_string());
+        let mut parser = Parser::new(lexer).unwrap();
+        let program = parser.parse().unwrap();
+        
+        assert_eq!(program.statements.len(), 1);
+        
+        if let Statement::Function(func) = &program.statements[0] {
+            assert_eq!(func.name, "identity");
+            assert_eq!(func.type_parameters.len(), 1);
+            assert_eq!(func.type_parameters[0].name, "T");
+            assert_eq!(func.type_parameters[0].bounds.len(), 0);
+            assert!(func.where_clause.is_none());
+        } else {
+            panic!("Expected function statement");
+        }
+    }
+
+    #[test]
+    fn test_generic_function_with_bounds() {
+        let source = r#"
+slay compare<T: Clone + Debug>(a, b) {
+    yolo true
+}
+"#;
+        
+        let lexer = Lexer::new(source.to_string());
+        let mut parser = Parser::new(lexer).unwrap();
+        let program = parser.parse().unwrap();
+        
+        assert_eq!(program.statements.len(), 1);
+        
+        if let Statement::Function(func) = &program.statements[0] {
+            assert_eq!(func.name, "compare");
+            assert_eq!(func.type_parameters.len(), 1);
+            assert_eq!(func.type_parameters[0].name, "T");
+            assert_eq!(func.type_parameters[0].bounds.len(), 2);
+            assert_eq!(func.type_parameters[0].bounds[0], "Clone");
+            assert_eq!(func.type_parameters[0].bounds[1], "Debug");
+            assert!(func.where_clause.is_none());
+        } else {
+            panic!("Expected function statement");
+        }
+    }
+
+    #[test]
+    fn test_generic_function_with_where_clause() {
+        let source = r#"
+slay complex<T, U>(x, y) where T: Clone, U: Debug + Send {
+    yolo x
+}
+"#;
+        
+        let lexer = Lexer::new(source.to_string());
+        let mut parser = Parser::new(lexer).unwrap();
+        let program = parser.parse().unwrap();
+        
+        assert_eq!(program.statements.len(), 1);
+        
+        if let Statement::Function(func) = &program.statements[0] {
+            assert_eq!(func.name, "complex");
+            assert_eq!(func.type_parameters.len(), 2);
+            assert_eq!(func.type_parameters[0].name, "T");
+            assert_eq!(func.type_parameters[1].name, "U");
+            
+            // Check where clause
+            assert!(func.where_clause.is_some());
+            let where_clause = func.where_clause.as_ref().unwrap();
+            assert_eq!(where_clause.constraints.len(), 2);
+            
+            assert_eq!(where_clause.constraints[0].type_name, "T");
+            assert_eq!(where_clause.constraints[0].bounds.len(), 1);
+            assert_eq!(where_clause.constraints[0].bounds[0], "Clone");
+            
+            assert_eq!(where_clause.constraints[1].type_name, "U");
+            assert_eq!(where_clause.constraints[1].bounds.len(), 2);
+            assert_eq!(where_clause.constraints[1].bounds[0], "Debug");
+            assert_eq!(where_clause.constraints[1].bounds[1], "Send");
+        } else {
+            panic!("Expected function statement");
+        }
+    }
+
+    #[test]
+    fn test_non_generic_function_still_works() {
+        let source = r#"
+slay simple(x) {
+    yolo x
+}
+"#;
+        
+        let lexer = Lexer::new(source.to_string());
+        let mut parser = Parser::new(lexer).unwrap();
+        let program = parser.parse().unwrap();
+        
+        assert_eq!(program.statements.len(), 1);
+        
+        if let Statement::Function(func) = &program.statements[0] {
+            assert_eq!(func.name, "simple");
+            assert_eq!(func.type_parameters.len(), 0);
+            assert!(func.where_clause.is_none());
+        } else {
+            panic!("Expected function statement");
+        }
     }
 }
 

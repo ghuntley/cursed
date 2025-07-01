@@ -70,6 +70,7 @@ mod tests {
         // Test function with return statement
         let func_stmt = FunctionStatement {
             name: "add".to_string(),
+            type_parameters: vec![],
             parameters: vec!["x".to_string(), "y".to_string()],
             body: vec![
                 Statement::Return(ReturnStatement {
@@ -81,6 +82,7 @@ mod tests {
                 })
             ],
             return_type: None,
+            where_clause: None,
             visibility: crate::ast::Visibility::Private,
         };
         
@@ -340,6 +342,7 @@ mod tests {
                 })),
                 Statement::Function(FunctionStatement {
                     name: "add".to_string(),
+                    type_parameters: vec![],
                     parameters: vec!["a".to_string(), "b".to_string()],
                     body: vec![
                         Statement::Return(ReturnStatement {
@@ -351,6 +354,7 @@ mod tests {
                         })
                     ],
                     return_type: None,
+                    where_clause: None,
                     visibility: crate::ast::Visibility::Private,
                 }),
                 Statement::If(IfStatement {

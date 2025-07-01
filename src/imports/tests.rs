@@ -23,9 +23,11 @@ fn create_test_program_with_imports(imports: Vec<ImportStatement>) -> Program {
         statements: vec![
             Statement::Function(FunctionStatement {
                 name: "test_function".to_string(),
+                type_parameters: vec![],
                 parameters: vec![],
                 body: vec![],
                 return_type: None,
+                where_clause: None,
                 visibility: crate::ast::Visibility::Private,
             })
         ],
