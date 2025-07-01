@@ -230,6 +230,13 @@ impl Parser {
                 log::info!("📝 Parsing interface statement with 'collab' keyword");
                 Ok(Statement::Interface(self.parse_interface_statement_with_visibility(visibility)?))
             },
+            TokenKind::Stan => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on goroutine statements"));
+                }
+                log::info!("📝 Parsing goroutine statement with 'stan' keyword");
+                Ok(Statement::Goroutine(self.parse_goroutine_statement()?))
+            },
             _ => {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
@@ -855,6 +862,19 @@ impl Parser {
         Ok(crate::ast::Parameter {
             name,
             param_type,
+        })
+    }
+
+    fn parse_goroutine_statement(&mut self) -> Result<crate::ast::GoroutineStatement, CursedError> {
+        log::debug!("🚀 Parsing goroutine statement");
+        self.consume(TokenKind::Stan, "Expected 'stan'")?;
+        
+        // Parse the expression that represents the function call to run in the goroutine
+        let expression = self.parse_expression()?;
+        
+        log::debug!("✅ Successfully parsed goroutine statement");
+        Ok(crate::ast::GoroutineStatement {
+            expression,
         })
     }
 }
