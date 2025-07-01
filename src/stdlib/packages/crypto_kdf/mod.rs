@@ -11,6 +11,7 @@ pub mod password_policy;
 pub mod salt_generation;
 pub mod timing_attacks;
 
+// Re-export functionality but avoid common conflict types
 pub use pbkdf2::*;
 pub use hkdf::*;
 pub use key_stretching::*;

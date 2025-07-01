@@ -5,6 +5,7 @@ use crate::error::CursedError;
 use std::collections::HashMap;
 use std::time::SystemTime;
 use std::fmt;
+use crate::stdlib::packages::IOHandler;
 
 /// Result type for version operations
 pub type VersionResult<T> = Result<T, CursedError>;
@@ -129,55 +130,6 @@ pub struct VersionEntry {
 }
 
 /// I/O operations handler
-pub struct IOHandler {
-    buffer_size: usize,
-}
-
-impl IOHandler {
-    /// Create a new I/O handler
-    pub fn new() -> Self {
-        Self {
-            buffer_size: 8192,
-        }
-    }
-    
-    /// Set buffer size
-    pub fn buffer_size(mut self, size: usize) -> Self {
-        self.buffer_size = size;
-        self
-    }
-    
-    /// Read from a reader
-    pub fn read_all<R: Read>(&self, mut reader: R) -> Result<Vec<u8>, CursedError> {
-        let mut buffer = Vec::new();
-        reader.read_to_end(&mut buffer).map_err(CursedError::from)?;
-        Ok(buffer)
-    }
-    
-    /// Write to a writer
-    pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> Result<(), CursedError> {
-        writer.write_all(data).map_err(CursedError::from)?;
-        Ok(())
-    }
-    
-    /// Read string from reader
-    pub fn read_string<R: Read>(&self, reader: R) -> Result<String, CursedError> {
-        let bytes = self.read_all(reader)?;
-        String::from_utf8(bytes).map_err(CursedError::from)
-    }
-    
-    /// Write string to writer
-    pub fn write_string<W: Write>(&self, writer: W, text: &str) -> Result<(), CursedError> {
-        self.write_all(writer, text.as_bytes())
-    }
-}
-
-impl Default for IOHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 /// Initialize I/O processing
 pub fn init_version() -> Result<(), CursedError> {
     let handler = IOHandler::new();

@@ -4,6 +4,8 @@
 /// key management, multi-signatures, and universal verification interfaces.
 
 // Core modules
+use crate::stdlib::packages::CryptoResult;
+
 pub mod errors;
 pub mod key_management;
 pub mod digital_signature;
