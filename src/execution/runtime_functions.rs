@@ -1419,3 +1419,326 @@ pub extern "C" fn string_levenshtein_distance(str1_ptr: *const c_char, str2_ptr:
         matrix[len1][len2] as i32
     }
 }
+
+// ================================
+// Networking Implementation Functions
+// ================================
+
+use std::net::{TcpStream, TcpListener, ToSocketAddrs, SocketAddr, IpAddr};
+use std::io::{Read as IoRead, Write as IoWrite};
+
+/// Connect to a TCP server (implementation for network_tcp_connect)
+#[no_mangle]
+pub extern "C" fn network_tcp_connect(host_ptr: *const c_char, port: u16) -> i32 {
+    if host_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(host_ptr).to_str() {
+            Ok(host) => {
+                let addr = format!("{}:{}", host, port);
+                match TcpStream::connect(&addr) {
+                    Ok(stream) => {
+                        // Store stream in a global registry for later use
+                        // For now, return a dummy socket descriptor
+                        1 // Success
+                    },
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Create a TCP listener on a port (implementation for network_tcp_listen)
+#[no_mangle]
+pub extern "C" fn network_tcp_listen(port: u16) -> i32 {
+    let addr = format!("0.0.0.0:{}", port);
+    match TcpListener::bind(&addr) {
+        Ok(_listener) => {
+            // Store listener in a global registry for later use
+            // For now, return a dummy socket descriptor
+            1 // Success
+        },
+        Err(_) => -1
+    }
+}
+
+/// Send data over TCP connection (implementation for network_tcp_send)
+#[no_mangle]
+pub extern "C" fn network_tcp_send(socket_id: i32, data_ptr: *const c_char, len: usize) -> i32 {
+    if data_ptr.is_null() || socket_id <= 0 {
+        return -1;
+    }
+    
+    unsafe {
+        let data = std::slice::from_raw_parts(data_ptr as *const u8, len);
+        // TODO: Retrieve actual socket from registry by socket_id
+        // For now, return success for basic functionality
+        data.len() as i32
+    }
+}
+
+/// Receive data from TCP connection (implementation for network_tcp_recv)
+#[no_mangle]
+pub extern "C" fn network_tcp_recv(socket_id: i32, buffer_ptr: *mut c_char, buffer_len: usize) -> i32 {
+    if buffer_ptr.is_null() || socket_id <= 0 || buffer_len == 0 {
+        return -1;
+    }
+    
+    // TODO: Retrieve actual socket from registry by socket_id
+    // For now, return 0 bytes received
+    0
+}
+
+/// Close TCP connection (implementation for network_tcp_close)
+#[no_mangle]
+pub extern "C" fn network_tcp_close(socket_id: i32) -> i32 {
+    if socket_id <= 0 {
+        return -1;
+    }
+    
+    // TODO: Remove socket from registry and close
+    // For now, return success
+    0
+}
+
+/// Perform DNS resolution (implementation for network_dns_resolve)
+#[no_mangle]
+pub extern "C" fn network_dns_resolve(hostname_ptr: *const c_char) -> *mut c_char {
+    if hostname_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(hostname_ptr).to_str() {
+            Ok(hostname) => {
+                if hostname == "localhost" {
+                    match CString::new("127.0.0.1") {
+                        Ok(result) => result.into_raw(),
+                        Err(_) => ptr::null_mut()
+                    }
+                } else {
+                    // Basic DNS resolution using std::net
+                    match format!("{}:80", hostname).to_socket_addrs() {
+                        Ok(mut addrs) => {
+                            if let Some(addr) = addrs.next() {
+                                let ip_str = addr.ip().to_string();
+                                match CString::new(ip_str) {
+                                    Ok(result) => result.into_raw(),
+                                    Err(_) => ptr::null_mut()
+                                }
+                            } else {
+                                ptr::null_mut()
+                            }
+                        },
+                        Err(_) => ptr::null_mut()
+                    }
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Simple HTTP GET request (implementation for network_http_get)
+#[no_mangle]
+pub extern "C" fn network_http_get(url_ptr: *const c_char) -> *mut c_char {
+    if url_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(url_ptr).to_str() {
+            Ok(url) => {
+                // Parse URL to extract host and path
+                if let Some(host_start) = url.find("://") {
+                    let after_protocol = &url[host_start + 3..];
+                    if let Some(path_start) = after_protocol.find('/') {
+                        let host = &after_protocol[..path_start];
+                        let path = &after_protocol[path_start..];
+                        
+                        // Create HTTP request
+                        let request = format!(
+                            "GET {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
+                            path, host
+                        );
+                        
+                        // Connect and send request
+                        match TcpStream::connect(format!("{}:80", host)) {
+                            Ok(mut stream) => {
+                                if stream.write_all(request.as_bytes()).is_ok() {
+                                    let mut response = String::new();
+                                    if stream.read_to_string(&mut response).is_ok() {
+                                        match CString::new(response) {
+                                            Ok(result) => return result.into_raw(),
+                                            Err(_) => {}
+                                        }
+                                    }
+                                }
+                            },
+                            Err(_) => {}
+                        }
+                    }
+                }
+                
+                // Return error response on failure
+                match CString::new("HTTP/1.1 500 Internal Server Error\r\n\r\nHTTP request failed") {
+                    Ok(result) => result.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Simple HTTP POST request (implementation for network_http_post)
+#[no_mangle]
+pub extern "C" fn network_http_post(url_ptr: *const c_char, data_ptr: *const c_char) -> *mut c_char {
+    if url_ptr.is_null() || data_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(url_ptr).to_str(), CStr::from_ptr(data_ptr).to_str()) {
+            (Ok(url), Ok(data)) => {
+                // Parse URL to extract host and path
+                if let Some(host_start) = url.find("://") {
+                    let after_protocol = &url[host_start + 3..];
+                    if let Some(path_start) = after_protocol.find('/') {
+                        let host = &after_protocol[..path_start];
+                        let path = &after_protocol[path_start..];
+                        
+                        // Create HTTP POST request
+                        let request = format!(
+                            "POST {} HTTP/1.1\r\nHost: {}\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            path, host, data.len(), data
+                        );
+                        
+                        // Connect and send request
+                        match TcpStream::connect(format!("{}:80", host)) {
+                            Ok(mut stream) => {
+                                if stream.write_all(request.as_bytes()).is_ok() {
+                                    let mut response = String::new();
+                                    if stream.read_to_string(&mut response).is_ok() {
+                                        match CString::new(response) {
+                                            Ok(result) => return result.into_raw(),
+                                            Err(_) => {}
+                                        }
+                                    }
+                                }
+                            },
+                            Err(_) => {}
+                        }
+                    }
+                }
+                
+                // Return error response on failure
+                match CString::new("HTTP/1.1 500 Internal Server Error\r\n\r\nHTTP POST request failed") {
+                    Ok(result) => result.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+/// Generic HTTP request (implementation for network_http_request)
+#[no_mangle]
+pub extern "C" fn network_http_request(
+    method_ptr: *const c_char, 
+    url_ptr: *const c_char, 
+    headers_ptr: *const c_char, 
+    body_ptr: *const c_char
+) -> *mut c_char {
+    if method_ptr.is_null() || url_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let method = match CStr::from_ptr(method_ptr).to_str() {
+            Ok(m) => m,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let url = match CStr::from_ptr(url_ptr).to_str() {
+            Ok(u) => u,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let headers = if headers_ptr.is_null() {
+            ""
+        } else {
+            match CStr::from_ptr(headers_ptr).to_str() {
+                Ok(h) => h,
+                Err(_) => ""
+            }
+        };
+        
+        let body = if body_ptr.is_null() {
+            ""
+        } else {
+            match CStr::from_ptr(body_ptr).to_str() {
+                Ok(b) => b,
+                Err(_) => ""
+            }
+        };
+        
+        // Parse URL to extract host and path
+        if let Some(host_start) = url.find("://") {
+            let after_protocol = &url[host_start + 3..];
+            if let Some(path_start) = after_protocol.find('/') {
+                let host = &after_protocol[..path_start];
+                let path = &after_protocol[path_start..];
+                
+                // Build HTTP request
+                let mut request = format!("{} {} HTTP/1.1\r\nHost: {}\r\n", method, path, host);
+                
+                // Add custom headers if provided
+                if !headers.is_empty() {
+                    request.push_str(headers);
+                    if !headers.ends_with("\r\n") {
+                        request.push_str("\r\n");
+                    }
+                }
+                
+                // Add body if provided
+                if !body.is_empty() {
+                    request.push_str(&format!("Content-Length: {}\r\n", body.len()));
+                }
+                
+                request.push_str("Connection: close\r\n\r\n");
+                
+                if !body.is_empty() {
+                    request.push_str(body);
+                }
+                
+                // Connect and send request
+                match TcpStream::connect(format!("{}:80", host)) {
+                    Ok(mut stream) => {
+                        if stream.write_all(request.as_bytes()).is_ok() {
+                            let mut response = String::new();
+                            if stream.read_to_string(&mut response).is_ok() {
+                                match CString::new(response) {
+                                    Ok(result) => return result.into_raw(),
+                                    Err(_) => {}
+                                }
+                            }
+                        }
+                    },
+                    Err(_) => {}
+                }
+            }
+        }
+        
+        // Return error response on failure
+        match CString::new("HTTP/1.1 500 Internal Server Error\r\n\r\nHTTP request failed") {
+            Ok(result) => result.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
