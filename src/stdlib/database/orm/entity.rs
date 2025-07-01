@@ -1,10 +1,67 @@
-//! Functional implementation for entity
+//! Entity trait and related types for CURSED ORM
 
 use crate::error::CursedError;
 use std::collections::HashMap;
+use super::super::{SqlValue, DatabaseError};
 
 /// Result type for entity operations
 pub type ModuleResult<T> = Result<T, CursedError>;
+
+/// Entity metadata for table introspection
+#[derive(Debug, Clone)]
+pub struct EntityMetadata {
+    pub table_name: String,
+    pub primary_key: String,
+    pub fields: Vec<String>,
+    pub relationships: Vec<String>, // For future use
+    pub validation_rules: Vec<String>, // For future use
+    pub indexes: Vec<String>, // For future use
+    pub version: u32,
+}
+
+/// Column definition for schema generation
+#[derive(Debug, Clone)]
+pub struct ColumnDefinition {
+    pub name: String,
+    pub sql_type: String,
+    pub is_nullable: bool,
+    pub is_primary_key: bool,
+    pub is_unique: bool,
+    pub default_value: Option<SqlValue>,
+}
+
+impl ColumnDefinition {
+    pub fn new(name: &str, sql_type: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            sql_type: sql_type.to_string(),
+            is_nullable: false,
+            is_primary_key: false,
+            is_unique: false,
+            default_value: None,
+        }
+    }
+    
+    pub fn nullable(mut self) -> Self {
+        self.is_nullable = true;
+        self
+    }
+    
+    pub fn primary_key(mut self) -> Self {
+        self.is_primary_key = true;
+        self
+    }
+    
+    pub fn unique(mut self) -> Self {
+        self.is_unique = true;
+        self
+    }
+    
+    pub fn default_value(mut self, value: SqlValue) -> Self {
+        self.default_value = Some(value);
+        self
+    }
+}
 
 /// Primary key attribute for entities
 #[derive(Debug, Clone)]

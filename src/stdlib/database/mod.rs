@@ -1,4 +1,5 @@
 use crate::error::CursedError;
+use std::sync::Arc;
 /// SQLSlay - CURSED Database Connectivity System
 /// 
 /// A high-performance SQL database connectivity system with connection pooling,
@@ -24,6 +25,7 @@ pub mod error;
 pub mod builder;
 pub mod llvm_integration;
 pub mod orm;
+pub mod connection;
 
 // Database-specific drivers
 pub mod sqlite;
@@ -47,6 +49,7 @@ pub use error::{DatabaseError, DatabaseErrorKind};
 pub use builder::{
     QueryBuilder, SelectBuilder, InsertBuilder, UpdateBuilder, DeleteBuilder
 };
+pub use connection::{DatabaseConnection, QueryResult as ConnectionQueryResult};
 
 // Re-export ORM types for easy access
 pub use orm::{
@@ -182,5 +185,63 @@ impl VibeContext {
     /// slay Cancel the context
     pub fn cancel(&self) {
         self.cancelled.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
+/// fr fr Main database struct for CURSED database operations
+pub struct DB {
+    connection: Arc<dyn DatabaseConnection>,
+}
+
+impl DB {
+    /// Open a database connection
+    pub fn open(driver: String, connection_string: String) -> Result<Self, DatabaseError> {
+        use connection::{DatabaseType, create_connection};
+        
+        let db_type = match driver.as_str() {
+            "sqlite" => DatabaseType::SQLite,
+            "postgres" => DatabaseType::PostgreSQL,
+            "mysql" => DatabaseType::MySQL,
+            "redis" => DatabaseType::Redis,
+            "memory" => DatabaseType::InMemory,
+            _ => DatabaseType::InMemory, // Default to in-memory for now
+        };
+        
+        match create_connection(db_type, &connection_string) {
+            Ok(conn) => Ok(DB {
+                connection: Arc::from(conn),
+            }),
+            Err(e) => Err(DatabaseError::connection(&format!("Failed to open database: {}", e)))
+        }
+    }
+    
+    /// Execute a query that doesn't return rows
+    pub fn exec(&self, sql: String, params: Vec<SqlValue>) -> Result<ConnectionQueryResult, DatabaseError> {
+        self.connection.exec(sql, params)
+            .map_err(|e| DatabaseError::query(&format!("Query execution failed: {}", e)))
+    }
+    
+    /// Execute a query that returns rows
+    pub fn query(&self, sql: String, params: Vec<SqlValue>) -> Result<ConnectionQueryResult, DatabaseError> {
+        self.connection.query(sql, params)
+            .map_err(|e| DatabaseError::query(&format!("Query execution failed: {}", e)))
+    }
+    
+    /// Begin a transaction
+    pub fn begin_transaction(&self) -> Result<(), DatabaseError> {
+        self.connection.begin_transaction()
+            .map_err(|e| DatabaseError::transaction(&format!("Failed to begin transaction: {}", e)))
+    }
+    
+    /// Commit a transaction
+    pub fn commit_transaction(&self) -> Result<(), DatabaseError> {
+        self.connection.commit_transaction()
+            .map_err(|e| DatabaseError::transaction(&format!("Failed to commit transaction: {}", e)))
+    }
+    
+    /// Rollback a transaction
+    pub fn rollback_transaction(&self) -> Result<(), DatabaseError> {
+        self.connection.rollback_transaction()
+            .map_err(|e| DatabaseError::transaction(&format!("Failed to rollback transaction: {}", e)))
     }
 }
