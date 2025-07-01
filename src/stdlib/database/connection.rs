@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use std::collections::HashMap;
+use super::core::SqlValue;
 
 /// Result type for database operations
 pub type DatabaseResult<T> = Result<T, CursedError>;
@@ -15,8 +16,6 @@ pub enum DatabaseType {
     Redis,
     InMemory,
 }
-
-use super::core::SqlValue;
 
 /// Database row representation
 #[derive(Debug, Clone)]
@@ -52,6 +51,17 @@ impl Row {
     /// Get all values
     pub fn values(&self) -> &[SqlValue] {
         &self.values
+    }
+    
+    /// Convert row to HashMap
+    pub fn to_hashmap(&self) -> HashMap<String, SqlValue> {
+        let mut map = HashMap::new();
+        for (i, column) in self.columns.iter().enumerate() {
+            if let Some(value) = self.values.get(i) {
+                map.insert(column.clone(), value.clone());
+            }
+        }
+        map
     }
 }
 

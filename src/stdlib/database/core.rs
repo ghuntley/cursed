@@ -50,13 +50,13 @@ impl Default for ModuleHandler {
 }
 
 /// SQL value representation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SqlValue {
     Null,
     Bool(bool),
-    Int(i64),
+    Integer(i64),
     Float(f64),
-    Text(String),
+    String(String),
     Bytes(Vec<u8>),
     DateTime(String),
     Decimal(String),
@@ -71,14 +71,14 @@ impl SqlValue {
     
     pub fn as_str(&self) -> Option<&str> {
         match self {
-            SqlValue::Text(s) => Some(s),
+            SqlValue::String(s) => Some(s),
             _ => None,
         }
     }
     
     pub fn as_i64(&self) -> Option<i64> {
         match self {
-            SqlValue::Int(i) => Some(*i),
+            SqlValue::Integer(i) => Some(*i),
             _ => None,
         }
     }
@@ -100,19 +100,19 @@ impl SqlValue {
 
 impl From<&str> for SqlValue {
     fn from(s: &str) -> Self {
-        SqlValue::Text(s.to_string())
+        SqlValue::String(s.to_string())
     }
 }
 
 impl From<String> for SqlValue {
     fn from(s: String) -> Self {
-        SqlValue::Text(s)
+        SqlValue::String(s)
     }
 }
 
 impl From<i64> for SqlValue {
     fn from(i: i64) -> Self {
-        SqlValue::Int(i)
+        SqlValue::Integer(i)
     }
 }
 
