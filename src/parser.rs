@@ -244,6 +244,20 @@ impl Parser {
                 log::info!("📝 Parsing select statement");
                 Ok(Statement::Select(self.parse_select_statement()?))
             },
+            TokenKind::YeetError => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on panic statements"));
+                }
+                log::info!("📝 Parsing panic statement with 'yeet_error' keyword");
+                Ok(Statement::Panic(self.parse_panic_statement()?))
+            },
+            TokenKind::Catch => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on catch statements"));
+                }
+                log::info!("📝 Parsing catch statement with 'catch' keyword");
+                Ok(Statement::Catch(self.parse_catch_statement()?))
+            },
             _ => {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
@@ -1025,6 +1039,67 @@ impl Parser {
                 value,
             }))
         }
+    }
+
+    fn parse_panic_statement(&mut self) -> Result<crate::ast::PanicStatement, CursedError> {
+        log::debug!("💀 Parsing panic statement");
+        self.consume(TokenKind::YeetError, "Expected 'yeet_error'")?;
+        
+        // Parse the message expression
+        let message = Box::new(self.parse_expression()?);
+        
+        log::debug!("✅ Successfully parsed panic statement");
+        Ok(crate::ast::PanicStatement {
+            message,
+        })
+    }
+
+    fn parse_catch_statement(&mut self) -> Result<crate::ast::CatchStatement, CursedError> {
+        log::debug!("🛡️ Parsing catch statement");
+        self.consume(TokenKind::Catch, "Expected 'catch'")?;
+        self.consume(TokenKind::LeftBrace, "Expected '{' after 'catch'")?;
+        
+        // Parse the protected block
+        let mut protected_block = Vec::new();
+        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            protected_block.push(self.parse_statement()?);
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' after catch body")?;
+        
+        // Optional recovery block
+        let mut recovery_block = None;
+        let mut error_variable = None;
+        
+        // Check for optional 'recover' block syntax: catch { ... } recover (error) { ... }
+        if self.check(&TokenKind::Identifier) && self.peek().lexeme == "recover" {
+            self.advance(); // consume 'recover'
+            
+            // Optional error variable: recover (error) { ... }
+            if self.check(&TokenKind::LeftParen) {
+                self.consume(TokenKind::LeftParen, "Expected '(' after 'recover'")?;
+                let error_var = self.consume(TokenKind::Identifier, "Expected error variable name")?.lexeme.clone();
+                error_variable = Some(error_var);
+                self.consume(TokenKind::RightParen, "Expected ')' after error variable")?;
+            }
+            
+            self.consume(TokenKind::LeftBrace, "Expected '{' after 'recover'")?;
+            
+            let mut recovery_statements = Vec::new();
+            while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                recovery_statements.push(self.parse_statement()?);
+            }
+            
+            self.consume(TokenKind::RightBrace, "Expected '}' after recovery body")?;
+            recovery_block = Some(recovery_statements);
+        }
+        
+        log::debug!("✅ Successfully parsed catch statement");
+        Ok(crate::ast::CatchStatement {
+            protected_block,
+            recovery_block,
+            error_variable,
+        })
     }
 }
 
