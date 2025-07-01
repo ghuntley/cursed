@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use std::collections::HashMap;
+use base64::{Engine as _, engine::general_purpose};
 
 /// Result type for crypto operations
 pub type CryptoResult<T> = Result<T, CursedError>;
@@ -78,7 +79,7 @@ impl MessageDigest {
     }
 
     pub fn to_base64(&self) -> String {
-        base64::encode(&self.digest)
+        general_purpose::STANDARD.encode(&self.digest)
     }
 }
 

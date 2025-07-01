@@ -64,19 +64,26 @@ pub mod windows_platform;
 pub mod macos_platform;
 pub mod mmap;
 
-// Re-export core functionality  
-pub use core::*;
+// Re-export core functionality through modules to avoid conflicts
+pub mod core_exports {
+    pub use super::core::*;
+}
 
-// Re-export enhanced functionality
-pub use enhanced_exec_slay::*;
-// // pub use enhanced_exec_slay_complete::*; // Removed to avoid circular dependency // Removed to avoid E0659 conflicts
-// // pub use enhanced_exec_vibez_complete::*; // Removed to avoid circular dependency // Removed to avoid E0659 conflicts
-// // pub use comprehensive_integration::*; // Removed to avoid circular dependency // Removed to avoid E0659 conflicts
-pub use llvm_integration::*;
-pub use shell_commands::*;
+// Re-export enhanced functionality through modules
+pub mod enhanced_exec_slay_exports {
+    pub use super::enhanced_exec_slay::*;
+}
+pub mod llvm_integration_exports {
+    pub use super::llvm_integration::*;
+}
+pub mod shell_commands_exports {
+    pub use super::shell_commands::*;
+}
 // Use explicit imports from safe_process_management to avoid conflicts
 pub use safe_process_management::{
     SecurityContext, ProcessIsolation, SecurityCheck, ProcessGuard
 };
-pub use safe_exec_slay::*;
+pub mod safe_exec_slay_exports {
+    pub use super::safe_exec_slay::*;
+}
 

@@ -118,23 +118,45 @@ pub mod web_vibez;
 pub mod sql_vibes;
 pub mod test_vibes;
 
-// Re-export database packages for convenience
-// pub use db_core::*; // Temporarily disabled
-pub use db_sql::*;
-pub use db_nosql::*;
+// Re-export database packages for convenience - using modules to avoid conflicts
+pub mod db_sql_exports {
+    pub use super::db_sql::*;
+}
+pub mod db_nosql_exports {
+    pub use super::db_nosql::*;
+}
 
-// Re-export cryptography packages for convenience
-// TODO: Re-enable when all modules are properly implemented
-pub use crypto_advanced::*;
-pub use crypto_asymmetric::*;
-pub use crypto_signatures::*;
-pub use crypto_kdf::*;
-pub use crypto_hash_advanced::*;
-pub use crypto_random::*;
-pub use crypto_zk::*;
-pub use crypto_pqc::*;
-pub use crypto_pki::*;
-pub use crypto_protocols::*;
+// Re-export cryptography packages for convenience - using modules to avoid conflicts
+pub mod crypto_advanced_exports {
+    pub use super::crypto_advanced::*;
+}
+pub mod crypto_asymmetric_exports {
+    pub use super::crypto_asymmetric::*;
+}
+pub mod crypto_signatures_exports {
+    pub use super::crypto_signatures::*;
+}
+pub mod crypto_kdf_exports {
+    pub use super::crypto_kdf::*;
+}
+pub mod crypto_hash_advanced_exports {
+    pub use super::crypto_hash_advanced::*;
+}
+pub mod crypto_random_exports {
+    pub use super::crypto_random::*;
+}
+pub mod crypto_zk_exports {
+    pub use super::crypto_zk::*;
+}
+pub mod crypto_pqc_exports {
+    pub use super::crypto_pqc::*;
+}
+pub mod crypto_pki_exports {
+    pub use super::crypto_pki::*;
+}
+pub mod crypto_protocols_exports {
+    pub use super::crypto_protocols::*;
+}
 
 // Re-export testing packages for convenience
 pub use quick_test::*;

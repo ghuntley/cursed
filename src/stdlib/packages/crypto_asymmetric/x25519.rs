@@ -1,6 +1,7 @@
 //! Cryptographic functionality for x25519
 
 use crate::error::CursedError;
+use base64::{Engine as _, engine::general_purpose};
 
 /// Result type for crypto operations
 pub type CryptoResult<T> = Result<T, CursedError>;
@@ -166,8 +167,8 @@ impl X25519KeyFormat {
     pub fn encode(&self, key: &[u8]) -> String {
         match self {
             X25519KeyFormat::Raw => String::from_utf8_lossy(key).to_string(),
-            X25519KeyFormat::Pem => format!("-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----", base64::encode(key)),
-            X25519KeyFormat::Der => base64::encode(key),
+            X25519KeyFormat::Pem => format!("-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----", general_purpose::STANDARD.encode(key)),
+            X25519KeyFormat::Der => general_purpose::STANDARD.encode(key),
             X25519KeyFormat::Hex => hex::encode(key),
         }
     }
@@ -179,10 +180,10 @@ impl X25519KeyFormat {
                 let cleaned = encoded.replace("-----BEGIN PUBLIC KEY-----", "")
                                    .replace("-----END PUBLIC KEY-----", "")
                                    .replace('\n', "");
-                base64::decode(&cleaned).map_err(|e| CursedError::runtime_error(&format!("PEM decode error: {}", e)))
+                general_purpose::STANDARD.decode(&cleaned).map_err(|e| CursedError::runtime_error(&format!("PEM decode error: {}", e)))
             }
             X25519KeyFormat::Der => {
-                base64::decode(encoded).map_err(|e| CursedError::runtime_error(&format!("DER decode error: {}", e)))
+                general_purpose::STANDARD.decode(encoded).map_err(|e| CursedError::runtime_error(&format!("DER decode error: {}", e)))
             }
             X25519KeyFormat::Hex => {
                 hex::decode(encoded).map_err(|e| CursedError::runtime_error(&format!("Hex decode error: {}", e)))
