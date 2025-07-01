@@ -10,6 +10,7 @@ use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, Condvar};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
+use std::fmt;
 
 use crate::runtime::channels::{SendResult, ReceiveResult};
 use crate::runtime::goroutine::GoroutineId;
@@ -480,5 +481,17 @@ mod tests {
         // Collect using iterator
         let values: Vec<i32> = receiver.into_iter().collect();
         assert_eq!(values, vec![1, 2, 3, 4, 5]);
+    }
+}
+
+impl<T> fmt::Debug for SimpleChannel<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SimpleChannel")
+            .field("id", &self.id)
+            .field("capacity", &self.capacity)
+            .field("closed", &self.closed.load(Ordering::SeqCst))
+            .field("sender_count", &self.sender_count.load(Ordering::SeqCst))
+            .field("receiver_count", &self.receiver_count.load(Ordering::SeqCst))
+            .finish()
     }
 }

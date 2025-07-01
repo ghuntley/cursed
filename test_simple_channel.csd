@@ -1,6 +1,6 @@
-// Simple channel operations test
+vibe main;
 
-slay main_character() {
-    sus x = 42
-    vibez.spill("Simple value: ", x)
+slay main() {
+    sus ch = dm lit();
+    ch <- 42;
 }

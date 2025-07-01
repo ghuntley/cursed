@@ -55,6 +55,9 @@ impl ExpressionCompiler {
             Expression::ChannelReceive(recv_expr) => {
                 self.compile_channel_receive(&recv_expr.channel)
             },
+            Expression::ChannelCreation(create_expr) => {
+                self.compile_channel_creation(&create_expr.element_type, &create_expr.capacity)
+            },
 
         }
     }
@@ -534,6 +537,31 @@ impl ExpressionCompiler {
             result_reg, channel_reg
         ));
         
+        Ok(result_reg)
+    }
+
+    /// Compile channel creation operation (dm type())
+    fn compile_channel_creation(&mut self, element_type: &str, capacity: &Option<Box<Expression>>) -> Result<String, CursedError> {
+        // Determine capacity
+        let capacity_reg = if let Some(cap_expr) = capacity {
+            self.compile_expression(cap_expr)?
+        } else {
+            "0".to_string() // Unbuffered channel
+        };
+
+        // Generate call to runtime channel creation function
+        let result_reg = format!("%var{}", self.variable_counter);
+        self.variable_counter += 1;
+
+        let string_index = self.string_constants.len();
+        self.ir_buffer.push_str(&format!(
+            "  {} = call i8* @cursed_channel_create(i32 {}, i8* getelementptr inbounds ([{}x i8], [{}x i8]* @.str.{}, i32 0, i32 0))\n",
+            result_reg, capacity_reg, element_type.len() + 1, element_type.len() + 1, string_index
+        ));
+
+        // Add the element type string to the strings section
+        self.string_constants.push(element_type.to_string());
+
         Ok(result_reg)
     }
 }
