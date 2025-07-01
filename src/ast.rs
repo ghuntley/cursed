@@ -59,6 +59,7 @@ pub enum Expression {
     Map(Vec<(Expression, Expression)>),
     ChannelSend(ChannelSendExpression),
     ChannelReceive(ChannelReceiveExpression),
+    ChannelCreation(ChannelCreationExpression),
 }
 
 /// Binary expression
@@ -184,6 +185,13 @@ pub struct ChannelSendExpression {
 #[derive(Debug, Clone)]
 pub struct ChannelReceiveExpression {
     pub channel: Box<Expression>,
+}
+
+/// Channel creation expression (dm type())
+#[derive(Debug, Clone)]
+pub struct ChannelCreationExpression {
+    pub element_type: String,
+    pub capacity: Option<Box<Expression>>,
 }
 
 /// Select statement for channel multiplexing

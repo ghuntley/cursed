@@ -8,6 +8,8 @@
 
 use crate::error::CursedError;
 use crate::ast::Program;
+use crate::runtime::channels::simple_channel::SimpleChannel;
+use std::sync::Arc;
 
 pub mod execution_context;
 pub mod jit_executor;
@@ -94,6 +96,7 @@ impl CursedExecutionEngine {
             CursedValue::Float(f) => f.to_string(),
             CursedValue::String(s) => format!("\"{}\"", s),
             CursedValue::Boolean(b) => b.to_string(),
+            CursedValue::Channel(_) => "<channel>".to_string(),
             CursedValue::Nil => "nil".to_string(),
         }
     }
@@ -282,19 +285,98 @@ impl CursedExecutionEngine {
                 // For now, just return the size as an integer
                 Ok(CursedValue::Integer(pairs.len() as i64))
             },
-            Expression::ChannelSend(_) => {
-                // For now, just return nil - channel send needs runtime integration
-                log::info!("📤 Channel send operation not yet implemented");
-                Ok(CursedValue::Nil)
+            Expression::ChannelSend(send_expr) => {
+                self.execute_channel_send(send_expr, context)
             },
-            Expression::ChannelReceive(_) => {
-                // For now, just return nil - channel receive needs runtime integration
-                log::info!("📥 Channel receive operation not yet implemented");
-                Ok(CursedValue::Nil)
+            Expression::ChannelReceive(recv_expr) => {
+                self.execute_channel_receive(recv_expr, context)
+            },
+            Expression::ChannelCreation(create_expr) => {
+                self.execute_channel_creation(create_expr, context)
             },
         }
     }
     
+    /// Execute channel send operation (channel <- value)
+    fn execute_channel_send(&mut self, send_expr: &crate::ast::ChannelSendExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        log::info!("📤 Executing channel send operation");
+        
+        // Evaluate the channel expression
+        let channel_value = self.evaluate_expression(&send_expr.channel, context)?;
+        let channel = match channel_value {
+            CursedValue::Channel(ch) => ch,
+            _ => return Err(CursedError::RuntimeError("Cannot send to non-channel value".to_string())),
+        };
+        
+        // Evaluate the value to send
+        let value = self.evaluate_expression(&send_expr.value, context)?;
+        
+        // Perform the send operation
+        match channel.send(value) {
+            crate::runtime::channels::SendResult::Sent => {
+                log::info!("📤 Channel send successful");
+                Ok(CursedValue::Nil)
+            },
+            crate::runtime::channels::SendResult::Closed(_) => {
+                Err(CursedError::RuntimeError("Cannot send on closed channel".to_string()))
+            },
+            crate::runtime::channels::SendResult::WouldBlock(_) => {
+                Err(CursedError::RuntimeError("Channel send would block".to_string()))
+            },
+        }
+    }
+    
+    /// Execute channel receive operation (<-channel)
+    fn execute_channel_receive(&mut self, recv_expr: &crate::ast::ChannelReceiveExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        log::info!("📥 Executing channel receive operation");
+        
+        // Evaluate the channel expression
+        let channel_value = self.evaluate_expression(&recv_expr.channel, context)?;
+        let channel = match channel_value {
+            CursedValue::Channel(ch) => ch,
+            _ => return Err(CursedError::RuntimeError("Cannot receive from non-channel value".to_string())),
+        };
+        
+        // Perform the receive operation
+        match channel.recv() {
+            crate::runtime::channels::ReceiveResult::Received(value) => {
+                log::info!("📥 Channel receive successful");
+                Ok(value)
+            },
+            crate::runtime::channels::ReceiveResult::Closed => {
+                Err(CursedError::RuntimeError("Cannot receive from closed channel".to_string()))
+            },
+            crate::runtime::channels::ReceiveResult::WouldBlock => {
+                Err(CursedError::RuntimeError("Channel receive would block".to_string()))
+            },
+        }
+    }
+    
+    /// Execute channel creation operation (dm type())
+    fn execute_channel_creation(&mut self, create_expr: &crate::ast::ChannelCreationExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        log::info!("🔧 Creating channel with element type: {}", create_expr.element_type);
+        
+        // Determine capacity for the channel
+        let capacity = if let Some(capacity_expr) = &create_expr.capacity {
+            match self.evaluate_expression(capacity_expr, context)? {
+                CursedValue::Integer(cap) => cap as usize,
+                _ => return Err(CursedError::RuntimeError("Channel capacity must be an integer".to_string())),
+            }
+        } else {
+            0 // Unbuffered channel
+        };
+        
+        // Create the channel
+        let channel = if capacity == 0 {
+            Arc::new(SimpleChannel::new())
+        } else {
+            Arc::new(SimpleChannel::with_capacity(capacity))
+        };
+        
+        log::info!("✅ Created channel with capacity: {}", capacity);
+        Ok(CursedValue::Channel(channel))
+    }
+
     fn apply_binary_operator(&self, left: &CursedValue, operator: &str, right: &CursedValue) -> Result<CursedValue, CursedError> {
         match (left, right) {
             (CursedValue::Integer(l), CursedValue::Integer(r)) => {
@@ -471,6 +553,7 @@ impl CursedExecutionEngine {
             CursedValue::Integer(i) => *i != 0,
             CursedValue::Float(f) => *f != 0.0,
             CursedValue::String(s) => !s.is_empty(),
+            CursedValue::Channel(_) => true, // Channels are truthy when they exist
             CursedValue::Nil => false,
         }
     }
@@ -497,6 +580,7 @@ pub enum CursedValue {
     Float(f64),
     String(String),
     Boolean(bool),
+    Channel(Arc<SimpleChannel<CursedValue>>),
     Nil,
 }
 
@@ -518,6 +602,7 @@ impl ValueManager {
             CursedValue::Float(f) => f.to_string(),
             CursedValue::String(s) => format!("\"{}\"", s),
             CursedValue::Boolean(b) => b.to_string(),
+            CursedValue::Channel(_) => "<channel>".to_string(),
             CursedValue::Nil => "nil".to_string(),
         }
     }

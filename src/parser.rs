@@ -745,6 +745,45 @@ impl Parser {
         }))
     }
 
+    /// Parse channel creation expression (dm type())
+    fn parse_channel_creation(&mut self) -> Result<Expression, CursedError> {
+        self.consume(TokenKind::Dm, "Expected 'dm'")?;
+        
+        // Parse the channel element type (handle different token types)
+        let element_type = if self.match_tokens(&[TokenKind::Identifier]) {
+            self.previous().lexeme.clone()
+        } else if self.match_tokens(&[TokenKind::Boolean]) { // Handle 'lit' and other keywords that might be tokenized as Boolean
+            self.previous().lexeme.clone()
+        } else {
+            return Err(CursedError::syntax_error("Expected channel element type after 'dm'"));
+        };
+        
+        // Parse parentheses (required for channel creation syntax)
+        if self.match_tokens(&[TokenKind::LeftParen]) {
+            // Optional capacity argument for buffered channels
+            let capacity = if !self.check(&TokenKind::RightParen) {
+                let expr = self.parse_expression()?;
+                Some(Box::new(expr))
+            } else {
+                None
+            };
+            
+            self.consume(TokenKind::RightParen, "Expected ')' after channel arguments")?;
+            
+            // Create channel creation expression
+            Ok(Expression::ChannelCreation(crate::ast::ChannelCreationExpression {
+                element_type,
+                capacity,
+            }))
+        } else {
+            // Simple channel type without parentheses syntax (also valid)
+            Ok(Expression::ChannelCreation(crate::ast::ChannelCreationExpression {
+                element_type,
+                capacity: None,
+            }))
+        }
+    }
+
     fn parse_primary(&mut self) -> Result<Expression, CursedError> {
         match &self.peek().kind {
             TokenKind::Boolean => {
@@ -775,6 +814,9 @@ impl Parser {
                 let expr = self.parse_expression()?;
                 self.consume(TokenKind::RightParen, "Expected ')' after expression")?;
                 Ok(expr)
+            },
+            TokenKind::Dm => {
+                self.parse_channel_creation()
             },
             _ => Err(CursedError::syntax_error("Expected expression")),
         }
