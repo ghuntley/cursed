@@ -206,6 +206,12 @@ declare i8* @cursed_channel_receive(i8*)
                 self.variables.insert(let_stmt.name.clone(), value_reg.clone());
                 self.ir_code.push_str(&format!("  ; Variable: {} = {}\n", let_stmt.name, value_reg));
             },
+            Statement::Assignment(assign_stmt) => {
+                let value_reg = self.generate_expression(&assign_stmt.value)?;
+                // Update the variable mapping
+                self.variables.insert(assign_stmt.name.clone(), value_reg.clone());
+                self.ir_code.push_str(&format!("  ; Assignment: {} = {}\n", assign_stmt.name, value_reg));
+            },
             Statement::Function(func_stmt) => {
                 self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.body)?;
             },

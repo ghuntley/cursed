@@ -97,6 +97,15 @@ impl Parser {
         &self.tokens[self.current]
     }
 
+    fn peek_ahead(&self, offset: usize) -> &Token {
+        let index = self.current + offset;
+        if index >= self.tokens.len() {
+            &self.tokens[self.tokens.len() - 1] // Return EOF token
+        } else {
+            &self.tokens[index]
+        }
+    }
+
     fn previous(&self) -> &Token {
         &self.tokens[self.current - 1]
     }
@@ -262,7 +271,13 @@ impl Parser {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
                 }
-                Ok(Statement::Expression(self.parse_expression()?))
+                
+                // Check if this is an assignment (identifier = expression)
+                if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal {
+                    Ok(Statement::Assignment(self.parse_assignment_statement()?))
+                } else {
+                    Ok(Statement::Expression(self.parse_expression()?))
+                }
             },
         }
     }
@@ -359,6 +374,17 @@ impl Parser {
             name,
             value,
             visibility: crate::ast::Visibility::Private,
+        })
+    }
+
+    fn parse_assignment_statement(&mut self) -> Result<AssignmentStatement, CursedError> {
+        let name = self.consume(TokenKind::Identifier, "Expected variable name")?.lexeme.clone();
+        self.consume(TokenKind::Equal, "Expected '=' after variable name")?;
+        let value = self.parse_expression()?;
+        
+        Ok(AssignmentStatement {
+            name,
+            value,
         })
     }
 

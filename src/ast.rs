@@ -30,6 +30,7 @@ pub struct PackageDeclaration {
 pub enum Statement {
     Expression(Expression),
     Let(LetStatement),
+    Assignment(AssignmentStatement),
     Return(ReturnStatement),
     If(IfStatement),
     Function(FunctionStatement),
@@ -106,6 +107,13 @@ pub struct LetStatement {
     pub name: String,
     pub value: Expression,
     pub visibility: Visibility,
+}
+
+/// Assignment statement  
+#[derive(Debug, Clone)]
+pub struct AssignmentStatement {
+    pub name: String,
+    pub value: Expression,
 }
 
 /// Return statement
