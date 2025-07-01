@@ -41,6 +41,8 @@ pub enum Statement {
     Select(SelectStatement),
     Struct(StructStatement),
     Interface(InterfaceStatement),
+    Panic(PanicStatement),
+    Catch(CatchStatement),
 }
 
 /// Expression types
@@ -288,6 +290,46 @@ pub enum Literal {
     Boolean(bool),
     Null,
     Nil,
+}
+
+/// Panic statement for error throwing (yeet_error message)
+#[derive(Debug, Clone)]
+pub struct PanicStatement {
+    pub message: Box<Expression>,
+}
+
+impl PanicStatement {
+    pub fn new(message: Box<Expression>) -> Self {
+        Self { message }
+    }
+}
+
+/// Catch statement for error handling (catch { ... })
+#[derive(Debug, Clone)]
+pub struct CatchStatement {
+    pub protected_block: Vec<Statement>,
+    pub recovery_block: Option<Vec<Statement>>,
+    pub error_variable: Option<String>,
+}
+
+impl CatchStatement {
+    pub fn new(protected_block: Vec<Statement>) -> Self {
+        Self {
+            protected_block,
+            recovery_block: None,
+            error_variable: None,
+        }
+    }
+    
+    pub fn with_recovery(mut self, recovery_block: Vec<Statement>) -> Self {
+        self.recovery_block = Some(recovery_block);
+        self
+    }
+    
+    pub fn with_error_var(mut self, error_variable: String) -> Self {
+        self.error_variable = Some(error_variable);
+        self
+    }
 }
 
 /// Type annotations

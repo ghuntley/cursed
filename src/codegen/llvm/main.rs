@@ -254,6 +254,26 @@ declare i8* @cursed_channel_receive(i8*)
                 self.ir_code.push_str(&format!("  ; Interface definition: {}\n", interface_stmt.name));
                 // TODO: Implement actual interface codegen
             },
+            Statement::Panic(panic_stmt) => {
+                self.ir_code.push_str("  ; Panic (yeet_error) statement\n");
+                self.generate_expression(&panic_stmt.message)?;
+                // TODO: Implement actual panic codegen with LLVM intrinsics
+                self.ir_code.push_str("  call void @cursed_panic()\n");
+            },
+            Statement::Catch(catch_stmt) => {
+                self.ir_code.push_str("  ; Catch statement begin\n");
+                for stmt in &catch_stmt.protected_block {
+                    self.generate_statement(stmt)?;
+                }
+                if let Some(recovery) = &catch_stmt.recovery_block {
+                    self.ir_code.push_str("  ; Recovery block\n");
+                    for stmt in recovery {
+                        self.generate_statement(stmt)?;
+                    }
+                }
+                self.ir_code.push_str("  ; Catch statement end\n");
+                // TODO: Implement actual catch codegen with exception handling
+            },
         }
         Ok(())
     }

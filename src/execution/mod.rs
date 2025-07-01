@@ -239,6 +239,51 @@ impl CursedExecutionEngine {
                 // TODO: Implement actual interface storage
                 Ok(CursedValue::Nil)
             },
+            Statement::Panic(panic_stmt) => {
+                // Evaluate the panic message
+                let message = self.evaluate_expression(&panic_stmt.message, context)?;
+                log::error!("💀 Panic (yeet_error): {:?}", message);
+                
+                // For now, return an error - in the future this should trigger panic unwinding
+                Err(CursedError::RuntimeError(format!("yeet_error: {:?}", message)))
+            },
+            Statement::Catch(catch_stmt) => {
+                log::info!("🛡️ Entering catch block");
+                
+                // Execute the protected block and handle any panics
+                let mut last_value = CursedValue::Nil;
+                let mut error_occurred = false;
+                
+                for stmt in &catch_stmt.protected_block {
+                    match self.execute_statement(stmt, context) {
+                        Ok(val) => last_value = val,
+                        Err(err) => {
+                            log::warn!("🚨 Caught error in catch block: {:?}", err);
+                            error_occurred = true;
+                            
+                            // If there's an error variable, set it
+                            if let Some(error_var) = &catch_stmt.error_variable {
+                                let error_msg = CursedValue::String(format!("{:?}", err));
+                                context.set_variable(error_var.clone(), error_msg);
+                            }
+                            
+                            // Execute recovery block if it exists
+                            if let Some(recovery) = &catch_stmt.recovery_block {
+                                for recovery_stmt in recovery {
+                                    last_value = self.execute_statement(recovery_stmt, context)?;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                if !error_occurred {
+                    log::info!("✅ Protected block completed without errors");
+                }
+                
+                Ok(last_value)
+            },
         }
     }
     
