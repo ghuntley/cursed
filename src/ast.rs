@@ -38,6 +38,7 @@ pub enum Statement {
     Switch(SwitchStatement),
     Goroutine(GoroutineStatement),
     Channel(ChannelStatement),
+    Select(SelectStatement),
     Struct(StructStatement),
     Interface(InterfaceStatement),
 }
@@ -56,6 +57,8 @@ pub enum Expression {
     Unary(UnaryExpression),
     Array(Vec<Expression>),
     Map(Vec<(Expression, Expression)>),
+    ChannelSend(ChannelSendExpression),
+    ChannelReceive(ChannelReceiveExpression),
 }
 
 /// Binary expression
@@ -163,11 +166,38 @@ pub struct GoroutineStatement {
     pub expression: Expression,
 }
 
-/// Channel statement
+/// Channel statement  
 #[derive(Debug, Clone)]
 pub struct ChannelStatement {
     pub name: String,
     pub buffer_size: Option<Expression>,
+}
+
+/// Channel send expression (channel <- value)
+#[derive(Debug, Clone)]
+pub struct ChannelSendExpression {
+    pub channel: Box<Expression>,
+    pub value: Box<Expression>,
+}
+
+/// Channel receive expression (<-channel)
+#[derive(Debug, Clone)]
+pub struct ChannelReceiveExpression {
+    pub channel: Box<Expression>,
+}
+
+/// Select statement for channel multiplexing
+#[derive(Debug, Clone)]
+pub struct SelectStatement {
+    pub cases: Vec<SelectCase>,
+    pub default_case: Option<Vec<Statement>>,
+}
+
+/// Select case (mood keyword with channel operations)
+#[derive(Debug, Clone)]
+pub struct SelectCase {
+    pub operation: Box<Expression>, // ChannelSend or ChannelReceive
+    pub body: Vec<Statement>,
 }
 
 /// Struct statement (squad keyword)

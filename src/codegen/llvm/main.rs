@@ -236,6 +236,16 @@ declare i8* @cursed_channel_receive(i8*)
             Statement::Channel(channel_stmt) => {
                 self.ir_code.push_str(&format!("  ; Channel creation: {}\n", channel_stmt.name));
             },
+            Statement::Select(select_stmt) => {
+                self.ir_code.push_str("  ; Select statement\n");
+                for (i, case) in select_stmt.cases.iter().enumerate() {
+                    self.ir_code.push_str(&format!("  ; Select case {}\n", i));
+                    self.generate_expression(&case.operation)?;
+                }
+                if let Some(_) = &select_stmt.default_case {
+                    self.ir_code.push_str("  ; Select default case\n");
+                }
+            },
             Statement::Struct(struct_stmt) => {
                 self.ir_code.push_str(&format!("  ; Struct definition: {}\n", struct_stmt.name));
                 // TODO: Implement actual struct codegen

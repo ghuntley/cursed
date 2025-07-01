@@ -49,6 +49,12 @@ impl ExpressionCompiler {
             Expression::Map(pairs) => {
                 self.compile_map_expression(pairs)
             },
+            Expression::ChannelSend(send_expr) => {
+                self.compile_channel_send(&send_expr.channel, &send_expr.value)
+            },
+            Expression::ChannelReceive(recv_expr) => {
+                self.compile_channel_receive(&recv_expr.channel)
+            },
 
         }
     }
@@ -502,5 +508,32 @@ impl ExpressionCompiler {
     /// Get variable register
     pub fn get_variable(&self, name: &str) -> Option<&String> {
         self.variables.get(name)
+    }
+
+    /// Compile channel send operation
+    fn compile_channel_send(&mut self, channel: &Expression, value: &Expression) -> Result<String, CursedError> {
+        let channel_reg = self.compile_expression(channel)?;
+        let value_reg = self.compile_expression(value)?;
+        
+        let result_reg = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  {} = call void @cursed_channel_send(i8* {}, i64 {})\n",
+            result_reg, channel_reg, value_reg
+        ));
+        
+        Ok(result_reg)
+    }
+
+    /// Compile channel receive operation  
+    fn compile_channel_receive(&mut self, channel: &Expression) -> Result<String, CursedError> {
+        let channel_reg = self.compile_expression(channel)?;
+        
+        let result_reg = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  {} = call i64 @cursed_channel_receive(i8* {})\n",
+            result_reg, channel_reg
+        ));
+        
+        Ok(result_reg)
     }
 }
