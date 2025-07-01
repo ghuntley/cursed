@@ -87,6 +87,7 @@ pub enum DatabaseError {
     Parse(String),
     Timeout(String),
     Auth(String),
+    Mapping(String),
 }
 
 impl DatabaseError {
@@ -109,6 +110,10 @@ impl DatabaseError {
     pub fn migration(msg: &str) -> Self {
         DatabaseError::Migration(msg.to_string())
     }
+    
+    pub fn mapping(msg: &str) -> Self {
+        DatabaseError::Mapping(msg.to_string())
+    }
 }
 
 impl std::fmt::Display for DatabaseError {
@@ -122,6 +127,7 @@ impl std::fmt::Display for DatabaseError {
             DatabaseError::Parse(msg) => write!(f, "Database parse error: {}", msg),
             DatabaseError::Timeout(msg) => write!(f, "Database timeout error: {}", msg),
             DatabaseError::Auth(msg) => write!(f, "Database auth error: {}", msg),
+            DatabaseError::Mapping(msg) => write!(f, "Database mapping error: {}", msg),
         }
     }
 }
