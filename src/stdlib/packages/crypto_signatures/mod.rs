@@ -287,26 +287,26 @@ pub fn get_global_stats() -> Option<SignatureGlobalStats> {
 pub mod utils {
     use super::*;
     
-    /// slay Quick Ed25519 signature generation and verification
-    pub fn quick_ed25519_sign_verify(message: &[u8]) -> Result<bool, String> {
-        // TODO: Implement Ed25519 signature verification
-        Ok(true)
+    /// Ed25519 signature generation and verification - DISABLED FOR SECURITY
+    pub fn quick_ed25519_sign_verify(_message: &[u8]) -> Result<bool, String> {
+        Err("SECURITY ERROR: Ed25519 signature verification disabled. \
+        The previous implementation returned Ok(true) without verification, creating a security bypass.".to_string())
     }
     
-    /// slay Quick ECDSA signature generation and verification
-    pub fn quick_ecdsa_sign_verify(message: &[u8], curve: &str) -> Result<bool, String> {
-        // TODO: Implement ECDSA signature verification
-        Ok(true)
+    /// ECDSA signature generation and verification - DISABLED FOR SECURITY
+    pub fn quick_ecdsa_sign_verify(_message: &[u8], _curve: &str) -> Result<bool, String> {
+        Err("SECURITY ERROR: ECDSA signature verification disabled. \
+        The previous implementation returned Ok(true) without verification, creating a security bypass.".to_string())
     }
     
-    /// slay Quick RSA signature generation and verification
+    /// RSA signature generation and verification - DISABLED FOR SECURITY
     pub fn quick_rsa_sign_verify(
-        message: &[u8],
-        key_size: usize,
-        scheme: &str
+        _message: &[u8],
+        _key_size: usize,
+        _scheme: &str
     ) -> Result<bool, String> {
-        // TODO: Implement RSA signature verification
-        Ok(true)
+        Err("SECURITY ERROR: RSA signature verification disabled. \
+        The previous implementation returned Ok(true) without verification, creating a security bypass.".to_string())
     }
     /// slay Get recommended algorithm for use case
     pub fn get_recommended_algorithm(use_case: &str) -> &'static str {

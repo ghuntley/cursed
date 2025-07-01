@@ -63,54 +63,28 @@ impl Default for CryptoHandler {
     }
 }
 
-/// X25519 key pair generation
-pub fn x25519_generate_keypair(seed: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
-    // Placeholder implementation - in real implementation would use x25519-dalek
-    let private_key = if seed.is_empty() {
-        CryptoHandler::new().generate_key()?
-    } else {
-        seed
-    };
-    
-    // Generate public key from private key (simplified placeholder)
-    let mut public_key = private_key.clone();
-    public_key.reverse(); // Placeholder transformation
-    
-    Ok((private_key, public_key))
+/// X25519 key pair generation - DISABLED FOR SECURITY
+pub fn x25519_generate_keypair(_seed: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
+    Err(CursedError::runtime_error(
+        "SECURITY ERROR: X25519 key generation disabled due to unsafe placeholder implementation. \
+        The previous implementation used public_key.reverse() which is cryptographically insecure."
+    ))
 }
 
-/// X448 key pair generation
-pub fn x448_generate_keypair(seed: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
-    // Placeholder implementation - in real implementation would use x448
-    let private_key = if seed.is_empty() {
-        let mut key = CryptoHandler::new().generate_key()?;
-        key.resize(56, 0); // X448 uses 56-byte keys
-        key
-    } else {
-        seed
-    };
-    
-    // Generate public key from private key (simplified placeholder)
-    let mut public_key = private_key.clone();
-    public_key.reverse(); // Placeholder transformation
-    
-    Ok((private_key, public_key))
+/// X448 key pair generation - DISABLED FOR SECURITY
+pub fn x448_generate_keypair(_seed: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
+    Err(CursedError::runtime_error(
+        "SECURITY ERROR: X448 key generation disabled due to unsafe placeholder implementation. \
+        The previous implementation used public_key.reverse() which is cryptographically insecure."
+    ))
 }
 
-/// Diffie-Hellman key pair generation
-pub fn dh_generate_keypair(params: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
-    // Placeholder implementation - in real implementation would use proper DH
-    let private_key = if params.is_empty() {
-        CryptoHandler::new().generate_key()?
-    } else {
-        params
-    };
-    
-    // Generate public key from private key (simplified placeholder)
-    let mut public_key = private_key.clone();
-    public_key.reverse(); // Placeholder transformation
-    
-    Ok((private_key, public_key))
+/// Diffie-Hellman key pair generation - DISABLED FOR SECURITY
+pub fn dh_generate_keypair(_params: Vec<u8>) -> CryptoResult<(Vec<u8>, Vec<u8>)> {
+    Err(CursedError::runtime_error(
+        "SECURITY ERROR: Diffie-Hellman key generation disabled due to unsafe placeholder implementation. \
+        The previous implementation used public_key.reverse() which is cryptographically insecure."
+    ))
 }
 
 /// Initialize crypto processing

@@ -18,6 +18,14 @@ impl ExecutionContext {
         }
     }
     
+    /// Create a child context that inherits functions from parent
+    pub fn new_child(&self) -> Self {
+        Self {
+            variables: HashMap::new(),
+            functions: self.functions.clone(),
+        }
+    }
+    
     pub fn set_variable(&mut self, name: String, value: CursedValue) {
         self.variables.insert(name, value);
     }

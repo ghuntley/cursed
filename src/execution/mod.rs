@@ -101,6 +101,7 @@ impl CursedExecutionEngine {
     fn execute_statement(&mut self, statement: &crate::ast::Statement, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
         use crate::ast::Statement;
         
+        log::debug!("🔧 Executing statement type: {:?}", std::mem::discriminant(statement));
         match statement {
             Statement::Expression(expr) => {
                 self.evaluate_expression(expr, context)
@@ -120,6 +121,8 @@ impl CursedExecutionEngine {
             },
             Statement::Function(func_stmt) => {
                 // Store function definition in context
+                log::info!("📝 Storing function definition: {} with {} parameters", func_stmt.name, func_stmt.parameters.len());
+                log::debug!("📝 Function body has {} statements", func_stmt.body.len());
                 context.set_function(func_stmt.name.clone(), func_stmt.clone());
                 Ok(CursedValue::Nil)
             },
@@ -330,9 +333,11 @@ impl CursedExecutionEngine {
                     },
                     _ => {
                         // User-defined function
+                        log::info!("🔍 Looking for function: {}", func_name);
                         if let Some(func_def) = context.get_function(func_name) {
-                            // Create new context for function execution
-                            let mut func_context = ExecutionContext::new();
+                            log::info!("✅ Found function: {}", func_name);
+                            // Create child context for function execution (inherits functions)
+                            let mut func_context = context.new_child();
                             
                             // Bind parameters
                             if call_expr.arguments.len() != func_def.parameters.len() {
@@ -355,6 +360,7 @@ impl CursedExecutionEngine {
                             
                             Ok(result)
                         } else {
+                            log::error!("❌ Function not found: {}", func_name);
                             Err(CursedError::RuntimeError(format!("Undefined function: {}", func_name)))
                         }
                     }
