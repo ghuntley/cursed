@@ -185,6 +185,32 @@ impl CursedExecutionEngine {
                 }
                 Ok(last_value)
             },
+            Statement::Switch(switch_stmt) => {
+                let switch_value = self.evaluate_expression(&switch_stmt.expression, context)?;
+                
+                // Try to match against each case
+                for case in &switch_stmt.cases {
+                    let case_value = self.evaluate_expression(&case.pattern, context)?;
+                    if self.values_equal(&switch_value, &case_value) {
+                        let mut last_value = CursedValue::Nil;
+                        for stmt in &case.body {
+                            last_value = self.execute_statement(stmt, context)?;
+                        }
+                        return Ok(last_value);
+                    }
+                }
+                
+                // If no case matched, try default case
+                if let Some(default_body) = &switch_stmt.default_case {
+                    let mut last_value = CursedValue::Nil;
+                    for stmt in default_body {
+                        last_value = self.execute_statement(stmt, context)?;
+                    }
+                    Ok(last_value)
+                } else {
+                    Ok(CursedValue::Nil)
+                }
+            },
             Statement::Goroutine(_) => {
                 // For now, just return nil - goroutines need more complex implementation
                 Ok(CursedValue::Nil)
@@ -431,6 +457,20 @@ impl CursedExecutionEngine {
             CursedValue::Float(f) => *f != 0.0,
             CursedValue::String(s) => !s.is_empty(),
             CursedValue::Nil => false,
+        }
+    }
+    
+    fn values_equal(&self, left: &CursedValue, right: &CursedValue) -> bool {
+        match (left, right) {
+            (CursedValue::Integer(a), CursedValue::Integer(b)) => a == b,
+            (CursedValue::Float(a), CursedValue::Float(b)) => a == b,
+            (CursedValue::String(a), CursedValue::String(b)) => a == b,
+            (CursedValue::Boolean(a), CursedValue::Boolean(b)) => a == b,
+            (CursedValue::Nil, CursedValue::Nil) => true,
+            // Allow integer-float comparison
+            (CursedValue::Integer(a), CursedValue::Float(b)) => *a as f64 == *b,
+            (CursedValue::Float(a), CursedValue::Integer(b)) => *a == *b as f64,
+            _ => false,
         }
     }
 }

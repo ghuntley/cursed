@@ -336,7 +336,7 @@ fn get_sql_injection_patterns() -> &'static [Regex] {
             Regex::new(r";\s*delete\s+from").unwrap(),
             Regex::new(r";\s*truncate").unwrap(),
             Regex::new(r"'\s*or\s*'1'\s*=\s*'1").unwrap(),
-            Regex::new(r"\"\s*or\s*\"1\"\s*=\s*\"1").unwrap(),
+            Regex::new(r#""\s*or\s*"1"\s*=\s*"1"#).unwrap(),
             Regex::new(r"'\s*or\s*1\s*=\s*1").unwrap(),
             Regex::new(r"--").unwrap(),
             Regex::new(r"/\*.*\*/").unwrap(),

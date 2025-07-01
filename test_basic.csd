@@ -1,1 +1,1 @@
-sus x = 42
+print("Hello from CURSED!");

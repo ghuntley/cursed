@@ -35,6 +35,7 @@ pub enum Statement {
     Function(FunctionStatement),
     While(WhileStatement),
     For(ForStatement),
+    Switch(SwitchStatement),
     Goroutine(GoroutineStatement),
     Channel(ChannelStatement),
     Struct(StructStatement),
@@ -138,6 +139,21 @@ pub struct ForStatement {
     pub init: Option<Box<Statement>>,
     pub condition: Option<Expression>,
     pub update: Option<Expression>,
+    pub body: Vec<Statement>,
+}
+
+/// Switch statement (vibe_check keyword)
+#[derive(Debug, Clone)]
+pub struct SwitchStatement {
+    pub expression: Expression,
+    pub cases: Vec<SwitchCase>,
+    pub default_case: Option<Vec<Statement>>,
+}
+
+/// Switch case (mood keyword)
+#[derive(Debug, Clone)]
+pub struct SwitchCase {
+    pub pattern: Expression,
     pub body: Vec<Statement>,
 }
 
