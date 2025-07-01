@@ -195,6 +195,27 @@ impl Parser {
                 }
                 Ok(Statement::If(self.parse_if_statement()?))
             },
+            TokenKind::Periodt => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on control flow statements"));
+                }
+                log::info!("📝 Parsing while statement with 'periodt' keyword");
+                Ok(Statement::While(self.parse_while_statement()?))
+            },
+            TokenKind::Bestie => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on control flow statements"));
+                }
+                log::info!("📝 Parsing for statement with 'bestie' keyword");
+                Ok(Statement::For(self.parse_for_statement()?))
+            },
+            TokenKind::VibeCheck => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on control flow statements"));
+                }
+                log::info!("📝 Parsing switch statement with 'vibe_check' keyword");
+                Ok(Statement::Switch(self.parse_switch_statement()?))
+            },
             TokenKind::Yolo => {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on return statements"));
@@ -410,6 +431,120 @@ impl Parser {
         };
         
         Ok(ReturnStatement { value })
+    }
+
+    fn parse_while_statement(&mut self) -> Result<WhileStatement, CursedError> {
+        self.consume(TokenKind::Periodt, "Expected 'periodt'")?;
+        let condition = self.parse_expression()?;
+        self.consume(TokenKind::LeftBrace, "Expected '{' after while condition")?;
+        
+        let mut body = Vec::new();
+        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            body.push(self.parse_statement()?);
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' after while body")?;
+        
+        Ok(WhileStatement {
+            condition,
+            body,
+        })
+    }
+
+    fn parse_for_statement(&mut self) -> Result<ForStatement, CursedError> {
+        self.consume(TokenKind::Bestie, "Expected 'bestie'")?;
+        
+        // Parse for loop variants:
+        // bestie init; condition; update { ... }
+        // bestie variable in iterable { ... } (future enhancement)
+        
+        let init = if self.check(&TokenKind::Semicolon) {
+            None
+        } else {
+            Some(Box::new(self.parse_statement()?))
+        };
+        
+        self.consume(TokenKind::Semicolon, "Expected ';' after for loop init")?;
+        
+        let condition = if self.check(&TokenKind::Semicolon) {
+            None
+        } else {
+            Some(self.parse_expression()?)
+        };
+        
+        self.consume(TokenKind::Semicolon, "Expected ';' after for loop condition")?;
+        
+        let update = if self.check(&TokenKind::LeftBrace) {
+            None
+        } else {
+            Some(self.parse_expression()?)
+        };
+        
+        self.consume(TokenKind::LeftBrace, "Expected '{' after for loop header")?;
+        
+        let mut body = Vec::new();
+        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            body.push(self.parse_statement()?);
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' after for body")?;
+        
+        Ok(ForStatement {
+            init,
+            condition,
+            update,
+            body,
+        })
+    }
+
+    fn parse_switch_statement(&mut self) -> Result<SwitchStatement, CursedError> {
+        self.consume(TokenKind::VibeCheck, "Expected 'vibe_check'")?;
+        let expression = self.parse_expression()?;
+        self.consume(TokenKind::LeftBrace, "Expected '{' after switch expression")?;
+        
+        let mut cases = Vec::new();
+        let mut default_case = None;
+        
+        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            if self.match_tokens(&[TokenKind::Mood]) {
+                // Parse case: mood pattern { statements }
+                let pattern = self.parse_expression()?;
+                self.consume(TokenKind::LeftBrace, "Expected '{' after case pattern")?;
+                
+                let mut case_body = Vec::new();
+                while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                    case_body.push(self.parse_statement()?);
+                }
+                
+                self.consume(TokenKind::RightBrace, "Expected '}' after case body")?;
+                
+                cases.push(SwitchCase {
+                    pattern,
+                    body: case_body,
+                });
+            } else if self.match_tokens(&[TokenKind::Basic]) {
+                // Parse default case: basic { statements }
+                self.consume(TokenKind::LeftBrace, "Expected '{' after 'basic'")?;
+                
+                let mut default_body = Vec::new();
+                while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                    default_body.push(self.parse_statement()?);
+                }
+                
+                self.consume(TokenKind::RightBrace, "Expected '}' after default case body")?;
+                default_case = Some(default_body);
+            } else {
+                return Err(CursedError::parse_error("Expected 'mood' or 'basic' in switch statement"));
+            }
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' after switch body")?;
+        
+        Ok(SwitchStatement {
+            expression,
+            cases,
+            default_case,
+        })
     }
 
     pub fn parse_expression(&mut self) -> Result<Expression, CursedError> {

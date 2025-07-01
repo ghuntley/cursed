@@ -226,6 +226,9 @@ declare i8* @cursed_channel_receive(i8*)
             Statement::For(for_stmt) => {
                 self.generate_for_statement(for_stmt)?;
             },
+            Statement::Switch(switch_stmt) => {
+                self.generate_switch_statement(switch_stmt)?;
+            },
             Statement::Goroutine(goroutine_stmt) => {
                 self.ir_code.push_str("  ; Goroutine spawn\n");
                 self.generate_expression(&goroutine_stmt.expression)?;
@@ -584,6 +587,67 @@ declare i8* @cursed_channel_receive(i8*)
         self.ir_code.push_str(&format!("  br label %{}\n", loop_label));
         
         // End
+        self.ir_code.push_str(&format!("{}:\n", end_label));
+        Ok(())
+    }
+    
+    fn generate_switch_statement(&mut self, switch_stmt: &crate::ast::SwitchStatement) -> Result<(), CursedError> {
+        let switch_value_reg = self.generate_expression(&switch_stmt.expression)?;
+        let end_label = self.next_label();
+        
+        // Generate case labels
+        let mut case_labels = Vec::new();
+        for _ in &switch_stmt.cases {
+            case_labels.push(self.next_label());
+        }
+        let default_label = if switch_stmt.default_case.is_some() {
+            Some(self.next_label())
+        } else {
+            None
+        };
+        
+        // Generate comparisons for each case
+        for (i, case) in switch_stmt.cases.iter().enumerate() {
+            let case_value_reg = self.generate_expression(&case.pattern)?;
+            let cmp_reg = self.next_register();
+            self.ir_code.push_str(&format!("  {} = icmp eq i32 {}, {}\n", cmp_reg, switch_value_reg, case_value_reg));
+            
+            let next_check_label = if i + 1 < switch_stmt.cases.len() {
+                format!("case_check_{}", i + 1)
+            } else if let Some(ref default) = default_label {
+                default.clone()
+            } else {
+                end_label.clone()
+            };
+            
+            self.ir_code.push_str(&format!("  br i1 {}, label %{}, label %{}\n", cmp_reg, case_labels[i], next_check_label));
+            
+            if i + 1 < switch_stmt.cases.len() {
+                self.ir_code.push_str(&format!("case_check_{}:\n", i + 1));
+            }
+        }
+        
+        // Generate case bodies
+        for (i, case) in switch_stmt.cases.iter().enumerate() {
+            self.ir_code.push_str(&format!("{}:\n", case_labels[i]));
+            for stmt in &case.body {
+                self.generate_statement(stmt)?;
+            }
+            self.ir_code.push_str(&format!("  br label %{}\n", end_label));
+        }
+        
+        // Generate default case if present
+        if let Some(default_body) = &switch_stmt.default_case {
+            if let Some(default_lbl) = default_label {
+                self.ir_code.push_str(&format!("{}:\n", default_lbl));
+                for stmt in default_body {
+                    self.generate_statement(stmt)?;
+                }
+                self.ir_code.push_str(&format!("  br label %{}\n", end_label));
+            }
+        }
+        
+        // End label
         self.ir_code.push_str(&format!("{}:\n", end_label));
         Ok(())
     }
