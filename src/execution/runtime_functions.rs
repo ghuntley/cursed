@@ -11,6 +11,8 @@ use std::ptr;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write, Read, BufRead, BufReader};
 use std::env;
+use regex::Regex;
+use base64::{Engine as _, engine::general_purpose};
 
 /// Initialize all runtime functions for the CURSED standard library
 pub fn initialize_runtime_functions() -> Result<(), CursedError> {
@@ -922,4 +924,498 @@ impl MinimalImplementation {
 
 pub fn get_minimal_result() -> Result<String, CursedError> {
     Ok("CURSED runtime functions implemented".to_string())
+}
+
+// ================================
+// String Processing Implementation Functions
+// ================================
+
+/// Get the length of a string (implementation for string_length)
+#[no_mangle]
+pub extern "C" fn string_length(str_ptr: *const c_char) -> usize {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s.chars().count(), // Unicode-aware character count
+            Err(_) => 0
+        }
+    }
+}
+
+/// Convert string to uppercase (implementation for string_to_upper)
+#[no_mangle]
+pub extern "C" fn string_to_upper(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let upper = s.to_uppercase();
+                match CString::new(upper) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Convert string to lowercase (implementation for string_to_lower)
+#[no_mangle]
+pub extern "C" fn string_to_lower(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let lower = s.to_lowercase();
+                match CString::new(lower) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Check if string matches regex pattern (implementation for string_regex_match)
+#[no_mangle]
+pub extern "C" fn string_regex_match(str_ptr: *const c_char, pattern_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() || pattern_ptr.is_null() {
+        return -1; // Error
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let pattern = match CStr::from_ptr(pattern_ptr).to_str() {
+            Ok(p) => p,
+            Err(_) => return -1
+        };
+        
+        match Regex::new(pattern) {
+            Ok(regex) => if regex.is_match(text) { 1 } else { 0 },
+            Err(_) => -1 // Invalid regex pattern
+        }
+    }
+}
+
+/// Find first regex match in string (implementation for string_regex_find)
+#[no_mangle]
+pub extern "C" fn string_regex_find(str_ptr: *const c_char, pattern_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() || pattern_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let pattern = match CStr::from_ptr(pattern_ptr).to_str() {
+            Ok(p) => p,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        match Regex::new(pattern) {
+            Ok(regex) => {
+                if let Some(mat) = regex.find(text) {
+                    match CString::new(mat.as_str()) {
+                        Ok(c_string) => c_string.into_raw(),
+                        Err(_) => ptr::null_mut()
+                    }
+                } else {
+                    ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Replace regex matches in string (implementation for string_regex_replace)
+#[no_mangle]
+pub extern "C" fn string_regex_replace(str_ptr: *const c_char, pattern_ptr: *const c_char, replacement_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() || pattern_ptr.is_null() || replacement_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let pattern = match CStr::from_ptr(pattern_ptr).to_str() {
+            Ok(p) => p,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let replacement = match CStr::from_ptr(replacement_ptr).to_str() {
+            Ok(r) => r,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        match Regex::new(pattern) {
+            Ok(regex) => {
+                let result = regex.replace_all(text, replacement);
+                match CString::new(result.as_ref()) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Split string by regex pattern (implementation for string_regex_split)
+#[no_mangle]
+pub extern "C" fn string_regex_split(str_ptr: *const c_char, pattern_ptr: *const c_char, count_ptr: *mut usize) -> *mut *mut c_char {
+    if str_ptr.is_null() || pattern_ptr.is_null() || count_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let pattern = match CStr::from_ptr(pattern_ptr).to_str() {
+            Ok(p) => p,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        match Regex::new(pattern) {
+            Ok(regex) => {
+                let parts: Vec<&str> = regex.split(text).collect();
+                let count = parts.len();
+                *count_ptr = count;
+                
+                if count == 0 {
+                    return ptr::null_mut();
+                }
+                
+                // Allocate array of string pointers
+                let array = libc::malloc(count * std::mem::size_of::<*mut c_char>()) as *mut *mut c_char;
+                if array.is_null() {
+                    return ptr::null_mut();
+                }
+                
+                // Convert each part to C string
+                for (i, part) in parts.iter().enumerate() {
+                    match CString::new(*part) {
+                        Ok(c_string) => {
+                            *array.add(i) = c_string.into_raw();
+                        },
+                        Err(_) => {
+                            // Cleanup on error
+                            for j in 0..i {
+                                let _ = CString::from_raw(*array.add(j));
+                            }
+                            libc::free(array as *mut libc::c_void);
+                            return ptr::null_mut();
+                        }
+                    }
+                }
+                
+                array
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Format string with template and arguments (implementation for string_format)
+#[no_mangle]
+pub extern "C" fn string_format(template_ptr: *const c_char, args_ptr: *const *const c_char, args_count: usize) -> *mut c_char {
+    if template_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let template = match CStr::from_ptr(template_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let mut args = Vec::new();
+        if !args_ptr.is_null() {
+            for i in 0..args_count {
+                let arg_ptr = *args_ptr.add(i);
+                if !arg_ptr.is_null() {
+                    if let Ok(arg) = CStr::from_ptr(arg_ptr).to_str() {
+                        args.push(arg);
+                    }
+                }
+            }
+        }
+        
+        // Simple string interpolation - replace {0}, {1}, etc. with arguments
+        let mut result = template.to_string();
+        for (i, arg) in args.iter().enumerate() {
+            let placeholder = format!("{{{}}}", i);
+            result = result.replace(&placeholder, arg);
+        }
+        
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Trim whitespace from string (implementation for string_trim)
+#[no_mangle]
+pub extern "C" fn string_trim(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let trimmed = s.trim();
+                match CString::new(trimmed) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Check if string contains substring (implementation for string_contains)
+#[no_mangle]
+pub extern "C" fn string_contains(str_ptr: *const c_char, substring_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() || substring_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let substring = match CStr::from_ptr(substring_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        if text.contains(substring) { 1 } else { 0 }
+    }
+}
+
+/// Find index of substring in string (implementation for string_index_of)
+#[no_mangle]
+pub extern "C" fn string_index_of(str_ptr: *const c_char, substring_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() || substring_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let substring = match CStr::from_ptr(substring_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        match text.find(substring) {
+            Some(index) => index as i32,
+            None => -1
+        }
+    }
+}
+
+/// Substring extraction (implementation for string_substring)
+#[no_mangle]
+pub extern "C" fn string_substring(str_ptr: *const c_char, start: usize, length: usize) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let chars: Vec<char> = s.chars().collect();
+                if start >= chars.len() {
+                    // Return empty string if start is beyond string length
+                    match CString::new("") {
+                        Ok(c_string) => c_string.into_raw(),
+                        Err(_) => ptr::null_mut()
+                    }
+                } else {
+                    let end = std::cmp::min(start + length, chars.len());
+                    let substring: String = chars[start..end].iter().collect();
+                    match CString::new(substring) {
+                        Ok(c_string) => c_string.into_raw(),
+                        Err(_) => ptr::null_mut()
+                    }
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// String concatenation (implementation for string_concat)
+#[no_mangle]
+pub extern "C" fn string_concat(str1_ptr: *const c_char, str2_ptr: *const c_char) -> *mut c_char {
+    if str1_ptr.is_null() || str2_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let str1 = match CStr::from_ptr(str1_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let str2 = match CStr::from_ptr(str2_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let result = format!("{}{}", str1, str2);
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Check if string is empty (implementation for string_is_empty)
+#[no_mangle]
+pub extern "C" fn string_is_empty(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 1; // Consider null as empty
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => if s.is_empty() { 1 } else { 0 },
+            Err(_) => 1
+        }
+    }
+}
+
+/// Encode string as base64 (implementation for string_base64_encode)
+#[no_mangle]
+pub extern "C" fn string_base64_encode(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let encoded = general_purpose::STANDARD.encode(s.as_bytes());
+                match CString::new(encoded) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Decode base64 string (implementation for string_base64_decode)
+#[no_mangle]
+pub extern "C" fn string_base64_decode(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                match general_purpose::STANDARD.decode(s) {
+                    Ok(decoded_bytes) => {
+                        match String::from_utf8(decoded_bytes) {
+                            Ok(decoded_string) => {
+                                match CString::new(decoded_string) {
+                                    Ok(c_string) => c_string.into_raw(),
+                                    Err(_) => ptr::null_mut()
+                                }
+                            },
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Calculate Levenshtein distance between two strings (implementation for string_levenshtein_distance)
+#[no_mangle]
+pub extern "C" fn string_levenshtein_distance(str1_ptr: *const c_char, str2_ptr: *const c_char) -> i32 {
+    if str1_ptr.is_null() || str2_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let str1 = match CStr::from_ptr(str1_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let str2 = match CStr::from_ptr(str2_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let chars1: Vec<char> = str1.chars().collect();
+        let chars2: Vec<char> = str2.chars().collect();
+        let len1 = chars1.len();
+        let len2 = chars2.len();
+        
+        if len1 == 0 { return len2 as i32; }
+        if len2 == 0 { return len1 as i32; }
+        
+        let mut matrix = vec![vec![0; len2 + 1]; len1 + 1];
+        
+        // Initialize first row and column
+        for i in 0..=len1 { matrix[i][0] = i; }
+        for j in 0..=len2 { matrix[0][j] = j; }
+        
+        // Fill the matrix
+        for i in 1..=len1 {
+            for j in 1..=len2 {
+                let cost = if chars1[i-1] == chars2[j-1] { 0 } else { 1 };
+                matrix[i][j] = std::cmp::min(
+                    std::cmp::min(
+                        matrix[i-1][j] + 1,    // deletion
+                        matrix[i][j-1] + 1     // insertion
+                    ),
+                    matrix[i-1][j-1] + cost    // substitution
+                );
+            }
+        }
+        
+        matrix[len1][len2] as i32
+    }
 }

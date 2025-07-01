@@ -268,6 +268,25 @@ impl SymbolResolver {
         self.register_symbol("collections_set_len", crate::execution::runtime_functions::collections_set_len as usize);
         self.register_symbol("collections_set_clear", crate::execution::runtime_functions::collections_set_clear as usize);
         self.register_symbol("collections_set_is_empty", crate::execution::runtime_functions::collections_set_is_empty as usize);
+        
+        // Register standard library string processing functions
+        self.register_symbol("string_length", crate::execution::runtime_functions::string_length as usize);
+        self.register_symbol("string_to_upper", crate::execution::runtime_functions::string_to_upper as usize);
+        self.register_symbol("string_to_lower", crate::execution::runtime_functions::string_to_lower as usize);
+        self.register_symbol("string_regex_match", crate::execution::runtime_functions::string_regex_match as usize);
+        self.register_symbol("string_regex_find", crate::execution::runtime_functions::string_regex_find as usize);
+        self.register_symbol("string_regex_replace", crate::execution::runtime_functions::string_regex_replace as usize);
+        self.register_symbol("string_regex_split", crate::execution::runtime_functions::string_regex_split as usize);
+        self.register_symbol("string_format", crate::execution::runtime_functions::string_format as usize);
+        self.register_symbol("string_trim", crate::execution::runtime_functions::string_trim as usize);
+        self.register_symbol("string_contains", crate::execution::runtime_functions::string_contains as usize);
+        self.register_symbol("string_index_of", crate::execution::runtime_functions::string_index_of as usize);
+        self.register_symbol("string_substring", crate::execution::runtime_functions::string_substring as usize);
+        self.register_symbol("string_concat", crate::execution::runtime_functions::string_concat as usize);
+        self.register_symbol("string_is_empty", crate::execution::runtime_functions::string_is_empty as usize);
+        self.register_symbol("string_base64_encode", crate::execution::runtime_functions::string_base64_encode as usize);
+        self.register_symbol("string_base64_decode", crate::execution::runtime_functions::string_base64_decode as usize);
+        self.register_symbol("string_levenshtein_distance", crate::execution::runtime_functions::string_levenshtein_distance as usize);
     }
     
     fn register_symbol(&mut self, name: &str, addr: usize) {
