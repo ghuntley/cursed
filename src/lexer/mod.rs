@@ -265,7 +265,17 @@ impl Lexer {
 
     fn number_literal(&mut self, start_column: usize) -> Result<Token, CursedError> {
         let mut value = String::new();
-        value.push(self.chars.get(self.position - 1).copied().unwrap());
+        
+        // Safe character access with bounds checking
+        if self.position > 0 {
+            if let Some(ch) = self.chars.get(self.position - 1).copied() {
+                value.push(ch);
+            } else {
+                return Err(CursedError::syntax_error("Invalid character position during number parsing"));
+            }
+        } else {
+            return Err(CursedError::syntax_error("Cannot parse number at start of input"));
+        }
         
         while !self.is_at_end() && self.peek().is_ascii_digit() {
             value.push(self.advance());
@@ -284,7 +294,17 @@ impl Lexer {
 
     fn identifier(&mut self, start_column: usize) -> Result<Token, CursedError> {
         let mut value = String::new();
-        value.push(self.input.chars().nth(self.position - 1).unwrap());
+        
+        // Safe character access with bounds checking
+        if self.position > 0 {
+            if let Some(ch) = self.input.chars().nth(self.position - 1) {
+                value.push(ch);
+            } else {
+                return Err(CursedError::syntax_error("Invalid character position during identifier parsing"));
+            }
+        } else {
+            return Err(CursedError::syntax_error("Cannot parse identifier at start of input"));
+        }
         
         while !self.is_at_end() && (self.peek().is_ascii_alphanumeric() || self.peek() == '_') {
             value.push(self.advance());
