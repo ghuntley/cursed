@@ -196,6 +196,29 @@ impl SymbolResolver {
         // Register error handling functions
         self.register_symbol("cursed_panic", cursed_panic as usize);
         self.register_symbol("cursed_error_propagate", cursed_error_propagate as usize);
+        
+        // Register standard library I/O functions
+        self.register_symbol("io_print", crate::execution::runtime_functions::io_print as usize);
+        self.register_symbol("io_println", crate::execution::runtime_functions::io_println as usize);
+        self.register_symbol("io_eprint", crate::execution::runtime_functions::io_eprint as usize);
+        self.register_symbol("io_eprintln", crate::execution::runtime_functions::io_eprintln as usize);
+        self.register_symbol("io_read_line", crate::execution::runtime_functions::io_read_line as usize);
+        self.register_symbol("io_write_file", crate::execution::runtime_functions::io_write_file as usize);
+        self.register_symbol("io_read_file", crate::execution::runtime_functions::io_read_file as usize);
+        self.register_symbol("io_file_exists", crate::execution::runtime_functions::io_file_exists as usize);
+        self.register_symbol("io_create_directory", crate::execution::runtime_functions::io_create_directory as usize);
+        self.register_symbol("io_create_directory_recursive", crate::execution::runtime_functions::io_create_directory_recursive as usize);
+        self.register_symbol("io_delete_file", crate::execution::runtime_functions::io_delete_file as usize);
+        
+        // Register standard library math functions
+        self.register_symbol("math_sin_impl", crate::execution::runtime_functions::math_sin_impl as usize);
+        self.register_symbol("math_cos_impl", crate::execution::runtime_functions::math_cos_impl as usize);
+        self.register_symbol("math_sqrt_impl", crate::execution::runtime_functions::math_sqrt_impl as usize);
+        self.register_symbol("math_random_impl", crate::execution::runtime_functions::math_random_impl as usize);
+        
+        // Register standard library collections functions (stubs)
+        self.register_symbol("collections_array_push", crate::execution::runtime_functions::collections_array_push as usize);
+        self.register_symbol("collections_map_set", crate::execution::runtime_functions::collections_map_set as usize);
     }
     
     fn register_symbol(&mut self, name: &str, addr: usize) {
