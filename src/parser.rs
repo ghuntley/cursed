@@ -62,9 +62,13 @@ impl Parser {
             }
             
             match self.parse_statement() {
-                Ok(stmt) => statements.push(stmt),
+                Ok(stmt) => {
+                    log::debug!("➕ Adding statement to program: {:?}", std::mem::discriminant(&stmt));
+                    statements.push(stmt);
+                },
                 Err(e) => {
                     // Record error but continue parsing
+                    log::error!("❌ Parse error: {}", e);
                     self.errors.push(format!("Parse error: {}", e));
                     self.synchronize();
                 }
@@ -72,6 +76,7 @@ impl Parser {
             self.skip_newlines();
         }
 
+        log::info!("📋 Program parsed with {} statements", statements.len());
         Ok(Program {
             statements,
             imports,
@@ -176,8 +181,12 @@ impl Parser {
         // Check for visibility modifiers
         let visibility = self.parse_visibility()?;
         
+        log::debug!("🔍 Parsing statement with token: {:?}", self.peek().kind);
         match self.peek().kind {
-            TokenKind::Slay => Ok(Statement::Function(self.parse_function_statement_with_visibility(visibility)?)),
+            TokenKind::Slay => {
+                log::info!("📝 Parsing function statement with 'slay' keyword");
+                Ok(Statement::Function(self.parse_function_statement_with_visibility(visibility)?))
+            },
             TokenKind::Sus => Ok(Statement::Let(self.parse_let_statement_with_visibility(visibility)?)),
             TokenKind::Facts => Ok(Statement::Let(self.parse_const_statement_with_visibility(visibility)?)),
             TokenKind::Lowkey => {
@@ -263,10 +272,14 @@ impl Parser {
         self.skip_newlines();
         
         let mut body = Vec::new();
+        log::debug!("🔧 Parsing function body for: {}", name);
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-            body.push(self.parse_statement()?);
+            let stmt = self.parse_statement()?;
+            log::debug!("➕ Adding statement to function body: {:?}", std::mem::discriminant(&stmt));
+            body.push(stmt);
             self.skip_newlines();
         }
+        log::debug!("✅ Function body parsing complete for: {}", name);
         
         self.consume(TokenKind::RightBrace, "Expected '}' after function body")?;
         

@@ -101,14 +101,16 @@ impl<T: Entity> Repository<T> {
         }
     }
     
-    pub async fn find_by_id(&self, id: &SqlValue) -> Result<Option<T>, DatabaseError> {
-        // TODO: Implement find by id
-        todo!("Implement find_by_id")
+    pub async fn find_by_id(&self, _id: &SqlValue) -> Result<Option<T>, DatabaseError> {
+        Err(DatabaseError::query(
+            "ORM find_by_id not implemented - replaced todo!() to prevent crashes"
+        ))
     }
     
-    pub async fn save(&self, entity: &T) -> Result<(), DatabaseError> {
-        // TODO: Implement save
-        todo!("Implement save")
+    pub async fn save(&self, _entity: &T) -> Result<(), DatabaseError> {
+        Err(DatabaseError::query(
+            "ORM save not implemented - replaced todo!() to prevent crashes"
+        ))
     }
 }
 
