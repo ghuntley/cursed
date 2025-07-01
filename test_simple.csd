@@ -1,5 +1,1 @@
-slay hello() {
-    vibez.spill("Hello, CURSED!")
-}
-
-hello()
+sus x = 42

@@ -219,6 +219,11 @@ impl CursedExecutionEngine {
                 // For now, just return nil - channels need more complex implementation
                 Ok(CursedValue::Nil)
             },
+            Statement::Select(_) => {
+                // For now, just return nil - select statements need more complex implementation
+                log::info!("📺 Select statement execution not yet implemented");
+                Ok(CursedValue::Nil)
+            },
             Statement::Struct(struct_stmt) => {
                 // Store struct definition in context for type checking
                 log::info!("📝 Storing struct definition: {} with {} fields", struct_stmt.name, struct_stmt.fields.len());
@@ -276,6 +281,16 @@ impl CursedExecutionEngine {
             Expression::Map(pairs) => {
                 // For now, just return the size as an integer
                 Ok(CursedValue::Integer(pairs.len() as i64))
+            },
+            Expression::ChannelSend(_) => {
+                // For now, just return nil - channel send needs runtime integration
+                log::info!("📤 Channel send operation not yet implemented");
+                Ok(CursedValue::Nil)
+            },
+            Expression::ChannelReceive(_) => {
+                // For now, just return nil - channel receive needs runtime integration
+                log::info!("📥 Channel receive operation not yet implemented");
+                Ok(CursedValue::Nil)
             },
         }
     }

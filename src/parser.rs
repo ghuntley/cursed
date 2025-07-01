@@ -237,6 +237,13 @@ impl Parser {
                 log::info!("📝 Parsing goroutine statement with 'stan' keyword");
                 Ok(Statement::Goroutine(self.parse_goroutine_statement()?))
             },
+            TokenKind::Select => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on select statements"));
+                }
+                log::info!("📝 Parsing select statement");
+                Ok(Statement::Select(self.parse_select_statement()?))
+            },
             _ => {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
@@ -555,7 +562,31 @@ impl Parser {
     }
 
     pub fn parse_expression(&mut self) -> Result<Expression, CursedError> {
-        self.parse_logical_or()
+        self.parse_channel_operations()
+    }
+
+    fn parse_channel_operations(&mut self) -> Result<Expression, CursedError> {
+        // Check for channel receive first: <-channel
+        if self.check(&TokenKind::LeftArrow) {
+            self.advance();
+            let channel = Box::new(self.parse_logical_or()?);
+            return Ok(Expression::ChannelReceive(crate::ast::ChannelReceiveExpression {
+                channel,
+            }));
+        }
+        
+        let mut expr = self.parse_logical_or()?;
+        
+        // Check for channel send: channel <- value
+        if self.match_tokens(&[TokenKind::LeftArrow]) {
+            let value = Box::new(self.parse_logical_or()?);
+            expr = Expression::ChannelSend(crate::ast::ChannelSendExpression {
+                channel: Box::new(expr),
+                value,
+            });
+        }
+        
+        Ok(expr)
     }
 
     fn parse_logical_or(&mut self) -> Result<Expression, CursedError> {
@@ -876,6 +907,82 @@ impl Parser {
         Ok(crate::ast::GoroutineStatement {
             expression,
         })
+    }
+
+    fn parse_select_statement(&mut self) -> Result<crate::ast::SelectStatement, CursedError> {
+        log::debug!("📺 Parsing select statement");
+        self.consume(TokenKind::Select, "Expected 'select'")?;
+        self.consume(TokenKind::LeftBrace, "Expected '{' after 'select'")?;
+        
+        let mut cases = Vec::new();
+        let mut default_case = None;
+        
+        while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            if self.match_tokens(&[TokenKind::Mood]) {
+                // Parse case: mood <-channel { statements } or mood channel <- value { statements }
+                let operation = self.parse_channel_operation()?;
+                self.consume(TokenKind::LeftBrace, "Expected '{' after channel operation")?;
+                
+                let mut case_body = Vec::new();
+                while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                    case_body.push(self.parse_statement()?);
+                }
+                
+                self.consume(TokenKind::RightBrace, "Expected '}' after case body")?;
+                
+                cases.push(crate::ast::SelectCase {
+                    operation: Box::new(operation),
+                    body: case_body,
+                });
+            } else if self.match_tokens(&[TokenKind::Basic]) {
+                // Parse default case: basic { statements }
+                self.consume(TokenKind::LeftBrace, "Expected '{' after 'basic'")?;
+                
+                let mut default_body = Vec::new();
+                while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                    default_body.push(self.parse_statement()?);
+                }
+                
+                self.consume(TokenKind::RightBrace, "Expected '}' after default case body")?;
+                default_case = Some(default_body);
+            } else {
+                return Err(CursedError::parse_error("Expected 'mood' or 'basic' in select statement"));
+            }
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' after select body")?;
+        
+        log::debug!("✅ Successfully parsed select statement with {} cases", cases.len());
+        Ok(crate::ast::SelectStatement {
+            cases,
+            default_case,
+        })
+    }
+
+    fn parse_channel_operation(&mut self) -> Result<crate::ast::Expression, CursedError> {
+        log::debug!("📡 Parsing channel operation");
+        
+        if self.check(&TokenKind::LeftArrow) {
+            // Receive: <-channel
+            self.advance();
+            let channel = Box::new(self.parse_primary()?);
+            
+            log::debug!("✅ Parsed channel receive operation");
+            Ok(crate::ast::Expression::ChannelReceive(crate::ast::ChannelReceiveExpression {
+                channel,
+            }))
+        } else {
+            // Send: channel <- value
+            let channel = Box::new(self.parse_primary()?);
+            self.consume(TokenKind::LeftArrow, "Expected '<-' for channel send")?;
+            let value = Box::new(self.parse_logical_or()?);
+            
+            log::debug!("✅ Parsed channel send operation");
+            Ok(crate::ast::Expression::ChannelSend(crate::ast::ChannelSendExpression {
+                channel,
+                value,
+            }))
+        }
     }
 }
 

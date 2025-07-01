@@ -70,6 +70,8 @@ pub enum TokenKind {
     Lies,        // false (NoTruth)
     MainCharacter, // main function
     Dm,          // channel type
+    Select,      // select statement
+    LeftArrow,   // <- channel operator
     
     // Visibility modifiers
     Spill,       // pub (public)
@@ -178,6 +180,8 @@ impl Lexer {
             '<' => {
                 if self.match_char('=') {
                     Ok(self.make_token(TokenKind::LessEqual, "<=".to_string(), start_column))
+                } else if self.match_char('-') {
+                    Ok(self.make_token(TokenKind::LeftArrow, "<-".to_string(), start_column))
                 } else {
                     Ok(self.make_token(TokenKind::Less, "<".to_string(), start_column))
                 }
@@ -326,6 +330,7 @@ impl Lexer {
             "nocap" => TokenKind::NoCap,
             "main_character" => TokenKind::MainCharacter,
             "dm" => TokenKind::Dm,
+            "select" => TokenKind::Select,
             
             // Visibility modifiers
             "spill" => TokenKind::Spill,
