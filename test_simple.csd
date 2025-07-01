@@ -1,2 +1,5 @@
-sus x = 42
-yolo x
+vibe main
+
+slay main() {
+    yolo 42
+}

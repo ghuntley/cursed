@@ -1,10 +1,10 @@
 vibe main
 
-slay add(a, b) {
+slay add(a: mid, b: mid) -> mid {
     yolo a + b
 }
 
-slay main() {
+slay main() -> mid {
     sus result = add(5, 10)
     yolo result
 }
