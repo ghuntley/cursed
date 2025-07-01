@@ -8,8 +8,9 @@ use crate::error::CursedError;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::ptr;
-use std::fs;
+use std::fs::{self, OpenOptions};
 use std::io::{self, Write, Read, BufRead, BufReader};
+use std::env;
 
 /// Initialize all runtime functions for the CURSED standard library
 pub fn initialize_runtime_functions() -> Result<(), CursedError> {
@@ -235,6 +236,288 @@ pub extern "C" fn io_delete_file(path_ptr: *const c_char) -> i32 {
         match CStr::from_ptr(path_ptr).to_str() {
             Ok(path) => {
                 match fs::remove_file(path) {
+                    Ok(_) => 0,
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+// ================================
+// Additional I/O Functions Implementation
+// ================================
+
+/// Printf-style formatted printing (implementation for io_printf)
+#[no_mangle]
+pub extern "C" fn io_printf(format_ptr: *const c_char, _args_ptr: *const c_char) -> i32 {
+    if format_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(format_ptr).to_str() {
+            Ok(format_str) => {
+                // For now, just print the format string (full printf implementation would be complex)
+                print!("{}", format_str);
+                io::stdout().flush().unwrap_or(());
+                0
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Read a single character from console (implementation for io_read_char)
+#[no_mangle]
+pub extern "C" fn io_read_char(buf_ptr: *mut c_char, buf_len: usize) -> i32 {
+    if buf_ptr.is_null() || buf_len < 2 {
+        return -1;
+    }
+    
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => {
+            let ch = input.chars().next().unwrap_or('\0');
+            unsafe {
+                *buf_ptr = ch as c_char;
+                *buf_ptr.add(1) = 0; // null terminate
+            }
+            0
+        },
+        Err(_) => -1
+    }
+}
+
+/// Read an integer from console (implementation for io_read_int)
+#[no_mangle]
+pub extern "C" fn io_read_int() -> i32 {
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => {
+            input.trim().parse::<i32>().unwrap_or(0)
+        },
+        Err(_) => 0
+    }
+}
+
+/// Read a float from console (implementation for io_read_float) 
+#[no_mangle]
+pub extern "C" fn io_read_float() -> f64 {
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => {
+            input.trim().parse::<f64>().unwrap_or(0.0)
+        },
+        Err(_) => 0.0
+    }
+}
+
+/// Append content to a file (implementation for io_append_file)
+#[no_mangle]
+pub extern "C" fn io_append_file(path_ptr: *const c_char, content_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() || content_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(path_ptr).to_str(), CStr::from_ptr(content_ptr).to_str()) {
+            (Ok(path), Ok(content)) => {
+                match OpenOptions::new().create(true).append(true).open(path) {
+                    Ok(mut file) => {
+                        match file.write_all(content.as_bytes()) {
+                            Ok(_) => 0,
+                            Err(_) => -1
+                        }
+                    },
+                    Err(_) => -1
+                }
+            },
+            _ => -1
+        }
+    }
+}
+
+/// Copy a file (implementation for io_copy_file)
+#[no_mangle]
+pub extern "C" fn io_copy_file(src_ptr: *const c_char, dest_ptr: *const c_char) -> i32 {
+    if src_ptr.is_null() || dest_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(src_ptr).to_str(), CStr::from_ptr(dest_ptr).to_str()) {
+            (Ok(src), Ok(dest)) => {
+                match fs::copy(src, dest) {
+                    Ok(_) => 0,
+                    Err(_) => -1
+                }
+            },
+            _ => -1
+        }
+    }
+}
+
+/// Move/rename a file (implementation for io_move_file)
+#[no_mangle]
+pub extern "C" fn io_move_file(src_ptr: *const c_char, dest_ptr: *const c_char) -> i32 {
+    if src_ptr.is_null() || dest_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(src_ptr).to_str(), CStr::from_ptr(dest_ptr).to_str()) {
+            (Ok(src), Ok(dest)) => {
+                match fs::rename(src, dest) {
+                    Ok(_) => 0,
+                    Err(_) => -1
+                }
+            },
+            _ => -1
+        }
+    }
+}
+
+/// Get file size (implementation for io_file_size)
+#[no_mangle]
+pub extern "C" fn io_file_size(path_ptr: *const c_char) -> i64 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::metadata(path) {
+                    Ok(metadata) => metadata.len() as i64,
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Check if path is a file (implementation for io_is_file)
+#[no_mangle]
+pub extern "C" fn io_is_file(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::metadata(path) {
+                    Ok(metadata) => if metadata.is_file() { 1 } else { 0 },
+                    Err(_) => 0
+                }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Check if path is a directory (implementation for io_is_directory)
+#[no_mangle]
+pub extern "C" fn io_is_directory(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::metadata(path) {
+                    Ok(metadata) => if metadata.is_dir() { 1 } else { 0 },
+                    Err(_) => 0
+                }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Remove a directory (implementation for io_remove_directory)
+#[no_mangle]
+pub extern "C" fn io_remove_directory(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::remove_dir(path) {
+                    Ok(_) => 0,
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Remove a directory recursively (implementation for io_remove_directory_recursive)
+#[no_mangle]
+pub extern "C" fn io_remove_directory_recursive(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::remove_dir_all(path) {
+                    Ok(_) => 0,
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Get current working directory (implementation for io_current_directory)
+#[no_mangle]
+pub extern "C" fn io_current_directory(buf_ptr: *mut c_char, buf_len: usize) -> i32 {
+    if buf_ptr.is_null() || buf_len == 0 {
+        return -1;
+    }
+    
+    match env::current_dir() {
+        Ok(path) => {
+            if let Some(path_str) = path.to_str() {
+                let path_bytes = path_str.as_bytes();
+                if path_bytes.len() + 1 <= buf_len {
+                    unsafe {
+                        ptr::copy_nonoverlapping(path_bytes.as_ptr(), buf_ptr as *mut u8, path_bytes.len());
+                        *buf_ptr.add(path_bytes.len()) = 0; // null terminate
+                    }
+                    0
+                } else {
+                    -1 // Buffer too small
+                }
+            } else {
+                -1 // Path not valid UTF-8
+            }
+        },
+        Err(_) => -1
+    }
+}
+
+/// Change working directory (implementation for io_change_directory)
+#[no_mangle]
+pub extern "C" fn io_change_directory(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match env::set_current_dir(path) {
                     Ok(_) => 0,
                     Err(_) => -1
                 }
