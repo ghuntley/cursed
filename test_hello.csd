@@ -1,3 +1,3 @@
-slay main() {
-    vibez.spill("Hello World")
+facts main() {
+    spilln("Hello, CURSED World!")
 }
