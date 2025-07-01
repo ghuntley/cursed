@@ -1,1 +1,1 @@
-print("Hello from CURSED!");
+println("Hello CURSED!");

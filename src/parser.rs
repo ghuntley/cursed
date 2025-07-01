@@ -1146,3 +1146,110 @@ impl MinimalImplementation {
 pub fn get_minimal_result() -> Result<String, CursedError> {
     Ok("CURSED advanced features enabled".to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lexer::Lexer;
+
+    #[test]
+    fn test_basic_cursed_parsing() {
+        println!("🧪 Testing basic CURSED parsing...");
+        
+        let simple_program = r#"
+vibe main
+sus x = 42
+"#;
+        
+        let mut lexer = Lexer::new(simple_program.to_string());
+        let tokens = lexer.tokenize().expect("Should tokenize successfully");
+        
+        println!("📋 Tokens created: {}", tokens.len());
+        for (i, token) in tokens.iter().enumerate() {
+            println!("  {}: {:?} = '{}'", i, token.kind, token.lexeme);
+        }
+        
+        let mut parser = Parser::from_tokens(tokens);
+        let result = parser.parse();
+        
+        match result {
+            Ok(program) => {
+                println!("✅ Basic parsing successful!");
+                println!("📦 Package: {:?}", program.package);
+                println!("📤 Imports: {}", program.imports.len());
+                println!("📋 Statements: {}", program.statements.len());
+                
+                // Verify package declaration
+                assert!(program.package.is_some(), "Should have package declaration");
+                assert_eq!(program.package.unwrap().name, "main");
+                
+                // Should have at least one statement
+                assert!(program.statements.len() > 0, "Should have at least one statement");
+                
+                println!("🎉 Basic CURSED parsing test passed!");
+            },
+            Err(e) => {
+                println!("❌ Parsing failed: {}", e);
+                let errors = parser.errors();
+                if !errors.is_empty() {
+                    println!("Parser errors:");
+                    for error in errors {
+                        println!("  - {}", error);
+                    }
+                }
+                panic!("Basic parsing should succeed");
+            }
+        }
+    }
+
+    #[test]
+    fn test_function_parsing_cursed() {
+        println!("🧪 Testing CURSED function parsing...");
+        
+        let function_program = r#"
+slay testFunc() {
+    sus x = 42
+    yolo x
+}
+"#;
+        
+        let mut lexer = Lexer::new(function_program.to_string());
+        let tokens = lexer.tokenize().expect("Should tokenize successfully");
+        
+        let mut parser = Parser::from_tokens(tokens);
+        let result = parser.parse();
+        
+        match result {
+            Ok(program) => {
+                println!("✅ Function parsing successful!");
+                println!("📋 Statements: {}", program.statements.len());
+                
+                // Should have one function statement
+                assert_eq!(program.statements.len(), 1, "Should have exactly one statement");
+                
+                match &program.statements[0] {
+                    Statement::Function(func) => {
+                        assert_eq!(func.name, "testFunc", "Function name should be 'testFunc'");
+                        assert_eq!(func.parameters.len(), 0, "Function should have no parameters");
+                        assert!(func.body.len() > 0, "Function should have body statements");
+                        
+                        println!("📝 Function '{}' parsed with {} body statements", func.name, func.body.len());
+                        println!("🎉 Function parsing test passed!");
+                    },
+                    _ => panic!("Expected function statement, got {:?}", std::mem::discriminant(&program.statements[0])),
+                }
+            },
+            Err(e) => {
+                println!("❌ Function parsing failed: {}", e);
+                let errors = parser.errors();
+                if !errors.is_empty() {
+                    println!("Parser errors:");
+                    for error in errors {
+                        println!("  - {}", error);
+                    }
+                }
+                panic!("Function parsing should succeed");
+            }
+        }
+    }
+}

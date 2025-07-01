@@ -447,6 +447,147 @@ mod tests {
     }
 
     #[test]
+    fn test_cursed_demo_keywords() {
+        // Test that the demo program's key tokens are recognized
+        let demo_snippet = r#"
+vibe main
+slay calculateArea(radius) {
+    sus x = 42
+    yolo result
+}
+lowkey x > 5 {
+    vibez.spill("hello")
+}
+"#;
+        
+        let mut lexer = Lexer::new(demo_snippet.to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+        println!("🔍 Demo lexer test - found {} tokens", tokens.len());
+        
+        // Check that all key CURSED keywords are recognized
+        let expected_keywords = ["vibe", "main", "slay", "calculateArea", "sus", "yolo", "lowkey", "vibez"];
+        
+        for keyword in &expected_keywords {
+            let found = tokens.iter().any(|t| t.lexeme == *keyword);
+            println!("  Keyword '{}': {}", keyword, if found { "✅ Found" } else { "❌ Missing" });
+            assert!(found, "Expected keyword '{}' not found in tokens", keyword);
+        }
+        
+        // Check token types for specific keywords
+        let vibe_token = tokens.iter().find(|t| t.lexeme == "vibe");
+        assert!(vibe_token.is_some());
+        assert_eq!(vibe_token.unwrap().kind, TokenKind::Vibe);
+        
+        let slay_token = tokens.iter().find(|t| t.lexeme == "slay");
+        assert!(slay_token.is_some());
+        assert_eq!(slay_token.unwrap().kind, TokenKind::Slay);
+        
+        let sus_token = tokens.iter().find(|t| t.lexeme == "sus");
+        assert!(sus_token.is_some());
+        assert_eq!(sus_token.unwrap().kind, TokenKind::Sus);
+        
+        let yolo_token = tokens.iter().find(|t| t.lexeme == "yolo");
+        assert!(yolo_token.is_some());
+        assert_eq!(yolo_token.unwrap().kind, TokenKind::Yolo);
+        
+        let lowkey_token = tokens.iter().find(|t| t.lexeme == "lowkey");
+        assert!(lowkey_token.is_some());
+        assert_eq!(lowkey_token.unwrap().kind, TokenKind::Lowkey);
+        
+        println!("✅ All CURSED keywords recognized correctly!");
+    }
+
+    #[test]
+    fn test_full_demo_tokenization() {
+        // Test the actual demo program content
+        let demo_content = r#"vibe main
+
+fr fr This is a basic hello world demo in the CURSED language
+fr fr showcasing Gen Z slang syntax and practical functionality
+
+yeet "vibez"  fr fr import standard library
+
+slay calculateArea(radius snack) snack {
+    yolo 3.14159 * radius * radius
+}
+
+slay greetUser(name tea) {
+    vibez.spill("Hello, " + name + "! Welcome to CURSED!")
+}
+
+slay demonstrateBasics() {
+    fr fr Variable declarations
+    sus radius snack = 5.0
+    sus userName tea = "Developer"
+    sus isAwesome lit = based  fr fr true
+    
+    fr fr Function calls
+    sus area = calculateArea(radius)
+    greetUser(userName)
+    
+    fr fr Output
+    vibez.spill("Circle radius: " + radius)
+    vibez.spill("Circle area: " + area)
+    
+    fr fr Conditionals
+    lowkey isAwesome {
+        vibez.spill("This language is based!")
+    } highkey {
+        vibez.spill("Something is sus...")
+    }
+}
+
+slay main() {
+    vibez.spill("=== CURSED Language Demo ===")
+    demonstrateBasics()
+    vibez.spill("=== Demo Complete ===")
+}"#;
+        
+        let mut lexer = Lexer::new(demo_content.to_string());
+        let tokens = match lexer.tokenize() {
+            Ok(tokens) => tokens,
+            Err(e) => panic!("❌ Failed to tokenize demo program: {}", e),
+        };
+        
+        println!("🎉 Successfully tokenized full demo program!");
+        println!("📊 Total tokens: {}", tokens.len());
+        
+        // Count different types of tokens
+        let mut keyword_count = 0;
+        let mut identifier_count = 0;
+        let mut string_count = 0;
+        let mut number_count = 0;
+        
+        for token in &tokens {
+            match token.kind {
+                TokenKind::Vibe | TokenKind::Slay | TokenKind::Sus | TokenKind::Yolo |
+                TokenKind::Lowkey | TokenKind::Highkey | TokenKind::Yeet | TokenKind::Facts => {
+                    keyword_count += 1;
+                },
+                TokenKind::Identifier => identifier_count += 1,
+                TokenKind::String => string_count += 1,
+                TokenKind::Number => number_count += 1,
+                _ => {},
+            }
+        }
+        
+        println!("📋 Token breakdown:");
+        println!("  CURSED Keywords: {}", keyword_count);
+        println!("  Identifiers: {}", identifier_count);
+        println!("  Strings: {}", string_count);
+        println!("  Numbers: {}", number_count);
+        
+        // Verify we have a reasonable distribution
+        assert!(keyword_count >= 15, "Expected at least 15 CURSED keywords, got {}", keyword_count);
+        assert!(identifier_count >= 10, "Expected at least 10 identifiers, got {}", identifier_count);
+        assert!(string_count >= 5, "Expected at least 5 strings, got {}", string_count);
+        assert!(number_count >= 1, "Expected at least 1 number, got {}", number_count);
+        
+        println!("✅ Demo program tokenization test passed!");
+    }
+
+    #[test]
     fn test_number_literal() {
         let mut lexer = Lexer::new("123 45.67".to_string());
         let tokens = lexer.tokenize().unwrap();
