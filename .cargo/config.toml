@@ -3,8 +3,9 @@
 linker = "gcc"
 rustflags = [
     "-C", "linker=gcc",
-    "-C", "link-arg=-fuse-ld=bfd",
+    "-C", "link-arg=-fuse-ld=ld",
     "-C", "link-arg=-Wl,--disable-new-dtags",
+    "-C", "link-arg=-L/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib",
 ]
 
 # macOS-specific configuration  
