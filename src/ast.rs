@@ -343,6 +343,13 @@ pub enum Type {
     Function(Vec<Type>, Box<Type>),
     Array(Box<Type>),
     Custom(String),
+    // CURSED-specific types
+    Normie,              // Standard/basic integer type (normie)
+    Tea,                 // String/information type (tea)
+    Lit,                 // Boolean/truth type (lit)
+    Squad(Box<Type>),    // Array/collection type (squad)
+    Collab(String),      // Interface type (collab)
+    Dm(Box<Type>),       // Channel type (dm<T>)
 }
 
 /// AST visitor trait for traversing the AST
