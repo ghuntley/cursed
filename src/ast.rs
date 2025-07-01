@@ -130,13 +130,35 @@ pub struct IfStatement {
     pub else_branch: Option<Vec<Statement>>,
 }
 
+/// Generic type parameter
+#[derive(Debug, Clone)]
+pub struct TypeParameter {
+    pub name: String,
+    pub bounds: Vec<String>, // trait bounds like Clone, Debug, etc.
+}
+
+/// Where clause for additional generic constraints
+#[derive(Debug, Clone)]
+pub struct WhereClause {
+    pub constraints: Vec<TypeConstraint>,
+}
+
+/// Type constraint for where clauses
+#[derive(Debug, Clone)]
+pub struct TypeConstraint {
+    pub type_name: String,
+    pub bounds: Vec<String>,
+}
+
 /// Function statement
 #[derive(Debug, Clone)]
 pub struct FunctionStatement {
     pub name: String,
+    pub type_parameters: Vec<TypeParameter>, // Generic type parameters
     pub parameters: Vec<String>,
     pub body: Vec<Statement>,
     pub return_type: Option<String>,
+    pub where_clause: Option<WhereClause>, // Where clause for constraints
     pub visibility: Visibility,
 }
 

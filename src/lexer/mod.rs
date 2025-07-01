@@ -62,6 +62,7 @@ pub enum TokenKind {
     Basic,       // default case
     YeetError,   // throw error
     Catch,       // catch error
+    Where,       // where clause for generics
     Normie,      // integer type
     Tea,         // string type
     Cap,         // null/nil
@@ -102,9 +103,12 @@ pub enum TokenKind {
     RightBrace,
     LeftBracket,
     RightBracket,
+    LeftAngle,      // < (for generics)
+    RightAngle,     // > (for generics)
     Comma,
     Semicolon,
     Colon,
+    DoubleColon,    // :: (for paths and type annotations)
     Dot,
     
     // Special
@@ -161,7 +165,13 @@ impl Lexer {
             ']' => Ok(self.make_token(TokenKind::RightBracket, "]".to_string(), start_column)),
             ',' => Ok(self.make_token(TokenKind::Comma, ",".to_string(), start_column)),
             ';' => Ok(self.make_token(TokenKind::Semicolon, ";".to_string(), start_column)),
-            ':' => Ok(self.make_token(TokenKind::Colon, ":".to_string(), start_column)),
+            ':' => {
+                if self.match_char(':') {
+                    Ok(self.make_token(TokenKind::DoubleColon, "::".to_string(), start_column))
+                } else {
+                    Ok(self.make_token(TokenKind::Colon, ":".to_string(), start_column))
+                }
+            },
             '.' => Ok(self.make_token(TokenKind::Dot, ".".to_string(), start_column)),
             '=' => {
                 if self.match_char('=') {
@@ -183,14 +193,24 @@ impl Lexer {
                 } else if self.match_char('-') {
                     Ok(self.make_token(TokenKind::LeftArrow, "<-".to_string(), start_column))
                 } else {
-                    Ok(self.make_token(TokenKind::Less, "<".to_string(), start_column))
+                    // Check if this is a generic context (heuristic)
+                    if self.is_generic_context() {
+                        Ok(self.make_token(TokenKind::LeftAngle, "<".to_string(), start_column))
+                    } else {
+                        Ok(self.make_token(TokenKind::Less, "<".to_string(), start_column))
+                    }
                 }
             },
             '>' => {
                 if self.match_char('=') {
                     Ok(self.make_token(TokenKind::GreaterEqual, ">=".to_string(), start_column))
                 } else {
-                    Ok(self.make_token(TokenKind::Greater, ">".to_string(), start_column))
+                    // Check if this is a generic context (heuristic)
+                    if self.is_generic_context() {
+                        Ok(self.make_token(TokenKind::RightAngle, ">".to_string(), start_column))
+                    } else {
+                        Ok(self.make_token(TokenKind::Greater, ">".to_string(), start_column))
+                    }
                 }
             },
             '&' => {
@@ -344,6 +364,7 @@ impl Lexer {
             "basic" => TokenKind::Basic,
             "yeet_error" => TokenKind::YeetError,
             "catch" => TokenKind::Catch,
+            "where" => TokenKind::Where,
             "normie" => TokenKind::Normie,
             "tea" => TokenKind::Tea,
             "cap" => TokenKind::Cap,
@@ -402,6 +423,36 @@ impl Lexer {
 
     fn is_at_end(&self) -> bool {
         self.position >= self.chars.len()
+    }
+
+    /// Heuristic to determine if we're in a generic context
+    /// This helps distinguish between `<` as a comparison operator vs generic delimiter
+    fn is_generic_context(&self) -> bool {
+        // Look back to see if we're after identifiers that might be generic
+        if self.position < 2 {
+            return false;
+        }
+        
+        // Look for patterns like:
+        // - identifier< (e.g., "Vec<")
+        // - function_name< (e.g., "foo<")
+        // - ": " (e.g., "x: Vec<")
+        let mut check_pos = self.position;
+        
+        // Skip whitespace backwards
+        while check_pos > 0 && self.chars.get(check_pos - 1).map_or(false, |c| c.is_whitespace()) {
+            check_pos -= 1;
+        }
+        
+        if check_pos == 0 {
+            return false;
+        }
+        
+        // Check the character before whitespace
+        let prev_char = self.chars.get(check_pos - 1).copied().unwrap_or('\0');
+        
+        // Generic context if preceded by identifier characters, colon, or comma
+        prev_char.is_ascii_alphanumeric() || prev_char == '_' || prev_char == ':' || prev_char == ','
     }
 
     pub fn tokenize(&mut self) -> Result<Vec<Token>, CursedError> {

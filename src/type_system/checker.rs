@@ -910,6 +910,7 @@ mod tests {
         // Test function declaration
         let func_stmt = FunctionStatement {
             name: "test_func".to_string(),
+            type_parameters: vec![],
             parameters: vec!["x".to_string()],
             body: vec![
                 Statement::Return(ReturnStatement {
@@ -918,6 +919,7 @@ mod tests {
             ],
             visibility: crate::ast::Visibility::Private,
             return_type: None,
+            where_clause: None,
         };
         
         let result = checker.check_function_complete(&func_stmt).unwrap();
