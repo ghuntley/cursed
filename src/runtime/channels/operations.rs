@@ -108,6 +108,8 @@ pub struct SendOperation<T> {
     completed: Arc<Mutex<bool>>,
     /// Completion notifier
     completion_notify: Arc<Condvar>,
+    /// Execution flag to prevent double execution
+    executed: bool,
 }
 
 impl<T> SendOperation<T> {
@@ -119,6 +121,7 @@ impl<T> SendOperation<T> {
             start_time: Instant::now(),
             completed: Arc::new(Mutex::new(false)),
             completion_notify: Arc::new(Condvar::new()),
+            executed: false,
         }
     }
     
@@ -127,7 +130,13 @@ impl<T> SendOperation<T> {
         mut self,
         buffer: &Arc<B>,
     ) -> SendResult<T> {
-        let value = self.value.take().unwrap();
+        // Prevent double execution
+        if self.executed {
+            panic!("SendOperation executed twice - this is a programming error");
+        }
+        self.executed = true;
+        
+        let value = self.value.take().expect("Send operation value should be present");
         
         if !self.options.blocking {
             return self.try_send_nonblocking(buffer, value);
@@ -219,22 +228,28 @@ impl<T> SendOperation<T> {
     
     /// Mark operation as completed
     fn mark_completed(&self) {
-        *self.completed.lock().unwrap() = true;
+        if let Ok(mut completed) = self.completed.lock() {
+            *completed = true;
+        }
         self.completion_notify.notify_all();
     }
     
     /// Wait for operation completion
     pub fn wait_for_completion(&self) -> Result<(), ChannelError> {
-        let mut completed = self.completed.lock().unwrap();
+        let mut completed = self.completed.lock()
+            .map_err(|_| ChannelError::Closed)?;
         while !*completed {
-            completed = self.completion_notify.wait(completed).unwrap();
+            completed = self.completion_notify.wait(completed)
+                .map_err(|_| ChannelError::Closed)?;
         }
         Ok(())
     }
     
     /// Check if operation is completed
     pub fn is_completed(&self) -> bool {
-        *self.completed.lock().unwrap()
+        self.completed.lock()
+            .map(|completed| *completed)
+            .unwrap_or(true) // Assume completed if we can't lock
     }
 }
 
@@ -364,22 +379,28 @@ impl<T> ReceiveOperation<T> {
     
     /// Mark operation as completed
     fn mark_completed(&self) {
-        *self.completed.lock().unwrap() = true;
+        if let Ok(mut completed) = self.completed.lock() {
+            *completed = true;
+        }
         self.completion_notify.notify_all();
     }
     
     /// Wait for operation completion
     pub fn wait_for_completion(&self) -> Result<(), ChannelError> {
-        let mut completed = self.completed.lock().unwrap();
+        let mut completed = self.completed.lock()
+            .map_err(|_| ChannelError::Closed)?;
         while !*completed {
-            completed = self.completion_notify.wait(completed).unwrap();
+            completed = self.completion_notify.wait(completed)
+                .map_err(|_| ChannelError::Closed)?;
         }
         Ok(())
     }
     
     /// Check if operation is completed
     pub fn is_completed(&self) -> bool {
-        *self.completed.lock().unwrap()
+        self.completed.lock()
+            .map(|completed| *completed)
+            .unwrap_or(true) // Assume completed if we can't lock
     }
 }
 
@@ -511,7 +532,9 @@ impl<T> BatchReceiveOperation<T> {
     
     /// Get the currently received values
     pub fn get_received(&self) -> Vec<T> where T: Clone {
-        self.received_values.lock().unwrap().clone()
+        self.received_values.lock()
+            .map(|values| values.clone())
+            .unwrap_or_else(|_| Vec::new())
     }
 }
 
@@ -561,7 +584,9 @@ impl<T: Send, B: ChannelBuffer<T>> Iterator for RangeReceiveIterator<T, B> {
     type Item = Result<T, ChannelError>;
     
     fn next(&mut self) -> Option<Self::Item> {
-        if *self.completed.lock().unwrap() {
+        if self.completed.lock()
+            .map(|completed| *completed)
+            .unwrap_or(true) {
             return None;
         }
         
@@ -569,7 +594,9 @@ impl<T: Send, B: ChannelBuffer<T>> Iterator for RangeReceiveIterator<T, B> {
             Ok(Some(value)) => Some(Ok(value)),
             Ok(None) => {
                 if !self.options.blocking {
-                    *self.completed.lock().unwrap() = true;
+                    if let Ok(mut completed) = self.completed.lock() {
+            *completed = true;
+        }
                     return None;
                 }
                 
@@ -579,13 +606,17 @@ impl<T: Send, B: ChannelBuffer<T>> Iterator for RangeReceiveIterator<T, B> {
                         Ok(Some(value)) => return Some(Ok(value)),
                         Ok(None) => {
                             if self.buffer.is_closed() {
-                                *self.completed.lock().unwrap() = true;
+                                if let Ok(mut completed) = self.completed.lock() {
+            *completed = true;
+        }
                                 return None;
                             }
                             thread::sleep(Duration::from_millis(1));
                         }
                         Err(ChannelError::Closed) => {
-                            *self.completed.lock().unwrap() = true;
+                            if let Ok(mut completed) = self.completed.lock() {
+            *completed = true;
+        }
                             return None;
                         }
                         Err(e) => return Some(Err(e)),
@@ -593,7 +624,9 @@ impl<T: Send, B: ChannelBuffer<T>> Iterator for RangeReceiveIterator<T, B> {
                 }
             }
             Err(ChannelError::Closed) => {
-                *self.completed.lock().unwrap() = true;
+                if let Ok(mut completed) = self.completed.lock() {
+            *completed = true;
+        }
                 None
             }
             Err(e) => Some(Err(e)),

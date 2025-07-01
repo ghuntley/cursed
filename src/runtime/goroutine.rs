@@ -160,9 +160,9 @@ pub struct SchedulerConfig {
 impl Default for SchedulerConfig {
     fn default() -> Self {
         Self {
-            num_workers: if std::thread::available_parallelism()
+            num_workers: std::thread::available_parallelism()
                 .map(|n| n.get())
-                .unwrap_or(1) == 1 { 1 } else { std::thread::available_parallelism().unwrap().get() },
+                .unwrap_or(1),
             queue_capacity: 1024,
             steal_attempts: 3,
             max_goroutines_per_worker: 10000,
@@ -286,7 +286,8 @@ impl GoroutineScheduler {
 
         // Update statistics
         {
-            let mut stats = self.stats.lock().unwrap();
+            let mut stats = self.stats.lock()
+                .map_err(|_| CursedError::runtime_error("Failed to lock scheduler statistics"))?;
             stats.started_at = Some(Instant::now());
         }
 
@@ -351,7 +352,8 @@ impl GoroutineScheduler {
         // Update statistics
         self.active_count.fetch_add(1, Ordering::SeqCst);
         {
-            let mut stats = self.stats.lock().unwrap();
+            let mut stats = self.stats.lock()
+                .map_err(|_| CursedError::runtime_error("Failed to lock scheduler statistics for goroutine spawn"))?;
             stats.total_goroutines_spawned += 1;
             stats.current_active_goroutines += 1;
             if stats.current_active_goroutines > stats.peak_active_goroutines {
@@ -369,7 +371,8 @@ impl GoroutineScheduler {
         
         // For now, just update statistics
         {
-            let mut stats = self.stats.lock().unwrap();
+            let mut stats = self.stats.lock()
+                .map_err(|_| CursedError::runtime_error("Failed to lock scheduler statistics for yield operation"))?;
             stats.total_yield_operations += 1;
         }
 
@@ -383,15 +386,17 @@ impl GoroutineScheduler {
     }
 
     /// Get scheduler statistics
-    pub fn get_stats(&self) -> SchedulerStats {
-        let mut stats = self.stats.lock().unwrap().clone();
+    pub fn get_stats(&self) -> Result<SchedulerStats, CursedError> {
+        let mut stats = self.stats.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to lock scheduler statistics for reading"))?
+            .clone();
         stats.current_active_goroutines = self.active_count.load(Ordering::SeqCst);
         
         if let Some(started_at) = stats.started_at {
             stats.scheduler_uptime = started_at.elapsed();
         }
         
-        stats
+        Ok(stats)
     }
 
     /// Get the number of active goroutines
@@ -412,7 +417,9 @@ impl GoroutineScheduler {
         let mut min_load = usize::MAX;
 
         for (i, worker) in self.workers.iter().enumerate() {
-            let queue_len = worker.queue.lock().unwrap().len();
+            let queue_len = worker.queue.lock()
+                .map_err(|_| CursedError::runtime_error("Failed to lock worker queue for scheduling"))?
+                .len();
             if queue_len < min_load {
                 min_load = queue_len;
                 best_worker = i;
@@ -421,7 +428,9 @@ impl GoroutineScheduler {
 
         // Add to worker queue
         let worker = &self.workers[best_worker];
-        worker.queue.lock().unwrap().push_back(goroutine);
+        worker.queue.lock()
+            .map_err(|_| CursedError::runtime_error("Failed to lock worker queue for goroutine insertion"))?
+            .push_back(goroutine);
         worker.work_available.notify_one();
 
         Ok(())
@@ -445,8 +454,12 @@ impl GoroutineScheduler {
         while !worker.shutdown.load(Ordering::SeqCst) {
             // Try to get work from local queue
             let goroutine = {
-                let mut queue = worker.queue.lock().unwrap();
-                queue.pop_front()
+                if let Ok(mut queue) = worker.queue.lock() {
+                    queue.pop_front()
+                } else {
+                    // Continue if we can't acquire the lock
+                    None
+                }
             };
 
             if let Some(goroutine) = goroutine {
@@ -460,17 +473,21 @@ impl GoroutineScheduler {
                 if !Self::try_steal_work(&worker, &mut stats) {
                     // No work available, wait for notification
                     let idle_start = Instant::now();
-                    let _guard = worker.work_available.wait_timeout(
-                        worker.queue.lock().unwrap(),
-                        Duration::from_millis(10),
-                    ).unwrap();
+                    if let Ok(queue_guard) = worker.queue.lock() {
+                        let _ = worker.work_available.wait_timeout(
+                            queue_guard,
+                            Duration::from_millis(10),
+                        );
+                    }
                     stats.idle_time += idle_start.elapsed();
                 }
             }
         }
 
         // Update worker statistics
-        *worker.stats.lock().unwrap() = stats;
+        if let Ok(mut worker_stats) = worker.stats.lock() {
+            *worker_stats = stats;
+        }
     }
 
     fn execute_goroutine(worker_id: WorkerId, goroutine: Arc<Mutex<Goroutine>>) {
@@ -478,8 +495,11 @@ impl GoroutineScheduler {
         
         // Set goroutine state to running
         {
-            let goroutine_guard = goroutine.lock().unwrap();
-            goroutine_guard.set_state(GoroutineState::Running);
+            if let Ok(goroutine_guard) = goroutine.lock() {
+                goroutine_guard.set_state(GoroutineState::Running);
+            } else {
+                return; // Can't acquire lock, skip execution
+            }
         }
 
         // Execute the goroutine function
@@ -493,19 +513,21 @@ impl GoroutineScheduler {
 
         // Update goroutine state based on execution result
         {
-            let goroutine_guard = goroutine.lock().unwrap();
-            match result {
-                Ok(_) => goroutine_guard.set_state(GoroutineState::Completed),
-                Err(_) => goroutine_guard.set_state(GoroutineState::Panicked),
+            if let Ok(goroutine_guard) = goroutine.lock() {
+                match result {
+                    Ok(_) => goroutine_guard.set_state(GoroutineState::Completed),
+                    Err(_) => goroutine_guard.set_state(GoroutineState::Panicked),
+                }
             }
         }
 
         // Update execution time
         let execution_time = execution_start.elapsed();
         {
-            let mut goroutine_guard = goroutine.lock().unwrap();
-            goroutine_guard.total_runtime += execution_time;
-            goroutine_guard.last_run = Some(Instant::now());
+            if let Ok(mut goroutine_guard) = goroutine.lock() {
+                goroutine_guard.total_runtime += execution_time;
+                goroutine_guard.last_run = Some(Instant::now());
+            }
         }
     }
 
@@ -597,8 +619,11 @@ pub extern "C" fn cursed_yolo_goroutine() -> bool {
 #[no_mangle]
 pub extern "C" fn cursed_get_scheduler_stats() -> *mut std::ffi::c_void {
     if let Some(scheduler) = get_global_scheduler() {
-        let stats = scheduler.get_stats();
-        Box::into_raw(Box::new(stats)) as *mut std::ffi::c_void
+        if let Ok(stats) = scheduler.get_stats() {
+            Box::into_raw(Box::new(stats)) as *mut std::ffi::c_void
+        } else {
+            std::ptr::null_mut()
+        }
     } else {
         std::ptr::null_mut()
     }

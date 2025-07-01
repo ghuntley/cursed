@@ -334,7 +334,9 @@ impl FullTypeSystem {
                 .count(),
             generic_instantiations: generic_report.total_instantiations,
             cache_hit_rate: generic_report.cache_hit_rate,
-            type_constructors: self.hkt_system.get_instances("Array").map(|v| v.len()).unwrap_or(0),
+            type_constructors: self.hkt_system.get_instances("Array")
+                .map(|instances| instances.len())
+                .unwrap_or(0),
             trait_implementations: self.relationship_graph.trait_impls.values()
                 .map(|v| v.len())
                 .sum(),
