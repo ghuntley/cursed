@@ -21,19 +21,43 @@ pub mod advanced;
 pub mod matrix;
 pub mod big_mood;
 
-// Re-export key functions from submodules
-pub use basic::*;
-pub use trigonometry::*;
-pub use logarithmic::*;
-pub use constants::*;
-pub use special::*;
-pub use random::*;
-pub use statistics::*;
-pub use utilities::*;
-pub use complex::*;
-pub use advanced::*;
-pub use matrix::*;
-pub use big_mood::*;
+// Re-export key functions from submodules through modules to avoid conflicts
+pub mod basic_exports {
+    pub use super::basic::*;
+}
+pub mod trigonometry_exports {
+    pub use super::trigonometry::*;
+}
+pub mod logarithmic_exports {
+    pub use super::logarithmic::*;
+}
+pub mod constants_exports {
+    pub use super::constants::*;
+}
+pub mod special_exports {
+    pub use super::special::*;
+}
+pub mod random_exports {
+    pub use super::random::*;
+}
+pub mod statistics_exports {
+    pub use super::statistics::*;
+}
+pub mod utilities_exports {
+    pub use super::utilities::*;
+}
+pub mod complex_exports {
+    pub use super::complex::*;
+}
+pub mod advanced_exports {
+    pub use super::advanced::*;
+}
+pub mod matrix_exports {
+    pub use super::matrix::*;
+}
+pub mod big_mood_exports {
+    pub use super::big_mood::*;
+}
 
 /// Error types for mathematical operations
 #[derive(Debug, Clone, PartialEq)]

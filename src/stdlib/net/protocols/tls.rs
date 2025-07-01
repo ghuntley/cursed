@@ -19,9 +19,9 @@ impl Default for TlsConfig {
         Self {
             version: TlsVersion::V1_2,
             cipher_suites: vec![
-                CipherSuite::TLS_AES_256_GCM_SHA384,
-                CipherSuite::TLS_AES_128_GCM_SHA256,
-                CipherSuite::TLS_CHACHA20_POLY1305_SHA256,
+                CipherSuite::TlsAes256GcmSha384,
+                CipherSuite::TlsAes128GcmSha256,
+                CipherSuite::TlsChacha20Poly1305Sha256,
             ],
             certificate_path: None,
             private_key_path: None,
@@ -88,29 +88,29 @@ impl std::fmt::Display for TlsVersion {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CipherSuite {
     // TLS 1.3 cipher suites
-    TLS_AES_128_GCM_SHA256,
-    TLS_AES_256_GCM_SHA384,
-    TLS_CHACHA20_POLY1305_SHA256,
+    TlsAes128GcmSha256,
+    TlsAes256GcmSha384,
+    TlsChacha20Poly1305Sha256,
     
     // TLS 1.2 cipher suites
-    TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-    TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-    TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
-    TLS_RSA_WITH_AES_128_GCM_SHA256,
-    TLS_RSA_WITH_AES_256_GCM_SHA384,
+    TlsEcdheRsaWithAes128GcmSha256,
+    TlsEcdheRsaWithAes256GcmSha384,
+    TlsEcdheRsaWithChacha20Poly1305Sha256,
+    TlsRsaWithAes128GcmSha256,
+    TlsRsaWithAes256GcmSha384,
 }
 
 impl std::fmt::Display for CipherSuite {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CipherSuite::TLS_AES_128_GCM_SHA256 => write!(f, "TLS_AES_128_GCM_SHA256"),
-            CipherSuite::TLS_AES_256_GCM_SHA384 => write!(f, "TLS_AES_256_GCM_SHA384"),
-            CipherSuite::TLS_CHACHA20_POLY1305_SHA256 => write!(f, "TLS_CHACHA20_POLY1305_SHA256"),
-            CipherSuite::TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 => write!(f, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"),
-            CipherSuite::TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 => write!(f, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
-            CipherSuite::TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 => write!(f, "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"),
-            CipherSuite::TLS_RSA_WITH_AES_128_GCM_SHA256 => write!(f, "TLS_RSA_WITH_AES_128_GCM_SHA256"),
-            CipherSuite::TLS_RSA_WITH_AES_256_GCM_SHA384 => write!(f, "TLS_RSA_WITH_AES_256_GCM_SHA384"),
+            CipherSuite::TlsAes128GcmSha256 => write!(f, "TLS_AES_128_GCM_SHA256"),
+            CipherSuite::TlsAes256GcmSha384 => write!(f, "TLS_AES_256_GCM_SHA384"),
+            CipherSuite::TlsChacha20Poly1305Sha256 => write!(f, "TLS_CHACHA20_POLY1305_SHA256"),
+            CipherSuite::TlsEcdheRsaWithAes128GcmSha256 => write!(f, "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"),
+            CipherSuite::TlsEcdheRsaWithAes256GcmSha384 => write!(f, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"),
+            CipherSuite::TlsEcdheRsaWithChacha20Poly1305Sha256 => write!(f, "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"),
+            CipherSuite::TlsRsaWithAes128GcmSha256 => write!(f, "TLS_RSA_WITH_AES_128_GCM_SHA256"),
+            CipherSuite::TlsRsaWithAes256GcmSha384 => write!(f, "TLS_RSA_WITH_AES_256_GCM_SHA384"),
         }
     }
 }

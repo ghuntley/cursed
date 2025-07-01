@@ -6,11 +6,11 @@ use crate::error::CursedError;
 pub type StringResult<T> = Result<T, CursedError>;
 
 /// String processing utilities
-pub struct StringProcessor {
+pub struct StringValidationProcessor {
     case_sensitive: bool,
 }
 
-impl StringProcessor {
+impl StringValidationProcessor {
     /// Create a new string processor
     pub fn new() -> Self {
         Self {
@@ -44,7 +44,7 @@ impl StringProcessor {
     }
 }
 
-impl Default for StringProcessor {
+impl Default for StringValidationProcessor {
     fn default() -> Self {
         Self::new()
     }
@@ -52,7 +52,7 @@ impl Default for StringProcessor {
 
 /// Initialize string processing
 pub fn init_validation() -> StringResult<()> {
-    let processor = StringProcessor::new();
+    let processor = StringValidationProcessor::new();
     let test_result = processor.process("test")?;
     if test_result.is_empty() {
         return Err(CursedError::runtime_error("String processing test failed"));
@@ -63,7 +63,7 @@ pub fn init_validation() -> StringResult<()> {
 
 /// Test string functionality
 pub fn test_validation() -> StringResult<()> {
-    let processor = StringProcessor::new();
+    let processor = StringValidationProcessor::new();
     let result = processor.process("Hello, CURSED!")?;
     if result != "Hello, CURSED!" {
         return Err(CursedError::runtime_error("String test failed"));

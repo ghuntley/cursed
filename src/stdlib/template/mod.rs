@@ -24,14 +24,37 @@ pub mod template_security;
 pub mod template_streaming;
 pub mod template_bundler;
 
-pub use template_core::*;
-pub use template_syntax::*;
-pub use template_render::*;
-pub use template_filters::*;
-pub use template_html::*;
-pub use template_formats::*;
-pub use template_cache::*;
-pub use template_web::*;
-pub use template_security::*;
-pub use template_streaming::*;
-pub use template_bundler::*;
+// Use modules to avoid ambiguous glob re-exports
+pub mod core {
+    pub use super::template_core::*;
+}
+pub mod syntax {
+    pub use super::template_syntax::*;
+}
+pub mod render {
+    pub use super::template_render::*;
+}
+pub mod filters {
+    pub use super::template_filters::*;
+}
+pub mod html {
+    pub use super::template_html::*;
+}
+pub mod formats {
+    pub use super::template_formats::*;
+}
+pub mod cache {
+    pub use super::template_cache::*;
+}
+pub mod web {
+    pub use super::template_web::*;
+}
+pub mod security {
+    pub use super::template_security::*;
+}
+pub mod streaming {
+    pub use super::template_streaming::*;
+}
+pub mod bundler {
+    pub use super::template_bundler::*;
+}
