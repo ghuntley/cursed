@@ -29,7 +29,7 @@ pub mod process;
 
 // TODO: Enable these modules once they are implemented
 // pub mod prelude;
-// pub mod collections;
+pub mod collections;
 // pub mod io;
 // pub mod error;
 

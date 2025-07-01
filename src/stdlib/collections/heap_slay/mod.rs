@@ -34,32 +34,37 @@ pub mod core;
 pub mod types;
 
 // Re-export core functionality
-pub use core::{
+// pub use core::{
 // };
 
-// Re-export convenience types
-pub use types::{
+// Re-export convenience types  
+// pub use types::{
 // };
 
-use crate::error::{CursedError, CursedError};
+use crate::error::CursedError;
 
 /// Result type for heap operations
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+pub type HeapResult<T> = std::result::Result<T, CursedError>;
 
 /// Create a heap-specific error
 pub fn heap_error(message: &str) -> CursedError {
     CursedError::General(format!("heap_slay: {}", message))
+}
+
 /// Validate heap index bounds
 pub fn validate_index(index: i32, len: i32) -> HeapResult<()> {
     if index < 0 || index >= len {
         return Err(heap_error(&format!(
-            index, len
+            "Index {} out of bounds for heap of length {}", index, len
         )));
     }
     Ok(())
+}
+
 /// Validate that heap is not empty for pop operations
 pub fn validate_not_empty(len: i32) -> HeapResult<()> {
     if len == 0 {
         return Err(heap_error("cannot pop from empty heap"));
     }
     Ok(())
+}

@@ -27,12 +27,12 @@ impl NetworkHandler {
     
     /// Parse IP address
     pub fn parse_ip(&self, ip_str: &str) -> NetworkResult<std::net::IpAddr> {
-        ip_str.parse().map_err(|e| CursedError::runtime_error(&format!("IP parse error: {}", e)))
+        ip_str.parse().map_err(CursedError::from)
     }
     
     /// Parse socket address
     pub fn parse_socket_addr(&self, addr_str: &str) -> NetworkResult<std::net::SocketAddr> {
-        addr_str.parse().map_err(|e| CursedError::runtime_error(&format!("Socket address parse error: {}", e)))
+        addr_str.parse().map_err(CursedError::from)
     }
     
     /// Get localhost IP
