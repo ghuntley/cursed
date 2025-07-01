@@ -5,7 +5,10 @@
 
 use crate::ast::{Expression, Statement, Program, BinaryExpression, CallExpression, 
                  MemberAccessExpression, LetStatement, FunctionStatement, IfStatement, 
-                 WhileStatement, ReturnStatement, Literal};
+                 WhileStatement, ReturnStatement, Literal, StructStatement, InterfaceStatement,
+                 ChannelStatement, GoroutineStatement, SelectStatement, PanicStatement, 
+                 CatchStatement, ChannelSendExpression, ChannelReceiveExpression, 
+                 ChannelCreationExpression};
 use crate::error::CursedError;
 use crate::core::Type;
 use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext, 
@@ -103,6 +106,27 @@ impl TypeChecker {
             Statement::Return(return_stmt) => {
                 self.check_return_statement(return_stmt)
             }
+            Statement::Struct(struct_stmt) => {
+                self.check_struct_statement(struct_stmt)
+            }
+            Statement::Interface(interface_stmt) => {
+                self.check_interface_statement(interface_stmt)
+            }
+            Statement::Channel(channel_stmt) => {
+                self.check_channel_statement(channel_stmt)
+            }
+            Statement::Goroutine(goroutine_stmt) => {
+                self.check_goroutine_statement(goroutine_stmt)
+            }
+            Statement::Select(select_stmt) => {
+                self.check_select_statement(select_stmt)
+            }
+            Statement::Panic(panic_stmt) => {
+                self.check_panic_statement(panic_stmt)
+            }
+            Statement::Catch(catch_stmt) => {
+                self.check_catch_statement(catch_stmt)
+            }
             _ => Ok(TypeExpression::named("void")),
         }
     }
@@ -132,6 +156,15 @@ impl TypeChecker {
             }
             Expression::Map(pairs) => {
                 self.check_map_expression(pairs)
+            }
+            Expression::ChannelSend(channel_send) => {
+                self.check_channel_send_expression(channel_send)
+            }
+            Expression::ChannelReceive(channel_receive) => {
+                self.check_channel_receive_expression(channel_receive)
+            }
+            Expression::ChannelCreation(channel_creation) => {
+                self.check_channel_creation_expression(channel_creation)
             }
             _ => Ok(TypeExpression::named("unknown")),
         }
@@ -681,6 +714,136 @@ impl TypeChecker {
         } else {
             false
         }
+    }
+    
+    // CURSED-specific type checking methods
+    
+    fn check_struct_statement(&mut self, struct_stmt: &StructStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Register the struct type in the type system
+        let struct_type = TypeExpression::named(&struct_stmt.name);
+        
+        // TODO: Check field types and add struct definition to environment
+        // For now, return a basic struct type representation
+        
+        Ok(struct_type)
+    }
+    
+    fn check_interface_statement(&mut self, interface_stmt: &InterfaceStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Register the interface type in the type system
+        let interface_type = TypeExpression::named(&interface_stmt.name);
+        
+        // TODO: Check method signatures and add interface definition to environment
+        // For now, return a basic interface type representation
+        
+        Ok(interface_type)
+    }
+    
+    fn check_channel_statement(&mut self, _channel_stmt: &ChannelStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Channel statements typically declare channels
+        // Return a generic channel type for now
+        Ok(TypeExpression::named("channel"))
+    }
+    
+    fn check_goroutine_statement(&mut self, goroutine_stmt: &GoroutineStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Check the expression within the goroutine
+        self.check_expression(&goroutine_stmt.expression)?;
+        
+        // Goroutines don't return a value in the traditional sense
+        Ok(TypeExpression::named("void"))
+    }
+    
+    fn check_select_statement(&mut self, select_stmt: &SelectStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Check each case in the select statement
+        for case in &select_stmt.cases {
+            // Check the channel operation
+            self.check_expression(&case.operation)?;
+            
+            // Check the body statements
+            for stmt in &case.body {
+                self.check_statement(stmt)?;
+            }
+        }
+        
+        Ok(TypeExpression::named("void"))
+    }
+    
+    fn check_panic_statement(&mut self, panic_stmt: &PanicStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Check the panic message expression
+        let message_type = self.check_expression(&*panic_stmt.message)?;
+        
+        // Panic message should be a string
+        if !self.types_compatible(&message_type, &TypeExpression::named("string")) {
+            return Err(TypeCheckError {
+                message: "Panic message must be a string".to_string(),
+                location: None, // TODO: Add location support to AST
+                error_type: TypeErrorKind::TypeMismatch,
+            });
+        }
+        
+        // Panic statements don't return (they diverge)
+        Ok(TypeExpression::named("never"))
+    }
+    
+    fn check_catch_statement(&mut self, catch_stmt: &CatchStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Check the protected block (try equivalent)
+        for stmt in &catch_stmt.protected_block {
+            self.check_statement(stmt)?;
+        }
+        
+        // Check the recovery block if present (catch equivalent)
+        if let Some(recovery_block) = &catch_stmt.recovery_block {
+            for stmt in recovery_block {
+                self.check_statement(stmt)?;
+            }
+        }
+        
+        // Error variable handling could be added here if needed
+        
+        Ok(TypeExpression::named("void"))
+    }
+    
+    fn check_channel_send_expression(&mut self, channel_send: &ChannelSendExpression) -> Result<TypeExpression, TypeCheckError> {
+        // Check the channel expression
+        let channel_type = self.check_expression(&*channel_send.channel)?;
+        
+        // Check the value being sent
+        let value_type = self.check_expression(&*channel_send.value)?;
+        
+        // TODO: Validate that the value type matches the channel's element type
+        // For now, assume channel send operations are valid
+        
+        Ok(TypeExpression::named("void"))
+    }
+    
+    fn check_channel_receive_expression(&mut self, channel_receive: &ChannelReceiveExpression) -> Result<TypeExpression, TypeCheckError> {
+        // Check the channel expression
+        let channel_type = self.check_expression(&*channel_receive.channel)?;
+        
+        // TODO: Extract the element type from the channel type
+        // For now, return a generic type
+        
+        Ok(TypeExpression::named("unknown"))
+    }
+    
+    fn check_channel_creation_expression(&mut self, channel_creation: &ChannelCreationExpression) -> Result<TypeExpression, TypeCheckError> {
+        // Check the element type
+        let element_type = &channel_creation.element_type;
+        
+        // Check the capacity expression if provided
+        if let Some(ref capacity) = channel_creation.capacity {
+            let capacity_type = self.check_expression(&**capacity)?;
+            // Capacity should be an integer
+            if !self.types_compatible(&capacity_type, &TypeExpression::named("int")) {
+                return Err(TypeCheckError {
+                    message: "Channel capacity must be an integer".to_string(),
+                    location: None,
+                    error_type: TypeErrorKind::TypeMismatch,
+                });
+            }
+        }
+        
+        // Return a channel type with the specified element type
+        Ok(TypeExpression::named(&format!("dm<{}>", element_type)))
     }
 }
 
