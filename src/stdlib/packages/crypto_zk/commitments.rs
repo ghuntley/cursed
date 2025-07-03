@@ -2,8 +2,7 @@
 
 use crate::error::CursedError;
 use crate::stdlib::packages::crypto_zk::field_arithmetic::FieldElement;
-use crate::stdlib::packages::CryptoResult;
-use crate::stdlib::packages::CryptoHandler;
+use crate::stdlib::packages::{CryptoResult, CryptoError, CryptoHandler};
 
 /// Result type for crypto operations
 /// A Pedersen commitment for hiding values with perfect binding

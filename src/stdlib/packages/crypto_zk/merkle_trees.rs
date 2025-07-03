@@ -2,8 +2,7 @@
 
 use crate::error::CursedError;
 use std::collections::HashMap;
-use crate::stdlib::packages::CryptoResult;
-use crate::stdlib::packages::CryptoHandler;
+use crate::stdlib::packages::{CryptoResult, CryptoError, CryptoHandler};
 
 /// Result type for crypto operations
 /// A Merkle tree for efficient data integrity verification

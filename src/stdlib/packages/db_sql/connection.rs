@@ -2,7 +2,7 @@
 
 use crate::error::CursedError;
 use std::io::{self, Read, Write};
-use crate::stdlib::packages::{IOResult, IOHandler, IOError};
+use crate::stdlib::packages::{IOError, IOHandler, IOResult};
 
 /// Result type for I/O operations
 /// I/O operations handler
@@ -13,7 +13,7 @@ pub fn init_connection() -> IOResult<()> {
     let mut cursor = std::io::Cursor::new(test_data);
     let result = handler.read_all(&mut cursor)?;
     if result != test_data {
-        return Err(CursedError::runtime_error(&"I/O test failed".to_string()));
+        return Err(IOError::Other("I/O test failed".to_string()));
     }
     println!("📁 I/O processing (connection) initialized");
     Ok(())
@@ -27,7 +27,7 @@ pub fn test_connection() -> IOResult<()> {
     handler.write_string(&mut buffer, test_string)?;
     let result = handler.read_string(std::io::Cursor::new(&buffer))?;
     if result != test_string {
-        return Err(CursedError::runtime_error(&"I/O string test failed".to_string()));
+        return Err(IOError::Other("I/O string test failed".to_string()));
     }
     Ok(())
 }

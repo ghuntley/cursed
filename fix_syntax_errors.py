@@ -1,51 +1,65 @@
 #!/usr/bin/env python3
 
 import os
-import re
 
 def fix_syntax_errors():
-    """Fix syntax errors introduced by regex replacements"""
+    """Fix syntax errors in the files we modified"""
     
     files_to_fix = [
-        "src/stdlib/packages/crypto_kdf/mod.rs",
-        "src/stdlib/packages/crypto_hash_advanced/mod.rs"
+        'src/stdlib/packages/db_nosql/redis.rs',
+        'src/stdlib/packages/db_nosql/mongodb.rs',
     ]
     
     for file_path in files_to_fix:
-        if os.path.exists(file_path):
-            with open(file_path, "r") as f:
-                content = f.read()
-                
-            # Fix duplicate pub keywords
-            content = re.sub(r'pub\s+pub\s+', 'pub ', content)
-            
-            # Fix orphaned pub keywords
-            content = re.sub(r'^pub\s*$', '', content, flags=re.MULTILINE)
-            
-            # Fix empty use statements
-            lines = content.split('\n')
-            fixed_lines = []
-            for line in lines:
-                if line.strip() == 'pub' or line.strip() == 'use ;':
-                    continue
-                if 'pub use *;' in line:
-                    continue
-                fixed_lines.append(line)
-                
-            content = '\n'.join(fixed_lines)
-            
-            # Remove empty lines that were left behind
-            content = re.sub(r'\n\s*\n\s*\n', '\n\n', content)
-            
-            with open(file_path, "w") as f:
-                f.write(content)
-                
-            print(f"✓ Fixed syntax errors in {file_path}")
-
-def main():
-    print("Fixing syntax errors...")
-    fix_syntax_errors()
-    print("Done!")
+        if not os.path.exists(file_path):
+            continue
+        
+        print(f"Fixing syntax in {file_path}...")
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Fix missing closing parentheses and semicolons
+        content = content.replace(
+            'CursedError::from(ModuleError::Other("Connection is closed".to_string()))',
+            'CursedError::from(ModuleError::Other("Connection is closed".to_string())))'
+        )
+        
+        # Fix any other similar patterns
+        content = content.replace(
+            'return Err(CursedError::from(ModuleError::Other(',
+            'return Err(CursedError::from(ModuleError::Other('
+        )
+        
+        # Fix specific broken lines
+        lines = content.split('\n')
+        for i, line in enumerate(lines):
+            if 'CursedError::from(ModuleError::Other(' in line and not line.strip().endswith(');'):
+                if line.strip().endswith('))'):
+                    lines[i] = line.replace('))', ')));')
+                elif line.strip().endswith(')'):
+                    lines[i] = line + ');'
+        
+        content = '\n'.join(lines)
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        print(f"Fixed syntax in {file_path}")
 
 if __name__ == "__main__":
-    main()
+    fix_syntax_errors()
+    
+    # Test compilation
+    import subprocess
+    print("\nTesting compilation...")
+    result = subprocess.run(["cargo", "check"], capture_output=True, text=True)
+    
+    error_count = result.stderr.count('error:')
+    print(f"Compilation errors: {error_count}")
+    
+    if error_count > 0:
+        print("\nFirst few errors:")
+        for line in result.stderr.split('\n')[:20]:
+            if line.strip():
+                print(line)
