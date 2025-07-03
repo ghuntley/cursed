@@ -20,9 +20,10 @@ declare i8* @cursed_channel_receive(i8*)
 
 define i32 @main() {
 entry:
-  ; Expression result: %0
+  %1 = getelementptr inbounds [20 x i8], [20 x i8]* @.str.2, i64 0, i64 0
+  call i32 @puts(i8* %1)
+  %2 = add i32 0, 0
+  ; Expression result: %2
   ret i32 0
 }
 
-  %0 = call i32 @vibez_spill(  %1 = getelementptr inbounds [26 x i8], [26 x i8]* @.str.2, i64 0, i64 0
-i32 %1)
