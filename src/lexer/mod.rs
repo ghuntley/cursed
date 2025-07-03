@@ -65,6 +65,7 @@ pub enum TokenKind {
     Where,       // where clause for generics
     Normie,      // integer type
     Tea,         // string type
+    Txt,         // string type (alias)
     Cap,         // null/nil
     NoCap,       // not null
     Truth,       // true
@@ -367,6 +368,7 @@ impl Lexer {
             "where" => TokenKind::Where,
             "normie" => TokenKind::Normie,
             "tea" => TokenKind::Tea,
+            "txt" => TokenKind::Txt,
             "cap" => TokenKind::Cap,
             "nocap" => TokenKind::NoCap,
             "main_character" => TokenKind::MainCharacter,

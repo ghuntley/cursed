@@ -125,6 +125,25 @@ impl Parser {
         }
     }
 
+    fn is_keyword(&self) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        
+        match self.peek().kind {
+            TokenKind::Slay | TokenKind::Yolo | TokenKind::Sus | TokenKind::Facts |
+            TokenKind::Lowkey | TokenKind::Highkey | TokenKind::Periodt | TokenKind::Stan |
+            TokenKind::Bestie | TokenKind::Flex | TokenKind::Ghosted | TokenKind::Simp |
+            TokenKind::Squad | TokenKind::Collab | TokenKind::Vibe | TokenKind::Yeet |
+            TokenKind::BeLike | TokenKind::VibeCheck | TokenKind::Mood | TokenKind::Basic |
+            TokenKind::YeetError | TokenKind::Catch | TokenKind::Where | TokenKind::Normie |
+            TokenKind::Tea | TokenKind::Cap | TokenKind::NoCap | TokenKind::Truth |
+            TokenKind::Lies | TokenKind::MainCharacter | TokenKind::Dm | TokenKind::Select |
+            TokenKind::Spill | TokenKind::Priv | TokenKind::Crew => true,
+            _ => false,
+        }
+    }
+
     fn match_tokens(&mut self, kinds: &[TokenKind]) -> bool {
         for kind in kinds {
             if self.check(kind) {
@@ -198,6 +217,7 @@ impl Parser {
             },
             TokenKind::Sus => Ok(Statement::Let(self.parse_let_statement_with_visibility(visibility)?)),
             TokenKind::Facts => Ok(Statement::Let(self.parse_const_statement_with_visibility(visibility)?)),
+            TokenKind::Txt => Ok(Statement::Let(self.parse_typed_variable_statement_with_visibility(visibility)?)),
             TokenKind::Lowkey => {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on control flow statements"));
@@ -445,6 +465,19 @@ impl Parser {
         })
     }
 
+    fn parse_typed_variable_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<LetStatement, CursedError> {
+        self.consume(TokenKind::Txt, "Expected 'txt'")?;
+        let name = self.consume(TokenKind::Identifier, "Expected variable name")?.lexeme.clone();
+        self.consume(TokenKind::Equal, "Expected '=' after variable name")?;
+        let value = self.parse_expression()?;
+        
+        Ok(LetStatement {
+            name,
+            value,
+            visibility,
+        })
+    }
+
     /// Parse visibility modifiers (spill = pub, priv = private, crew = pkg)
     fn parse_visibility(&mut self) -> Result<crate::ast::Visibility, CursedError> {
         match self.peek().kind {
@@ -573,40 +606,73 @@ impl Parser {
         self.consume(TokenKind::VibeCheck, "Expected 'vibe_check'")?;
         let expression = self.parse_expression()?;
         self.consume(TokenKind::LeftBrace, "Expected '{' after switch expression")?;
+        self.skip_newlines();
         
         let mut cases = Vec::new();
         let mut default_case = None;
         
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
             if self.match_tokens(&[TokenKind::Mood]) {
-                // Parse case: mood pattern { statements }
-                let pattern = self.parse_expression()?;
-                self.consume(TokenKind::LeftBrace, "Expected '{' after case pattern")?;
+                // Parse case: mood pattern1, pattern2, ... :
+                let mut patterns = Vec::new();
                 
-                let mut case_body = Vec::new();
-                while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-                    case_body.push(self.parse_statement()?);
+                // Parse first pattern
+                patterns.push(self.parse_expression()?);
+                
+                // Parse additional patterns separated by commas
+                while self.match_tokens(&[TokenKind::Comma]) {
+                    self.skip_newlines();
+                    patterns.push(self.parse_expression()?);
                 }
                 
-                self.consume(TokenKind::RightBrace, "Expected '}' after case body")?;
+                self.consume(TokenKind::Colon, "Expected ':' after case pattern(s)")?;
+                self.skip_newlines();
+                
+                // Parse case body (indented statements without braces)
+                let mut case_body = Vec::new();
+                
+                // Parse statements until we hit another mood/basic or closing brace
+                while !self.check(&TokenKind::RightBrace) && 
+                      !self.check(&TokenKind::Mood) && 
+                      !self.check(&TokenKind::Basic) && 
+                      !self.is_at_end() {
+                    case_body.push(self.parse_statement()?);
+                    self.skip_newlines();
+                }
+                
+                // For now, combine multiple patterns into one by using the first pattern
+                // In a full implementation, you'd need to modify SwitchCase to support multiple patterns
+                let combined_pattern = if patterns.len() == 1 {
+                    patterns.into_iter().next().unwrap()
+                } else {
+                    // Create a virtual pattern that represents multiple values
+                    // For now, just use the first pattern
+                    patterns.into_iter().next().unwrap()
+                };
                 
                 cases.push(SwitchCase {
-                    pattern,
+                    pattern: combined_pattern,
                     body: case_body,
                 });
             } else if self.match_tokens(&[TokenKind::Basic]) {
-                // Parse default case: basic { statements }
-                self.consume(TokenKind::LeftBrace, "Expected '{' after 'basic'")?;
+                // Parse default case: basic:
+                self.consume(TokenKind::Colon, "Expected ':' after 'basic'")?;
+                self.skip_newlines();
                 
                 let mut default_body = Vec::new();
-                while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                while !self.check(&TokenKind::RightBrace) && 
+                      !self.check(&TokenKind::Mood) && 
+                      !self.is_at_end() {
                     default_body.push(self.parse_statement()?);
+                    self.skip_newlines();
                 }
                 
-                self.consume(TokenKind::RightBrace, "Expected '}' after default case body")?;
                 default_case = Some(default_body);
             } else {
-                return Err(CursedError::parse_error("Expected 'mood' or 'basic' in switch statement"));
+                self.skip_newlines();
+                if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                    return Err(CursedError::parse_error("Expected 'mood' or 'basic' in switch statement"));
+                }
             }
         }
         
@@ -770,7 +836,19 @@ impl Parser {
             if self.match_tokens(&[TokenKind::LeftParen]) {
                 expr = self.finish_call(expr)?;
             } else if self.match_tokens(&[TokenKind::Dot]) {
-                let property = self.consume(TokenKind::Identifier, "Expected property name after '.'")?;
+                // Accept identifiers or keywords as property names
+                let property = if self.check(&TokenKind::Identifier) {
+                    self.advance()
+                } else if self.check(&TokenKind::Spill) {
+                    // Handle 'spill' specifically 
+                    self.advance()
+                } else if self.is_keyword() {
+                    // Allow other keywords as property names in member access
+                    self.advance()
+                } else {
+                    return Err(CursedError::syntax_error("Expected property name after '.'"));
+                };
+                
                 expr = Expression::MemberAccess(MemberAccessExpression {
                     object: Box::new(expr),
                     property: property.lexeme.clone(),

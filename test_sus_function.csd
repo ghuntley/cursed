@@ -1,6 +1,6 @@
 vibe main
 
 slay main() {
-    txt x = "hello";
+    sus x = "hello";
     yolo 0;
 }
