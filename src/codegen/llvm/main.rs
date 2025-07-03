@@ -164,8 +164,8 @@ impl LlvmCodeGenerator {
             }
         }
         
-        // Add main function if not present
-        if !self.ir_code.contains("define i32 @main(") {
+        // Add main function if not present (check for any return type)
+        if !self.ir_code.contains("@main(") {
             self.ir_code.push_str("\ndefine i32 @main() {\n");
             self.ir_code.push_str("  ret i32 0\n");
             self.ir_code.push_str("}\n");
@@ -218,7 +218,9 @@ declare i8* @cursed_channel_receive(i8*)
             Statement::Return(return_stmt) => {
                 if let Some(val) = &return_stmt.value {
                     let return_reg = self.generate_expression(val)?;
-                    self.ir_code.push_str(&format!("  ret i32 {}\n", return_reg));
+                    // Determine return type based on expression
+                    let return_type = self.infer_expression_type(val)?;
+                    self.ir_code.push_str(&format!("  ret {} {}\n", return_type, return_reg));
                 } else {
                     self.ir_code.push_str("  ret i32 0\n");
                 }
@@ -1162,6 +1164,33 @@ impl LlvmCodeGenerator {
         }
         
         None
+    }
+
+    /// Infer the LLVM type for an expression
+    fn infer_expression_type(&self, expr: &Expression) -> Result<String, CursedError> {
+        match expr {
+            Expression::String(_) => Ok("i8*".to_string()),
+            Expression::Integer(_) => Ok("i32".to_string()),
+            Expression::Boolean(_) => Ok("i1".to_string()),
+            Expression::Identifier(_) => Ok("i32".to_string()), // Default for now
+            Expression::Binary(_) => Ok("i32".to_string()), // Default for now
+            Expression::Unary(_) => Ok("i32".to_string()), // Default for now
+            Expression::Call(_) => Ok("i32".to_string()), // Default for now
+            Expression::Literal(lit) => self.infer_literal_type(lit),
+            _ => Ok("i32".to_string()), // Default fallback
+        }
+    }
+
+    /// Infer the LLVM type for a literal
+    fn infer_literal_type(&self, literal: &Literal) -> Result<String, CursedError> {
+        match literal {
+            Literal::String(_) => Ok("i8*".to_string()),
+            Literal::Integer(_) => Ok("i32".to_string()),
+            Literal::Float(_) => Ok("double".to_string()),
+            Literal::Boolean(_) => Ok("i1".to_string()),
+            Literal::Null => Ok("i8*".to_string()),
+            Literal::Nil => Ok("i8*".to_string()),
+        }
     }
 }
 
