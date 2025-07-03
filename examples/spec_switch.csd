@@ -1,16 +1,16 @@
 vibe main
 
 slay main() {
-    txt day = "Monday";
+    sus day = "Monday"
     
     vibe_check day {
         mood "Monday", "Tuesday":
-            vibez.spill("Start of week");
+            vibez.spill("Start of week")
         mood "Friday":
-            vibez.spill("End of week");
+            vibez.spill("End of week")
         basic:
-            vibez.spill("Mid-week");
+            vibez.spill("Mid-week")
     }
     
-    yolo 0;
+    yolo 0
 }
