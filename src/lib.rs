@@ -518,6 +518,171 @@ pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) 
     })
 }
 
+/// Compile CURSED source file to executable binary
+pub fn compile(source_file: &str, output_file: &str) -> crate::error::Result<()> {
+    tracing::info!("Compiling CURSED source file {} to executable {}", source_file, output_file);
+    
+    // Read the source file
+    let source = std::fs::read_to_string(source_file)
+        .map_err(|e| CursedError::Io(e.to_string()))?;
+    
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| CursedError::Io(e.to_string()))?;
+    
+    rt.block_on(async {
+        // Create package manager for dependency resolution
+        let package_manager_config = crate::package_manager::PackageManagerConfig::default();
+        let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
+            crate::package_manager::PackageManager::new(package_manager_config)
+                .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
+        ));
+        
+        // Initialize LLVM code generator with optimizations for executable output
+        let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
+        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+        
+        codegen.initialize_package_integration(package_manager, package_config)?;
+        codegen.enable_release_optimizations()?;
+        
+        // Generate LLVM IR from CURSED source
+        tracing::info!("Generating LLVM IR for compilation...");
+        let ir = codegen.compile_with_packages(&source, Some(std::path::Path::new(source_file))).await?;
+        
+        // Compile IR to executable binary
+        compile_ir_to_executable(&ir, output_file)?;
+        
+        tracing::info!("Successfully compiled {} to executable {}", source_file, output_file);
+        Ok(())
+    })
+}
+
+/// Compile LLVM IR to executable binary using system linker
+fn compile_ir_to_executable(ir: &str, output_file: &str) -> crate::error::Result<()> {
+    use std::process::Command;
+    use std::io::Write;
+    
+    tracing::info!("Compiling LLVM IR to executable binary...");
+    
+    // Write IR to temporary file
+    let temp_ir_file = format!("{}.ll", output_file);
+    let temp_obj_file = format!("{}.o", output_file);
+    
+    std::fs::write(&temp_ir_file, ir)
+        .map_err(|e| CursedError::Io(format!("Failed to write IR file: {}", e)))?;
+    
+    // Check if LLVM tools are available
+    let llc_result = Command::new("llc")
+        .arg("--version")
+        .output();
+    
+    if llc_result.is_err() {
+        return Err(CursedError::CompilerError(
+            "LLVM compiler (llc) not found. Please install LLVM tools.".to_string()
+        ));
+    }
+    
+    // Compile IR to object file using llc
+    tracing::info!("Compiling IR to object file with llc...");
+    let llc_output = Command::new("llc")
+        .arg("-filetype=obj")
+        .arg("-o")
+        .arg(&temp_obj_file)
+        .arg(&temp_ir_file)
+        .output()
+        .map_err(|e| CursedError::Io(format!("Failed to run llc: {}", e)))?;
+    
+    if !llc_output.status.success() {
+        let error_msg = String::from_utf8_lossy(&llc_output.stderr);
+        return Err(CursedError::CompilerError(format!("llc compilation failed: {}", error_msg)));
+    }
+    
+    // Link object file to executable using gcc/clang
+    tracing::info!("Linking object file to executable...");
+    let linker_result = link_object_to_executable(&temp_obj_file, output_file);
+    
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&temp_ir_file);
+    let _ = std::fs::remove_file(&temp_obj_file);
+    
+    linker_result
+}
+
+/// Link object file to executable using system linker
+fn link_object_to_executable(obj_file: &str, output_file: &str) -> crate::error::Result<()> {
+    use std::process::Command;
+    
+    // Try different linkers in order of preference
+    let linkers = ["clang", "gcc", "ld"];
+    
+    for linker in &linkers {
+        let result = Command::new(linker)
+            .arg("--version")
+            .output();
+            
+        if result.is_ok() {
+            tracing::info!("Using {} as linker", linker);
+            return link_with_linker(linker, obj_file, output_file);
+        }
+    }
+    
+    Err(CursedError::CompilerError(
+        "No suitable linker found. Please install clang, gcc, or ld.".to_string()
+    ))
+}
+
+/// Link with specific linker
+fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::error::Result<()> {
+    use std::process::Command;
+    
+    let mut cmd = Command::new(linker);
+    
+    match linker {
+        "clang" | "gcc" => {
+            cmd.arg("-o")
+               .arg(output_file)
+               .arg(obj_file)
+               .arg("-lc")  // Link with C standard library
+               .arg("-lm")  // Link with math library
+               .arg("-lpthread"); // Link with pthread for goroutines
+        }
+        "ld" => {
+            cmd.arg("-o")
+               .arg(output_file)
+               .arg(obj_file)
+               .arg("-lc")
+               .arg("-dynamic-linker")
+               .arg("/lib64/ld-linux-x86-64.so.2"); // Linux dynamic linker
+        }
+        _ => {
+            return Err(CursedError::CompilerError(format!("Unsupported linker: {}", linker)));
+        }
+    }
+    
+    tracing::info!("Running linker command: {:?}", cmd);
+    let link_output = cmd.output()
+        .map_err(|e| CursedError::Io(format!("Failed to run linker {}: {}", linker, e)))?;
+    
+    if !link_output.status.success() {
+        let error_msg = String::from_utf8_lossy(&link_output.stderr);
+        return Err(CursedError::CompilerError(format!("Linking failed with {}: {}", linker, error_msg)));
+    }
+    
+    // Make the output file executable
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let metadata = std::fs::metadata(output_file)
+            .map_err(|e| CursedError::Io(format!("Failed to get file metadata: {}", e)))?;
+        let mut permissions = metadata.permissions();
+        permissions.set_mode(0o755); // rwxr-xr-x
+        std::fs::set_permissions(output_file, permissions)
+            .map_err(|e| CursedError::Io(format!("Failed to set executable permissions: {}", e)))?;
+    }
+    
+    tracing::info!("Successfully linked executable: {}", output_file);
+    Ok(())
+}
+
 /// Format CURSED source code
 pub fn format(source: &str) -> crate::error::Result<String> {
     tracing::info!("Formatting CURSED source code");
