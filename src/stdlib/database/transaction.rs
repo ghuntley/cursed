@@ -53,7 +53,7 @@ impl Tx {
         if let Some(ref tx) = self.transaction {
             tx.execute(query).map_err(|e| e)
         } else {
-            Err(CursedError::runtime_error(&"Transaction not available".to_string()))
+            Err(CursedError::runtime_error(&"Transaction not available"))
         }
     }
     
@@ -81,7 +81,7 @@ impl TransactionManager {
     /// Begin a new transaction
     pub fn begin(&mut self) -> TransactionResult<&mut Tx> {
         if self.current_transaction.is_some() {
-            return Err(CursedError::runtime_error(&"Transaction already active".to_string()));
+            return Err(CursedError::runtime_error(&"Transaction already active"));
         }
         
         if let Some(ref conn) = self.connection {
@@ -90,7 +90,7 @@ impl TransactionManager {
             println!("🔄 Transaction begun");
             Ok(self.current_transaction.as_mut().unwrap())
         } else {
-            Err(CursedError::runtime_error(&"No connection available".to_string()))
+            Err(CursedError::runtime_error(&"No connection available"))
         }
     }
     

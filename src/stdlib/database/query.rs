@@ -75,7 +75,7 @@ impl QueryExecutor {
                 Err(e) => Err(e),
             }
         } else {
-            Err(CursedError::runtime_error(&"No database connection available".to_string()))
+            Err(CursedError::runtime_error(&"No database connection available"))
         }
     }
     
@@ -354,7 +354,7 @@ impl QueryBuilder {
     
     fn build_select(&self) -> QueryResult<String> {
         let table = self.table.as_ref()
-            .ok_or_else(|| IOError::Other("Table name required".to_string()))?;
+            .ok_or_else(|| CursedError::Io("Table name required".to_string()))?;
         
         let columns = if self.columns.is_empty() {
             "*".to_string()
@@ -402,10 +402,10 @@ impl QueryBuilder {
     
     fn build_insert(&self) -> QueryResult<String> {
         let table = self.table.as_ref()
-            .ok_or_else(|| IOError::Other("Table name required".to_string()))?;
+            .ok_or_else(|| CursedError::Io("Table name required".to_string()))?;
         
         if self.columns.is_empty() {
-            return Err(CursedError::runtime_error(&"Columns required for INSERT".to_string()));
+            return Err(CursedError::runtime_error(&"Columns required for INSERT"));
         }
         
         let columns = self.columns.join(", ");
@@ -416,10 +416,10 @@ impl QueryBuilder {
     
     fn build_update(&self) -> QueryResult<String> {
         let table = self.table.as_ref()
-            .ok_or_else(|| IOError::Other("Table name required".to_string()))?;
+            .ok_or_else(|| CursedError::Io("Table name required".to_string()))?;
         
         if self.columns.is_empty() {
-            return Err(CursedError::runtime_error(&"Columns required for UPDATE".to_string()));
+            return Err(CursedError::runtime_error(&"Columns required for UPDATE"));
         }
         
         let set_clauses = self.columns.iter()
@@ -439,7 +439,7 @@ impl QueryBuilder {
     
     fn build_delete(&self) -> QueryResult<String> {
         let table = self.table.as_ref()
-            .ok_or_else(|| IOError::Other("Table name required".to_string()))?;
+            .ok_or_else(|| CursedError::Io("Table name required".to_string()))?;
         
         let mut query = format!("DELETE FROM {}", table);
         

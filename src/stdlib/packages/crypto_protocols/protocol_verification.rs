@@ -15,7 +15,7 @@ pub fn init_protocol_verification() -> IOResult<()> {
     let mut cursor = std::io::Cursor::new(test_data);
     let result = handler.read_all(&mut cursor)?;
     if result != test_data {
-        return Err(CursedError::runtime_error(&"I/O test failed".to_string()));
+        return Err(IOError::Other("I/O test failed".to_string()).into());
     }
     println!("📁 I/O processing (protocol_verification) initialized");
     Ok(())
@@ -29,7 +29,7 @@ pub fn test_protocol_verification() -> IOResult<()> {
     handler.write_string(&mut buffer, test_string)?;
     let result = handler.read_string(std::io::Cursor::new(&buffer))?;
     if result != test_string {
-        return Err(CursedError::runtime_error(&"I/O string test failed".to_string()));
+        return Err(IOError::Other("I/O string test failed".to_string()).into());
     }
     Ok(())
 }

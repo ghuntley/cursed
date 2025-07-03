@@ -113,7 +113,7 @@ where
             .map_err(|_| ModuleError::Other("Failed to acquire lock".to_string()))?;
         
         if *total >= self.config.max_connections {
-            return Err(CursedError::runtime_error(&"Pool is at maximum capacity".to_string()));
+            return Err(CursedError::runtime_error(&"Pool is at maximum capacity"));
         }
         
         let mut connections = self.connections.lock()
@@ -160,7 +160,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
+            return Err(CursedError::runtime_error(&"Module is disabled"));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -182,7 +182,7 @@ pub fn init_pool() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
+        return Err(CursedError::runtime_error(&"Module test failed"));
     }
     println!("⚙️  Module processing (pool) initialized");
     Ok(())
@@ -193,7 +193,7 @@ pub fn test_pool() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
+        return Err(CursedError::runtime_error(&"Module test failed"));
     }
     Ok(())
 }

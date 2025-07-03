@@ -91,7 +91,7 @@ impl PostgresPool {
                 drop(connections);
                 self.create_new_connection()
             } else {
-                Err(CursedError::runtime_error(&"Pool exhausted - no connections available".to_string()))
+                Err(CursedError::runtime_error(&"Pool exhausted - no connections available"))
             }
         }
     }

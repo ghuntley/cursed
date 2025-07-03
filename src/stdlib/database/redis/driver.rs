@@ -42,7 +42,7 @@ impl RedisDriver {
     /// Connect to Redis
     pub fn connect(&self) -> RedisResult<RedisConnection> {
         if !self.is_initialized {
-            return Err(CursedError::runtime_error(&"Driver not initialized".to_string()));
+            return Err(CursedError::runtime_error(&"Driver not initialized"));
         }
         
         let connection_string = format!("redis://{}:{}/{}", 

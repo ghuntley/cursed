@@ -148,7 +148,7 @@ impl VectorCommitment {
     
     pub fn get_commitment(&self, index: usize) -> CryptoResult<&PedersenCommitment> {
         self.commitments.get(index)
-            .ok_or_else(|| CryptoError::Other("Index out of bounds".to_string()))
+            .ok_or_else(|| CryptoError::InvalidInput)
     }
     
     pub fn verify_commitment(&self, index: usize) -> CryptoResult<bool> {
@@ -198,7 +198,7 @@ impl KateCommitment {
         setup_points: Vec<FieldElement>,
     ) -> CryptoResult<Self> {
         if polynomial_coefficients.is_empty() {
-            return Err(CursedError::runtime_error(&"Empty polynomial".to_string()));
+            return Err(CryptoError::InvalidInput);
         }
         
         let modulus = polynomial_coefficients[0].modulus.clone();
@@ -298,7 +298,7 @@ pub fn test_commitments() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     Ok(())
 }

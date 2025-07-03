@@ -91,7 +91,7 @@ impl CustomMapping {
     pub fn map_from_sql(&self, value: &str) -> Result<String, CursedError> {
         match &self.reverse_mapper {
             Some(mapper) => mapper(value),
-            None => Err(CursedError::runtime_error(&"Reverse mapping not available".to_string())),
+            None => Err(CursedError::runtime_error(&"Reverse mapping not available")),
         }
     }
 }
@@ -321,7 +321,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
+            return Err(CursedError::runtime_error(&"Module is disabled"));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -343,7 +343,7 @@ pub fn init_mapping() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
+        return Err(CursedError::runtime_error(&"Module test failed"));
     }
     println!("⚙️  Module processing (mapping) initialized");
     Ok(())
@@ -354,7 +354,7 @@ pub fn test_mapping() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
+        return Err(CursedError::runtime_error(&"Module test failed"));
     }
     Ok(())
 }

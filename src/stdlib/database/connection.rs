@@ -106,7 +106,7 @@ impl QueryResult {
     /// Get the last insert ID
     pub fn last_insert_id(&self) -> DatabaseResult<i64> {
         self.last_insert_id
-            .ok_or_else(|| IOError::Other("No last insert ID available".to_string()))
+            .ok_or_else(|| CursedError::Io("No last insert ID available".to_string()))
     }
     
     /// Convert to iterator
@@ -191,7 +191,7 @@ impl DatabaseConnection for InMemoryDatabase {
                 Ok(QueryResult::new(Vec::new())) // Invalid query
             }
         } else {
-            Err(CursedError::runtime_error(&"Query operation expected SELECT statement".to_string()))
+            Err(CursedError::runtime_error(&"Query operation expected SELECT statement"))
         }
     }
     
@@ -205,7 +205,7 @@ impl DatabaseConnection for InMemoryDatabase {
                 tables.insert(table_name, Vec::new());
                 Ok(QueryResult::with_affected_rows(0, None))
             } else {
-                Err(CursedError::runtime_error(&"Invalid CREATE TABLE statement".to_string()))
+                Err(CursedError::runtime_error(&"Invalid CREATE TABLE statement"))
             }
         } else if sql_upper.starts_with("INSERT") {
             // For demo purposes, just return success
@@ -214,7 +214,7 @@ impl DatabaseConnection for InMemoryDatabase {
             // For demo purposes, just return success
             Ok(QueryResult::with_affected_rows(1, None))
         } else {
-            Err(CursedError::runtime_error(&"Unsupported SQL operation".to_string()))
+            Err(CursedError::runtime_error(&"Unsupported SQL operation"))
         }
     }
     

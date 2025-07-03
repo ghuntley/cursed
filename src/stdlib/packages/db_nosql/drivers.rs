@@ -90,28 +90,28 @@ impl GenericNoSqlConnection {
 impl NoSqlConnection for GenericNoSqlConnection {
     fn execute(&self, query: &str) -> ModuleResult<String> {
         if !self.connected {
-            return Err(CursedError::runtime_error(&"Connection is closed".to_string()));
+            return Err(CursedError::runtime_error(&"Connection is closed"));
         }
         Ok(format!("Executed query: {}", query))
     }
     
     fn insert(&self, collection: &str, document: &str) -> ModuleResult<String> {
         if !self.connected {
-            return Err(CursedError::runtime_error(&"Connection is closed".to_string()));
+            return Err(CursedError::runtime_error(&"Connection is closed"));
         }
         Ok(format!("Inserted document into {}: {}", collection, document))
     }
     
     fn find(&self, collection: &str, query: &str) -> ModuleResult<Vec<String>> {
         if !self.connected {
-            return Err(CursedError::runtime_error(&"Connection is closed".to_string()));
+            return Err(CursedError::runtime_error(&"Connection is closed"));
         }
         Ok(vec![format!("Found in {}: {}", collection, query)])
     }
     
     fn update(&self, collection: &str, filter: &str, update: &str) -> ModuleResult<u64> {
         if !self.connected {
-            return Err(CursedError::runtime_error(&"Connection is closed".to_string()));
+            return Err(CursedError::runtime_error(&"Connection is closed"));
         }
         println!("Updated {} where {} with {}", collection, filter, update);
         Ok(1)
@@ -119,7 +119,7 @@ impl NoSqlConnection for GenericNoSqlConnection {
     
     fn delete(&self, collection: &str, filter: &str) -> ModuleResult<u64> {
         if !self.connected {
-            return Err(CursedError::runtime_error(&"Connection is closed".to_string()));
+            return Err(CursedError::runtime_error(&"Connection is closed"));
         }
         println!("Deleted from {} where {}", collection, filter);
         Ok(1)
@@ -158,7 +158,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
+            return Err(CursedError::runtime_error(&"Module is disabled"));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -180,7 +180,7 @@ pub fn init_drivers() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
+        return Err(CursedError::runtime_error(&"Module test failed"));
     }
     println!("⚙️  Module processing (drivers) initialized");
     Ok(())
@@ -191,7 +191,7 @@ pub fn test_drivers() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
+        return Err(CursedError::runtime_error(&"Module test failed"));
     }
     Ok(())
 }

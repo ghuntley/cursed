@@ -24,7 +24,7 @@ pub fn test_rsa() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     Ok(())
 }
@@ -85,7 +85,7 @@ pub enum KeyFormat {
 
 // Missing RSA functions
 pub fn rsa_generate_keypair(key_size: usize) -> CryptoResult<CursedRsaKeyPair> {
-    let handler = CryptoHandler::new().key_size(key_size / 8);
+    let handler = CryptoHandler::new();
     let private_key = handler.generate_key()?;
     let public_key = handler.generate_key()?;
     

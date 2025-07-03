@@ -95,7 +95,7 @@ impl MySqlDriver {
     /// Create a new connection
     pub fn connect(&self) -> MySqlDriverResult<MySqlConnection> {
         if !self.is_initialized {
-            return Err(CursedError::runtime_error(&"Driver not initialized".to_string()));
+            return Err(CursedError::runtime_error(&"Driver not initialized"));
         }
         
         let connection_string = format!(

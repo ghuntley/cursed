@@ -1,4 +1,7 @@
 /// Production-ready Advanced Cryptographic Hash Functions Module
+
+use crate::stdlib::packages::CryptoError;
+
 pub mod algorithms;
 pub mod blake3;
 pub mod collision_resistance;
@@ -126,7 +129,7 @@ pub fn hash_password(password: &str) -> crate::error::Result<()> {
     // Use default password hashing configuration
     let _password_len = password.len();
     if _password_len < 8 {
-        return Err(CursedError::validation_error("Password too short"));
+        return Err(CursedError::validation_error("Password too short (minimum 8 characters)"));
     }
     Ok(())
 }
@@ -135,7 +138,7 @@ pub fn hash_password(password: &str) -> crate::error::Result<()> {
 pub fn verify_password(password: &str, hash: &str) -> crate::error::Result<()> {
     // Basic password verification
     if password.is_empty() || hash.is_empty() {
-        return Err(CursedError::validation_error("Invalid password or hash"));
+        return Err(CursedError::validation_error("Password and hash cannot be empty"));
     }
     Ok(())
 }

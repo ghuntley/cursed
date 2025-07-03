@@ -132,7 +132,7 @@ pub fn test_field_arithmetic() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CryptoError::Other("Crypto hash test failed".to_string()));
+        return Err(CryptoError::Other("Crypto hash test failed".to_string().into()));
     }
     Ok(())
 }

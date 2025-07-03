@@ -38,7 +38,7 @@ impl Assertions {
         if condition {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is false"))
         }
     }
 
@@ -55,7 +55,7 @@ impl Assertions {
     pub fn assert_some<T: Debug>(option: Option<T>) -> TestResult<T> {
         match option {
             Some(value) => Ok(value),
-            None => Err(CursedError::runtime_error(&"Assertion failed: expected Some, got None".to_string())),
+            None => Err(CursedError::runtime_error("Assertion failed: expected Some, got None")),
         }
     }
 
@@ -63,9 +63,9 @@ impl Assertions {
     pub fn assert_none<T: Debug>(option: Option<T>) -> TestResult<()> {
         match option {
             None => Ok(()),
-            Some(value) => Err(CryptoError::Other(&format!(
+            Some(value) => Err(CryptoError::Other(format!(
                 "Assertion failed: expected None, got Some({:?})", value
-            ))),
+            )).into()),
         }
     }
 
@@ -73,9 +73,9 @@ impl Assertions {
     pub fn assert_ok<T: Debug, E: Debug>(result: Result<T, E>) -> TestResult<T> {
         match result {
             Ok(value) => Ok(value),
-            Err(error) => Err(CryptoError::Other(&format!(
+            Err(error) => Err(CryptoError::Other(format!(
                 "Assertion failed: expected Ok, got Err({:?})", error
-            ))),
+            )).into()),
         }
     }
 
@@ -83,9 +83,9 @@ impl Assertions {
     pub fn assert_err<T: Debug, E: Debug>(result: Result<T, E>) -> TestResult<E> {
         match result {
             Err(error) => Ok(error),
-            Ok(value) => Err(CryptoError::Other(&format!(
+            Ok(value) => Err(CryptoError::Other(format!(
                 "Assertion failed: expected Err, got Ok({:?})", value
-            ))),
+            )).into()),
         }
     }
 
@@ -171,9 +171,9 @@ impl Assertions {
         if collection.is_empty() {
             Ok(())
         } else {
-            Err(CryptoError::Other(&format!(
+            Err(CryptoError::Other(format!(
                 "Assertion failed: collection is not empty (length: {})", collection.len()
-            )))
+            )).into())
         }
     }
 
@@ -182,9 +182,9 @@ impl Assertions {
         if collection.len() == expected_len {
             Ok(())
         } else {
-            Err(CryptoError::Other(&format!(
+            Err(CryptoError::Other(format!(
                 "Assertion failed: expected length {}, got {}", expected_len, collection.len()
-            )))
+            )).into())
         }
     }
 }

@@ -104,7 +104,7 @@ pub fn init_rng() -> Result<(), CursedError> {
 
 /// Quick access to generate secure random bytes
 pub fn generate_random_bytes(size: usize) -> Result<Vec<u8>, CursedError> {
-    random_bytes(size)
+    random_bytes(size).map_err(|e| CursedError::runtime_error(&format!("Crypto error: {:?}", e)))
 }
 
 /// Quick access to generate secure random number

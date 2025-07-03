@@ -57,7 +57,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is false"))
         }
     }
     
@@ -69,7 +69,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is true"))
         }
     }
     

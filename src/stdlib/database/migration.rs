@@ -61,10 +61,10 @@ impl Migration {
     /// Validate the migration
     pub fn validate(&self) -> MigrationResult<()> {
         if self.id.is_empty() {
-            return Err(CursedError::runtime_error(&"Migration ID cannot be empty".to_string()));
+            return Err(CursedError::runtime_error(&"Migration ID cannot be empty"));
         }
         if self.up_sql.is_empty() {
-            return Err(CursedError::runtime_error(&"Migration up SQL cannot be empty".to_string()));
+            return Err(CursedError::runtime_error(&"Migration up SQL cannot be empty"));
         }
         Ok(())
     }
