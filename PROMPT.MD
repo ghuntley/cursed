@@ -17,3 +17,5 @@
 
 
 9999999999. ALWAYS KEEP @fix_plan.md up to do date with your learnings using a subagent. Especially after wrapping up/finishing your turn.
+
+99999999999. If you discover a way to resolve the linker problems make sure you permantley fix the problem. IMMEDIATELY.
