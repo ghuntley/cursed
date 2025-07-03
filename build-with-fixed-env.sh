@@ -4,8 +4,19 @@
 # This script ensures the correct environment variables are set for building
 # the CURSED compiler with proper libffi linking.
 
+# Find the correct nix store paths dynamically
+LIBFFI_PATH=$(find /nix/store -maxdepth 1 -name "*libffi*" -type d | head -1)
+NCURSES_PATH=$(find /nix/store -maxdepth 1 -name "*ncurses*" -type d | grep -v "man" | grep -v "dev" | head -1)
+LIBXML2_PATH=$(find /nix/store -maxdepth 1 -name "*libxml2*" -type d | head -1)
+LLVM_PATH=$(dirname $(find /nix/store -name "llc" -type f 2>/dev/null | grep -v kernel | head -1))
+
+# Add LLVM tools to PATH
+if [ -n "$LLVM_PATH" ]; then
+    export PATH="$LLVM_PATH:$PATH"
+fi
+
 # Set the correct RUSTFLAGS to avoid libffi linking issues
-export RUSTFLAGS="-L /nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib -L /nix/store/0z4hrkxczlw3scrjvky5c73705k19q4lxs-devenv-profile/lib -L /nix/store/09b5m303v4d52wjry30xsabj65vnhkni-libffi-3.4.7/lib -L /nix/store/0z4hrksbdrwv9xb8ycjk3rq9ppmw0350-libxml2-2.13.5/lib -C link-arg=-Wl,-rpath,/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib -C link-arg=-Wl,-rpath,/nix/store/7xfkxczlw3scrjvky5c73705k19q4lxs-devenv-profile/lib -C link-arg=-Wl,-rpath,/nix/store/09b5m303v4d52wjry30xsabj65vnhkni-libffi-3.4.7/lib -C link-arg=-Wl,-rpath,/nix/store/0z4hrksbdrwv9xb8ycjk3rq9ppmw0350-libxml2-2.13.5/lib -C linker=gcc"
+export RUSTFLAGS="-L ${NCURSES_PATH}/lib -L ${LIBFFI_PATH}/lib -L ${LIBXML2_PATH}/lib -C link-arg=-Wl,-rpath,${NCURSES_PATH}/lib -C link-arg=-Wl,-rpath,${LIBFFI_PATH}/lib -C link-arg=-Wl,-rpath,${LIBXML2_PATH}/lib -C linker=gcc"
 
 echo "🔧 Building CURSED compiler with fixed linker environment..."
 echo "📦 RUSTFLAGS: $RUSTFLAGS"

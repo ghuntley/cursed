@@ -113,6 +113,7 @@ pub enum TokenKind {
     Dot,
     
     // Special
+    At,             // @ (for pointer types)
     Newline,
     Eof,
 }
@@ -174,6 +175,7 @@ impl Lexer {
                 }
             },
             '.' => Ok(self.make_token(TokenKind::Dot, ".".to_string(), start_column)),
+            '@' => Ok(self.make_token(TokenKind::At, "@".to_string(), start_column)),
             '=' => {
                 if self.match_char('=') {
                     Ok(self.make_token(TokenKind::EqualEqual, "==".to_string(), start_column))
