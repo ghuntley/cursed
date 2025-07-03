@@ -570,20 +570,43 @@ fn compile_ir_to_executable(ir: &str, output_file: &str) -> crate::error::Result
     std::fs::write(&temp_ir_file, ir)
         .map_err(|e| CursedError::Io(format!("Failed to write IR file: {}", e)))?;
     
-    // Check if LLVM tools are available
-    let llc_result = Command::new("llc")
-        .arg("--version")
-        .output();
+    // Find llc in common locations
+    let llc_locations = vec![
+        "llc".to_string(), // Try PATH first
+        "/nix/store/013b6qj9g2n2pmxcllnch9drrf9m0zwf-llvm-17.0.6/bin/llc".to_string(),
+        "/nix/store/s5a4igx64mngxrz3d4s2mxz6764mdv47-llvm-17.0.6/bin/llc".to_string(),
+        "/nix/store/8qpf7pp0a71psdngm5nxc64jahw0vlwl-llvm-19.1.7/bin/llc".to_string(),
+        "/nix/store/vnxd8nqfibccfbczxwd9li5hw42k5kmw-llvm-19.1.6/bin/llc".to_string(),
+        "/usr/bin/llc".to_string(),
+        "/usr/local/bin/llc".to_string(),
+    ];
     
-    if llc_result.is_err() {
-        return Err(CursedError::CompilerError(
-            "LLVM compiler (llc) not found. Please install LLVM tools.".to_string()
-        ));
+    let mut llc_path = None;
+    for location in &llc_locations {
+        tracing::debug!("Trying llc at: {}", location);
+        let llc_result = Command::new(location)
+            .arg("--version")
+            .output();
+        
+        if llc_result.is_ok() {
+            tracing::info!("Found llc at: {}", location);
+            llc_path = Some(location.clone());
+            break;
+        } else {
+            tracing::debug!("llc not found at: {}", location);
+        }
     }
+    
+    let llc_command = match llc_path {
+        Some(path) => path,
+        None => return Err(CursedError::CompilerError(
+            "LLVM compiler (llc) not found. Please install LLVM tools.".to_string()
+        ))
+    };
     
     // Compile IR to object file using llc
     tracing::info!("Compiling IR to object file with llc...");
-    let llc_output = Command::new("llc")
+    let llc_output = Command::new(&llc_command)
         .arg("-filetype=obj")
         .arg("-o")
         .arg(&temp_obj_file)
