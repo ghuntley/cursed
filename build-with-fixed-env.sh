@@ -8,7 +8,7 @@
 LIBFFI_PATH=$(find /nix/store -maxdepth 1 -name "*libffi*" -type d | head -1)
 NCURSES_PATH=$(find /nix/store -maxdepth 1 -name "*ncurses*" -type d | grep -v "man" | grep -v "dev" | head -1)
 LIBXML2_PATH=$(find /nix/store -maxdepth 1 -name "*libxml2*" -type d | head -1)
-LLVM_PATH=$(dirname $(find /nix/store -name "llc" -type f 2>/dev/null | grep -v kernel | head -1))
+LLVM_PATH=$(dirname $(find /nix/store -name "llc" -type f 2>/dev/null | grep -v kernel | grep -v fhsenv | head -1))
 
 # Add LLVM tools to PATH
 if [ -n "$LLVM_PATH" ]; then

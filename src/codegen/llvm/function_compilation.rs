@@ -95,6 +95,9 @@ impl FunctionCompiler {
     pub fn compile_statement(&mut self, statement: &Statement) -> Result<String, CursedError> {
         let mut ir = String::new();
         
+        // Remember the current IR length to capture any new IR generated during compilation
+        let ir_start = self.ir_code.len();
+        
         match statement {
             Statement::Expression(expr) => {
                 let expr_reg = self.compile_expression(expr)?;
@@ -155,6 +158,19 @@ impl FunctionCompiler {
             _ => {
                 ir.push_str("  ; Unsupported statement\n");
             }
+        }
+        
+        // Include any new IR that was accumulated during expression compilation
+        let new_ir = &self.ir_code[ir_start..];
+        if !new_ir.is_empty() {
+            // Insert the accumulated IR before the statement comment
+            let mut final_ir = String::new();
+            final_ir.push_str(new_ir);
+            final_ir.push_str(&ir);
+            ir = final_ir;
+            
+            // Clear the accumulated IR to prevent duplication
+            self.ir_code.truncate(ir_start);
         }
         
         Ok(ir)
@@ -262,13 +278,20 @@ impl FunctionCompiler {
         
         match function {
             Expression::Identifier(func_name) => {
+                // First compile all arguments to generate their intermediate IR
+                let mut arg_regs = Vec::new();
+                for arg in arguments {
+                    let arg_reg = self.compile_expression(arg)?;
+                    arg_regs.push(arg_reg);
+                }
+                
+                // Now generate the function call with compiled arguments
                 self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
                 
-                for (i, arg) in arguments.iter().enumerate() {
+                for (i, arg_reg) in arg_regs.iter().enumerate() {
                     if i > 0 {
                         self.ir_code.push_str(", ");
                     }
-                    let arg_reg = self.compile_expression(arg)?;
                     self.ir_code.push_str(&format!("i32 {}", arg_reg));
                 }
                 
@@ -277,14 +300,26 @@ impl FunctionCompiler {
             Expression::MemberAccess(member_expr) => {
                 // Handle method calls
                 if let Expression::Identifier(obj_name) = &*member_expr.object {
+                    // Special handling for stdlib methods like vibez.spill
+                    if obj_name == "vibez" {
+                        return self.compile_vibez_method_call(&member_expr.property, arguments);
+                    }
+                    
+                    // First compile all arguments to generate their intermediate IR
+                    let mut arg_regs = Vec::new();
+                    for arg in arguments {
+                        let arg_reg = self.compile_expression(arg)?;
+                        arg_regs.push(arg_reg);
+                    }
+                    
+                    // Now generate the method call with compiled arguments
                     let func_name = format!("{}_{}", obj_name, member_expr.property);
                     self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
                     
-                    for (i, arg) in arguments.iter().enumerate() {
+                    for (i, arg_reg) in arg_regs.iter().enumerate() {
                         if i > 0 {
                             self.ir_code.push_str(", ");
                         }
-                        let arg_reg = self.compile_expression(arg)?;
                         self.ir_code.push_str(&format!("i32 {}", arg_reg));
                     }
                     
@@ -297,6 +332,40 @@ impl FunctionCompiler {
         }
         
         Ok(result_reg)
+    }
+
+    /// Compile vibez method calls (stdlib output methods)
+    fn compile_vibez_method_call(&mut self, method: &str, arguments: &[Expression]) -> Result<String, CursedError> {
+        match method {
+            "spill" => {
+                // Handle vibez.spill() calls
+                for arg in arguments {
+                    let arg_reg = self.compile_expression(arg)?;
+                    match arg {
+                        Expression::String(_) => {
+                            self.ir_code.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
+                        },
+                        _ => {
+                            // For non-string types, use printf with %d format
+                            let format_reg = self.next_register();
+                            let const_name = format!("@.str.{}", self.variable_counter);
+                            self.variable_counter += 1;
+                            
+                            // Add format string constant (this would normally be added to constants section)
+                            self.ir_code.push_str(&format!("  {} = getelementptr inbounds [4 x i8], [4 x i8]* @.str.fmt.d, i64 0, i64 0\n", format_reg));
+                            self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_reg, arg_reg));
+                        }
+                    }
+                }
+                // Return a dummy register for the result (vibez.spill returns void conceptually)
+                let result_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = add i32 0, 0\n", result_reg));
+                Ok(result_reg)
+            },
+            _ => {
+                return Err(CursedError::CompilerError(format!("Unknown vibez method: {}", method)));
+            }
+        }
     }
 
     /// Compile member access expressions

@@ -242,14 +242,20 @@ impl ExpressionCompiler {
         
         match function {
             Expression::Identifier(func_name) => {
-                // Regular function call
+                // First compile all arguments to generate their intermediate IR
+                let mut arg_regs = Vec::new();
+                for arg in arguments {
+                    let arg_reg = self.compile_expression(arg)?;
+                    arg_regs.push(arg_reg);
+                }
+                
+                // Now generate the function call with compiled arguments
                 self.ir_buffer.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
                 
-                for (i, arg) in arguments.iter().enumerate() {
+                for (i, arg_reg) in arg_regs.iter().enumerate() {
                     if i > 0 {
                         self.ir_buffer.push_str(", ");
                     }
-                    let arg_reg = self.compile_expression(arg)?;
                     self.ir_buffer.push_str(&format!("i32 {}", arg_reg));
                 }
                 
@@ -263,15 +269,21 @@ impl ExpressionCompiler {
                         return self.compile_vibez_method_call(&member_expr.property, arguments);
                     }
                     
-                    // Regular method call
+                    // First compile all arguments to generate their intermediate IR
+                    let mut arg_regs = Vec::new();
+                    for arg in arguments {
+                        let arg_reg = self.compile_expression(arg)?;
+                        arg_regs.push(arg_reg);
+                    }
+                    
+                    // Now generate the method call with compiled arguments
                     let method_name = format!("{}_{}", obj_name, member_expr.property);
                     self.ir_buffer.push_str(&format!("  {} = call i32 @{}(", result_reg, method_name));
                     
-                    for (i, arg) in arguments.iter().enumerate() {
+                    for (i, arg_reg) in arg_regs.iter().enumerate() {
                         if i > 0 {
                             self.ir_buffer.push_str(", ");
                         }
-                        let arg_reg = self.compile_expression(arg)?;
                         self.ir_buffer.push_str(&format!("i32 {}", arg_reg));
                     }
                     
@@ -442,11 +454,17 @@ impl ExpressionCompiler {
             "spillf" => {
                 // Handle vibez.spillf() calls
                 if !arguments.is_empty() {
-                    let format_arg = self.compile_expression(&arguments[0])?;
-                    self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}", format_arg));
-                    
-                    for arg in &arguments[1..] {
+                    // First compile all arguments to generate their intermediate IR
+                    let mut arg_regs = Vec::new();
+                    for arg in arguments {
                         let arg_reg = self.compile_expression(arg)?;
+                        arg_regs.push(arg_reg);
+                    }
+                    
+                    // Now generate the printf call with compiled arguments
+                    self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}", arg_regs[0]));
+                    
+                    for arg_reg in &arg_regs[1..] {
                         self.ir_buffer.push_str(&format!(", i32 {}", arg_reg));
                     }
                     
