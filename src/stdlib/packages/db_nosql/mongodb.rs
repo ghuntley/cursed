@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use crate::stdlib::packages::ModuleError;
+use crate::stdlib::packages::IOError;
 
 /// Result type for mongodb operations
 pub type ModuleResult<T> = Result<T, CursedError>;
@@ -31,9 +32,9 @@ impl ModuleHandler {
     }
     
     /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
+    pub fn process(&self, data: &str) -> Result<String, CursedError> {
         if !self.enabled {
-            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
+            return Err(CursedError::from(ModuleError::Other("Module is disabled".to_string())));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -51,22 +52,22 @@ impl Default for ModuleHandler {
 }
 
 /// Initialize mongodb processing
-pub fn init_mongodb() -> ModuleResult<()> {
+pub fn init_mongodb() -> Result<(), CursedError> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
+        return Err(CursedError::from(ModuleError::Other("Module test failed".to_string())));
     }
     println!("⚙️  Module processing (mongodb) initialized");
     Ok(())
 }
 
 /// Test mongodb functionality
-pub fn test_mongodb() -> ModuleResult<()> {
+pub fn test_mongodb() -> Result<(), CursedError> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
+        return Err(CursedError::from(ModuleError::Other("Module test failed".to_string())));
     }
     Ok(())
 }
