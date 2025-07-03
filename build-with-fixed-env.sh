@@ -10,9 +10,10 @@ NCURSES_PATH=$(find /nix/store -maxdepth 1 -name "*ncurses*" -type d | grep -v "
 LIBXML2_PATH=$(find /nix/store -maxdepth 1 -name "*libxml2*" -type d | head -1)
 LLVM_PATH=$(dirname $(find /nix/store -name "llc" -type f 2>/dev/null | grep -v kernel | grep -v fhsenv | head -1))
 
-# Add LLVM tools to PATH
+# Add LLVM tools to PATH for compilation
 if [ -n "$LLVM_PATH" ]; then
     export PATH="$LLVM_PATH:$PATH"
+    echo "🔧 LLVM tools path: $LLVM_PATH"
 fi
 
 # Set the correct RUSTFLAGS to avoid libffi linking issues
@@ -34,7 +35,8 @@ if [ $BUILD_EXIT_CODE -eq 0 ]; then
     echo ""
     echo "🚀 Usage examples:"
     echo "  ./target/x86_64-unknown-linux-gnu/debug/cursed test_hello_cursed.csd"
-    echo "  ./target/x86_64-unknown-linux-gnu/debug/cursed --compile test.csd -o output"
+    echo "  export PATH=\"$LLVM_PATH:\$PATH\" && ./target/x86_64-unknown-linux-gnu/debug/cursed --compile test.csd -o output"
+    echo "  export PATH=\"$LLVM_PATH:\$PATH\" && ./target/x86_64-unknown-linux-gnu/debug/cursed --compile test_hello_cursed.csd"
 else
     echo ""
     echo "❌ Build failed with exit code: $BUILD_EXIT_CODE"

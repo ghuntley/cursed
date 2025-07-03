@@ -12,6 +12,7 @@ pub struct FunctionCompiler {
     pub label_counter: usize,
     pub variables: HashMap<String, String>,
     pub current_function: Option<String>,
+    pub string_constants: Vec<String>,
 }
 
 impl FunctionCompiler {
@@ -22,7 +23,13 @@ impl FunctionCompiler {
             label_counter: 0,
             variables: HashMap::new(),
             current_function: None,
+            string_constants: Vec::new(),
         }
+    }
+    
+    /// Get the collected string constants
+    pub fn get_string_constants(&self) -> &Vec<String> {
+        &self.string_constants
     }
 
     /// Generate complete LLVM function definition with full IR
@@ -184,9 +191,16 @@ impl FunctionCompiler {
             Expression::String(val) => {
                 let str_reg = self.next_register();
                 let len = val.len() + 1;
+                let const_name = format!("@.str.{}", self.string_constants.len());
+                
+                // Add string constant definition
+                self.string_constants.push(format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
+                    const_name, len, val.replace("\"", "\\\"")));
+                
+                // Generate getelementptr instruction
                 self.ir_code.push_str(&format!(
-                    "  {} = getelementptr inbounds [{} x i8], [{} x i8]* @.str.{}, i64 0, i64 0\n",
-                    str_reg, len, len, self.variable_counter
+                    "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
+                    str_reg, len, len, const_name
                 ));
                 Ok(str_reg)
             },
@@ -343,7 +357,8 @@ impl FunctionCompiler {
                     let arg_reg = self.compile_expression(arg)?;
                     match arg {
                         Expression::String(_) => {
-                            self.ir_code.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
+                            let call_result = self.next_register();
+                            self.ir_code.push_str(&format!("  {} = call i32 @puts(i8* {})\n", call_result, arg_reg));
                         },
                         _ => {
                             // For non-string types, use printf with %d format
@@ -370,6 +385,15 @@ impl FunctionCompiler {
 
     /// Compile member access expressions
     fn compile_member_access(&mut self, object: &Expression, property: &str) -> Result<String, CursedError> {
+        // Check for special vibez method calls
+        if let Expression::Identifier(obj_name) = object {
+            if obj_name == "vibez" && property == "spill" {
+                // Return a special marker for vibez.spill method calls
+                // This will be handled by the function call compiler
+                return Ok("vibez_spill_method".to_string());
+            }
+        }
+        
         let obj_reg = self.compile_expression(object)?;
         let member_reg = self.next_register();
         
