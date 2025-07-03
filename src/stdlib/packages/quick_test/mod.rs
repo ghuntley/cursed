@@ -106,7 +106,7 @@ impl fmt::Display for ShrinkStrategy {
 
 /// fr fr Result of a test run
 #[derive(Debug, Clone)]
-pub struct Result {
+pub struct TestResult {
     /// Did the test pass?
     pub passed: bool,
     /// Number of iterations performed
@@ -125,7 +125,7 @@ pub struct Result {
     pub seed: u64,
 }
 
-impl Result {
+impl TestResult {
     /// slay Create a passing test result
     pub fn pass(count: i32, runtime: Duration, seed: u64) -> Self {
         Self {
@@ -553,7 +553,7 @@ impl Generator for OneOfGenerator {
 /// fr fr Core testing functions and built-in generators
 
 /// fr fr Run a single test function with the given configuration
-pub fn check<F>(f: F, config: Option<Config>) -> QuickTestResult<Result>
+pub fn check<F>(f: F, config: Option<Config>) -> QuickTestResult<TestResult>
 where
     F: Fn(Value) -> bool + Send + Sync,
 {
@@ -584,7 +584,7 @@ where
                 (None, 0)
             };
             
-            return Ok(Result::fail(
+            return Ok(TestResult::fail(
                 i,
                 i,
                 input,
@@ -597,7 +597,7 @@ where
     }
     
     let runtime = start_time.elapsed();
-    Ok(Result::pass(config.max_count, runtime, seed))
+    Ok(TestResult::pass(config.max_count, runtime, seed))
 }
 
 /// fr fr Test a property for many random values using a specific generator
@@ -605,7 +605,7 @@ pub fn check_with_generator<F>(
     f: F,
     generator: &dyn Generator,
     config: Option<Config>,
-) -> QuickTestResult<Result>
+) -> QuickTestResult<TestResult>
 where
     F: Fn(Value) -> bool + Send + Sync,
 {
@@ -635,7 +635,7 @@ where
                 (None, 0)
             };
             
-            return Ok(Result::fail(
+            return Ok(TestResult::fail(
                 i,
                 i,
                 input,
@@ -648,7 +648,7 @@ where
     }
     
     let runtime = start_time.elapsed();
-    Ok(Result::pass(config.max_count, runtime, seed))
+    Ok(TestResult::pass(config.max_count, runtime, seed))
 }
 
 /// fr fr Test a property that should always be true
@@ -1037,7 +1037,7 @@ where
     }
     
     /// slay Run the state machine
-    pub fn run(&self, config: Option<Config>) -> QuickTestResult<Result> {
+    pub fn run(&self, config: Option<Config>) -> QuickTestResult<TestResult> {
         let config = config.unwrap_or_default();
         let seed = config.seed.unwrap_or_else(|| rand::random());
         let mut rng = ChaCha20Rng::seed_from_u64(seed);
@@ -1074,7 +1074,7 @@ where
                         action_sequence.into_iter().map(Value::String).collect()
                     );
                     
-                    return Ok(Result::fail(
+                    return Ok(TestResult::fail(
                         i,
                         i,
                         input,
@@ -1088,7 +1088,7 @@ where
         }
         
         let runtime = start_time.elapsed();
-        Ok(Result::pass(config.max_count, runtime, seed))
+        Ok(TestResult::pass(config.max_count, runtime, seed))
     }
 }
 

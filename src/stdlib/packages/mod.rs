@@ -1,4 +1,6 @@
 
+use std::io::{Read, Write};
+
 // Common crypto result types
 pub type CryptoResult<T> = std::result::Result<T, CryptoError>;
 pub type IOResult<T> = std::result::Result<T, IOError>;
@@ -36,6 +38,7 @@ pub enum PkiError {
 #[derive(Debug, Clone)]
 pub enum IOError {
     ReadFailed,
+    ReadError(String),
     WriteFailed,
     InvalidInput,
     FileNotFound,
@@ -90,6 +93,7 @@ impl std::fmt::Display for IOError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             IOError::ReadFailed => write!(f, "Read failed"),
+            IOError::ReadError(msg) => write!(f, "Read error: {}", msg),
             IOError::WriteFailed => write!(f, "Write failed"),
             IOError::InvalidInput => write!(f, "Invalid input"),
             IOError::FileNotFound => write!(f, "File not found"),
@@ -145,19 +149,27 @@ impl IOHandler {
         Self::default()
     }
     
-    pub fn read_all(&self) -> Result<Vec<u8>, IOError> {
+    pub fn read_all<R: std::io::Read>(&self, reader: &mut R) -> Result<Vec<u8>, IOError> {
         // Stub implementation - in production would read from actual IO
-        Ok(vec![])
+        let mut buffer = Vec::new();
+        reader.read_to_end(&mut buffer)
+            .map_err(|e| IOError::ReadError(format!("Failed to read: {}", e)))?;
+        Ok(buffer)
     }
     
-    pub fn write_string(&self, _data: &str) -> Result<(), IOError> {
+    pub fn write_string<W: std::io::Write>(&self, writer: &mut W, data: &str) -> Result<(), IOError> {
         // Stub implementation - in production would write to actual IO
+        writer.write_all(data.as_bytes())
+            .map_err(|e| IOError::Other(format!("Failed to write: {}", e)))?;
         Ok(())
     }
     
-    pub fn read_string(&self) -> Result<String, IOError> {
+    pub fn read_string<R: std::io::Read>(&self, mut reader: R) -> Result<String, IOError> {
         // Stub implementation - in production would read from actual IO
-        Ok(String::new())
+        let mut buffer = String::new();
+        reader.read_to_string(&mut buffer)
+            .map_err(|e| IOError::ReadError(format!("Failed to read string: {}", e)))?;
+        Ok(buffer)
     }
 }
 
