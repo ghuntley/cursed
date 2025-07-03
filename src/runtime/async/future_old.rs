@@ -31,7 +31,7 @@ impl std::error::Error for FutureError {}
 
 impl From<FutureError> for CursedError {
     fn from(err: FutureError) -> Self {
-        CursedError::runtime_error(&err.to_string())
+        CursedError::runtime_error(&err)
     }
 }
 

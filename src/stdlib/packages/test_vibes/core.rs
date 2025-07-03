@@ -113,7 +113,7 @@ impl VibeTest {
             Ok(()) => {
                 if self.should_panic {
                     println!("❌ Test should have panicked but didn't: {}", self.name);
-                    Err(CursedError::runtime_error(&"Test should have panicked".to_string()))
+                    Err(CursedError::runtime_error("Test should have panicked"))
                 } else {
                     println!("✅ Test passed: {} ({:?})", self.name, duration);
                     Ok(())
@@ -265,7 +265,7 @@ impl VibeTestingManager {
                 Err(_) => {
                     failed_count += 1;
                     if self.fail_fast {
-                        return Err(CursedError::runtime_error(&"Test failed and fail_fast is enabled".to_string()));
+                        return Err(CursedError::runtime_error("Test failed and fail_fast is enabled"));
                     }
                     false
                 }
@@ -275,7 +275,7 @@ impl VibeTestingManager {
 
         if failed_count > 0 {
             println!("❌ {} test(s) failed out of {}", failed_count, self.tests.len());
-            Err(CryptoError::Other(format!("{} test(s) failed", "placeholder")))
+            Err(CryptoError::Other("{} test(s) failed".to_string()).into())
         } else {
             println!("✅ All {} tests passed!", self.tests.len());
             Ok(results)
@@ -367,7 +367,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is false"))
         }
     }
     
@@ -379,7 +379,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is true"))
         }
     }
     

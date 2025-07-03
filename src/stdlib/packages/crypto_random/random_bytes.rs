@@ -44,7 +44,7 @@ pub fn entropy_random_bytes(size: usize, min_entropy_bits: usize) -> RandomBytes
     // For now, use secure random bytes and assume they meet entropy requirements
     // In a real implementation, we would measure and verify entropy
     if min_entropy_bits > size * 8 {
-        return Err(CursedError::validation_error("Requested entropy exceeds maximum possible for given size"));
+        return Err(CryptoError::InvalidInput);
     }
     secure_random_bytes(size)
 }
@@ -53,12 +53,12 @@ pub fn entropy_random_bytes(size: usize, min_entropy_bits: usize) -> RandomBytes
 pub fn test_random_bytes() -> RandomBytesResult<()> {
     let test_bytes = random_bytes(32)?;
     if test_bytes.len() != 32 {
-        return Err(CursedError::runtime_error(&"Random byte generation test failed".to_string()));
+        return Err(CryptoError::Other("Random byte generation test failed".to_string()));
     }
     
     // Check that bytes are not all zeros (extremely unlikely with good RNG)
     if test_bytes.iter().all(|&b| b == 0) {
-        return Err(CursedError::runtime_error(&"Random bytes appear to be all zeros - RNG may be broken".to_string()));
+        return Err(CryptoError::Other("Random bytes appear to be all zeros - RNG may be broken".to_string()));
     }
     
     Ok(())

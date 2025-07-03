@@ -115,7 +115,7 @@ impl TestCase {
             match (&result, self.expected_result) {
                 (Ok(()), Some(false)) => {
                     println!("❌ Test case expected to fail but passed: {}", self.name);
-                    Err(CursedError::runtime_error(&"Test case expected to fail but passed".to_string()))
+                    Err(CursedError::runtime_error("Test case expected to fail but passed"))
                 }
                 (Err(_), Some(true)) => {
                     println!("❌ Test case expected to pass but failed: {}", self.name);
@@ -192,7 +192,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is false"))
         }
     }
     
@@ -204,7 +204,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is true"))
         }
     }
     

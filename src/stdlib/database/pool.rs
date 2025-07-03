@@ -121,7 +121,7 @@ impl ConnectionPool {
             if start_time.elapsed() >= self.config.connection_timeout {
                 let mut stats = self.stats.lock().unwrap();
                 stats.connection_timeouts += 1;
-                return Err(CursedError::runtime_error(&"Connection timeout".to_string()));
+                return Err(CursedError::runtime_error(&"Connection timeout"));
             }
             
             // Wait a bit before trying again
@@ -363,7 +363,7 @@ impl PooledConnectionHandle {
     pub fn execute(&self, query: &str) -> PoolResult<super::driver::DriverResult<Box<dyn super::driver::DatabaseResult>>> {
         println!("🔍 Executing query on pooled connection {}: {}", self.index, query);
         // In a real implementation, this would use the actual connection
-        Err(CursedError::runtime_error(&"Not implemented".to_string()))
+        Err(CursedError::runtime_error(&"Not implemented"))
     }
 }
 

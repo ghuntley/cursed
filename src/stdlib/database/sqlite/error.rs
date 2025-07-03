@@ -118,7 +118,7 @@ impl std::error::Error for SqliteError {}
 
 impl From<SqliteError> for CursedError {
     fn from(error: SqliteError) -> Self {
-        CursedError::runtime_error(&error.to_string())
+        CursedError::runtime_error(&format!("{}", error))
     }
 }
 

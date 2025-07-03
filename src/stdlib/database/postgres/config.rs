@@ -136,19 +136,19 @@ impl PostgresConfig {
     /// Validate the configuration
     pub fn validate(&self) -> PostgresConfigResult<()> {
         if self.host.is_empty() {
-            return Err(CursedError::runtime_error(&"Host cannot be empty".to_string()));
+            return Err(CursedError::runtime_error(&"Host cannot be empty"));
         }
         
         if self.port == 0 {
-            return Err(CursedError::runtime_error(&"Port must be greater than 0".to_string()));
+            return Err(CursedError::runtime_error(&"Port must be greater than 0"));
         }
         
         if self.database.is_empty() {
-            return Err(CursedError::runtime_error(&"Database name cannot be empty".to_string()));
+            return Err(CursedError::runtime_error(&"Database name cannot be empty"));
         }
         
         if self.username.is_empty() {
-            return Err(CursedError::runtime_error(&"Username cannot be empty".to_string()));
+            return Err(CursedError::runtime_error(&"Username cannot be empty"));
         }
         
         Ok(())

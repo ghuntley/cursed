@@ -205,7 +205,7 @@ impl Stub {
 
     pub fn call(&self) -> TestResult<Option<Box<dyn Any + Send + Sync>>> {
         if self.should_panic {
-            return Err(CursedError::runtime_error(&"Stubbed method panicked".to_string()));
+            return Err(CursedError::runtime_error("Stubbed method panicked"));
         }
 
         if let Some(implementation) = self.implementation {
@@ -270,7 +270,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is false"))
         }
     }
     
@@ -282,7 +282,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is true"))
         }
     }
     

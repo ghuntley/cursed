@@ -115,7 +115,7 @@ impl RedisClient {
             let conn = pool.get_connection().await?;
             conn.execute(command, args).await
         } else {
-            Err(CursedError::runtime_error(&"Not connected to Redis".to_string()))
+            Err(CursedError::runtime_error(&"Not connected to Redis"))
         }
     }
 
@@ -125,7 +125,7 @@ impl RedisClient {
         match result {
             RedisValue::String(s) => Ok(Some(s)),
             RedisValue::Null => Ok(None),
-            _ => Err(CursedError::runtime_error(&"Unexpected value type".to_string())),
+            _ => Err(CursedError::runtime_error(&"Unexpected value type")),
         }
     }
 
@@ -194,7 +194,7 @@ impl RedisConnection {
         match command {
             "GET" => Ok(RedisValue::Null),
             "SET" => Ok(RedisValue::String("OK".to_string())),
-            _ => Err(CursedError::runtime_error(&"Unknown command".to_string())),
+            _ => Err(CursedError::runtime_error(&"Unknown command")),
         }
     }
 }

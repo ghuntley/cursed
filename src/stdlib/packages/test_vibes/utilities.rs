@@ -36,7 +36,7 @@ impl TempFile {
     pub fn with_content(content: &str) -> TestResult<Self> {
         let temp_file = Self::new()?;
         fs::write(&temp_file.path, content)
-            .map_err(|e| CryptoError::Other(format!("Failed to write temp file: {}", "placeholder")))?;
+            .map_err(|e| CursedError::runtime_error(&format!("Failed to write temp file: {}", e)))?;
         Ok(temp_file)
     }
 
@@ -46,12 +46,12 @@ impl TempFile {
 
     pub fn read(&self) -> TestResult<String> {
         fs::read_to_string(&self.path)
-            .map_err(|e| CryptoError::Other(format!("Failed to read temp file: {}", "placeholder")))
+            .map_err(|e| CursedError::runtime_error(&format!("Failed to read temp file: {}", e)))
     }
 
     pub fn write(&self, content: &str) -> TestResult<()> {
         fs::write(&self.path, content)
-            .map_err(|e| CryptoError::Other(format!("Failed to write temp file: {}", "placeholder")))
+            .map_err(|e| CursedError::runtime_error(&format!("Failed to write temp file: {}", e)))
     }
 
     pub fn cleanup(self) -> TestResult<()> {
@@ -100,14 +100,14 @@ impl TempDir {
     pub fn create_file(&self, name: &str, content: &str) -> TestResult<PathBuf> {
         let file_path = self.path.join(name);
         fs::write(&file_path, content)
-            .map_err(|e| CryptoError::Other(format!("Failed to create file in temp dir: {}", "placeholder")))?;
+            .map_err(|e| CursedError::runtime_error(&format!("Failed to create file in temp dir: {}", e)))?;
         Ok(file_path)
     }
 
     pub fn create_subdir(&self, name: &str) -> TestResult<PathBuf> {
         let dir_path = self.path.join(name);
         fs::create_dir_all(&dir_path)
-            .map_err(|e| CryptoError::Other(format!("Failed to create subdir in temp dir: {}", "placeholder")))?;
+            .map_err(|e| CursedError::runtime_error(&format!("Failed to create subdir in temp dir: {}", e)))?;
         Ok(dir_path)
     }
 
@@ -245,7 +245,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is false"))
         }
     }
     
@@ -257,7 +257,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
+            Err(CursedError::runtime_error("Assertion failed: condition is true"))
         }
     }
     

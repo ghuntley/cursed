@@ -69,7 +69,7 @@ pub fn test_argon2() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     Ok(())
 }

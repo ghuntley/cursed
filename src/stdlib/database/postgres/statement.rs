@@ -49,7 +49,7 @@ impl PostgresStatement {
     /// Execute the prepared statement
     pub fn execute(&self) -> PostgresStatementResult<PostgresQueryResult> {
         if !self.is_prepared {
-            return Err(CursedError::runtime_error(&"Statement not prepared".to_string()));
+            return Err(CursedError::runtime_error(&"Statement not prepared"));
         }
         println!("⚡ Executing prepared statement with {} parameters", self.parameters.len());
         Ok(PostgresQueryResult::new(1, Vec::new()))

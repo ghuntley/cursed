@@ -24,7 +24,7 @@ pub fn test_pkcs() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
+        return Err(CryptoError::Other("Crypto hash test failed".to_string().into()).into());
     }
     Ok(())
 }
@@ -53,6 +53,6 @@ pub fn decrypt_private_key(encrypted_data: &[u8], password: &str) -> PkcsResult<
     if encrypted_data.len() > password_len {
         Ok(encrypted_data[..encrypted_data.len() - password_len].to_vec())
     } else {
-        Err(CryptoError::EncryptionFailed)
+        Err(CryptoError::EncryptionFailed.into())
     }
 }

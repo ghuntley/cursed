@@ -47,7 +47,7 @@ impl PostgresConnection {
     /// Execute a query
     pub fn execute(&self, query: &str) -> PostgresConnectionResult<PostgresQueryResult> {
         if !self.is_connected {
-            return Err(CursedError::runtime_error(&"Not connected to database".to_string()));
+            return Err(CursedError::runtime_error(&"Not connected to database"));
         }
         println!("🔍 Executing query: {}", query);
         Ok(PostgresQueryResult::new(1, Vec::new()))

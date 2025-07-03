@@ -79,7 +79,7 @@ impl PlonkPolynomial {
     
     pub fn lagrange_interpolation(points: Vec<(FieldElement, FieldElement)>) -> CryptoResult<Self> {
         if points.is_empty() {
-            return Err(CursedError::runtime_error(&"Cannot interpolate empty point set".to_string()));
+            return Err(CryptoError::InvalidInput);
         }
         
         let modulus = points[0].0.modulus.clone();
@@ -214,7 +214,7 @@ impl PlonkUniversalSetup {
     
     pub fn commit_polynomial(&self, polynomial: &PlonkPolynomial) -> CryptoResult<G1Point> {
         if polynomial.degree > self.max_degree {
-            return Err(CursedError::runtime_error(&"Polynomial degree exceeds setup limit".to_string()));
+            return Err(CryptoError::InvalidInput);
         }
         
         let mut commitment = G1Point::infinity(vec![0]);
@@ -428,7 +428,7 @@ pub fn test_plonk() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     Ok(())
 }
