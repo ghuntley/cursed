@@ -23,6 +23,16 @@ impl ExpressionCompiler {
         }
     }
 
+    /// Set the starting variable counter to synchronize with main generator
+    pub fn set_variable_counter(&mut self, counter: usize) {
+        self.variable_counter = counter;
+    }
+
+    /// Get the current variable counter value
+    pub fn get_variable_counter(&self) -> usize {
+        self.variable_counter
+    }
+
     /// Compile any expression to LLVM IR with complete register handling
     pub fn compile_expression(&mut self, expression: &Expression) -> Result<String, CursedError> {
         match expression {

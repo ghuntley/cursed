@@ -288,6 +288,9 @@ declare i8* @cursed_channel_receive(i8*)
         // Use the dedicated expression compiler for complete IR generation
         let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
         
+        // Synchronize the variable counter to avoid register conflicts
+        expression_compiler.set_variable_counter(self.variable_counter);
+        
         // Copy current variables to the expression compiler
         for (name, reg) in &self.variables {
             expression_compiler.set_variable(name.clone(), reg.clone());
@@ -295,6 +298,9 @@ declare i8* @cursed_channel_receive(i8*)
         
         // Compile the expression to complete LLVM IR
         let result_reg = expression_compiler.compile_expression(expression)?;
+        
+        // Update our variable counter to reflect what the expression compiler used
+        self.variable_counter = expression_compiler.get_variable_counter();
         
         // Add the generated IR to our main IR code
         let expression_ir = expression_compiler.get_ir();
@@ -523,6 +529,13 @@ declare i8* @cursed_channel_receive(i8*)
         let expression_ir = function_compiler.get_ir();
         if !expression_ir.is_empty() {
             self.ir_code.push_str(expression_ir);
+        }
+        
+        // Merge string constants from function compiler
+        for constant in function_compiler.get_string_constants() {
+            if !self.string_constants.contains(constant) {
+                self.string_constants.push(constant.clone());
+            }
         }
         
         Ok(())
@@ -1057,64 +1070,17 @@ impl LlvmCodeGenerator {
         source_file: Option<&Path>,
         package_manager: &crate::package_manager::PackageManager
     ) -> Result<String, CursedError> {
-        let mut enhanced_source = String::new();
+        // For now, just return the original source
+        // Package dependencies will be handled during IR generation, not during parsing
+        // This prevents LLVM IR declarations from being mixed with CURSED source code
         
-        // Add package dependency declarations
-        enhanced_source.push_str("; CURSED Package Dependencies\n");
+        // TODO: Future implementation should:
+        // 1. Extract import statements from CURSED source
+        // 2. Resolve package dependencies
+        // 3. Store dependency metadata for later use during IR generation
+        // 4. Return only the original CURSED source code
         
-        // Parse source to find import statements
-        if let Some(imports) = self.extract_import_statements(source) {
-            for import in imports {
-                // Resolve package through package manager
-                match package_manager.get_package_info(&import, None).await {
-                    Ok(package) => {
-                        // Add package-specific declarations
-                        enhanced_source.push_str(&format!(
-                            "; Package: {} (version: {})\n",
-                            package.name, package.version
-                        ));
-                        
-                        // Add function declarations from package
-                        // Note: PackageInfo doesn't have exports field, stubbed for now
-                        enhanced_source.push_str(&format!(
-                            "declare i32 @cursed_pkg_{}(...)\n",
-                            import.replace("-", "_")
-                        ));
-                        
-                        // Add type declarations from package
-                        // Note: PackageInfo doesn't have types field, stubbed for now
-                        enhanced_source.push_str(&format!(
-                            "; Type definitions from package {}\n",
-                            import
-                        ));
-                    },
-                    Err(_) => {
-                        // Package not found - add generic declaration
-                        enhanced_source.push_str(&format!(
-                            "; Package: {} (not resolved)\ndeclare i32 @cursed_pkg_{}(...)\n",
-                            import, 
-                            import.replace("-", "_")
-                        ));
-                    }
-                }
-            }
-        }
-        
-        // Add source file metadata
-        if let Some(file_path) = source_file {
-            enhanced_source.push_str(&format!(
-                "; Source file: {:?}\n",
-                file_path
-            ));
-        }
-        
-        // Add runtime function declarations
-        self.add_runtime_declarations(&mut enhanced_source);
-        
-        // Add the original source
-        enhanced_source.push_str(source);
-        
-        Ok(enhanced_source)
+        Ok(source.to_string())
     }
     
     /// Get LLVM type string from CURSED type
