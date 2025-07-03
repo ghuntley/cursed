@@ -1,7 +1,7 @@
 //! LLVM Function Compilation Module
 //! Complete function compilation with full LLVM IR generation
 
-use crate::ast::{Statement, Expression, FunctionStatement};
+use crate::ast::{Statement, Expression, FunctionStatement, Literal};
 use crate::error::CursedError;
 use std::collections::HashMap;
 
@@ -49,8 +49,16 @@ impl FunctionCompiler {
         
         let mut function_ir = String::new();
         
-        // Generate function signature
-        let ret_type = self.get_llvm_type(return_type.unwrap_or("int"));
+        // Generate function signature with inferred return type
+        let ret_type = if let Some(explicit_type) = return_type {
+            self.get_llvm_type(explicit_type)
+        } else if name == "main" {
+            // Main functions always return i32 (C convention)
+            "i32".to_string()
+        } else {
+            // Infer return type from function body
+            self.infer_function_return_type(body)?
+        };
         function_ir.push_str(&format!("define {} @{}(", ret_type, name));
         
         // Generate parameters with types
@@ -137,7 +145,20 @@ impl FunctionCompiler {
             Statement::Return(return_stmt) => {
                 if let Some(val) = &return_stmt.value {
                     let return_reg = self.compile_expression(val)?;
-                    ir.push_str(&format!("  ret i32 {}\n", return_reg));
+                    let return_type = self.infer_expression_type(val)?;
+                    
+                    // Special handling for main function returning strings
+                    if let Some(ref func_name) = self.current_function {
+                        if func_name == "main" && return_type == "i8*" {
+                            // Print the string using puts and return 0
+                            ir.push_str(&format!("  call i32 @puts(i8* {})\n", return_reg));
+                            ir.push_str("  ret i32 0\n");
+                        } else {
+                            ir.push_str(&format!("  ret {} {}\n", return_type, return_reg));
+                        }
+                    } else {
+                        ir.push_str(&format!("  ret {} {}\n", return_type, return_reg));
+                    }
                 } else {
                     ir.push_str("  ret i32 0\n");
                 }
@@ -426,6 +447,54 @@ impl FunctionCompiler {
         }
         
         Ok(result_reg)
+    }
+
+    /// Infer the LLVM type for an expression
+    fn infer_expression_type(&self, expr: &Expression) -> Result<String, CursedError> {
+        match expr {
+            Expression::String(_) => Ok("i8*".to_string()),
+            Expression::Integer(_) => Ok("i32".to_string()),
+            Expression::Boolean(_) => Ok("i1".to_string()),
+            Expression::Identifier(_) => Ok("i32".to_string()), // Default for now
+            Expression::Binary(_) => Ok("i32".to_string()), // Default for now
+            Expression::Unary(_) => Ok("i32".to_string()), // Default for now
+            Expression::Call(_) => Ok("i32".to_string()), // Default for now
+            Expression::Literal(lit) => self.infer_literal_type(lit),
+            _ => Ok("i32".to_string()), // Default fallback
+        }
+    }
+
+    /// Infer the LLVM type for a literal
+    fn infer_literal_type(&self, literal: &Literal) -> Result<String, CursedError> {
+        match literal {
+            Literal::String(_) => Ok("i8*".to_string()),
+            Literal::Integer(_) => Ok("i32".to_string()),
+            Literal::Float(_) => Ok("double".to_string()),
+            Literal::Boolean(_) => Ok("i1".to_string()),
+            Literal::Null => Ok("i8*".to_string()),
+            Literal::Nil => Ok("i8*".to_string()),
+        }
+    }
+
+    /// Infer function return type from function body
+    fn infer_function_return_type(&self, body: &[Statement]) -> Result<String, CursedError> {
+        // Look for return statements in the function body
+        for statement in body {
+            if let Statement::Return(return_stmt) = statement {
+                if let Some(val) = &return_stmt.value {
+                    return self.infer_expression_type(val);
+                }
+            }
+        }
+        
+        // If no explicit return found, check if the last statement is an expression
+        // that could be an implicit return (CURSED uses expression-based returns)
+        if let Some(Statement::Expression(expr)) = body.last() {
+            return self.infer_expression_type(expr);
+        }
+        
+        // Default to void if no return type can be inferred
+        Ok("void".to_string())
     }
 
     /// Compile if statements with proper branch handling
