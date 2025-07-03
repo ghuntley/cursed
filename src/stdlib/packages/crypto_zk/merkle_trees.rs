@@ -29,7 +29,7 @@ impl MerkleTree {
         use sha2::{Sha256, Digest};
         
         if self.leaves.is_empty() {
-            return Err(CursedError::runtime_error("Cannot build tree with no leaves"));
+            return Err(CursedError::runtime_error(&"Cannot build tree with no leaves".to_string()));
         }
         
         let mut current_level = self.leaves.clone();
@@ -59,7 +59,7 @@ impl MerkleTree {
     
     pub fn get_proof(&self, index: usize) -> CryptoResult<MerkleProof> {
         if index >= self.leaves.len() {
-            return Err(CursedError::runtime_error("Index out of bounds"));
+            return Err(CursedError::runtime_error(&"Index out of bounds".to_string()));
         }
         
         let mut proof_hashes = vec![];
@@ -211,6 +211,7 @@ impl MerkleTrees {
     
     pub fn hash_leaf(data: &[u8]) -> Vec<u8> {
         use sha2::{Sha256, Digest};
+use crate::stdlib::packages::CryptoError;
         let mut hasher = Sha256::new();
         hasher.update(data);
         hasher.finalize().to_vec()
@@ -223,7 +224,7 @@ pub fn init_merkle_trees() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
     let key = handler.generate_key()?;
     if key.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto key generation test failed"));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     println!("🔐 Crypto processing (merkle_trees) initialized");
     Ok(())
@@ -235,7 +236,7 @@ pub fn test_merkle_trees() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto hash test failed"));
+        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
     }
     Ok(())
 }

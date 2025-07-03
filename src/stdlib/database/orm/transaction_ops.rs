@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use std::io::{self, Read, Write};
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
+use crate::stdlib::packages::IOError;
 
 /// Result type for I/O operations
 pub type IOResult<T> = Result<T, CursedError>;
@@ -157,7 +158,7 @@ impl TransactionManager {
     
     pub fn start_transaction(&mut self, transaction_id: String) -> Result<(), CursedError> {
         if self.active_transactions.contains_key(&transaction_id) {
-            return Err(CursedError::runtime_error(&format!("Transaction {} already exists", transaction_id)));
+            return Err(CursedError::runtime_error(&format!("Transaction {} already exists", "placeholder")));
         }
         
         let metrics = TransactionMetrics::new(transaction_id.clone());
@@ -175,7 +176,7 @@ impl TransactionManager {
                     Err(CursedError::runtime_error(&format!("Cannot commit transaction in state {:?}", metrics.state)))
                 }
             }
-            None => Err(CursedError::runtime_error(&format!("Transaction {} not found", transaction_id))),
+            None => Err(CursedError::runtime_error(&format!("Transaction {} not found", "placeholder"))),
         }
     }
     
@@ -189,7 +190,7 @@ impl TransactionManager {
                     Err(CursedError::runtime_error(&format!("Cannot rollback transaction in state {:?}", metrics.state)))
                 }
             }
-            None => Err(CursedError::runtime_error(&format!("Transaction {} not found", transaction_id))),
+            None => Err(CursedError::runtime_error(&format!("Transaction {} not found", "placeholder"))),
         }
     }
     
@@ -232,14 +233,14 @@ impl IOHandler {
     pub fn read_all<R: Read>(&self, mut reader: R) -> IOResult<Vec<u8>> {
         let mut buffer = Vec::new();
         reader.read_to_end(&mut buffer)
-            .map_err(|e| CursedError::runtime_error(&format!("Read error: {}", e)))?;
+            .map_err(|e| IOError::Other(format!("Read error: {}", "placeholder")))?;
         Ok(buffer)
     }
     
     /// Write to a writer
     pub fn write_all<W: Write>(&self, mut writer: W, data: &[u8]) -> IOResult<()> {
         writer.write_all(data)
-            .map_err(|e| CursedError::runtime_error(&format!("Write error: {}", e)))?;
+            .map_err(|e| IOError::Other(format!("Write error: {}", "placeholder")))?;
         Ok(())
     }
     
@@ -247,7 +248,7 @@ impl IOHandler {
     pub fn read_string<R: Read>(&self, reader: R) -> IOResult<String> {
         let bytes = self.read_all(reader)?;
         String::from_utf8(bytes)
-            .map_err(|e| CursedError::runtime_error(&format!("UTF-8 decode error: {}", e)))
+            .map_err(|e| IOError::Other(format!("UTF-8 decode error: {}", "placeholder")))
     }
     
     /// Write string to writer
@@ -269,7 +270,7 @@ pub fn init_transaction_ops() -> IOResult<()> {
     let mut cursor = std::io::Cursor::new(test_data);
     let result = handler.read_all(&mut cursor)?;
     if result != test_data {
-        return Err(CursedError::runtime_error("I/O test failed"));
+        return Err(CursedError::runtime_error(&"I/O test failed".to_string()));
     }
     println!("📁 I/O processing (transaction_ops) initialized");
     Ok(())
@@ -283,7 +284,7 @@ pub fn test_transaction_ops() -> IOResult<()> {
     handler.write_string(&mut buffer, test_string)?;
     let result = handler.read_string(std::io::Cursor::new(&buffer))?;
     if result != test_string {
-        return Err(CursedError::runtime_error("I/O string test failed"));
+        return Err(CursedError::runtime_error(&"I/O string test failed".to_string()));
     }
     Ok(())
 }

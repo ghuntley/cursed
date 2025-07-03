@@ -71,7 +71,7 @@ impl VersionManager {
     
     pub fn update_version(&mut self, version: SchemaVersion) -> VersionResult<()> {
         if version <= self.current_version {
-            return Err(CursedError::runtime_error(
+            return Err(IOError::Other(
                 &format!("Cannot downgrade from {} to {}", self.current_version, version)
             ));
         }
@@ -94,7 +94,7 @@ impl VersionManager {
     
     pub fn rollback_to_version(&mut self, target_version: SchemaVersion) -> VersionResult<()> {
         if target_version > self.current_version {
-            return Err(CursedError::runtime_error(
+            return Err(IOError::Other(
                 &format!("Cannot rollback to future version {}", target_version)
             ));
         }
@@ -137,7 +137,7 @@ pub fn init_version() -> IOResult<()> {
     let mut cursor = std::io::Cursor::new(test_data);
     let result = handler.read_all(&mut cursor)?;
     if result != test_data {
-        return Err(IOError::Other("I/O test failed".to_string()));
+        return Err(CursedError::runtime_error(&"I/O test failed".to_string()));
     }
     println!("📁 I/O processing (version) initialized");
     Ok(())
@@ -151,7 +151,7 @@ pub fn test_version() -> IOResult<()> {
     handler.write_string(&mut buffer, test_string)?;
     let result = handler.read_string(std::io::Cursor::new(&buffer))?;
     if result != test_string {
-        return Err(IOError::Other("I/O string test failed".to_string()));
+        return Err(CursedError::runtime_error(&"I/O string test failed".to_string()));
     }
     Ok(())
 }

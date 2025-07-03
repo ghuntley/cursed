@@ -118,6 +118,7 @@ impl CryptoHandler {
         // Simple SHA256 implementation - in production would use proper crypto
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
+use crate::stdlib::packages::CryptoError;
         
         let mut hasher = DefaultHasher::new();
         data.hash(&mut hasher);

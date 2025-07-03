@@ -7,6 +7,7 @@ use crate::stdlib::packages::crypto_zk::groth16::{G1Point, G2Point};
 use std::collections::HashMap;
 use crate::stdlib::packages::CryptoResult;
 use crate::stdlib::packages::CryptoHandler;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for crypto operations
 /// A polynomial in the PLONK system
@@ -78,7 +79,7 @@ impl PlonkPolynomial {
     
     pub fn lagrange_interpolation(points: Vec<(FieldElement, FieldElement)>) -> CryptoResult<Self> {
         if points.is_empty() {
-            return Err(CursedError::runtime_error("Cannot interpolate empty point set"));
+            return Err(CursedError::runtime_error(&"Cannot interpolate empty point set".to_string()));
         }
         
         let modulus = points[0].0.modulus.clone();
@@ -213,7 +214,7 @@ impl PlonkUniversalSetup {
     
     pub fn commit_polynomial(&self, polynomial: &PlonkPolynomial) -> CryptoResult<G1Point> {
         if polynomial.degree > self.max_degree {
-            return Err(CursedError::runtime_error("Polynomial degree exceeds setup limit"));
+            return Err(CursedError::runtime_error(&"Polynomial degree exceeds setup limit".to_string()));
         }
         
         let mut commitment = G1Point::infinity(vec![0]);
@@ -387,7 +388,7 @@ impl Plonk {
         if let Some(prover) = &self.prover {
             prover.prove(public_inputs, private_inputs)
         } else {
-            Err(CursedError::runtime_error("No proving key available"))
+            Err(CryptoError::KeyGenerationFailed)
         }
     }
     
@@ -415,7 +416,7 @@ pub fn init_plonk() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
     let key = handler.generate_key()?;
     if key.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto key generation test failed"));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     println!("🔐 Crypto processing (plonk) initialized");
     Ok(())
@@ -427,7 +428,7 @@ pub fn test_plonk() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto hash test failed"));
+        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
     }
     Ok(())
 }

@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use super::connection::PostgresConnection;
 use std::collections::{VecDeque, HashMap};
 use std::sync::{Arc, Mutex};
+use crate::stdlib::packages::IOError;
 
 /// Result type for PostgreSQL pool operations
 pub type PostgresPoolResult<T> = Result<T, CursedError>;
@@ -90,7 +91,7 @@ impl PostgresPool {
                 drop(connections);
                 self.create_new_connection()
             } else {
-                Err(CursedError::runtime_error("Pool exhausted - no connections available"))
+                Err(CursedError::runtime_error(&"Pool exhausted - no connections available".to_string()))
             }
         }
     }

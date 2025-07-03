@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use std::collections::HashMap;
+use crate::stdlib::packages::IOError;
 
 /// Result type for migration operations
 pub type MigrationResult<T> = Result<T, CursedError>;
@@ -60,10 +61,10 @@ impl Migration {
     /// Validate the migration
     pub fn validate(&self) -> MigrationResult<()> {
         if self.id.is_empty() {
-            return Err(CursedError::runtime_error("Migration ID cannot be empty"));
+            return Err(CursedError::runtime_error(&"Migration ID cannot be empty".to_string()));
         }
         if self.up_sql.is_empty() {
-            return Err(CursedError::runtime_error("Migration up SQL cannot be empty"));
+            return Err(CursedError::runtime_error(&"Migration up SQL cannot be empty".to_string()));
         }
         Ok(())
     }

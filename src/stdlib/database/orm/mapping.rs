@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::collections::HashMap;
 use super::migration::ColumnType;
+use crate::stdlib::packages::ModuleError;
 
 /// Result type for mapping operations
 pub type ModuleResult<T> = Result<T, CursedError>;
@@ -90,7 +91,7 @@ impl CustomMapping {
     pub fn map_from_sql(&self, value: &str) -> Result<String, CursedError> {
         match &self.reverse_mapper {
             Some(mapper) => mapper(value),
-            None => Err(CursedError::runtime_error("Reverse mapping not available")),
+            None => Err(CursedError::runtime_error(&"Reverse mapping not available".to_string())),
         }
     }
 }
@@ -128,7 +129,7 @@ impl MappingRegistry {
             return Ok(sql_mapping.get_sql_type(target_system).to_string());
         }
         
-        Err(CursedError::runtime_error(&format!("No mapping found for type: {}", cursed_type)))
+        Err(CursedError::runtime_error(&format!("No mapping found for type: {}", "placeholder")))
     }
     
     pub fn map_column_type(&self, column_type: &ColumnType, target_system: &DatabaseSystem) -> Result<String, CursedError> {
@@ -320,7 +321,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -342,7 +343,7 @@ pub fn init_mapping() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     println!("⚙️  Module processing (mapping) initialized");
     Ok(())
@@ -353,7 +354,7 @@ pub fn test_mapping() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     Ok(())
 }

@@ -25,6 +25,7 @@
 // pub mod monitoring;
 
 use crate::error::CursedError;
+use crate::stdlib::packages::IOError;
 
 /// Redis client configuration
 #[derive(Debug, Clone)]
@@ -114,7 +115,7 @@ impl RedisClient {
             let conn = pool.get_connection().await?;
             conn.execute(command, args).await
         } else {
-            Err(CursedError::runtime_error("Not connected to Redis"))
+            Err(CursedError::runtime_error(&"Not connected to Redis".to_string()))
         }
     }
 
@@ -124,7 +125,7 @@ impl RedisClient {
         match result {
             RedisValue::String(s) => Ok(Some(s)),
             RedisValue::Null => Ok(None),
-            _ => Err(CursedError::runtime_error("Unexpected value type")),
+            _ => Err(CursedError::runtime_error(&"Unexpected value type".to_string())),
         }
     }
 
@@ -193,7 +194,7 @@ impl RedisConnection {
         match command {
             "GET" => Ok(RedisValue::Null),
             "SET" => Ok(RedisValue::String("OK".to_string())),
-            _ => Err(CursedError::runtime_error("Unknown command")),
+            _ => Err(CursedError::runtime_error(&"Unknown command".to_string())),
         }
     }
 }

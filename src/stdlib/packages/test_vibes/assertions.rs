@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use std::fmt::{Debug, Display};
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
@@ -15,7 +16,7 @@ impl Assertions {
         if left == right {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: left == right\n  left: {:?}\n right: {:?}", left, right
             )))
         }
@@ -26,7 +27,7 @@ impl Assertions {
         if left != right {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: left != right\n  left: {:?}\n right: {:?}", left, right
             )))
         }
@@ -37,7 +38,7 @@ impl Assertions {
         if condition {
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is false"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
         }
     }
 
@@ -46,7 +47,7 @@ impl Assertions {
         if condition {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!("Assertion failed: {}", message)))
+            Err(CursedError::runtime_error(&format!("Assertion failed: {}", "placeholder")))
         }
     }
 
@@ -54,7 +55,7 @@ impl Assertions {
     pub fn assert_some<T: Debug>(option: Option<T>) -> TestResult<T> {
         match option {
             Some(value) => Ok(value),
-            None => Err(CursedError::runtime_error("Assertion failed: expected Some, got None")),
+            None => Err(CursedError::runtime_error(&"Assertion failed: expected Some, got None".to_string())),
         }
     }
 
@@ -62,7 +63,7 @@ impl Assertions {
     pub fn assert_none<T: Debug>(option: Option<T>) -> TestResult<()> {
         match option {
             None => Ok(()),
-            Some(value) => Err(CursedError::runtime_error(&format!(
+            Some(value) => Err(CryptoError::Other(&format!(
                 "Assertion failed: expected None, got Some({:?})", value
             ))),
         }
@@ -72,7 +73,7 @@ impl Assertions {
     pub fn assert_ok<T: Debug, E: Debug>(result: Result<T, E>) -> TestResult<T> {
         match result {
             Ok(value) => Ok(value),
-            Err(error) => Err(CursedError::runtime_error(&format!(
+            Err(error) => Err(CryptoError::Other(&format!(
                 "Assertion failed: expected Ok, got Err({:?})", error
             ))),
         }
@@ -82,7 +83,7 @@ impl Assertions {
     pub fn assert_err<T: Debug, E: Debug>(result: Result<T, E>) -> TestResult<E> {
         match result {
             Err(error) => Ok(error),
-            Ok(value) => Err(CursedError::runtime_error(&format!(
+            Ok(value) => Err(CryptoError::Other(&format!(
                 "Assertion failed: expected Err, got Ok({:?})", value
             ))),
         }
@@ -93,7 +94,7 @@ impl Assertions {
         if haystack.contains(needle) {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: '{}' does not contain '{}'", haystack, needle
             )))
         }
@@ -104,7 +105,7 @@ impl Assertions {
         if string.starts_with(prefix) {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: '{}' does not start with '{}'", string, prefix
             )))
         }
@@ -115,7 +116,7 @@ impl Assertions {
         if string.ends_with(suffix) {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: '{}' does not end with '{}'", string, suffix
             )))
         }
@@ -126,7 +127,7 @@ impl Assertions {
         if left > right {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: {:?} > {:?}", left, right
             )))
         }
@@ -137,7 +138,7 @@ impl Assertions {
         if left < right {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: {:?} < {:?}", left, right
             )))
         }
@@ -148,7 +149,7 @@ impl Assertions {
         if left >= right {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: {:?} >= {:?}", left, right
             )))
         }
@@ -159,7 +160,7 @@ impl Assertions {
         if left <= right {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CursedError::runtime_error(&&format!(
                 "Assertion failed: {:?} <= {:?}", left, right
             )))
         }
@@ -170,7 +171,7 @@ impl Assertions {
         if collection.is_empty() {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CryptoError::Other(&format!(
                 "Assertion failed: collection is not empty (length: {})", collection.len()
             )))
         }
@@ -181,7 +182,7 @@ impl Assertions {
         if collection.len() == expected_len {
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!(
+            Err(CryptoError::Other(&format!(
                 "Assertion failed: expected length {}, got {}", expected_len, collection.len()
             )))
         }

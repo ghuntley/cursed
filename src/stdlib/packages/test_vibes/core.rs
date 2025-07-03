@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
@@ -112,7 +113,7 @@ impl VibeTest {
             Ok(()) => {
                 if self.should_panic {
                     println!("❌ Test should have panicked but didn't: {}", self.name);
-                    Err(CursedError::runtime_error("Test should have panicked"))
+                    Err(CursedError::runtime_error(&"Test should have panicked".to_string()))
                 } else {
                     println!("✅ Test passed: {} ({:?})", self.name, duration);
                     Ok(())
@@ -264,7 +265,7 @@ impl VibeTestingManager {
                 Err(_) => {
                     failed_count += 1;
                     if self.fail_fast {
-                        return Err(CursedError::runtime_error("Test failed and fail_fast is enabled"));
+                        return Err(CursedError::runtime_error(&"Test failed and fail_fast is enabled".to_string()));
                     }
                     false
                 }
@@ -274,7 +275,7 @@ impl VibeTestingManager {
 
         if failed_count > 0 {
             println!("❌ {} test(s) failed out of {}", failed_count, self.tests.len());
-            Err(CursedError::runtime_error(&format!("{} test(s) failed", failed_count)))
+            Err(CryptoError::Other(format!("{} test(s) failed", "placeholder")))
         } else {
             println!("✅ All {} tests passed!", self.tests.len());
             Ok(results)
@@ -366,7 +367,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is false"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
         }
     }
     
@@ -378,7 +379,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is true"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
         }
     }
     

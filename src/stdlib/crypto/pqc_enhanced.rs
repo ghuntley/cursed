@@ -36,6 +36,7 @@ impl CryptoHandler {
     /// Hash data using SHA-256
     pub fn hash_sha256(&self, data: &[u8]) -> Vec<u8> {
         use sha2::{Sha256, Digest};
+use crate::stdlib::packages::CryptoError;
         let mut hasher = Sha256::new();
         hasher.update(data);
         hasher.finalize().to_vec()
@@ -53,7 +54,7 @@ impl CryptoHandler {
     
     /// Decode from hex
     pub fn from_hex(&self, hex_str: &str) -> CryptoResult<Vec<u8>> {
-        hex::decode(hex_str).map_err(|e| CursedError::runtime_error(&format!("Hex decode error: {}", e)))
+        hex::decode(hex_str).map_err(|e| CryptoError::Other(format!("Hex decode error: {}")))
     }
 }
 
@@ -68,7 +69,7 @@ pub fn init_pqc_enhanced() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
     let key = handler.generate_key()?;
     if key.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto key generation test failed"));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     println!("🔐 Crypto processing (pqc_enhanced) initialized");
     Ok(())
@@ -80,7 +81,7 @@ pub fn test_pqc_enhanced() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto hash test failed"));
+        return Err(CryptoError::Other("Crypto hash test failed"));
     }
     Ok(())
 }

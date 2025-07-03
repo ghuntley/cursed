@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::collections::HashMap;
 use std::any::Any;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
@@ -58,7 +59,7 @@ impl MockVibe {
     pub fn verify(&self) -> TestResult<()> {
         for expectation in &self.expectations {
             if !expectation.is_satisfied(&self.call_history) {
-                return Err(CursedError::runtime_error(&format!(
+                return Err(CursedError::runtime_error(&&format!(
                     "Expectation not met for method: {}", expectation.method_name
                 )));
             }
@@ -71,7 +72,7 @@ impl MockVibe {
             
             for call in &self.call_history {
                 if !expected_calls.contains(call) {
-                    return Err(CursedError::runtime_error(&format!(
+                    return Err(CursedError::runtime_error(&&format!(
                         "Unexpected call in strict mode: {}", call
                     )));
                 }
@@ -204,7 +205,7 @@ impl Stub {
 
     pub fn call(&self) -> TestResult<Option<Box<dyn Any + Send + Sync>>> {
         if self.should_panic {
-            return Err(CursedError::runtime_error("Stubbed method panicked"));
+            return Err(CursedError::runtime_error(&"Stubbed method panicked".to_string()));
         }
 
         if let Some(implementation) = self.implementation {
@@ -269,7 +270,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is false"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
         }
     }
     
@@ -281,7 +282,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is true"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
         }
     }
     

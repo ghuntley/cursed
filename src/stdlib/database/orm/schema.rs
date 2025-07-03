@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::collections::HashMap;
 use super::migration::{ColumnDefinition, ColumnType, TableConstraint};
+use crate::stdlib::packages::ModuleError;
 
 /// Result type for schema operations
 pub type ModuleResult<T> = Result<T, CursedError>;
@@ -382,7 +383,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -404,7 +405,7 @@ pub fn init_schema() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     println!("⚙️  Module processing (schema) initialized");
     Ok(())
@@ -415,7 +416,7 @@ pub fn test_schema() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     Ok(())
 }

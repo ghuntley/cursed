@@ -5,6 +5,7 @@ use super::pool::{ConnectionPool, PoolConfig};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use crate::stdlib::packages::ModuleError;
 
 /// Result type for manager operations
 pub type ModuleResult<T> = Result<T, CursedError>;
@@ -57,17 +58,17 @@ impl PoolManager {
     pub fn register_pool(&mut self, name: String, pool: Arc<Mutex<dyn PoolManagerTrait>>) -> ModuleResult<()> {
         self.pools.insert(name.clone(), pool);
         let mut stats = self.stats.lock()
-            .map_err(|_| CursedError::runtime_error("Failed to acquire stats lock"))?;
+            .map_err(|_| ModuleError::Other("Failed to acquire stats lock".to_string()))?;
         stats.insert(name, PoolStats::default());
         Ok(())
     }
     
     pub fn get_pool_stats(&self, name: &str) -> ModuleResult<PoolStats> {
         let stats = self.stats.lock()
-            .map_err(|_| CursedError::runtime_error("Failed to acquire stats lock"))?;
+            .map_err(|_| ModuleError::Other("Failed to acquire stats lock".to_string()))?;
         stats.get(name)
             .cloned()
-            .ok_or_else(|| CursedError::runtime_error(&format!("Pool '{}' not found", name)))
+            .ok_or_else(|| ModuleError::Other(format!("Pool '{}' not found", "placeholder")))
     }
     
     pub fn health_check_all(&self) -> ModuleResult<HashMap<String, bool>> {
@@ -75,7 +76,7 @@ impl PoolManager {
         
         for (name, pool) in &self.pools {
             let pool = pool.lock()
-                .map_err(|_| CursedError::runtime_error("Failed to acquire pool lock"))?;
+                .map_err(|_| ModuleError::Other("Failed to acquire pool lock".to_string()))?;
             results.insert(name.clone(), pool.health_check());
         }
         
@@ -85,9 +86,9 @@ impl PoolManager {
     pub fn cleanup_all(&mut self) -> ModuleResult<()> {
         for (name, pool) in &self.pools {
             let mut pool = pool.lock()
-                .map_err(|_| CursedError::runtime_error("Failed to acquire pool lock"))?;
+                .map_err(|_| ModuleError::Other("Failed to acquire pool lock".to_string()))?;
             pool.cleanup().map_err(|e| {
-                CursedError::runtime_error(&format!("Failed to cleanup pool '{}': {}", name, e))
+                ModuleError::Other(format!("Failed to cleanup pool '{}': {}", name, e))
             })?;
         }
         Ok(())
@@ -95,14 +96,14 @@ impl PoolManager {
     
     pub fn update_stats(&self, pool_name: &str, stats: PoolStats) -> ModuleResult<()> {
         let mut stats_map = self.stats.lock()
-            .map_err(|_| CursedError::runtime_error("Failed to acquire stats lock"))?;
+            .map_err(|_| ModuleError::Other("Failed to acquire stats lock".to_string()))?;
         stats_map.insert(pool_name.to_string(), stats);
         Ok(())
     }
     
     pub fn get_all_stats(&self) -> ModuleResult<HashMap<String, PoolStats>> {
         let stats = self.stats.lock()
-            .map_err(|_| CursedError::runtime_error("Failed to acquire stats lock"))?;
+            .map_err(|_| ModuleError::Other("Failed to acquire stats lock".to_string()))?;
         Ok(stats.clone())
     }
 }
@@ -134,7 +135,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -156,7 +157,7 @@ pub fn init_manager() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     println!("⚙️  Module processing (manager) initialized");
     Ok(())
@@ -167,7 +168,7 @@ pub fn test_manager() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     Ok(())
 }

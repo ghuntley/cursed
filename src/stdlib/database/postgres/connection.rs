@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use std::collections::HashMap;
+use crate::stdlib::packages::IOError;
 
 /// Result type for PostgreSQL connection operations
 pub type PostgresConnectionResult<T> = Result<T, CursedError>;
@@ -46,7 +47,7 @@ impl PostgresConnection {
     /// Execute a query
     pub fn execute(&self, query: &str) -> PostgresConnectionResult<PostgresQueryResult> {
         if !self.is_connected {
-            return Err(CursedError::runtime_error("Not connected to database"));
+            return Err(CursedError::runtime_error(&"Not connected to database".to_string()));
         }
         println!("🔍 Executing query: {}", query);
         Ok(PostgresQueryResult::new(1, Vec::new()))

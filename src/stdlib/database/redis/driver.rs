@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use super::connection::RedisConnection;
+use crate::stdlib::packages::IOError;
 
 /// Result type for Redis operations
 pub type RedisResult<T> = Result<T, CursedError>;
@@ -41,7 +42,7 @@ impl RedisDriver {
     /// Connect to Redis
     pub fn connect(&self) -> RedisResult<RedisConnection> {
         if !self.is_initialized {
-            return Err(CursedError::runtime_error("Driver not initialized"));
+            return Err(CursedError::runtime_error(&"Driver not initialized".to_string()));
         }
         
         let connection_string = format!("redis://{}:{}/{}", 

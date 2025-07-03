@@ -1,6 +1,7 @@
 //! String processing functionality for random_strings
 
 use crate::error::CursedError;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for string operations
 pub type StringResult<T> = Result<T, CursedError>;
@@ -55,7 +56,7 @@ pub fn init_random_strings() -> StringResult<()> {
     let processor = StringProcessor::new();
     let test_result = processor.process("test")?;
     if test_result.is_empty() {
-        return Err(CursedError::runtime_error("String processing test failed"));
+        return Err(CursedError::runtime_error(&"String processing test failed".to_string()));
     }
     println!("📝 String processing (random_strings) initialized");
     Ok(())
@@ -66,7 +67,7 @@ pub fn test_random_strings() -> StringResult<()> {
     let processor = StringProcessor::new();
     let result = processor.process("Hello, CURSED!")?;
     if result != "Hello, CURSED!" {
-        return Err(CursedError::runtime_error("String test failed"));
+        return Err(CursedError::runtime_error(&"String test failed".to_string()));
     }
     Ok(())
 }

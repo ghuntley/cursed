@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for async operations
 pub type AsyncResult<T> = Result<T, CursedError>;
@@ -50,7 +51,7 @@ impl AsyncHandler {
     {
         tokio::time::timeout(duration, future)
             .await
-            .map_err(|_| CursedError::runtime_error("Async operation timed out"))
+            .map_err(|_| CryptoError::Other("Async operation timed out"))
     }
 }
 
@@ -92,7 +93,7 @@ pub async fn init_timer() -> AsyncResult<()> {
     let task = SimpleTask::new("test".to_string());
     let result = handler.spawn(task).await?;
     if result != "test" {
-        return Err(CursedError::runtime_error("Async test failed"));
+        return Err(CryptoError::Other("Async test failed"));
     }
     println!("⚡ Async processing (timer) initialized");
     Ok(())
@@ -104,7 +105,7 @@ pub async fn test_timer() -> AsyncResult<()> {
     let future = async { 42 };
     let result = handler.spawn(future).await?;
     if result != 42 {
-        return Err(CursedError::runtime_error("Async test failed"));
+        return Err(CryptoError::Other("Async test failed"));
     }
     Ok(())
 }

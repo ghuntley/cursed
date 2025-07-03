@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::collections::HashMap;
 use std::fmt;
+use crate::stdlib::packages::IOError;
 
 /// Result type for PostgreSQL configuration operations
 pub type PostgresConfigResult<T> = Result<T, CursedError>;
@@ -135,19 +136,19 @@ impl PostgresConfig {
     /// Validate the configuration
     pub fn validate(&self) -> PostgresConfigResult<()> {
         if self.host.is_empty() {
-            return Err(CursedError::runtime_error("Host cannot be empty"));
+            return Err(CursedError::runtime_error(&"Host cannot be empty".to_string()));
         }
         
         if self.port == 0 {
-            return Err(CursedError::runtime_error("Port must be greater than 0"));
+            return Err(CursedError::runtime_error(&"Port must be greater than 0".to_string()));
         }
         
         if self.database.is_empty() {
-            return Err(CursedError::runtime_error("Database name cannot be empty"));
+            return Err(CursedError::runtime_error(&"Database name cannot be empty".to_string()));
         }
         
         if self.username.is_empty() {
-            return Err(CursedError::runtime_error("Username cannot be empty"));
+            return Err(CursedError::runtime_error(&"Username cannot be empty".to_string()));
         }
         
         Ok(())

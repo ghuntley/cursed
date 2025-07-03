@@ -69,6 +69,31 @@ impl std::fmt::Display for CursedError {
 
 impl std::error::Error for CursedError {}
 
+// From trait implementations for error conversions
+impl From<crate::stdlib::packages::CryptoError> for CursedError {
+    fn from(err: crate::stdlib::packages::CryptoError) -> Self {
+        CursedError::General(format!("Crypto error: {}", err))
+    }
+}
+
+impl From<crate::stdlib::packages::IOError> for CursedError {
+    fn from(err: crate::stdlib::packages::IOError) -> Self {
+        CursedError::Io(format!("IO error: {}", err))
+    }
+}
+
+impl From<crate::stdlib::packages::ModuleError> for CursedError {
+    fn from(err: crate::stdlib::packages::ModuleError) -> Self {
+        CursedError::General(format!("Module error: {}", err))
+    }
+}
+
+impl From<crate::stdlib::packages::PkiError> for CursedError {
+    fn from(err: crate::stdlib::packages::PkiError) -> Self {
+        CursedError::General(format!("PKI error: {}", err))
+    }
+}
+
 pub type Result<T> = std::result::Result<T, CursedError>;
 
 // Convenience constructor functions

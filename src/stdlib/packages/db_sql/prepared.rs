@@ -32,7 +32,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -51,6 +51,7 @@ impl Default for ModuleHandler {
 
 use super::{DbResult, SqlValue, SqlResultSet, SqlExecuteResult};
 use std::collections::HashMap;
+use crate::stdlib::packages::ModuleError;
 
 /// Prepared statement interface
 pub struct PreparedStatement {
@@ -134,7 +135,7 @@ pub fn init_prepared() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     println!("⚙️  Module processing (prepared) initialized");
     Ok(())
@@ -145,7 +146,7 @@ pub fn test_prepared() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     Ok(())
 }

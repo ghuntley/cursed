@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use super::{SqliteConfig, SqliteStats, SqliteError};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use crate::stdlib::packages::IOError;
 
 /// Result type for connection operations
 pub type ConnectionResult<T> = Result<T, SqliteError>;

@@ -1,9 +1,10 @@
 //! Cryptographically secure random byte generation
 
 use crate::error::CursedError;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for random byte operations
-pub type RandomBytesResult<T> = Result<T, CursedError>;
+pub type RandomBytesResult<T> = Result<T, CryptoError>;
 
 /// Generate cryptographically secure random bytes
 pub fn random_bytes(size: usize) -> RandomBytesResult<Vec<u8>> {
@@ -26,14 +27,15 @@ pub fn fill_bytes(buffer: &mut [u8]) -> RandomBytesResult<()> {
 pub fn secure_random_bytes(size: usize) -> RandomBytesResult<Vec<u8>> {
     use getrandom::getrandom;
     let mut bytes = vec![0u8; size];
-    getrandom(&mut bytes).map_err(|e| CursedError::runtime_error(&format!("Failed to get secure random bytes: {}", e)))?;
+    getrandom(&mut bytes).map_err(|e| CryptoError::Other(format!("Failed to get secure random bytes: {}", "placeholder")))?;
     Ok(bytes)
 }
 
 /// Fill a buffer with cryptographically secure random bytes using system entropy
 pub fn secure_fill_bytes(buffer: &mut [u8]) -> RandomBytesResult<()> {
     use getrandom::getrandom;
-    getrandom(buffer).map_err(|e| CursedError::runtime_error(&format!("Failed to get secure random bytes: {}", e)))?;
+use crate::stdlib::packages::CryptoError;
+    getrandom(buffer).map_err(|e| CryptoError::Other(format!("Failed to get secure random bytes: {}", "placeholder")))?;
     Ok(())
 }
 
@@ -51,12 +53,12 @@ pub fn entropy_random_bytes(size: usize, min_entropy_bits: usize) -> RandomBytes
 pub fn test_random_bytes() -> RandomBytesResult<()> {
     let test_bytes = random_bytes(32)?;
     if test_bytes.len() != 32 {
-        return Err(CursedError::runtime_error("Random byte generation test failed"));
+        return Err(CursedError::runtime_error(&"Random byte generation test failed".to_string()));
     }
     
     // Check that bytes are not all zeros (extremely unlikely with good RNG)
     if test_bytes.iter().all(|&b| b == 0) {
-        return Err(CursedError::runtime_error("Random bytes appear to be all zeros - RNG may be broken"));
+        return Err(CursedError::runtime_error(&"Random bytes appear to be all zeros - RNG may be broken".to_string()));
     }
     
     Ok(())
