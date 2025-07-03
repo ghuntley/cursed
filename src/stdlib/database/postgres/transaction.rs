@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use super::connection::{PostgresConnection, PostgresQueryResult};
+use crate::stdlib::packages::IOError;
 
 /// Result type for PostgreSQL transaction operations
 pub type PostgresTransactionResult<T> = Result<T, CursedError>;
@@ -26,7 +27,7 @@ impl PostgresTransaction {
     /// Begin the transaction
     pub fn begin(&mut self) -> PostgresTransactionResult<()> {
         if self.is_active {
-            return Err(CursedError::runtime_error("Transaction already active"));
+            return Err(CursedError::runtime_error(&"Transaction already active".to_string()));
         }
         
         if let Some(ref mut conn) = self.connection {
@@ -34,7 +35,7 @@ impl PostgresTransaction {
             self.is_active = true;
             println!("🔄 PostgreSQL transaction begun");
         } else {
-            return Err(CursedError::runtime_error("No connection available"));
+            return Err(CursedError::runtime_error(&"No connection available".to_string()));
         }
         
         Ok(())
@@ -43,7 +44,7 @@ impl PostgresTransaction {
     /// Commit the transaction
     pub fn commit(&mut self) -> PostgresTransactionResult<()> {
         if !self.is_active {
-            return Err(CursedError::runtime_error("No active transaction to commit"));
+            return Err(CursedError::runtime_error(&"No active transaction to commit".to_string()));
         }
         
         if let Some(ref mut conn) = self.connection {
@@ -52,7 +53,7 @@ impl PostgresTransaction {
             self.savepoint_level = 0;
             println!("✅ PostgreSQL transaction committed");
         } else {
-            return Err(CursedError::runtime_error("No connection available"));
+            return Err(CursedError::runtime_error(&"No connection available".to_string()));
         }
         
         Ok(())
@@ -61,7 +62,7 @@ impl PostgresTransaction {
     /// Rollback the transaction
     pub fn rollback(&mut self) -> PostgresTransactionResult<()> {
         if !self.is_active {
-            return Err(CursedError::runtime_error("No active transaction to rollback"));
+            return Err(CursedError::runtime_error(&"No active transaction to rollback".to_string()));
         }
         
         if let Some(ref mut conn) = self.connection {
@@ -70,7 +71,7 @@ impl PostgresTransaction {
             self.savepoint_level = 0;
             println!("🔄 PostgreSQL transaction rolled back");
         } else {
-            return Err(CursedError::runtime_error("No connection available"));
+            return Err(CursedError::runtime_error(&"No connection available".to_string()));
         }
         
         Ok(())
@@ -79,7 +80,7 @@ impl PostgresTransaction {
     /// Create a savepoint
     pub fn savepoint(&mut self, name: &str) -> PostgresTransactionResult<()> {
         if !self.is_active {
-            return Err(CursedError::runtime_error("No active transaction for savepoint"));
+            return Err(CursedError::runtime_error(&"No active transaction for savepoint".to_string()));
         }
         
         self.savepoint_level += 1;
@@ -90,7 +91,7 @@ impl PostgresTransaction {
     /// Rollback to a savepoint
     pub fn rollback_to_savepoint(&mut self, name: &str) -> PostgresTransactionResult<()> {
         if !self.is_active {
-            return Err(CursedError::runtime_error("No active transaction"));
+            return Err(CursedError::runtime_error(&"No active transaction".to_string()));
         }
         
         if self.savepoint_level > 0 {
@@ -103,13 +104,13 @@ impl PostgresTransaction {
     /// Execute a query within the transaction
     pub fn execute(&self, query: &str) -> PostgresTransactionResult<PostgresQueryResult> {
         if !self.is_active {
-            return Err(CursedError::runtime_error("No active transaction"));
+            return Err(CursedError::runtime_error(&"No active transaction".to_string()));
         }
         
         if let Some(ref conn) = self.connection {
             conn.execute(query).map_err(|e| e)
         } else {
-            Err(CursedError::runtime_error("No connection available"))
+            Err(CursedError::runtime_error(&"No connection available".to_string()))
         }
     }
     

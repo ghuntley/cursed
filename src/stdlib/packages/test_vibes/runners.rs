@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use super::core::{VibeTest, VibeBench, VibeTestingManager, BenchResult};
 use std::collections::HashMap;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
@@ -239,7 +240,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is false"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
         }
     }
     
@@ -251,7 +252,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is true"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
         }
     }
     

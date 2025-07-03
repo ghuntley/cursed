@@ -102,6 +102,7 @@ impl HashCommitment {
     
     pub fn verify_opening(&self, value: &[u8], nonce: &[u8]) -> bool {
         use sha2::{Sha256, Digest};
+use crate::stdlib::packages::CryptoError;
         
         let mut hasher = Sha256::new();
         hasher.update(value);
@@ -148,7 +149,7 @@ impl VectorCommitment {
     
     pub fn get_commitment(&self, index: usize) -> CryptoResult<&PedersenCommitment> {
         self.commitments.get(index)
-            .ok_or_else(|| CursedError::runtime_error("Index out of bounds"))
+            .ok_or_else(|| CryptoError::Other("Index out of bounds".to_string()))
     }
     
     pub fn verify_commitment(&self, index: usize) -> CryptoResult<bool> {
@@ -198,7 +199,7 @@ impl KateCommitment {
         setup_points: Vec<FieldElement>,
     ) -> CryptoResult<Self> {
         if polynomial_coefficients.is_empty() {
-            return Err(CursedError::runtime_error("Empty polynomial"));
+            return Err(CursedError::runtime_error(&"Empty polynomial".to_string()));
         }
         
         let modulus = polynomial_coefficients[0].modulus.clone();
@@ -286,7 +287,7 @@ pub fn init_commitments() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
     let key = handler.generate_key()?;
     if key.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto key generation test failed"));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     println!("🔐 Crypto processing (commitments) initialized");
     Ok(())
@@ -298,7 +299,7 @@ pub fn test_commitments() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto hash test failed"));
+        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
     }
     Ok(())
 }

@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::fs;
 use std::time::{Duration, Instant};
 use rand::Rng;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
@@ -24,7 +25,7 @@ impl TempFile {
         
         // Create empty file
         fs::File::create(&path)
-            .map_err(|e| CursedError::runtime_error(&format!("Failed to create temp file: {}", e)))?;
+            .map_err(|e| CryptoError::Other(format!("Failed to create temp file: {}", "placeholder")))?;
         
         Ok(Self {
             path,
@@ -35,7 +36,7 @@ impl TempFile {
     pub fn with_content(content: &str) -> TestResult<Self> {
         let temp_file = Self::new()?;
         fs::write(&temp_file.path, content)
-            .map_err(|e| CursedError::runtime_error(&format!("Failed to write temp file: {}", e)))?;
+            .map_err(|e| CryptoError::Other(format!("Failed to write temp file: {}", "placeholder")))?;
         Ok(temp_file)
     }
 
@@ -45,18 +46,18 @@ impl TempFile {
 
     pub fn read(&self) -> TestResult<String> {
         fs::read_to_string(&self.path)
-            .map_err(|e| CursedError::runtime_error(&format!("Failed to read temp file: {}", e)))
+            .map_err(|e| CryptoError::Other(format!("Failed to read temp file: {}", "placeholder")))
     }
 
     pub fn write(&self, content: &str) -> TestResult<()> {
         fs::write(&self.path, content)
-            .map_err(|e| CursedError::runtime_error(&format!("Failed to write temp file: {}", e)))
+            .map_err(|e| CryptoError::Other(format!("Failed to write temp file: {}", "placeholder")))
     }
 
     pub fn cleanup(self) -> TestResult<()> {
         if self.path.exists() {
             fs::remove_file(&self.path)
-                .map_err(|e| CursedError::runtime_error(&format!("Failed to cleanup temp file: {}", e)))?;
+                .map_err(|e| CryptoError::Other(format!("Failed to cleanup temp file: {}", "placeholder")))?;
         }
         Ok(())
     }
@@ -84,7 +85,7 @@ impl TempDir {
         let path = temp_dir.join(dirname);
         
         fs::create_dir_all(&path)
-            .map_err(|e| CursedError::runtime_error(&format!("Failed to create temp dir: {}", e)))?;
+            .map_err(|e| CryptoError::Other(format!("Failed to create temp dir: {}", "placeholder")))?;
         
         Ok(Self {
             path,
@@ -99,21 +100,21 @@ impl TempDir {
     pub fn create_file(&self, name: &str, content: &str) -> TestResult<PathBuf> {
         let file_path = self.path.join(name);
         fs::write(&file_path, content)
-            .map_err(|e| CursedError::runtime_error(&format!("Failed to create file in temp dir: {}", e)))?;
+            .map_err(|e| CryptoError::Other(format!("Failed to create file in temp dir: {}", "placeholder")))?;
         Ok(file_path)
     }
 
     pub fn create_subdir(&self, name: &str) -> TestResult<PathBuf> {
         let dir_path = self.path.join(name);
         fs::create_dir_all(&dir_path)
-            .map_err(|e| CursedError::runtime_error(&format!("Failed to create subdir in temp dir: {}", e)))?;
+            .map_err(|e| CryptoError::Other(format!("Failed to create subdir in temp dir: {}", "placeholder")))?;
         Ok(dir_path)
     }
 
     pub fn cleanup(self) -> TestResult<()> {
         if self.path.exists() {
             fs::remove_dir_all(&self.path)
-                .map_err(|e| CursedError::runtime_error(&format!("Failed to cleanup temp dir: {}", e)))?;
+                .map_err(|e| CryptoError::Other(format!("Failed to cleanup temp dir: {}", "placeholder")))?;
         }
         Ok(())
     }
@@ -148,7 +149,7 @@ where
     let elapsed = start.elapsed();
     
     if elapsed > duration {
-        return Err(CursedError::runtime_error(&format!(
+        return Err(CursedError::runtime_error(&&format!(
             "Test exceeded deadline: {:?} > {:?}", elapsed, duration
         )));
     }
@@ -244,7 +245,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is false"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
         }
     }
     
@@ -256,7 +257,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is true"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
         }
     }
     

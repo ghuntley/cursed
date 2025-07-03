@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use std::collections::HashMap;
+use crate::stdlib::packages::IOError;
 
 /// Result type for builder operations
 pub type BuilderResult<T> = Result<T, CursedError>;
@@ -98,7 +99,7 @@ impl QueryBuilder {
     
     fn build_select(&self) -> BuilderResult<String> {
         let table = self.table.as_ref()
-            .ok_or_else(|| CursedError::runtime_error("Table name required"))?;
+            .ok_or_else(|| IOError::Other("Table name required".to_string()))?;
         
         let columns = if self.columns.is_empty() {
             "*".to_string()
@@ -127,10 +128,10 @@ impl QueryBuilder {
     
     fn build_insert(&self) -> BuilderResult<String> {
         let table = self.table.as_ref()
-            .ok_or_else(|| CursedError::runtime_error("Table name required"))?;
+            .ok_or_else(|| IOError::Other("Table name required".to_string()))?;
         
         if self.columns.is_empty() {
-            return Err(CursedError::runtime_error("Columns required for INSERT"));
+            return Err(CursedError::runtime_error(&"Columns required for INSERT".to_string()));
         }
         
         let columns = self.columns.join(", ");
@@ -141,10 +142,10 @@ impl QueryBuilder {
     
     fn build_update(&self) -> BuilderResult<String> {
         let table = self.table.as_ref()
-            .ok_or_else(|| CursedError::runtime_error("Table name required"))?;
+            .ok_or_else(|| IOError::Other("Table name required".to_string()))?;
         
         if self.columns.is_empty() {
-            return Err(CursedError::runtime_error("Columns required for UPDATE"));
+            return Err(CursedError::runtime_error(&"Columns required for UPDATE".to_string()));
         }
         
         let set_clauses = self.columns.iter()
@@ -164,7 +165,7 @@ impl QueryBuilder {
     
     fn build_delete(&self) -> BuilderResult<String> {
         let table = self.table.as_ref()
-            .ok_or_else(|| CursedError::runtime_error("Table name required"))?;
+            .ok_or_else(|| IOError::Other("Table name required".to_string()))?;
         
         let mut query = format!("DELETE FROM {}", table);
         

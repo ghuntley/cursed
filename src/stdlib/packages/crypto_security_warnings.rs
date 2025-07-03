@@ -4,6 +4,7 @@
 //! that were found to have unsafe placeholder implementations.
 
 use crate::error::CursedError;
+use crate::stdlib::packages::CryptoError;
 
 /// Print security warning for disabled crypto functions
 pub fn print_crypto_security_warning() {
@@ -22,10 +23,7 @@ pub fn print_crypto_security_warning() {
 
 /// Check if crypto functions are safe to use
 pub fn verify_crypto_safety() -> Result<(), CursedError> {
-    Err(CursedError::runtime_error(
-        "Cryptographic functions are disabled for security. Placeholder implementations \
-        contained critical vulnerabilities including crypto bypasses and insecure key generation."
-    ))
+    Err(CryptoError::KeyGenerationFailed)
 }
 
 /// Security audit result

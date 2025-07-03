@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use super::connection::{PostgresValue, PostgresQueryResult};
+use crate::stdlib::packages::IOError;
 
 /// Result type for PostgreSQL statement operations
 pub type PostgresStatementResult<T> = Result<T, CursedError>;
@@ -48,7 +49,7 @@ impl PostgresStatement {
     /// Execute the prepared statement
     pub fn execute(&self) -> PostgresStatementResult<PostgresQueryResult> {
         if !self.is_prepared {
-            return Err(CursedError::runtime_error("Statement not prepared"));
+            return Err(CursedError::runtime_error(&"Statement not prepared".to_string()));
         }
         println!("⚡ Executing prepared statement with {} parameters", self.parameters.len());
         Ok(PostgresQueryResult::new(1, Vec::new()))

@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::collections::HashMap;
 use serde_json::{Value, Map};
+use crate::stdlib::packages::ModuleError;
 
 /// Result type for document operations
 pub type ModuleResult<T> = Result<T, CursedError>;
@@ -23,8 +24,8 @@ impl Document {
     pub fn from_json(json: &str) -> ModuleResult<Self> {
         match serde_json::from_str::<Value>(json) {
             Ok(Value::Object(map)) => Ok(Self { data: map }),
-            Ok(_) => Err(CursedError::runtime_error("Document must be JSON object")),
-            Err(e) => Err(CursedError::runtime_error(&format!("Invalid JSON: {}", e))),
+            Ok(_) => Err(CursedError::runtime_error(&"Document must be JSON object".to_string())),
+            Err(e) => Err(CursedError::runtime_error(&format!("Invalid JSON: {}", "placeholder"))),
         }
     }
     
@@ -101,7 +102,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -123,7 +124,7 @@ pub fn init_document() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     println!("⚙️  Module processing (document) initialized");
     Ok(())
@@ -134,7 +135,7 @@ pub fn test_document() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     Ok(())
 }

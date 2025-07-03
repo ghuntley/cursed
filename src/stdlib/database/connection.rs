@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::collections::HashMap;
 use super::core::SqlValue;
+use crate::stdlib::packages::IOError;
 
 /// Result type for database operations
 pub type DatabaseResult<T> = Result<T, CursedError>;
@@ -105,7 +106,7 @@ impl QueryResult {
     /// Get the last insert ID
     pub fn last_insert_id(&self) -> DatabaseResult<i64> {
         self.last_insert_id
-            .ok_or_else(|| CursedError::runtime_error("No last insert ID available"))
+            .ok_or_else(|| IOError::Other("No last insert ID available".to_string()))
     }
     
     /// Convert to iterator
@@ -162,7 +163,7 @@ impl InMemoryDatabase {
             table.push(row);
             Ok(())
         } else {
-            Err(CursedError::runtime_error(&format!("Table '{}' not found", table_name)))
+            Err(CursedError::runtime_error(&format!("Table '{}' not found", "placeholder")))
         }
     }
 }
@@ -190,7 +191,7 @@ impl DatabaseConnection for InMemoryDatabase {
                 Ok(QueryResult::new(Vec::new())) // Invalid query
             }
         } else {
-            Err(CursedError::runtime_error("Query operation expected SELECT statement"))
+            Err(CursedError::runtime_error(&"Query operation expected SELECT statement".to_string()))
         }
     }
     
@@ -204,7 +205,7 @@ impl DatabaseConnection for InMemoryDatabase {
                 tables.insert(table_name, Vec::new());
                 Ok(QueryResult::with_affected_rows(0, None))
             } else {
-                Err(CursedError::runtime_error("Invalid CREATE TABLE statement"))
+                Err(CursedError::runtime_error(&"Invalid CREATE TABLE statement".to_string()))
             }
         } else if sql_upper.starts_with("INSERT") {
             // For demo purposes, just return success
@@ -213,7 +214,7 @@ impl DatabaseConnection for InMemoryDatabase {
             // For demo purposes, just return success
             Ok(QueryResult::with_affected_rows(1, None))
         } else {
-            Err(CursedError::runtime_error("Unsupported SQL operation"))
+            Err(CursedError::runtime_error(&"Unsupported SQL operation".to_string()))
         }
     }
     

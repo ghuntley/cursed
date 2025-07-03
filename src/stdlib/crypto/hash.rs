@@ -145,21 +145,22 @@ impl Hmac {
                 type HmacSha256 = Hmac<Sha256>;
                 
                 let mut mac = HmacSha256::new_from_slice(key)
-                    .map_err(|e| CursedError::runtime_error(&format!("HMAC key error: {}", e)))?;
+                    .map_err(|e| CryptoError::Other(format!("HMAC key error: {}")))?;
                 mac.update(data);
                 Ok(mac.finalize().into_bytes().to_vec())
             }
             HashAlgorithm::Sha512 => {
                 use hmac::{Hmac, Mac};
                 use sha2::Sha512;
+use crate::stdlib::packages::CryptoError;
                 type HmacSha512 = Hmac<Sha512>;
                 
                 let mut mac = HmacSha512::new_from_slice(key)
-                    .map_err(|e| CursedError::runtime_error(&format!("HMAC key error: {}", e)))?;
+                    .map_err(|e| CryptoError::Other(format!("HMAC key error: {}")))?;
                 mac.update(data);
                 Ok(mac.finalize().into_bytes().to_vec())
             }
-            _ => Err(CursedError::runtime_error("HMAC not supported for this hash algorithm")),
+            _ => Err(CryptoError::Other("HMAC not supported for this hash algorithm")),
         }
     }
 }
@@ -171,20 +172,20 @@ pub fn test_hash_functions() -> HashResult<()> {
     // Test SHA-256
     let sha256_result = sha256(test_data);
     if sha256_result.is_empty() {
-        return Err(CursedError::runtime_error("SHA-256 hash failed"));
+        return Err(CryptoError::Other("SHA-256 hash failed"));
     }
     
     // Test BLAKE3
     let blake3_result = blake3_hash(test_data);
     if blake3_result.is_empty() {
-        return Err(CursedError::runtime_error("BLAKE3 hash failed"));
+        return Err(CryptoError::Other("BLAKE3 hash failed"));
     }
     
     // Test HMAC
     let hmac = Hmac::new(HashAlgorithm::Sha256);
     let hmac_result = hmac.compute(b"secret_key", test_data)?;
     if hmac_result.is_empty() {
-        return Err(CursedError::runtime_error("HMAC failed"));
+        return Err(CryptoError::Other("HMAC failed"));
     }
     
     Ok(())

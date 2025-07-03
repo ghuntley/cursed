@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use super::driver::{DriverConn, DriverTx};
+use crate::stdlib::packages::IOError;
 
 /// Result type for transaction operations
 pub type TransactionResult<T> = Result<T, CursedError>;
@@ -52,7 +53,7 @@ impl Tx {
         if let Some(ref tx) = self.transaction {
             tx.execute(query).map_err(|e| e)
         } else {
-            Err(CursedError::runtime_error("Transaction not available"))
+            Err(CursedError::runtime_error(&"Transaction not available".to_string()))
         }
     }
     
@@ -80,7 +81,7 @@ impl TransactionManager {
     /// Begin a new transaction
     pub fn begin(&mut self) -> TransactionResult<&mut Tx> {
         if self.current_transaction.is_some() {
-            return Err(CursedError::runtime_error("Transaction already active"));
+            return Err(CursedError::runtime_error(&"Transaction already active".to_string()));
         }
         
         if let Some(ref conn) = self.connection {
@@ -89,7 +90,7 @@ impl TransactionManager {
             println!("🔄 Transaction begun");
             Ok(self.current_transaction.as_mut().unwrap())
         } else {
-            Err(CursedError::runtime_error("No connection available"))
+            Err(CursedError::runtime_error(&"No connection available".to_string()))
         }
     }
     

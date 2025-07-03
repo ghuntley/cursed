@@ -5,6 +5,7 @@ use super::connection::{MySqlConnection, MySqlQueryResult};
 use super::statement::MySqlStatement;
 use super::transaction::MySqlTransaction;
 use std::collections::HashMap;
+use crate::stdlib::packages::IOError;
 
 /// Result type for MySQL driver operations
 pub type MySqlDriverResult<T> = Result<T, CursedError>;
@@ -94,7 +95,7 @@ impl MySqlDriver {
     /// Create a new connection
     pub fn connect(&self) -> MySqlDriverResult<MySqlConnection> {
         if !self.is_initialized {
-            return Err(CursedError::runtime_error("Driver not initialized"));
+            return Err(CursedError::runtime_error(&"Driver not initialized".to_string()));
         }
         
         let connection_string = format!(

@@ -1,6 +1,7 @@
 //! Redis connection implementation
 
 use crate::error::CursedError;
+use crate::stdlib::packages::IOError;
 
 /// Redis connection
 pub struct RedisConnection {
@@ -27,7 +28,7 @@ impl RedisConnection {
     /// Execute a Redis command
     pub fn execute(&self, command: &str) -> Result<RedisValue, CursedError> {
         if !self.is_connected {
-            return Err(CursedError::runtime_error("Not connected to Redis"));
+            return Err(CursedError::runtime_error(&"Not connected to Redis".to_string()));
         }
         println!("🔍 Executing Redis command: {}", command);
         Ok(RedisValue::String("OK".to_string()))

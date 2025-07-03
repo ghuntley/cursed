@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use crate::stdlib::packages::CryptoResult;
 use crate::stdlib::packages::CryptoHandler;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for crypto operations
 /// RSA-PSS salt length specification
@@ -53,7 +54,7 @@ impl RsaPssSignature {
 
     pub fn from_hex(hex_str: &str, salt_length: SaltLength, hash_algorithm: String, key_size: usize) -> CryptoResult<Self> {
         let signature = hex::decode(hex_str)
-            .map_err(|e| CursedError::runtime_error(&format!("Hex decode error: {}", e)))?;
+            .map_err(|e| CryptoError::Other(format!("Hex decode error: {}", "placeholder")))?;
         Ok(Self::new(signature, salt_length, hash_algorithm, key_size))
     }
 }
@@ -64,7 +65,7 @@ pub fn init_rsa_pss() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
     let key = handler.generate_key()?;
     if key.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto key generation test failed"));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     println!("🔐 Crypto processing (rsa_pss) initialized");
     Ok(())
@@ -76,7 +77,7 @@ pub fn test_rsa_pss() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto hash test failed"));
+        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
     }
     Ok(())
 }

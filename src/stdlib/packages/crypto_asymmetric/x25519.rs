@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use base64::{Engine as _, engine::general_purpose};
 use crate::stdlib::packages::CryptoResult;
 use crate::stdlib::packages::CryptoHandler;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for crypto operations
 /// Cryptographic operations handler
@@ -12,7 +13,7 @@ pub fn init_x25519() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
     let key = handler.generate_key()?;
     if key.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto key generation test failed"));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     println!("🔐 Crypto processing (x25519) initialized");
     Ok(())
@@ -24,7 +25,7 @@ pub fn test_x25519() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto hash test failed"));
+        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
     }
     Ok(())
 }
@@ -123,13 +124,13 @@ impl X25519KeyFormat {
                 let cleaned = encoded.replace("-----BEGIN PUBLIC KEY-----", "")
                                    .replace("-----END PUBLIC KEY-----", "")
                                    .replace('\n', "");
-                general_purpose::STANDARD.decode(&cleaned).map_err(|e| CursedError::runtime_error(&format!("PEM decode error: {}", e)))
+                general_purpose::STANDARD.decode(&cleaned).map_err(|e| CryptoError::Other(format!("PEM decode error: {}", "placeholder")))
             }
             X25519KeyFormat::Der => {
-                general_purpose::STANDARD.decode(encoded).map_err(|e| CursedError::runtime_error(&format!("DER decode error: {}", e)))
+                general_purpose::STANDARD.decode(encoded).map_err(|e| CryptoError::Other(format!("DER decode error: {}", "placeholder")))
             }
             X25519KeyFormat::Hex => {
-                hex::decode(encoded).map_err(|e| CursedError::runtime_error(&format!("Hex decode error: {}", e)))
+                hex::decode(encoded).map_err(|e| CryptoError::Other(format!("Hex decode error: {}", "placeholder")))
             }
         }
     }

@@ -68,6 +68,7 @@ pub fn secure_random_bytes(len: usize) -> Vec<u8> {
 /// Generate a random string with specified length and character set
 pub fn random_string(len: usize, charset: &str) -> String {
     use rand::Rng;
+use crate::stdlib::packages::CryptoError;
     let mut rng = rand::thread_rng();
     let chars: Vec<char> = charset.chars().collect();
     (0..len)
@@ -90,12 +91,12 @@ pub fn test_crypto_random() -> CryptoRandomResult<()> {
     let bytes = rng.gen_bytes(32);
     
     if bytes.len() != 32 {
-        return Err(CursedError::runtime_error("Random byte generation failed"));
+        return Err(CryptoError::Other("Random byte generation failed"));
     }
     
     // Basic entropy check - bytes shouldn't all be the same
     if bytes.iter().all(|&b| b == bytes[0]) {
-        return Err(CursedError::runtime_error("Random bytes lack entropy"));
+        return Err(CryptoError::Other("Random bytes lack entropy"));
     }
     
     Ok(())

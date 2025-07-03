@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use std::collections::HashMap;
 use crate::stdlib::packages::CryptoResult;
 use crate::stdlib::packages::CryptoHandler;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for crypto operations
 /// Timestamp validation policy
@@ -71,7 +72,7 @@ pub fn init_timestamping() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
     let key = handler.generate_key()?;
     if key.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto key generation test failed"));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     println!("🔐 Crypto processing (timestamping) initialized");
     Ok(())
@@ -83,7 +84,7 @@ pub fn test_timestamping() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto hash test failed"));
+        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
     }
     Ok(())
 }

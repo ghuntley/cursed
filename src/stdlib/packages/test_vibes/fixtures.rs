@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::collections::HashMap;
 use std::any::Any;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
@@ -114,7 +115,7 @@ impl TestCase {
             match (&result, self.expected_result) {
                 (Ok(()), Some(false)) => {
                     println!("❌ Test case expected to fail but passed: {}", self.name);
-                    Err(CursedError::runtime_error("Test case expected to fail but passed"))
+                    Err(CursedError::runtime_error(&"Test case expected to fail but passed".to_string()))
                 }
                 (Err(_), Some(true)) => {
                     println!("❌ Test case expected to pass but failed: {}", self.name);
@@ -191,7 +192,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is false"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is false".to_string()))
         }
     }
     
@@ -203,7 +204,7 @@ impl TestHandler {
             }
             Ok(())
         } else {
-            Err(CursedError::runtime_error("Assertion failed: condition is true"))
+            Err(CursedError::runtime_error(&"Assertion failed: condition is true".to_string()))
         }
     }
     

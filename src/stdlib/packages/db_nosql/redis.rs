@@ -2,6 +2,7 @@
 
 use crate::error::CursedError;
 use std::collections::HashMap;
+use crate::stdlib::packages::ModuleError;
 
 /// Result type for redis operations
 pub type ModuleResult<T> = Result<T, CursedError>;
@@ -59,7 +60,7 @@ impl RedisConnection {
     
     pub fn set(&self, key: &str, value: &str) -> ModuleResult<()> {
         if !self.connected {
-            return Err(CursedError::runtime_error("Connection is closed"));
+            return Err(CursedError::runtime_error(&"Connection is closed".to_string()));
         }
         println!("SET {}: {}", key, value);
         Ok(())
@@ -67,7 +68,7 @@ impl RedisConnection {
     
     pub fn get(&self, key: &str) -> ModuleResult<Option<String>> {
         if !self.connected {
-            return Err(CursedError::runtime_error("Connection is closed"));
+            return Err(CursedError::runtime_error(&"Connection is closed".to_string()));
         }
         println!("GET {}", key);
         Ok(Some(format!("value_for_{}", key)))
@@ -75,7 +76,7 @@ impl RedisConnection {
     
     pub fn del(&self, key: &str) -> ModuleResult<u64> {
         if !self.connected {
-            return Err(CursedError::runtime_error("Connection is closed"));
+            return Err(CursedError::runtime_error(&"Connection is closed".to_string()));
         }
         println!("DEL {}", key);
         Ok(1)
@@ -110,7 +111,7 @@ impl RedisConnectionPool {
     
     pub fn get_connection(&mut self) -> ModuleResult<&mut RedisConnection> {
         self.connections.first_mut()
-            .ok_or_else(|| CursedError::runtime_error("No connections available"))
+            .ok_or_else(|| ModuleError::Other("No connections available".to_string()))
     }
     
     pub fn size(&self) -> usize {
@@ -145,7 +146,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -167,7 +168,7 @@ pub fn init_redis() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     println!("⚙️  Module processing (redis) initialized");
     Ok(())
@@ -178,7 +179,7 @@ pub fn test_redis() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     Ok(())
 }

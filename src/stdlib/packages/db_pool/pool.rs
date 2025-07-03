@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use crate::stdlib::packages::ModuleError;
 
 /// Result type for pool operations
 pub type ModuleResult<T> = Result<T, CursedError>;
@@ -84,7 +85,7 @@ where
     
     pub fn get_connection(&self) -> ModuleResult<Option<PooledConnection<T>>> {
         let mut connections = self.connections.lock()
-            .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+            .map_err(|_| ModuleError::Other("Failed to acquire lock".to_string()))?;
         
         // Remove expired connections
         connections.retain(|conn| !conn.is_expired(&self.config));
@@ -95,13 +96,13 @@ where
     pub fn return_connection(&self, connection: PooledConnection<T>) -> ModuleResult<()> {
         if connection.is_expired(&self.config) {
             let mut total = self.total_connections.lock()
-                .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+                .map_err(|_| ModuleError::Other("Failed to acquire lock".to_string()))?;
             *total -= 1;
             return Ok(());
         }
         
         let mut connections = self.connections.lock()
-            .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+            .map_err(|_| ModuleError::Other("Failed to acquire lock".to_string()))?;
         
         connections.push_back(connection);
         Ok(())
@@ -109,14 +110,14 @@ where
     
     pub fn add_connection(&self, connection: T) -> ModuleResult<()> {
         let mut total = self.total_connections.lock()
-            .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+            .map_err(|_| ModuleError::Other("Failed to acquire lock".to_string()))?;
         
         if *total >= self.config.max_connections {
-            return Err(CursedError::runtime_error("Pool is at maximum capacity"));
+            return Err(CursedError::runtime_error(&"Pool is at maximum capacity".to_string()));
         }
         
         let mut connections = self.connections.lock()
-            .map_err(|_| CursedError::runtime_error("Failed to acquire lock"))?;
+            .map_err(|_| ModuleError::Other("Failed to acquire lock".to_string()))?;
         
         connections.push_back(PooledConnection::new(connection));
         *total += 1;
@@ -159,7 +160,7 @@ impl ModuleHandler {
     /// Process data
     pub fn process(&self, data: &str) -> ModuleResult<String> {
         if !self.enabled {
-            return Err(CursedError::runtime_error("Module is disabled"));
+            return Err(CursedError::runtime_error(&"Module is disabled".to_string()));
         }
         Ok(format!("Processed: {}", data))
     }
@@ -181,7 +182,7 @@ pub fn init_pool() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("test")?;
     if !result.contains("test") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     println!("⚙️  Module processing (pool) initialized");
     Ok(())
@@ -192,7 +193,7 @@ pub fn test_pool() -> ModuleResult<()> {
     let handler = ModuleHandler::new();
     let result = handler.process("Hello, CURSED!")?;
     if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error("Module test failed"));
+        return Err(CursedError::runtime_error(&"Module test failed".to_string()));
     }
     Ok(())
 }

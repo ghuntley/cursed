@@ -6,6 +6,7 @@ use crate::stdlib::packages::crypto_zk::circuit_builder::{Circuit, Wire, R1CSCon
 use std::collections::HashMap;
 use crate::stdlib::packages::CryptoResult;
 use crate::stdlib::packages::CryptoHandler;
+use crate::stdlib::packages::CryptoError;
 
 /// Result type for crypto operations
 /// A point on the G1 curve (BN254)
@@ -261,7 +262,7 @@ impl Groth16 {
         if let Some(prover) = &self.prover {
             prover.prove(public_inputs, private_inputs)
         } else {
-            Err(CursedError::runtime_error("No proving key available"))
+            Err(CryptoError::KeyGenerationFailed)
         }
     }
     
@@ -289,7 +290,7 @@ pub fn init_groth16() -> CryptoResult<()> {
     let handler = CryptoHandler::new();
     let key = handler.generate_key()?;
     if key.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto key generation test failed"));
+        return Err(CryptoError::KeyGenerationFailed);
     }
     println!("🔐 Crypto processing (groth16) initialized");
     Ok(())
@@ -301,7 +302,7 @@ pub fn test_groth16() -> CryptoResult<()> {
     let data = b"Hello, CURSED Crypto!";
     let hash = handler.hash_sha256(data);
     if hash.len() != 32 {
-        return Err(CursedError::runtime_error("Crypto hash test failed"));
+        return Err(CursedError::runtime_error(&"Crypto hash test failed".to_string()));
     }
     Ok(())
 }
