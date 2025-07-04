@@ -50,8 +50,8 @@ impl TypeSystem {
             methods: vec![
                 MethodSignature {
                     name: "spill".to_string(),
-                    parameters: vec![TypeExpression::named("string")],
-                    return_type: Some(TypeExpression::named("void")),
+                    parameters: vec![TypeExpression::named("tea")],
+                    return_type: Some(TypeExpression::named("cap")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
                 }
@@ -70,9 +70,9 @@ impl TypeSystem {
         use crate::ast::Expression;
         
         match expr {
-            Expression::Integer(_) => Ok(TypeExpression::named("int")),
-            Expression::String(_) => Ok(TypeExpression::named("string")),
-            Expression::Boolean(_) => Ok(TypeExpression::named("bool")),
+            Expression::Integer(_) => Ok(TypeExpression::named("normie")),
+            Expression::String(_) => Ok(TypeExpression::named("tea")),
+            Expression::Boolean(_) => Ok(TypeExpression::named("vibes")),
             Expression::Identifier(name) => {
                 if let Some(type_def) = self.environment.type_definitions.get(name) {
                     Ok(TypeExpression::named(&type_def.name))
@@ -156,16 +156,15 @@ impl TypeSystem {
     fn check_binary_operation(&self, left: &TypeExpression, op: &str, right: &TypeExpression) -> Result<TypeExpression, String> {
         match op {
             "+" | "-" | "*" | "/" => {
-                if self.types_compatible(left, &TypeExpression::named("int")) && 
-                   self.types_compatible(right, &TypeExpression::named("int")) {
-                    Ok(TypeExpression::named("int"))
+                if self.is_numeric_type(left) && self.is_numeric_type(right) {
+                    Ok(left.clone())
                 } else {
-                    Err(format!("Arithmetic operation requires int types, got {:?} and {:?}", left, right))
+                    Err(format!("Arithmetic operation requires numeric types, got {:?} and {:?}", left, right))
                 }
             }
             "==" | "!=" | "<" | ">" | "<=" | ">=" => {
                 if self.types_compatible(left, right) {
-                    Ok(TypeExpression::named("bool"))
+                    Ok(TypeExpression::named("vibes"))
                 } else {
                     Err(format!("Comparison requires compatible types, got {:?} and {:?}", left, right))
                 }
@@ -185,6 +184,18 @@ impl TypeSystem {
     fn types_compatible(&self, t1: &TypeExpression, t2: &TypeExpression) -> bool {
         // Simple compatibility check for now
         t1.name == t2.name
+    }
+    
+    fn is_numeric_type(&self, type_expr: &TypeExpression) -> bool {
+        if let Some(name) = &type_expr.name {
+            matches!(name.as_str(), 
+                "normie" | "thicc" |       // CURSED integer types
+                "snack" | "meal" |         // CURSED float types
+                "int" | "float"            // Standard types (fallback)
+            )
+        } else {
+            false
+        }
     }
 }
 

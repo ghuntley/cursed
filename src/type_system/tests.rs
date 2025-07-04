@@ -71,19 +71,19 @@ mod tests {
         let int_expr = Expression::Integer(42);
         let result = type_system.check_expression(&int_expr);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().name, Some("int".to_string()));
+        assert_eq!(result.unwrap().name, Some("normie".to_string()));
         
         // Test string literal
         let string_expr = Expression::String("hello".to_string());
         let result = type_system.check_expression(&string_expr);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().name, Some("string".to_string()));
+        assert_eq!(result.unwrap().name, Some("tea".to_string()));
         
         // Test boolean literal
         let bool_expr = Expression::Boolean(true);
         let result = type_system.check_expression(&bool_expr);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().name, Some("bool".to_string()));
+        assert_eq!(result.unwrap().name, Some("vibes".to_string()));
     }
 
     #[test]
@@ -98,7 +98,7 @@ mod tests {
         
         let result = type_system.check_expression(&member_access);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().name, Some("void".to_string()));
+        assert_eq!(result.unwrap().name, Some("cap".to_string()));
     }
 
     #[test]
@@ -116,7 +116,7 @@ mod tests {
         
         let result = type_system.check_expression(&call_expr);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().name, Some("void".to_string()));
+        assert_eq!(result.unwrap().name, Some("cap".to_string()));
     }
 
     #[test]
@@ -132,7 +132,7 @@ mod tests {
         
         let result = type_system.check_expression(&binary_expr);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().name, Some("int".to_string()));
+        assert_eq!(result.unwrap().name, Some("normie".to_string()));
         
         // Test 1 == 2
         let comparison_expr = Expression::Binary(BinaryExpression {
@@ -143,7 +143,7 @@ mod tests {
         
         let result = type_system.check_expression(&comparison_expr);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().name, Some("bool".to_string()));
+        assert_eq!(result.unwrap().name, Some("vibes".to_string()));
     }
 
     #[test]
