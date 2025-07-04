@@ -786,6 +786,8 @@ impl GarbageCollector {
         false
     }
     
+
+    
     /// Perform full garbage collection
     fn full_collect(&self) -> Result<(), CursedError> {
         // Mark phase
@@ -859,39 +861,46 @@ impl GarbageCollector {
         let roots = self.roots.read().unwrap();
         let mut visitor = MarkVisitor::new();
         
-        // Mark all objects reachable from roots
+        // Add all root objects to the marking queue
         for &root_addr in &roots.stack_roots {
             if root_addr != 0 {
                 let root = root_addr as *mut HeapObject;
-                unsafe { self.mark_object(root, &mut visitor)?; }
+                visitor.add_to_queue(root);
             }
         }
         
         for &root_addr in &roots.global_roots {
             if root_addr != 0 {
                 let root = root_addr as *mut HeapObject;
-                unsafe { self.mark_object(root, &mut visitor)?; }
+                visitor.add_to_queue(root);
             }
         }
         
         for &root_addr in &roots.channel_roots {
             if root_addr != 0 {
                 let root = root_addr as *mut HeapObject;
-                unsafe { self.mark_object(root, &mut visitor)?; }
+                visitor.add_to_queue(root);
             }
         }
         
         for &root_addr in &roots.jit_roots {
             if root_addr != 0 {
                 let root = root_addr as *mut HeapObject;
-                unsafe { self.mark_object(root, &mut visitor)?; }
+                visitor.add_to_queue(root);
             }
         }
         
         for &root_addr in &roots.async_roots {
             if root_addr != 0 {
                 let root = root_addr as *mut HeapObject;
-                unsafe { self.mark_object(root, &mut visitor)?; }
+                visitor.add_to_queue(root);
+            }
+        }
+        
+        // Process all objects in the marking queue
+        while let Some(obj) = visitor.discovered_objects.pop() {
+            unsafe {
+                self.mark_object(obj, &mut visitor)?;
             }
         }
         
@@ -899,7 +908,7 @@ impl GarbageCollector {
     }
     
     /// Mark an object and its references
-    unsafe fn mark_object(&self, obj: *mut HeapObject, _visitor: &mut MarkVisitor) -> Result<(), CursedError> {
+    unsafe fn mark_object(&self, obj: *mut HeapObject, visitor: &mut MarkVisitor) -> Result<(), CursedError> {
         if obj.is_null() {
             return Ok(());
         }
@@ -912,11 +921,170 @@ impl GarbageCollector {
         // Mark object
         (*obj).metadata.mark_bits |= 1;
         
-        // Trace object references
-        // This is a simplified version - real implementation would need proper object layout
-        // For now, we skip tracing as it requires proper object type information
-        // In a real implementation, this would use vtables or type information
-        // to properly trace the object's references
+        // Trace object references based on object type
+        self.trace_object_references(obj, visitor)?;
+        
+        Ok(())
+    }
+    
+    /// Trace object references based on object type
+    unsafe fn trace_object_references(&self, obj: *mut HeapObject, visitor: &mut MarkVisitor) -> Result<(), CursedError> {
+        let obj_ptr = obj as *mut u8;
+        let data_ptr = obj_ptr.add(std::mem::size_of::<ObjectMetadata>());
+        
+        match (*obj).metadata.tag {
+            Tag::Object => {
+                // Generic object - scan for pointer-sized values that might be references
+                self.scan_for_references(data_ptr, (*obj).metadata.size, visitor)?;
+            }
+            Tag::Array => {
+                // Array of objects - each element might contain references
+                self.trace_array_references(data_ptr, (*obj).metadata.size, visitor)?;
+            }
+            Tag::Function => {
+                // Function objects may have closure captures
+                self.trace_function_references(data_ptr, (*obj).metadata.size, visitor)?;
+            }
+            Tag::String => {
+                // Strings contain no object references
+            }
+            Tag::Number | Tag::Boolean | Tag::Nil => {
+                // Primitive types contain no references
+            }
+            Tag::Interface => {
+                // Interface objects may have vtable and data references
+                self.trace_interface_references(data_ptr, (*obj).metadata.size, visitor)?;
+            }
+            Tag::Channel => {
+                // Channel objects contain buffered data and goroutine references
+                self.trace_channel_references(data_ptr, (*obj).metadata.size, visitor)?;
+            }
+            Tag::Custom(_) => {
+                // Custom types - conservative scanning
+                self.scan_for_references(data_ptr, (*obj).metadata.size, visitor)?;
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Scan memory region for potential object references
+    unsafe fn scan_for_references(&self, data_ptr: *mut u8, size: usize, visitor: &mut MarkVisitor) -> Result<(), CursedError> {
+        let word_size = std::mem::size_of::<usize>();
+        let num_words = size / word_size;
+        
+        for i in 0..num_words {
+            let word_ptr = data_ptr.add(i * word_size) as *const usize;
+            let potential_ref = *word_ptr;
+            
+            // Conservative approach: treat any pointer-sized value as a potential reference
+            if potential_ref != 0 && self.is_valid_heap_object(potential_ref) {
+                let ref_obj = potential_ref as *mut HeapObject;
+                visitor.add_to_queue(ref_obj);
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Trace array references
+    unsafe fn trace_array_references(&self, data_ptr: *mut u8, size: usize, visitor: &mut MarkVisitor) -> Result<(), CursedError> {
+        // Array layout: [length: usize][capacity: usize][elements...]
+        if size < 2 * std::mem::size_of::<usize>() {
+            return Ok(());
+        }
+        
+        let length_ptr = data_ptr as *const usize;
+        let length = *length_ptr;
+        
+        let elements_ptr = data_ptr.add(2 * std::mem::size_of::<usize>());
+        let element_size = std::mem::size_of::<usize>(); // Assuming pointer-sized elements
+        
+        for i in 0..length {
+            let element_ptr = elements_ptr.add(i * element_size) as *const usize;
+            let element_val = *element_ptr;
+            
+            if element_val != 0 && self.is_valid_heap_object(element_val) {
+                let ref_obj = element_val as *mut HeapObject;
+                visitor.add_to_queue(ref_obj);
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Trace function references (closures)
+    unsafe fn trace_function_references(&self, data_ptr: *mut u8, size: usize, visitor: &mut MarkVisitor) -> Result<(), CursedError> {
+        // Function layout: [code_ptr: usize][env_size: usize][environment...]
+        if size < 2 * std::mem::size_of::<usize>() {
+            return Ok(());
+        }
+        
+        let env_size_ptr = data_ptr.add(std::mem::size_of::<usize>()) as *const usize;
+        let env_size = *env_size_ptr;
+        
+        if env_size > 0 {
+            let env_ptr = data_ptr.add(2 * std::mem::size_of::<usize>());
+            self.scan_for_references(env_ptr, env_size, visitor)?;
+        }
+        
+        Ok(())
+    }
+    
+    /// Trace interface references
+    unsafe fn trace_interface_references(&self, data_ptr: *mut u8, size: usize, visitor: &mut MarkVisitor) -> Result<(), CursedError> {
+        // Interface layout: [vtable_ptr: usize][data_ptr: usize]
+        if size < 2 * std::mem::size_of::<usize>() {
+            return Ok(());
+        }
+        
+        let data_ref_ptr = data_ptr.add(std::mem::size_of::<usize>()) as *const usize;
+        let data_ref = *data_ref_ptr;
+        
+        if data_ref != 0 && self.is_valid_heap_object(data_ref) {
+            let ref_obj = data_ref as *mut HeapObject;
+            visitor.add_to_queue(ref_obj);
+        }
+        
+        Ok(())
+    }
+    
+    /// Trace channel references
+    unsafe fn trace_channel_references(&self, data_ptr: *mut u8, size: usize, visitor: &mut MarkVisitor) -> Result<(), CursedError> {
+        // Channel layout: [buffer_ptr: usize][capacity: usize][length: usize][element_size: usize]
+        if size < 4 * std::mem::size_of::<usize>() {
+            return Ok(());
+        }
+        
+        let buffer_ptr_ref = data_ptr as *const usize;
+        let buffer_ptr = *buffer_ptr_ref;
+        
+        let capacity_ptr = data_ptr.add(std::mem::size_of::<usize>()) as *const usize;
+        let capacity = *capacity_ptr;
+        
+        let length_ptr = data_ptr.add(2 * std::mem::size_of::<usize>()) as *const usize;
+        let length = *length_ptr;
+        
+        let element_size_ptr = data_ptr.add(3 * std::mem::size_of::<usize>()) as *const usize;
+        let element_size = *element_size_ptr;
+        
+        // Trace buffered channel elements
+        if buffer_ptr != 0 && self.is_valid_heap_object(buffer_ptr) {
+            let buffer_obj = buffer_ptr as *mut HeapObject;
+            visitor.add_to_queue(buffer_obj);
+            
+            // Also trace individual elements if they contain references
+            if element_size == std::mem::size_of::<usize>() {
+                let elements_ptr = buffer_ptr as *const usize;
+                for i in 0..length {
+                    let element_val = *elements_ptr.add(i);
+                    if element_val != 0 && self.is_valid_heap_object(element_val) {
+                        let element_obj = element_val as *mut HeapObject;
+                        visitor.add_to_queue(element_obj);
+                    }
+                }
+            }
+        }
         
         Ok(())
     }
@@ -1643,12 +1811,22 @@ pub enum RootType {
 /// Mark visitor for garbage collection
 pub struct MarkVisitor {
     pub discovered_objects: Vec<*mut HeapObject>,
+    pub visited: std::collections::HashSet<*mut HeapObject>,
 }
 
 impl MarkVisitor {
     pub fn new() -> Self {
         Self {
             discovered_objects: Vec::new(),
+            visited: std::collections::HashSet::new(),
+        }
+    }
+    
+    /// Add an object to the marking queue
+    pub fn add_to_queue(&mut self, obj: *mut HeapObject) {
+        if !obj.is_null() && !self.visited.contains(&obj) {
+            self.visited.insert(obj);
+            self.discovered_objects.push(obj);
         }
     }
 }

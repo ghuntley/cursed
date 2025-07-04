@@ -74,6 +74,7 @@ pub enum TokenKind {
     Dm,          // channel type
     Select,      // select statement
     LeftArrow,   // <- channel operator
+    Arrow,       // -> return type arrow
     
     // Visibility modifiers
     Spill,       // pub (public)
@@ -164,6 +165,8 @@ impl Lexer {
             '-' => {
                 if self.match_char('=') {
                     Ok(self.make_token(TokenKind::MinusEqual, "-=".to_string(), start_column))
+                } else if self.match_char('>') {
+                    Ok(self.make_token(TokenKind::Arrow, "->".to_string(), start_column))
                 } else {
                     Ok(self.make_token(TokenKind::Minus, "-".to_string(), start_column))
                 }

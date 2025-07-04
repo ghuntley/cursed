@@ -7,7 +7,7 @@
 //! - Debug information generation
 //! - Profile-guided optimization
 
-use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator, AstVisitor};
+use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator, AstVisitor, InterfaceStatement, MethodSignature};
 use crate::error::CursedError;
 use crate::package_manager::PackageManager;
 use crate::codegen::llvm::package_integration::LlvmPackageConfig;
@@ -15,6 +15,34 @@ use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
+
+// Interface codegen support structures
+#[derive(Debug, Clone)]
+pub struct InterfaceDefinition {
+    pub name: String,
+    pub methods: Vec<InterfaceMethod>,
+}
+
+#[derive(Debug, Clone)]
+pub struct InterfaceMethod {
+    pub name: String,
+    pub signature: String,
+    pub index: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct VTableDefinition {
+    pub interface_name: String,
+    pub implementation_type: String,
+    pub methods: Vec<VTableEntry>,
+}
+
+#[derive(Debug, Clone)]
+pub struct VTableEntry {
+    pub method_name: String,
+    pub function_name: String,
+    pub signature: String,
+}
 
 // Mock types for backward compatibility with tests
 pub struct MockModule;
@@ -56,6 +84,8 @@ pub struct LlvmCodeGenerator {
     optimization_config: OptimizationConfig,
     optimization_enabled: bool,
     use_enhanced_passes: bool,
+    interface_registry: HashMap<String, InterfaceDefinition>,
+    vtable_registry: HashMap<String, VTableDefinition>,
 }
 
 impl LlvmCodeGenerator {
@@ -73,6 +103,8 @@ impl LlvmCodeGenerator {
             optimization_config: OptimizationConfig::default(),
             optimization_enabled: false,
             use_enhanced_passes: false,
+            interface_registry: HashMap::new(),
+            vtable_registry: HashMap::new(),
         })
     }
 
@@ -287,8 +319,7 @@ declare i8* @cursed_channel_receive(i8*)
                 self.generate_struct_definition(struct_stmt)?;
             },
             Statement::Interface(interface_stmt) => {
-                self.ir_code.push_str(&format!("  ; Interface definition: {}\n", interface_stmt.name));
-                // TODO: Implement actual interface codegen
+                self.generate_interface_definition(interface_stmt)?;
             },
             Statement::Panic(panic_stmt) => {
                 self.ir_code.push_str("  ; Panic (yeet_error) statement\n");
@@ -1556,6 +1587,218 @@ impl std::fmt::Display for LlvmType {
 pub type LlvmValue = String;
 pub type LlvmFunction = String;
 pub type LlvmModule = String;
+
+impl LlvmCodeGenerator {
+    // Interface code generation methods
+    
+    fn generate_interface_definition(&mut self, interface_stmt: &InterfaceStatement) -> Result<(), CursedError> {
+        self.ir_code.push_str(&format!("  ; Interface definition: {}\n", interface_stmt.name));
+        
+        // Generate interface vtable type
+        self.generate_interface_vtable_type(interface_stmt)?;
+        
+        // Register the interface in our registry
+        let interface_def = InterfaceDefinition {
+            name: interface_stmt.name.clone(),
+            methods: interface_stmt.methods.iter().enumerate().map(|(i, method)| {
+                InterfaceMethod {
+                    name: method.name.clone(),
+                    signature: self.generate_method_signature(method),
+                    index: i,
+                }
+            }).collect(),
+        };
+        
+        self.interface_registry.insert(interface_stmt.name.clone(), interface_def);
+        
+        // Generate interface descriptor
+        self.generate_interface_descriptor(interface_stmt)?;
+        
+        Ok(())
+    }
+    
+    fn generate_interface_vtable_type(&mut self, interface_stmt: &InterfaceStatement) -> Result<(), CursedError> {
+        // Generate vtable type for the interface
+        self.ir_code.push_str(&format!("%interface.{}.vtable = type {{ ", interface_stmt.name));
+        
+        for (i, method) in interface_stmt.methods.iter().enumerate() {
+            if i > 0 {
+                self.ir_code.push_str(", ");
+            }
+            
+            // Generate function pointer type for method
+            let return_type = method.return_type.as_ref().map(|t| self.convert_cursed_type_to_llvm(t))
+                .transpose()?.unwrap_or_else(|| "void".to_string());
+            
+            // Generate parameter types
+            let mut param_types = vec!["i8*".to_string()]; // self pointer
+            for param in &method.parameters {
+                let param_type = param.param_type.as_ref().map(|t| self.convert_cursed_type_to_llvm(t))
+                    .transpose()?.unwrap_or_else(|| "i8*".to_string());
+                param_types.push(param_type);
+            }
+            
+            // Function pointer type
+            self.ir_code.push_str(&format!("{} ({})*", return_type, param_types.join(", ")));
+        }
+        
+        self.ir_code.push_str(" }\n");
+        
+        // Generate interface object type (fat pointer)
+        self.ir_code.push_str(&format!("%interface.{} = type {{ i8*, %interface.{}.vtable* }}\n", 
+            interface_stmt.name, interface_stmt.name));
+        
+        Ok(())
+    }
+    
+    fn generate_interface_descriptor(&mut self, interface_stmt: &InterfaceStatement) -> Result<(), CursedError> {
+        // Generate type descriptor for interface
+        self.ir_code.push_str(&format!("@interface.{}.descriptor = global {{", interface_stmt.name));
+        self.ir_code.push_str(&format!(" i8* getelementptr inbounds ([{}x i8], [{}x i8]* @interface.{}.name, i32 0, i32 0),", 
+            interface_stmt.name.len() + 1, interface_stmt.name.len() + 1, interface_stmt.name));
+        self.ir_code.push_str(&format!(" i32 {} }}\n", interface_stmt.methods.len()));
+        
+        // Generate interface name string
+        self.ir_code.push_str(&format!("@interface.{}.name = private unnamed_addr constant [{} x i8] c\"{}\\00\"\n", 
+            interface_stmt.name, interface_stmt.name.len() + 1, interface_stmt.name));
+        
+        Ok(())
+    }
+    
+    fn generate_method_signature(&self, method: &MethodSignature) -> String {
+        let return_type = method.return_type.as_ref().map(|t| self.convert_cursed_type_to_llvm(t))
+            .unwrap_or_else(|| Ok("void".to_string())).unwrap_or_else(|_| "void".to_string());
+        
+        let mut param_types = vec!["i8*".to_string()]; // self pointer
+        for param in &method.parameters {
+            let param_type = param.param_type.as_ref().map(|t| self.convert_cursed_type_to_llvm(t))
+                .unwrap_or_else(|| Ok("i8*".to_string())).unwrap_or_else(|_| "i8*".to_string());
+            param_types.push(param_type);
+        }
+        
+        format!("{} ({})", return_type, param_types.join(", "))
+    }
+    
+    pub fn generate_interface_implementation(&mut self, impl_type: &str, interface_name: &str, method_impls: &HashMap<String, String>) -> Result<(), CursedError> {
+        // Generate vtable for the implementation
+        let vtable_name = format!("{}.{}.vtable", impl_type, interface_name);
+        
+        if let Some(interface_def) = self.interface_registry.get(interface_name) {
+            // Generate vtable global
+            self.ir_code.push_str(&format!("@{} = global %interface.{}.vtable {{", vtable_name, interface_name));
+            
+            for (i, method) in interface_def.methods.iter().enumerate() {
+                if i > 0 {
+                    self.ir_code.push_str(", ");
+                }
+                
+                let default_impl_name = format!("{}.{}", impl_type, method.name);
+                let impl_fn_name = method_impls.get(&method.name)
+                    .unwrap_or(&default_impl_name);
+                
+                // Generate function pointer with correct signature
+                self.ir_code.push_str(&format!("{} @{}", method.signature, impl_fn_name));
+            }
+            
+            self.ir_code.push_str(" }\n");
+            
+            // Register vtable in registry
+            let vtable_def = VTableDefinition {
+                interface_name: interface_name.to_string(),
+                implementation_type: impl_type.to_string(),
+                methods: interface_def.methods.iter().map(|method| {
+                    let default_impl_name = format!("{}.{}", impl_type, method.name);
+                    VTableEntry {
+                        method_name: method.name.clone(),
+                        function_name: method_impls.get(&method.name)
+                            .unwrap_or(&default_impl_name).clone(),
+                        signature: method.signature.clone(),
+                    }
+                }).collect(),
+            };
+            
+            self.vtable_registry.insert(vtable_name.clone(), vtable_def);
+        }
+        
+        Ok(())
+    }
+    
+    pub fn generate_interface_method_call(&mut self, interface_obj: &str, method_name: &str, args: &[String]) -> Result<String, CursedError> {
+        let result_reg = self.next_variable();
+        
+        // Extract vtable from interface object
+        let vtable_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.*, %interface.** {}, i32 0, i32 1\n", 
+            vtable_reg, interface_obj));
+        
+        let vtable_loaded_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = load %interface.*.vtable*, %interface.*.vtable** %{}\n", 
+            vtable_loaded_reg, vtable_reg));
+        
+        // Get method from vtable (assuming method index is known)
+        let method_ptr_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.*.vtable, %interface.*.vtable* %{}, i32 0, i32 0\n", 
+            method_ptr_reg, vtable_loaded_reg)); // This needs actual method index
+        
+        let method_loaded_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = load void (i8*)*, void (i8*)** %{}\n", 
+            method_loaded_reg, method_ptr_reg));
+        
+        // Extract data pointer from interface object
+        let data_ptr_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.*, %interface.** {}, i32 0, i32 0\n", 
+            data_ptr_reg, interface_obj));
+        
+        let data_loaded_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = load i8*, i8** %{}\n", 
+            data_loaded_reg, data_ptr_reg));
+        
+        // Call the method
+        let mut call_args = vec![format!("%{}", data_loaded_reg)];
+        call_args.extend(args.iter().cloned());
+        
+        self.ir_code.push_str(&format!("  %{} = call void %{}({})\n", 
+            result_reg, method_loaded_reg, call_args.join(", ")));
+        
+        Ok(format!("%{}", result_reg))
+    }
+    
+    pub fn generate_interface_cast(&mut self, obj_ptr: &str, obj_type: &str, interface_name: &str) -> Result<String, CursedError> {
+        let result_reg = self.next_variable();
+        
+        // Create interface object (fat pointer)
+        let interface_obj_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = alloca %interface.{}\n", interface_obj_reg, interface_name));
+        
+        // Set data pointer
+        let data_ptr_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.{}, %interface.{}* %{}, i32 0, i32 0\n", 
+            data_ptr_reg, interface_name, interface_name, interface_obj_reg));
+        
+        let casted_data_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = bitcast {}* {} to i8*\n", 
+            casted_data_reg, obj_type, obj_ptr));
+        
+        self.ir_code.push_str(&format!("  store i8* %{}, i8** %{}\n", 
+            casted_data_reg, data_ptr_reg));
+        
+        // Set vtable pointer
+        let vtable_ptr_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.{}, %interface.{}* %{}, i32 0, i32 1\n", 
+            vtable_ptr_reg, interface_name, interface_name, interface_obj_reg));
+        
+        self.ir_code.push_str(&format!("  store %interface.{}.vtable* @{}.{}.vtable, %interface.{}.vtable** %{}\n", 
+            interface_name, obj_type, interface_name, interface_name, vtable_ptr_reg));
+        
+        Ok(format!("%{}", interface_obj_reg))
+    }
+    
+    fn next_variable(&mut self) -> String {
+        let var = format!("t{}", self.variable_counter);
+        self.variable_counter += 1;
+        var
+    }
+}
 
 #[cfg(test)]
 mod tests {
