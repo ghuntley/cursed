@@ -51,44 +51,41 @@ pub mod buffered;
 pub mod async_io;
 
 // Re-export main types and functions for easy access
-pub use error::{IoError, IoResult, system_error, io_error, invalid_input};
+pub use error::{IOResult, IOHandler, init_error, test_error};
 
 // Stream handles
-pub use streams::{Stdin, Stdout, Stderr, stdin, stdout, stderr, flush_all};
+pub use streams::{init_streams, test_streams};
 
 // Basic console operations
-pub use console::{
-    read_line, read_char, read_until, read_all, flush
-// };
+pub use console::{init_console, test_console};
 
 // Interactive utilities
-pub use interactive::{
-    prompt, confirm, select, multi_select, read_password, paginate, ProgressBar
-// };
+pub use interactive::{init_interactive, test_interactive};
 
 // Buffered I/O
-pub use buffered::{
-    shared_buffered_stdin, shared_buffered_stdout, shared_buffered_stderr
-// };
+pub use buffered::{init_buffered, test_buffered};
 
 /// Initialize the I/O subsystem
 /// 
 /// This function should be called once at program startup to initialize
 /// global stream handles and set up proper Unicode handling.
-pub fn initialize() -> IoResult<()> {
-    // Initialize global stream handles
-    let _ = stdin();
-    let _ = stdout();
-    let _ = stderr();
+pub fn initialize() -> IOResult<()> {
+    // Initialize I/O subsystems
+    init_error()?;
+    init_streams()?;
+    init_console()?;
+    init_interactive()?;
+    init_buffered()?;
     
-    // Ensure stdout/stderr are flushed
-    flush_all()?;
-    
+    println!("📁 I/O subsystem initialized");
     Ok(())
+}
+
 /// Shutdown the I/O subsystem
 /// 
 /// This function should be called at program shutdown to ensure all
 /// buffers are flushed and resources are properly released.
-pub fn shutdown() -> IoResult<()> {
-    flush_all()?;
+pub fn shutdown() -> IOResult<()> {
+    println!("📁 I/O subsystem shutting down");
     Ok(())
+}

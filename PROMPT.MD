@@ -4,9 +4,9 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality. Follow the fix_plan.md and choose the most important thing. Before making changes search codebase (don't assume not implemented) using subagents. Think extra hard. You may use up to 500 subagents for search and edit operations but only 1 subagent for build/tests.
+1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality. Follow the fix_plan.md and choose the most important thing. Before making changes search codebase (don't assume not implemented) using subagents. Think hard. You may use up to 500 subagents for search and edit operations but only 1 subagent for build/tests.
 
-2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think extra hard.
+2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think hard.
 
 2. When you discover a parser, lexer, control flow or LLVM issue. Immediately update @fix_plan.md with your findings using a subagent. When the issue is resolved, update @fix_plan.md and remove the item using a subagent.
 
