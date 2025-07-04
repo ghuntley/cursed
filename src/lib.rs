@@ -387,12 +387,12 @@ pub fn run_file_optimized(path: &str, optimization_config: crate::optimization::
 }
 
 /// Compile CURSED source to LLVM IR
-pub fn compile_to_ir(source: &str) -> crate::error::Result<()> {
+pub fn compile_to_ir(source: &str) -> crate::error::Result<String> {
     compile_to_ir_with_packages(source, None)
 }
 
 /// Compile CURSED source to LLVM IR with specified optimization level
-pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> crate::error::Result<()> {
+pub fn compile_to_ir_with_optimization(source: &str, optimization_level: Option<&str>) -> crate::error::Result<String> {
     compile_to_ir_with_optimization_and_packages(source, optimization_level, None)
 }
 
@@ -401,7 +401,7 @@ pub fn compile_to_ir_with_optimization_and_packages(
     source: &str, 
     optimization_level: Option<&str>, 
     source_file: Option<&std::path::Path>
-) -> crate::error::Result<()> {
+) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR with optimization and package management");
     
     let rt = tokio::runtime::Runtime::new()
@@ -448,12 +448,12 @@ pub fn compile_to_ir_with_optimization_and_packages(
         }
         
         tracing::debug!("Generated optimized LLVM IR with package integration:\n{}", ir);
-        Ok(())
+        Ok(ir)
     })
 }
 
 /// Compile CURSED source to LLVM IR with package management
-pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> crate::error::Result<()> {
+pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR with package management");
     
     let rt = tokio::runtime::Runtime::new()
@@ -479,7 +479,7 @@ pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path:
         let ir = codegen.compile_with_packages(source, source_file).await?;
         
         tracing::debug!("Generated LLVM IR with package integration:\n{}", ir);
-        Ok(())
+        Ok(ir)
     })
 }
 

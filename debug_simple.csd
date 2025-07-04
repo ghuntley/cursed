@@ -1,3 +1,1 @@
-slay test(x normie) {
-    yolo x
-}
+slay main() { yolo; }

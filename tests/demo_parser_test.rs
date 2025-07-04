@@ -88,13 +88,13 @@ fn test_demo_cursed_hello_parsing() {
                     "calculateArea" => {
                         found_calculate_area = true;
                         assert_eq!(func.parameters.len(), 1, "calculateArea should have 1 parameter");
-                        assert_eq!(func.parameters[0], "radius", "Parameter should be 'radius'");
+                        assert_eq!(func.parameters[0].name, "radius", "Parameter should be 'radius'");
                         verify_calculate_area_body(&func.body);
                     },
                     "greetUser" => {
                         found_greet_user = true;
                         assert_eq!(func.parameters.len(), 1, "greetUser should have 1 parameter");
-                        assert_eq!(func.parameters[0], "name", "Parameter should be 'name'");
+                        assert_eq!(func.parameters[0].name, "name", "Parameter should be 'name'");
                     },
                     "demonstrateBasics" => {
                         found_demonstrate_basics = true;
@@ -277,8 +277,8 @@ slay testFunc(param1, param2) {
         Statement::Function(func) => {
             assert_eq!(func.name, "testFunc");
             assert_eq!(func.parameters.len(), 2);
-            assert_eq!(func.parameters[0], "param1");
-            assert_eq!(func.parameters[1], "param2");
+            assert_eq!(func.parameters[0].name, "param1");
+            assert_eq!(func.parameters[1].name, "param2");
             println!("      ✅ Function declaration parsed correctly");
         },
         _ => panic!("Expected function statement"),

@@ -181,6 +181,12 @@ impl Parser {
             // Skip newlines
         }
     }
+    
+    fn skip_newlines_and_semicolons(&mut self) {
+        while self.match_tokens(&[TokenKind::Newline, TokenKind::Semicolon]) {
+            // Skip newlines and semicolons
+        }
+    }
 
     fn synchronize(&mut self) {
         self.advance();
@@ -434,7 +440,7 @@ impl Parser {
         let where_clause = self.parse_where_clause()?;
         
         self.consume(TokenKind::LeftBrace, "Expected '{' before function body")?;
-        self.skip_newlines();
+        self.skip_newlines_and_semicolons();
         
         let mut body = Vec::new();
         log::debug!("🔧 Parsing function body for: {}", name);
@@ -442,7 +448,7 @@ impl Parser {
             let stmt = self.parse_statement()?;
             log::debug!("➕ Adding statement to function body: {:?}", std::mem::discriminant(&stmt));
             body.push(stmt);
-            self.skip_newlines();
+            self.skip_newlines_and_semicolons();
         }
         log::debug!("✅ Function body parsing complete for: {}", name);
         
