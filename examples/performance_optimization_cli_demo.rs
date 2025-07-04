@@ -13,18 +13,18 @@ use cursed::optimization::{
 use cursed::error::Result;
 use std::path::PathBuf;
 use std::time::Instant;
-use clap::{App, Arg, ArgMatches};
+use clap::{Command, Arg, ArgMatches};
 
 fn main() -> Result<()> {
-    tracing_subscriber::init();
+    tracing_subscriber::fmt::init();
     
     let matches = create_cli_app().get_matches();
     
     match matches.subcommand() {
-        ("build", Some(sub_matches)) => run_build_command(sub_matches),
-        ("benchmark", Some(sub_matches)) => run_benchmark_command(sub_matches),
-        ("optimize", Some(sub_matches)) => run_optimize_command(sub_matches),
-        ("analyze", Some(sub_matches)) => run_analyze_command(sub_matches),
+        Some(("build", sub_matches)) => run_build_command(sub_matches),
+        Some(("benchmark", sub_matches)) => run_benchmark_command(sub_matches),
+        Some(("optimize", sub_matches)) => run_optimize_command(sub_matches),
+        Some(("analyze", sub_matches)) => run_analyze_command(sub_matches),
         _ => {
             println!("Use --help to see available commands");
             Ok(())
@@ -32,148 +32,146 @@ fn main() -> Result<()> {
     }
 }
 
-fn create_cli_app() -> App<'static, 'static> {
-    App::new("cursed-perf")
+fn create_cli_app() -> Command {
+    Command::new("cursed-perf")
         .version("1.0.0")
         .about("CURSED Performance Optimization CLI Demo")
         .subcommand(
-            App::new("build")
+            Command::new("build")
                 .about("Build with performance optimization")
                 .arg(
-                    Arg::with_name("source")
+                    Arg::new("source")
                         .help("Source files to compile")
-                        .multiple(true)
+                        .num_args(1..)
                         .required(true)
                 )
                 .arg(
-                    Arg::with_name("output")
-                        .short("o")
+                    Arg::new("output")
+                        .short('o')
                         .long("output")
                         .value_name("DIR")
                         .help("Output directory")
-                        .takes_value(true)
                 )
                 .arg(
-                    Arg::with_name("release")
+                    Arg::new("release")
                         .long("release")
                         .help("Build in release mode with maximum optimization")
+                        .action(clap::ArgAction::SetTrue)
                 )
                 .arg(
-                    Arg::with_name("debug")
+                    Arg::new("debug")
                         .long("debug")
                         .help("Build in debug mode with fast compilation")
+                        .action(clap::ArgAction::SetTrue)
                 )
                 .arg(
-                    Arg::with_name("profile")
+                    Arg::new("profile")
                         .long("profile")
                         .value_name("PROFILE")
                         .help("Optimization profile (dev, release, debug, size, performance)")
-                        .takes_value(true)
-                )
+                        )
                 .arg(
-                    Arg::with_name("parallel")
-                        .short("j")
+                    Arg::new("parallel")
+                        .short('j')
                         .long("parallel")
                         .value_name("N")
                         .help("Number of parallel workers")
-                        .takes_value(true)
-                )
+                        )
                 .arg(
-                    Arg::with_name("adaptive")
+                    Arg::new("adaptive")
                         .long("adaptive")
                         .help("Enable adaptive optimization")
+                        .action(clap::ArgAction::SetTrue)
                 )
                 .arg(
-                    Arg::with_name("verbose")
-                        .short("v")
+                    Arg::new("verbose")
+                        .short('v')
                         .long("verbose")
                         .help("Enable verbose output and detailed reports")
+                        .action(clap::ArgAction::SetTrue)
                 )
                 .arg(
-                    Arg::with_name("no-performance")
+                    Arg::new("no-performance")
                         .long("no-performance")
                         .help("Disable performance integration system")
+                        .action(clap::ArgAction::SetTrue)
                 )
         )
         .subcommand(
-            App::new("benchmark")
+            Command::new("benchmark")
                 .about("Run performance benchmarks")
                 .arg(
-                    Arg::with_name("benchmark-name")
+                    Arg::new("benchmark-name")
                         .help("Benchmark configuration name (quick, thorough)")
                         .default_value("quick")
                 )
                 .arg(
-                    Arg::with_name("source")
+                    Arg::new("source")
                         .help("Source files for benchmarking")
-                        .multiple(true)
+                        .num_args(1..)
                         .required(true)
                 )
                 .arg(
-                    Arg::with_name("iterations")
-                        .short("i")
+                    Arg::new("iterations")
+                        .short('i')
                         .long("iterations")
                         .value_name("N")
                         .help("Number of benchmark iterations")
-                        .takes_value(true)
-                )
+                        )
         )
         .subcommand(
-            App::new("optimize")
+            Command::new("optimize")
                 .about("Run performance optimization analysis")
                 .arg(
-                    Arg::with_name("source")
+                    Arg::new("source")
                         .help("Source files to analyze")
-                        .multiple(true)
+                        .num_args(1..)
                         .required(true)
                 )
                 .arg(
-                    Arg::with_name("target-improvement")
+                    Arg::new("target-improvement")
                         .long("target")
                         .value_name("PERCENT")
                         .help("Target performance improvement percentage")
-                        .takes_value(true)
-                )
+                        )
                 .arg(
-                    Arg::with_name("report")
+                    Arg::new("report")
                         .long("report")
                         .value_name("FILE")
                         .help("Output detailed report to file")
-                        .takes_value(true)
-                )
+                        )
         )
         .subcommand(
-            App::new("analyze")
+            Command::new("analyze")
                 .about("Analyze project characteristics for optimization")
                 .arg(
-                    Arg::with_name("project-root")
+                    Arg::new("project-root")
                         .help("Project root directory")
                         .default_value(".")
                 )
                 .arg(
-                    Arg::with_name("output-format")
+                    Arg::new("output-format")
                         .long("format")
                         .value_name("FORMAT")
                         .help("Output format (json, yaml, table)")
                         .default_value("table")
-                        .takes_value(true)
-                )
+                        )
         )
 }
 
 fn run_build_command(matches: &ArgMatches) -> Result<()> {
     println!("🚀 Starting CURSED Performance-Optimized Build");
     
-    let source_files: Vec<PathBuf> = matches.values_of("source")
+    let source_files: Vec<PathBuf> = matches.get_many::<String>("source")
         .unwrap()
-        .map(PathBuf::from)
+        .map(|s| PathBuf::from(s))
         .collect();
     
-    let output_dir = matches.value_of("output").map(PathBuf::from);
-    let debug = matches.is_present("debug");
-    let release = matches.is_present("release");
-    let verbose = matches.is_present("verbose");
-    let enable_performance = !matches.is_present("no-performance");
+    let output_dir = matches.get_one::<String>("output").map(PathBuf::from);
+    let debug = matches.get_flag("debug");
+    let release = matches.get_flag("release");
+    let verbose = matches.get_flag("verbose");
+    let enable_performance = !matches.get_flag("no-performance");
     
     println!("📁 Source files: {} files", source_files.len());
     println!("🔧 Build mode: {}", if debug { "Debug" } else if release { "Release" } else { "Default" });
@@ -257,10 +255,10 @@ fn run_build_command(matches: &ArgMatches) -> Result<()> {
 fn run_benchmark_command(matches: &ArgMatches) -> Result<()> {
     println!("🏁 Running Performance Benchmarks");
     
-    let benchmark_name = matches.value_of("benchmark-name").unwrap();
-    let source_files: Vec<PathBuf> = matches.values_of("source")
+    let benchmark_name = matches.get_one::<String>("benchmark-name").unwrap();
+    let source_files: Vec<PathBuf> = matches.get_many::<String>("source")
         .unwrap()
-        .map(PathBuf::from)
+        .map(|s| PathBuf::from(s))
         .collect();
     
     println!("📋 Benchmark: {}", benchmark_name);
@@ -309,12 +307,12 @@ fn run_benchmark_command(matches: &ArgMatches) -> Result<()> {
 fn run_optimize_command(matches: &ArgMatches) -> Result<()> {
     println!("🔍 Running Performance Optimization Analysis");
     
-    let source_files: Vec<PathBuf> = matches.values_of("source")
+    let source_files: Vec<PathBuf> = matches.get_many::<String>("source")
         .unwrap()
-        .map(PathBuf::from)
+        .map(|s| PathBuf::from(s))
         .collect();
     
-    let target_improvement = matches.value_of("target-improvement")
+    let target_improvement = matches.get_one::<String>("target-improvement")
         .and_then(|s| s.parse::<f64>().ok())
         .unwrap_or(25.0);
     
@@ -386,7 +384,7 @@ fn run_optimize_command(matches: &ArgMatches) -> Result<()> {
     }
     
     // Save detailed report if requested
-    if let Some(report_file) = matches.value_of("report") {
+    if let Some(report_file) = matches.get_one::<String>("report") {
         save_optimization_report(&results, report_file)?;
         println!("\n📄 Detailed report saved to: {}", report_file);
     }
@@ -397,8 +395,8 @@ fn run_optimize_command(matches: &ArgMatches) -> Result<()> {
 fn run_analyze_command(matches: &ArgMatches) -> Result<()> {
     println!("📊 Analyzing Project Characteristics");
     
-    let project_root = PathBuf::from(matches.value_of("project-root").unwrap());
-    let output_format = matches.value_of("output-format").unwrap();
+    let project_root = PathBuf::from(matches.get_one::<String>("project-root").unwrap());
+    let output_format = matches.get_one::<String>("output-format").unwrap();
     
     println!("📁 Project root: {}", project_root.display());
     
@@ -409,7 +407,7 @@ fn run_analyze_command(matches: &ArgMatches) -> Result<()> {
     // Analyze project characteristics
     let characteristics = analyze_project_characteristics(&source_files)?;
     
-    match output_format {
+    match output_format.as_str() {
         "json" => print_characteristics_json(&characteristics),
         "yaml" => print_characteristics_yaml(&characteristics),
         _ => print_characteristics_table(&characteristics),
@@ -463,7 +461,7 @@ fn save_optimization_report(
         "timestamp": chrono::Utc::now().to_rfc3339(),
     });
     
-    std::fs::write(filename, serde_json::to_string_pretty(&report)?)?;
+    std::fs::write(filename, serde_json::to_string_pretty(&report).map_err(|e| cursed::error::Error::Other(e.to_string()))?)?;
     Ok(())
 }
 

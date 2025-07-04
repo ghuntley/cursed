@@ -1,9 +1,105 @@
 //! Testing functionality for mocking
 
 use crate::error::CursedError;
+use std::collections::HashMap;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
+
+/// Mock object for testing
+#[derive(Debug)]
+pub struct MockVibe {
+    pub name: String,
+    pub expectations: Vec<Expectation>,
+    pub call_history: Vec<String>,
+}
+
+impl MockVibe {
+    /// Create a new mock
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            expectations: Vec::new(),
+            call_history: Vec::new(),
+        }
+    }
+    
+    /// Add an expectation
+    pub fn expect(mut self, expectation: Expectation) -> Self {
+        self.expectations.push(expectation);
+        self
+    }
+    
+    /// Record a method call
+    pub fn record_call(&mut self, method_name: &str) {
+        self.call_history.push(method_name.to_string());
+    }
+    
+    /// Verify all expectations were met
+    pub fn verify(&self) -> TestResult<()> {
+        for expectation in &self.expectations {
+            let call_count = self.call_history.iter()
+                .filter(|&call| call == &expectation.method_name)
+                .count();
+            
+            if call_count != expectation.expected_calls {
+                return Err(CursedError::runtime_error(&format!(
+                    "Mock expectation failed for {}: expected {} calls, got {}",
+                    expectation.method_name, expectation.expected_calls, call_count
+                )));
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Expectation for mock verification
+#[derive(Debug, Clone)]
+pub struct Expectation {
+    pub method_name: String,
+    pub expected_calls: usize,
+    pub return_value: Option<String>,
+}
+
+impl Expectation {
+    /// Create a new expectation
+    pub fn new(method_name: String) -> Self {
+        Self {
+            method_name,
+            expected_calls: 1,
+            return_value: None,
+        }
+    }
+    
+    /// Set expected number of calls
+    pub fn times(mut self, count: usize) -> Self {
+        self.expected_calls = count;
+        self
+    }
+    
+    /// Set return value
+    pub fn returns(mut self, value: String) -> Self {
+        self.return_value = Some(value);
+        self
+    }
+}
+
+/// Stub for replacing behavior
+#[derive(Debug, Clone)]
+pub struct Stub {
+    pub method_name: String,
+    pub behavior: String,
+}
+
+impl Stub {
+    /// Create a new stub
+    pub fn new(method_name: String, behavior: String) -> Self {
+        Self {
+            method_name,
+            behavior,
+        }
+    }
+}
 
 /// Test operations handler
 pub struct TestHandler {

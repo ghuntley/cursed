@@ -18,6 +18,7 @@ pub struct PackageInfo {
     pub authors: Vec<String>,
     pub dependencies: Vec<Dependency>,
     pub keywords: Vec<String>,
+    pub categories: Vec<String>,
     pub license: Option<String>,
     pub homepage: Option<String>,
     pub repository: Option<String>,
@@ -199,9 +200,16 @@ impl PackageRegistry {
         Ok(PackageMetadata {
             name: package_info.name,
             version: package_info.version,
+            description: package_info.description,
             dependencies: package_info.dependencies,
             download_url: package_info.download_url,
             checksum: package_info.checksum,
+            authors: package_info.authors,
+            license: package_info.license,
+            homepage: package_info.homepage,
+            repository: package_info.repository,
+            keywords: package_info.keywords,
+            categories: package_info.categories,
         })
     }
 
@@ -264,9 +272,16 @@ impl PackageRegistry {
 pub struct PackageMetadata {
     pub name: String,
     pub version: Version,
+    pub description: String,
     pub dependencies: Vec<Dependency>,
     pub download_url: String,
     pub checksum: String,
+    pub authors: Vec<String>,
+    pub license: Option<String>,
+    pub homepage: Option<String>,
+    pub repository: Option<String>,
+    pub keywords: Vec<String>,
+    pub categories: Vec<String>,
 }
 
 impl Dependency {

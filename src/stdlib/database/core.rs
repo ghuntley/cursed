@@ -55,6 +55,7 @@ impl Default for ModuleHandler {
 pub enum SqlValue {
     Null,
     Bool(bool),
+    Boolean(bool), // Alias for Bool for compatibility
     Integer(i64),
     Float(f64),
     String(String),
@@ -93,7 +94,7 @@ impl SqlValue {
     
     pub fn as_bool(&self) -> Option<bool> {
         match self {
-            SqlValue::Bool(b) => Some(*b),
+            SqlValue::Bool(b) | SqlValue::Boolean(b) => Some(*b),
             _ => None,
         }
     }
