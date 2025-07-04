@@ -24,10 +24,10 @@ mod tests {
     #[test]
     fn test_basic_type_checking() {
         let valid_programs = vec![
-            "facts x: i64 = 42;",
-            "facts name: String = \"hello\";",
-            "facts flag: bool = true;",
-            "facts pi: f64 = 3.14159;",
+            "facts x normie = 42;",
+            "facts name tea = \"hello\";",
+            "facts flag lit = based;",
+            "facts pi meal = 3.14159;",
         ];
         
         for program in valid_programs {

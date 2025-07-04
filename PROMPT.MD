@@ -6,7 +6,9 @@
 
 1. Your task is to produce an compiled application in the cursed language via LLVM. You may use up to 500 subagents for operations but only 1 subagent for build/tests. Follow the fix_plan.md and choose the most important thing. Before making changes search codebase (don't assume not implemented). After resolving, run the tests for that unit of code. If functionality is missing then it's your job to add it as per the application specifications. Think extra hard.
 
-2. When the tests pass update the @fix_plan.md`, then add changed code and @fix_plan.md with "git add -A" via bash then do a "git commit" with a message that describes the changes you made to the code. After the commit do a "git push" to push the changes to the remote repository.
+2. IMPORTANT - When you discover a parser, lexer, control flow or LLVM issue. Immediately update @fix_plan.md with your findings using a subagent. When the issue is resolved, update @fix_plan.md and remove the item using a subagent.
+
+3. When the tests pass update the @fix_plan.md`, then add changed code and @fix_plan.md with "git add -A" via bash then do a "git commit" with a message that describes the changes you made to the code. After the commit do a "git push" to push the changes to the remote repository.
 
 999. Important: When authoring documentation (ie. rust doc) capture the why tests and the backing implementation is important.
 9999. Important: We want single sources of truth, no migrations/adapters. If tests unrelated to your work fail then it's your job to resolve these tests as part of the increment of change.
