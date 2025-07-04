@@ -37,6 +37,7 @@ pub mod redis;
 pub use core::{
     SqlValue
 };
+
 pub use driver::{Driver, DriverConn, DriverStmt, DriverTx, DriverRegistry};
 pub use pool::{ConnectionPool, PoolConfig, PoolStats};
 pub use llvm_integration::{
@@ -66,6 +67,24 @@ pub use sqlite::{
 
 /// Transaction isolation level (alias for compatibility)
 pub type IsolationLevel = SqlIsolationLevel;
+
+/// Transaction options for controlling transaction behavior
+#[derive(Debug, Clone)]
+pub struct TxOptions {
+    /// Isolation level for the transaction
+    pub isolation_level: Option<SqlIsolationLevel>,
+    /// Whether the transaction is read-only
+    pub read_only: bool,
+}
+
+impl Default for TxOptions {
+    fn default() -> Self {
+        Self {
+            isolation_level: None,
+            read_only: false,
+        }
+    }
+}
 
 /// fr fr Database isolation levels for transaction control
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

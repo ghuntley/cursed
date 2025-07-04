@@ -2,12 +2,14 @@
 
 use crate::error::CursedError;
 use std::collections::HashMap;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
 pub struct BuildAnalytics {
     pub config: BuildAnalyticsConfig,
     pub events: Vec<BuildEvent>,
+    pub monitoring_start_time: Option<Instant>,
+    pub is_monitoring: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +52,46 @@ pub enum BuildEventType {
     Linking,
 }
 
+#[derive(Debug, Clone)]
+pub struct BuildMetrics {
+    pub total_build_time: Duration,
+    pub compilation_time: Duration,
+    pub linking_time: Duration,
+    pub files_compiled: usize,
+    pub cache_hit_rate: f64,
+    pub memory_peak_mb: f64,
+    pub parallelism_efficiency: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct BuildBottlenecks {
+    pub optimization_opportunities: Vec<OptimizationOpportunity>,
+}
+
+#[derive(Debug, Clone)]
+pub struct OptimizationOpportunity {
+    pub description: String,
+    pub estimated_time_savings: Duration,
+}
+
+#[derive(Debug, Clone)]
+pub struct BuildReport {
+    pub performance_comparison: PerformanceComparison,
+    pub recommendations: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PerformanceComparison {
+    pub trend_direction: TrendDirection,
+}
+
+#[derive(Debug, Clone)]
+pub enum TrendDirection {
+    Improving,
+    Stable,
+    Degrading,
+}
+
 impl Default for BuildAnalyticsConfig {
     fn default() -> Self {
         Self {
@@ -74,6 +116,8 @@ impl BuildAnalytics {
         Ok(Self {
             config,
             events: Vec::new(),
+            monitoring_start_time: None,
+            is_monitoring: false,
         })
     }
     
@@ -85,6 +129,154 @@ impl BuildAnalytics {
         let mut summary = HashMap::new();
         summary.insert("total_events".to_string(), self.events.len().to_string());
         summary
+    }
+    
+    pub fn start_build_monitoring(&mut self) -> Result<(), CursedError> {
+        self.monitoring_start_time = Some(Instant::now());
+        self.is_monitoring = true;
+        self.events.clear();
+        Ok(())
+    }
+    
+    pub fn stop_build_monitoring(&mut self) -> Result<BuildMetrics, CursedError> {
+        if !self.is_monitoring {
+            return Err(CursedError::RuntimeError("Build monitoring not active".to_string()));
+        }
+        
+        self.is_monitoring = false;
+        let total_time = self.monitoring_start_time
+            .map(|start| start.elapsed())
+            .unwrap_or_default();
+        
+        // Calculate metrics from recorded events
+        let mut compilation_time = Duration::default();
+        let mut linking_time = Duration::default();
+        let mut cache_hits = 0;
+        let mut cache_misses = 0;
+        let mut files_compiled = 0;
+        
+        for event in &self.events {
+            match event.event_type {
+                BuildEventType::CompilationEnd | BuildEventType::CompileEnd => {
+                    if let Some(duration_str) = event.data.get("duration_ms") {
+                        if let Ok(duration_ms) = duration_str.parse::<u64>() {
+                            compilation_time += Duration::from_millis(duration_ms);
+                        }
+                    }
+                    files_compiled += 1;
+                }
+                BuildEventType::Linking | BuildEventType::LinkEnd => {
+                    if let Some(duration_str) = event.data.get("duration_ms") {
+                        if let Ok(duration_ms) = duration_str.parse::<u64>() {
+                            linking_time += Duration::from_millis(duration_ms);
+                        }
+                    }
+                }
+                BuildEventType::CacheHit => cache_hits += 1,
+                BuildEventType::CacheMiss => cache_misses += 1,
+                _ => {}
+            }
+        }
+        
+        let total_cache_requests = cache_hits + cache_misses;
+        let cache_hit_rate = if total_cache_requests > 0 {
+            cache_hits as f64 / total_cache_requests as f64
+        } else {
+            0.0
+        };
+        
+        Ok(BuildMetrics {
+            total_build_time: total_time,
+            compilation_time,
+            linking_time,
+            files_compiled,
+            cache_hit_rate,
+            memory_peak_mb: 256.0, // Mock value
+            parallelism_efficiency: 0.85, // Mock value
+        })
+    }
+    
+    pub fn analyze_bottlenecks(&self) -> Result<BuildBottlenecks, CursedError> {
+        let mut opportunities = Vec::new();
+        
+        // Analyze compilation bottlenecks
+        let mut slow_compilations = 0;
+        for event in &self.events {
+            if matches!(event.event_type, BuildEventType::CompilationEnd | BuildEventType::CompileEnd) {
+                if let Some(duration_str) = event.data.get("duration_ms") {
+                    if let Ok(duration_ms) = duration_str.parse::<u64>() {
+                        if duration_ms > 500 {
+                            slow_compilations += 1;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if slow_compilations > 0 {
+            opportunities.push(OptimizationOpportunity {
+                description: format!("Optimize {} slow compilation units", slow_compilations),
+                estimated_time_savings: Duration::from_millis(slow_compilations * 200),
+            });
+        }
+        
+        // Analyze cache miss opportunities
+        let cache_misses = self.events.iter()
+            .filter(|e| matches!(e.event_type, BuildEventType::CacheMiss))
+            .count();
+        
+        if cache_misses > 2 {
+            opportunities.push(OptimizationOpportunity {
+                description: format!("Improve caching strategy ({} misses)", cache_misses),
+                estimated_time_savings: Duration::from_millis(cache_misses as u64 * 100),
+            });
+        }
+        
+        Ok(BuildBottlenecks {
+            optimization_opportunities: opportunities,
+        })
+    }
+    
+    pub fn generate_build_report(&self) -> Result<BuildReport, CursedError> {
+        let mut recommendations = Vec::new();
+        
+        // Analyze trends (mock implementation)
+        let trend_direction = if self.events.len() < 10 {
+            TrendDirection::Stable
+        } else if self.events.len() < 20 {
+            TrendDirection::Improving
+        } else {
+            TrendDirection::Degrading
+        };
+        
+        // Generate recommendations based on events
+        let cache_hit_count = self.events.iter()
+            .filter(|e| matches!(e.event_type, BuildEventType::CacheHit))
+            .count();
+        let cache_miss_count = self.events.iter()
+            .filter(|e| matches!(e.event_type, BuildEventType::CacheMiss))
+            .count();
+        
+        if cache_miss_count > cache_hit_count {
+            recommendations.push("Consider prewarming the build cache".to_string());
+        }
+        
+        let optimization_passes = self.events.iter()
+            .filter(|e| matches!(e.event_type, BuildEventType::OptimizationPass))
+            .count();
+        
+        if optimization_passes > 5 {
+            recommendations.push("Review optimization pass configuration for efficiency".to_string());
+        }
+        
+        recommendations.push("Enable parallel compilation for better performance".to_string());
+        
+        Ok(BuildReport {
+            performance_comparison: PerformanceComparison {
+                trend_direction,
+            },
+            recommendations,
+        })
     }
 }
 

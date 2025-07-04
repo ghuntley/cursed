@@ -1,0 +1,1 @@
+slay factorial(n normie) normie { lowkey n <= 1 { yolo 1; } highkey { yolo n * factorial(n - 1); } } slay main() { sus result normie = factorial(5); vibez.spill("Factorial of 5 is: " + result); yolo result; }

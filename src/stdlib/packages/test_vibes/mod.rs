@@ -12,7 +12,7 @@ pub mod matchers;
 pub mod runners;
 
 // Re-export core types for easy access
-pub use core::{VibeTest, VibeBench, VibeTestingManager, TestResult, BenchResult};
+pub use core::{VibeTest, VibeBench, VibeTestingManager, TestResult, BenchResult, TestExecutionResult};
 pub use assertions::*;
 pub use fixtures::{FixtureVibe, TestCase, DatabaseFixture};
 pub use mocking::{MockVibe, Expectation, Stub};
