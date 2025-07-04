@@ -189,9 +189,16 @@ impl Parser {
 
     // Parsing methods
     fn parse_package_declaration(&mut self) -> Result<PackageDeclaration, CursedError> {
-        let name = self.consume(TokenKind::Identifier, "Expected package name")?;
+        let name_token = self.consume(TokenKind::Identifier, "Expected package name")?;
+        let name = name_token.lexeme.clone();
+        
+        // Consume optional semicolon after package name
+        if self.check(&TokenKind::Semicolon) {
+            self.advance();
+        }
+        
         Ok(PackageDeclaration {
-            name: name.lexeme.clone(),
+            name,
             version: None,
         })
     }
@@ -314,8 +321,16 @@ impl Parser {
         
         if !self.check(&TokenKind::RightParen) {
             loop {
-                let param = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
-                parameters.push(param);
+                let param_name = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
+                
+                // Check for optional type after parameter name (CURSED syntax: "x lit", "name tea")
+                if self.check(&TokenKind::Identifier) {
+                    let _param_type = self.advance().lexeme.clone();
+                    // For now, we still just collect the parameter name
+                    // TODO: Store parameter types properly in AST
+                }
+                
+                parameters.push(param_name);
                 
                 if !self.match_tokens(&[TokenKind::Comma]) {
                     break;
@@ -324,6 +339,13 @@ impl Parser {
         }
         
         self.consume(TokenKind::RightParen, "Expected ')' after parameters")?;
+        
+        // Parse optional return type (CURSED syntax: "slay func(x lit) lit { ... }")
+        let return_type = if self.check(&TokenKind::Identifier) {
+            Some(self.advance().lexeme.clone())
+        } else {
+            None
+        };
         
         // Parse optional where clause
         let where_clause = self.parse_where_clause()?;
@@ -344,7 +366,7 @@ impl Parser {
             type_parameters,
             parameters,
             body,
-            return_type: None, // TODO: Add proper type parsing
+            return_type,
             where_clause,
             visibility: crate::ast::Visibility::Private,
         })
@@ -362,8 +384,16 @@ impl Parser {
         
         if !self.check(&TokenKind::RightParen) {
             loop {
-                let param = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
-                parameters.push(param);
+                let param_name = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
+                
+                // Check for optional type after parameter name (CURSED syntax: "x lit", "name tea")
+                if self.check(&TokenKind::Identifier) {
+                    let _param_type = self.advance().lexeme.clone();
+                    // For now, we still just collect the parameter name
+                    // TODO: Store parameter types properly in AST
+                }
+                
+                parameters.push(param_name);
                 
                 if !self.match_tokens(&[TokenKind::Comma]) {
                     break;
@@ -372,6 +402,13 @@ impl Parser {
         }
         
         self.consume(TokenKind::RightParen, "Expected ')' after parameters")?;
+        
+        // Parse optional return type (CURSED syntax: "slay func(x lit) lit { ... }")
+        let return_type = if self.check(&TokenKind::Identifier) {
+            Some(self.advance().lexeme.clone())
+        } else {
+            None
+        };
         
         // Parse optional where clause
         let where_clause = self.parse_where_clause()?;
@@ -396,7 +433,7 @@ impl Parser {
             type_parameters,
             parameters,
             body,
-            return_type: None, // TODO: Add proper type parsing
+            return_type,
             where_clause,
             visibility,
         })
@@ -405,6 +442,13 @@ impl Parser {
     fn parse_let_statement(&mut self) -> Result<LetStatement, CursedError> {
         self.consume(TokenKind::Sus, "Expected 'sus'")?;
         let name = self.consume(TokenKind::Identifier, "Expected variable name")?.lexeme.clone();
+        
+        // Check for optional type after variable name (CURSED syntax: "sus result lit = ...")
+        if self.check(&TokenKind::Identifier) {
+            let _var_type = self.advance().lexeme.clone();
+            // TODO: Store variable type properly in AST
+        }
+        
         self.consume(TokenKind::Equal, "Expected '=' after variable name")?;
         let value = self.parse_expression()?;
         
@@ -442,6 +486,13 @@ impl Parser {
     fn parse_let_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<LetStatement, CursedError> {
         self.consume(TokenKind::Sus, "Expected 'sus'")?;
         let name = self.consume(TokenKind::Identifier, "Expected variable name")?.lexeme.clone();
+        
+        // Check for optional type after variable name (CURSED syntax: "sus result lit = ...")
+        if self.check(&TokenKind::Identifier) {
+            let _var_type = self.advance().lexeme.clone();
+            // TODO: Store variable type properly in AST
+        }
+        
         self.consume(TokenKind::Equal, "Expected '=' after variable name")?;
         let value = self.parse_expression()?;
         
@@ -529,6 +580,10 @@ impl Parser {
 
     fn parse_return_statement(&mut self) -> Result<ReturnStatement, CursedError> {
         self.consume(TokenKind::Yolo, "Expected 'yolo'")?;
+        
+        // Skip any newlines after 'yolo'
+        self.skip_newlines();
+        
         let value = if self.check(&TokenKind::Semicolon) || self.check(&TokenKind::RightBrace) {
             None
         } else {
@@ -1060,9 +1115,9 @@ impl Parser {
     fn parse_parameter(&mut self) -> Result<crate::ast::Parameter, CursedError> {
         let name = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
         
-        // Optional type annotation
-        let param_type = if self.match_tokens(&[TokenKind::Colon]) {
-            let type_name = self.consume(TokenKind::Identifier, "Expected parameter type")?.lexeme.clone();
+        // CURSED syntax: parameter name followed directly by type (e.g., "x lit", "name tea")
+        let param_type = if self.check(&TokenKind::Identifier) {
+            let type_name = self.advance().lexeme.clone();
             Some(type_name)
         } else {
             None

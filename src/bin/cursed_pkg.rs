@@ -224,7 +224,9 @@ async fn run(matches: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
         Some(("init", _)) => {
             println!("Initializing workspace...");
             
-            match pkg_manager.init_workspace().await {
+            let current_dir = std::env::current_dir().unwrap();
+            let members = vec!["main".to_string()];
+            match pkg_manager.init_workspace(&current_dir, members) {
                 Ok(_) => {
                     println!("Successfully initialized workspace");
                 }
@@ -252,7 +254,7 @@ async fn run(matches: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
         Some(("clean", _)) => {
             println!("Cleaning package cache...");
             
-            match pkg_manager.clean_workspace().await {
+            match pkg_manager.clean_workspace() {
                 Ok(_) => {
                     println!("Cache cleaned successfully");
                 }

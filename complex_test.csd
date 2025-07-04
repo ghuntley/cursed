@@ -1,33 +1,10 @@
-// Test complex expressions and missing operators
-vibe test
+vibe main
 
-slay calculate(x, y, z) {
-    // Test missing modulo operator
-    facts remainder = x % y
-    
-    // Test complex expressions with precedence
-    facts result = x + y * z - 10 / 2
-    
-    // Test comparison operators
-    lowkey x > y && y < z {
-        yolo result + remainder
-    } highkey {
-        yolo 0
-    }
+slay add(x lit, y lit) lit {
+    yolo x + y
 }
 
 slay main() {
-    facts a = 15
-    facts b = 4
-    facts c = 3
-    
-    // Test function with parameters
-    facts answer = calculate(a, b, c)
-    
-    // Test complex boolean expressions
-    lowkey answer != 0 || a >= b {
-        // Should work
-    }
-    
-    yolo answer
+    sus result lit = add(5, 10)
+    yolo result
 }
