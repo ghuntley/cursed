@@ -1215,6 +1215,11 @@ impl Parser {
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
             let method = self.parse_method_signature()?;
             methods.push(method);
+            
+            // Optional semicolon after method signature
+            if self.match_tokens(&[TokenKind::Semicolon]) {
+                // Consume semicolon
+            }
         }
         
         self.consume(TokenKind::RightBrace, "Expected '}' after interface methods")?;
@@ -1227,6 +1232,8 @@ impl Parser {
     }
 
     fn parse_method_signature(&mut self) -> Result<crate::ast::MethodSignature, CursedError> {
+        // Expect 'slay' keyword for method declaration
+        self.consume(TokenKind::Slay, "Expected 'slay' for method declaration")?;
         let name = self.consume(TokenKind::Identifier, "Expected method name")?.lexeme.clone();
         
         self.consume(TokenKind::LeftParen, "Expected '(' after method name")?;
@@ -1245,9 +1252,9 @@ impl Parser {
         
         self.consume(TokenKind::RightParen, "Expected ')' after parameters")?;
         
-        // Optional return type (using colon for now)
-        let return_type = if self.match_tokens(&[TokenKind::Colon]) {
-            let type_name = self.consume(TokenKind::Identifier, "Expected return type")?.lexeme.clone();
+        // Optional return type (using space syntax like in test)
+        let return_type = if self.check(&TokenKind::Identifier) {
+            let type_name = self.advance().lexeme.clone();
             Some(type_name)
         } else {
             None
@@ -1263,8 +1270,14 @@ impl Parser {
     fn parse_parameter(&mut self) -> Result<crate::ast::Parameter, CursedError> {
         let name = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
         
-        // CURSED syntax: parameter name followed directly by type (e.g., "x lit", "name tea")
-        let param_type = if self.check(&TokenKind::Identifier) {
+        // CURSED syntax: parameter name followed by type (e.g., "x lit", "name tea")
+        // Also support colon syntax for compatibility (e.g., "x: lit", "name: tea")
+        let param_type = if self.match_tokens(&[TokenKind::Colon]) {
+            // Colon syntax: name: type
+            let type_name = self.consume(TokenKind::Identifier, "Expected parameter type after colon")?.lexeme.clone();
+            Some(type_name)
+        } else if self.check(&TokenKind::Identifier) {
+            // Space syntax: name type
             let type_name = self.advance().lexeme.clone();
             Some(type_name)
         } else {

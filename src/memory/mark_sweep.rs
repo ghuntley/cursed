@@ -301,6 +301,20 @@ impl MarkSweepCollector {
 
         Ok(())
     }
+    
+    /// Trace object references based on object type and layout
+    pub fn trace_object_references(&self, addr: usize) -> Result<Vec<usize>, CursedError> {
+        let objects = self.objects.read()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire objects lock"))?;
+        
+        if let Some(info) = objects.get(&addr) {
+            // For now, return the stored references
+            // In a full implementation, this would inspect the object's memory layout
+            Ok(info.references.clone())
+        } else {
+            Ok(Vec::new())
+        }
+    }
 
     /// Perform garbage collection
     pub fn collect(&self) -> Result<CollectionStats, CursedError> {
@@ -507,9 +521,19 @@ impl MarkSweepCollector {
             }
         };
 
-        // Mark all referenced objects
+        // Mark all referenced objects and follow reference chains
         for &ref_addr in &references {
-            self.mark_object(ref_addr)?;
+            if ref_addr != 0 && ref_addr != addr {  // Avoid self-references and null
+                self.mark_object(ref_addr)?;
+                
+                // Follow transitive references to build complete reachability graph
+                let transitive_refs = self.trace_object_references(ref_addr)?;
+                for &trans_ref in &transitive_refs {
+                    if trans_ref != 0 && trans_ref != ref_addr && trans_ref != addr {
+                        self.mark_object(trans_ref)?;
+                    }
+                }
+            }
         }
 
         Ok(())
