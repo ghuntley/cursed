@@ -488,7 +488,7 @@ async fn demonstrate_advanced_features() -> Result<(), Box<dyn Error>> {
     ];
 
     for (description, sql) in cte_examples {
-        info!("  - {}: {}", description);
+        info!("  - {}", description);
         debug!("    SQL: {}", sql);
     }
 

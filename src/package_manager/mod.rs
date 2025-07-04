@@ -15,6 +15,8 @@ pub mod version;
 pub mod installer;
 pub mod archive;
 pub mod config;
+pub mod workspace;
+pub mod lock_file;
 
 #[cfg(test)]
 mod tests;
@@ -29,9 +31,12 @@ pub use downloader::{PackageDownloader, DownloadedPackage, DownloadConfig};
 pub use cache::{PackageCache, CachedPackage, CacheConfig};
 pub use version::{Version, VersionReq};
 pub use installer::{PackageInstaller, InstallConfig, InstalledPackageInfo, InstallResult, UninstallResult};
+pub use workspace::{WorkspaceManager, WorkspaceConfig, WorkspaceMember, WorkspacePackageMetadata};
+pub use lock_file::{LockFileManager, LockedPackage, LockFileStats, LockFileValidation};
 
 use std::collections::HashMap;
 use std::str::FromStr;
+use std::path::PathBuf;
 
 /// Main package manager
 #[derive(Debug)]
@@ -42,23 +47,25 @@ pub struct PackageManager {
     cache: PackageCache,
     installer: PackageInstaller,
     config: PackageManagerConfig,
+    workspace: Option<WorkspaceManager>,
+    lock_file_manager: Option<LockFileManager>,
 }
 
 /// Configuration for the package manager
 #[derive(Debug, Clone)]
 pub struct PackageManagerConfig {
-    pub cache_dir: String,
+    pub cache_dir: PathBuf,
     pub registry_url: String,
     pub offline_mode: bool,
     pub verify_signatures: bool,
-    pub workspace_dir: String,
+    pub workspace_dir: PathBuf,
     pub max_cache_size: usize,
     pub timeout_seconds: u64,
     pub parallel_downloads: u32,
 }
 
 /// Version specification type
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum VersionSpec {
     Simple(String),
     Range(String),
@@ -99,11 +106,11 @@ pub enum PackageManagerError {
 impl Default for PackageManagerConfig {
     fn default() -> Self {
         Self {
-            cache_dir: "target/packages".to_string(),
+            cache_dir: PathBuf::from("target/packages"),
             registry_url: "https://packages.cursed-lang.org".to_string(),
             offline_mode: false,
             verify_signatures: true,
-            workspace_dir: ".".to_string(),
+            workspace_dir: PathBuf::from("."),
             max_cache_size: 1024 * 1024 * 1024, // 1GB
             timeout_seconds: 30,
             parallel_downloads: 4,
@@ -129,14 +136,14 @@ impl PackageManager {
         let downloader = PackageDownloader::new(download_config.clone())?;
         
         let cache_config = CacheConfig {
-            cache_dir: std::path::PathBuf::from(&config.cache_dir),
+            cache_dir: config.cache_dir.clone(),
             ..Default::default()
         };
         let cache = PackageCache::new(cache_config)?;
         
         let install_config = InstallConfig {
-            install_dir: std::path::PathBuf::from(&config.cache_dir).join("installed"),
-            temp_dir: std::path::PathBuf::from(&config.cache_dir).join("temp"),
+            install_dir: config.cache_dir.join("installed"),
+            temp_dir: config.cache_dir.join("temp"),
             ..Default::default()
         };
         let installer_downloader = PackageDownloader::new(download_config.clone())?;
@@ -149,6 +156,8 @@ impl PackageManager {
             cache,
             installer,
             config,
+            workspace: None,
+            lock_file_manager: None,
         })
     }
 
@@ -271,122 +280,153 @@ impl PackageManager {
     }
 
     /// Generate lock file for current workspace
-    pub async fn generate_lock_file(&self) -> crate::error::Result<()> {
+    pub fn generate_lock_file(&self) -> crate::error::Result<()> {
         tracing::info!("Generating lock file");
         
-        // Create lock file with current installed packages
+        let lock_path = self.config.workspace_dir.join("CursedPackage.lock");
+        let mut lock_manager = LockFileManager::new(&lock_path);
+        
+        // Add installed packages to lock file
         let installed = self.list_installed();
-        let lock_content = installed.iter()
-            .map(|p| format!("{}@{}", p.name, p.version))
-            .collect::<Vec<_>>()
-            .join("\n");
+        for package in installed {
+            let locked_package = LockedPackage {
+                name: package.name.clone(),
+                version: package.version.to_string(),
+                source: "registry".to_string(),
+                checksum: None,
+                dependencies: Vec::new(),
+            };
+            lock_manager.add_package(locked_package);
+        }
         
-        let lock_path = std::path::Path::new(&self.config.workspace_dir).join("package.lock");
-        std::fs::write(lock_path, lock_content)?;
+        // If we have a workspace, add workspace members
+        if let Some(workspace) = &self.workspace {
+            let members: Vec<String> = workspace.members().iter()
+                .map(|m| m.name.clone())
+                .collect();
+            lock_manager.set_workspace_members(members);
+        }
         
+        lock_manager.save()?;
         Ok(())
     }
 
     /// Validate existing lock file
-    pub async fn validate_lock_file(&self) -> crate::error::Result<bool> {
-        let lock_path = std::path::Path::new(&self.config.workspace_dir).join("package.lock");
+    pub fn validate_lock_file(&self) -> crate::error::Result<()> {
+        let lock_path = self.config.workspace_dir.join("CursedPackage.lock");
         
         if !lock_path.exists() {
-            return Ok(false);
+            return Err(crate::error::CursedError::General("No lock file found".to_string()));
         }
         
-        let lock_content = std::fs::read_to_string(lock_path)?;
-        let installed = self.list_installed();
+        let mut lock_manager = LockFileManager::new(&lock_path);
+        lock_manager.load()?;
         
-        // Simple validation - check if all locked packages are installed
-        for line in lock_content.lines() {
-            if let Some((name, _version)) = line.split_once('@') {
-                if !self.is_installed(name) {
-                    return Ok(false);
-                }
-            }
-        }
-        
-        Ok(true)
-    }
-
-    /// Get lock file status
-    pub async fn lock_file_status(&self) -> crate::error::Result<String> {
-        let lock_path = std::path::Path::new(&self.config.workspace_dir).join("package.lock");
-        
-        if !lock_path.exists() {
-            return Ok("No lock file found".to_string());
-        }
-        
-        let is_valid = self.validate_lock_file().await?;
-        if is_valid {
-            Ok("Lock file is valid and up to date".to_string())
-        } else {
-            Ok("Lock file is out of sync with installed packages".to_string())
-        }
-    }
-
-    /// Initialize workspace
-    pub async fn init_workspace(&self) -> crate::error::Result<()> {
-        tracing::info!("Initializing workspace in: {}", self.config.workspace_dir);
-        
-        let workspace_path = std::path::Path::new(&self.config.workspace_dir);
-        std::fs::create_dir_all(workspace_path)?;
-        
-        // Create basic package.toml if it doesn't exist
-        let package_toml = workspace_path.join("package.toml");
-        if !package_toml.exists() {
-            let default_content = r#"[package]
-name = "my-cursed-project"
-version = "0.1.0"
-description = "A CURSED project"
-
-[dependencies]
-"#;
-            std::fs::write(package_toml, default_content)?;
+        let is_valid = lock_manager.validate()?;
+        if !is_valid {
+            return Err(crate::error::CursedError::General("Lock file validation failed".to_string()));
         }
         
         Ok(())
     }
 
-    /// Get workspace directory
-    pub fn workspace(&self) -> &str {
-        &self.config.workspace_dir
+    /// Get lock file status
+    pub fn lock_file_status(&self) -> Option<&LockFileManager> {
+        self.lock_file_manager.as_ref()
+    }
+
+    /// Initialize workspace with members
+    pub fn init_workspace(&mut self, workspace_root: &std::path::Path, members: Vec<String>) -> crate::error::Result<()> {
+        tracing::info!("Initializing workspace in: {:?} with members: {:?}", workspace_root, members);
+        
+        std::fs::create_dir_all(workspace_root)?;
+        
+        // Create workspace manager
+        let workspace = WorkspaceManager::init_workspace(workspace_root, members)?;
+        self.workspace = Some(workspace);
+        
+        // Initialize lock file manager
+        let lock_path = workspace_root.join("CursedPackage.lock");
+        self.lock_file_manager = Some(LockFileManager::new(&lock_path));
+        
+        Ok(())
+    }
+
+    /// Get workspace
+    pub fn workspace(&self) -> Option<&WorkspaceManager> {
+        self.workspace.as_ref()
     }
 
     /// Install all workspace dependencies
     pub async fn install_workspace(&mut self) -> crate::error::Result<Vec<InstalledPackage>> {
         tracing::info!("Installing workspace dependencies");
         
-        let package_toml = std::path::Path::new(&self.config.workspace_dir).join("package.toml");
-        if !package_toml.exists() {
-            return Err(crate::error::CursedError::General("No package.toml found in workspace".to_string()));
-        }
+        // Get dependencies first to avoid borrow checker issues
+        let dependencies = if let Some(workspace) = &self.workspace {
+            let deps = workspace.list_dependencies();
+            let member_names: Vec<String> = workspace.members().iter().map(|m| m.name.clone()).collect();
+            Some((deps, member_names))
+        } else {
+            None
+        };
         
-        // For now, just return empty vec - full TOML parsing would be needed
-        Ok(Vec::new())
+        if let Some((dependencies, member_names)) = dependencies {
+            let mut installed = Vec::new();
+            
+            // Install external dependencies for each member
+            for (member_name, deps) in dependencies {
+                for dep_name in deps {
+                    // Skip local dependencies (they are workspace members)
+                    if !member_names.contains(&dep_name) {
+                        match self.install_package(&dep_name, None).await {
+                            Ok(package) => installed.push(package),
+                            Err(e) => tracing::warn!("Failed to install dependency {} for {}: {}", dep_name, member_name, e),
+                        }
+                    }
+                }
+            }
+            
+            Ok(installed)
+        } else {
+            Ok(Vec::new())
+        }
     }
 
     /// Build workspace
     pub async fn build_workspace(&self) -> crate::error::Result<()> {
         tracing::info!("Building workspace");
         
-        // For now, just verify workspace exists
-        let workspace_path = std::path::Path::new(&self.config.workspace_dir);
-        if !workspace_path.exists() {
-            return Err(crate::error::CursedError::General("Workspace directory does not exist".to_string()));
+        if let Some(workspace) = &self.workspace {
+            // Validate workspace before building
+            workspace.validate()?;
+            
+            // Get build order
+            let build_order = workspace.get_build_order()?;
+            
+            // Build each member in dependency order
+            for member in build_order {
+                tracing::info!("Building workspace member: {}", member.name);
+                // In a real implementation, this would trigger the CURSED compiler
+                // For now, just verify the member directory exists
+                if !member.path.exists() {
+                    return Err(crate::error::CursedError::General(
+                        format!("Workspace member {} does not exist at {:?}", member.name, member.path)
+                    ));
+                }
+            }
+            
+            Ok(())
+        } else {
+            Err(crate::error::CursedError::General("No workspace initialized".to_string()))
         }
-        
-        Ok(())
     }
 
     /// Clean workspace
-    pub async fn clean_workspace(&self) -> crate::error::Result<()> {
+    pub fn clean_workspace(&self) -> crate::error::Result<()> {
         tracing::info!("Cleaning workspace");
         
-        let cache_path = std::path::Path::new(&self.config.cache_dir);
-        if cache_path.exists() {
-            std::fs::remove_dir_all(cache_path)?;
+        if self.config.cache_dir.exists() {
+            std::fs::remove_dir_all(&self.config.cache_dir)?;
         }
         
         Ok(())

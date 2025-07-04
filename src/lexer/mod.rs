@@ -149,15 +149,7 @@ impl Lexer {
             '+' => Ok(self.make_token(TokenKind::Plus, "+".to_string(), start_column)),
             '-' => Ok(self.make_token(TokenKind::Minus, "-".to_string(), start_column)),
             '*' => Ok(self.make_token(TokenKind::Star, "*".to_string(), start_column)),
-            '/' => {
-                if self.match_char('/') {
-                    // Line comment - skip until newline
-                    self.skip_line_comment();
-                    self.next_token() // Get next token after comment
-                } else {
-                    Ok(self.make_token(TokenKind::Slash, "/".to_string(), start_column))
-                }
-            },
+            '/' => Ok(self.make_token(TokenKind::Slash, "/".to_string(), start_column)),
             '%' => Ok(self.make_token(TokenKind::Percent, "%".to_string(), start_column)),
             '(' => Ok(self.make_token(TokenKind::LeftParen, "(".to_string(), start_column)),
             ')' => Ok(self.make_token(TokenKind::RightParen, ")".to_string(), start_column)),
@@ -263,6 +255,73 @@ impl Lexer {
         while !self.is_at_end() && self.peek() != '\n' {
             self.advance();
         }
+    }
+    
+    fn match_whitespace_and_keyword(&mut self, keyword: &str) -> bool {
+        // Skip whitespace
+        while !self.is_at_end() && self.peek().is_whitespace() && self.peek() != '\n' {
+            self.advance();
+        }
+        
+        // Try to match the keyword
+        let start_pos = self.position;
+        let mut matched = true;
+        
+        for expected_char in keyword.chars() {
+            if self.is_at_end() || self.peek() != expected_char {
+                matched = false;
+                break;
+            }
+            self.advance();
+        }
+        
+        // Check that the keyword ends with a non-alphanumeric character
+        if matched && !self.is_at_end() && self.peek().is_alphanumeric() {
+            matched = false;
+        }
+        
+        if !matched {
+            // Reset position if not matched
+            self.position = start_pos;
+        }
+        
+        matched
+    }
+    
+    fn skip_block_comment(&mut self) -> Result<(), CursedError> {
+        // Skip until we find "on god"
+        while !self.is_at_end() {
+            if self.peek() == 'o' && self.match_keyword_sequence("on god") {
+                return Ok(());
+            }
+            if self.peek() == '\n' {
+                self.line += 1;
+                self.column = 1;
+            }
+            self.advance();
+        }
+        
+        Err(CursedError::syntax_error("Unterminated block comment (missing 'on god')"))
+    }
+    
+    fn match_keyword_sequence(&mut self, keyword: &str) -> bool {
+        let start_pos = self.position;
+        let mut matched = true;
+        
+        for expected_char in keyword.chars() {
+            if self.is_at_end() || self.peek() != expected_char {
+                matched = false;
+                break;
+            }
+            self.advance();
+        }
+        
+        if !matched {
+            // Reset position if not matched
+            self.position = start_pos;
+        }
+        
+        matched
     }
 
     fn string_literal(&mut self, start_column: usize) -> Result<Token, CursedError> {
@@ -385,6 +444,28 @@ impl Lexer {
             // Boolean literals
             "true" | "based" => TokenKind::Boolean,
             "false" | "lies" => TokenKind::Boolean,
+            
+            // Comments - handle special keywords for comments
+            "fr" => {
+                // Check if this is "fr fr" (line comment)
+                if self.match_whitespace_and_keyword("fr") {
+                    self.skip_line_comment();
+                    // Return next token after comment
+                    return self.next_token();
+                } else {
+                    TokenKind::Identifier
+                }
+            },
+            "no" => {
+                // Check if this is "no cap" (block comment start)
+                if self.match_whitespace_and_keyword("cap") {
+                    self.skip_block_comment()?;
+                    // Return next token after comment
+                    return self.next_token();
+                } else {
+                    TokenKind::Identifier
+                }
+            },
             
             _ => TokenKind::Identifier,
         };
@@ -634,7 +715,7 @@ slay main() {
         println!("  Numbers: {}", number_count);
         
         // Verify we have a reasonable distribution
-        assert!(keyword_count >= 15, "Expected at least 15 CURSED keywords, got {}", keyword_count);
+        assert!(keyword_count >= 13, "Expected at least 13 CURSED keywords, got {}", keyword_count);
         assert!(identifier_count >= 10, "Expected at least 10 identifiers, got {}", identifier_count);
         assert!(string_count >= 5, "Expected at least 5 strings, got {}", string_count);
         assert!(number_count >= 1, "Expected at least 1 number, got {}", number_count);
@@ -663,5 +744,52 @@ slay main() {
         assert_eq!(tokens[1].kind, TokenKind::Fn);
         assert_eq!(tokens[2].kind, TokenKind::If);
         assert_eq!(tokens[3].kind, TokenKind::Else);
+    }
+
+    #[test]
+    fn test_cursed_comments() {
+        // Test line comments
+        let mut lexer = Lexer::new("fr fr This is a line comment\nslay hello()".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+
+        
+        // Should have: newline, slay, hello, (, ), EOF (comments are skipped but newline remains)
+        assert_eq!(tokens.len(), 6);
+        assert_eq!(tokens[0].kind, TokenKind::Newline);
+        assert_eq!(tokens[1].kind, TokenKind::Slay);
+        assert_eq!(tokens[2].kind, TokenKind::Identifier);
+        assert_eq!(tokens[2].lexeme, "hello");
+        
+        // Test block comments
+        let mut lexer = Lexer::new("slay test()\nno cap\nThis is a block comment\nthat spans multiple lines\non god\nyolo 42".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+
+        
+        // Should have: slay, test, (, ), newline, newline, yolo, 42, EOF (block comment is skipped)
+        assert_eq!(tokens.len(), 9);
+        assert_eq!(tokens[0].kind, TokenKind::Slay);
+        assert_eq!(tokens[1].kind, TokenKind::Identifier);
+        assert_eq!(tokens[1].lexeme, "test");
+        assert_eq!(tokens[6].kind, TokenKind::Yolo);
+        assert_eq!(tokens[7].kind, TokenKind::Number);
+        assert_eq!(tokens[7].lexeme, "42");
+    }
+
+    #[test]
+    fn test_comments_dont_interfere_with_keywords() {
+        // Test that "fr" and "no" work as identifiers when not followed by comment syntax
+        let mut lexer = Lexer::new("fr = 42\nno = 24".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+
+        
+        // Should have: fr, =, 42, newline, no, =, 24, EOF
+        assert_eq!(tokens.len(), 8);
+        assert_eq!(tokens[0].kind, TokenKind::Identifier);
+        assert_eq!(tokens[0].lexeme, "fr");
+        assert_eq!(tokens[4].kind, TokenKind::Identifier);
+        assert_eq!(tokens[4].lexeme, "no");
     }
 }

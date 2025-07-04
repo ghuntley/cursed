@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use tempfile::TempDir;
 
 use cursed::package_manager::{
-    PackageManager, PackageManagerConfig, PackageMetadata,
+    PackageManager, PackageManagerConfig, WorkspacePackageMetadata, VersionSpec,
     WorkspaceManager, WorkspaceConfig, LockFileManager,
 };
 
@@ -51,12 +51,14 @@ async fn demo_basic_package_management() -> Result<(), Box<dyn std::error::Error
         max_cache_size: 1024 * 1024 * 1024, // 1GB
         timeout_seconds: 30,
         parallel_downloads: 4,
+        offline_mode: false,
+        verify_signatures: true,
     };
     
     let mut manager = PackageManager::new(config)?;
     
     // Create a sample package metadata
-    let package_metadata = PackageMetadata {
+    let package_metadata = WorkspacePackageMetadata {
         name: "my-awesome-package".to_string(),
         version: "1.0.0".to_string(),
         description: "An awesome CURSED package".to_string(),
@@ -134,12 +136,11 @@ async fn demo_workspace_management() -> Result<(), Box<dyn std::error::Error>> {
     println!("📁 Workspace root: {:?}", workspace.root());
     
     // Display workspace configuration
-    if let Some(config) = workspace.config() {
-        println!("📋 Workspace configuration:");
-        println!("   Members: {:?}", config.members);
-        println!("   Exclude: {:?}", config.exclude);
-        println!("   Dependencies: {:?}", config.dependencies);
-    }
+    let config = workspace.config();
+    println!("📋 Workspace configuration:");
+    println!("   Members: {:?}", config.members);
+    println!("   Exclude: {:?}", config.exclude);
+    println!("   Dependencies: {:?}", config.dependencies);
     
     // Create realistic member packages
     println!("\n📦 Creating workspace members...");
@@ -216,6 +217,8 @@ async fn demo_complete_workflow() -> Result<(), Box<dyn std::error::Error>> {
         max_cache_size: 1024 * 1024 * 1024,
         timeout_seconds: 30,
         parallel_downloads: 4,
+        offline_mode: false,
+        verify_signatures: true,
     };
     
     let mut manager = PackageManager::new(config)?;
@@ -401,7 +404,7 @@ slay main() {
 }
 "#)?;
     
-    std::fs::write(frontend_dir.join("src/main.csd"), r#"
+    std::fs::write(frontend_dir.join("src/main.csd"), r##"
 // Frontend Application
 import "shared::types";
 import "ui_framework";
@@ -411,7 +414,7 @@ slay main() {
     app.mount("#app");
     capicola("Frontend application started");
 }
-"#)?;
+"##)?;
     
     std::fs::write(shared_dir.join("src/lib.csd"), r#"
 // Shared Types and Utilities
