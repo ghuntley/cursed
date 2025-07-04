@@ -682,6 +682,7 @@ impl FunctionCompiler {
     /// Get LLVM type string from CURSED type
     fn get_llvm_type(&self, cursed_type: &str) -> String {
         match cursed_type {
+            // Standard types
             "int" | "i32" => "i32".to_string(),
             "i64" | "long" => "i64".to_string(),
             "f32" | "float" => "float".to_string(),
@@ -689,6 +690,17 @@ impl FunctionCompiler {
             "bool" => "i1".to_string(),
             "string" | "str" => "i8*".to_string(),
             "void" => "void".to_string(),
+            // Gen-Z CURSED types
+            "normie" => "i32".to_string(),      // normie = i32
+            "tea" => "i8*".to_string(),         // tea = string
+            "lit" => "i1".to_string(),          // lit = bool
+            "cap" => "i8*".to_string(),         // cap = string
+            "dm" => "i8*".to_string(),          // dm = string
+            "truth" => "i1".to_string(),        // truth = bool
+            "lies" => "i1".to_string(),         // lies = bool
+            "based" => "i1".to_string(),        // based = bool
+            "facts" => "i32".to_string(),       // facts = i32 (immutable)
+            "sus" => "i32".to_string(),         // sus = i32 (mutable)
             _ => "i8*".to_string(), // Default to pointer for complex types
         }
     }

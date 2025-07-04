@@ -121,7 +121,7 @@ impl LlvmCodeGenerator {
     pub fn compile_function(&mut self, statement: &Statement) -> Result<String, CursedError> {
         self.ir_code.clear();
         if let Statement::Function(func_stmt) = statement {
-            self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.body)?;
+            self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.return_type, &func_stmt.body)?;
         }
         Ok(self.ir_code.clone())
     }
@@ -153,7 +153,7 @@ impl LlvmCodeGenerator {
                     if func_stmt.name == "main" {
                         has_main_function = true;
                     }
-                    self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.body)?;
+                    self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.return_type, &func_stmt.body)?;
                 },
                 _ => {
                     // Collect non-function statements to be placed in main function
@@ -242,7 +242,7 @@ declare i8* @cursed_channel_receive(i8*)
                 self.ir_code.push_str(&format!("  ; Assignment: {} = {}\n", assign_stmt.name, value_reg));
             },
             Statement::Function(func_stmt) => {
-                self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.body)?;
+                self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.return_type, &func_stmt.body)?;
             },
             Statement::Return(return_stmt) => {
                 if let Some(val) = &return_stmt.value {
@@ -621,17 +621,18 @@ declare i8* @cursed_channel_receive(i8*)
         }
     }
     
-    fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], body: &[Statement]) -> Result<(), CursedError> {
+    fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], return_type: &Option<String>, body: &[Statement]) -> Result<(), CursedError> {
         // Use the dedicated function compiler for complete IR generation
         let mut function_compiler = crate::codegen::llvm::function_compilation::FunctionCompiler::new();
         
         // Compile the complete function with all statements and expressions
         let param_names: Vec<String> = params.iter().map(|p| p.name.clone()).collect();
+        let param_types: Vec<String> = params.iter().map(|p| p.param_type.clone().unwrap_or("i32".to_string())).collect();
         let function_ir = function_compiler.compile_function(
             name,
             &param_names,
-            None, // param types
-            None, // return type
+            Some(&param_types), // param types from AST
+            return_type.as_deref(), // return type from AST
             body
         )?;
         
