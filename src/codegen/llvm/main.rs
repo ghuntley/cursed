@@ -511,14 +511,15 @@ declare i8* @cursed_channel_receive(i8*)
         format!("getelementptr inbounds ([{} x i8], [{} x i8]* {}, i64 0, i64 0)", len, len, const_name)
     }
     
-    fn generate_function(&mut self, name: &str, params: &[String], body: &[Statement]) -> Result<(), CursedError> {
+    fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], body: &[Statement]) -> Result<(), CursedError> {
         // Use the dedicated function compiler for complete IR generation
         let mut function_compiler = crate::codegen::llvm::function_compilation::FunctionCompiler::new();
         
         // Compile the complete function with all statements and expressions
+        let param_names: Vec<String> = params.iter().map(|p| p.name.clone()).collect();
         let function_ir = function_compiler.compile_function(
             name,
-            params,
+            &param_names,
             None, // param types
             None, // return type
             body

@@ -1,1 +1,3 @@
-println("Hello CURSED!");
+slay main() {
+    vibez.spill("Hello, CURSED world!")
+}
