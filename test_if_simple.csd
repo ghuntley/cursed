@@ -1,5 +1,6 @@
 slay main() {
     lowkey based {
-        yolo 42;
+        yolo 1;
     }
+    yolo 0;
 }

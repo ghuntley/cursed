@@ -1,1 +1,1 @@
-slay main() { yolo 42 }
+slay main() { yolo "Hello, World!"; }

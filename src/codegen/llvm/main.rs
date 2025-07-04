@@ -142,33 +142,62 @@ impl LlvmCodeGenerator {
         // Generate runtime function declarations
         self.generate_runtime_declarations();
         
-        // First pass: Generate all function definitions
+        // Collect non-function statements for insertion into main function
+        let mut top_level_statements = Vec::new();
+        let mut has_main_function = false;
+        
+        // First pass: Generate all function definitions and collect top-level statements
         for statement in &program.statements {
-            if let Statement::Function(func_stmt) = statement {
-                self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.body)?;
+            match statement {
+                Statement::Function(func_stmt) => {
+                    if func_stmt.name == "main" {
+                        has_main_function = true;
+                    }
+                    self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.body)?;
+                },
+                _ => {
+                    // Collect non-function statements to be placed in main function
+                    top_level_statements.push(statement);
+                }
             }
         }
         
-        // Second pass: Generate other statements (non-function)
-        for statement in &program.statements {
-            if !matches!(statement, Statement::Function(_)) {
+        // Generate main function if not present or if there are top-level statements
+        if !has_main_function && !top_level_statements.is_empty() {
+            self.ir_code.push_str("\ndefine i32 @main() {\n");
+            
+            // Generate all top-level statements inside main function
+            for statement in &top_level_statements {
                 self.generate_statement(statement)?;
             }
-        }
-        
-        // Add string constants
-        if !self.string_constants.is_empty() {
-            self.ir_code.push_str("\n; String constants\n");
-            for constant in &self.string_constants {
-                self.ir_code.push_str(&format!("{}\n", constant));
-            }
-        }
-        
-        // Add main function if not present (check for any return type)
-        if !self.ir_code.contains("@main(") {
+            
+            self.ir_code.push_str("  ret i32 0\n");
+            self.ir_code.push_str("}\n");
+        } else if !has_main_function {
+            // Add empty main function if no main was defined and no top-level statements
             self.ir_code.push_str("\ndefine i32 @main() {\n");
             self.ir_code.push_str("  ret i32 0\n");
             self.ir_code.push_str("}\n");
+        }
+        
+        // Add string constants AFTER generating all code
+        // Debug output (commented out for production)
+        // eprintln!("DEBUG: Final string constants check. Count: {}", self.string_constants.len());
+        // for (i, constant) in self.string_constants.iter().enumerate() {
+        //     eprintln!("DEBUG: String constant {}: {}", i, constant);
+        // }
+        
+        if !self.string_constants.is_empty() {
+            // Insert string constants before the main function by modifying the ir_code
+            let main_pos = self.ir_code.find("define i32 @main()").unwrap_or(self.ir_code.len());
+            let before_main = self.ir_code[..main_pos].to_string();
+            let from_main = self.ir_code[main_pos..].to_string();
+            
+            self.ir_code = format!("{}\n; String constants\n", before_main);
+            for constant in &self.string_constants {
+                self.ir_code.push_str(&format!("{}\n", constant));
+            }
+            self.ir_code.push_str(&from_main);
         }
         
         Ok(self.ir_code.clone())
@@ -287,37 +316,60 @@ declare i8* @cursed_channel_receive(i8*)
     }
     
     fn generate_expression(&mut self, expression: &Expression) -> Result<String, CursedError> {
-        // Use the dedicated expression compiler for complete IR generation
-        let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
-        
-        // Synchronize the variable counter to avoid register conflicts
-        expression_compiler.set_variable_counter(self.variable_counter);
-        
-        // Copy current variables to the expression compiler
-        for (name, reg) in &self.variables {
-            expression_compiler.set_variable(name.clone(), reg.clone());
-        }
-        
-        // Compile the expression to complete LLVM IR
-        let result_reg = expression_compiler.compile_expression(expression)?;
-        
-        // Update our variable counter to reflect what the expression compiler used
-        self.variable_counter = expression_compiler.get_variable_counter();
-        
-        // Add the generated IR to our main IR code
-        let expression_ir = expression_compiler.get_ir();
-        if !expression_ir.is_empty() {
-            self.ir_code.push_str(expression_ir);
-        }
-        
-        // Add any string constants to our pool
-        for constant in expression_compiler.get_string_constants() {
-            if !self.string_constants.contains(constant) {
-                self.string_constants.push(constant.clone());
+        // Handle simple expressions directly without the complex expression compiler
+        match expression {
+            Expression::Literal(Literal::Boolean(true)) => {
+                Ok("1".to_string())  // boolean true as i1 1
+            },
+            Expression::Literal(Literal::Boolean(false)) => {
+                Ok("0".to_string())  // boolean false as i1 0  
+            },
+            Expression::Boolean(val) => {
+                Ok(if *val { "1" } else { "0" }.to_string())
+            },
+            Expression::Integer(val) => {
+                Ok(val.to_string())
+            },
+            Expression::String(val) => {
+                self.generate_string_literal(val)
+            },
+            Expression::Call(call_expr) => {
+                self.generate_function_call(&call_expr.function, &call_expr.arguments)
+            },
+            _ => {
+                // For complex expressions, use the expression compiler
+                let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
+                
+                // Synchronize the variable counter to avoid register conflicts
+                expression_compiler.set_variable_counter(self.variable_counter);
+                
+                // Copy current variables to the expression compiler
+                for (name, reg) in &self.variables {
+                    expression_compiler.set_variable(name.clone(), reg.clone());
+                }
+                
+                // Compile the expression to complete LLVM IR
+                let result_reg = expression_compiler.compile_expression(expression)?;
+                
+                // Update our variable counter to reflect what the expression compiler used
+                self.variable_counter = expression_compiler.get_variable_counter();
+                
+                // Add the generated IR to our main IR code
+                let expression_ir = expression_compiler.get_ir();
+                if !expression_ir.is_empty() {
+                    self.ir_code.push_str(expression_ir);
+                }
+                
+                // Add any string constants to our pool
+                for constant in expression_compiler.get_string_constants() {
+                    if !self.string_constants.contains(constant) {
+                        self.string_constants.push(constant.clone());
+                    }
+                }
+                
+                Ok(result_reg)
             }
         }
-        
-        Ok(result_reg)
     }
     
     fn generate_literal(&mut self, literal: &Literal) -> Result<String, CursedError> {
@@ -448,7 +500,6 @@ declare i8* @cursed_channel_receive(i8*)
     }
     
     fn generate_stdlib_call(&mut self, function_name: &str, arguments: &[Expression]) -> Result<String, CursedError> {
-        let result_reg = self.next_register();
         
         // Generate stdlib call with proper runtime integration
         match function_name {
@@ -474,7 +525,8 @@ declare i8* @cursed_channel_receive(i8*)
                         }
                     }
                 }
-                self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; stdlib call result\n", result_reg));
+                // Return success indicator (0) without creating unnecessary registers
+                Ok("0".to_string())
             },
             "vibez_spillf" => {
                 // Format string printing
@@ -493,14 +545,13 @@ declare i8* @cursed_channel_receive(i8*)
                     }
                     self.ir_code.push_str(")\n");
                 }
-                self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; spillf result\n", result_reg));
+                // Return success indicator (0) without creating unnecessary registers
+                Ok("0".to_string())
             },
             _ => {
                 return Err(CursedError::CompilerError(format!("Unknown stdlib function: {}", function_name)));
             }
         }
-        
-        Ok(result_reg)
     }
     
     fn add_string_constant(&mut self, s: &str) -> String {
@@ -509,6 +560,65 @@ declare i8* @cursed_channel_receive(i8*)
         self.string_constants.push(format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
             const_name, len, s));
         format!("getelementptr inbounds ([{} x i8], [{} x i8]* {}, i64 0, i64 0)", len, len, const_name)
+    }
+
+    fn generate_string_literal(&mut self, value: &str) -> Result<String, CursedError> {
+        let const_name = format!("@.str.{}", self.string_constants.len());
+        let len = value.len() + 1; // +1 for null terminator
+        
+        // Add to constant pool
+        let constant_def = format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
+            const_name, len, value.replace("\"", "\\\""));
+        self.string_constants.push(constant_def.clone());
+        
+        // Debug output (commented out for production)
+        // eprintln!("DEBUG: Added string constant: {}", constant_def);
+        // eprintln!("DEBUG: Total string constants: {}", self.string_constants.len());
+        
+        // Generate getelementptr to get string pointer
+        let reg = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
+            reg, len, len, const_name
+        ));
+        
+        Ok(reg)
+    }
+
+    fn generate_function_call(&mut self, function: &Expression, arguments: &[Expression]) -> Result<String, CursedError> {
+        // Handle stdlib function calls like vibez.spill
+        if let Expression::MemberAccess(member_expr) = function {
+            if let Expression::Identifier(obj_name) = &*member_expr.object {
+                if obj_name == "vibez" {
+                    let full_function_name = format!("vibez_{}", member_expr.property);
+                    return self.generate_stdlib_call(&full_function_name, arguments);
+                }
+            }
+        }
+        
+        // Handle regular function calls
+        if let Expression::Identifier(function_name) = function {
+            let result_reg = self.next_register();
+            let mut arg_regs = Vec::new();
+            
+            for arg in arguments {
+                let arg_reg = self.generate_expression(arg)?;
+                arg_regs.push(arg_reg);
+            }
+            
+            self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, function_name));
+            for (i, arg_reg) in arg_regs.iter().enumerate() {
+                if i > 0 {
+                    self.ir_code.push_str(", ");
+                }
+                self.ir_code.push_str(&format!("i32 {}", arg_reg));
+            }
+            self.ir_code.push_str(")\n");
+            
+            Ok(result_reg)
+        } else {
+            Err(CursedError::CompilerError("Complex function calls not yet supported".to_string()))
+        }
     }
     
     fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], body: &[Statement]) -> Result<(), CursedError> {
@@ -705,8 +815,8 @@ declare i8* @cursed_channel_receive(i8*)
     }
     
     fn next_register(&mut self) -> String {
-        let reg = format!("%{}", self.variable_counter);
         self.variable_counter += 1;
+        let reg = format!("%{}", self.variable_counter);
         reg
     }
     

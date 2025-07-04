@@ -74,8 +74,8 @@ impl FunctionCompiler {
             let llvm_type = self.get_llvm_type(param_type);
             function_ir.push_str(&format!("{} %{}", llvm_type, param));
             
-            // Map parameters to variables
-            self.variables.insert(param.clone(), format!("%{}", param));
+            // Map parameters to variables (use PARAM: prefix to distinguish from stack allocations)
+            self.variables.insert(param.clone(), format!("PARAM:%{}", param));
         }
         
         function_ir.push_str(") {\n");
@@ -147,12 +147,30 @@ impl FunctionCompiler {
                     let return_reg = self.compile_expression(val)?;
                     let return_type = self.infer_expression_type(val)?;
                     
-                    // Special handling for main function returning strings
+                    // Special handling for main function
                     if let Some(ref func_name) = self.current_function {
-                        if func_name == "main" && return_type == "i8*" {
-                            // Print the string using puts and return 0
-                            ir.push_str(&format!("  call i32 @puts(i8* {})\n", return_reg));
-                            ir.push_str("  ret i32 0\n");
+                        if func_name == "main" {
+                            match return_type.as_str() {
+                                "i8*" => {
+                                    // Print the string using puts and return 0
+                                    ir.push_str(&format!("  call i32 @puts(i8* {})\n", return_reg));
+                                    ir.push_str("  ret i32 0\n");
+                                },
+                                "i1" => {
+                                    // Convert boolean to i32 for main function
+                                    let conv_reg = self.next_register();
+                                    ir.push_str(&format!("  {} = zext i1 {} to i32\n", conv_reg, return_reg));
+                                    ir.push_str(&format!("  ret i32 {}\n", conv_reg));
+                                },
+                                "i32" => {
+                                    // Already correct type
+                                    ir.push_str(&format!("  ret i32 {}\n", return_reg));
+                                },
+                                _ => {
+                                    // Default: try to convert to i32
+                                    ir.push_str(&format!("  ret i32 {}\n", return_reg));
+                                }
+                            }
                         } else {
                             ir.push_str(&format!("  ret {} {}\n", return_type, return_reg));
                         }
@@ -231,10 +249,17 @@ impl FunctionCompiler {
                 if let Some(reg) = self.variables.get(name) {
                     // Clone the register string to avoid borrow issues
                     let reg_name = reg.clone();
-                    // Load from variable
-                    let load_reg = self.next_register();
-                    self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, reg_name));
-                    Ok(load_reg)
+                    
+                    // Check if this is a function parameter (starts with PARAM:)
+                    if reg_name.starts_with("PARAM:") {
+                        // Function parameters are already values, no need to load - strip PARAM: prefix
+                        Ok(reg_name.strip_prefix("PARAM:").unwrap().to_string())
+                    } else {
+                        // Local variable allocated on stack - need to load
+                        let load_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, reg_name));
+                        Ok(load_reg)
+                    }
                 } else {
                     // Function parameter or global
                     Ok(format!("%{}", name))
@@ -390,12 +415,14 @@ impl FunctionCompiler {
                         _ => {
                             // For non-string types, use printf with %d format
                             let format_reg = self.next_register();
-                            let const_name = format!("@.str.{}", self.variable_counter);
-                            self.variable_counter += 1;
+                            let const_name = format!("@.str.fmt.d.{}", self.string_constants.len());
                             
-                            // Add format string constant (this would normally be added to constants section)
-                            self.ir_code.push_str(&format!("  {} = getelementptr inbounds [4 x i8], [4 x i8]* @.str.fmt.d, i64 0, i64 0\n", format_reg));
-                            self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_reg, arg_reg));
+                            // Add format string constant
+                            self.string_constants.push(format!("{} = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\", align 1", const_name));
+                            
+                            self.ir_code.push_str(&format!("  {} = getelementptr inbounds [4 x i8], [4 x i8]* {}, i64 0, i64 0\n", format_reg, const_name));
+                            let call_result = self.next_register();
+                            self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_result, format_reg, arg_reg));
                         }
                     }
                 }

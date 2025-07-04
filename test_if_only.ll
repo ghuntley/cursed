@@ -18,15 +18,10 @@ declare i32 @cursed_goroutine_spawn(i8*)
 declare void @cursed_channel_send(i8*, i8*)
 declare i8* @cursed_channel_receive(i8*)
 
+
 define i32 @main() {
-entry:
-  %1 = getelementptr inbounds [26 x i8], [26 x i8]* @.str.0, i64 0, i64 0
-  %2 = call i32 @puts(i8* %1)
-  %3 = add i32 0, 0
-  ; Expression result: %3
+  %1 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.0, i64 0, i64 0
+  call i32 @puts(i8* %1)
+  %2 = add i32 0, 0 ; stdlib call result
   ret i32 0
 }
-
-
-; String constants
-@.str.0 = private unnamed_addr constant [26 x i8] c"Hello, CURSED world! 🎉\00", align 1
