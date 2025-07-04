@@ -219,10 +219,12 @@ impl FunctionCompiler {
                     const_name, len, val.replace("\"", "\\\"")));
                 
                 // Generate getelementptr instruction
-                self.ir_code.push_str(&format!(
-                    "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
-                    str_reg, len, len, const_name
-                ));
+                let ir_line = format!(
+                "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
+                str_reg, len, len, const_name
+                );
+        log::debug!("Adding IR line: {}", ir_line.trim());
+        self.ir_code.push_str(&ir_line);
                 Ok(str_reg)
             },
             Expression::Identifier(name) => {
@@ -309,10 +311,10 @@ impl FunctionCompiler {
 
     /// Compile function calls with argument handling
     fn compile_function_call(&mut self, function: &Expression, arguments: &[Expression]) -> Result<String, CursedError> {
-        let result_reg = self.next_register();
-        
         match function {
             Expression::Identifier(func_name) => {
+                let result_reg = self.next_register();
+                
                 // First compile all arguments to generate their intermediate IR
                 let mut arg_regs = Vec::new();
                 for arg in arguments {
@@ -331,6 +333,7 @@ impl FunctionCompiler {
                 }
                 
                 self.ir_code.push_str(")\n");
+                Ok(result_reg)
             },
             Expression::MemberAccess(member_expr) => {
                 // Handle method calls
@@ -339,6 +342,8 @@ impl FunctionCompiler {
                     if obj_name == "vibez" {
                         return self.compile_vibez_method_call(&member_expr.property, arguments);
                     }
+                    
+                    let result_reg = self.next_register();
                     
                     // First compile all arguments to generate their intermediate IR
                     let mut arg_regs = Vec::new();
@@ -359,14 +364,15 @@ impl FunctionCompiler {
                     }
                     
                     self.ir_code.push_str(")\n");
+                    Ok(result_reg)
+                } else {
+                    return Err(CursedError::CompilerError("Unsupported member access in function call".to_string()));
                 }
             },
             _ => {
                 return Err(CursedError::CompilerError("Unsupported function call expression".to_string()));
             }
         }
-        
-        Ok(result_reg)
     }
 
     /// Compile vibez method calls (stdlib output methods)
@@ -663,6 +669,7 @@ impl FunctionCompiler {
     /// Generate next register name
     fn next_register(&mut self) -> String {
         let reg = format!("%{}", self.variable_counter);
+        log::debug!("Generated register: {} (counter was {})", reg, self.variable_counter);
         self.variable_counter += 1;
         reg
     }
