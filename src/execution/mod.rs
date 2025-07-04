@@ -83,6 +83,23 @@ impl CursedExecutionEngine {
             last_value = self.execute_statement(statement, &mut context)?;
         }
         
+        // After processing all statements, check if there's a main function and call it
+        if let Some(_main_func) = context.get_function("main") {
+            tracing::info!("🚀 Calling main function");
+            
+            // Create a CallExpression AST node to call main()
+            let main_call = crate::ast::CallExpression {
+                function: Box::new(crate::ast::Expression::Identifier("main".to_string())),
+                arguments: vec![], // main() takes no arguments
+            };
+            
+            let result = self.evaluate_call(&main_call, &mut context)?;
+            
+            // Don't automatically print the return value from main.
+            // Output should come from explicit print statements like vibez.spill()
+            return Ok(result);
+        }
+        
         Ok(last_value)
     }
     
@@ -559,10 +576,14 @@ impl CursedExecutionEngine {
                         ("vibez", "spill") => {
                             for arg in &call_expr.arguments {
                                 let value = self.evaluate_expression(arg, context)?;
-                                print!("{}", self.format_value(&value));
-                            }
-                            println!(); // Add newline
-                            Ok(CursedValue::Nil)
+                                // Print raw value without quotes for strings
+                           match &value {
+                           CursedValue::String(s) => print!("{}", s),
+                           _ => print!("{}", self.format_value(&value)),
+                        }
+                        }
+                        println!(); // Add newline
+                        Ok(CursedValue::Nil)
                         },
                         ("vibez", "spillf") => {
                             // Format string print

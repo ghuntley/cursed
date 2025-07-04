@@ -1,5 +1,5 @@
 vibe main
 
 slay main() {
-    yolo "Hello, world!"
+    yolo "Hello, World!"
 }
