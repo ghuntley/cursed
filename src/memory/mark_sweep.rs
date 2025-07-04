@@ -1022,7 +1022,7 @@ mod tests {
         
         // Perform incremental collection
         let stats = collector.collect().unwrap();
-        assert!(stats.total_collections >= 0);
+        // total_collections is u64 and will always be >= 0
     }
 
     #[test]

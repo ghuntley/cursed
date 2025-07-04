@@ -158,6 +158,7 @@ impl<'ctx> LlvmPassManager<'ctx> {
             crate::optimization::config::OptimizationLevel::Aggressive => 25,
             crate::optimization::config::OptimizationLevel::Size => 10,
             crate::optimization::config::OptimizationLevel::SizeZ => 8,
+            crate::optimization::config::OptimizationLevel::SizeAggressive => 12,
             crate::optimization::config::OptimizationLevel::Custom(_) => self.config.custom_passes.len(),
         }
     }
@@ -206,6 +207,7 @@ impl OptimizationLevelExt for crate::optimization::config::OptimizationLevel {
             crate::optimization::config::OptimizationLevel::Aggressive => LLVMOptLevel::Aggressive,
             crate::optimization::config::OptimizationLevel::Size => LLVMOptLevel::Default,
             crate::optimization::config::OptimizationLevel::SizeZ => LLVMOptLevel::Default,
+            crate::optimization::config::OptimizationLevel::SizeAggressive => LLVMOptLevel::Default,
             crate::optimization::config::OptimizationLevel::Custom(_) => LLVMOptLevel::Default,
         }
     }

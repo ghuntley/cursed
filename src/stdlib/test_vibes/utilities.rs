@@ -1,9 +1,40 @@
 //! Testing functionality for utilities
 
 use crate::error::CursedError;
+use rand::Rng;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
+
+/// Generate a random string for testing
+pub fn random_string(length: usize) -> String {
+    use rand::distributions::Alphanumeric;
+    use rand::{thread_rng, Rng};
+    
+    thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(length)
+        .map(char::from)
+        .collect()
+}
+
+/// Generate a random integer for testing
+pub fn random_int(min: i32, max: i32) -> i32 {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(min..=max)
+}
+
+/// Generate a random float for testing
+pub fn random_float(min: f64, max: f64) -> f64 {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(min..=max)
+}
+
+/// Generate random bytes for testing
+pub fn random_bytes(length: usize) -> Vec<u8> {
+    let mut rng = rand::thread_rng();
+    (0..length).map(|_| rng.gen()).collect()
+}
 
 /// Test operations handler
 pub struct TestHandler {

@@ -1,9 +1,50 @@
 //! Testing functionality for table_driven
 
 use crate::error::CursedError;
+use super::core::VibeTest;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
+
+/// A test case for table-driven tests
+#[derive(Debug, Clone)]
+pub struct TestCase<T> {
+    pub name: String,
+    pub input: T,
+    pub expected: T,
+}
+
+impl<T> TestCase<T> {
+    /// Create a new test case
+    pub fn new(name: String, input: T, expected: T) -> Self {
+        Self {
+            name,
+            input,
+            expected,
+        }
+    }
+}
+
+/// Run test cases
+pub fn run_test_cases<T, F>(test: &mut VibeTest, cases: Vec<TestCase<T>>, test_fn: F) -> TestResult<()>
+where
+    T: Clone + PartialEq + std::fmt::Debug,
+    F: Fn(&T) -> T,
+{
+    for case in cases {
+        let result = test_fn(&case.input);
+        if result != case.expected {
+            let error_msg = format!(
+                "Test case '{}' failed: expected {:?}, got {:?}",
+                case.name, case.expected, result
+            );
+            test.fail(&error_msg);
+            return Err(CursedError::runtime_error(&error_msg));
+        }
+    }
+    test.pass();
+    Ok(())
+}
 
 /// Test operations handler
 pub struct TestHandler {

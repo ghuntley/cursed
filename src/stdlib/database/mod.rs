@@ -76,6 +76,8 @@ pub enum SqlIsolationLevel {
     ReadUncommitted,
     /// Read committed data only
     ReadCommitted,
+    /// Read committed data only (alternative name)
+    LevelReadCommitted,
     /// Write committed (similar to read committed)
     WriteCommitted,
     /// Repeatable reads within transaction
@@ -93,7 +95,7 @@ impl std::fmt::Display for SqlIsolationLevel {
         match self {
             SqlIsolationLevel::Default => write!(f, "DEFAULT"),
             SqlIsolationLevel::ReadUncommitted => write!(f, "READ UNCOMMITTED"),
-            SqlIsolationLevel::ReadCommitted => write!(f, "READ COMMITTED"),
+            SqlIsolationLevel::ReadCommitted | SqlIsolationLevel::LevelReadCommitted => write!(f, "READ COMMITTED"),
             SqlIsolationLevel::WriteCommitted => write!(f, "WRITE COMMITTED"),
             SqlIsolationLevel::RepeatableRead => write!(f, "REPEATABLE READ"),
             SqlIsolationLevel::Snapshot => write!(f, "SNAPSHOT"),

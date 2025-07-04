@@ -116,7 +116,7 @@ impl<'ctx> EnhancedLlvmPassManager<'ctx> {
             OptimizationLevel::Aggressive => {
                 self.add_all_optimization_passes()?;
             },
-            OptimizationLevel::Size | OptimizationLevel::SizeZ => {
+            OptimizationLevel::Size | OptimizationLevel::SizeZ | OptimizationLevel::SizeAggressive => {
                 self.add_size_optimization_passes()?;
             },
             OptimizationLevel::Custom(_) => {

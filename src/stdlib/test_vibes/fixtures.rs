@@ -1,9 +1,80 @@
 //! Testing functionality for fixtures
 
 use crate::error::CursedError;
+use super::core::VibeTest;
 
 /// Result type for test operations
 pub type TestResult<T> = Result<T, CursedError>;
+
+/// Test fixture that provides setup and teardown functionality
+#[derive(Debug)]
+pub struct FixtureVibe {
+    pub name: String,
+    setup_done: bool,
+}
+
+impl FixtureVibe {
+    /// Create a new fixture
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            setup_done: false,
+        }
+    }
+    
+    /// Run a test with the fixture
+    pub fn run<T, F>(&mut self, test: &mut VibeTest, test_fn: F) -> TestResult<()>
+    where
+        F: FnOnce(&mut VibeTest, T) -> TestResult<()>,
+        T: Default,
+    {
+        // Setup
+        self.setup_done = true;
+        let fixture_data = T::default();
+        
+        // Run test
+        let result = test_fn(test, fixture_data);
+        
+        // Teardown (implicit)
+        self.setup_done = false;
+        
+        result
+    }
+}
+
+/// Database fixture for testing database operations
+#[derive(Debug, Default)]
+pub struct DatabaseFixture {
+    pub connection_string: String,
+    pub test_data: Vec<String>,
+}
+
+impl DatabaseFixture {
+    /// Create a new database fixture
+    pub fn new() -> Self {
+        Self {
+            connection_string: "sqlite::memory:".to_string(),
+            test_data: vec!["test_user".to_string(), "test_data".to_string()],
+        }
+    }
+    
+    /// Setup test database
+    pub fn setup(&mut self) -> TestResult<()> {
+        println!("Setting up test database...");
+        Ok(())
+    }
+    
+    /// Teardown test database
+    pub fn teardown(&mut self) -> TestResult<()> {
+        println!("Tearing down test database...");
+        Ok(())
+    }
+}
+
+/// Create a new fixture vibe
+pub fn new_fixture_vibe(name: String) -> FixtureVibe {
+    FixtureVibe::new(name)
+}
 
 /// Test operations handler
 pub struct TestHandler {

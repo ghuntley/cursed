@@ -34,18 +34,18 @@ mod tests {
         features: Vec<String>,
     }
 
-    #[derive(Debug, serde::Serialize)]
+    #[derive(Debug, serde::Serialize, serde::Deserialize)]
     struct SearchResponse {
         packages: Vec<MockPackage>,
         total: usize,
     }
 
-    #[derive(Debug, serde::Serialize)]
+    #[derive(Debug, serde::Serialize, serde::Deserialize)]
     struct PackageResponse {
         package: MockPackage,
     }
 
-    #[derive(Debug, serde::Serialize)]
+    #[derive(Debug, serde::Serialize, serde::Deserialize)]
     struct VersionsResponse {
         versions: Vec<String>,
     }

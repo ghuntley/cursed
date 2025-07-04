@@ -41,6 +41,7 @@ pub enum OptimizationLevel {
     Aggressive,  // -O3: Aggressive optimizations
     Size,        // -Os: Optimize for size
     SizeZ,       // -Oz: Optimize aggressively for size
+    SizeAggressive, // Additional size optimization level
     Custom(HashMap<String, bool>),  // Custom optimization settings
 }
 
@@ -53,6 +54,7 @@ impl OptimizationLevel {
             OptimizationLevel::Aggressive => "O3",
             OptimizationLevel::Size => "Os",
             OptimizationLevel::SizeZ => "Oz",
+            OptimizationLevel::SizeAggressive => "Oz", // Same as SizeZ
             OptimizationLevel::Custom(_) => "Custom",
         }
     }
@@ -249,6 +251,7 @@ impl OptimizationConfig {
             OptimizationLevel::Aggressive => flags.push("-O3".to_string()),
             OptimizationLevel::Size => flags.push("-Os".to_string()),
             OptimizationLevel::SizeZ => flags.push("-Oz".to_string()),
+            OptimizationLevel::SizeAggressive => flags.push("-Oz".to_string()),
             OptimizationLevel::Custom(_) => flags.push("-O2".to_string()), // Default fallback
         }
 
@@ -535,6 +538,7 @@ impl OptimizationConfig {
             OptimizationLevel::Aggressive => 3,
             OptimizationLevel::Size => 2,
             OptimizationLevel::SizeZ => 2,
+            OptimizationLevel::SizeAggressive => 2,
             OptimizationLevel::Custom(_) => 2,
         };
 
@@ -546,6 +550,7 @@ impl OptimizationConfig {
             OptimizationLevel::Aggressive => crate::codegen::llvm::optimization::OptimizationLevel::O3,
             OptimizationLevel::Size => crate::codegen::llvm::optimization::OptimizationLevel::Os,
             OptimizationLevel::SizeZ => crate::codegen::llvm::optimization::OptimizationLevel::Oz,
+            OptimizationLevel::SizeAggressive => crate::codegen::llvm::optimization::OptimizationLevel::Oz,
             _ => crate::codegen::llvm::optimization::OptimizationLevel::O2, // Default for other levels
         };
         

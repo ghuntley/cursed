@@ -415,7 +415,7 @@ mod tests {
         let allocator = Allocator::new();
         
         let ptr = allocator.allocate(64, Tag::Object).unwrap();
-        assert!(!ptr.as_ptr().is_null());
+        // NonNull pointer is guaranteed to be non-null by type system
         
         let stats = allocator.get_detailed_stats();
         assert_eq!(stats.allocation_count, 1);

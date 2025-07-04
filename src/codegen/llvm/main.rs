@@ -789,6 +789,7 @@ declare i8* @cursed_channel_receive(i8*)
             OptimizationLevel::O3 => 3,
             OptimizationLevel::Os => 2,
             OptimizationLevel::Oz => 2,
+            OptimizationLevel::Default => 2,
         };
         Ok(())
     }
@@ -814,6 +815,7 @@ declare i8* @cursed_channel_receive(i8*)
             OptimizationLevel::O3 => 3,
             OptimizationLevel::Os => 2, // Size optimization, treat as O2
             OptimizationLevel::Oz => 2, // Size optimization, treat as O2
+            OptimizationLevel::Default => 2, // Default optimization, treat as O2
         };
         self.optimization_enabled = true;
         Ok(())

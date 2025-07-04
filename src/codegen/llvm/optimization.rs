@@ -10,6 +10,20 @@ pub enum OptimizationLevel {
     O3,
     Os,
     Oz,
+    Default, // Alias for O2
+}
+
+impl OptimizationLevel {
+    /// Convert to inkwell optimization level
+    pub fn to_inkwell_level(&self) -> InkwellOptLevel {
+        match self {
+            OptimizationLevel::O0 => InkwellOptLevel::None,
+            OptimizationLevel::O1 => InkwellOptLevel::Less,
+            OptimizationLevel::O2 | OptimizationLevel::Default => InkwellOptLevel::Default,
+            OptimizationLevel::O3 => InkwellOptLevel::Aggressive,
+            OptimizationLevel::Os | OptimizationLevel::Oz => InkwellOptLevel::Default, // Size optimization fallback
+        }
+    }
 }
 use inkwell::{
     context::Context,

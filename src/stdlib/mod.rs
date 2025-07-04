@@ -26,6 +26,10 @@ pub mod bytefit;
 pub mod packages;
 pub mod database;
 pub mod process;
+pub mod test_vibes;
+pub mod lookin_glass;
+pub mod system;
+pub mod packrat;
 
 // TODO: Enable these modules once they are implemented
 // pub mod prelude;

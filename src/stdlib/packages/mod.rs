@@ -257,7 +257,14 @@ pub mod crypto_protocols_exports {
 
 // Re-export testing packages for convenience - using specific imports to avoid conflicts
 pub use quick_test::{Config as QuickTestConfig, TestResult as QuickTestResult, check, check_with_generator, generate};
-pub use test_vibes::{TestResult as TestVibesResult, TestCase, TestRunner as TestVibesRunner, VibeTest, VibeBench};
+pub use test_vibes::{
+    TestResult as TestVibesResult, TestCase, TestRunner as TestVibesRunner, VibeTest, VibeBench,
+    TestRunnerConfig, TestManager, TestSummary, FixtureVibe, DatabaseFixture,
+    assert_equal, assert_equal_with_test, assert_true, assert_true_with_test,
+    assert_false, assert_false_with_test, assert_contains_substr, assert_has_prefix,
+    assert_len, assert_contains, assert_some, assert_none, assert_ok, assert_err,
+    assert_shooks, assert_no_shook, assert_shooks_with_value
+};
 
 // Re-export existing packages for convenience, avoiding 'error' and 'types' conflicts - temporarily disabled
 /* pub use web_vibez::{

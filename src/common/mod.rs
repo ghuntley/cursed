@@ -5,10 +5,13 @@ use crate::error::CursedError;
 /// Optimization levels for CURSED compilation
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OptimizationLevel {
-    None,      // O0 - No optimization
-    Less,      // O1 - Minimal optimization
-    Default,   // O2 - Standard optimization
-    Aggressive,// O3 - Maximum optimization
+    None,           // O0 - No optimization
+    Less,           // O1 - Minimal optimization
+    Default,        // O2 - Standard optimization
+    Aggressive,     // O3 - Maximum optimization
+    Size,           // Os - Size optimization
+    SizeAggressive, // Oz - Aggressive size optimization
+    Production,     // Production-level optimization
 }
 
 impl Default for OptimizationLevel {
@@ -24,6 +27,9 @@ impl std::fmt::Display for OptimizationLevel {
             OptimizationLevel::Less => write!(f, "O1"),
             OptimizationLevel::Default => write!(f, "O2"),
             OptimizationLevel::Aggressive => write!(f, "O3"),
+            OptimizationLevel::Size => write!(f, "Os"),
+            OptimizationLevel::SizeAggressive => write!(f, "Oz"),
+            OptimizationLevel::Production => write!(f, "Production"),
         }
     }
 }
