@@ -278,6 +278,12 @@ impl Parser {
                 }
                 Ok(Statement::Return(self.parse_return_statement()?))
             },
+            TokenKind::Return => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on return statements"));
+                }
+                Ok(Statement::Return(self.parse_return_statement()?))
+            },
             TokenKind::Squad => {
                 log::info!("📝 Parsing struct statement with 'squad' keyword");
                 Ok(Statement::Struct(self.parse_struct_statement_with_visibility(visibility)?))
@@ -595,6 +601,11 @@ impl Parser {
         
         let mut then_branch = Vec::new();
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            // Skip newlines within if statement body
+            if self.check(&TokenKind::Newline) {
+                self.advance();
+                continue;
+            }
             then_branch.push(self.parse_statement()?);
         }
         
@@ -605,6 +616,11 @@ impl Parser {
             self.consume(TokenKind::LeftBrace, "Expected '{' after else")?;
             let mut else_stmts = Vec::new();
             while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                // Skip newlines within else statement body
+                if self.check(&TokenKind::Newline) {
+                    self.advance();
+                    continue;
+                }
                 else_stmts.push(self.parse_statement()?);
             }
             self.consume(TokenKind::RightBrace, "Expected '}' after else body")?;
@@ -619,9 +635,16 @@ impl Parser {
     }
 
     fn parse_return_statement(&mut self) -> Result<ReturnStatement, CursedError> {
-        self.consume(TokenKind::Yolo, "Expected 'yolo'")?;
+        // Handle both 'yolo' and 'return' keywords
+        if self.check(&TokenKind::Yolo) {
+            self.consume(TokenKind::Yolo, "Expected 'yolo'")?;
+        } else if self.check(&TokenKind::Return) {
+            self.consume(TokenKind::Return, "Expected 'return'")?;
+        } else {
+            return Err(CursedError::parse_error("Expected 'yolo' or 'return'"));
+        }
         
-        // Skip any newlines after 'yolo'
+        // Skip any newlines after return keyword
         self.skip_newlines();
         
         let value = if self.check(&TokenKind::Semicolon) || self.check(&TokenKind::RightBrace) {

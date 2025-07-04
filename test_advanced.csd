@@ -1,11 +1,11 @@
-fr fr Advanced CURSED program testing functions and types
-
 slay add(x normie, y normie) normie {
-    yolo x + y
+    yolo x + y;
 }
 
 slay main() {
-    sus result normie = add(5, 3)
-    vibez.spill("Result of add(5, 3): ")
-    vibez.spill(result)
+    sus result normie = add(5, 3);
+    lowkey result > 7 {
+        vibez.spill("Result is greater than 7");
+    }
+    yolo result;
 }

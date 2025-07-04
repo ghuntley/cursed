@@ -107,10 +107,17 @@ impl ExpressionCompiler {
         if let Some(reg) = self.variables.get(name) {
             // Clone the register string to avoid borrow issues
             let reg_name = reg.clone();
-            // Load from allocated variable
-            let load_reg = self.next_register();
-            self.ir_buffer.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, reg_name));
-            Ok(load_reg)
+            
+            // Check if this is a function parameter (starts with PARAM:)
+            if reg_name.starts_with("PARAM:") {
+                // Function parameters are already values, no need to load - strip PARAM: prefix
+                Ok(reg_name.strip_prefix("PARAM:").unwrap().to_string())
+            } else {
+                // Local variable allocated on stack - need to load
+                let load_reg = self.next_register();
+                self.ir_buffer.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, reg_name));
+                Ok(load_reg)
+            }
         } else {
             // Function parameter or global variable
             Ok(format!("%{}", name))
@@ -511,8 +518,8 @@ impl ExpressionCompiler {
 
     /// Generate next register name
     fn next_register(&mut self) -> String {
-        let reg = format!("%{}", self.variable_counter);
         self.variable_counter += 1;
+        let reg = format!("%{}", self.variable_counter);
         reg
     }
 

@@ -1,3 +1,3 @@
 slay main() {
-    lowkey based {vibez.spill("yes")}
+    lowkey based { yolo 42; }
 }

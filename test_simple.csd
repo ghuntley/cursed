@@ -1,1 +1,5 @@
-slay main() { vibez.spill("Hello, CURSED!"); }
+fr fr Simple test
+
+slay main() {
+    yolo 0
+}

@@ -1,1 +1,1 @@
-slay main() { yolo; }
+vibez.spill("Test")
