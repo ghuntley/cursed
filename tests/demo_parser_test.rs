@@ -206,7 +206,7 @@ fn test_individual_language_features() {
     println!("\n🧪 Testing individual language features...");
     
     // Test Gen Z keywords recognition
-    test_genZ_keywords();
+    test_gen_z_keywords();
     
     // Test function declarations
     test_function_declarations();

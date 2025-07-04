@@ -1,0 +1,3 @@
+slay main() {
+yolo
+}

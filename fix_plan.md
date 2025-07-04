@@ -20,13 +20,17 @@ This document provides a prioritized list of missing implementations and fixes n
 
 **Implementation Note**: Lexer now correctly handles CURSED comment syntax according to specifications. Line comments use `fr fr` instead of `//`, and block comments use `no cap` ... `on god` syntax.
 
-### 1.3 Complete Parser Grammar Implementation
-- **Return types**: Functions lack proper return type parsing (parser.rs:347, 399)
+### 1.3 Complete Parser Grammar Implementation - **SIGNIFICANT PROGRESS**
+- **Return types**: Functions lack proper return type parsing (parser.rs:347, 399) - **COMPLETED**
+- **Function parameter types**: Function parameters now correctly handle CURSED syntax (e.g., "x lit") - **COMPLETED**
+- **Type annotations**: Parameter types are string names only - **COMPLETED**
+- **Variable declarations**: Variables now correctly handle CURSED syntax (e.g., "sus result lit = ...") - **COMPLETED**
 - **Array/slice syntax**: No support for array literals or indexing
 - **Pattern matching**: Beyond basic switch statements  
 - **Async/await**: Completely missing from parser
 - **Error handling**: No `?` operator or Result<T,E> syntax
-- **Type annotations**: Parameter types are string names only
+
+**Implementation Note**: Parser now correctly handles CURSED syntax for function parameters, variable declarations, and return types. Core parser tests are passing, and basic compilation/execution is working with complex CURSED programs.
 
 ### 1.4 Implement Core AST Nodes
 - **Replace all stub AST nodes** in `ast_full_backup/` (currently all placeholders)

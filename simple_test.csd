@@ -1,2 +1,1 @@
-slay main() {
-}
+slay main() { yolo 42 }
