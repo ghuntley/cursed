@@ -64,6 +64,7 @@ pub enum Expression {
     ChannelReceive(ChannelReceiveExpression),
     ChannelCreation(ChannelCreationExpression),
     StructLiteral(StructLiteralExpression),
+    Lambda(LambdaExpression),
 }
 
 /// Binary expression
@@ -100,6 +101,13 @@ pub struct StructLiteralExpression {
 pub struct StructFieldAssignment {
     pub field_name: String,
     pub value: Expression,
+}
+
+/// Lambda expression (anonymous function)
+#[derive(Debug, Clone)]
+pub struct LambdaExpression {
+    pub parameters: Vec<String>,
+    pub body: Box<Expression>,
 }
 
 /// Visibility level for symbols

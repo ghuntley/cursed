@@ -75,6 +75,9 @@ impl ExpressionCompiler {
                     .collect();
                 self.compile_struct_literal(&struct_literal.struct_name, &field_tuples)
             },
+            Expression::Lambda(lambda_expr) => {
+                self.compile_lambda_expression(&lambda_expr.parameters, &lambda_expr.body)
+            },
 
         }
     }
@@ -424,13 +427,71 @@ impl ExpressionCompiler {
 
     /// Compile lambda expressions
     fn compile_lambda_expression(&mut self, parameters: &[String], body: &Expression) -> Result<String, CursedError> {
-        let lambda_reg = self.next_register();
+        // Generate a unique function name for this lambda
+        let lambda_func_name = format!("lambda_{}", self.variable_counter);
+        self.variable_counter += 1;
         
-        // For now, just create a function pointer placeholder
-        self.ir_buffer.push_str(&format!("  {} = alloca i8*, align 8\n", lambda_reg));
-        self.ir_buffer.push_str(&format!("  ; Lambda with {} parameters\n", parameters.len()));
+        // Save current state
+        let old_variables = self.variables.clone();
+        let old_ir_buffer = self.ir_buffer.clone();
         
-        Ok(lambda_reg)
+        // Clear IR buffer for lambda function generation
+        self.ir_buffer.clear();
+        
+        // Build lambda function signature
+        let mut lambda_ir = String::new();
+        lambda_ir.push_str(&format!("define i32 @{}(", lambda_func_name));
+        
+        // Add parameters to function signature
+        for (i, param) in parameters.iter().enumerate() {
+            if i > 0 {
+                lambda_ir.push_str(", ");
+            }
+            lambda_ir.push_str(&format!("i32 %{}", param));
+            
+            // Map parameters to variables with PARAM: prefix
+            self.variables.insert(param.clone(), format!("PARAM:%{}", param));
+        }
+        
+        lambda_ir.push_str(") {\n");
+        lambda_ir.push_str("entry:\n");
+        
+        // Compile the lambda body
+        let body_reg = self.compile_expression(body)?;
+        
+        // Add any IR generated during body compilation
+        if !self.ir_buffer.is_empty() {
+            lambda_ir.push_str(&self.ir_buffer);
+        }
+        
+        // Return the body result
+        lambda_ir.push_str(&format!("  ret i32 {}\n", body_reg));
+        lambda_ir.push_str("}\n\n");
+        
+        // Restore previous state
+        self.variables = old_variables;
+        self.ir_buffer = old_ir_buffer;
+        
+        // Store the lambda function definition to be emitted later
+        // For now, we'll append it to the string constants as a hack
+        self.string_constants.push(lambda_ir);
+        
+        // Generate code to create a function pointer
+        let lambda_ptr_reg = self.next_register();
+        self.ir_buffer.push_str(&format!("  {} = bitcast i32 (", lambda_ptr_reg));
+        
+        // Add parameter types to bitcast
+        for (i, _) in parameters.iter().enumerate() {
+            if i > 0 {
+                self.ir_buffer.push_str(", ");
+            }
+            self.ir_buffer.push_str("i32");
+        }
+        
+        self.ir_buffer.push_str(&format!(")* @{} to i8*\n", lambda_func_name));
+        self.ir_buffer.push_str(&format!("  ; Lambda function pointer with {} parameters\n", parameters.len()));
+        
+        Ok(lambda_ptr_reg)
     }
 
     /// Compile struct literals
@@ -533,6 +594,22 @@ impl ExpressionCompiler {
     /// Get string constants for global declaration
     pub fn get_string_constants(&self) -> &[String] {
         &self.string_constants
+    }
+    
+    /// Get lambda function definitions
+    pub fn get_lambda_functions(&self) -> Vec<String> {
+        self.string_constants.iter()
+            .filter(|s| s.starts_with("define i32 @lambda_"))
+            .cloned()
+            .collect()
+    }
+    
+    /// Get only actual string constants (not lambda functions)
+    pub fn get_actual_string_constants(&self) -> Vec<String> {
+        self.string_constants.iter()
+            .filter(|s| !s.starts_with("define i32 @lambda_"))
+            .cloned()
+            .collect()
     }
 
     /// Get generated IR code

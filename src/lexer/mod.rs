@@ -97,6 +97,7 @@ pub enum TokenKind {
     GreaterEqual,
     AmpAmp,         // &&
     PipePipe,       // ||
+    Pipe,           // |
     
     // Assignment operators
     PlusEqual,      // +=
@@ -262,7 +263,7 @@ impl Lexer {
                 if self.match_char('|') {
                     Ok(self.make_token(TokenKind::PipePipe, "||".to_string(), start_column))
                 } else {
-                    Err(CursedError::syntax_error("Unexpected character: '|' (use '||' for logical OR)"))
+                    Ok(self.make_token(TokenKind::Pipe, "|".to_string(), start_column))
                 }
             },
             '\n' => {

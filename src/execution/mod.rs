@@ -127,6 +127,9 @@ impl CursedExecutionEngine {
                     .collect();
                 format!("{{ {} }}", field_strs.join(", "))
             },
+            CursedValue::Lambda(lambda_value) => {
+                format!("<lambda({})>", lambda_value.parameters.join(", "))
+            },
             CursedValue::Nil => "nil".to_string(),
         }
     }
@@ -405,6 +408,9 @@ impl CursedExecutionEngine {
             Expression::StructLiteral(struct_literal) => {
                 self.evaluate_struct_literal(struct_literal, context)
             },
+            Expression::Lambda(lambda_expr) => {
+                self.evaluate_lambda(lambda_expr, context)
+            },
         }
     }
     
@@ -620,6 +626,13 @@ impl CursedExecutionEngine {
                         Ok(CursedValue::Nil)
                     },
                     _ => {
+                        // First check if the identifier resolves to a lambda
+                        if let Some(value) = context.get_variable(func_name) {
+                            if let CursedValue::Lambda(lambda_value) = value {
+                                return self.call_lambda(&lambda_value, &call_expr.arguments, context);
+                            }
+                        }
+                        
                         // User-defined function
                         log::info!("🔍 Looking for function: {}", func_name);
                         if let Some(func_def) = context.get_function(func_name) {
@@ -715,7 +728,15 @@ impl CursedExecutionEngine {
                     Err(CursedError::RuntimeError("Complex member access not supported yet".to_string()))
                 }
             },
-            _ => Err(CursedError::RuntimeError("Unsupported function call type".to_string())),
+            _ => {
+                // For other expressions (like lambda literals), evaluate first
+                let function_value = self.evaluate_expression(&call_expr.function, context)?;
+                if let CursedValue::Lambda(lambda_value) = function_value {
+                    self.call_lambda(&lambda_value, &call_expr.arguments, context)
+                } else {
+                    Err(CursedError::RuntimeError("Cannot call non-function value".to_string()))
+                }
+            }
         }
     }
     
@@ -744,6 +765,7 @@ impl CursedExecutionEngine {
             CursedValue::String(s) => !s.is_empty(),
             CursedValue::Channel(_) => true, // Channels are truthy when they exist
             CursedValue::Struct(fields) => !fields.is_empty(), // Structs are truthy if they have fields
+            CursedValue::Lambda(_) => true, // Lambdas are always truthy when they exist
             CursedValue::Nil => false,
         }
     }
@@ -778,6 +800,53 @@ impl CursedExecutionEngine {
         
         Ok(CursedValue::Struct(struct_fields))
     }
+    
+    /// Evaluate lambda expression (anonymous function)
+    fn evaluate_lambda(&mut self, lambda_expr: &crate::ast::LambdaExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        // Capture the current environment for closure
+        let mut captured_env = std::collections::HashMap::new();
+        
+        // Capture all variables from the current context
+        for (var_name, var_value) in context.get_all_variables().iter() {
+            captured_env.insert(var_name.clone(), var_value.clone());
+        }
+        
+        let lambda_value = LambdaValue {
+            parameters: lambda_expr.parameters.clone(),
+            body: lambda_expr.body.clone(),
+            captured_env,
+        };
+        
+        Ok(CursedValue::Lambda(lambda_value))
+    }
+    
+    /// Call a lambda function with given arguments
+    fn call_lambda(&mut self, lambda_value: &LambdaValue, arguments: &[crate::ast::Expression], context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        // Check argument count
+        if arguments.len() != lambda_value.parameters.len() {
+            return Err(CursedError::RuntimeError(format!(
+                "Lambda expects {} arguments, got {}",
+                lambda_value.parameters.len(), arguments.len()
+            )));
+        }
+        
+        // Create new context for lambda execution
+        let mut lambda_context = context.new_child();
+        
+        // Restore captured environment
+        for (var_name, var_value) in &lambda_value.captured_env {
+            lambda_context.set_variable(var_name.clone(), var_value.clone());
+        }
+        
+        // Bind parameters
+        for (param, arg) in lambda_value.parameters.iter().zip(arguments) {
+            let arg_value = self.evaluate_expression(arg, context)?;
+            lambda_context.set_variable(param.clone(), arg_value);
+        }
+        
+        // Execute lambda body
+        self.evaluate_expression(&lambda_value.body, &mut lambda_context)
+    }
 }
 
 /// Advanced value types for CURSED
@@ -789,7 +858,16 @@ pub enum CursedValue {
     Boolean(bool),
     Channel(Arc<SimpleChannel<CursedValue>>),
     Struct(std::collections::HashMap<String, CursedValue>),
+    Lambda(LambdaValue),
     Nil,
+}
+
+/// Lambda value representation
+#[derive(Debug, Clone)]
+pub struct LambdaValue {
+    pub parameters: Vec<String>,
+    pub body: Box<crate::ast::Expression>,
+    pub captured_env: std::collections::HashMap<String, CursedValue>,
 }
 
 /// Control flow for execution
@@ -823,6 +901,9 @@ impl ValueManager {
                     .map(|(k, v)| format!("{}: {}", k, self.format_value(v)))
                     .collect();
                 format!("{{ {} }}", field_strs.join(", "))
+            },
+            CursedValue::Lambda(lambda_value) => {
+                format!("<lambda({})>", lambda_value.parameters.join(", "))
             },
             CursedValue::Nil => "nil".to_string(),
         }
