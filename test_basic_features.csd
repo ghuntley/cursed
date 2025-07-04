@@ -1,18 +1,13 @@
-// Test basic CURSED features
-let x = 10;
-let y = 20;
-let z = x + y;
+fr fr Test basic CURSED features
 
-print("Basic math:", z);
-
-let name = "CURSED";
-print("Language:", name);
-
-// Test conditionals
-if (z > 25) {
-    print("Z is greater than 25");
-} else {
-    print("Z is not greater than 25");
+slay add(x normie, y normie) normie {
+    yolo x + y
 }
 
-print("Basic features test completed!");
+slay main() {
+    sus result normie = add(5, 3)
+    lowkey result > 7 {
+        vibez.spill("Result is greater than 7")
+    }
+    yolo result
+}

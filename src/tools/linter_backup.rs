@@ -8,7 +8,7 @@
 //! - Integration with existing parser and lexer modules
 
 use crate::error::CursedError;
-use crate::ast::{Program, Statement, Expression, Literal, UnaryOperator, Type, AstVisitor};
+use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator, UnaryOperator, Type, AstVisitor};
 use crate::lexer::{Lexer, Token, TokenKind};
 use std::collections::HashMap;
 use std::path::Path;
@@ -1046,7 +1046,7 @@ impl CursedLinter {
     /// Check error handling patterns
     fn check_error_handling(&self, statements: &[Statement], func_name: &str) -> Option<LintIssue> {
         let has_error_handling = statements.iter().any(|stmt| {
-            matches!(stmt, Statement::Panic(_) | Statement::Catch(_))
+            matches!(stmt, Statement::Try(_) | Statement::Throw(_))
         });
         
         if !has_error_handling && statements.len() > 5 {
@@ -1183,7 +1183,7 @@ impl CursedLinter {
         }
         
         if let Expression::Binary(binary) = expr {
-            if matches!(binary.operator.as_str(), "+" | "-" | "*" | "/") {
+            if matches!(binary.operator, BinaryOperator::Add | BinaryOperator::Subtract | BinaryOperator::Multiply | BinaryOperator::Divide) {
                 return Some(LintIssue {
                     rule_id: "unused_expression".to_string(),
                     category: LintCategory::Correctness,
@@ -1209,8 +1209,12 @@ impl CursedLinter {
     }
     
     /// Create misplaced control flow issue
-    fn create_misplaced_control_flow_issue(&self, _statement: &Statement) -> LintIssue {
-        let keyword = "control flow";
+    fn create_misplaced_control_flow_issue(&self, statement: &Statement) -> LintIssue {
+        let keyword = match statement {
+            Statement::Break => "break",
+            Statement::Continue => "continue",
+            _ => "control flow",
+        };
         
         LintIssue {
             rule_id: "misplaced_control_flow".to_string(),
@@ -1285,19 +1289,19 @@ impl CursedLinter {
         None
     }
     
-    /// Check try-catch patterns (using CatchStatement from actual AST)
-    fn check_catch_patterns(&self, catch_stmt: &crate::ast::CatchStatement) -> Option<LintIssue> {
-        if catch_stmt.protected_block.is_empty() {
+    /// Check try-catch patterns
+    fn check_try_catch_patterns(&self, try_stmt: &crate::ast::TryStatement) -> Option<LintIssue> {
+        if try_stmt.body.is_empty() {
             return Some(LintIssue {
-                rule_id: "catch_pattern".to_string(),
+                rule_id: "try_catch_pattern".to_string(),
                 category: LintCategory::Style,
                 severity: LintSeverity::Warning,
-                message: "Empty protected block".to_string(),
+                message: "Empty try block".to_string(),
                 file_path: self.context.current_file.clone(),
                 line: 1,
                 column: 1,
                 length: 0,
-                suggestion: Some("Add statements to protected block or remove it".to_string()),
+                suggestion: Some("Add statements to try block or remove it".to_string()),
                 context: HashMap::new(),
             });
         }
@@ -1349,23 +1353,7 @@ impl CursedLinter {
                     });
                 }
             },
-            Literal::Integer(n) => {
-                if n > &1000000 {
-                    return Some(LintIssue {
-                        rule_id: "large_number".to_string(),
-                        category: LintCategory::Style,
-                        severity: LintSeverity::Hint,
-                        message: "Very large number literal".to_string(),
-                        file_path: self.context.current_file.clone(),
-                        line: 1,
-                        column: 1,
-                        length: n.to_string().len(),
-                        suggestion: Some("Consider using scientific notation or constants".to_string()),
-                        context: HashMap::new(),
-                    });
-                }
-            },
-            Literal::Float(n) => {
+            Literal::Number(n) => {
                 if n > &1000000.0 {
                     return Some(LintIssue {
                         rule_id: "large_number".to_string(),
@@ -1387,26 +1375,10 @@ impl CursedLinter {
     }
     
     /// Check binary operator patterns
-    fn check_binary_operator_patterns(&self, op: &str, left: &Expression, right: &Expression) -> Option<LintIssue> {
+    fn check_binary_operator_patterns(&self, op: &BinaryOperator, left: &Expression, right: &Expression) -> Option<LintIssue> {
         // Check for division by zero
-        if op == "/" {
-            if let Expression::Literal(Literal::Integer(n)) = right {
-                if *n == 0 {
-                    return Some(LintIssue {
-                        rule_id: "division_by_zero".to_string(),
-                        category: LintCategory::Correctness,
-                        severity: LintSeverity::Error,
-                        message: "Division by zero".to_string(),
-                        file_path: self.context.current_file.clone(),
-                        line: 1,
-                        column: 1,
-                        length: 1,
-                        suggestion: Some("Check for zero before division".to_string()),
-                        context: HashMap::new(),
-                    });
-                }
-            }
-            if let Expression::Literal(Literal::Float(n)) = right {
+        if matches!(op, BinaryOperator::Divide) {
+            if let Expression::Literal(Literal::Number(n)) = right {
                 if *n == 0.0 {
                     return Some(LintIssue {
                         rule_id: "division_by_zero".to_string(),
@@ -1425,7 +1397,7 @@ impl CursedLinter {
         }
         
         // Check for redundant comparisons
-        if matches!(op, "==" | "!=") {
+        if matches!(op, BinaryOperator::Equal | BinaryOperator::NotEqual) {
             if let (Expression::Literal(lit1), Expression::Literal(lit2)) = (left, right) {
                 if lit1 == lit2 {
                     return Some(LintIssue {
@@ -1545,24 +1517,8 @@ impl CursedLinter {
     }
     
     /// Check index patterns
-    fn check_index_patterns(&self, _object: &Expression, index: &Expression) -> Option<LintIssue> {
-        if let Expression::Literal(Literal::Integer(n)) = index {
-            if *n < 0 {
-                return Some(LintIssue {
-                    rule_id: "negative_index".to_string(),
-                    category: LintCategory::Correctness,
-                    severity: LintSeverity::Warning,
-                    message: "Negative array index".to_string(),
-                    file_path: self.context.current_file.clone(),
-                    line: 1,
-                    column: 1,
-                    length: 0,
-                    suggestion: Some("Use positive index or length-based indexing".to_string()),
-                    context: HashMap::new(),
-                });
-            }
-        }
-        if let Expression::Literal(Literal::Float(n)) = index {
+    fn check_index_patterns(&self, object: &Expression, index: &Expression) -> Option<LintIssue> {
+        if let Expression::Literal(Literal::Number(n)) = index {
             if *n < 0.0 {
                 return Some(LintIssue {
                     rule_id: "negative_index".to_string(),
@@ -1622,19 +1578,19 @@ impl CursedLinter {
         None
     }
     
-    /// Check function call patterns for complexity
-    fn check_function_complexity_patterns(&self, args: &[Expression]) -> Option<LintIssue> {
-        if args.len() > 10 {
+    /// Check lambda patterns
+    fn check_lambda_patterns(&self, lambda: &crate::ast::LambdaExpression) -> Option<LintIssue> {
+        if lambda.parameters.len() > 10 {
             return Some(LintIssue {
-                rule_id: "function_complexity".to_string(),
+                rule_id: "lambda_complexity".to_string(),
                 category: LintCategory::Complexity,
                 severity: LintSeverity::Warning,
-                message: "Function call has too many arguments".to_string(),
+                message: "Lambda has too many parameters".to_string(),
                 file_path: self.context.current_file.clone(),
                 line: 1,
                 column: 1,
                 length: 0,
-                suggestion: Some("Consider restructuring arguments or using a struct".to_string()),
+                suggestion: Some("Consider using a regular function".to_string()),
                 context: HashMap::new(),
             });
         }
@@ -1744,7 +1700,7 @@ impl Default for CursedLinter {
     }
 }
 
-/// Working implementation of AstVisitor trait for CursedLinter
+/// Implementation of AstVisitor trait for comprehensive AST analysis
 impl AstVisitor<Vec<LintIssue>> for CursedLinter {
     fn visit_program(&mut self, program: &Program) -> Vec<LintIssue> {
         let mut issues = Vec::new();
@@ -1756,15 +1712,25 @@ impl AstVisitor<Vec<LintIssue>> for CursedLinter {
         self.context.imports.clear();
         self.context.slang_usage = SlangUsageStats::default();
         
+        // Collect import statements
+        for import in &program.imports {
+            self.context.imports.push(import.clone());
+        }
+        
+        // Validate package structure if present
+        if let Some(package) = &program.package {
+            if let Some(issue) = self.check_package_naming(package) {
+                issues.push(issue);
+            }
+        }
+        
         // Visit all statements in the program
         for statement in &program.statements {
             issues.extend(self.visit_statement(statement));
         }
         
-        // Check for unused variables
-        if self.rules.get("unused_variables").map_or(false, |r| r.enabled) {
-            issues.extend(self.check_unused_variables().unwrap_or_default());
-        }
+        // Perform global analysis after visiting all statements
+        issues.extend(self.perform_global_analysis());
         
         issues
     }
@@ -1779,6 +1745,13 @@ impl AstVisitor<Vec<LintIssue>> for CursedLinter {
                     issues.push(issue);
                 }
                 
+                // Check function parameters
+                for param in &func_stmt.parameters {
+                    if let Some(issue) = self.check_parameter_naming(&param.name, 1) {
+                        issues.push(issue);
+                    }
+                }
+                
                 // Track function info
                 let complexity = self.calculate_function_complexity(&func_stmt.body);
                 self.context.functions.insert(func_stmt.name.clone(), FunctionInfo {
@@ -1786,77 +1759,241 @@ impl AstVisitor<Vec<LintIssue>> for CursedLinter {
                     declared_line: 1,
                     param_count: func_stmt.parameters.len(),
                     complexity,
-                    proper_slang_naming: func_stmt.name.starts_with("slay_") || func_stmt.name == "main",
+                    proper_slang_naming: self.has_proper_slang_naming(&func_stmt.name),
                 });
                 
-                // Visit function body
+                // Check function complexity
+                if complexity > self.config.max_function_complexity {
+                    issues.push(self.create_complexity_issue(&func_stmt.name, complexity));
+                }
+                
+                // Check return type if present
+                if let Some(return_type) = &func_stmt.return_type {
+                    if let Some(issue) = self.check_return_type(return_type, &func_stmt.name) {
+                        issues.push(issue);
+                    }
+                }
+                
+                // Enter function scope
                 self.context.scope_depth += 1;
+                
+                // Visit function body statements
                 for stmt in &func_stmt.body {
                     issues.extend(self.visit_statement(stmt));
                 }
+                
+                // Exit function scope
                 self.context.scope_depth -= 1;
+                
+                // Check for proper error handling
+                if self.config.enforce_error_handling {
+                    if let Some(issue) = self.check_error_handling(&func_stmt.body, &func_stmt.name) {
+                        issues.push(issue);
+                    }
+                }
             },
             
             Statement::Let(let_stmt) => {
+                // Check variable naming
+                if let Some(issue) = self.check_variable_naming(&let_stmt.name, 1).unwrap_or(None) {
+                    issues.push(issue);
+                }
+                
                 // Track variable declaration
                 self.context.variable_usage.insert(let_stmt.name.clone(), VariableInfo {
                     name: let_stmt.name.clone(),
                     declared_line: 1,
                     usage_count: 0,
-                    is_mutable: false,
-                    var_type: None,
+                    is_mutable: let_stmt.mutable,
+                    var_type: let_stmt.type_annotation.clone(),
                 });
+                
+                // Check type annotations
+                if self.config.require_explicit_types && let_stmt.type_annotation.is_none() {
+                    issues.push(self.create_type_annotation_issue(&let_stmt.name));
+                }
                 
                 // Visit the value expression
                 issues.extend(self.visit_expression(&let_stmt.value));
+                
+                // Check for variable shadowing
+                if let Some(issue) = self.check_variable_shadowing(&let_stmt.name) {
+                    issues.push(issue);
+                }
             },
             
             Statement::If(if_stmt) => {
+                // Visit condition expression
                 issues.extend(self.visit_expression(&if_stmt.condition));
+                
+                // Check for proper conditional patterns
+                if let Some(issue) = self.check_conditional_patterns(&if_stmt.condition) {
+                    issues.push(issue);
+                }
+                
+                // Visit then branch
+                self.context.scope_depth += 1;
                 for stmt in &if_stmt.then_branch {
                     issues.extend(self.visit_statement(stmt));
                 }
+                self.context.scope_depth -= 1;
+                
+                // Visit else branch if present
                 if let Some(else_stmts) = &if_stmt.else_branch {
+                    self.context.scope_depth += 1;
                     for stmt in else_stmts {
                         issues.extend(self.visit_statement(stmt));
+                    }
+                    self.context.scope_depth -= 1;
+                }
+                
+                // Check for empty branches
+                if if_stmt.then_branch.is_empty() {
+                    issues.push(self.create_empty_branch_issue("then"));
+                }
+                if let Some(else_stmts) = &if_stmt.else_branch {
+                    if else_stmts.is_empty() {
+                        issues.push(self.create_empty_branch_issue("else"));
                     }
                 }
             },
             
             Statement::While(while_stmt) => {
+                // Visit condition
                 issues.extend(self.visit_expression(&while_stmt.condition));
+                
+                // Check for infinite loop patterns
+                if let Some(issue) = self.check_infinite_loop_patterns(&while_stmt.condition) {
+                    issues.push(issue);
+                }
+                
+                // Visit body
+                self.context.scope_depth += 1;
                 for stmt in &while_stmt.body {
                     issues.extend(self.visit_statement(stmt));
+                }
+                self.context.scope_depth -= 1;
+                
+                // Check for empty loop body
+                if while_stmt.body.is_empty() {
+                    issues.push(self.create_empty_loop_issue("while"));
                 }
             },
             
             Statement::For(for_stmt) => {
-                if let Some(condition) = &for_stmt.condition {
-                    issues.extend(self.visit_expression(condition));
-                }
-                if let Some(init) = &for_stmt.init {
-                    issues.extend(self.visit_statement(init));
-                }
-                if let Some(update) = &for_stmt.update {
-                    issues.extend(self.visit_expression(update));
-                }
+                // Visit iterator expression
+                issues.extend(self.visit_expression(&for_stmt.iterable));
+                
+                // Track loop variable
+                self.context.variable_usage.insert(for_stmt.variable.clone(), VariableInfo {
+                    name: for_stmt.variable.clone(),
+                    declared_line: 1,
+                    usage_count: 1, // Loop variable is implicitly used
+                    is_mutable: false,
+                    var_type: None,
+                });
+                
+                // Visit body
+                self.context.scope_depth += 1;
                 for stmt in &for_stmt.body {
                     issues.extend(self.visit_statement(stmt));
+                }
+                self.context.scope_depth -= 1;
+                
+                // Check for empty loop body
+                if for_stmt.body.is_empty() {
+                    issues.push(self.create_empty_loop_issue("for"));
                 }
             },
             
             Statement::Return(return_stmt) => {
+                // Visit return value if present
                 if let Some(expr) = &return_stmt.value {
                     issues.extend(self.visit_expression(expr));
                 }
+                
+                // Check for unreachable code after return
+                // This would require more sophisticated analysis
             },
             
-            Statement::Expression(expr) => {
-                issues.extend(self.visit_expression(expr));
+            Statement::Expression(expr_stmt) => {
+                // Visit the expression
+                issues.extend(self.visit_expression(&expr_stmt.expression));
+                
+                // Check for statement-like expressions that might be missing side effects
+                if let Some(issue) = self.check_expression_statement(&expr_stmt.expression) {
+                    issues.push(issue);
+                }
+            },
+            
+            Statement::Break | Statement::Continue => {
+                // Check if break/continue is within a loop
+                if !self.is_in_loop_context() {
+                    issues.push(self.create_misplaced_control_flow_issue(statement));
+                }
+            },
+            
+            Statement::Import(import_stmt) => {
+                // Check import naming and patterns
+                if let Some(issue) = self.check_import_patterns(&import_stmt.module) {
+                    issues.push(issue);
+                }
+                
+                // Track import for dependency analysis
+                self.context.imports.push(import_stmt.module.clone());
+            },
+            
+            Statement::Export(export_stmt) => {
+                // Check export patterns
+                if let Some(issue) = self.check_export_patterns(&export_stmt.name) {
+                    issues.push(issue);
+                }
+            },
+            
+            Statement::Throw(throw_stmt) => {
+                // Visit the thrown expression
+                issues.extend(self.visit_expression(&throw_stmt.value));
+                
+                // Check for proper error throwing patterns
+                if let Some(issue) = self.check_throw_patterns(&throw_stmt.value) {
+                    issues.push(issue);
+                }
+            },
+            
+            Statement::Try(try_stmt) => {
+                // Visit try block
+                self.context.scope_depth += 1;
+                for stmt in &try_stmt.body {
+                    issues.extend(self.visit_statement(stmt));
+                }
+                self.context.scope_depth -= 1;
+                
+                // Visit catch block if present
+                if let Some(catch_clause) = &try_stmt.catch_clause {
+                    self.context.scope_depth += 1;
+                    for stmt in &catch_clause.body {
+                        issues.extend(self.visit_statement(stmt));
+                    }
+                    self.context.scope_depth -= 1;
+                }
+                
+                // Visit finally block if present
+                if let Some(finally_stmts) = &try_stmt.finally_clause {
+                    self.context.scope_depth += 1;
+                    for stmt in finally_stmts {
+                        issues.extend(self.visit_statement(stmt));
+                    }
+                    self.context.scope_depth -= 1;
+                }
+                
+                // Check for proper error handling patterns
+                if let Some(issue) = self.check_try_catch_patterns(try_stmt) {
+                    issues.push(issue);
+                }
             },
             
             _ => {
-                // Handle other statement types
+                // Handle other statement types that may be added in the future
             }
         }
         
@@ -1872,64 +2009,312 @@ impl AstVisitor<Vec<LintIssue>> for CursedLinter {
                 if let Some(var_info) = self.context.variable_usage.get_mut(name) {
                     var_info.usage_count += 1;
                 }
+                
+                // Check for undefined variables
+                if !self.context.variable_usage.contains_key(name) && !self.is_builtin_identifier(name) {
+                    issues.push(self.create_undefined_variable_issue(name));
+                }
+            },
+            
+            Expression::Literal(literal) => {
+                // Check literal patterns
+                if let Some(issue) = self.check_literal_patterns(literal) {
+                    issues.push(issue);
+                }
             },
             
             Expression::Binary(binary_expr) => {
+                // Visit both operands
                 issues.extend(self.visit_expression(&binary_expr.left));
                 issues.extend(self.visit_expression(&binary_expr.right));
                 
-                // Check for division by zero
-                if binary_expr.operator == "/" {
-                    if let Expression::Integer(0) = **&binary_expr.right {
-                        issues.push(LintIssue {
-                            rule_id: "division_by_zero".to_string(),
-                            category: LintCategory::Correctness,
-                            severity: LintSeverity::Error,
-                            message: "Division by zero".to_string(),
-                            file_path: self.context.current_file.clone(),
-                            line: 1,
-                            column: 1,
-                            length: 1,
-                            suggestion: Some("Check for zero before division".to_string()),
-                            context: HashMap::new(),
-                        });
-                    }
+                // Check for operator-specific issues
+                if let Some(issue) = self.check_binary_operator_patterns(&binary_expr.operator, &binary_expr.left, &binary_expr.right) {
+                    issues.push(issue);
                 }
             },
             
             Expression::Unary(unary_expr) => {
+                // Visit operand
                 issues.extend(self.visit_expression(&unary_expr.operand));
+                
+                // Check unary operator patterns
+                if let Some(issue) = self.check_unary_operator_patterns(&unary_expr.operator, &unary_expr.operand) {
+                    issues.push(issue);
+                }
             },
             
             Expression::Call(call_expr) => {
+                // Visit function expression
                 issues.extend(self.visit_expression(&call_expr.function));
+                
+                // Visit all arguments
                 for arg in &call_expr.arguments {
                     issues.extend(self.visit_expression(arg));
+                }
+                
+                // Check function call patterns
+                if let Some(issue) = self.check_function_call_patterns(&call_expr.function, &call_expr.arguments) {
+                    issues.push(issue);
                 }
             },
             
             Expression::Array(elements) => {
+                // Visit all elements
                 for element in elements {
                     issues.extend(self.visit_expression(element));
+                }
+                
+                // Check array patterns
+                if let Some(issue) = self.check_array_patterns(elements) {
+                    issues.push(issue);
                 }
             },
             
             Expression::Map(pairs) => {
+                // Visit all key-value pairs
                 for (key, value) in pairs {
                     issues.extend(self.visit_expression(key));
                     issues.extend(self.visit_expression(value));
                 }
+                
+                // Check map patterns
+                if let Some(issue) = self.check_map_patterns(pairs) {
+                    issues.push(issue);
+                }
             },
             
-            Expression::MemberAccess(member_expr) => {
+            Expression::Index(index_expr) => {
+                // Visit object and index expressions
+                issues.extend(self.visit_expression(&index_expr.object));
+                issues.extend(self.visit_expression(&index_expr.index));
+                
+                // Check indexing patterns
+                if let Some(issue) = self.check_index_patterns(&index_expr.object, &index_expr.index) {
+                    issues.push(issue);
+                }
+            },
+            
+            Expression::Member(member_expr) => {
+                // Visit object expression
                 issues.extend(self.visit_expression(&member_expr.object));
+                
+                // Check member access patterns
+                if let Some(issue) = self.check_member_access_patterns(&member_expr.object, &member_expr.property) {
+                    issues.push(issue);
+                }
+            },
+            
+            Expression::Assign(assign_expr) => {
+                // Visit left and right sides
+                issues.extend(self.visit_expression(&assign_expr.left));
+                issues.extend(self.visit_expression(&assign_expr.right));
+                
+                // Check assignment patterns
+                if let Some(issue) = self.check_assignment_patterns(&assign_expr.left, &assign_expr.right) {
+                    issues.push(issue);
+                }
+            },
+            
+            Expression::Lambda(lambda_expr) => {
+                // Track lambda parameters
+                self.context.scope_depth += 1;
+                for param in &lambda_expr.parameters {
+                    self.context.variable_usage.insert(param.name.clone(), VariableInfo {
+                        name: param.name.clone(),
+                        declared_line: 1,
+                        usage_count: 0,
+                        is_mutable: false,
+                        var_type: param.type_annotation.clone(),
+                    });
+                }
+                
+                // Visit lambda body
+                issues.extend(self.visit_expression(&lambda_expr.body));
+                
+                self.context.scope_depth -= 1;
+                
+                // Check lambda patterns
+                if let Some(issue) = self.check_lambda_patterns(lambda_expr) {
+                    issues.push(issue);
+                }
+            },
+            
+            Expression::Conditional(cond_expr) => {
+                // Visit all parts
+                issues.extend(self.visit_expression(&cond_expr.condition));
+                issues.extend(self.visit_expression(&cond_expr.then_expr));
+                issues.extend(self.visit_expression(&cond_expr.else_expr));
+                
+                // Check conditional expression patterns
+                if let Some(issue) = self.check_conditional_expr_patterns(&cond_expr.condition, &cond_expr.then_expr, &cond_expr.else_expr) {
+                    issues.push(issue);
+                }
             },
             
             _ => {
-                // Handle other expression types like Integer, String, Boolean, etc.
+                // Handle other expression types
             }
         }
         
         issues
+    }
+}
+
+/// Utility functions for linting
+pub mod utils {
+    use super::*;
+
+    /// Quick lint check for source code
+    pub fn quick_lint(source: &str) -> Result<LintResult, CursedError> {
+        let mut linter = CursedLinter::new();
+        linter.lint_source(source)
+    }
+
+    /// Create linter with minimal configuration
+    pub fn minimal_linter() -> CursedLinter {
+        let mut config = LinterConfig::default();
+        config.validate_slang = true;
+        config.enforce_function_naming = false;
+        config.check_variable_naming = false;
+        config.check_unused_variables = false;
+        
+        CursedLinter::with_config(config)
+    }
+
+    /// Create linter with strict configuration
+    pub fn strict_linter() -> CursedLinter {
+        let mut config = LinterConfig::default();
+        config.validate_slang = true;
+        config.enforce_function_naming = true;
+        config.check_variable_naming = true;
+        config.max_function_complexity = 5;
+        config.max_line_length = 80;
+        config.require_explicit_types = true;
+        config.check_unused_variables = true;
+        config.enforce_error_handling = true;
+        
+        CursedLinter::with_config(config)
+    }
+
+    /// Format lint results as human-readable text
+    pub fn format_results(result: &LintResult) -> String {
+        let mut output = String::new();
+        
+        if result.issues.is_empty() {
+            output.push_str("✅ No issues found! Your CURSED code is clean periodt\n");
+        } else {
+            output.push_str(&format!("Found {} issues:\n\n", result.issues.len()));
+            
+            for issue in &result.issues {
+                let severity_icon = match issue.severity {
+                    LintSeverity::Error => "❌",
+                    LintSeverity::Warning => "⚠️",
+                    LintSeverity::Info => "ℹ️",
+                    LintSeverity::Hint => "💡",
+                };
+                
+                output.push_str(&format!(
+                    "{} {} ({}:{}:{}) - {}\n",
+                    severity_icon,
+                    issue.severity.as_str().to_uppercase(),
+                    issue.file_path.as_deref().unwrap_or("<source>"),
+                    issue.line,
+                    issue.column,
+                    issue.message
+                ));
+                
+                if let Some(suggestion) = &issue.suggestion {
+                    output.push_str(&format!("   💡 Suggestion: {}\n", suggestion));
+                }
+                
+                output.push('\n');
+            }
+        }
+        
+        // Add summary
+        output.push_str(&format!(
+            "Summary: {} issues, {} files analyzed, {} lines analyzed\n",
+            result.summary.total_issues,
+            result.summary.files_analyzed,
+            result.summary.lines_analyzed
+        ));
+        
+        output.push_str(&format!(
+            "Analysis completed in {}ms\n",
+            result.metrics.analysis_time_ms
+        ));
+        
+        output
+    }
+}
+
+/// Legacy support for existing minimal implementation
+pub struct MinimalImplementation;
+
+impl MinimalImplementation {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+pub fn get_minimal_result() -> Result<String, CursedError> {
+    Ok("CURSED linting system enabled with Gen Z slang validation periodt".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_linter_creation() {
+        let linter = CursedLinter::new();
+        assert!(!linter.rules.is_empty());
+        assert!(linter.config.validate_slang);
+    }
+
+    #[test]
+    fn test_slang_keyword_detection() {
+        let linter = CursedLinter::new();
+        assert!(linter.is_slang_keyword("slay"));
+        assert!(linter.is_slang_keyword("sus"));
+        assert!(linter.is_slang_keyword("facts"));
+        assert!(!linter.is_slang_keyword("function"));
+    }
+
+    #[test]
+    fn test_quick_lint_simple() {
+        let source = r#"
+            slay main() {
+                sus x = 42;
+                facts message = "Hello, CURSED!";
+            }
+        "#;
+        
+        let result = utils::quick_lint(source);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_function_naming_rule() {
+        let mut linter = CursedLinter::new();
+        let result = linter.check_function_naming("bad_function", 1);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_some());
+    }
+
+    #[test]
+    fn test_minimal_linter() {
+        let linter = utils::minimal_linter();
+        assert!(linter.config.validate_slang);
+        assert!(!linter.config.enforce_function_naming);
+    }
+
+    #[test]
+    fn test_strict_linter() {
+        let linter = utils::strict_linter();
+        assert!(linter.config.validate_slang);
+        assert!(linter.config.enforce_function_naming);
+        assert_eq!(linter.config.max_function_complexity, 5);
     }
 }

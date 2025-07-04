@@ -289,8 +289,8 @@ impl Parser {
                 }
                 Ok(Statement::Return(self.parse_return_statement()?))
             },
-            TokenKind::Squad => {
-                log::info!("📝 Parsing struct statement with 'squad' keyword");
+            TokenKind::BeLike => {
+                log::info!("📝 Parsing struct statement with 'be_like' keyword");
                 Ok(Statement::Struct(self.parse_struct_statement_with_visibility(visibility)?))
             },
             TokenKind::Collab => {
@@ -1098,20 +1098,30 @@ impl Parser {
     }
 
     fn parse_struct_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::StructStatement, CursedError> {
-        self.consume(TokenKind::Squad, "Expected 'squad'")?;
+        self.consume(TokenKind::BeLike, "Expected 'be_like'")?;
         let name = self.consume(TokenKind::Identifier, "Expected struct name")?.lexeme.clone();
+        self.consume(TokenKind::Squad, "Expected 'squad' after struct name")?;
         
-        self.consume(TokenKind::LeftBrace, "Expected '{' after struct name")?;
+        self.consume(TokenKind::LeftBrace, "Expected '{' after 'squad'")?;
         let mut fields = Vec::new();
         
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            // Skip newlines in field declarations
+            self.skip_newlines();
+            if self.check(&TokenKind::RightBrace) {
+                break;
+            }
+            
             let field = self.parse_struct_field()?;
             fields.push(field);
             
-            // Optional comma
-            if self.match_tokens(&[TokenKind::Comma]) {
-                // Consume comma
+            // Optional semicolon after field
+            if self.match_tokens(&[TokenKind::Semicolon]) {
+                // Consume semicolon
             }
+            
+            // Skip newlines after field
+            self.skip_newlines();
         }
         
         self.consume(TokenKind::RightBrace, "Expected '}' after struct fields")?;
@@ -1126,10 +1136,9 @@ impl Parser {
     fn parse_struct_field(&mut self) -> Result<crate::ast::StructField, CursedError> {
         let name = self.consume(TokenKind::Identifier, "Expected field name")?.lexeme.clone();
         
-        // Optional type annotation
-        let field_type = if self.match_tokens(&[TokenKind::Colon]) {
-            let type_name = self.consume(TokenKind::Identifier, "Expected type name")?.lexeme.clone();
-            Some(type_name)
+        // CURSED syntax: field_name field_type (e.g., "name tea", "age normie")
+        let field_type = if self.check_type_token() {
+            Some(self.advance().lexeme.clone())
         } else {
             None
         };

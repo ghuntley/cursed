@@ -1,5 +1,1 @@
-fr fr Simple test
-
-slay main() {
-    yolo 0
-}
+slay main() { yolo "Hello, World!"; }
