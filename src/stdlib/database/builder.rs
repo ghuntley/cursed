@@ -44,7 +44,7 @@ pub struct DeleteBuilder {
 
 /// Query types
 #[derive(Debug, Clone)]
-enum QueryType {
+pub enum QueryType {
     Select,
     Insert,
     Update,

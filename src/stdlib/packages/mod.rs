@@ -255,8 +255,9 @@ pub mod crypto_protocols_exports {
     pub use super::crypto_protocols::*;
 }
 
-// Re-export testing packages for convenience
-pub use quick_test::*;
+// Re-export testing packages for convenience - using specific imports to avoid conflicts
+pub use quick_test::{Config as QuickTestConfig, TestResult as QuickTestResult, check, check_with_generator, generate};
+pub use test_vibes::{TestResult as TestVibesResult, TestCase, TestRunner as TestVibesRunner, VibeTest, VibeBench};
 
 // Re-export existing packages for convenience, avoiding 'error' and 'types' conflicts - temporarily disabled
 /* pub use web_vibez::{
@@ -306,4 +307,3 @@ pub use quick_test::*;
     test_connection_pooling,
     test_sql_vibes
 }; */
-pub use test_vibes::*;

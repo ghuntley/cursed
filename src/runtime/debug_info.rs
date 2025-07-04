@@ -691,15 +691,15 @@ pub struct FunctionInfo {
 #[derive(Debug)]
 pub struct DwarfDebugDatabase {
     /// Function information indexed by address range
-    functions: BTreeMap<u64, FunctionDebugInfo>,
+    pub functions: BTreeMap<u64, FunctionDebugInfo>,
     /// Local variables indexed by function address
-    variables: HashMap<u64, Vec<VariableDebugInfo>>,
+    pub variables: HashMap<u64, Vec<VariableDebugInfo>>,
     /// Inline call sites indexed by address
-    inline_sites: HashMap<u64, Vec<InlineCallSite>>,
+    pub inline_sites: HashMap<u64, Vec<InlineCallSite>>,
     /// Type information by type ID
-    types: HashMap<u64, DwarfTypeInfo>,
+    pub types: HashMap<u64, DwarfTypeInfo>,
     /// Address to line number mappings
-    line_mappings: BTreeMap<u64, LineInfo>,
+    pub line_mappings: BTreeMap<u64, LineInfo>,
 }
 
 /// Function debug information from DWARF
@@ -899,7 +899,7 @@ pub struct LlvmDebugInfo {
     /// Type information
     type_info: HashMap<String, TypeDebugInfo>,
     /// DWARF debug database
-    dwarf_database: Option<DwarfDebugDatabase>,
+    pub dwarf_database: Option<DwarfDebugDatabase>,
 }
 
 impl LlvmDebugInfo {

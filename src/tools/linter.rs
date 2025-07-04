@@ -137,6 +137,8 @@ pub struct LintResult {
 pub struct LintIssue {
     /// Rule that generated this issue
     pub rule_id: String,
+    /// Rule category
+    pub category: LintCategory,
     /// Issue severity
     pub severity: LintSeverity,
     /// Issue message
@@ -273,6 +275,56 @@ impl CursedLinter {
         linter
     }
 
+    /// Create a strict linter with all rules enabled and strict settings
+    pub fn strict_linter() -> Self {
+        let mut severity_levels = HashMap::new();
+        severity_levels.insert("slang_validation".to_string(), LintSeverity::Error);
+        severity_levels.insert("function_naming".to_string(), LintSeverity::Error);
+        severity_levels.insert("variable_naming".to_string(), LintSeverity::Warning);
+        severity_levels.insert("complexity".to_string(), LintSeverity::Error);
+        severity_levels.insert("line_length".to_string(), LintSeverity::Warning);
+        severity_levels.insert("unused_variables".to_string(), LintSeverity::Error);
+        
+        let config = LinterConfig {
+            validate_slang: true,
+            enforce_function_naming: true,
+            check_variable_naming: true,
+            max_function_complexity: 5,
+            max_line_length: 80,
+            require_explicit_types: true,
+            check_unused_variables: true,
+            enforce_error_handling: true,
+            custom_rules: vec![],
+            severity_levels,
+        };
+        Self::with_config(config)
+    }
+
+    /// Create a minimal linter with only essential rules enabled
+    pub fn minimal_linter() -> Self {
+        let mut severity_levels = HashMap::new();
+        severity_levels.insert("slang_validation".to_string(), LintSeverity::Info);
+        severity_levels.insert("function_naming".to_string(), LintSeverity::Info);
+        severity_levels.insert("variable_naming".to_string(), LintSeverity::Info);
+        severity_levels.insert("complexity".to_string(), LintSeverity::Warning);
+        severity_levels.insert("line_length".to_string(), LintSeverity::Info);
+        severity_levels.insert("unused_variables".to_string(), LintSeverity::Info);
+        
+        let config = LinterConfig {
+            validate_slang: false,
+            enforce_function_naming: false,
+            check_variable_naming: false,
+            max_function_complexity: 20,
+            max_line_length: 120,
+            require_explicit_types: false,
+            check_unused_variables: false,
+            enforce_error_handling: false,
+            custom_rules: vec![],
+            severity_levels,
+        };
+        Self::with_config(config)
+    }
+
     /// Initialize built-in lint rules
     fn initialize_rules(&mut self) {
         // Gen Z slang validation rules
@@ -370,6 +422,13 @@ impl CursedLinter {
     /// Get a lint rule by ID
     pub fn get_rule(&self, rule_id: &str) -> Option<&LintRule> {
         self.rules.get(rule_id)
+    }
+
+    /// Get category for a rule, defaulting to Style if rule not found
+    fn get_rule_category(&self, rule_id: &str) -> LintCategory {
+        self.get_rule(rule_id)
+            .map(|rule| rule.category.clone())
+            .unwrap_or(LintCategory::Style)
     }
 
     /// Enable or disable a lint rule
@@ -504,8 +563,10 @@ impl CursedLinter {
                 // Check function complexity
                 let complexity = self.calculate_function_complexity(&func_stmt.body);
                 if complexity > self.config.max_function_complexity {
+                    let rule_id = "function_complexity".to_string();
                     issues.push(LintIssue {
-                        rule_id: "function_complexity".to_string(),
+                        rule_id: rule_id.clone(),
+                        category: self.get_rule_category(&rule_id),
                         severity: LintSeverity::Warning,
                         message: format!("Function '{}' has complexity {} which exceeds maximum {}", 
                                        func_stmt.name, complexity, self.config.max_function_complexity),
@@ -623,8 +684,10 @@ impl CursedLinter {
             
             // Check line length
             if line.len() > self.config.max_line_length {
+                let rule_id = "line_length".to_string();
                 issues.push(LintIssue {
-                    rule_id: "line_length".to_string(),
+                    rule_id: rule_id.clone(),
+                    category: self.get_rule_category(&rule_id),
                     severity: LintSeverity::Info,
                     message: format!("Line exceeds maximum length of {} characters", self.config.max_line_length),
                     file_path: self.context.current_file.clone(),
@@ -699,8 +762,10 @@ impl CursedLinter {
 
             for pattern in &suspicious_patterns {
                 if content.contains(pattern) && content.len() > 10 {
+                    let rule_id = "hardcoded_secrets".to_string();
                     return Ok(Some(LintIssue {
-                        rule_id: "hardcoded_secrets".to_string(),
+                        rule_id: rule_id.clone(),
+                        category: self.get_rule_category(&rule_id),
                         severity: LintSeverity::Error,
                         message: "Potential hardcoded secret detected".to_string(),
                         file_path: self.context.current_file.clone(),
@@ -724,8 +789,10 @@ impl CursedLinter {
         }
 
         if name != "main" && !name.starts_with("slay_") {
+            let rule_id = "slang_function_naming".to_string();
             return Ok(Some(LintIssue {
-                rule_id: "slang_function_naming".to_string(),
+                rule_id: rule_id.clone(),
+                category: self.get_rule_category(&rule_id),
                 severity: LintSeverity::Warning,
                 message: format!("Function '{}' should use 'slay_' prefix for proper Gen Z naming", name),
                 file_path: self.context.current_file.clone(),
@@ -748,8 +815,10 @@ impl CursedLinter {
 
         // For now, just provide informational message about CURSED variable naming
         if name.len() > 20 {
+            let rule_id = "slang_variable_naming".to_string();
             return Ok(Some(LintIssue {
-                rule_id: "slang_variable_naming".to_string(),
+                rule_id: rule_id.clone(),
+                category: self.get_rule_category(&rule_id),
                 severity: LintSeverity::Info,
                 message: format!("Consider shorter variable name for '{}'", name),
                 file_path: self.context.current_file.clone(),
@@ -770,8 +839,10 @@ impl CursedLinter {
 
         for (name, info) in &self.context.variable_usage {
             if info.usage_count == 0 {
+                let rule_id = "unused_variables".to_string();
                 issues.push(LintIssue {
-                    rule_id: "unused_variables".to_string(),
+                    rule_id: rule_id.clone(),
+                    category: self.get_rule_category(&rule_id),
                     severity: LintSeverity::Warning,
                     message: format!("Variable '{}' is declared but never used", name),
                     file_path: self.context.current_file.clone(),
