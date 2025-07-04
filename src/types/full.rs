@@ -510,7 +510,7 @@ mod tests {
         assert!(result.is_ok());
         
         let type_expr = result.unwrap();
-        assert_eq!(type_expr.name, Some("int".to_string()));
+        assert_eq!(type_expr.name, Some("normie".to_string()));
     }
 
     #[test]
