@@ -69,6 +69,84 @@ impl TypeChecker {
                          TypeExpression::named("int"));
     }
     
+    /// Convert AST type string to TypeExpression
+    /// Maps CURSED type names to proper TypeExpression objects
+    fn type_string_to_expression(&self, type_str: &str) -> TypeExpression {
+        match type_str {
+            // CURSED primitive types
+            "normie" => TypeExpression::named("normie"),     // integer
+            "tea" => TypeExpression::named("tea"),           // string
+            "vibes" => TypeExpression::named("vibes"),       // boolean
+            "lit" => TypeExpression::named("lit"),           // boolean (alternative)
+            "thicc" => TypeExpression::named("thicc"),       // int64
+            "snack" => TypeExpression::named("snack"),       // float32
+            "meal" => TypeExpression::named("meal"),         // float64
+            "sip" => TypeExpression::named("sip"),           // char
+            "cap" => TypeExpression::named("cap"),           // nil/null
+            
+            // Standard types (fallback)
+            "int" => TypeExpression::named("int"),
+            "string" => TypeExpression::named("string"),
+            "bool" => TypeExpression::named("bool"),
+            "void" => TypeExpression::named("void"),
+            
+            // Default for unknown types
+            _ => TypeExpression::named("unknown"),
+        }
+    }
+    
+    /// Infer return type from function body statements
+    /// Analyzes return statements to determine the function's return type
+    fn infer_return_type_from_body(&self, body: &[Statement]) -> TypeExpression {
+        // Look for return statements (yolo statements in CURSED)
+        for statement in body {
+            if let Statement::Return(return_stmt) = statement {
+                if let Some(ref expr) = return_stmt.value {
+                    // Try to infer type from the return expression
+                    // For now, use basic type inference
+                    return self.infer_expression_type(expr);
+                } else {
+                    // Return without value implies void
+                    return TypeExpression::named("void");
+                }
+            }
+        }
+        
+        // No return statement found, assume void
+        TypeExpression::named("void")
+    }
+    
+    /// Basic expression type inference for return type analysis
+    fn infer_expression_type(&self, expr: &Expression) -> TypeExpression {
+        match expr {
+            Expression::Literal(literal) => {
+                match literal {
+                    Literal::Integer(_) => TypeExpression::named("normie"),
+                    Literal::Float(_) => TypeExpression::named("snack"),
+                    Literal::String(_) => TypeExpression::named("tea"),
+                    Literal::Boolean(_) => TypeExpression::named("vibes"),
+                    Literal::Null => TypeExpression::named("cap"),
+                    Literal::Nil => TypeExpression::named("cap"),
+                }
+            }
+            Expression::Binary(binary_expr) => {
+                // For binary expressions, infer based on operation
+                match binary_expr.operator.as_str() {
+                    "+" | "-" | "*" | "/" | "%" => TypeExpression::named("normie"),
+                    ">" | "<" | ">=" | "<=" | "==" | "!=" => TypeExpression::named("vibes"),
+                    "&&" | "||" => TypeExpression::named("vibes"),
+                    _ => TypeExpression::named("unknown"),
+                }
+            }
+            Expression::Call(_) => {
+                // For function calls, we'd need more sophisticated analysis
+                // For now, assume unknown and let explicit types handle it
+                TypeExpression::named("unknown")
+            }
+            _ => TypeExpression::named("unknown"),
+        }
+    }
+    
     pub fn check_program(&mut self, program: &Program) -> Result<(), Vec<TypeCheckError>> {
         self.errors.clear();
         
@@ -480,12 +558,19 @@ impl TypeChecker {
     }
     
     fn check_function_statement(&mut self, func_stmt: &FunctionStatement) -> Result<TypeExpression, TypeCheckError> {
-        // Create function type
+        // Create function type with proper parameter types
         let param_types: Vec<TypeExpression> = func_stmt.parameters.iter()
-            .map(|_| TypeExpression::named("unknown")) // TODO: Add type annotations
+            .map(|param| {
+                param.param_type.as_ref()
+                    .map(|type_str| self.type_string_to_expression(type_str))
+                    .unwrap_or(TypeExpression::named("unknown"))
+            })
             .collect();
         
-        let return_type = TypeExpression::named("void"); // TODO: Infer return type
+        // Use explicit return type if specified, otherwise infer from function body
+        let return_type = func_stmt.return_type.as_ref()
+            .map(|type_str| self.type_string_to_expression(type_str))
+            .unwrap_or_else(|| self.infer_return_type_from_body(&func_stmt.body));
         
         // Add function to current scope
         let func_type = TypeExpression::function(param_types, return_type.clone());
@@ -494,9 +579,12 @@ impl TypeChecker {
         // Enter new scope for function body
         self.enter_scope();
         
-        // Add parameters to function scope
+        // Add parameters to function scope with proper types
         for param in &func_stmt.parameters {
-            self.add_variable(param.name.clone(), TypeExpression::named("unknown"));
+            let param_type = param.param_type.as_ref()
+                .map(|type_str| self.type_string_to_expression(type_str))
+                .unwrap_or(TypeExpression::named("unknown"));
+            self.add_variable(param.name.clone(), param_type);
         }
         
         // Set current function return type
