@@ -319,6 +319,7 @@ impl Parser {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
                 }
                 
+
                 // Check if this is an assignment (identifier = expression)
                 if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal {
                     Ok(Statement::Assignment(self.parse_assignment_statement()?))
@@ -378,8 +379,10 @@ impl Parser {
         
         let mut body = Vec::new();
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-            body.push(self.parse_statement()?);
-            self.skip_newlines();
+            self.skip_newlines(); // Skip newlines before parsing each statement
+            if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                body.push(self.parse_statement()?);
+            }
         }
         
         self.consume(TokenKind::RightBrace, "Expected '}' after function body")?;
@@ -445,10 +448,12 @@ impl Parser {
         let mut body = Vec::new();
         log::debug!("🔧 Parsing function body for: {}", name);
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-            let stmt = self.parse_statement()?;
-            log::debug!("➕ Adding statement to function body: {:?}", std::mem::discriminant(&stmt));
-            body.push(stmt);
-            self.skip_newlines_and_semicolons();
+            self.skip_newlines_and_semicolons(); // Skip newlines before parsing each statement
+            if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                let stmt = self.parse_statement()?;
+                log::debug!("➕ Adding statement to function body: {:?}", std::mem::discriminant(&stmt));
+                body.push(stmt);
+            }
         }
         log::debug!("✅ Function body parsing complete for: {}", name);
         
@@ -583,7 +588,9 @@ impl Parser {
 
     fn parse_if_statement(&mut self) -> Result<IfStatement, CursedError> {
         self.consume(TokenKind::Lowkey, "Expected 'lowkey'")?;
+        self.skip_newlines(); // Skip newlines after lowkey
         let condition = self.parse_expression()?;
+        self.skip_newlines(); // Skip newlines after condition
         self.consume(TokenKind::LeftBrace, "Expected '{' after if condition")?;
         
         let mut then_branch = Vec::new();
@@ -774,6 +781,7 @@ impl Parser {
     }
 
     pub fn parse_expression(&mut self) -> Result<Expression, CursedError> {
+        self.skip_newlines(); // Skip newlines at the start of expression parsing
         self.parse_channel_operations()
     }
 
@@ -976,7 +984,7 @@ impl Parser {
         // Parse the channel element type (handle different token types)
         let element_type = if self.match_tokens(&[TokenKind::Identifier]) {
             self.previous().lexeme.clone()
-        } else if self.match_tokens(&[TokenKind::Boolean]) { // Handle 'lit' and other keywords that might be tokenized as Boolean
+        } else if self.match_tokens(&[TokenKind::Truth, TokenKind::Lies]) { // Handle boolean keywords
             self.previous().lexeme.clone()
         } else {
             return Err(CursedError::syntax_error("Expected channel element type after 'dm'"));
@@ -1009,16 +1017,8 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Expression, CursedError> {
+        self.skip_newlines(); // Skip any newlines before parsing primary expression
         match &self.peek().kind {
-            TokenKind::Boolean => {
-                let token = self.advance();
-                let value = match token.lexeme.as_str() {
-                    "true" | "based" => true,
-                    "false" | "lies" => false,
-                    _ => false,
-                };
-                Ok(Expression::Boolean(value))
-            },
             TokenKind::Truth => {
                 self.advance();
                 Ok(Expression::Boolean(true))

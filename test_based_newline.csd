@@ -1,5 +1,6 @@
 slay main() {
-    lowkey based {
+    lowkey 
+    based {
         vibez.spill("This is true!")
     }
 }

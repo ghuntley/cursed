@@ -1,5 +1,5 @@
-vibe main
+fr fr This is a simple CURSED hello world program
 
 slay main() {
-    yolo "Hello, World!"
+    vibez.spill("Hello, CURSED World! 🎉")
 }

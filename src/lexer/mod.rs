@@ -442,8 +442,8 @@ impl Lexer {
             "crew" => TokenKind::Crew,
             
             // Boolean literals
-            "true" | "based" => TokenKind::Boolean,
-            "false" | "lies" => TokenKind::Boolean,
+            "true" | "based" => TokenKind::Truth,
+            "false" | "lies" => TokenKind::Lies,
             
             // Comments - handle special keywords for comments
             "fr" => {

@@ -4,7 +4,7 @@
 //! features of the CURSED programming language toolchain.
 
 use cursed::build_system::{
-    analytics::{BuildAnalytics, BuildAnalyticsConfig, BuildEventType, create_build_event},
+    analytics::{BuildAnalytics, BuildAnalyticsConfig, BuildEventType, create_build_event, create_build_event_with_duration},
     advanced_cache::{AdvancedCache, AdvancedCacheConfig, CacheData, CacheMetadata},
     memory_optimizer::{MemoryOptimizer, MemoryOptimizerConfig, MemoryStrategy, create_memory_aware_task},
     incremental_cache::{IncrementalCache, CacheManager},
@@ -75,38 +75,38 @@ fn demo_build_analytics(workspace: &PathBuf) -> Result<(), Box<dyn std::error::E
     println!("🏗️  Simulating build process with multiple phases...");
     
     // Phase 1: Dependency resolution
-    let dep_event = create_build_event(BuildEventType::DependencyResolution, Duration::from_millis(150));
-    analytics.record_event(dep_event)?;
+    let dep_event = create_build_event_with_duration(BuildEventType::DependencyResolution, Duration::from_millis(150));
+    analytics.record_event(dep_event);
     
     // Phase 2: Multiple file compilation
     for i in 1..=5 {
-        let compile_start = create_build_event(BuildEventType::CompilationStart, Duration::from_millis(0));
-        analytics.record_event(compile_start)?;
+        let compile_start = create_build_event_with_duration(BuildEventType::CompilationStart, Duration::from_millis(0));
+        analytics.record_event(compile_start);
         
         // Simulate compilation with varying complexity
         let duration = Duration::from_millis(200 + i * 100);
-        let compile_end = create_build_event(BuildEventType::CompilationEnd, duration);
-        analytics.record_event(compile_end)?;
+        let compile_end = create_build_event_with_duration(BuildEventType::CompilationEnd, duration);
+        analytics.record_event(compile_end);
         
         // Some cache hits and misses
         if i % 2 == 0 {
-            let cache_hit = create_build_event(BuildEventType::CacheHit, Duration::from_millis(5));
-            analytics.record_event(cache_hit)?;
+            let cache_hit = create_build_event_with_duration(BuildEventType::CacheHit, Duration::from_millis(5));
+            analytics.record_event(cache_hit);
         } else {
-            let cache_miss = create_build_event(BuildEventType::CacheMiss, Duration::from_millis(2));
-            analytics.record_event(cache_miss)?;
+            let cache_miss = create_build_event_with_duration(BuildEventType::CacheMiss, Duration::from_millis(2));
+            analytics.record_event(cache_miss);
         }
     }
     
     // Phase 3: Optimization passes
     for _ in 0..3 {
-        let opt_event = create_build_event(BuildEventType::OptimizationPass, Duration::from_millis(80));
-        analytics.record_event(opt_event)?;
+        let opt_event = create_build_event_with_duration(BuildEventType::OptimizationPass, Duration::from_millis(80));
+        analytics.record_event(opt_event);
     }
     
     // Phase 4: Linking
-    let link_event = create_build_event(BuildEventType::Linking, Duration::from_millis(300));
-    analytics.record_event(link_event)?;
+    let link_event = create_build_event_with_duration(BuildEventType::Linking, Duration::from_millis(300));
+    analytics.record_event(link_event);
     
     println!("⏹️  Stopping build monitoring and analyzing results...");
     let metrics = analytics.stop_build_monitoring()?;
@@ -613,8 +613,8 @@ fn demo_integrated_workflow(workspace: &PathBuf) -> Result<(), Box<dyn std::erro
     
     // Simulate realistic multi-phase build process
     println!("\n📋 Phase 1: Project analysis and dependency resolution");
-    let dep_event = create_build_event(BuildEventType::DependencyResolution, Duration::from_millis(200));
-    analytics.record_event(dep_event)?;
+    let dep_event = create_build_event_with_duration(BuildEventType::DependencyResolution, Duration::from_millis(200));
+    analytics.record_event(dep_event);
     
     // Submit dependency analysis task
     let dep_task = create_memory_aware_task(
@@ -645,13 +645,13 @@ fn demo_integrated_workflow(workspace: &PathBuf) -> Result<(), Box<dyn std::erro
         
         if cached.is_some() {
             // Cache hit - record analytics event
-            let cache_hit = create_build_event(BuildEventType::CacheHit, Duration::from_millis(5));
-            analytics.record_event(cache_hit)?;
+            let cache_hit = create_build_event_with_duration(BuildEventType::CacheHit, Duration::from_millis(5));
+            analytics.record_event(cache_hit);
             println!("   🎯 Cache hit for {}", filename);
         } else {
             // Cache miss - need to compile
-            let cache_miss = create_build_event(BuildEventType::CacheMiss, Duration::from_millis(2));
-            analytics.record_event(cache_miss)?;
+            let cache_miss = create_build_event_with_duration(BuildEventType::CacheMiss, Duration::from_millis(2));
+            analytics.record_event(cache_miss);
             
             // Submit compilation task to memory optimizer
             let task = create_memory_aware_task(
@@ -664,8 +664,8 @@ fn demo_integrated_workflow(workspace: &PathBuf) -> Result<(), Box<dyn std::erro
             
             // Record compilation event
             let duration = Duration::from_millis((memory_mb * 4.0) as u64); // 4ms per MB simulation
-            let compile_event = create_build_event(BuildEventType::CompilationEnd, duration);
-            analytics.record_event(compile_event)?;
+            let compile_event = create_build_event_with_duration(BuildEventType::CompilationEnd, duration);
+            analytics.record_event(compile_event);
             
             // Store result in cache
             let metadata = CacheMetadata {
@@ -688,8 +688,8 @@ fn demo_integrated_workflow(workspace: &PathBuf) -> Result<(), Box<dyn std::erro
     // Phase 3: Optimization passes
     println!("\n⚡ Phase 3: Optimization passes");
     for i in 0..3 {
-        let opt_event = create_build_event(BuildEventType::OptimizationPass, Duration::from_millis(100));
-        analytics.record_event(opt_event)?;
+        let opt_event = create_build_event_with_duration(BuildEventType::OptimizationPass, Duration::from_millis(100));
+        analytics.record_event(opt_event);
         println!("   ⚡ Optimization pass {} completed", i + 1);
     }
     
@@ -708,8 +708,8 @@ fn demo_integrated_workflow(workspace: &PathBuf) -> Result<(), Box<dyn std::erro
     
     memory_optimizer.submit_task(link_task)?;
     
-    let link_event = create_build_event(BuildEventType::Linking, Duration::from_millis(350));
-    analytics.record_event(link_event)?;
+    let link_event = create_build_event_with_duration(BuildEventType::Linking, Duration::from_millis(350));
+    analytics.record_event(link_event);
     println!("   ✅ Linking completed");
     
     // Allow processing time

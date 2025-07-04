@@ -39,11 +39,12 @@ This document provides a prioritized list of missing implementations and fixes n
 
 **Implementation Note**: Lexer now correctly handles CURSED comment syntax according to specifications. Line comments use `fr fr` instead of `//`, and block comments use `no cap` ... `on god` syntax.
 
-### 1.4 Complete Parser Grammar Implementation - **COMPLETED** ✅
+### 1.4 Complete Parser Grammar Implementation - **MOSTLY COMPLETED** ✅
 - **Return types**: Function return types are properly parsed ✅ **COMPLETED**
 - **Function parameter types**: Parser correctly handles "slay add(x normie, y normie) normie" ✅ **COMPLETED**
 - **Type annotations**: Parameter types are string names only ✅ **COMPLETED**
 - **Variable declarations**: Parser correctly handles "sus result normie = ..." ✅ **COMPLETED**
+- **If statements**: Single-line if statements working, multi-line formatting needs fixing ✅ **MOSTLY COMPLETED**
 - **Array/slice syntax**: No support for array literals or indexing
 - **Pattern matching**: Beyond basic switch statements  
 - **Async/await**: Completely missing from parser
@@ -51,7 +52,14 @@ This document provides a prioritized list of missing implementations and fixes n
 
 **Implementation Note**: Parser now correctly handles CURSED type annotations including normie, tea, txt, dm, truth, lies, cap as type tokens. Core parser tests are passing, and basic compilation/execution is working with complex CURSED programs including typed functions and variables.
 
-**Current Issue**: If statement (lowkey) parsing needs fixing as boolean expressions like "based" are not being recognized properly.
+**MOSTLY COMPLETED**: If statement (lowkey) parsing - **MAJOR PROGRESS** ✅
+- **COMPLETED**: Fixed lexer token mapping - "based" and "lies" now correctly map to TokenKind::Truth and TokenKind::Lies
+- **COMPLETED**: Fixed parser boolean parsing - removed TokenKind::Boolean, now properly handles TokenKind::Truth and TokenKind::Lies  
+- **COMPLETED**: Basic if statement parsing now works - single-line if statements execute correctly
+- **COMPLETED**: Boolean expressions work correctly in if conditions
+- **WORKING**: Single-line if statements: `lowkey based {vibez.spill("true branch")}`
+- **WORKING**: Comparison if statements: `lowkey x > 0 {vibez.spill("positive")} highkey {vibez.spill("not positive")}`
+- **REMAINING**: Multi-line if statements with newlines/indentation still fail to parse (formatting issue, not fundamental parsing)
 
 ### 1.5 Implement Core AST Nodes
 - **Replace all stub AST nodes** in `ast_full_backup/` (currently all placeholders)
@@ -196,6 +204,7 @@ This document provides a prioritized list of missing implementations and fixes n
 - **Compilation**: Basic CURSED programs compile and run ✅ **COMPLETED**
 - **Basic execution**: Simple programs with main functions execute correctly ✅ **COMPLETED**
 - **Type annotations**: Advanced CURSED programs with types (e.g., add function with normie parameters) now compile and execute correctly ✅ **COMPLETED**
+- **If statement parsing**: Single-line if statements with boolean expressions and comparisons work correctly ✅ **COMPLETED**
 - **LLVM IR generation**: Compiler generates valid LLVM IR for native compilation ✅ **COMPLETED**
 - **Native executable generation**: Compiler produces working native executables ✅ **COMPLETED**
 - **Self-hosting**: Compiler can compile itself
