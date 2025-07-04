@@ -57,16 +57,16 @@ impl TypeChecker {
     
     fn initialize_builtins(&mut self) {
         // Add built-in variables
-        self.add_variable("vibez".to_string(), TypeExpression::named("vibez"));
+        self.add_variable("vibez".to_string(), TypeExpression::named("vibes"));
         
         // Add built-in functions
         self.add_function("print".to_string(), 
-                         vec![TypeExpression::named("string")], 
-                         TypeExpression::named("void"));
+                         vec![TypeExpression::named("tea")], 
+                         TypeExpression::named("cap"));
         
         self.add_function("len".to_string(),
-                         vec![TypeExpression::named("string")],
-                         TypeExpression::named("int"));
+                         vec![TypeExpression::named("tea")],
+                         TypeExpression::named("normie"));
     }
     
     /// Convert AST type string to TypeExpression
@@ -106,14 +106,14 @@ impl TypeChecker {
                     // For now, use basic type inference
                     return self.infer_expression_type(expr);
                 } else {
-                    // Return without value implies void
-                    return TypeExpression::named("void");
+                    // Return without value implies cap (CURSED void)
+                    return TypeExpression::named("cap");
                 }
             }
         }
         
-        // No return statement found, assume void
-        TypeExpression::named("void")
+        // No return statement found, assume cap (CURSED void)
+        TypeExpression::named("cap")
     }
     
     /// Basic expression type inference for return type analysis
@@ -503,11 +503,11 @@ impl TypeChecker {
     
     fn check_literal(&self, literal: &Literal) -> Result<TypeExpression, TypeCheckError> {
         match literal {
-            Literal::Integer(_) => Ok(TypeExpression::named("int")),
-            Literal::Float(_) => Ok(TypeExpression::named("float")),
-            Literal::String(_) => Ok(TypeExpression::named("string")),
-            Literal::Boolean(_) => Ok(TypeExpression::named("bool")),
-            Literal::Null | Literal::Nil => Ok(TypeExpression::named("void")),
+            Literal::Integer(_) => Ok(TypeExpression::named("normie")),
+            Literal::Float(_) => Ok(TypeExpression::named("snack")),
+            Literal::String(_) => Ok(TypeExpression::named("tea")),
+            Literal::Boolean(_) => Ok(TypeExpression::named("vibes")),
+            Literal::Null | Literal::Nil => Ok(TypeExpression::named("cap")),
         }
     }
     
@@ -686,7 +686,7 @@ impl TypeChecker {
         let return_type = if let Some(value) = &return_stmt.value {
             self.check_expression(value)?
         } else {
-            TypeExpression::named("void")
+            TypeExpression::named("cap")
         };
         
         // Check against current function's return type
@@ -741,7 +741,7 @@ impl TypeChecker {
                     let return_type = if let Some(value) = &return_stmt.value {
                         self.check_expression(value)?
                     } else {
-                        TypeExpression::named("void")
+                        TypeExpression::named("cap")
                     };
                     return_types.push(return_type);
                 }
@@ -762,7 +762,7 @@ impl TypeChecker {
     
     fn unify_return_types(&self, return_types: &[TypeExpression]) -> Result<TypeExpression, TypeCheckError> {
         if return_types.is_empty() {
-            return Ok(TypeExpression::named("void"));
+            return Ok(TypeExpression::named("cap"));
         }
         
         let mut unified_type = return_types[0].clone();
@@ -831,9 +831,9 @@ impl TypeChecker {
     fn is_numeric_type(&self, type_expr: &TypeExpression) -> bool {
         if let Some(name) = &type_expr.name {
             matches!(name.as_str(), 
-                "int" | "float" |          // Standard types
                 "normie" | "thicc" |       // CURSED integer types
-                "snack" | "meal"           // CURSED float types
+                "snack" | "meal" |         // CURSED float types
+                "int" | "float"            // Standard types (fallback)
             )
         } else {
             false
@@ -843,8 +843,8 @@ impl TypeChecker {
     fn is_bool_type(&self, type_expr: &TypeExpression) -> bool {
         if let Some(name) = &type_expr.name {
             matches!(name.as_str(), 
-                "bool" |                   // Standard type
-                "vibes" | "lit"            // CURSED boolean types
+                "vibes" | "lit" |          // CURSED boolean types
+                "bool"                     // Standard type (fallback)
             )
         } else {
             false
@@ -1233,17 +1233,17 @@ mod tests {
         // Test integer literal
         let expr = Expression::Integer(42);
         let result = checker.check_expression(&expr).unwrap();
-        assert_eq!(result.name, Some("int".to_string()));
+        assert_eq!(result.name, Some("normie".to_string()));
         
         // Test string literal
         let expr = Expression::String("hello".to_string());
         let result = checker.check_expression(&expr).unwrap();
-        assert_eq!(result.name, Some("string".to_string()));
+        assert_eq!(result.name, Some("tea".to_string()));
         
         // Test boolean literal
         let expr = Expression::Boolean(true);
         let result = checker.check_expression(&expr).unwrap();
-        assert_eq!(result.name, Some("bool".to_string()));
+        assert_eq!(result.name, Some("vibes".to_string()));
     }
     
     #[test]
@@ -1348,7 +1348,7 @@ mod tests {
         
         let result = checker.visit_expression(&expr);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().name, Some("int".to_string()));
+        assert_eq!(result.unwrap().name, Some("normie".to_string()));
         
         // Test visiting statements
         let stmt = Statement::If(IfStatement {
