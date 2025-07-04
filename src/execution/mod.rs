@@ -23,6 +23,8 @@ pub struct CursedExecutionEngine {
     jit_enabled: bool,
     goroutine_support: bool,
     gc_enabled: bool,
+    recursion_depth: usize,
+    max_recursion_depth: usize,
 }
 
 impl CursedExecutionEngine {
@@ -31,6 +33,8 @@ impl CursedExecutionEngine {
             jit_enabled: true,
             goroutine_support: true,
             gc_enabled: true,
+            recursion_depth: 0,
+            max_recursion_depth: 1000,
         })
     }
     
@@ -80,7 +84,10 @@ impl CursedExecutionEngine {
         // Execute each statement
         let mut last_value = CursedValue::Nil;
         for statement in &program.statements {
-            last_value = self.execute_statement(statement, &mut context)?;
+            match self.execute_statement(statement, &mut context)? {
+                ExecutionFlow::Continue(value) => last_value = value,
+                ExecutionFlow::Return(value) => return Ok(value), // Early return from program
+            }
         }
         
         // After processing all statements, check if there's a main function and call it
@@ -118,31 +125,33 @@ impl CursedExecutionEngine {
         }
     }
     
-    fn execute_statement(&mut self, statement: &crate::ast::Statement, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+    fn execute_statement(&mut self, statement: &crate::ast::Statement, context: &mut ExecutionContext) -> Result<ExecutionFlow, CursedError> {
         use crate::ast::Statement;
         
         log::debug!("🔧 Executing statement type: {:?}", std::mem::discriminant(statement));
         match statement {
             Statement::Expression(expr) => {
-                self.evaluate_expression(expr, context)
+                let value = self.evaluate_expression(expr, context)?;
+                Ok(ExecutionFlow::Continue(value))
             },
             Statement::Let(let_stmt) => {
                 let value = self.evaluate_expression(&let_stmt.value, context)?;
                 context.set_variable(let_stmt.name.clone(), value.clone());
                 // For assignment statements, return the value that was assigned
-                Ok(value)
+                Ok(ExecutionFlow::Continue(value))
             },
             Statement::Assignment(assign_stmt) => {
                 let value = self.evaluate_expression(&assign_stmt.value, context)?;
                 context.set_variable(assign_stmt.name.clone(), value.clone());
                 // For assignment statements, return the value that was assigned
-                Ok(value)
+                Ok(ExecutionFlow::Continue(value))
             },
             Statement::Return(return_stmt) => {
                 if let Some(expr) = &return_stmt.value {
-                    self.evaluate_expression(expr, context)
+                    let value = self.evaluate_expression(expr, context)?;
+                    Ok(ExecutionFlow::Return(value))
                 } else {
-                    Ok(CursedValue::Nil)
+                    Ok(ExecutionFlow::Return(CursedValue::Nil))
                 }
             },
             Statement::Function(func_stmt) => {
@@ -150,24 +159,30 @@ impl CursedExecutionEngine {
                 log::info!("📝 Storing function definition: {} with {} parameters", func_stmt.name, func_stmt.parameters.len());
                 log::debug!("📝 Function body has {} statements", func_stmt.body.len());
                 context.set_function(func_stmt.name.clone(), func_stmt.clone());
-                Ok(CursedValue::Nil)
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::If(if_stmt) => {
                 let condition = self.evaluate_expression(&if_stmt.condition, context)?;
                 if self.is_truthy(&condition) {
                     let mut last_value = CursedValue::Nil;
                     for stmt in &if_stmt.then_branch {
-                        last_value = self.execute_statement(stmt, context)?;
+                        match self.execute_statement(stmt, context)? {
+                            ExecutionFlow::Continue(value) => last_value = value,
+                            ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                        }
                     }
-                    Ok(last_value)
+                    Ok(ExecutionFlow::Continue(last_value))
                 } else if let Some(else_branch) = &if_stmt.else_branch {
                     let mut last_value = CursedValue::Nil;
                     for stmt in else_branch {
-                        last_value = self.execute_statement(stmt, context)?;
+                        match self.execute_statement(stmt, context)? {
+                            ExecutionFlow::Continue(value) => last_value = value,
+                            ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                        }
                     }
-                    Ok(last_value)
+                    Ok(ExecutionFlow::Continue(last_value))
                 } else {
-                    Ok(CursedValue::Nil)
+                    Ok(ExecutionFlow::Continue(CursedValue::Nil))
                 }
             },
             Statement::While(while_stmt) => {
@@ -178,15 +193,21 @@ impl CursedExecutionEngine {
                         break;
                     }
                     for stmt in &while_stmt.body {
-                        last_value = self.execute_statement(stmt, context)?;
+                        match self.execute_statement(stmt, context)? {
+                            ExecutionFlow::Continue(value) => last_value = value,
+                            ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                        }
                     }
                 }
-                Ok(last_value)
+                Ok(ExecutionFlow::Continue(last_value))
             },
             Statement::For(for_stmt) => {
                 // Initialize
                 if let Some(init) = &for_stmt.init {
-                    self.execute_statement(init, context)?;
+                    match self.execute_statement(init, context)? {
+                        ExecutionFlow::Continue(_) => {},
+                        ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                    }
                 }
                 
                 let mut last_value = CursedValue::Nil;
@@ -201,7 +222,10 @@ impl CursedExecutionEngine {
                     
                     // Execute body
                     for stmt in &for_stmt.body {
-                        last_value = self.execute_statement(stmt, context)?;
+                        match self.execute_statement(stmt, context)? {
+                            ExecutionFlow::Continue(value) => last_value = value,
+                            ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                        }
                     }
                     
                     // Update
@@ -209,7 +233,7 @@ impl CursedExecutionEngine {
                         self.evaluate_expression(update, context)?;
                     }
                 }
-                Ok(last_value)
+                Ok(ExecutionFlow::Continue(last_value))
             },
             Statement::Switch(switch_stmt) => {
                 let switch_value = self.evaluate_expression(&switch_stmt.expression, context)?;
@@ -220,9 +244,12 @@ impl CursedExecutionEngine {
                     if self.values_equal(&switch_value, &case_value) {
                         let mut last_value = CursedValue::Nil;
                         for stmt in &case.body {
-                            last_value = self.execute_statement(stmt, context)?;
+                            match self.execute_statement(stmt, context)? {
+                                ExecutionFlow::Continue(value) => last_value = value,
+                                ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                            }
                         }
-                        return Ok(last_value);
+                        return Ok(ExecutionFlow::Continue(last_value));
                     }
                 }
                 
@@ -230,37 +257,40 @@ impl CursedExecutionEngine {
                 if let Some(default_body) = &switch_stmt.default_case {
                     let mut last_value = CursedValue::Nil;
                     for stmt in default_body {
-                        last_value = self.execute_statement(stmt, context)?;
+                        match self.execute_statement(stmt, context)? {
+                            ExecutionFlow::Continue(value) => last_value = value,
+                            ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                        }
                     }
-                    Ok(last_value)
+                    Ok(ExecutionFlow::Continue(last_value))
                 } else {
-                    Ok(CursedValue::Nil)
+                    Ok(ExecutionFlow::Continue(CursedValue::Nil))
                 }
             },
             Statement::Goroutine(_) => {
                 // For now, just return nil - goroutines need more complex implementation
-                Ok(CursedValue::Nil)
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::Channel(_) => {
                 // For now, just return nil - channels need more complex implementation
-                Ok(CursedValue::Nil)
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::Select(_) => {
                 // For now, just return nil - select statements need more complex implementation
                 log::info!("📺 Select statement execution not yet implemented");
-                Ok(CursedValue::Nil)
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::Struct(struct_stmt) => {
                 // Store struct definition in context for type checking
                 log::info!("📝 Storing struct definition: {} with {} fields", struct_stmt.name, struct_stmt.fields.len());
                 // TODO: Implement actual struct storage
-                Ok(CursedValue::Nil)
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::Interface(interface_stmt) => {
                 // Store interface definition in context for type checking
                 log::info!("📝 Storing interface definition: {} with {} methods", interface_stmt.name, interface_stmt.methods.len());
                 // TODO: Implement actual interface storage
-                Ok(CursedValue::Nil)
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::Panic(panic_stmt) => {
                 // Evaluate the panic message
@@ -279,7 +309,8 @@ impl CursedExecutionEngine {
                 
                 for stmt in &catch_stmt.protected_block {
                     match self.execute_statement(stmt, context) {
-                        Ok(val) => last_value = val,
+                        Ok(ExecutionFlow::Continue(val)) => last_value = val,
+                        Ok(ExecutionFlow::Return(val)) => return Ok(ExecutionFlow::Return(val)),
                         Err(err) => {
                             log::warn!("🚨 Caught error in catch block: {:?}", err);
                             error_occurred = true;
@@ -293,7 +324,10 @@ impl CursedExecutionEngine {
                             // Execute recovery block if it exists
                             if let Some(recovery) = &catch_stmt.recovery_block {
                                 for recovery_stmt in recovery {
-                                    last_value = self.execute_statement(recovery_stmt, context)?;
+                                    match self.execute_statement(recovery_stmt, context)? {
+                                        ExecutionFlow::Continue(val) => last_value = val,
+                                        ExecutionFlow::Return(val) => return Ok(ExecutionFlow::Return(val)),
+                                    }
                                 }
                             }
                             break;
@@ -305,7 +339,7 @@ impl CursedExecutionEngine {
                     log::info!("✅ Protected block completed without errors");
                 }
                 
-                Ok(last_value)
+                Ok(ExecutionFlow::Continue(last_value))
             },
         }
     }
@@ -581,11 +615,23 @@ impl CursedExecutionEngine {
                         log::info!("🔍 Looking for function: {}", func_name);
                         if let Some(func_def) = context.get_function(func_name) {
                             log::info!("✅ Found function: {}", func_name);
+                            
+                            // Check recursion depth
+                            if self.recursion_depth >= self.max_recursion_depth {
+                                return Err(CursedError::RuntimeError(format!(
+                                    "Maximum recursion depth exceeded ({})", self.max_recursion_depth
+                                )));
+                            }
+                            
+                            // Increment recursion depth
+                            self.recursion_depth += 1;
+                            
                             // Create child context for function execution (inherits functions)
                             let mut func_context = context.new_child();
                             
                             // Bind parameters
                             if call_expr.arguments.len() != func_def.parameters.len() {
+                                self.recursion_depth -= 1; // Restore depth on error
                                 return Err(CursedError::RuntimeError(format!(
                                     "Function {} expects {} arguments, got {}",
                                     func_name, func_def.parameters.len(), call_expr.arguments.len()
@@ -597,12 +643,20 @@ impl CursedExecutionEngine {
                                 func_context.set_variable(param.name.clone(), arg_value);
                             }
                             
-                            // Execute function body
+                            // Execute function body with proper return handling
                             let mut result = CursedValue::Nil;
                             for stmt in &func_def.body {
-                                result = self.execute_statement(stmt, &mut func_context)?;
+                                match self.execute_statement(stmt, &mut func_context)? {
+                                    ExecutionFlow::Continue(value) => result = value,
+                                    ExecutionFlow::Return(value) => {
+                                        result = value;
+                                        break; // Early return from function
+                                    }
+                                }
                             }
                             
+                            // Decrement recursion depth before returning
+                            self.recursion_depth -= 1;
                             Ok(result)
                         } else {
                             log::error!("❌ Function not found: {}", func_name);
@@ -696,6 +750,13 @@ pub enum CursedValue {
     Boolean(bool),
     Channel(Arc<SimpleChannel<CursedValue>>),
     Nil,
+}
+
+/// Control flow for execution
+#[derive(Debug, Clone)]
+pub enum ExecutionFlow {
+    Continue(CursedValue),
+    Return(CursedValue),
 }
 
 /// Value manager for runtime operations
