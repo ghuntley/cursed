@@ -1376,14 +1376,19 @@ impl Parser {
     fn parse_generic_parameters(&mut self) -> Result<Vec<crate::ast::TypeParameter>, CursedError> {
         let mut type_parameters = Vec::new();
         
-        // Check if we have generic parameters
-        if !self.check(&TokenKind::LeftAngle) {
+        // Check if we have generic parameters (accept both Less and LeftAngle)
+        if !self.check(&TokenKind::LeftAngle) && !self.check(&TokenKind::Less) {
             return Ok(type_parameters);
         }
         
-        self.consume(TokenKind::LeftAngle, "Expected '<'")?;
+        // Accept either LeftAngle or Less for generic parameters
+        if self.check(&TokenKind::LeftAngle) {
+            self.consume(TokenKind::LeftAngle, "Expected '<'")?;
+        } else {
+            self.consume(TokenKind::Less, "Expected '<'")?;
+        }
         
-        if !self.check(&TokenKind::RightAngle) {
+        if !self.check(&TokenKind::RightAngle) && !self.check(&TokenKind::Greater) {
             loop {
                 let name = self.consume(TokenKind::Identifier, "Expected type parameter name")?.lexeme.clone();
                 let mut bounds = Vec::new();
@@ -1408,7 +1413,12 @@ impl Parser {
             }
         }
         
-        self.consume(TokenKind::RightAngle, "Expected '>'")?;
+        // Accept either RightAngle or Greater for closing generic parameters
+        if self.check(&TokenKind::RightAngle) {
+            self.consume(TokenKind::RightAngle, "Expected '>'")?;
+        } else {
+            self.consume(TokenKind::Greater, "Expected '>'")?;
+        }
         Ok(type_parameters)
     }
 
@@ -1502,6 +1512,8 @@ slay compare<T: Clone + Debug>(a, b) {
             panic!("Expected function statement");
         }
     }
+
+
 
     #[test]
     fn test_generic_function_with_where_clause() {

@@ -382,6 +382,9 @@ impl CursedFormatter {
             TokenType::StanKeyword => {
                 self.format_stan_goroutine(tokens, index)
             },
+            TokenType::YoloKeyword => {
+                self.format_yolo_statement(tokens, index)
+            },
             TokenType::LeftBrace => {
                 self.format_opening_brace(tokens, index)
             },
@@ -395,6 +398,10 @@ impl CursedFormatter {
                 self.format_comment(tokens, index)
             },
             _ => {
+                // Add indentation if we're starting a new line inside a block
+                if self.current_line.is_empty() && self.indentation_level > 0 {
+                    self.add_indentation();
+                }
                 self.add_token_to_current_line(&token.value);
                 Ok(index + 1)
             }
@@ -479,6 +486,7 @@ impl CursedFormatter {
             let token = &tokens[next_index];
             match token.token_type {
                 TokenType::LeftBrace => {
+                    // Don't consume the left brace, let the main formatter handle it
                     break;
                 },
                 TokenType::LeftParen => {
@@ -689,6 +697,44 @@ impl CursedFormatter {
         Ok(next_index)
     }
 
+    /// Format a yolo (return/print) statement
+    fn format_yolo_statement(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
+        // Add indentation if we're starting a new line inside a block
+        if self.current_line.is_empty() && self.indentation_level > 0 {
+            self.add_indentation();
+        }
+        self.add_token_to_current_line("yolo");
+        let mut next_index = index + 1;
+        
+        // Add space after yolo
+        self.add_token_to_current_line(" ");
+        
+        // Handle expression until semicolon, newline, or closing brace
+        while next_index < tokens.len() {
+            let token = &tokens[next_index];
+            match token.token_type {
+                TokenType::Semicolon => {
+                    self.add_token_to_current_line(";");
+                    next_index += 1;
+                    break;
+                },
+                TokenType::Newline => {
+                    break;
+                },
+                TokenType::RightBrace => {
+                    // Don't consume the right brace, let the main formatter handle it
+                    break;
+                },
+                _ => {
+                    self.add_token_to_current_line(&token.value);
+                    next_index += 1;
+                }
+            }
+        }
+        
+        Ok(next_index)
+    }
+
     /// Format an opening brace
     fn format_opening_brace(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
         match self.config.options.brace_style {
@@ -769,11 +815,6 @@ impl CursedFormatter {
             self.line_buffer.push(self.current_line.clone());
         }
         self.current_line.clear();
-        
-        // Add indentation for the next line if we're inside a block
-        if self.indentation_level > 0 {
-            self.add_indentation();
-        }
     }
 
     /// Finalize the output and return the formatted string

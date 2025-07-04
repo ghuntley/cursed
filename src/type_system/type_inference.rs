@@ -58,9 +58,9 @@ impl TypeInference {
     /// Infer types for expressions with advanced constraint solving
     pub fn infer_expression_type(&mut self, expr: &Expression) -> Result<TypeExpression, CursedError> {
         match expr {
-            Expression::Integer(_) => Ok(TypeExpression::named("int")),
-            Expression::String(_) => Ok(TypeExpression::named("string")),
-            Expression::Boolean(_) => Ok(TypeExpression::named("bool")),
+            Expression::Integer(_) => Ok(TypeExpression::named("normie")),
+            Expression::String(_) => Ok(TypeExpression::named("tea")),
+            Expression::Boolean(_) => Ok(TypeExpression::named("vibes")),
             Expression::Identifier(name) => {
                 // Look up or create fresh type variable
                 if let Some(type_expr) = self.inference_context.type_vars.get(name) {
@@ -75,31 +75,47 @@ impl TypeInference {
                 let left_type = self.infer_expression_type(&binary.left)?;
                 let right_type = self.infer_expression_type(&binary.right)?;
                 
-                // Create constraints for binary operations
-                let result_type = self.fresh_type_variable();
-                
                 match binary.operator.as_str() {
                     "+" | "-" | "*" | "/" => {
-                        // Arithmetic operations: both operands must be numeric
-                        self.add_unification_constraint(left_type.clone(), TypeExpression::named("int"), "arithmetic left operand".to_string());
-                        self.add_unification_constraint(right_type.clone(), TypeExpression::named("int"), "arithmetic right operand".to_string());
-                        self.add_unification_constraint(result_type.clone(), TypeExpression::named("int"), "arithmetic result".to_string());
+                        // For simple arithmetic with concrete types, return concrete type
+                        if left_type.name == Some("normie".to_string()) && right_type.name == Some("normie".to_string()) {
+                            Ok(TypeExpression::named("normie"))
+                        } else {
+                            // Create constraints for complex cases
+                            let result_type = self.fresh_type_variable();
+                            self.add_unification_constraint(left_type.clone(), TypeExpression::named("normie"), "arithmetic left operand".to_string());
+                            self.add_unification_constraint(right_type.clone(), TypeExpression::named("normie"), "arithmetic right operand".to_string());
+                            self.add_unification_constraint(result_type.clone(), TypeExpression::named("normie"), "arithmetic result".to_string());
+                            Ok(result_type)
+                        }
                     }
                     "==" | "!=" | "<" | ">" | "<=" | ">=" => {
-                        // Comparison operations: operands must be the same type
-                        self.add_unification_constraint(left_type, right_type, "comparison operands".to_string());
-                        self.add_unification_constraint(result_type.clone(), TypeExpression::named("bool"), "comparison result".to_string());
+                        // For simple comparisons with concrete types, return concrete type
+                        if left_type.name.is_some() && right_type.name.is_some() {
+                            Ok(TypeExpression::named("vibes"))
+                        } else {
+                            // Create constraints for complex cases
+                            let result_type = self.fresh_type_variable();
+                            self.add_unification_constraint(left_type, right_type, "comparison operands".to_string());
+                            self.add_unification_constraint(result_type.clone(), TypeExpression::named("vibes"), "comparison result".to_string());
+                            Ok(result_type)
+                        }
                     }
                     "&&" | "||" => {
-                        // Logical operations: both operands must be bool
-                        self.add_unification_constraint(left_type, TypeExpression::named("bool"), "logical left operand".to_string());
-                        self.add_unification_constraint(right_type, TypeExpression::named("bool"), "logical right operand".to_string());
-                        self.add_unification_constraint(result_type.clone(), TypeExpression::named("bool"), "logical result".to_string());
+                        // For simple logical with concrete types, return concrete type
+                        if left_type.name == Some("vibes".to_string()) && right_type.name == Some("vibes".to_string()) {
+                            Ok(TypeExpression::named("vibes"))
+                        } else {
+                            // Create constraints for complex cases
+                            let result_type = self.fresh_type_variable();
+                            self.add_unification_constraint(left_type, TypeExpression::named("vibes"), "logical left operand".to_string());
+                            self.add_unification_constraint(right_type, TypeExpression::named("vibes"), "logical right operand".to_string());
+                            self.add_unification_constraint(result_type.clone(), TypeExpression::named("vibes"), "logical result".to_string());
+                            Ok(result_type)
+                        }
                     }
                     _ => return Err(CursedError::type_error(&format!("Unknown binary operator: {}", binary.operator))),
                 }
-                
-                Ok(result_type)
             }
             Expression::Array(elements) => {
                 if elements.is_empty() {

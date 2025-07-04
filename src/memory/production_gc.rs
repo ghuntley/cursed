@@ -399,7 +399,7 @@ impl ProductionGarbageCollector {
         let regions = self.regions.read().unwrap();
         let young_region = &regions[0];
         
-        if let Some(obj) = self.try_allocate_in_region(young_region, total_size, tag)? {
+        if let Some(obj) = self.try_allocate_in_region(young_region, total_size, size, tag)? {
             self.allocation_counter.fetch_add(total_size, Ordering::Relaxed);
             self.check_gc_trigger();
             return Ok(obj);
@@ -408,7 +408,7 @@ impl ProductionGarbageCollector {
         // Try old generation
         if regions.len() > 1 {
             let old_region = &regions[1];
-            if let Some(obj) = self.try_allocate_in_region(old_region, total_size, tag)? {
+            if let Some(obj) = self.try_allocate_in_region(old_region, total_size, size, tag)? {
                 self.allocation_counter.fetch_add(total_size, Ordering::Relaxed);
                 self.check_gc_trigger();
                 return Ok(obj);
@@ -422,7 +422,7 @@ impl ProductionGarbageCollector {
         let regions = self.regions.read().unwrap();
         let young_region = &regions[0];
         
-        if let Some(obj) = self.try_allocate_in_region(young_region, total_size, tag)? {
+        if let Some(obj) = self.try_allocate_in_region(young_region, total_size, size, tag)? {
             self.allocation_counter.fetch_add(total_size, Ordering::Relaxed);
             return Ok(obj);
         }
@@ -434,15 +434,16 @@ impl ProductionGarbageCollector {
     fn try_allocate_in_region(
         &self,
         region: &HeapRegion,
-        size: usize,
+        total_size: usize,
+        requested_size: usize,
         tag: Tag,
     ) -> Result<Option<NonNull<HeapObject>>, CursedError> {
         // Try to allocate from free blocks first
         {
             let mut free_blocks = region.free_blocks.lock().unwrap();
             if let Some((ptr, block_size)) = free_blocks.pop_front() {
-                if block_size >= size {
-                    let obj = unsafe { self.initialize_object(ptr.as_ptr(), size, tag, region.generation) };
+                if block_size >= total_size {
+                    let obj = unsafe { self.initialize_object(ptr.as_ptr(), requested_size, tag, region.generation) };
                     return Ok(Some(obj));
                 }
                 // Put back if too small
@@ -453,7 +454,7 @@ impl ProductionGarbageCollector {
         // Try bump allocation
         loop {
             let current = region.alloc_ptr.load(Ordering::Acquire);
-            let new_ptr = unsafe { current.add(size) };
+            let new_ptr = unsafe { current.add(total_size) };
             
             if new_ptr > region.end {
                 return Ok(None); // Region full
@@ -466,7 +467,7 @@ impl ProductionGarbageCollector {
                 Ordering::Relaxed,
             ) {
                 Ok(_) => {
-                    let obj = unsafe { self.initialize_object(current, size, tag, region.generation) };
+                    let obj = unsafe { self.initialize_object(current, requested_size, tag, region.generation) };
                     return Ok(Some(obj));
                 }
                 Err(_) => continue, // Retry
