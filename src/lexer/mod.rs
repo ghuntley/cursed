@@ -97,6 +97,14 @@ pub enum TokenKind {
     AmpAmp,         // &&
     PipePipe,       // ||
     
+    // Assignment operators
+    PlusEqual,      // +=
+    MinusEqual,     // -=
+    StarEqual,      // *=
+    SlashEqual,     // /=
+    PercentEqual,   // %=
+    ColonEqual,     // :=
+    
     // Delimiters
     LeftParen,
     RightParen,
@@ -146,11 +154,41 @@ impl Lexer {
         let c = self.advance();
         
         match c {
-            '+' => Ok(self.make_token(TokenKind::Plus, "+".to_string(), start_column)),
-            '-' => Ok(self.make_token(TokenKind::Minus, "-".to_string(), start_column)),
-            '*' => Ok(self.make_token(TokenKind::Star, "*".to_string(), start_column)),
-            '/' => Ok(self.make_token(TokenKind::Slash, "/".to_string(), start_column)),
-            '%' => Ok(self.make_token(TokenKind::Percent, "%".to_string(), start_column)),
+            '+' => {
+                if self.match_char('=') {
+                    Ok(self.make_token(TokenKind::PlusEqual, "+=".to_string(), start_column))
+                } else {
+                    Ok(self.make_token(TokenKind::Plus, "+".to_string(), start_column))
+                }
+            },
+            '-' => {
+                if self.match_char('=') {
+                    Ok(self.make_token(TokenKind::MinusEqual, "-=".to_string(), start_column))
+                } else {
+                    Ok(self.make_token(TokenKind::Minus, "-".to_string(), start_column))
+                }
+            },
+            '*' => {
+                if self.match_char('=') {
+                    Ok(self.make_token(TokenKind::StarEqual, "*=".to_string(), start_column))
+                } else {
+                    Ok(self.make_token(TokenKind::Star, "*".to_string(), start_column))
+                }
+            },
+            '/' => {
+                if self.match_char('=') {
+                    Ok(self.make_token(TokenKind::SlashEqual, "/=".to_string(), start_column))
+                } else {
+                    Ok(self.make_token(TokenKind::Slash, "/".to_string(), start_column))
+                }
+            },
+            '%' => {
+                if self.match_char('=') {
+                    Ok(self.make_token(TokenKind::PercentEqual, "%=".to_string(), start_column))
+                } else {
+                    Ok(self.make_token(TokenKind::Percent, "%".to_string(), start_column))
+                }
+            },
             '(' => Ok(self.make_token(TokenKind::LeftParen, "(".to_string(), start_column)),
             ')' => Ok(self.make_token(TokenKind::RightParen, ")".to_string(), start_column)),
             '{' => Ok(self.make_token(TokenKind::LeftBrace, "{".to_string(), start_column)),
@@ -162,6 +200,8 @@ impl Lexer {
             ':' => {
                 if self.match_char(':') {
                     Ok(self.make_token(TokenKind::DoubleColon, "::".to_string(), start_column))
+                } else if self.match_char('=') {
+                    Ok(self.make_token(TokenKind::ColonEqual, ":=".to_string(), start_column))
                 } else {
                     Ok(self.make_token(TokenKind::Colon, ":".to_string(), start_column))
                 }
@@ -228,6 +268,7 @@ impl Lexer {
                 Ok(self.make_token(TokenKind::Newline, "\n".to_string(), start_column))
             },
             '"' => self.string_literal(start_column),
+            '`' => self.raw_string_literal(start_column),
             '\0' => Ok(Token {
                 kind: TokenKind::Eof,
                 lexeme: "".to_string(),
@@ -331,8 +372,29 @@ impl Lexer {
             if self.peek() == '\n' {
                 self.line += 1;
                 self.column = 1;
+                value.push(self.advance());
+            } else if self.peek() == '\\' {
+                // Handle escape sequences
+                self.advance(); // consume backslash
+                if self.is_at_end() {
+                    return Err(CursedError::syntax_error("Unterminated string escape"));
+                }
+                
+                match self.advance() {
+                    'n' => value.push('\n'),
+                    't' => value.push('\t'),
+                    'r' => value.push('\r'),
+                    '\\' => value.push('\\'),
+                    '"' => value.push('"'),
+                    '\'' => value.push('\''),
+                    '0' => value.push('\0'),
+                    c => {
+                        return Err(CursedError::syntax_error(&format!("Invalid escape sequence: \\{}", c)));
+                    }
+                }
+            } else {
+                value.push(self.advance());
             }
-            value.push(self.advance());
         }
         
         if self.is_at_end() {
@@ -340,6 +402,27 @@ impl Lexer {
         }
         
         // Consume closing quote
+        self.advance();
+        
+        Ok(self.make_token(TokenKind::String, value, start_column))
+    }
+
+    fn raw_string_literal(&mut self, start_column: usize) -> Result<Token, CursedError> {
+        let mut value = String::new();
+        
+        while !self.is_at_end() && self.peek() != '`' {
+            if self.peek() == '\n' {
+                self.line += 1;
+                self.column = 1;
+            }
+            value.push(self.advance());
+        }
+        
+        if self.is_at_end() {
+            return Err(CursedError::syntax_error("Unterminated raw string"));
+        }
+        
+        // Consume closing backtick
         self.advance();
         
         Ok(self.make_token(TokenKind::String, value, start_column))
@@ -359,11 +442,45 @@ impl Lexer {
             return Err(CursedError::syntax_error("Cannot parse number at start of input"));
         }
         
+        // Check for binary (0b), octal (0o), or hexadecimal (0x) prefixes
+        if value == "0" && !self.is_at_end() {
+            match self.peek() {
+                'b' | 'B' => {
+                    // Binary number (0b...)
+                    value.push(self.advance()); // consume 'b'
+                    while !self.is_at_end() && matches!(self.peek(), '0' | '1') {
+                        value.push(self.advance());
+                    }
+                    return Ok(self.make_token(TokenKind::Number, value, start_column));
+                },
+                'o' | 'O' => {
+                    // Octal number (0o...)
+                    value.push(self.advance()); // consume 'o'
+                    while !self.is_at_end() && self.peek().is_ascii_digit() && self.peek() < '8' {
+                        value.push(self.advance());
+                    }
+                    return Ok(self.make_token(TokenKind::Number, value, start_column));
+                },
+                'x' | 'X' => {
+                    // Hexadecimal number (0x...)
+                    value.push(self.advance()); // consume 'x'
+                    while !self.is_at_end() && self.peek().is_ascii_hexdigit() {
+                        value.push(self.advance());
+                    }
+                    return Ok(self.make_token(TokenKind::Number, value, start_column));
+                },
+                _ => {
+                    // Continue with regular decimal parsing
+                }
+            }
+        }
+        
+        // Regular decimal number parsing
         while !self.is_at_end() && self.peek().is_ascii_digit() {
             value.push(self.advance());
         }
         
-        // Handle decimal
+        // Handle decimal point
         if !self.is_at_end() && self.peek() == '.' && self.peek_next().is_ascii_digit() {
             value.push(self.advance()); // consume '.'
             while !self.is_at_end() && self.peek().is_ascii_digit() {

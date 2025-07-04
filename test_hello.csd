@@ -1,5 +1,1 @@
-vibe main;
-
-slay main() {
-    yolo "Hello, World!"
-}
+slay main() { vibez.spill("Hello, CURSED world!"); }

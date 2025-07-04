@@ -497,6 +497,48 @@ impl CursedExecutionEngine {
                     _ => Err(CursedError::RuntimeError(format!("Unsupported string operator: {}", operator))),
                 }
             },
+            // String + Integer concatenation
+            (CursedValue::String(l), CursedValue::Integer(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported string-integer operator: {}", operator))),
+                }
+            },
+            // Integer + String concatenation  
+            (CursedValue::Integer(l), CursedValue::String(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported integer-string operator: {}", operator))),
+                }
+            },
+            // String + Float concatenation
+            (CursedValue::String(l), CursedValue::Float(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported string-float operator: {}", operator))),
+                }
+            },
+            // Float + String concatenation
+            (CursedValue::Float(l), CursedValue::String(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported float-string operator: {}", operator))),
+                }
+            },
+            // String + Boolean concatenation
+            (CursedValue::String(l), CursedValue::Boolean(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported string-boolean operator: {}", operator))),
+                }
+            },
+            // Boolean + String concatenation
+            (CursedValue::Boolean(l), CursedValue::String(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported boolean-string operator: {}", operator))),
+                }
+            },
             _ => Err(CursedError::RuntimeError(format!("Type mismatch in binary operation: {:?} {} {:?}", left, operator, right))),
         }
     }
