@@ -1,3 +1,0 @@
-slay main() {
-    yolo
-}

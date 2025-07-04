@@ -68,6 +68,13 @@ impl ExpressionCompiler {
             Expression::ChannelCreation(create_expr) => {
                 self.compile_channel_creation(&create_expr.element_type, &create_expr.capacity)
             },
+            Expression::StructLiteral(struct_literal) => {
+                // Convert StructFieldAssignment to (String, Expression) tuples
+                let field_tuples: Vec<(String, Expression)> = struct_literal.fields.iter()
+                    .map(|field| (field.field_name.clone(), field.value.clone()))
+                    .collect();
+                self.compile_struct_literal(&struct_literal.struct_name, &field_tuples)
+            },
 
         }
     }
@@ -599,4 +606,6 @@ impl ExpressionCompiler {
 
         Ok(result_reg)
     }
+
+
 }

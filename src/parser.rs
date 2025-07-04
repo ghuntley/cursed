@@ -974,6 +974,13 @@ impl Parser {
         loop {
             if self.match_tokens(&[TokenKind::LeftParen]) {
                 expr = self.finish_call(expr)?;
+            } else if self.check(&TokenKind::LeftBrace) {
+                // Check if this is a struct literal (identifier followed by {)
+                if let Expression::Identifier(struct_name) = expr {
+                    expr = self.parse_struct_literal(struct_name)?;
+                } else {
+                    break;
+                }
             } else if self.match_tokens(&[TokenKind::Dot]) {
                 // Accept identifiers or keywords as property names
                 let property = if self.check(&TokenKind::Identifier) {
@@ -1148,6 +1155,54 @@ impl Parser {
             field_type,
             visibility: crate::ast::Visibility::Private, // Default to private
         })
+    }
+
+    fn parse_struct_literal(&mut self, struct_name: String) -> Result<Expression, CursedError> {
+        use crate::ast::{StructLiteralExpression, StructFieldAssignment};
+        
+        self.consume(TokenKind::LeftBrace, "Expected '{' for struct literal")?;
+        let mut fields = Vec::new();
+        
+        // Handle empty struct literal
+        if self.check(&TokenKind::RightBrace) {
+            self.advance();
+            return Ok(Expression::StructLiteral(StructLiteralExpression {
+                struct_name,
+                fields,
+            }));
+        }
+        
+        loop {
+            // Skip newlines in field assignments
+            self.skip_newlines();
+            
+            if self.check(&TokenKind::RightBrace) {
+                break;
+            }
+            
+            // Parse field assignment: field_name: value
+            let field_name = self.consume(TokenKind::Identifier, "Expected field name")?.lexeme.clone();
+            self.consume(TokenKind::Colon, "Expected ':' after field name")?;
+            let value = self.parse_expression()?;
+            
+            fields.push(StructFieldAssignment { field_name, value });
+            
+            // Check for comma separator or end
+            if self.match_tokens(&[TokenKind::Comma]) {
+                continue;
+            } else if self.check(&TokenKind::RightBrace) {
+                break;
+            } else {
+                return Err(CursedError::syntax_error("Expected ',' or '}' in struct literal"));
+            }
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' to close struct literal")?;
+        
+        Ok(Expression::StructLiteral(StructLiteralExpression {
+            struct_name,
+            fields,
+        }))
     }
 
     fn parse_interface_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::InterfaceStatement, CursedError> {

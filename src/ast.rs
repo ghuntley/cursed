@@ -63,6 +63,7 @@ pub enum Expression {
     ChannelSend(ChannelSendExpression),
     ChannelReceive(ChannelReceiveExpression),
     ChannelCreation(ChannelCreationExpression),
+    StructLiteral(StructLiteralExpression),
 }
 
 /// Binary expression
@@ -85,6 +86,20 @@ pub struct CallExpression {
 pub struct MemberAccessExpression {
     pub object: Box<Expression>,
     pub property: String,
+}
+
+/// Struct literal expression (e.g., Person { name: "Alice", age: 30 })
+#[derive(Debug, Clone)]
+pub struct StructLiteralExpression {
+    pub struct_name: String,
+    pub fields: Vec<StructFieldAssignment>,
+}
+
+/// Struct field assignment in a struct literal
+#[derive(Debug, Clone)]
+pub struct StructFieldAssignment {
+    pub field_name: String,
+    pub value: Expression,
 }
 
 /// Visibility level for symbols
