@@ -15,6 +15,16 @@ pub struct AdvancedCacheConfig {
     pub max_size: usize,
     pub ttl: std::time::Duration,
     pub compression_enabled: bool,
+    pub cache_directory: std::path::PathBuf,
+    pub enable_ast_cache: bool,
+    pub enable_ir_cache: bool,
+    pub enable_object_cache: bool,
+    pub enable_distributed_cache: bool,
+    pub distributed_nodes: Vec<String>,
+    pub cache_warming_enabled: bool,
+    pub precomputation_enabled: bool,
+    pub max_cache_size_mb: usize,
+    pub max_entry_age_hours: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -36,6 +46,16 @@ impl Default for AdvancedCacheConfig {
             max_size: 100_000_000, // 100MB
             ttl: std::time::Duration::from_secs(3600), // 1 hour
             compression_enabled: true,
+            cache_directory: std::path::PathBuf::from("./cache"),
+            enable_ast_cache: true,
+            enable_ir_cache: true,
+            enable_object_cache: true,
+            enable_distributed_cache: false,
+            distributed_nodes: Vec::new(),
+            cache_warming_enabled: false,
+            precomputation_enabled: false,
+            max_cache_size_mb: 100,
+            max_entry_age_hours: 24,
         }
     }
 }
