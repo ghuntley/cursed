@@ -497,7 +497,7 @@ mod tests {
         
         if let Err(CompilationError::TypeCheckingFailed(errors)) = result {
             assert!(!errors.is_empty());
-            assert!(errors[0].message.contains("type mismatch") || errors[0].message.contains("arithmetic"));
+            assert!(errors[0].message.contains("Type mismatch") || errors[0].message.contains("Arithmetic operation"));
         }
     }
     

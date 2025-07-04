@@ -273,53 +273,76 @@ impl TypeChecker {
     }
     
     fn check_binary_expression(&mut self, binary: &BinaryExpression) -> Result<TypeExpression, TypeCheckError> {
-        let left_type = self.check_expression(&binary.left)?;
-        let right_type = self.check_expression(&binary.right)?;
+        let mut left_type = self.check_expression(&binary.left)?;
+        let mut right_type = self.check_expression(&binary.right)?;
         
-        // Unify types for binary operations
-        let mut unifier = super::constraint_resolver::TypeUnifier::new();
-        match unifier.unify(&left_type, &right_type) {
-            Ok(_) => {
-                // Determine result type based on operation
-                match binary.operator.as_str() {
-                    "+" | "-" | "*" | "/" => {
-                        if self.is_numeric_type(&left_type) && self.is_numeric_type(&right_type) {
-                            Ok(left_type) // Return the numeric type
-                        } else {
-                            Err(TypeCheckError {
-                                message: format!("Arithmetic operation requires numeric types, got {:?} and {:?}", 
-                                               left_type, right_type),
-                                location: None,
-                                error_type: TypeErrorKind::TypeMismatch,
-                            })
-                        }
+        // Handle type inference for arithmetic operations with unknown types
+        match binary.operator.as_str() {
+            "+" | "-" | "*" | "/" => {
+                let left_is_unknown = self.is_unknown_type(&left_type);
+                let right_is_unknown = self.is_unknown_type(&right_type);
+                
+                // If either operand is unknown, try to infer as numeric
+                if left_is_unknown || right_is_unknown {
+                    // Infer unknown types as normie (CURSED integer type) for arithmetic operations
+                    if left_is_unknown {
+                        left_type = TypeExpression::named("normie");
+                        self.update_variable_type_if_identifier(&binary.left, &left_type);
                     }
-                    "==" | "!=" | "<" | ">" | "<=" | ">=" => {
-                        Ok(TypeExpression::named("bool"))
+                    if right_is_unknown {
+                        right_type = TypeExpression::named("normie");
+                        self.update_variable_type_if_identifier(&binary.right, &right_type);
                     }
-                    "&&" | "||" => {
-                        if self.is_bool_type(&left_type) && self.is_bool_type(&right_type) {
-                            Ok(TypeExpression::named("bool"))
-                        } else {
-                            Err(TypeCheckError {
-                                message: format!("Logical operation requires bool types, got {:?} and {:?}", 
-                                               left_type, right_type),
-                                location: None,
-                                error_type: TypeErrorKind::TypeMismatch,
-                            })
-                        }
-                    }
-                    _ => Err(TypeCheckError {
-                        message: format!("Unknown binary operator: {}", binary.operator),
+                }
+                
+                // Now check if both operands are numeric
+                if self.is_numeric_type(&left_type) && self.is_numeric_type(&right_type) {
+                    Ok(left_type) // Return the numeric type
+                } else {
+                    Err(TypeCheckError {
+                        message: format!("Arithmetic operation requires numeric types, got {:?} and {:?}", 
+                                       left_type, right_type),
                         location: None,
-                        error_type: TypeErrorKind::InvalidOperation,
+                        error_type: TypeErrorKind::TypeMismatch,
                     })
                 }
             }
-            Err(_) => Err(TypeCheckError {
-                message: format!("Type mismatch in binary expression: {:?} and {:?}", left_type, right_type),
+            "==" | "!=" | "<" | ">" | "<=" | ">=" => {
+                // For comparison operators, try to unify the types
+                let mut unifier = super::constraint_resolver::TypeUnifier::new();
+                match unifier.unify(&left_type, &right_type) {
+                    Ok(_) => Ok(TypeExpression::named("vibes")),
+                    Err(_) => {
+                        // If unification fails, still allow comparison if types are compatible
+                        if self.types_compatible(&left_type, &right_type) {
+                            Ok(TypeExpression::named("vibes"))
+                        } else {
+                            Err(TypeCheckError {
+                                message: format!("Cannot compare incompatible types: {:?} and {:?}", 
+                                               left_type, right_type),
+                                location: None,
+                                error_type: TypeErrorKind::TypeMismatch,
+                            })
+                        }
+                    }
+                }
+            }
+            "&&" | "||" => {
+                if self.is_bool_type(&left_type) && self.is_bool_type(&right_type) {
+                    Ok(TypeExpression::named("vibes"))
+                } else {
+                    Err(TypeCheckError {
+                        message: format!("Logical operation requires bool types, got {:?} and {:?}", 
+                                       left_type, right_type),
+                        location: None,
+                        error_type: TypeErrorKind::TypeMismatch,
+                    })
+                }
+            }
+            _ => Err(TypeCheckError {
+                message: format!("Unknown binary operator: {}", binary.operator),
                 location: None,
-                error_type: TypeErrorKind::TypeMismatch,
+                error_type: TypeErrorKind::InvalidOperation,
             })
         }
     }
@@ -680,6 +703,16 @@ impl TypeChecker {
     
     /// Complete function type checking with proper inference
     pub fn check_function_complete(&mut self, func_stmt: &FunctionStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Add function parameters to scope first
+        for param in &func_stmt.parameters {
+            let param_type = if let Some(type_name) = &param.param_type {
+                TypeExpression::named(type_name)
+            } else {
+                TypeExpression::named("unknown")
+            };
+            self.add_variable(param.name.clone(), param_type);
+        }
+        
         // Collect all return statements in the function
         let mut return_types = Vec::new();
         self.collect_return_types(&func_stmt.body, &mut return_types)?;
@@ -794,7 +827,11 @@ impl TypeChecker {
     
     fn is_numeric_type(&self, type_expr: &TypeExpression) -> bool {
         if let Some(name) = &type_expr.name {
-            matches!(name.as_str(), "int" | "float")
+            matches!(name.as_str(), 
+                "int" | "float" |          // Standard types
+                "normie" | "thicc" |       // CURSED integer types
+                "snack" | "meal"           // CURSED float types
+            )
         } else {
             false
         }
@@ -802,9 +839,33 @@ impl TypeChecker {
     
     fn is_bool_type(&self, type_expr: &TypeExpression) -> bool {
         if let Some(name) = &type_expr.name {
-            name == "bool"
+            matches!(name.as_str(), 
+                "bool" |                   // Standard type
+                "vibes" | "lit"            // CURSED boolean types
+            )
         } else {
             false
+        }
+    }
+    
+    fn is_unknown_type(&self, type_expr: &TypeExpression) -> bool {
+        if let Some(name) = &type_expr.name {
+            name == "unknown"
+        } else {
+            false
+        }
+    }
+    
+    /// Update variable type in symbol table if expression is an identifier
+    fn update_variable_type_if_identifier(&mut self, expr: &Expression, new_type: &TypeExpression) {
+        if let Expression::Identifier(name) = expr {
+            // Update the variable's type in the current scope
+            for scope in self.scopes.iter_mut().rev() {
+                if scope.contains_key(name) {
+                    scope.insert(name.clone(), new_type.clone());
+                    break;
+                }
+            }
         }
     }
     
@@ -1179,7 +1240,7 @@ mod tests {
         });
         
         let result = checker.check_expression(&expr).unwrap();
-        assert_eq!(result.name, Some("int".to_string()));
+        assert_eq!(result.name, Some("normie".to_string()));
         
         // Test comparison operation
         let expr = Expression::Binary(BinaryExpression {
@@ -1189,7 +1250,7 @@ mod tests {
         });
         
         let result = checker.check_expression(&expr).unwrap();
-        assert_eq!(result.name, Some("bool".to_string()));
+        assert_eq!(result.name, Some("vibes".to_string()));
     }
     
     #[test]
