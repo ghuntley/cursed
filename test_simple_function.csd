@@ -1,6 +1,0 @@
-vibe main
-
-slay main() {
-    txt x = "hello";
-    yolo 0;
-}

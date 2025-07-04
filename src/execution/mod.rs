@@ -121,6 +121,12 @@ impl CursedExecutionEngine {
             CursedValue::String(s) => format!("\"{}\"", s),
             CursedValue::Boolean(b) => b.to_string(),
             CursedValue::Channel(_) => "<channel>".to_string(),
+            CursedValue::Struct(fields) => {
+                let field_strs: Vec<String> = fields.iter()
+                    .map(|(k, v)| format!("{}: {}", k, self.format_value(v)))
+                    .collect();
+                format!("{{ {} }}", field_strs.join(", "))
+            },
             CursedValue::Nil => "nil".to_string(),
         }
     }
@@ -395,6 +401,9 @@ impl CursedExecutionEngine {
             },
             Expression::ChannelCreation(create_expr) => {
                 self.execute_channel_creation(create_expr, context)
+            },
+            Expression::StructLiteral(struct_literal) => {
+                self.evaluate_struct_literal(struct_literal, context)
             },
         }
     }
@@ -710,9 +719,21 @@ impl CursedExecutionEngine {
         }
     }
     
-    fn evaluate_member_access(&mut self, member_expr: &crate::ast::MemberAccessExpression, _context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
-        // For now, just return a placeholder - member access without calls is complex
-        Ok(CursedValue::Nil)
+    fn evaluate_member_access(&mut self, member_expr: &crate::ast::MemberAccessExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let object = self.evaluate_expression(&member_expr.object, context)?;
+        
+        match object {
+            CursedValue::Struct(struct_fields) => {
+                // Access struct field
+                struct_fields.get(&member_expr.property)
+                    .cloned()
+                    .ok_or_else(|| CursedError::RuntimeError(format!("Struct field '{}' not found", member_expr.property)))
+            },
+            _ => {
+                // For other types, return nil for now (could be method calls)
+                Ok(CursedValue::Nil)
+            }
+        }
     }
     
     fn is_truthy(&self, value: &CursedValue) -> bool {
@@ -722,6 +743,7 @@ impl CursedExecutionEngine {
             CursedValue::Float(f) => *f != 0.0,
             CursedValue::String(s) => !s.is_empty(),
             CursedValue::Channel(_) => true, // Channels are truthy when they exist
+            CursedValue::Struct(fields) => !fields.is_empty(), // Structs are truthy if they have fields
             CursedValue::Nil => false,
         }
     }
@@ -733,11 +755,28 @@ impl CursedExecutionEngine {
             (CursedValue::String(a), CursedValue::String(b)) => a == b,
             (CursedValue::Boolean(a), CursedValue::Boolean(b)) => a == b,
             (CursedValue::Nil, CursedValue::Nil) => true,
+            (CursedValue::Struct(a), CursedValue::Struct(b)) => {
+                // Compare struct fields
+                a.len() == b.len() && a.iter().all(|(k, v)| b.get(k).map_or(false, |v2| self.values_equal(v, v2)))
+            },
             // Allow integer-float comparison
             (CursedValue::Integer(a), CursedValue::Float(b)) => *a as f64 == *b,
             (CursedValue::Float(a), CursedValue::Integer(b)) => *a == *b as f64,
             _ => false,
         }
+    }
+
+    /// Evaluate struct literal expression
+    fn evaluate_struct_literal(&mut self, struct_literal: &crate::ast::StructLiteralExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let mut struct_fields = std::collections::HashMap::new();
+        
+        // Evaluate each field assignment
+        for field_assignment in &struct_literal.fields {
+            let field_value = self.evaluate_expression(&field_assignment.value, context)?;
+            struct_fields.insert(field_assignment.field_name.clone(), field_value);
+        }
+        
+        Ok(CursedValue::Struct(struct_fields))
     }
 }
 
@@ -749,6 +788,7 @@ pub enum CursedValue {
     String(String),
     Boolean(bool),
     Channel(Arc<SimpleChannel<CursedValue>>),
+    Struct(std::collections::HashMap<String, CursedValue>),
     Nil,
 }
 
@@ -778,6 +818,12 @@ impl ValueManager {
             CursedValue::String(s) => format!("\"{}\"", s),
             CursedValue::Boolean(b) => b.to_string(),
             CursedValue::Channel(_) => "<channel>".to_string(),
+            CursedValue::Struct(fields) => {
+                let field_strs: Vec<String> = fields.iter()
+                    .map(|(k, v)| format!("{}: {}", k, self.format_value(v)))
+                    .collect();
+                format!("{{ {} }}", field_strs.join(", "))
+            },
             CursedValue::Nil => "nil".to_string(),
         }
     }

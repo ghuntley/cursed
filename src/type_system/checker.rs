@@ -215,9 +215,9 @@ impl TypeChecker {
     
     pub fn check_expression(&mut self, expression: &Expression) -> Result<TypeExpression, TypeCheckError> {
         match expression {
-            Expression::Integer(_) => Ok(TypeExpression::named("int")),
-            Expression::String(_) => Ok(TypeExpression::named("string")),
-            Expression::Boolean(_) => Ok(TypeExpression::named("bool")),
+            Expression::Integer(_) => Ok(TypeExpression::named("normie")),
+            Expression::String(_) => Ok(TypeExpression::named("tea")),
+            Expression::Boolean(_) => Ok(TypeExpression::named("vibes")),
             Expression::Identifier(name) => {
                 self.check_identifier(name)
             }
@@ -247,6 +247,9 @@ impl TypeChecker {
             }
             Expression::ChannelCreation(channel_creation) => {
                 self.check_channel_creation_expression(channel_creation)
+            }
+            Expression::StructLiteral(struct_literal) => {
+                self.check_struct_literal_expression(struct_literal)
             }
             _ => Ok(TypeExpression::named("unknown")),
         }
@@ -997,6 +1000,21 @@ impl TypeChecker {
         
         // Return a channel type with the specified element type
         Ok(TypeExpression::named(&format!("dm<{}>", element_type)))
+    }
+
+    fn check_struct_literal_expression(&mut self, struct_literal: &crate::ast::StructLiteralExpression) -> Result<TypeExpression, TypeCheckError> {
+        // Verify the struct exists (TODO: enhance with proper struct type tracking)
+        let struct_type_name = &struct_literal.struct_name;
+        
+        // Check each field assignment
+        for field_assignment in &struct_literal.fields {
+            let field_type = self.check_expression(&field_assignment.value)?;
+            // TODO: Validate field types against struct definition when we have struct registry
+            log::debug!("Struct field '{}' has type {:?}", field_assignment.field_name, field_type);
+        }
+        
+        // Return the struct type
+        Ok(TypeExpression::named(struct_type_name))
     }
 }
 
