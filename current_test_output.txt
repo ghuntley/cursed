@@ -1,0 +1,3717 @@
+   Compiling cursed v0.1.0 (/home/ghuntley/code/cursed)
+warning: comparison is useless due to type limits
+   --> tests/linter_integration_test.rs:228:13
+    |
+228 |     assert!(results.issues.len() >= 0);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_comparisons)]` on by default
+
+warning: comparison is useless due to type limits
+   --> tests/linter_integration_test.rs:244:13
+    |
+244 |     assert!(results.issues.len() >= 0);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: comparison is useless due to type limits
+   --> tests/linter_integration_test.rs:260:13
+    |
+260 |     assert!(results.issues.len() >= 0);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: comparison is useless due to type limits
+   --> tests/linter_integration_test.rs:277:13
+    |
+277 |     assert!(results.issues.len() >= 0);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: comparison is useless due to type limits
+   --> tests/linter_integration_test.rs:303:13
+    |
+303 |     assert!(results.issues.len() >= 0);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: comparison is useless due to type limits
+   --> tests/linter_integration_test.rs:370:13
+    |
+370 |     assert!(results.issues.len() >= 0);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `cursed` (test "linter_integration_test") generated 6 warnings
+error[E0599]: no method named `start_build_monitoring` found for struct `BuildAnalytics` in the current scope
+  --> examples/build_analytics_demo.rs:72:15
+   |
+72 |     analytics.start_build_monitoring()?;
+   |               ^^^^^^^^^^^^^^^^^^^^^^ method not found in `BuildAnalytics`
+
+error[E0599]: no method named `start_with_progress` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:176:14
+    |
+176 |     compiler.start_with_progress(true)?;
+    |              ^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:182:53
+    |
+182 |         create_job("utils", base_path, JobPriority::Normal),
+    |                                                     ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:183:58
+    |
+183 |         create_job("web_server", base_path, JobPriority::Normal),
+    |                                                          ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0599]: no method named `stop_build_monitoring` found for struct `BuildAnalytics` in the current scope
+   --> examples/build_analytics_demo.rs:112:29
+    |
+112 |     let metrics = analytics.stop_build_monitoring()?;
+    |                             ^^^^^^^^^^^^^^^^^^^^^ method not found in `BuildAnalytics`
+
+error[E0599]: no method named `analyze_bottlenecks` found for struct `BuildAnalytics` in the current scope
+   --> examples/build_analytics_demo.rs:126:33
+    |
+126 |     let bottlenecks = analytics.analyze_bottlenecks()?;
+    |                                 ^^^^^^^^^^^^^^^^^^^ method not found in `BuildAnalytics`
+
+error[E0599]: no method named `add_jobs_with_dependencies` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:189:14
+    |
+189 |     compiler.add_jobs_with_dependencies(jobs)?;
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0599]: no method named `wait_for_completion` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:190:28
+    |
+190 |     let results = compiler.wait_for_completion(Some(std::time::Duration::from_secs(30)))?;
+    |                            ^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0599]: no method named `generate_build_report` found for struct `BuildAnalytics` in the current scope
+   --> examples/build_analytics_demo.rs:141:28
+    |
+141 |     let report = analytics.generate_build_report()?;
+    |                            ^^^^^^^^^^^^^^^^^^^^^ method not found in `BuildAnalytics`
+
+error[E0277]: the `?` operator can only be applied to values that implement `Try`
+   --> examples/build_analytics_demo.rs:176:17
+    |
+176 |     let cache = AdvancedCache::new(config)?;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the `?` operator cannot be applied to type `AdvancedCache`
+    |
+    = help: the trait `Try` is not implemented for `AdvancedCache`
+
+error[E0560]: struct `CacheMetadata` has no field named `file_path`
+   --> examples/build_analytics_demo.rs:183:9
+    |
+183 |         file_path: PathBuf::from("src/main.csd"),
+    |         ^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `last_modified`
+   --> examples/build_analytics_demo.rs:184:9
+    |
+184 |         last_modified: 1234567890,
+    |         ^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `file_size`
+   --> examples/build_analytics_demo.rs:185:9
+    |
+185 |         file_size: 2048,
+    |         ^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `compiler_version`
+   --> examples/build_analytics_demo.rs:186:9
+    |
+186 |         compiler_version: "0.1.0".to_string(),
+    |         ^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `compilation_flags`
+   --> examples/build_analytics_demo.rs:187:9
+    |
+187 |         compilation_flags: vec!["--optimize".to_string(), "--target=native".to_string()],
+    |         ^^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `source_hash`
+   --> examples/build_analytics_demo.rs:188:9
+    |
+188 |         source_hash: "abc123def456".to_string(),
+    |         ^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `dependency_hashes`
+   --> examples/build_analytics_demo.rs:189:9
+    |
+189 |         dependency_hashes: {
+    |         ^^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0599]: no associated item named `Ast` found for struct `CacheData` in the current scope
+   --> examples/build_analytics_demo.rs:197:31
+    |
+197 |     let ast_data = CacheData::Ast(r#"{
+    |                               ^^^ associated item not found in `CacheData`
+
+error[E0560]: struct `CacheMetadata` has no field named `file_path`
+   --> examples/build_analytics_demo.rs:213:9
+    |
+213 |         file_path: PathBuf::from("src/utils.csd"),
+    |         ^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `last_modified`
+   --> examples/build_analytics_demo.rs:214:9
+    |
+214 |         last_modified: 1234567891,
+    |         ^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `file_size`
+   --> examples/build_analytics_demo.rs:215:9
+    |
+215 |         file_size: 1536,
+    |         ^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `compiler_version`
+   --> examples/build_analytics_demo.rs:216:9
+    |
+216 |         compiler_version: "0.1.0".to_string(),
+    |         ^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `compilation_flags`
+   --> examples/build_analytics_demo.rs:217:9
+    |
+217 |         compilation_flags: vec!["--optimize".to_string()],
+    |         ^^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `source_hash`
+   --> examples/build_analytics_demo.rs:218:9
+    |
+218 |         source_hash: "utils_source_hash".to_string(),
+    |         ^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `dependency_hashes`
+   --> examples/build_analytics_demo.rs:219:9
+    |
+219 |         dependency_hashes: HashMap::new(),
+    |         ^^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0599]: no method named `get_compilation_report` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:196:33
+    |
+196 |     println!("  📊 {}", compiler.get_compilation_report());
+    |                                  ^^^^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0432]: unresolved import `cursed::optimization::distributed`
+ --> examples/distributed_compilation_demo.rs:6:27
+  |
+6 | use cursed::optimization::distributed::*;
+  |                           ^^^^^^^^^^^ could not find `distributed` in `optimization`
+
+error[E0599]: no associated item named `IR` found for struct `CacheData` in the current scope
+   --> examples/build_analytics_demo.rs:222:30
+    |
+222 |     let ir_data = CacheData::IR(r#"
+    |                              ^^ associated item not found in `CacheData`
+
+error[E0560]: struct `CacheMetadata` has no field named `file_path`
+   --> examples/build_analytics_demo.rs:239:9
+    |
+239 |         file_path: PathBuf::from("src/math.csd"),
+    |         ^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `last_modified`
+   --> examples/build_analytics_demo.rs:240:9
+    |
+240 |         last_modified: 1234567892,
+    |         ^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `file_size`
+   --> examples/build_analytics_demo.rs:241:9
+    |
+241 |         file_size: 4096,
+    |         ^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `compiler_version`
+   --> examples/build_analytics_demo.rs:242:9
+    |
+242 |         compiler_version: "0.1.0".to_string(),
+    |         ^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `compilation_flags`
+   --> examples/build_analytics_demo.rs:243:9
+    |
+243 |         compilation_flags: vec!["--optimize".to_string(), "--debug".to_string()],
+    |         ^^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `source_hash`
+   --> examples/build_analytics_demo.rs:244:9
+    |
+244 |         source_hash: "math_source_hash".to_string(),
+    |         ^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `dependency_hashes`
+   --> examples/build_analytics_demo.rs:245:9
+    |
+245 |         dependency_hashes: HashMap::new(),
+    |         ^^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0599]: no associated item named `Object` found for struct `CacheData` in the current scope
+   --> examples/build_analytics_demo.rs:248:31
+    |
+248 |     let obj_data = CacheData::Object(vec![
+    |                               ^^^^^^ associated item not found in `CacheData`
+
+error[E0599]: no method named `stop` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:198:14
+    |
+198 |     compiler.stop()?;
+    |              ^^^^ method not found in `ParallelCompiler`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `max_memory_mb`
+   --> examples/build_analytics_demo.rs:310:9
+    |
+310 |         max_memory_mb: 2048.0,
+    |         ^^^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+310 |         max_memory: 2048.0,
+    |         ~~~~~~~~~~
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `warning_threshold_percent`
+   --> examples/build_analytics_demo.rs:311:9
+    |
+311 |         warning_threshold_percent: 75.0,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `critical_threshold_percent`
+   --> examples/build_analytics_demo.rs:312:9
+    |
+312 |         critical_threshold_percent: 90.0,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `enable_streaming`
+   --> examples/build_analytics_demo.rs:313:9
+    |
+313 |         enable_streaming: true,
+    |         ^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `streaming_chunk_size_mb`
+   --> examples/build_analytics_demo.rs:314:9
+    |
+314 |         streaming_chunk_size_mb: 64.0,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `memory_strategy`
+   --> examples/build_analytics_demo.rs:315:9
+    |
+315 |         memory_strategy: MemoryStrategy::Adaptive,
+    |         ^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `max_concurrent_memory_intensive_tasks`
+   --> examples/build_analytics_demo.rs:316:9
+    |
+316 |         max_concurrent_memory_intensive_tasks: 3,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `enable_adaptive_scheduling`
+   --> examples/build_analytics_demo.rs:317:9
+    |
+317 |         enable_adaptive_scheduling: true,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `enable_memory_pressure_detection`
+   --> examples/build_analytics_demo.rs:318:9
+    |
+318 |         enable_memory_pressure_detection: true,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `large_file_threshold_mb`
+   --> examples/build_analytics_demo.rs:319:9
+    |
+319 |         large_file_threshold_mb: 200.0,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0609]: no field `max_memory_mb` on type `MemoryOptimizerConfig`
+   --> examples/build_analytics_demo.rs:323:74
+    |
+323 |     println!("⚙️  Creating memory optimizer with {} MB limit...", config.max_memory_mb);
+    |                                                                         ^^^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+323 |     println!("⚙️  Creating memory optimizer with {} MB limit...", config.max_memory);
+    |                                                                         ~~~~~~~~~~
+
+error[E0277]: the `?` operator can only be applied to values that implement `Try`
+   --> examples/build_analytics_demo.rs:324:21
+    |
+324 |     let optimizer = MemoryOptimizer::new(config)?;
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the `?` operator cannot be applied to type `MemoryOptimizer`
+    |
+    = help: the trait `Try` is not implemented for `MemoryOptimizer`
+
+error[E0432]: unresolved imports `cursed::optimization::performance_integration`, `cursed::optimization::config::OptimizationProfile`, `cursed::optimization::build_integration`
+  --> examples/performance_optimization_cli_demo.rs:7:5
+   |
+7  |     performance_integration::{
+   |     ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+...
+10 |     config::{OptimizationConfig, OptimizationProfile, OptimizationLevel},
+   |                                  ^^^^^^^^^^^^^^^^^^^
+   |                                  |
+   |                                  no `OptimizationProfile` in `optimization::config`
+   |                                  help: a similar name exists in the module: `OptimizationConfig`
+11 |     build_integration::{create_build_optimizer_from_args_with_performance, BuildContext},
+   |     ^^^^^^^^^^^^^^^^^ could not find `build_integration` in `optimization`
+
+error[E0599]: no method named `start` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:207:14
+    |
+207 |     compiler.start()?;
+    |              ^^^^^ method not found in `ParallelCompiler`
+
+error[E0599]: no method named `log` found for struct `cursed::stdlib::packages::VibeTest` in the current scope
+  --> examples/test_vibes_example.rs:49:14
+   |
+49 |         test.log(&["Math works correctly!"]);
+   |              ^^^ method not found in `VibeTest`
+
+error[E0308]: mismatched types
+   --> examples/build_analytics_demo.rs:336:13
+    |
+336 |             format!("src/small_file_{}.csd", i),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u8`, found `String`
+    |
+    = note: this error originates in the macro `format` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0432]: unresolved imports `cursed::stdlib::template::template_formats::TemplateFormatRenderer`, `cursed::stdlib::template::template_formats::TemplateFormat`, `cursed::stdlib::template::template_formats::ApiFormat`
+ --> examples/protobuf_template_demo.rs:1:50
+  |
+1 | use cursed::stdlib::template::template_formats::{TemplateFormatRenderer, TemplateFormat, ApiFormat};
+  |                                                  ^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^ no `ApiFormat` in `stdlib::template::template_formats`
+  |                                                  |                       |
+  |                                                  |                       no `TemplateFormat` in `stdlib::template::template_formats`
+  |                                                  no `TemplateFormatRenderer` in `stdlib::template::template_formats`
+
+error[E0432]: unresolved import `cursed::object::Object`
+ --> examples/protobuf_template_demo.rs:2:5
+  |
+2 | use cursed::object::Object as CursedObject;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `Object` in `object`
+  |
+help: consider importing one of these items instead
+  |
+2 | use cursed::Tag::Object as CursedObject;
+  |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2 | use cursed::Value::Object as CursedObject;
+  |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2 | use cursed::runtime::debug_output::DebugValue::Object as CursedObject;
+  |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2 | use cursed::runtime::error_context::ContextValue::Object as CursedObject;
+  |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    and 4 other candidates
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/build_analytics_demo.rs:334:20
+    |
+334 |         let task = create_memory_aware_task(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+337 |             25.0 + (i as f64 * 5.0), // 30, 35, 40 MB
+    |             ----------------------- expected `usize`, found `f64`
+338 |             false, // Cannot stream small files efficiently
+    |             ----- unexpected argument #4 of type `bool`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/memory_optimizer.rs:90:8
+    |
+90  | pub fn create_memory_aware_task(id: String, priority: u8, estimated_memory: usize) -> MemoryTask {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+337 -             25.0 + (i as f64 * 5.0), // 30, 35, 40 MB
+337 +             /* usize */, // Cannot stream small files efficiently
+    |
+
+error[E0308]: mismatched types
+   --> examples/build_analytics_demo.rs:348:13
+    |
+348 |             format!("src/medium_file_{}.csd", i),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u8`, found `String`
+    |
+    = note: this error originates in the macro `format` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/build_analytics_demo.rs:346:20
+    |
+346 |         let task = create_memory_aware_task(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+349 |             150.0 + (i as f64 * 50.0), // 200, 250 MB
+    |             ------------------------- expected `usize`, found `f64`
+350 |             true, // Can stream
+    |             ---- unexpected argument #4 of type `bool`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/memory_optimizer.rs:90:8
+    |
+90  | pub fn create_memory_aware_task(id: String, priority: u8, estimated_memory: usize) -> MemoryTask {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+349 -             150.0 + (i as f64 * 50.0), // 200, 250 MB
+349 +             /* usize */, // Can stream
+    |
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:377:39
+    |
+377 |                 cursed::optimization::performance_integration::ImplementationEffort::Low => "🟢",
+    |                                       ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error[E0308]: mismatched types
+   --> examples/parallel_compilation_demo.rs:212:9
+    |
+212 |         base_path.join("utils.csd"),
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `String`, found `PathBuf`
+
+error[E0308]: mismatched types
+   --> examples/build_analytics_demo.rs:360:13
+    |
+360 |             format!("src/large_file_{}.csd", i),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u8`, found `String`
+    |
+    = note: this error originates in the macro `format` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/build_analytics_demo.rs:358:20
+    |
+358 |         let task = create_memory_aware_task(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+361 |             400.0 + (i as f64 * 100.0), // 500, 600 MB
+    |             -------------------------- expected `usize`, found `f64`
+362 |             true, // Can stream
+    |             ---- unexpected argument #4 of type `bool`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/memory_optimizer.rs:90:8
+    |
+90  | pub fn create_memory_aware_task(id: String, priority: u8, estimated_memory: usize) -> MemoryTask {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+361 -             400.0 + (i as f64 * 100.0), // 500, 600 MB
+361 +             /* usize */, // Can stream
+    |
+
+error[E0599]: no method named `pass_vibe` found for struct `cursed::stdlib::packages::VibeTest` in the current scope
+  --> examples/test_vibes_example.rs:50:14
+   |
+50 |         test.pass_vibe();
+   |              ^^^^^^^^^ method not found in `VibeTest`
+
+error[E0308]: mismatched types
+   --> examples/build_analytics_demo.rs:385:13
+    |
+385 |             format!("src/{}.csd", name),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u8`, found `String`
+    |
+    = note: this error originates in the macro `format` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0432]: unresolved imports `cursed::optimization::pgo::PgoManager`, `cursed::optimization::pgo::PgoConfig`, `cursed::optimization::pgo::OptimizationStrategy`
+ --> examples/pgo_example.rs:7:5
+  |
+7 |     PgoManager, PgoConfig, InstrumentationMode, CollectionMode, 
+  |     ^^^^^^^^^^  ^^^^^^^^^ no `PgoConfig` in `optimization::pgo`
+  |     |
+  |     no `PgoManager` in `optimization::pgo`
+8 |     OptimizationStrategy, ProfileData
+  |     ^^^^^^^^^^^^^^^^^^^^ no `OptimizationStrategy` in `optimization::pgo`
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/build_analytics_demo.rs:383:20
+    |
+383 |         let task = create_memory_aware_task(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+386 |             memory_mb,
+    |             --------- expected `usize`, found floating-point number
+387 |             can_stream,
+    |             ---------- unexpected argument #4 of type `bool`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/memory_optimizer.rs:90:8
+    |
+90  | pub fn create_memory_aware_task(id: String, priority: u8, estimated_memory: usize) -> MemoryTask {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+386 -             memory_mb,
+386 +             /* usize */,
+    |
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:216:71
+    |
+216 |     let mut math_job = create_job("math_lib", base_path, JobPriority::Normal);
+    |                                                                       ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/build_analytics_demo.rs:405:22
+    |
+405 |     let large_task = create_memory_aware_task(
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^
+406 |         "huge_file".to_string(),
+407 |         "src/huge_generated_file.csd".to_string(),
+    |         ----------------------------------------- expected `u8`, found `String`
+408 |         1200.0, // 1.2 GB file
+    |         ------ expected `usize`, found floating-point number
+409 |         true,
+    |         ---- unexpected argument #4 of type `bool`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/memory_optimizer.rs:90:8
+    |
+90  | pub fn create_memory_aware_task(id: String, priority: u8, estimated_memory: usize) -> MemoryTask {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+407 ~         /* u8 */,
+408 ~         /* usize */,
+    |
+
+error[E0609]: no field `estimated_memory_mb` on type `MemoryTask`
+   --> examples/build_analytics_demo.rs:414:39
+    |
+414 |              chunks.len(), large_task.estimated_memory_mb);
+    |                                       ^^^^^^^^^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+414 |              chunks.len(), large_task.estimated_memory);
+    |                                       ~~~~~~~~~~~~~~~~
+
+error[E0308]: mismatched types
+   --> examples/parallel_compilation_demo.rs:217:34
+    |
+217 |     math_job.dependencies = vec![base_path.join("utils.csd")];
+    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `String`, found `PathBuf`
+
+error[E0599]: no method named `fail_vibe` found for struct `cursed::stdlib::packages::VibeTest` in the current scope
+  --> examples/test_vibes_example.rs:52:14
+   |
+52 |         test.fail_vibe("Math is broken!");
+   |              ^^^^^^^^^ method not found in `VibeTest`
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:378:39
+    |
+378 |                 cursed::optimization::performance_integration::ImplementationEffort::Medium => "🟡",
+    |                                       ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:219:65
+    |
+219 |     let utils_job = create_job("utils", base_path, JobPriority::Normal);
+    |                                                                 ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0308]: mismatched types
+   --> examples/build_analytics_demo.rs:457:43
+    |
+457 |     let mut cache = IncrementalCache::new(cache_dir)?;
+    |                     --------------------- ^^^^^^^^^ expected `CacheManager`, found `PathBuf`
+    |                     |
+    |                     arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/incremental_cache.rs:38:12
+    |
+38  |     pub fn new(manager: CacheManager) -> Self {
+    |            ^^^
+
+error[E0277]: the `?` operator can only be applied to values that implement `Try`
+   --> examples/build_analytics_demo.rs:457:21
+    |
+457 |     let mut cache = IncrementalCache::new(cache_dir)?;
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the `?` operator cannot be applied to type `IncrementalCache`
+    |
+    = help: the trait `Try` is not implemented for `IncrementalCache`
+
+error[E0432]: unresolved import `cursed::stdlib::database::TxOptions`
+  --> examples/postgres_demo.rs:20:15
+   |
+20 |     SqlValue, TxOptions, SqlIsolationLevel,
+   |               ^^^^^^^^^ no `TxOptions` in `stdlib::database`
+
+error[E0432]: unresolved imports `cursed::optimization::CodeAnalysisEngine`, `cursed::optimization::AnalysisConfig`, `cursed::optimization::PatternType`, `cursed::optimization::PatternSeverity`, `cursed::optimization::OptimizationCategory`
+  --> examples/optimization_analyzer_example.rs:9:26
+   |
+9  |     OptimizationManager, CodeAnalysisEngine, AnalysisConfig,
+   |                          ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^ no `AnalysisConfig` in `optimization`
+   |                          |
+   |                          no `CodeAnalysisEngine` in `optimization`
+10 |     PatternType, PatternSeverity, OptimizationCategory
+   |     ^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
+   |     |            |                |
+   |     |            |                no `OptimizationCategory` in `optimization`
+   |     |            |                help: a similar name exists in the module: `OptimizationManager`
+   |     |            no `PatternSeverity` in `optimization`
+   |     no `PatternType` in `optimization`
+
+error[E0432]: unresolved imports `cursed::memory::AdaptiveGarbageCollector`, `cursed::memory::AdaptiveGcConfig`, `cursed::memory::AdaptiveStrategy`, `cursed::memory::BehaviorPattern`, `cursed::memory::PressureLevel`, `cursed::memory::TargetMetrics`, `cursed::memory::adaptive_gc`, `cursed::memory::object_store`
+  --> examples/adaptive_gc_demo.rs:13:5
+   |
+13 |     AdaptiveGarbageCollector, AdaptiveGcConfig, AdaptiveStrategy, BehaviorPattern,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^ no `BehaviorPattern` in `memory`
+   |     |                         |                 |
+   |     |                         |                 no `AdaptiveStrategy` in `memory`
+   |     |                         no `AdaptiveGcConfig` in `memory`
+   |     no `AdaptiveGarbageCollector` in `memory`
+14 |     PressureLevel, TargetMetrics, 
+   |     ^^^^^^^^^^^^^  ^^^^^^^^^^^^^ no `TargetMetrics` in `memory`
+   |     |
+   |     no `PressureLevel` in `memory`
+15 |     adaptive_gc::AdaptationParameters,
+   |     ^^^^^^^^^^^ could not find `adaptive_gc` in `memory`
+16 |     object_store::Storable, Traceable, Visitor
+   |     ^^^^^^^^^^^^ could not find `object_store` in `memory`
+
+error[E0432]: unresolved imports `cursed::optimization::BaselineComparator`, `cursed::optimization::BaselineComparisonConfig`, `cursed::optimization::BaselineMetadata`, `cursed::optimization::EnvironmentInfo`, `cursed::optimization::TimeSavingsConfig`, `cursed::optimization::BenchmarkConfig`, `cursed::optimization::BenchmarkResult`
+ --> examples/optimization_usage_demo.rs:4:26
+  |
+4 |     OptimizationManager, BaselineComparator, BaselineComparisonConfig, BaselineMetadata,
+  |                          ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^ no `BaselineMetadata` in `optimization`
+  |                          |                   |
+  |                          |                   no `BaselineComparisonConfig` in `optimization`
+  |                          no `BaselineComparator` in `optimization`
+5 |     EnvironmentInfo, TimeSavingsConfig, BenchmarkConfig, BenchmarkResult,
+  |     ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^ no `BenchmarkResult` in `optimization`
+  |     |                |                  |
+  |     |                |                  no `BenchmarkConfig` in `optimization`
+  |     |                |                  help: a similar name exists in the module: `benchmarking`
+  |     |                no `TimeSavingsConfig` in `optimization`
+  |     no `EnvironmentInfo` in `optimization`
+  |
+  = help: consider importing this struct instead:
+          cursed::profiling::BenchmarkConfig
+  = help: consider importing this type alias instead:
+          cursed::stdlib::test_vibes::BenchmarkResult
+
+error[E0599]: no method named `get_result` found for struct `cursed::stdlib::packages::VibeTest` in the current scope
+  --> examples/test_vibes_example.rs:55:28
+   |
+55 |     let test_result = test.get_result();
+   |                            ^^^^^^^^^^ method not found in `VibeTest`
+
+error[E0432]: unresolved imports `cursed::optimization::BaselineStorage`, `cursed::optimization::BaselineStorageConfig`, `cursed::optimization::BaselineType`, `cursed::optimization::RegressionAnalyzer`, `cursed::optimization::RegressionAnalysisConfig`, `cursed::optimization::BenchmarkRunner`, `cursed::optimization::BenchmarkConfig`, `cursed::optimization::BenchmarkResult`, `cursed::optimization::BenchmarkSuiteResult`, `cursed::optimization::BenchmarkStatistics`, `cursed::optimization::PerformanceThresholds`
+  --> examples/performance_baseline_demo.rs:7:5
+   |
+7  |     BaselineStorage, BaselineStorageConfig, BaselineType,
+   |     ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^ no `BaselineType` in `optimization`
+   |     |                |
+   |     |                no `BaselineStorageConfig` in `optimization`
+   |     no `BaselineStorage` in `optimization`
+8  |     RegressionAnalyzer, RegressionAnalysisConfig,
+   |     ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^ no `RegressionAnalysisConfig` in `optimization`
+   |     |
+   |     no `RegressionAnalyzer` in `optimization`
+9  |     BenchmarkRunner, BenchmarkConfig, BenchmarkResult, BenchmarkSuiteResult,
+   |     ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^ no `BenchmarkSuiteResult` in `optimization`
+   |     |                |                |
+   |     |                |                no `BenchmarkResult` in `optimization`
+   |     |                no `BenchmarkConfig` in `optimization`
+   |     |                help: a similar name exists in the module: `benchmarking`
+   |     no `BenchmarkRunner` in `optimization`
+10 |     BenchmarkStatistics, PerformanceThresholds,
+   |     ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^
+   |     |
+   |     no `BenchmarkStatistics` in `optimization`
+   |
+   = help: consider importing this struct instead:
+           cursed::profiling::BenchmarkConfig
+   = help: consider importing this type alias instead:
+           cursed::stdlib::test_vibes::BenchmarkResult
+
+error[E0061]: this function takes 2 arguments but 1 argument was supplied
+   --> examples/build_analytics_demo.rs:547:23
+    |
+547 |     let mut manager = CacheManager::new(global_cache_dir)?;
+    |                       ^^^^^^^^^^^^^^^^^------------------ argument #2 of type `usize` is missing
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/incremental_cache.rs:75:12
+    |
+75  |     pub fn new(cache_dir: PathBuf, max_entries: usize) -> Self {
+    |            ^^^
+help: provide the argument
+    |
+547 |     let mut manager = CacheManager::new(global_cache_dir, /* usize */)?;
+    |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+error[E0432]: unresolved imports `cursed::stdlib::packrat::tar::RatPack`, `cursed::stdlib::packrat::tar::RatStash`, `cursed::stdlib::packrat::tar::RatHeader`, `cursed::stdlib::packrat::tar::FileInfoHeader`, `cursed::stdlib::packrat::zip::HoardPack`, `cursed::stdlib::packrat::zip::HoardStash`, `cursed::stdlib::packrat::zip::HoardFileHeader`, `cursed::stdlib::packrat::zip::FileInfoHeader`, `cursed::stdlib::packrat::compression::IsZip`, `cursed::stdlib::packrat::compression::IsTar`, `cursed::stdlib::packrat::compression::Compress`, `cursed::stdlib::packrat::compression::Decompress`, `cursed::stdlib::packrat::ArchiveResult`
+  --> examples/packrat_usage_examples.rs:9:11
+   |
+9  |     tar::{RatPack, RatStash, RatHeader, FileInfoHeader as TarFileInfoHeader},
+   |           ^^^^^^^  ^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `FileInfoHeader` in `stdlib::packrat::tar`
+   |           |        |         |
+   |           |        |         no `RatHeader` in `stdlib::packrat::tar`
+   |           |        no `RatStash` in `stdlib::packrat::tar`
+   |           no `RatPack` in `stdlib::packrat::tar`
+10 |     zip::{HoardPack, HoardStash, HoardFileHeader, FileInfoHeader as ZipFileInfoHeader},
+   |           ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `FileInfoHeader` in `stdlib::packrat::zip`
+   |           |          |           |
+   |           |          |           no `HoardFileHeader` in `stdlib::packrat::zip`
+   |           |          no `HoardStash` in `stdlib::packrat::zip`
+   |           no `HoardPack` in `stdlib::packrat::zip`
+11 |     compression::{IsZip, IsTar, Compress, Decompress},
+   |                   ^^^^^  ^^^^^  ^^^^^^^^  ^^^^^^^^^^
+   |                   |      |
+   |                   |      no `IsTar` in `stdlib::packrat::compression`
+   |                   no `IsZip` in `stdlib::packrat::compression`
+12 |     ArchiveResult,
+   |     ^^^^^^^^^^^^^
+
+error[E0277]: the `?` operator can only be applied to values that implement `Try`
+   --> examples/build_analytics_demo.rs:547:23
+    |
+547 |     let mut manager = CacheManager::new(global_cache_dir)?;
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the `?` operator cannot be applied to type `CacheManager`
+    |
+    = help: the trait `Try` is not implemented for `CacheManager`
+
+error[E0599]: no method named `add_jobs_with_dependencies` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:231:14
+    |
+231 |     compiler.add_jobs_with_dependencies(jobs)?;
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0425]: cannot find function `get_current_pid` in this scope
+  --> examples/simple_process_demo.rs:79:23
+   |
+79 |     let current_pid = get_current_pid();
+   |                       ^^^^^^^^^^^^^^^ not found in this scope
+   |
+help: consider importing this function
+   |
+1  + use sysinfo::get_current_pid;
+   |
+
+error[E0277]: can't compare `cursed::stdlib::packages::VibeTest` with `cursed::stdlib::packages::VibeTest`
+  --> examples/test_vibes_example.rs:64:5
+   |
+64 |     assert_equal(&mut test, 5, 5, "numbers should be equal");
+   |     ^^^^^^^^^^^^ no implementation for `cursed::stdlib::packages::VibeTest == cursed::stdlib::packages::VibeTest`
+   |
+   = help: the trait `PartialEq` is not implemented for `cursed::stdlib::packages::VibeTest`, which is required by `&mut cursed::stdlib::packages::VibeTest: PartialEq`
+   = note: required for `&mut cursed::stdlib::packages::VibeTest` to implement `PartialEq`
+note: required by a bound in `cursed::stdlib::packages::assert_equal`
+  --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:12:8
+   |
+10 | pub fn assert_equal<T>(actual: T, expected: T, message: &str) -> AssertionResult 
+   |        ------------ required by a bound in this function
+11 | where
+12 |     T: PartialEq + std::fmt::Debug
+   |        ^^^^^^^^^ required by this bound in `assert_equal`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `max_memory_mb`
+   --> examples/build_analytics_demo.rs:597:9
+    |
+597 |         max_memory_mb: 1024.0,
+    |         ^^^^^^^^^^^^^ unknown field
+    |
+help: a field with a similar name exists
+    |
+597 |         max_memory: 1024.0,
+    |         ~~~~~~~~~~
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `enable_adaptive_scheduling`
+   --> examples/build_analytics_demo.rs:598:9
+    |
+598 |         enable_adaptive_scheduling: true,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0560]: struct `MemoryOptimizerConfig` has no field named `memory_strategy`
+   --> examples/build_analytics_demo.rs:599:9
+    |
+599 |         memory_strategy: MemoryStrategy::Adaptive,
+    |         ^^^^^^^^^^^^^^^ `MemoryOptimizerConfig` does not have this field
+    |
+    = note: available fields are: `max_memory`, `strategy`, `gc_threshold`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:319:40
+    |
+319 |             cursed::optimization::pgo::OptimizationType::FunctionInlining => "Function Inlining".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0277]: the `?` operator can only be applied to values that implement `Try`
+   --> examples/build_analytics_demo.rs:605:17
+    |
+605 |     let cache = AdvancedCache::new(cache_config)?;
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the `?` operator cannot be applied to type `AdvancedCache`
+    |
+    = help: the trait `Try` is not implemented for `AdvancedCache`
+
+error[E0433]: failed to resolve: could not find `regression_analyzer` in `optimization`
+   --> examples/performance_baseline_demo.rs:214:46
+    |
+214 |         severity_mode: cursed::optimization::regression_analyzer::SeverityCalculationMode::Adaptive,
+    |                                              ^^^^^^^^^^^^^^^^^^^ could not find `regression_analyzer` in `optimization`
+
+error[E0277]: the `?` operator can only be applied to values that implement `Try`
+   --> examples/build_analytics_demo.rs:606:28
+    |
+606 |     let memory_optimizer = MemoryOptimizer::new(memory_config)?;
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the `?` operator cannot be applied to type `MemoryOptimizer`
+    |
+    = help: the trait `Try` is not implemented for `MemoryOptimizer`
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:379:39
+    |
+379 |                 cursed::optimization::performance_integration::ImplementationEffort::High => "🔴",
+    |                                       ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error[E0433]: failed to resolve: use of undeclared type `ProcessConfig`
+  --> examples/simple_process_demo.rs:13:18
+   |
+13 |     let config = ProcessConfig::new("echo")
+   |                  ^^^^^^^^^^^^^ use of undeclared type `ProcessConfig`
+
+error[E0599]: no method named `wait_for_completion` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:232:28
+    |
+232 |     let results = compiler.wait_for_completion(Some(std::time::Duration::from_secs(30)))?;
+    |                            ^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0425]: cannot find function `spawn_process` in this scope
+  --> examples/simple_process_demo.rs:17:23
+   |
+17 |     let mut process = spawn_process(config)?;
+   |                       ^^^^^^^^^^^^^ not found in this scope
+
+error[E0433]: failed to resolve: use of undeclared type `ProcessConfig`
+  --> examples/simple_process_demo.rs:26:22
+   |
+26 |     let env_config = ProcessConfig::new("env")
+   |                      ^^^^^^^^^^^^^ use of undeclared type `ProcessConfig`
+
+error[E0425]: cannot find function `spawn_process` in this scope
+  --> examples/simple_process_demo.rs:35:27
+   |
+35 |     let mut env_process = spawn_process(env_config)?;
+   |                           ^^^^^^^^^^^^^ not found in this scope
+
+error[E0433]: failed to resolve: could not find `RegressionSeverity` in `optimization`
+   --> examples/performance_baseline_demo.rs:263:35
+    |
+263 |             cursed::optimization::RegressionSeverity::Critical => "🔴",
+    |                                   ^^^^^^^^^^^^^^^^^^ could not find `RegressionSeverity` in `optimization`
+
+error[E0599]: no method named `start_build_monitoring` found for struct `BuildAnalytics` in the current scope
+   --> examples/build_analytics_demo.rs:609:15
+    |
+609 |     analytics.start_build_monitoring()?;
+    |               ^^^^^^^^^^^^^^^^^^^^^^ method not found in `BuildAnalytics`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:320:40
+    |
+320 |             cursed::optimization::pgo::OptimizationType::LoopOptimization => "Loop Optimization".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0599]: no method named `stop` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:240:14
+    |
+240 |     compiler.stop()?;
+    |              ^^^^ method not found in `ParallelCompiler`
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+  --> examples/test_vibes_example.rs:64:5
+   |
+64 |     assert_equal(&mut test, 5, 5, "numbers should be equal");
+   |     ^^^^^^^^^^^^            -  - unexpected argument #3 of type `{integer}`
+   |                             |
+   |                             expected `&mut VibeTest`, found integer
+   |
+note: function defined here
+  --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:10:8
+   |
+10 | pub fn assert_equal<T>(actual: T, expected: T, message: &str) -> AssertionResult 
+   |        ^^^^^^^^^^^^
+help: remove the extra argument
+   |
+64 -     assert_equal(&mut test, 5, 5, "numbers should be equal");
+64 +     assert_equal(&mut test, /* &mut cursed::stdlib::packages::VibeTest */, "numbers should be equal");
+   |
+
+error[E0061]: this function takes 2 arguments but 3 arguments were supplied
+  --> examples/test_vibes_example.rs:65:5
+   |
+65 |     assert_true(&mut test, true, "true should be true");
+   |     ^^^^^^^^^^^ --------- unexpected argument #1 of type `&mut cursed::stdlib::packages::VibeTest`
+   |
+note: function defined here
+  --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:42:8
+   |
+42 | pub fn assert_true(value: bool, message: &str) -> AssertionResult {
+   |        ^^^^^^^^^^^
+help: remove the extra argument
+   |
+65 -     assert_true(&mut test, true, "true should be true");
+65 +     assert_true(true, "true should be true");
+   |
+
+error[E0061]: this function takes 2 arguments but 3 arguments were supplied
+  --> examples/test_vibes_example.rs:66:5
+   |
+66 |     assert_false(&mut test, false, "false should be false");
+   |     ^^^^^^^^^^^^ --------- unexpected argument #1 of type `&mut cursed::stdlib::packages::VibeTest`
+   |
+note: function defined here
+  --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:68:8
+   |
+68 | pub fn assert_false(value: bool, message: &str) -> AssertionResult {
+   |        ^^^^^^^^^^^^
+help: remove the extra argument
+   |
+66 -     assert_false(&mut test, false, "false should be false");
+66 +     assert_false(false, "false should be false");
+   |
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+  --> examples/test_vibes_example.rs:69:5
+   |
+69 |     assert_contains_substr(&mut test, "hello world", "world", "should contain substring");
+   |     ^^^^^^^^^^^^^^^^^^^^^^ --------- unexpected argument #1 of type `&mut cursed::stdlib::packages::VibeTest`
+   |
+note: function defined here
+  --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:94:8
+   |
+94 | pub fn assert_contains_substr(text: &str, substr: &str, message: &str) -> AssertionResult {
+   |        ^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+   |
+69 -     assert_contains_substr(&mut test, "hello world", "world", "should contain substring");
+69 +     assert_contains_substr("hello world", "world", "should contain substring");
+   |
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/test_vibes_example.rs:70:5
+    |
+70  |     assert_has_prefix(&mut test, "TestVibes", "Test", "should start with Test");
+    |     ^^^^^^^^^^^^^^^^^ --------- unexpected argument #1 of type `&mut cursed::stdlib::packages::VibeTest`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:106:8
+    |
+106 | pub fn assert_has_prefix(text: &str, prefix: &str, message: &str) -> AssertionResult {
+    |        ^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+70  -     assert_has_prefix(&mut test, "TestVibes", "Test", "should start with Test");
+70  +     assert_has_prefix("TestVibes", "Test", "should start with Test");
+    |
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/test_vibes_example.rs:74:5
+    |
+74  |     assert_len(&mut test, &numbers, 5, "should have 5 elements");
+    |     ^^^^^^^^^^ --------- unexpected argument #1 of type `&mut cursed::stdlib::packages::VibeTest`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:118:8
+    |
+118 | pub fn assert_len<T>(collection: &[T], expected_len: usize, message: &str) -> AssertionResult {
+    |        ^^^^^^^^^^
+help: remove the extra argument
+    |
+74  -     assert_len(&mut test, &numbers, 5, "should have 5 elements");
+74  +     assert_len(&numbers, 5, "should have 5 elements");
+    |
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/build_analytics_demo.rs:620:20
+    |
+620 |     let dep_task = create_memory_aware_task(
+    |                    ^^^^^^^^^^^^^^^^^^^^^^^^
+621 |         "dependency_analysis".to_string(),
+622 |         "Cargo.toml".to_string(),
+    |         ------------------------ expected `u8`, found `String`
+623 |         50.0,
+    |         ---- expected `usize`, found floating-point number
+624 |         false,
+    |         ----- unexpected argument #4 of type `bool`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/memory_optimizer.rs:90:8
+    |
+90  | pub fn create_memory_aware_task(id: String, priority: u8, estimated_memory: usize) -> MemoryTask {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+622 ~         /* u8 */,
+623 ~         /* usize */,
+    |
+
+error[E0432]: unresolved import `cursed::optimization::comprehensive_performance_system`
+ --> examples/performance_optimization_showcase.rs:7:27
+  |
+7 | use cursed::optimization::comprehensive_performance_system::*;
+  |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ could not find `comprehensive_performance_system` in `optimization`
+
+error[E0433]: failed to resolve: use of undeclared type `ProcessConfig`
+  --> examples/simple_process_demo.rs:54:21
+   |
+54 |     let wd_config = ProcessConfig::new("pwd")
+   |                     ^^^^^^^^^^^^^ use of undeclared type `ProcessConfig`
+
+error[E0425]: cannot find function `spawn_process` in this scope
+  --> examples/simple_process_demo.rs:63:26
+   |
+63 |     let mut wd_process = spawn_process(wd_config)?;
+   |                          ^^^^^^^^^^^^^ not found in this scope
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/build_analytics_demo.rs:657:24
+    |
+657 |             let task = create_memory_aware_task(
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^
+658 |                 format!("compile_{}", filename.replace(['/', '.'], "_")),
+659 |                 filename.to_string(),
+    |                 -------------------- expected `u8`, found `String`
+660 |                 *memory_mb,
+    |                 ---------- expected `usize`, found floating-point number
+661 |                 *can_stream,
+    |                 ----------- unexpected argument #4 of type `bool`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/memory_optimizer.rs:90:8
+    |
+90  | pub fn create_memory_aware_task(id: String, priority: u8, estimated_memory: usize) -> MemoryTask {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+659 ~                 /* u8 */,
+660 ~                 /* usize */,
+    |
+
+error[E0560]: struct `CacheMetadata` has no field named `file_path`
+   --> examples/build_analytics_demo.rs:672:17
+    |
+672 |                 file_path: PathBuf::from(filename),
+    |                 ^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `last_modified`
+   --> examples/build_analytics_demo.rs:673:17
+    |
+673 |                 last_modified: 1234567890,
+    |                 ^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `file_size`
+   --> examples/build_analytics_demo.rs:674:17
+    |
+674 |                 file_size: (*memory_mb * 1024.0 * 1024.0) as u64,
+    |                 ^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `compiler_version`
+   --> examples/build_analytics_demo.rs:675:17
+    |
+675 |                 compiler_version: "0.1.0".to_string(),
+    |                 ^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `compilation_flags`
+   --> examples/build_analytics_demo.rs:676:17
+    |
+676 |                 compilation_flags: vec!["--optimize".to_string()],
+    |                 ^^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `source_hash`
+   --> examples/build_analytics_demo.rs:677:17
+    |
+677 |                 source_hash: format!("{}_hash", filename),
+    |                 ^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0560]: struct `CacheMetadata` has no field named `dependency_hashes`
+   --> examples/build_analytics_demo.rs:678:17
+    |
+678 |                 dependency_hashes: HashMap::new(),
+    |                 ^^^^^^^^^^^^^^^^^ `CacheMetadata` does not have this field
+    |
+    = note: available fields are: `created_at`, `size`, `hash`
+
+error[E0599]: no method named `start_with_progress` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:249:14
+    |
+249 |     compiler.start_with_progress(true)?;
+    |              ^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0433]: failed to resolve: could not find `RegressionSeverity` in `optimization`
+   --> examples/performance_baseline_demo.rs:264:35
+    |
+264 |             cursed::optimization::RegressionSeverity::Major => "🟠",
+    |                                   ^^^^^^^^^^^^^^^^^^ could not find `RegressionSeverity` in `optimization`
+
+error[E0599]: no associated item named `IR` found for struct `CacheData` in the current scope
+   --> examples/build_analytics_demo.rs:681:38
+    |
+681 |             let ir_data = CacheData::IR(format!("compiled_ir_for_{}", filename));
+    |                                      ^^ associated item not found in `CacheData`
+
+error[E0599]: no variant or associated item named `Critical` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:254:67
+    |
+254 |         create_job_with_priority("utils", base_path, JobPriority::Critical),
+    |                                                                   ^^^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0432]: unresolved imports `cursed::optimization::pgo::PgoConfig`, `cursed::optimization::pgo::OptimizationStrategy`
+ --> examples/performance_optimization_showcase.rs:9:33
+  |
+9 | use cursed::optimization::pgo::{PgoConfig, InstrumentationMode, OptimizationStrategy};
+  |                                 ^^^^^^^^^                       ^^^^^^^^^^^^^^^^^^^^ no `OptimizationStrategy` in `optimization::pgo`
+  |                                 |
+  |                                 no `PgoConfig` in `optimization::pgo`
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/build_analytics_demo.rs:698:21
+    |
+698 |     let link_task = create_memory_aware_task(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^
+699 |         "linking".to_string(),
+700 |         "link_phase".to_string(),
+    |         ------------------------ expected `u8`, found `String`
+701 |         400.0, // Large memory requirement for linking
+    |         ----- expected `usize`, found floating-point number
+702 |         false, // Cannot stream linking
+    |         ----- unexpected argument #4 of type `bool`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/build_system/memory_optimizer.rs:90:8
+    |
+90  | pub fn create_memory_aware_task(id: String, priority: u8, estimated_memory: usize) -> MemoryTask {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+700 ~         /* u8 */,
+701 ~         /* usize */, // Cannot stream linking
+    |
+
+error[E0432]: unresolved imports `cursed::build_system::PackageIntegrationConfig`, `cursed::build_system::PackageIntegration`
+ --> examples/package_integration_demo.rs:5:28
+  |
+5 | use cursed::build_system::{PackageIntegrationConfig, PackageIntegration};
+  |                            ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `PackageIntegration` in `build_system`
+  |                            |
+  |                            no `PackageIntegrationConfig` in `build_system`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:321:40
+    |
+321 |             cursed::optimization::pgo::OptimizationType::VectorizationOptimization => "Vectorization".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0432]: unresolved import `cursed::imports::ImportResolverConfig`
+ --> examples/package_integration_demo.rs:6:38
+  |
+6 | use cursed::imports::{ImportManager, ImportResolverConfig};
+  |                                      ^^^^^^^^^^^^^^^^^^^^
+  |                                      |
+  |                                      no `ImportResolverConfig` in `imports`
+  |                                      help: a similar name exists in the module: `ImportResolver`
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:255:74
+    |
+255 |         create_job_with_priority("complex_math", base_path, JobPriority::Normal),
+    |                                                                          ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0432]: unresolved imports `cursed::build_system::BuildOrchestrator`, `cursed::build_system::BuildConfig`, `cursed::build_system::ProjectType`, `cursed::build_system::TestDiscovery`, `cursed::build_system::TestDiscoveryConfig`, `cursed::build_system::TestExecutor`, `cursed::build_system::TestExecutionConfig`, `cursed::build_system::TestFilter`, `cursed::build_system::TestCategory`
+ --> examples/test_discovery_demo.rs:7:5
+  |
+7 |     BuildOrchestrator, BuildConfig, ProjectType, TestDiscovery, TestDiscoveryConfig,
+  |     ^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^  ^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^ no `TestDiscoveryConfig` in `build_system`
+  |     |                  |            |            |
+  |     |                  |            |            no `TestDiscovery` in `build_system`
+  |     |                  |            no `ProjectType` in `build_system`
+  |     |                  no `BuildConfig` in `build_system`
+  |     no `BuildOrchestrator` in `build_system`
+8 |     TestExecutor, TestExecutionConfig, TestFilter, TestCategory
+  |     ^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^^^^^^ no `TestCategory` in `build_system`
+  |     |             |                    |
+  |     |             |                    no `TestFilter` in `build_system`
+  |     |             no `TestExecutionConfig` in `build_system`
+  |     no `TestExecutor` in `build_system`
+
+error[E0432]: unresolved imports `cursed::codegen::llvm::jit_compilation::JitCompilationInterface`, `cursed::codegen::llvm::jit_compilation::JitCompilationConfig`, `cursed::codegen::llvm::jit_compilation::create_optimized_jit_interface`, `cursed::codegen::llvm::osr::OSRManager`, `cursed::codegen::llvm::osr::OSRConfig`, `cursed::codegen::llvm::osr::DeoptimizationReason`, `cursed::codegen::llvm::tiered_compilation::TieredCompilationManager`, `cursed::codegen::llvm::tiered_compilation::TieredCompilationConfig`, `cursed::codegen::llvm::tiered_compilation::CompilationTier`
+  --> examples/osr_tiered_compilation_demo.rs:7:23
+   |
+7  |     jit_compilation::{JitCompilationInterface, JitCompilationConfig, create_optimized_jit_interface},
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `create_optimized_jit_interface` in `codegen::llvm::jit_compilation`
+   |                       |                        |
+   |                       |                        no `JitCompilationConfig` in `codegen::llvm::jit_compilation`
+   |                       no `JitCompilationInterface` in `codegen::llvm::jit_compilation`
+8  |     jit_engine::CursedJitEngine,
+9  |     osr::{OSRManager, OSRConfig, DeoptimizationReason},
+   |           ^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^ no `DeoptimizationReason` in `codegen::llvm::osr`
+   |           |           |
+   |           |           no `OSRConfig` in `codegen::llvm::osr`
+   |           no `OSRManager` in `codegen::llvm::osr`
+10 |     tiered_compilation::{TieredCompilationManager, TieredCompilationConfig, CompilationTier},
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^ no `CompilationTier` in `codegen::llvm::tiered_compilation`
+   |                          |                         |
+   |                          |                         no `TieredCompilationConfig` in `codegen::llvm::tiered_compilation`
+   |                          no `TieredCompilationManager` in `codegen::llvm::tiered_compilation`
+   |
+   = help: consider importing this enum instead:
+           cursed::runtime::jit_runtime::CompilationTier
+help: a similar name exists in the module
+   |
+7  |     jit_compilation::{JitCompilationStats, JitCompilationConfig, create_optimized_jit_interface},
+   |                       ~~~~~~~~~~~~~~~~~~~
+help: a similar name exists in the module
+   |
+7  |     jit_compilation::{JitCompilationInterface, JitCompilationStats, create_optimized_jit_interface},
+   |                                                ~~~~~~~~~~~~~~~~~~~
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:439:37
+    |
+439 |     results: &cursed::optimization::performance_integration::IntegratedOptimizationResults,
+    |                                     ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error[E0599]: no method named `stop_build_monitoring` found for struct `BuildAnalytics` in the current scope
+   --> examples/build_analytics_demo.rs:721:35
+    |
+721 |     let final_metrics = analytics.stop_build_monitoring()?;
+    |                                   ^^^^^^^^^^^^^^^^^^^^^ method not found in `BuildAnalytics`
+
+error[E0433]: failed to resolve: could not find `RegressionSeverity` in `optimization`
+   --> examples/performance_baseline_demo.rs:265:35
+    |
+265 |             cursed::optimization::RegressionSeverity::Minor => "🟡",
+    |                                   ^^^^^^^^^^^^^^^^^^ could not find `RegressionSeverity` in `optimization`
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/test_vibes_example.rs:75:5
+    |
+75  |     assert_contains(&mut test, &numbers, &3, "should contain 3");
+    |     ^^^^^^^^^^^^^^^                      -- unexpected argument #3 of type `&{integer}`
+    |
+note: expected `&[Vec<{integer}>]`, found `&mut VibeTest`
+   --> examples/test_vibes_example.rs:75:21
+    |
+75  |     assert_contains(&mut test, &numbers, &3, "should contain 3");
+    |                     ^^^^^^^^^
+    = note:      expected reference `&[Vec<{integer}>]`
+            found mutable reference `&mut cursed::stdlib::packages::VibeTest`
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:130:8
+    |
+130 | pub fn assert_contains<T>(collection: &[T], item: &T, message: &str) -> AssertionResult 
+    |        ^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+75  -     assert_contains(&mut test, &numbers, &3, "should contain 3");
+75  +     assert_contains(/* collection */, &numbers, "should contain 3");
+    |
+
+error[E0425]: cannot find function `command_exists` in this scope
+  --> examples/simple_process_demo.rs:70:41
+   |
+70 |     println!("Echo command exists: {}", command_exists("echo"));
+   |                                         ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0599]: no method named `add_jobs_with_dependencies` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:266:14
+    |
+266 |     compiler.add_jobs_with_dependencies(jobs)?;
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:322:40
+    |
+322 |             cursed::optimization::pgo::OptimizationType::BranchPrediction => "Branch Prediction".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0425]: cannot find function `command_exists` in this scope
+  --> examples/simple_process_demo.rs:71:48
+   |
+71 |     println!("Nonexistent command exists: {}", command_exists("nonexistent_xyz"));
+   |                                                ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `which` in this scope
+  --> examples/simple_process_demo.rs:73:28
+   |
+73 |     if let Ok(echo_path) = which("echo") {
+   |                            ^^^^^ not found in this scope
+
+error[E0425]: cannot find function `create_debug_jit_interface` in module `cursed::codegen::llvm::jit_compilation`
+   --> examples/osr_tiered_compilation_demo.rs:380:66
+    |
+380 |     let _dev_interface = cursed::codegen::llvm::jit_compilation::create_debug_jit_interface(&context)?;
+    |                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `cursed::codegen::llvm::jit_compilation`
+
+error[E0425]: cannot find function `create_optimized_jit_interface` in module `cursed::codegen::llvm::jit_compilation`
+   --> examples/osr_tiered_compilation_demo.rs:388:67
+    |
+388 |     let _prod_interface = cursed::codegen::llvm::jit_compilation::create_optimized_jit_interface(&context)?;
+    |                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `cursed::codegen::llvm::jit_compilation`
+
+error[E0425]: cannot find function `get_process_info` in this scope
+  --> examples/simple_process_demo.rs:82:31
+   |
+82 |     if let Ok(process_info) = get_process_info(current_pid) {
+   |                               ^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `is_process_running` in this scope
+  --> examples/simple_process_demo.rs:84:41
+   |
+84 |         println!("Process running: {}", is_process_running(current_pid));
+   |                                         ^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `run_command` in this scope
+  --> examples/simple_process_demo.rs:89:24
+   |
+89 |     let shell_output = run_command("echo 'Shell command executed successfully'")?;
+   |                        ^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `run_command_timeout` in this scope
+  --> examples/simple_process_demo.rs:96:15
+   |
+96 |         match run_command_timeout("sleep 0.1", Duration::from_millis(200)) {
+   |               ^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `run_command_timeout` in this scope
+   --> examples/simple_process_demo.rs:101:15
+    |
+101 |         match run_command_timeout("sleep 2", Duration::from_millis(100)) {
+    |               ^^^^^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0599]: no method named `generate_build_report` found for struct `BuildAnalytics` in the current scope
+   --> examples/build_analytics_demo.rs:747:28
+    |
+747 |     let report = analytics.generate_build_report()?;
+    |                            ^^^^^^^^^^^^^^^^^^^^^ method not found in `BuildAnalytics`
+
+error[E0433]: failed to resolve: could not find `RegressionSeverity` in `optimization`
+   --> examples/performance_baseline_demo.rs:266:35
+    |
+266 |             cursed::optimization::RegressionSeverity::Warning => "🔵",
+    |                                   ^^^^^^^^^^^^^^^^^^ could not find `RegressionSeverity` in `optimization`
+
+error[E0599]: no method named `wait_for_completion` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:267:28
+    |
+267 |     let results = compiler.wait_for_completion(Some(std::time::Duration::from_secs(30)))?;
+    |                            ^^^^^^^^^^^^^^^^^^^ method not found in `ParallelCompiler`
+
+error[E0599]: no method named `get_result` found for struct `cursed::stdlib::packages::VibeTest` in the current scope
+  --> examples/test_vibes_example.rs:77:28
+   |
+77 |     let test_result = test.get_result();
+   |                            ^^^^^^^^^^ method not found in `VibeTest`
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:489:94
+    |
+489 | ...ult<cursed::optimization::performance_integration::ProjectCharacteristics> {
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:323:40
+    |
+323 |             cursed::optimization::pgo::OptimizationType::IndirectCallPromotion => "Indirect Call Promotion".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0061]: this function takes 0 arguments but 1 argument was supplied
+   --> examples/test_vibes_example.rs:93:13
+    |
+93  |             DatabaseFixture::new("test://localhost/testdb")
+    |             ^^^^^^^^^^^^^^^^^^^^ ------------------------- unexpected argument of type `&'static str`
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/fixtures.rs:269:12
+    |
+269 |     pub fn new() -> Self {
+    |            ^^^
+help: remove the extra argument
+    |
+93  -             DatabaseFixture::new("test://localhost/testdb")
+93  +             DatabaseFixture::new()
+    |
+
+error[E0061]: this function takes 1 argument but 2 arguments were supplied
+  --> examples/test_vibes_example.rs:89:19
+   |
+89 |       let fixture = FixtureVibe::new(
+   |                     ^^^^^^^^^^^^^^^^
+...
+95 | /         |_t, mut db| {
+96 | |             // Teardown: cleanup
+97 | |             println!("    🧹 Cleaning up test database...");
+98 | |             db.disconnect();
+99 | |         },
+   | |_________- unexpected argument #2
+   |
+note: expected `String`, found closure
+  --> examples/test_vibes_example.rs:90:9
+   |
+90 | /         |_t| {
+91 | |             // Setup: create a mock database
+92 | |             println!("    🔧 Setting up test database...");
+93 | |             DatabaseFixture::new("test://localhost/testdb")
+94 | |         },
+   | |_________^
+   = note: expected struct `std::string::String`
+             found closure `{closure@examples/test_vibes_example.rs:90:9: 90:13}`
+note: associated function defined here
+  --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/fixtures.rs:21:12
+   |
+21 |     pub fn new(name: String) -> Self {
+   |            ^^^
+help: remove the extra argument
+   |
+90 -         |_t| {
+91 -             // Setup: create a mock database
+92 -             println!("    🔧 Setting up test database...");
+93 -             DatabaseFixture::new("test://localhost/testdb")
+94 -         },
+90 +         /* std::string::String */,
+   |
+
+error[E0599]: no method named `stop` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:279:14
+    |
+279 |     compiler.stop()?;
+    |              ^^^^ method not found in `ParallelCompiler`
+
+Some errors have detailed explanations: E0425, E0433.
+For more information about an error, try `rustc --explain E0425`.
+error[E0599]: no function or associated item named `with_limits` found for struct `ParallelCompiler` in the current scope
+   --> examples/parallel_compilation_demo.rs:288:42
+    |
+288 |     let mut compiler = ParallelCompiler::with_limits(2, 512, 70.0);
+    |                                          ^^^^^^^^^^^ function or associated item not found in `ParallelCompiler`
+    |
+note: if you're trying to build a new `ParallelCompiler`, consider using `ParallelCompiler::new` which returns `ParallelCompiler`
+   --> /home/ghuntley/code/cursed/src/optimization/parallel.rs:43:5
+    |
+43  |     pub fn new(max_workers: usize) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some errors have detailed explanations: E0061, E0277, E0308, E0560, E0599, E0609.
+For more information about an error, try `rustc --explain E0061`.
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:297:52
+    |
+297 |         create_job("main", base_path, JobPriority::Normal),
+    |                                                    ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:324:40
+    |
+324 |             cursed::optimization::pgo::OptimizationType::ValueSpecialization => "Value Specialization".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:298:53
+    |
+298 |         create_job("utils", base_path, JobPriority::Normal),
+    |                                                     ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0308]: mismatched types
+  --> examples/packrat_usage_examples.rs:49:29
+   |
+49 |             ("config.json", b"{\"name\": \"cursed\", \"version\": \"1.0\"}"),
+   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a fixed size of 19 elements, found one with 36 elements
+
+error: could not compile `cursed` (example "simple_process_demo") due to 15 previous errors
+warning: build failed, waiting for other jobs to finish...
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:516:30
+    |
+516 |     Ok(cursed::optimization::performance_integration::ProjectCharacteristics {
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error: could not compile `cursed` (example "build_analytics_demo") due to 74 previous errors
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:299:56
+    |
+299 |         create_job("math_lib", base_path, JobPriority::Normal),
+    |                                                        ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0308]: mismatched types
+  --> examples/packrat_usage_examples.rs:50:31
+   |
+50 |             ("data/info.txt", b"This file is in a subdirectory"),
+   |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a fixed size of 19 elements, found one with 30 elements
+
+error[E0599]: no method named `run` found for struct `cursed::stdlib::packages::FixtureVibe` in the current scope
+   --> examples/test_vibes_example.rs:103:13
+    |
+103 |     fixture.run(&mut test, |t, mut db| {
+    |     --------^^^ method not found in `FixtureVibe`
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:300:60
+    |
+300 |         create_job("complex_math", base_path, JobPriority::Normal),
+    |                                                            ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:325:40
+    |
+325 |             cursed::optimization::pgo::OptimizationType::CodeLayout => "Code Layout".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/parallel_compilation_demo.rs:301:58
+    |
+301 |         create_job("web_server", base_path, JobPriority::Normal),
+    |                                                          ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0432]: unresolved imports `cursed::stdlib::system::monitoring::SystemMonitor`, `cursed::stdlib::system::monitoring::monitor_system`, `cursed::stdlib::system::monitoring::monitor_system_with_cache`, `cursed::stdlib::system::monitoring::monitor_continuous`, `cursed::stdlib::system::monitoring::get_resource_usage`, `cursed::stdlib::system::monitoring::get_performance_metrics`, `cursed::stdlib::system::monitoring::get_cpu_usage`, `cursed::stdlib::system::monitoring::get_memory_usage`, `cursed::stdlib::system::monitoring::get_disk_usage`, `cursed::stdlib::system::monitoring::get_network_statistics`, `cursed::stdlib::system::monitoring::get_system_info_summary`, `cursed::stdlib::system::monitoring::get_process_info`, `cursed::stdlib::system::monitoring::get_top_processes_by_cpu`, `cursed::stdlib::system::monitoring::get_top_processes_by_memory`, `cursed::stdlib::system::monitoring::cleanup_monitoring`
+  --> examples/system_monitoring_demo.rs:8:5
+   |
+8  |     SystemMonitor, monitor_system, monitor_system_with_cache, monitor_continuous,
+   |     ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^ no `monitor_continuous` in `stdlib::system::monitoring`
+   |     |              |               |
+   |     |              |               no `monitor_system_with_cache` in `stdlib::system::monitoring`
+   |     |              no `monitor_system` in `stdlib::system::monitoring`
+   |     no `SystemMonitor` in `stdlib::system::monitoring`
+9  |     get_resource_usage, get_performance_metrics, get_cpu_usage, get_memory_usage,
+   |     ^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^ no `get_memory_usage` in `stdlib::system::monitoring`
+   |     |                   |                        |
+   |     |                   |                        no `get_cpu_usage` in `stdlib::system::monitoring`
+   |     |                   no `get_performance_metrics` in `stdlib::system::monitoring`
+   |     no `get_resource_usage` in `stdlib::system::monitoring`
+10 |     get_disk_usage, get_network_statistics, get_system_info_summary,
+   |     ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^
+   |     |               |
+   |     |               no `get_network_statistics` in `stdlib::system::monitoring`
+   |     no `get_disk_usage` in `stdlib::system::monitoring`
+11 |     get_process_info, get_top_processes_by_cpu, get_top_processes_by_memory,
+   |     ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 |     init_monitoring, cleanup_monitoring,
+   |                      ^^^^^^^^^^^^^^^^^^
+
+error[E0560]: struct `CompilationJob` has no field named `output_path`
+   --> examples/parallel_compilation_demo.rs:326:9
+    |
+326 |         output_path: base_path.join(format!("{}.o", name)),
+    |         ^^^^^^^^^^^ `CompilationJob` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0560]: struct `CompilationJob` has no field named `compile_flags`
+   --> examples/parallel_compilation_demo.rs:329:9
+    |
+329 |         compile_flags: vec!["-O2".to_string()],
+    |         ^^^^^^^^^^^^^ `CompilationJob` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0560]: struct `CompilationJob` has no field named `created_at`
+   --> examples/parallel_compilation_demo.rs:330:9
+    |
+330 |         created_at: Instant::now(),
+    |         ^^^^^^^^^^ `CompilationJob` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0599]: no method named `get_result` found for struct `cursed::stdlib::packages::VibeTest` in the current scope
+   --> examples/test_vibes_example.rs:121:28
+    |
+121 |     let test_result = test.get_result();
+    |                            ^^^^^^^^^^ method not found in `VibeTest`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:326:40
+    |
+326 |             cursed::optimization::pgo::OptimizationType::RegisterAllocation => "Register Allocation".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:532:72
+    |
+532 | fn print_characteristics_table(characteristics: &cursed::optimization::performance_integration::ProjectCharacteristics) {
+    |                                                                        ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error[E0308]: mismatched types
+   --> examples/test_vibes_example.rs:127:30
+    |
+127 |     let mock = MockVibe::new("api_service");
+    |                ------------- ^^^^^^^^^^^^^- help: try using a conversion method: `.to_string()`
+    |                |             |
+    |                |             expected `String`, found `&str`
+    |                arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/mocking.rs:22:12
+    |
+22  |     pub fn new(name: String) -> Self {
+    |            ^^^
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:327:40
+    |
+327 |             cursed::optimization::pgo::OptimizationType::DeadCodeElimination => "Dead Code Elimination".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0432]: unresolved import `cursed::stdlib::packages::db_core`
+  --> examples/postgresql_demo.rs:22:31
+   |
+22 | use cursed::stdlib::packages::db_core::{ConnectionConfig, DatabaseDriver};
+   |                               ^^^^^^^ could not find `db_core` in `packages`
+
+Some errors have detailed explanations: E0308, E0560, E0599.
+For more information about an error, try `rustc --explain E0308`.
+error[E0308]: mismatched types
+  --> examples/package_integration_demo.rs:48:17
+   |
+47 |             match manager.list_installed() {
+   |                   ------------------------ this expression has type `Vec<&InstalledPackageInfo>`
+48 |                 Ok(packages) => {
+   |                 ^^^^^^^^^^^^ expected `Vec<&InstalledPackageInfo>`, found `Result<_, _>`
+   |
+   = note: expected struct `Vec<&InstalledPackageInfo>`
+                found enum `std::result::Result<_, _>`
+
+error[E0308]: mismatched types
+  --> examples/package_integration_demo.rs:54:17
+   |
+47 |             match manager.list_installed() {
+   |                   ------------------------ this expression has type `Vec<&InstalledPackageInfo>`
+...
+54 |                 Err(e) => {
+   |                 ^^^^^^ expected `Vec<&InstalledPackageInfo>`, found `Result<_, _>`
+   |
+   = note: expected struct `Vec<&InstalledPackageInfo>`
+                found enum `std::result::Result<_, _>`
+
+error[E0432]: unresolved imports `cursed::stdlib::packages::db_sql::drivers::SqlTransactionIsolation`, `cursed::stdlib::packages::db_sql::drivers::SqlBatch`
+  --> examples/postgresql_demo.rs:24:49
+   |
+24 | use cursed::stdlib::packages::db_sql::drivers::{SqlTransactionIsolation, SqlBatch};
+   |                                                 ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^ no `SqlBatch` in `stdlib::packages::db_sql::drivers`
+   |                                                 |
+   |                                                 no `SqlTransactionIsolation` in `stdlib::packages::db_sql::drivers`
+
+error[E0433]: failed to resolve: could not find `OptimizationType` in `pgo`
+   --> examples/pgo_example.rs:328:40
+    |
+328 |             cursed::optimization::pgo::OptimizationType::ConstantPropagation => "Constant Propagation".to_string(),
+    |                                        ^^^^^^^^^^^^^^^^
+    |                                        |
+    |                                        could not find `OptimizationType` in `pgo`
+    |                                        help: an enum with a similar name exists: `LoopOptimizationType`
+
+error[E0412]: cannot find type `OptimizationType` in module `cursed::optimization::pgo`
+   --> examples/pgo_example.rs:316:61
+    |
+316 | impl OptimizationTypeDisplay for cursed::optimization::pgo::OptimizationType {
+    |                                                             ^^^^^^^^^^^^^^^^ help: an enum with a similar name exists: `LoopOptimizationType`
+    |
+   ::: /home/ghuntley/code/cursed/src/optimization/pgo/mod.rs:47:1
+    |
+47  | pub enum LoopOptimizationType {
+    | ----------------------------- similarly named enum `LoopOptimizationType` defined here
+
+error[E0599]: no function or associated item named `new` found for struct `AdvancedOptimizationManager` in the current scope
+   --> examples/optimization_usage_demo.rs:38:57
+    |
+38  |     let mut optimization_manager = OptimizationManager::new()
+    |                                                         ^^^ function or associated item not found in `AdvancedOptimizationManager`
+    |
+note: if you're trying to build a new `AdvancedOptimizationManager` consider using one of the following associated functions:
+      AdvancedOptimizationManager::default
+      AdvancedOptimizationManager::with_optimization_config
+      AdvancedOptimizationManager::with_config
+   --> /home/ghuntley/code/cursed/src/optimization/optimization_manager.rs:25:5
+    |
+25  |     pub fn default() -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+38  |     pub fn with_optimization_config(config: crate::optimization::config::OptimizationConfig) -> Result<Self, CursedError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+107 |     pub fn with_config(config: crate::optimization::config::OptimizationConfig) -> Result<Self, CursedError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: items from traits can only be used if the trait is in scope
+help: trait `Paint` which provides `new` is implemented but not in scope; perhaps you want to import it
+    |
+3   + use yansi::Paint;
+    |
+
+error[E0061]: this function takes 0 arguments but 2 arguments were supplied
+  --> examples/package_integration_demo.rs:72:33
+   |
+72 |     let import_manager_result = ImportManager::new(package_manager.clone(), import_config);
+   |                                 ^^^^^^^^^^^^^^^^^^ -----------------------  ------------- unexpected argument #2
+   |                                                    |
+   |                                                    unexpected argument #1 of type `Arc<std::sync::Mutex<PackageManager>>`
+   |
+note: associated function defined here
+  --> /home/ghuntley/code/cursed/src/imports/mod.rs:74:12
+   |
+74 |     pub fn new() -> Result<Self> {
+   |            ^^^
+help: remove the extra arguments
+   |
+72 -     let import_manager_result = ImportManager::new(package_manager.clone(), import_config);
+72 +     let import_manager_result = ImportManager::new();
+   |
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:543:71
+    |
+543 | fn print_characteristics_json(characteristics: &cursed::optimization::performance_integration::ProjectCharacteristics) {
+    |                                                                       ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error: could not compile `cursed` (example "parallel_compilation_demo") due to 30 previous errors
+error[E0308]: mismatched types
+  --> examples/postgres_demo.rs:99:44
+   |
+99 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+   |                    ----------------------- ^^^^^^^^^^^^^^ expected `String`, found `PostgresConfig`
+   |                    |
+   |                    arguments to this function are incorrect
+   |
+note: associated function defined here
+  --> /home/ghuntley/code/cursed/src/stdlib/database/postgres/connection.rs:19:12
+   |
+19 |     pub fn new(connection_string: String) -> Self {
+   |            ^^^
+
+error[E0046]: not all trait items implemented, missing: `get_tag`, `size`
+  --> examples/adaptive_gc_demo.rs:32:1
+   |
+32 | impl Traceable for WebRequest {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `get_tag`, `size` in implementation
+   |
+   = help: implement the missing item: `fn get_tag(&self) -> Tag { todo!() }`
+   = help: implement the missing item: `fn size(&self) -> usize { todo!() }`
+
+error[E0046]: not all trait items implemented, missing: `get_tag`, `size`
+  --> examples/adaptive_gc_demo.rs:49:1
+   |
+49 | impl Traceable for DataProcessingJob {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `get_tag`, `size` in implementation
+   |
+   = help: implement the missing item: `fn get_tag(&self) -> Tag { todo!() }`
+   = help: implement the missing item: `fn size(&self) -> usize { todo!() }`
+
+error[E0308]: mismatched types
+   --> examples/packrat_usage_examples.rs:103:29
+    |
+103 |             ("src/main.rs", b"fn main() {\n    println!(\"Hello from ZIP!\");\n}"),
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a fixed size of 45 elements, found one with 46 elements
+
+error[E0308]: mismatched types
+   --> examples/test_vibes_example.rs:130:36
+    |
+130 |     let _expectation = mock.expect("get_user").times(1);
+    |                             ------ ^^^^^^^^^^ expected `Expectation`, found `&str`
+    |                             |
+    |                             arguments to this method are incorrect
+    |
+note: method defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/mocking.rs:37:12
+    |
+37  |     pub fn expect(mut self, expectation: Expectation) -> Self {
+    |            ^^^^^^
+
+error[E0599]: no function or associated item named `new` found for struct `AdvancedOptimizationManager` in the current scope
+   --> examples/optimization_analyzer_example.rs:38:40
+    |
+38  |     let manager = OptimizationManager::new();
+    |                                        ^^^ function or associated item not found in `AdvancedOptimizationManager`
+    |
+note: if you're trying to build a new `AdvancedOptimizationManager` consider using one of the following associated functions:
+      AdvancedOptimizationManager::default
+      AdvancedOptimizationManager::with_optimization_config
+      AdvancedOptimizationManager::with_config
+   --> /home/ghuntley/code/cursed/src/optimization/optimization_manager.rs:25:5
+    |
+25  |     pub fn default() -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+38  |     pub fn with_optimization_config(config: crate::optimization::config::OptimizationConfig) -> Result<Self, CursedError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+107 |     pub fn with_config(config: crate::optimization::config::OptimizationConfig) -> Result<Self, CursedError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: items from traits can only be used if the trait is in scope
+help: trait `Paint` which provides `new` is implemented but not in scope; perhaps you want to import it
+    |
+8   + use yansi::Paint;
+    |
+
+error[E0277]: `PostgresConnection` is not a future
+  --> examples/postgres_demo.rs:99:60
+   |
+99 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+   |                    ----------------------------------------^^^^^
+   |                    |                                      ||
+   |                    |                                      |`PostgresConnection` is not a future
+   |                    |                                      help: remove the `.await`
+   |                    this call returns `PostgresConnection`
+   |
+   = help: the trait `Future` is not implemented for `PostgresConnection`, which is required by `PostgresConnection: IntoFuture`
+   = note: PostgresConnection must be a future or must implement `IntoFuture` to be awaited
+   = note: required for `PostgresConnection` to implement `IntoFuture`
+
+error[E0308]: mismatched types
+   --> examples/packrat_usage_examples.rs:104:33
+    |
+104 |             ("assets/data.csv", b"name,value\nitem1,100\nitem2,200"),
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected an array with a fixed size of 45 elements, found one with 30 elements
+
+error[E0282]: type annotations needed
+   --> examples/optimization_analyzer_example.rs:108:66
+    |
+108 | ...                   println!("       Before: {}", before.lines().next().unwrap_or(""));
+    |                                                            ^^^^^ cannot infer type for type parameter `T` declared on the enum `Option`
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:556:72
+    |
+556 | fn print_characteristics_yaml(_characteristics: &cursed::optimization::performance_integration::ProjectCharacteristics) {
+    |                                                                        ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error[E0433]: failed to resolve: could not find `db_core` in `packages`
+  --> examples/postgresql_demo.rs:81:52
+   |
+81 |         ("Transactions", cursed::stdlib::packages::db_core::DriverFeature::Transactions),
+   |                                                    ^^^^^^^ could not find `db_core` in `packages`
+
+error[E0599]: no method named `times` found for struct `cursed::stdlib::packages::test_vibes::MockVibe` in the current scope
+   --> examples/test_vibes_example.rs:130:48
+    |
+130 |     let _expectation = mock.expect("get_user").times(1);
+    |                                                ^^^^^ method not found in `MockVibe`
+
+Some errors have detailed explanations: E0432, E0599.
+For more information about an error, try `rustc --explain E0432`.
+error[E0308]: mismatched types
+   --> examples/postgres_demo.rs:141:34
+    |
+141 |     let pool = PostgresPool::new(config.clone()).await?;
+    |                ----------------- ^^^^^^^^^^^^^^ expected `PostgresPoolConfig`, found `PostgresConfig`
+    |                |
+    |                arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/database/postgres/pool.rs:44:12
+    |
+44  |     pub fn new(config: PostgresPoolConfig) -> PostgresPoolResult<Self> {
+    |            ^^^
+
+error[E0433]: failed to resolve: could not find `db_core` in `packages`
+  --> examples/postgresql_demo.rs:82:59
+   |
+82 |         ("Prepared Statements", cursed::stdlib::packages::db_core::DriverFeature::PreparedStatements),
+   |                                                           ^^^^^^^ could not find `db_core` in `packages`
+
+error[E0282]: type annotations needed
+   --> examples/optimization_analyzer_example.rs:111:65
+    |
+111 | ...                   println!("       After:  {}", after.lines().next().unwrap_or(""));
+    |                                                           ^^^^^ cannot infer type for type parameter `T` declared on the enum `Option`
+
+error[E0277]: `std::result::Result<PostgresPool, CursedError>` is not a future
+   --> examples/postgres_demo.rs:141:50
+    |
+141 |     let pool = PostgresPool::new(config.clone()).await?;
+    |                ----------------------------------^^^^^
+    |                |                                ||
+    |                |                                |`std::result::Result<PostgresPool, CursedError>` is not a future
+    |                |                                help: remove the `.await`
+    |                this call returns `std::result::Result<PostgresPool, CursedError>`
+    |
+    = help: the trait `Future` is not implemented for `std::result::Result<PostgresPool, CursedError>`, which is required by `std::result::Result<PostgresPool, CursedError>: IntoFuture`
+    = note: std::result::Result<PostgresPool, CursedError> must be a future or must implement `IntoFuture` to be awaited
+    = note: required for `std::result::Result<PostgresPool, CursedError>` to implement `IntoFuture`
+
+error[E0433]: failed to resolve: could not find `performance_integration` in `optimization`
+   --> examples/performance_optimization_cli_demo.rs:561:76
+    |
+561 | fn provide_project_recommendations(characteristics: &cursed::optimization::performance_integration::ProjectCharacteristics) {
+    |                                                                            ^^^^^^^^^^^^^^^^^^^^^^^ could not find `performance_integration` in `optimization`
+
+error[E0412]: cannot find type `BenchmarkResults` in module `cursed::optimization::benchmarking`
+   --> examples/performance_optimization_cli_demo.rs:424:77
+    |
+424 | fn calculate_efficiency_score(results: &cursed::optimization::benchmarking::BenchmarkResults) -> f64 {
+    |                                                                             ^^^^^^^^^^^^^^^^ not found in `cursed::optimization::benchmarking`
+    |
+help: consider importing this struct
+    |
+1   + use cursed::profiling::BenchmarkResults;
+    |
+help: if you import `BenchmarkResults`, refer to it directly
+    |
+424 - fn calculate_efficiency_score(results: &cursed::optimization::benchmarking::BenchmarkResults) -> f64 {
+424 + fn calculate_efficiency_score(results: &BenchmarkResults) -> f64 {
+    |
+
+error[E0282]: type annotations needed for `Arc<_, _>`
+   --> examples/system_monitoring_demo.rs:254:13
+    |
+254 |         let monitor_clone = std::sync::Arc::clone(&monitor);
+    |             ^^^^^^^^^^^^^
+...
+257 |                 let usage = monitor_clone.get_resource_usage()?;
+    |                                           ------------------ type must be known at this point
+    |
+help: consider giving `monitor_clone` an explicit type, where the type for type parameter `T` is specified
+    |
+254 |         let monitor_clone: Arc<T, A> = std::sync::Arc::clone(&monitor);
+    |                          +++++++++++
+
+error[E0061]: this method takes 1 argument but 2 arguments were supplied
+   --> examples/test_vibes_example.rs:134:24
+    |
+134 |     let _result = mock.record_call("get_user", vec!["user_id_123".to_string()]);
+    |                        ^^^^^^^^^^^             ------------------------------- unexpected argument #2 of type `Vec<std::string::String>`
+    |
+note: method defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/mocking.rs:55:12
+    |
+55  |     pub fn record_call(&mut self, method_name: &str) {
+    |            ^^^^^^^^^^^
+help: remove the extra argument
+    |
+134 -     let _result = mock.record_call("get_user", vec!["user_id_123".to_string()]);
+134 +     let _result = mock.record_call("get_user");
+    |
+
+Some errors have detailed explanations: E0308, E0432.
+error[E0433]: failed to resolve: could not find `db_core` in `packages`
+  --> examples/postgresql_demo.rs:83:58
+   |
+83 |         ("Connection Pooling", cursed::stdlib::packages::db_core::DriverFeature::ConnectionPooling),
+   |                                                          ^^^^^^^ could not find `db_core` in `packages`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `cursed` (example "optimization_usage_demo") due to 2 previous errors
+error[E0433]: failed to resolve: could not find `db_core` in `packages`
+  --> examples/postgresql_demo.rs:84:56
+   |
+84 |         ("Async Operations", cursed::stdlib::packages::db_core::DriverFeature::AsyncOperations),
+   |                                                        ^^^^^^^ could not find `db_core` in `packages`
+
+error[E0308]: mismatched types
+   --> examples/postgres_demo.rs:191:44
+    |
+191 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------- ^^^^^^^^^^^^^^ expected `String`, found `PostgresConfig`
+    |                    |
+    |                    arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/database/postgres/connection.rs:19:12
+    |
+19  |     pub fn new(connection_string: String) -> Self {
+    |            ^^^
+
+error[E0061]: this method takes 0 arguments but 1 argument was supplied
+   --> examples/test_vibes_example.rs:138:10
+    |
+138 |     mock.verify(&mut test);
+    |          ^^^^^^ --------- unexpected argument of type `&mut cursed::stdlib::packages::VibeTest`
+    |
+note: method defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/mocking.rs:59:12
+    |
+59  |     pub fn verify(&self) -> TestResult<()> {
+    |            ^^^^^^
+help: remove the extra argument
+    |
+138 -     mock.verify(&mut test);
+138 +     mock.verify();
+    |
+
+error[E0277]: `PostgresConnection` is not a future
+   --> examples/postgres_demo.rs:191:60
+    |
+191 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------------------------^^^^^
+    |                    |                                      ||
+    |                    |                                      |`PostgresConnection` is not a future
+    |                    |                                      help: remove the `.await`
+    |                    this call returns `PostgresConnection`
+    |
+    = help: the trait `Future` is not implemented for `PostgresConnection`, which is required by `PostgresConnection: IntoFuture`
+    = note: PostgresConnection must be a future or must implement `IntoFuture` to be awaited
+    = note: required for `PostgresConnection` to implement `IntoFuture`
+
+error: could not compile `cursed` (example "packrat_usage_examples") due to 5 previous errors
+error: could not compile `cursed` (example "test_discovery_demo") due to 1 previous error
+error[E0433]: failed to resolve: could not find `db_core` in `packages`
+  --> examples/postgresql_demo.rs:85:49
+   |
+85 |         ("Streaming", cursed::stdlib::packages::db_core::DriverFeature::Streaming),
+   |                                                 ^^^^^^^ could not find `db_core` in `packages`
+
+error[E0308]: mismatched types
+   --> examples/postgres_demo.rs:243:44
+    |
+243 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------- ^^^^^^^^^^^^^^ expected `String`, found `PostgresConfig`
+    |                    |
+    |                    arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/database/postgres/connection.rs:19:12
+    |
+19  |     pub fn new(connection_string: String) -> Self {
+    |            ^^^
+
+error[E0599]: no variant or associated item named `Other` found for enum `cursed::error::Error` in the current scope
+   --> examples/performance_baseline_demo.rs:198:46
+    |
+198 |         .ok_or_else(|| cursed::error::Error::Other("No default baseline found".to_string()))?;
+    |                                              ^^^^^ variant or associated item not found in `Error`
+
+error[E0277]: `PostgresConnection` is not a future
+   --> examples/postgres_demo.rs:243:60
+    |
+243 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------------------------^^^^^
+    |                    |                                      ||
+    |                    |                                      |`PostgresConnection` is not a future
+    |                    |                                      help: remove the `.await`
+    |                    this call returns `PostgresConnection`
+    |
+    = help: the trait `Future` is not implemented for `PostgresConnection`, which is required by `PostgresConnection: IntoFuture`
+    = note: PostgresConnection must be a future or must implement `IntoFuture` to be awaited
+    = note: required for `PostgresConnection` to implement `IntoFuture`
+
+error[E0433]: failed to resolve: could not find `db_core` in `packages`
+  --> examples/postgresql_demo.rs:86:48
+   |
+86 |         ("Batching", cursed::stdlib::packages::db_core::DriverFeature::Batching),
+   |                                                ^^^^^^^ could not find `db_core` in `packages`
+
+error[E0599]: no method named `get_result` found for struct `cursed::stdlib::packages::VibeTest` in the current scope
+   --> examples/test_vibes_example.rs:140:28
+    |
+140 |     let test_result = test.get_result();
+    |                            ^^^^^^^^^^ method not found in `VibeTest`
+
+error[E0282]: type annotations needed
+   --> examples/test_vibes_example.rs:148:61
+    |
+148 |     let benchmark = Benchmark::new("string_concatenation", |b| {
+    |                                                             ^
+149 |         for _ in 0..b.iterations() {
+    |                     - type must be known at this point
+    |
+help: consider giving this closure parameter an explicit type
+    |
+148 |     let benchmark = Benchmark::new("string_concatenation", |b: /* Type */| {
+    |                                                              ++++++++++++
+
+error[E0609]: no field `overall_improvement` on type `&_`
+   --> examples/performance_baseline_demo.rs:281:57
+    |
+281 |         println!("  Overall change: {:.1}%", comparison.overall_improvement);
+    |                                                         ^^^^^^^^^^^^^^^^^^^ unknown field
+
+error[E0425]: cannot find function `repeat` in this scope
+  --> examples/bytefit_simple_demo.rs:46:20
+   |
+46 |     let repeated = repeat(b"abc", 3);
+   |                    ^^^^^^ not found in this scope
+   |
+help: consider importing one of these functions
+   |
+1  + use std::array::repeat;
+   |
+1  + use std::io::repeat;
+   |
+1  + use std::iter::repeat;
+   |
+1  + use core::array::repeat;
+   |
+     and 8 other candidates
+
+error[E0425]: cannot find function `join` in this scope
+  --> examples/bytefit_simple_demo.rs:75:18
+   |
+75 |     let joined = join(&parts, b", ");
+   |                  ^^^^ not found in this scope
+   |
+help: consider importing one of these functions
+   |
+1  + use cursed::runtime::r#async::future::util::join;
+   |
+1  + use futures::future::join;
+   |
+1  + use rayon::join;
+   |
+1  + use tokio::io::join;
+   |
+
+error[E0425]: cannot find function `replace` in this scope
+  --> examples/bytefit_simple_demo.rs:79:20
+   |
+79 |     let replaced = replace(text, b"hello", b"hi", 1);
+   |                    ^^^^^^^ not found in this scope
+   |
+help: consider importing one of these functions
+   |
+1  + use std::mem::replace;
+   |
+1  + use std::ptr::replace;
+   |
+1  + use ark_std::mem::replace;
+   |
+1  + use ark_std::ptr::replace;
+   |
+
+error[E0425]: cannot find function `to_upper` in this scope
+  --> examples/bytefit_simple_demo.rs:85:24
+   |
+85 |     if let Ok(upper) = to_upper(b"Hello World") {
+   |                        ^^^^^^^^ not found in this scope
+   |
+help: consider importing this function
+   |
+1  + use core::unicode::conversions::to_upper;
+   |
+
+error[E0425]: cannot find function `to_lower` in this scope
+  --> examples/bytefit_simple_demo.rs:89:24
+   |
+89 |     if let Ok(lower) = to_lower(b"Hello World") {
+   |                        ^^^^^^^^ not found in this scope
+   |
+help: consider importing this function
+   |
+1  + use core::unicode::conversions::to_lower;
+   |
+
+error[E0425]: cannot find function `from_hex` in this scope
+   --> examples/bytefit_simple_demo.rs:134:30
+    |
+134 |     if let Ok(hex_decoded) = from_hex(&hex_encoded) {
+    |                              ^^^^^^^^ not found in this scope
+
+error[E0061]: this function takes 1 argument but 2 arguments were supplied
+   --> examples/test_vibes_example.rs:148:21
+    |
+148 |       let benchmark = Benchmark::new("string_concatenation", |b| {
+    |  _____________________^^^^^^^^^^^^^^_----------------------__-
+    | |                                    |
+    | |                                    expected `String`, found `&str`
+149 | |         for _ in 0..b.iterations() {
+150 | |             let _result = format!("{}{}", "hello", "world");
+151 | |         }
+152 | |     }).iterations(1000);
+    | |_____- unexpected argument #2
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/benchmarks.rs:22:12
+    |
+22  |     pub fn new(name: String) -> Self {
+    |            ^^^
+help: try using a conversion method
+    |
+148 |     let benchmark = Benchmark::new("string_concatenation".to_string(), |b| {
+    |                                                          ++++++++++++
+help: remove the extra argument
+    |
+148 -     let benchmark = Benchmark::new("string_concatenation", |b| {
+148 +     let benchmark = Benchmark::new(/* std::string::String */).iterations(1000);
+    |
+
+error[E0609]: no field `name` on type `std::result::Result<cursed::stdlib::packages::test_vibes::BenchResult, CursedError>`
+   --> examples/test_vibes_example.rs:156:21
+    |
+156 |              result.name, result.iterations, result.ns_per_op);
+    |                     ^^^^ unknown field
+    |
+help: one of the expressions' fields has a field of the same name
+    |
+156 |              result.unwrap().name, result.iterations, result.ns_per_op);
+    |                     +++++++++
+
+error[E0609]: no field `iterations` on type `std::result::Result<cursed::stdlib::packages::test_vibes::BenchResult, CursedError>`
+   --> examples/test_vibes_example.rs:156:34
+    |
+156 |              result.name, result.iterations, result.ns_per_op);
+    |                                  ^^^^^^^^^^ unknown field
+    |
+help: one of the expressions' fields has a field of the same name
+    |
+156 |              result.name, result.unwrap().iterations, result.ns_per_op);
+    |                                  +++++++++
+
+error[E0609]: no field `ns_per_op` on type `std::result::Result<cursed::stdlib::packages::test_vibes::BenchResult, CursedError>`
+   --> examples/test_vibes_example.rs:156:53
+    |
+156 |              result.name, result.iterations, result.ns_per_op);
+    |                                                     ^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `name`, `duration`, `iterations`, `bytes_processed`, `memory_used`
+
+error[E0308]: mismatched types
+   --> examples/postgres_demo.rs:300:44
+    |
+300 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------- ^^^^^^^^^^^^^^ expected `String`, found `PostgresConfig`
+    |                    |
+    |                    arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/database/postgres/connection.rs:19:12
+    |
+19  |     pub fn new(connection_string: String) -> Self {
+    |            ^^^
+
+error[E0560]: struct `cursed::stdlib::packages::TestRunnerConfig` has no field named `fail_fast`
+   --> examples/test_vibes_example.rs:162:9
+    |
+162 |         fail_fast: false,
+    |         ^^^^^^^^^ `cursed::stdlib::packages::TestRunnerConfig` does not have this field
+    |
+    = note: available fields are: `max_threads`, `timeout_seconds`
+
+error[E0560]: struct `cursed::stdlib::packages::TestRunnerConfig` has no field named `timeout`
+   --> examples/test_vibes_example.rs:164:9
+    |
+164 |         timeout: Some(std::time::Duration::from_secs(30)),
+    |         ^^^^^^^ `cursed::stdlib::packages::TestRunnerConfig` does not have this field
+    |
+    = note: available fields are: `max_threads`, `timeout_seconds`
+
+error[E0560]: struct `cursed::stdlib::packages::TestRunnerConfig` has no field named `filter`
+   --> examples/test_vibes_example.rs:165:9
+    |
+165 |         filter: None,
+    |         ^^^^^^ `cursed::stdlib::packages::TestRunnerConfig` does not have this field
+    |
+    = note: available fields are: `max_threads`, `timeout_seconds`
+
+error[E0560]: struct `cursed::stdlib::packages::TestRunnerConfig` has no field named `benchmark_iterations`
+   --> examples/test_vibes_example.rs:166:9
+    |
+166 |         benchmark_iterations: 100,
+    |         ^^^^^^^^^^^^^^^^^^^^ `cursed::stdlib::packages::TestRunnerConfig` does not have this field
+    |
+    = note: available fields are: `max_threads`, `timeout_seconds`
+
+error[E0560]: struct `cursed::stdlib::packages::TestRunnerConfig` has no field named `warmup_iterations`
+   --> examples/test_vibes_example.rs:167:9
+    |
+167 |         warmup_iterations: 10,
+    |         ^^^^^^^^^^^^^^^^^ `cursed::stdlib::packages::TestRunnerConfig` does not have this field
+    |
+    = note: available fields are: `max_threads`, `timeout_seconds`
+
+error[E0061]: this function takes 0 arguments but 1 argument was supplied
+   --> examples/test_vibes_example.rs:170:22
+    |
+170 |     let mut runner = TestRunner::new(config);
+    |                      ^^^^^^^^^^^^^^^ ------ unexpected argument of type `cursed::stdlib::packages::TestRunnerConfig`
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/runners.rs:36:12
+    |
+36  |     pub fn new() -> Self {
+    |            ^^^
+help: remove the extra argument
+    |
+170 -     let mut runner = TestRunner::new(config);
+170 +     let mut runner = TestRunner::new();
+    |
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/test_vibes_example.rs:175:9
+    |
+175 |         assert_equal(t, 15, result, "addition should work");
+    |         ^^^^^^^^^^^^        ------ unexpected argument #3 of type `{integer}`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:10:8
+    |
+10  | pub fn assert_equal<T>(actual: T, expected: T, message: &str) -> AssertionResult 
+    |        ^^^^^^^^^^^^
+help: remove the extra argument
+    |
+175 -         assert_equal(t, 15, result, "addition should work");
+175 +         assert_equal(t, 15, "addition should work");
+    |
+
+error[E0277]: `PostgresConnection` is not a future
+   --> examples/postgres_demo.rs:300:60
+    |
+300 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------------------------^^^^^
+    |                    |                                      ||
+    |                    |                                      |`PostgresConnection` is not a future
+    |                    |                                      help: remove the `.await`
+    |                    this call returns `PostgresConnection`
+    |
+    = help: the trait `Future` is not implemented for `PostgresConnection`, which is required by `PostgresConnection: IntoFuture`
+    = note: PostgresConnection must be a future or must implement `IntoFuture` to be awaited
+    = note: required for `PostgresConnection` to implement `IntoFuture`
+
+error[E0433]: failed to resolve: could not find `db_core` in `packages`
+  --> examples/postgresql_demo.rs:87:50
+   |
+87 |         ("Encryption", cursed::stdlib::packages::db_core::DriverFeature::Encryption),
+   |                                                  ^^^^^^^ could not find `db_core` in `packages`
+
+error[E0599]: no variant or associated item named `Aggressive` found for enum `cursed::codegen::llvm::optimization::OptimizationLevel` in the current scope
+   --> examples/performance_baseline_demo.rs:344:52
+    |
+344 |             optimization_level: OptimizationLevel::Aggressive,
+    |                                                    ^^^^^^^^^^ variant or associated item not found in `OptimizationLevel`
+
+error[E0599]: no method named `pass_vibe` found for type `{integer}` in the current scope
+   --> examples/test_vibes_example.rs:176:11
+    |
+176 |         t.pass_vibe();
+    |           ^^^^^^^^^
+    |
+help: there is a method `parse` with a similar name, but with different arguments
+   --> /home/ghuntley/.cargo/registry/src/index.crates.io-6f17d22bba15001f/winnow-0.7.11/src/parser.rs:51:5
+    |
+51  | /     fn parse(&mut self, mut input: I) -> Result<O, ParseError<I, <E as ParserError<I>>::Inner>>
+52  | |     where
+53  | |         Self: core::marker::Sized,
+54  | |         I: Stream,
+...   |
+57  | |         E: ParserError<I>,
+58  | |         <E as ParserError<I>>::Inner: ParserError<I>,
+    | |_____________________________________________________^
+
+error[E0308]: mismatched types
+   --> examples/postgres_demo.rs:415:44
+    |
+415 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------- ^^^^^^^^^^^^^^ expected `String`, found `PostgresConfig`
+    |                    |
+    |                    arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/database/postgres/connection.rs:19:12
+    |
+19  |     pub fn new(connection_string: String) -> Self {
+    |            ^^^
+
+error[E0599]: no variant or associated item named `Aggressive` found for enum `cursed::codegen::llvm::optimization::OptimizationLevel` in the current scope
+   --> examples/performance_baseline_demo.rs:365:57
+    |
+365 |             best_optimization_level: OptimizationLevel::Aggressive,
+    |                                                         ^^^^^^^^^^ variant or associated item not found in `OptimizationLevel`
+
+error[E0277]: `PostgresConnection` is not a future
+   --> examples/postgres_demo.rs:415:60
+    |
+415 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------------------------^^^^^
+    |                    |                                      ||
+    |                    |                                      |`PostgresConnection` is not a future
+    |                    |                                      help: remove the `.await`
+    |                    this call returns `PostgresConnection`
+    |
+    = help: the trait `Future` is not implemented for `PostgresConnection`, which is required by `PostgresConnection: IntoFuture`
+    = note: PostgresConnection must be a future or must implement `IntoFuture` to be awaited
+    = note: required for `PostgresConnection` to implement `IntoFuture`
+
+error[E0061]: this method takes 1 argument but 2 arguments were supplied
+   --> examples/test_vibes_example.rs:173:12
+    |
+173 |       runner.add_test("arithmetic_test", |t| {
+    |  ____________^^^^^^^^_-----------------__-
+    | |                     |
+    | |                     expected `VibeTest`, found `&str`
+174 | |         let result = 10 + 5;
+175 | |         assert_equal(t, 15, result, "addition should work");
+176 | |         t.pass_vibe();
+177 | |     });
+    | |_____- unexpected argument #2 of type `{closure@examples/test_vibes_example.rs:173:40: 173:43}`
+    |
+note: method defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/runners.rs:48:12
+    |
+48  |     pub fn add_test(mut self, test: VibeTest) -> Self {
+    |            ^^^^^^^^
+help: remove the extra argument
+    |
+173 -     runner.add_test("arithmetic_test", |t| {
+173 +     runner.add_test(/* cursed::stdlib::packages::VibeTest */);
+    |
+
+error[E0061]: this function takes 3 arguments but 4 arguments were supplied
+   --> examples/test_vibes_example.rs:181:9
+    |
+181 |         assert_contains_substr(t, greeting, "TestVibes", "should contain framework name");
+    |         ^^^^^^^^^^^^^^^^^^^^^^                           ------------------------------- unexpected argument #4 of type `&'static str`
+    |
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/test_vibes/assertions.rs:94:8
+    |
+94  | pub fn assert_contains_substr(text: &str, substr: &str, message: &str) -> AssertionResult {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+181 -         assert_contains_substr(t, greeting, "TestVibes", "should contain framework name");
+181 +         assert_contains_substr(t, greeting, "TestVibes");
+    |
+
+error[E0599]: no method named `get_stats` found for struct `ImportManager` in the current scope
+  --> examples/package_integration_demo.rs:79:33
+   |
+79 |             let stats = manager.get_stats();
+   |                                 ^^^^^^^^^ method not found in `ImportManager`
+
+error[E0603]: enum `SqlValue` is private
+  --> examples/postgresql_demo.rs:23:51
+   |
+23 | use cursed::stdlib::packages::db_sql::{SqlDriver, SqlValue};
+   |                                                   ^^^^^^^^ private enum
+   |
+note: the enum `SqlValue` is defined here
+  --> /home/ghuntley/code/cursed/src/stdlib/packages/db_sql/mod.rs:54:31
+   |
+54 | use crate::stdlib::database::{SqlValue, DatabaseError};
+   |                               ^^^^^^^^
+help: import `SqlValue` directly
+   |
+23 | use cursed::stdlib::packages::db_sql::{SqlDriver, cursed::stdlib::database::core::SqlValue};
+   |                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+error[E0308]: mismatched types
+   --> examples/postgres_demo.rs:459:44
+    |
+459 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------- ^^^^^^^^^^^^^^ expected `String`, found `PostgresConfig`
+    |                    |
+    |                    arguments to this function are incorrect
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/database/postgres/connection.rs:19:12
+    |
+19  |     pub fn new(connection_string: String) -> Self {
+    |            ^^^
+
+error[E0277]: `PostgresConnection` is not a future
+   --> examples/postgres_demo.rs:459:60
+    |
+459 |     let mut conn = PostgresConnection::new(config.clone()).await?;
+    |                    ----------------------------------------^^^^^
+    |                    |                                      ||
+    |                    |                                      |`PostgresConnection` is not a future
+    |                    |                                      help: remove the `.await`
+    |                    this call returns `PostgresConnection`
+    |
+    = help: the trait `Future` is not implemented for `PostgresConnection`, which is required by `PostgresConnection: IntoFuture`
+    = note: PostgresConnection must be a future or must implement `IntoFuture` to be awaited
+    = note: required for `PostgresConnection` to implement `IntoFuture`
+
+error[E0599]: no method named `pass_vibe` found for reference `&str` in the current scope
+   --> examples/test_vibes_example.rs:182:11
+    |
+182 |         t.pass_vibe();
+    |           ^^^^^^^^^
+    |
+help: there is a method `parse` with a similar name
+    |
+182 |         t.parse();
+    |           ~~~~~
+
+Some errors have detailed explanations: E0282, E0432, E0599.
+For more information about an error, try `rustc --explain E0282`.
+error[E0599]: no function or associated item named `new_with_default_config` found for struct `CursedJitEngine` in the current scope
+   --> examples/osr_tiered_compilation_demo.rs:396:39
+    |
+396 |     let jit_engine = CursedJitEngine::new_with_default_config(&context)?;
+    |                                       ^^^^^^^^^^^^^^^^^^^^^^^ function or associated item not found in `CursedJitEngine`
+    |
+note: if you're trying to build a new `CursedJitEngine`, consider using `CursedJitEngine::new` which returns `std::result::Result<CursedJitEngine, CursedError>`
+   --> /home/ghuntley/code/cursed/src/codegen/llvm/jit_engine.rs:652:5
+    |
+652 |     pub fn new(config: JitEngineConfig) -> Result<Self, CursedError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> examples/postgres_demo.rs:471:26
+    |
+471 |         &[SqlValue::Json(json_data)]
+    |           -------------- ^^^^^^^^^- help: try using a conversion method: `.to_string()`
+    |           |              |
+    |           |              expected `String`, found `Value`
+    |           arguments to this enum variant are incorrect
+    |
+note: tuple variant defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/database/core.rs:66:5
+    |
+66  |     Json(String),
+    |     ^^^^
+
+error[E0061]: this method takes 1 argument but 2 arguments were supplied
+   --> examples/test_vibes_example.rs:179:12
+    |
+179 |       runner.add_test("string_test", |t| {
+    |  ____________^^^^^^^^_-------------__-
+    | |                     |
+    | |                     expected `VibeTest`, found `&str`
+180 | |         let greeting = "Hello, TestVibes!";
+181 | |         assert_contains_substr(t, greeting, "TestVibes", "should contain framework name");
+182 | |         t.pass_vibe();
+183 | |     });
+    | |_____- unexpected argument #2 of type `{closure@examples/test_vibes_example.rs:179:36: 179:39}`
+    |
+note: method defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/runners.rs:48:12
+    |
+48  |     pub fn add_test(mut self, test: VibeTest) -> Self {
+    |            ^^^^^^^^
+help: remove the extra argument
+    |
+179 -     runner.add_test("string_test", |t| {
+179 +     runner.add_test(/* cursed::stdlib::packages::VibeTest */);
+    |
+
+Some errors have detailed explanations: E0432, E0433, E0599, E0609.
+Some errors have detailed explanations: E0061, E0308, E0432, E0599.
+error[E0277]: `?` couldn't convert the error to `cursed::error::Error`
+   --> examples/osr_tiered_compilation_demo.rs:397:43
+    |
+372 | fn demo_configuration_scenarios() -> Result<(), Error> {
+    |                                      ----------------- expected `cursed::error::Error` because of this
+...
+397 |     let codegen = LlvmCodeGenerator::new()?;
+    |                   ------------------------^ the trait `From<CursedError>` is not implemented for `cursed::error::Error`, which is required by `std::result::Result<(), cursed::error::Error>: FromResidual<std::result::Result<Infallible, CursedError>>`
+    |                   |
+    |                   this can't be annotated with `?` because it has type `Result<_, CursedError>`
+    |
+    = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+    = help: the trait `FromResidual<std::result::Result<Infallible, E>>` is implemented for `std::result::Result<T, F>`
+    = note: required for `std::result::Result<(), cursed::error::Error>` to implement `FromResidual<std::result::Result<Infallible, CursedError>>`
+
+error[E0599]: no function or associated item named `new` found for struct `AdvancedOptimizationManager` in the current scope
+   --> examples/pgo_example.rs:178:57
+    |
+178 |     let mut optimization_manager = OptimizationManager::new(opt_config)?;
+    |                                                         ^^^ function or associated item not found in `AdvancedOptimizationManager`
+    |
+note: if you're trying to build a new `AdvancedOptimizationManager` consider using one of the following associated functions:
+      AdvancedOptimizationManager::default
+      AdvancedOptimizationManager::with_optimization_config
+      AdvancedOptimizationManager::with_config
+   --> /home/ghuntley/code/cursed/src/optimization/optimization_manager.rs:25:5
+    |
+25  |     pub fn default() -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+38  |     pub fn with_optimization_config(config: crate::optimization::config::OptimizationConfig) -> Result<Self, CursedError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+107 |     pub fn with_config(config: crate::optimization::config::OptimizationConfig) -> Result<Self, CursedError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: items from traits can only be used if the trait is in scope
+help: trait `Paint` which provides `new` is implemented but not in scope; perhaps you want to import it
+    |
+1   + use yansi::Paint;
+    |
+
+error: could not compile `cursed` (example "optimization_analyzer_example") due to 4 previous errors
+error[E0308]: mismatched types
+  --> examples/postgres_demo.rs:79:19
+   |
+79 |         password: env::var("POSTGRES_PASSWORD").ok(),
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `String`, found `Option<String>`
+   |
+   = note: expected struct `std::string::String`
+                found enum `std::option::Option<std::string::String>`
+help: consider using `Option::expect` to unwrap the `std::option::Option<std::string::String>` value, panicking if the value is an `Option::None`
+   |
+79 |         password: env::var("POSTGRES_PASSWORD").ok().expect("REASON"),
+   |                                                     +++++++++++++++++
+
+error[E0061]: this method takes 1 argument but 2 arguments were supplied
+   --> examples/test_vibes_example.rs:185:12
+    |
+185 |       runner.add_benchmark("multiplication_bench", |b| {
+    |  ____________^^^^^^^^^^^^^_----------------------__-
+    | |                          |
+    | |                          expected `VibeBench`, found `&str`
+186 | |         for _ in 0..b.iterations() {
+187 | |             let _ = 7 * 8;
+188 | |         }
+189 | |     });
+    | |_____- unexpected argument #2
+    |
+note: method defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/packages/test_vibes/runners.rs:53:12
+    |
+53  |     pub fn add_benchmark(mut self, benchmark: VibeBench) -> Self {
+    |            ^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+185 -     runner.add_benchmark("multiplication_bench", |b| {
+185 +     runner.add_benchmark(/* cursed::stdlib::packages::VibeBench */);
+    |
+
+error: could not compile `cursed` (example "performance_baseline_demo") due to 10 previous errors
+error[E0308]: mismatched types
+  --> examples/postgres_demo.rs:81:26
+   |
+81 |         connect_timeout: Duration::from_secs(10),
+   |                          ^^^^^^^^^^^^^^^^^^^^^^^ expected `Option<u64>`, found `Duration`
+   |
+   = note: expected enum `std::option::Option<u64>`
+            found struct `std::time::Duration`
+
+error: could not compile `cursed` (example "package_integration_demo") due to 6 previous errors
+error[E0308]: mismatched types
+  --> examples/postgres_demo.rs:82:24
+   |
+82 |         query_timeout: Duration::from_secs(30),
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^ expected `Option<u64>`, found `Duration`
+   |
+   = note: expected enum `std::option::Option<u64>`
+            found struct `std::time::Duration`
+
+error[E0308]: mismatched types
+  --> examples/postgres_demo.rs:83:27
+   |
+83 |         application_name: "CURSED PostgreSQL Demo".to_string(),
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Option<String>`, found `String`
+   |
+   = note: expected enum `std::option::Option<std::string::String>`
+            found struct `std::string::String`
+help: try wrapping the expression in `Some`
+   |
+83 |         application_name: Some("CURSED PostgreSQL Demo".to_string()),
+   |                           +++++                                    +
+
+error[E0560]: struct `cursed::stdlib::database::postgres::PostgresConfig` has no field named `max_connections`
+  --> examples/postgres_demo.rs:84:9
+   |
+84 |         max_connections: 20,
+   |         ^^^^^^^^^^^^^^^ `cursed::stdlib::database::postgres::PostgresConfig` does not have this field
+   |
+   = note: available fields are: `search_path`, `timezone`, `options`
+
+error[E0560]: struct `cursed::stdlib::database::postgres::PostgresConfig` has no field named `min_connections`
+  --> examples/postgres_demo.rs:85:9
+   |
+85 |         min_connections: 5,
+   |         ^^^^^^^^^^^^^^^ `cursed::stdlib::database::postgres::PostgresConfig` does not have this field
+   |
+   = note: available fields are: `search_path`, `timezone`, `options`
+
+error[E0560]: struct `cursed::stdlib::database::postgres::PostgresConfig` has no field named `max_lifetime`
+  --> examples/postgres_demo.rs:86:9
+   |
+86 |         max_lifetime: Some(Duration::from_secs(1800)), // 30 minutes
+   |         ^^^^^^^^^^^^ `cursed::stdlib::database::postgres::PostgresConfig` does not have this field
+   |
+   = note: available fields are: `search_path`, `timezone`, `options`
+
+error[E0560]: struct `cursed::stdlib::database::postgres::PostgresConfig` has no field named `idle_timeout`
+  --> examples/postgres_demo.rs:87:9
+   |
+87 |         idle_timeout: Some(Duration::from_secs(300)),   // 5 minutes
+   |         ^^^^^^^^^^^^ `cursed::stdlib::database::postgres::PostgresConfig` does not have this field
+   |
+   = note: available fields are: `search_path`, `timezone`, `options`
+
+error[E0560]: struct `cursed::stdlib::database::postgres::PostgresConfig` has no field named `retry_attempts`
+  --> examples/postgres_demo.rs:88:9
+   |
+88 |         retry_attempts: 3,
+   |         ^^^^^^^^^^^^^^ `cursed::stdlib::database::postgres::PostgresConfig` does not have this field
+   |
+   = note: available fields are: `search_path`, `timezone`, `options`
+
+error[E0560]: struct `cursed::stdlib::database::postgres::PostgresConfig` has no field named `retry_delay`
+  --> examples/postgres_demo.rs:89:9
+   |
+89 |         retry_delay: Duration::from_secs(1),
+   |         ^^^^^^^^^^^ `cursed::stdlib::database::postgres::PostgresConfig` does not have this field
+   |
+   = note: available fields are: `search_path`, `timezone`, `options`
+
+error[E0599]: no method named `run_tests` found for struct `TestVibesRunner` in the current scope
+   --> examples/test_vibes_example.rs:192:26
+    |
+192 |     let summary = runner.run_tests();
+    |                          ^^^^^^^^^ method not found in `TestVibesRunner`
+    |
+help: one of the expressions' fields has a method of the same name
+    |
+192 |     let summary = runner.manager.run_tests();
+    |                          ++++++++
+
+Some errors have detailed explanations: E0277, E0425, E0432, E0599.
+For more information about an error, try `rustc --explain E0277`.
+Some errors have detailed explanations: E0282, E0432.
+error[E0422]: cannot find struct, variant or union type `OptimizationArgs` in this scope
+   --> examples/optimization_showcase.rs:106:16
+    |
+106 |     let args = OptimizationArgs {
+    |                ^^^^^^^^^^^^^^^^ help: a struct with a similar name exists: `OptimizationStats`
+    |
+   ::: /home/ghuntley/code/cursed/src/optimization/types.rs:8:1
+    |
+8   | pub struct OptimizationStats {
+    | ---------------------------- similarly named struct `OptimizationStats` defined here
+
+error[E0433]: failed to resolve: use of undeclared type `ParallelCompiler`
+   --> examples/optimization_showcase.rs:134:24
+    |
+134 |     let mut compiler = ParallelCompiler::new(4);
+    |                        ^^^^^^^^^^^^^^^^ use of undeclared type `ParallelCompiler`
+    |
+help: consider importing one of these structs
+    |
+1   + use crate::parallel::ParallelCompiler;
+    |
+1   + use cursed::optimization::parallel::ParallelCompiler;
+    |
+
+error[E0412]: cannot find type `CompilationJob` in this scope
+   --> examples/optimization_showcase.rs:538:17
+    |
+538 | ) -> Result<Vec<CompilationJob>, Box<dyn std::error::Error>> {
+    |                 ^^^^^^^^^^^^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+1   + use crate::parallel::CompilationJob;
+    |
+1   + use cursed::optimization::parallel::CompilationJob;
+    |
+
+Some errors have detailed explanations: E0061, E0277, E0282, E0308, E0560, E0599, E0609.
+error: could not compile `cursed` (example "osr_tiered_compilation_demo") due to 5 previous errors
+error[E0425]: cannot find function `compare` in this scope
+  --> examples/bytefit_simple_demo.rs:42:47
+   |
+42 |     println!("compare('hello', 'world'): {}", compare(data1, data2));
+   |                                               ^^^^^^^ not found in this scope
+   |
+help: use the `.` operator to call the method `equivalent::Comparable::compare` on `&[u8; 5]`
+   |
+42 -     println!("compare('hello', 'world'): {}", compare(data1, data2));
+42 +     println!("compare('hello', 'world'): {}", data1.compare(data2));
+   |
+
+error[E0599]: no method named `add_function_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:269:18
+    |
+269 |     profile_data.add_function_execution("compute_fibonacci".to_string(), 15000); // Called many times
+    |                  ^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error: could not compile `cursed` (example "test_vibes_example") due to 42 previous errors
+error: could not compile `cursed` (example "system_monitoring_demo") due to 2 previous errors
+Some errors have detailed explanations: E0277, E0308, E0432, E0560.
+error[E0425]: cannot find function `equal` in this scope
+  --> examples/bytefit_simple_demo.rs:43:45
+   |
+43 |     println!("equal('hello', 'hello'): {}", equal(data1, data3));
+   |                                             ^^^^^ not found in this scope
+
+error[E0425]: cannot find function `equal_fold` in this scope
+  --> examples/bytefit_simple_demo.rs:44:50
+   |
+44 |     println!("equal_fold('Hello', 'HELLO'): {}", equal_fold(b"Hello", b"HELLO"));
+   |                                                  ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `runes` in this scope
+  --> examples/bytefit_simple_demo.rs:49:31
+   |
+49 |     if let Ok(runes_result) = runes(b"Hello") {
+   |                               ^^^^^ not found in this scope
+
+error[E0433]: failed to resolve: use of undeclared type `OptimizationProfile`
+  --> examples/optimization_showcase.rs:88:25
+   |
+88 |         ("Development", OptimizationProfile::Development),
+   |                         ^^^^^^^^^^^^^^^^^^^
+   |                         |
+   |                         use of undeclared type `OptimizationProfile`
+   |                         help: a struct with a similar name exists: `OptimizationConfig`
+
+error[E0599]: no method named `add_function_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:272:18
+    |
+272 |     profile_data.add_function_execution("process_array".to_string(), 100); // Called 100 times (1000/10)
+    |                  ^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0433]: failed to resolve: use of undeclared type `OptimizationProfile`
+  --> examples/optimization_showcase.rs:89:21
+   |
+89 |         ("Release", OptimizationProfile::Release),
+   |                     ^^^^^^^^^^^^^^^^^^^
+   |                     |
+   |                     use of undeclared type `OptimizationProfile`
+   |                     help: a struct with a similar name exists: `OptimizationConfig`
+
+error[E0433]: failed to resolve: use of undeclared type `OptimizationProfile`
+  --> examples/optimization_showcase.rs:90:19
+   |
+90 |         ("Debug", OptimizationProfile::Debug),
+   |                   ^^^^^^^^^^^^^^^^^^^
+   |                   |
+   |                   use of undeclared type `OptimizationProfile`
+   |                   help: a struct with a similar name exists: `OptimizationConfig`
+
+error[E0433]: failed to resolve: use of undeclared type `OptimizationProfile`
+  --> examples/optimization_showcase.rs:91:18
+   |
+91 |         ("Size", OptimizationProfile::Size),
+   |                  ^^^^^^^^^^^^^^^^^^^
+   |                  |
+   |                  use of undeclared type `OptimizationProfile`
+   |                  help: a struct with a similar name exists: `OptimizationConfig`
+
+error[E0433]: failed to resolve: use of undeclared type `OptimizationProfile`
+  --> examples/optimization_showcase.rs:92:25
+   |
+92 |         ("Performance", OptimizationProfile::Performance),
+   |                         ^^^^^^^^^^^^^^^^^^^
+   |                         |
+   |                         use of undeclared type `OptimizationProfile`
+   |                         help: a struct with a similar name exists: `OptimizationConfig`
+
+error[E0425]: cannot find function `contains` in this scope
+  --> examples/bytefit_simple_demo.rs:59:43
+   |
+59 |     println!("contains(text, 'fox'): {}", contains(text, b"fox"));
+   |                                           ^^^^^^^^ not found in this scope
+   |
+help: use the `.` operator to call the method `contains` on `&[u8]`
+   |
+59 -     println!("contains(text, 'fox'): {}", contains(text, b"fox"));
+59 +     println!("contains(text, 'fox'): {}", text.contains(b"fox"));
+   |
+
+error: could not compile `cursed` (example "postgres_demo") due to 26 previous errors
+error[E0425]: cannot find function `contains_any` in this scope
+  --> examples/bytefit_simple_demo.rs:60:47
+   |
+60 |     println!("contains_any(text, 'xyz'): {}", contains_any(text, "xyz"));
+   |                                               ^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `contains_rune` in this scope
+  --> examples/bytefit_simple_demo.rs:61:46
+   |
+61 |     println!("contains_rune(text, 'q'): {}", contains_rune(text, 'q'));
+   |                                              ^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `count` in this scope
+  --> examples/bytefit_simple_demo.rs:63:40
+   |
+63 |     println!("count(text, 'the'): {}", count(text, b"the"));
+   |                                        ^^^^^ not found in this scope
+
+error[E0599]: no variant or associated item named `Other` found for enum `cursed::error::Error` in the current scope
+   --> examples/performance_optimization_cli_demo.rs:464:102
+    |
+464 |     std::fs::write(filename, serde_json::to_string_pretty(&report).map_err(|e| cursed::error::Error::Other(e.to_string()))?)?;
+    |                                                                                                      ^^^^^ variant or associated item not found in `Error`
+
+error[E0425]: cannot find function `index` in this scope
+  --> examples/bytefit_simple_demo.rs:64:40
+   |
+64 |     println!("index(text, 'fox'): {}", index(text, b"fox"));
+   |                                        ^^^^^ not found in this scope
+   |
+help: use the `.` operator to call the method `Index::index` on `&[u8; 43]`
+   |
+64 -     println!("index(text, 'fox'): {}", index(text, b"fox"));
+64 +     println!("index(text, 'fox'): {}", text.index(b"fox"));
+   |
+
+error[E0425]: cannot find function `last_index_byte` in this scope
+  --> examples/bytefit_simple_demo.rs:65:48
+   |
+65 |     println!("last_index_byte(text, 'o'): {}", last_index_byte(text, b'o'));
+   |                                                ^^^^^^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `has_prefix` in this scope
+  --> examples/bytefit_simple_demo.rs:67:45
+   |
+67 |     println!("has_prefix(text, 'The'): {}", has_prefix(text, b"The"));
+   |                                             ^^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `has_suffix` in this scope
+  --> examples/bytefit_simple_demo.rs:68:45
+   |
+68 |     println!("has_suffix(text, 'dog'): {}", has_suffix(text, b"dog"));
+   |                                             ^^^^^^^^^^ not found in this scope
+
+error[E0599]: no method named `add_function_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:275:18
+    |
+275 |     profile_data.add_function_execution("error_handler".to_string(), 2); // Called 2 times (1000/500)
+    |                  ^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0599]: no method named `add_function_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:278:18
+    |
+278 |     profile_data.add_function_execution("main".to_string(), 1);
+    |                  ^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+Some errors have detailed explanations: E0412, E0432, E0433, E0599.
+For more information about an error, try `rustc --explain E0412`.
+error[E0609]: no field `target_cpu` on type `cursed::OptimizationConfig`
+   --> examples/optimization_showcase.rs:120:44
+    |
+120 |     println!("   Target CPU: {:?}", config.target_cpu);
+    |                                            ^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `level`, `target_features`, `inline_threshold`, `unroll_threshold`, `vectorize` ... and 17 others
+
+error[E0433]: failed to resolve: use of undeclared type `IncrementalBuilder`
+   --> examples/optimization_showcase.rs:180:23
+    |
+180 |     let mut builder = IncrementalBuilder::new(temp_dir.path())?;
+    |                       ^^^^^^^^^^^^^^^^^^ use of undeclared type `IncrementalBuilder`
+
+error[E0599]: no method named `add_basic_block_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:281:18
+    |
+281 |     profile_data.add_basic_block_execution("compute_fibonacci:entry".to_string(), 15000);
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error: could not compile `cursed` (example "performance_optimization_cli_demo") due to 13 previous errors
+error[E0308]: mismatched types
+  --> examples/bytefit_simple_demo.rs:74:42
+   |
+74 |     let parts = vec![b"hello", b"world", b"test"];
+   |                                          ^^^^^^^ expected an array with a fixed size of 5 elements, found one with 4 elements
+
+error[E0433]: failed to resolve: use of undeclared type `CompilationCache`
+   --> examples/optimization_showcase.rs:241:21
+    |
+241 |     let mut cache = CompilationCache::new(&temp_dir.path().join("cache"))?;
+    |                     ^^^^^^^^^^^^^^^^ use of undeclared type `CompilationCache`
+
+error[E0433]: failed to resolve: use of undeclared type `CacheType`
+   --> examples/optimization_showcase.rs:250:9
+    |
+250 |         CacheType::CompiledObject,
+    |         ^^^^^^^^^ use of undeclared type `CacheType`
+
+error[E0433]: failed to resolve: use of undeclared type `CacheType`
+   --> examples/optimization_showcase.rs:251:9
+    |
+251 |         CacheType::LlvmIr,
+    |         ^^^^^^^^^ use of undeclared type `CacheType`
+
+error[E0433]: failed to resolve: use of undeclared type `CacheType`
+   --> examples/optimization_showcase.rs:252:9
+    |
+252 |         CacheType::AstSerialized,
+    |         ^^^^^^^^^ use of undeclared type `CacheType`
+
+error[E0433]: failed to resolve: use of undeclared type `CacheType`
+   --> examples/optimization_showcase.rs:253:9
+    |
+253 |         CacheType::PreprocessedSource,
+    |         ^^^^^^^^^ use of undeclared type `CacheType`
+
+error[E0433]: failed to resolve: use of undeclared type `CacheType`
+   --> examples/optimization_showcase.rs:282:9
+    |
+282 |         CacheType::CompiledObject,
+    |         ^^^^^^^^^ use of undeclared type `CacheType`
+
+error[E0433]: failed to resolve: use of undeclared type `PerformanceProfiler`
+   --> examples/optimization_showcase.rs:302:20
+    |
+302 |     let profiler = PerformanceProfiler::new();
+    |                    ^^^^^^^^^^^^^^^^^^^
+    |                    |
+    |                    use of undeclared type `PerformanceProfiler`
+    |                    help: a struct with a similar name exists: `PerformanceMonitor`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:308:21
+    |
+308 |         ("parsing", ProfileCategory::Parsing, 50),
+    |                     ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:309:27
+    |
+309 |         ("type_checking", ProfileCategory::TypeChecking, 80),
+    |                           ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:310:26
+    |
+310 |         ("optimization", ProfileCategory::Optimization, 120),
+    |                          ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:311:29
+    |
+311 |         ("code_generation", ProfileCategory::CodeGeneration, 90),
+    |                             ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:312:21
+    |
+312 |         ("linking", ProfileCategory::Linking, 30),
+    |                     ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0425]: cannot find function `replace_all` in this scope
+  --> examples/bytefit_simple_demo.rs:82:24
+   |
+82 |     let replaced_all = replace_all(text, b"hello", b"hi");
+   |                        ^^^^^^^^^^^ not found in this scope
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+  --> examples/bytefit_simple_demo.rs:85:12
+   |
+85 |     if let Ok(upper) = to_upper(b"Hello World") {
+   |            ^^^^^^^^^ doesn't have a size known at compile-time
+   |
+   = help: the trait `Sized` is not implemented for `[u8]`
+note: required by a bound in `std::prelude::v1::Ok`
+  --> /build/rustc-1.82.0-src/library/core/src/result.rs:531:5
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+  --> examples/bytefit_simple_demo.rs:89:12
+   |
+89 |     if let Ok(lower) = to_lower(b"Hello World") {
+   |            ^^^^^^^^^ doesn't have a size known at compile-time
+   |
+   = help: the trait `Sized` is not implemented for `[u8]`
+note: required by a bound in `std::prelude::v1::Ok`
+  --> /build/rustc-1.82.0-src/library/core/src/result.rs:531:5
+
+error[E0599]: no method named `add_basic_block_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:282:18
+    |
+282 |     profile_data.add_basic_block_execution("compute_fibonacci:recursive_case".to_string(), 12000);
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0425]: cannot find function `to_title` in this scope
+  --> examples/bytefit_simple_demo.rs:93:24
+   |
+93 |     if let Ok(title) = to_title(b"hello world") {
+   |                        ^^^^^^^^ not found in this scope
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:333:58
+    |
+333 |         profiler.end_timer("showcase_session", &op_name, ProfileCategory::FileIO);
+    |                                                          ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+  --> examples/bytefit_simple_demo.rs:93:12
+   |
+93 |     if let Ok(title) = to_title(b"hello world") {
+   |            ^^^^^^^^^ doesn't have a size known at compile-time
+   |
+   = help: the trait `Sized` is not implemented for `[u8]`
+note: required by a bound in `std::prelude::v1::Ok`
+  --> /build/rustc-1.82.0-src/library/core/src/result.rs:531:5
+
+error[E0433]: failed to resolve: use of undeclared type `PerformanceProfiler`
+   --> examples/optimization_showcase.rs:362:20
+    |
+362 |     let profiler = PerformanceProfiler::new();
+    |                    ^^^^^^^^^^^^^^^^^^^
+    |                    |
+    |                    use of undeclared type `PerformanceProfiler`
+    |                    help: a struct with a similar name exists: `PerformanceMonitor`
+
+error[E0433]: failed to resolve: use of undeclared type `PerformanceAnalyzer`
+   --> examples/optimization_showcase.rs:363:24
+    |
+363 |     let mut analyzer = PerformanceAnalyzer::new();
+    |                        ^^^^^^^^^^^^^^^^^^^ use of undeclared type `PerformanceAnalyzer`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:371:9
+    |
+371 |         ProfileCategory::Parsing,
+    |         ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:379:9
+    |
+379 |         ProfileCategory::TypeChecking,
+    |         ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:387:9
+    |
+387 |         ProfileCategory::CodeGeneration,
+    |         ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0425]: cannot find function `new_fit_buffer` in this scope
+   --> examples/bytefit_simple_demo.rs:101:15
+    |
+101 |     let buf = new_fit_buffer(None);
+    |               ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0433]: failed to resolve: use of undeclared type `CursedOptimizationPasses`
+   --> examples/optimization_showcase.rs:427:22
+    |
+427 |     let mut passes = CursedOptimizationPasses::new();
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared type `CursedOptimizationPasses`
+
+error[E0560]: struct `Program` has no field named `modules`
+   --> examples/optimization_showcase.rs:440:9
+    |
+440 |         modules: vec![], // Empty for demo
+    |         ^^^^^^^ `Program` does not have this field
+    |
+    = note: available fields are: `statements`, `imports`, `package`
+
+error[E0433]: failed to resolve: use of undeclared type `OptimizationSystem`
+   --> examples/optimization_showcase.rs:482:27
+    |
+482 |     let system = Arc::new(OptimizationSystem::new(config)?);
+    |                           ^^^^^^^^^^^^^^^^^^
+    |                           |
+    |                           use of undeclared type `OptimizationSystem`
+    |                           help: a struct with a similar name exists: `OptimizationStats`
+
+error[E0433]: failed to resolve: use of undeclared type `OptimizationSession`
+   --> examples/optimization_showcase.rs:486:19
+    |
+486 |     let session = OptimizationSession::new(system.clone(), "integration_demo".to_string());
+    |                   ^^^^^^^^^^^^^^^^^^^
+    |                   |
+    |                   use of undeclared type `OptimizationSession`
+    |                   help: a struct with a similar name exists: `OptimizationResult`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:495:58
+    |
+495 |     profiler.end_timer(session.id(), "project_analysis", ProfileCategory::Other);
+    |                                                          ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0433]: failed to resolve: use of undeclared type `ProfileCategory`
+   --> examples/optimization_showcase.rs:500:63
+    |
+500 |     profiler.end_timer(session.id(), "dependency_resolution", ProfileCategory::Other);
+    |                                                               ^^^^^^^^^^^^^^^ use of undeclared type `ProfileCategory`
+
+error[E0061]: this function takes 1 argument but 0 arguments were supplied
+   --> examples/optimization_showcase.rs:518:22
+    |
+518 |     let mut result = OptimizationResult::success();
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^-- argument #1 of type `cursed::OptimizationStats` is missing
+    |
+note: associated function defined here
+   --> /home/ghuntley/code/cursed/src/optimization/types.rs:65:12
+    |
+65  |     pub fn success(stats: OptimizationStats) -> Self {
+    |            ^^^^^^^
+help: provide the argument
+    |
+518 |     let mut result = OptimizationResult::success(/* cursed::OptimizationStats */);
+    |                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+error[E0425]: cannot find function `new_fit_buffer` in this scope
+   --> examples/bytefit_simple_demo.rs:119:16
+    |
+119 |     let buf3 = new_fit_buffer(Some(b"  spaced content  ".to_vec()));
+    |                ^^^^^^^^^^^^^^ not found in this scope
+
+error[E0560]: struct `CompilationJob` has no field named `output_path`
+   --> examples/optimization_showcase.rs:554:13
+    |
+554 |             output_path: output_file,
+    |             ^^^^^^^^^^^ `CompilationJob` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0425]: cannot find function `to_hex` in this scope
+   --> examples/bytefit_simple_demo.rs:131:23
+    |
+131 |     let hex_encoded = to_hex(data);
+    |                       ^^^^^^ not found in this scope
+    |
+help: use the `.` operator to call the method `nom::HexDisplay::to_hex` on `&[u8]`
+    |
+131 -     let hex_encoded = to_hex(data);
+131 +     let hex_encoded = data.to_hex();
+    |
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+   --> examples/bytefit_simple_demo.rs:134:12
+    |
+134 |     if let Ok(hex_decoded) = from_hex(&hex_encoded) {
+    |            ^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u8]`
+note: required by a bound in `std::prelude::v1::Ok`
+   --> /build/rustc-1.82.0-src/library/core/src/result.rs:531:5
+
+error[E0425]: cannot find function `to_base64` in this scope
+   --> examples/bytefit_simple_demo.rs:139:26
+    |
+139 |     let base64_encoded = to_base64(data);
+    |                          ^^^^^^^^^ not found in this scope
+
+error[E0425]: cannot find function `from_base64` in this scope
+   --> examples/bytefit_simple_demo.rs:142:33
+    |
+142 |     if let Ok(base64_decoded) = from_base64(&base64_encoded) {
+    |                                 ^^^^^^^^^^^ not found in this scope
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+   --> examples/bytefit_simple_demo.rs:142:12
+    |
+142 |     if let Ok(base64_decoded) = from_base64(&base64_encoded) {
+    |            ^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u8]`
+note: required by a bound in `std::prelude::v1::Ok`
+   --> /build/rustc-1.82.0-src/library/core/src/result.rs:531:5
+
+error[E0599]: no method named `add_basic_block_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:283:18
+    |
+283 |     profile_data.add_basic_block_execution("compute_fibonacci:base_case".to_string(), 3000);
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0425]: cannot find function `and` in this scope
+   --> examples/bytefit_simple_demo.rs:150:22
+    |
+150 |     let and_result = and(&a, &b);
+    |                      ^^^ not found in this scope
+
+Some errors have detailed explanations: E0046, E0432.
+For more information about an error, try `rustc --explain E0046`.
+error[E0425]: cannot find function `or` in this scope
+   --> examples/bytefit_simple_demo.rs:151:21
+    |
+151 |     let or_result = or(&a, &b);
+    |                     ^^ not found in this scope
+
+error[E0425]: cannot find function `xor` in this scope
+   --> examples/bytefit_simple_demo.rs:152:22
+    |
+152 |     let xor_result = xor(&a, &b);
+    |                      ^^^ not found in this scope
+
+error[E0599]: no method named `add_basic_block_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:285:18
+    |
+285 |     profile_data.add_basic_block_execution("process_array:loop".to_string(), 10000); // 100 * 100 iterations
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0599]: no method named `driver_info` found for struct `PostgreSqlDriver` in the current scope
+  --> examples/postgresql_demo.rs:73:23
+   |
+73 |     let info = driver.driver_info();
+   |                       ^^^^^^^^^^^ method not found in `PostgreSqlDriver`
+
+error[E0308]: mismatched types
+   --> examples/bytefit_simple_demo.rs:173:33
+    |
+173 |     let patterns = vec![b"h*o", b"h?llo", b"*.txt", b"test*"];
+    |                                 ^^^^^^^^ expected an array with a fixed size of 3 elements, found one with 5 elements
+
+error: could not compile `cursed` (example "adaptive_gc_demo") due to 3 previous errors
+error[E0308]: mismatched types
+   --> examples/bytefit_simple_demo.rs:174:42
+    |
+174 |     let texts = vec![b"hello", b"hello", b"file.txt", b"testing"];
+    |                                          ^^^^^^^^^^^ expected an array with a fixed size of 5 elements, found one with 8 elements
+
+error[E0599]: no variant or associated item named `Normal` found for enum `JobPriority` in the current scope
+   --> examples/optimization_showcase.rs:556:74
+    |
+556 |             priority: if i < 3 { JobPriority::High } else { JobPriority::Normal },
+    |                                                                          ^^^^^^ variant or associated item not found in `JobPriority`
+
+error[E0560]: struct `CompilationJob` has no field named `compile_flags`
+   --> examples/optimization_showcase.rs:557:13
+    |
+557 |             compile_flags: vec!["--optimize".to_string()],
+    |             ^^^^^^^^^^^^^ `CompilationJob` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0560]: struct `CompilationJob` has no field named `created_at`
+   --> examples/optimization_showcase.rs:558:13
+    |
+558 |             created_at: Instant::now(),
+    |             ^^^^^^^^^^ `CompilationJob` does not have this field
+    |
+    = note: all struct fields are already assigned
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+   --> examples/bytefit_simple_demo.rs:176:44
+    |
+176 |     for (pattern, text) in patterns.iter().zip(texts.iter()) {
+    |                                            ^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u8]`, which is required by `std::slice::Iter<'_, _>: Iterator`
+    = note: required for `std::slice::Iter<'_, [u8]>` to implement `Iterator`
+help: consider removing this method call, as the receiver has type `Vec<_, _>` and `Vec<_, _>: Sized` trivially holds
+    |
+176 -     for (pattern, text) in patterns.iter().zip(texts.iter()) {
+176 +     for (pattern, text) in patterns.zip(texts.iter()) {
+    |
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+   --> examples/bytefit_simple_demo.rs:176:37
+    |
+176 |     for (pattern, text) in patterns.iter().zip(texts.iter()) {
+    |                                     ^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u8]`
+note: required by a bound in `bitflags::core::slice::<impl [T]>::iter`
+   --> /build/rustc-1.82.0-src/library/core/src/slice/mod.rs:1013:5
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+   --> examples/bytefit_simple_demo.rs:176:28
+    |
+176 |     for (pattern, text) in patterns.iter().zip(texts.iter()) {
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u8]`, which is required by `std::slice::Iter<'_, _>: Iterator`
+    = note: required for `std::slice::Iter<'_, [u8]>` to implement `Iterator`
+
+error[E0599]: no method named `add_basic_block_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:286:18
+    |
+286 |     profile_data.add_basic_block_execution("main:fibonacci_loop".to_string(), 1000);
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+   --> examples/bytefit_simple_demo.rs:176:44
+    |
+176 |     for (pattern, text) in patterns.iter().zip(texts.iter()) {
+    |                                            ^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u8]`, which is required by `std::slice::Iter<'_, _>: IntoIterator`
+    = note: required for `std::slice::Iter<'_, [u8]>` to implement `Iterator`
+    = note: required for `std::slice::Iter<'_, [u8]>` to implement `IntoIterator`
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+   --> examples/bytefit_simple_demo.rs:176:54
+    |
+176 |     for (pattern, text) in patterns.iter().zip(texts.iter()) {
+    |                                                      ^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u8]`
+note: required by a bound in `bitflags::core::slice::<impl [T]>::iter`
+   --> /build/rustc-1.82.0-src/library/core/src/slice/mod.rs:1013:5
+
+error[E0277]: the size for values of type `[u8]` cannot be known at compilation time
+   --> examples/bytefit_simple_demo.rs:176:48
+    |
+176 |     for (pattern, text) in patterns.iter().zip(texts.iter()) {
+    |                                                ^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `Sized` is not implemented for `[u8]`, which is required by `Vec<_, _>: Deref`
+    = note: required for `Vec<[u8], _>` to implement `Deref`
+
+error[E0308]: mismatched types
+   --> examples/bytefit_simple_demo.rs:187:50
+    |
+187 |     if let Ok(digit_match) = regex_match(r"\d+", test_text) {
+    |                              -----------         ^^^^^^^^^ expected `&str`, found `&[u8; 37]`
+    |                              |
+    |                              arguments to this function are incorrect
+    |
+    = note: expected reference `&str`
+               found reference `&[u8; 37]`
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/bytefit/mod.rs:145:8
+    |
+145 | pub fn regex_match(pattern: &str, text: &str) -> Result<bool, String> {
+    |        ^^^^^^^^^^^
+
+error[E0061]: this function takes 2 arguments but 3 arguments were supplied
+   --> examples/bytefit_simple_demo.rs:192:29
+    |
+192 |     if let Ok(all_digits) = regex_find_all(r"\d+", test_text, -1) {
+    |                             ^^^^^^^^^^^^^^         ---------  -- unexpected argument #3 of type `{integer}`
+    |                                                    |
+    |                                                    expected `&str`, found `&[u8; 37]`
+    |
+    = note: expected reference `&str`
+               found reference `&[u8; 37]`
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/bytefit/mod.rs:168:8
+    |
+168 | pub fn regex_find_all(pattern: &str, text: &str) -> Result<Vec<String>, String> {
+    |        ^^^^^^^^^^^^^^
+help: remove the extra argument
+    |
+192 -     if let Ok(all_digits) = regex_find_all(r"\d+", test_text, -1) {
+192 +     if let Ok(all_digits) = regex_find_all(r"\d+", /* &str */) {
+    |
+
+error[E0308]: mismatched types
+   --> examples/bytefit_simple_demo.rs:195:63
+    |
+195 |             println!("  [{}]: {}", i, String::from_utf8_lossy(digits));
+    |                                       ----------------------- ^^^^^^ expected `&[u8]`, found `&String`
+    |                                       |
+    |                                       arguments to this function are incorrect
+    |
+    = note: expected reference `&[u8]`
+               found reference `&std::string::String`
+note: associated function defined here
+   --> /build/rustc-1.82.0-src/library/alloc/src/string.rs:632:12
+
+Some errors have detailed explanations: E0061, E0412, E0422, E0433, E0560, E0599, E0609.
+error[E0599]: no method named `add_basic_block_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:287:18
+    |
+287 |     profile_data.add_basic_block_execution("main:array_processing".to_string(), 100);
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0308]: arguments to this function are incorrect
+   --> examples/bytefit_simple_demo.rs:200:27
+    |
+200 |     if let Ok(replaced) = regex_replace(r"\d+", test_text, b"XXX") {
+    |                           ^^^^^^^^^^^^^         ---------  ------ expected `&str`, found `&[u8; 3]`
+    |                                                 |
+    |                                                 expected `&str`, found `&[u8; 37]`
+    |
+    = note: expected reference `&str`
+               found reference `&[u8; 37]`
+    = note: expected reference `&str`
+               found reference `&'static [u8; 3]`
+note: function defined here
+   --> /home/ghuntley/code/cursed/src/stdlib/bytefit/mod.rs:214:8
+    |
+214 | pub fn regex_replace(pattern: &str, text: &str, replacement: &str) -> Result<String, String> {
+    |        ^^^^^^^^^^^^^
+help: consider removing the leading `b`
+    |
+200 -     if let Ok(replaced) = regex_replace(r"\d+", test_text, b"XXX") {
+200 +     if let Ok(replaced) = regex_replace(r"\d+", test_text, "XXX") {
+    |
+
+error[E0308]: mismatched types
+   --> examples/bytefit_simple_demo.rs:201:84
+    |
+201 |         println!("regex_replace('\\d+', text, 'XXX'): {}", String::from_utf8_lossy(&replaced));
+    |                                                            ----------------------- ^^^^^^^^^ expected `&[u8]`, found `&String`
+    |                                                            |
+    |                                                            arguments to this function are incorrect
+    |
+    = note: expected reference `&[u8]`
+               found reference `&std::string::String`
+note: associated function defined here
+   --> /build/rustc-1.82.0-src/library/alloc/src/string.rs:632:12
+
+error[E0599]: no method named `supported_types` found for struct `PostgreSqlDriver` in the current scope
+  --> examples/postgresql_demo.rs:96:24
+   |
+96 |     let types = driver.supported_types();
+   |                        ^^^^^^^^^^^^^^^ method not found in `PostgreSqlDriver`
+
+error: could not compile `cursed` (example "performance_optimization_showcase") due to 2 previous errors
+error: could not compile `cursed` (example "optimization_showcase") due to 39 previous errors
+Some errors have detailed explanations: E0061, E0277, E0308, E0425.
+error[E0599]: no method named `add_basic_block_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:288:18
+    |
+288 |     profile_data.add_basic_block_execution("main:error_handling".to_string(), 2);
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error: could not compile `cursed` (example "bytefit_simple_demo") due to 47 previous errors
+error[E0599]: no method named `add_edge_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:291:18
+    |
+291 |     profile_data.add_edge_execution("main:fibonacci_loop->compute_fibonacci".to_string(), 1000);
+    |                  ^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0599]: no method named `configuration_options` found for struct `PostgreSqlDriver` in the current scope
+   --> examples/postgresql_demo.rs:103:33
+    |
+103 |     let config_options = driver.configuration_options();
+    |                                 ^^^^^^^^^^^^^^^^^^^^^ method not found in `PostgreSqlDriver`
+
+error[E0599]: no method named `add_edge_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:292:18
+    |
+292 |     profile_data.add_edge_execution("main:array_processing->process_array".to_string(), 100);
+    |                  ^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0599]: no method named `add_edge_execution` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:293:18
+    |
+293 |     profile_data.add_edge_execution("main:error_handling->error_handler".to_string(), 2);
+    |                  ^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0609]: no field `total_execution_time` on type `std::string::String`
+   --> examples/pgo_example.rs:296:18
+    |
+296 |     profile_data.total_execution_time = Duration::from_millis(2500); // 2.5 seconds execution
+    |                  ^^^^^^^^^^^^^^^^^^^^ unknown field
+
+error[E0609]: no field `function_counts` on type `std::string::String`
+   --> examples/pgo_example.rs:303:57
+    |
+303 |     println!("  ✓ Functions profiled: {}", profile_data.function_counts.len());
+    |                                                         ^^^^^^^^^^^^^^^ unknown field
+
+error[E0599]: no method named `performance_info` found for struct `PostgreSqlDriver` in the current scope
+   --> examples/postgresql_demo.rs:113:28
+    |
+113 |     let perf_info = driver.performance_info();
+    |                            ^^^^^^^^^^^^^^^^ method not found in `PostgreSqlDriver`
+
+error[E0609]: no field `basic_block_counts` on type `std::string::String`
+   --> examples/pgo_example.rs:304:60
+    |
+304 |     println!("  ✓ Basic blocks profiled: {}", profile_data.basic_block_counts.len());
+    |                                                            ^^^^^^^^^^^^^^^^^^ unknown field
+
+error[E0609]: no field `edge_counts` on type `std::string::String`
+   --> examples/pgo_example.rs:305:53
+    |
+305 |     println!("  ✓ Edges profiled: {}", profile_data.edge_counts.len());
+    |                                                     ^^^^^^^^^^^ unknown field
+
+error[E0599]: no method named `total_function_executions` found for struct `std::string::String` in the current scope
+   --> examples/pgo_example.rs:306:61
+    |
+306 |     println!("  ✓ Total execution events: {}", profile_data.total_function_executions());
+    |                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `String`
+
+error[E0599]: no method named `limitations` found for struct `PostgreSqlDriver` in the current scope
+   --> examples/postgresql_demo.rs:122:30
+    |
+122 |     let limitations = driver.limitations();
+    |                              ^^^^^^^^^^^ method not found in `PostgreSqlDriver`
+
+Some errors have detailed explanations: E0412, E0432, E0433, E0599, E0609.
+error: could not compile `cursed` (example "pgo_example") due to 32 previous errors
+error[E0599]: no method named `validate_connection_string` found for struct `PostgreSqlDriver` in the current scope
+   --> examples/postgresql_demo.rs:180:22
+    |
+180 |         match driver.validate_connection_string(&connection_string) {
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `PostgreSqlDriver`
+
+error[E0599]: no method named `validate_sql` found for struct `PostgreSqlDriver` in the current scope
+   --> examples/postgresql_demo.rs:220:22
+    |
+220 |         match driver.validate_sql(sql) {
+    |                      ^^^^^^^^^^^^ method not found in `PostgreSqlDriver`
+
+error: could not compile `cursed` (example "protobuf_template_demo") due to 2 previous errors
+error: could not compile `cursed` (example "distributed_compilation_demo") due to 1 previous error
+error[E0609]: no field `sql` on type `&_`
+   --> examples/postgresql_demo.rs:409:25
+    |
+409 |                   batch.sql,
+    |                         ^^^ unknown field
+
+Some errors have detailed explanations: E0432, E0433, E0599, E0603, E0609.
+error: could not compile `cursed` (example "postgresql_demo") due to 18 previous errors

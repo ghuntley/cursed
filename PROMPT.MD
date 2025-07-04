@@ -4,9 +4,11 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to produce an compiled application in the cursed language via LLVM. You may use up to 500 subagents for operations but only 1 subagent for build/tests. Follow the fix_plan.md and choose the most important thing. Before making changes search codebase (don't assume not implemented). After resolving, run the tests for that unit of code. If functionality is missing then it's your job to add it as per the application specifications. Think extra hard.
+1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality. Follow the fix_plan.md and choose the most important thing. Before making changes search codebase (don't assume not implemented) using subagents. Think extra hard. You may use up to 500 subagents for search and edit operations but only 1 subagent for build/tests.
 
-2. IMPORTANT - When you discover a parser, lexer, control flow or LLVM issue. Immediately update @fix_plan.md with your findings using a subagent. When the issue is resolved, update @fix_plan.md and remove the item using a subagent.
+2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think extra hard.
+
+2. When you discover a parser, lexer, control flow or LLVM issue. Immediately update @fix_plan.md with your findings using a subagent. When the issue is resolved, update @fix_plan.md and remove the item using a subagent.
 
 3. When the tests pass update the @fix_plan.md`, then add changed code and @fix_plan.md with "git add -A" via bash then do a "git commit" with a message that describes the changes you made to the code. After the commit do a "git push" to push the changes to the remote repository.
 
@@ -19,5 +21,3 @@
 
 
 9999999999. ALWAYS KEEP @fix_plan.md up to do date with your learnings using a subagent. Especially after wrapping up/finishing your turn.
-
-99999999999. If you discover a way to resolve the linker problems make sure you permantley fix the problem. IMMEDIATELY.

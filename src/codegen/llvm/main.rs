@@ -7,7 +7,7 @@
 //! - Debug information generation
 //! - Profile-guided optimization
 
-use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator};
+use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator, AstVisitor};
 use crate::error::CursedError;
 use crate::package_manager::PackageManager;
 use crate::codegen::llvm::package_integration::LlvmPackageConfig;
@@ -284,8 +284,7 @@ declare i8* @cursed_channel_receive(i8*)
                 }
             },
             Statement::Struct(struct_stmt) => {
-                self.ir_code.push_str(&format!("  ; Struct definition: {}\n", struct_stmt.name));
-                // TODO: Implement actual struct codegen
+                self.generate_struct_definition(struct_stmt)?;
             },
             Statement::Interface(interface_stmt) => {
                 self.ir_code.push_str(&format!("  ; Interface definition: {}\n", interface_stmt.name));
@@ -312,6 +311,112 @@ declare i8* @cursed_channel_receive(i8*)
                 // TODO: Implement actual catch codegen with exception handling
             },
         }
+        Ok(())
+    }
+    
+    fn generate_struct_definition(&mut self, struct_stmt: &crate::ast::StructStatement) -> Result<(), CursedError> {
+        // Generate LLVM struct type definition
+        self.ir_code.push_str(&format!("  ; Struct definition: {}\n", struct_stmt.name));
+        
+        // Generate struct type declaration
+        let mut field_types = Vec::new();
+        for field in &struct_stmt.fields {
+            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&"normie".to_string()))?;
+            field_types.push(field_type);
+        }
+        
+        // Generate the struct type definition
+        self.ir_code.push_str(&format!("%struct.{} = type {{ ", struct_stmt.name));
+        for (i, field_type) in field_types.iter().enumerate() {
+            if i > 0 {
+                self.ir_code.push_str(", ");
+            }
+            self.ir_code.push_str(field_type);
+        }
+        self.ir_code.push_str(" }\n");
+        
+        // Generate constructor function
+        self.generate_struct_constructor(struct_stmt)?;
+        
+        // Generate field accessors
+        self.generate_struct_accessors(struct_stmt)?;
+        
+        Ok(())
+    }
+    
+    fn convert_cursed_type_to_llvm(&self, cursed_type: &str) -> Result<String, CursedError> {
+        match cursed_type {
+            "normie" => Ok("i32".to_string()),
+            "tea" => Ok("i8*".to_string()),
+            "lit" => Ok("i1".to_string()),
+            "snack" => Ok("double".to_string()),
+            _ => Ok("i8*".to_string()), // Default to pointer for unknown types
+        }
+    }
+    
+    fn generate_struct_constructor(&mut self, struct_stmt: &crate::ast::StructStatement) -> Result<(), CursedError> {
+        // Generate constructor function: struct_name_new(field1, field2, ...)
+        let mut param_types = Vec::new();
+        let mut param_names = Vec::new();
+        
+        for field in &struct_stmt.fields {
+            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&"normie".to_string()))?;
+            param_types.push(field_type);
+            param_names.push(field.name.clone());
+        }
+        
+        self.ir_code.push_str(&format!("define %struct.{}* @{}_new(", struct_stmt.name, struct_stmt.name));
+        for (i, (param_type, param_name)) in param_types.iter().zip(param_names.iter()).enumerate() {
+            if i > 0 {
+                self.ir_code.push_str(", ");
+            }
+            self.ir_code.push_str(&format!("{} %{}", param_type, param_name));
+        }
+        self.ir_code.push_str(") {\n");
+        
+        // Allocate memory for the struct
+        self.ir_code.push_str(&format!("  %ptr = call i8* @malloc(i64 ptrtoint (%struct.{}* getelementptr (%struct.{}, %struct.{}* null, i32 1) to i64))\n", 
+                                      struct_stmt.name, struct_stmt.name, struct_stmt.name));
+        self.ir_code.push_str(&format!("  %struct_ptr = bitcast i8* %ptr to %struct.{}*\n", struct_stmt.name));
+        
+        // Initialize fields
+        for (i, (param_name, _)) in param_names.iter().zip(param_types.iter()).enumerate() {
+            self.ir_code.push_str(&format!("  %field_ptr{} = getelementptr inbounds %struct.{}, %struct.{}* %struct_ptr, i32 0, i32 {}\n", 
+                                          i, struct_stmt.name, struct_stmt.name, i));
+            self.ir_code.push_str(&format!("  store {} %{}, {}* %field_ptr{}\n", 
+                                          param_types[i], param_name, param_types[i], i));
+        }
+        
+        self.ir_code.push_str(&format!("  ret %struct.{}* %struct_ptr\n", struct_stmt.name));
+        self.ir_code.push_str("}\n\n");
+        
+        Ok(())
+    }
+    
+    fn generate_struct_accessors(&mut self, struct_stmt: &crate::ast::StructStatement) -> Result<(), CursedError> {
+        // Generate getter and setter functions for each field
+        for (field_idx, field) in struct_stmt.fields.iter().enumerate() {
+            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&"normie".to_string()))?;
+            
+            // Generate getter: struct_name_get_field_name(struct_ptr)
+            self.ir_code.push_str(&format!("define {} @{}_get_{}(%struct.{}* %self) {{\n", 
+                                          field_type, struct_stmt.name, field.name, struct_stmt.name));
+            self.ir_code.push_str(&format!("  %field_ptr = getelementptr inbounds %struct.{}, %struct.{}* %self, i32 0, i32 {}\n", 
+                                          struct_stmt.name, struct_stmt.name, field_idx));
+            self.ir_code.push_str(&format!("  %value = load {}, {}* %field_ptr\n", field_type, field_type));
+            self.ir_code.push_str(&format!("  ret {} %value\n", field_type));
+            self.ir_code.push_str("}\n\n");
+            
+            // Generate setter: struct_name_set_field_name(struct_ptr, value)
+            self.ir_code.push_str(&format!("define void @{}_set_{}(%struct.{}* %self, {} %value) {{\n", 
+                                          struct_stmt.name, field.name, struct_stmt.name, field_type));
+            self.ir_code.push_str(&format!("  %field_ptr = getelementptr inbounds %struct.{}, %struct.{}* %self, i32 0, i32 {}\n", 
+                                          struct_stmt.name, struct_stmt.name, field_idx));
+            self.ir_code.push_str(&format!("  store {} %value, {}* %field_ptr\n", field_type, field_type));
+            self.ir_code.push_str("  ret void\n");
+            self.ir_code.push_str("}\n\n");
+        }
+        
         Ok(())
     }
     
@@ -555,6 +660,16 @@ declare i8* @cursed_channel_receive(i8*)
     }
     
     fn add_string_constant(&mut self, s: &str) -> String {
+        // Check if this string constant already exists
+        for (i, constant) in self.string_constants.iter().enumerate() {
+            if constant.contains(&format!("c\"{}\\00\"", s)) {
+                let const_name = format!("@.str.{}", i);
+                let len = s.len() + 1; // +1 for null terminator
+                return format!("getelementptr inbounds ([{} x i8], [{} x i8]* {}, i64 0, i64 0)", len, len, const_name);
+            }
+        }
+        
+        // String constant doesn't exist, add it
         let const_name = format!("@.str.{}", self.string_constants.len());
         let len = s.len() + 1; // +1 for null terminator
         self.string_constants.push(format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
@@ -563,17 +678,33 @@ declare i8* @cursed_channel_receive(i8*)
     }
 
     fn generate_string_literal(&mut self, value: &str) -> Result<String, CursedError> {
+        let cleaned_value = value.replace("\"", "\\\"");
+        
+        // Check if this string constant already exists
+        for (i, constant) in self.string_constants.iter().enumerate() {
+            if constant.contains(&format!("c\"{}\\00\"", cleaned_value)) {
+                let const_name = format!("@.str.{}", i);
+                let len = cleaned_value.len() + 1; // +1 for null terminator
+                
+                // Generate getelementptr to get string pointer
+                let reg = self.next_register();
+                self.ir_code.push_str(&format!(
+                    "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
+                    reg, len, len, const_name
+                ));
+                
+                return Ok(reg);
+            }
+        }
+        
+        // String constant doesn't exist, add it
         let const_name = format!("@.str.{}", self.string_constants.len());
-        let len = value.len() + 1; // +1 for null terminator
+        let len = cleaned_value.len() + 1; // +1 for null terminator
         
         // Add to constant pool
         let constant_def = format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
-            const_name, len, value.replace("\"", "\\\""));
+            const_name, len, cleaned_value);
         self.string_constants.push(constant_def.clone());
-        
-        // Debug output (commented out for production)
-        // eprintln!("DEBUG: Added string constant: {}", constant_def);
-        // eprintln!("DEBUG: Total string constants: {}", self.string_constants.len());
         
         // Generate getelementptr to get string pointer
         let reg = self.next_register();
@@ -645,10 +776,36 @@ declare i8* @cursed_channel_receive(i8*)
             self.ir_code.push_str(expression_ir);
         }
         
-        // Merge string constants from function compiler
+        // Merge string constants from function compiler with proper deduplication
         for constant in function_compiler.get_string_constants() {
-            if !self.string_constants.contains(constant) {
-                self.string_constants.push(constant.clone());
+            // Extract the string content from the constant definition
+            if let Some(start) = constant.find("c\"") {
+                if let Some(end) = constant.rfind("\\00\"") {
+                    let string_content = &constant[start+2..end];
+                    
+                    // Check if this string content already exists
+                    let mut already_exists = false;
+                    for existing_constant in &self.string_constants {
+                        if existing_constant.contains(&format!("c\"{}\\00\"", string_content)) {
+                            already_exists = true;
+                            break;
+                        }
+                    }
+                    
+                    if !already_exists {
+                        // Renumber the constant to avoid conflicts
+                        let new_const_name = format!("@.str.{}", self.string_constants.len());
+                        let mut new_constant = constant.clone();
+                        
+                        // Replace the old constant name with the new one
+                        if let Some(old_name_end) = constant.find(" = ") {
+                            let old_name = &constant[0..old_name_end];
+                            new_constant = new_constant.replace(old_name, &new_const_name);
+                        }
+                        
+                        self.string_constants.push(new_constant);
+                    }
+                }
             }
         }
         
@@ -1304,6 +1461,71 @@ impl LlvmCodeGenerator {
             Literal::Boolean(_) => Ok("i1".to_string()),
             Literal::Null => Ok("i8*".to_string()),
             Literal::Nil => Ok("i8*".to_string()),
+        }
+    }
+    
+    /// Visitor-pattern based compilation method
+    /// Uses the AstVisitor trait to systematically traverse and generate LLVM IR
+    pub fn compile_with_visitor(&mut self, program: &Program) -> Result<String, CursedError> {
+        self.visit_program(program)
+    }
+    
+    /// Visitor-pattern based statement compilation
+    /// Uses the AstVisitor trait to generate LLVM IR for a single statement
+    pub fn compile_statement_with_visitor(&mut self, statement: &Statement) -> Result<String, CursedError> {
+        self.visit_statement(statement)
+    }
+    
+    /// Visitor-pattern based expression compilation
+    /// Uses the AstVisitor trait to generate LLVM IR for a single expression
+    pub fn compile_expression_with_visitor(&mut self, expression: &Expression) -> Result<String, CursedError> {
+        self.visit_expression(expression)
+    }
+}
+
+/// Implementation of AstVisitor trait for LlvmCodeGenerator
+/// This provides standardized traversal of the AST with LLVM IR generation
+impl AstVisitor<Result<String, CursedError>> for LlvmCodeGenerator {
+    fn visit_program(&mut self, program: &Program) -> Result<String, CursedError> {
+        // Use the existing generate_ir method which handles complete program compilation
+        self.generate_ir(program)
+    }
+    
+    fn visit_statement(&mut self, statement: &Statement) -> Result<String, CursedError> {
+        // Clear previous IR and generate for this statement
+        let original_ir = self.ir_code.clone();
+        self.ir_code.clear();
+        
+        // Generate the statement
+        match self.generate_statement(statement) {
+            Ok(()) => {
+                let statement_ir = self.ir_code.clone();
+                self.ir_code = original_ir;
+                Ok(statement_ir)
+            },
+            Err(e) => {
+                self.ir_code = original_ir;
+                Err(e)
+            }
+        }
+    }
+    
+    fn visit_expression(&mut self, expression: &Expression) -> Result<String, CursedError> {
+        // Generate the expression and return the register/value
+        let original_ir = self.ir_code.clone();
+        self.ir_code.clear();
+        
+        match self.generate_expression(expression) {
+            Ok(register) => {
+                let expression_ir = self.ir_code.clone();
+                self.ir_code = original_ir;
+                // Return both the generated IR and the resulting register/value
+                Ok(format!("{}; Result: {}", expression_ir, register))
+            },
+            Err(e) => {
+                self.ir_code = original_ir;
+                Err(e)
+            }
         }
     }
 }

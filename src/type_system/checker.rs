@@ -8,7 +8,7 @@ use crate::ast::{Expression, Statement, Program, BinaryExpression, CallExpressio
                  WhileStatement, ReturnStatement, Literal, StructStatement, InterfaceStatement,
                  ChannelStatement, GoroutineStatement, SelectStatement, PanicStatement, 
                  CatchStatement, ChannelSendExpression, ChannelReceiveExpression, 
-                 ChannelCreationExpression};
+                 ChannelCreationExpression, AstVisitor};
 use crate::error::CursedError;
 use crate::core::Type;
 use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext, 
@@ -23,14 +23,14 @@ pub struct TypeChecker {
     pub errors: Vec<TypeCheckError>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeCheckError {
     pub message: String,
     pub location: Option<String>,
     pub error_type: TypeErrorKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeErrorKind {
     TypeMismatch,
     UndefinedVariable,
@@ -72,17 +72,21 @@ impl TypeChecker {
     pub fn check_program(&mut self, program: &Program) -> Result<(), Vec<TypeCheckError>> {
         self.errors.clear();
         
-        // Check all statements
-        for statement in &program.statements {
-            if let Err(error) = self.check_statement(statement) {
-                self.errors.push(error);
+        // Use the visitor pattern for type checking
+        match self.visit_program(program) {
+            Ok(_) => {
+                if self.errors.is_empty() {
+                    Ok(())
+                } else {
+                    Err(self.errors.clone())
+                }
             }
-        }
-        
-        if self.errors.is_empty() {
-            Ok(())
-        } else {
-            Err(self.errors.clone())
+            Err(error) => {
+                if !self.errors.contains(&error) {
+                    self.errors.push(error);
+                }
+                Err(self.errors.clone())
+            }
         }
     }
     
@@ -853,6 +857,203 @@ impl Default for TypeChecker {
     }
 }
 
+/// Implementation of AstVisitor trait for TypeChecker
+/// This provides standardized traversal of the AST with type checking
+impl AstVisitor<Result<TypeExpression, TypeCheckError>> for TypeChecker {
+    fn visit_program(&mut self, program: &Program) -> Result<TypeExpression, TypeCheckError> {
+        self.errors.clear();
+        
+        // Visit all statements in the program
+        for statement in &program.statements {
+            if let Err(error) = self.visit_statement(statement) {
+                self.errors.push(error);
+            }
+        }
+        
+        // Return void type for the program, or error if any accumulated
+        if self.errors.is_empty() {
+            Ok(TypeExpression::named("void"))
+        } else {
+            Err(self.errors.first().cloned().unwrap())
+        }
+    }
+    
+    fn visit_statement(&mut self, statement: &Statement) -> Result<TypeExpression, TypeCheckError> {
+        match statement {
+            Statement::Expression(expr) => {
+                self.visit_expression(expr)
+            }
+            Statement::Let(let_stmt) => {
+                self.visit_let_statement(let_stmt)
+            }
+            Statement::Function(func_stmt) => {
+                self.visit_function_statement(func_stmt)
+            }
+            Statement::If(if_stmt) => {
+                self.visit_if_statement(if_stmt)
+            }
+            Statement::While(while_stmt) => {
+                self.visit_while_statement(while_stmt)
+            }
+            Statement::Return(return_stmt) => {
+                self.visit_return_statement(return_stmt)
+            }
+            Statement::Struct(struct_stmt) => {
+                self.visit_struct_statement(struct_stmt)
+            }
+            Statement::Interface(interface_stmt) => {
+                self.visit_interface_statement(interface_stmt)
+            }
+            Statement::Channel(channel_stmt) => {
+                self.visit_channel_statement(channel_stmt)
+            }
+            Statement::Goroutine(goroutine_stmt) => {
+                self.visit_goroutine_statement(goroutine_stmt)
+            }
+            Statement::Select(select_stmt) => {
+                self.visit_select_statement(select_stmt)
+            }
+            Statement::Panic(panic_stmt) => {
+                self.visit_panic_statement(panic_stmt)
+            }
+            Statement::Catch(catch_stmt) => {
+                self.visit_catch_statement(catch_stmt)
+            }
+            _ => Ok(TypeExpression::named("void")),
+        }
+    }
+    
+    fn visit_expression(&mut self, expression: &Expression) -> Result<TypeExpression, TypeCheckError> {
+        match expression {
+            Expression::Integer(_) => Ok(TypeExpression::named("int")),
+            Expression::String(_) => Ok(TypeExpression::named("string")),
+            Expression::Boolean(_) => Ok(TypeExpression::named("bool")),
+            Expression::Identifier(name) => {
+                self.visit_identifier(name)
+            }
+            Expression::Binary(binary) => {
+                self.visit_binary_expression(binary)
+            }
+            Expression::Call(call) => {
+                self.visit_call_expression(call)
+            }
+            Expression::MemberAccess(member) => {
+                self.visit_member_access(member)
+            }
+            Expression::Literal(literal) => {
+                self.visit_literal(literal)
+            }
+            Expression::Array(elements) => {
+                self.visit_array_expression(elements)
+            }
+            Expression::Map(pairs) => {
+                self.visit_map_expression(pairs)
+            }
+            Expression::ChannelSend(channel_send) => {
+                self.visit_channel_send_expression(channel_send)
+            }
+            Expression::ChannelReceive(channel_receive) => {
+                self.visit_channel_receive_expression(channel_receive)
+            }
+            Expression::ChannelCreation(channel_creation) => {
+                self.visit_channel_creation_expression(channel_creation)
+            }
+            _ => Ok(TypeExpression::named("unknown")),
+        }
+    }
+}
+
+/// Visitor-specific methods that delegate to existing functionality
+impl TypeChecker {
+    fn visit_identifier(&self, name: &str) -> Result<TypeExpression, TypeCheckError> {
+        self.check_identifier(name)
+    }
+
+    fn visit_binary_expression(&mut self, binary: &BinaryExpression) -> Result<TypeExpression, TypeCheckError> {
+        self.check_binary_expression(binary)
+    }
+
+    fn visit_call_expression(&mut self, call: &CallExpression) -> Result<TypeExpression, TypeCheckError> {
+        self.check_call_expression(call)
+    }
+
+    fn visit_member_access(&mut self, member: &MemberAccessExpression) -> Result<TypeExpression, TypeCheckError> {
+        self.check_member_access(member)
+    }
+
+    fn visit_literal(&self, literal: &Literal) -> Result<TypeExpression, TypeCheckError> {
+        self.check_literal(literal)
+    }
+
+    fn visit_array_expression(&mut self, elements: &[Expression]) -> Result<TypeExpression, TypeCheckError> {
+        self.check_array_expression(elements)
+    }
+
+    fn visit_map_expression(&mut self, pairs: &[(Expression, Expression)]) -> Result<TypeExpression, TypeCheckError> {
+        self.check_map_expression(pairs)
+    }
+
+    fn visit_let_statement(&mut self, let_stmt: &LetStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_let_statement(let_stmt)
+    }
+
+    fn visit_function_statement(&mut self, func_stmt: &FunctionStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_function_statement(func_stmt)
+    }
+
+    fn visit_if_statement(&mut self, if_stmt: &IfStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_if_statement(if_stmt)
+    }
+
+    fn visit_while_statement(&mut self, while_stmt: &WhileStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_while_statement(while_stmt)
+    }
+
+    fn visit_return_statement(&mut self, return_stmt: &ReturnStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_return_statement(return_stmt)
+    }
+
+    fn visit_struct_statement(&mut self, struct_stmt: &StructStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_struct_statement(struct_stmt)
+    }
+
+    fn visit_interface_statement(&mut self, interface_stmt: &InterfaceStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_interface_statement(interface_stmt)
+    }
+
+    fn visit_channel_statement(&mut self, channel_stmt: &ChannelStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_channel_statement(channel_stmt)
+    }
+
+    fn visit_goroutine_statement(&mut self, goroutine_stmt: &GoroutineStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_goroutine_statement(goroutine_stmt)
+    }
+
+    fn visit_select_statement(&mut self, select_stmt: &SelectStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_select_statement(select_stmt)
+    }
+
+    fn visit_panic_statement(&mut self, panic_stmt: &PanicStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_panic_statement(panic_stmt)
+    }
+
+    fn visit_catch_statement(&mut self, catch_stmt: &CatchStatement) -> Result<TypeExpression, TypeCheckError> {
+        self.check_catch_statement(catch_stmt)
+    }
+
+    fn visit_channel_send_expression(&mut self, channel_send: &ChannelSendExpression) -> Result<TypeExpression, TypeCheckError> {
+        self.check_channel_send_expression(channel_send)
+    }
+
+    fn visit_channel_receive_expression(&mut self, channel_receive: &ChannelReceiveExpression) -> Result<TypeExpression, TypeCheckError> {
+        self.check_channel_receive_expression(channel_receive)
+    }
+
+    fn visit_channel_creation_expression(&mut self, channel_creation: &ChannelCreationExpression) -> Result<TypeExpression, TypeCheckError> {
+        self.check_channel_creation_expression(channel_creation)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -947,5 +1148,49 @@ mod tests {
         
         let result = checker.check_expression(&expr);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_ast_visitor_trait() {
+        let mut checker = TypeChecker::new();
+        
+        // Test visiting a simple program
+        let program = Program {
+            statements: vec![
+                Statement::Let(LetStatement {
+                    name: "x".to_string(),
+                    value: Expression::Integer(42),
+                    var_type: None,
+                    visibility: crate::ast::Visibility::Private,
+                }),
+                Statement::Expression(Expression::Identifier("x".to_string())),
+            ],
+            imports: vec![],
+            package: None,
+        };
+        
+        let result = checker.visit_program(&program);
+        assert!(result.is_ok());
+        
+        // Test visiting individual expressions
+        let expr = Expression::Binary(BinaryExpression {
+            left: Box::new(Expression::Integer(1)),
+            operator: "+".to_string(),
+            right: Box::new(Expression::Integer(2)),
+        });
+        
+        let result = checker.visit_expression(&expr);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().name, Some("int".to_string()));
+        
+        // Test visiting statements
+        let stmt = Statement::If(IfStatement {
+            condition: Expression::Boolean(true),
+            then_branch: vec![Statement::Expression(Expression::Integer(1))],
+            else_branch: None,
+        });
+        
+        let result = checker.visit_statement(&stmt);
+        assert!(result.is_ok());
     }
 }
