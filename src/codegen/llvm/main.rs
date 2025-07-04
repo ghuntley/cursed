@@ -496,11 +496,21 @@ declare i8* @cursed_channel_receive(i8*)
                     self.ir_code.push_str(expression_ir);
                 }
                 
-                // Add any string constants to our pool
-                for constant in expression_compiler.get_string_constants() {
-                    if !self.string_constants.contains(constant) {
-                        self.string_constants.push(constant.clone());
+                // Add any string constants to our pool (excluding lambda functions)
+                for constant in expression_compiler.get_actual_string_constants() {
+                    if !self.string_constants.contains(&constant) {
+                        self.string_constants.push(constant);
                     }
+                }
+                
+                // Add lambda function definitions to our IR code
+                for lambda_func in expression_compiler.get_lambda_functions() {
+                    // Insert lambda functions before the main function
+                    let main_pos = self.ir_code.find("define i32 @main()").unwrap_or(self.ir_code.len());
+                    let before_main = self.ir_code[..main_pos].to_string();
+                    let from_main = self.ir_code[main_pos..].to_string();
+                    
+                    self.ir_code = format!("{}\n{}\n{}", before_main, lambda_func, from_main);
                 }
                 
                 Ok(result_reg)

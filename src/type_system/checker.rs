@@ -251,6 +251,9 @@ impl TypeChecker {
             Expression::StructLiteral(struct_literal) => {
                 self.check_struct_literal_expression(struct_literal)
             }
+            Expression::Lambda(lambda_expr) => {
+                self.check_lambda_expression(lambda_expr)
+            }
             _ => Ok(TypeExpression::named("unknown")),
         }
     }
@@ -1015,6 +1018,29 @@ impl TypeChecker {
         
         // Return the struct type
         Ok(TypeExpression::named(struct_type_name))
+    }
+    
+    /// Check lambda expression and infer its function type
+    fn check_lambda_expression(&mut self, lambda_expr: &crate::ast::LambdaExpression) -> Result<TypeExpression, TypeCheckError> {
+        // Enter new scope for lambda parameters
+        self.enter_scope();
+        
+        // Add lambda parameters to scope with unknown types initially
+        let mut param_types = Vec::new();
+        for param in &lambda_expr.parameters {
+            let param_type = TypeExpression::named("unknown");
+            self.add_variable(param.clone(), param_type.clone());
+            param_types.push(param_type);
+        }
+        
+        // Check lambda body and infer return type
+        let return_type = self.check_expression(&lambda_expr.body)?;
+        
+        // Exit lambda scope
+        self.exit_scope();
+        
+        // Create function type
+        Ok(TypeExpression::function(param_types, return_type))
     }
 }
 

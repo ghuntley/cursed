@@ -41,4 +41,9 @@ impl ExecutionContext {
     pub fn get_function(&self, name: &str) -> Option<crate::ast::FunctionStatement> {
         self.functions.get(name).cloned()
     }
+    
+    /// Get all variables for lambda environment capture
+    pub fn get_all_variables(&self) -> &HashMap<String, CursedValue> {
+        &self.variables
+    }
 }

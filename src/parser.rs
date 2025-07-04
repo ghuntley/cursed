@@ -1100,8 +1100,61 @@ impl Parser {
             TokenKind::Dm => {
                 self.parse_channel_creation()
             },
+            TokenKind::Pipe => {
+                self.parse_lambda_expression()
+            },
+            TokenKind::PipePipe => {
+                self.parse_lambda_expression()
+            },
             _ => Err(CursedError::syntax_error("Expected expression")),
         }
+    }
+
+    fn parse_lambda_expression(&mut self) -> Result<Expression, CursedError> {
+        let mut parameters = Vec::new();
+        
+        // Check if it's a parameterless lambda: || { body }
+        if self.check(&TokenKind::PipePipe) {
+            self.advance(); // consume ||
+        } else {
+            // Parse parameterized lambda: |param1, param2| { body }
+            self.consume(TokenKind::Pipe, "Expected '|' to start lambda parameters")?;
+            
+            // Parse parameters
+            if !self.check(&TokenKind::Pipe) {
+                loop {
+                    let param = self.consume(TokenKind::Identifier, "Expected parameter name")?;
+                    parameters.push(param.lexeme.clone());
+                    
+                    if !self.match_tokens(&[TokenKind::Comma]) {
+                        break;
+                    }
+                }
+            }
+            
+            self.consume(TokenKind::Pipe, "Expected '|' to close lambda parameters")?;
+        }
+        
+        // Parse lambda body
+        self.consume(TokenKind::LeftBrace, "Expected '{' to start lambda body")?;
+        self.skip_newlines();
+        
+        // For now, we'll parse a single expression as the body
+        // In a full implementation, you might want to support multiple statements
+        let body = if self.check(&TokenKind::RightBrace) {
+            // Empty body - return unit/void expression
+            Expression::Identifier("()".to_string())
+        } else {
+            self.parse_expression()?
+        };
+        
+        self.skip_newlines();
+        self.consume(TokenKind::RightBrace, "Expected '}' to close lambda body")?;
+        
+        Ok(Expression::Lambda(crate::ast::LambdaExpression {
+            parameters,
+            body: Box::new(body),
+        }))
     }
 
     fn parse_struct_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::StructStatement, CursedError> {
@@ -1767,5 +1820,70 @@ slay testFunc() {
                 panic!("Function parsing should succeed");
             }
         }
+    }
+
+    #[test]
+    fn test_lambda_expression_parsing() {
+        println!("🧪 Testing lambda expression parsing...");
+        
+        // Test parameterless lambda
+        let tokens = vec![
+            Token { kind: TokenKind::PipePipe, lexeme: "||".to_string(), line: 1, column: 1 },
+            Token { kind: TokenKind::LeftBrace, lexeme: "{".to_string(), line: 1, column: 3 },
+            Token { kind: TokenKind::Number, lexeme: "42".to_string(), line: 1, column: 5 },
+            Token { kind: TokenKind::RightBrace, lexeme: "}".to_string(), line: 1, column: 7 },
+            Token { kind: TokenKind::Eof, lexeme: "".to_string(), line: 1, column: 8 },
+        ];
+        
+        let mut parser = Parser::from_tokens(tokens);
+        match parser.parse_expression() {
+            Ok(expr) => {
+                if let Expression::Lambda(lambda) = expr {
+                    assert_eq!(lambda.parameters.len(), 0, "Parameterless lambda should have no parameters");
+                    println!("✅ Parameterless lambda parsed successfully");
+                } else {
+                    panic!("Expected lambda expression, got {:?}", std::mem::discriminant(&expr));
+                }
+            },
+            Err(e) => {
+                println!("❌ Parameterless lambda parsing failed: {}", e);
+                panic!("Parameterless lambda parsing should succeed");
+            }
+        }
+        
+        // Test lambda with parameters
+        let tokens = vec![
+            Token { kind: TokenKind::Pipe, lexeme: "|".to_string(), line: 1, column: 1 },
+            Token { kind: TokenKind::Identifier, lexeme: "x".to_string(), line: 1, column: 2 },
+            Token { kind: TokenKind::Comma, lexeme: ",".to_string(), line: 1, column: 3 },
+            Token { kind: TokenKind::Identifier, lexeme: "y".to_string(), line: 1, column: 5 },
+            Token { kind: TokenKind::Pipe, lexeme: "|".to_string(), line: 1, column: 6 },
+            Token { kind: TokenKind::LeftBrace, lexeme: "{".to_string(), line: 1, column: 8 },
+            Token { kind: TokenKind::Identifier, lexeme: "x".to_string(), line: 1, column: 10 },
+            Token { kind: TokenKind::Plus, lexeme: "+".to_string(), line: 1, column: 12 },
+            Token { kind: TokenKind::Identifier, lexeme: "y".to_string(), line: 1, column: 14 },
+            Token { kind: TokenKind::RightBrace, lexeme: "}".to_string(), line: 1, column: 15 },
+            Token { kind: TokenKind::Eof, lexeme: "".to_string(), line: 1, column: 16 },
+        ];
+        
+        let mut parser = Parser::from_tokens(tokens);
+        match parser.parse_expression() {
+            Ok(expr) => {
+                if let Expression::Lambda(lambda) = expr {
+                    assert_eq!(lambda.parameters.len(), 2, "Lambda should have 2 parameters");
+                    assert_eq!(lambda.parameters[0], "x", "First parameter should be 'x'");
+                    assert_eq!(lambda.parameters[1], "y", "Second parameter should be 'y'");
+                    println!("✅ Lambda with parameters parsed successfully");
+                } else {
+                    panic!("Expected lambda expression, got {:?}", std::mem::discriminant(&expr));
+                }
+            },
+            Err(e) => {
+                println!("❌ Lambda with parameters parsing failed: {}", e);
+                panic!("Lambda with parameters parsing should succeed");
+            }
+        }
+        
+        println!("🎉 Lambda expression parsing tests passed!");
     }
 }
