@@ -188,11 +188,12 @@ pub fn run(source: &str) -> crate::error::Result<()> {
     let mut execution_engine = execution::CursedExecutionEngine::new()?;
     let result = execution_engine.execute(source)?;
     
-    // Print the result for user feedback
-    match result {
-        execution::CursedValue::Nil => {}, // Don't print nil results
-        _ => println!("{}", execution_engine.get_value_manager().format_value(&result)),
-    }
+    // Don't automatically print the result - output should come from explicit print statements
+    // like vibez.spill() or println!()
+    // match result {
+    //     execution::CursedValue::Nil => {}, // Don't print nil results
+    //     _ => println!("{}", execution_engine.get_value_manager().format_value(&result)),
+    // }
     
     Ok(())
 }
