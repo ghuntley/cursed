@@ -161,7 +161,7 @@ fn verify_calculate_area_body(body: &[Statement]) {
         match statement {
             Statement::Return(ret_stmt) => {
                 println!("      ✅ Found return statement");
-                if let Expression::Binary(_) = &ret_stmt.value {
+                if let Some(Expression::Binary(_)) = &ret_stmt.value {
                     println!("      ✅ Return contains binary expression (calculation)");
                 }
             },
