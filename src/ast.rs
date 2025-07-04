@@ -106,6 +106,7 @@ impl Default for Visibility {
 pub struct LetStatement {
     pub name: String,
     pub value: Expression,
+    pub var_type: Option<String>, // Type annotation for the variable
     pub visibility: Visibility,
 }
 
@@ -155,7 +156,7 @@ pub struct TypeConstraint {
 pub struct FunctionStatement {
     pub name: String,
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters
-    pub parameters: Vec<String>,
+    pub parameters: Vec<Parameter>,
     pub body: Vec<Statement>,
     pub return_type: Option<String>,
     pub where_clause: Option<WhereClause>, // Where clause for constraints

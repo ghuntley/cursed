@@ -552,7 +552,7 @@ impl CursedExecutionEngine {
                             
                             for (param, arg) in func_def.parameters.iter().zip(&call_expr.arguments) {
                                 let arg_value = self.evaluate_expression(arg, context)?;
-                                func_context.set_variable(param.clone(), arg_value);
+                                func_context.set_variable(param.name.clone(), arg_value);
                             }
                             
                             // Execute function body

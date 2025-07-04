@@ -71,7 +71,10 @@ mod tests {
         let func_stmt = FunctionStatement {
             name: "add".to_string(),
             type_parameters: vec![],
-            parameters: vec!["x".to_string(), "y".to_string()],
+            parameters: vec![
+                Parameter { name: "x".to_string(), param_type: None },
+                Parameter { name: "y".to_string(), param_type: None }
+            ],
             body: vec![
                 Statement::Return(ReturnStatement {
                     value: Some(Expression::Binary(BinaryExpression {
@@ -255,6 +258,7 @@ mod tests {
         let let_stmt = LetStatement {
             name: "x".to_string(),
             value: Expression::Integer(42),
+            var_type: None,
             visibility: crate::ast::Visibility::Private,
         };
         
@@ -326,11 +330,13 @@ mod tests {
                 Statement::Let(LetStatement {
                     name: "x".to_string(),
                     value: Expression::Integer(42),
+                    var_type: None,
                     visibility: crate::ast::Visibility::Private,
                 }),
                 Statement::Let(LetStatement {
                     name: "message".to_string(),
                     value: Expression::String("Hello, CURSED!".to_string()),
+                    var_type: None,
                     visibility: crate::ast::Visibility::Private,
                 }),
                 Statement::Expression(Expression::Call(CallExpression {
@@ -343,7 +349,10 @@ mod tests {
                 Statement::Function(FunctionStatement {
                     name: "add".to_string(),
                     type_parameters: vec![],
-                    parameters: vec!["a".to_string(), "b".to_string()],
+                    parameters: vec![
+                        Parameter { name: "a".to_string(), param_type: None },
+                        Parameter { name: "b".to_string(), param_type: None }
+                    ],
                     body: vec![
                         Statement::Return(ReturnStatement {
                             value: Some(Expression::Binary(BinaryExpression {

@@ -176,7 +176,7 @@ impl TypeInference {
                 let param_types: Vec<TypeExpression> = func_stmt.parameters.iter()
                     .map(|param| {
                         let param_type = self.fresh_type_variable();
-                        self.inference_context.type_vars.insert(param.clone(), param_type.clone());
+                        self.inference_context.type_vars.insert(param.name.clone(), param_type.clone());
                         param_type
                     })
                     .collect();

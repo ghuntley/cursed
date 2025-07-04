@@ -1,3 +1,3 @@
-slay main() {
-    "hello"
+slay test(x normie) {
+    yolo x
 }

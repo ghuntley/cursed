@@ -492,7 +492,7 @@ impl TypeChecker {
         
         // Add parameters to function scope
         for param in &func_stmt.parameters {
-            self.add_variable(param.clone(), TypeExpression::named("unknown"));
+            self.add_variable(param.name.clone(), TypeExpression::named("unknown"));
         }
         
         // Set current function return type
@@ -911,7 +911,10 @@ mod tests {
         let func_stmt = FunctionStatement {
             name: "test_func".to_string(),
             type_parameters: vec![],
-            parameters: vec!["x".to_string()],
+            parameters: vec![crate::ast::Parameter {
+                name: "x".to_string(),
+                param_type: Some("normie".to_string()),
+            }],
             body: vec![
                 Statement::Return(ReturnStatement {
                     value: Some(Expression::Integer(42)),
