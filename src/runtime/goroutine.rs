@@ -493,30 +493,39 @@ impl GoroutineScheduler {
     fn execute_goroutine(worker_id: WorkerId, goroutine: Arc<Mutex<Goroutine>>) {
         let execution_start = Instant::now();
         
-        // Set goroutine state to running
-        {
-            if let Ok(goroutine_guard) = goroutine.lock() {
+        // Extract the entry function from the goroutine
+        // We need to move the function out of the goroutine struct to execute it
+        let entry_fn = {
+            if let Ok(mut goroutine_guard) = goroutine.lock() {
                 goroutine_guard.set_state(GoroutineState::Running);
+                
+                // Take the entry function out of the goroutine
+                // Note: This is a one-time operation as FnOnce can only be called once
+                let fake_fn = Box::new(|| {}) as Box<dyn FnOnce() + Send + 'static>;
+                std::mem::replace(&mut goroutine_guard.entry_fn, fake_fn)
             } else {
                 return; // Can't acquire lock, skip execution
             }
-        }
+        };
 
-        // Execute the goroutine function
-        // Note: In a real implementation, this would involve context switching,
-        // stack management, and proper error handling
-        let result = std::panic::catch_unwind(|| {
-            // Extract and execute the entry function
-            // This is simplified - real implementation would handle stack switching
-            println!("Worker {} executing goroutine", worker_id);
-        });
+        // Execute the goroutine function with proper error handling
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+            // Call the actual entry function
+            entry_fn();
+        }));
 
         // Update goroutine state based on execution result
         {
             if let Ok(goroutine_guard) = goroutine.lock() {
                 match result {
-                    Ok(_) => goroutine_guard.set_state(GoroutineState::Completed),
-                    Err(_) => goroutine_guard.set_state(GoroutineState::Panicked),
+                    Ok(_) => {
+                        goroutine_guard.set_state(GoroutineState::Completed);
+                        log::debug!("Worker {} completed goroutine {}", worker_id, goroutine_guard.id);
+                    },
+                    Err(panic_info) => {
+                        goroutine_guard.set_state(GoroutineState::Panicked);
+                        log::error!("Worker {} - goroutine {} panicked: {:?}", worker_id, goroutine_guard.id, panic_info);
+                    },
                 }
             }
         }
