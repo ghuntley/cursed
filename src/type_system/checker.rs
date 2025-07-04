@@ -57,7 +57,7 @@ impl TypeChecker {
     
     fn initialize_builtins(&mut self) {
         // Add built-in variables
-        self.add_variable("vibez".to_string(), TypeExpression::named("vibes"));
+        self.add_variable("vibez".to_string(), TypeExpression::named("vibez"));
         
         // Add built-in functions
         self.add_function("print".to_string(), 
