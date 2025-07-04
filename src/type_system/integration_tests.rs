@@ -107,7 +107,7 @@ mod tests {
         });
         
         let result = checker.check_expression(&method_call).unwrap();
-        assert_eq!(result.name, Some("void".to_string()));
+        assert_eq!(result.name, Some("cap".to_string()));
     }
     
     #[test]
@@ -143,7 +143,7 @@ mod tests {
             methods: vec![
                 super::super::MethodSignature {
                     name: "get".to_string(),
-                    parameters: vec![super::super::TypeExpression::named("int")],
+                    parameters: vec![super::super::TypeExpression::named("normie")],
                     return_type: Some(super::super::TypeExpression::named("T")),
                     type_parameters: Vec::new(),
                     constraints: Vec::new(),
@@ -163,8 +163,8 @@ mod tests {
         let mut system = TypeSystem::new();
         
         // Test basic type compatibility
-        let int_type = super::super::TypeExpression::named("int");
-        let string_type = super::super::TypeExpression::named("string");
+        let int_type = super::super::TypeExpression::named("normie");
+        let string_type = super::super::TypeExpression::named("tea");
         
         assert!(system.types_compatible(&int_type, &int_type));
         assert!(!system.types_compatible(&int_type, &string_type));
@@ -186,7 +186,7 @@ mod tests {
         });
         
         let result = checker.check_expression(&complex_expr).unwrap();
-        assert_eq!(result.name, Some("int".to_string()));
+        assert_eq!(result.name, Some("normie".to_string()));
         
         // Test comparison expression
         let comparison_expr = Expression::Binary(BinaryExpression {
@@ -263,12 +263,12 @@ mod tests {
         };
         
         let result = checker.check_let_statement(&let_stmt).unwrap();
-        assert_eq!(result.name, Some("int".to_string()));
+        assert_eq!(result.name, Some("normie".to_string()));
         
         // Verify variable is added to scope
         let identifier_expr = Expression::Identifier("x".to_string());
         let lookup_result = checker.check_expression(&identifier_expr).unwrap();
-        assert_eq!(lookup_result.name, Some("int".to_string()));
+        assert_eq!(lookup_result.name, Some("normie".to_string()));
     }
     
     #[test]
@@ -285,7 +285,7 @@ mod tests {
         let result = checker.check_expression(&array_expr).unwrap();
         assert_eq!(result.name, Some("Array".to_string()));
         assert_eq!(result.parameters.len(), 1);
-        assert_eq!(result.parameters[0].name, Some("int".to_string()));
+        assert_eq!(result.parameters[0].name, Some("normie".to_string()));
         
         // Heterogeneous array (should fail)
         let bad_array_expr = Expression::Array(vec![
@@ -310,8 +310,8 @@ mod tests {
         let result = checker.check_expression(&map_expr).unwrap();
         assert_eq!(result.name, Some("Map".to_string()));
         assert_eq!(result.parameters.len(), 2);
-        assert_eq!(result.parameters[0].name, Some("string".to_string()));
-        assert_eq!(result.parameters[1].name, Some("int".to_string()));
+        assert_eq!(result.parameters[0].name, Some("tea".to_string()));
+        assert_eq!(result.parameters[1].name, Some("normie".to_string()));
         
         // Mixed value types (should fail)
         let bad_map_expr = Expression::Map(vec![
