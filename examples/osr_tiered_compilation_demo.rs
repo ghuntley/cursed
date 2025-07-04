@@ -19,7 +19,7 @@ fn main() -> Result<(), Error> {
     tracing_subscriber::fmt::init();
     
     println!("🚀 CURSED JIT: OSR and Tiered Compilation Demo");
-    println!("=" .repeat(60));
+    println!("{}", "=".repeat(60));
     
     demo_osr_functionality()?;
     demo_tiered_compilation()?;
@@ -32,7 +32,7 @@ fn main() -> Result<(), Error> {
 /// Demonstrate OSR (On-Stack Replacement) functionality
 fn demo_osr_functionality() -> Result<(), Error> {
     println!("\n🔄 OSR (On-Stack Replacement) Demo");
-    println!("-".repeat(40));
+    println!("{}", "-".repeat(40));
     
     let context = Context::create();
     let config = OSRConfig {
@@ -99,7 +99,7 @@ fn demo_osr_functionality() -> Result<(), Error> {
 /// Demonstrate Tiered Compilation functionality
 fn demo_tiered_compilation() -> Result<(), Error> {
     println!("\n🎯 Tiered Compilation Demo");
-    println!("-".repeat(40));
+    println!("{}", "-".repeat(40));
     
     let context = Context::create();
     let config = TieredCompilationConfig {
@@ -200,7 +200,7 @@ fn demo_tiered_compilation() -> Result<(), Error> {
 /// Demonstrate integrated JIT compilation with OSR and Tiered Compilation
 fn demo_integrated_jit_compilation() -> Result<(), Error> {
     println!("\n🚀 Integrated JIT Compilation Demo");
-    println!("-".repeat(40));
+    println!("{}", "-".repeat(40));
     
     let context = Context::create();
     
@@ -288,7 +288,7 @@ fn demo_integrated_jit_compilation() -> Result<(), Error> {
 /// Demonstrate performance analysis and optimization
 fn demo_performance_analysis() -> Result<(), Error> {
     println!("\n📈 Performance Analysis Demo");
-    println!("-".repeat(40));
+    println!("{}", "-".repeat(40));
     
     let context = Context::create();
     let mut interface = create_optimized_jit_interface(&context)?;
@@ -371,7 +371,7 @@ fn demo_performance_analysis() -> Result<(), Error> {
 #[allow(dead_code)]
 fn demo_configuration_scenarios() -> Result<(), Error> {
     println!("\n⚙️  Configuration Scenarios Demo");
-    println!("-".repeat(40));
+    println!("{}", "-".repeat(40));
     
     let context = Context::create();
     
@@ -423,7 +423,7 @@ fn demo_configuration_scenarios() -> Result<(), Error> {
 #[allow(dead_code)]
 fn stress_test() -> Result<(), Error> {
     println!("\n💪 Stress Test");
-    println!("-".repeat(40));
+    println!("{}", "-".repeat(40));
     
     let context = Context::create();
     let mut interface = create_optimized_jit_interface(&context)?;

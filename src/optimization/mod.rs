@@ -22,6 +22,8 @@ pub mod pgo;
 pub mod benchmarking;
 pub mod incremental;
 pub mod benchmarks;
+pub mod parallel;
+pub mod profiler;
 
 // Re-export key types
 pub use config::{OptimizationConfig, OptimizationLevel};

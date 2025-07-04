@@ -224,7 +224,7 @@ fn test_individual_language_features() {
     test_string_literals();
 }
 
-fn test_genZ_keywords() {
+fn test_gen_z_keywords() {
     println!("  🔍 Testing Gen Z keywords...");
     
     let test_cases = vec![
