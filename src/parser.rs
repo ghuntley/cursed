@@ -65,6 +65,11 @@ impl Parser {
                 Ok(stmt) => {
                     log::debug!("➕ Adding statement to program: {:?}", std::mem::discriminant(&stmt));
                     statements.push(stmt);
+                    
+                    // Optional semicolon after statement
+                    if self.check(&TokenKind::Semicolon) {
+                        self.advance();
+                    }
                 },
                 Err(e) => {
                     // Record error but continue parsing
@@ -459,6 +464,11 @@ impl Parser {
                 let stmt = self.parse_statement()?;
                 log::debug!("➕ Adding statement to function body: {:?}", std::mem::discriminant(&stmt));
                 body.push(stmt);
+                
+                // Optional semicolon after statement
+                if self.check(&TokenKind::Semicolon) {
+                    self.advance();
+                }
             }
         }
         log::debug!("✅ Function body parsing complete for: {}", name);
@@ -607,6 +617,11 @@ impl Parser {
                 continue;
             }
             then_branch.push(self.parse_statement()?);
+            
+            // Optional semicolon after statement
+            if self.check(&TokenKind::Semicolon) {
+                self.advance();
+            }
         }
         
         self.consume(TokenKind::RightBrace, "Expected '}' after if body")?;
@@ -622,6 +637,11 @@ impl Parser {
                     continue;
                 }
                 else_stmts.push(self.parse_statement()?);
+                
+                // Optional semicolon after statement  
+                if self.check(&TokenKind::Semicolon) {
+                    self.advance();
+                }
             }
             self.consume(TokenKind::RightBrace, "Expected '}' after else body")?;
             else_branch = Some(else_stmts);
