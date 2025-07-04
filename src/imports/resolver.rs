@@ -262,12 +262,42 @@ impl ImportResolver {
             let parts: Vec<&str> = import_path.splitn(2, '@').collect();
             Ok(ImportSource::Package(parts[0].to_string(), Some(parts[1].to_string())))
         } else if !import_path.contains("/") && !import_path.contains("\\") {
-            // Simple package name
-            Ok(ImportSource::Package(import_path.to_string(), None))
+            // Simple name - check if it exists in search paths before treating as package
+            let path = PathBuf::from(import_path);
+            if self.local_import_exists(&path) {
+                Ok(ImportSource::Local(path))
+            } else {
+                Ok(ImportSource::Package(import_path.to_string(), None))
+            }
         } else {
             // Default to local path
             Ok(ImportSource::Local(PathBuf::from(import_path)))
         }
+    }
+
+    /// Check if a local import exists in search paths
+    fn local_import_exists(&self, path: &Path) -> bool {
+        // Try absolute path first
+        if path.is_absolute() {
+            return path.exists();
+        }
+
+        // Try relative to search paths
+        for search_path in &self.config.search_paths {
+            let candidates = vec![
+                search_path.join(path),
+                search_path.join(path).with_extension("csd"),
+                search_path.join(path).join("mod.csd"),
+            ];
+
+            for candidate in candidates {
+                if candidate.exists() && candidate.is_file() {
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 
     /// Resolve a local file import
