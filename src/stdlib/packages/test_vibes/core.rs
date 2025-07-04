@@ -44,6 +44,28 @@ impl BenchResult {
     }
 }
 
+/// Result of a test execution
+#[derive(Debug, Clone, PartialEq)]
+pub struct TestExecutionResult {
+    pub name: String,
+    pub passed: bool,
+    pub failed: bool,
+    pub errors: Vec<String>,
+    pub logs: Vec<String>,
+}
+
+impl TestExecutionResult {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            passed: false,
+            failed: false,
+            errors: Vec::new(),
+            logs: Vec::new(),
+        }
+    }
+}
+
 /// Main test structure for individual tests
 #[derive(Debug, Clone)]
 pub struct VibeTest {
@@ -53,10 +75,12 @@ pub struct VibeTest {
     pub should_panic: bool,
     pub ignore: bool,
     pub test_fn: Option<fn() -> TestResult<()>>,
+    pub result: TestExecutionResult,
 }
 
 impl VibeTest {
     pub fn new(name: String) -> Self {
+        let result = TestExecutionResult::new(name.clone());
         Self {
             name,
             description: None,
@@ -64,6 +88,7 @@ impl VibeTest {
             should_panic: false,
             ignore: false,
             test_fn: None,
+            result,
         }
     }
 
@@ -90,6 +115,31 @@ impl VibeTest {
     pub fn with_test_fn(mut self, test_fn: fn() -> TestResult<()>) -> Self {
         self.test_fn = Some(test_fn);
         self
+    }
+
+    /// Log messages to the test output
+    pub fn log(&mut self, messages: &[&str]) {
+        for message in messages {
+            self.result.logs.push(message.to_string());
+        }
+    }
+
+    /// Mark the test as passed
+    pub fn pass_vibe(&mut self) {
+        self.result.passed = true;
+        self.result.failed = false;
+    }
+
+    /// Mark the test as failed with an error message
+    pub fn fail_vibe(&mut self, error_message: &str) {
+        self.result.failed = true;
+        self.result.passed = false;
+        self.result.errors.push(error_message.to_string());
+    }
+
+    /// Get the test result
+    pub fn get_result(&self) -> &TestExecutionResult {
+        &self.result
     }
 
     pub fn run(&self) -> TestResult<()> {
@@ -129,6 +179,18 @@ impl VibeTest {
                 }
             }
         }
+    }
+}
+
+impl PartialEq for VibeTest {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.description == other.description
+            && self.timeout == other.timeout
+            && self.should_panic == other.should_panic
+            && self.ignore == other.ignore
+            && self.result == other.result
+            // Note: test_fn is not compared as function pointers don't implement PartialEq
     }
 }
 

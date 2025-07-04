@@ -24,6 +24,8 @@ pub mod incremental;
 pub mod benchmarks;
 pub mod parallel;
 pub mod profiler;
+pub mod comprehensive_performance_system;
+pub mod distributed;
 
 // Re-export key types
 pub use config::{OptimizationConfig, OptimizationLevel};

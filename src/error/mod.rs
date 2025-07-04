@@ -127,6 +127,10 @@ impl CursedError {
         CursedError::RuntimeError(msg.to_string())
     }
     
+    pub fn system_error(msg: &str) -> Self {
+        CursedError::RuntimeError(format!("System error: {}", msg))
+    }
+    
     pub fn import_error(msg: &str) -> Self {
         CursedError::ImportError(msg.to_string())
     }
