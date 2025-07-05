@@ -215,6 +215,12 @@ impl From<PostgresError> for CursedError {
     }
 }
 
+impl From<CursedError> for PostgresError {
+    fn from(err: CursedError) -> Self {
+        PostgresError::internal(&err.to_string())
+    }
+}
+
 impl fmt::Display for PostgresErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

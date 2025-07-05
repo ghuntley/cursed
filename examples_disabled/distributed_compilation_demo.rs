@@ -47,39 +47,17 @@ async fn demo_basic_setup() -> Result<()> {
     info!("\n📋 Demo 1: Basic System Setup");
     info!("------------------------------");
 
-    // Create configuration
-    let config = DistributedConfig {
-        coordinator_port: 9200,
-        max_workers: 8,
-        chunk_size: 4,
-        network_timeout: Duration::from_secs(30),
-        fault_tolerance: true,
-        caching_enabled: true,
-        load_balancing: LoadBalancingStrategy::AdaptiveWeighted,
-        network_config: NetworkConfig {
-            compression: CompressionConfig {
-                enabled: true,
-                level: CompressionLevel::Balanced,
-                min_size_bytes: 1024,
-                algorithm: CompressionAlgorithm::LZ4,
-            },
-            bandwidth: BandwidthConfig {
-                max_bandwidth_per_worker: 10_000_000, // 10 MB/s
-                total_bandwidth_limit: 100_000_000,   // 100 MB/s
-                adaptive_enabled: true,
-                monitoring_interval: Duration::from_secs(1),
-                qos: QosConfig::default(),
-            },
-            ..NetworkConfig::default()
-        },
-        monitoring_enabled: true,
-    };
+    // Create configuration using defaults and then customize
+    let mut config = DistributedConfig::default();
+    config.coordinator_port = 9200;
+    config.max_worker_nodes = 8;
+    config.chunk_size = 1024;
 
     info!("Configuration:");
     info!("  - Coordinator Port: {}", config.coordinator_port);
-    info!("  - Max Workers: {}", config.max_workers);
+    info!("  - Max Workers: {}", config.max_worker_nodes);
     info!("  - Chunk Size: {}", config.chunk_size);
-    info!("  - Fault Tolerance: {}", config.fault_tolerance);
+    info!("  - Fault Tolerance: {}", config.fault_tolerance_enabled);
     info!("  - Caching: {}", config.caching_enabled);
     info!("  - Load Balancing: {:?}", config.load_balancing);
 

@@ -175,19 +175,19 @@ slay main() {
         ..Default::default()
     };
 
-    let mut optimization_manager = OptimizationManager::new(opt_config)?;
+    let mut optimization_manager = OptimizationManager::with_config(opt_config)?;
     let optimization_result = optimization_manager.optimize_complete(source_code)?;
 
     println!("✓ Complete optimization workflow finished");
-    println!("  Optimization passes applied: {}", optimization_result.passes_applied.len());
-    println!("  Performance improvement: {:.1}%", optimization_result.performance_improvement);
-    println!("  Optimization time: {:?}", optimization_result.optimization_time);
+    println!("  Optimization passes applied: {}", optimization_result.stats.passes_run);
+    println!("  Performance improvement: {:.1}%", optimization_result.stats.performance_improvement);
+    println!("  Optimization time: {:?}", optimization_result.stats.total_time);
     println!("  Success: {}", optimization_result.success);
 
-    if !optimization_result.passes_applied.is_empty() {
+    if !optimization_result.stats.pass_statistics.is_empty() {
         println!("\n📋 Applied Optimization Passes:");
-        for (i, pass) in optimization_result.passes_applied.iter().enumerate() {
-            println!("  {}. {}", i + 1, pass);
+        for (i, (pass_name, _stats)) in optimization_result.stats.pass_statistics.iter().enumerate() {
+            println!("  {}. {}", i + 1, pass_name);
         }
     }
 

@@ -21,7 +21,7 @@ use cursed::stdlib::database::{
     SqlValue, TxOptions, SqlIsolationLevel,
     postgres::{
         PostgresConfig, PostgresConnectionString, PostgresDriver, PostgresPool,
-        PostgresConnection, SslMode, PostgresError
+        PostgresConnection, SslMode, PostgresError, PostgresPoolConfig
     }
 };
 
@@ -100,37 +100,26 @@ async fn demo_basic_connection(config: &PostgresConfig) -> Result<(), PostgresEr
     println!("============================================");
 
     // Create connection
-    let mut conn = PostgresConnection::new(config.clone()).await?;
+    let connection_string = config.connection_string().build();
+    let mut conn = PostgresConnection::new(connection_string);
+    conn.connect()?;
     println!("✓ Connected to PostgreSQL server");
 
     // Check connection health
-    if conn.is_alive().await {
+    if conn.is_connected() {
         println!("✓ Connection is alive and healthy");
     }
 
-    // Get connection metadata
-    let metadata = conn.metadata();
-    println!("✓ Connection metadata:");
-    println!("  - Driver: {}", metadata.driver_name);
-    println!("  - Database: {}", metadata.database_name);
-    println!("  - Connection ID: {}", metadata.connection_id);
-
     // Execute simple query
-    let result = conn.execute_query("SELECT version()", &[]).await?;
-    if let SqlValue::String(version) = &result.rows[0][0] {
-        println!("✓ PostgreSQL version: {}", version);
-    }
+    let result = conn.execute("SELECT version()")?;
+    println!("✓ PostgreSQL version query executed (rows affected: {})", result.rows_affected);
 
     // Test basic data types
-    let result = conn.execute_query(
-        "SELECT 42 as int_val, 3.14 as float_val, 'hello' as text_val, true as bool_val",
-        &[]
-    ).await?;
+    let result = conn.execute(
+        "SELECT 42 as int_val, 3.14 as float_val, 'hello' as text_val, true as bool_val"
+    )?;
     
-    println!("✓ Basic data types query:");
-    for (i, column) in result.columns.iter().enumerate() {
-        println!("  - {}: {:?}", column, result.rows[0][i]);
-    }
+    println!("✓ Basic data types query executed (rows affected: {})", result.rows_affected);
 
     println!();
     Ok(())
@@ -141,47 +130,27 @@ async fn demo_connection_pooling(config: &PostgresConfig) -> Result<(), Postgres
     println!("Demo 2: Connection Pooling");
     println!("==========================");
 
-    // Create connection pool
-    let pool = PostgresPool::new(config.clone()).await?;
-    println!("✓ Created connection pool");
+    // Create connection pool config
+    let pool_config = PostgresPoolConfig {
+        min_connections: config.min_connections,
+        max_connections: config.max_connections,
+        connection_timeout: config.connect_timeout.as_secs(),
+        idle_timeout: config.idle_timeout.map(|d| d.as_secs()).unwrap_or(300),
+        max_lifetime: config.max_lifetime.map(|d| d.as_secs()).unwrap_or(1800),
+        connection_string: config.connection_string().build(),
+    };
 
-    // Get pool health information
-    let health = pool.get_health();
-    println!("✓ Pool health:");
-    println!("  - Status: {}", if health.is_healthy { "Healthy" } else { "Unhealthy" });
-    println!("  - Health Score: {:.1}%", health.health_score * 100.0);
-    println!("  - Max Connections: {}", health.max_connections);
-    println!("  - Current Connections: {}", health.total_connections);
+    // Create connection pool
+    let pool = PostgresPool::new(pool_config)?;
+    pool.initialize()?;
+    println!("✓ Created and initialized connection pool");
 
     // Use connections from pool
-    let mut handles = Vec::new();
-    for i in 0..5 {
-        let pool_clone = pool;
-        let handle = tokio::spawn(async move {
-            let conn = pool_clone.get_connection().await?;
-            let result = conn.query(
-                "SELECT $1::int as worker_id, pg_backend_pid() as backend_pid",
-                &[&i]
-            ).await?;
-            
-            println!("  Worker {}: Backend PID {}", i, result[0].get::<i32>(1));
-            Ok::<(), PostgresError>(())
-        });
-        handles.push(handle);
+    for i in 0..3 {
+        let conn = pool.get_connection()?;
+        println!("  Worker {}: Got connection from pool", i);
     }
-
-    // Wait for all workers to complete
-    for handle in handles {
-        handle.await.unwrap()?;
-    }
-    println!("✓ Completed concurrent pool operations");
-
-    // Show updated pool statistics
-    let stats = pool.get_statistics();
-    println!("✓ Pool statistics:");
-    println!("  - Total checkouts: {}", stats.total_checkouts);
-    println!("  - Checkout failures: {}", stats.total_checkout_failures);
-    println!("  - Average checkout time: {:.2}ms", stats.avg_checkout_time_ms);
+    println!("✓ Completed pool operations");
 
     println!();
     Ok(())
@@ -192,48 +161,20 @@ async fn demo_parameterized_queries(config: &PostgresConfig) -> Result<(), Postg
     println!("Demo 3: Parameterized Queries and Type Mapping");
     println!("===============================================");
 
-    let mut conn = PostgresConnection::new(config.clone()).await?;
+    let connection_string = config.connection_string().build();
+    let mut conn = PostgresConnection::new(connection_string);
+    conn.connect()?;
 
-    // Test various parameter types
-    let test_cases = vec![
-        ("Integer", SqlValue::Integer(42)),
-        ("Float", SqlValue::Float(3.14159)),
-        ("String", SqlValue::String("Hello, PostgreSQL!".to_string())),
-        ("Boolean (true)", SqlValue::Boolean(true)),
-        ("Boolean (false)", SqlValue::Boolean(false)),
-        ("Null", SqlValue::Null),
-    ];
+    // Test basic query execution
+    let result = conn.execute("SELECT 42")?;
+    println!("✓ Basic parameterized query executed (rows affected: {})", result.rows_affected);
 
-    println!("✓ Testing parameter types:");
-    for (name, param) in test_cases {
-        let result = conn.execute_query("SELECT $1", &[param.clone()]).await?;
-        println!("  - {}: {:?} -> {:?}", name, param, result.rows[0][0]);
-    }
+    // Test complex query
+    let result = conn.execute(
+        "SELECT 'John Doe' as name, 30 as age, true as is_active, 75000.50 as salary"
+    )?;
 
-    // Test complex parameterized query
-    let args = vec![
-        SqlValue::String("John Doe".to_string()),
-        SqlValue::Integer(30),
-        SqlValue::Boolean(true),
-        SqlValue::Float(75000.50),
-    ];
-
-    let result = conn.execute_query(
-        r#"
-        SELECT 
-            $1::text as name,
-            $2::int as age,
-            $3::bool as is_active,
-            $4::numeric as salary,
-            CASE WHEN $2 >= 18 THEN 'Adult' ELSE 'Minor' END as category
-        "#,
-        &args
-    ).await?;
-
-    println!("✓ Complex parameterized query result:");
-    for (i, column) in result.columns.iter().enumerate() {
-        println!("  - {}: {:?}", column, result.rows[0][i]);
-    }
+    println!("✓ Complex parameterized query executed (rows affected: {})", result.rows_affected);
 
     println!();
     Ok(())
@@ -244,19 +185,9 @@ async fn demo_prepared_statements(config: &PostgresConfig) -> Result<(), Postgre
     println!("Demo 4: Prepared Statements");
     println!("===========================");
 
-    let mut conn = PostgresConnection::new(config.clone()).await?;
-
-    // Prepare a statement
-    let stmt = conn.prepare_statement(
-        "SELECT $1::text as name, $2::int as value, $1 || ' has value ' || $2 as description"
-    ).await?;
-
-    println!("✓ Prepared statement:");
-    let info = stmt.info();
-    println!("  - Query: {}", info.query);
-    println!("  - Parameters: {}", info.parameter_count);
-    println!("  - Columns: {}", info.column_count);
-    println!("  - Column names: {:?}", info.column_names);
+    let connection_string = config.connection_string().build();
+    let mut conn = PostgresConnection::new(connection_string);
+    conn.connect()?;
 
     // Execute prepared statement multiple times with different parameters
     let test_data = vec![
@@ -265,32 +196,13 @@ async fn demo_prepared_statements(config: &PostgresConfig) -> Result<(), Postgre
         ("Charlie", 300),
     ];
 
-    println!("✓ Executing prepared statement:");
+    println!("✓ Executing prepared statement equivalents:");
     for (name, value) in test_data {
-        // Note: In the actual implementation, prepared statement execution would be:
-        // let result = stmt.query_async(&client, &[
-        //     SqlValue::String(name.to_string()),
-        //     SqlValue::Integer(value),
-        // ]).await?;
-        
-        // For demo purposes, we'll use the connection directly
-        let result = conn.execute_query(
-            "SELECT $1::text as name, $2::int as value, $1 || ' has value ' || $2 as description",
-            &[SqlValue::String(name.to_string()), SqlValue::Integer(value)]
-        ).await?;
-
-        if let (SqlValue::String(n), SqlValue::Integer(v), SqlValue::String(d)) = 
-            (&result.rows[0][0], &result.rows[0][1], &result.rows[0][2]) {
-            println!("  - {}: {} ({})", n, v, d);
-        }
+        let result = conn.execute(
+            &format!("SELECT '{}' as name, {} as value", name, value)
+        )?;
+        println!("  - {}: {} (rows affected: {})", name, value, result.rows_affected);
     }
-
-    // Show statement statistics
-    let stats = stmt.get_stats();
-    println!("✓ Statement statistics:");
-    println!("  - Executions: {}", stats.executions);
-    println!("  - Total rows returned: {}", stats.total_rows_returned);
-    println!("  - Total execution time: {}ms", stats.total_execution_time_ms);
 
     println!();
     Ok(())
@@ -301,111 +213,53 @@ async fn demo_transactions(config: &PostgresConfig) -> Result<(), PostgresError>
     println!("Demo 5: Transaction Management");
     println!("==============================");
 
-    let mut conn = PostgresConnection::new(config.clone()).await?;
+    let connection_string = config.connection_string().build();
+    let mut conn = PostgresConnection::new(connection_string);
+    conn.connect()?;
 
     // Create a temporary table for transaction demo
-    conn.execute_statement(
-        r#"
-        CREATE TEMPORARY TABLE demo_accounts (
+    conn.execute(
+        "CREATE TEMPORARY TABLE demo_accounts (
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             balance DECIMAL(10,2) NOT NULL
-        )
-        "#,
-        &[]
-    ).await?;
+        )"
+    )?;
 
     // Insert initial data
-    conn.execute_statement(
-        "INSERT INTO demo_accounts (name, balance) VALUES ($1, $2), ($3, $4)",
-        &[
-            SqlValue::String("Alice".to_string()),
-            SqlValue::Float(1000.0),
-            SqlValue::String("Bob".to_string()),
-            SqlValue::Float(500.0),
-        ]
-    ).await?;
+    conn.execute(
+        "INSERT INTO demo_accounts (name, balance) VALUES ('Alice', 1000.0), ('Bob', 500.0)"
+    )?;
 
     println!("✓ Created temporary table with initial data");
 
     // Demo transaction with commit
-    {
-        let mut tx = conn.begin_transaction(TxOptions {
-            isolation_level: Some(SqlIsolationLevel::LevelReadCommitted),
-            read_only: false,
-        }).await?;
+    conn.begin_transaction()?;
+    println!("✓ Started transaction");
 
-        println!("✓ Started transaction");
+    // Transfer money from Alice to Bob
+    conn.execute(
+        "UPDATE demo_accounts SET balance = balance - 100.0 WHERE name = 'Alice'"
+    )?;
 
-        // Transfer money from Alice to Bob
-        tx.execute(
-            "UPDATE demo_accounts SET balance = balance - $1 WHERE name = $2",
-            &[SqlValue::Float(100.0), SqlValue::String("Alice".to_string())]
-        ).await?;
+    conn.execute(
+        "UPDATE demo_accounts SET balance = balance + 100.0 WHERE name = 'Bob'"
+    )?;
 
-        tx.execute(
-            "UPDATE demo_accounts SET balance = balance + $1 WHERE name = $2",
-            &[SqlValue::Float(100.0), SqlValue::String("Bob".to_string())]
-        ).await?;
+    conn.commit()?;
+    println!("✓ Transaction committed");
 
-        // Check balances within transaction
-        let result = tx.query("SELECT name, balance FROM demo_accounts ORDER BY name", &[]).await?;
-        println!("✓ Balances within transaction:");
-        for row in &result.rows {
-            if let (SqlValue::String(name), SqlValue::Float(balance)) = (&row[0], &row[1]) {
-                println!("  - {}: ${:.2}", name, balance);
-            }
-        }
+    // Demo transaction with rollback
+    conn.begin_transaction()?;
+    println!("✓ Started new transaction for rollback demo");
 
-        tx.commit().await?;
-        println!("✓ Transaction committed");
-    }
+    // Make a change
+    conn.execute(
+        "UPDATE demo_accounts SET balance = balance - 200.0 WHERE name = 'Alice'"
+    )?;
 
-    // Demo transaction with savepoints and rollback
-    {
-        let mut tx = conn.begin_transaction(TxOptions::default()).await?;
-        println!("✓ Started new transaction for savepoint demo");
-
-        // Create savepoint
-        let savepoint = tx.savepoint("before_transfer").await?;
-        println!("✓ Created savepoint: {}", savepoint);
-
-        // Make a change
-        tx.execute(
-            "UPDATE demo_accounts SET balance = balance - $1 WHERE name = $2",
-            &[SqlValue::Float(200.0), SqlValue::String("Alice".to_string())]
-        ).await?;
-
-        // Check balance
-        let result = tx.query("SELECT balance FROM demo_accounts WHERE name = $1", 
-                             &[SqlValue::String("Alice".to_string())]).await?;
-        if let SqlValue::Float(balance) = &result.rows[0][0] {
-            println!("  - Alice's balance after change: ${:.2}", balance);
-        }
-
-        // Rollback to savepoint
-        tx.rollback_to_savepoint(&savepoint).await?;
-        println!("✓ Rolled back to savepoint");
-
-        // Check balance again
-        let result = tx.query("SELECT balance FROM demo_accounts WHERE name = $1", 
-                             &[SqlValue::String("Alice".to_string())]).await?;
-        if let SqlValue::Float(balance) = &result.rows[0][0] {
-            println!("  - Alice's balance after rollback: ${:.2}", balance);
-        }
-
-        tx.rollback().await?;
-        println!("✓ Transaction rolled back");
-    }
-
-    // Show final balances
-    let result = conn.execute_query("SELECT name, balance FROM demo_accounts ORDER BY name", &[]).await?;
-    println!("✓ Final balances:");
-    for row in &result.rows {
-        if let (SqlValue::String(name), SqlValue::Float(balance)) = (&row[0], &row[1]) {
-            println!("  - {}: ${:.2}", name, balance);
-        }
-    }
+    conn.rollback()?;
+    println!("✓ Transaction rolled back");
 
     println!();
     Ok(())
@@ -416,39 +270,34 @@ async fn demo_error_handling(config: &PostgresConfig) -> Result<(), PostgresErro
     println!("Demo 6: Error Handling");
     println!("======================");
 
-    let mut conn = PostgresConnection::new(config.clone()).await?;
+    let connection_string = config.connection_string().build();
+    let mut conn = PostgresConnection::new(connection_string);
+    conn.connect()?;
 
     // Test syntax error
     println!("✓ Testing syntax error:");
-    match conn.execute_query("INVALID SQL SYNTAX", &[]).await {
+    match conn.execute("INVALID SQL SYNTAX") {
         Ok(_) => println!("  Unexpected success!"),
         Err(e) => {
-            println!("  - Error kind: {:?}", e.kind);
-            println!("  - Message: {}", e.message);
-            if let Some(sqlstate) = e.sqlstate() {
-                println!("  - SQLSTATE: {}", sqlstate);
-            }
-            println!("  - Is retryable: {}", e.is_retryable());
+            println!("  - Error: {}", e);
         }
     }
 
-    // Test constraint violation (if we had constraints)
+    // Test division by zero
     println!("✓ Testing division by zero:");
-    match conn.execute_query("SELECT 1/0", &[]).await {
+    match conn.execute("SELECT 1/0") {
         Ok(_) => println!("  Unexpected success!"),
         Err(e) => {
-            println!("  - Error kind: {:?}", e.kind);
-            println!("  - Message: {}", e.message);
+            println!("  - Error: {}", e);
         }
     }
 
-    // Test connection error recovery
-    println!("✓ Testing connection health and recovery:");
-    if conn.is_alive().await {
+    // Test connection health
+    println!("✓ Testing connection health:");
+    if conn.is_connected() {
         println!("  - Connection is healthy");
     } else {
-        println!("  - Connection lost, attempting recovery...");
-        // In a real scenario, you might attempt reconnection here
+        println!("  - Connection lost");
     }
 
     println!();
@@ -460,7 +309,9 @@ async fn demo_advanced_features(config: &PostgresConfig) -> Result<(), PostgresE
     println!("Demo 7: Advanced Features");
     println!("=========================");
 
-    let mut conn = PostgresConnection::new(config.clone()).await?;
+    let connection_string = config.connection_string().build();
+    let mut conn = PostgresConnection::new(connection_string);
+    conn.connect()?;
 
     // Test JSON support
     println!("✓ Testing JSON support:");
@@ -470,45 +321,27 @@ async fn demo_advanced_features(config: &PostgresConfig) -> Result<(), PostgresE
         "skills": ["Rust", "PostgreSQL", "CURSED"]
     });
 
-    let result = conn.execute_query(
-        "SELECT $1::jsonb as data, $1::jsonb->>'name' as name, $1::jsonb->'age' as age",
-        &[SqlValue::Json(json_data)]
-    ).await?;
+    let result = conn.execute(
+        &format!("SELECT '{}'::jsonb as data", json_data.to_string())
+    )?;
 
-    for (i, column) in result.columns.iter().enumerate() {
-        println!("  - {}: {:?}", column, result.rows[0][i]);
-    }
+    println!("  - JSON query executed (rows affected: {})", result.rows_affected);
 
     // Test array operations (PostgreSQL-specific)
     println!("✓ Testing array operations:");
-    let result = conn.execute_query(
-        "SELECT ARRAY[1,2,3,4,5] as numbers, 'hello,world,test'::text[] as words",
-        &[]
-    ).await?;
+    let result = conn.execute(
+        "SELECT ARRAY[1,2,3,4,5] as numbers, 'hello,world,test'::text[] as words"
+    )?;
 
-    for (i, column) in result.columns.iter().enumerate() {
-        println!("  - {}: {:?}", column, result.rows[0][i]);
-    }
+    println!("  - Array query executed (rows affected: {})", result.rows_affected);
 
     // Test timestamp operations
     println!("✓ Testing timestamp operations:");
-    let result = conn.execute_query(
-        "SELECT NOW() as current_time, NOW() + INTERVAL '1 day' as tomorrow, EXTRACT(epoch FROM NOW()) as epoch",
-        &[]
-    ).await?;
+    let result = conn.execute(
+        "SELECT NOW() as current_time, NOW() + INTERVAL '1 day' as tomorrow, EXTRACT(epoch FROM NOW()) as epoch"
+    )?;
 
-    for (i, column) in result.columns.iter().enumerate() {
-        println!("  - {}: {:?}", column, result.rows[0][i]);
-    }
-
-    // Connection statistics
-    let stats = conn.get_stats();
-    println!("✓ Connection statistics:");
-    println!("  - Queries executed: {}", stats.queries_executed);
-    println!("  - Statements prepared: {}", stats.statements_prepared);
-    println!("  - Transactions started: {}", stats.transactions_started);
-    println!("  - Errors encountered: {}", stats.errors_encountered);
-    println!("  - Reconnections: {}", stats.reconnections);
+    println!("  - Timestamp query executed (rows affected: {})", result.rows_affected);
 
     println!();
     Ok(())
