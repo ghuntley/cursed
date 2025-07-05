@@ -510,7 +510,7 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         // TODO: Implement assembly generation
         println!("{} Assembly generation not yet implemented", "Warning".yellow().bold());
     } else {
-        cursed::compile(input, output)?;
+        cursed::compile(input, output).await?;
         println!("{} executable: {}", "Generated".green().bold(), output);
     }
     

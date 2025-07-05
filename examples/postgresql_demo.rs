@@ -226,12 +226,12 @@ async fn demonstrate_basic_queries() -> Result<(), Box<dyn Error>> {
     // Example parameter binding
     info!("🔗 Parameter Binding Examples:");
     let parameter_examples = vec![
-        ("String Parameter", SqlValue::Text("John Doe".to_string())),
+        ("String Parameter", SqlValue::String("John Doe".to_string())),
         ("Integer Parameter", SqlValue::Integer(42)),
-        ("Float Parameter", SqlValue::Double(99.99)),
+        ("Float Parameter", SqlValue::Float(99.99)),
         ("Boolean Parameter", SqlValue::Boolean(true)),
-        ("UUID Parameter", SqlValue::Uuid(uuid::Uuid::new_v4())),
-        ("JSON Parameter", SqlValue::Json(serde_json::json!({"status": "active", "preferences": {"theme": "dark"}}))),
+        ("UUID Parameter", SqlValue::String(uuid::Uuid::new_v4().to_string())),
+        ("JSON Parameter", SqlValue::Json(serde_json::json!({"status": "active", "preferences": {"theme": "dark"}}).to_string())),
         ("Null Parameter", SqlValue::Null),
     ];
 
@@ -359,25 +359,25 @@ async fn demonstrate_batch_operations() -> Result<(), Box<dyn Error>> {
             SqlBatch {
                 sql: "INSERT INTO products (name, category, price) VALUES ($1, $2, $3)".to_string(),
                 parameters: vec![
-                    SqlValue::Text("Laptop".to_string()),
-                    SqlValue::Text("Electronics".to_string()),
-                    SqlValue::Double(999.99),
+                    SqlValue::String("Laptop".to_string()),
+                    SqlValue::String("Electronics".to_string()),
+                    SqlValue::Float(999.99),
                 ],
             },
             SqlBatch {
                 sql: "INSERT INTO products (name, category, price) VALUES ($1, $2, $3)".to_string(),
                 parameters: vec![
-                    SqlValue::Text("Mouse".to_string()),
-                    SqlValue::Text("Electronics".to_string()),
-                    SqlValue::Double(29.99),
+                    SqlValue::String("Mouse".to_string()),
+                    SqlValue::String("Electronics".to_string()),
+                    SqlValue::Float(29.99),
                 ],
             },
             SqlBatch {
                 sql: "INSERT INTO products (name, category, price) VALUES ($1, $2, $3)".to_string(),
                 parameters: vec![
-                    SqlValue::Text("Keyboard".to_string()),
-                    SqlValue::Text("Electronics".to_string()),
-                    SqlValue::Double(79.99),
+                    SqlValue::String("Keyboard".to_string()),
+                    SqlValue::String("Electronics".to_string()),
+                    SqlValue::Float(79.99),
                 ],
             },
         ]),
@@ -388,14 +388,14 @@ async fn demonstrate_batch_operations() -> Result<(), Box<dyn Error>> {
             },
             SqlBatch {
                 sql: "UPDATE cache SET access_count = access_count + 1 WHERE key = $1".to_string(),
-                parameters: vec![SqlValue::Text("user_preferences".to_string())],
+                parameters: vec![SqlValue::String("user_preferences".to_string())],
             },
             SqlBatch {
                 sql: "INSERT INTO cache (key, value, expires_at) VALUES ($1, $2, $3) ON CONFLICT (key) DO UPDATE SET value = $2, expires_at = $3".to_string(),
                 parameters: vec![
-                    SqlValue::Text("system_config".to_string()),
-                    SqlValue::Json(serde_json::json!({"maintenance_mode": false})),
-                    SqlValue::Text("2024-12-31 23:59:59".to_string()),
+                    SqlValue::String("system_config".to_string()),
+                    SqlValue::Json(serde_json::json!({"maintenance_mode": false}).to_string()),
+                    SqlValue::String("2024-12-31 23:59:59".to_string()),
                 ],
             },
         ]),

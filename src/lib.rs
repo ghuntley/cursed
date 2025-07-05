@@ -520,41 +520,36 @@ pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) 
 }
 
 /// Compile CURSED source file to executable binary
-pub fn compile(source_file: &str, output_file: &str) -> crate::error::Result<()> {
+pub async fn compile(source_file: &str, output_file: &str) -> crate::error::Result<()> {
     tracing::info!("Compiling CURSED source file {} to executable {}", source_file, output_file);
     
     // Read the source file
     let source = std::fs::read_to_string(source_file)
         .map_err(|e| CursedError::Io(e.to_string()))?;
     
-    let rt = tokio::runtime::Runtime::new()
-        .map_err(|e| CursedError::Io(e.to_string()))?;
+    // Create package manager for dependency resolution
+    let package_manager_config = crate::package_manager::PackageManagerConfig::default();
+    let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
+        crate::package_manager::PackageManager::new(package_manager_config)
+            .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
+    ));
     
-    rt.block_on(async {
-        // Create package manager for dependency resolution
-        let package_manager_config = crate::package_manager::PackageManagerConfig::default();
-        let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
-            crate::package_manager::PackageManager::new(package_manager_config)
-                .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
-        ));
-        
-        // Initialize LLVM code generator with optimizations for executable output
-        let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-        let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
-        
-        codegen.initialize_package_integration(package_manager, package_config)?;
-        codegen.enable_release_optimizations()?;
-        
-        // Generate LLVM IR from CURSED source
-        tracing::info!("Generating LLVM IR for compilation...");
-        let ir = codegen.compile_with_packages(&source, Some(std::path::Path::new(source_file))).await?;
-        
-        // Compile IR to executable binary
-        compile_ir_to_executable(&ir, output_file)?;
-        
-        tracing::info!("Successfully compiled {} to executable {}", source_file, output_file);
-        Ok(())
-    })
+    // Initialize LLVM code generator with optimizations for executable output
+    let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
+    let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
+    
+    codegen.initialize_package_integration(package_manager, package_config)?;
+    codegen.enable_release_optimizations()?;
+    
+    // Generate LLVM IR from CURSED source
+    tracing::info!("Generating LLVM IR for compilation...");
+    let ir = codegen.compile_with_packages(&source, Some(std::path::Path::new(source_file))).await?;
+    
+    // Compile IR to executable binary
+    compile_ir_to_executable(&ir, output_file)?;
+    
+    tracing::info!("Successfully compiled {} to executable {}", source_file, output_file);
+    Ok(())
 }
 
 /// Compile LLVM IR to executable binary using system linker
