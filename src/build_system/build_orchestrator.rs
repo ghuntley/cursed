@@ -73,6 +73,19 @@ impl BuildOrchestrator {
             results_cache: HashMap::new(),
         }
     }
+    
+    /// Helper constructor that accepts BuildConfig and converts it to WorkspaceConfig
+    pub fn from_build_config(config: BuildConfig, work_dir: PathBuf) -> Result<Self> {
+        let workspace_config = WorkspaceConfig {
+            root: work_dir,
+            projects: vec![],
+            global_config: config,
+            max_jobs: 4,
+            dependencies: HashMap::new(),
+        };
+        
+        Ok(Self::new(workspace_config))
+    }
 
     /// Initialize orchestrator from workspace directory
     pub async fn from_workspace<P: AsRef<Path>>(workspace_root: P) -> Result<Self> {

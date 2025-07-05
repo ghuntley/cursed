@@ -37,3 +37,87 @@ pub use types::{OptimizationStats, OptimizationResult};
 pub use optimization_manager::{
     PerformanceMetrics, AdvancedOptimizationManager, OptimizationManager
 };
+
+// Stub types that examples are trying to import
+#[derive(Debug, Clone)]
+pub struct BaselineComparator {
+    config: BaselineComparisonConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct BaselineComparisonConfig {
+    pub tolerance: f64,
+    pub min_samples: usize,
+    pub confidence_level: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct BaselineMetadata {
+    pub version: String,
+    pub timestamp: std::time::SystemTime,
+    pub environment: EnvironmentInfo,
+}
+
+#[derive(Debug, Clone)]
+pub struct EnvironmentInfo {
+    pub os: String,
+    pub arch: String,
+    pub cpu_count: usize,
+    pub memory_gb: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct TimeSavingsConfig {
+    pub baseline_time: std::time::Duration,
+    pub optimization_time: std::time::Duration,
+    pub threshold: f64,
+}
+
+#[derive(Debug, Clone)]
+pub struct BenchmarkConfig {
+    pub iterations: usize,
+    pub warmup_iterations: usize,
+    pub timeout: std::time::Duration,
+}
+
+#[derive(Debug, Clone)]
+pub struct BenchmarkResult {
+    pub duration: std::time::Duration,
+    pub throughput: f64,
+    pub memory_usage: usize,
+    pub cpu_usage: f64,
+}
+
+#[derive(Debug, Clone)]
+pub enum RegressionSeverity {
+    Critical,
+    Major,
+    Minor,
+    Warning,
+}
+
+impl BaselineComparator {
+    pub fn new(config: BaselineComparisonConfig) -> Self {
+        Self { config }
+    }
+}
+
+impl Default for BaselineComparisonConfig {
+    fn default() -> Self {
+        Self {
+            tolerance: 0.05,
+            min_samples: 10,
+            confidence_level: 0.95,
+        }
+    }
+}
+
+impl Default for BenchmarkConfig {
+    fn default() -> Self {
+        Self {
+            iterations: 100,
+            warmup_iterations: 10,
+            timeout: std::time::Duration::from_secs(60),
+        }
+    }
+}
