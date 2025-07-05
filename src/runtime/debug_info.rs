@@ -533,6 +533,11 @@ impl SymbolResolver {
 
     /// Resolve an address to symbol information
     pub fn resolve_address(&self, address: u64) -> Result<SymbolInfo, CursedError> {
+        // Update resolutions counter for all resolution attempts
+        if let Ok(mut stats) = self.stats.write() {
+            stats.resolutions += 1;
+        }
+
         // Check cache first
         if let Ok(cache) = self.lookup_cache.read() {
             if let Some(symbol) = cache.get(&address) {
@@ -575,7 +580,6 @@ impl SymbolResolver {
 
         // Update statistics
         if let Ok(mut stats) = self.stats.write() {
-            stats.resolutions += 1;
             if symbol_info.symbol_type != SymbolType::Unknown {
                 stats.successful_resolutions += 1;
             }

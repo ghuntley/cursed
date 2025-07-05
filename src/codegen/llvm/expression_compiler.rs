@@ -38,6 +38,7 @@ impl ExpressionCompiler {
         match expression {
             Expression::Literal(literal) => self.compile_literal(literal),
             Expression::Integer(val) => Ok(val.to_string()),
+            Expression::Float(val) => Ok(val.to_string()),
             Expression::String(val) => self.compile_string_literal(val),
             Expression::Boolean(val) => Ok(if *val { "1" } else { "0" }.to_string()),
             Expression::Identifier(name) => self.compile_identifier(name),

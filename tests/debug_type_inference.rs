@@ -21,8 +21,7 @@ fn debug_type_inference_simple() {
     
     let mut codegen = LlvmCodeGeneratorReal::new().unwrap();
     match codegen.compile_ast(&ast) {
-        Ok(_) => {
-            let ir = codegen.module().print_to_string().to_string();
+        Ok(ir) => {
             println!("SUCCESS: Generated IR:\n{}", ir);
             println!("IR length: {}", ir.len());
             assert!(!ir.is_empty(), "IR should not be empty");

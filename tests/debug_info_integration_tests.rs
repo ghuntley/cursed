@@ -237,6 +237,19 @@ fn test_inline_function_debug_info() {
 fn test_variable_scope_and_location_tracking() {
     let mut database = DwarfDebugDatabase::new();
 
+    // Create a test function that covers the variable address range
+    let test_function = FunctionDebugInfo {
+        name: "test_function".to_string(),
+        demangled_name: Some("test_function".to_string()),
+        start_address: 0x6000,
+        end_address: 0x6300,
+        parameters: vec![],
+        source_file: Some(PathBuf::from("test.csd")),
+        line_range: Some((1, 50)),
+        frame_base: None,
+    };
+    database.functions.insert(test_function.start_address, test_function);
+
     // Create test variables with different scopes
     let variables = vec![
         VariableDebugInfo {
