@@ -22,6 +22,24 @@ pub mod sqlite;
 pub use drivers::{
     SqlDriver, SqlDriverManager, create_sql_driver, SqlFeature
 };
+
+// Re-export SqlValue from database core
+pub use crate::stdlib::database::core::SqlValue;
+
+// Add missing transaction and batch types
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SqlTransactionIsolation {
+    ReadUncommitted,
+    ReadCommitted,
+    RepeatableRead,
+    Serializable,
+}
+
+#[derive(Debug, Clone)]
+pub struct SqlBatch {
+    pub sql: String,
+    pub parameters: Vec<SqlValue>,
+}
 pub use builder::{
     DeleteBuilder, CreateTableBuilder, AlterTableBuilder
 };
@@ -43,6 +61,8 @@ pub use postgresql::{PostgreSqlDriver, PostgreSqlConnection, PgError};
 // pub use mysql::{MySqlDriver, MySqlConnection, MySqlError};  // Temporarily disabled - mysql crate not available
 pub use sqlite::{SqliteDriver, SqliteConnection, SqliteError};
 
+
+
 // Placeholder imports disabled
 // ConnectionConfig, DatabaseDriver
 // };
@@ -51,7 +71,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 // Import database types and errors
-use crate::stdlib::database::{SqlValue, DatabaseError};
+use crate::stdlib::database::DatabaseError;
 
 // Define result types for DB operations
 pub type DbResult<T> = Result<T, DatabaseError>;

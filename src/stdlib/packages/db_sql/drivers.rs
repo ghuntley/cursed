@@ -1,9 +1,25 @@
 //! Functional implementation for drivers
 
 use crate::error::CursedError;
+use crate::stdlib::database::core::SqlValue;
 
 /// Result type for drivers operations
 pub type ModuleResult<T> = Result<T, CursedError>;
+
+// SQL database types for driver compatibility
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SqlTransactionIsolation {
+    ReadUncommitted,
+    ReadCommitted,
+    RepeatableRead,
+    Serializable,
+}
+
+#[derive(Debug, Clone)]
+pub struct SqlBatch {
+    pub sql: String,
+    pub parameters: Vec<SqlValue>,
+}
 
 /// drivers operations handler
 pub struct ModuleHandler {

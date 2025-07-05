@@ -393,6 +393,7 @@ pub mod full_type_utils {
                     constraints: Vec::new(),
                 }
             ],
+            fields: Vec::new(),
             is_builtin: true,
         };
         system.register_type(array_type)?;
@@ -419,6 +420,7 @@ pub mod full_type_utils {
                     constraints: Vec::new(),
                 }
             ],
+            fields: Vec::new(),
             is_builtin: true,
         };
         system.register_type(option_type)?;
@@ -445,6 +447,7 @@ pub mod full_type_utils {
                     constraints: Vec::new(),
                 }
             ],
+            fields: Vec::new(),
             is_builtin: true,
         };
         system.register_type(result_type)?;
@@ -460,6 +463,7 @@ pub mod full_type_utils {
             type_parameters: type_params.into_iter().map(|s| s.to_string()).collect(),
             constraints: Vec::new(),
             methods: Vec::new(),
+            fields: Vec::new(),
             is_builtin: false,
         }
     }

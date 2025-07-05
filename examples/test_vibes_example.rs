@@ -61,18 +61,18 @@ fn example_assertions() {
     let mut test = VibeTest::new("assertion_test".to_string());
     
     // Basic assertions
-    assert_equal(&mut test, 5, 5, "numbers should be equal");
-    assert_true(&mut test, true, "true should be true");
-    assert_false(&mut test, false, "false should be false");
+    assert_equal(5, 5, "numbers should be equal");
+    assert_true(true, "true should be true");
+    assert_false(false, "false should be false");
     
     // String assertions
-    assert_contains_substr(&mut test, "hello world", "world", "should contain substring");
-    assert_has_prefix(&mut test, "TestVibes", "Test", "should start with Test");
+    assert_contains_substr("hello world", "world", "should contain substring");
+    assert_has_prefix("TestVibes", "Test", "should start with Test");
     
     // Collection assertions
     let numbers = vec![1, 2, 3, 4, 5];
-    assert_len(&mut test, &numbers, 5, "should have 5 elements");
-    assert_contains(&mut test, &numbers, &3, "should contain 3");
+    assert_len(&numbers, 5, "should have 5 elements");
+    assert_contains(&numbers, &3, "should contain 3");
     
     let test_result = test.get_result();
     println!("  Assertion test: {}", 
@@ -90,7 +90,7 @@ fn example_fixtures() {
         |_t| {
             // Setup: create a mock database
             println!("    🔧 Setting up test database...");
-            DatabaseFixture::new("test://localhost/testdb")
+            DatabaseFixture::new()
         },
         |_t, mut db| {
             // Teardown: cleanup

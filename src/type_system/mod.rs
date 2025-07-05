@@ -56,6 +56,7 @@ impl TypeSystem {
                     constraints: Vec::new(),
                 }
             ],
+            fields: vec![], // Built-in vibez has no fields
             is_builtin: true,
         };
         environment.type_definitions.insert("vibez".to_string(), vibez_type);
@@ -346,6 +347,7 @@ pub struct TypeDefinition {
     pub type_parameters: Vec<String>,
     pub constraints: Vec<GenericConstraint>,
     pub methods: Vec<MethodSignature>,
+    pub fields: Vec<crate::ast::StructField>, // For struct field storage
     pub is_builtin: bool,
 }
 
@@ -479,6 +481,7 @@ impl TypeEnvironment {
             type_parameters: Vec::new(),
             constraints: Vec::new(),
             methods: Vec::new(),
+            fields: Vec::new(), // Built-in types have no fields by default
             is_builtin: true,
         };
         self.type_definitions.insert(name.to_string(), type_def);
