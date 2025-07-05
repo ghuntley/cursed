@@ -458,7 +458,7 @@ mod tests {
         let program = Program {
             statements: vec![
                 Statement::Let(LetStatement {
-                    name: "x".to_string(),
+                    target: crate::ast::LetTarget::Single("x".to_string()),
                     value: Expression::Integer(42),
                     var_type: None,
                     visibility: crate::ast::Visibility::Private,
