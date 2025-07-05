@@ -8,10 +8,19 @@ fn test_zlib_compression_decompression() {
     
     // Test basic compression and decompression
     let compressed = zlib::zlib_compress(test_data).unwrap();
-    assert!(compressed.len() < test_data.len()); // Should be smaller for this text
-    
     let decompressed = zlib::zlib_decompress(&compressed).unwrap();
     assert_eq!(decompressed, test_data);
+    
+    // For small data, compression overhead can make it larger than original
+    // Test with larger, more compressible data 
+    let large_test_data = b"This is a repeating pattern for compression testing. This is a repeating pattern for compression testing. This is a repeating pattern for compression testing. This is a repeating pattern for compression testing. This is a repeating pattern for compression testing. This is a repeating pattern for compression testing. This is a repeating pattern for compression testing. This is a repeating pattern for compression testing.";
+    
+    let large_compressed = zlib::zlib_compress(large_test_data).unwrap();
+    let large_decompressed = zlib::zlib_decompress(&large_compressed).unwrap();
+    
+    assert_eq!(large_decompressed, large_test_data);
+    // With repetitive data, compression should be effective
+    assert!(large_compressed.len() < large_test_data.len());
 }
 
 #[test]
