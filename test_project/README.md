@@ -1,39 +1,58 @@
 # test_project
 
-{{description}}
+A CURSED programming language package.
 
-## Installation
+## Getting Started
 
-```bash
-cursed-build build --release
-```
-
-## Usage
+### Building
 
 ```bash
-./target/release/test_project [command]
+cd test_project
+cursed build
 ```
 
-## Commands
+### Running
 
-- `help` - Show help information
+```bash
+cursed run src/main.csd
+```
+
+### Testing
+
+```bash
+cursed test
+```
 
 ## Development
 
+### Project Structure
+
+```
+test_project/
+├── src/
+│   ├── main.csd      # Main entry point
+│   └── lib.csd       # Library module
+├── tests/
+│   └── lib_test.csd  # Test module
+├── package.toml      # Package configuration
+└── README.md         # This file
+```
+
+### Adding Dependencies
+
+Add dependencies to `package.toml`:
+
+```toml
+[dependencies]
+some-package = "1.0.0"
+```
+
+### Publishing
+
 ```bash
-# Build in debug mode
-cursed-build build
-
-# Run tests
-cursed-build test
-
-# Format code
-cursed-build fmt
-
-# Lint code
-cursed-build lint
+cursed pkg publish
 ```
 
 ## License
 
-{{license}}
+MIT License

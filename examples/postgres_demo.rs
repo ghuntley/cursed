@@ -16,6 +16,7 @@
 
 use std::env;
 use std::time::Duration;
+use std::collections::HashMap;
 use cursed::stdlib::database::{
     SqlValue, TxOptions, SqlIsolationLevel,
     postgres::{
@@ -81,6 +82,9 @@ fn get_demo_config() -> PostgresConfig {
         connect_timeout: Duration::from_secs(10),
         query_timeout: Duration::from_secs(30),
         application_name: "CURSED PostgreSQL Demo".to_string(),
+        search_path: None,
+        timezone: None,
+        options: std::collections::HashMap::new(),
         max_connections: 20,
         min_connections: 5,
         max_lifetime: Some(Duration::from_secs(1800)), // 30 minutes

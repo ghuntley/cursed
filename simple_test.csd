@@ -1,1 +1,1 @@
-slay main() { yolo "Hello, World!"; }
+slay main() { vibez.spill("Hello CURSED!"); yolo 0; }
