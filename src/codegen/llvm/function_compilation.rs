@@ -140,20 +140,25 @@ impl FunctionCompiler {
             Statement::Assignment(assign_stmt) => {
                 let value_reg = self.compile_expression(&assign_stmt.value)?;
                 
-                // Look up existing variable
-                if let Some(var_reg) = self.variables.get(&assign_stmt.name).cloned() {
-                    // Store new value to existing variable
-                    // TODO: Use proper type tracking
-                    if assign_stmt.name.contains("name") || assign_stmt.name.contains("text") || assign_stmt.name.contains("str") {
-                        ir.push_str(&format!("  store i8* {}, i8** {}, align 8\n", value_reg, var_reg));
-                    } else if assign_stmt.name.contains("flag") || assign_stmt.name.contains("bool") || assign_stmt.name.contains("is_") || assign_stmt.name.contains("active") || assign_stmt.name.contains("enabled") {
-                        ir.push_str(&format!("  store i1 {}, i1* {}, align 1\n", value_reg, var_reg));
+                // Handle only simple variable assignment for now
+                if let crate::ast::AssignmentTarget::Single(name) = &assign_stmt.target {
+                    // Look up existing variable
+                    if let Some(var_reg) = self.variables.get(name).cloned() {
+                        // Store new value to existing variable
+                        // TODO: Use proper type tracking
+                        if name.contains("name") || name.contains("text") || name.contains("str") {
+                            ir.push_str(&format!("  store i8* {}, i8** {}, align 8\n", value_reg, var_reg));
+                        } else if name.contains("flag") || name.contains("bool") || name.contains("is_") || name.contains("active") || name.contains("enabled") {
+                            ir.push_str(&format!("  store i1 {}, i1* {}, align 1\n", value_reg, var_reg));
+                        } else {
+                            ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", value_reg, var_reg));
+                        }
+                        ir.push_str(&format!("  ; Assignment to {} = {}\n", name, value_reg));
                     } else {
-                        ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", value_reg, var_reg));
+                        return Err(CursedError::runtime_error(&format!("Undefined variable: {}", name)));
                     }
-                    ir.push_str(&format!("  ; Assignment to {} = {}\n", assign_stmt.name, value_reg));
                 } else {
-                    return Err(CursedError::runtime_error(&format!("Undefined variable: {}", assign_stmt.name)));
+                    ir.push_str("  ; Tuple assignment not implemented in function compilation\n");
                 }
             },
             Statement::Return(return_stmt) => {

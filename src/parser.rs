@@ -339,8 +339,9 @@ impl Parser {
                 }
                 
 
-                // Check if this is an assignment (identifier = expression)
-                if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal {
+                // Check if this is an assignment (identifier = expression or tuple destructuring)
+                if (self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal) ||
+                   (self.check(&TokenKind::LeftParen) && self.is_tuple_assignment()) {
                     Ok(Statement::Assignment(self.parse_assignment_statement()?))
                 } else {
                     Ok(Statement::Expression(self.parse_expression()?))
@@ -517,14 +518,79 @@ impl Parser {
     }
 
     fn parse_assignment_statement(&mut self) -> Result<AssignmentStatement, CursedError> {
-        let name = self.consume(TokenKind::Identifier, "Expected variable name")?.lexeme.clone();
-        self.consume(TokenKind::Equal, "Expected '=' after variable name")?;
+        let target = self.parse_assignment_target()?;
+        self.consume(TokenKind::Equal, "Expected '=' after assignment target")?;
         let value = self.parse_expression()?;
         
         Ok(AssignmentStatement {
-            name,
+            target,
             value,
         })
+    }
+
+    fn parse_assignment_target(&mut self) -> Result<crate::ast::AssignmentTarget, CursedError> {
+        // Check for tuple destructuring: (a, b, c) = ...
+        if self.check(&TokenKind::LeftParen) {
+            self.advance(); // consume '('
+            
+            let mut names = Vec::new();
+            if !self.check(&TokenKind::RightParen) {
+                loop {
+                    let name = self.consume(TokenKind::Identifier, "Expected variable name in tuple destructuring")?;
+                    names.push(name.lexeme.clone());
+                    
+                    if !self.match_tokens(&[TokenKind::Comma]) {
+                        break;
+                    }
+                }
+            }
+            
+            self.consume(TokenKind::RightParen, "Expected ')' after tuple destructuring")?;
+            Ok(crate::ast::AssignmentTarget::Tuple(names))
+        } else {
+            // Single variable assignment
+            let name = self.consume(TokenKind::Identifier, "Expected variable name")?;
+            Ok(crate::ast::AssignmentTarget::Single(name.lexeme.clone()))
+        }
+    }
+
+    /// Check if the current position looks like a tuple assignment (a, b) =
+    fn is_tuple_assignment(&self) -> bool {
+        if !self.check(&TokenKind::LeftParen) {
+            return false;
+        }
+        
+        // Look ahead to see if this is a tuple assignment pattern
+        // We're looking for: ( identifier, identifier, ... ) =
+        let mut pos = 1; // Start after the opening paren
+        
+        // Check for at least one identifier
+        if pos >= self.tokens.len() || self.tokens[self.current + pos].kind != TokenKind::Identifier {
+            return false;
+        }
+        pos += 1;
+        
+        // Look for comma-separated identifiers
+        while self.current + pos < self.tokens.len() {
+            match self.tokens[self.current + pos].kind {
+                TokenKind::Comma => {
+                    pos += 1;
+                    // After comma, expect identifier
+                    if self.current + pos >= self.tokens.len() || self.tokens[self.current + pos].kind != TokenKind::Identifier {
+                        return false;
+                    }
+                    pos += 1;
+                },
+                TokenKind::RightParen => {
+                    pos += 1;
+                    // After closing paren, expect =
+                    return self.current + pos < self.tokens.len() && self.tokens[self.current + pos].kind == TokenKind::Equal;
+                },
+                _ => return false,
+            }
+        }
+        
+        false
     }
 
     fn parse_const_statement(&mut self) -> Result<LetStatement, CursedError> {
@@ -990,23 +1056,35 @@ impl Parser {
                     break;
                 }
             } else if self.match_tokens(&[TokenKind::Dot]) {
-                // Accept identifiers or keywords as property names
-                let property = if self.check(&TokenKind::Identifier) {
-                    self.advance()
-                } else if self.check(&TokenKind::Spill) {
-                    // Handle 'spill' specifically 
-                    self.advance()
-                } else if self.is_keyword() {
-                    // Allow other keywords as property names in member access
-                    self.advance()
+                // Check for tuple access (e.g., tuple.0, tuple.1)
+                if self.check(&TokenKind::Number) {
+                    let index_token = self.advance();
+                    let index = index_token.lexeme.parse::<usize>()
+                        .map_err(|_| CursedError::syntax_error("Invalid tuple index"))?;
+                    
+                    expr = Expression::TupleAccess(crate::ast::TupleAccessExpression {
+                        tuple: Box::new(expr),
+                        index,
+                    });
                 } else {
-                    return Err(CursedError::syntax_error("Expected property name after '.'"));
-                };
-                
-                expr = Expression::MemberAccess(MemberAccessExpression {
-                    object: Box::new(expr),
-                    property: property.lexeme.clone(),
-                });
+                    // Accept identifiers or keywords as property names
+                    let property = if self.check(&TokenKind::Identifier) {
+                        self.advance()
+                    } else if self.check(&TokenKind::Spill) {
+                        // Handle 'spill' specifically 
+                        self.advance()
+                    } else if self.is_keyword() {
+                        // Allow other keywords as property names in member access
+                        self.advance()
+                    } else {
+                        return Err(CursedError::syntax_error("Expected property name after '.'"));
+                    };
+                    
+                    expr = Expression::MemberAccess(MemberAccessExpression {
+                        object: Box::new(expr),
+                        property: property.lexeme.clone(),
+                    });
+                }
             } else {
                 break;
             }
@@ -1100,10 +1178,7 @@ impl Parser {
                 Ok(Expression::Identifier(token.lexeme.clone()))
             },
             TokenKind::LeftParen => {
-                self.advance();
-                let expr = self.parse_expression()?;
-                self.consume(TokenKind::RightParen, "Expected ')' after expression")?;
-                Ok(expr)
+                self.parse_tuple_or_parenthesized()
             },
             TokenKind::Dm => {
                 self.parse_channel_creation()
@@ -1163,6 +1238,42 @@ impl Parser {
             parameters,
             body: Box::new(body),
         }))
+    }
+
+    fn parse_tuple_or_parenthesized(&mut self) -> Result<Expression, CursedError> {
+        self.advance(); // consume '('
+        
+        // Check for empty tuple: ()
+        if self.check(&TokenKind::RightParen) {
+            self.advance(); // consume ')'
+            return Ok(Expression::Tuple(crate::ast::TupleExpression {
+                elements: Vec::new(),
+            }));
+        }
+        
+        // Parse first expression
+        let first_expr = self.parse_expression()?;
+        
+        // Check if it's a tuple (comma-separated) or parenthesized expression
+        if self.check(&TokenKind::Comma) {
+            // It's a tuple
+            let mut elements = vec![first_expr];
+            
+            while self.match_tokens(&[TokenKind::Comma]) {
+                // Allow trailing comma
+                if self.check(&TokenKind::RightParen) {
+                    break;
+                }
+                elements.push(self.parse_expression()?);
+            }
+            
+            self.consume(TokenKind::RightParen, "Expected ')' after tuple elements")?;
+            Ok(Expression::Tuple(crate::ast::TupleExpression { elements }))
+        } else {
+            // It's a parenthesized expression
+            self.consume(TokenKind::RightParen, "Expected ')' after expression")?;
+            Ok(first_expr)
+        }
     }
 
     fn parse_struct_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::StructStatement, CursedError> {
