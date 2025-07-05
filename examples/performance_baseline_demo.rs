@@ -224,7 +224,13 @@ fn baseline_metadata_demo() -> Result<()> {
     let metadata = BaselineMetadata {
         version: "v1.0.0".to_string(),
         timestamp: SystemTime::now(),
-        environment: env_info,
+        environment: env_info.clone(),
+        benchmark_results: Vec::new(),
+        metadata: cursed::optimization::BaselineInfo {
+            version: "v1.0.0".to_string(),
+            timestamp: SystemTime::now(),
+            environment: env_info,
+        },
     };
 
     println!("✓ Created baseline metadata:");
