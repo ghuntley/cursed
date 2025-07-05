@@ -30,6 +30,37 @@ pub enum ProjectType {
     Benchmark,
 }
 
+// Package integration types for examples
+#[derive(Debug, Clone)]
+pub struct PackageIntegrationConfig {
+    pub enabled: bool,
+    pub cache_dir: std::path::PathBuf,
+    pub registry_url: String,
+    pub offline_mode: bool,
+}
+
+impl Default for PackageIntegrationConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            cache_dir: std::path::PathBuf::from(".cursed/packages"),
+            registry_url: "https://registry.cursed.dev".to_string(),
+            offline_mode: false,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct PackageIntegration {
+    config: PackageIntegrationConfig,
+}
+
+impl PackageIntegration {
+    pub fn new(config: PackageIntegrationConfig) -> Result<Self, crate::error::CursedError> {
+        Ok(Self { config })
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TestDiscovery {
     config: TestDiscoveryConfig,

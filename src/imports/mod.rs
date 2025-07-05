@@ -18,7 +18,7 @@ mod tests;
 // Re-export main types for convenience
 pub use resolver::{
     ImportResolver, ImportSource, ImportError as ResolverImportError,
-    ResolvedImport, CompiledModule, ImportStats, 
+    ResolvedImport, CompiledModule, ImportStats as ResolverImportStats, 
     resolve_program_imports, module_exists
 };
 
@@ -68,6 +68,9 @@ pub struct ImportCache {
 
 /// Import configuration type alias for consistency with resolver
 pub use resolver::ImportConfig;
+
+/// Alias for backward compatibility in examples
+pub type ImportResolverConfig = ImportConfig;
 
 impl ImportManager {
     /// Create new import manager with default configuration
@@ -137,6 +140,23 @@ impl ImportManager {
     pub fn resolver_mut(&mut self) -> &mut ImportResolver {
         &mut self.resolver
     }
+
+    /// Get import statistics for examples
+    pub fn get_stats(&self) -> ImportStats {
+        ImportStats {
+            cached_imports: self.cache.resolved_imports.len(),
+            loaded_modules: self.cache.resolved_imports.len(),
+            failed_imports: self.cache.failed_imports.len(),
+        }
+    }
+}
+
+/// Import statistics for examples
+#[derive(Debug, Clone)]
+pub struct ImportStats {
+    pub cached_imports: usize,
+    pub loaded_modules: usize,
+    pub failed_imports: usize,
 }
 
 /// Represents an import statement

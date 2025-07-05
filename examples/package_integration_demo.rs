@@ -44,16 +44,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("✅ Package manager created successfully!");
             
             // Show installed packages
-            match manager.list_installed() {
-                Ok(packages) => {
-                    println!("📦 Installed packages: {} found", packages.len());
-                    for pkg in packages {
-                        println!("  - {} v{}: {}", pkg.name, pkg.version, pkg.description);
-                    }
-                }
-                Err(e) => {
-                    println!("⚠️  Could not list packages: {}", e);
-                }
+            let packages = manager.list_installed();
+            println!("📦 Installed packages: {} found", packages.len());
+            for pkg in packages {
+                println!("  - {} v{}: installed at {}", pkg.name, pkg.version, pkg.install_path.display());
             }
         }
         Err(e) => {
@@ -65,11 +59,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 3. Import System Setup
     println!("\n🔗 Setting up import resolution...");
     
-    let package_config = PackageManagerConfig::default();
-    let package_manager = Arc::new(Mutex::new(PackageManager::new(package_config)?));
     let import_config = ImportResolverConfig::default();
-    
-    let import_manager_result = ImportManager::new(package_manager.clone(), import_config);
+    let import_manager_result = ImportManager::with_config(import_config);
     
     match import_manager_result {
         Ok(manager) => {

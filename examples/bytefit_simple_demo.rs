@@ -70,7 +70,7 @@ fn search_functions_demo() {
 }
 
 fn transformation_demo() {
-    let parts = vec![b"hello", b"world", b"test"];
+    let parts = vec![b"hello".to_vec(), b"world".to_vec(), b"test".to_vec()];
     let joined = join(&parts, b", ");
     println!("join(['hello', 'world', 'test'], ', '): {}", String::from_utf8_lossy(&joined));
     
@@ -81,23 +81,20 @@ fn transformation_demo() {
     let replaced_all = replace_all(text, b"hello", b"hi");
     println!("replace_all('hello world hello', 'hello', 'hi'): {}", String::from_utf8_lossy(&replaced_all));
     
-    if let Ok(upper) = to_upper(b"Hello World") {
-        println!("to_upper('Hello World'): {}", String::from_utf8_lossy(&upper));
-    }
+    let upper = to_upper(b"Hello World");
+    println!("to_upper('Hello World'): {}", String::from_utf8_lossy(&upper));
     
-    if let Ok(lower) = to_lower(b"Hello World") {
-        println!("to_lower('Hello World'): {}", String::from_utf8_lossy(&lower));
-    }
+    let lower = to_lower(b"Hello World");
+    println!("to_lower('Hello World'): {}", String::from_utf8_lossy(&lower));
     
-    if let Ok(title) = to_title(b"hello world") {
-        println!("to_title('hello world'): {}", String::from_utf8_lossy(&title));
-    }
+    let title = to_title(b"hello world");
+    println!("to_title('hello world'): {}", String::from_utf8_lossy(&title));
     
     println!();
 }
 
 fn buffer_demo() {
-    let buf = new_fit_buffer(None);
+    let mut buf = new_fit_buffer(64);
     
     // Build content using chained operations
     buf.append_string("Hello ")
@@ -110,15 +107,14 @@ fn buffer_demo() {
     println!("Buffer length: {}, capacity: {}", buf.len(), buf.cap());
     
     // Clone and modify
-    let buf2 = buf.clone_buffer();
+    let mut buf2 = buf.clone_buffer();
     buf2.replace_all(b" ", b"_");
     println!("Modified clone: {}", buf2.string());
     
     // Trimming
-    let buf3 = new_fit_buffer(Some(b"  spaced content  ".to_vec()));
-    if let Ok(_) = buf3.trim_space() {
-        println!("Trimmed buffer: '{}'", buf3.string());
-    }
+    let mut buf3 = FitBuffer::with_data(b"  spaced content  ".to_vec());
+    buf3.trim_space();
+    println!("Trimmed buffer: '{}'", buf3.string());
     
     println!();
 }
@@ -128,7 +124,7 @@ fn binary_demo() {
     
     // Hex encoding/decoding
     let hex_encoded = to_hex(data);
-    println!("Hex encoded: {}", String::from_utf8_lossy(&hex_encoded));
+    println!("Hex encoded: {}", hex_encoded);
     
     if let Ok(hex_decoded) = from_hex(&hex_encoded) {
         println!("Hex decoded: {}", String::from_utf8_lossy(&hex_decoded));
@@ -136,7 +132,7 @@ fn binary_demo() {
     
     // Base64 encoding/decoding
     let base64_encoded = to_base64(data);
-    println!("Base64 encoded: {}", String::from_utf8_lossy(&base64_encoded));
+    println!("Base64 encoded: {}", base64_encoded);
     
     if let Ok(base64_decoded) = from_base64(&base64_encoded) {
         println!("Base64 decoded: {}", String::from_utf8_lossy(&base64_decoded));
@@ -169,8 +165,8 @@ fn binary_demo() {
 
 fn pattern_demo() {
     // Wildcard matching
-    let patterns = vec![b"h*o", b"h?llo", b"*.txt", b"test*"];
-    let texts = vec![b"hello", b"hello", b"file.txt", b"testing"];
+    let patterns = vec![b"h*o".as_slice(), b"h?llo".as_slice(), b"*.txt".as_slice(), b"test*".as_slice()];
+    let texts = vec![b"hello".as_slice(), b"hello".as_slice(), b"file.txt".as_slice(), b"testing".as_slice()];
     
     for (pattern, text) in patterns.iter().zip(texts.iter()) {
         let matches = wildcard_match(pattern, text);
@@ -181,7 +177,7 @@ fn pattern_demo() {
     }
     
     // Regular expression matching
-    let test_text = b"The price is $123.45 and ID is ABC123";
+    let test_text = "The price is $123.45 and ID is ABC123";
     
     if let Ok(digit_match) = regex_match(r"\d+", test_text) {
         println!("regex_match('\\d+', text): {}", digit_match);
@@ -191,13 +187,13 @@ fn pattern_demo() {
     if let Ok(all_digits) = regex_find_all(r"\d+", test_text, -1) {
         println!("Found {} digit sequences:", all_digits.len());
         for (i, digits) in all_digits.iter().enumerate() {
-            println!("  [{}]: {}", i, String::from_utf8_lossy(digits));
+            println!("  [{}]: {}", i, digits);
         }
     }
     
     // Replace with regex
-    if let Ok(replaced) = regex_replace(r"\d+", test_text, b"XXX") {
-        println!("regex_replace('\\d+', text, 'XXX'): {}", String::from_utf8_lossy(&replaced));
+    if let Ok(replaced) = regex_replace(r"\d+", test_text, "XXX") {
+        println!("regex_replace('\\d+', text, 'XXX'): {}", replaced);
     }
     
     println!();
