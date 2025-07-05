@@ -120,7 +120,7 @@ fn main() {
             },
             cursed::ast::Statement::Let(let_stmt) => {
                 let_count += 1;
-                println!("  Statement {}: Let variable '{}'", i, let_stmt.name);
+                println!("  Statement {}: Let variable '{}'", i, let_stmt.target.primary_name());
             },
             _ => {
                 other_count += 1;

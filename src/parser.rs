@@ -510,7 +510,7 @@ impl Parser {
         let value = self.parse_expression()?;
         
         Ok(LetStatement {
-            name,
+            target: crate::ast::LetTarget::Single(name),
             value,
             var_type,
             visibility: crate::ast::Visibility::Private,
@@ -600,7 +600,7 @@ impl Parser {
         let value = self.parse_expression()?;
         
         Ok(LetStatement {
-            name,
+            target: crate::ast::LetTarget::Single(name),
             value,
             var_type: None, // Constants don't need explicit type annotations
             visibility: crate::ast::Visibility::Private,
@@ -609,7 +609,29 @@ impl Parser {
 
     fn parse_let_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<LetStatement, CursedError> {
         self.consume(TokenKind::Sus, "Expected 'sus'")?;
-        let name = self.consume(TokenKind::Identifier, "Expected variable name")?.lexeme.clone();
+        
+        // Check for tuple destructuring syntax: sus (x, y, z) = ...
+        let target = if self.check(&TokenKind::LeftParen) {
+            self.advance(); // consume '('
+            let mut names = Vec::new();
+            
+            // Parse variable names separated by commas
+            loop {
+                let name = self.consume(TokenKind::Identifier, "Expected variable name in tuple destructuring")?.lexeme.clone();
+                names.push(name);
+                
+                if !self.check(&TokenKind::Comma) {
+                    break;
+                }
+                self.advance(); // consume ','
+            }
+            
+            self.consume(TokenKind::RightParen, "Expected ')' after tuple destructuring")?;
+            crate::ast::LetTarget::Tuple(names)
+        } else {
+            let name = self.consume(TokenKind::Identifier, "Expected variable name")?.lexeme.clone();
+            crate::ast::LetTarget::Single(name)
+        };
         
         // Check for optional type after variable name (CURSED syntax: "sus result normie = ...")
         let var_type = if self.check_type_token() {
@@ -622,7 +644,7 @@ impl Parser {
         let value = self.parse_expression()?;
         
         Ok(LetStatement {
-            name,
+            target,
             value,
             var_type,
             visibility,
@@ -636,7 +658,7 @@ impl Parser {
         let value = self.parse_expression()?;
         
         Ok(LetStatement {
-            name,
+            target: crate::ast::LetTarget::Single(name),
             value,
             var_type: None, // Generic constants don't need explicit type annotations
             visibility,
@@ -650,7 +672,7 @@ impl Parser {
         let value = self.parse_expression()?;
         
         Ok(LetStatement {
-            name,
+            target: crate::ast::LetTarget::Single(name),
             value,
             var_type: None, // Typed variables don't need explicit type annotations
             visibility,

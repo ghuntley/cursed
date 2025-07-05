@@ -139,10 +139,27 @@ impl Default for Visibility {
     }
 }
 
+/// Let statement target (single variable or tuple destructuring)
+#[derive(Debug, Clone)]
+pub enum LetTarget {
+    Single(String),
+    Tuple(Vec<String>),
+}
+
+impl LetTarget {
+    /// Get the primary name for compatibility (returns first name for tuples)
+    pub fn primary_name(&self) -> String {
+        match self {
+            LetTarget::Single(name) => name.clone(),
+            LetTarget::Tuple(names) => names.first().cloned().unwrap_or_default(),
+        }
+    }
+}
+
 /// Let statement
 #[derive(Debug, Clone)]
 pub struct LetStatement {
-    pub name: String,
+    pub target: LetTarget,
     pub value: Expression,
     pub var_type: Option<String>, // Type annotation for the variable
     pub visibility: Visibility,

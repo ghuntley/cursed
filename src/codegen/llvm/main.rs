@@ -280,18 +280,69 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Statement::Let(let_stmt) => {
                 let value_reg = self.generate_expression(&let_stmt.value)?;
                 // Store the variable mapping
-                self.variables.insert(let_stmt.name.clone(), value_reg.clone());
-                self.ir_code.push_str(&format!("  ; Variable: {} = {}\n", let_stmt.name, value_reg));
+                match &let_stmt.target {
+                    crate::ast::LetTarget::Single(name) => {
+                        self.variables.insert(name.clone(), value_reg.clone());
+                        self.ir_code.push_str(&format!("  ; Variable: {} = {}\n", name, value_reg));
+                    },
+                    crate::ast::LetTarget::Tuple(names) => {
+                        self.ir_code.push_str(&format!("  ; Tuple destructuring let statement\n"));
+                        
+                        // Extract each element from the tuple and assign to variables
+                        for (index, var_name) in names.iter().enumerate() {
+                            // Generate getelementptr to access tuple field
+                            let field_ptr = self.next_register();
+                            self.ir_code.push_str(&format!(
+                                "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
+                                field_ptr, value_reg, index
+                            ));
+                            
+                            // Load the value from the field
+                            let field_value = self.next_register();
+                            self.ir_code.push_str(&format!(
+                                "  {} = load i32, i32* {}, align 4\n",
+                                field_value, field_ptr
+                            ));
+                            
+                            // Store the variable mapping
+                            self.variables.insert(var_name.clone(), field_value.clone());
+                            self.ir_code.push_str(&format!("  ; Extracted {} = {} from tuple\n", var_name, field_value));
+                        }
+                    }
+                }
             },
             Statement::Assignment(assign_stmt) => {
                 let value_reg = self.generate_expression(&assign_stmt.value)?;
                 // Update the variable mapping
-                // For now, only handle simple variable assignment (not tuple destructuring)
-                if let crate::ast::AssignmentTarget::Single(name) = &assign_stmt.target {
-                    self.variables.insert(name.clone(), value_reg.clone());
-                    self.ir_code.push_str(&format!("  ; Assignment: {} = {}\n", name, value_reg));
-                } else {
-                    self.ir_code.push_str(&format!("  ; Tuple assignment (TODO: implement)\n"));
+                match &assign_stmt.target {
+                    crate::ast::AssignmentTarget::Single(name) => {
+                        self.variables.insert(name.clone(), value_reg.clone());
+                        self.ir_code.push_str(&format!("  ; Assignment: {} = {}\n", name, value_reg));
+                    },
+                    crate::ast::AssignmentTarget::Tuple(var_names) => {
+                        self.ir_code.push_str(&format!("  ; Tuple destructuring assignment\n"));
+                        
+                        // Extract each element from the tuple and assign to variables
+                        for (index, var_name) in var_names.iter().enumerate() {
+                            // Generate getelementptr to access tuple field
+                            let field_ptr = self.next_register();
+                            self.ir_code.push_str(&format!(
+                                "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
+                                field_ptr, value_reg, index
+                            ));
+                            
+                            // Load the value from the field
+                            let field_value = self.next_register();
+                            self.ir_code.push_str(&format!(
+                                "  {} = load i32, i32* {}, align 4\n",
+                                field_value, field_ptr
+                            ));
+                            
+                            // Store the variable mapping
+                            self.variables.insert(var_name.clone(), field_value.clone());
+                            self.ir_code.push_str(&format!("  ; Extracted {} = {} from tuple\n", var_name, field_value));
+                        }
+                    }
                 }
             },
             Statement::Function(func_stmt) => {

@@ -184,7 +184,7 @@ impl TypeInference {
         match stmt {
             Statement::Let(let_stmt) => {
                 let value_type = self.infer_expression_type(&let_stmt.value)?;
-                self.inference_context.type_vars.insert(let_stmt.name.clone(), value_type);
+                self.inference_context.type_vars.insert(let_stmt.target.primary_name(), value_type);
                 Ok(())
             }
             Statement::Function(func_stmt) => {

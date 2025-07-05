@@ -212,7 +212,7 @@ impl ModuleLoader {
                 Statement::Let(let_stmt) => {
                     // Only export public constants
                     if let_stmt.visibility == Visibility::Public {
-                        symbols.push(let_stmt.name.clone());
+                        symbols.push(let_stmt.target.primary_name());
                     }
                 }
                 // Add more exportable types as needed

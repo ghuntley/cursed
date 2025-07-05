@@ -576,8 +576,8 @@ impl CursedLinter {
             },
             Statement::Let(let_stmt) => {
                 // Track variable declaration
-                self.context.variable_usage.insert(let_stmt.name.clone(), VariableInfo {
-                    name: let_stmt.name.clone(),
+                self.context.variable_usage.insert(let_stmt.target.primary_name(), VariableInfo {
+                    name: let_stmt.target.primary_name(),
                     declared_line: 1, // TODO: Get actual line number
                     usage_count: 0,
                     is_mutable: true, // TODO: Determine from context
@@ -585,7 +585,7 @@ impl CursedLinter {
                 });
                 
                 // Check variable naming
-                if let Some(issue) = self.check_variable_naming(&let_stmt.name, 1)? {
+                if let Some(issue) = self.check_variable_naming(&let_stmt.target.primary_name(), 1)? {
                     issues.push(issue);
                 }
                 
@@ -1799,8 +1799,8 @@ impl AstVisitor<Vec<LintIssue>> for CursedLinter {
             
             Statement::Let(let_stmt) => {
                 // Track variable declaration
-                self.context.variable_usage.insert(let_stmt.name.clone(), VariableInfo {
-                    name: let_stmt.name.clone(),
+                self.context.variable_usage.insert(let_stmt.target.primary_name(), VariableInfo {
+                    name: let_stmt.target.primary_name(),
                     declared_line: 1,
                     usage_count: 0,
                     is_mutable: false,
