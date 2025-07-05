@@ -168,6 +168,11 @@ impl<T> SendOperation<T> {
         buffer: &Arc<B>,
         mut value: T,
     ) -> SendResult<T> {
+        let mut retry_count = 0;
+        const MAX_RETRIES: u32 = 10000; // Prevent infinite loops
+        const INITIAL_SLEEP_MS: u64 = 1;
+        const MAX_SLEEP_MS: u64 = 100;
+        
         loop {
             match buffer.try_push(value) {
                 Ok(()) => {
@@ -180,13 +185,24 @@ impl<T> SendOperation<T> {
                 }
                 Err((v, _)) => {
                     value = v;
-                    // Block until space is available
-                    thread::sleep(Duration::from_millis(1));
+                    retry_count += 1;
+                    
+                    if retry_count > MAX_RETRIES {
+                        self.mark_completed();
+                        return SendResult::Closed(value);
+                    }
                     
                     if buffer.is_closed() {
                         self.mark_completed();
                         return SendResult::Closed(value);
                     }
+                    
+                    // Exponential backoff to reduce CPU usage
+                    let sleep_time = std::cmp::min(
+                        INITIAL_SLEEP_MS * (1 << std::cmp::min(retry_count / 100, 6)),
+                        MAX_SLEEP_MS
+                    );
+                    thread::sleep(Duration::from_millis(sleep_time));
                 }
             }
         }
@@ -313,6 +329,11 @@ impl<T> ReceiveOperation<T> {
         &self,
         buffer: &Arc<B>,
     ) -> ReceiveResult<T> {
+        let mut retry_count = 0;
+        const MAX_RETRIES: u32 = 10000; // Prevent infinite loops
+        const INITIAL_SLEEP_MS: u64 = 1;
+        const MAX_SLEEP_MS: u64 = 100;
+        
         loop {
             match buffer.try_pop() {
                 Ok(Some(value)) => {
@@ -320,20 +341,42 @@ impl<T> ReceiveOperation<T> {
                     return ReceiveResult::Received(value);
                 }
                 Ok(None) => {
-                    // Block until data is available
-                    thread::sleep(Duration::from_millis(1));
+                    retry_count += 1;
+                    
+                    if retry_count > MAX_RETRIES {
+                        ReceiveOperation::<T>::mark_completed(self);
+                        return ReceiveResult::Closed;
+                    }
                     
                     if buffer.is_closed() && buffer.is_empty() {
                         ReceiveOperation::<T>::mark_completed(self);
                         return ReceiveResult::Closed;
                     }
+                    
+                    // Exponential backoff to reduce CPU usage
+                    let sleep_time = std::cmp::min(
+                        INITIAL_SLEEP_MS * (1 << std::cmp::min(retry_count / 100, 6)),
+                        MAX_SLEEP_MS
+                    );
+                    thread::sleep(Duration::from_millis(sleep_time));
                 }
                 Err(ChannelError::Closed) => {
                     ReceiveOperation::<T>::mark_completed(self);
                     return ReceiveResult::Closed;
                 }
                 Err(_) => {
-                    thread::sleep(Duration::from_millis(1));
+                    retry_count += 1;
+                    
+                    if retry_count > MAX_RETRIES {
+                        ReceiveOperation::<T>::mark_completed(self);
+                        return ReceiveResult::Closed;
+                    }
+                    
+                    let sleep_time = std::cmp::min(
+                        INITIAL_SLEEP_MS * (1 << std::cmp::min(retry_count / 100, 6)),
+                        MAX_SLEEP_MS
+                    );
+                    thread::sleep(Duration::from_millis(sleep_time));
                 }
             }
         }

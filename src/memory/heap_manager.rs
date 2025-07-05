@@ -594,15 +594,20 @@ impl HeapManager {
             coalesced.push_back(block);
         }
         
+        // Calculate fragmentation before updating stats (to avoid deadlock)
+        let fragmentation = self.calculate_fragmentation_from_blocks(&coalesced);
+        
         // Update free blocks
         *free_blocks = coalesced;
+        
+        // Release the free_blocks lock before acquiring stats lock to avoid deadlock
+        drop(free_blocks);
         
         // Update region stats
         {
             let mut stats = region.stats.write().unwrap();
             stats.last_compaction = Some(Instant::now());
-            // Recalculate fragmentation
-            stats.fragmentation = self.calculate_fragmentation(region);
+            stats.fragmentation = fragmentation;
         }
         
         Ok(())
@@ -611,6 +616,11 @@ impl HeapManager {
     /// Calculate fragmentation ratio for a region
     fn calculate_fragmentation(&self, region: &HeapRegion) -> f64 {
         let free_blocks = region.free_blocks.lock().unwrap();
+        self.calculate_fragmentation_from_blocks(&free_blocks)
+    }
+    
+    /// Calculate fragmentation ratio from free blocks collection
+    fn calculate_fragmentation_from_blocks(&self, free_blocks: &VecDeque<FreeBlock>) -> f64 {
         if free_blocks.is_empty() {
             return 0.0;
         }
@@ -961,6 +971,8 @@ mod tests {
     
     #[test]
     fn test_compaction() {
+        use std::time::{Duration, Instant};
+        
         let heap = create_default_heap().unwrap();
         
         // Allocate and deallocate to create fragmentation
@@ -976,8 +988,13 @@ mod tests {
             }
         }
         
-        // Compact
+        // Compact with timeout to prevent hanging
+        let start_time = Instant::now();
         heap.compact().unwrap();
+        let elapsed = start_time.elapsed();
+        
+        // Assert compaction completed within reasonable time
+        assert!(elapsed < Duration::from_secs(5), "Compaction took too long: {:?}", elapsed);
         
         let stats = heap.get_stats();
         assert!(stats.compactions > 0);
