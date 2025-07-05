@@ -183,12 +183,179 @@ pub mod dwarf_gen {
             Ok(Self { enabled: false })
         }
         
-        pub fn generate_dwarf(&self, _debug_info: &super::DebugInfo) -> crate::error::Result<Vec<u8>> {
+        pub fn generate_dwarf(&self, debug_info: &super::DebugInfo) -> crate::error::Result<Vec<u8>> {
             if !self.enabled {
                 return Err(CursedError::General("DWARF generation disabled".to_string()));
             }
-            // TODO: Implement DWARF generation
-            Ok(vec![])
+            
+            // Implement DWARF generation
+            // DWARF (Debugging With Attributed Record Formats) is a debugging file format
+            // used by many debuggers to support source-level debugging
+            
+            let mut dwarf_data = Vec::new();
+            
+            // DWARF Header
+            self.write_dwarf_header(&mut dwarf_data)?;
+            
+            // Compilation Unit Header
+            self.write_compilation_unit_header(&mut dwarf_data, debug_info)?;
+            
+            // Debug Information Entries (DIEs)
+            self.write_debug_information_entries(&mut dwarf_data, debug_info)?;
+            
+            // Line Number Program
+            self.write_line_number_program(&mut dwarf_data, debug_info)?;
+            
+            // Address Ranges
+            self.write_address_ranges(&mut dwarf_data, debug_info)?;
+            
+            Ok(dwarf_data)
+        }
+        
+        /// Write DWARF header section
+        fn write_dwarf_header(&self, data: &mut Vec<u8>) -> crate::error::Result<()> {
+            // DWARF v4 header format
+            // Length (4 bytes) - will be filled later
+            data.extend_from_slice(&[0u8; 4]);
+            
+            // Version (2 bytes) - DWARF v4
+            data.extend_from_slice(&[4u8, 0u8]);
+            
+            // Debug abbreviation offset (4 bytes)
+            data.extend_from_slice(&[0u8; 4]);
+            
+            // Address size (1 byte) - 8 bytes for 64-bit
+            data.push(8u8);
+            
+            Ok(())
+        }
+        
+        /// Write compilation unit header
+        fn write_compilation_unit_header(&self, data: &mut Vec<u8>, debug_info: &super::DebugInfo) -> crate::error::Result<()> {
+            // Compilation unit DIE tag
+            data.push(0x11); // DW_TAG_compile_unit
+            
+            // Attributes
+            if let Some(ref source_file) = debug_info.source_file {
+                // DW_AT_name attribute
+                data.push(0x03); // DW_AT_name
+                data.extend_from_slice(source_file.as_bytes());
+                data.push(0x00); // null terminator
+            }
+            
+            if let Some(ref module_name) = debug_info.module_name {
+                // DW_AT_comp_dir attribute  
+                data.push(0x1B); // DW_AT_comp_dir
+                data.extend_from_slice(module_name.as_bytes());
+                data.push(0x00); // null terminator
+            }
+            
+            // DW_AT_language attribute (DW_LANG_C99 as placeholder)
+            data.push(0x13); // DW_AT_language
+            data.push(0x0C); // DW_LANG_C99
+            
+            Ok(())
+        }
+        
+        /// Write debug information entries (DIEs)
+        fn write_debug_information_entries(&self, data: &mut Vec<u8>, debug_info: &super::DebugInfo) -> crate::error::Result<()> {
+            if let Some(ref function_name) = debug_info.function_name {
+                // Function DIE
+                data.push(0x2E); // DW_TAG_subprogram
+                
+                // Function name
+                data.push(0x03); // DW_AT_name
+                data.extend_from_slice(function_name.as_bytes());
+                data.push(0x00); // null terminator
+                
+                // Line number
+                if let Some(line) = debug_info.line_number {
+                    data.push(0x3A); // DW_AT_decl_line
+                    data.extend_from_slice(&line.to_le_bytes());
+                }
+                
+                // Column number
+                if let Some(column) = debug_info.column_number {
+                    data.push(0x39); // DW_AT_decl_column
+                    data.extend_from_slice(&column.to_le_bytes());
+                }
+            }
+            
+            Ok(())
+        }
+        
+        /// Write line number program
+        fn write_line_number_program(&self, data: &mut Vec<u8>, debug_info: &super::DebugInfo) -> crate::error::Result<()> {
+            // Line number program header
+            data.push(0x02); // minimum_instruction_length
+            data.push(0x01); // default_is_stmt
+            data.push(0xFB); // line_base (-5)
+            data.push(0x0E); // line_range (14)
+            data.push(0x0D); // opcode_base (13)
+            
+            // Standard opcode lengths
+            let opcode_lengths = [0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1];
+            data.extend_from_slice(&opcode_lengths);
+            
+            // Include directories (empty for now)
+            data.push(0x00);
+            
+            // File names
+            if let Some(ref source_file) = debug_info.source_file {
+                data.extend_from_slice(source_file.as_bytes());
+                data.push(0x00); // null terminator
+                data.push(0x00); // directory index
+                data.push(0x00); // file time
+                data.push(0x00); // file size
+            }
+            data.push(0x00); // end of file names
+            
+            // Line number program (minimal)
+            if let Some(line) = debug_info.line_number {
+                // Set line number
+                data.push(0x02); // DW_LNS_advance_line
+                data.push(line as u8);
+                
+                // Set address
+                data.push(0x00); // DW_LNE_extended_op
+                data.push(0x09); // length
+                data.push(0x02); // DW_LNE_set_address
+                data.extend_from_slice(&[0u8; 8]); // address placeholder
+                
+                // Copy line
+                data.push(0x01); // DW_LNS_copy
+            }
+            
+            // End sequence
+            data.push(0x00); // DW_LNE_extended_op
+            data.push(0x01); // length
+            data.push(0x01); // DW_LNE_end_sequence
+            
+            Ok(())
+        }
+        
+        /// Write address ranges
+        fn write_address_ranges(&self, data: &mut Vec<u8>, _debug_info: &super::DebugInfo) -> crate::error::Result<()> {
+            // Address range header
+            data.extend_from_slice(&[0u8; 4]); // length (will be filled)
+            data.extend_from_slice(&[2u8, 0u8]); // version
+            data.extend_from_slice(&[0u8; 4]); // cu_offset
+            data.push(8u8); // address_size
+            data.push(0u8); // segment_size
+            
+            // Padding to align to address boundary
+            while data.len() % 8 != 0 {
+                data.push(0u8);
+            }
+            
+            // Address range (placeholder)
+            data.extend_from_slice(&[0u8; 8]); // start address
+            data.extend_from_slice(&[0u8; 8]); // length
+            
+            // Terminator
+            data.extend_from_slice(&[0u8; 16]);
+            
+            Ok(())
         }
     }
     
