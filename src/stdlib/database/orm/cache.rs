@@ -4,6 +4,7 @@ use crate::error::CursedError;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use crate::stdlib::packages::ModuleError;
+use crate::stdlib::database::redis::{RedisClient, RedisConfig, RedisValue};
 
 /// Result type for cache operations
 pub type ModuleResult<T> = Result<T, CursedError>;
@@ -38,6 +39,7 @@ pub struct MemoryCache<K, V> {
 pub struct RedisCache {
     connection_string: String,
     config: CacheConfig,
+    redis_client: Option<RedisClient>,
 }
 
 /// Cache invalidation manager
@@ -121,27 +123,117 @@ impl RedisCache {
         Self {
             connection_string: connection_string.to_string(),
             config,
+            redis_client: None,
         }
     }
     
-    pub async fn get(&self, key: &str) -> Result<Option<String>, CursedError> {
-        // TODO: Implement Redis get
-        Ok(None)
-    }
-    
-    pub async fn set(&self, key: &str, value: &str) -> Result<(), CursedError> {
-        // TODO: Implement Redis set
+    /// Initialize Redis connection
+    pub async fn connect(&mut self) -> Result<(), CursedError> {
+        let redis_config = RedisConfig {
+            url: self.connection_string.clone(),
+            ..Default::default()
+        };
+        
+        let mut client = RedisClient::new(redis_config)?;
+        client.connect().await?;
+        self.redis_client = Some(client);
         Ok(())
     }
     
-    pub async fn remove(&self, key: &str) -> Result<bool, CursedError> {
-        // TODO: Implement Redis remove
-        Ok(false)
+    /// Get Redis client, initializing if needed
+    async fn get_client(&mut self) -> Result<&RedisClient, CursedError> {
+        if self.redis_client.is_none() {
+            self.connect().await?;
+        }
+        self.redis_client.as_ref()
+            .ok_or_else(|| CursedError::runtime_error(&"Failed to initialize Redis client"))
     }
     
-    pub async fn clear(&self) -> Result<(), CursedError> {
-        // TODO: Implement Redis clear
-        Ok(())
+    pub async fn get(&mut self, key: &str) -> Result<Option<String>, CursedError> {
+        // Extract TTL first to avoid borrow issues
+        let ttl_secs = self.config.ttl.as_secs();
+        let client = self.get_client().await?;
+        
+        // Apply TTL if configured
+        let cache_key = if ttl_secs > 0 {
+            format!("{}:ttl:{}", key, ttl_secs)
+        } else {
+            key.to_string()
+        };
+        
+        match client.get(&cache_key).await {
+            Ok(Some(value)) => Ok(Some(value)),
+            Ok(None) => Ok(None),
+            Err(e) => {
+                eprintln!("Redis get error: {}", e);
+                Ok(None) // Return None on error to gracefully degrade
+            }
+        }
+    }
+    
+    pub async fn set(&mut self, key: &str, value: &str) -> Result<(), CursedError> {
+        // Extract TTL first to avoid borrow issues
+        let ttl_secs = self.config.ttl.as_secs();
+        let client = self.get_client().await?;
+        
+        // Apply TTL if configured
+        let cache_key = if ttl_secs > 0 {
+            format!("{}:ttl:{}", key, ttl_secs)
+        } else {
+            key.to_string()
+        };
+        
+        match client.set(&cache_key, value).await {
+            Ok(_) => {
+                // If TTL is configured, set expiration
+                if ttl_secs > 0 {
+                    let ttl_str = ttl_secs.to_string();
+                    if let Err(e) = client.execute("EXPIRE", &[&cache_key, &ttl_str]).await {
+                        eprintln!("Redis expire error: {}", e);
+                        // Continue anyway, value is set
+                    }
+                }
+                Ok(())
+            }
+            Err(e) => {
+                eprintln!("Redis set error: {}", e);
+                Err(CursedError::runtime_error(&format!("Failed to set cache value: {}", e)))
+            }
+        }
+    }
+    
+    pub async fn remove(&mut self, key: &str) -> Result<bool, CursedError> {
+        // Extract TTL first to avoid borrow issues
+        let ttl_secs = self.config.ttl.as_secs();
+        let client = self.get_client().await?;
+        
+        // Apply TTL if configured
+        let cache_key = if ttl_secs > 0 {
+            format!("{}:ttl:{}", key, ttl_secs)
+        } else {
+            key.to_string()
+        };
+        
+        match client.execute("DEL", &[&cache_key]).await {
+            Ok(RedisValue::Integer(count)) => Ok(count > 0),
+            Ok(_) => Ok(false),
+            Err(e) => {
+                eprintln!("Redis remove error: {}", e);
+                Ok(false) // Return false on error to gracefully degrade
+            }
+        }
+    }
+    
+    pub async fn clear(&mut self) -> Result<(), CursedError> {
+        let client = self.get_client().await?;
+        
+        match client.execute("FLUSHDB", &[]).await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                eprintln!("Redis clear error: {}", e);
+                Err(CursedError::runtime_error(&format!("Failed to clear cache: {}", e)))
+            }
+        }
     }
 }
 
