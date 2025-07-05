@@ -220,6 +220,61 @@ impl Parser {
         }
     }
 
+    /// Recovery method for errors within blocks that doesn't escape to top-level
+    fn recover_within_block(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            // Stop at statement boundaries within the current block
+            if self.previous().kind == TokenKind::Semicolon || 
+               self.previous().kind == TokenKind::Newline {
+                return;
+            }
+
+            // Stop at the start of new statements but don't leave the block
+            match self.peek().kind {
+                TokenKind::Sus | TokenKind::Facts | TokenKind::Lowkey |
+                TokenKind::Bestie | TokenKind::Yolo | TokenKind::Newline => return,
+                // Don't stop at RightBrace since we want to stay within the current block context
+                TokenKind::RightBrace => return,
+                _ => {}
+            }
+
+            self.advance();
+        }
+    }
+
+    /// Look ahead to determine if { starts a struct literal
+    /// Real struct literals look like: { field: value, field2: value2 }
+    /// vs blocks that are just: { statements... }
+    fn looks_like_struct_literal(&self) -> bool {
+        if !self.check(&TokenKind::LeftBrace) {
+            return false;
+        }
+        
+        // Look ahead past the opening brace
+        let mut offset = 1;
+        
+        // Skip newlines
+        while self.peek_ahead(offset).kind == TokenKind::Newline {
+            offset += 1;
+        }
+        
+        // Check if we see identifier : pattern (struct field assignment)
+        if self.peek_ahead(offset).kind == TokenKind::Identifier &&
+           self.peek_ahead(offset + 1).kind == TokenKind::Colon {
+            return true;
+        }
+        
+        // Empty braces could be empty struct literal
+        if self.peek_ahead(offset).kind == TokenKind::RightBrace {
+            return true;
+        }
+        
+        // Otherwise, probably not a struct literal
+        false
+    }
+
     // Parsing methods
     fn parse_package_declaration(&mut self) -> Result<PackageDeclaration, CursedError> {
         let name_token = self.consume(TokenKind::Identifier, "Expected package name")?;
@@ -466,21 +521,27 @@ impl Parser {
         self.skip_newlines_and_semicolons();
         
         let mut body = Vec::new();
-        log::debug!("🔧 Parsing function body for: {}", name);
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
             self.skip_newlines_and_semicolons(); // Skip newlines before parsing each statement
             if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-                let stmt = self.parse_statement()?;
-                log::debug!("➕ Adding statement to function body: {:?}", std::mem::discriminant(&stmt));
-                body.push(stmt);
-                
-                // Optional semicolon after statement
-                if self.check(&TokenKind::Semicolon) {
-                    self.advance();
+                match self.parse_statement() {
+                    Ok(stmt) => {
+                        body.push(stmt);
+                        
+                        // Optional semicolon after statement
+                        if self.check(&TokenKind::Semicolon) {
+                            self.advance();
+                        }
+                    },
+                    Err(e) => {
+                        // Record error but continue parsing function body
+                        log::error!("❌ Parse error in function body: {}", e);
+                        self.errors.push(format!("Parse error in function body: {}", e));
+                        self.recover_within_block();
+                    }
                 }
             }
         }
-        log::debug!("✅ Function body parsing complete for: {}", name);
         
         self.consume(TokenKind::RightBrace, "Expected '}' after function body")?;
         
@@ -712,11 +773,22 @@ impl Parser {
                 self.advance();
                 continue;
             }
-            then_branch.push(self.parse_statement()?);
-            
-            // Optional semicolon after statement
-            if self.check(&TokenKind::Semicolon) {
-                self.advance();
+            match self.parse_statement() {
+                Ok(stmt) => {
+                    then_branch.push(stmt);
+                    
+                    // Optional semicolon after statement
+                    if self.check(&TokenKind::Semicolon) {
+                        self.advance();
+                    }
+                },
+                Err(e) => {
+                    // Record error but continue parsing if body
+                    log::error!("❌ Parse error in if body: {}", e);
+                    self.errors.push(format!("Parse error in if body: {}", e));
+                    // Instead of full synchronize, just skip to next statement boundary within this block
+                    self.recover_within_block();
+                }
             }
         }
         
@@ -732,11 +804,21 @@ impl Parser {
                     self.advance();
                     continue;
                 }
-                else_stmts.push(self.parse_statement()?);
-                
-                // Optional semicolon after statement  
-                if self.check(&TokenKind::Semicolon) {
-                    self.advance();
+                match self.parse_statement() {
+                    Ok(stmt) => {
+                        else_stmts.push(stmt);
+                        
+                        // Optional semicolon after statement  
+                        if self.check(&TokenKind::Semicolon) {
+                            self.advance();
+                        }
+                    },
+                    Err(e) => {
+                        // Record error but continue parsing else body
+                        log::error!("❌ Parse error in else body: {}", e);
+                        self.errors.push(format!("Parse error in else body: {}", e));
+                        self.recover_within_block();
+                    }
                 }
             }
             self.consume(TokenKind::RightBrace, "Expected '}' after else body")?;
@@ -1072,8 +1154,14 @@ impl Parser {
                 expr = self.finish_call(expr)?;
             } else if self.check(&TokenKind::LeftBrace) {
                 // Check if this is a struct literal (identifier followed by {)
-                if let Expression::Identifier(struct_name) = expr {
-                    expr = self.parse_struct_literal(struct_name)?;
+                if let Expression::Identifier(ref struct_name) = expr {
+                    // Look ahead to see if this is actually a struct literal
+                    // A real struct literal should have field assignments: identifier { field: value, ... }
+                    if self.looks_like_struct_literal() {
+                        expr = self.parse_struct_literal(struct_name.clone())?;
+                    } else {
+                        break;
+                    }
                 } else {
                     break;
                 }
