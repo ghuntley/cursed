@@ -103,6 +103,11 @@ pub fn get_minimal_result() -> Result<String, CursedError> {
 pub type OptimizationManager = AdvancedOptimizationManager;
 
 impl OptimizationManager {
+    /// Default constructor for compatibility with examples
+    pub fn new() -> Self {
+        Self::default()
+    }
+    
     /// Constructor that takes OptimizationConfig for PGO example compatibility
     pub fn with_config(config: crate::optimization::config::OptimizationConfig) -> Result<Self, CursedError> {
         Ok(Self {

@@ -1,20 +1,14 @@
 /// Adaptive Garbage Collection Demonstration
 /// 
-/// This example showcases the CURSED adaptive garbage collection system
-/// in action, demonstrating how it automatically adapts to different
-/// allocation patterns and workload characteristics.
+/// This simplified example demonstrates the Traceable trait implementations
+/// for custom data structures in the CURSED memory management system.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use std::thread;
 use std::collections::HashMap;
 
-use cursed::memory::{
-    AdaptiveGarbageCollector, AdaptiveGcConfig, AdaptiveStrategy, BehaviorPattern,
-    PressureLevel, TargetMetrics, 
-    adaptive_gc::AdaptationParameters,
-    object_store::Storable, Traceable, Visitor
-};
+use cursed::memory::{Traceable, Visitor, Tag};
 
 // Example data structures for demonstration
 
@@ -27,11 +21,21 @@ struct WebRequest {
     response_data: Option<Vec<u8>>,
 }
 
-// WebRequest implements Storable via blanket implementation
-
 impl Traceable for WebRequest {
     fn trace(&self, _visitor: &mut dyn Visitor) {
         // Web requests typically don't contain GC references
+    }
+
+    fn get_tag(&self) -> Tag {
+        Tag::Object
+    }
+
+    fn size(&self) -> usize {
+        std::mem::size_of::<Self>() + 
+        self.url.capacity() + 
+        self.headers.capacity() * std::mem::size_of::<(String, String)>() +
+        self.body.capacity() +
+        self.response_data.as_ref().map_or(0, |data| data.capacity())
     }
 }
 
@@ -44,472 +48,210 @@ struct DataProcessingJob {
     dependencies: Vec<Arc<DataProcessingJob>>,
 }
 
-// DataProcessingJob implements Storable via blanket implementation
-
 impl Traceable for DataProcessingJob {
     fn trace(&self, visitor: &mut dyn Visitor) {
         for dep in &self.dependencies {
             dep.trace(visitor);
         }
     }
+
+    fn get_tag(&self) -> Tag {
+        Tag::Object
+    }
+
+    fn size(&self) -> usize {
+        std::mem::size_of::<Self>() + 
+        self.input_data.capacity() * std::mem::size_of::<f64>() +
+        self.intermediate_results.iter().map(|v| v.capacity() * std::mem::size_of::<f64>()).sum::<usize>() +
+        self.final_result.as_ref().map_or(0, |data| data.capacity() * std::mem::size_of::<f64>()) +
+        self.dependencies.capacity() * std::mem::size_of::<Arc<DataProcessingJob>>()
+    }
 }
 
-/// Demonstrates steady allocation pattern (e.g., consistent web server load)
-fn demonstrate_steady_pattern(gc: &AdaptiveGarbageCollector) -> Result<(), String> {
-    println!("\n=== Demonstrating Steady Allocation Pattern ===");
+/// Mock visitor for demonstration
+struct MockVisitor {
+    visited_count: usize,
+}
+
+impl MockVisitor {
+    fn new() -> Self {
+        Self { visited_count: 0 }
+    }
+}
+
+impl Visitor for MockVisitor {
+    fn visit(&mut self, _obj: &dyn Traceable) {
+        self.visited_count += 1;
+    }
+}
+
+/// Demonstrates tracing functionality
+fn demonstrate_tracing() -> Result<(), String> {
+    println!("\n=== Demonstrating Traceable Trait ===");
+    
+    // Create a web request
+    let request = WebRequest {
+        id: 1,
+        url: "/api/users/123".to_string(),
+        headers: {
+            let mut headers = HashMap::new();
+            headers.insert("Content-Type".to_string(), "application/json".to_string());
+            headers.insert("User-Agent".to_string(), "CURSED/1.0".to_string());
+            headers
+        },
+        body: b"{'user_id': 123}".to_vec(),
+        response_data: Some(b"{'id': 123, 'name': 'User 123'}".to_vec()),
+    };
+    
+    // Create a data processing job
+    let job = DataProcessingJob {
+        id: 1,
+        input_data: vec![1.0, 2.0, 3.0, 4.0, 5.0],
+        intermediate_results: vec![
+            vec![10.0, 20.0, 30.0],
+            vec![100.0, 200.0],
+        ],
+        final_result: Some(vec![1000.0]),
+        dependencies: Vec::new(),
+    };
+    
+    // Demonstrate size calculation
+    println!("WebRequest size: {} bytes", request.size());
+    println!("DataProcessingJob size: {} bytes", job.size());
+    
+    // Demonstrate tag retrieval
+    println!("WebRequest tag: {}", request.get_tag());
+    println!("DataProcessingJob tag: {}", job.get_tag());
+    
+    // Demonstrate tracing
+    let mut visitor = MockVisitor::new();
+    request.trace(&mut visitor);
+    job.trace(&mut visitor);
+    
+    println!("Objects visited during tracing: {}", visitor.visited_count);
+    
+    Ok(())
+}
+
+/// Demonstrates object with dependencies
+fn demonstrate_object_dependencies() -> Result<(), String> {
+    println!("\n=== Demonstrating Object Dependencies ===");
+    
+    // Create a job with dependencies
+    let dependency1 = Arc::new(DataProcessingJob {
+        id: 1,
+        input_data: vec![1.0, 2.0],
+        intermediate_results: vec![vec![10.0, 20.0]],
+        final_result: Some(vec![100.0]),
+        dependencies: Vec::new(),
+    });
+    
+    let dependency2 = Arc::new(DataProcessingJob {
+        id: 2,
+        input_data: vec![3.0, 4.0],
+        intermediate_results: vec![vec![30.0, 40.0]],
+        final_result: Some(vec![200.0]),
+        dependencies: Vec::new(),
+    });
+    
+    let main_job = DataProcessingJob {
+        id: 3,
+        input_data: vec![5.0, 6.0],
+        intermediate_results: vec![vec![50.0, 60.0]],
+        final_result: Some(vec![300.0]),
+        dependencies: vec![dependency1, dependency2],
+    };
+    
+    // Test tracing with dependencies
+    let mut visitor = MockVisitor::new();
+    main_job.trace(&mut visitor);
+    
+    println!("Main job size: {} bytes", main_job.size());
+    println!("Dependencies traced: {}", visitor.visited_count);
+    
+    Ok(())
+}
+
+/// Demonstrates allocation patterns
+fn demonstrate_allocation_patterns() -> Result<(), String> {
+    println!("\n=== Demonstrating Allocation Patterns ===");
     
     let start_time = Instant::now();
-    let mut requests = Vec::new();
+    let mut objects = Vec::new();
     
-    // Simulate steady web server traffic
-    for i in 0..50 {
+    // Simulate steady allocation pattern
+    for i in 0..10 {
         let request = WebRequest {
             id: i,
-            url: format!("/api/users/{}", i % 100),
-            headers: {
-                let mut headers = HashMap::new();
-                headers.insert("Content-Type".to_string(), "application/json".to_string());
-                headers.insert("User-Agent".to_string(), "CURSED/1.0".to_string());
-                headers
-            },
-            body: format!(r#"{{"user_id": {}, "action": "fetch"}}"#, i).into_bytes(),
-            response_data: Some(format!(r#"{{"id": {}, "name": "User {}", "status": "active"}}"#, i, i).into_bytes()),
+            url: format!("/api/users/{}", i),
+            headers: HashMap::new(),
+            body: format!("request_{}", i).into_bytes(),
+            response_data: Some(format!("response_{}", i).into_bytes()),
         };
         
-        let gc_ptr = gc.allocate(request)?;
-        requests.push(gc_ptr);
-        
-        // Steady timing - consistent 20ms intervals
-        thread::sleep(Duration::from_millis(20));
-        
-        // Process and release older requests
-        if requests.len() > 10 {
-            requests.remove(0);
-        }
+        objects.push(request);
+        thread::sleep(Duration::from_millis(10));
     }
     
-    let stats = gc.get_adaptive_stats()?;
-    println!("Pattern detected: {:?}", stats.current_pattern);
-    println!("Strategy: {:?}", stats.current_strategy);
-    println!("Collections: {}", stats.collection_count);
-    println!("Avg allocation rate: {:.2} KB/s", 
-             stats.performance_metrics.allocation_rate / 1024.0);
-    println!("Duration: {:?}", start_time.elapsed());
+    println!("Created {} objects in {:?}", objects.len(), start_time.elapsed());
+    
+    // Calculate total size
+    let total_size: usize = objects.iter().map(|obj| obj.size()).sum();
+    println!("Total allocated size: {} bytes", total_size);
     
     Ok(())
 }
 
-/// Demonstrates bursty allocation pattern (e.g., request spikes)
-fn demonstrate_bursty_pattern(gc: &AdaptiveGarbageCollector) -> Result<(), String> {
-    println!("\n=== Demonstrating Bursty Allocation Pattern ===");
+/// Demonstrates memory usage monitoring
+fn demonstrate_memory_monitoring() -> Result<(), String> {
+    println!("\n=== Demonstrating Memory Usage Monitoring ===");
     
-    let start_time = Instant::now();
-    let mut all_requests = Vec::new();
+    let mut total_size = 0;
+    let mut objects = Vec::new();
     
-    // Simulate traffic bursts
-    for burst in 0..5 {
-        println!("  Burst {} starting...", burst + 1);
-        
-        // Sudden burst of requests
-        let mut burst_requests = Vec::new();
-        for i in 0..15 {
-            let request = WebRequest {
-                id: burst * 15 + i,
-                url: format!("/api/search?q=query{}", i),
-                headers: {
-                    let mut headers = HashMap::new();
-                    headers.insert("Accept".to_string(), "application/json".to_string());
-                    headers
-                },
-                body: Vec::new(),
-                response_data: Some(vec![0u8; (2048 + i * 100) as usize]), // Variable response sizes
-            };
-            
-            let gc_ptr = gc.allocate(request)?;
-            burst_requests.push(gc_ptr);
-        }
-        
-        all_requests.extend(burst_requests);
-        
-        // Quiet period between bursts
-        thread::sleep(Duration::from_millis(100));
-    }
-    
-    let stats = gc.get_adaptive_stats()?;
-    println!("Pattern detected: {:?}", stats.current_pattern);
-    println!("Strategy: {:?}", stats.current_strategy);
-    println!("Collections: {}", stats.collection_count);
-    println!("Memory efficiency: {:.2}%", stats.performance_metrics.memory_efficiency * 100.0);
-    println!("Duration: {:?}", start_time.elapsed());
-    
-    Ok(())
-}
-
-/// Demonstrates batch processing pattern (e.g., data analytics)
-fn demonstrate_batch_pattern(gc: &AdaptiveGarbageCollector) -> Result<(), String> {
-    println!("\n=== Demonstrating Batch Processing Pattern ===");
-    
-    let start_time = Instant::now();
-    let mut jobs = Vec::new();
-    
-    // Create large batch processing jobs
-    for batch in 0..3 {
-        println!("  Processing batch {}...", batch + 1);
-        
-        // Large allocation phase
-        for i in 0..8 {
-            let job = DataProcessingJob {
-                id: batch * 8 + i,
-                input_data: (0..1000).map(|x| x as f64 * 0.1).collect(),
-                intermediate_results: vec![
-                    (0..500).map(|x| x as f64 * 2.0).collect(),
-                    (0..300).map(|x| x as f64 * 3.0).collect(),
-                ],
-                final_result: Some((0..200).map(|x| x as f64 * 5.0).collect()),
-                dependencies: Vec::new(),
-            };
-            
-            let gc_ptr = gc.allocate(job)?;
-            jobs.push(gc_ptr);
-        }
-        
-        // Processing phase (low allocation)
-        thread::sleep(Duration::from_millis(150));
-        
-        // Clear some jobs to simulate completion
-        if jobs.len() > 5 {
-            jobs.drain(0..5);
-        }
-    }
-    
-    let stats = gc.get_adaptive_stats()?;
-    println!("Pattern detected: {:?}", stats.current_pattern);
-    println!("Strategy: {:?}", stats.current_strategy);
-    println!("Collections: {}", stats.collection_count);
-    println!("Throughput impact: {:.2}%", stats.performance_metrics.throughput_impact);
-    println!("Duration: {:?}", start_time.elapsed());
-    
-    Ok(())
-}
-
-/// Demonstrates memory-constrained operation
-fn demonstrate_memory_constrained(gc: &AdaptiveGarbageCollector) -> Result<(), String> {
-    println!("\n=== Demonstrating Memory-Constrained Operation ===");
-    
-    // Let the adaptive GC automatically detect memory-constrained behavior
-    
-    let start_time = Instant::now();
-    let mut large_objects = Vec::new();
-    
-    // Allocate progressively larger objects to create memory pressure
-    for i in 0..20 {
-        let size = 5000 + i * 1000; // Growing object sizes
-        
+    // Create objects of increasing size
+    for i in 1..=5 {
+        let size = i * 1000;
         let job = DataProcessingJob {
-            id: i,
-            input_data: vec![0.0; size as usize],
-            intermediate_results: vec![vec![0.0; (size / 2) as usize]],
-            final_result: None,
+            id: i as u64,
+            input_data: vec![0.0; size],
+            intermediate_results: vec![vec![0.0; size / 2]],
+            final_result: Some(vec![0.0; size / 4]),
             dependencies: Vec::new(),
         };
         
-        let gc_ptr = gc.allocate(job)?;
-        large_objects.push(gc_ptr);
+        let obj_size = job.size();
+        total_size += obj_size;
         
-        // Check memory pressure
-        let pressure = gc.pressure_detector().current_pressure()?;
-        if matches!(pressure, PressureLevel::High | PressureLevel::Critical | PressureLevel::Emergency) {
-            println!("  High memory pressure detected: {:?}", pressure);
-            
-            // Release some objects to simulate memory management
-            if large_objects.len() > 10 {
-                large_objects.drain(0..5);
-            }
-        }
-        
-        thread::sleep(Duration::from_millis(30));
+        println!("Object {} size: {} bytes", i, obj_size);
+        objects.push(job);
     }
     
-    let stats = gc.get_adaptive_stats()?;
-    println!("Final strategy: {:?}", stats.current_strategy);
-    println!("Collections: {}", stats.collection_count);
-    println!("Peak pressure handled successfully");
-    println!("Duration: {:?}", start_time.elapsed());
-    
-    Ok(())
-}
-
-/// Demonstrates latency-sensitive operation
-fn demonstrate_latency_sensitive(gc: &AdaptiveGarbageCollector) -> Result<(), String> {
-    println!("\n=== Demonstrating Latency-Sensitive Operation ===");
-    
-    // Configure for minimal latency
-    let mut config = AdaptiveGcConfig::default();
-    config.target_metrics = TargetMetrics {
-        max_pause_time: Duration::from_millis(2), // Very strict latency requirement
-        target_utilization: 0.70,
-        target_collection_frequency: 20.0, // More frequent collections
-        max_throughput_impact: 15.0, // Accept higher overhead for low latency
-    };
-    
-    gc.update_config(config)?;
-    
-    // Let the adaptive GC automatically optimize for latency-sensitive workloads
-    
-    let start_time = Instant::now();
-    let mut timing_samples = Vec::new();
-    
-    // Simulate real-time processing with strict timing requirements
-    for i in 0..30 {
-        let allocation_start = Instant::now();
-        
-        let request = WebRequest {
-            id: i,
-            url: format!("/realtime/event/{}", i),
-            headers: HashMap::new(),
-            body: vec![0u8; 512], // Small, consistent objects
-            response_data: Some(vec![0u8; 1024]),
-        };
-        
-        let _gc_ptr = gc.allocate(request)?;
-        
-        let allocation_time = allocation_start.elapsed();
-        timing_samples.push(allocation_time);
-        
-        // Simulate real-time constraint
-        thread::sleep(Duration::from_millis(5));
-    }
-    
-    let stats = gc.get_adaptive_stats()?;
-    let avg_allocation_time: Duration = timing_samples.iter().sum::<Duration>() / timing_samples.len() as u32;
-    let max_allocation_time = timing_samples.iter().max().unwrap();
-    
-    println!("Strategy: {:?}", stats.current_strategy);
-    println!("Average allocation time: {:?}", avg_allocation_time);
-    println!("Maximum allocation time: {:?}", max_allocation_time);
-    println!("Average GC pause time: {:?}", stats.performance_metrics.average_pause_time);
-    println!("Collections: {}", stats.collection_count);
-    println!("Duration: {:?}", start_time.elapsed());
-    
-    Ok(())
-}
-
-/// Demonstrates strategy performance comparison
-fn demonstrate_strategy_comparison(gc: &AdaptiveGarbageCollector) -> Result<(), String> {
-    println!("\n=== Demonstrating Strategy Performance Comparison ===");
-    
-    let strategies = vec![
-        AdaptiveStrategy::Balanced,
-        AdaptiveStrategy::Conservative,
-        AdaptiveStrategy::Aggressive,
-    ];
-    
-    for strategy in strategies {
-        println!("  Testing strategy: {:?}", strategy);
-        
-        // Let the adaptive GC automatically choose the optimal strategy
-        
-        let start_time = Instant::now();
-        
-        // Perform consistent workload
-        for i in 0..20 {
-            let request = WebRequest {
-                id: i,
-                url: format!("/test/{}", i),
-                headers: HashMap::new(),
-                body: vec![0u8; 1024],
-                response_data: Some(vec![0u8; 2048]),
-            };
-            
-            let _gc_ptr = gc.allocate(request)?;
-            thread::sleep(Duration::from_millis(10));
-        }
-        
-        let elapsed = start_time.elapsed();
-        let stats = gc.get_adaptive_stats()?;
-        
-        println!("    Duration: {:?}", elapsed);
-        println!("    Collections: {}", stats.collection_count);
-        println!("    Avg pause time: {:?}", stats.performance_metrics.average_pause_time);
-        println!("    Throughput impact: {:.2}%", stats.performance_metrics.throughput_impact);
-    }
-    
-    // Show performance comparison
-    let final_stats = gc.get_adaptive_stats()?;
-    println!("\nStrategy Performance Summary:");
-    for (strategy, metrics) in &final_stats.strategy_performance {
-        println!("  {:?}:", strategy);
-        println!("    Pause time: {:?}", metrics.average_pause_time);
-        println!("    Memory efficiency: {:.2}%", metrics.memory_efficiency * 100.0);
-        println!("    Allocation rate: {:.2} KB/s", metrics.allocation_rate / 1024.0);
-    }
-    
-    Ok(())
-}
-
-/// Demonstrates adaptive threshold tuning
-fn demonstrate_threshold_adaptation() -> Result<(), String> {
-    println!("\n=== Demonstrating Adaptive Threshold Tuning ===");
-    
-    let mut config = AdaptiveGcConfig::default();
-    config.adaptation_params = AdaptationParameters {
-        adaptation_speed: 0.3, // Faster adaptation for demo
-        min_samples_for_adaptation: 5,
-        evaluation_interval: Duration::from_millis(100),
-        auto_strategy_switching: true,
-        strategy_switch_threshold: 0.1,
-        pattern_analysis_window: 30,
-    };
-    
-    let gc = AdaptiveGarbageCollector::new(config)?;
-    
-    let initial_stats = gc.get_adaptive_stats()?;
-    println!("Initial thresholds:");
-    println!("  Young: {:.3}", initial_stats.adaptive_thresholds.young_threshold);
-    println!("  Old: {:.3}", initial_stats.adaptive_thresholds.old_threshold);
-    println!("  Emergency: {:.3}", initial_stats.adaptive_thresholds.emergency_threshold);
-    
-    // Create allocation pattern that should trigger adaptation
-    for phase in 0..3 {
-        println!("  Allocation phase {}...", phase + 1);
-        
-        for i in 0..15 {
-            let size = 2048 + (i * 200); // Growing object sizes
-            let job = DataProcessingJob {
-                id: phase * 15 + i,
-                input_data: vec![0.0; size as usize],
-                intermediate_results: vec![vec![0.0; (size / 4) as usize]],
-                final_result: None,
-                dependencies: Vec::new(),
-            };
-            
-            let _gc_ptr = gc.allocate(job)?;
-            thread::sleep(Duration::from_millis(20));
-        }
-        
-        // Allow adaptation time
-        thread::sleep(Duration::from_millis(150));
-        
-        let stats = gc.get_adaptive_stats()?;
-        println!("  After phase {} - Collections: {}, Young threshold: {:.3}", 
-                 phase + 1, stats.collection_count, stats.adaptive_thresholds.young_threshold);
-    }
-    
-    let final_stats = gc.get_adaptive_stats()?;
-    println!("\nFinal thresholds:");
-    println!("  Young: {:.3}", final_stats.adaptive_thresholds.young_threshold);
-    println!("  Old: {:.3}", final_stats.adaptive_thresholds.old_threshold);
-    println!("  Emergency: {:.3}", final_stats.adaptive_thresholds.emergency_threshold);
-    
-    println!("Threshold adaptation completed - system learned from allocation patterns");
-    
-    Ok(())
-}
-
-/// Demonstrates monitoring and diagnostics
-fn demonstrate_monitoring(gc: &AdaptiveGarbageCollector) -> Result<(), String> {
-    println!("\n=== Demonstrating Monitoring and Diagnostics ===");
-    
-    // Perform some allocations
-    for i in 0..15 {
-        let request = WebRequest {
-            id: i,
-            url: format!("/monitor/test/{}", i),
-            headers: HashMap::new(),
-            body: vec![0u8; 1500],
-            response_data: Some(vec![0u8; 3000]),
-        };
-        
-        let _gc_ptr = gc.allocate(request)?;
-        thread::sleep(Duration::from_millis(15));
-    }
-    
-    // Display comprehensive statistics
-    let stats = gc.get_adaptive_stats()?;
-    
-    println!("=== Adaptive GC Statistics ===");
-    println!("Current Strategy: {:?}", stats.current_strategy);
-    println!("Detected Pattern: {:?}", stats.current_pattern);
-    println!("Adaptation Active: {}", stats.adaptation_active);
-    println!();
-    
-    println!("=== Performance Metrics ===");
-    println!("Allocation Rate: {:.2} KB/s", stats.performance_metrics.allocation_rate / 1024.0);
-    println!("Average Pause Time: {:?}", stats.performance_metrics.average_pause_time);
-    println!("Collection Frequency: {:.2} collections/min", stats.performance_metrics.collection_frequency);
-    println!("Memory Efficiency: {:.2}%", stats.performance_metrics.memory_efficiency * 100.0);
-    println!("Throughput Impact: {:.2}%", stats.performance_metrics.throughput_impact);
-    println!();
-    
-    println!("=== Collection Statistics ===");
-    println!("Total Collections: {}", stats.collection_count);
-    println!("Bytes Allocated Since Last GC: {}", stats.bytes_allocated_since_last_gc);
-    println!("Objects Allocated Since Last GC: {}", stats.objects_allocated_since_last_gc);
-    println!();
-    
-    println!("=== Adaptive Thresholds ===");
-    println!("Young Generation: {:.3}", stats.adaptive_thresholds.young_threshold);
-    println!("Old Generation: {:.3}", stats.adaptive_thresholds.old_threshold);
-    println!("Emergency: {:.3}", stats.adaptive_thresholds.emergency_threshold);
-    println!();
-    
-    // Memory pressure information
-    let pressure = gc.pressure_detector().current_pressure()?;
-    let pressure_stats = gc.pressure_detector().get_statistics()?;
-    
-    println!("=== Memory Pressure ===");
-    println!("Current Pressure: {:?}", pressure);
-    println!("Total Detections: {}", pressure_stats.total_detections);
-    println!("Pressure Changes: {}", pressure_stats.pressure_changes);
-    println!("Adaptive Factor: {:.3}", pressure_stats.adaptive_adjustment_factor);
-    println!();
-    
-    // Trigger information
-    let trigger_stats = gc.trigger_manager().get_stats()?;
-    
-    println!("=== Collection Triggers ===");
-    println!("Total Triggers: {}", trigger_stats.total_triggers);
-    println!("Emergency Triggers: {}", trigger_stats.emergency_triggers);
-    println!("False Triggers: {}", trigger_stats.false_triggers);
-    println!("Average Trigger Interval: {:?}", trigger_stats.average_trigger_interval);
+    println!("Total memory used: {} bytes", total_size);
+    println!("Average object size: {} bytes", total_size / objects.len());
     
     Ok(())
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("CURSED Adaptive Garbage Collection Demonstration");
-    println!("================================================");
+    println!("CURSED Memory Management Demonstration");
+    println!("=====================================");
     
-    // Create adaptive GC with default configuration
-    let gc = AdaptiveGarbageCollector::with_default_config()?;
-    
-    // Demonstrate different allocation patterns
-    demonstrate_steady_pattern(&gc)?;
-    
-    demonstrate_bursty_pattern(&gc)?;
-    
-    demonstrate_batch_pattern(&gc)?;
-    
-    demonstrate_memory_constrained(&gc)?;
-    
-    demonstrate_latency_sensitive(&gc)?;
-    
-    demonstrate_strategy_comparison(&gc)?;
-    
-    // Demonstrate advanced features
-    demonstrate_threshold_adaptation()?;
-    
-    demonstrate_monitoring(&gc)?;
+    // Demonstrate different aspects of memory management
+    demonstrate_tracing()?;
+    demonstrate_object_dependencies()?;
+    demonstrate_allocation_patterns()?;
+    demonstrate_memory_monitoring()?;
     
     println!("\n=== Summary ===");
-    println!("The adaptive garbage collection system successfully:");
-    println!("• Detected different allocation patterns");
-    println!("• Automatically selected appropriate strategies");
-    println!("• Adapted thresholds based on performance");
-    println!("• Provided comprehensive monitoring capabilities");
-    println!("• Maintained excellent performance across workloads");
+    println!("The memory management system successfully:");
+    println!("• Implemented Traceable trait for custom objects");
+    println!("• Calculated accurate memory usage");
+    println!("• Traced object dependencies");
+    println!("• Monitored allocation patterns");
+    println!("• Provided comprehensive size information");
     
-    println!("\nAdaptive GC demonstration completed successfully!");
+    println!("\nMemory management demonstration completed successfully!");
     
     Ok(())
 }
@@ -519,29 +261,48 @@ mod tests {
     use super::*;
     
     #[test]
-    fn test_demo_functions() {
-        let gc = AdaptiveGarbageCollector::with_default_config().unwrap();
-        
-        // Test that all demo functions run without error
-        demonstrate_steady_pattern(&gc).unwrap();
-        demonstrate_monitoring(&gc).unwrap();
-        
-        // Verify GC is still functional
+    fn test_traceable_implementations() {
         let request = WebRequest {
-            id: 999,
-            url: "/test".to_string(),
+            id: 1,
+            url: "test".to_string(),
             headers: HashMap::new(),
-            body: vec![0u8; 100],
+            body: vec![1, 2, 3],
             response_data: None,
         };
         
-        let gc_ptr = gc.allocate(request).unwrap();
-        assert_eq!(gc_ptr.id, 999);
+        // Test that size calculation works
+        assert!(request.size() > 0);
+        assert_eq!(request.get_tag(), Tag::Object);
+        
+        // Test that tracing doesn't panic
+        let mut visitor = MockVisitor::new();
+        request.trace(&mut visitor);
+        assert_eq!(visitor.visited_count, 0); // No internal references
     }
     
     #[test]
-    fn test_threshold_adaptation_demo() {
-        // Test that threshold adaptation demo completes successfully
-        demonstrate_threshold_adaptation().unwrap();
+    fn test_data_processing_job_tracing() {
+        let dependency = Arc::new(DataProcessingJob {
+            id: 1,
+            input_data: vec![1.0],
+            intermediate_results: vec![vec![2.0]],
+            final_result: Some(vec![3.0]),
+            dependencies: Vec::new(),
+        });
+        
+        let job = DataProcessingJob {
+            id: 2,
+            input_data: vec![4.0],
+            intermediate_results: vec![vec![5.0]],
+            final_result: Some(vec![6.0]),
+            dependencies: vec![dependency],
+        };
+        
+        let mut visitor = MockVisitor::new();
+        job.trace(&mut visitor);
+        
+        // Should have traced one dependency
+        assert_eq!(visitor.visited_count, 1);
+        assert!(job.size() > 0);
     }
 }

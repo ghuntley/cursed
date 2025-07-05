@@ -154,6 +154,33 @@ impl Default for BuildConfig {
     }
 }
 
+impl BuildConfig {
+    /// Create a default build configuration for a specific project type
+    pub fn default_for_project(name: &str, project_type: crate::build_system::ProjectType) -> Self {
+        let mut config = Self::default();
+        
+        match project_type {
+            crate::build_system::ProjectType::Binary | crate::build_system::ProjectType::Executable => {
+                config.main_file = Some(PathBuf::from("src/main.rs"));
+            },
+            crate::build_system::ProjectType::Library => {
+                config.main_file = Some(PathBuf::from("src/lib.rs"));
+            },
+            crate::build_system::ProjectType::Test => {
+                config.source_dirs = vec![PathBuf::from("tests")];
+                config.build_mode = BuildMode::Debug;
+            },
+            crate::build_system::ProjectType::Benchmark => {
+                config.source_dirs = vec![PathBuf::from("benches")];
+                config.build_mode = BuildMode::Release;
+            },
+        }
+        
+        config.project_root = PathBuf::from(name);
+        config
+    }
+}
+
 impl BuildPipeline {
     /// Create a new build pipeline with the given configuration
     pub fn new(config: BuildConfig) -> Result<Self> {
