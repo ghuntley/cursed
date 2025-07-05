@@ -8,7 +8,7 @@ use cursed::error::CursedError;
 fn test_println_string() {
     // Test basic println functionality through execution engine
     let code = r#"
-        println("Hello from JIT!");
+        vibez.spill("Hello from JIT!");
     "#;
     
     // Create execution engine
@@ -22,10 +22,10 @@ fn test_println_string() {
 #[test]
 fn test_basic_arithmetic() {
     let code = r#"
-        let x = 10;
-        let y = 20;
-        let result = x + y;
-        println(result);
+        sus x = 10;
+        sus y = 20;
+        sus result = x + y;
+        vibez.spill(result);
     "#;
     
     let mut engine = CursedExecutionEngine::new().unwrap();
@@ -36,27 +36,28 @@ fn test_basic_arithmetic() {
 #[test]
 fn test_function_call() {
     let code = r#"
-        func add(x: int, y: int) -> int {
-            return x + y;
+        slay add(x normie, y normie) normie {
+            yolo x + y;
         }
         
-        let result = add(5, 3);
-        println(result);
+        sus result = add(5, 3);
+        vibez.spill(result);
     "#;
     
     let mut engine = CursedExecutionEngine::new().unwrap();
     let result = engine.execute(code);
+
     assert!(result.is_ok());
 }
 
 #[test]
 fn test_control_flow() {
     let code = r#"
-        let x = 10;
-        if x > 5 {
-            println("x is greater than 5");
-        } else {
-            println("x is not greater than 5");
+        sus x = 10;
+        lowkey x > 5 {
+            vibez.spill("x is greater than 5");
+        } highkey {
+            vibez.spill("x is not greater than 5");
         }
     "#;
     
@@ -68,12 +69,18 @@ fn test_control_flow() {
 #[test]
 fn test_loop_execution() {
     let code = r#"
-        for i in 0..3 {
-            println(i);
+        slay main() normie {
+            bestie i in 0..3 {
+                vibez.spill(i);
+            }
+            yolo 0;
         }
+        
+        sus result = main();
     "#;
     
     let mut engine = CursedExecutionEngine::new().unwrap();
     let result = engine.execute(code);
+
     assert!(result.is_ok());
 }
