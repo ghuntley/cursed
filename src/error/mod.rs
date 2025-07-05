@@ -51,6 +51,7 @@ pub enum Error {
     Compiler(String),
     Io(String),
     General(String),
+    Other(String),
 }
 
 impl std::fmt::Display for CursedError {
@@ -77,6 +78,23 @@ impl std::fmt::Display for CursedError {
 }
 
 impl std::error::Error for CursedError {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::Syntax(msg) => write!(f, "Syntax error: {}", msg),
+            Error::Type(msg) => write!(f, "Type error: {}", msg),
+            Error::Runtime(msg) => write!(f, "Runtime error: {}", msg),
+            Error::Import(msg) => write!(f, "Import error: {}", msg),
+            Error::Compiler(msg) => write!(f, "Compiler error: {}", msg),
+            Error::Io(msg) => write!(f, "IO error: {}", msg),
+            Error::General(msg) => write!(f, "Error: {}", msg),
+            Error::Other(msg) => write!(f, "Other error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for Error {}
 
 // From trait implementations for error conversions
 impl From<crate::stdlib::packages::CryptoError> for CursedError {
@@ -225,5 +243,20 @@ impl From<std::net::AddrParseError> for CursedError {
 impl From<Box<dyn std::error::Error>> for CursedError {
     fn from(error: Box<dyn std::error::Error>) -> Self {
         CursedError::General(error.to_string())
+    }
+}
+
+impl From<Error> for CursedError {
+    fn from(error: Error) -> Self {
+        match error {
+            Error::Syntax(msg) => CursedError::SyntaxError(msg),
+            Error::Type(msg) => CursedError::TypeError(msg),
+            Error::Runtime(msg) => CursedError::RuntimeError(msg),
+            Error::Import(msg) => CursedError::ImportError(msg),
+            Error::Compiler(msg) => CursedError::CompilerError(msg),
+            Error::Io(msg) => CursedError::Io(msg),
+            Error::General(msg) => CursedError::General(msg),
+            Error::Other(msg) => CursedError::General(msg),
+        }
     }
 }
