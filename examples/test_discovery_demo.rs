@@ -37,6 +37,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ".git/**".to_string(),
             "*.bak".to_string(),
         ],
+        search_paths: vec![work_dir.join("tests"), work_dir.join("src")],
+        test_patterns: vec!["*_test.rs".to_string(), "*test*.rs".to_string()],
     };
     
     let test_discovery = TestDiscovery::new(discovery_config)?;

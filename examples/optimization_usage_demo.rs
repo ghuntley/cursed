@@ -19,6 +19,9 @@ fn main() -> Result<()> {
     // 1. Create optimization manager with baseline comparison
     let temp_dir = tempdir().unwrap();
     let baseline_config = BaselineComparisonConfig {
+        tolerance: 0.05,
+        min_samples: 10,
+        confidence_level: 0.95,
         regression_threshold_percent: 5.0,
         improvement_threshold_percent: 5.0,
         min_confidence_level: 0.8,

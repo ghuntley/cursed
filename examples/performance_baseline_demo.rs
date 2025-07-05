@@ -90,6 +90,11 @@ fn benchmark_comparison_demo() -> Result<()> {
         tolerance: 0.05, // 5% tolerance
         min_samples: 3,
         confidence_level: 0.95,
+        regression_threshold_percent: 5.0,
+        improvement_threshold_percent: 5.0,
+        min_confidence_level: 0.8,
+        max_baseline_age_days: 30,
+        use_statistical_testing: true,
     };
 
     let comparator = BaselineComparator::new(config);
@@ -211,6 +216,8 @@ fn baseline_metadata_demo() -> Result<()> {
         arch: "x86_64".to_string(),
         cpu_count: 8,
         memory_gb: 16.0,
+        cpu_cores: 8,
+        memory_mb: 16384,
     };
 
     // Create baseline metadata

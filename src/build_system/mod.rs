@@ -121,23 +121,60 @@ impl TestDiscovery {
     }
     
     pub fn discover_tests(&self) -> Result<TestDiscoveryResult, crate::error::CursedError> {
+        let unit_tests = vec![
+            TestInfo {
+                name: "example_unit_test".to_string(),
+                path: std::path::PathBuf::from("tests/unit_test.rs"),
+                category: TestCategory::Unit,
+                file_path: std::path::PathBuf::from("tests/unit_test.rs"),
+                line_number: 10,
+                ignored: false,
+                is_benchmark: false,
+            }
+        ];
+        let integration_tests = vec![
+            TestInfo {
+                name: "example_integration_test".to_string(),
+                path: std::path::PathBuf::from("tests/integration_test.rs"),
+                category: TestCategory::Integration,
+                file_path: std::path::PathBuf::from("tests/integration_test.rs"),
+                line_number: 15,
+                ignored: false,
+                is_benchmark: false,
+            }
+        ];
+        let ignored_tests = Vec::new();
+        
+        let mut all_tests = unit_tests.clone();
+        all_tests.extend(integration_tests.clone());
+        all_tests.extend(ignored_tests.clone());
+        
+        let statistics = TestStatistics {
+            total_tests: all_tests.len(),
+            unit_tests: unit_tests.len(),
+            integration_tests: integration_tests.len(),
+            ignored_tests: ignored_tests.len(),
+            benchmark_tests: 0,
+            files_scanned: 2,
+            test_files_found: 2,
+        };
+        
         Ok(TestDiscoveryResult {
-            unit_tests: vec![
-                TestInfo {
-                    name: "example_unit_test".to_string(),
-                    path: std::path::PathBuf::from("tests/unit_test.rs"),
-                    category: TestCategory::Unit,
-                }
-            ],
-            integration_tests: vec![
-                TestInfo {
-                    name: "example_integration_test".to_string(),
-                    path: std::path::PathBuf::from("tests/integration_test.rs"),
-                    category: TestCategory::Integration,
-                }
-            ],
-            ignored_tests: Vec::new(),
+            unit_tests,
+            integration_tests,
+            ignored_tests,
+            tests: all_tests,
+            statistics,
         })
+    }
+    
+    pub fn filter_tests(&self, result: &TestDiscoveryResult, patterns: &[String]) -> Vec<TestInfo> {
+        result.tests.iter()
+            .filter(|test| {
+                patterns.iter().any(|pattern| test.name.contains(pattern))
+            })
+            .cloned()
+            .collect()
     }
 }
 
@@ -147,6 +184,19 @@ pub struct TestDiscoveryResult {
     pub unit_tests: Vec<TestInfo>,
     pub integration_tests: Vec<TestInfo>,
     pub ignored_tests: Vec<TestInfo>,
+    pub tests: Vec<TestInfo>,
+    pub statistics: TestStatistics,
+}
+
+#[derive(Debug, Clone)]
+pub struct TestStatistics {
+    pub total_tests: usize,
+    pub unit_tests: usize,
+    pub integration_tests: usize,
+    pub ignored_tests: usize,
+    pub benchmark_tests: usize,
+    pub files_scanned: usize,
+    pub test_files_found: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -154,6 +204,10 @@ pub struct TestInfo {
     pub name: String,
     pub path: std::path::PathBuf,
     pub category: TestCategory,
+    pub file_path: std::path::PathBuf,
+    pub line_number: usize,
+    pub ignored: bool,
+    pub is_benchmark: bool,
 }
 
 impl TestFilter {
@@ -163,6 +217,16 @@ impl TestFilter {
             unit_tests: Vec::new(),
             integration_tests: Vec::new(),
             ignored_tests: Vec::new(),
+            tests: Vec::new(),
+            statistics: TestStatistics {
+                total_tests: 0,
+                unit_tests: 0,
+                integration_tests: 0,
+                ignored_tests: 0,
+                benchmark_tests: 0,
+                files_scanned: 0,
+                test_files_found: 0,
+            },
         }
     }
 }

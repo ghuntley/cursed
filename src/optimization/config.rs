@@ -593,6 +593,134 @@ impl From<&str> for OptimizationLevel {
     }
 }
 
+/// Optimization profile combining multiple configuration aspects
+#[derive(Debug, Clone)]
+pub struct OptimizationProfile {
+    pub name: String,
+    pub config: OptimizationConfig,
+    pub description: String,
+    pub use_cases: Vec<String>,
+    pub estimated_build_time_factor: f64,
+    pub estimated_performance_gain: f64,
+}
+
+impl OptimizationProfile {
+    /// Create a new optimization profile
+    pub fn new(name: String, config: OptimizationConfig) -> Self {
+        Self {
+            name: name.clone(),
+            config,
+            description: format!("Optimization profile: {}", name),
+            use_cases: Vec::new(),
+            estimated_build_time_factor: 1.0,
+            estimated_performance_gain: 1.0,
+        }
+    }
+
+    /// Create development profile
+    pub fn development() -> Self {
+        Self {
+            name: "Development".to_string(),
+            config: OptimizationConfig::for_development(),
+            description: "Fast compilation with basic optimizations".to_string(),
+            use_cases: vec![
+                "Development builds".to_string(),
+                "Debug builds".to_string(),
+                "Rapid iteration".to_string(),
+            ],
+            estimated_build_time_factor: 0.8,
+            estimated_performance_gain: 1.1,
+        }
+    }
+
+    /// Create production profile
+    pub fn production() -> Self {
+        Self {
+            name: "Production".to_string(),
+            config: OptimizationConfig::for_production(),
+            description: "Maximum performance optimizations".to_string(),
+            use_cases: vec![
+                "Production releases".to_string(),
+                "Performance-critical applications".to_string(),
+                "Final builds".to_string(),
+            ],
+            estimated_build_time_factor: 1.8,
+            estimated_performance_gain: 1.6,
+        }
+    }
+
+    /// Create size-optimized profile
+    pub fn size_optimized() -> Self {
+        Self {
+            name: "Size".to_string(),
+            config: OptimizationConfig::size_optimized(),
+            description: "Optimize for binary size".to_string(),
+            use_cases: vec![
+                "Embedded systems".to_string(),
+                "WebAssembly targets".to_string(),
+                "Size-constrained environments".to_string(),
+            ],
+            estimated_build_time_factor: 1.2,
+            estimated_performance_gain: 1.0,
+        }
+    }
+
+    /// Create balanced profile
+    pub fn balanced() -> Self {
+        Self {
+            name: "Balanced".to_string(),
+            config: OptimizationConfig::new(OptimizationLevel::Default),
+            description: "Balanced compilation time and performance".to_string(),
+            use_cases: vec![
+                "General purpose builds".to_string(),
+                "CI/CD pipelines".to_string(),
+                "Default builds".to_string(),
+            ],
+            estimated_build_time_factor: 1.0,
+            estimated_performance_gain: 1.3,
+        }
+    }
+
+    /// Get all available profiles
+    pub fn all_profiles() -> Vec<Self> {
+        vec![
+            Self::development(),
+            Self::balanced(),
+            Self::production(),
+            Self::size_optimized(),
+        ]
+    }
+
+    /// Find profile by name
+    pub fn by_name(name: &str) -> Option<Self> {
+        match name.to_lowercase().as_str() {
+            "development" | "dev" => Some(Self::development()),
+            "production" | "prod" => Some(Self::production()),
+            "size" | "min" => Some(Self::size_optimized()),
+            "balanced" | "default" => Some(Self::balanced()),
+            _ => None,
+        }
+    }
+
+    /// Add use case to profile
+    pub fn add_use_case(&mut self, use_case: String) {
+        if !self.use_cases.contains(&use_case) {
+            self.use_cases.push(use_case);
+        }
+    }
+
+    /// Set estimated factors
+    pub fn set_estimates(&mut self, build_time_factor: f64, performance_gain: f64) {
+        self.estimated_build_time_factor = build_time_factor;
+        self.estimated_performance_gain = performance_gain;
+    }
+
+    /// Check if profile is suitable for use case
+    pub fn is_suitable_for(&self, use_case: &str) -> bool {
+        self.use_cases.iter().any(|uc| uc.to_lowercase().contains(&use_case.to_lowercase()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
