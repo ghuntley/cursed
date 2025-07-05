@@ -1426,6 +1426,52 @@ pub extern "C" fn string_levenshtein_distance(str1_ptr: *const c_char, str2_ptr:
 
 use std::net::{TcpStream, TcpListener, ToSocketAddrs, SocketAddr, IpAddr};
 use std::io::{Read as IoRead, Write as IoWrite};
+use std::sync::{Arc, Mutex};
+
+/// Socket types that can be stored in the registry
+#[derive(Debug)]
+pub enum SocketType {
+    TcpStream(TcpStream),
+    TcpListener(TcpListener),
+}
+
+/// Socket registry to manage active sockets by ID
+pub struct SocketRegistry {
+    sockets: HashMap<i32, SocketType>,
+    next_id: i32,
+}
+
+impl SocketRegistry {
+    fn new() -> Self {
+        Self {
+            sockets: HashMap::new(),
+            next_id: 1,
+        }
+    }
+
+    fn register_socket(&mut self, socket: SocketType) -> i32 {
+        let id = self.next_id;
+        self.next_id += 1;
+        self.sockets.insert(id, socket);
+        id
+    }
+
+    fn get_socket(&self, id: i32) -> Option<&SocketType> {
+        self.sockets.get(&id)
+    }
+
+    fn get_socket_mut(&mut self, id: i32) -> Option<&mut SocketType> {
+        self.sockets.get_mut(&id)
+    }
+
+    fn remove_socket(&mut self, id: i32) -> Option<SocketType> {
+        self.sockets.remove(&id)
+    }
+}
+
+/// Global socket registry instance
+static SOCKET_REGISTRY: std::sync::LazyLock<Arc<Mutex<SocketRegistry>>> = 
+    std::sync::LazyLock::new(|| Arc::new(Mutex::new(SocketRegistry::new())));
 
 /// Connect to a TCP server (implementation for network_tcp_connect)
 #[no_mangle]
@@ -1440,9 +1486,13 @@ pub extern "C" fn network_tcp_connect(host_ptr: *const c_char, port: u16) -> i32
                 let addr = format!("{}:{}", host, port);
                 match TcpStream::connect(&addr) {
                     Ok(stream) => {
-                        // Store stream in a global registry for later use
-                        // For now, return a dummy socket descriptor
-                        1 // Success
+                        // Register the socket in the global registry
+                        match SOCKET_REGISTRY.lock() {
+                            Ok(mut registry) => {
+                                registry.register_socket(SocketType::TcpStream(stream))
+                            },
+                            Err(_) => -1
+                        }
                     },
                     Err(_) => -1
                 }
@@ -1457,10 +1507,14 @@ pub extern "C" fn network_tcp_connect(host_ptr: *const c_char, port: u16) -> i32
 pub extern "C" fn network_tcp_listen(port: u16) -> i32 {
     let addr = format!("0.0.0.0:{}", port);
     match TcpListener::bind(&addr) {
-        Ok(_listener) => {
-            // Store listener in a global registry for later use
-            // For now, return a dummy socket descriptor
-            1 // Success
+        Ok(listener) => {
+            // Register the listener in the global registry
+            match SOCKET_REGISTRY.lock() {
+                Ok(mut registry) => {
+                    registry.register_socket(SocketType::TcpListener(listener))
+                },
+                Err(_) => -1
+            }
         },
         Err(_) => -1
     }
@@ -1475,9 +1529,29 @@ pub extern "C" fn network_tcp_send(socket_id: i32, data_ptr: *const c_char, len:
     
     unsafe {
         let data = std::slice::from_raw_parts(data_ptr as *const u8, len);
-        // TODO: Retrieve actual socket from registry by socket_id
-        // For now, return success for basic functionality
-        data.len() as i32
+        
+        // Retrieve actual socket from registry by socket_id
+        match SOCKET_REGISTRY.lock() {
+            Ok(mut registry) => {
+                match registry.get_socket_mut(socket_id) {
+                    Some(SocketType::TcpStream(stream)) => {
+                        match stream.write_all(data) {
+                            Ok(_) => data.len() as i32,
+                            Err(_) => -1
+                        }
+                    },
+                    Some(SocketType::TcpListener(_)) => {
+                        // Can't send data on a listener
+                        -1
+                    },
+                    None => {
+                        // Socket not found
+                        -1
+                    }
+                }
+            },
+            Err(_) => -1
+        }
     }
 }
 
@@ -1488,9 +1562,31 @@ pub extern "C" fn network_tcp_recv(socket_id: i32, buffer_ptr: *mut c_char, buff
         return -1;
     }
     
-    // TODO: Retrieve actual socket from registry by socket_id
-    // For now, return 0 bytes received
-    0
+    // Retrieve actual socket from registry by socket_id
+    match SOCKET_REGISTRY.lock() {
+        Ok(mut registry) => {
+            match registry.get_socket_mut(socket_id) {
+                Some(SocketType::TcpStream(stream)) => {
+                    unsafe {
+                        let buffer = std::slice::from_raw_parts_mut(buffer_ptr as *mut u8, buffer_len);
+                        match stream.read(buffer) {
+                            Ok(bytes_read) => bytes_read as i32,
+                            Err(_) => -1
+                        }
+                    }
+                },
+                Some(SocketType::TcpListener(_)) => {
+                    // Can't receive data on a listener
+                    -1
+                },
+                None => {
+                    // Socket not found
+                    -1
+                }
+            }
+        },
+        Err(_) => -1
+    }
 }
 
 /// Close TCP connection (implementation for network_tcp_close)
@@ -1500,9 +1596,22 @@ pub extern "C" fn network_tcp_close(socket_id: i32) -> i32 {
         return -1;
     }
     
-    // TODO: Remove socket from registry and close
-    // For now, return success
-    0
+    // Remove socket from registry and close
+    match SOCKET_REGISTRY.lock() {
+        Ok(mut registry) => {
+            match registry.remove_socket(socket_id) {
+                Some(_) => {
+                    // Socket removed successfully, it will be automatically closed when dropped
+                    0
+                },
+                None => {
+                    // Socket not found
+                    -1
+                }
+            }
+        },
+        Err(_) => -1
+    }
 }
 
 /// Perform DNS resolution (implementation for network_dns_resolve)

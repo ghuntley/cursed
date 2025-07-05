@@ -7,8 +7,12 @@ use std::env;
 use std::fs;
 use std::process;
 use std::path::Path;
+use std::collections::HashMap;
+use std::path::PathBuf;
 use clap::{Arg, Command, ArgMatches, value_parser};
 use colored::*;
+use glob::glob;
+use serde_json::json;
 use cursed::{self, optimization::{OptimizationConfig, OptimizationLevel as OptOptimizationLevel}};
 use cursed::package_manager::{PackageManager, PackageManagerConfig};
 use cursed::tools::{CursedFormatter, CursedLinter, LinterConfig};
@@ -1216,12 +1220,12 @@ async fn handle_doc(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resul
     
     println!("{} documentation from {}", "Generating".blue().bold(), input);
     
-    // TODO: Implement documentation generation
-    println!("{} Documentation generation not yet implemented", "Warning".yellow().bold());
+    // Generate documentation using integrated system
+    generate_documentation(input, output, format).await?;
     
     if serve {
         println!("{} documentation server on port {}", "Starting".blue().bold(), port);
-        // TODO: Implement documentation server
+        serve_documentation(output, port).await?;
     }
     
     Ok(())
@@ -1363,12 +1367,13 @@ async fn handle_repl(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resu
     
     if let Some(startup_file) = startup {
         println!("Loading startup file: {}", startup_file);
-        // TODO: Implement startup file loading
-        println!("{} Startup file loading not yet implemented", "Warning".yellow().bold());
+        if let Err(e) = repl.load_startup_file(startup_file) {
+            println!("{} Failed to load startup file: {}", "Warning".yellow().bold(), e);
+        }
     }
     
-    // TODO: Implement proper REPL loop
-    println!("{} REPL loop not yet implemented", "Warning".yellow().bold());
+    // Start the REPL loop
+    repl.run_repl_loop(no_history)?;
     
     Ok(())
 }
@@ -1416,4 +1421,419 @@ fn find_test_files(pattern: &str) -> Result<Vec<String>, Box<dyn std::error::Err
     }
     
     Ok(files)
+}
+
+// Documentation generation implementation
+
+#[derive(Debug)]
+struct DocItem {
+    name: String,
+    item_type: String,
+    description: String,
+    file_path: PathBuf,
+    line_number: usize,
+    parameters: Vec<Parameter>,
+    return_type: Option<String>,
+    examples: Vec<String>,
+}
+
+#[derive(Debug)]
+struct Parameter {
+    name: String,
+    param_type: String,
+    description: String,
+}
+
+#[derive(Debug)]
+struct DocumentationIndex {
+    items: Vec<DocItem>,
+    files: Vec<PathBuf>,
+}
+
+async fn generate_documentation(input: &str, output: &str, format: &str) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Scanning for source files...");
+    
+    let doc_index = scan_for_docs(input)?;
+    
+    println!("Found {} documented items in {} files", 
+        doc_index.items.len(), 
+        doc_index.files.len()
+    );
+    
+    // Create output directory
+    fs::create_dir_all(output)?;
+    
+    match format {
+        "html" => generate_html_docs(&doc_index, output, "CURSED Documentation")?,
+        "markdown" => generate_markdown_docs(&doc_index, output, "CURSED Documentation")?,
+        "json" => generate_json_docs(&doc_index, output)?,
+        _ => return Err("Unsupported format".into()),
+    }
+    
+    println!("{} Documentation generated successfully in {}", "✓".green(), output);
+    Ok(())
+}
+
+async fn serve_documentation(docs_dir: &str, port: u16) -> Result<(), Box<dyn std::error::Error>> {
+    println!("{} Starting documentation server...", "→".cyan());
+    println!("Serving {} on http://localhost:{}", docs_dir, port);
+    println!("Press Ctrl+C to stop");
+    
+    // Use simple HTTP server
+    use std::net::{TcpListener, TcpStream};
+    use std::io::prelude::*;
+    
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", port))?;
+    
+    for stream in listener.incoming() {
+        let stream = stream?;
+        handle_connection(stream, docs_dir)?;
+    }
+    
+    Ok(())
+}
+
+fn handle_connection(mut stream: std::net::TcpStream, docs_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::prelude::*;
+    
+    let mut buffer = [0; 1024];
+    stream.read(&mut buffer)?;
+    
+    let request = String::from_utf8_lossy(&buffer[..]);
+    let request_line = request.lines().next().unwrap_or("");
+    
+    let (status_line, filename) = if request_line.starts_with("GET / ") {
+        ("HTTP/1.1 200 OK", format!("{}/index.html", docs_dir))
+    } else if request_line.starts_with("GET /style.css ") {
+        ("HTTP/1.1 200 OK", format!("{}/style.css", docs_dir))
+    } else {
+        ("HTTP/1.1 404 NOT FOUND", format!("{}/404.html", docs_dir))
+    };
+    
+    let contents = fs::read_to_string(&filename).unwrap_or_else(|_| {
+        if filename.ends_with("404.html") {
+            "<html><body><h1>404 Not Found</h1></body></html>".to_string()
+        } else {
+            "<html><body><h1>Error loading file</h1></body></html>".to_string()
+        }
+    });
+    
+    let response = format!("{}\r\n\r\n{}", status_line, contents);
+    stream.write(response.as_bytes())?;
+    stream.flush()?;
+    
+    Ok(())
+}
+
+fn scan_for_docs(input: &str) -> Result<DocumentationIndex, Box<dyn std::error::Error>> {
+    let mut items = Vec::new();
+    let mut files = Vec::new();
+    
+    let input_path = Path::new(input);
+    
+    if input_path.is_file() && input_path.extension() == Some(std::ffi::OsStr::new("csd")) {
+        // Single file
+        println!("Processing single file: {}", input_path.display());
+        files.push(input_path.to_path_buf());
+        let file_items = parse_cursed_file(input_path)?;
+        items.extend(file_items);
+    } else {
+        // Directory - scan for CURSED source files
+        let local_pattern = format!("{}/*.csd", input);
+        println!("Scanning pattern: {}", local_pattern);
+        
+        for entry in glob(&local_pattern)? {
+            let path = entry?;
+            if path.is_file() {
+                println!("Found file: {}", path.display());
+                files.push(path.clone());
+                let file_items = parse_cursed_file(&path)?;
+                items.extend(file_items);
+            }
+        }
+    }
+    
+    Ok(DocumentationIndex { items, files })
+}
+
+fn parse_cursed_file(file_path: &Path) -> Result<Vec<DocItem>, Box<dyn std::error::Error>> {
+    let content = fs::read_to_string(file_path)?;
+    let mut items = Vec::new();
+    let lines: Vec<&str> = content.lines().collect();
+    
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i].trim();
+        
+        // Look for documentation comments
+        if line.starts_with("//!") || line.starts_with("///") {
+            let (doc_item, next_i) = parse_doc_comment(&lines, i, file_path)?;
+            if let Some(item) = doc_item {
+                items.push(item);
+            }
+            i = next_i;
+        } else {
+            i += 1;
+        }
+    }
+    
+    Ok(items)
+}
+
+fn parse_doc_comment(lines: &[&str], start_idx: usize, file_path: &Path) -> Result<(Option<DocItem>, usize), Box<dyn std::error::Error>> {
+    let mut description = String::new();
+    let mut examples = Vec::new();
+    let mut i = start_idx;
+    
+    // Collect documentation lines
+    while i < lines.len() {
+        let line = lines[i].trim();
+        if line.starts_with("//!") || line.starts_with("///") {
+            let content = line.trim_start_matches("//!").trim_start_matches("///").trim();
+            if content.starts_with("# Example") || content.starts_with("## Example") {
+                // Start collecting example
+                i += 1;
+                while i < lines.len() && (lines[i].trim().starts_with("///") || lines[i].trim().starts_with("//!")) {
+                    let example_line = lines[i].trim().trim_start_matches("///").trim_start_matches("//!").trim();
+                    if !example_line.is_empty() {
+                        examples.push(example_line.to_string());
+                    }
+                    i += 1;
+                }
+            } else {
+                description.push_str(content);
+                description.push('\n');
+            }
+        } else {
+            break;
+        }
+        i += 1;
+    }
+    
+    // Look for the next significant line (function, struct, etc.)
+    while i < lines.len() && lines[i].trim().is_empty() {
+        i += 1;
+    }
+    
+    if i < lines.len() {
+        let next_line = lines[i].trim();
+        let (name, item_type) = if next_line.starts_with("fn ") {
+            let name = extract_function_name(next_line);
+            (name, "function".to_string())
+        } else if next_line.starts_with("struct ") {
+            let name = extract_struct_name(next_line);
+            (name, "struct".to_string())
+        } else if next_line.starts_with("enum ") {
+            let name = extract_enum_name(next_line);
+            (name, "enum".to_string())
+        } else if next_line.starts_with("interface ") {
+            let name = extract_interface_name(next_line);
+            (name, "interface".to_string())
+        } else {
+            ("unknown".to_string(), "item".to_string())
+        };
+        
+        if name != "unknown" {
+            return Ok((Some(DocItem {
+                name,
+                item_type,
+                description: description.trim().to_string(),
+                file_path: file_path.to_path_buf(),
+                line_number: i + 1,
+                parameters: Vec::new(), // TODO: Parse parameters
+                return_type: None, // TODO: Parse return type
+                examples,
+            }), i + 1));
+        }
+    }
+    
+    Ok((None, i))
+}
+
+fn extract_function_name(line: &str) -> String {
+    line.split_whitespace()
+        .nth(1)
+        .and_then(|s| s.split('(').next())
+        .unwrap_or("unknown")
+        .to_string()
+}
+
+fn extract_struct_name(line: &str) -> String {
+    line.split_whitespace()
+        .nth(1)
+        .unwrap_or("unknown")
+        .to_string()
+}
+
+fn extract_enum_name(line: &str) -> String {
+    line.split_whitespace()
+        .nth(1)
+        .unwrap_or("unknown")
+        .to_string()
+}
+
+fn extract_interface_name(line: &str) -> String {
+    line.split_whitespace()
+        .nth(1)
+        .unwrap_or("unknown")
+        .to_string()
+}
+
+fn generate_html_docs(doc_index: &DocumentationIndex, output: &str, title: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut items_html = String::new();
+    for item in &doc_index.items {
+        items_html.push_str(&format!(
+            r#"<div class="doc-item">
+                <h3>{} <span class="type">({})</span></h3>
+                <p class="description">{}</p>
+                <p class="source">Source: {}:{}</p>
+                {}
+            </div>"#,
+            item.name,
+            item.item_type,
+            item.description,
+            item.file_path.display(),
+            item.line_number,
+            if !item.examples.is_empty() {
+                format!("<div class=\"examples\"><h4>Examples:</h4><pre><code>{}</code></pre></div>", 
+                    item.examples.join("\n"))
+            } else {
+                String::new()
+            }
+        ));
+    }
+    
+    let html_content = format!(r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{}</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>{}</h1>
+        <p>Documentation for {} items</p>
+    </header>
+    <main>
+        {}
+    </main>
+</body>
+</html>"#, title, title, doc_index.items.len(), items_html);
+    
+    let index_path = Path::new(output).join("index.html");
+    fs::write(index_path, html_content)?;
+    
+    // Generate CSS
+    let css_content = r#"body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    border-bottom: 2px solid #eee;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+}
+
+.doc-item {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.type {
+    color: #666;
+    font-size: 0.8em;
+}
+
+.description {
+    margin: 10px 0;
+}
+
+.source {
+    color: #888;
+    font-size: 0.9em;
+}
+
+.examples {
+    margin-top: 15px;
+}
+
+.examples pre {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 3px;
+    overflow-x: auto;
+}"#;
+    
+    let css_path = Path::new(output).join("style.css");
+    fs::write(css_path, css_content)?;
+    
+    Ok(())
+}
+
+fn generate_markdown_docs(doc_index: &DocumentationIndex, output: &str, title: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut markdown = format!("# {}\n\n", title);
+    markdown.push_str(&format!("Generated documentation for {} items.\n\n", doc_index.items.len()));
+    
+    let mut items_by_type: HashMap<String, Vec<&DocItem>> = HashMap::new();
+    for item in &doc_index.items {
+        items_by_type.entry(item.item_type.clone()).or_default().push(item);
+    }
+    
+    for (item_type, items) in items_by_type {
+        markdown.push_str(&format!("## {}\n\n", item_type.to_uppercase()));
+        
+        for item in items {
+            markdown.push_str(&format!("### {}\n\n", item.name));
+            markdown.push_str(&format!("{}\n\n", item.description));
+            markdown.push_str(&format!("**Source:** `{}:{}`\n\n", item.file_path.display(), item.line_number));
+            
+            if !item.examples.is_empty() {
+                markdown.push_str("**Examples:**\n\n");
+                markdown.push_str("```cursed\n");
+                markdown.push_str(&item.examples.join("\n"));
+                markdown.push_str("\n```\n\n");
+            }
+            
+            markdown.push_str("---\n\n");
+        }
+    }
+    
+    let readme_path = Path::new(output).join("README.md");
+    fs::write(readme_path, markdown)?;
+    
+    Ok(())
+}
+
+fn generate_json_docs(doc_index: &DocumentationIndex, output: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let json_data = json!({
+        "title": "CURSED Documentation",
+        "generated_at": std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
+        "items": doc_index.items.iter().map(|item| {
+            json!({
+                "name": item.name,
+                "type": item.item_type,
+                "description": item.description,
+                "file_path": item.file_path.to_string_lossy(),
+                "line_number": item.line_number,
+                "examples": item.examples
+            })
+        }).collect::<Vec<_>>(),
+        "files": doc_index.files.iter().map(|f| f.to_string_lossy()).collect::<Vec<_>>()
+    });
+    
+    let json_path = Path::new(output).join("docs.json");
+    fs::write(json_path, serde_json::to_string_pretty(&json_data)?)?;
+    
+    Ok(())
 }
