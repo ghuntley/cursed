@@ -38,9 +38,9 @@ mod tests {
                 println!("Generated IR: {}", ir);
             }
             Err(error) => {
-                println!("Binary arithmetic with unknown types failed: {}", error);
-                // Don't panic, just assert false to show the error
-                assert!(false, "Binary arithmetic with unknown types failed: {}", error);
+                eprintln!("Binary arithmetic with unknown types failed: {}", error);
+                println!("Error details: {:?}", error);
+                panic!("Binary arithmetic with unknown types failed: {}", error);
             }
         }
     }

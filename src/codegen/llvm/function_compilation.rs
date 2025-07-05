@@ -49,6 +49,9 @@ impl FunctionCompiler {
         
         let mut function_ir = String::new();
         
+        // Infer types for untyped parameters
+        let inferred_param_types = self.infer_parameter_types(params, param_types, body)?;
+        
         // Generate function signature with inferred return type
         let ret_type = if let Some(explicit_type) = return_type {
             self.get_llvm_type(explicit_type)
@@ -61,16 +64,12 @@ impl FunctionCompiler {
         };
         function_ir.push_str(&format!("define {} @{}(", ret_type, name));
         
-        // Generate parameters with types
+        // Generate parameters with inferred types
         for (i, param) in params.iter().enumerate() {
             if i > 0 {
                 function_ir.push_str(", ");
             }
-            let param_type = if let Some(types) = param_types {
-                types.get(i).map(|s| s.as_str()).unwrap_or("int")
-            } else {
-                "int"
-            };
+            let param_type = &inferred_param_types[i];
             let llvm_type = self.get_llvm_type(param_type);
             function_ir.push_str(&format!("{} %{}", llvm_type, param));
             
@@ -830,6 +829,230 @@ impl FunctionCompiler {
     }
 
     /// Get LLVM type string from CURSED type
+    /// Infer parameter types by analyzing how they're used in the function body
+    fn infer_parameter_types(
+        &self,
+        params: &[String],
+        param_types: Option<&[String]>,
+        body: &[Statement]
+    ) -> Result<Vec<String>, CursedError> {
+        let mut inferred_types = Vec::new();
+        
+        for (i, param) in params.iter().enumerate() {
+            // If type is explicitly provided, use it
+            if let Some(types) = param_types {
+                if let Some(explicit_type) = types.get(i) {
+                    if explicit_type != "UNTYPED" {
+                        inferred_types.push(explicit_type.clone());
+                        continue;
+                    }
+                }
+            }
+            
+            // Infer type from usage in function body
+            let inferred_type = self.infer_parameter_type_from_usage(param, body)?;
+            inferred_types.push(inferred_type);
+        }
+        
+        Ok(inferred_types)
+    }
+    
+    /// Infer a parameter's type by analyzing its usage in the function body
+    fn infer_parameter_type_from_usage(
+        &self,
+        param_name: &str,
+        body: &[Statement]
+    ) -> Result<String, CursedError> {
+        let mut type_constraints = Vec::new();
+        
+        // Analyze all statements in the function body
+        for statement in body {
+            self.collect_type_constraints(param_name, statement, &mut type_constraints)?;
+        }
+        
+        // Resolve type constraints to determine the parameter type
+        self.resolve_type_constraints(&type_constraints)
+    }
+    
+    /// Collect type constraints for a parameter based on its usage
+    fn collect_type_constraints(
+        &self,
+        param_name: &str,
+        statement: &Statement,
+        constraints: &mut Vec<String>
+    ) -> Result<(), CursedError> {
+        match statement {
+            Statement::Return(return_stmt) => {
+                if let Some(value) = &return_stmt.value {
+                    self.collect_expression_constraints(param_name, value, constraints)?;
+                }
+            }
+            Statement::Let(let_stmt) => {
+                self.collect_expression_constraints(param_name, &let_stmt.value, constraints)?;
+            }
+            Statement::Expression(expr) => {
+                self.collect_expression_constraints(param_name, expr, constraints)?;
+            }
+            Statement::If(if_stmt) => {
+                self.collect_expression_constraints(param_name, &if_stmt.condition, constraints)?;
+                for stmt in &if_stmt.then_branch {
+                    self.collect_type_constraints(param_name, stmt, constraints)?;
+                }
+                if let Some(else_branch) = &if_stmt.else_branch {
+                    for stmt in else_branch {
+                        self.collect_type_constraints(param_name, stmt, constraints)?;
+                    }
+                }
+            }
+            Statement::While(while_stmt) => {
+                self.collect_expression_constraints(param_name, &while_stmt.condition, constraints)?;
+                for stmt in &while_stmt.body {
+                    self.collect_type_constraints(param_name, stmt, constraints)?;
+                }
+            }
+            Statement::For(for_stmt) => {
+                if let Some(init) = &for_stmt.init {
+                    self.collect_type_constraints(param_name, init, constraints)?;
+                }
+                if let Some(condition) = &for_stmt.condition {
+                    self.collect_expression_constraints(param_name, condition, constraints)?;
+                }
+                if let Some(update) = &for_stmt.update {
+                    self.collect_expression_constraints(param_name, update, constraints)?;
+                }
+                for stmt in &for_stmt.body {
+                    self.collect_type_constraints(param_name, stmt, constraints)?;
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    
+    /// Collect type constraints from expression usage
+    fn collect_expression_constraints(
+        &self,
+        param_name: &str,
+        expression: &Expression,
+        constraints: &mut Vec<String>
+    ) -> Result<(), CursedError> {
+        match expression {
+            Expression::Identifier(name) if name == param_name => {
+                // Direct usage - doesn't give us type info by itself
+            }
+            Expression::Binary(binary) => {
+                // Check if our parameter is used in a binary operation
+                if let Expression::Identifier(left_name) = &*binary.left {
+                    if left_name == param_name {
+                        // Parameter is the left operand
+                        self.infer_type_from_binary_operation(&binary.operator, &binary.right, constraints)?;
+                    }
+                }
+                if let Expression::Identifier(right_name) = &*binary.right {
+                    if right_name == param_name {
+                        // Parameter is the right operand  
+                        self.infer_type_from_binary_operation(&binary.operator, &binary.left, constraints)?;
+                    }
+                }
+                // Recursively check nested expressions
+                self.collect_expression_constraints(param_name, &binary.left, constraints)?;
+                self.collect_expression_constraints(param_name, &binary.right, constraints)?;
+            }
+            Expression::Call(call) => {
+                // Check function arguments
+                for arg in &call.arguments {
+                    self.collect_expression_constraints(param_name, arg, constraints)?;
+                }
+                // Check function expression
+                self.collect_expression_constraints(param_name, &call.function, constraints)?;
+            }
+            Expression::Array(elements) => {
+                for element in elements {
+                    self.collect_expression_constraints(param_name, element, constraints)?;
+                }
+            }
+            Expression::Unary(unary) => {
+                self.collect_expression_constraints(param_name, &unary.operand, constraints)?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    
+    /// Infer type constraints from binary operations
+    fn infer_type_from_binary_operation(
+        &self,
+        operator: &str,
+        other_operand: &Expression,
+        constraints: &mut Vec<String>
+    ) -> Result<(), CursedError> {
+        match operator {
+            "+" | "-" | "*" | "/" | "%" => {
+                // Arithmetic operations - operands should be numeric
+                match other_operand {
+                    Expression::Integer(_) => {
+                        constraints.push("normie".to_string()); // Integer literal suggests normie type
+                    }
+                    Expression::Float(_) => {
+                        constraints.push("f32".to_string()); // Float literal suggests f32 type
+                    }
+                    _ => {
+                        constraints.push("normie".to_string()); // Default to normie for arithmetic
+                    }
+                }
+            }
+            "==" | "!=" | "<" | ">" | "<=" | ">=" => {
+                // Comparison operations - infer type from the other operand
+                match other_operand {
+                    Expression::Integer(_) => {
+                        constraints.push("normie".to_string());
+                    }
+                    Expression::Float(_) => {
+                        constraints.push("f32".to_string());
+                    }
+                    Expression::String(_) => {
+                        constraints.push("tea".to_string());
+                    }
+                    Expression::Boolean(_) => {
+                        constraints.push("lit".to_string());
+                    }
+                    _ => {
+                        constraints.push("normie".to_string()); // Default to normie
+                    }
+                }
+            }
+            "&&" | "||" => {
+                // Logical operations - operands should be boolean
+                constraints.push("lit".to_string());
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    
+    /// Resolve type constraints to determine the final type
+    fn resolve_type_constraints(&self, constraints: &[String]) -> Result<String, CursedError> {
+        if constraints.is_empty() {
+            // No constraints found, default to normie (integer)
+            return Ok("normie".to_string());
+        }
+        
+        // Count frequency of each type constraint
+        let mut type_counts = std::collections::HashMap::new();
+        for constraint in constraints {
+            *type_counts.entry(constraint.clone()).or_insert(0) += 1;
+        }
+        
+        // Find the most frequent type
+        let most_frequent_type = type_counts
+            .iter()
+            .max_by_key(|(_, count)| *count)
+            .map(|(type_name, _)| type_name.clone())
+            .unwrap_or_else(|| "normie".to_string());
+        
+        Ok(most_frequent_type)
+    }
+
     fn get_llvm_type(&self, cursed_type: &str) -> String {
         match cursed_type {
             // Standard types

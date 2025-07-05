@@ -45,14 +45,21 @@ pub struct VTableEntry {
 }
 
 // Mock types for backward compatibility with tests
-pub struct MockModule;
+pub struct MockModule {
+    pub ir_code: String,
+}
+
 pub struct MockContext;
 pub struct MockBuilder;
 pub struct MockRuntime;
 
 impl MockModule {
+    pub fn new(ir_code: String) -> Self {
+        Self { ir_code }
+    }
+
     pub fn print_to_string(&self) -> MockString {
-        MockString("".to_string())
+        MockString(self.ir_code.clone())
     }
 
     pub fn get_function(&self, _name: &str) -> Option<MockFunction> {
@@ -134,7 +141,7 @@ impl LlvmCodeGenerator {
 
     // Method to get module for backward compatibility
     pub fn module(&self) -> MockModule {
-        MockModule
+        MockModule::new(self.ir_code.clone())
     }
 
     // Method to get source length for tests
@@ -945,11 +952,11 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         
         // Compile the complete function with all statements and expressions
         let param_names: Vec<String> = params.iter().map(|p| p.name.clone()).collect();
-        let param_types: Vec<String> = params.iter().map(|p| p.param_type.clone().unwrap_or("i32".to_string())).collect();
+        let param_types: Vec<String> = params.iter().map(|p| p.param_type.clone().unwrap_or("UNTYPED".to_string())).collect();
         let function_ir = function_compiler.compile_function(
             name,
             &param_names,
-            Some(&param_types), // param types from AST
+            Some(&param_types), // param types from AST (with "UNTYPED" for inference)
             return_type.as_deref(), // return type from AST
             body
         )?;
