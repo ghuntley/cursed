@@ -43,8 +43,8 @@
 - ✅ **Function calculations**: Functions like `calculateArea` with floating point math now work correctly
 - ✅ **Type system integration**: Float literals integrate properly with CURSED type system
 
-**REMAINING ISSUE:**
-- ⚠️ **If statement parsing in complex functions**: There's still one remaining issue with if statement parsing inside complex function bodies that needs further investigation
+**COMPLETED ISSUE:**
+- ✅ **Logical operators in complex if statements**: Logical operators (|| and &&) now working correctly in complex if statements within function bodies - complete resolution achieved
 
 **Impact**: This resolves a critical parsing limitation that was preventing floating point calculations from working in CURSED programs. The compiler now supports proper floating point arithmetic, enabling mathematical functions and calculations to work correctly.
 
