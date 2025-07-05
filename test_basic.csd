@@ -1,3 +1,1 @@
-func main() {
-    vibez.spill(42);
-}
+slay main() { vibez.spill("Hello, CURSED!"); }
