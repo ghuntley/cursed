@@ -257,7 +257,7 @@ mod tests {
         let mut checker = TypeChecker::new();
         
         let let_stmt = LetStatement {
-            name: "x".to_string(),
+            target: crate::ast::LetTarget::Single("x".to_string()),
             value: Expression::Integer(42),
             var_type: None,
             visibility: crate::ast::Visibility::Private,
@@ -329,13 +329,13 @@ mod tests {
         Program {
             statements: vec![
                 Statement::Let(LetStatement {
-                    name: "x".to_string(),
+                    target: crate::ast::LetTarget::Single("x".to_string()),
                     value: Expression::Integer(42),
                     var_type: None,
                     visibility: crate::ast::Visibility::Private,
                 }),
                 Statement::Let(LetStatement {
-                    name: "message".to_string(),
+                    target: crate::ast::LetTarget::Single("message".to_string()),
                     value: Expression::String("Hello, CURSED!".to_string()),
                     var_type: None,
                     visibility: crate::ast::Visibility::Private,
