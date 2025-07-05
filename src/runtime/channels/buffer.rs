@@ -141,17 +141,13 @@ impl<T: Send> UnbufferedChannel<T> {
 
 impl<T: Send> ChannelBuffer<T> for UnbufferedChannel<T> {
     fn try_push(&self, value: T) -> Result<(), (T, ChannelError)> {
-        // For unbuffered channels, we need a receiver to be waiting
-        if self.pending_receivers.load(Ordering::SeqCst) == 0 {
-            return Err((value, ChannelError::WouldBlock));
-        }
-        
         let mut pending = self.pending_value.lock().unwrap();
         
         if *self.closed.lock().unwrap() {
             return Err((value, ChannelError::Closed));
         }
         
+        // For unbuffered channels, we can only push if there's no pending value
         if pending.is_some() {
             return Err((value, ChannelError::WouldBlock));
         }
@@ -476,10 +472,13 @@ mod tests {
     fn test_unbuffered_channel() {
         let channel = UnbufferedChannel::new();
         
-        // Should not be able to send without receiver
-        assert!(channel.try_push(42).is_err());
+        // Should be able to send one value to unbuffered channel
+        assert!(channel.try_push(42).is_ok());
         
-        // Should not be able to receive without sender
+        // Should be able to receive the value
+        assert_eq!(channel.try_pop().unwrap(), Some(42));
+        
+        // Should not be able to receive when empty
         assert!(channel.try_pop().unwrap().is_none());
     }
 
