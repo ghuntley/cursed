@@ -667,7 +667,9 @@ fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::e
                .arg(obj_file)
                .arg("-lc")  // Link with C standard library
                .arg("-lm")  // Link with math library
-               .arg("-lpthread"); // Link with pthread for goroutines
+               .arg("-lpthread") // Link with pthread for goroutines
+               .arg("-lstdc++") // Link with C++ standard library for exception handling
+               .arg("-lgcc_s"); // Link with GCC support library for unwind functions
         }
         "ld" => {
             cmd.arg("-o")

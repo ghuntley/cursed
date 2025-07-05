@@ -987,32 +987,95 @@ extern "C" fn cursed_goroutine_join(id: u64) -> i32 {
 
 // Channel operations using runtime system
 extern "C" fn cursed_channel_create(capacity: usize) -> *mut std::ffi::c_void {
+    use crate::runtime::channels::SimpleChannel;
+    use crate::execution::CursedValue;
+    use std::sync::Arc;
+    
     // Create channel through runtime system
-    std::ptr::null_mut() // Placeholder for actual channel creation
+    let channel = if capacity == 0 {
+        Arc::new(SimpleChannel::<CursedValue>::new())
+    } else {
+        Arc::new(SimpleChannel::<CursedValue>::with_capacity(capacity))
+    };
+    
+    // Box the channel and return raw pointer
+    let boxed_channel = Box::new(channel);
+    Box::into_raw(boxed_channel) as *mut std::ffi::c_void
 }
 
 extern "C" fn cursed_channel_send(channel_ptr: *mut std::ffi::c_void, data_ptr: *const std::ffi::c_void) -> i32 {
     if channel_ptr.is_null() || data_ptr.is_null() {
         return -1;
     }
-    // Implementation would send data through channel
-    0
+    
+    use crate::runtime::channels::{SimpleChannel, SendResult};
+    use crate::execution::CursedValue;
+    use std::sync::Arc;
+    
+    unsafe {
+        // Reconstruct the channel from pointer
+        let channel = &*(channel_ptr as *const Arc<SimpleChannel<CursedValue>>);
+        
+        // Reconstruct the value from pointer (assuming it's a boxed CursedValue)
+        let value = &*(data_ptr as *const CursedValue);
+        
+        // Send the value through the channel
+        match channel.send(value.clone()) {
+            SendResult::Sent => 0,
+            SendResult::Closed(_) => -2,
+            SendResult::WouldBlock(_) => -3,
+        }
+    }
 }
 
 extern "C" fn cursed_channel_recv(channel_ptr: *mut std::ffi::c_void, data_ptr: *mut std::ffi::c_void) -> i32 {
     if channel_ptr.is_null() || data_ptr.is_null() {
         return -1;
     }
-    // Implementation would receive data from channel
-    0
+    
+    use crate::runtime::channels::{SimpleChannel, ReceiveResult};
+    use crate::execution::CursedValue;
+    use std::sync::Arc;
+    
+    unsafe {
+        // Reconstruct the channel from pointer
+        let channel = &*(channel_ptr as *const Arc<SimpleChannel<CursedValue>>);
+        
+        // Receive data from channel
+        match channel.recv() {
+            ReceiveResult::Received(value) => {
+                // Store the received value in the output pointer
+                let output_ptr = data_ptr as *mut CursedValue;
+                *output_ptr = value;
+                0
+            }
+            ReceiveResult::Closed => -2,
+            ReceiveResult::WouldBlock => -3,
+        }
+    }
 }
 
 extern "C" fn cursed_channel_close(channel_ptr: *mut std::ffi::c_void) -> i32 {
     if channel_ptr.is_null() {
         return -1;
     }
-    // Implementation would close channel
-    0
+    
+    use crate::runtime::channels::SimpleChannel;
+    use crate::execution::CursedValue;
+    use std::sync::Arc;
+    
+    unsafe {
+        // Reconstruct the channel from pointer
+        let channel = &*(channel_ptr as *const Arc<SimpleChannel<CursedValue>>);
+        
+        // Close the channel
+        channel.close();
+        
+        // Clean up the boxed channel
+        let _ = Box::from_raw(channel_ptr as *mut Arc<SimpleChannel<CursedValue>>);
+        
+        0
+    }
 }
 
 // Async runtime functions

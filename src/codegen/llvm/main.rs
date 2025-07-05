@@ -253,6 +253,22 @@ declare i32 @cursed_goroutine_spawn(i8*)
 declare void @cursed_channel_send(i8*, i8*)
 declare i8* @cursed_channel_receive(i8*)
 
+; Exception handling declarations
+declare i32 @__gxx_personality_v0(...)
+declare i8* @__cxa_begin_catch(i8*)
+declare void @__cxa_end_catch()
+declare void @__cxa_rethrow()
+declare i8* @__cxa_allocate_exception(i64)
+declare void @__cxa_throw(i8*, i8*, i8*)
+declare i8* @_Unwind_GetLanguageSpecificData(i8*)
+declare i32 @_Unwind_GetRegionStart(i8*)
+declare i32 @_Unwind_GetDataRelBase(i8*)
+declare i32 @_Unwind_GetTextRelBase(i8*)
+
+; CURSED exception type info
+@_ZTI11CursedError = constant { i8*, i8* } { i8* null, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @_ZTS11CursedError, i32 0, i32 0) }
+@_ZTS11CursedError = constant [14 x i8] c\"11CursedError\\00\"
+
 ");
     }
     
@@ -322,24 +338,24 @@ declare i8* @cursed_channel_receive(i8*)
                 self.generate_interface_definition(interface_stmt)?;
             },
             Statement::Panic(panic_stmt) => {
-                self.ir_code.push_str("  ; Panic (yeet_error) statement\n");
-                self.generate_expression(&panic_stmt.message)?;
-                // TODO: Implement actual panic codegen with LLVM intrinsics
-                self.ir_code.push_str("  call void @cursed_panic()\n");
+                self.ir_code.push_str("  ; Panic (yeet_error) statement with exception throwing\n");
+                
+                // Generate the panic message
+                let message_reg = self.generate_expression(&panic_stmt.message)?;
+                
+                // Allocate exception object
+                self.ir_code.push_str("  %exception_alloc = call i8* @__cxa_allocate_exception(i64 8)\n");
+                
+                // Store the panic message in the exception object
+                self.ir_code.push_str(&format!("  %exception_cast = bitcast i8* %exception_alloc to i8**\n"));
+                self.ir_code.push_str(&format!("  store i8* {}, i8** %exception_cast\n", message_reg));
+                
+                // Throw the exception
+                self.ir_code.push_str("  call void @__cxa_throw(i8* %exception_alloc, i8* @_ZTI11CursedError, i8* null)\n");
+                self.ir_code.push_str("  unreachable\n");
             },
             Statement::Catch(catch_stmt) => {
-                self.ir_code.push_str("  ; Catch statement begin\n");
-                for stmt in &catch_stmt.protected_block {
-                    self.generate_statement(stmt)?;
-                }
-                if let Some(recovery) = &catch_stmt.recovery_block {
-                    self.ir_code.push_str("  ; Recovery block\n");
-                    for stmt in recovery {
-                        self.generate_statement(stmt)?;
-                    }
-                }
-                self.ir_code.push_str("  ; Catch statement end\n");
-                // TODO: Implement actual catch codegen with exception handling
+                self.generate_catch_statement(catch_stmt)?;
             },
         }
         Ok(())
@@ -1010,6 +1026,115 @@ declare i8* @cursed_channel_receive(i8*)
         
         // End label
         self.ir_code.push_str(&format!("{}:\n", end_label));
+        Ok(())
+    }
+    
+    fn generate_catch_statement(&mut self, catch_stmt: &crate::ast::CatchStatement) -> Result<(), CursedError> {
+        self.ir_code.push_str("  ; Catch statement with proper exception handling\n");
+        
+        // Generate labels for exception handling
+        let try_label = self.next_label();
+        let catch_label = self.next_label();
+        let continue_label = self.next_label();
+        let finally_label = self.next_label();
+        
+        // Branch to try block
+        self.ir_code.push_str(&format!("  br label %{}\n", try_label));
+        
+        // Try block - where the protected code runs
+        self.ir_code.push_str(&format!("{}:\n", try_label));
+        
+        // Generate protected block using invoke instead of regular calls
+        // This allows exceptions to be caught
+        for stmt in &catch_stmt.protected_block {
+            // For function calls and operations that can throw, we need to use invoke
+            match stmt {
+                Statement::Expression(expr) => {
+                    match expr {
+                        Expression::Call(func_call) => {
+                            // For function calls, use invoke to enable exception handling
+                            if let Expression::Identifier(func_name) = &*func_call.function {
+                                // Generate arguments
+                                let mut arg_regs = Vec::new();
+                                for arg in &func_call.arguments {
+                                    let arg_reg = self.generate_expression(arg)?;
+                                    arg_regs.push(arg_reg);
+                                }
+                                let args_str = arg_regs.join(", ");
+                                
+                                self.ir_code.push_str(&format!(
+                                    "  invoke void @{}({}) to label %{} unwind label %{}\n",
+                                    func_name, args_str, continue_label, catch_label
+                                ));
+                            } else {
+                                // For non-simple function calls, generate normally
+                                self.generate_expression(expr)?;
+                            }
+                        }
+                        _ => {
+                            // For non-throwing operations, generate normally
+                            self.generate_expression(expr)?;
+                        }
+                    }
+                }
+                Statement::Panic(_) => {
+                    // Panic statements should use invoke to be catchable
+                    self.generate_statement(stmt)?;
+                    self.ir_code.push_str(&format!("  invoke void @cursed_panic() to label %{} unwind label %{}\n", 
+                                                  continue_label, catch_label));
+                }
+                _ => {
+                    // Other statements might not throw, generate normally
+                    self.generate_statement(stmt)?;
+                }
+            }
+        }
+        
+        // If we get here without exception, continue to finally
+        self.ir_code.push_str(&format!("  br label %{}\n", finally_label));
+        
+        // Exception handler (catch block)
+        self.ir_code.push_str(&format!("{}:\n", catch_label));
+        
+        // Landing pad for exception handling
+        self.ir_code.push_str("  %exception_ptr = landingpad { i8*, i32 }\n");
+        self.ir_code.push_str("    personality i32 (...)* @__gxx_personality_v0\n");
+        self.ir_code.push_str("    catch i8* @_ZTI11CursedError\n");
+        self.ir_code.push_str("    catch i8* null\n"); // Catch all
+        
+        // Extract exception info
+        self.ir_code.push_str("  %exception_object = extractvalue { i8*, i32 } %exception_ptr, 0\n");
+        self.ir_code.push_str("  %exception_selector = extractvalue { i8*, i32 } %exception_ptr, 1\n");
+        
+        // Begin catch
+        self.ir_code.push_str("  %caught_exception = call i8* @__cxa_begin_catch(i8* %exception_object)\n");
+        
+        // Bind error variable if specified
+        if let Some(error_var) = &catch_stmt.error_variable {
+            self.variables.insert(error_var.clone(), "%caught_exception".to_string());
+            self.ir_code.push_str(&format!("  ; Error variable {} bound to caught exception\n", error_var));
+        }
+        
+        // Generate recovery block if present
+        if let Some(recovery) = &catch_stmt.recovery_block {
+            self.ir_code.push_str("  ; Recovery block\n");
+            for stmt in recovery {
+                self.generate_statement(stmt)?;
+            }
+        }
+        
+        // End catch
+        self.ir_code.push_str("  call void @__cxa_end_catch()\n");
+        self.ir_code.push_str(&format!("  br label %{}\n", finally_label));
+        
+        // Continue label (normal execution path)
+        self.ir_code.push_str(&format!("{}:\n", continue_label));
+        self.ir_code.push_str(&format!("  br label %{}\n", finally_label));
+        
+        // Finally label (both normal and exception paths merge here)
+        self.ir_code.push_str(&format!("{}:\n", finally_label));
+        self.ir_code.push_str("  ; Exception handling complete\n");
+        
         Ok(())
     }
     

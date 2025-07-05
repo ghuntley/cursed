@@ -968,8 +968,16 @@ impl TypeChecker {
         // Check the value being sent
         let value_type = self.check_expression(&*channel_send.value)?;
         
-        // TODO: Validate that the value type matches the channel's element type
-        // For now, assume channel send operations are valid
+        // Validate that the value type matches the channel's element type
+        if let Some(channel_element_type) = self.extract_channel_element_type(&channel_type) {
+            if !self.types_compatible(&value_type, &channel_element_type) {
+                return Err(TypeCheckError {
+                    message: format!("Type mismatch: expected {:?}, got {:?}", channel_element_type, value_type),
+                    location: None,
+                    error_type: TypeErrorKind::TypeMismatch,
+                });
+            }
+        }
         
         Ok(TypeExpression::named("void"))
     }
@@ -978,10 +986,13 @@ impl TypeChecker {
         // Check the channel expression
         let channel_type = self.check_expression(&*channel_receive.channel)?;
         
-        // TODO: Extract the element type from the channel type
-        // For now, return a generic type
-        
-        Ok(TypeExpression::named("unknown"))
+        // Extract the element type from the channel type
+        if let Some(element_type) = self.extract_channel_element_type(&channel_type) {
+            Ok(element_type)
+        } else {
+            // If we can't determine the element type, return a generic type
+            Ok(TypeExpression::named("unknown"))
+        }
     }
     
     fn check_channel_creation_expression(&mut self, channel_creation: &ChannelCreationExpression) -> Result<TypeExpression, TypeCheckError> {
@@ -1042,6 +1053,30 @@ impl TypeChecker {
         // Create function type
         Ok(TypeExpression::function(param_types, return_type))
     }
+    
+    /// Extract the element type from a channel type
+    fn extract_channel_element_type(&self, channel_type: &TypeExpression) -> Option<TypeExpression> {
+        // Handle channel types in the form "channel<T>" or "dm<T>"
+        if let Some(type_name) = &channel_type.name {
+            if type_name.starts_with("channel<") && type_name.ends_with(">") {
+                let element_type_str = &type_name[8..type_name.len()-1];
+                return Some(TypeExpression::named(element_type_str));
+            }
+            if type_name.starts_with("dm<") && type_name.ends_with(">") {
+                let element_type_str = &type_name[3..type_name.len()-1];
+                return Some(TypeExpression::named(element_type_str));
+            }
+        }
+        
+        // Handle generic channel types
+        if !channel_type.parameters.is_empty() {
+            return Some(channel_type.parameters[0].clone());
+        }
+        
+        None
+    }
+    
+
 }
 
 impl Default for TypeChecker {

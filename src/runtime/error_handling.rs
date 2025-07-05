@@ -580,9 +580,49 @@ impl ErrorRuntime {
         None
     }
 
-    fn capture_stack_trace(&self) -> Vec<String> {
-        // Simple stack trace capture for now
-        vec!["Stack trace capture not implemented yet".to_string()]
+    pub fn capture_stack_trace(&self) -> Vec<String> {
+        let mut trace = Vec::new();
+        
+        // Use backtrace crate to capture the current stack
+        let bt = backtrace::Backtrace::new();
+        
+        // Format the backtrace into readable strings
+        for frame in bt.frames() {
+            for symbol in frame.symbols() {
+                let mut line = String::new();
+                
+                // Function name
+                if let Some(name) = symbol.name() {
+                    // Demangle Rust symbols for readability
+                    let name_str = name.to_string();
+                    let demangled = rustc_demangle::demangle(&name_str);
+                    line.push_str(&format!("{}", demangled));
+                } else {
+                    line.push_str("<unknown>");
+                }
+                
+                // File and line number
+                if let (Some(file), Some(line_no)) = (symbol.filename(), symbol.lineno()) {
+                    line.push_str(&format!(" at {}:{}", file.display(), line_no));
+                } else if let Some(file) = symbol.filename() {
+                    line.push_str(&format!(" at {}", file.display()));
+                }
+                
+                // Memory address for debugging
+                if let Some(addr) = symbol.addr() {
+                    line.push_str(&format!(" (0x{:x})", addr as usize));
+                }
+                
+                trace.push(line);
+            }
+        }
+        
+        // If no symbols were found, provide a fallback
+        if trace.is_empty() {
+            trace.push("Stack trace unavailable - debug symbols may be missing".to_string());
+        }
+        
+        trace
     }
 
     fn update_statistics(&self, context: &ErrorContext) -> Result<()> {
