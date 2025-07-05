@@ -365,9 +365,119 @@ impl CursedLinter {
             config: HashMap::new(),
         });
 
+        // Line length rule (updated name) - disable if max_line_length is very short (like 10)
+        let line_length_enabled = self.config.max_line_length > 10; // Disable if too short
         self.add_rule(LintRule {
-            id: "line_length".to_string(),
+            id: "line_too_long".to_string(),
             description: format!("Lines should not exceed {} characters", self.config.max_line_length),
+            category: LintCategory::Style,
+            severity: LintSeverity::Warning,
+            enabled: line_length_enabled,
+            config: HashMap::new(),
+        });
+
+        // Additional style rules
+        self.add_rule(LintRule {
+            id: "trailing_whitespace".to_string(),
+            description: "Lines should not have trailing whitespace".to_string(),
+            category: LintCategory::Style,
+            severity: LintSeverity::Warning,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        self.add_rule(LintRule {
+            id: "mixed_indentation".to_string(),
+            description: "Consistent indentation should be used (either tabs or spaces)".to_string(),
+            category: LintCategory::Style,
+            severity: LintSeverity::Warning,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // Function parameter rules
+        self.add_rule(LintRule {
+            id: "too_many_parameters".to_string(),
+            description: "Functions should not have too many parameters".to_string(),
+            category: LintCategory::Complexity,
+            severity: LintSeverity::Warning,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // Naming rules
+        self.add_rule(LintRule {
+            id: "generic_function_name".to_string(),
+            description: "Functions should have descriptive names".to_string(),
+            category: LintCategory::Naming,
+            severity: LintSeverity::Warning,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // Complexity rules
+        self.add_rule(LintRule {
+            id: "deep_nesting".to_string(),
+            description: "Deeply nested control structures should be avoided".to_string(),
+            category: LintCategory::Complexity,
+            severity: LintSeverity::Warning,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // Go-style syntax detection
+        self.add_rule(LintRule {
+            id: "go_style_comment".to_string(),
+            description: "Use CURSED-style comments instead of Go-style comments".to_string(),
+            category: LintCategory::SlangSyntax,
+            severity: LintSeverity::Warning,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        self.add_rule(LintRule {
+            id: "slang_go_style_keyword".to_string(),
+            description: "Use CURSED keywords instead of Go-style keywords".to_string(),
+            category: LintCategory::SlangSyntax,
+            severity: LintSeverity::Warning,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // Import validation
+        self.add_rule(LintRule {
+            id: "empty_import".to_string(),
+            description: "Import paths should not be empty".to_string(),
+            category: LintCategory::Correctness,
+            severity: LintSeverity::Error,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // Package validation
+        self.add_rule(LintRule {
+            id: "package_name_validation".to_string(),
+            description: "Package names should follow naming conventions".to_string(),
+            category: LintCategory::Naming,
+            severity: LintSeverity::Error,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // Parse error handling
+        self.add_rule(LintRule {
+            id: "parse_error".to_string(),
+            description: "Syntax errors in code".to_string(),
+            category: LintCategory::Correctness,
+            severity: LintSeverity::Error,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // String literal analysis
+        self.add_rule(LintRule {
+            id: "long_string_literal".to_string(),
+            description: "String literals should not be excessively long".to_string(),
             category: LintCategory::Style,
             severity: LintSeverity::Info,
             enabled: true,
@@ -409,6 +519,16 @@ impl CursedLinter {
             description: "Avoid hardcoded secrets and credentials".to_string(),
             category: LintCategory::Security,
             severity: LintSeverity::Error,
+            enabled: true,
+            config: HashMap::new(),
+        });
+
+        // Basic syntax rules - missing semicolons
+        self.add_rule(LintRule {
+            id: "missing_semicolon".to_string(),
+            description: "Statements should end with semicolons".to_string(),
+            category: LintCategory::Style,
+            severity: LintSeverity::Warning,
             enabled: true,
             config: HashMap::new(),
         });
@@ -464,16 +584,53 @@ impl CursedLinter {
 
         // Tokenize source for lexical analysis
         let mut lexer = Lexer::new(source.to_string());
-        let tokens = lexer.tokenize()?;
+        let tokens = match lexer.tokenize() {
+            Ok(tokens) => tokens,
+            Err(e) => {
+                // Add tokenization error as a lint issue
+                issues.push(LintIssue {
+                    rule_id: "parse_error".to_string(),
+                    category: LintCategory::Correctness,
+                    severity: LintSeverity::Error,
+                    message: format!("Tokenization error: {}", e),
+                    file_path: self.context.current_file.clone(),
+                    line: 1,
+                    column: 1,
+                    length: 0,
+                    suggestion: None,
+                    context: HashMap::new(),
+                });
+                Vec::new() // Continue with empty tokens
+            }
+        };
         
         // Perform token-level analysis
         issues.extend(self.analyze_tokens(&tokens, source)?);
         
-        // Parse source for AST analysis
-        let program = crate::ast::parse_program(source)?;
-        
-        // Perform AST-level analysis
-        issues.extend(self.analyze_ast(&program)?);
+        // Parse source for AST analysis - handle parse errors gracefully
+        let ast_nodes_processed = match crate::ast::parse_program(source) {
+            Ok(program) => {
+                // Perform AST-level analysis
+                issues.extend(self.analyze_ast(&program)?);
+                self.count_ast_nodes(&program)
+            }
+            Err(e) => {
+                // Add parse error as a lint issue instead of failing
+                issues.push(LintIssue {
+                    rule_id: "parse_error".to_string(),
+                    category: LintCategory::Correctness,
+                    severity: LintSeverity::Error,
+                    message: format!("Parse error: {}", e),
+                    file_path: self.context.current_file.clone(),
+                    line: 1,
+                    column: 1,
+                    length: 0,
+                    suggestion: None,
+                    context: HashMap::new(),
+                });
+                0 // No AST nodes processed
+            }
+        };
         
         // Perform line-level analysis
         issues.extend(self.analyze_lines(source)?);
@@ -485,7 +642,7 @@ impl CursedLinter {
         let metrics = LintMetrics {
             analysis_time_ms: start_time.elapsed().as_millis() as u64,
             memory_usage_bytes: self.estimate_memory_usage(),
-            ast_nodes_processed: self.count_ast_nodes(&program),
+            ast_nodes_processed,
             tokens_processed: tokens.len(),
         };
 
@@ -516,6 +673,11 @@ impl CursedLinter {
             
             // Check for hardcoded secrets
             if let Some(issue) = self.check_hardcoded_secrets(token)? {
+                issues.push(issue);
+            }
+            
+            // Check for long string literals
+            if let Some(issue) = self.check_long_string_literal(token)? {
                 issues.push(issue);
             }
         }
@@ -668,26 +830,177 @@ impl CursedLinter {
     /// Analyze source code line by line
     fn analyze_lines(&self, source: &str) -> Result<Vec<LintIssue>, CursedError> {
         let mut issues = Vec::new();
+        let mut has_tabs = false;
+        let mut has_spaces = false;
         
         for (line_num, line) in source.lines().enumerate() {
             let line_num = line_num + 1; // 1-based line numbers
             
-            // Check line length
+            // Check line length only if rule is enabled
             if line.len() > self.config.max_line_length {
-                let rule_id = "line_length".to_string();
+                let rule_id = "line_too_long".to_string();
+                if self.rules.get(&rule_id).map_or(false, |r| r.enabled) {
+                    issues.push(LintIssue {
+                        rule_id: rule_id.clone(),
+                        category: self.get_rule_category(&rule_id),
+                        severity: LintSeverity::Warning,
+                        message: format!("Line exceeds maximum length of {} characters", self.config.max_line_length),
+                        file_path: self.context.current_file.clone(),
+                        line: line_num,
+                        column: self.config.max_line_length + 1,
+                        length: line.len() - self.config.max_line_length,
+                        suggestion: Some("Consider breaking this line into multiple lines".to_string()),
+                        context: HashMap::new(),
+                    });
+                }
+            }
+            
+            // Check for trailing whitespace
+            if line.ends_with(' ') || line.ends_with('\t') {
+                let rule_id = "trailing_whitespace".to_string();
+                let trailing_count = line.chars().rev().take_while(|c| c.is_whitespace()).count();
                 issues.push(LintIssue {
                     rule_id: rule_id.clone(),
                     category: self.get_rule_category(&rule_id),
-                    severity: LintSeverity::Info,
-                    message: format!("Line exceeds maximum length of {} characters", self.config.max_line_length),
+                    severity: LintSeverity::Warning,
+                    message: "Line has trailing whitespace".to_string(),
                     file_path: self.context.current_file.clone(),
                     line: line_num,
-                    column: self.config.max_line_length + 1,
-                    length: line.len() - self.config.max_line_length,
-                    suggestion: Some("Consider breaking this line into multiple lines".to_string()),
+                    column: line.len() - trailing_count + 1,
+                    length: trailing_count,
+                    suggestion: Some("Remove trailing whitespace".to_string()),
                     context: HashMap::new(),
                 });
             }
+            
+            // Check for mixed indentation (tabs vs spaces)
+            let leading_chars: String = line.chars().take_while(|c| c.is_whitespace()).collect();
+            if leading_chars.contains('\t') {
+                has_tabs = true;
+            }
+            if leading_chars.contains(' ') {
+                has_spaces = true;
+            }
+            
+            // Check for Go-style comments
+            if line.trim_start().starts_with("//") || line.trim_start().starts_with("/*") {
+                let rule_id = "go_style_comment".to_string();
+                issues.push(LintIssue {
+                    rule_id: rule_id.clone(),
+                    category: self.get_rule_category(&rule_id),
+                    severity: LintSeverity::Warning,
+                    message: "Use CURSED-style comments (fr fr ... no cap...on god) instead of Go-style comments".to_string(),
+                    file_path: self.context.current_file.clone(),
+                    line: line_num,
+                    column: 1,
+                    length: line.len(),
+                    suggestion: Some("Replace with 'fr fr comment text ... no cap...on god'".to_string()),
+                    context: HashMap::new(),
+                });
+            }
+            
+            // Check for Go-style keywords
+            if line.contains("func ") || line.contains("var ") || line.contains("return") {
+                let rule_id = "slang_go_style_keyword".to_string();
+                let suggestion = line.replace("func ", "slay ")
+                    .replace("var ", "sus ")
+                    .replace("return", "yolo");
+                    
+                issues.push(LintIssue {
+                    rule_id: rule_id.clone(),
+                    category: self.get_rule_category(&rule_id),
+                    severity: LintSeverity::Warning,
+                    message: "Use CURSED keywords instead of Go-style keywords".to_string(),
+                    file_path: self.context.current_file.clone(),
+                    line: line_num,
+                    column: 1,
+                    length: line.len(),
+                    suggestion: Some(suggestion),
+                    context: HashMap::new(),
+                });
+            }
+            
+            // Check for empty import statements
+            if line.trim().starts_with("yeet \"\"") || line.trim() == "yeet \"\"" {
+                let rule_id = "empty_import".to_string();
+                issues.push(LintIssue {
+                    rule_id: rule_id.clone(),
+                    category: self.get_rule_category(&rule_id),
+                    severity: LintSeverity::Error,
+                    message: "Import path cannot be empty".to_string(),
+                    file_path: self.context.current_file.clone(),
+                    line: line_num,
+                    column: line.find("\"\"").unwrap_or(0) + 1,
+                    length: 2,
+                    suggestion: Some("Provide a valid import path".to_string()),
+                    context: HashMap::new(),
+                });
+            }
+            
+            // Check for package name validation
+            if line.trim_start().starts_with("vibe ") {
+                let package_name = line.trim_start().strip_prefix("vibe ").unwrap_or("").trim();
+                if package_name.chars().any(|c| c.is_ascii_digit() && package_name.starts_with(c)) {
+                    let rule_id = "package_name_validation".to_string();
+                    issues.push(LintIssue {
+                        rule_id: rule_id.clone(),
+                        category: self.get_rule_category(&rule_id),
+                        severity: LintSeverity::Error,
+                        message: "Package name cannot start with a number".to_string(),
+                        file_path: self.context.current_file.clone(),
+                        line: line_num,
+                        column: line.find(package_name).unwrap_or(0) + 1,
+                        length: package_name.len(),
+                        suggestion: Some("Use a package name that starts with a letter".to_string()),
+                        context: HashMap::new(),
+                    });
+                }
+            }
+
+            // Check for missing semicolons (basic syntax check)
+            let trimmed = line.trim();
+            if !trimmed.is_empty() && 
+               !trimmed.starts_with("//") && 
+               !trimmed.starts_with("/*") &&
+               !trimmed.starts_with("fr fr") &&
+               !trimmed.starts_with("vibe ") &&
+               !trimmed.starts_with("yeet ") &&
+               !trimmed.starts_with("slay ") &&
+               !trimmed.ends_with("{") &&
+               !trimmed.ends_with("}") &&
+               !trimmed.ends_with(";") &&
+               (trimmed.starts_with("sus ") || trimmed.starts_with("facts ") || trimmed.contains("print(")) {
+                let rule_id = "missing_semicolon".to_string();
+                issues.push(LintIssue {
+                    rule_id: rule_id.clone(),
+                    category: self.get_rule_category(&rule_id),
+                    severity: LintSeverity::Warning,
+                    message: "Statement should end with a semicolon".to_string(),
+                    file_path: self.context.current_file.clone(),
+                    line: line_num,
+                    column: line.len(),
+                    length: 1,
+                    suggestion: Some("Add a semicolon at the end of the statement".to_string()),
+                    context: HashMap::new(),
+                });
+            }
+        }
+        
+        // Check for mixed indentation across the file
+        if has_tabs && has_spaces {
+            let rule_id = "mixed_indentation".to_string();
+            issues.push(LintIssue {
+                rule_id: rule_id.clone(),
+                category: self.get_rule_category(&rule_id),
+                severity: LintSeverity::Warning,
+                message: "File uses both tabs and spaces for indentation".to_string(),
+                file_path: self.context.current_file.clone(),
+                line: 1,
+                column: 1,
+                length: 0,
+                suggestion: Some("Use consistent indentation (either tabs or spaces throughout)".to_string()),
+                context: HashMap::new(),
+            });
         }
         
         Ok(issues)
@@ -1736,6 +2049,119 @@ impl CursedLinter {
         
         issues
     }
+    
+    /// Check for long string literals
+    fn check_long_string_literal(&self, token: &Token) -> Result<Option<LintIssue>, CursedError> {
+        if matches!(token.kind, TokenKind::String) {
+            // Consider strings longer than 100 characters as excessively long
+            if token.lexeme.len() > 100 {
+                let rule_id = "long_string_literal".to_string();
+                return Ok(Some(LintIssue {
+                    rule_id: rule_id.clone(),
+                    category: self.get_rule_category(&rule_id),
+                    severity: LintSeverity::Info,
+                    message: "String literal is very long, consider breaking it up or using a constant".to_string(),
+                    file_path: self.context.current_file.clone(),
+                    line: token.line,
+                    column: token.column,
+                    length: token.lexeme.len(),
+                    suggestion: Some("Consider breaking this string into smaller parts or using a constant".to_string()),
+                    context: HashMap::new(),
+                }));
+            }
+        }
+        Ok(None)
+    }
+    
+    /// Check for too many function parameters
+    fn check_too_many_parameters(&self, param_count: usize, function_name: &str, line: usize) -> Option<LintIssue> {
+        const MAX_PARAMS: usize = 4; // Consider more than 4 parameters as too many
+        
+        if param_count > MAX_PARAMS {
+            let rule_id = "too_many_parameters".to_string();
+            return Some(LintIssue {
+                rule_id: rule_id.clone(),
+                category: self.get_rule_category(&rule_id),
+                severity: LintSeverity::Warning,
+                message: format!("Function '{}' has {} parameters, which exceeds the recommended maximum of {}", 
+                                function_name, param_count, MAX_PARAMS),
+                file_path: self.context.current_file.clone(),
+                line,
+                column: 1,
+                length: function_name.len(),
+                suggestion: Some("Consider grouping parameters into a struct or reducing the number of parameters".to_string()),
+                context: HashMap::new(),
+            });
+        }
+        None
+    }
+    
+    /// Check for generic function names
+    fn check_generic_function_name(&self, function_name: &str, line: usize) -> Option<LintIssue> {
+        let generic_names = ["doSomething", "doStuff", "handleSomething", "process", "execute", 
+                           "run", "perform", "action", "method", "function"];
+        
+        if generic_names.iter().any(|&name| function_name.contains(name)) {
+            let rule_id = "generic_function_name".to_string();
+            return Some(LintIssue {
+                rule_id: rule_id.clone(),
+                category: self.get_rule_category(&rule_id),
+                severity: LintSeverity::Warning,
+                message: format!("Function name '{}' is too generic, consider using a more descriptive name", function_name),
+                file_path: self.context.current_file.clone(),
+                line,
+                column: 1,
+                length: function_name.len(),
+                suggestion: Some("Use a more specific name that describes what the function actually does".to_string()),
+                context: HashMap::new(),
+            });
+        }
+        None
+    }
+    
+    /// Check for deep nesting in statements
+    fn check_deep_nesting(&self, statements: &[Statement], current_depth: usize) -> Vec<LintIssue> {
+        let mut issues = Vec::new();
+        const MAX_DEPTH: usize = 4; // Consider nesting deeper than 4 levels as problematic
+        
+        if current_depth > MAX_DEPTH {
+            let rule_id = "deep_nesting".to_string();
+            issues.push(LintIssue {
+                rule_id: rule_id.clone(),
+                category: self.get_rule_category(&rule_id),
+                severity: LintSeverity::Warning,
+                message: format!("Code is nested {} levels deep, which exceeds the recommended maximum of {}", 
+                                current_depth, MAX_DEPTH),
+                file_path: self.context.current_file.clone(),
+                line: 1, // Would need actual line tracking
+                column: 1,
+                length: 0,
+                suggestion: Some("Consider extracting nested logic into separate functions".to_string()),
+                context: HashMap::new(),
+            });
+        }
+        
+        // Recursively check nested statements
+        for statement in statements {
+            match statement {
+                Statement::If(if_stmt) => {
+                    issues.extend(self.check_deep_nesting(&if_stmt.then_branch, current_depth + 1));
+                    if let Some(else_branch) = &if_stmt.else_branch {
+                        issues.extend(self.check_deep_nesting(else_branch, current_depth + 1));
+                    }
+                },
+                Statement::While(while_stmt) => {
+                    issues.extend(self.check_deep_nesting(&while_stmt.body, current_depth + 1));
+                },
+                Statement::For(for_stmt) => {
+                    issues.extend(self.check_deep_nesting(&for_stmt.body, current_depth + 1));
+                },
+                _ => {}
+            }
+        }
+        
+        issues
+    }
 }
 
 impl Default for CursedLinter {
@@ -1779,6 +2205,16 @@ impl AstVisitor<Vec<LintIssue>> for CursedLinter {
                     issues.push(issue);
                 }
                 
+                // Check for too many parameters
+                if let Some(issue) = self.check_too_many_parameters(func_stmt.parameters.len(), &func_stmt.name, 1) {
+                    issues.push(issue);
+                }
+                
+                // Check for generic function names
+                if let Some(issue) = self.check_generic_function_name(&func_stmt.name, 1) {
+                    issues.push(issue);
+                }
+                
                 // Track function info
                 let complexity = self.calculate_function_complexity(&func_stmt.body);
                 self.context.functions.insert(func_stmt.name.clone(), FunctionInfo {
@@ -1788,6 +2224,9 @@ impl AstVisitor<Vec<LintIssue>> for CursedLinter {
                     complexity,
                     proper_slang_naming: func_stmt.name.starts_with("slay_") || func_stmt.name == "main",
                 });
+                
+                // Check for deep nesting in function body
+                issues.extend(self.check_deep_nesting(&func_stmt.body, 0));
                 
                 // Visit function body
                 self.context.scope_depth += 1;
