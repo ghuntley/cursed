@@ -311,14 +311,103 @@ mod tests {
 
     #[tokio::test]
     async fn test_registry_search() {
-        let registry = PackageRegistry::new(RegistryConfig::default()).unwrap();
+        let mut server = mockito::Server::new_async().await;
+        
+        // Mock the search endpoint
+        let mock_response = r#"{
+            "packages": [
+                {
+                    "name": "example-package",
+                    "version": {
+                        "major": 1,
+                        "minor": 0,
+                        "patch": 0,
+                        "pre_release": null,
+                        "build": null
+                    },
+                    "description": "An example package",
+                    "authors": ["Test Author"],
+                    "dependencies": [],
+                    "keywords": ["example"],
+                    "categories": ["development"],
+                    "license": "MIT",
+                    "homepage": "https://example.com",
+                    "repository": "https://github.com/example/example-package",
+                    "download_url": "https://example.com/download",
+                    "checksum": "abc123",
+                    "file_size": 1024
+                }
+            ],
+            "total": 1
+        }"#;
+        
+        let _m = server
+            .mock("GET", "/api/v1/search")
+            .match_query(mockito::Matcher::UrlEncoded("q".into(), "example".into()))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create_async()
+            .await;
+
+        let config = RegistryConfig {
+            url: server.url(),
+            timeout: std::time::Duration::from_secs(30),
+            max_retries: 3,
+            api_key: None,
+        };
+        
+        let registry = PackageRegistry::new(config).unwrap();
         let results = registry.search_packages("example").await.unwrap();
         assert!(!results.is_empty());
+        assert_eq!(results[0].name, "example-package");
     }
 
     #[tokio::test]
     async fn test_package_info() {
-        let registry = PackageRegistry::new(RegistryConfig::default()).unwrap();
+        let mut server = mockito::Server::new_async().await;
+        
+        // Mock the package info endpoint
+        let mock_response = r#"{
+            "package": {
+                "name": "test-package",
+                "version": {
+                    "major": 1,
+                    "minor": 0,
+                    "patch": 0,
+                    "pre_release": null,
+                    "build": null
+                },
+                "description": "A test package",
+                "authors": ["Test Author"],
+                "dependencies": [],
+                "keywords": ["test"],
+                "categories": ["development"],
+                "license": "MIT",
+                "homepage": "https://example.com",
+                "repository": "https://github.com/example/test-package",
+                "download_url": "https://example.com/download",
+                "checksum": "abc123",
+                "file_size": 1024
+            }
+        }"#;
+        
+        let _m = server
+            .mock("GET", "/api/v1/packages/test-package")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create_async()
+            .await;
+
+        let config = RegistryConfig {
+            url: server.url(),
+            timeout: std::time::Duration::from_secs(30),
+            max_retries: 3,
+            api_key: None,
+        };
+        
+        let registry = PackageRegistry::new(config).unwrap();
         let info = registry.get_package_info("test-package", None).await.unwrap();
         assert_eq!(info.name, "test-package");
     }
