@@ -12,7 +12,8 @@ use crate::ast::{Expression, Statement, Program, BinaryExpression, CallExpressio
 use crate::error::CursedError;
 use crate::core::Type;
 use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext, 
-            TypeSubstitution, ConstraintResolver, ConstraintViolation};
+            TypeSubstitution, ConstraintResolver, ConstraintViolation, TypeDefinition, 
+            TypeKind, MethodSignature};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -39,6 +40,8 @@ pub enum TypeErrorKind {
     InvalidOperation,
     ConstraintViolation,
     UnificationFailure,
+    TypeNotFound,
+    FieldNotFound,
 }
 
 impl TypeChecker {
@@ -878,23 +881,111 @@ impl TypeChecker {
     // CURSED-specific type checking methods
     
     fn check_struct_statement(&mut self, struct_stmt: &StructStatement) -> Result<TypeExpression, TypeCheckError> {
-        // Register the struct type in the type system
-        let struct_type = TypeExpression::named(&struct_stmt.name);
+        // Validate field types
+        let mut validated_fields = Vec::new();
+        for field in &struct_stmt.fields {
+            // Check field type exists if specified
+            if let Some(field_type_name) = &field.field_type {
+                // Validate the field type exists in the type system
+                if !self.is_type_defined(field_type_name) {
+                    return Err(TypeCheckError {
+                        message: format!("Type '{}' not found", field_type_name),
+                        location: None,
+                        error_type: TypeErrorKind::TypeNotFound,
+                    });
+                }
+            }
+            validated_fields.push(field.clone());
+        }
         
-        // TODO: Check field types and add struct definition to environment
-        // For now, return a basic struct type representation
+        // Register the struct type in the type environment
+        let struct_definition = TypeDefinition {
+            name: struct_stmt.name.clone(),
+            kind: TypeKind::Struct,
+            type_parameters: Vec::new(),
+            constraints: Vec::new(),
+            methods: Vec::new(),
+            fields: validated_fields,
+            is_builtin: false,
+        };
         
-        Ok(struct_type)
+        self.type_system.environment.type_definitions.insert(
+            struct_stmt.name.clone(), 
+            struct_definition
+        );
+        
+        log::debug!("Registered struct type '{}' with {} fields", 
+                   struct_stmt.name, struct_stmt.fields.len());
+        
+        Ok(TypeExpression::named(&struct_stmt.name))
     }
     
     fn check_interface_statement(&mut self, interface_stmt: &InterfaceStatement) -> Result<TypeExpression, TypeCheckError> {
-        // Register the interface type in the type system
-        let interface_type = TypeExpression::named(&interface_stmt.name);
+        // Validate method signatures
+        let mut validated_methods = Vec::new();
+        for method in &interface_stmt.methods {
+            // Check parameter types
+            let mut param_types = Vec::new();
+            for param in &method.parameters {
+                if let Some(param_type_name) = &param.param_type {
+                    if !self.is_type_defined(param_type_name) {
+                        return Err(TypeCheckError {
+                            message: format!("Type '{}' not found", param_type_name),
+                            location: None,
+                            error_type: TypeErrorKind::TypeNotFound,
+                        });
+                    }
+                    param_types.push(TypeExpression::named(param_type_name));
+                } else {
+                    // Infer parameter type if not specified
+                    param_types.push(TypeExpression::named("unknown"));
+                }
+            }
+            
+            // Check return type
+            let return_type = if let Some(return_type_name) = &method.return_type {
+                if !self.is_type_defined(return_type_name) {
+                    return Err(TypeCheckError {
+                        message: format!("Type '{}' not found", return_type_name),
+                        location: None,
+                        error_type: TypeErrorKind::TypeNotFound,
+                    });
+                }
+                Some(TypeExpression::named(return_type_name))
+            } else {
+                None
+            };
+            
+            // Create validated method signature
+            validated_methods.push(MethodSignature {
+                name: method.name.clone(),
+                parameters: param_types,
+                return_type,
+                type_parameters: Vec::new(),
+                constraints: Vec::new(),
+            });
+        }
         
-        // TODO: Check method signatures and add interface definition to environment
-        // For now, return a basic interface type representation
+        // Register the interface type in the type environment
+        let interface_definition = TypeDefinition {
+            name: interface_stmt.name.clone(),
+            kind: TypeKind::Interface,
+            type_parameters: Vec::new(),
+            constraints: Vec::new(),
+            methods: validated_methods,
+            fields: Vec::new(), // Interfaces don't have fields
+            is_builtin: false,
+        };
         
-        Ok(interface_type)
+        self.type_system.environment.type_definitions.insert(
+            interface_stmt.name.clone(), 
+            interface_definition
+        );
+        
+        log::debug!("Registered interface type '{}' with {} methods", 
+                   interface_stmt.name, interface_stmt.methods.len());
+        
+        Ok(TypeExpression::named(&interface_stmt.name))
     }
     
     fn check_channel_statement(&mut self, _channel_stmt: &ChannelStatement) -> Result<TypeExpression, TypeCheckError> {
@@ -1017,20 +1108,79 @@ impl TypeChecker {
     }
 
     fn check_struct_literal_expression(&mut self, struct_literal: &crate::ast::StructLiteralExpression) -> Result<TypeExpression, TypeCheckError> {
-        // Verify the struct exists (TODO: enhance with proper struct type tracking)
+        // Verify the struct exists and get its definition
         let struct_type_name = &struct_literal.struct_name;
+        let struct_definition = self.type_system.environment.type_definitions.get(struct_type_name)
+            .ok_or_else(|| TypeCheckError {
+                message: format!("Struct type '{}' not found", struct_type_name),
+                location: None,
+                error_type: TypeErrorKind::TypeNotFound,
+            })?.clone();
         
-        // Check each field assignment
+        // Verify it's actually a struct
+        if struct_definition.kind != TypeKind::Struct {
+            return Err(TypeCheckError {
+                message: format!("Expected struct type, found {:?}", struct_definition.kind),
+                location: None,
+                error_type: TypeErrorKind::TypeMismatch,
+            });
+        }
+        
+        // Check each field assignment against the struct definition
         for field_assignment in &struct_literal.fields {
-            let field_type = self.check_expression(&field_assignment.value)?;
-            // TODO: Validate field types against struct definition when we have struct registry
-            log::debug!("Struct field '{}' has type {:?}", field_assignment.field_name, field_type);
+            // Find the field in the struct definition
+            let struct_field = struct_definition.fields.iter()
+                .find(|f| f.name == field_assignment.field_name)
+                .ok_or_else(|| TypeCheckError {
+                    message: format!("Field '{}' not found in struct '{}'", 
+                                    field_assignment.field_name, struct_type_name),
+                    location: None,
+                    error_type: TypeErrorKind::FieldNotFound,
+                })?;
+            
+            // Check the assigned value type
+            let assigned_type = self.check_expression(&field_assignment.value)?;
+            
+            // Validate against declared field type if specified
+            if let Some(expected_type_name) = &struct_field.field_type {
+                let expected_type = TypeExpression::named(expected_type_name);
+                if !self.are_types_compatible(&assigned_type, &expected_type) {
+                    return Err(TypeCheckError {
+                        message: format!("Type mismatch in field '{}': expected '{}', found '{:?}'", 
+                                        field_assignment.field_name, expected_type_name, assigned_type),
+                        location: None,
+                        error_type: TypeErrorKind::TypeMismatch,
+                    });
+                }
+            }
+            
+            log::debug!("Struct field '{}' validated: assigned {:?} to field type {:?}", 
+                       field_assignment.field_name, assigned_type, struct_field.field_type);
         }
         
         // Return the struct type
         Ok(TypeExpression::named(struct_type_name))
     }
     
+    /// Helper method to check if a type is defined in the type system
+    fn is_type_defined(&self, type_name: &str) -> bool {
+        // Check built-in types
+        match type_name {
+            "normie" | "tea" | "vibes" | "snack" | "cap" | "lit" | "truth" | "lies" => true,
+            _ => {
+                // Check user-defined types in the environment
+                self.type_system.environment.type_definitions.contains_key(type_name)
+            }
+        }
+    }
+    
+    /// Helper method to check if two types are compatible for assignment
+    fn are_types_compatible(&self, assigned: &TypeExpression, expected: &TypeExpression) -> bool {
+        // Basic type compatibility check
+        // For now, require exact match; later can be extended for subtyping, coercion, etc.
+        format!("{:?}", assigned) == format!("{:?}", expected)
+    }
+
     /// Check lambda expression and infer its function type
     fn check_lambda_expression(&mut self, lambda_expr: &crate::ast::LambdaExpression) -> Result<TypeExpression, TypeCheckError> {
         // Enter new scope for lambda parameters

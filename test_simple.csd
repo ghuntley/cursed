@@ -1,4 +1,4 @@
 slay main() {
-    vibez.spill("Hello, CURSED world with new features!");
-    yolo 42;
+    sus x = 42;
+    yolo x;
 }

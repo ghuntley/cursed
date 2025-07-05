@@ -4,6 +4,15 @@
 /// implementation, including error types, debugging contexts, and recovery.
 
 pub mod debug_context;
+pub mod structured;
+pub mod types;
+pub mod cli;
+
+// Re-export structured error types for easy access
+pub use structured::{
+    StructuredError, ErrorCode, ErrorSeverity, ErrorSourceLocation, ErrorReporter,
+    unexpected_token, unterminated_string, unknown_variable, type_mismatch, function_not_found,
+};
 
 #[derive(Debug, Clone)]
 pub enum CursedError {

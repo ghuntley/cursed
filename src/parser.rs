@@ -1,6 +1,7 @@
 //! Parser module for CURSED language
 
-use crate::error::CursedError;
+use crate::error::{CursedError, StructuredError, ErrorCode};
+use crate::error::structured::ErrorSourceLocation;
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::ast::*;
 
@@ -177,7 +178,14 @@ impl Parser {
         if self.check(&kind) {
             Ok(self.advance())
         } else {
-            Err(CursedError::syntax_error(message))
+            let current_token = &self.peek();
+            let error = StructuredError::unexpected_token(
+                &format!("{:?}", kind),
+                &current_token.lexeme,
+                current_token.line,
+                current_token.column,
+            );
+            Err(CursedError::from(error))
         }
     }
 

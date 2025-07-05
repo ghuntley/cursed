@@ -105,8 +105,31 @@ fn build_cli() -> Command {
         .arg(Arg::new("file")
             .help("CURSED source file to run (backward compatibility)")
             .value_name("FILE")
-            .index(1)
-)
+            .index(1))
+        
+        // Error handling options
+        .arg(Arg::new("explain")
+            .help("Explain an error code (e.g., E0001)")
+            .long("explain")
+            .value_name("CODE")
+            .global(true))
+        .arg(Arg::new("list-error-codes")
+            .help("List all available error codes")
+            .long("list-error-codes")
+            .action(clap::ArgAction::SetTrue)
+            .global(true))
+        .arg(Arg::new("max-errors")
+            .help("Maximum number of errors to report")
+            .long("max-errors")
+            .value_name("COUNT")
+            .value_parser(value_parser!(usize))
+            .default_value("100")
+            .global(true))
+        .arg(Arg::new("json-errors")
+            .help("Output errors in JSON format")
+            .long("json-errors")
+            .action(clap::ArgAction::SetTrue)
+            .global(true))
         
         // Subcommands
         .subcommand(
@@ -400,6 +423,24 @@ fn build_cli() -> Command {
 }
 
 async fn handle_command(matches: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    // Handle error explanation commands first
+    if let Some(code) = matches.get_one::<String>("explain") {
+        use cursed::error::cli::FileAwareErrorReporter;
+        return match FileAwareErrorReporter::handle_explain_command(code) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                eprintln!("{}: {}", "Error".red(), e);
+                Err(e.into())
+            }
+        };
+    }
+    
+    if matches.get_flag("list-error-codes") {
+        use cursed::error::cli::FileAwareErrorReporter;
+        FileAwareErrorReporter::list_error_codes();
+        return Ok(());
+    }
+    
     // Set up logging based on verbosity
     if matches.get_flag("verbose") {
         std::env::set_var("RUST_LOG", "cursed=debug");
@@ -811,8 +852,42 @@ async fn handle_build(matches: &ArgMatches, global_matches: &ArgMatches) -> Resu
              "Building".green().bold(), 
              if release { "release" } else { "debug" });
     
-    // TODO: Implement project building
-    println!("{} Project building not yet implemented", "Warning".yellow().bold());
+    // Use the new build system
+    use cursed::build_system::{BuildOrchestrator, BuildStrategy};
+    
+    let current_dir = std::env::current_dir()?;
+    let mut orchestrator = BuildOrchestrator::from_workspace(&current_dir).await?;
+    
+    let strategy = if jobs.unwrap_or(1) > 1 {
+        BuildStrategy::Parallel
+    } else {
+        BuildStrategy::Sequential
+    };
+    
+    let results = orchestrator.build_workspace(strategy).await?;
+    
+    let success_count = results.values().filter(|r| r.success).count();
+    let total_count = results.len();
+    
+    if success_count == total_count {
+        println!("{} Build completed successfully ({}/{} projects)", 
+                 "✅".green().bold(), success_count, total_count);
+    } else {
+        println!("{} Build completed with errors ({}/{} projects)", 
+                 "❌".red().bold(), success_count, total_count);
+        
+        // Show errors
+        for (project, result) in &results {
+            if !result.success {
+                println!("❌ {}: {} errors", project, result.errors.len());
+                for error in &result.errors {
+                    println!("  {}", error);
+                }
+            }
+        }
+        
+        process::exit(1);
+    }
     
     Ok(())
 }

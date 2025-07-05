@@ -1,6 +1,7 @@
 //! Lexical analysis for CURSED
 
-use crate::error::CursedError;
+use crate::error::{CursedError, StructuredError, ErrorCode};
+use crate::error::structured::ErrorSourceLocation;
 
 #[derive(Debug, Clone)]
 pub struct Lexer {
@@ -256,7 +257,19 @@ impl Lexer {
                 if self.match_char('&') {
                     Ok(self.make_token(TokenKind::AmpAmp, "&&".to_string(), start_column))
                 } else {
-                    Err(CursedError::syntax_error("Unexpected character: '&' (use '&&' for logical AND)"))
+                    let error = StructuredError::new(ErrorCode::E0001, "Unexpected character: '&'".to_string())
+                        .with_location(ErrorSourceLocation {
+                            file: "".to_string(),
+                            line: self.line,
+                            column: start_column,
+                            length: 1,
+                            source_line: None,
+                        })
+                        .with_suggestions(vec![
+                            "Use '&&' for logical AND".to_string(),
+                            "Use bitwise operations if intended".to_string(),
+                        ]);
+                    Err(CursedError::from(error))
                 }
             },
             '|' => {
@@ -281,7 +294,21 @@ impl Lexer {
             }),
             _ if c.is_ascii_digit() => self.number_literal(start_column),
             _ if c.is_ascii_alphabetic() || c == '_' => self.identifier(start_column),
-            _ => Err(CursedError::syntax_error(&format!("Unexpected character: {}", c))),
+            _ => {
+                let error = StructuredError::new(ErrorCode::E0005, format!("Unexpected character: {}", c))
+                    .with_location(ErrorSourceLocation {
+                        file: "".to_string(),
+                        line: self.line,
+                        column: start_column,
+                        length: 1,
+                        source_line: None,
+                    })
+                    .with_suggestions(vec![
+                        "Check for typos in the source code".to_string(),
+                        "Ensure the character is valid CURSED syntax".to_string(),
+                    ]);
+                Err(CursedError::from(error))
+            },
         }
     }
 
@@ -393,7 +420,8 @@ impl Lexer {
                     '\'' => value.push('\''),
                     '0' => value.push('\0'),
                     c => {
-                        return Err(CursedError::syntax_error(&format!("Invalid escape sequence: \\{}", c)));
+                        let error = StructuredError::invalid_escape_sequence(&c.to_string(), self.line, self.column);
+                        return Err(CursedError::from(error));
                     }
                 }
             } else {
@@ -402,7 +430,8 @@ impl Lexer {
         }
         
         if self.is_at_end() {
-            return Err(CursedError::syntax_error("Unterminated string"));
+            let error = StructuredError::unterminated_string(self.line, start_column);
+            return Err(CursedError::from(error));
         }
         
         // Consume closing quote

@@ -260,6 +260,7 @@ mod tests {
             kind: TypeKind::Struct,
             type_parameters: vec!["T".to_string()],
             constraints: Vec::new(),
+            fields: Vec::new(),
             methods: vec![
                 MethodSignature {
                     name: "get".to_string(),
@@ -286,6 +287,7 @@ mod tests {
             kind: TypeKind::Function,
             type_parameters: vec!["T".to_string(), "R".to_string()],
             constraints: Vec::new(),
+            fields: Vec::new(),
             methods: vec![
                 MethodSignature {
                     name: "call".to_string(),

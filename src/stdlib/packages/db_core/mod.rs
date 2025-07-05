@@ -47,6 +47,109 @@ pub use core_types::{
     ColumnMetadata, RowValue, QueryParameter
 };
 
+// Database driver and configuration types
+#[derive(Debug, Clone)]
+pub struct ConnectionConfig {
+    pub host: Option<String>,
+    pub port: Option<u16>,
+    pub database: Option<String>,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub max_connections: Option<u32>,
+    pub connection_timeout: Option<std::time::Duration>,
+    pub idle_timeout: Option<std::time::Duration>,
+    pub ssl_mode: Option<String>,
+}
+
+impl Default for ConnectionConfig {
+    fn default() -> Self {
+        Self {
+            host: None,
+            port: None,
+            database: None,
+            username: None,
+            password: None,
+            max_connections: None,
+            connection_timeout: None,
+            idle_timeout: None,
+            ssl_mode: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DriverFeature {
+    Transactions,
+    PreparedStatements,
+    ConnectionPooling,
+    AsyncOperations,
+    Streaming,
+    Batching,
+    Encryption,
+}
+
+pub trait DatabaseDriver {
+    fn driver_info(&self) -> DriverInfo;
+    fn supports_feature(&self, feature: DriverFeature) -> bool;
+    fn supported_types(&self) -> Vec<SqlType>;
+    fn configuration_options(&self) -> Vec<ConfigurationOption>;
+    fn performance_info(&self) -> PerformanceInfo;
+    fn limitations(&self) -> DriverLimitations;
+    fn validate_connection_string(&self, conn_str: &str) -> Result<(), String>;
+    fn validate_sql(&self, sql: &str) -> Result<(), String>;
+}
+
+#[derive(Debug, Clone)]
+pub struct DriverInfo {
+    pub name: String,
+    pub version: String,
+    pub description: String,
+    pub author: String,
+}
+
+impl DriverInfo {
+    pub fn name(&self) -> &str { &self.name }
+    pub fn version(&self) -> &str { &self.version }
+    pub fn description(&self) -> &str { &self.description }
+    pub fn author(&self) -> &str { &self.author }
+}
+
+#[derive(Debug, Clone)]
+pub struct ConfigurationOption {
+    pub name: String,
+    pub description: String,
+    pub default_value: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PerformanceInfo {
+    pub connection_time: std::time::Duration,
+    pub query_overhead: std::time::Duration,
+    pub max_connections: Option<u32>,
+    pub connection_pooling: bool,
+    pub statement_caching: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct DriverLimitations {
+    pub max_statement_length: Option<usize>,
+    pub max_parameters: Option<usize>,
+    pub max_identifier_length: Option<usize>,
+    pub max_columns: Option<usize>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SqlType {
+    Text,
+    Integer,
+    Float,
+    Boolean,
+    Uuid,
+    Json,
+    Timestamp,
+    Binary,
+}
+
 // Import SavePoint from traits (commented out to avoid conflict)
 // pub use traits::SavePoint;
 

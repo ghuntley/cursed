@@ -134,6 +134,10 @@ impl ProfileCollector {
             collection_duration: self.start_time.map(|t| t.elapsed()),
             total_samples: self.samples.len(),
             total_functions,
+            function_counts: HashMap::new(),
+            basic_block_counts: HashMap::new(),
+            edge_counts: HashMap::new(),
+            total_execution_time: Duration::from_secs(0),
         }
     }
 
@@ -179,6 +183,10 @@ pub struct ProfileData {
     pub collection_duration: Option<Duration>,
     pub total_samples: usize,
     pub total_functions: usize,
+    pub function_counts: HashMap<String, u64>,
+    pub basic_block_counts: HashMap<String, u64>,
+    pub edge_counts: HashMap<String, u64>,
+    pub total_execution_time: Duration,
 }
 
 impl ProfileData {
@@ -190,7 +198,31 @@ impl ProfileData {
             collection_duration: None,
             total_samples: 0,
             total_functions: 0,
+            function_counts: HashMap::new(),
+            basic_block_counts: HashMap::new(),
+            edge_counts: HashMap::new(),
+            total_execution_time: Duration::from_secs(0),
         }
+    }
+    
+    /// Add function execution data
+    pub fn add_function_execution(&mut self, function_name: String, count: u64) {
+        self.function_counts.insert(function_name, count);
+    }
+    
+    /// Add basic block execution data
+    pub fn add_basic_block_execution(&mut self, block_name: String, count: u64) {
+        self.basic_block_counts.insert(block_name, count);
+    }
+    
+    /// Add edge execution data
+    pub fn add_edge_execution(&mut self, edge_name: String, count: u64) {
+        self.edge_counts.insert(edge_name, count);
+    }
+    
+    /// Get total function executions
+    pub fn total_function_executions(&self) -> u64 {
+        self.function_counts.values().sum()
     }
 
     /// Get function call count

@@ -39,16 +39,15 @@ fn basic_operations_demo() {
     let data2 = b"world";
     let data3 = b"hello";
     
-    println!("compare('hello', 'world'): {}", compare(data1, data2));
+    println!("compare('hello', 'world'): {:?}", compare(data1, data2));
     println!("equal('hello', 'hello'): {}", equal(data1, data3));
     println!("equal_fold('Hello', 'HELLO'): {}", equal_fold(b"Hello", b"HELLO"));
     
     let repeated = repeat(b"abc", 3);
     println!("repeat('abc', 3): {}", String::from_utf8_lossy(&repeated));
     
-    if let Ok(runes_result) = runes(b"Hello") {
-        println!("runes('Hello'): {} characters", runes_result.len());
-    }
+    let runes_result = runes(b"Hello");
+    println!("runes('Hello'): {} characters", runes_result.len());
     
     println!();
 }
@@ -57,12 +56,12 @@ fn search_functions_demo() {
     let text = b"The quick brown fox jumps over the lazy dog";
     
     println!("contains(text, 'fox'): {}", contains(text, b"fox"));
-    println!("contains_any(text, 'xyz'): {}", contains_any(text, "xyz"));
+    println!("contains_any(text, 'xyz'): {}", contains_any(text, b"xyz"));
     println!("contains_rune(text, 'q'): {}", contains_rune(text, 'q'));
     
     println!("count(text, 'the'): {}", count(text, b"the"));
-    println!("index(text, 'fox'): {}", index(text, b"fox"));
-    println!("last_index_byte(text, 'o'): {}", last_index_byte(text, b'o'));
+    println!("index(text, 'fox'): {:?}", index(text, b"fox"));
+    println!("last_index_byte(text, 'o'): {:?}", last_index_byte(text, b'o'));
     
     println!("has_prefix(text, 'The'): {}", has_prefix(text, b"The"));
     println!("has_suffix(text, 'dog'): {}", has_suffix(text, b"dog"));

@@ -140,6 +140,7 @@ mod tests {
             kind: super::super::TypeKind::Struct,
             type_parameters: vec!["T".to_string()],
             constraints: Vec::new(),
+            fields: Vec::new(),
             methods: vec![
                 super::super::MethodSignature {
                     name: "get".to_string(),
