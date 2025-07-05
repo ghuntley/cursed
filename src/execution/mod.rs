@@ -382,6 +382,7 @@ impl CursedExecutionEngine {
         
         match expression {
             Expression::Integer(i) => Ok(CursedValue::Integer(*i)),
+            Expression::Float(f) => Ok(CursedValue::Float(*f)),
             Expression::String(s) => Ok(CursedValue::String(s.clone())),
             Expression::Boolean(b) => Ok(CursedValue::Boolean(*b)),
             Expression::Identifier(name) => {

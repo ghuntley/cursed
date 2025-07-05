@@ -51,6 +51,7 @@ pub enum Statement {
 pub enum Expression {
     Identifier(String),
     Integer(i64),
+    Float(f64),
     String(String),
     Boolean(bool),
     Binary(BinaryExpression),

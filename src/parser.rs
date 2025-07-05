@@ -1187,9 +1187,14 @@ impl Parser {
             },
             TokenKind::Number => {
                 let token = self.advance();
-                let value = token.lexeme.parse::<i64>()
-                    .map_err(|_| CursedError::syntax_error("Invalid number literal"))?;
-                Ok(Expression::Integer(value))
+                // Try parsing as integer first, then as float
+                if let Ok(int_value) = token.lexeme.parse::<i64>() {
+                    Ok(Expression::Integer(int_value))
+                } else if let Ok(float_value) = token.lexeme.parse::<f64>() {
+                    Ok(Expression::Float(float_value))
+                } else {
+                    Err(CursedError::syntax_error("Invalid number literal"))
+                }
             },
             TokenKind::String => {
                 let token = self.advance();
