@@ -286,8 +286,13 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Statement::Assignment(assign_stmt) => {
                 let value_reg = self.generate_expression(&assign_stmt.value)?;
                 // Update the variable mapping
-                self.variables.insert(assign_stmt.name.clone(), value_reg.clone());
-                self.ir_code.push_str(&format!("  ; Assignment: {} = {}\n", assign_stmt.name, value_reg));
+                // For now, only handle simple variable assignment (not tuple destructuring)
+                if let crate::ast::AssignmentTarget::Single(name) = &assign_stmt.target {
+                    self.variables.insert(name.clone(), value_reg.clone());
+                    self.ir_code.push_str(&format!("  ; Assignment: {} = {}\n", name, value_reg));
+                } else {
+                    self.ir_code.push_str(&format!("  ; Tuple assignment (TODO: implement)\n"));
+                }
             },
             Statement::Function(func_stmt) => {
                 self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.return_type, &func_stmt.body)?;

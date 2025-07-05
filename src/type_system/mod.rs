@@ -93,6 +93,17 @@ impl TypeSystem {
                 let right_type = self.check_expression(&binary.right)?;
                 self.check_binary_operation(&left_type, &binary.operator, &right_type)
             }
+            Expression::Tuple(tuple_expr) => {
+                let mut element_types = Vec::new();
+                for element in &tuple_expr.elements {
+                    element_types.push(self.check_expression(element)?);
+                }
+                Ok(TypeExpression::tuple(element_types))
+            }
+            Expression::TupleAccess(tuple_access) => {
+                let tuple_type = self.check_expression(&tuple_access.tuple)?;
+                self.check_tuple_access(&tuple_type, tuple_access.index)
+            }
             _ => Ok(TypeExpression::named("unknown")),
         }
     }
@@ -185,6 +196,24 @@ impl TypeSystem {
     fn types_compatible(&self, t1: &TypeExpression, t2: &TypeExpression) -> bool {
         // Simple compatibility check for now
         t1.name == t2.name
+    }
+    
+    fn check_tuple_access(&self, tuple_type: &TypeExpression, index: usize) -> Result<TypeExpression, String> {
+        // Verify that the type is actually a tuple
+        if let Some(name) = &tuple_type.name {
+            if name == "Tuple" {
+                // Check if the index is valid
+                if index < tuple_type.parameters.len() {
+                    Ok(tuple_type.parameters[index].clone())
+                } else {
+                    Err(format!("Tuple index {} out of bounds for tuple with {} elements", index, tuple_type.parameters.len()))
+                }
+            } else {
+                Err(format!("Cannot access tuple element on non-tuple type: {}", name))
+            }
+        } else {
+            Err("Cannot access tuple element on unknown type".to_string())
+        }
     }
     
     fn is_numeric_type(&self, type_expr: &TypeExpression) -> bool {
@@ -335,6 +364,15 @@ impl TypeExpression {
             kind: TypeKind::Struct,
             name: Some("Map".to_string()),
             parameters: vec![key_type, value_type],
+            return_type: None,
+        }
+    }
+    
+    pub fn tuple(element_types: Vec<TypeExpression>) -> Self {
+        Self {
+            kind: TypeKind::Struct,
+            name: Some("Tuple".to_string()),
+            parameters: element_types,
             return_type: None,
         }
     }

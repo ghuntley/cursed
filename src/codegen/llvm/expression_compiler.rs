@@ -78,6 +78,12 @@ impl ExpressionCompiler {
             Expression::Lambda(lambda_expr) => {
                 self.compile_lambda_expression(&lambda_expr.parameters, &lambda_expr.body)
             },
+            Expression::Tuple(tuple_expr) => {
+                self.compile_tuple_expression(&tuple_expr.elements)
+            },
+            Expression::TupleAccess(tuple_access) => {
+                self.compile_tuple_access(&tuple_access.tuple, tuple_access.index)
+            },
 
         }
     }
@@ -684,5 +690,75 @@ impl ExpressionCompiler {
         Ok(result_reg)
     }
 
+    /// Compile tuple expression (e.g., (1, "hello", based))
+    fn compile_tuple_expression(&mut self, elements: &[Expression]) -> Result<String, CursedError> {
+        // Create a struct type for the tuple with appropriate fields
+        let mut element_types = Vec::new();
+        let mut element_regs = Vec::new();
+        
+        // Compile each element and determine its type
+        for element in elements {
+            let element_reg = self.compile_expression(element)?;
+            element_regs.push(element_reg);
+            
+            // Determine LLVM type based on expression
+            let llvm_type = match element {
+                Expression::Integer(_) => "i32",
+                Expression::String(_) => "i8*",
+                Expression::Boolean(_) => "i1",
+                _ => "i8*", // Default to pointer for complex types
+            };
+            element_types.push(llvm_type);
+        }
+        
+        // Create the tuple struct type
+        let tuple_type = format!("{{ {} }}", element_types.join(", "));
+        
+        // Allocate memory for the tuple
+        let tuple_reg = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  {} = alloca {}, align 8\n",
+            tuple_reg, tuple_type
+        ));
+        
+        // Store each element in the tuple
+        for (i, element_reg) in element_regs.iter().enumerate() {
+            let field_ptr = self.next_register();
+            self.ir_buffer.push_str(&format!(
+                "  {} = getelementptr inbounds {}, {}* {}, i32 0, i32 {}\n",
+                field_ptr, tuple_type, tuple_type, tuple_reg, i
+            ));
+            
+            self.ir_buffer.push_str(&format!(
+                "  store {} {}, {}* {}, align 4\n",
+                element_types[i], element_reg, element_types[i], field_ptr
+            ));
+        }
+        
+        Ok(tuple_reg)
+    }
 
+    /// Compile tuple access expression (e.g., tuple.0, tuple.1)
+    fn compile_tuple_access(&mut self, tuple_expr: &Expression, index: usize) -> Result<String, CursedError> {
+        let tuple_reg = self.compile_expression(tuple_expr)?;
+        
+        // For now, we'll assume a generic tuple type - in a real implementation,
+        // we'd need proper type information from the type system
+        let field_ptr = self.next_register();
+        
+        // Generate GEP instruction to access the field
+        self.ir_buffer.push_str(&format!(
+            "  {} = getelementptr inbounds %tuple_type, %tuple_type* {}, i32 0, i32 {}\n",
+            field_ptr, tuple_reg, index
+        ));
+        
+        // Load the value from the field
+        let result_reg = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  {} = load i32, i32* {}, align 4\n",
+            result_reg, field_ptr
+        ));
+        
+        Ok(result_reg)
+    }
 }

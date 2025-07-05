@@ -65,6 +65,8 @@ pub enum Expression {
     ChannelCreation(ChannelCreationExpression),
     StructLiteral(StructLiteralExpression),
     Lambda(LambdaExpression),
+    Tuple(TupleExpression),
+    TupleAccess(TupleAccessExpression),
 }
 
 /// Binary expression
@@ -110,6 +112,19 @@ pub struct LambdaExpression {
     pub body: Box<Expression>,
 }
 
+/// Tuple expression (e.g., (1, "hello", based))
+#[derive(Debug, Clone)]
+pub struct TupleExpression {
+    pub elements: Vec<Expression>,
+}
+
+/// Tuple access expression (e.g., tuple.0, tuple.1)
+#[derive(Debug, Clone)]
+pub struct TupleAccessExpression {
+    pub tuple: Box<Expression>,
+    pub index: usize,
+}
+
 /// Visibility level for symbols
 #[derive(Debug, Clone, PartialEq)]
 pub enum Visibility {
@@ -136,8 +151,15 @@ pub struct LetStatement {
 /// Assignment statement  
 #[derive(Debug, Clone)]
 pub struct AssignmentStatement {
-    pub name: String,
+    pub target: AssignmentTarget,
     pub value: Expression,
+}
+
+/// Assignment target (single variable or tuple destructuring)
+#[derive(Debug, Clone)]
+pub enum AssignmentTarget {
+    Single(String),
+    Tuple(Vec<String>),
 }
 
 /// Return statement
@@ -404,6 +426,7 @@ pub enum Type {
     Squad(Box<Type>),    // Array/collection type (squad)
     Collab(String),      // Interface type (collab)
     Dm(Box<Type>),       // Channel type (dm<T>)
+    Tuple(Vec<Type>),    // Tuple type (tuple)
 }
 
 /// AST visitor trait for traversing the AST

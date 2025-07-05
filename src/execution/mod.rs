@@ -130,6 +130,12 @@ impl CursedExecutionEngine {
             CursedValue::Lambda(lambda_value) => {
                 format!("<lambda({})>", lambda_value.parameters.join(", "))
             },
+            CursedValue::Tuple(elements) => {
+                let element_strs: Vec<String> = elements.iter()
+                    .map(|v| self.format_value(v))
+                    .collect();
+                format!("({})", element_strs.join(", "))
+            },
             CursedValue::Nil => "nil".to_string(),
         }
     }
@@ -151,7 +157,7 @@ impl CursedExecutionEngine {
             },
             Statement::Assignment(assign_stmt) => {
                 let value = self.evaluate_expression(&assign_stmt.value, context)?;
-                context.set_variable(assign_stmt.name.clone(), value.clone());
+                self.execute_assignment(&assign_stmt.target, value.clone(), context)?;
                 // For assignment statements, return the value that was assigned
                 Ok(ExecutionFlow::Continue(value))
             },
@@ -410,6 +416,12 @@ impl CursedExecutionEngine {
             },
             Expression::Lambda(lambda_expr) => {
                 self.evaluate_lambda(lambda_expr, context)
+            },
+            Expression::Tuple(tuple_expr) => {
+                self.evaluate_tuple(tuple_expr, context)
+            },
+            Expression::TupleAccess(tuple_access) => {
+                self.evaluate_tuple_access(tuple_access, context)
             },
         }
     }
@@ -766,6 +778,7 @@ impl CursedExecutionEngine {
             CursedValue::Channel(_) => true, // Channels are truthy when they exist
             CursedValue::Struct(fields) => !fields.is_empty(), // Structs are truthy if they have fields
             CursedValue::Lambda(_) => true, // Lambdas are always truthy when they exist
+            CursedValue::Tuple(elements) => !elements.is_empty(), // Tuples are truthy if they have elements
             CursedValue::Nil => false,
         }
     }
@@ -847,6 +860,69 @@ impl CursedExecutionEngine {
         // Execute lambda body
         self.evaluate_expression(&lambda_value.body, &mut lambda_context)
     }
+
+    /// Evaluate tuple expression
+    fn evaluate_tuple(&mut self, tuple_expr: &crate::ast::TupleExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let mut elements = Vec::new();
+        
+        for element_expr in &tuple_expr.elements {
+            let element_value = self.evaluate_expression(element_expr, context)?;
+            elements.push(element_value);
+        }
+        
+        Ok(CursedValue::Tuple(elements))
+    }
+
+    /// Evaluate tuple access expression
+    fn evaluate_tuple_access(&mut self, tuple_access: &crate::ast::TupleAccessExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let tuple_value = self.evaluate_expression(&tuple_access.tuple, context)?;
+        
+        match tuple_value {
+            CursedValue::Tuple(ref elements) => {
+                if tuple_access.index < elements.len() {
+                    Ok(elements[tuple_access.index].clone())
+                } else {
+                    Err(CursedError::RuntimeError(format!(
+                        "Tuple index {} out of bounds for tuple with {} elements",
+                        tuple_access.index, elements.len()
+                    )))
+                }
+            },
+            _ => Err(CursedError::RuntimeError(
+                "Cannot access tuple element on non-tuple value".to_string()
+            )),
+        }
+    }
+
+    /// Execute assignment to either a single variable or tuple destructuring
+    fn execute_assignment(&mut self, target: &crate::ast::AssignmentTarget, value: CursedValue, context: &mut ExecutionContext) -> Result<(), CursedError> {
+        match target {
+            crate::ast::AssignmentTarget::Single(name) => {
+                context.set_variable(name.clone(), value);
+                Ok(())
+            },
+            crate::ast::AssignmentTarget::Tuple(names) => {
+                match value {
+                    CursedValue::Tuple(elements) => {
+                        if names.len() != elements.len() {
+                            return Err(CursedError::RuntimeError(format!(
+                                "Tuple destructuring mismatch: expected {} variables, got {} values",
+                                names.len(), elements.len()
+                            )));
+                        }
+                        
+                        for (name, element) in names.iter().zip(elements.into_iter()) {
+                            context.set_variable(name.clone(), element);
+                        }
+                        Ok(())
+                    },
+                    _ => Err(CursedError::RuntimeError(
+                        "Cannot destructure non-tuple value in tuple assignment".to_string()
+                    )),
+                }
+            }
+        }
+    }
 }
 
 /// Advanced value types for CURSED
@@ -859,6 +935,7 @@ pub enum CursedValue {
     Channel(Arc<SimpleChannel<CursedValue>>),
     Struct(std::collections::HashMap<String, CursedValue>),
     Lambda(LambdaValue),
+    Tuple(Vec<CursedValue>),
     Nil,
 }
 
@@ -905,7 +982,43 @@ impl ValueManager {
             CursedValue::Lambda(lambda_value) => {
                 format!("<lambda({})>", lambda_value.parameters.join(", "))
             },
+            CursedValue::Tuple(elements) => {
+                let element_strs: Vec<String> = elements.iter()
+                    .map(|v| self.format_value(v))
+                    .collect();
+                format!("({})", element_strs.join(", "))
+            },
             CursedValue::Nil => "nil".to_string(),
+        }
+    }
+    
+    /// Execute assignment to either a single variable or tuple destructuring
+    fn execute_assignment(&mut self, target: &crate::ast::AssignmentTarget, value: CursedValue, context: &mut ExecutionContext) -> Result<(), CursedError> {
+        match target {
+            crate::ast::AssignmentTarget::Single(name) => {
+                context.set_variable(name.clone(), value);
+                Ok(())
+            },
+            crate::ast::AssignmentTarget::Tuple(names) => {
+                match value {
+                    CursedValue::Tuple(elements) => {
+                        if names.len() != elements.len() {
+                            return Err(CursedError::RuntimeError(format!(
+                                "Tuple destructuring mismatch: expected {} variables, got {} values",
+                                names.len(), elements.len()
+                            )));
+                        }
+                        
+                        for (name, element) in names.iter().zip(elements.into_iter()) {
+                            context.set_variable(name.clone(), element);
+                        }
+                        Ok(())
+                    },
+                    _ => Err(CursedError::RuntimeError(
+                        "Cannot destructure non-tuple value in tuple assignment".to_string()
+                    )),
+                }
+            }
         }
     }
 }
