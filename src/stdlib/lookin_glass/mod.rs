@@ -106,6 +106,13 @@ pub fn track_method_invocation() {
     }
 }
 
+/// Track type lookup
+pub fn track_type_lookup() {
+    if let Ok(mut stats) = REFLECTION_STATS.write() {
+        stats.type_lookups += 1;
+    }
+}
+
 /// Reset reflection statistics
 pub fn reset_reflection_statistics() {
     if let Ok(mut stats) = REFLECTION_STATS.write() {

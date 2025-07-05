@@ -70,6 +70,9 @@ pub fn register_type(name: String, type_info: TypeInfo) -> Result<(), CursedErro
 
 /// Look up a type by name
 pub fn lookup_type(name: &str) -> Option<TypeInfo> {
+    // Track the lookup in statistics
+    super::track_type_lookup();
+    
     if let Ok(registry) = TYPE_REGISTRY.lock() {
         registry.as_ref().and_then(|r| r.get(name).cloned())
     } else {
