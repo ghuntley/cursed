@@ -452,6 +452,25 @@ pub fn compile_to_ir_with_optimization_and_packages(
     })
 }
 
+/// Compile CURSED source to assembly
+pub fn compile_to_assembly(source: &str) -> crate::error::Result<String> {
+    tracing::info!("Compiling CURSED source to assembly");
+    
+    // Parse the source and generate LLVM IR directly
+    let mut parser = crate::parser::new_parser(source)?;
+    let program = parser.parse_program()?;
+    
+    // Generate LLVM IR
+    let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
+    let ir = codegen.compile_ast(&program)?;
+    
+    // Convert IR to assembly
+    let assembly = codegen.compile_ir_to_assembly(&ir)?;
+    
+    tracing::debug!("Generated assembly:\n{}", assembly);
+    Ok(assembly)
+}
+
 /// Compile CURSED source to LLVM IR with package management
 pub fn compile_to_ir_with_packages(source: &str, source_file: Option<&std::path::Path>) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR with package management");

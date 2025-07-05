@@ -1,32 +1,20 @@
 # CURSED build artifacts
-/target/
-*.exe
-*.dll
-*.so
-*.dylib
-
-# Debug files
-*.pdb
-*.dSYM/
-
-# Cache files
-.cursed-cache/
-*.cache
+target/
+*.ll
+*.s
+*.o
+*.out
 
 # IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Log files
-*.log
-
-# Environment files
-.env
-.env.local
+# Temporary files
+*.tmp
+*.temp

@@ -7,6 +7,7 @@ use std::time::Duration;
 pub struct PerformanceConfig {
     pub optimization_level: crate::optimization::config::OptimizationLevel,
     pub enable_pgo: bool,
+    pub pgo_config: crate::optimization::pgo::PgoConfig,
     pub enable_function_inlining: bool,
     pub enable_dead_code_elimination: bool,
     pub enable_constant_propagation: bool,
@@ -31,6 +32,7 @@ impl Default for PerformanceConfig {
         Self {
             optimization_level: crate::optimization::config::OptimizationLevel::Default,
             enable_pgo: false,
+            pgo_config: crate::optimization::pgo::PgoConfig::default(),
             enable_function_inlining: true,
             enable_dead_code_elimination: true,
             enable_constant_propagation: true,

@@ -3,6 +3,7 @@
 use crate::error::CursedError;
 use std::collections::HashMap;
 use std::fmt;
+use std::time::Duration;
 use crate::stdlib::packages::IOError;
 
 /// Result type for PostgreSQL configuration operations
@@ -15,14 +16,20 @@ pub struct PostgresConfig {
     pub port: u16,
     pub database: String,
     pub username: String,
-    pub password: String,
+    pub password: Option<String>,
     pub ssl_mode: SslMode,
-    pub connect_timeout: Option<u64>,
-    pub query_timeout: Option<u64>,
-    pub application_name: Option<String>,
+    pub connect_timeout: Duration,
+    pub query_timeout: Duration,
+    pub application_name: String,
     pub search_path: Option<String>,
     pub timezone: Option<String>,
     pub options: HashMap<String, String>,
+    pub max_connections: u32,
+    pub min_connections: u32,
+    pub max_lifetime: Option<Duration>,
+    pub idle_timeout: Option<Duration>,
+    pub retry_attempts: u32,
+    pub retry_delay: Duration,
 }
 
 /// PostgreSQL connection string builder
@@ -50,14 +57,20 @@ impl PostgresConfig {
             port: 5432,
             database: "postgres".to_string(),
             username: "postgres".to_string(),
-            password: String::new(),
+            password: None,
             ssl_mode: SslMode::Prefer,
-            connect_timeout: None,
-            query_timeout: None,
-            application_name: None,
+            connect_timeout: Duration::from_secs(30),
+            query_timeout: Duration::from_secs(60),
+            application_name: "CURSED Application".to_string(),
             search_path: None,
             timezone: None,
             options: HashMap::new(),
+            max_connections: 20,
+            min_connections: 5,
+            max_lifetime: Some(Duration::from_secs(1800)),
+            idle_timeout: Some(Duration::from_secs(300)),
+            retry_attempts: 3,
+            retry_delay: Duration::from_secs(1),
         }
     }
     
@@ -87,7 +100,7 @@ impl PostgresConfig {
     
     /// Set the password
     pub fn password(mut self, password: &str) -> Self {
-        self.password = password.to_string();
+        self.password = Some(password.to_string());
         self
     }
     
@@ -98,20 +111,20 @@ impl PostgresConfig {
     }
     
     /// Set the connection timeout
-    pub fn connect_timeout(mut self, timeout: u64) -> Self {
-        self.connect_timeout = Some(timeout);
+    pub fn connect_timeout(mut self, timeout: Duration) -> Self {
+        self.connect_timeout = timeout;
         self
     }
     
     /// Set the query timeout
-    pub fn query_timeout(mut self, timeout: u64) -> Self {
-        self.query_timeout = Some(timeout);
+    pub fn query_timeout(mut self, timeout: Duration) -> Self {
+        self.query_timeout = timeout;
         self
     }
     
     /// Set the application name
     pub fn application_name(mut self, name: &str) -> Self {
-        self.application_name = Some(name.to_string());
+        self.application_name = name.to_string();
         self
     }
     
@@ -130,6 +143,42 @@ impl PostgresConfig {
     /// Add a custom option
     pub fn option(mut self, key: &str, value: &str) -> Self {
         self.options.insert(key.to_string(), value.to_string());
+        self
+    }
+    
+    /// Set max connections
+    pub fn max_connections(mut self, max: u32) -> Self {
+        self.max_connections = max;
+        self
+    }
+    
+    /// Set min connections
+    pub fn min_connections(mut self, min: u32) -> Self {
+        self.min_connections = min;
+        self
+    }
+    
+    /// Set max lifetime
+    pub fn max_lifetime(mut self, lifetime: Option<Duration>) -> Self {
+        self.max_lifetime = lifetime;
+        self
+    }
+    
+    /// Set idle timeout
+    pub fn idle_timeout(mut self, timeout: Option<Duration>) -> Self {
+        self.idle_timeout = timeout;
+        self
+    }
+    
+    /// Set retry attempts
+    pub fn retry_attempts(mut self, attempts: u32) -> Self {
+        self.retry_attempts = attempts;
+        self
+    }
+    
+    /// Set retry delay
+    pub fn retry_delay(mut self, delay: Duration) -> Self {
+        self.retry_delay = delay;
         self
     }
     
@@ -191,7 +240,7 @@ impl PostgresConnectionString {
                     if !auth_parts.is_empty() {
                         config.username = auth_parts[0].to_string();
                         if auth_parts.len() > 1 {
-                            config.password = auth_parts[1].to_string();
+                            config.password = Some(auth_parts[1].to_string());
                         }
                     }
                     
@@ -221,11 +270,11 @@ impl PostgresConnectionString {
                                             }
                                             "connect_timeout" => {
                                                 if let Ok(timeout) = param_parts[1].parse::<u64>() {
-                                                    config.connect_timeout = Some(timeout);
+                                                    config.connect_timeout = Duration::from_secs(timeout);
                                                 }
                                             }
                                             "application_name" => {
-                                                config.application_name = Some(param_parts[1].to_string());
+                                                config.application_name = param_parts[1].to_string();
                                             }
                                             _ => {
                                                 config.options.insert(param_parts[0].to_string(), param_parts[1].to_string());
@@ -252,7 +301,7 @@ impl PostgresConnectionString {
                         }
                         "dbname" => config.database = parts[1].to_string(),
                         "user" => config.username = parts[1].to_string(),
-                        "password" => config.password = parts[1].to_string(),
+                        "password" => config.password = Some(parts[1].to_string()),
                         "sslmode" => config.ssl_mode = SslMode::from_str(parts[1]),
                         _ => {
                             config.options.insert(parts[0].to_string(), parts[1].to_string());
@@ -268,10 +317,12 @@ impl PostgresConnectionString {
     
     /// Build the connection string
     pub fn build(&self) -> String {
+        let password = self.config.password.as_deref().unwrap_or("");
+        
         let mut conn_str = format!(
             "postgresql://{}:{}@{}:{}/{}",
             self.config.username,
-            self.config.password,
+            password,
             self.config.host,
             self.config.port,
             self.config.database
@@ -285,12 +336,13 @@ impl PostgresConnectionString {
         }
         
         // Add timeouts
-        if let Some(timeout) = self.config.connect_timeout {
-            params.push(format!("connect_timeout={}", timeout));
+        let timeout_secs = self.config.connect_timeout.as_secs();
+        if timeout_secs != 30 {
+            params.push(format!("connect_timeout={}", timeout_secs));
         }
         
-        if let Some(ref app_name) = self.config.application_name {
-            params.push(format!("application_name={}", app_name));
+        if self.config.application_name != "CURSED Application" {
+            params.push(format!("application_name={}", self.config.application_name));
         }
         
         if let Some(ref search_path) = self.config.search_path {
@@ -401,7 +453,7 @@ impl PostgresEnvConfig {
         }
         
         if let Ok(password) = std::env::var("PGPASSWORD") {
-            config.password = password;
+            config.password = Some(password);
         }
         
         if let Ok(ssl_mode) = std::env::var("PGSSLMODE") {
@@ -410,12 +462,12 @@ impl PostgresEnvConfig {
         
         if let Ok(timeout) = std::env::var("PGCONNECT_TIMEOUT") {
             if let Ok(timeout_num) = timeout.parse::<u64>() {
-                config.connect_timeout = Some(timeout_num);
+                config.connect_timeout = Duration::from_secs(timeout_num);
             }
         }
         
         if let Ok(app_name) = std::env::var("PGAPPNAME") {
-            config.application_name = Some(app_name);
+            config.application_name = app_name;
         }
         
         config
@@ -427,15 +479,11 @@ impl PostgresEnvConfig {
         std::env::set_var("PGPORT", &config.port.to_string());
         std::env::set_var("PGDATABASE", &config.database);
         std::env::set_var("PGUSER", &config.username);
-        std::env::set_var("PGPASSWORD", &config.password);
+        if let Some(ref password) = config.password {
+            std::env::set_var("PGPASSWORD", password);
+        }
         std::env::set_var("PGSSLMODE", &config.ssl_mode.to_string());
-        
-        if let Some(timeout) = config.connect_timeout {
-            std::env::set_var("PGCONNECT_TIMEOUT", &timeout.to_string());
-        }
-        
-        if let Some(ref app_name) = config.application_name {
-            std::env::set_var("PGAPPNAME", app_name);
-        }
+        std::env::set_var("PGCONNECT_TIMEOUT", &config.connect_timeout.as_secs().to_string());
+        std::env::set_var("PGAPPNAME", &config.application_name);
     }
 }

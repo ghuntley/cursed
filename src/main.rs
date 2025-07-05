@@ -600,8 +600,10 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         fs::write(format!("{}.ll", output), ir)?;
         println!("{} LLVM IR to {}.ll", "Generated".green().bold(), output);
     } else if matches.get_flag("emit-asm") {
-        // TODO: Implement assembly generation
-        println!("{} Assembly generation not yet implemented", "Warning".yellow().bold());
+        let source = fs::read_to_string(input)?;
+        let assembly = cursed::compile_to_assembly(&source)?;
+        fs::write(format!("{}.s", output), assembly)?;
+        println!("{} Assembly to {}.s", "Generated".green().bold(), output);
     } else {
         cursed::compile(input, output).await?;
         println!("{} executable: {}", "Generated".green().bold(), output);
@@ -640,10 +642,6 @@ async fn handle_test(matches: &ArgMatches, global_matches: &ArgMatches) -> Resul
         println!("{} tests with pattern: {}", "Running".green().bold(), pattern);
     }
     
-    // TODO: Implement comprehensive test runner
-    // For now, use a simple approach
-    println!("{} Test runner implementation in progress", "Info".blue().bold());
-    
     // Find test files
     let test_files = find_test_files(pattern)?;
     
@@ -652,37 +650,128 @@ async fn handle_test(matches: &ArgMatches, global_matches: &ArgMatches) -> Resul
         return Ok(());
     }
     
-    println!("Found {} test files", test_files.len());
+    println!("{} {} test files", "Found".blue().bold(), test_files.len());
     
+    let start_time = std::time::Instant::now();
     let mut passed = 0;
     let mut failed = 0;
+    let mut skipped = 0;
+    let mut failed_tests = Vec::new();
     
-    for test_file in test_files {
-        if let Some(f) = filter {
-            if !test_file.contains(f) {
-                continue;
+    if parallel && test_files.len() > 1 {
+        // Run tests in parallel
+        println!("{} Running tests in parallel...", "Info".blue().bold());
+        
+        use tokio::task::JoinSet;
+        let mut set = JoinSet::new();
+        
+        for test_file in test_files {
+            if let Some(f) = filter {
+                if !test_file.contains(f) {
+                    skipped += 1;
+                    continue;
+                }
             }
+            
+            let test_file_clone = test_file.clone();
+            let timeout_duration = std::time::Duration::from_secs(timeout);
+            
+            set.spawn(async move {
+                let result = tokio::time::timeout(timeout_duration, async {
+                    cursed::run_file(&test_file_clone)
+                }).await;
+                
+                match result {
+                    Ok(Ok(_)) => (test_file_clone, true, None),
+                    Ok(Err(e)) => (test_file_clone, false, Some(e.to_string())),
+                    Err(_) => (test_file_clone, false, Some("Test timed out".to_string())),
+                }
+            });
         }
         
-        println!("Running test: {}", test_file);
-        
-        // Run the test file
-        match cursed::run_file(&test_file) {
-            Ok(_) => {
-                println!("  {} PASSED", "✓".green().bold());
-                passed += 1;
+        // Collect results
+        while let Some(result) = set.join_next().await {
+            match result {
+                Ok((test_file, success, error)) => {
+                    if success {
+                        println!("  {} {} PASSED", "✓".green().bold(), test_file);
+                        passed += 1;
+                    } else {
+                        println!("  {} {} FAILED: {}", "✗".red().bold(), test_file, error.unwrap_or("Unknown error".to_string()));
+                        failed += 1;
+                        failed_tests.push(test_file);
+                    }
+                }
+                Err(e) => {
+                    println!("  {} Test execution error: {}", "✗".red().bold(), e);
+                    failed += 1;
+                }
             }
-            Err(e) => {
-                println!("  {} FAILED: {}", "✗".red().bold(), e);
-                failed += 1;
+        }
+    } else {
+        // Run tests sequentially
+        for test_file in test_files {
+            if let Some(f) = filter {
+                if !test_file.contains(f) {
+                    if global_matches.get_flag("verbose") {
+                        println!("  {} {} SKIPPED (filter)", "⊝".yellow().bold(), test_file);
+                    }
+                    skipped += 1;
+                    continue;
+                }
+            }
+            
+            if global_matches.get_flag("verbose") {
+                println!("Running test: {}", test_file);
+            }
+            
+            // Run the test file with timeout
+            let test_result = tokio::time::timeout(
+                std::time::Duration::from_secs(timeout),
+                async { cursed::run_file(&test_file) }
+            ).await;
+            
+            match test_result {
+                Ok(Ok(_)) => {
+                    println!("  {} {} PASSED", "✓".green().bold(), test_file);
+                    passed += 1;
+                }
+                Ok(Err(e)) => {
+                    println!("  {} {} FAILED: {}", "✗".red().bold(), test_file, e);
+                    failed += 1;
+                    failed_tests.push(test_file);
+                }
+                Err(_) => {
+                    println!("  {} {} TIMEOUT", "⏱".yellow().bold(), test_file);
+                    failed += 1;
+                    failed_tests.push(test_file);
+                }
             }
         }
     }
     
+    let total_time = start_time.elapsed();
+    
     println!();
-    println!("Test results: {} passed, {} failed", 
-             passed.to_string().green().bold(), 
-             failed.to_string().red().bold());
+    println!("{} Test Summary:", "📊".bold());
+    println!("  Total: {}", passed + failed + skipped);
+    println!("  Passed: {}", passed.to_string().green().bold());
+    println!("  Failed: {}", failed.to_string().red().bold());
+    if skipped > 0 {
+        println!("  Skipped: {}", skipped.to_string().yellow().bold());
+    }
+    println!("  Duration: {:.2}s", total_time.as_secs_f64());
+    
+    if !failed_tests.is_empty() {
+        println!("\n{} Failed tests:", "❌".red().bold());
+        for test in failed_tests {
+            println!("  - {}", test);
+        }
+    }
+    
+    if coverage {
+        println!("\n{} Coverage analysis not yet implemented", "Warning".yellow().bold());
+    }
     
     if failed > 0 {
         process::exit(1);
@@ -752,8 +841,213 @@ async fn handle_pkg(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resul
             let name = sub_matches.get_one::<String>("name").unwrap();
             println!("{} new package: {}", "Initializing".blue().bold(), name);
             
-            // TODO: Implement init functionality
-            println!("{} Package initialization not yet implemented", "Warning".yellow().bold());
+            // Create package directory structure
+            std::fs::create_dir_all(name)?;
+            std::fs::create_dir_all(&format!("{}/src", name))?;
+            std::fs::create_dir_all(&format!("{}/tests", name))?;
+            
+            // Create package.toml
+            let package_toml = format!(
+                r#"[package]
+name = "{}"
+version = "0.1.0"
+description = "A new CURSED package"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+edition = "2024"
+
+[dependencies]
+# Add dependencies here
+
+[dev-dependencies]
+# Add development dependencies here
+
+[build]
+# Build configuration
+optimization = "2"
+target = "native"
+
+[features]
+# Feature flags
+default = []
+"#, name);
+            
+            std::fs::write(&format!("{}/package.toml", name), package_toml)?;
+            
+            // Create main.csd
+            let main_csd = format!(
+                r#"// {} - Main entry point
+//
+// This is the main module for your CURSED package.
+// You can import other modules and define your program logic here.
+
+func main() {{
+    puts("Hello from {}! 🚀");
+}}
+"#, name, name);
+            
+            std::fs::write(&format!("{}/src/main.csd", name), main_csd)?;
+            
+            // Create lib.csd
+            let lib_csd = format!(
+                r#"// {} - Library module
+//
+// This is the main library module for your CURSED package.
+// Export public functions and types here.
+
+// Example public function
+pub func greet(name: string) -> string {{
+    return "Hello, " + name + "!";
+}}
+
+// Example public interface
+pub interface Greeter {{
+    func greet(name: string) -> string;
+}}
+
+// Example struct implementing the interface
+pub struct SimpleGreeter {{}}
+
+impl Greeter for SimpleGreeter {{
+    func greet(name: string) -> string {{
+        return "Hello, " + name + " from SimpleGreeter!";
+    }}
+}}
+"#, name);
+            
+            std::fs::write(&format!("{}/src/lib.csd", name), lib_csd)?;
+            
+            // Create example test
+            let test_csd = format!(
+                r#"// {} - Test module
+//
+// This file contains tests for your CURSED package.
+// Run tests with: cursed test
+
+import "{}/src/lib" as lib;
+
+func test_greet() {{
+    let result = lib.greet("World");
+    assert_eq(result, "Hello, World!");
+    puts("✓ test_greet passed");
+}}
+
+func test_greeter_interface() {{
+    let greeter = lib.SimpleGreeter{{}};
+    let result = greeter.greet("CURSED");
+    assert_eq(result, "Hello, CURSED from SimpleGreeter!");
+    puts("✓ test_greeter_interface passed");
+}}
+
+func main() {{
+    puts("Running tests for {}...");
+    
+    test_greet();
+    test_greeter_interface();
+    
+    puts("All tests passed! 🎉");
+}}
+"#, name, name, name);
+            
+            std::fs::write(&format!("{}/tests/lib_test.csd", name), test_csd)?;
+            
+            // Create README.md
+            let readme_md = format!(
+                r#"# {}
+
+A CURSED programming language package.
+
+## Getting Started
+
+### Building
+
+```bash
+cd {}
+cursed build
+```
+
+### Running
+
+```bash
+cursed run src/main.csd
+```
+
+### Testing
+
+```bash
+cursed test
+```
+
+## Development
+
+### Project Structure
+
+```
+{}/
+├── src/
+│   ├── main.csd      # Main entry point
+│   └── lib.csd       # Library module
+├── tests/
+│   └── lib_test.csd  # Test module
+├── package.toml      # Package configuration
+└── README.md         # This file
+```
+
+### Adding Dependencies
+
+Add dependencies to `package.toml`:
+
+```toml
+[dependencies]
+some-package = "1.0.0"
+```
+
+### Publishing
+
+```bash
+cursed pkg publish
+```
+
+## License
+
+MIT License
+"#, name, name, name);
+            
+            std::fs::write(&format!("{}/README.md", name), readme_md)?;
+            
+            // Create .gitignore
+            let gitignore = r#"# CURSED build artifacts
+target/
+*.ll
+*.s
+*.o
+*.out
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+"#;
+            
+            std::fs::write(&format!("{}/.gitignore", name), gitignore)?;
+            
+            println!("{} Successfully initialized package '{}'", "✅".green().bold(), name);
+            println!();
+            println!("Next steps:");
+            println!("  cd {}", name);
+            println!("  cursed build              # Build the package");
+            println!("  cursed run src/main.csd   # Run the main program");
+            println!("  cursed test               # Run tests");
+            println!("  cursed pkg publish        # Publish to registry");
         }
         _ => {
             eprintln!("Unknown package subcommand");
