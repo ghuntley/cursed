@@ -417,19 +417,8 @@ impl Parser {
         
         if !self.check(&TokenKind::RightParen) {
             loop {
-                let param_name = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
-                
-                // Check for optional type after parameter name (CURSED syntax: "x normie", "name tea")
-                let param_type = if self.check_type_token() {
-                    Some(self.advance().lexeme.clone())
-                } else {
-                    None
-                };
-                
-                parameters.push(Parameter {
-                    name: param_name,
-                    param_type,
-                });
+                let param = self.parse_parameter()?;
+                parameters.push(param);
                 
                 if !self.match_tokens(&[TokenKind::Comma]) {
                     break;
@@ -485,19 +474,8 @@ impl Parser {
         
         if !self.check(&TokenKind::RightParen) {
             loop {
-                let param_name = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
-                
-                // Check for optional type after parameter name (CURSED syntax: "x normie", "name tea")
-                let param_type = if self.check_type_token() {
-                    Some(self.advance().lexeme.clone())
-                } else {
-                    None
-                };
-                
-                parameters.push(Parameter {
-                    name: param_name,
-                    param_type,
-                });
+                let param = self.parse_parameter()?;
+                parameters.push(param);
                 
                 if !self.match_tokens(&[TokenKind::Comma]) {
                     break;
@@ -521,6 +499,7 @@ impl Parser {
         self.skip_newlines_and_semicolons();
         
         let mut body = Vec::new();
+        
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
             self.skip_newlines_and_semicolons(); // Skip newlines before parsing each statement
             if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
@@ -545,15 +524,17 @@ impl Parser {
         
         self.consume(TokenKind::RightBrace, "Expected '}' after function body")?;
         
-        Ok(FunctionStatement {
-            name,
+        let func_stmt = FunctionStatement {
+            name: name.clone(),
             type_parameters,
             parameters,
             body,
             return_type,
             where_clause,
             visibility,
-        })
+        };
+        
+        Ok(func_stmt)
     }
 
     fn parse_let_statement(&mut self) -> Result<LetStatement, CursedError> {
@@ -1557,13 +1538,17 @@ impl Parser {
     fn parse_parameter(&mut self) -> Result<crate::ast::Parameter, CursedError> {
         let name = self.consume(TokenKind::Identifier, "Expected parameter name")?.lexeme.clone();
         
-        // CURSED syntax: parameter name followed by type (e.g., "x lit", "name tea")
-        // Also support colon syntax for compatibility (e.g., "x: lit", "name: tea")
+        // CURSED syntax: parameter name followed by type (e.g., "x normie", "name tea")
+        // Also support colon syntax for compatibility (e.g., "x: normie", "name: tea")
         let param_type = if self.match_tokens(&[TokenKind::Colon]) {
             // Colon syntax: name: type
-            let type_name = self.consume(TokenKind::Identifier, "Expected parameter type after colon")?.lexeme.clone();
-            Some(type_name)
-        } else if self.check(&TokenKind::Identifier) {
+            if self.check_type_token() {
+                let type_name = self.advance().lexeme.clone();
+                Some(type_name)
+            } else {
+                return Err(CursedError::parse_error("Expected parameter type after colon"));
+            }
+        } else if self.check_type_token() {
             // Space syntax: name type
             let type_name = self.advance().lexeme.clone();
             Some(type_name)

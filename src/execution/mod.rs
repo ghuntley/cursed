@@ -619,6 +619,16 @@ impl CursedExecutionEngine {
                     _ => Err(CursedError::RuntimeError(format!("Unsupported boolean-string operator: {}", operator))),
                 }
             },
+            // Boolean logical operations
+            (CursedValue::Boolean(l), CursedValue::Boolean(r)) => {
+                match operator {
+                    "&&" => Ok(CursedValue::Boolean(*l && *r)),
+                    "||" => Ok(CursedValue::Boolean(*l || *r)),
+                    "==" => Ok(CursedValue::Boolean(l == r)),
+                    "!=" => Ok(CursedValue::Boolean(l != r)),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported boolean operator: {}", operator))),
+                }
+            },
             _ => Err(CursedError::RuntimeError(format!("Type mismatch in binary operation: {:?} {} {:?}", left, operator, right))),
         }
     }
