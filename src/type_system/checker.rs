@@ -584,7 +584,7 @@ impl TypeChecker {
         let value_type = self.check_expression(&let_stmt.value)?;
         
         // Add variable to current scope
-        self.add_variable(let_stmt.name.clone(), value_type.clone());
+        self.add_variable(let_stmt.target.primary_name(), value_type.clone());
         
         Ok(value_type)
     }

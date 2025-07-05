@@ -1,7 +1,6 @@
-// Test lambda expressions (completed in v3.26.0)
-slay main() {
-    sus add = |x, y| { yolo x + y; };
-    sus result = add(5, 3);
-    vibez.spill("Lambda result: " + result);
+slay main() normie {
+    sus add normie = |x, y| { yolo x + y; };
+    sus result normie = add(5, 3);
+    vibez.spill("Lambda result:");
     yolo result;
 }

@@ -151,7 +151,25 @@ impl CursedExecutionEngine {
             },
             Statement::Let(let_stmt) => {
                 let value = self.evaluate_expression(&let_stmt.value, context)?;
-                context.set_variable(let_stmt.name.clone(), value.clone());
+                match &let_stmt.target {
+                    crate::ast::LetTarget::Single(name) => {
+                        context.set_variable(name.clone(), value.clone());
+                    },
+                    crate::ast::LetTarget::Tuple(names) => {
+                        // Handle tuple destructuring
+                        if let CursedValue::Tuple(elements) = &value {
+                            for (index, name) in names.iter().enumerate() {
+                                if let Some(element) = elements.get(index) {
+                                    context.set_variable(name.clone(), element.clone());
+                                } else {
+                                    return Err(CursedError::runtime_error(&format!("Tuple index {} out of bounds for destructuring", index)));
+                                }
+                            }
+                        } else {
+                            return Err(CursedError::runtime_error("Cannot destructure non-tuple value"));
+                        }
+                    }
+                }
                 // For assignment statements, return the value that was assigned
                 Ok(ExecutionFlow::Continue(value))
             },

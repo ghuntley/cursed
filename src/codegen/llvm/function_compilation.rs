@@ -134,8 +134,38 @@ impl FunctionCompiler {
                 ir.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, value_reg, var_type, var_reg));
                 
                 // Store variable mapping
-                self.variables.insert(let_stmt.name.clone(), var_reg);
-                ir.push_str(&format!("  ; Variable {} allocated\n", let_stmt.name));
+                match &let_stmt.target {
+                    crate::ast::LetTarget::Single(name) => {
+                        self.variables.insert(name.clone(), var_reg);
+                        ir.push_str(&format!("  ; Variable {} allocated\n", name));
+                    },
+                    crate::ast::LetTarget::Tuple(names) => {
+                        ir.push_str("  ; Tuple destructuring let statement\n");
+                        
+                        // Extract each element from the tuple and assign to variables
+                        for (index, var_name) in names.iter().enumerate() {
+                            // Generate getelementptr to access tuple field
+                            let field_ptr = format!("%tuple_field_{}", self.variable_counter);
+                            self.variable_counter += 1;
+                            ir.push_str(&format!(
+                                "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
+                                field_ptr, value_reg, index
+                            ));
+                            
+                            // Load the value from the field
+                            let field_value = format!("%tuple_val_{}", self.variable_counter);
+                            self.variable_counter += 1;
+                            ir.push_str(&format!(
+                                "  {} = load i32, i32* {}, align 4\n",
+                                field_value, field_ptr
+                            ));
+                            
+                            // Store the variable mapping
+                            self.variables.insert(var_name.clone(), field_value.clone());
+                            ir.push_str(&format!("  ; Extracted {} = {} from tuple\n", var_name, field_value));
+                        }
+                    }
+                }
             },
             Statement::Assignment(assign_stmt) => {
                 let value_reg = self.compile_expression(&assign_stmt.value)?;
@@ -157,8 +187,33 @@ impl FunctionCompiler {
                     } else {
                         return Err(CursedError::runtime_error(&format!("Undefined variable: {}", name)));
                     }
+                } else if let crate::ast::AssignmentTarget::Tuple(var_names) = &assign_stmt.target {
+                    ir.push_str("  ; Tuple destructuring assignment in function\n");
+                    
+                    // Extract each element from the tuple and assign to variables
+                    for (index, var_name) in var_names.iter().enumerate() {
+                        // Generate getelementptr to access tuple field
+                        let field_ptr = format!("%tuple_field_{}", self.variable_counter);
+                        self.variable_counter += 1;
+                        ir.push_str(&format!(
+                            "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
+                            field_ptr, value_reg, index
+                        ));
+                        
+                        // Load the value from the field
+                        let field_value = format!("%tuple_val_{}", self.variable_counter);
+                        self.variable_counter += 1;
+                        ir.push_str(&format!(
+                            "  {} = load i32, i32* {}, align 4\n",
+                            field_value, field_ptr
+                        ));
+                        
+                        // Store the variable mapping in function scope
+                        self.variables.insert(var_name.clone(), field_value.clone());
+                        ir.push_str(&format!("  ; Extracted {} = {} from tuple\n", var_name, field_value));
+                    }
                 } else {
-                    ir.push_str("  ; Tuple assignment not implemented in function compilation\n");
+                    ir.push_str("  ; Unknown assignment target type\n");
                 }
             },
             Statement::Return(return_stmt) => {
