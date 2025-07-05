@@ -10,6 +10,7 @@ mod tests {
     };
     use tempfile::TempDir;
     use std::str::FromStr;
+    use mockito::{Mock, ServerGuard};
 
     #[test]
     fn test_package_manager_creation() {
@@ -66,16 +67,110 @@ mod tests {
 
     #[tokio::test]
     async fn test_registry_search() {
-        let registry = PackageRegistry::new(RegistryConfig::default()).unwrap();
+        let mut server = mockito::Server::new_async().await;
+        
+        // Mock the search endpoint
+        let mock_response = r#"{
+            "packages": [
+                {
+                    "name": "test-package",
+                    "version": {
+                        "major": 1,
+                        "minor": 0,
+                        "patch": 0,
+                        "pre_release": null,
+                        "build": null
+                    },
+                    "description": "A test package",
+                    "authors": ["Test Author"],
+                    "dependencies": [],
+                    "keywords": ["test"],
+                    "categories": ["development"],
+                    "license": "MIT",
+                    "homepage": "https://example.com",
+                    "repository": "https://github.com/example/test-package",
+                    "download_url": "https://example.com/download",
+                    "checksum": "abc123",
+                    "file_size": 1024
+                }
+            ],
+            "total": 1
+        }"#;
+        
+        let _m = server
+            .mock("GET", "/api/v1/search")
+            .match_query(mockito::Matcher::UrlEncoded("q".into(), "test".into()))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create_async()
+            .await;
+
+        let config = RegistryConfig {
+            url: server.url(),
+            timeout: std::time::Duration::from_secs(30),
+            max_retries: 3,
+            api_key: None,
+        };
+        
+        let registry = PackageRegistry::new(config).unwrap();
         let results = registry.search_packages("test").await;
         assert!(results.is_ok());
+        let packages = results.unwrap();
+        assert_eq!(packages.len(), 1);
+        assert_eq!(packages[0].name, "test-package");
     }
 
     #[tokio::test]
     async fn test_package_info() {
-        let registry = PackageRegistry::new(RegistryConfig::default()).unwrap();
+        let mut server = mockito::Server::new_async().await;
+        
+        // Mock the package info endpoint
+        let mock_response = r#"{
+            "package": {
+                "name": "test-package",
+                "version": {
+                    "major": 1,
+                    "minor": 0,
+                    "patch": 0,
+                    "pre_release": null,
+                    "build": null
+                },
+                "description": "A test package",
+                "authors": ["Test Author"],
+                "dependencies": [],
+                "keywords": ["test"],
+                "categories": ["development"],
+                "license": "MIT",
+                "homepage": "https://example.com",
+                "repository": "https://github.com/example/test-package",
+                "download_url": "https://example.com/download",
+                "checksum": "abc123",
+                "file_size": 1024
+            }
+        }"#;
+        
+        let _m = server
+            .mock("GET", "/api/v1/packages/test-package")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create_async()
+            .await;
+
+        let config = RegistryConfig {
+            url: server.url(),
+            timeout: std::time::Duration::from_secs(30),
+            max_retries: 3,
+            api_key: None,
+        };
+        
+        let registry = PackageRegistry::new(config).unwrap();
         let info = registry.get_package_info("test-package", None).await;
         assert!(info.is_ok());
+        let package_info = info.unwrap();
+        assert_eq!(package_info.name, "test-package");
+        assert_eq!(package_info.version.to_string(), "1.0.0");
     }
 
     #[test]
@@ -98,7 +193,49 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolver_creation() {
-        let registry = PackageRegistry::new(RegistryConfig::default()).unwrap();
+        let mut server = mockito::Server::new_async().await;
+        
+        // Mock the package info endpoint for dependency resolution
+        let mock_response = r#"{
+            "package": {
+                "name": "test-package",
+                "version": {
+                    "major": 1,
+                    "minor": 0,
+                    "patch": 0,
+                    "pre_release": null,
+                    "build": null
+                },
+                "description": "A test package",
+                "authors": ["Test Author"],
+                "dependencies": [],
+                "keywords": ["test"],
+                "categories": ["development"],
+                "license": "MIT",
+                "homepage": "https://example.com",
+                "repository": "https://github.com/example/test-package",
+                "download_url": "https://example.com/download",
+                "checksum": "abc123",
+                "file_size": 1024
+            }
+        }"#;
+        
+        let _m = server
+            .mock("GET", "/api/v1/packages/test-package")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(mock_response)
+            .create_async()
+            .await;
+
+        let config = RegistryConfig {
+            url: server.url(),
+            timeout: std::time::Duration::from_secs(30),
+            max_retries: 3,
+            api_key: None,
+        };
+
+        let registry = PackageRegistry::new(config).unwrap();
         let mut resolver = PackageResolver::new(registry);
         
         // Test resolver exists

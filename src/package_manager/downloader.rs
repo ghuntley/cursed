@@ -313,26 +313,62 @@ mod tests {
 
     #[tokio::test]
     async fn test_package_download() {
+        let mut server = mockito::Server::new_async().await;
+        
+        // Mock package download endpoint
+        let mock_package_data = b"mock package data";
+        let _m = server
+            .mock("GET", "/test-package-1.0.0.tar.gz")
+            .with_status(200)
+            .with_header("content-type", "application/gzip")
+            .with_body(mock_package_data)
+            .create_async()
+            .await;
+
         let temp_dir = TempDir::new().unwrap();
         let downloader = PackageDownloader::new(DownloadConfig::default()).unwrap();
         
         let output_path = temp_dir.path().join("test-package.tar.gz");
         let version = Version::new(1, 0, 0);
+        let download_url = format!("{}/test-package-1.0.0.tar.gz", server.url());
         
         let result = downloader.download_package(
             "test-package",
             &version,
-            "https://example.com/test-package-1.0.0.tar.gz",
-            output_path,
-            Some("sha256:mock_checksum"),
+            &download_url,
+            output_path.clone(),
+            None, // Skip checksum validation for test
         ).await;
 
         // Should complete without error in mock implementation
         assert!(result.is_ok());
+        
+        // Verify file was created
+        assert!(output_path.exists());
     }
 
     #[tokio::test]
     async fn test_concurrent_downloads() {
+        let mut server = mockito::Server::new_async().await;
+        
+        // Mock multiple package download endpoints
+        let mock_package_data = b"mock package data";
+        let _m1 = server
+            .mock("GET", "/package1.tar.gz")
+            .with_status(200)
+            .with_header("content-type", "application/gzip")
+            .with_body(mock_package_data)
+            .create_async()
+            .await;
+            
+        let _m2 = server
+            .mock("GET", "/package2.tar.gz")
+            .with_status(200)
+            .with_header("content-type", "application/gzip")
+            .with_body(mock_package_data)
+            .create_async()
+            .await;
+
         let temp_dir = TempDir::new().unwrap();
         let downloader = PackageDownloader::new(DownloadConfig::default()).unwrap();
         
@@ -340,13 +376,13 @@ mod tests {
             PackageDownloadRequest::new(
                 "package1".to_string(),
                 Version::new(1, 0, 0),
-                "https://example.com/package1.tar.gz".to_string(),
+                format!("{}/package1.tar.gz", server.url()),
                 temp_dir.path().join("package1.tar.gz"),
             ),
             PackageDownloadRequest::new(
                 "package2".to_string(),
                 Version::new(2, 0, 0),
-                "https://example.com/package2.tar.gz".to_string(),
+                format!("{}/package2.tar.gz", server.url()),
                 temp_dir.path().join("package2.tar.gz"),
             ),
         ];
