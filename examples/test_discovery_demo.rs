@@ -115,12 +115,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--------------------------------------------");
     
     let config = BuildConfig::default_for_project("cursed", ProjectType::Binary);
-    let mut orchestrator = BuildOrchestrator::new(config, work_dir)?;
+    let mut orchestrator = BuildOrchestrator::from_build_config(config, work_dir)?;
     
     println!("📊 Running comprehensive test suite through BuildOrchestrator...");
     
     // Run a small subset of tests to avoid long execution in demo
-    let small_test_subset = discovery_result.tests.into_iter().take(3).collect();
+    let small_test_subset: Vec<_> = discovery_result.tests.into_iter().take(3).collect();
     
     if !small_test_subset.is_empty() {
         // Configure test execution for demo (limited tests)

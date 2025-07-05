@@ -175,7 +175,7 @@ slay main() {
         ..Default::default()
     };
 
-    let mut optimization_manager = OptimizationManager::with_config(opt_config)?;
+    let mut optimization_manager = OptimizationManager::new().with_config(opt_config);
     let optimization_result = optimization_manager.optimize_complete(source_code)?;
 
     println!("✓ Complete optimization workflow finished");

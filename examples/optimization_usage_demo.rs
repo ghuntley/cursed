@@ -3,8 +3,8 @@
 use cursed::optimization::{
     OptimizationManager, BaselineComparator, BaselineComparisonConfig, BaselineMetadata,
     EnvironmentInfo, TimeSavingsConfig, BenchmarkConfig, BenchmarkResult,
+    config::OptimizationConfig,
 };
-use cursed::codegen::llvm::optimization::OptimizationConfig;
 use cursed::error::Result;
 use std::time::Duration;
 use tempfile::tempdir;
