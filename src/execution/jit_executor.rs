@@ -442,8 +442,8 @@ impl JitExecutor {
     fn execute_interpreted(&mut self, source: &str) -> Result<CursedValue, CursedError> {
         tracing::info!("🔄 Falling back to interpreted execution");
 
-        // Use the existing interpreted execution engine
-        let mut execution_engine = crate::execution::CursedExecutionEngine::new()?;
+        // Use the non-JIT execution engine to avoid infinite recursion
+        let mut execution_engine = crate::execution::CursedExecutionEngine::new_no_jit()?;
         execution_engine.execute(source)
     }
 }

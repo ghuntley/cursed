@@ -17,6 +17,10 @@ cargo test
 ./build-with-fixed-env.sh
 ```
 
+## Development Environment
+
+Uses https://devenv.sh to provide development dependencies. These are defined in  devenv.nix. You will need to run "direnv allow" after making a change then restart bash sessions.
+
 ## Project Structure
 
 ```
