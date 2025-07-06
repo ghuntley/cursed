@@ -3,6 +3,7 @@
 
 use crate::ast::{Statement, Expression, FunctionStatement, Literal};
 use crate::error::CursedError;
+use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use std::collections::HashMap;
 
 /// Complete function compiler for CURSED functions to LLVM IR
@@ -14,7 +15,7 @@ pub struct FunctionCompiler {
     pub variable_types: HashMap<String, String>,  // Maps variable names to their LLVM types
     pub function_params: HashMap<String, String>,  // Maps parameter names to their registers
     pub current_function: Option<String>,
-    pub string_constants: Vec<String>,
+    pub string_manager: StringConstantManager,
 }
 
 impl FunctionCompiler {
@@ -27,13 +28,13 @@ impl FunctionCompiler {
             variable_types: HashMap::new(),
             function_params: HashMap::new(),
             current_function: None,
-            string_constants: Vec::new(),
+            string_manager: get_global_string_manager(),
         }
     }
     
-    /// Get the collected string constants
-    pub fn get_string_constants(&self) -> &Vec<String> {
-        &self.string_constants
+    /// Get the collected string constants (now managed globally)
+    pub fn get_string_constants(&self) -> Vec<String> {
+        self.string_manager.get_all_constants()
     }
 
     /// Generate complete LLVM function definition with full IR
@@ -311,36 +312,14 @@ impl FunctionCompiler {
             Expression::String(val) => {
                 let cleaned_val = val.replace("\"", "\\\"");
                 
-                // Check if this string constant already exists
-                for (i, constant) in self.string_constants.iter().enumerate() {
-                    if constant.contains(&format!("c\"{}\\00\"", cleaned_val)) {
-                        let const_name = format!("@.str.{}", i);
-                        let len = cleaned_val.len() + 1; // +1 for null terminator
-                        
-                        let str_reg = self.next_register();
-                        let ir_line = format!(
-                            "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
-                            str_reg, len, len, const_name
-                        );
-                        log::debug!("Adding IR line: {}", ir_line.trim());
-                        self.ir_code.push_str(&ir_line);
-                        return Ok(str_reg);
-                    }
-                }
+                // Use the centralized string manager to get reference
+                let string_ref = self.string_manager.add_string_constant(&cleaned_val);
                 
-                // String constant doesn't exist, add it
+                // Generate register and assignment
                 let str_reg = self.next_register();
-                let len = cleaned_val.len() + 1;
-                let const_name = format!("@.str.{}", self.string_constants.len());
-                
-                // Add string constant definition
-                self.string_constants.push(format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
-                    const_name, len, cleaned_val));
-                
-                // Generate getelementptr instruction
                 let ir_line = format!(
-                    "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
-                    str_reg, len, len, const_name
+                    "  {} = {}\n",
+                    str_reg, string_ref
                 );
                 log::debug!("Adding IR line: {}", ir_line.trim());
                 self.ir_code.push_str(&ir_line);
@@ -523,6 +502,7 @@ impl FunctionCompiler {
         }
     }
 
+
     /// Compile vibez method calls (stdlib output methods)
     fn compile_vibez_method_call(&mut self, method: &str, arguments: &[Expression]) -> Result<String, CursedError> {
         match method {
@@ -548,31 +528,12 @@ impl FunctionCompiler {
                                 _ => ("%d\\0A\\00", "i32"), // Default fallback
                             };
                             
-                            // Find or create the format string constant
-                            let const_name = {
-                                // First, check if this format string already exists
-                                let mut existing_index = None;
-                                for (i, constant) in self.string_constants.iter().enumerate() {
-                                    if constant.contains(format_string) {
-                                        existing_index = Some(i);
-                                        break;
-                                    }
-                                }
-                                
-                                if let Some(i) = existing_index {
-                                    // Use existing constant
-                                    format!("@.str.{}", i)
-                                } else {
-                                    // Create new constant
-                                    let new_index = self.string_constants.len();
-                                    let const_name = format!("@.str.{}", new_index);
-                                    self.string_constants.push(format!("{} = private unnamed_addr constant [4 x i8] c\"{}\", align 1", const_name, format_string));
-                                    const_name
-                                }
-                            };
+                            // Use the centralized string manager for format string
+                            let format_str_cleaned = format_string.replace("\\00", "");
+                            let format_ref = self.string_manager.add_string_constant(&format_str_cleaned);
                             
                             let format_reg = self.next_register();
-                            self.ir_code.push_str(&format!("  {} = getelementptr inbounds [4 x i8], [4 x i8]* {}, i64 0, i64 0\n", format_reg, const_name));
+                            self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_ref));
                             
                             // Convert boolean to integer if needed
                             let final_arg_reg = if arg_type == "i1" {

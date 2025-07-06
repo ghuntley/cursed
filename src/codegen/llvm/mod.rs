@@ -48,6 +48,7 @@ pub mod process_execution_ffi;
 pub mod process_stubs;
 pub mod process_ipc_integration;
 pub mod question_mark;
+pub mod string_constants;
 pub mod real_compilation;
 pub mod real_optimization_integration;
 pub mod result_types;
