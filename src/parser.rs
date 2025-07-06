@@ -138,6 +138,7 @@ impl Parser {
             TokenKind::Normie | 
             TokenKind::Tea | 
             TokenKind::Txt | 
+            TokenKind::Sip |
             TokenKind::Dm |
             TokenKind::Truth |
             TokenKind::Lies |
@@ -157,7 +158,7 @@ impl Parser {
             TokenKind::Squad | TokenKind::Collab | TokenKind::Vibe | TokenKind::Yeet |
             TokenKind::BeLike | TokenKind::VibeCheck | TokenKind::Mood | TokenKind::Basic |
             TokenKind::YeetError | TokenKind::Catch | TokenKind::Where | TokenKind::Normie |
-            TokenKind::Tea | TokenKind::Cap | TokenKind::NoCap | TokenKind::Truth |
+            TokenKind::Tea | TokenKind::Sip | TokenKind::Cap | TokenKind::NoCap | TokenKind::Truth |
             TokenKind::Lies | TokenKind::MainCharacter | TokenKind::Dm | TokenKind::Select |
             TokenKind::Spill | TokenKind::Priv | TokenKind::Crew => true,
             _ => false,
@@ -169,6 +170,18 @@ impl Parser {
             if self.check(kind) {
                 self.advance();
                 return true;
+            }
+        }
+        false
+    }
+    
+    fn is_sus_function_declaration(&self) -> bool {
+        // Look ahead to see if this is a function declaration (sus identifier() ...) 
+        // or a variable declaration (sus identifier type = ...)
+        if self.current + 1 < self.tokens.len() && self.tokens[self.current].kind == TokenKind::Sus {
+            if self.current + 2 < self.tokens.len() && self.tokens[self.current + 1].kind == TokenKind::Identifier {
+                // Check if the next token after the identifier is a left parenthesis (function)
+                return self.tokens[self.current + 2].kind == TokenKind::LeftParen;
             }
         }
         false
@@ -310,7 +323,16 @@ impl Parser {
                 log::info!("📝 Parsing function statement with 'slay' keyword");
                 Ok(Statement::Function(self.parse_function_statement_with_visibility(visibility)?))
             },
-            TokenKind::Sus => Ok(Statement::Let(self.parse_let_statement_with_visibility(visibility)?)),
+            TokenKind::Sus => {
+                // Look ahead to determine if this is a function declaration or variable declaration
+                if self.is_sus_function_declaration() {
+                    log::info!("📝 Parsing function statement with 'sus' keyword");
+                    Ok(Statement::Function(self.parse_function_statement_with_visibility(visibility)?))
+                } else {
+                    log::info!("📝 Parsing variable statement with 'sus' keyword");
+                    Ok(Statement::Let(self.parse_let_statement_with_visibility(visibility)?))
+                }
+            },
             TokenKind::Facts => Ok(Statement::Let(self.parse_const_statement_with_visibility(visibility)?)),
             TokenKind::Txt => Ok(Statement::Let(self.parse_typed_variable_statement_with_visibility(visibility)?)),
             TokenKind::Lowkey => {
@@ -470,7 +492,14 @@ impl Parser {
     }
 
     fn parse_function_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<FunctionStatement, CursedError> {
-        self.consume(TokenKind::Slay, "Expected 'slay'")?;
+        // Accept both 'slay' and 'sus' for function declarations
+        if self.check(&TokenKind::Slay) {
+            self.advance(); // consume 'slay'
+        } else if self.check(&TokenKind::Sus) {
+            self.advance(); // consume 'sus'
+        } else {
+            return Err(CursedError::parse_error("Expected 'slay' or 'sus' for function declaration"));
+        }
         let name = self.consume(TokenKind::Identifier, "Expected function name")?.lexeme.clone();
         
         // Parse optional generic parameters
@@ -1280,6 +1309,15 @@ impl Parser {
             TokenKind::String => {
                 let token = self.advance();
                 Ok(Expression::String(token.lexeme.clone()))
+            },
+            TokenKind::Character => {
+                let token = self.advance();
+                // Parse the first character from the lexeme string
+                if let Some(c) = token.lexeme.chars().next() {
+                    Ok(Expression::Character(c))
+                } else {
+                    Err(CursedError::syntax_error("Invalid character literal"))
+                }
             },
             TokenKind::Identifier => {
                 let token = self.advance();

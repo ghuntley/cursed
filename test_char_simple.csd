@@ -1,0 +1,3 @@
+sus main() {
+    return 'a';
+}

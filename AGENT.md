@@ -62,6 +62,13 @@ src/
 - Tests: Boolean literals work correctly in both variable declarations and expressions
 - Status: Fully compliant with language specification
 
+### Mixed Arithmetic Operations
+- Mixed Integer-Float arithmetic fully supported in interpretation mode
+- All arithmetic (+, -, *, /) and comparison (<, >, ==, etc.) operations work
+- Automatic type promotion: integers converted to floats for mixed operations
+- Example: `5 * 3.14` works correctly in interpretation mode
+- Status: Works perfectly in interpretation mode, compilation mode works for non-constant expressions
+
 ## Known Issues
 
 ### JIT Execution Environment

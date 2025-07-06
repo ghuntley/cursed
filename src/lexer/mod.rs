@@ -26,6 +26,7 @@ pub enum TokenKind {
     Number,
     String,
     Boolean,
+    Character,
     
     // Identifiers
     Identifier,
@@ -67,6 +68,7 @@ pub enum TokenKind {
     Normie,      // integer type
     Tea,         // string type
     Txt,         // string type (alias)
+    Sip,         // character type
     Cap,         // null/nil
     NoCap,       // not null
     Truth,       // true
@@ -294,6 +296,7 @@ impl Lexer {
                 Ok(self.make_token(TokenKind::Newline, "\n".to_string(), start_column))
             },
             '"' => self.string_literal(start_column),
+            '\'' => self.character_literal(start_column),
             '`' => self.raw_string_literal(start_column),
             '\0' => Ok(Token {
                 kind: TokenKind::Eof,
@@ -467,6 +470,45 @@ impl Lexer {
         Ok(self.make_token(TokenKind::String, value, start_column))
     }
 
+    fn character_literal(&mut self, start_column: usize) -> Result<Token, CursedError> {
+        if self.is_at_end() {
+            return Err(CursedError::syntax_error("Unterminated character literal"));
+        }
+
+        let char_value = if self.peek() == '\\' {
+            // Handle escape sequences
+            self.advance(); // consume backslash
+            if self.is_at_end() {
+                return Err(CursedError::syntax_error("Unterminated character escape"));
+            }
+            
+            match self.advance() {
+                'n' => '\n',
+                't' => '\t',
+                'r' => '\r',
+                '\\' => '\\',
+                '\'' => '\'',
+                '"' => '"',
+                '0' => '\0',
+                c => {
+                    let error = StructuredError::invalid_escape_sequence(&c.to_string(), self.line, self.column);
+                    return Err(CursedError::from(error));
+                }
+            }
+        } else {
+            self.advance()
+        };
+
+        if self.is_at_end() || self.peek() != '\'' {
+            return Err(CursedError::syntax_error("Unterminated character literal"));
+        }
+
+        // Consume closing quote
+        self.advance();
+
+        Ok(self.make_token(TokenKind::Character, char_value.to_string(), start_column))
+    }
+
     fn raw_string_literal(&mut self, start_column: usize) -> Result<Token, CursedError> {
         let mut value = String::new();
         
@@ -607,6 +649,7 @@ impl Lexer {
             "normie" => TokenKind::Normie,
             "tea" => TokenKind::Tea,
             "txt" => TokenKind::Txt,
+            "sip" => TokenKind::Sip,
             "cap" => TokenKind::Cap,
             "nocap" => TokenKind::NoCap,
             "main_character" => TokenKind::MainCharacter,
