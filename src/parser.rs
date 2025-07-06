@@ -1261,6 +1261,11 @@ impl Parser {
                 self.advance();
                 Ok(Expression::Boolean(false))
             },
+            TokenKind::Sus => {
+                // Handle 'sus' as boolean literal false in expression context
+                self.advance();
+                Ok(Expression::Boolean(false))
+            },
             TokenKind::Number => {
                 let token = self.advance();
                 // Try parsing as integer first, then as float

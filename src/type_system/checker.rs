@@ -1166,7 +1166,7 @@ impl TypeChecker {
     fn is_type_defined(&self, type_name: &str) -> bool {
         // Check built-in types
         match type_name {
-            "normie" | "tea" | "vibes" | "snack" | "cap" | "lit" | "truth" | "lies" => true,
+            "normie" | "tea" | "vibes" | "snack" | "cap" | "lit" => true,
             _ => {
                 // Check user-defined types in the environment
                 self.type_system.environment.type_definitions.contains_key(type_name)
