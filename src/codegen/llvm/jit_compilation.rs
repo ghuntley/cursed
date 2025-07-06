@@ -232,6 +232,81 @@ impl SymbolResolver {
         self.register_symbol("math_sqrt_impl", crate::execution::runtime_functions::math_sqrt_impl as usize);
         self.register_symbol("math_random_impl", crate::execution::runtime_functions::math_random_impl as usize);
         
+        // Register new math functions
+        self.register_symbol("math_abs_impl", crate::execution::runtime_functions::math_abs_impl as usize);
+        self.register_symbol("math_abs_int_impl", crate::execution::runtime_functions::math_abs_int_impl as usize);
+        self.register_symbol("math_min_impl", crate::execution::runtime_functions::math_min_impl as usize);
+        self.register_symbol("math_max_impl", crate::execution::runtime_functions::math_max_impl as usize);
+        self.register_symbol("math_min_int_impl", crate::execution::runtime_functions::math_min_int_impl as usize);
+        self.register_symbol("math_max_int_impl", crate::execution::runtime_functions::math_max_int_impl as usize);
+        self.register_symbol("math_clamp_impl", crate::execution::runtime_functions::math_clamp_impl as usize);
+        self.register_symbol("math_sign_impl", crate::execution::runtime_functions::math_sign_impl as usize);
+        self.register_symbol("math_pow_impl", crate::execution::runtime_functions::math_pow_impl as usize);
+        self.register_symbol("math_cbrt_impl", crate::execution::runtime_functions::math_cbrt_impl as usize);
+        self.register_symbol("math_log_impl", crate::execution::runtime_functions::math_log_impl as usize);
+        self.register_symbol("math_log10_impl", crate::execution::runtime_functions::math_log10_impl as usize);
+        self.register_symbol("math_log2_impl", crate::execution::runtime_functions::math_log2_impl as usize);
+        self.register_symbol("math_exp_impl", crate::execution::runtime_functions::math_exp_impl as usize);
+        self.register_symbol("math_exp2_impl", crate::execution::runtime_functions::math_exp2_impl as usize);
+        self.register_symbol("math_tan_impl", crate::execution::runtime_functions::math_tan_impl as usize);
+        self.register_symbol("math_asin_impl", crate::execution::runtime_functions::math_asin_impl as usize);
+        self.register_symbol("math_acos_impl", crate::execution::runtime_functions::math_acos_impl as usize);
+        self.register_symbol("math_atan_impl", crate::execution::runtime_functions::math_atan_impl as usize);
+        self.register_symbol("math_atan2_impl", crate::execution::runtime_functions::math_atan2_impl as usize);
+        self.register_symbol("math_sinh_impl", crate::execution::runtime_functions::math_sinh_impl as usize);
+        self.register_symbol("math_cosh_impl", crate::execution::runtime_functions::math_cosh_impl as usize);
+        self.register_symbol("math_tanh_impl", crate::execution::runtime_functions::math_tanh_impl as usize);
+        self.register_symbol("math_floor_impl", crate::execution::runtime_functions::math_floor_impl as usize);
+        self.register_symbol("math_ceil_impl", crate::execution::runtime_functions::math_ceil_impl as usize);
+        self.register_symbol("math_round_impl", crate::execution::runtime_functions::math_round_impl as usize);
+        self.register_symbol("math_trunc_impl", crate::execution::runtime_functions::math_trunc_impl as usize);
+        self.register_symbol("math_frac_impl", crate::execution::runtime_functions::math_frac_impl as usize);
+        self.register_symbol("math_sum_impl", crate::execution::runtime_functions::math_sum_impl as usize);
+        self.register_symbol("math_mean_impl", crate::execution::runtime_functions::math_mean_impl as usize);
+        self.register_symbol("math_median_impl", crate::execution::runtime_functions::math_median_impl as usize);
+        self.register_symbol("math_variance_impl", crate::execution::runtime_functions::math_variance_impl as usize);
+        self.register_symbol("math_std_dev_impl", crate::execution::runtime_functions::math_std_dev_impl as usize);
+        self.register_symbol("math_random_int_impl", crate::execution::runtime_functions::math_random_int_impl as usize);
+        self.register_symbol("math_random_float_impl", crate::execution::runtime_functions::math_random_float_impl as usize);
+        self.register_symbol("math_seed_random_impl", crate::execution::runtime_functions::math_seed_random_impl as usize);
+        self.register_symbol("math_is_nan_impl", crate::execution::runtime_functions::math_is_nan_impl as usize);
+        self.register_symbol("math_is_infinite_impl", crate::execution::runtime_functions::math_is_infinite_impl as usize);
+        self.register_symbol("math_is_finite_impl", crate::execution::runtime_functions::math_is_finite_impl as usize);
+        self.register_symbol("math_gcd_impl", crate::execution::runtime_functions::math_gcd_impl as usize);
+        self.register_symbol("math_lcm_impl", crate::execution::runtime_functions::math_lcm_impl as usize);
+        self.register_symbol("math_factorial_impl", crate::execution::runtime_functions::math_factorial_impl as usize);
+        self.register_symbol("math_fibonacci_impl", crate::execution::runtime_functions::math_fibonacci_impl as usize);
+        self.register_symbol("math_smoothstep_impl", crate::execution::runtime_functions::math_smoothstep_impl as usize);
+        
+        // Register crypto functions
+        self.register_symbol("crypto_sha256", crate::execution::runtime_functions::crypto_sha256 as usize);
+        self.register_symbol("crypto_sha512", crate::execution::runtime_functions::crypto_sha512 as usize);
+        self.register_symbol("crypto_md5", crate::execution::runtime_functions::crypto_md5 as usize);
+        self.register_symbol("crypto_blake3", crate::execution::runtime_functions::crypto_blake3 as usize);
+        self.register_symbol("crypto_random_bytes", crate::execution::runtime_functions::crypto_random_bytes as usize);
+        self.register_symbol("crypto_random_int", crate::execution::runtime_functions::crypto_random_int as usize);
+        self.register_symbol("crypto_random_string", crate::execution::runtime_functions::crypto_random_string as usize);
+        self.register_symbol("crypto_base64_encode", crate::execution::runtime_functions::crypto_base64_encode as usize);
+        self.register_symbol("crypto_base64_decode", crate::execution::runtime_functions::crypto_base64_decode as usize);
+        self.register_symbol("crypto_hex_encode", crate::execution::runtime_functions::crypto_hex_encode as usize);
+        self.register_symbol("crypto_hex_decode", crate::execution::runtime_functions::crypto_hex_decode as usize);
+        self.register_symbol("crypto_aes_encrypt", crate::execution::runtime_functions::crypto_aes_encrypt as usize);
+        self.register_symbol("crypto_aes_decrypt", crate::execution::runtime_functions::crypto_aes_decrypt as usize);
+        self.register_symbol("crypto_pbkdf2", crate::execution::runtime_functions::crypto_pbkdf2 as usize);
+        self.register_symbol("crypto_scrypt", crate::execution::runtime_functions::crypto_scrypt as usize);
+        self.register_symbol("crypto_ed25519_keypair", crate::execution::runtime_functions::crypto_ed25519_keypair as usize);
+        self.register_symbol("crypto_ed25519_sign", crate::execution::runtime_functions::crypto_ed25519_sign as usize);
+        self.register_symbol("crypto_ed25519_verify", crate::execution::runtime_functions::crypto_ed25519_verify as usize);
+        self.register_symbol("crypto_hmac_sha256", crate::execution::runtime_functions::crypto_hmac_sha256 as usize);
+        self.register_symbol("crypto_hmac_sha512", crate::execution::runtime_functions::crypto_hmac_sha512 as usize);
+        self.register_symbol("crypto_argon2_hash", crate::execution::runtime_functions::crypto_argon2_hash as usize);
+        self.register_symbol("crypto_argon2_verify", crate::execution::runtime_functions::crypto_argon2_verify as usize);
+        self.register_symbol("crypto_bcrypt_hash", crate::execution::runtime_functions::crypto_bcrypt_hash as usize);
+        self.register_symbol("crypto_bcrypt_verify", crate::execution::runtime_functions::crypto_bcrypt_verify as usize);
+        self.register_symbol("crypto_constant_time_eq", crate::execution::runtime_functions::crypto_constant_time_eq as usize);
+        self.register_symbol("crypto_secure_random", crate::execution::runtime_functions::crypto_secure_random as usize);
+        self.register_symbol("crypto_generate_salt", crate::execution::runtime_functions::crypto_generate_salt as usize);
+        
         // Register standard library collections functions
         // Array/Vector operations
         self.register_symbol("collections_array_new", crate::execution::runtime_functions::collections_array_new as usize);

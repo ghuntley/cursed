@@ -1641,6 +1641,9 @@ impl Parser {
             TokenKind::LeftBracket => {
                 self.parse_array_literal()
             },
+            TokenKind::LeftBrace => {
+                self.parse_map_literal()
+            },
             _ => Err(CursedError::syntax_error("Expected expression")),
         }
     }
@@ -1861,6 +1864,47 @@ impl Parser {
         self.consume(TokenKind::RightBracket, "Expected ']' to close array literal")?;
         
         Ok(Expression::Array(elements))
+    }
+
+    fn parse_map_literal(&mut self) -> Result<Expression, CursedError> {
+        self.consume(TokenKind::LeftBrace, "Expected '{' for map literal")?;
+        let mut pairs = Vec::new();
+        
+        // Handle empty map literal {}
+        if self.check(&TokenKind::RightBrace) {
+            self.advance();
+            return Ok(Expression::Map(pairs));
+        }
+        
+        // Parse map key-value pairs
+        loop {
+            self.skip_newlines(); // Allow newlines between pairs
+            
+            // Parse key
+            let key = self.parse_expression()?;
+            
+            // Expect colon separator
+            self.consume(TokenKind::Colon, "Expected ':' after map key")?;
+            
+            // Parse value
+            let value = self.parse_expression()?;
+            pairs.push((key, value));
+            
+            self.skip_newlines(); // Allow newlines after pairs
+            
+            if self.match_tokens(&[TokenKind::Comma]) {
+                // Continue parsing next pair
+                continue;
+            } else if self.check(&TokenKind::RightBrace) {
+                break;
+            } else {
+                return Err(CursedError::syntax_error("Expected ',' or '}' in map literal"));
+            }
+        }
+        
+        self.consume(TokenKind::RightBrace, "Expected '}' to close map literal")?;
+        
+        Ok(Expression::Map(pairs))
     }
 
     fn parse_interface_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::InterfaceStatement, CursedError> {
