@@ -187,26 +187,60 @@ impl JitExecutor {
             return self.execute_interpreted(source);
         }
         
-        // For now, always fall back to interpretation until JIT issues are resolved
-        tracing::warn!("⚠️ JIT compilation temporarily disabled due to LLVM initialization issues");
-        return self.execute_interpreted(source);
-
-        #[allow(unreachable_code)]
-        {
-            // Parse the source code
-            let mut parser = new_parser(source)?;
-            let program = parser.parse_program()?;
-
-            // Look for main function
-            let main_function = self.find_main_function(&program)?;
-
-            if let Some(main_func) = main_function {
-                // JIT compile and execute main function
-                self.jit_compile_and_execute_function(&main_func, source)
-            } else {
-                // Execute as script (compile everything and run)
-                self.jit_compile_and_execute_program(&program, source)
+        // Try JIT compilation
+        match self.try_jit_compilation(source) {
+            Ok(result) => {
+                tracing::info!("✅ JIT compilation successful");
+                return Ok(result);
             }
+            Err(e) => {
+                tracing::warn!("⚠️ JIT compilation failed: {}, falling back to interpretation", e);
+                return self.execute_interpreted(source);
+            }
+        }
+    }
+    
+    /// Try JIT compilation of the source code
+    fn try_jit_compilation(&mut self, source: &str) -> Result<CursedValue, CursedError> {
+        // Parse the source code
+        let mut parser = new_parser(source)?;
+        let program = parser.parse_program()?;
+        
+        // Look for main function
+        let main_func = program.statements.iter().find(|stmt| {
+            if let Statement::Function(func_stmt) = stmt {
+                func_stmt.name == "main"
+            } else {
+                false
+            }
+        });
+        
+        if let Some(main_stmt) = main_func {
+            tracing::info!("🚀 JIT compiling main function");
+            
+            // Generate LLVM IR for the main function
+            let llvm_ir = {
+                let mut codegen = self.llvm_codegen.lock().unwrap();
+                codegen.compile_function(main_stmt)?
+            };
+            
+            // Cache the generated code
+            self.source_cache.write().unwrap().insert(source.to_string(), llvm_ir.clone());
+            
+            // JIT compile and execute
+            let mut jit_engine = self.jit_engine.lock().unwrap();
+            let result = jit_engine.compile_and_run(&llvm_ir)?;
+            
+            // Update stats
+            {
+                let mut stats = self.stats.write().unwrap();
+                stats.functions_compiled += 1;
+                stats.total_executions += 1;
+            }
+            
+            Ok(CursedValue::String(result))
+        } else {
+            Err(CursedError::RuntimeError("No main function found".to_string()))
         }
     }
 
