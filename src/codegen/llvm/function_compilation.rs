@@ -50,8 +50,8 @@ impl FunctionCompiler {
         self.variables.clear();
         self.variable_types.clear();
         self.function_params.clear();
-        // Main function register numbering starts at %1 according to LLVM convention
-        self.variable_counter = if name == "main" { 1 } else { 0 };
+        // All functions register numbering starts at %0 according to LLVM convention
+        self.variable_counter = 0;
         self.label_counter = 0;
         self.current_function = Some(name.to_string());
         

@@ -47,6 +47,39 @@ cargo run --bin cursed -- compile program.csd
 # 5. Check LLVM IR register numbering consistency if issues arise
 ```
 
+## Using the CURSED Compiler
+
+```bash
+# Run CURSED program in interpretation mode
+cargo run --bin cursed test_simple.csd
+
+# Compile CURSED program to native executable
+cargo run --bin cursed -- compile test_simple.csd
+./test_simple  # Run the compiled executable
+```
+
+### Basic CURSED Syntax Examples
+
+```cursed
+# Variable declarations
+sus name tea = "value"
+sus count drip = 42
+sus flag lit = based
+
+# Function definitions
+slay functionName(param normie) normie {
+    vibez.spill("Hello from function")
+    damn param
+}
+
+# Output
+vibez.spill("Hello, world!")
+
+# Boolean values
+sus isReady lit = based    # true
+sus isComplete lit = sus   # false
+```
+
 ## Development Environment
 
 Uses https://devenv.sh to provide development dependencies. These are defined in  devenv.nix. You will need to run "direnv allow" after making a change then restart bash sessions.
