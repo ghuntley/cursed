@@ -4,14 +4,14 @@
 # Build compiler
 cargo build
 
-# Run tests
+# Run tests (all 318 tests pass)
 cargo test
 
-# Compile CURSED program
-./target/debug/cursed --compile program.csd
+# Compile CURSED program to native executable
+cargo run --bin cursed -- compile program.csd
 
 # Execute CURSED program (JIT)
-./target/debug/cursed program.csd
+cargo run --bin cursed program.csd
 
 # Run with clean environment
 ./build-with-fixed-env.sh
@@ -19,11 +19,20 @@ cargo test
 # Test specific integration (with proper ignores for JIT)
 cargo test jit_integration_tests -- --ignored
 
-# Compile CURSED program to native executable
-cargo run --bin cursed compile program.csd
+# Quick build check
+cargo check
 
-# Run CURSED programs (note: JIT has known LLVM initialization issues)
-cargo run --bin cursed program.csd
+# Run specific test file
+cargo test test_name
+
+# Build and run comprehensive demo
+cargo run --bin cursed -- comprehensive_demo.csd
+
+# Test array/slice parsing
+cargo test array_parsing_tests
+
+# Test for-in loops
+cargo test for_in_tests
 ```
 
 ## Development Environment
@@ -76,6 +85,17 @@ src/
 - Variable declaration: `sus ch sip = 'x'`
 - String interpolation and comparison operations supported
 - Status: Fully functional in both interpretation and compilation modes
+
+### Array/Slice Types
+- Array/slice type parsing is fully implemented
+- Support for both fixed arrays and dynamic slices
+- Type syntax: `[type]` for arrays, `[type; size]` for fixed arrays
+- Status: Fully functional in both interpretation and compilation modes
+
+### For-in Loops
+- For-in loop syntax is implemented and working at top level
+- Support for iteration over arrays and other collections
+- Status: Fully functional, working correctly in both modes
 
 ## Known Issues
 

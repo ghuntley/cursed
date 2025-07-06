@@ -10,7 +10,9 @@ pub struct FunctionCompiler {
     pub ir_code: String,
     pub variable_counter: usize,
     pub label_counter: usize,
-    pub variables: HashMap<String, String>,
+    pub variables: HashMap<String, String>,  // Maps variable names to their register/pointer
+    pub variable_types: HashMap<String, String>,  // Maps variable names to their LLVM types
+    pub function_params: HashMap<String, String>,  // Maps parameter names to their registers
     pub current_function: Option<String>,
     pub string_constants: Vec<String>,
 }
@@ -22,6 +24,8 @@ impl FunctionCompiler {
             variable_counter: 0,
             label_counter: 0,
             variables: HashMap::new(),
+            variable_types: HashMap::new(),
+            function_params: HashMap::new(),
             current_function: None,
             string_constants: Vec::new(),
         }
@@ -43,6 +47,8 @@ impl FunctionCompiler {
     ) -> Result<String, CursedError> {
         // Reset state for new function
         self.variables.clear();
+        self.variable_types.clear();
+        self.function_params.clear();
         self.variable_counter = 0;
         self.label_counter = 0;
         self.current_function = Some(name.to_string());
@@ -73,8 +79,9 @@ impl FunctionCompiler {
             let llvm_type = self.get_llvm_type(param_type);
             function_ir.push_str(&format!("{} %{}", llvm_type, param));
             
-            // Map parameters to variables (use PARAM: prefix to distinguish from stack allocations)
-            self.variables.insert(param.clone(), format!("PARAM:%{}", param));
+            // Map parameters to their LLVM types and registers
+            self.variable_types.insert(param.clone(), llvm_type.clone());
+            self.function_params.insert(param.clone(), format!("%{}", param));
         }
         
         function_ir.push_str(") {\n");
@@ -136,6 +143,7 @@ impl FunctionCompiler {
                 match &let_stmt.target {
                     crate::ast::LetTarget::Single(name) => {
                         self.variables.insert(name.clone(), var_reg);
+                        self.variable_types.insert(name.clone(), var_type.clone());
                         ir.push_str(&format!("  ; Variable {} allocated\n", name));
                     },
                     crate::ast::LetTarget::Tuple(names) => {
@@ -339,30 +347,27 @@ impl FunctionCompiler {
                 Ok(str_reg)
             },
             Expression::Identifier(name) => {
-                if let Some(reg) = self.variables.get(name) {
-                    // Clone the register string to avoid borrow issues
-                    let reg_name = reg.clone();
+                // Check if this is a function parameter first
+                if let Some(param_reg) = self.function_params.get(name) {
+                    // Function parameters are already values, no need to load
+                    Ok(param_reg.clone())
+                } else if let Some(var_reg) = self.variables.get(name) {
+                    // Local variable allocated on stack - need to load
+                    let var_reg = var_reg.clone();
+                    let load_reg = self.next_register();
                     
-                    // Check if this is a function parameter (starts with PARAM:)
-                    if reg_name.starts_with("PARAM:") {
-                        // Function parameters are already values, no need to load - strip PARAM: prefix
-                        Ok(reg_name.strip_prefix("PARAM:").unwrap().to_string())
+                    // Use the type from variable_types to generate the correct load instruction
+                    if let Some(var_type) = self.variable_types.get(name) {
+                        self.ir_code.push_str(&format!("  {} = load {}, {}* {}, align 4\n", 
+                            load_reg, var_type, var_type, var_reg));
                     } else {
-                        // Local variable allocated on stack - need to load
-                        // For now, assume types based on variable names
-                        // TODO: Implement proper type tracking
-                        let load_reg = self.next_register();
-                        if name.contains("name") || name.contains("text") || name.contains("str") {
-                            self.ir_code.push_str(&format!("  {} = load i8*, i8** {}, align 8\n", load_reg, reg_name));
-                        } else if name.contains("flag") || name.contains("bool") || name.contains("is_") || name.contains("active") || name.contains("enabled") {
-                            self.ir_code.push_str(&format!("  {} = load i1, i1* {}, align 1\n", load_reg, reg_name));
-                        } else {
-                            self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, reg_name));
-                        }
-                        Ok(load_reg)
+                        // Fallback to i32 if type not found
+                        self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", 
+                            load_reg, var_reg));
                     }
+                    Ok(load_reg)
                 } else {
-                    // Function parameter or global
+                    // Unknown identifier, assume it's a global or something
                     Ok(format!("%{}", name))
                 }
             },
@@ -621,8 +626,34 @@ impl FunctionCompiler {
             Expression::String(_) => Ok("i8*".to_string()),
             Expression::Integer(_) => Ok("i32".to_string()),
             Expression::Boolean(_) => Ok("i1".to_string()),
-            Expression::Identifier(_) => Ok("i32".to_string()), // Default for now
-            Expression::Binary(_) => Ok("i32".to_string()), // Default for now
+            Expression::Identifier(name) => {
+                // Look up the variable type from the variable_types HashMap
+                if let Some(llvm_type) = self.variable_types.get(name) {
+                    Ok(llvm_type.clone())
+                } else {
+                    Ok("i32".to_string()) // Default if not found
+                }
+            },
+            Expression::Binary(binary_expr) => {
+                // For binary expressions, we need to check what kind of operation it is
+                match binary_expr.operator.as_str() {
+                    "+" => {
+                        // For add operations, check if either operand is a string (string concatenation)
+                        let left_type = self.infer_expression_type(&binary_expr.left)?;
+                        let right_type = self.infer_expression_type(&binary_expr.right)?;
+                        
+                        if left_type == "i8*" || right_type == "i8*" {
+                            Ok("i8*".to_string()) // String concatenation result
+                        } else {
+                            Ok("i32".to_string()) // Numeric addition result
+                        }
+                    },
+                    "<" | "<=" | ">" | ">=" | "==" | "!=" => {
+                        Ok("i1".to_string()) // Comparison result is boolean
+                    },
+                    _ => Ok("i32".to_string()), // Default for other operations
+                }
+            },
             Expression::Unary(_) => Ok("i32".to_string()), // Default for now
             Expression::Call(_) => Ok("i32".to_string()), // Default for now
             Expression::Literal(lit) => self.infer_literal_type(lit),
@@ -1085,16 +1116,42 @@ impl FunctionCompiler {
 
     /// Handle string concatenation
     fn compile_string_concatenation(&mut self, left: &Expression, right: &Expression) -> Result<String, CursedError> {
-        // For now, just return the first string for simple cases
-        // TODO: Implement proper string concatenation using runtime functions
+        let left_type = self.infer_expression_type(left)?;
+        let right_type = self.infer_expression_type(right)?;
+        
         let left_reg = self.compile_expression(left)?;
         let right_reg = self.compile_expression(right)?;
         
-        // For string concatenation, we'll use a simple approach:
-        // Just use the left operand for now (temporary solution)
-        // A proper implementation would use strcat or a custom concatenation function
-        log::debug!("String concatenation: {} + {} (returning first operand)", left_reg, right_reg);
-        Ok(left_reg)
+        // Convert operands to strings if needed
+        let left_str_reg = if left_type == "i32" {
+            let converted_reg = self.next_register();
+            self.ir_code.push_str(&format!("  {} = call i8* @i32_to_string(i32 {})\n", 
+                converted_reg, left_reg));
+            converted_reg
+        } else {
+            left_reg
+        };
+        
+        let right_str_reg = if right_type == "i32" {
+            let converted_reg = self.next_register();
+            self.ir_code.push_str(&format!("  {} = call i8* @i32_to_string(i32 {})\n", 
+                converted_reg, right_reg));
+            converted_reg
+        } else {
+            right_reg
+        };
+        
+        // Generate a new register for the result
+        let result_reg = self.next_register();
+        
+        // Call the string_concat runtime function
+        // string_concat(str1_ptr: *const c_char, str2_ptr: *const c_char) -> *mut c_char
+        self.ir_code.push_str(&format!("  {} = call i8* @string_concat(i8* {}, i8* {})\n", 
+            result_reg, left_str_reg, right_str_reg));
+        
+        log::debug!("String concatenation: {} + {} -> {} (left_type: {}, right_type: {})", 
+            left_str_reg, right_str_reg, result_reg, left_type, right_type);
+        Ok(result_reg)
     }
 
     /// Generate next register name

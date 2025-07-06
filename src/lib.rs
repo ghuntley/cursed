@@ -683,6 +683,38 @@ fn link_object_to_executable(obj_file: &str, output_file: &str) -> crate::error:
     ))
 }
 
+/// Find the CURSED runtime library
+fn find_runtime_library() -> Option<String> {
+    // Look for runtime library in common locations
+    let possible_paths = vec![
+        // In target directory (when building from source)
+        format!("{}/libcursed_runtime.a", env!("OUT_DIR")),
+        // In current directory
+        "./libcursed_runtime.a".to_string(),
+        // In system library paths
+        "/usr/lib/libcursed_runtime.a".to_string(),
+        "/usr/local/lib/libcursed_runtime.a".to_string(),
+    ];
+    
+    for path in possible_paths {
+        if std::path::Path::new(&path).exists() {
+            tracing::info!("Found CURSED runtime library at: {}", path);
+            return Some(path);
+        }
+    }
+    
+    // Try to find it in the build output directory
+    if let Ok(target_dir) = std::env::var("CARGO_TARGET_DIR") {
+        let lib_path = format!("{}/release/libcursed_runtime.a", target_dir);
+        if std::path::Path::new(&lib_path).exists() {
+            tracing::info!("Found CURSED runtime library at: {}", lib_path);
+            return Some(lib_path);
+        }
+    }
+    
+    None
+}
+
 /// Link with specific linker
 fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::error::Result<()> {
     use std::process::Command;
@@ -693,8 +725,16 @@ fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::e
         "clang" | "gcc" => {
             cmd.arg("-o")
                .arg(output_file)
-               .arg(obj_file)
-               .arg("-lc")  // Link with C standard library
+               .arg(obj_file);
+            
+            // Link with CURSED runtime library
+            if let Some(runtime_lib) = find_runtime_library() {
+                cmd.arg(&runtime_lib);
+            } else {
+                tracing::warn!("CURSED runtime library not found, some functions may not be available");
+            }
+            
+            cmd.arg("-lc")  // Link with C standard library
                .arg("-lm")  // Link with math library
                .arg("-lpthread") // Link with pthread for goroutines
                .arg("-lstdc++") // Link with C++ standard library for exception handling

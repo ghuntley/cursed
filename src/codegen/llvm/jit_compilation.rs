@@ -282,6 +282,7 @@ impl SymbolResolver {
         self.register_symbol("string_contains", crate::execution::runtime_functions::string_contains as usize);
         self.register_symbol("string_index_of", crate::execution::runtime_functions::string_index_of as usize);
         self.register_symbol("string_substring", crate::execution::runtime_functions::string_substring as usize);
+        self.register_symbol("i32_to_string", crate::execution::runtime_functions::i32_to_string as usize);
         self.register_symbol("string_concat", crate::execution::runtime_functions::string_concat as usize);
         self.register_symbol("string_is_empty", crate::execution::runtime_functions::string_is_empty as usize);
         self.register_symbol("string_base64_encode", crate::execution::runtime_functions::string_base64_encode as usize);

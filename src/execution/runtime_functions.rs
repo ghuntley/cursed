@@ -1278,6 +1278,16 @@ pub extern "C" fn string_substring(str_ptr: *const c_char, start: usize, length:
     }
 }
 
+/// Convert integer to string (implementation for i32_to_string)
+#[no_mangle]
+pub extern "C" fn i32_to_string(value: i32) -> *mut c_char {
+    let result = value.to_string();
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
 /// String concatenation (implementation for string_concat)
 #[no_mangle]
 pub extern "C" fn string_concat(str1_ptr: *const c_char, str2_ptr: *const c_char) -> *mut c_char {
