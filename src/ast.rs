@@ -36,6 +36,7 @@ pub enum Statement {
     Function(FunctionStatement),
     While(WhileStatement),
     For(ForStatement),
+    ForIn(ForInStatement),
     Switch(SwitchStatement),
     Goroutine(GoroutineStatement),
     Channel(ChannelStatement),
@@ -164,7 +165,7 @@ impl LetTarget {
 pub struct LetStatement {
     pub target: LetTarget,
     pub value: Expression,
-    pub var_type: Option<String>, // Type annotation for the variable
+    pub var_type: Option<Type>, // Type annotation for the variable
     pub visibility: Visibility,
 }
 
@@ -223,7 +224,7 @@ pub struct FunctionStatement {
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters
     pub parameters: Vec<Parameter>,
     pub body: Vec<Statement>,
-    pub return_type: Option<String>,
+    pub return_type: Option<Type>,
     pub where_clause: Option<WhereClause>, // Where clause for constraints
     pub visibility: Visibility,
 }
@@ -241,6 +242,14 @@ pub struct ForStatement {
     pub init: Option<Box<Statement>>,
     pub condition: Option<Expression>,
     pub update: Option<Expression>,
+    pub body: Vec<Statement>,
+}
+
+/// For-in statement
+#[derive(Debug, Clone)]
+pub struct ForInStatement {
+    pub variable: String,
+    pub iterable: Expression,
     pub body: Vec<Statement>,
 }
 
@@ -288,7 +297,7 @@ pub struct ChannelReceiveExpression {
 /// Channel creation expression (dm type())
 #[derive(Debug, Clone)]
 pub struct ChannelCreationExpression {
-    pub element_type: String,
+    pub element_type: Type,
     pub capacity: Option<Box<Expression>>,
 }
 
@@ -318,7 +327,7 @@ pub struct StructStatement {
 #[derive(Debug, Clone)]
 pub struct StructField {
     pub name: String,
-    pub field_type: Option<String>,
+    pub field_type: Option<Type>,
     pub visibility: Visibility,
 }
 
@@ -335,14 +344,14 @@ pub struct InterfaceStatement {
 pub struct MethodSignature {
     pub name: String,
     pub parameters: Vec<Parameter>,
-    pub return_type: Option<String>,
+    pub return_type: Option<Type>,
 }
 
 /// Parameter definition
 #[derive(Debug, Clone)]
 pub struct Parameter {
     pub name: String,
-    pub param_type: Option<String>,
+    pub param_type: Option<Type>,
 }
 
 /// Unary expression
@@ -449,7 +458,8 @@ pub enum Type {
     Boolean,
     Void,
     Function(Vec<Type>, Box<Type>),
-    Array(Box<Type>),
+    Array(Box<Type>, Option<usize>),  // Array type with optional size [N]T
+    Slice(Box<Type>),                 // Slice type []T
     Custom(String),
     // CURSED-specific types
     Normie,              // Standard/basic integer type (normie)
@@ -460,6 +470,57 @@ pub enum Type {
     Collab(String),      // Interface type (collab)
     Dm(Box<Type>),       // Channel type (dm<T>)
     Tuple(Vec<Type>),    // Tuple type (tuple)
+}
+
+impl std::fmt::Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Type::Integer => write!(f, "normie"),
+            Type::Float => write!(f, "tea"), 
+            Type::String => write!(f, "tea"),
+            Type::Boolean => write!(f, "lit"),
+            Type::Void => write!(f, "void"),
+            Type::Function(params, ret) => {
+                write!(f, "fn(")?;
+                for (i, param) in params.iter().enumerate() {
+                    if i > 0 { write!(f, ", ")?; }
+                    write!(f, "{}", param)?;
+                }
+                write!(f, ") -> {}", ret)
+            }
+            Type::Array(inner, size) => {
+                if let Some(size) = size {
+                    write!(f, "[{}]{}", size, inner)
+                } else {
+                    write!(f, "[]{}", inner)
+                }
+            }
+            Type::Slice(inner) => write!(f, "[]{}", inner),
+            Type::Custom(name) => write!(f, "{}", name),
+            Type::Normie => write!(f, "normie"),
+            Type::Tea => write!(f, "tea"),
+            Type::Lit => write!(f, "lit"),
+            Type::Sip => write!(f, "sip"),
+            Type::Squad(inner) => write!(f, "squad<{}>", inner),
+            Type::Collab(name) => write!(f, "collab<{}>", name),
+            Type::Dm(inner) => write!(f, "dm<{}>", inner),
+            Type::Tuple(types) => {
+                write!(f, "(")?;
+                for (i, t) in types.iter().enumerate() {
+                    if i > 0 { write!(f, ", ")?; }
+                    write!(f, "{}", t)?;
+                }
+                write!(f, ")")
+            }
+        }
+    }
+}
+
+impl Type {
+    /// Convert Type to string for backward compatibility
+    pub fn to_string_compat(&self) -> String {
+        format!("{}", self)
+    }
 }
 
 /// AST visitor trait for traversing the AST

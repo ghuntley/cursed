@@ -79,6 +79,7 @@ pub enum TokenKind {
     LeftArrow,   // <- channel operator
     Arrow,       // -> return type arrow
     Later,       // later (defer statement)
+    In,          // in (for-in loops)
     
     // Visibility modifiers
     Spill,       // pub (public)
@@ -656,6 +657,7 @@ impl Lexer {
             "dm" => TokenKind::Dm,
             "select" => TokenKind::Select,
             "later" => TokenKind::Later,
+            "in" => TokenKind::In,
             
             // Visibility modifiers
             "spill" => TokenKind::Spill,
@@ -1096,5 +1098,28 @@ slay test() {
         assert_eq!(tokens[5].kind, TokenKind::Equal);
         assert_eq!(tokens[6].lexeme, "10");
         assert_eq!(tokens[7].kind, TokenKind::Eof);
+    }
+
+    #[test]
+    fn test_for_in_tokens() {
+        let mut lexer = Lexer::new("bestie person in people".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+        println!("🔍 For-in test - found {} tokens", tokens.len());
+        for (i, token) in tokens.iter().enumerate() {
+            println!("  #{} {:?} '{}'", i, token.kind, token.lexeme);
+        }
+        
+        // Should have: Bestie, Identifier(person), In, Identifier(people), Eof
+        assert_eq!(tokens.len(), 5);
+        assert_eq!(tokens[0].kind, TokenKind::Bestie);
+        assert_eq!(tokens[0].lexeme, "bestie");
+        assert_eq!(tokens[1].kind, TokenKind::Identifier);
+        assert_eq!(tokens[1].lexeme, "person");
+        assert_eq!(tokens[2].kind, TokenKind::In);
+        assert_eq!(tokens[2].lexeme, "in");
+        assert_eq!(tokens[3].kind, TokenKind::Identifier);
+        assert_eq!(tokens[3].lexeme, "people");
+        assert_eq!(tokens[4].kind, TokenKind::Eof);
     }
 }

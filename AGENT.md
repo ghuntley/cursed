@@ -69,6 +69,14 @@ src/
 - Example: `5 * 3.14` works correctly in interpretation mode
 - Status: Works perfectly in interpretation mode, compilation mode works for non-constant expressions
 
+### Character Type
+- Character type: `sip` (single character values)
+- Character literals: `'a'`, `'Z'`, `'1'`, `'@'`
+- Escape sequences: `'\n'`, `'\t'`, `'\\'`, `'\''`
+- Variable declaration: `sus ch sip = 'x'`
+- String interpolation and comparison operations supported
+- Status: Fully functional in both interpretation and compilation modes
+
 ## Known Issues
 
 ### JIT Execution Environment

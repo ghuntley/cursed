@@ -123,7 +123,7 @@ impl FunctionCompiler {
                 
                 // Infer the type from the value expression
                 let var_type = if let Some(explicit_type) = &let_stmt.var_type {
-                    self.get_llvm_type(explicit_type)
+                    self.get_llvm_type(&explicit_type.to_string())
                 } else {
                     self.infer_expression_type(&let_stmt.value)?
                 };

@@ -24,6 +24,7 @@ pub mod execution;
 pub mod optimization;
 pub mod common;
 pub mod common_types;
+pub mod type_helper;
 
 // Newly enabled advanced modules
 pub mod types;
