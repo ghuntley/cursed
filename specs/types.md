@@ -8,7 +8,7 @@ CURSED has several built-in basic types:
 
 | Type Category | CURSED Types | Description |
 |---------------|--------------|-------------|
-| Boolean       | `lit`        | Represents `based` (true) or `sus` (false) values |
+| Boolean       | `lit`        | Represents `based` (true) or `cap` (false) values |
 | Numeric       | `smol`       | 8-bit signed integer |
 |               | `mid`        | 16-bit signed integer |
 |               | `normie`     | 32-bit signed integer |
@@ -67,14 +67,14 @@ Each type has a zero value that variables of that type are initialized to when n
 
 | Type | Zero Value |
 |------|------------|
-| lit  | `sus` (false) |
+| lit  | `cap` (false) |
 | numeric types | `0` |
 | tea  | `""` (empty string) |
 | sip  | `\0` (null character) |
-| pointers | `cap` (nil) |
-| slices | `cap` (nil) |
-| maps | `cap` (nil) |
-| channels | `cap` (nil) |
+| pointers | `cringe` (nil) |
+| slices | `cringe` (nil) |
+| maps | `cringe` (nil) |
+| channels | `cringe` (nil) |
 | structs | Each field has its zero value |
 | arrays | Each element has its zero value |
 
@@ -86,6 +86,7 @@ CURSED supports type inference in variable declarations with the `:=` operator:
 x := 10        fr fr x is a normie (int32)
 y := "hello"   fr fr y is a tea (string)
 z := based     fr fr z is a lit (bool)
+w := cap       fr fr w is a lit (bool)
 c := 'a'       fr fr c is a sip (char)
 ```
 
@@ -143,4 +144,4 @@ sus is_alnum lit = c.is_alnum()
 sus as_upper sip = c.to_uppercase()
 sus as_lower sip = c.to_lowercase()
 sus as_int normie = normie(c)    fr fr Convert char to integer
-``` 
+```

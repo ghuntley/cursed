@@ -92,6 +92,8 @@ pub enum TokenKind {
     Star,
     Slash,
     Percent,        // %
+    PlusPlus,       // ++
+    MinusMinus,     // --
     Equal,
     EqualEqual,
     Bang,
@@ -164,6 +166,8 @@ impl Lexer {
             '+' => {
                 if self.match_char('=') {
                     Ok(self.make_token(TokenKind::PlusEqual, "+=".to_string(), start_column))
+                } else if self.match_char('+') {
+                    Ok(self.make_token(TokenKind::PlusPlus, "++".to_string(), start_column))
                 } else {
                     Ok(self.make_token(TokenKind::Plus, "+".to_string(), start_column))
                 }
@@ -173,6 +177,8 @@ impl Lexer {
                     Ok(self.make_token(TokenKind::MinusEqual, "-=".to_string(), start_column))
                 } else if self.match_char('>') {
                     Ok(self.make_token(TokenKind::Arrow, "->".to_string(), start_column))
+                } else if self.match_char('-') {
+                    Ok(self.make_token(TokenKind::MinusMinus, "--".to_string(), start_column))
                 } else {
                     Ok(self.make_token(TokenKind::Minus, "-".to_string(), start_column))
                 }
@@ -651,7 +657,7 @@ impl Lexer {
             "tea" => TokenKind::Tea,
             "txt" => TokenKind::Txt,
             "sip" => TokenKind::Sip,
-            "cap" => TokenKind::Cap,
+
             "nocap" => TokenKind::NoCap,
             "main_character" => TokenKind::MainCharacter,
             "dm" => TokenKind::Dm,
@@ -666,6 +672,10 @@ impl Lexer {
             
             // Boolean literals
             "based" => TokenKind::Truth,
+            "cap" => TokenKind::Lies,
+            
+            // Nil literal
+            "cringe" => TokenKind::Cap,
             
             // Comments - handle special keywords for comments
             "fr" => {

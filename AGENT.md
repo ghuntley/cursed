@@ -77,7 +77,7 @@ vibez.spill("Hello, world!")
 
 # Boolean values
 sus isReady lit = based    # true
-sus isComplete lit = sus   # false
+sus isComplete lit = cap   # false
 ```
 
 ## Development Environment
@@ -110,9 +110,9 @@ src/
 - Status: Works in interpretation mode, may have LLVM codegen issues
 
 ### Boolean Literals
-- Specification-compliant syntax: `based` (true) and `sus` (false)
+- Specification-compliant syntax: `based` (true) and `cap` (false)
 - Boolean type: `lit` 
-- Usage: `sus flag lit = based` or `sus flag lit = sus`
+- Usage: `sus flag lit = based` or `sus flag lit = cap`
 - Tests: Boolean literals work correctly in both variable declarations and expressions
 - Status: Fully compliant with language specification
 

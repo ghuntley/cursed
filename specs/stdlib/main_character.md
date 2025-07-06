@@ -87,7 +87,7 @@ be_like DirEntry collab {
 
 ```
 slay VibeOut(code normie) fr fr Exits with status code (like os.Exit)
-slay NoVibeCheck(err tea) fr fr Exits if err is non-cap (like os.Exit)
+slay NoVibeCheck(err tea) fr fr Exits if err is non-cringe (like os.Exit)
 slay GetVibeID() normie fr fr Returns process ID (like os.Getpid)
 slay StartVibe(name tea, args ...tea) (*VibeProcess, tea) fr fr Starts a new process
 
@@ -206,20 +206,20 @@ slay GetVibeArch() tea fr fr Returns system architecture
 ```
 fr fr Creating and writing to a file
 file, err := main_character.CreateVibe("example.txt")
-if err != cap {
+if err != cringe {
     main_character.ErrorVibe.WriteString("Failed to create file: " + err.Error())
     main_character.VibeOut(1)
 }
 defer file.Close()
 
 _, err = file.WriteString("Hello, I'm the main character!")
-if err != cap {
+if err != cringe {
     vibez.spill("Error writing to file: ", err)
 }
 
 fr fr Reading directory contents
 entries, err := main_character.ReadFolderVibe(".")
-if err != cap {
+if err != cringe {
     vibez.spill("Error reading directory: ", err)
 }
 
@@ -234,7 +234,7 @@ vibez.spill("Home directory: ", home)
 
 fr fr Starting a new process
 proc, err := main_character.StartVibe("ls", "-la")
-if err != cap {
+if err != cringe {
     vibez.spill("Error starting process: ", err)
 }
 

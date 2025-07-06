@@ -173,7 +173,7 @@ be_like Result squad {
 fr fr Exported method that can be called remotely
 slay (c *Calculator) Add(args *Args, result *Result) tea {
   result.Value = args.A + args.B
-  yolo cap
+  yolo cringe
 }
 
 fr fr Server implementation
@@ -182,7 +182,7 @@ slay runServer() {
   
   fr fr Register the Calculator service
   err := rpc_vibes.Register(calc)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Register tea: %v", err)
     yolo
   }
@@ -192,7 +192,7 @@ slay runServer() {
   
   fr fr Listen on port 8080
   listener, err := vibe_net.Listen("tcp", ":8080")
-  if err != cap {
+  if err != cringe {
     vibez.spill("Listen tea: %v", err)
     yolo
   }
@@ -200,14 +200,14 @@ slay runServer() {
   vibez.spill("RPC server listening on port 8080")
   
   fr fr Start accepting connections
-  http_vibez.Serve(listener, cap)
+  http_vibez.Serve(listener, cringe)
 }
 
 fr fr Client implementation
 slay runClient() {
   fr fr Connect to the RPC server
   client, err := rpc_vibes.DialHTTP("tcp", "localhost:8080")
-  if err != cap {
+  if err != cringe {
     vibez.spill("Connection tea: %v", err)
     yolo
   }
@@ -219,7 +219,7 @@ slay runClient() {
   
   fr fr Make a synchronous call
   err = client.Call("Calculator.Add", args, &result)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Call tea: %v", err)
     yolo
   }
@@ -229,12 +229,12 @@ slay runClient() {
   fr fr Make an asynchronous call
   args.A = 10
   args.B = 20
-  call := client.Go("Calculator.Add", args, &result, cap)
+  call := client.Go("Calculator.Add", args, &result, cringe)
   
   fr fr Wait for the call to complete
   <- call.Done
   
-  if call.Error != cap {
+  if call.Error != cringe {
     vibez.spill("Async call tea: %v", call.Error)
     yolo
   }
@@ -246,7 +246,7 @@ fr fr Custom codec example
 slay customCodecExample() {
   fr fr Create a custom codec that uses Gob encoding
   conn, err := vibe_net.Dial("tcp", "localhost:8080")
-  if err != cap {
+  if err != cringe {
     vibez.spill("Connection tea: %v", err)
     yolo
   }
@@ -278,7 +278,7 @@ be_like CustomCodec squad {
 }
 
 slay (c *CustomCodec) WriteRequest(req *rpc_vibes.Request, body interface{}) tea {
-  if err := c.enc.Encode(req); err != cap {
+  if err := c.enc.Encode(req); err != cringe {
     yolo err
   }
   yolo c.enc.Encode(body)
@@ -303,14 +303,14 @@ slay jsonRPCExample() {
   server := rpc_vibes.NewJSONServer()
   
   err := server.Register(calc)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Register tea: %v", err)
     yolo
   }
   
   fr fr Listen for HTTP connections
   http_vibez.Handle("/rpc", server)
-  http_vibez.ListenAndServe(":8080", cap)
+  http_vibez.ListenAndServe(":8080", cringe)
   
   fr fr Client side
   client := rpc_vibes.NewJSONClient("http:fr frlocalhost:8080/rpc")
@@ -319,7 +319,7 @@ slay jsonRPCExample() {
   var result Result
   
   err = client.Call("Calculator.Add", args, &result)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Call tea: %v", err)
     yolo
   }
@@ -367,7 +367,7 @@ slay serviceDiscoveryExample() {
   var result Result
   
   err := client.Call("calculator", "Calculator.Add", args, &result)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Call tea: %v", err)
     yolo
   }

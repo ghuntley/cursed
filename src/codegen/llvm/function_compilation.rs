@@ -16,6 +16,8 @@ pub struct FunctionCompiler {
     pub function_params: HashMap<String, String>,  // Maps parameter names to their registers
     pub current_function: Option<String>,
     pub string_manager: StringConstantManager,
+    pub current_break_label: Option<String>,
+    pub current_continue_label: Option<String>,
 }
 
 impl FunctionCompiler {
@@ -29,6 +31,8 @@ impl FunctionCompiler {
             function_params: HashMap::new(),
             current_function: None,
             string_manager: get_global_string_manager(),
+            current_break_label: None,
+            current_continue_label: None,
         }
     }
     
@@ -315,6 +319,22 @@ impl FunctionCompiler {
             Statement::Function(_) => {
                 // Nested functions not supported in LLVM - skip or error
                 ir.push_str("  ; Nested function skipped\n");
+            },
+            Statement::Break(_) => {
+                ir.push_str("  ; Break statement - branch to loop exit\n");
+                if let Some(break_label) = &self.current_break_label {
+                    ir.push_str(&format!("  br label %{}\n", break_label));
+                } else {
+                    return Err(CursedError::internal_error("Break statement outside of loop"));
+                }
+            },
+            Statement::Continue(_) => {
+                ir.push_str("  ; Continue statement - branch to loop start\n");
+                if let Some(continue_label) = &self.current_continue_label {
+                    ir.push_str(&format!("  br label %{}\n", continue_label));
+                } else {
+                    return Err(CursedError::internal_error("Continue statement outside of loop"));
+                }
             },
             _ => {
                 ir.push_str("  ; Unsupported statement\n");

@@ -318,7 +318,7 @@ In addition to standard Go template syntax, RizzTemplate supports:
 ```
 fr fr Simple template parsing and execution
 tmpl, err := rizz_template.New("greeting").Parse("Hello, {{.Name}}! {{if .Admin}}You're an admin!{{end}}")
-if err != cap {
+if err != cringe {
     vibez.spill("Parse tea:", err)
     yolo
 }
@@ -347,13 +347,13 @@ funcs := rizz_template.FuncMap{
 }
 
 tmpl, err = rizz_template.New("fancyGreeting").AddFuncs(funcs).Parse("Hello, {{formatName .Name}}!")
-if err != cap {
+if err != cringe {
     vibez.spill("Parse tea:", err)
     yolo
 }
 
 result, err := tmpl.ExecuteToString(data)
-if err != cap {
+if err != cringe {
     vibez.spill("Execution tea:", err)
     yolo
 }
@@ -376,7 +376,7 @@ html, err := renderer.RenderToString("pages/home.tmpl", map[tea]interface{}{
     "title": "Home Page",
     "user":  user,
 })
-if err != cap {
+if err != cringe {
     vibez.spill("Render tea:", err)
     yolo
 }
@@ -389,7 +389,7 @@ layout.SetContent("content", "<p>This is the main content area.</p>")
 html, err = layout.String(map[tea]interface{}{
     "user": currentUser,
 })
-if err != cap {
+if err != cringe {
     vibez.spill("Layout tea:", err)
     yolo
 }

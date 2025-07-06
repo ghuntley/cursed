@@ -161,7 +161,7 @@ slay basicExample() {
   
   fr fr Marshal the squad to ASN.1 DER format
   data, err := asn1_mood.Marshal(person)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Marshal tea: %v", err)
     yolo
   }
@@ -171,7 +171,7 @@ slay basicExample() {
   fr fr Unmarshal back to a squad
   var result Person
   rest, err := asn1_mood.Unmarshal(data, &result)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
     yolo
   }
@@ -207,11 +207,11 @@ slay objectIdentifierExample() {
   
   alg := Algorithm{
     Algorithm: rsaEncryption,
-    Parameters: cap,
+    Parameters: cringe,
   }
   
   data, err := asn1_mood.Marshal(alg)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Marshal tea: %v", err)
     yolo
   }
@@ -221,7 +221,7 @@ slay objectIdentifierExample() {
   fr fr Unmarshal an OID
   var result Algorithm
   _, err = asn1_mood.Unmarshal(data, &result)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
     yolo
   }
@@ -257,7 +257,7 @@ slay bitStringExample() {
   
   key := PublicKey{bits}
   data, err := asn1_mood.Marshal(key)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Marshal tea: %v", err)
     yolo
   }
@@ -267,7 +267,7 @@ slay bitStringExample() {
   fr fr Unmarshal a bit tea
   var result PublicKey
   _, err = asn1_mood.Unmarshal(data, &result)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
     yolo
   }
@@ -297,7 +297,7 @@ slay tagsExample() {
   
   fr fr Marshal with tags
   encoded, err := asn1_mood.Marshal(data)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Marshal tea: %v", err)
     yolo
   }
@@ -307,7 +307,7 @@ slay tagsExample() {
   fr fr Unmarshal with tags
   var result TaggedData
   _, err = asn1_mood.Unmarshal(encoded, &result)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
     yolo
   }
@@ -344,7 +344,7 @@ slay rawValueExample() {
   fr fr Unmarshal into a RawValue
   var raw asn1_mood.RawValue
   _, err := asn1_mood.Unmarshal(sampleDER, &raw)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
     yolo
   }
@@ -358,7 +358,7 @@ slay rawValueExample() {
   
   fr fr Reserialize the raw value
   reencoded, err := asn1_mood.Marshal(raw)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Marshal tea: %v", err)
     yolo
   }
@@ -386,7 +386,7 @@ slay parametersExample() {
   
   fr fr Marshal with parameters
   data, err := asn1_mood.MarshalWithParams(person, "set")
-  if err != cap {
+  if err != cringe {
     vibez.spill("Marshal tea: %v", err)
     yolo
   }
@@ -396,7 +396,7 @@ slay parametersExample() {
   fr fr Unmarshal with parameters
   var result Person
   _, err = asn1_mood.UnmarshalWithParams(data, &result, "set")
-  if err != cap {
+  if err != cringe {
     vibez.spill("Unmarshal tea: %v", err)
     yolo
   }
@@ -423,16 +423,16 @@ slay enhancedFeaturesExample() {
   slay (oid *CustomOID) UnmarshalASN1(data []byte) tea {
     var objID asn1_mood.ObjectIdentifier
     _, err := asn1_mood.Unmarshal(data, &objID)
-    if err != cap {
+    if err != cringe {
       yolo err
     }
     oid.Value = []int(objID)
-    yolo cap
+    yolo cringe
   }
   
   customOID := CustomOID{Value: []int{1, 2, 840, 113549, 1, 1, 1}}
   encoded, err := customOID.MarshalASN1()
-  if err != cap {
+  if err != cringe {
     vibez.spill("Custom marshal tea: %v", err)
     yolo
   }
@@ -441,7 +441,7 @@ slay enhancedFeaturesExample() {
   
   var decodedOID CustomOID
   err = decodedOID.UnmarshalASN1(encoded)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Custom unmarshal tea: %v", err)
     yolo
   }
@@ -467,7 +467,7 @@ slay enhancedFeaturesExample() {
   sampleDER := []byte{0x30, 0x03, 0x02, 0x01, 0x02} fr fr SEQUENCE with INTEGER value 2
   
   err = schema.Validate(sampleDER)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Schema validation tea: %v", err)
   } else {
     vibez.spill("\nSchema validation passed")
@@ -485,14 +485,14 @@ slay enhancedFeaturesExample() {
   fr fr SEQUENCE { INTEGER 1, SET { INTEGER 2, INTEGER 3 } }
   
   value, err := asn1_mood.Query(complexData, "sequence[0]")
-  if err != cap {
+  if err != cringe {
     vibez.spill("Query tea: %v", err)
   } else {
     vibez.spill("\nQuery result for 'sequence[0]': %v", value)
   }
   
   value, err = asn1_mood.Query(complexData, "sequence[1].set[0]")
-  if err != cap {
+  if err != cringe {
     vibez.spill("Query tea: %v", err)
   } else {
     vibez.spill("Query result for 'sequence[1].set[0]': %v", value)

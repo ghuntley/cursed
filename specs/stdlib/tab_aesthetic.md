@@ -114,7 +114,7 @@ slay (w *Writer) Format(src []byte) []byte
 
 ```csd
 fr fr Basic tabwriter example
-buffer := dropz.file.NewBuffer(cap)
+buffer := dropz.file.NewBuffer(cringe)
 w := tab_aesthetic.NewWriter(buffer, 0, 8, 1, ' ', 0)
 
 fr fr Write tab-separated data
@@ -125,7 +125,7 @@ w.WriteString("Charlie\t38\tLos Angeles\n")
 
 fr fr Flush formats the data with aligned columns
 err := w.Flush()
-if err != cap {
+if err != cringe {
   vibez.spill("Error flushing tabwriter: %v", err)
   yolo
 }
@@ -142,7 +142,7 @@ w.WriteString("Bob\t32\tSan Francisco\n")
 w.WriteString("Charlie\t38\tLos Angeles\n")
 
 err = w.Flush()
-if err != cap {
+if err != cringe {
   vibez.spill("Error flushing tabwriter: %v", err)
   yolo
 }
@@ -159,7 +159,7 @@ w.WriteString("Bob\t32\tSF\n")
 w.WriteString("Charlie\t38\tLA\n")
 
 err = w.Flush()
-if err != cap {
+if err != cringe {
   vibez.spill("Error flushing tabwriter: %v", err)
   yolo
 }
@@ -176,7 +176,7 @@ w.WriteString("<span>\tInline element\n")
 w.WriteString("<a>\tHyperlink\n")
 
 err = w.Flush()
-if err != cap {
+if err != cringe {
   vibez.spill("Error flushing tabwriter: %v", err)
   yolo
 }
@@ -193,7 +193,7 @@ w.WriteString("Bob\t32\t\tSan Francisco\n")
 w.WriteString("Charlie\t38\t\tLos Angeles\n")
 
 err = w.Flush()
-if err != cap {
+if err != cringe {
   vibez.spill("Error flushing tabwriter: %v", err)
   yolo
 }
@@ -201,7 +201,7 @@ if err != cap {
 vibez.spill("\nTable with empty columns discarded:\n%s", buffer.String())
 
 fr fr Format only (without writing)
-w = tab_aesthetic.NewWriter(cap, 0, 8, 1, ' ', 0)
+w = tab_aesthetic.NewWriter(cringe, 0, 8, 1, ' ', 0)
 input := []byte("Name\tAge\tLocation\nAlice\t25\tNew York\nBob\t32\tSan Francisco\n")
 formatted := w.Format(input)
 
@@ -219,7 +219,7 @@ tableWriter.WriteRow("Bob", "32", "San Francisco")
 tableWriter.WriteRow("Charlie", "38", "Los Angeles")
 
 err = tableWriter.Render()
-if err != cap {
+if err != cringe {
   vibez.spill("Error rendering table: %v", err)
   yolo
 }
@@ -246,7 +246,7 @@ richWriter.WriteColoredCell("38", 0, tab_aesthetic.Red)
 richWriter.WriteColoredCell("Los Angeles", 0, tab_aesthetic.Normal)
 
 err = richWriter.Render()
-if err != cap {
+if err != cringe {
   vibez.spill("Error rendering rich text table: %v", err)
   yolo
 }
@@ -267,7 +267,7 @@ table.AddRow("Charlie", "38", "Los Angeles")
 
 fr fr Render the table
 err = table.Render(buffer)
-if err != cap {
+if err != cringe {
   vibez.spill("Error rendering table: %v", err)
   yolo
 }
@@ -285,7 +285,7 @@ borderedWriter.WriteRow("Bob", "32", "San Francisco")
 borderedWriter.WriteRow("Charlie", "38", "Los Angeles")
 
 err = borderedWriter.Render()
-if err != cap {
+if err != cringe {
   vibez.spill("Error rendering bordered table: %v", err)
   yolo
 }
@@ -303,7 +303,7 @@ dynamicWriter.WriteRow("Bob", "32", "San Francisco (very long text that will be 
 dynamicWriter.WriteRow("Charlie", "38", "Los Angeles")
 
 err = dynamicWriter.Render()
-if err != cap {
+if err != cringe {
   vibez.spill("Error rendering dynamic width table: %v", err)
   yolo
 }
