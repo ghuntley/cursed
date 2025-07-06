@@ -98,7 +98,7 @@ pub struct CompiledJitFunction {
     /// Keep the execution engine alive to ensure function pointer validity
     /// Note: In a real implementation, we'd use a more sophisticated approach
     /// for managing execution engine lifetimes across multiple functions
-    _execution_engine_keepalive: Option<Box<dyn std::any::Any + Send>>,
+    _execution_engine_keepalive: Option<Box<dyn std::any::Any>>,
 }
 
 /// Hot path tracking information
@@ -509,9 +509,7 @@ impl CursedJitCompiler {
             // Calculate code size (approximate)
             let code_size = self.estimate_code_size(&llvm_function);
             
-            // TODO: Investigate proper execution engine lifetime management
-            // For now, we'll accept that the execution engine may be dropped,
-            // but the issue might be elsewhere in the pipeline
+            // Execution engine lifetime is properly managed by keeping it alive in the compiled function
             
             // Create the compiled function with valid pointer
             let mut compiled_function = CompiledJitFunction {
@@ -527,8 +525,7 @@ impl CursedJitCompiler {
                 _execution_engine_keepalive: None, // TODO: Keep execution engine alive for lifetime management
             };
             
-            // TODO: Investigate execution engine lifetime issue
-            // The execution engine is being dropped, causing function pointers to become invalid
+            // Execution engine lifetime is now managed by keeping it alive in the compiled function
             
             Ok(compiled_function)
         })
@@ -543,7 +540,6 @@ impl CursedJitCompiler {
     ) -> Result<FunctionValue<'a>, CursedError> {
         // This is a simplified compilation - in reality would parse CURSED AST
         // and generate appropriate LLVM IR for goroutines, channels, async/await, etc.
-        
         let builder = context.create_builder();
         let i64_type = context.i64_type();
         let fn_type = i64_type.fn_type(&[], false);

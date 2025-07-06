@@ -232,7 +232,7 @@ pub fn run_with_packages(source: &str, source_file: Option<&std::path::Path>) ->
 
 /// Compile and execute CURSED source file
 pub fn run_file(path: &str) -> crate::error::Result<()> {
-    let mut execution_engine = execution::CursedExecutionEngine::new()?;
+    let mut execution_engine = execution::CursedExecutionEngine::new_no_jit()?;
     let result = execution_engine.execute_file(path)?;
     
     // Print the result for user feedback
