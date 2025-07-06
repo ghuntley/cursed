@@ -849,6 +849,52 @@ impl CursedExecutionEngine {
                     _ => Err(CursedError::RuntimeError(format!("Unsupported boolean operator: {}", operator))),
                 }
             },
+            // Mixed Integer-Float arithmetic operations (convert int to float)
+            (CursedValue::Integer(l), CursedValue::Float(r)) => {
+                let l_float = *l as f64;
+                match operator {
+                    "+" => Ok(CursedValue::Float(l_float + r)),
+                    "-" => Ok(CursedValue::Float(l_float - r)),
+                    "*" => Ok(CursedValue::Float(l_float * r)),
+                    "/" => {
+                        if *r == 0.0 {
+                            Err(CursedError::RuntimeError("Division by zero".to_string()))
+                        } else {
+                            Ok(CursedValue::Float(l_float / r))
+                        }
+                    },
+                    "==" => Ok(CursedValue::Boolean((l_float - r).abs() < f64::EPSILON)),
+                    "!=" => Ok(CursedValue::Boolean((l_float - r).abs() >= f64::EPSILON)),
+                    "<" => Ok(CursedValue::Boolean(l_float < *r)),
+                    ">" => Ok(CursedValue::Boolean(l_float > *r)),
+                    "<=" => Ok(CursedValue::Boolean(l_float <= *r)),
+                    ">=" => Ok(CursedValue::Boolean(l_float >= *r)),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported integer-float operator: {}", operator))),
+                }
+            },
+            // Mixed Float-Integer arithmetic operations (convert int to float)
+            (CursedValue::Float(l), CursedValue::Integer(r)) => {
+                let r_float = *r as f64;
+                match operator {
+                    "+" => Ok(CursedValue::Float(l + r_float)),
+                    "-" => Ok(CursedValue::Float(l - r_float)),
+                    "*" => Ok(CursedValue::Float(l * r_float)),
+                    "/" => {
+                        if *r == 0 {
+                            Err(CursedError::RuntimeError("Division by zero".to_string()))
+                        } else {
+                            Ok(CursedValue::Float(l / r_float))
+                        }
+                    },
+                    "==" => Ok(CursedValue::Boolean((l - r_float).abs() < f64::EPSILON)),
+                    "!=" => Ok(CursedValue::Boolean((l - r_float).abs() >= f64::EPSILON)),
+                    "<" => Ok(CursedValue::Boolean(*l < r_float)),
+                    ">" => Ok(CursedValue::Boolean(*l > r_float)),
+                    "<=" => Ok(CursedValue::Boolean(*l <= r_float)),
+                    ">=" => Ok(CursedValue::Boolean(*l >= r_float)),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported float-integer operator: {}", operator))),
+                }
+            },
             _ => Err(CursedError::RuntimeError(format!("Type mismatch in binary operation: {:?} {} {:?}", left, operator, right))),
         }
     }
