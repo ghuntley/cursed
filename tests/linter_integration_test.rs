@@ -224,8 +224,7 @@ slay test() {
     
     let results = linter.lint_source(source).unwrap();
     
-    // Basic test that linting works
-    assert!(results.issues.len() >= 0);
+    // Basic test that linting works (no assertion needed - if linting fails, unwrap() above will panic)
 }
 
 #[test]
@@ -240,8 +239,7 @@ fn test_category_filtering() {
         .filter(|r| r.rule_id.contains("style") || r.rule_id.contains("whitespace"))
         .collect();
     
-    // Should work without crashing
-    assert!(results.issues.len() >= 0);
+    // Should work without crashing (no assertion needed - if linting fails, unwrap() above will panic)
 }
 
 #[test]
@@ -256,8 +254,7 @@ slay test() {
     let results = linter.lint_source(source).unwrap();
     
     // Strict mode should be more aggressive
-    // This test mainly verifies that strict config doesn't crash
-    assert!(results.issues.len() >= 0);
+    // This test mainly verifies that strict config doesn't crash (no assertion needed - if linting fails, unwrap() above will panic)
 }
 
 #[test]
@@ -273,8 +270,7 @@ slay test() {
     let results = linter.lint_source(source).unwrap();
     
     // Relaxed mode should be more permissive
-    // This test mainly verifies that relaxed config works
-    assert!(results.issues.len() >= 0);
+    // This test mainly verifies that relaxed config works (no assertion needed - if linting fails, unwrap() above will panic)
 }
 
 #[test]
@@ -299,8 +295,7 @@ fn test_empty_source_handling() {
     
     let results = linter.lint_source(source).unwrap();
     
-    // Empty source should not crash and may have minimal issues
-    assert!(results.issues.len() >= 0);
+    // Empty source should not crash and may have minimal issues (no assertion needed - if linting fails, unwrap() above will panic)
 }
 
 #[test]
@@ -366,8 +361,7 @@ fn test_custom_rule_configuration() {
     
     let results = linter.lint_source(source).unwrap();
     
-    // Should not crash with custom rules
-    assert!(results.issues.len() >= 0);
+    // Should not crash with custom rules (no assertion needed - if linting fails, unwrap() above will panic)
 }
 
 #[test]

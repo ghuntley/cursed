@@ -325,6 +325,8 @@ declare i8* @malloc(i64)
 declare void @free(i8*)
 declare i64 @strlen(i8*)
 declare i8* @strcpy(i8*, i8*)
+declare i8* @i32_to_string(i32)
+declare i8* @string_concat(i8*, i8*)
 
 ; CURSED runtime functions
 declare void @cursed_panic(i8*, i64)
