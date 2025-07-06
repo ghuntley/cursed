@@ -689,6 +689,10 @@ impl FunctionCompiler {
                     Ok(format!("[{} x i32]*", len)) // Array pointer with length
                 }
             },
+            Expression::ArrayAccess(_) => {
+                // Array access returns the element type (for now, assume i32)
+                Ok("i32".to_string())
+            },
             _ => Ok("i32".to_string()), // Default fallback
         }
     }

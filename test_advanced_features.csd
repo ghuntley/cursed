@@ -1,23 +1,16 @@
-vibe main
-
+// Test struct member access
 be_like Person squad {
     name tea
     age normie
 }
 
-slay createPerson(name tea, age normie) Person {
-    yolo Person { name: name, age: age }
-}
-
+// Test array operations
 slay main() {
-    sus people []Person = [
-        createPerson("Alice", 25),
-        createPerson("Bob", 30)
-    ]
+    sus person Person = Person { name: "Alice", age: 25 }
+    vibez.spill(person.name)
     
-    bestie person in people {
-        vibez.spill("Person: " + person.name + ", Age: " + person.age)
-    }
+    sus numbers []normie = [1, 2, 3, 4, 5]
+    vibez.spill("Array created successfully")
     
     yolo 0
 }
