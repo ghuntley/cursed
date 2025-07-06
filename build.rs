@@ -44,6 +44,21 @@ crate-type = ["staticlib"]
 regex = "1.10"
 base64 = "0.22"
 libc = "0.2"
+hex = "0.4"
+rand = "0.8"
+sha2 = "0.10"
+md5 = "0.7"
+blake3 = "1.5"
+hmac = "0.12"
+pbkdf2 = "0.12"
+scrypt = "0.11"
+argon2 = "0.5"
+bcrypt = "0.15"
+ed25519-dalek = "2.0"
+aes = "0.8"
+aes-gcm = "0.10"
+subtle = "2.5.0"
+base64ct = "=1.6.0"
 "#;
     
     fs::write(runtime_dir.join("Cargo.toml"), runtime_cargo_toml).unwrap();
@@ -67,6 +82,19 @@ use base64::{Engine as _, engine::general_purpose};
 use std::net::{TcpStream, TcpListener, ToSocketAddrs, SocketAddr, IpAddr};
 use std::io::{Read as IoRead, Write as IoWrite};
 use std::sync::{Arc, Mutex};
+use sha2::{Sha256, Sha512, Digest};
+// MD5 import not needed, we'll use md5::compute directly
+use blake3::Hasher as Blake3Hasher;
+use rand::{Rng, RngCore};
+use rand::distributions::Alphanumeric;
+use aes_gcm::{Aes128Gcm, KeyInit, aead::{Aead, AeadCore, OsRng}};
+use hmac::{Hmac, Mac};
+use pbkdf2::pbkdf2_hmac;
+use scrypt::{scrypt, Params};
+use argon2::{Argon2, password_hash::{PasswordHasher, PasswordVerifier, SaltString}};
+use bcrypt::{hash, verify};
+use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer};
+use subtle::ConstantTimeEq;
 
 // Export all runtime functions with C linkage
 "#;

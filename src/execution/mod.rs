@@ -1263,7 +1263,116 @@ impl CursedExecutionEngine {
                             }
                             Ok(CursedValue::Nil)
                         },
-                        _ => Err(CursedError::RuntimeError(format!("Unknown method: {}.{}", obj_name, member_expr.property))),
+                        // Math functions
+                         ("math", "sqrt") => {
+                             if call_expr.arguments.len() != 1 {
+                                 return Err(CursedError::RuntimeError("sqrt() expects 1 argument".to_string()));
+                             }
+                             let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             match arg {
+                                 CursedValue::Float(f) => Ok(CursedValue::Float(f.sqrt())),
+                                 CursedValue::Integer(i) => Ok(CursedValue::Float((i as f64).sqrt())),
+                                 _ => Err(CursedError::RuntimeError("sqrt() expects a number".to_string())),
+                             }
+                         },
+                         ("math", "abs") => {
+                             if call_expr.arguments.len() != 1 {
+                                 return Err(CursedError::RuntimeError("abs() expects 1 argument".to_string()));
+                             }
+                             let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             match arg {
+                                 CursedValue::Float(f) => Ok(CursedValue::Float(f.abs())),
+                                 CursedValue::Integer(i) => Ok(CursedValue::Integer(i.abs())),
+                                 _ => Err(CursedError::RuntimeError("abs() expects a number".to_string())),
+                             }
+                         },
+                         ("math", "max") => {
+                             if call_expr.arguments.len() != 2 {
+                                 return Err(CursedError::RuntimeError("max() expects 2 arguments".to_string()));
+                             }
+                             let arg1 = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             let arg2 = self.evaluate_expression(&call_expr.arguments[1], context)?;
+                             match (arg1, arg2) {
+                                 (CursedValue::Float(f1), CursedValue::Float(f2)) => Ok(CursedValue::Float(f1.max(f2))),
+                                 (CursedValue::Integer(i1), CursedValue::Integer(i2)) => Ok(CursedValue::Integer(i1.max(i2))),
+                                 (CursedValue::Float(f), CursedValue::Integer(i)) => Ok(CursedValue::Float(f.max(i as f64))),
+                                 (CursedValue::Integer(i), CursedValue::Float(f)) => Ok(CursedValue::Float((i as f64).max(f))),
+                                 _ => Err(CursedError::RuntimeError("max() expects numbers".to_string())),
+                             }
+                         },
+                         ("math", "min") => {
+                             if call_expr.arguments.len() != 2 {
+                                 return Err(CursedError::RuntimeError("min() expects 2 arguments".to_string()));
+                             }
+                             let arg1 = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             let arg2 = self.evaluate_expression(&call_expr.arguments[1], context)?;
+                             match (arg1, arg2) {
+                                 (CursedValue::Float(f1), CursedValue::Float(f2)) => Ok(CursedValue::Float(f1.min(f2))),
+                                 (CursedValue::Integer(i1), CursedValue::Integer(i2)) => Ok(CursedValue::Integer(i1.min(i2))),
+                                 (CursedValue::Float(f), CursedValue::Integer(i)) => Ok(CursedValue::Float(f.min(i as f64))),
+                                 (CursedValue::Integer(i), CursedValue::Float(f)) => Ok(CursedValue::Float((i as f64).min(f))),
+                                 _ => Err(CursedError::RuntimeError("min() expects numbers".to_string())),
+                             }
+                         },
+                         ("math", "pow") => {
+                             if call_expr.arguments.len() != 2 {
+                                 return Err(CursedError::RuntimeError("pow() expects 2 arguments".to_string()));
+                             }
+                             let base = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             let exp = self.evaluate_expression(&call_expr.arguments[1], context)?;
+                             match (base, exp) {
+                                 (CursedValue::Float(b), CursedValue::Float(e)) => Ok(CursedValue::Float(b.powf(e))),
+                                 (CursedValue::Integer(b), CursedValue::Integer(e)) => Ok(CursedValue::Float((b as f64).powf(e as f64))),
+                                 (CursedValue::Float(b), CursedValue::Integer(e)) => Ok(CursedValue::Float(b.powf(e as f64))),
+                                 (CursedValue::Integer(b), CursedValue::Float(e)) => Ok(CursedValue::Float((b as f64).powf(e))),
+                                 _ => Err(CursedError::RuntimeError("pow() expects numbers".to_string())),
+                             }
+                         },
+                         ("math", "sin") => {
+                             if call_expr.arguments.len() != 1 {
+                                 return Err(CursedError::RuntimeError("sin() expects 1 argument".to_string()));
+                             }
+                             let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             match arg {
+                                 CursedValue::Float(f) => Ok(CursedValue::Float(f.sin())),
+                                 CursedValue::Integer(i) => Ok(CursedValue::Float((i as f64).sin())),
+                                 _ => Err(CursedError::RuntimeError("sin() expects a number".to_string())),
+                             }
+                         },
+                         ("math", "cos") => {
+                             if call_expr.arguments.len() != 1 {
+                                 return Err(CursedError::RuntimeError("cos() expects 1 argument".to_string()));
+                             }
+                             let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             match arg {
+                                 CursedValue::Float(f) => Ok(CursedValue::Float(f.cos())),
+                                 CursedValue::Integer(i) => Ok(CursedValue::Float((i as f64).cos())),
+                                 _ => Err(CursedError::RuntimeError("cos() expects a number".to_string())),
+                             }
+                         },
+                         ("math", "floor") => {
+                             if call_expr.arguments.len() != 1 {
+                                 return Err(CursedError::RuntimeError("floor() expects 1 argument".to_string()));
+                             }
+                             let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             match arg {
+                                 CursedValue::Float(f) => Ok(CursedValue::Float(f.floor())),
+                                 CursedValue::Integer(i) => Ok(CursedValue::Float(i as f64)),
+                                 _ => Err(CursedError::RuntimeError("floor() expects a number".to_string())),
+                             }
+                         },
+                         ("math", "ceil") => {
+                             if call_expr.arguments.len() != 1 {
+                                 return Err(CursedError::RuntimeError("ceil() expects 1 argument".to_string()));
+                             }
+                             let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                             match arg {
+                                 CursedValue::Float(f) => Ok(CursedValue::Float(f.ceil())),
+                                 CursedValue::Integer(i) => Ok(CursedValue::Float(i as f64)),
+                                 _ => Err(CursedError::RuntimeError("ceil() expects a number".to_string())),
+                             }
+                         },
+                         _ => Err(CursedError::RuntimeError(format!("Unknown method: {}.{}", obj_name, member_expr.property))),
                     }
                 } else {
                     Err(CursedError::RuntimeError("Complex member access not supported yet".to_string()))
@@ -1282,6 +1391,14 @@ impl CursedExecutionEngine {
     }
     
     fn evaluate_member_access(&mut self, member_expr: &crate::ast::MemberAccessExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        // Handle special object method calls
+        if let crate::ast::Expression::Identifier(obj_name) = &*member_expr.object {
+            if obj_name == "math" {
+                // This is a math method call, it should be handled by function call evaluation
+                return Err(CursedError::RuntimeError(format!("Unknown method: math.{}", member_expr.property)));
+            }
+        }
+        
         let object = self.evaluate_expression(&member_expr.object, context)?;
         
         match object {

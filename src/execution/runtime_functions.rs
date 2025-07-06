@@ -876,6 +876,704 @@ pub extern "C" fn collections_set_is_empty(set_ptr: *const HashSet<i64>) -> i32 
 }
 
 // ================================
+// Crypto Implementation Functions
+// ================================
+
+use sha2::{Sha256, Sha512, Digest};
+// MD5 import not needed, we'll use md5::compute directly
+use blake3::Hasher as Blake3Hasher;
+use rand::{Rng, RngCore};
+use rand::distributions::Alphanumeric;
+use aes_gcm::{Aes128Gcm, KeyInit, aead::{Aead, AeadCore, OsRng}};
+use hmac::{Hmac, Mac};
+use pbkdf2::pbkdf2_hmac;
+use scrypt::{scrypt, Params};
+use argon2::{Argon2, password_hash::{PasswordHasher, PasswordVerifier, SaltString}};
+use bcrypt::{hash, verify};
+use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer};
+use subtle::ConstantTimeEq;
+
+// Hash Functions
+#[no_mangle]
+pub extern "C" fn crypto_sha256(data_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(data_ptr).to_str() {
+            Ok(data) => {
+                let mut hasher = Sha256::new();
+                hasher.update(data.as_bytes());
+                let hash = hasher.finalize();
+                let hex_string = hex::encode(hash);
+                
+                match CString::new(hex_string) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_sha512(data_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(data_ptr).to_str() {
+            Ok(data) => {
+                let mut hasher = Sha512::new();
+                hasher.update(data.as_bytes());
+                let hash = hasher.finalize();
+                let hex_string = hex::encode(hash);
+                
+                match CString::new(hex_string) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_md5(data_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(data_ptr).to_str() {
+            Ok(data) => {
+                let hash = md5::compute(data.as_bytes());
+                let hex_string = hex::encode(&hash[..]);
+                
+                match CString::new(hex_string) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_blake3(data_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(data_ptr).to_str() {
+            Ok(data) => {
+                let mut hasher = Blake3Hasher::new();
+                hasher.update(data.as_bytes());
+                let hash = hasher.finalize();
+                let hex_string = hex::encode(hash.as_bytes());
+                
+                match CString::new(hex_string) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+// Random Generation Functions
+#[no_mangle]
+pub extern "C" fn crypto_random_bytes(length: i64) -> *mut c_char {
+    if length <= 0 {
+        return ptr::null_mut();
+    }
+    
+    let mut rng = rand::thread_rng();
+    let mut bytes = vec![0u8; length as usize];
+    rng.fill_bytes(&mut bytes);
+    
+    let hex_string = hex::encode(bytes);
+    match CString::new(hex_string) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_random_int(min: i64, max: i64) -> i64 {
+    if min >= max {
+        return min;
+    }
+    
+    let mut rng = rand::thread_rng();
+    rng.gen_range(min..max)
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_random_string(length: i64) -> *mut c_char {
+    if length <= 0 {
+        return ptr::null_mut();
+    }
+    
+    let mut rng = rand::thread_rng();
+    let random_string: String = (0..length)
+        .map(|_| rng.sample(Alphanumeric) as char)
+        .collect();
+    
+    match CString::new(random_string) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+// Base Encoding Functions
+#[no_mangle]
+pub extern "C" fn crypto_base64_encode(data_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(data_ptr).to_str() {
+            Ok(data) => {
+                let encoded = general_purpose::STANDARD.encode(data.as_bytes());
+                match CString::new(encoded) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_base64_decode(encoded_ptr: *const c_char) -> *mut c_char {
+    if encoded_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(encoded_ptr).to_str() {
+            Ok(encoded) => {
+                match general_purpose::STANDARD.decode(encoded) {
+                    Ok(decoded) => {
+                        match String::from_utf8(decoded) {
+                            Ok(decoded_str) => {
+                                match CString::new(decoded_str) {
+                                    Ok(c_str) => c_str.into_raw(),
+                                    Err(_) => ptr::null_mut()
+                                }
+                            },
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_hex_encode(data_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(data_ptr).to_str() {
+            Ok(data) => {
+                let hex_string = hex::encode(data.as_bytes());
+                match CString::new(hex_string) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_hex_decode(hex_ptr: *const c_char) -> *mut c_char {
+    if hex_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(hex_ptr).to_str() {
+            Ok(hex_str) => {
+                match hex::decode(hex_str) {
+                    Ok(decoded) => {
+                        match String::from_utf8(decoded) {
+                            Ok(decoded_str) => {
+                                match CString::new(decoded_str) {
+                                    Ok(c_str) => c_str.into_raw(),
+                                    Err(_) => ptr::null_mut()
+                                }
+                            },
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+// Symmetric Encryption Functions
+#[no_mangle]
+pub extern "C" fn crypto_aes_encrypt(data_ptr: *const c_char, key_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() || key_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(data_ptr).to_str(), CStr::from_ptr(key_ptr).to_str()) {
+            (Ok(data), Ok(key)) => {
+                // Use first 16 bytes of key for AES-128
+                let mut key_bytes = [0u8; 16];
+                let key_data = key.as_bytes();
+                let copy_len = std::cmp::min(key_data.len(), 16);
+                key_bytes[..copy_len].copy_from_slice(&key_data[..copy_len]);
+                
+                match Aes128Gcm::new_from_slice(&key_bytes) {
+                    Ok(cipher) => {
+                        let nonce = Aes128Gcm::generate_nonce(&mut OsRng);
+                        match cipher.encrypt(&nonce, data.as_bytes()) {
+                            Ok(ciphertext) => {
+                                // Combine nonce and ciphertext
+                                let mut result = nonce.to_vec();
+                                result.extend_from_slice(&ciphertext);
+                                let hex_string = hex::encode(result);
+                                
+                                match CString::new(hex_string) {
+                                    Ok(c_str) => c_str.into_raw(),
+                                    Err(_) => ptr::null_mut()
+                                }
+                            },
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_aes_decrypt(encrypted_ptr: *const c_char, key_ptr: *const c_char) -> *mut c_char {
+    if encrypted_ptr.is_null() || key_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(encrypted_ptr).to_str(), CStr::from_ptr(key_ptr).to_str()) {
+            (Ok(encrypted), Ok(key)) => {
+                // Use first 16 bytes of key for AES-128
+                let mut key_bytes = [0u8; 16];
+                let key_data = key.as_bytes();
+                let copy_len = std::cmp::min(key_data.len(), 16);
+                key_bytes[..copy_len].copy_from_slice(&key_data[..copy_len]);
+                
+                match hex::decode(encrypted) {
+                    Ok(encrypted_data) => {
+                        if encrypted_data.len() < 12 {
+                            return ptr::null_mut();
+                        }
+                        
+                        let (nonce, ciphertext) = encrypted_data.split_at(12);
+                        match Aes128Gcm::new_from_slice(&key_bytes) {
+                            Ok(cipher) => {
+                                match cipher.decrypt(nonce.into(), ciphertext) {
+                                    Ok(plaintext) => {
+                                        match String::from_utf8(plaintext) {
+                                            Ok(plaintext_str) => {
+                                                match CString::new(plaintext_str) {
+                                                    Ok(c_str) => c_str.into_raw(),
+                                                    Err(_) => ptr::null_mut()
+                                                }
+                                            },
+                                            Err(_) => ptr::null_mut()
+                                        }
+                                    },
+                                    Err(_) => ptr::null_mut()
+                                }
+                            },
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+// Key Derivation Functions
+#[no_mangle]
+pub extern "C" fn crypto_pbkdf2(password_ptr: *const c_char, salt_ptr: *const c_char, iterations: i64, length: i64) -> *mut c_char {
+    if password_ptr.is_null() || salt_ptr.is_null() || iterations <= 0 || length <= 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(password_ptr).to_str(), CStr::from_ptr(salt_ptr).to_str()) {
+            (Ok(password), Ok(salt)) => {
+                let mut key = vec![0u8; length as usize];
+                pbkdf2_hmac::<Sha256>(password.as_bytes(), salt.as_bytes(), iterations as u32, &mut key);
+                
+                let hex_string = hex::encode(key);
+                match CString::new(hex_string) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_scrypt(password_ptr: *const c_char, salt_ptr: *const c_char, n: i64, r: i64, p: i64, length: i64) -> *mut c_char {
+    if password_ptr.is_null() || salt_ptr.is_null() || n <= 0 || r <= 0 || p <= 0 || length <= 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(password_ptr).to_str(), CStr::from_ptr(salt_ptr).to_str()) {
+            (Ok(password), Ok(salt)) => {
+                let mut key = vec![0u8; length as usize];
+                let params = Params::new(n as u8, r as u32, p as u32, length as usize).unwrap_or_default();
+                
+                match scrypt(password.as_bytes(), salt.as_bytes(), &params, &mut key) {
+                    Ok(_) => {
+                        let hex_string = hex::encode(key);
+                        match CString::new(hex_string) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+// Digital Signature Functions
+#[no_mangle]
+pub extern "C" fn crypto_ed25519_keypair() -> *mut c_char {
+    let mut rng = rand::thread_rng();
+    let mut secret_key = [0u8; 32];
+    rng.fill_bytes(&mut secret_key);
+    let signing_key = SigningKey::from_bytes(&secret_key);
+    let verifying_key = signing_key.verifying_key();
+    
+    // Create a JSON-like string with the keypair
+    let keypair_json = format!("{{\"private_key\":\"{}\",\"public_key\":\"{}\"}}",
+        hex::encode(signing_key.to_bytes()),
+        hex::encode(verifying_key.to_bytes())
+    );
+    
+    match CString::new(keypair_json) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_ed25519_sign(message_ptr: *const c_char, private_key_ptr: *const c_char) -> *mut c_char {
+    if message_ptr.is_null() || private_key_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(message_ptr).to_str(), CStr::from_ptr(private_key_ptr).to_str()) {
+            (Ok(message), Ok(private_key)) => {
+                match hex::decode(private_key) {
+                    Ok(key_bytes) => {
+                        if key_bytes.len() != 32 {
+                            return ptr::null_mut();
+                        }
+                        
+                        let mut key_array = [0u8; 32];
+                        key_array.copy_from_slice(&key_bytes);
+                        
+                        let signing_key = SigningKey::from_bytes(&key_array);
+                        let signature = signing_key.sign(message.as_bytes());
+                        let hex_string = hex::encode(signature.to_bytes());
+                        
+                        match CString::new(hex_string) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_ed25519_verify(message_ptr: *const c_char, signature_ptr: *const c_char, public_key_ptr: *const c_char) -> i32 {
+    if message_ptr.is_null() || signature_ptr.is_null() || public_key_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(message_ptr).to_str(), CStr::from_ptr(signature_ptr).to_str(), CStr::from_ptr(public_key_ptr).to_str()) {
+            (Ok(message), Ok(signature), Ok(public_key)) => {
+                match (hex::decode(signature), hex::decode(public_key)) {
+                    (Ok(sig_bytes), Ok(pub_key_bytes)) => {
+                        if sig_bytes.len() != 64 || pub_key_bytes.len() != 32 {
+                            return 0;
+                        }
+                        
+                        let mut sig_array = [0u8; 64];
+                        let mut pub_key_array = [0u8; 32];
+                        sig_array.copy_from_slice(&sig_bytes);
+                        pub_key_array.copy_from_slice(&pub_key_bytes);
+                        
+                        match (Signature::try_from(&sig_array[..]), VerifyingKey::try_from(&pub_key_array[..])) {
+                            (Ok(signature), Ok(verifying_key)) => {
+                                match verifying_key.verify_strict(message.as_bytes(), &signature) {
+                                    Ok(_) => 1,
+                                    Err(_) => 0
+                                }
+                            },
+                            _ => 0
+                        }
+                    },
+                    _ => 0
+                }
+            },
+            _ => 0
+        }
+    }
+}
+
+// HMAC Functions
+#[no_mangle]
+pub extern "C" fn crypto_hmac_sha256(data_ptr: *const c_char, key_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() || key_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(data_ptr).to_str(), CStr::from_ptr(key_ptr).to_str()) {
+            (Ok(data), Ok(key)) => {
+                type HmacSha256 = Hmac<Sha256>;
+                match <HmacSha256 as Mac>::new_from_slice(key.as_bytes()) {
+                    Ok(mut mac) => {
+                        mac.update(data.as_bytes());
+                        let result = mac.finalize();
+                        let hex_string = hex::encode(result.into_bytes());
+                        
+                        match CString::new(hex_string) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_hmac_sha512(data_ptr: *const c_char, key_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() || key_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(data_ptr).to_str(), CStr::from_ptr(key_ptr).to_str()) {
+            (Ok(data), Ok(key)) => {
+                type HmacSha512 = Hmac<Sha512>;
+                match <HmacSha512 as Mac>::new_from_slice(key.as_bytes()) {
+                    Ok(mut mac) => {
+                        mac.update(data.as_bytes());
+                        let result = mac.finalize();
+                        let hex_string = hex::encode(result.into_bytes());
+                        
+                        match CString::new(hex_string) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+// Password Hashing Functions
+#[no_mangle]
+pub extern "C" fn crypto_argon2_hash(password_ptr: *const c_char, salt_ptr: *const c_char) -> *mut c_char {
+    if password_ptr.is_null() || salt_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(password_ptr).to_str(), CStr::from_ptr(salt_ptr).to_str()) {
+            (Ok(password), Ok(salt)) => {
+                let argon2 = Argon2::default();
+                match SaltString::encode_b64(salt.as_bytes()) {
+                    Ok(salt_string) => {
+                        match argon2.hash_password(password.as_bytes(), &salt_string) {
+                            Ok(hash) => {
+                                match CString::new(hash.to_string()) {
+                                    Ok(c_str) => c_str.into_raw(),
+                                    Err(_) => ptr::null_mut()
+                                }
+                            },
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_argon2_verify(password_ptr: *const c_char, hash_ptr: *const c_char) -> i32 {
+    if password_ptr.is_null() || hash_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(password_ptr).to_str(), CStr::from_ptr(hash_ptr).to_str()) {
+            (Ok(password), Ok(hash)) => {
+                let argon2 = Argon2::default();
+                match argon2::password_hash::PasswordHash::new(hash) {
+                    Ok(parsed_hash) => {
+                        match argon2.verify_password(password.as_bytes(), &parsed_hash) {
+                            Ok(_) => 1,
+                            Err(_) => 0
+                        }
+                    },
+                    Err(_) => 0
+                }
+            },
+            _ => 0
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_bcrypt_hash(password_ptr: *const c_char, cost: i64) -> *mut c_char {
+    if password_ptr.is_null() || cost < 4 || cost > 31 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(password_ptr).to_str() {
+            Ok(password) => {
+                match hash(password, cost as u32) {
+                    Ok(hash) => {
+                        match CString::new(hash) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_bcrypt_verify(password_ptr: *const c_char, hash_ptr: *const c_char) -> i32 {
+    if password_ptr.is_null() || hash_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(password_ptr).to_str(), CStr::from_ptr(hash_ptr).to_str()) {
+            (Ok(password), Ok(hash)) => {
+                match verify(password, hash) {
+                    Ok(is_valid) => if is_valid { 1 } else { 0 },
+                    Err(_) => 0
+                }
+            },
+            _ => 0
+        }
+    }
+}
+
+// Utility Functions
+#[no_mangle]
+pub extern "C" fn crypto_constant_time_eq(a_ptr: *const c_char, b_ptr: *const c_char) -> i32 {
+    if a_ptr.is_null() || b_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(a_ptr).to_str(), CStr::from_ptr(b_ptr).to_str()) {
+            (Ok(a), Ok(b)) => {
+                if a.len() != b.len() {
+                    return 0;
+                }
+                
+                let result = a.as_bytes().ct_eq(b.as_bytes());
+                if result.into() { 1 } else { 0 }
+            },
+            _ => 0
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_secure_random() -> f64 {
+    let mut rng = rand::thread_rng();
+    rng.gen::<f64>()
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_generate_salt(length: i64) -> *mut c_char {
+    if length <= 0 {
+        return ptr::null_mut();
+    }
+    
+    let mut rng = rand::thread_rng();
+    let mut salt = vec![0u8; length as usize];
+    rng.fill_bytes(&mut salt);
+    
+    let hex_string = hex::encode(salt);
+    match CString::new(hex_string) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+// ================================
 // Math Implementation Functions
 // ================================
 
@@ -908,6 +1606,351 @@ pub extern "C" fn math_random_impl() -> f64 {
         .hash(&mut hasher);
     
     (hasher.finish() as f64) / (u64::MAX as f64)
+}
+
+// Additional math functions
+
+#[no_mangle]
+pub extern "C" fn math_abs_impl(x: f64) -> f64 {
+    x.abs()
+}
+
+#[no_mangle]
+pub extern "C" fn math_abs_int_impl(x: i64) -> i64 {
+    x.abs()
+}
+
+#[no_mangle]
+pub extern "C" fn math_min_impl(x: f64, y: f64) -> f64 {
+    x.min(y)
+}
+
+#[no_mangle]
+pub extern "C" fn math_max_impl(x: f64, y: f64) -> f64 {
+    x.max(y)
+}
+
+#[no_mangle]
+pub extern "C" fn math_min_int_impl(x: i64, y: i64) -> i64 {
+    x.min(y)
+}
+
+#[no_mangle]
+pub extern "C" fn math_max_int_impl(x: i64, y: i64) -> i64 {
+    x.max(y)
+}
+
+#[no_mangle]
+pub extern "C" fn math_clamp_impl(x: f64, min: f64, max: f64) -> f64 {
+    x.clamp(min, max)
+}
+
+#[no_mangle]
+pub extern "C" fn math_sign_impl(x: f64) -> f64 {
+    if x > 0.0 {
+        1.0
+    } else if x < 0.0 {
+        -1.0
+    } else {
+        0.0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn math_pow_impl(x: f64, y: f64) -> f64 {
+    x.powf(y)
+}
+
+#[no_mangle]
+pub extern "C" fn math_cbrt_impl(x: f64) -> f64 {
+    x.cbrt()
+}
+
+#[no_mangle]
+pub extern "C" fn math_log_impl(x: f64) -> f64 {
+    x.ln()
+}
+
+#[no_mangle]
+pub extern "C" fn math_log10_impl(x: f64) -> f64 {
+    x.log10()
+}
+
+#[no_mangle]
+pub extern "C" fn math_log2_impl(x: f64) -> f64 {
+    x.log2()
+}
+
+#[no_mangle]
+pub extern "C" fn math_exp_impl(x: f64) -> f64 {
+    x.exp()
+}
+
+#[no_mangle]
+pub extern "C" fn math_exp2_impl(x: f64) -> f64 {
+    x.exp2()
+}
+
+#[no_mangle]
+pub extern "C" fn math_tan_impl(x: f64) -> f64 {
+    x.tan()
+}
+
+#[no_mangle]
+pub extern "C" fn math_asin_impl(x: f64) -> f64 {
+    x.asin()
+}
+
+#[no_mangle]
+pub extern "C" fn math_acos_impl(x: f64) -> f64 {
+    x.acos()
+}
+
+#[no_mangle]
+pub extern "C" fn math_atan_impl(x: f64) -> f64 {
+    x.atan()
+}
+
+#[no_mangle]
+pub extern "C" fn math_atan2_impl(y: f64, x: f64) -> f64 {
+    y.atan2(x)
+}
+
+#[no_mangle]
+pub extern "C" fn math_sinh_impl(x: f64) -> f64 {
+    x.sinh()
+}
+
+#[no_mangle]
+pub extern "C" fn math_cosh_impl(x: f64) -> f64 {
+    x.cosh()
+}
+
+#[no_mangle]
+pub extern "C" fn math_tanh_impl(x: f64) -> f64 {
+    x.tanh()
+}
+
+#[no_mangle]
+pub extern "C" fn math_floor_impl(x: f64) -> f64 {
+    x.floor()
+}
+
+#[no_mangle]
+pub extern "C" fn math_ceil_impl(x: f64) -> f64 {
+    x.ceil()
+}
+
+#[no_mangle]
+pub extern "C" fn math_round_impl(x: f64) -> f64 {
+    x.round()
+}
+
+#[no_mangle]
+pub extern "C" fn math_trunc_impl(x: f64) -> f64 {
+    x.trunc()
+}
+
+#[no_mangle]
+pub extern "C" fn math_frac_impl(x: f64) -> f64 {
+    x.fract()
+}
+
+#[no_mangle]
+pub extern "C" fn math_sum_impl(arr_ptr: *const f64, len: usize) -> f64 {
+    if arr_ptr.is_null() || len == 0 {
+        return 0.0;
+    }
+    
+    unsafe {
+        let slice = std::slice::from_raw_parts(arr_ptr, len);
+        slice.iter().sum()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn math_mean_impl(arr_ptr: *const f64, len: usize) -> f64 {
+    if arr_ptr.is_null() || len == 0 {
+        return 0.0;
+    }
+    
+    unsafe {
+        let slice = std::slice::from_raw_parts(arr_ptr, len);
+        slice.iter().sum::<f64>() / len as f64
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn math_median_impl(arr_ptr: *const f64, len: usize) -> f64 {
+    if arr_ptr.is_null() || len == 0 {
+        return 0.0;
+    }
+    
+    unsafe {
+        let slice = std::slice::from_raw_parts(arr_ptr, len);
+        let mut sorted: Vec<f64> = slice.to_vec();
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        
+        if len % 2 == 0 {
+            (sorted[len / 2 - 1] + sorted[len / 2]) / 2.0
+        } else {
+            sorted[len / 2]
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn math_variance_impl(arr_ptr: *const f64, len: usize) -> f64 {
+    if arr_ptr.is_null() || len == 0 {
+        return 0.0;
+    }
+    
+    unsafe {
+        let slice = std::slice::from_raw_parts(arr_ptr, len);
+        let mean = slice.iter().sum::<f64>() / len as f64;
+        slice.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / len as f64
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn math_std_dev_impl(arr_ptr: *const f64, len: usize) -> f64 {
+    math_variance_impl(arr_ptr, len).sqrt()
+}
+
+#[no_mangle]
+pub extern "C" fn math_random_int_impl(min: i64, max: i64) -> i64 {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    use std::time::{SystemTime, UNIX_EPOCH};
+    
+    if min >= max {
+        return min;
+    }
+    
+    let mut hasher = DefaultHasher::new();
+    SystemTime::now().duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos()
+        .hash(&mut hasher);
+    
+    let range = (max - min) as u64;
+    min + (hasher.finish() % range) as i64
+}
+
+#[no_mangle]
+pub extern "C" fn math_random_float_impl(min: f64, max: f64) -> f64 {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    use std::time::{SystemTime, UNIX_EPOCH};
+    
+    if min >= max {
+        return min;
+    }
+    
+    let mut hasher = DefaultHasher::new();
+    SystemTime::now().duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos()
+        .hash(&mut hasher);
+    
+    let random_01 = (hasher.finish() as f64) / (u64::MAX as f64);
+    min + random_01 * (max - min)
+}
+
+#[no_mangle]
+pub extern "C" fn math_seed_random_impl(seed: u64) -> f64 {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    
+    let mut hasher = DefaultHasher::new();
+    seed.hash(&mut hasher);
+    (hasher.finish() as f64) / (u64::MAX as f64)
+}
+
+#[no_mangle]
+pub extern "C" fn math_is_nan_impl(x: f64) -> i32 {
+    if x.is_nan() { 1 } else { 0 }
+}
+
+#[no_mangle]
+pub extern "C" fn math_is_infinite_impl(x: f64) -> i32 {
+    if x.is_infinite() { 1 } else { 0 }
+}
+
+#[no_mangle]
+pub extern "C" fn math_is_finite_impl(x: f64) -> i32 {
+    if x.is_finite() { 1 } else { 0 }
+}
+
+#[no_mangle]
+pub extern "C" fn math_gcd_impl(a: i64, b: i64) -> i64 {
+    fn gcd(a: i64, b: i64) -> i64 {
+        if b == 0 { a.abs() } else { gcd(b, a % b) }
+    }
+    gcd(a, b)
+}
+
+#[no_mangle]
+pub extern "C" fn math_lcm_impl(a: i64, b: i64) -> i64 {
+    if a == 0 || b == 0 {
+        0
+    } else {
+        (a.abs() * b.abs()) / math_gcd_impl(a, b)
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn math_factorial_impl(n: i64) -> i64 {
+    if n < 0 {
+        return 0;
+    }
+    if n <= 1 {
+        return 1;
+    }
+    
+    let mut result = 1i64;
+    for i in 2..=n {
+        if let Some(new_result) = result.checked_mul(i) {
+            result = new_result;
+        } else {
+            return i64::MAX; // Overflow
+        }
+    }
+    result
+}
+
+#[no_mangle]
+pub extern "C" fn math_fibonacci_impl(n: i64) -> i64 {
+    if n < 0 {
+        return 0;
+    }
+    if n <= 1 {
+        return n;
+    }
+    
+    let mut a = 0i64;
+    let mut b = 1i64;
+    
+    for _ in 2..=n {
+        let next = a.saturating_add(b);
+        a = b;
+        b = next;
+    }
+    
+    b
+}
+
+#[no_mangle]
+pub extern "C" fn math_smoothstep_impl(edge0: f64, edge1: f64, x: f64) -> f64 {
+    if x <= edge0 {
+        return 0.0;
+    }
+    if x >= edge1 {
+        return 1.0;
+    }
+    
+    let t = (x - edge0) / (edge1 - edge0);
+    t * t * (3.0 - 2.0 * t)
 }
 
 // ================================

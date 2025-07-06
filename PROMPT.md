@@ -4,7 +4,7 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality. Follow the fix_plan.md and choose the 3 important things. Before making changes search codebase (don't assume not implemented) using subagents. Think hard. You may use up to 500 subagents for search and edit operations but only 1 subagent for build/tests.
+1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality. Follow the fix_plan.md and choose the 5 important things. Before making changes search codebase (don't assume not implemented) using subagents. Think hard. You may use up to 500 subagents for search and edit operations but only 1 subagent for build/tests.
 
 2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think hard.
 
@@ -25,3 +25,8 @@
 99999999999. When you learn something new about how to run the compiler or examples make sure you update @AGENT.md using a subagent but keep it brief. For example if you run commands multiple times before learning the correct command then that file should be updated.
 
 999999999999. The standard libray should be authored in cursed itself and tests authored. If you find duplicate rust implementation then delete it/migrate to cursed implementation.
+
+99999999999999. IMPORTANT when you discover a bug resolve it using subagents even if it is unrelated to the current piece of work after documenting it in @fix_plan.md
+
+
+9999999999999999. When you start implementing the standard library (stdlib) in the cursed language, start with the testing primitives so that future standard library in the cursed language can be tested.

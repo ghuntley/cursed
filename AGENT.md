@@ -64,6 +64,11 @@ cargo run --bin cursed -- compile test_simple.csd
 ./test_simple  # Run the compiled executable
 ```
 
+
+## Tests
+
+- Tests for the cursed language MUST be authored in cursed and MUST use the cursed testing standard library. They should be stored in the tests/ folder under the appropriate subfolder that describes the test module/purpose.
+
 ### Basic CURSED Syntax Examples
 
 ```cursed
@@ -154,7 +159,7 @@ src/
 
 ### Break/Continue Statements
 - Break statement: `ghosted` (with optional labels)
-- Continue statement: `simp` (with optional labels)  
+- Continue statement: `simp` (with optional labels)
 - Usage: `ghosted`, `ghosted labelName`, `simp`, `simp labelName`
 - Status: Fully functional in both interpretation and compilation modes
 

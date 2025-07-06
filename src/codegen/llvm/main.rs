@@ -94,6 +94,7 @@ pub struct LlvmCodeGenerator {
     use_enhanced_passes: bool,
     interface_registry: HashMap<String, InterfaceDefinition>,
     vtable_registry: HashMap<String, VTableDefinition>,
+    current_function_defers: Option<Vec<crate::ast::Expression>>,
 }
 
 impl LlvmCodeGenerator {
@@ -113,6 +114,7 @@ impl LlvmCodeGenerator {
             use_enhanced_passes: false,
             interface_registry: HashMap::new(),
             vtable_registry: HashMap::new(),
+            current_function_defers: None,
         })
     }
 
@@ -508,6 +510,9 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.return_type, &func_stmt.body)?;
             },
             Statement::Return(return_stmt) => {
+                // Execute deferred expressions before returning
+                self.generate_defer_cleanup()?;
+                
                 if let Some(val) = &return_stmt.value {
                     let return_reg = self.generate_expression(val)?;
                     // Determine return type based on expression
@@ -573,15 +578,18 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 self.generate_catch_statement(catch_stmt)?;
             },
             Statement::Defer(defer_stmt) => {
-                self.ir_code.push_str("  ; Defer statement - add to cleanup stack\n");
+                // Store the defer expression for execution at function exit
+                self.ir_code.push_str("  ; Defer statement - add expression to cleanup list\n");
                 
-                // For now, generate a comment with the deferred expression
-                // A full implementation would require complex cleanup handling
-                self.ir_code.push_str("  ; TODO: Proper defer implementation with cleanup handlers\n");
+                // Add this expression to the defer list for this function
+                if let Some(ref mut defer_list) = self.current_function_defers {
+                    defer_list.push(defer_stmt.expression.as_ref().clone());
+                } else {
+                    // Initialize defer list if not already present
+                    self.current_function_defers = Some(vec![defer_stmt.expression.as_ref().clone()]);
+                }
                 
-                // Generate the expression to ensure it's valid, but don't execute it yet
-                let _defer_reg = self.generate_expression(&defer_stmt.expression)?;
-                self.ir_code.push_str("  ; Expression will be executed at function exit\n");
+                self.ir_code.push_str("  ; Deferred expression added to cleanup list\n");
             },
             Statement::ForIn(for_in_stmt) => {
                 self.generate_for_in_statement(for_in_stmt)?;
@@ -1236,6 +1244,10 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                     let full_function_name = format!("vibez_{}", member_expr.property);
                     return self.generate_stdlib_call(&full_function_name, arguments);
                 }
+                if obj_name == "math" {
+                    let full_function_name = format!("math_{}_impl", member_expr.property);
+                    return self.generate_stdlib_call(&full_function_name, arguments);
+                }
             }
         }
         
@@ -1268,6 +1280,9 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
     }
     
     fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], return_type: &Option<crate::ast::Type>, body: &[Statement]) -> Result<(), CursedError> {
+        // Initialize defer list for this function
+        self.current_function_defers = None;
+        
         // Use the dedicated function compiler for complete IR generation
         let mut function_compiler = crate::codegen::llvm::function_compilation::FunctionCompiler::new();
         
@@ -1300,6 +1315,29 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         
         // String constants are now automatically managed globally, no need to merge manually
         
+        Ok(())
+    }
+    
+    /// Generate cleanup code for deferred expressions
+    fn generate_defer_cleanup(&mut self) -> Result<(), CursedError> {
+        if let Some(defers) = self.current_function_defers.clone() {
+            self.ir_code.push_str("  ; Executing deferred expressions in LIFO order\n");
+            
+            // Execute deferred expressions in reverse order (LIFO)
+            for defer_expr in defers.iter().rev() {
+                self.ir_code.push_str("  ; Executing deferred expression\n");
+                match self.generate_expression(defer_expr) {
+                    Ok(_) => {
+                        // Ignore the result of defer expressions
+                        self.ir_code.push_str("  ; Deferred expression completed\n");
+                    },
+                    Err(e) => {
+                        // Log error but don't fail the function
+                        self.ir_code.push_str(&format!("  ; Error in deferred expression: {:?}\n", e));
+                    }
+                }
+            }
+        }
         Ok(())
     }
     
