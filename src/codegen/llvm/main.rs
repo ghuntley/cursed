@@ -505,6 +505,10 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 let _defer_reg = self.generate_expression(&defer_stmt.expression)?;
                 self.ir_code.push_str("  ; Expression will be executed at function exit\n");
             },
+            Statement::ForIn(_) => {
+                // For now, return a placeholder - full implementation would generate LLVM IR for for-in loops
+                self.ir_code.push_str("  ; for-in loop placeholder\n");
+            },
         }
         Ok(())
     }
@@ -516,7 +520,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         // Generate struct type declaration
         let mut field_types = Vec::new();
         for field in &struct_stmt.fields {
-            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&"normie".to_string()))?;
+            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&crate::ast::Type::Normie))?;
             field_types.push(field_type);
         }
         
@@ -539,13 +543,51 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         Ok(())
     }
     
-    fn convert_cursed_type_to_llvm(&self, cursed_type: &str) -> Result<String, CursedError> {
+    fn convert_cursed_type_to_llvm(&self, cursed_type: &crate::ast::Type) -> Result<String, CursedError> {
         match cursed_type {
-            "normie" => Ok("i32".to_string()),
-            "tea" => Ok("i8*".to_string()),
-            "lit" => Ok("i1".to_string()),
-            "snack" => Ok("double".to_string()),
-            _ => Ok("i8*".to_string()), // Default to pointer for unknown types
+            crate::ast::Type::Integer | crate::ast::Type::Normie => Ok("i32".to_string()),
+            crate::ast::Type::Float => Ok("double".to_string()),
+            crate::ast::Type::String | crate::ast::Type::Tea => Ok("i8*".to_string()),
+            crate::ast::Type::Boolean | crate::ast::Type::Lit => Ok("i1".to_string()),
+            crate::ast::Type::Sip => Ok("i8".to_string()),
+            crate::ast::Type::Array(element_type, size) => {
+                let element_llvm = self.convert_cursed_type_to_llvm(element_type)?;
+                if let Some(size) = size {
+                    Ok(format!("[{} x {}]", size, element_llvm))
+                } else {
+                    Ok(format!("[0 x {}]", element_llvm))
+                }
+            },
+            crate::ast::Type::Slice(element_type) => {
+                let element_llvm = self.convert_cursed_type_to_llvm(element_type)?;
+                Ok(format!("{{ i8*, i64 }}", /* ptr, len */))
+            },
+            crate::ast::Type::Squad(element_type) => {
+                let element_llvm = self.convert_cursed_type_to_llvm(element_type)?;
+                Ok(format!("{{ i8*, i64 }}", /* ptr, len */))
+            },
+            crate::ast::Type::Tuple(types) => {
+                let mut llvm_types = Vec::new();
+                for t in types {
+                    llvm_types.push(self.convert_cursed_type_to_llvm(t)?);
+                }
+                Ok(format!("{{ {} }}", llvm_types.join(", ")))
+            },
+            crate::ast::Type::Custom(name) => Ok(format!("%struct.{}", name)),
+            crate::ast::Type::Collab(name) => Ok(format!("%interface.{}", name)),
+            crate::ast::Type::Dm(element_type) => {
+                let _element_llvm = self.convert_cursed_type_to_llvm(element_type)?;
+                Ok("i8*".to_string()) // Channel is a pointer
+            },
+            crate::ast::Type::Function(params, return_type) => {
+                let mut param_types = Vec::new();
+                for param in params {
+                    param_types.push(self.convert_cursed_type_to_llvm(param)?);
+                }
+                let ret_type = self.convert_cursed_type_to_llvm(return_type)?;
+                Ok(format!("{} ({})*", ret_type, param_types.join(", ")))
+            },
+            crate::ast::Type::Void => Ok("void".to_string()),
         }
     }
     
@@ -555,7 +597,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         let mut param_names = Vec::new();
         
         for field in &struct_stmt.fields {
-            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&"normie".to_string()))?;
+            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&crate::ast::Type::Normie))?;
             param_types.push(field_type);
             param_names.push(field.name.clone());
         }
@@ -591,7 +633,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
     fn generate_struct_accessors(&mut self, struct_stmt: &crate::ast::StructStatement) -> Result<(), CursedError> {
         // Generate getter and setter functions for each field
         for (field_idx, field) in struct_stmt.fields.iter().enumerate() {
-            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&"normie".to_string()))?;
+            let field_type = self.convert_cursed_type_to_llvm(field.field_type.as_ref().unwrap_or(&crate::ast::Type::Normie))?;
             
             // Generate getter: struct_name_get_field_name(struct_ptr)
             self.ir_code.push_str(&format!("define {} @{}_get_{}(%struct.{}* %self) {{\n", 
@@ -957,18 +999,25 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         }
     }
     
-    fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], return_type: &Option<String>, body: &[Statement]) -> Result<(), CursedError> {
+    fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], return_type: &Option<crate::ast::Type>, body: &[Statement]) -> Result<(), CursedError> {
         // Use the dedicated function compiler for complete IR generation
         let mut function_compiler = crate::codegen::llvm::function_compilation::FunctionCompiler::new();
         
         // Compile the complete function with all statements and expressions
         let param_names: Vec<String> = params.iter().map(|p| p.name.clone()).collect();
-        let param_types: Vec<String> = params.iter().map(|p| p.param_type.clone().unwrap_or("UNTYPED".to_string())).collect();
+        let param_types: Vec<String> = params.iter().map(|p| {
+            if let Some(param_type) = &p.param_type {
+                param_type.to_string()
+            } else {
+                "UNTYPED".to_string()
+            }
+        }).collect();
+        let return_type_str = return_type.as_ref().map(|t| t.to_string());
         let function_ir = function_compiler.compile_function(
             name,
             &param_names,
             Some(&param_types), // param types from AST (with "UNTYPED" for inference)
-            return_type.as_deref(), // return type from AST
+            return_type_str.as_deref(), // return type from AST
             body
         )?;
         

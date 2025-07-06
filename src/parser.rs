@@ -142,8 +142,88 @@ impl Parser {
             TokenKind::Dm |
             TokenKind::Truth |
             TokenKind::Lies |
-            TokenKind::Cap
+            TokenKind::Cap |
+            TokenKind::LeftBracket  // For array/slice types
         )
+    }
+
+    /// Parse a type expression
+    fn parse_type(&mut self) -> Result<crate::ast::Type, CursedError> {
+        match self.peek().kind {
+            TokenKind::LeftBracket => {
+                self.advance(); // consume '['
+                
+                // Check if it's a slice type []T or array type [N]T
+                if self.check(&TokenKind::RightBracket) {
+                    // Slice type: []T
+                    self.advance(); // consume ']'
+                    let element_type = self.parse_type()?;
+                    Ok(crate::ast::Type::Slice(Box::new(element_type)))
+                } else {
+                    // Array type: [N]T (for now, we'll just parse as slice)
+                    // TODO: In the future, we could parse the size expression
+                    while !self.check(&TokenKind::RightBracket) && !self.is_at_end() {
+                        self.advance(); // Skip array size for now
+                    }
+                    self.consume(TokenKind::RightBracket, "Expected ']' after array size")?;
+                    let element_type = self.parse_type()?;
+                    Ok(crate::ast::Type::Array(Box::new(element_type), None))
+                }
+            }
+            TokenKind::Dm => {
+                self.advance(); // consume 'dm'
+                let element_type = self.parse_type()?;
+                Ok(crate::ast::Type::Dm(Box::new(element_type)))
+            }
+            TokenKind::LeftParen => {
+                // Tuple type: (T1, T2, ...)
+                self.advance(); // consume '('
+                let mut types = Vec::new();
+                
+                if !self.check(&TokenKind::RightParen) {
+                    loop {
+                        types.push(self.parse_type()?);
+                        if !self.check(&TokenKind::Comma) {
+                            break;
+                        }
+                        self.advance(); // consume ','
+                    }
+                }
+                
+                self.consume(TokenKind::RightParen, "Expected ')' after tuple type")?;
+                Ok(crate::ast::Type::Tuple(types))
+            }
+            // Basic types
+            TokenKind::Normie => {
+                self.advance();
+                Ok(crate::ast::Type::Normie)
+            }
+            TokenKind::Tea => {
+                self.advance();
+                Ok(crate::ast::Type::Tea)
+            }
+            TokenKind::Sip => {
+                self.advance();
+                Ok(crate::ast::Type::Sip)
+            }
+            TokenKind::Truth => {
+                self.advance();
+                Ok(crate::ast::Type::Lit)
+            }
+            TokenKind::Lies => {
+                self.advance();
+                Ok(crate::ast::Type::Lit)
+            }
+            TokenKind::Cap => {
+                self.advance();
+                Ok(crate::ast::Type::Lit)
+            }
+            _ => {
+                // Custom type (identifier)
+                let token = self.advance();
+                Ok(crate::ast::Type::Custom(token.lexeme.clone()))
+            }
+        }
     }
 
     fn is_keyword(&self) -> bool {
@@ -353,7 +433,7 @@ impl Parser {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on control flow statements"));
                 }
                 log::info!("📝 Parsing for statement with 'bestie' keyword");
-                Ok(Statement::For(self.parse_for_statement()?))
+                self.parse_for_statement()
             },
             TokenKind::VibeCheck => {
                 if visibility != crate::ast::Visibility::Private {
@@ -459,7 +539,7 @@ impl Parser {
         
         // Parse optional return type (CURSED syntax: "slay func(x normie) normie { ... }")
         let return_type = if self.check_type_token() {
-            Some(self.advance().lexeme.clone())
+            Some(self.parse_type()?)
         } else {
             None
         };
@@ -523,7 +603,7 @@ impl Parser {
         
         // Parse optional return type (CURSED syntax: "slay func(x normie) normie { ... }")
         let return_type = if self.check_type_token() {
-            Some(self.advance().lexeme.clone())
+            Some(self.parse_type()?)
         } else {
             None
         };
@@ -579,7 +659,7 @@ impl Parser {
         
         // Check for optional type after variable name (CURSED syntax: "sus result normie = ...")
         let var_type = if self.check_type_token() {
-            Some(self.advance().lexeme.clone())
+            Some(self.parse_type()?)
         } else {
             None
         };
@@ -713,7 +793,7 @@ impl Parser {
         
         // Check for optional type after variable name (CURSED syntax: "sus result normie = ...")
         let var_type = if self.check_type_token() {
-            Some(self.advance().lexeme.clone())
+            Some(self.parse_type()?)
         } else {
             None
         };
@@ -889,12 +969,43 @@ impl Parser {
         })
     }
 
-    fn parse_for_statement(&mut self) -> Result<ForStatement, CursedError> {
+    fn parse_for_statement(&mut self) -> Result<Statement, CursedError> {
         self.consume(TokenKind::Bestie, "Expected 'bestie'")?;
+        
+        // Check if this is a for-in loop by looking ahead
+        // Pattern: bestie variable in iterable { ... }
+        let checkpoint = self.current;
+        
+        // Try to parse as for-in first
+        if self.check(&TokenKind::Identifier) {
+            let variable = self.advance().lexeme.clone();
+            
+            if self.match_tokens(&[TokenKind::In]) {
+                // This is a for-in loop
+                let iterable = self.parse_expression()?;
+                
+                self.consume(TokenKind::LeftBrace, "Expected '{' after for-in header")?;
+                
+                let mut body = Vec::new();
+                while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                    body.push(self.parse_statement()?);
+                }
+                
+                self.consume(TokenKind::RightBrace, "Expected '}' after for-in body")?;
+                
+                return Ok(Statement::ForIn(ForInStatement {
+                    variable,
+                    iterable,
+                    body,
+                }));
+            }
+        }
+        
+        // Reset and parse as traditional C-style for loop
+        self.current = checkpoint;
         
         // Parse for loop variants:
         // bestie init; condition; update { ... }
-        // bestie variable in iterable { ... } (future enhancement)
         
         let init = if self.check(&TokenKind::Semicolon) {
             None
@@ -927,12 +1038,12 @@ impl Parser {
         
         self.consume(TokenKind::RightBrace, "Expected '}' after for body")?;
         
-        Ok(ForStatement {
+        Ok(Statement::For(ForStatement {
             init,
             condition,
             update,
             body,
-        })
+        }))
     }
 
     fn parse_switch_statement(&mut self) -> Result<SwitchStatement, CursedError> {
@@ -1244,14 +1355,8 @@ impl Parser {
     fn parse_channel_creation(&mut self) -> Result<Expression, CursedError> {
         self.consume(TokenKind::Dm, "Expected 'dm'")?;
         
-        // Parse the channel element type (handle different token types)
-        let element_type = if self.match_tokens(&[TokenKind::Identifier]) {
-            self.previous().lexeme.clone()
-        } else if self.match_tokens(&[TokenKind::Truth, TokenKind::Lies]) { // Handle boolean keywords
-            self.previous().lexeme.clone()
-        } else {
-            return Err(CursedError::syntax_error("Expected channel element type after 'dm'"));
-        };
+        // Parse the channel element type using the new type parser
+        let element_type = self.parse_type()?;
         
         // Parse parentheses (required for channel creation syntax)
         if self.match_tokens(&[TokenKind::LeftParen]) {
@@ -1466,7 +1571,7 @@ impl Parser {
         
         // CURSED syntax: field_name field_type (e.g., "name tea", "age normie")
         let field_type = if self.check_type_token() {
-            Some(self.advance().lexeme.clone())
+            Some(self.parse_type()?)
         } else {
             None
         };
@@ -1608,9 +1713,8 @@ impl Parser {
         self.consume(TokenKind::RightParen, "Expected ')' after parameters")?;
         
         // Optional return type (using space syntax like in test)
-        let return_type = if self.check(&TokenKind::Identifier) {
-            let type_name = self.advance().lexeme.clone();
-            Some(type_name)
+        let return_type = if self.check_type_token() {
+            Some(self.parse_type()?)
         } else {
             None
         };
@@ -1630,15 +1734,13 @@ impl Parser {
         let param_type = if self.match_tokens(&[TokenKind::Colon]) {
             // Colon syntax: name: type
             if self.check_type_token() {
-                let type_name = self.advance().lexeme.clone();
-                Some(type_name)
+                Some(self.parse_type()?)
             } else {
                 return Err(CursedError::parse_error("Expected parameter type after colon"));
             }
         } else if self.check_type_token() {
             // Space syntax: name type
-            let type_name = self.advance().lexeme.clone();
-            Some(type_name)
+            Some(self.parse_type()?)
         } else {
             None
         };

@@ -229,13 +229,13 @@ impl CursedExecutionEngine {
                     result.push_str(&param.name);
                     if let Some(param_type) = &param.param_type {
                         result.push_str(" ");
-                        result.push_str(param_type);
+                        result.push_str(&param_type.to_string());
                     }
                 }
                 
                 result.push_str(") ");
                 if let Some(return_type) = &func.return_type {
-                    result.push_str(return_type);
+                    result.push_str(&return_type.to_string());
                     result.push(' ');
                 }
                 result.push_str("{\n");
@@ -351,6 +351,12 @@ impl CursedExecutionEngine {
             },
             CursedValue::Nil => "nil".to_string(),
             CursedValue::Character(c) => format!("'{}'", c),
+            CursedValue::Array(elements) => {
+                let element_strs: Vec<String> = elements.iter()
+                    .map(|v| self.format_value(v))
+                    .collect();
+                format!("[{}]", element_strs.join(", "))
+            },
         }
     }
     
@@ -480,6 +486,38 @@ impl CursedExecutionEngine {
                         self.evaluate_expression(update, context)?;
                     }
                 }
+                Ok(ExecutionFlow::Continue(last_value))
+            },
+            Statement::ForIn(for_in_stmt) => {
+                // Evaluate the iterable expression
+                let iterable = self.evaluate_expression(&for_in_stmt.iterable, context)?;
+                
+                // Extract values from the iterable
+                let values = match iterable {
+                    CursedValue::Array(arr) => arr,
+                    CursedValue::String(s) => {
+                        // Iterate over characters
+                        s.chars().map(|c| CursedValue::String(c.to_string())).collect()
+                    },
+                    _ => return Err(CursedError::runtime_error(&format!("Cannot iterate over {}", iterable.type_name()))),
+                };
+                
+                let mut last_value = CursedValue::Nil;
+                
+                // Iterate over each value
+                for value in values {
+                    // Set the loop variable
+                    context.set_variable(for_in_stmt.variable.clone(), value);
+                    
+                    // Execute the body statements
+                    for stmt in &for_in_stmt.body {
+                        match self.execute_statement(stmt, context)? {
+                            ExecutionFlow::Continue(value) => last_value = value,
+                            ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                        }
+                    }
+                }
+                
                 Ok(ExecutionFlow::Continue(last_value))
             },
             Statement::Switch(switch_stmt) => {
@@ -637,8 +675,11 @@ impl CursedExecutionEngine {
                 self.apply_unary_operator(&unary_expr.operator, &operand)
             },
             Expression::Array(elements) => {
-                // For now, just return the length as an integer
-                Ok(CursedValue::Integer(elements.len() as i64))
+                let mut array_values = Vec::new();
+                for element in elements {
+                    array_values.push(self.evaluate_expression(element, context)?);
+                }
+                Ok(CursedValue::Array(array_values))
             },
             Expression::Map(pairs) => {
                 // For now, just return the size as an integer
@@ -1116,6 +1157,7 @@ impl CursedExecutionEngine {
             CursedValue::Tuple(elements) => !elements.is_empty(), // Tuples are truthy if they have elements
             CursedValue::Nil => false,
             CursedValue::Character(c) => *c != '\0', // Characters are truthy unless null character
+            CursedValue::Array(elements) => !elements.is_empty(), // Arrays are truthy if they have elements
         }
     }
     
@@ -1269,6 +1311,7 @@ pub enum CursedValue {
     String(String),
     Boolean(bool),
     Character(char),
+    Array(Vec<CursedValue>),
     Channel(Arc<SimpleChannel<CursedValue>>),
     Struct(std::collections::HashMap<String, CursedValue>),
     Lambda(LambdaValue),
@@ -1291,6 +1334,24 @@ pub enum ExecutionFlow {
     Return(CursedValue),
 }
 
+impl CursedValue {
+    pub fn type_name(&self) -> &'static str {
+        match self {
+            CursedValue::Integer(_) => "integer",
+            CursedValue::Float(_) => "float",
+            CursedValue::String(_) => "string",
+            CursedValue::Boolean(_) => "boolean",
+            CursedValue::Character(_) => "character",
+            CursedValue::Array(_) => "array",
+            CursedValue::Channel(_) => "channel",
+            CursedValue::Struct(_) => "struct",
+            CursedValue::Lambda(_) => "lambda",
+            CursedValue::Tuple(_) => "tuple",
+            CursedValue::Nil => "nil",
+        }
+    }
+}
+
 /// Value manager for runtime operations
 pub struct ValueManager {
     gc_enabled: bool,
@@ -1309,6 +1370,12 @@ impl ValueManager {
             CursedValue::Float(f) => f.to_string(),
             CursedValue::String(s) => format!("\"{}\"", s),
             CursedValue::Boolean(b) => b.to_string(),
+            CursedValue::Array(elements) => {
+                let element_strs: Vec<String> = elements.iter()
+                    .map(|v| self.format_value(v))
+                    .collect();
+                format!("[{}]", element_strs.join(", "))
+            },
             CursedValue::Channel(_) => "<channel>".to_string(),
             CursedValue::Struct(fields) => {
                 let field_strs: Vec<String> = fields.iter()

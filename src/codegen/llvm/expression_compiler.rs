@@ -67,7 +67,7 @@ impl ExpressionCompiler {
                 self.compile_channel_receive(&recv_expr.channel)
             },
             Expression::ChannelCreation(create_expr) => {
-                self.compile_channel_creation(&create_expr.element_type, &create_expr.capacity)
+                self.compile_channel_creation(&create_expr.element_type.to_string(), &create_expr.capacity)
             },
             Expression::StructLiteral(struct_literal) => {
                 // Convert StructFieldAssignment to (String, Expression) tuples

@@ -594,14 +594,14 @@ impl TypeChecker {
         let param_types: Vec<TypeExpression> = func_stmt.parameters.iter()
             .map(|param| {
                 param.param_type.as_ref()
-                    .map(|type_str| self.type_string_to_expression(type_str))
+                    .map(|type_str| self.type_string_to_expression(&type_str.to_string()))
                     .unwrap_or(TypeExpression::named("unknown"))
             })
             .collect();
         
         // Use explicit return type if specified, otherwise infer from function body
         let return_type = func_stmt.return_type.as_ref()
-            .map(|type_str| self.type_string_to_expression(type_str))
+            .map(|type_str| self.type_string_to_expression(&type_str.to_string()))
             .unwrap_or_else(|| self.infer_return_type_from_body(&func_stmt.body));
         
         // Add function to current scope
@@ -614,7 +614,7 @@ impl TypeChecker {
         // Add parameters to function scope with proper types
         for param in &func_stmt.parameters {
             let param_type = param.param_type.as_ref()
-                .map(|type_str| self.type_string_to_expression(type_str))
+                .map(|type_str| self.type_string_to_expression(&type_str.to_string()))
                 .unwrap_or(TypeExpression::named("unknown"));
             self.add_variable(param.name.clone(), param_type);
         }
@@ -715,7 +715,7 @@ impl TypeChecker {
         // Add function parameters to scope first
         for param in &func_stmt.parameters {
             let param_type = if let Some(type_name) = &param.param_type {
-                TypeExpression::named(type_name)
+                TypeExpression::named(&type_name.to_string())
             } else {
                 TypeExpression::named("unknown")
             };
@@ -887,7 +887,7 @@ impl TypeChecker {
             // Check field type exists if specified
             if let Some(field_type_name) = &field.field_type {
                 // Validate the field type exists in the type system
-                if !self.is_type_defined(field_type_name) {
+                if !self.is_type_defined(&field_type_name.to_string()) {
                     return Err(TypeCheckError {
                         message: format!("Type '{}' not found", field_type_name),
                         location: None,
@@ -928,14 +928,14 @@ impl TypeChecker {
             let mut param_types = Vec::new();
             for param in &method.parameters {
                 if let Some(param_type_name) = &param.param_type {
-                    if !self.is_type_defined(param_type_name) {
+                    if !self.is_type_defined(&param_type_name.to_string()) {
                         return Err(TypeCheckError {
                             message: format!("Type '{}' not found", param_type_name),
                             location: None,
                             error_type: TypeErrorKind::TypeNotFound,
                         });
                     }
-                    param_types.push(TypeExpression::named(param_type_name));
+                    param_types.push(TypeExpression::named(&param_type_name.to_string()));
                 } else {
                     // Infer parameter type if not specified
                     param_types.push(TypeExpression::named("unknown"));
@@ -944,14 +944,14 @@ impl TypeChecker {
             
             // Check return type
             let return_type = if let Some(return_type_name) = &method.return_type {
-                if !self.is_type_defined(return_type_name) {
+                if !self.is_type_defined(&return_type_name.to_string()) {
                     return Err(TypeCheckError {
                         message: format!("Type '{}' not found", return_type_name),
                         location: None,
                         error_type: TypeErrorKind::TypeNotFound,
                     });
                 }
-                Some(TypeExpression::named(return_type_name))
+                Some(TypeExpression::named(&return_type_name.to_string()))
             } else {
                 None
             };
@@ -1143,7 +1143,7 @@ impl TypeChecker {
             
             // Validate against declared field type if specified
             if let Some(expected_type_name) = &struct_field.field_type {
-                let expected_type = TypeExpression::named(expected_type_name);
+                let expected_type = TypeExpression::named(&expected_type_name.to_string());
                 if !self.are_types_compatible(&assigned_type, &expected_type) {
                     return Err(TypeCheckError {
                         message: format!("Type mismatch in field '{}': expected '{}', found '{:?}'", 
@@ -1492,7 +1492,7 @@ mod tests {
             type_parameters: vec![],
             parameters: vec![crate::ast::Parameter {
                 name: "x".to_string(),
-                param_type: Some("normie".to_string()),
+                param_type: Some(crate::ast::Type::Normie),
             }],
             body: vec![
                 Statement::Return(ReturnStatement {

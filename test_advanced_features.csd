@@ -1,18 +1,23 @@
-facts PI = 3.14159
+vibe main
 
-slay calculateArea(radius normie) normie {
-    yolo radius * radius * PI
+be_like Person squad {
+    name tea
+    age normie
+}
+
+slay createPerson(name tea, age normie) Person {
+    yolo Person { name: name, age: age }
 }
 
 slay main() {
-    sus radius normie = 5
-    sus area normie = calculateArea(radius)
+    sus people []Person = [
+        createPerson("Alice", 25),
+        createPerson("Bob", 30)
+    ]
     
-    lowkey area > 70 {
-        vibez.spill("Large circle!")
-    } highkey {
-        vibez.spill("Small circle!")
+    bestie person in people {
+        vibez.spill("Person: " + person.name + ", Age: " + person.age)
     }
     
-    yolo area
+    yolo 0
 }
