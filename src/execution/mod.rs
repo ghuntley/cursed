@@ -7,8 +7,9 @@
 //! - Error handling and recovery
 
 use crate::error::CursedError;
-use crate::ast::Program;
+use crate::ast::{Program, Statement};
 use crate::runtime::channels::simple_channel::SimpleChannel;
+
 use std::sync::Arc;
 
 pub mod execution_context;
@@ -78,9 +79,76 @@ impl CursedExecutionEngine {
     fn execute_jit(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
         tracing::info!("⚡ JIT compilation enabled");
         
-        // Temporarily disable JIT execution due to LLVM initialization issues
-        tracing::warn!("⚠️ JIT execution temporarily disabled due to LLVM initialization issues, falling back to interpretation");
-        self.execute_interpreted(program)
+        // Try JIT compilation first
+        match self.try_jit_execution(program) {
+            Ok(result) => {
+                tracing::info!("✅ JIT compilation successful");
+                Ok(result)
+            }
+            Err(e) => {
+                tracing::warn!("⚠️ JIT compilation failed: {}, falling back to interpretation", e);
+                self.execute_interpreted(program)
+            }
+        }
+    }
+    
+    fn try_jit_execution(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
+        // Create JIT executor if not exists
+        let mut jit_executor = JitExecutor::new()?;
+        
+        // Convert program to source code for JIT compilation
+        let source = self.program_to_source(program)?;
+        
+        // Execute with JIT
+        jit_executor.execute(&source)
+    }
+    
+    fn program_to_source(&self, program: &Program) -> Result<String, CursedError> {
+        // For now, we'll need to reconstruct the source from the AST
+        // This is a simplified approach - in a real implementation you'd want to preserve original source
+        let mut source = String::new();
+        
+        // Add package declaration if present
+        if let Some(ref package) = program.package {
+            source.push_str(&format!("vibe {:?}\n\n", package));
+        }
+        
+        // Add imports
+        for import in &program.imports {
+            source.push_str(&format!("yeet {:?}\n", import));
+        }
+        
+        if !program.imports.is_empty() {
+            source.push('\n');
+        }
+        
+        // Add statements (this is a simplified version)
+        for stmt in &program.statements {
+            match stmt {
+                Statement::Function(func_stmt) => {
+                    source.push_str(&format!("slay {}(", func_stmt.name));
+                    for (i, param) in func_stmt.parameters.iter().enumerate() {
+                        if i > 0 { source.push_str(", "); }
+                        source.push_str(&format!("{} {}", param.name, param.param_type.as_ref().map_or("".to_string(), |t| format!("{:?}", t))));
+                    }
+                    source.push_str(")");
+                    if let Some(ref ret_type) = func_stmt.return_type {
+                        source.push_str(&format!(" {:?}", ret_type));
+                    }
+                    source.push_str(" {\n");
+                    // Add body statements (simplified)
+                    for body_stmt in &func_stmt.body {
+                        source.push_str(&format!("    // Statement: {:?}\n", body_stmt));
+                    }
+                    source.push_str("}\n\n");
+                }
+                _ => {
+                    source.push_str(&format!("// Statement: {:?}\n", stmt));
+                }
+            }
+        }
+        
+        Ok(source)
     }
     
     fn execute_interpreted(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
