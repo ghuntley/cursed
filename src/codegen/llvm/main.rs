@@ -598,6 +598,62 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Statement::Decrement(decrement_stmt) => {
                 self.generate_decrement_statement(decrement_stmt)?;
             },
+            Statement::ShortDeclaration(short_decl_stmt) => {
+                let value_reg = self.generate_expression(&short_decl_stmt.value)?;
+                
+                match &short_decl_stmt.target {
+                    crate::ast::ShortDeclarationTarget::Single(name) => {
+                        let var_reg = self.next_register();
+                        
+                        // Determine type based on the value expression
+                        let (var_type, store_value) = match &short_decl_stmt.value {
+                            Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
+                            Expression::Boolean(_) => ("i1".to_string(), value_reg.clone()),
+                            Expression::Integer(_) => ("i32".to_string(), value_reg.clone()),
+                            Expression::Float(_) => ("double".to_string(), value_reg.clone()),
+                            Expression::Character(_) => ("i8".to_string(), value_reg.clone()),
+                            _ => ("i32".to_string(), value_reg.clone()), // Default
+                        };
+                        
+                        // Allocate and store variable
+                        self.ir_code.push_str(&format!("  {} = alloca {}, align 4\n", var_reg, var_type));
+                        self.ir_code.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, store_value, var_type, var_reg));
+                        
+                        // Store the variable mapping
+                        self.variables.insert(name.clone(), var_reg.clone());
+                        self.ir_code.push_str(&format!("  ; Short declaration: {} := {} ({})\n", name, value_reg, var_type));
+                    },
+                    crate::ast::ShortDeclarationTarget::Tuple(names) => {
+                        self.ir_code.push_str(&format!("  ; Tuple destructuring short declaration\n"));
+                        
+                        // Extract each element from the tuple and assign to variables
+                        for (index, var_name) in names.iter().enumerate() {
+                            // Generate getelementptr to access tuple field
+                            let field_ptr = self.next_register();
+                            self.ir_code.push_str(&format!(
+                                "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
+                                field_ptr, value_reg, index
+                            ));
+                            
+                            // Load the value from the field
+                            let field_value = self.next_register();
+                            self.ir_code.push_str(&format!(
+                                "  {} = load i32, i32* {}, align 4\n",
+                                field_value, field_ptr
+                            ));
+                            
+                            // Allocate variable on stack
+                            let var_reg = self.next_register();
+                            self.ir_code.push_str(&format!("  {} = alloca i32, align 4\n", var_reg));
+                            self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", field_value, var_reg));
+                            
+                            // Store the variable mapping
+                            self.variables.insert(var_name.clone(), var_reg.clone());
+                            self.ir_code.push_str(&format!("  ; Short declaration: {} := {} from tuple\n", var_name, field_value));
+                        }
+                    }
+                }
+            },
         }
         Ok(())
     }
@@ -695,6 +751,14 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             crate::ast::Type::String | crate::ast::Type::Tea => Ok("i8*".to_string()),
             crate::ast::Type::Boolean | crate::ast::Type::Lit => Ok("i1".to_string()),
             crate::ast::Type::Sip => Ok("i8".to_string()),
+            crate::ast::Type::Smol => Ok("i8".to_string()),
+            crate::ast::Type::Mid => Ok("i16".to_string()),
+            crate::ast::Type::Thicc => Ok("i64".to_string()),
+            crate::ast::Type::Snack => Ok("float".to_string()),
+            crate::ast::Type::Meal => Ok("double".to_string()),
+            crate::ast::Type::Byte => Ok("i8".to_string()),
+            crate::ast::Type::Rune => Ok("i32".to_string()),
+            crate::ast::Type::Extra => Ok("{ double, double }".to_string()), // Complex number as {real, imag}
             crate::ast::Type::Array(element_type, size) => {
                 let element_llvm = self.convert_cursed_type_to_llvm(element_type)?;
                 if let Some(size) = size {

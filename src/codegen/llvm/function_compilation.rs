@@ -258,6 +258,69 @@ impl FunctionCompiler {
                     ir.push_str("  ; Unknown assignment target type\n");
                 }
             },
+            Statement::ShortDeclaration(short_decl_stmt) => {
+                let value_reg = self.compile_expression(&short_decl_stmt.value)?;
+                
+                match &short_decl_stmt.target {
+                    crate::ast::ShortDeclarationTarget::Single(name) => {
+                        // Create new variable allocation
+                        let alloca_reg = self.next_register();
+                        
+                        // Infer variable type from expression
+                        let var_type = self.infer_expression_type(&short_decl_stmt.value)?;
+                        
+                        ir.push_str(&format!("  {} = alloca {}, align {}\n", 
+                            alloca_reg, 
+                            var_type,
+                            self.get_type_alignment(&var_type)
+                        ));
+                        
+                        // Store the initial value
+                        ir.push_str(&format!("  store {} {}, {}* {}, align {}\n", 
+                            var_type, 
+                            value_reg, 
+                            var_type, 
+                            alloca_reg,
+                            self.get_type_alignment(&var_type)
+                        ));
+                        
+                        // Register the variable
+                        self.variables.insert(name.clone(), alloca_reg);
+                        ir.push_str(&format!("  ; Short declaration: {} := {}\n", name, value_reg));
+                    },
+                    crate::ast::ShortDeclarationTarget::Tuple(var_names) => {
+                        ir.push_str("  ; Tuple destructuring short declaration in function\n");
+                        
+                        // Extract each element from the tuple and create variables
+                        for (index, var_name) in var_names.iter().enumerate() {
+                            // Generate getelementptr to access tuple field
+                            let field_ptr = self.next_register();
+                            ir.push_str(&format!(
+                                "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
+                                field_ptr, value_reg, index
+                            ));
+                            
+                            // Load the value from the field
+                            let field_value = self.next_register();
+                            ir.push_str(&format!(
+                                "  {} = load i32, i32* {}, align 4\n",
+                                field_value, field_ptr
+                            ));
+                            
+                            // Create new variable allocation
+                            let alloca_reg = self.next_register();
+                            ir.push_str(&format!("  {} = alloca i32, align 4\n", alloca_reg));
+                            
+                            // Store the value
+                            ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", field_value, alloca_reg));
+                            
+                            // Register the variable
+                            self.variables.insert(var_name.clone(), alloca_reg);
+                            ir.push_str(&format!("  ; Short declaration: {} := {} from tuple\n", var_name, field_value));
+                        }
+                    }
+                }
+            },
             Statement::Return(return_stmt) => {
                 if let Some(val) = &return_stmt.value {
                     let return_reg = self.compile_expression(val)?;
@@ -669,17 +732,34 @@ impl FunctionCompiler {
                             let format_reg = self.next_register();
                             self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_ref));
                             
-                            // Convert boolean to integer if needed
-                            let final_arg_reg = if arg_type == "i1" {
-                                let convert_reg = self.next_register();
-                                self.ir_code.push_str(&format!("  {} = zext i1 {} to i32\n", convert_reg, arg_reg));
-                                convert_reg
-                            } else {
-                                arg_reg
+                            // Convert small types to i32 for printf compatibility
+                            let final_arg_reg = match arg_type.as_str() {
+                                "i1" => {
+                                    let convert_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = zext i1 {} to i32\n", convert_reg, arg_reg));
+                                    convert_reg
+                                },
+                                "i8" => {
+                                    let convert_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = sext i8 {} to i32\n", convert_reg, arg_reg));
+                                    convert_reg
+                                },
+                                "i16" => {
+                                    let convert_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = sext i16 {} to i32\n", convert_reg, arg_reg));
+                                    convert_reg
+                                },
+                                _ => arg_reg
+                            };
+                            
+                            // Determine final LLVM type for printf call
+                            let printf_type = match arg_type.as_str() {
+                                "i1" | "i8" | "i16" => "i32",
+                                other => other
                             };
                             
                             let call_result = self.next_register();
-                            self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, {} {})\n", call_result, format_reg, llvm_type, final_arg_reg));
+                            self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, {} {})\n", call_result, format_reg, printf_type, final_arg_reg));
                     }
                 }
                 // Return a dummy register for the result (vibez.spill returns void conceptually)
@@ -825,6 +905,22 @@ impl FunctionCompiler {
             Literal::Boolean(_) => Ok("i1".to_string()),
             Literal::Null => Ok("i8*".to_string()),
             Literal::Nil => Ok("i8*".to_string()),
+        }
+    }
+
+    /// Get alignment for an LLVM type
+    fn get_type_alignment(&self, llvm_type: &str) -> u32 {
+        match llvm_type {
+            "i1" => 1,          // Boolean: 1 byte alignment
+            "i8" => 1,          // Character/smol/byte: 1 byte alignment
+            "i8*" => 8,         // Pointer: 8 byte alignment on 64-bit
+            "i16" => 2,         // Mid: 2 byte alignment
+            "i32" => 4,         // Integer/normie/rune: 4 byte alignment
+            "i64" => 8,         // Thicc: 8 byte alignment
+            "double" => 8,      // Meal: 8 byte alignment
+            "float" => 4,       // Snack: 4 byte alignment
+            "{ double, double }" => 8, // Extra (complex): 8 byte alignment
+            _ => 4,             // Default: 4 byte alignment
         }
     }
 

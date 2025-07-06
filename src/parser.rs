@@ -139,6 +139,15 @@ impl Parser {
             TokenKind::Tea | 
             TokenKind::Txt | 
             TokenKind::Sip |
+            TokenKind::Smol |
+            TokenKind::Mid |
+            TokenKind::Thicc |
+            TokenKind::Snack |
+            TokenKind::Meal |
+            TokenKind::Byte |
+            TokenKind::Rune |
+            TokenKind::Extra |
+            TokenKind::Lit |
             TokenKind::Dm |
             TokenKind::Truth |
             TokenKind::Lies |
@@ -206,6 +215,42 @@ impl Parser {
                 self.advance();
                 Ok(crate::ast::Type::Sip)
             }
+            TokenKind::Smol => {
+                self.advance();
+                Ok(crate::ast::Type::Smol)
+            }
+            TokenKind::Mid => {
+                self.advance();
+                Ok(crate::ast::Type::Mid)
+            }
+            TokenKind::Thicc => {
+                self.advance();
+                Ok(crate::ast::Type::Thicc)
+            }
+            TokenKind::Snack => {
+                self.advance();
+                Ok(crate::ast::Type::Snack)
+            }
+            TokenKind::Meal => {
+                self.advance();
+                Ok(crate::ast::Type::Meal)
+            }
+            TokenKind::Byte => {
+                self.advance();
+                Ok(crate::ast::Type::Byte)
+            }
+            TokenKind::Rune => {
+                self.advance();
+                Ok(crate::ast::Type::Rune)
+            }
+            TokenKind::Extra => {
+                self.advance();
+                Ok(crate::ast::Type::Extra)
+            }
+            TokenKind::Lit => {
+                self.advance();
+                Ok(crate::ast::Type::Lit)
+            }
             TokenKind::Truth => {
                 self.advance();
                 Ok(crate::ast::Type::Lit)
@@ -238,7 +283,9 @@ impl Parser {
             TokenKind::Squad | TokenKind::Collab | TokenKind::Vibe | TokenKind::Yeet |
             TokenKind::BeLike | TokenKind::VibeCheck | TokenKind::Mood | TokenKind::Basic |
             TokenKind::YeetError | TokenKind::Catch | TokenKind::Where | TokenKind::Normie |
-            TokenKind::Tea | TokenKind::Sip | TokenKind::Cap | TokenKind::NoCap | TokenKind::Truth |
+            TokenKind::Tea | TokenKind::Sip | TokenKind::Smol | TokenKind::Mid | TokenKind::Thicc |
+            TokenKind::Snack | TokenKind::Meal | TokenKind::Byte | TokenKind::Rune | TokenKind::Extra |
+            TokenKind::Lit | TokenKind::Cap | TokenKind::NoCap | TokenKind::Truth |
             TokenKind::Lies | TokenKind::MainCharacter | TokenKind::Dm | TokenKind::Select |
             TokenKind::Spill | TokenKind::Priv | TokenKind::Crew => true,
             _ => false,
@@ -531,9 +578,12 @@ impl Parser {
                 }
                 
 
-                // Check if this is an assignment (identifier = expression or tuple destructuring)
-                if (self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal) ||
-                   (self.check(&TokenKind::LeftParen) && self.is_tuple_assignment()) {
+                // Check if this is a short variable declaration (identifier := expression or tuple destructuring)
+                if (self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::ColonEqual) ||
+                   (self.check(&TokenKind::LeftParen) && self.is_tuple_short_declaration()) {
+                    Ok(Statement::ShortDeclaration(self.parse_short_declaration_statement()?))
+                } else if (self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal) ||
+                          (self.check(&TokenKind::LeftParen) && self.is_tuple_assignment()) {
                     Ok(Statement::Assignment(self.parse_assignment_statement()?))
                 } else if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::PlusPlus {
                     // Postfix increment (variable++)
@@ -777,6 +827,83 @@ impl Parser {
                     pos += 1;
                     // After closing paren, expect =
                     return self.current + pos < self.tokens.len() && self.tokens[self.current + pos].kind == TokenKind::Equal;
+                },
+                _ => return false,
+            }
+        }
+        
+        false
+    }
+
+    /// Parse a short variable declaration (identifier := expression)
+    fn parse_short_declaration_statement(&mut self) -> Result<crate::ast::ShortDeclarationStatement, CursedError> {
+        let target = self.parse_short_declaration_target()?;
+        self.consume(TokenKind::ColonEqual, "Expected ':=' in short variable declaration")?;
+        let value = self.parse_expression()?;
+        
+        Ok(crate::ast::ShortDeclarationStatement {
+            target,
+            value,
+        })
+    }
+
+    fn parse_short_declaration_target(&mut self) -> Result<crate::ast::ShortDeclarationTarget, CursedError> {
+        // Check for tuple destructuring: (a, b, c) := ...
+        if self.check(&TokenKind::LeftParen) {
+            self.advance(); // consume '('
+            
+            let mut names = Vec::new();
+            if !self.check(&TokenKind::RightParen) {
+                loop {
+                    let name = self.consume(TokenKind::Identifier, "Expected variable name in tuple destructuring")?;
+                    names.push(name.lexeme.clone());
+                    
+                    if !self.match_tokens(&[TokenKind::Comma]) {
+                        break;
+                    }
+                }
+            }
+            
+            self.consume(TokenKind::RightParen, "Expected ')' after tuple destructuring")?;
+            Ok(crate::ast::ShortDeclarationTarget::Tuple(names))
+        } else {
+            // Single variable declaration
+            let name = self.consume(TokenKind::Identifier, "Expected variable name")?;
+            Ok(crate::ast::ShortDeclarationTarget::Single(name.lexeme.clone()))
+        }
+    }
+
+    /// Check if the current position looks like a tuple short declaration (a, b) :=
+    fn is_tuple_short_declaration(&self) -> bool {
+        if !self.check(&TokenKind::LeftParen) {
+            return false;
+        }
+        
+        // Look ahead to see if this is a tuple short declaration pattern
+        // We're looking for: ( identifier, identifier, ... ) :=
+        let mut pos = 1; // Start after the opening paren
+        
+        // Check for at least one identifier
+        if pos >= self.tokens.len() || self.tokens[self.current + pos].kind != TokenKind::Identifier {
+            return false;
+        }
+        pos += 1;
+        
+        // Look for comma-separated identifiers
+        while self.current + pos < self.tokens.len() {
+            match self.tokens[self.current + pos].kind {
+                TokenKind::Comma => {
+                    pos += 1;
+                    // After comma, expect identifier
+                    if self.current + pos >= self.tokens.len() || self.tokens[self.current + pos].kind != TokenKind::Identifier {
+                        return false;
+                    }
+                    pos += 1;
+                },
+                TokenKind::RightParen => {
+                    pos += 1;
+                    // After closing paren, expect :=
+                    return self.current + pos < self.tokens.len() && self.tokens[self.current + pos].kind == TokenKind::ColonEqual;
                 },
                 _ => return false,
             }
@@ -1340,6 +1467,26 @@ impl Parser {
                     expr = Expression::TupleAccess(crate::ast::TupleAccessExpression {
                         tuple: Box::new(expr),
                         index,
+                    });
+                } else if self.check(&TokenKind::LeftParen) {
+                    // Type assertion: value.(type)
+                    self.advance(); // consume '('
+                    let target_type = self.parse_type()?;
+                    
+                    // Check for safe type assertion: value.(type)?
+                    let is_safe = if self.check(&TokenKind::Question) {
+                        self.advance(); // consume '?'
+                        true
+                    } else {
+                        false
+                    };
+                    
+                    self.consume(TokenKind::RightParen, "Expected ')' after type assertion")?;
+                    
+                    expr = Expression::TypeAssertion(crate::ast::TypeAssertionExpression {
+                        value: Box::new(expr),
+                        target_type,
+                        is_safe,
                     });
                 } else {
                     // Accept identifiers or keywords as property names

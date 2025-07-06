@@ -34,6 +34,12 @@ cargo test array_parsing_tests
 # Test for-in loops
 cargo test for_in_tests
 
+# Test short variable declarations
+cargo run --bin cursed test_short_declaration.csd
+
+# Test type assertions
+cargo run --bin cursed test_type_assertions.csd
+
 # Test native compilation with mixed types
 cargo run --bin cursed -- compile program.csd
 ./program  # Run the compiled executable
@@ -66,6 +72,10 @@ sus name tea = "value"
 sus count drip = 42
 sus flag lit = based
 
+# Short variable declarations
+x := 42
+(a, b, c) := (1, 2, 3)
+
 # Function definitions
 slay functionName(param normie) normie {
     vibez.spill("Hello from function")
@@ -78,6 +88,11 @@ vibez.spill("Hello, world!")
 # Boolean values
 sus isReady lit = based    # true
 sus isComplete lit = cap   # false
+
+# Type assertions
+sus smallInt smol = number.(smol)
+sus largeInt thicc = number.(thicc)
+sus floatVal meal = 42.(meal)
 ```
 
 ## Development Environment
@@ -102,6 +117,26 @@ src/
 
 ## Language Features
 
+### Short Variable Declarations
+- Syntax: `variable := expression` and `(a, b, c) := tuple`
+- Examples: `x := 42`, `(a, b, c) := (1, 2, 3)`
+- Test: `test_short_declaration.csd`
+- Status: Fully functional in both interpretation and compilation modes
+
+### Basic Types
+- Integer types: `normie` (i32), `smol` (i8), `mid` (i16), `thicc` (i64)
+- Float types: `drip` (f32), `snack` (f32), `meal` (f64)
+- Other types: `byte` (u8), `rune` (i32), `extra` (complex)
+- String type: `tea`, Boolean type: `lit`, Character type: `sip`
+- Status: All basic types fully supported
+
+### Type Assertions
+- Syntax: `value.(type)` for type conversion/checking
+- Examples: `number.(smol)`, `42.(meal)`, `character.(normie)`
+- Support for conversions between integer, float, boolean, and character types
+- Test: `test_type_assertions.csd`
+- Status: Fully functional in both interpretation and compilation modes
+
 ### Tuples
 - Basic syntax: `(1, "hello", based)`
 - Access elements: `tuple.0`, `tuple.1`, `tuple.2`
@@ -111,10 +146,23 @@ src/
 
 ### Boolean Literals
 - Specification-compliant syntax: `based` (true) and `cap` (false)
-- Boolean type: `lit` 
+- Nil literal: `cringe` (nil)
+- Boolean type: `lit`
 - Usage: `sus flag lit = based` or `sus flag lit = cap`
 - Tests: Boolean literals work correctly in both variable declarations and expressions
 - Status: Fully compliant with language specification
+
+### Break/Continue Statements
+- Break statement: `ghosted` (with optional labels)
+- Continue statement: `simp` (with optional labels)  
+- Usage: `ghosted`, `ghosted labelName`, `simp`, `simp labelName`
+- Status: Fully functional in both interpretation and compilation modes
+
+### Increment/Decrement Operators
+- Increment operators: `++variable` (prefix), `variable++` (postfix)
+- Decrement operators: `--variable` (prefix), `variable--` (postfix)
+- Support for both integer and float types with correct semantics
+- Status: Fully functional in both interpretation and compilation modes
 
 ### Mixed Arithmetic Operations
 - Mixed Integer-Float arithmetic fully supported in interpretation mode

@@ -65,10 +65,19 @@ pub enum TokenKind {
     YeetError,   // throw error
     Catch,       // catch error
     Where,       // where clause for generics
-    Normie,      // integer type
+    Normie,      // integer type (i32)
     Tea,         // string type
     Txt,         // string type (alias)
     Sip,         // character type
+    Smol,        // small integer type (i8)
+    Mid,         // medium integer type (i16)
+    Thicc,       // large integer type (i64)
+    Snack,       // small float type (f32)
+    Meal,        // large float type (f64)
+    Byte,        // unsigned 8-bit integer (u8)
+    Rune,        // Unicode code point (i32 alias)
+    Extra,       // complex number type
+    Lit,         // boolean type
     Cap,         // null/nil
     NoCap,       // not null
     Truth,       // true
@@ -128,6 +137,7 @@ pub enum TokenKind {
     Colon,
     DoubleColon,    // :: (for paths and type annotations)
     Dot,
+    Question,       // ?
     
     // Special
     At,             // @ (for pointer types)
@@ -230,6 +240,7 @@ impl Lexer {
                 }
             },
             '.' => Ok(self.make_token(TokenKind::Dot, ".".to_string(), start_column)),
+            '?' => Ok(self.make_token(TokenKind::Question, "?".to_string(), start_column)),
             '@' => Ok(self.make_token(TokenKind::At, "@".to_string(), start_column)),
             '=' => {
                 if self.match_char('=') {
@@ -657,6 +668,15 @@ impl Lexer {
             "tea" => TokenKind::Tea,
             "txt" => TokenKind::Txt,
             "sip" => TokenKind::Sip,
+            "smol" => TokenKind::Smol,
+            "mid" => TokenKind::Mid,
+            "thicc" => TokenKind::Thicc,
+            "snack" => TokenKind::Snack,
+            "meal" => TokenKind::Meal,
+            "byte" => TokenKind::Byte,
+            "rune" => TokenKind::Rune,
+            "extra" => TokenKind::Extra,
+            "lit" => TokenKind::Lit,
 
             "nocap" => TokenKind::NoCap,
             "main_character" => TokenKind::MainCharacter,

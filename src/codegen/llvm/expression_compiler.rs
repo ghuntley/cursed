@@ -95,6 +95,12 @@ impl ExpressionCompiler {
                 let char_val = *c as u8;
                 Ok(format!("{}", char_val))
             },
+            Expression::TypeAssertion(type_assertion) => {
+                // For now, just compile the inner expression and add a comment
+                let value_reg = self.compile_expression(&type_assertion.value)?;
+                self.ir_buffer.push_str(&format!("  ; Type assertion: value.({})\n", type_assertion.target_type));
+                Ok(value_reg)
+            },
 
         }
     }
