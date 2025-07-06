@@ -5,6 +5,7 @@ use cursed::execution::*;
 use cursed::error::CursedError;
 
 #[test]
+#[ignore = "Requires LLVM environment setup"]
 fn test_println_string() {
     // Test basic println functionality through execution engine
     let code = r#"
@@ -20,6 +21,7 @@ fn test_println_string() {
 }
 
 #[test]
+#[ignore = "Requires LLVM environment setup"]
 fn test_basic_arithmetic() {
     let code = r#"
         sus x = 10;
@@ -34,6 +36,7 @@ fn test_basic_arithmetic() {
 }
 
 #[test]
+#[ignore = "Requires LLVM environment setup"]
 fn test_function_call() {
     let code = r#"
         slay add(x normie, y normie) normie {
@@ -51,6 +54,7 @@ fn test_function_call() {
 }
 
 #[test]
+#[ignore = "Requires LLVM environment setup"]
 fn test_control_flow() {
     let code = r#"
         sus x = 10;
@@ -67,6 +71,7 @@ fn test_control_flow() {
 }
 
 #[test]
+#[ignore = "Requires LLVM environment setup"]
 fn test_loop_execution() {
     let code = r#"
         slay main() normie {
