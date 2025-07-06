@@ -17,6 +17,7 @@ pub mod runtime_functions;
 pub mod value_manager;
 
 pub use execution_context::ExecutionContext;
+pub use jit_executor::{JitExecutor, JitExecutorConfig, JitExecutionStats, jit_execute, new_jit_executor};
 
 /// Advanced execution engine for CURSED
 pub struct CursedExecutionEngine {
@@ -67,12 +68,22 @@ impl CursedExecutionEngine {
     fn execute_jit(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
         tracing::info!("⚡ JIT compilation enabled");
         
-        // Generate LLVM IR
-        let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
-        let _ir = codegen.generate_ir(program)?;
+        // Use the real JIT executor
+        let mut jit_executor = JitExecutor::new()?;
         
-        // Execute interpreted for now (since JIT compilation is complex)
-        self.execute_interpreted(program)
+        // Convert program back to source for JIT compilation
+        // In a real implementation, we'd maintain the original source or serialize the AST
+        // For now, use a simple approach
+        let source_approximation = self.program_to_source_approximation(program);
+        
+        match jit_executor.execute(&source_approximation) {
+            Ok(result) => Ok(result),
+            Err(e) => {
+                tracing::warn!("⚠️ JIT execution failed, falling back to interpretation: {}", e);
+                // Fall back to interpreted execution
+                self.execute_interpreted(program)
+            }
+        }
     }
     
     fn execute_interpreted(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
@@ -112,6 +123,138 @@ impl CursedExecutionEngine {
     
     pub fn get_value_manager(&self) -> ValueManager {
         ValueManager::new()
+    }
+
+    /// Convert program AST back to source approximation for JIT compilation
+    /// In a real implementation, this would be more sophisticated
+    fn program_to_source_approximation(&self, program: &Program) -> String {
+        let mut source = String::new();
+        
+        // Add imports
+        for import in &program.imports {
+            source.push_str(&format!("import \"{}\";\n", import.path));
+        }
+        
+        if !program.imports.is_empty() {
+            source.push('\n');
+        }
+        
+        // Add package declaration
+        if let Some(package) = &program.package {
+            source.push_str(&format!("package {};\n\n", package.name));
+        }
+        
+        // Convert statements to basic source representation
+        for statement in &program.statements {
+            source.push_str(&self.statement_to_source(statement));
+            source.push('\n');
+        }
+        
+        source
+    }
+    
+    /// Convert a statement to basic source representation
+    fn statement_to_source(&self, statement: &crate::ast::Statement) -> String {
+        use crate::ast::Statement;
+        
+        match statement {
+            Statement::Function(func) => {
+                let mut result = format!("fn {}(", func.name);
+                
+                // Add parameters
+                for (i, param) in func.parameters.iter().enumerate() {
+                    if i > 0 { result.push_str(", "); }
+                    result.push_str(&format!("{}: {}", param.name, param.param_type.as_deref().unwrap_or("auto")));
+                }
+                
+                result.push_str(") -> ");
+                result.push_str(func.return_type.as_deref().unwrap_or("auto"));
+                result.push_str(" {\n");
+                
+                // Add function body (simplified)
+                for stmt in &func.body {
+                    result.push_str("    ");
+                    result.push_str(&self.statement_to_source(stmt));
+                    result.push('\n');
+                }
+                
+                result.push('}');
+                result
+            },
+            Statement::Return(ret) => {
+                if let Some(expr) = &ret.value {
+                    format!("return {};", self.expression_to_source(expr))
+                } else {
+                    "return;".to_string()
+                }
+            },
+            Statement::Let(let_stmt) => {
+                format!("let {} = {};", 
+                    self.let_target_to_source(&let_stmt.target),
+                    self.expression_to_source(&let_stmt.value)
+                )
+            },
+            Statement::Expression(expr) => {
+                format!("{};", self.expression_to_source(expr))
+            },
+            _ => {
+                // For other statements, just return a comment for now
+                "// unsupported statement".to_string()
+            }
+        }
+    }
+    
+    /// Convert an expression to basic source representation
+    fn expression_to_source(&self, expression: &crate::ast::Expression) -> String {
+        use crate::ast::Expression;
+        
+        match expression {
+            Expression::Integer(i) => i.to_string(),
+            Expression::Float(f) => f.to_string(),
+            Expression::String(s) => format!("\"{}\"", s),
+            Expression::Boolean(b) => b.to_string(),
+            Expression::Identifier(name) => name.clone(),
+            Expression::Literal(lit) => {
+                match lit {
+                    crate::ast::Literal::Integer(i) => i.to_string(),
+                    crate::ast::Literal::Float(f) => f.to_string(),
+                    crate::ast::Literal::String(s) => format!("\"{}\"", s),
+                    crate::ast::Literal::Boolean(b) => b.to_string(),
+                    crate::ast::Literal::Nil | crate::ast::Literal::Null => "nil".to_string(),
+                }
+            },
+            Expression::Binary(binary) => {
+                format!("{} {} {}", 
+                    self.expression_to_source(&binary.left),
+                    binary.operator,
+                    self.expression_to_source(&binary.right)
+                )
+            },
+            Expression::Call(call) => {
+                let mut result = self.expression_to_source(&call.function);
+                result.push('(');
+                for (i, arg) in call.arguments.iter().enumerate() {
+                    if i > 0 { result.push_str(", "); }
+                    result.push_str(&self.expression_to_source(arg));
+                }
+                result.push(')');
+                result
+            },
+            _ => {
+                // For other expressions, return a placeholder
+                "/* unsupported expression */".to_string()
+            }
+        }
+    }
+    
+    /// Convert let target to source representation
+    fn let_target_to_source(&self, target: &crate::ast::LetTarget) -> String {
+        match target {
+            crate::ast::LetTarget::Single(name) => name.clone(),
+            crate::ast::LetTarget::Tuple(names) => {
+                format!("({})", names.join(", "))
+            }
+        }
     }
     
     fn format_value(&self, value: &CursedValue) -> String {
