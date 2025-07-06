@@ -59,7 +59,7 @@ impl CursedExecutionEngine {
         
         // Execute with JIT if enabled
         if self.jit_enabled {
-            self.execute_jit(&program)
+            self.execute_jit_with_source(&program, source)
         } else {
             self.execute_interpreted(&program)
         }
@@ -76,11 +76,11 @@ impl CursedExecutionEngine {
         Ok(self.format_value(&result))
     }
     
-    fn execute_jit(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
+    fn execute_jit_with_source(&mut self, program: &Program, source: &str) -> Result<CursedValue, CursedError> {
         tracing::info!("⚡ JIT compilation enabled");
         
-        // Try JIT compilation first
-        match self.try_jit_execution(program) {
+        // Try JIT compilation first with original source
+        match self.try_jit_execution_with_source(source) {
             Ok(result) => {
                 tracing::info!("✅ JIT compilation successful");
                 Ok(result)
@@ -92,15 +92,12 @@ impl CursedExecutionEngine {
         }
     }
     
-    fn try_jit_execution(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
+    fn try_jit_execution_with_source(&mut self, source: &str) -> Result<CursedValue, CursedError> {
         // Create JIT executor if not exists
         let mut jit_executor = JitExecutor::new()?;
         
-        // Convert program to source code for JIT compilation
-        let source = self.program_to_source(program)?;
-        
-        // Execute with JIT
-        jit_executor.execute(&source)
+        // Execute with JIT using original source
+        jit_executor.execute(source)
     }
     
     fn program_to_source(&self, program: &Program) -> Result<String, CursedError> {
