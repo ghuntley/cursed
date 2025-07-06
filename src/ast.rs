@@ -57,6 +57,7 @@ pub enum Statement {
 #[derive(Debug, Clone)]
 pub enum Expression {
     Identifier(String),
+    Variable(String),   // Add Variable variant
     Integer(i64),
     Float(f64),
     String(String),
@@ -424,6 +425,8 @@ pub enum UnaryOperator {
     Not,
     Minus,
     Plus,
+    AddressOf,    // @ (address-of operator)
+    Dereference,  // * (dereference operator)
 }
 
 /// Literal values
@@ -632,6 +635,7 @@ pub enum Type {
     Collab(String),      // Interface type (collab)
     Dm(Box<Type>),       // Channel type (dm<T>)
     Tuple(Vec<Type>),    // Tuple type (tuple)
+    Pointer(Box<Type>),  // Pointer type (@T)
 }
 
 impl std::fmt::Display for Type {
@@ -682,6 +686,7 @@ impl std::fmt::Display for Type {
                 }
                 write!(f, ")")
             }
+            Type::Pointer(inner) => write!(f, "@{}", inner),
         }
     }
 }

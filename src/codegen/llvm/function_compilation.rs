@@ -813,6 +813,23 @@ impl FunctionCompiler {
             crate::ast::UnaryOperator::Plus => {
                 self.ir_code.push_str(&format!("  {} = add i32 0, {}\n", result_reg, operand_reg));
             },
+            crate::ast::UnaryOperator::AddressOf => {
+                // Address-of: @variable -> return the address of the variable
+                if let Expression::Identifier(var_name) = operand {
+                    if let Some(var_reg) = self.variables.get(var_name) {
+                        // Return the address directly (the alloca register)
+                        return Ok(var_reg.clone());
+                    } else {
+                        return Err(CursedError::syntax_error(&format!("Cannot take address of undefined variable: {}", var_name)));
+                    }
+                } else {
+                    return Err(CursedError::syntax_error("Address-of operator can only be applied to variables"));
+                }
+            },
+            crate::ast::UnaryOperator::Dereference => {
+                // Dereference: *pointer -> load the value the pointer points to
+                self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", result_reg, operand_reg));
+            },
         }
         
         Ok(result_reg)

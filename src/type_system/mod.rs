@@ -15,6 +15,9 @@ mod tests;
 #[cfg(test)]
 pub mod integration_tests;
 
+#[cfg(test)]
+
+
 // Import base types from core and AST
 pub use crate::core::{Type};
 pub use crate::ast::Type as AstType;
@@ -103,6 +106,10 @@ impl TypeSystem {
             Expression::TupleAccess(tuple_access) => {
                 let tuple_type = self.check_expression(&tuple_access.tuple)?;
                 self.check_tuple_access(&tuple_type, tuple_access.index)
+            }
+            Expression::Unary(unary_expr) => {
+                let operand_type = self.check_expression(&unary_expr.operand)?;
+                self.check_unary_operation(&unary_expr.operator, &operand_type)
             }
             _ => Ok(TypeExpression::named("unknown")),
         }
@@ -225,6 +232,43 @@ impl TypeSystem {
             )
         } else {
             false
+        }
+    }
+    
+    fn check_unary_operation(&self, operator: &crate::ast::UnaryOperator, operand_type: &TypeExpression) -> Result<TypeExpression, String> {
+        use crate::ast::UnaryOperator;
+        
+        match operator {
+            UnaryOperator::Not => {
+                if self.types_compatible(operand_type, &TypeExpression::named("lit")) {
+                    Ok(TypeExpression::named("lit"))
+                } else {
+                    Err(format!("Not operator requires boolean type, got {:?}", operand_type))
+                }
+            }
+            UnaryOperator::Minus | UnaryOperator::Plus => {
+                if self.is_numeric_type(operand_type) {
+                    Ok(operand_type.clone())
+                } else {
+                    Err(format!("Unary arithmetic operator requires numeric type, got {:?}", operand_type))
+                }
+            }
+            UnaryOperator::AddressOf => {
+                // Address-of operator: @variable -> @Type
+                Ok(TypeExpression::pointer(operand_type.clone()))
+            }
+            UnaryOperator::Dereference => {
+                // Dereference operator: *pointer -> Type
+                if let Some(name) = &operand_type.name {
+                    if name == "Pointer" && !operand_type.parameters.is_empty() {
+                        Ok(operand_type.parameters[0].clone())
+                    } else {
+                        Err(format!("Dereference operator requires pointer type, got {:?}", operand_type))
+                    }
+                } else {
+                    Err(format!("Dereference operator requires pointer type, got {:?}", operand_type))
+                }
+            }
         }
     }
 }
@@ -373,6 +417,15 @@ impl TypeExpression {
             kind: TypeKind::Struct,
             name: Some("Tuple".to_string()),
             parameters: element_types,
+            return_type: None,
+        }
+    }
+    
+    pub fn pointer(inner_type: TypeExpression) -> Self {
+        Self {
+            kind: TypeKind::Primitive,
+            name: Some("Pointer".to_string()),
+            parameters: vec![inner_type],
             return_type: None,
         }
     }

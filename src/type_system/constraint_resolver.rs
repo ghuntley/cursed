@@ -173,11 +173,131 @@ impl ConstraintResolver {
     fn type_implements_bound(&self, type_expr: &TypeExpression, bound: &str, env: &TypeEnvironment) -> bool {
         if let Some(type_name) = &type_expr.name {
             if let Some(type_def) = env.get_type(type_name) {
-                // Check if type has methods required by bound
+                // Check if bound is an interface that this type implements
+                if let Some(interface_def) = env.get_type(bound) {
+                    if interface_def.kind == super::TypeKind::Interface {
+                        return self.check_interface_implementation_internal(type_def, interface_def, env);
+                    }
+                }
+                // Fallback: Check if type has methods required by bound
                 return type_def.methods.iter().any(|m| m.name.contains(bound));
             }
         }
         false
+    }
+    
+    /// Internal method to check interface implementation without TypeChecker
+    fn check_interface_implementation_internal(&self, type_def: &super::TypeDefinition, interface_def: &super::TypeDefinition, env: &TypeEnvironment) -> bool {
+        // Check if all interface methods are implemented by the type
+        for interface_method in &interface_def.methods {
+            if !self.type_has_compatible_method_internal(type_def, interface_method, env) {
+                return false;
+            }
+        }
+        true
+    }
+    
+    /// Internal method to check method compatibility without TypeChecker
+    fn type_has_compatible_method_internal(&self, type_def: &super::TypeDefinition, interface_method: &super::MethodSignature, env: &TypeEnvironment) -> bool {
+        // Find method with matching name
+        let type_method = type_def.methods.iter()
+            .find(|m| m.name == interface_method.name);
+        
+        let type_method = match type_method {
+            Some(method) => method,
+            None => return false, // Method not found
+        };
+        
+        // Check parameter compatibility
+        if !self.check_method_signature_compatibility_internal(type_method, interface_method, env) {
+            return false;
+        }
+        
+        true
+    }
+    
+    /// Internal method to check method signature compatibility
+    fn check_method_signature_compatibility_internal(&self, impl_method: &super::MethodSignature, interface_method: &super::MethodSignature, _env: &TypeEnvironment) -> bool {
+        // Check parameter count
+        if impl_method.parameters.len() != interface_method.parameters.len() {
+            return false;
+        }
+        
+        // Check parameter types
+        for (impl_param, interface_param) in impl_method.parameters.iter().zip(interface_method.parameters.iter()) {
+            if !self.types_are_compatible_internal(impl_param, interface_param) {
+                return false;
+            }
+        }
+        
+        // Check return type compatibility
+        match (&impl_method.return_type, &interface_method.return_type) {
+            (Some(impl_ret), Some(interface_ret)) => {
+                if !self.types_are_compatible_internal(impl_ret, interface_ret) {
+                    return false;
+                }
+            }
+            (None, None) => {}, // Both void
+            _ => return false, // Mismatch: one void, one not
+        }
+        
+        true
+    }
+    
+    /// Internal method to check type compatibility
+    fn types_are_compatible_internal(&self, type1: &TypeExpression, type2: &TypeExpression) -> bool {
+        // Direct name matching
+        if type1.name == type2.name {
+            // Check parameter compatibility recursively
+            if type1.parameters.len() != type2.parameters.len() {
+                return false;
+            }
+            
+            for (param1, param2) in type1.parameters.iter().zip(type2.parameters.iter()) {
+                if !self.types_are_compatible_internal(param1, param2) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        false
+    }
+    
+    /// Check interface satisfaction for constraint resolution
+    pub fn check_interface_satisfaction(&self, type_expr: &TypeExpression, interface_name: &str, env: &TypeEnvironment) -> Result<bool, ConstraintViolation> {
+        if let Some(type_name) = &type_expr.name {
+            if let Some(type_def) = env.get_type(type_name) {
+                if let Some(interface_def) = env.get_type(interface_name) {
+                    if interface_def.kind == super::TypeKind::Interface {
+                        return Ok(self.check_interface_implementation_internal(type_def, interface_def, env));
+                    }
+                }
+            }
+        }
+        
+        Ok(false)
+    }
+    
+    /// Verify all interface constraints are satisfied
+    pub fn verify_interface_constraints(&self, constraints: &[GenericConstraint], type_bindings: &std::collections::HashMap<String, TypeExpression>, env: &TypeEnvironment) -> Result<(), ConstraintViolation> {
+        for constraint in constraints {
+            for (type_param, bound) in constraint.type_parameters.iter().zip(constraint.bounds.iter()) {
+                if let Some(bound_type) = type_bindings.get(type_param) {
+                    if !self.check_interface_satisfaction(bound_type, bound, env)? {
+                        return Err(ConstraintViolation {
+                            reason: ViolationReason::MissingImplementation,
+                            context: format!("Type '{}' does not implement interface '{}'", 
+                                           bound_type.name.as_ref().unwrap_or(&"unknown".to_string()), 
+                                           bound),
+                        });
+                    }
+                }
+            }
+        }
+        
+        Ok(())
     }
     
     fn resolve_single_constraint(&self, constraint: &GenericConstraint, bound_types: &[String], env: &TypeEnvironment) -> Result<HashMap<String, TypeExpression>, ConstraintViolation> {

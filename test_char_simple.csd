@@ -1,3 +1,0 @@
-sus main() {
-    return 'a';
-}

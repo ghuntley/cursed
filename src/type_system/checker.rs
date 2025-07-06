@@ -32,6 +32,14 @@ pub struct TypeCheckError {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub enum ErrorSeverity {
+    Error,
+    Warning,
+    Note,
+    Help,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeErrorKind {
     TypeMismatch,
     UndefinedVariable,
@@ -42,6 +50,21 @@ pub enum TypeErrorKind {
     UnificationFailure,
     TypeNotFound,
     FieldNotFound,
+}
+
+impl TypeCheckError {
+    pub fn new(error_type: TypeErrorKind, message: String) -> Self {
+        Self {
+            message,
+            location: None,
+            error_type,
+        }
+    }
+    
+    pub fn with_location(mut self, location: String) -> Self {
+        self.location = Some(location);
+        self
+    }
 }
 
 impl TypeChecker {
@@ -274,11 +297,10 @@ impl TypeChecker {
             return Ok(TypeExpression::named(&type_def.name));
         }
         
-        Err(TypeCheckError {
-            message: format!("Undefined variable: {}", name),
-            location: None,
-            error_type: TypeErrorKind::UndefinedVariable,
-        })
+        Err(TypeCheckError::new(
+            TypeErrorKind::UndefinedVariable,
+            format!("Undefined variable: {}", name)
+        ))
     }
     
     fn check_binary_expression(&mut self, binary: &BinaryExpression) -> Result<TypeExpression, TypeCheckError> {

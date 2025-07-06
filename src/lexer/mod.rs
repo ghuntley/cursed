@@ -24,9 +24,12 @@ pub struct Token {
 pub enum TokenKind {
     // Literals
     Number,
+    Integer(String),    // For integer literals with value
+    StringLiteral(String), // For string literals with value
     String,
     Boolean,
     Character,
+    Based,              // For 'based' literal
     
     // Identifiers
     Identifier,

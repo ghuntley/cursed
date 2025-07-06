@@ -417,12 +417,17 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                     crate::ast::LetTarget::Single(name) => {
                         let var_reg = self.next_register();
                         
-                        // Determine type based on the value expression
-                        let (var_type, store_value) = match &let_stmt.value {
-                            Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
-                            Expression::Boolean(_) => ("i1".to_string(), value_reg.clone()),
-                            Expression::Integer(_) => ("i32".to_string(), value_reg.clone()),
-                            _ => ("i32".to_string(), value_reg.clone()), // Default
+                        // Determine type based on type annotation or value expression
+                        let (var_type, store_value) = if let Some(type_annotation) = &let_stmt.var_type {
+                            let llvm_type = self.convert_cursed_type_to_llvm(type_annotation)?;
+                            (llvm_type, value_reg.clone())
+                        } else {
+                            match &let_stmt.value {
+                                Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
+                                Expression::Boolean(_) => ("i1".to_string(), value_reg.clone()),
+                                Expression::Integer(_) => ("i32".to_string(), value_reg.clone()),
+                                _ => ("i32".to_string(), value_reg.clone()), // Default
+                            }
                         };
                         
                         // Allocate and store variable
@@ -796,6 +801,10 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 let _element_llvm = self.convert_cursed_type_to_llvm(element_type)?;
                 Ok("i8*".to_string()) // Channel is a pointer
             },
+            crate::ast::Type::Pointer(inner_type) => {
+                let inner_llvm = self.convert_cursed_type_to_llvm(inner_type)?;
+                Ok(format!("{}*", inner_llvm))
+            },
             crate::ast::Type::Function(params, return_type) => {
                 let mut param_types = Vec::new();
                 for param in params {
@@ -919,6 +928,9 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Expression::Call(call_expr) => {
                 self.generate_function_call(&call_expr.function, &call_expr.arguments)
             },
+            Expression::Unary(unary_expr) => {
+                self.generate_unary_expression(&unary_expr.operator, &unary_expr.operand)
+            },
             _ => {
                 // For complex expressions, use the expression compiler
                 let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
@@ -1010,21 +1022,33 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         let operand_reg = self.generate_expression(operand)?;
         let result_reg = self.next_register();
         
-        let op_str = match operator {
-            crate::ast::UnaryOperator::Not => "xor",
-            crate::ast::UnaryOperator::Minus => "sub",
-            crate::ast::UnaryOperator::Plus => "add",
-        };
-        
         match operator {
             crate::ast::UnaryOperator::Not => {
-                self.ir_code.push_str(&format!("  {} = {} i1 {}, true\n", result_reg, op_str, operand_reg));
+                self.ir_code.push_str(&format!("  {} = xor i1 {}, true\n", result_reg, operand_reg));
             },
             crate::ast::UnaryOperator::Minus => {
-                self.ir_code.push_str(&format!("  {} = {} i32 0, {}\n", result_reg, op_str, operand_reg));
+                self.ir_code.push_str(&format!("  {} = sub i32 0, {}\n", result_reg, operand_reg));
             },
             crate::ast::UnaryOperator::Plus => {
-                self.ir_code.push_str(&format!("  {} = {} i32 0, {}\n", result_reg, op_str, operand_reg));
+                // Unary plus is essentially a no-op, just return the operand
+                return Ok(operand_reg);
+            },
+            crate::ast::UnaryOperator::AddressOf => {
+                // Address-of: @variable -> return the address of the variable
+                if let Expression::Identifier(var_name) = operand {
+                    if let Some(var_reg) = self.variables.get(var_name).cloned() {
+                        // Return the address directly (the alloca register)
+                        return Ok(var_reg);
+                    } else {
+                        return Err(CursedError::syntax_error(&format!("Cannot take address of undefined variable: {}", var_name)));
+                    }
+                } else {
+                    return Err(CursedError::syntax_error("Address-of operator can only be applied to variables"));
+                }
+            },
+            crate::ast::UnaryOperator::Dereference => {
+                // Dereference: *pointer -> load the value the pointer points to
+                self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", result_reg, operand_reg));
             },
         }
         
@@ -2487,10 +2511,37 @@ impl LlvmCodeGenerator {
         Ok(format!("%{}", interface_obj_reg))
     }
     
-    fn next_variable(&mut self) -> String {
+    pub fn next_variable(&mut self) -> String {
         let var = format!("t{}", self.variable_counter);
         self.variable_counter += 1;
         var
+    }
+    
+    /// Public wrapper for generate_expression for use by codegen modules
+    pub fn generate_expression_public(&mut self, expression: &Expression) -> Result<String, CursedError> {
+        self.generate_expression(expression)
+    }
+    
+    /// Public wrapper for generate_statement for use by codegen modules
+    pub fn generate_statement_public(&mut self, statement: &Statement) -> Result<String, CursedError> {
+        self.generate_statement(statement)?;
+        Ok(String::new())
+    }
+    
+    /// Get the last variable counter for accessing results
+    pub fn get_last_variable_counter(&self) -> usize {
+        self.variable_counter.saturating_sub(1)
+    }
+    
+    /// Check if a function declaration exists in the IR code
+    pub fn has_function_declaration(&self, name: &str) -> bool {
+        self.ir_code.contains(&format!("declare")) && self.ir_code.contains(&format!("@{}", name)) ||
+        self.ir_code.contains(&format!("define")) && self.ir_code.contains(&format!("@{}", name))
+    }
+    
+    /// Mark a function as declared (no-op for now)
+    pub fn mark_function_declared(&mut self, _name: &str) {
+        // No-op implementation for now
     }
 }
 

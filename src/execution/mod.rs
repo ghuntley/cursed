@@ -857,6 +857,11 @@ impl CursedExecutionEngine {
             Expression::TypeAssertion(type_assertion) => {
                 self.evaluate_type_assertion(type_assertion, context)
             },
+            Expression::Variable(name) => {
+                // Variable access - same as Identifier
+                context.get_variable(name)
+                    .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)))
+            },
         }
     }
     
@@ -1138,6 +1143,15 @@ impl CursedExecutionEngine {
                     CursedValue::Integer(_) | CursedValue::Float(_) => Ok(operand.clone()),
                     _ => Err(CursedError::RuntimeError("Cannot apply unary plus to non-numeric value".to_string())),
                 }
+            },
+            crate::ast::UnaryOperator::AddressOf => {
+                // For interpretation mode, we need to handle address-of differently
+                // since we don't have actual memory addresses. We can use a pointer wrapper.
+                Err(CursedError::RuntimeError("Address-of operator not supported in interpretation mode".to_string()))
+            },
+            crate::ast::UnaryOperator::Dereference => {
+                // For interpretation mode, dereference would unwrap a pointer wrapper
+                Err(CursedError::RuntimeError("Dereference operator not supported in interpretation mode".to_string()))
             },
         }
     }
