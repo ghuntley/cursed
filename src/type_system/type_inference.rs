@@ -141,6 +141,36 @@ impl TypeInference {
             Expression::Call(call) => {
                 self.infer_call_type(call)
             }
+            Expression::ArrayAccess(array_access) => {
+                let array_type = self.infer_expression_type(&array_access.array)?;
+                let index_type = self.infer_expression_type(&array_access.index)?;
+                
+                // Ensure index is integer
+                self.add_unification_constraint(
+                    index_type,
+                    TypeExpression::named("normie"),
+                    "array index must be integer".to_string()
+                );
+                
+                // Extract element type from array type
+                match array_type.name.as_ref().map(|s| s.as_str()) {
+                    Some(name) if name.starts_with('[') && name.ends_with(']') => {
+                        // Extract element type from [ElementType] syntax
+                        let element_type_name = &name[1..name.len()-1];
+                        Ok(TypeExpression::named(element_type_name))
+                    }
+                    _ => {
+                        // For complex array types, create fresh type variable for element
+                        let element_type = self.fresh_type_variable();
+                        self.add_unification_constraint(
+                            array_type,
+                            TypeExpression::array(element_type.clone()),
+                            "array access requires array type".to_string()
+                        );
+                        Ok(element_type)
+                    }
+                }
+            }
             _ => {
                 // For other expressions, create fresh type variables
                 Ok(self.fresh_type_variable())

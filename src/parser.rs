@@ -1323,6 +1323,15 @@ impl Parser {
                         property: property.lexeme.clone(),
                     });
                 }
+            } else if self.match_tokens(&[TokenKind::LeftBracket]) {
+                // Array indexing: array[index]
+                let index = self.parse_expression()?;
+                self.consume(TokenKind::RightBracket, "Expected ']' after array index")?;
+                
+                expr = Expression::ArrayAccess(crate::ast::ArrayAccessExpression {
+                    array: Box::new(expr),
+                    index: Box::new(index),
+                });
             } else {
                 break;
             }

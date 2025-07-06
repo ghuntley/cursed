@@ -85,6 +85,9 @@ impl ExpressionCompiler {
             Expression::TupleAccess(tuple_access) => {
                 self.compile_tuple_access(&tuple_access.tuple, tuple_access.index)
             },
+            Expression::ArrayAccess(array_access) => {
+                self.compile_array_access(&array_access.array, &array_access.index)
+            },
             Expression::Character(c) => {
                 let char_val = *c as u8;
                 Ok(format!("{}", char_val))
@@ -762,6 +765,27 @@ impl ExpressionCompiler {
         self.ir_buffer.push_str(&format!(
             "  {} = load i32, i32* {}, align 4\n",
             result_reg, field_ptr
+        ));
+        
+        Ok(result_reg)
+    }
+
+    fn compile_array_access(&mut self, array_expr: &Expression, index_expr: &Expression) -> Result<String, CursedError> {
+        let array_reg = self.compile_expression(array_expr)?;
+        let index_reg = self.compile_expression(index_expr)?;
+        
+        // Get pointer to the array element using GEP
+        let element_ptr = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  {} = getelementptr inbounds [0 x i32], [0 x i32]* {}, i32 0, i32 {}\n",
+            element_ptr, array_reg, index_reg
+        ));
+        
+        // Load the value from the array element
+        let result_reg = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  {} = load i32, i32* {}, align 4\n",
+            result_reg, element_ptr
         ));
         
         Ok(result_reg)

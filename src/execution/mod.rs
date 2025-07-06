@@ -706,6 +706,9 @@ impl CursedExecutionEngine {
             Expression::TupleAccess(tuple_access) => {
                 self.evaluate_tuple_access(tuple_access, context)
             },
+            Expression::ArrayAccess(array_access) => {
+                self.evaluate_array_access(array_access, context)
+            },
         }
     }
     
@@ -1268,6 +1271,37 @@ impl CursedExecutionEngine {
             },
             _ => Err(CursedError::RuntimeError(
                 "Cannot access tuple element on non-tuple value".to_string()
+            )),
+        }
+    }
+
+    fn evaluate_array_access(&mut self, array_access: &crate::ast::ArrayAccessExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let array_value = self.evaluate_expression(&array_access.array, context)?;
+        let index_value = self.evaluate_expression(&array_access.index, context)?;
+        
+        let index = match index_value {
+            CursedValue::Integer(i) => {
+                if i < 0 {
+                    return Err(CursedError::RuntimeError(format!("Array index cannot be negative: {}", i)));
+                }
+                i as usize
+            },
+            _ => return Err(CursedError::RuntimeError("Array index must be an integer".to_string())),
+        };
+        
+        match array_value {
+            CursedValue::Array(ref elements) => {
+                if index < elements.len() {
+                    Ok(elements[index].clone())
+                } else {
+                    Err(CursedError::RuntimeError(format!(
+                        "Array index {} out of bounds for array with {} elements",
+                        index, elements.len()
+                    )))
+                }
+            },
+            _ => Err(CursedError::RuntimeError(
+                "Cannot access array element on non-array value".to_string()
             )),
         }
     }

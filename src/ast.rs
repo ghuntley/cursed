@@ -71,6 +71,7 @@ pub enum Expression {
     Lambda(LambdaExpression),
     Tuple(TupleExpression),
     TupleAccess(TupleAccessExpression),
+    ArrayAccess(ArrayAccessExpression),
 }
 
 /// Binary expression
@@ -127,6 +128,13 @@ pub struct TupleExpression {
 pub struct TupleAccessExpression {
     pub tuple: Box<Expression>,
     pub index: usize,
+}
+
+/// Array access expression (e.g., array[0], array[index])
+#[derive(Debug, Clone)]
+pub struct ArrayAccessExpression {
+    pub array: Box<Expression>,
+    pub index: Box<Expression>,
 }
 
 /// Visibility level for symbols

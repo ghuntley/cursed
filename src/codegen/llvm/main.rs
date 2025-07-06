@@ -1813,6 +1813,7 @@ impl LlvmCodeGenerator {
             Expression::Unary(_) => Ok("i32".to_string()), // Default for now
             Expression::Call(_) => Ok("i32".to_string()), // Default for now
             Expression::Literal(lit) => self.infer_literal_type(lit),
+            Expression::ArrayAccess(_) => Ok("i32".to_string()), // Array element type
             _ => Ok("i32".to_string()), // Default fallback
         }
     }
