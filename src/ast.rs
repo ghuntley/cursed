@@ -55,6 +55,7 @@ pub enum Expression {
     Float(f64),
     String(String),
     Boolean(bool),
+    Character(char),
     Binary(BinaryExpression),
     Call(CallExpression),
     MemberAccess(MemberAccessExpression),
@@ -454,6 +455,7 @@ pub enum Type {
     Normie,              // Standard/basic integer type (normie)
     Tea,                 // String/information type (tea)
     Lit,                 // Boolean/truth type (lit)
+    Sip,                 // Character type (sip)
     Squad(Box<Type>),    // Array/collection type (squad)
     Collab(String),      // Interface type (collab)
     Dm(Box<Type>),       // Channel type (dm<T>)

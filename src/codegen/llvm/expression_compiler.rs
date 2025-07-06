@@ -85,6 +85,10 @@ impl ExpressionCompiler {
             Expression::TupleAccess(tuple_access) => {
                 self.compile_tuple_access(&tuple_access.tuple, tuple_access.index)
             },
+            Expression::Character(c) => {
+                let char_val = *c as u8;
+                Ok(format!("{}", char_val))
+            },
 
         }
     }

@@ -17,6 +17,7 @@ pub enum Type {
     Normie,              // Standard/basic integer type (normie)
     Tea,                 // String/information type (tea)
     Lit,                 // Boolean/truth type (lit)
+    Sip,                 // Character type (sip)
     Squad(Box<Type>),    // Array/collection type (squad)
     Collab(String),      // Interface type (collab)
     Dm(Box<Type>),       // Channel type (dm<T>)
@@ -46,6 +47,7 @@ impl TypeChecker {
         match expression {
             "true" | "false" => Ok(Type::Bool),
             s if s.starts_with('"') && s.ends_with('"') => Ok(Type::String),
+            s if s.starts_with('\'') && s.ends_with('\'') && s.len() == 3 => Ok(Type::Sip), // Character literal
             s if s.parse::<i64>().is_ok() => Ok(Type::Int),
             s if s.parse::<f64>().is_ok() => Ok(Type::Float),
             _ => Ok(Type::Unknown),

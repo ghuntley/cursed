@@ -282,6 +282,7 @@ impl CursedExecutionEngine {
             Expression::Float(f) => f.to_string(),
             Expression::String(s) => format!("\"{}\"", s),
             Expression::Boolean(b) => b.to_string(),
+            Expression::Character(c) => format!("'{}'", c),
             Expression::Identifier(name) => name.clone(),
             Expression::Literal(lit) => {
                 match lit {
@@ -349,6 +350,7 @@ impl CursedExecutionEngine {
                 format!("({})", element_strs.join(", "))
             },
             CursedValue::Nil => "nil".to_string(),
+            CursedValue::Character(c) => format!("'{}'", c),
         }
     }
     
@@ -605,6 +607,7 @@ impl CursedExecutionEngine {
             Expression::Float(f) => Ok(CursedValue::Float(*f)),
             Expression::String(s) => Ok(CursedValue::String(s.clone())),
             Expression::Boolean(b) => Ok(CursedValue::Boolean(*b)),
+            Expression::Character(c) => Ok(CursedValue::Character(*c)),
             Expression::Identifier(name) => {
                 context.get_variable(name)
                     .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)))
@@ -895,6 +898,33 @@ impl CursedExecutionEngine {
                     _ => Err(CursedError::RuntimeError(format!("Unsupported float-integer operator: {}", operator))),
                 }
             },
+            // String + Character concatenation
+            (CursedValue::String(l), CursedValue::Character(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported string-character operator: {}", operator))),
+                }
+            },
+            // Character + String concatenation
+            (CursedValue::Character(l), CursedValue::String(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported character-string operator: {}", operator))),
+                }
+            },
+            // Character + Character operations
+            (CursedValue::Character(l), CursedValue::Character(r)) => {
+                match operator {
+                    "+" => Ok(CursedValue::String(format!("{}{}", l, r))), // Concatenation creates string
+                    "==" => Ok(CursedValue::Boolean(l == r)),
+                    "!=" => Ok(CursedValue::Boolean(l != r)),
+                    "<" => Ok(CursedValue::Boolean(l < r)),
+                    ">" => Ok(CursedValue::Boolean(l > r)),
+                    "<=" => Ok(CursedValue::Boolean(l <= r)),
+                    ">=" => Ok(CursedValue::Boolean(l >= r)),
+                    _ => Err(CursedError::RuntimeError(format!("Unsupported character operator: {}", operator))),
+                }
+            },
             _ => Err(CursedError::RuntimeError(format!("Type mismatch in binary operation: {:?} {} {:?}", left, operator, right))),
         }
     }
@@ -1085,6 +1115,7 @@ impl CursedExecutionEngine {
             CursedValue::Lambda(_) => true, // Lambdas are always truthy when they exist
             CursedValue::Tuple(elements) => !elements.is_empty(), // Tuples are truthy if they have elements
             CursedValue::Nil => false,
+            CursedValue::Character(c) => *c != '\0', // Characters are truthy unless null character
         }
     }
     
@@ -1237,6 +1268,7 @@ pub enum CursedValue {
     Float(f64),
     String(String),
     Boolean(bool),
+    Character(char),
     Channel(Arc<SimpleChannel<CursedValue>>),
     Struct(std::collections::HashMap<String, CursedValue>),
     Lambda(LambdaValue),
@@ -1294,6 +1326,7 @@ impl ValueManager {
                 format!("({})", element_strs.join(", "))
             },
             CursedValue::Nil => "nil".to_string(),
+            CursedValue::Character(c) => format!("'{}'", c),
         }
     }
     
