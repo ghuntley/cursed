@@ -76,6 +76,7 @@ pub enum TokenKind {
     Select,      // select statement
     LeftArrow,   // <- channel operator
     Arrow,       // -> return type arrow
+    Later,       // later (defer statement)
     
     // Visibility modifiers
     Spill,       // pub (public)
@@ -585,6 +586,7 @@ impl Lexer {
             "main_character" => TokenKind::MainCharacter,
             "dm" => TokenKind::Dm,
             "select" => TokenKind::Select,
+            "later" => TokenKind::Later,
             
             // Visibility modifiers
             "spill" => TokenKind::Spill,

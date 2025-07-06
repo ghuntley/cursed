@@ -44,6 +44,7 @@ pub enum Statement {
     Interface(InterfaceStatement),
     Panic(PanicStatement),
     Catch(CatchStatement),
+    Defer(DeferStatement),
 }
 
 /// Expression types
@@ -423,6 +424,18 @@ impl CatchStatement {
     pub fn with_error_var(mut self, error_variable: String) -> Self {
         self.error_variable = Some(error_variable);
         self
+    }
+}
+
+/// Defer statement for deferred execution (later expression)
+#[derive(Debug, Clone)]
+pub struct DeferStatement {
+    pub expression: Box<Expression>,
+}
+
+impl DeferStatement {
+    pub fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
     }
 }
 
