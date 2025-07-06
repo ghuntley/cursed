@@ -1292,6 +1292,9 @@ impl Parser {
             TokenKind::PipePipe => {
                 self.parse_lambda_expression()
             },
+            TokenKind::LeftBracket => {
+                self.parse_array_literal()
+            },
             _ => Err(CursedError::syntax_error("Expected expression")),
         }
     }
@@ -1478,6 +1481,40 @@ impl Parser {
             struct_name,
             fields,
         }))
+    }
+
+    fn parse_array_literal(&mut self) -> Result<Expression, CursedError> {
+        self.consume(TokenKind::LeftBracket, "Expected '[' for array literal")?;
+        let mut elements = Vec::new();
+        
+        // Handle empty array literal []
+        if self.check(&TokenKind::RightBracket) {
+            self.advance();
+            return Ok(Expression::Array(elements));
+        }
+        
+        // Parse array elements
+        loop {
+            self.skip_newlines(); // Allow newlines between elements
+            
+            let element = self.parse_expression()?;
+            elements.push(element);
+            
+            self.skip_newlines(); // Allow newlines after elements
+            
+            if self.match_tokens(&[TokenKind::Comma]) {
+                // Continue parsing next element
+                continue;
+            } else if self.check(&TokenKind::RightBracket) {
+                break;
+            } else {
+                return Err(CursedError::syntax_error("Expected ',' or ']' in array literal"));
+            }
+        }
+        
+        self.consume(TokenKind::RightBracket, "Expected ']' to close array literal")?;
+        
+        Ok(Expression::Array(elements))
     }
 
     fn parse_interface_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::InterfaceStatement, CursedError> {
