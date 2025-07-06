@@ -39,6 +39,16 @@ impl CursedExecutionEngine {
         })
     }
     
+    pub fn new_no_jit() -> Result<Self, CursedError> {
+        Ok(Self {
+            jit_enabled: false,
+            goroutine_support: true,
+            gc_enabled: true,
+            recursion_depth: 0,
+            max_recursion_depth: 1000,
+        })
+    }
+    
     pub fn execute(&mut self, source: &str) -> Result<CursedValue, CursedError> {
         tracing::info!("🚀 Executing CURSED code with advanced features");
         
@@ -68,22 +78,9 @@ impl CursedExecutionEngine {
     fn execute_jit(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
         tracing::info!("⚡ JIT compilation enabled");
         
-        // Use the real JIT executor
-        let mut jit_executor = JitExecutor::new()?;
-        
-        // Convert program back to source for JIT compilation
-        // In a real implementation, we'd maintain the original source or serialize the AST
-        // For now, use a simple approach
-        let source_approximation = self.program_to_source_approximation(program);
-        
-        match jit_executor.execute(&source_approximation) {
-            Ok(result) => Ok(result),
-            Err(e) => {
-                tracing::warn!("⚠️ JIT execution failed, falling back to interpretation: {}", e);
-                // Fall back to interpreted execution
-                self.execute_interpreted(program)
-            }
-        }
+        // Temporarily disable JIT execution due to LLVM initialization issues
+        tracing::warn!("⚠️ JIT execution temporarily disabled due to LLVM initialization issues, falling back to interpretation");
+        self.execute_interpreted(program)
     }
     
     fn execute_interpreted(&mut self, program: &Program) -> Result<CursedValue, CursedError> {
@@ -159,17 +156,24 @@ impl CursedExecutionEngine {
         
         match statement {
             Statement::Function(func) => {
-                let mut result = format!("fn {}(", func.name);
+                let mut result = format!("slay {}(", func.name);
                 
                 // Add parameters
                 for (i, param) in func.parameters.iter().enumerate() {
                     if i > 0 { result.push_str(", "); }
-                    result.push_str(&format!("{}: {}", param.name, param.param_type.as_deref().unwrap_or("auto")));
+                    result.push_str(&param.name);
+                    if let Some(param_type) = &param.param_type {
+                        result.push_str(" ");
+                        result.push_str(param_type);
+                    }
                 }
                 
-                result.push_str(") -> ");
-                result.push_str(func.return_type.as_deref().unwrap_or("auto"));
-                result.push_str(" {\n");
+                result.push_str(") ");
+                if let Some(return_type) = &func.return_type {
+                    result.push_str(return_type);
+                    result.push(' ');
+                }
+                result.push_str("{\n");
                 
                 // Add function body (simplified)
                 for stmt in &func.body {

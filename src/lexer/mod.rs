@@ -182,7 +182,15 @@ impl Lexer {
                 }
             },
             '/' => {
-                if self.match_char('=') {
+                if self.match_char('/') {
+                    // Line comment - skip to end of line
+                    self.skip_line_comment();
+                    return self.next_token();
+                } else if self.match_char('*') {
+                    // Block comment - skip to */
+                    self.skip_c_style_block_comment()?;
+                    return self.next_token();
+                } else if self.match_char('=') {
                     Ok(self.make_token(TokenKind::SlashEqual, "/=".to_string(), start_column))
                 } else {
                     Ok(self.make_token(TokenKind::Slash, "/".to_string(), start_column))
@@ -375,6 +383,24 @@ impl Lexer {
         }
         
         Err(CursedError::syntax_error("Unterminated block comment (missing 'on god')"))
+    }
+    
+    fn skip_c_style_block_comment(&mut self) -> Result<(), CursedError> {
+        // Skip until we find "*/"
+        while !self.is_at_end() {
+            if self.peek() == '*' && self.peek_next() == '/' {
+                self.advance(); // consume '*'
+                self.advance(); // consume '/'
+                return Ok(());
+            }
+            if self.peek() == '\n' {
+                self.line += 1;
+                self.column = 1;
+            }
+            self.advance();
+        }
+        
+        Err(CursedError::syntax_error("Unterminated block comment (missing '*/')"))
     }
     
     fn match_keyword_sequence(&mut self, keyword: &str) -> bool {
@@ -943,5 +969,90 @@ slay main() {
         assert_eq!(tokens[0].lexeme, "fr");
         assert_eq!(tokens[4].kind, TokenKind::Identifier);
         assert_eq!(tokens[4].lexeme, "no");
+    }
+
+    #[test]
+    fn test_c_style_comments() {
+        // Test C-style line comments
+        let mut lexer = Lexer::new("// This is a line comment\nslay hello()".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+        // Should have: newline, slay, hello, (, ), EOF (comments are skipped but newline remains)
+        assert_eq!(tokens.len(), 6);
+        assert_eq!(tokens[0].kind, TokenKind::Newline);
+        assert_eq!(tokens[1].kind, TokenKind::Slay);
+        assert_eq!(tokens[2].kind, TokenKind::Identifier);
+        assert_eq!(tokens[2].lexeme, "hello");
+        
+        // Test C-style block comments
+        let mut lexer = Lexer::new("slay test()\n/* This is a block comment\nthat spans multiple lines */\nyolo 42".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+        // Should have: slay, test, (, ), newline, newline, yolo, 42, EOF (block comment is skipped)
+        assert_eq!(tokens.len(), 9);
+        assert_eq!(tokens[0].kind, TokenKind::Slay);
+        assert_eq!(tokens[1].kind, TokenKind::Identifier);
+        assert_eq!(tokens[1].lexeme, "test");
+        assert_eq!(tokens[6].kind, TokenKind::Yolo);
+        assert_eq!(tokens[7].kind, TokenKind::Number);
+        assert_eq!(tokens[7].lexeme, "42");
+    }
+
+    #[test]
+    fn test_mixed_comment_styles() {
+        // Test that both C-style and CURSED-style comments work together
+        let code = r#"
+// C-style line comment
+slay test() {
+    /* C-style block comment */
+    sus x = 42;
+    fr fr CURSED line comment
+    no cap
+    CURSED block comment
+    on god
+    yolo x;
+}
+"#;
+        let mut lexer = Lexer::new(code.to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+        // Verify key tokens are present and comments are properly skipped
+        let token_lexemes: Vec<String> = tokens.iter().map(|t| t.lexeme.clone()).collect();
+        assert!(token_lexemes.contains(&"slay".to_string()));
+        assert!(token_lexemes.contains(&"test".to_string()));
+        assert!(token_lexemes.contains(&"sus".to_string()));
+        assert!(token_lexemes.contains(&"x".to_string()));
+        assert!(token_lexemes.contains(&"42".to_string()));
+        assert!(token_lexemes.contains(&"yolo".to_string()));
+        
+        // Verify comments are not present as tokens
+        assert!(!token_lexemes.contains(&"C-style".to_string()));
+        assert!(!token_lexemes.contains(&"CURSED".to_string()));
+        assert!(!token_lexemes.contains(&"block".to_string()));
+        assert!(!token_lexemes.contains(&"comment".to_string()));
+    }
+
+    #[test]
+    fn test_slash_not_tokenized_as_separate_slashes() {
+        // Test that // is properly handled as comment start, not as two slash tokens
+        let mut lexer = Lexer::new("x = 5 // comment\ny = 10".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+        // Should have: x, =, 5, newline, y, =, 10, EOF
+        // No separate slash tokens should be present
+        assert_eq!(tokens.len(), 8);
+        
+        let slash_tokens: Vec<&Token> = tokens.iter().filter(|t| t.kind == TokenKind::Slash).collect();
+        assert_eq!(slash_tokens.len(), 0, "Found unexpected slash tokens: {:?}", slash_tokens);
+        
+        // Verify the expected tokens are there
+        assert_eq!(tokens[0].lexeme, "x");
+        assert_eq!(tokens[1].kind, TokenKind::Equal);
+        assert_eq!(tokens[2].lexeme, "5");
+        assert_eq!(tokens[3].kind, TokenKind::Newline);
+        assert_eq!(tokens[4].lexeme, "y");
+        assert_eq!(tokens[5].kind, TokenKind::Equal);
+        assert_eq!(tokens[6].lexeme, "10");
+        assert_eq!(tokens[7].kind, TokenKind::Eof);
     }
 }
