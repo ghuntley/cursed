@@ -575,8 +575,8 @@ impl DebugManager {
     /// Infer variable type from its string representation
     fn infer_variable_type(&self, value: &str) -> String {
         // Simple type inference based on value patterns
-        if value == "based" || value == "lies" {
-            "truth".to_string() // CURSED boolean type
+        if value == "based" || value == "sus" {
+            "lit".to_string() // CURSED boolean type
         } else if value.chars().all(|c| c.is_ascii_digit()) {
             "normie".to_string() // CURSED integer type
         } else if value.contains('.') && value.chars().all(|c| c.is_ascii_digit() || c == '.') {

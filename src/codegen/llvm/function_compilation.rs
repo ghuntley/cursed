@@ -1078,11 +1078,7 @@ impl FunctionCompiler {
             "lit" => "i1".to_string(),          // lit = bool
             "cap" => "i8*".to_string(),         // cap = string
             "dm" => "i8*".to_string(),          // dm = string
-            "truth" => "i1".to_string(),        // truth = bool
-            "lies" => "i1".to_string(),         // lies = bool
-            "based" => "i1".to_string(),        // based = bool
             "facts" => "i32".to_string(),       // facts = i32 (immutable)
-            "sus" => "i32".to_string(),         // sus = i32 (mutable)
             _ => "i8*".to_string(), // Default to pointer for complex types
         }
     }
