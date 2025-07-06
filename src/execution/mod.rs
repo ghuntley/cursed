@@ -796,9 +796,20 @@ impl CursedExecutionEngine {
                     .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)))
             },
             Expression::Binary(binary_expr) => {
-                let left = self.evaluate_expression(&binary_expr.left, context)?;
-                let right = self.evaluate_expression(&binary_expr.right, context)?;
-                self.apply_binary_operator(&left, &binary_expr.operator, &right)
+                if binary_expr.operator == "=" {
+                    // Handle assignment
+                    if let Expression::Identifier(var_name) = &*binary_expr.left {
+                        let value = self.evaluate_expression(&binary_expr.right, context)?;
+                        context.set_variable(var_name.clone(), value.clone());
+                        Ok(value)
+                    } else {
+                        Err(CursedError::RuntimeError("Invalid assignment target".to_string()))
+                    }
+                } else {
+                    let left = self.evaluate_expression(&binary_expr.left, context)?;
+                    let right = self.evaluate_expression(&binary_expr.right, context)?;
+                    self.apply_binary_operator(&left, &binary_expr.operator, &right)
+                }
             },
             Expression::Call(call_expr) => {
                 self.evaluate_call(call_expr, context)
@@ -854,6 +865,9 @@ impl CursedExecutionEngine {
             Expression::ArrayAccess(array_access) => {
                 self.evaluate_array_access(array_access, context)
             },
+            Expression::SliceAccess(slice_access) => {
+                self.evaluate_slice_access(slice_access, context)
+            },
             Expression::TypeAssertion(type_assertion) => {
                 self.evaluate_type_assertion(type_assertion, context)
             },
@@ -862,6 +876,56 @@ impl CursedExecutionEngine {
                 context.get_variable(name)
                     .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)))
             },
+            Expression::Increment(inc_expr) => {
+                self.evaluate_increment_expression(inc_expr, context)
+            },
+            Expression::Decrement(dec_expr) => {
+                self.evaluate_decrement_expression(dec_expr, context)
+            },
+        }
+    }
+    
+    /// Evaluate increment expression (++variable or variable++)
+    fn evaluate_increment_expression(&mut self, inc_expr: &crate::ast::IncrementExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let current_value = context.get_variable(&inc_expr.variable)
+            .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", inc_expr.variable)))?;
+        
+        let incremented = match current_value {
+            CursedValue::Integer(i) => CursedValue::Integer(i + 1),
+            CursedValue::Float(f) => CursedValue::Float(f + 1.0),
+            _ => return Err(CursedError::RuntimeError(format!("Cannot increment non-numeric value: {}", current_value.type_name()))),
+        };
+        
+        context.set_variable(inc_expr.variable.clone(), incremented.clone());
+        
+        if inc_expr.is_prefix {
+            // Prefix increment: return the new value
+            Ok(incremented)
+        } else {
+            // Postfix increment: return the old value
+            Ok(current_value)
+        }
+    }
+    
+    /// Evaluate decrement expression (--variable or variable--)
+    fn evaluate_decrement_expression(&mut self, dec_expr: &crate::ast::DecrementExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let current_value = context.get_variable(&dec_expr.variable)
+            .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", dec_expr.variable)))?;
+        
+        let decremented = match current_value {
+            CursedValue::Integer(i) => CursedValue::Integer(i - 1),
+            CursedValue::Float(f) => CursedValue::Float(f - 1.0),
+            _ => return Err(CursedError::RuntimeError(format!("Cannot decrement non-numeric value: {}", current_value.type_name()))),
+        };
+        
+        context.set_variable(dec_expr.variable.clone(), decremented.clone());
+        
+        if dec_expr.is_prefix {
+            // Prefix decrement: return the new value
+            Ok(decremented)
+        } else {
+            // Postfix decrement: return the old value
+            Ok(current_value)
         }
     }
     
@@ -1585,6 +1649,79 @@ impl CursedExecutionEngine {
                 "Cannot access array element on non-array value".to_string()
             )),
         }
+    }
+
+    /// Evaluate slice access expression (array[start:end])
+    fn evaluate_slice_access(&mut self, slice_access: &crate::ast::SliceAccessExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let array_value = self.evaluate_expression(&slice_access.array, context)?;
+        
+        // Get the array elements
+        let elements = match array_value {
+            CursedValue::Array(ref elements) => elements,
+            _ => return Err(CursedError::RuntimeError(
+                "Cannot slice non-array value".to_string()
+            )),
+        };
+        
+        let len = elements.len();
+        
+        // Evaluate start index (defaults to 0)
+        let start = if let Some(ref start_expr) = slice_access.start {
+            let start_value = self.evaluate_expression(start_expr, context)?;
+            match start_value {
+                CursedValue::Integer(i) => {
+                    if i < 0 {
+                        return Err(CursedError::RuntimeError(format!("Slice start index cannot be negative: {}", i)));
+                    }
+                    i as usize
+                },
+                _ => return Err(CursedError::RuntimeError("Slice start index must be an integer".to_string())),
+            }
+        } else {
+            0
+        };
+        
+        // Evaluate end index (defaults to array length)
+        let end = if let Some(ref end_expr) = slice_access.end {
+            let end_value = self.evaluate_expression(end_expr, context)?;
+            match end_value {
+                CursedValue::Integer(i) => {
+                    if i < 0 {
+                        return Err(CursedError::RuntimeError(format!("Slice end index cannot be negative: {}", i)));
+                    }
+                    i as usize
+                },
+                _ => return Err(CursedError::RuntimeError("Slice end index must be an integer".to_string())),
+            }
+        } else {
+            len
+        };
+        
+        // Bounds checking
+        if start > len {
+            return Err(CursedError::RuntimeError(format!(
+                "Slice start index {} out of bounds for array with {} elements",
+                start, len
+            )));
+        }
+        
+        if end > len {
+            return Err(CursedError::RuntimeError(format!(
+                "Slice end index {} out of bounds for array with {} elements",
+                end, len
+            )));
+        }
+        
+        if start > end {
+            return Err(CursedError::RuntimeError(format!(
+                "Slice start index {} cannot be greater than end index {}",
+                start, end
+            )));
+        }
+        
+        // Create the slice
+        let slice_elements = elements[start..end].to_vec();
+        Ok(CursedValue::Array(slice_elements))
     }
 
     /// Evaluate type assertion expression (value.(type))

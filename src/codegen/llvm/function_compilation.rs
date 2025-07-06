@@ -493,6 +493,9 @@ impl FunctionCompiler {
             Expression::ArrayAccess(array_access_expr) => {
                 self.compile_array_access(&array_access_expr.array, &array_access_expr.index)
             },
+            Expression::SliceAccess(slice_access_expr) => {
+                self.compile_slice_access(&slice_access_expr.array, &slice_access_expr.start, &slice_access_expr.end)
+            },
             Expression::Tuple(tuple_expr) => {
                 self.compile_tuple_literal(&tuple_expr.elements)
             },
@@ -897,6 +900,10 @@ impl FunctionCompiler {
                 // Array access returns the element type (for now, assume i32)
                 Ok("i32".to_string())
             },
+            Expression::SliceAccess(_) => {
+                // Slice access returns a pointer to a new array
+                Ok("[0 x i32]*".to_string())
+            },
             Expression::Tuple(tuple_expr) => {
                 // Tuple type: {type1, type2, type3, ...}*
                 let mut element_types = Vec::new();
@@ -1222,6 +1229,49 @@ impl FunctionCompiler {
         ));
         
         Ok(element_value_reg)
+    }
+
+    /// Compile slice access expression: array[start:end]
+    fn compile_slice_access(
+        &mut self, 
+        array_expr: &Expression, 
+        start_expr: &Option<Box<Expression>>, 
+        end_expr: &Option<Box<Expression>>
+    ) -> Result<String, CursedError> {
+        // Get the array register
+        let array_reg = self.compile_expression(array_expr)?;
+        
+        // Get start index (default to 0)
+        let start_reg = if let Some(ref start_expr) = start_expr {
+            self.compile_expression(start_expr)?
+        } else {
+            let zero_reg = self.next_register();
+            self.ir_code.push_str(&format!("  {} = add i32 0, 0\n", zero_reg));
+            zero_reg
+        };
+        
+        // Get end index (default to array length - simplified for now)
+        let end_reg = if let Some(ref end_expr) = end_expr {
+            self.compile_expression(end_expr)?
+        } else {
+            // For now, use a placeholder value - in a full implementation,
+            // we'd need to track array lengths
+            let length_reg = self.next_register();
+            self.ir_code.push_str(&format!("  {} = add i32 0, 5 ; placeholder array length\n", length_reg));
+            length_reg
+        };
+        
+        // For this simplified implementation, we'll create a comment about the slice
+        // and return the original array (a full implementation would create a new slice)
+        let comment_reg = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  ; Slice operation: array {} from {} to {} - returning original array for now\n",
+            array_reg, start_reg, end_reg
+        ));
+        
+        // Return the original array register for now
+        // In a full implementation, we'd allocate a new array and copy elements
+        Ok(array_reg)
     }
 
     /// Compile tuple literal: (val1, val2, val3)

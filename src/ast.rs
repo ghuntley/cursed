@@ -72,13 +72,16 @@ pub enum Expression {
     Map(Vec<(Expression, Expression)>),
     ChannelSend(ChannelSendExpression),
     ChannelReceive(ChannelReceiveExpression),
-    ChannelCreation(ChannelCreationExpression),
+    ChannelCreation(Box<ChannelCreationExpression>),
     StructLiteral(StructLiteralExpression),
     Lambda(LambdaExpression),
     Tuple(TupleExpression),
     TupleAccess(TupleAccessExpression),
     ArrayAccess(ArrayAccessExpression),
+    SliceAccess(SliceAccessExpression),
     TypeAssertion(TypeAssertionExpression),
+    Increment(IncrementExpression),
+    Decrement(DecrementExpression),
 }
 
 /// Binary expression
@@ -144,6 +147,14 @@ pub struct ArrayAccessExpression {
     pub index: Box<Expression>,
 }
 
+/// Slice access expression (e.g., array[i:j], array[i:], array[:j], array[:])
+#[derive(Debug, Clone)]
+pub struct SliceAccessExpression {
+    pub array: Box<Expression>,
+    pub start: Option<Box<Expression>>,
+    pub end: Option<Box<Expression>>,
+}
+
 /// Type assertion expression (e.g., value.(Type))
 #[derive(Debug, Clone)]
 pub struct TypeAssertionExpression {
@@ -168,6 +179,20 @@ impl TypeAssertionExpression {
             is_safe: true,
         }
     }
+}
+
+/// Increment expression (++variable or variable++)
+#[derive(Debug, Clone)]
+pub struct IncrementExpression {
+    pub variable: String,
+    pub is_prefix: bool,
+}
+
+/// Decrement expression (--variable or variable--)
+#[derive(Debug, Clone)]
+pub struct DecrementExpression {
+    pub variable: String,
+    pub is_prefix: bool,
 }
 
 /// Visibility level for symbols
@@ -338,7 +363,7 @@ pub struct ChannelReceiveExpression {
 /// Channel creation expression (dm type())
 #[derive(Debug, Clone)]
 pub struct ChannelCreationExpression {
-    pub element_type: Type,
+    pub element_type: Box<Type>,
     pub capacity: Option<Box<Expression>>,
 }
 
@@ -607,7 +632,7 @@ impl ShortDeclarationStatement {
 }
 
 /// Type annotations
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Type {
     Integer,
     Float,
@@ -615,7 +640,7 @@ pub enum Type {
     Boolean,
     Void,
     Function(Vec<Type>, Box<Type>),
-    Array(Box<Type>, Option<usize>),  // Array type with optional size [N]T
+    Array(Box<Type>, Option<Box<Expression>>),  // Array type with optional size [N]T
     Slice(Box<Type>),                 // Slice type []T
     Custom(String),
     // CURSED-specific types
@@ -638,6 +663,22 @@ pub enum Type {
     Pointer(Box<Type>),  // Pointer type (@T)
 }
 
+/// Helper function to convert Expression to string representation
+fn expression_to_string(expr: &Expression) -> String {
+    match expr {
+        Expression::Integer(n) => n.to_string(),
+        Expression::Variable(name) => name.clone(),
+        Expression::Identifier(name) => name.clone(),
+        Expression::Binary(bin) => {
+            format!("({} {} {})", 
+                expression_to_string(&bin.left),
+                bin.operator,
+                expression_to_string(&bin.right))
+        }
+        _ => format!("{{expr}}")
+    }
+}
+
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -656,7 +697,7 @@ impl std::fmt::Display for Type {
             }
             Type::Array(inner, size) => {
                 if let Some(size) = size {
-                    write!(f, "[{}]{}", size, inner)
+                    write!(f, "[{}]{}", expression_to_string(size), inner)
                 } else {
                     write!(f, "[]{}", inner)
                 }

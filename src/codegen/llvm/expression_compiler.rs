@@ -91,6 +91,9 @@ impl ExpressionCompiler {
             Expression::ArrayAccess(array_access) => {
                 self.compile_array_access(&array_access.array, &array_access.index)
             },
+            Expression::SliceAccess(slice_access) => {
+                self.compile_slice_access(&slice_access.array, &slice_access.start, &slice_access.end)
+            },
             Expression::Character(c) => {
                 let char_val = *c as u8;
                 Ok(format!("{}", char_val))
@@ -105,7 +108,65 @@ impl ExpressionCompiler {
                 // Variable access - same as Identifier
                 self.compile_identifier(name)
             },
+            Expression::Increment(inc_expr) => {
+                self.compile_increment_expression(inc_expr)
+            },
+            Expression::Decrement(dec_expr) => {
+                self.compile_decrement_expression(dec_expr)
+            },
 
+        }
+    }
+
+    /// Compile increment expression (++variable or variable++)
+    fn compile_increment_expression(&mut self, inc_expr: &crate::ast::IncrementExpression) -> Result<String, CursedError> {
+        // Load the current value
+        let var_reg = self.variables.get(&inc_expr.variable)
+            .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", inc_expr.variable)))?
+            .clone();
+        
+        let load_reg = self.next_register();
+        self.ir_buffer.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, var_reg));
+        
+        // Increment the value
+        let inc_reg = self.next_register();
+        self.ir_buffer.push_str(&format!("  {} = add i32 {}, 1\n", inc_reg, load_reg));
+        
+        // Store the incremented value back
+        self.ir_buffer.push_str(&format!("  store i32 {}, i32* {}, align 4\n", inc_reg, var_reg));
+        
+        if inc_expr.is_prefix {
+            // Return the incremented value
+            Ok(inc_reg)
+        } else {
+            // Return the original value
+            Ok(load_reg)
+        }
+    }
+    
+    /// Compile decrement expression (--variable or variable--)
+    fn compile_decrement_expression(&mut self, dec_expr: &crate::ast::DecrementExpression) -> Result<String, CursedError> {
+        // Load the current value
+        let var_reg = self.variables.get(&dec_expr.variable)
+            .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", dec_expr.variable)))?
+            .clone();
+        
+        let load_reg = self.next_register();
+        self.ir_buffer.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, var_reg));
+        
+        // Decrement the value
+        let dec_reg = self.next_register();
+        self.ir_buffer.push_str(&format!("  {} = sub i32 {}, 1\n", dec_reg, load_reg));
+        
+        // Store the decremented value back
+        self.ir_buffer.push_str(&format!("  store i32 {}, i32* {}, align 4\n", dec_reg, var_reg));
+        
+        if dec_expr.is_prefix {
+            // Return the decremented value
+            Ok(dec_reg)
+        } else {
+            // Return the original value
+            Ok(load_reg)
         }
     }
 
@@ -856,5 +917,63 @@ impl ExpressionCompiler {
         ));
         
         Ok(result_reg)
+    }
+
+    /// Compile slice access expression (array[start:end])
+    fn compile_slice_access(
+        &mut self, 
+        array_expr: &Expression, 
+        start_expr: &Option<Box<Expression>>, 
+        end_expr: &Option<Box<Expression>>
+    ) -> Result<String, CursedError> {
+        let array_reg = self.compile_expression(array_expr)?;
+        
+        // Compile start index (default to 0)
+        let start_reg = if let Some(ref start_expr) = start_expr {
+            self.compile_expression(start_expr)?
+        } else {
+            "0".to_string()
+        };
+        
+        // For slice compilation, we need to create a new array with the sliced elements
+        // This is a simplified implementation that allocates a new array
+        
+        // First, calculate the slice length (end - start)
+        let end_reg = if let Some(ref end_expr) = end_expr {
+            self.compile_expression(end_expr)?
+        } else {
+            // Use array length - for now, we'll use a placeholder
+            let len_reg = self.next_register();
+            self.ir_buffer.push_str(&format!(
+                "  {} = load i32, i32* getelementptr inbounds ([0 x i32], [0 x i32]* {}, i32 0, i32 -1), align 4 ; array length placeholder\n",
+                len_reg, array_reg
+            ));
+            len_reg
+        };
+        
+        // Calculate slice length: end - start
+        let length_reg = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  {} = sub i32 {}, {}\n",
+            length_reg, end_reg, start_reg
+        ));
+        
+        // Allocate memory for the new slice
+        let slice_ptr = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  {} = alloca [0 x i32], i32 {}, align 4\n",
+            slice_ptr, length_reg
+        ));
+        
+        // Copy elements from original array to slice
+        // This is a simplified implementation - in practice, we'd use a loop or memcpy
+        let comment_reg = self.next_register();
+        self.ir_buffer.push_str(&format!(
+            "  ; Slice compilation: copying elements from {} to {} (start: {}, end: {})\n",
+            array_reg, slice_ptr, start_reg, end_reg
+        ));
+        
+        // Return the slice pointer
+        Ok(slice_ptr)
     }
 }

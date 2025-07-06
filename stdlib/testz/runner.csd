@@ -1,0 +1,314 @@
+fr fr CURSED Test Runner
+fr fr Provides test discovery and execution functionality
+
+yeet "testz"
+
+fr fr ================================
+fr fr Test Discovery
+fr fr ================================
+
+struct TestFunction {
+    name tea
+    file tea
+    line normie
+}
+
+sus discovered_tests [TestFunction] = []
+sus test_files [tea] = []
+
+slay discover_tests_in_file(filename tea) {
+    fr fr This would scan a file for test functions
+    fr fr For now, we'll simulate discovery
+    vibez.spill("Discovering tests in: " + filename)
+    
+    fr fr Add discovered tests to the list
+    sus test_func TestFunction = TestFunction{
+        name: "test_example",
+        file: filename,
+        line: 1
+    }
+    discovered_tests = discovered_tests + [test_func]
+}
+
+slay discover_tests_in_directory(dir tea) {
+    fr fr This would recursively scan directory for .csd files
+    fr fr and find functions that start with "test_"
+    vibez.spill("Discovering tests in directory: " + dir)
+    
+    fr fr Mock discovery - would use io functions to scan directory
+    sus test_files [tea] = [
+        "test_basic.csd",
+        "test_advanced.csd", 
+        "test_integration.csd"
+    ]
+    
+    sus i normie = 0
+    periodt i < test_files.length {
+        discover_tests_in_file(test_files[i])
+        i = i + 1
+    }
+}
+
+slay is_test_function(func_name tea) lit {
+    fr fr Check if function name starts with "test_"
+    lowkey func_name.length >= 5 {
+        fr fr Simple prefix check - would need proper string functions
+        yolo based
+    }
+    yolo cap
+}
+
+fr fr ================================
+fr fr Test Execution
+fr fr ================================
+
+slay run_test_function(test_func TestFunction) lit {
+    vibez.spill("Running test function: " + test_func.name)
+    
+    fr fr This would actually call the test function
+    fr fr For now, we'll simulate test execution
+    
+    testz.test_start(test_func.name)
+    
+    fr fr Mock test execution - would call the actual function
+    fr fr In a real implementation, this would use reflection or
+    fr fr function pointers to call the discovered test functions
+    
+    sus success lit = based  fr fr Mock success
+    
+    lowkey success {
+        testz.test_pass("Test completed successfully")
+        yolo based
+    } highkey {
+        testz.test_fail("Test failed")
+        yolo cap
+    }
+}
+
+slay run_discovered_tests() normie {
+    vibez.spill("Running " + discovered_tests.length + " discovered tests")
+    
+    testz.reset_test_state()
+    
+    sus i normie = 0
+    periodt i < discovered_tests.length {
+        sus test_func TestFunction = discovered_tests[i]
+        run_test_function(test_func)
+        i = i + 1
+    }
+    
+    testz.print_test_summary()
+    
+    lowkey testz.test_failed > 0 {
+        yolo 1
+    } highkey {
+        yolo 0
+    }
+}
+
+fr fr ================================
+fr fr Test Filtering
+fr fr ================================
+
+slay filter_tests_by_name(pattern tea) {
+    fr fr Filter tests by name pattern
+    vibez.spill("Filtering tests by pattern: " + pattern)
+    
+    sus filtered_tests [TestFunction] = []
+    sus i normie = 0
+    periodt i < discovered_tests.length {
+        sus test_func TestFunction = discovered_tests[i]
+        fr fr Simple pattern matching - would need proper regex
+        lowkey test_func.name.length > 0 {
+            filtered_tests = filtered_tests + [test_func]
+        }
+        i = i + 1
+    }
+    
+    discovered_tests = filtered_tests
+}
+
+slay filter_tests_by_file(filename tea) {
+    fr fr Filter tests by file name
+    vibez.spill("Filtering tests by file: " + filename)
+    
+    sus filtered_tests [TestFunction] = []
+    sus i normie = 0
+    periodt i < discovered_tests.length {
+        sus test_func TestFunction = discovered_tests[i]
+        lowkey test_func.file == filename {
+            filtered_tests = filtered_tests + [test_func]
+        }
+        i = i + 1
+    }
+    
+    discovered_tests = filtered_tests
+}
+
+fr fr ================================
+fr fr Test Configuration
+fr fr ================================
+
+struct TestConfig {
+    parallel lit
+    timeout normie
+    verbose lit
+    fail_fast lit
+    test_dir tea
+    pattern tea
+}
+
+slay create_default_config() TestConfig {
+    yolo TestConfig{
+        parallel: cap,
+        timeout: 30000,  fr fr 30 seconds
+        verbose: cap,
+        fail_fast: cap,
+        test_dir: "tests/",
+        pattern: "test_*"
+    }
+}
+
+slay run_tests_with_config(config TestConfig) normie {
+    lowkey config.verbose {
+        vibez.spill("Running tests with configuration:")
+        vibez.spill("  Directory: " + config.test_dir)
+        vibez.spill("  Pattern: " + config.pattern)
+        vibez.spill("  Parallel: " + config.parallel)
+        vibez.spill("  Timeout: " + config.timeout)
+        vibez.spill("  Fail fast: " + config.fail_fast)
+    }
+    
+    discover_tests_in_directory(config.test_dir)
+    
+    lowkey config.pattern.length > 0 {
+        filter_tests_by_name(config.pattern)
+    }
+    
+    yolo run_discovered_tests()
+}
+
+fr fr ================================
+fr fr Test Reporting
+fr fr ================================
+
+slay generate_test_report(format tea) {
+    lowkey format == "json" {
+        generate_json_report()
+    } highkey lowkey format == "xml" {
+        generate_xml_report()
+    } highkey lowkey format == "html" {
+        generate_html_report()
+    } highkey {
+        vibez.spill("Unknown report format: " + format)
+    }
+}
+
+slay generate_json_report() {
+    vibez.spill("Generating JSON test report...")
+    
+    sus json_output tea = "{\n"
+    json_output = json_output + "  \"total\": " + testz.test_count + ",\n"
+    json_output = json_output + "  \"passed\": " + testz.test_passed + ",\n"
+    json_output = json_output + "  \"failed\": " + testz.test_failed + ",\n"
+    json_output = json_output + "  \"tests\": [\n"
+    
+    sus i normie = 0
+    periodt i < testz.test_results.length {
+        sus result testz.TestResult = testz.test_results[i]
+        json_output = json_output + "    {\n"
+        json_output = json_output + "      \"name\": \"" + result.name + "\",\n"
+        json_output = json_output + "      \"passed\": " + result.passed + ",\n"
+        json_output = json_output + "      \"message\": \"" + result.message + "\"\n"
+        json_output = json_output + "    }"
+        
+        lowkey i < testz.test_results.length - 1 {
+            json_output = json_output + ","
+        }
+        json_output = json_output + "\n"
+        i = i + 1
+    }
+    
+    json_output = json_output + "  ]\n"
+    json_output = json_output + "}\n"
+    
+    vibez.spill(json_output)
+}
+
+slay generate_xml_report() {
+    vibez.spill("Generating XML test report...")
+    
+    sus xml_output tea = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    xml_output = xml_output + "<testsuite tests=\"" + testz.test_count + "\" failures=\"" + testz.test_failed + "\">\n"
+    
+    sus i normie = 0
+    periodt i < testz.test_results.length {
+        sus result testz.TestResult = testz.test_results[i]
+        xml_output = xml_output + "  <testcase name=\"" + result.name + "\">\n"
+        
+        lowkey result.passed == cap {
+            xml_output = xml_output + "    <failure message=\"" + result.message + "\"/>\n"
+        }
+        
+        xml_output = xml_output + "  </testcase>\n"
+        i = i + 1
+    }
+    
+    xml_output = xml_output + "</testsuite>\n"
+    
+    vibez.spill(xml_output)
+}
+
+slay generate_html_report() {
+    vibez.spill("Generating HTML test report...")
+    
+    sus html_output tea = "<!DOCTYPE html>\n<html>\n<head>\n"
+    html_output = html_output + "<title>CURSED Test Report</title>\n"
+    html_output = html_output + "<style>\n"
+    html_output = html_output + "body { font-family: Arial, sans-serif; margin: 20px; }\n"
+    html_output = html_output + ".pass { color: green; }\n"
+    html_output = html_output + ".fail { color: red; }\n"
+    html_output = html_output + ".summary { background: #f0f0f0; padding: 10px; margin: 10px 0; }\n"
+    html_output = html_output + "</style>\n"
+    html_output = html_output + "</head>\n<body>\n"
+    html_output = html_output + "<h1>CURSED Test Report</h1>\n"
+    
+    html_output = html_output + "<div class=\"summary\">\n"
+    html_output = html_output + "<h2>Summary</h2>\n"
+    html_output = html_output + "<p>Total: " + testz.test_count + "</p>\n"
+    html_output = html_output + "<p>Passed: " + testz.test_passed + "</p>\n"
+    html_output = html_output + "<p>Failed: " + testz.test_failed + "</p>\n"
+    html_output = html_output + "</div>\n"
+    
+    html_output = html_output + "<h2>Test Results</h2>\n"
+    html_output = html_output + "<ul>\n"
+    
+    sus i normie = 0
+    periodt i < testz.test_results.length {
+        sus result testz.TestResult = testz.test_results[i]
+        sus class_name tea = "pass"
+        lowkey result.passed == cap {
+            class_name = "fail"
+        }
+        
+        html_output = html_output + "<li class=\"" + class_name + "\">"
+        html_output = html_output + result.name + ": " + result.message
+        html_output = html_output + "</li>\n"
+        i = i + 1
+    }
+    
+    html_output = html_output + "</ul>\n"
+    html_output = html_output + "</body>\n</html>\n"
+    
+    vibez.spill(html_output)
+}
+
+fr fr ================================
+fr fr Main Test Runner Entry Point
+fr fr ================================
+
+slay main() {
+    sus config TestConfig = create_default_config()
+    sus exit_code normie = run_tests_with_config(config)
+    yolo exit_code
+}

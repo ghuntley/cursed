@@ -1,0 +1,4 @@
+slay main() {
+    bestie ; based; {
+    }
+}

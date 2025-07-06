@@ -160,14 +160,53 @@ impl TypeInference {
                         Ok(TypeExpression::named(element_type_name))
                     }
                     _ => {
-                        // For complex array types, create fresh type variable for element
-                        let element_type = self.fresh_type_variable();
-                        self.add_unification_constraint(
-                            array_type,
-                            TypeExpression::array(element_type.clone()),
-                            "array access requires array type".to_string()
-                        );
-                        Ok(element_type)
+                        Err(CursedError::TypeError(format!("Cannot index non-array type: {:?}", array_type)))
+                    }
+                }
+            }
+            Expression::SliceAccess(slice_access) => {
+                let array_type = self.infer_expression_type(&slice_access.array)?;
+                
+                // Check start index type if present
+                if let Some(ref start_expr) = slice_access.start {
+                    let start_type = self.infer_expression_type(start_expr)?;
+                    self.add_unification_constraint(
+                        start_type,
+                        TypeExpression::named("normie"),
+                        "slice start index must be integer".to_string()
+                    );
+                }
+                
+                // Check end index type if present
+                if let Some(ref end_expr) = slice_access.end {
+                    let end_type = self.infer_expression_type(end_expr)?;
+                    self.add_unification_constraint(
+                        end_type,
+                        TypeExpression::named("normie"),
+                        "slice end index must be integer".to_string()
+                    );
+                }
+                
+                // Slice of an array returns the same array type (slice)
+                match array_type.name.as_ref().map(|s| s.as_str()) {
+                    Some(name) if name.starts_with('[') && name.ends_with(']') => {
+                        // Return the same array type for slices
+                        Ok(array_type)
+                    }
+                    _ => {
+                        Err(CursedError::TypeError(format!("Cannot slice non-array type: {:?}", array_type)))
+                    }
+                }
+            }
+            Expression::Variable(name) => {
+                // Look up the variable type in the inference context
+                match self.inference_context.type_vars.get(name) {
+                    Some(var_type) => Ok(var_type.clone()),
+                    None => {
+                        // For now, we'll assume 'normie' type for undefined variables
+                        // A full implementation would report an error
+                        log::warn!("Undefined variable: {}. Assuming 'normie' type.", name);
+                        Ok(TypeExpression::named("normie"))
                     }
                 }
             }

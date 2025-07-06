@@ -13,6 +13,7 @@ use std::io::{self, Write, Read, BufRead, BufReader};
 use std::env;
 use regex::Regex;
 use base64::{Engine as _, engine::general_purpose};
+use std::slice;
 
 /// Initialize all runtime functions for the CURSED standard library
 pub fn initialize_runtime_functions() -> Result<(), CursedError> {
@@ -535,7 +536,6 @@ pub extern "C" fn io_change_directory(path_ptr: *const c_char) -> i32 {
 
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::slice;
 
 // Array/Vector Operations
 #[no_mangle]
@@ -2922,5 +2922,104 @@ pub extern "C" fn char_to_string(c: c_char) -> *mut c_char {
     match CString::new(char_string) {
         Ok(c_string) => c_string.into_raw(),
         Err(_) => ptr::null_mut()
+    }
+}
+
+// ================================
+// Vibez Module Wrapper Functions
+// ================================
+
+/// Simple wrapper for formatted printing - placeholder implementation
+#[no_mangle]
+pub extern "C" fn vibez_format(format_ptr: *const c_char, args_ptr: *const i64, args_len: usize) -> *mut c_char {
+    if format_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let format_str = match CStr::from_ptr(format_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        
+        // Simple placeholder implementation - just return the format string for now
+        match CString::new(format_str) {
+            Ok(c_str) => c_str.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Simple wrapper for sprintf-style formatting - placeholder implementation
+#[no_mangle]
+pub extern "C" fn vibez_sprintf(format_ptr: *const c_char, args_ptr: *const i64, args_len: usize) -> *mut c_char {
+    if format_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let format_str = match CStr::from_ptr(format_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        
+        // Simple placeholder implementation - just return the format string for now
+        match CString::new(format_str) {
+            Ok(c_str) => c_str.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Simple wrapper for debug logging - placeholder implementation
+#[no_mangle]
+pub extern "C" fn vibez_debug_log(level: u8, message_ptr: *const c_char, module_ptr: *const c_char) -> i32 {
+    if message_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let message = match CStr::from_ptr(message_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1,
+        };
+        
+        let module = if module_ptr.is_null() {
+            "unknown"
+        } else {
+            match CStr::from_ptr(module_ptr).to_str() {
+                Ok(s) => s,
+                Err(_) => "unknown",
+            }
+        };
+        
+        // Simple implementation: print to stderr
+        eprintln!("[DEBUG-{}] [{}] {}", level, module, message);
+        0
+    }
+}
+
+/// Simple wrapper for debug inspect - placeholder implementation
+#[no_mangle]
+pub extern "C" fn vibez_debug_inspect(value_ptr: *const i64, label_ptr: *const c_char) -> i32 {
+    if value_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let value = *value_ptr;
+        
+        let label = if label_ptr.is_null() {
+            "value"
+        } else {
+            match CStr::from_ptr(label_ptr).to_str() {
+                Ok(s) => s,
+                Err(_) => "value",
+            }
+        };
+        
+        // Simple implementation: print the value
+        eprintln!("[INSPECT] {}: {}", label, value);
+        0
     }
 }
