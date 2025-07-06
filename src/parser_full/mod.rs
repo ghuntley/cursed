@@ -158,19 +158,85 @@ impl Parser {
                 return;
             }
         }
-    fn parse_package_declaration(&mut self) -> crate::error::Result<()> {
-        self.expect_token(TokenType::Vibe)?;
-        
-        if !self.current_token_is(&TokenType::Identifier) {
-            return Err(CursedError::Parse("Expected package name after 'vibe'".to_string()));
-        let package_name = self.current_token.literal.clone();
+    fn parse_package_declaration(&mut self) -> crate::error::Result<PackageDeclaration> {
+    self.expect_token(TokenType::Vibe)?;
+    
+    if !self.current_token_is(&TokenType::Identifier) {
+    return Err(CursedError::Parse("Expected package name after 'vibe'".to_string()));
+    }
+    let package_name = self.current_token.literal.clone();
+    self.advance_token()?;
+    
+        // Check for optional version string
+    let version = if self.current_token_is(&TokenType::String) {
+        let version_str = self.current_token.literal.clone();
         self.advance_token()?;
+        Some(version_str)
+    } else {
+    None
+    };
+    
+    Ok(PackageDeclaration {
+        name: package_name,
+    version,
+    })
+    }
+    
+    fn parse_import_statement(&mut self) -> crate::error::Result<ImportStatement> {
+    let _token = self.expect_token(TokenType::Yeet)?;
+    
+    // Handle selective imports: yeet {Symbol1, Symbol2} from "path"
+    if self.current_token_is(&TokenType::LeftBrace) {
+    self.advance_token()?; // consume '{'
+        let mut items = Vec::new();
+            
+            while !self.current_token_is(&TokenType::RightBrace) && !self.is_at_end() {
+                if !self.current_token_is(&TokenType::Identifier) {
+                    return Err(CursedError::Parse("Expected identifier in import list".to_string()));
+                }
+                items.push(self.current_token.literal.clone());
+                self.advance_token()?;
+                
+                if !self.current_token_is(&TokenType::RightBrace) {
+                    self.expect_token(TokenType::Comma)?;
+                }
+            }
+            
+            self.expect_token(TokenType::RightBrace)?;
+            self.expect_token(TokenType::Identifier)?; // consume 'from'
+            
+            if !self.current_token_is(&TokenType::String) {
+                return Err(CursedError::Parse("Expected import path string".to_string()));
+            }
+            let path = self.current_token.literal.clone();
+            self.advance_token()?;
+            
+            return Ok(ImportStatement {
+                path,
+                alias: None,
+                items,
+            });
+        }
         
-        Ok(Some(package_name))
-    fn parse_import_statement(&mut self) -> crate::error::Result<()> {
-        let token = self.expect_token(TokenType::Yeet)?;
+        // Handle wildcard imports: yeet * from "path"
+        if self.current_token_is(&TokenType::Star) {
+            self.advance_token()?; // consume '*'
+            self.expect_token(TokenType::Identifier)?; // consume 'from'
+            
+            if !self.current_token_is(&TokenType::String) {
+                return Err(CursedError::Parse("Expected import path string".to_string()));
+            }
+            let path = self.current_token.literal.clone();
+            self.advance_token()?;
+            
+            return Ok(ImportStatement {
+                path,
+                alias: Some("*".to_string()),
+                items: vec!["*".to_string()],
+            });
+        }
         
-        // Handle aliased imports: yeet alias "path" 
+        // Handle aliased imports: yeet alias "path" or basic imports: yeet "path"
         let (alias, path) = if self.current_token_is(&TokenType::Identifier) && self.peek_token_is(&TokenType::String) {
             let alias = self.current_token.literal.clone();
             self.advance_token()?;
@@ -183,10 +249,11 @@ impl Parser {
             (None, path)
         } else {
             return Err(CursedError::Parse("Expected import path".to_string()));
+        };
         
-        Ok(if let Some(alias) = alias {
-            ImportStatement::with_alias(token, path, alias)
-        } else {
-            ImportStatement::new(token, path)
+        Ok(ImportStatement {
+            path,
+            alias,
+            items: Vec::new(),
         })
-}
+    }

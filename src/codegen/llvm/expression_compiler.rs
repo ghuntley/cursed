@@ -101,6 +101,10 @@ impl ExpressionCompiler {
                 self.ir_buffer.push_str(&format!("  ; Type assertion: value.({})\n", type_assertion.target_type));
                 Ok(value_reg)
             },
+            &Expression::Variable(ref name) => {
+                // Variable access - same as Identifier
+                self.compile_identifier(name)
+            },
 
         }
     }
@@ -306,6 +310,23 @@ impl ExpressionCompiler {
             UnaryOperator::Plus => {
                 // Unary plus is a no-op
                 return Ok(operand_reg);
+            },
+            UnaryOperator::AddressOf => {
+                // Address-of: @variable -> return the address of the variable
+                if let Expression::Identifier(var_name) = operand {
+                    if let Some(var_reg) = self.variables.get(var_name) {
+                        // Return the address directly (the alloca register)
+                        return Ok(var_reg.clone());
+                    } else {
+                        return Err(CursedError::syntax_error(&format!("Cannot take address of undefined variable: {}", var_name)));
+                    }
+                } else {
+                    return Err(CursedError::syntax_error("Address-of operator can only be applied to variables"));
+                }
+            },
+            UnaryOperator::Dereference => {
+                // Dereference: *pointer -> load the value the pointer points to
+                self.ir_buffer.push_str(&format!("  {} = load i32, i32* {}, align 4\n", result_reg, operand_reg));
             },
         }
         

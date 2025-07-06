@@ -152,13 +152,20 @@ impl Parser {
             TokenKind::Truth |
             TokenKind::Lies |
             TokenKind::Cap |
-            TokenKind::LeftBracket  // For array/slice types
+            TokenKind::LeftBracket |  // For array/slice types
+            TokenKind::At             // For pointer types
         )
     }
 
     /// Parse a type expression
     fn parse_type(&mut self) -> Result<crate::ast::Type, CursedError> {
         match self.peek().kind {
+            TokenKind::At => {
+                // Pointer type: @T
+                self.advance(); // consume '@'
+                let inner_type = self.parse_type()?;
+                Ok(crate::ast::Type::Pointer(Box::new(inner_type)))
+            }
             TokenKind::LeftBracket => {
                 self.advance(); // consume '['
                 
@@ -360,6 +367,291 @@ impl Parser {
         }
     }
 
+    /// Enhanced synchronization with error recovery suggestions
+    fn synchronize_with_suggestions(&mut self, error_context: &str) -> Vec<String> {
+        let mut suggestions = Vec::new();
+        let current_token = self.peek();
+        
+        // Analyze current context for recovery suggestions
+        match current_token.kind {
+            TokenKind::Identifier if error_context.contains("expected") => {
+                let name = &current_token.lexeme;
+                suggestions.push(format!("Did you mean to declare a variable? Try: sus {} = value", name));
+                suggestions.push(format!("Or define a function? Try: slay {}() {{ ... }}", name));
+            }
+            TokenKind::LeftBrace => {
+                if error_context.contains("function") {
+                    suggestions.push("This looks like a function body. Make sure the function signature is correct".to_string());
+                } else {
+                    suggestions.push("This looks like a block. Make sure it's properly structured".to_string());
+                }
+            }
+            TokenKind::RightBrace => {
+                suggestions.push("Unmatched closing brace. Check for missing opening brace".to_string());
+            }
+            _ => {}
+        }
+        
+        // Perform standard synchronization
+        self.synchronize();
+        
+        suggestions
+    }
+
+    /// Expression-level error recovery
+    fn recover_expression(&mut self) -> Result<Expression, CursedError> {
+        let token = self.peek();
+        
+        match token.kind {
+            TokenKind::Identifier => {
+                // Try to create a variable reference as fallback
+                let name = token.lexeme.clone();
+                self.advance();
+                Ok(Expression::Variable(name))
+            }
+            TokenKind::Number => {
+                let value = token.lexeme.parse::<i64>().unwrap_or(0);
+                self.advance();
+                Ok(Expression::Literal(Literal::Integer(value)))
+            }
+            TokenKind::String => {
+                let lexeme = token.lexeme.clone();
+                self.advance();
+                Ok(Expression::Literal(Literal::String(lexeme)))
+            }
+            TokenKind::Truth => {
+                self.advance();
+                Ok(Expression::Literal(Literal::Boolean(true)))
+            }
+            TokenKind::Cap => {
+                self.advance();
+                Ok(Expression::Literal(Literal::Boolean(false)))
+            }
+            _ => {
+                // Create a placeholder expression and skip problematic token
+                self.advance();
+                Ok(Expression::Literal(Literal::Integer(0))) // Safe fallback
+            }
+        }
+    }
+
+    /// Statement-level error recovery
+    fn recover_statement(&mut self) -> Result<Statement, CursedError> {
+        // Skip to next statement boundary
+        self.synchronize();
+        
+        // Return a no-op statement as fallback
+        Ok(Statement::Expression(Expression::Literal(Literal::Integer(0))))
+    }
+
+    /// Enhanced error reporting with context
+    fn report_error_with_context(&mut self, error: CursedError, context: &str) -> StructuredError {
+        let token = self.peek();
+        let line = token.line;
+        let column = token.column;
+        
+        let structured_error = match &error {
+            CursedError::SyntaxError(msg) => {
+                StructuredError::new(ErrorCode::E0001, msg.clone())
+                    .with_location(ErrorSourceLocation {
+                        file: "".to_string(),
+                        line,
+                        column,
+                        length: token.lexeme.len(),
+                        source_line: None,
+                    })
+            }
+            CursedError::TypeError(msg) => {
+                StructuredError::new(ErrorCode::E0100, msg.clone())
+                    .with_location(ErrorSourceLocation {
+                        file: "".to_string(),
+                        line,
+                        column,
+                        length: token.lexeme.len(),
+                        source_line: None,
+                    })
+            }
+            _ => {
+                StructuredError::new(ErrorCode::E0001, error.to_string())
+                    .with_location(ErrorSourceLocation {
+                        file: "".to_string(),
+                        line,
+                        column,
+                        length: token.lexeme.len(),
+                        source_line: None,
+                    })
+            }
+        };
+        
+        // Generate context-specific suggestions
+        let suggestions = self.generate_error_suggestions(&error, context);
+        let final_error = structured_error.with_suggestions(suggestions);
+        
+        // Store for later reporting
+        self.errors.push(final_error.to_string());
+        
+        final_error
+    }
+
+    /// Generate context-specific error suggestions
+    fn generate_error_suggestions(&mut self, error: &CursedError, context: &str) -> Vec<String> {
+        let mut suggestions = Vec::new();
+        let current_token = self.peek();
+        
+        match error {
+            CursedError::SyntaxError(msg) => {
+                if msg.contains("expected") {
+                    if msg.contains("')'") {
+                        suggestions.push("Check for missing closing parenthesis".to_string());
+                        suggestions.push("Make sure all function calls are properly closed".to_string());
+                    } else if msg.contains("';'") {
+                        suggestions.push("Add a semicolon at the end of the statement".to_string());
+                    } else if msg.contains("'{'") {
+                        suggestions.push("Add opening brace for block statement".to_string());
+                    } else if msg.contains("'}'") {
+                        suggestions.push("Add closing brace to end the block".to_string());
+                    }
+                }
+                
+                // Token-specific suggestions
+                match current_token.kind {
+                    TokenKind::Identifier => {
+                        let name = &current_token.lexeme;
+                        suggestions.push(format!("If '{}' is a variable, make sure it's declared with 'sus'", name));
+                        suggestions.push(format!("If '{}' is a function, make sure it's defined with 'slay'", name));
+                    }
+                    TokenKind::LeftParen => {
+                        suggestions.push("This looks like a function call. Make sure the function exists".to_string());
+                    }
+                    TokenKind::LeftBrace => {
+                        suggestions.push("This looks like a block. Make sure it's in the right context".to_string());
+                    }
+                    _ => {}
+                }
+            }
+            CursedError::TypeError(msg) => {
+                suggestions.push("Check the types of values in this expression".to_string());
+                suggestions.push("Consider using type assertions with .() syntax".to_string());
+                
+                if msg.contains("mismatch") {
+                    suggestions.push("Use explicit type conversion if needed".to_string());
+                }
+            }
+            _ => {}
+        }
+        
+        // Add context-specific suggestions
+        if context.contains("function") {
+            suggestions.push("Make sure function parameters and return types are correct".to_string());
+        } else if context.contains("variable") {
+            suggestions.push("Check variable declaration syntax: sus name type = value".to_string());
+        }
+        
+        suggestions
+    }
+
+    /// Check for common typos and suggest corrections
+    fn suggest_corrections(&self, token: &str) -> Vec<String> {
+        let mut suggestions = Vec::new();
+        
+        // Common CURSED keyword corrections
+        let keywords = [
+            ("sus", vec!["sus", "let", "var"]),
+            ("slay", vec!["slay", "fn", "func", "function"]),
+            ("facts", vec!["facts", "struct"]),
+            ("lowkey", vec!["lowkey", "for"]),
+            ("bestie", vec!["bestie", "if"]),
+            ("yolo", vec!["yolo", "while"]),
+            ("vibez", vec!["vibez", "console", "print"]),
+            ("based", vec!["based", "true"]),
+            ("cap", vec!["cap", "false", "nil", "null"]),
+            ("damn", vec!["damn", "return"]),
+            ("ghosted", vec!["ghosted", "break"]),
+            ("simp", vec!["simp", "continue"]),
+        ];
+        
+        for (correct, alternatives) in &keywords {
+            if alternatives.contains(&token) && token != *correct {
+                suggestions.push(format!("Did you mean '{}'?", correct));
+            }
+        }
+        
+        // Levenshtein distance for typos
+        for (correct, _) in &keywords {
+            if Self::levenshtein_distance(token, correct) <= 2 && token != *correct {
+                suggestions.push(format!("Did you mean '{}'?", correct));
+            }
+        }
+        
+        suggestions
+    }
+
+    /// Calculate Levenshtein distance for typo detection
+    fn levenshtein_distance(a: &str, b: &str) -> usize {
+        let a_chars: Vec<char> = a.chars().collect();
+        let b_chars: Vec<char> = b.chars().collect();
+        let a_len = a_chars.len();
+        let b_len = b_chars.len();
+        
+        if a_len == 0 { return b_len; }
+        if b_len == 0 { return a_len; }
+        
+        let mut matrix = vec![vec![0; b_len + 1]; a_len + 1];
+        
+        for i in 0..=a_len {
+            matrix[i][0] = i;
+        }
+        for j in 0..=b_len {
+            matrix[0][j] = j;
+        }
+        
+        for i in 1..=a_len {
+            for j in 1..=b_len {
+                let cost = if a_chars[i-1] == b_chars[j-1] { 0 } else { 1 };
+                matrix[i][j] = std::cmp::min(
+                    std::cmp::min(matrix[i-1][j] + 1, matrix[i][j-1] + 1),
+                    matrix[i-1][j-1] + cost
+                );
+            }
+        }
+        
+        matrix[a_len][b_len]
+    }
+
+    /// Enhanced error handling with recovery for missing tokens
+    fn handle_missing_token(&mut self, expected: TokenKind, context: &str) -> Result<(), CursedError> {
+        let error_msg = format!("Expected {:?}, found {:?}", expected, self.peek().kind);
+        
+        // Try to recover by inserting the missing token conceptually
+        match expected {
+            TokenKind::Semicolon => {
+                // Often optional in CURSED, so just continue
+                return Ok(());
+            }
+            TokenKind::RightParen => {
+                // Critical for parsing, but try to continue
+                let suggestions = vec![
+                    "Add closing parenthesis ')'".to_string(),
+                    "Check for nested parentheses".to_string(),
+                ];
+                self.errors.push(format!("{} - {}", error_msg, suggestions.join(", ")));
+                return Ok(());
+            }
+            TokenKind::RightBrace => {
+                // Critical for block structure
+                let suggestions = vec![
+                    "Add closing brace '}'".to_string(),
+                    "Check block structure".to_string(),
+                ];
+                self.errors.push(format!("{} - {}", error_msg, suggestions.join(", ")));
+                return Ok(());
+            }
+            _ => {
+                return Err(CursedError::SyntaxError(error_msg));
+            }
+        }
+    }
+
     /// Recovery method for errors within blocks that doesn't escape to top-level
     fn recover_within_block(&mut self) {
         self.advance();
@@ -420,18 +712,78 @@ impl Parser {
         let name_token = self.consume(TokenKind::Identifier, "Expected package name")?;
         let name = name_token.lexeme.clone();
         
-        // Consume optional semicolon after package name
+        // Check for optional version string
+        let version = if self.check(&TokenKind::String) {
+            let version_token = self.advance();
+            Some(version_token.lexeme.clone())
+        } else {
+            None
+        };
+        
+        // Consume optional semicolon after package declaration
         if self.check(&TokenKind::Semicolon) {
             self.advance();
         }
         
         Ok(PackageDeclaration {
             name,
-            version: None,
+            version,
         })
     }
 
     fn parse_import_statement(&mut self) -> Result<ImportStatement, CursedError> {
+        // Handle selective imports: yeet {Symbol1, Symbol2} from "path"
+        if self.check(&TokenKind::LeftBrace) {
+            self.advance(); // consume '{'
+            let mut items = Vec::new();
+            
+            while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                let item = self.consume(TokenKind::Identifier, "Expected identifier")?;
+                items.push(item.lexeme.clone());
+                
+                if !self.check(&TokenKind::RightBrace) {
+                    self.consume(TokenKind::Comma, "Expected ',' between imports")?;
+                }
+            }
+            
+            self.consume(TokenKind::RightBrace, "Expected '}'")?;
+            self.consume(TokenKind::Identifier, "Expected 'from'")?; // consume 'from'
+            let path_token = self.consume(TokenKind::String, "Expected import path")?;
+            
+            return Ok(ImportStatement {
+                path: path_token.lexeme.clone(),
+                alias: None,
+                items,
+            });
+        }
+        
+        // Handle wildcard imports: yeet * from "path"
+        if self.check(&TokenKind::Star) {
+            self.advance(); // consume '*'
+            self.consume(TokenKind::Identifier, "Expected 'from'")?; // consume 'from'
+            let path_token = self.consume(TokenKind::String, "Expected import path")?;
+            
+            return Ok(ImportStatement {
+                path: path_token.lexeme.clone(),
+                alias: Some("*".to_string()),
+                items: vec!["*".to_string()],
+            });
+        }
+        
+        // Handle aliased imports: yeet alias "path" or basic imports: yeet "path"
+        if self.check(&TokenKind::Identifier) {
+            let alias_token = self.advance(); // consume identifier
+            let alias = alias_token.lexeme.clone();
+            let path_token = self.consume(TokenKind::String, "Expected import path")?;
+            
+            return Ok(ImportStatement {
+                path: path_token.lexeme.clone(),
+                alias: Some(alias),
+                items: Vec::new(),
+            });
+        }
+        
+        // Basic import: yeet "path"
         let path_token = self.consume(TokenKind::String, "Expected import path")?;
         Ok(ImportStatement {
             path: path_token.lexeme.clone(),
@@ -1420,13 +1772,15 @@ impl Parser {
     }
 
     fn parse_unary(&mut self) -> Result<Expression, CursedError> {
-        if self.match_tokens(&[TokenKind::Bang, TokenKind::Minus]) {
+        if self.match_tokens(&[TokenKind::Bang, TokenKind::Minus, TokenKind::At, TokenKind::Star]) {
             let operator = self.previous().lexeme.clone();
             let right = self.parse_unary()?;
             let unary_op = match operator.as_str() {
                 "!" => UnaryOperator::Not,
                 "-" => UnaryOperator::Minus,
                 "+" => UnaryOperator::Plus,
+                "@" => UnaryOperator::AddressOf,
+                "*" => UnaryOperator::Dereference,
                 _ => return Err(CursedError::syntax_error("Invalid unary operator")),
             };
             return Ok(Expression::Unary(UnaryExpression {

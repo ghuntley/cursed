@@ -7,11 +7,24 @@ pub mod debug_context;
 pub mod structured;
 pub mod types;
 pub mod cli;
+pub mod diagnostics;
+pub mod pipeline_integration;
 
 // Re-export structured error types for easy access
 pub use structured::{
     StructuredError, ErrorCode, ErrorSeverity, ErrorSourceLocation, ErrorReporter,
     unexpected_token, unterminated_string, unknown_variable, type_mismatch, function_not_found,
+};
+
+// Re-export diagnostic types
+pub use diagnostics::{
+    ErrorDiagnostics, DiagnosticError, FixHint, FixType, AutoFix, ConfidenceLevel,
+};
+
+// Re-export pipeline integration types
+pub use pipeline_integration::{
+    PipelineErrorManager, CompilationContext, PipelineStage, CompilationResult,
+    RecoveryStrategy, RecoveryAction,
 };
 
 #[derive(Debug, Clone)]
