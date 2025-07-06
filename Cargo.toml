@@ -390,6 +390,18 @@ path = "src/bin/cursed_repl.rs"
 name = "cursed-test"
 path = "src/bin/cursed_test.rs"
 
+[[bin]]
+name = "debug-tokens"
+path = "debug_lexer_simple.rs"
+
+[[bin]]
+name = "debug-parser"
+path = "debug_parser_trace.rs"
+
+[[bin]]
+name = "debug-full"
+path = "debug_full_program.rs"
+
 [profile.release]
 lto = true  # Enable Link Time Optimization for smaller binaries
 codegen-units = 1  # Optimize for size and performance

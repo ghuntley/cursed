@@ -35,8 +35,8 @@ use inkwell::{
 use std::cell::RefCell;
 
 use crate::error::CursedError;
-// use crate::runtime::value::Value;
-// use crate::stdlib::vibez::print::spillf;
+use crate::runtime::value::Value;
+use crate::stdlib::vibez::print::spillf;
 use crate::runtime::jit_runtime::{
     CompilationTier, OptimizationLevel, CompiledFunction, ExecutionMetrics,
     JitRuntimeConfig, SafePointer, CodeGeneratorTrait
@@ -891,10 +891,9 @@ impl Default for ExecutionMetrics {
 use crate::runtime::AsyncRuntime;
 use crate::runtime::goroutine::*;
 use crate::runtime::memory::*;
-// use crate::stdlib::vibez::print::*;
+use crate::stdlib::vibez::print::*;
 use crate::runtime::process::*;
 use crate::runtime::gc::*;
-use crate::runtime::value::Value;
 
 // Vibez.spill runtime function - core CURSED output
 extern "C" fn cursed_vibez_spill(args_ptr: *const Value, args_len: usize) -> i32 {
@@ -904,9 +903,11 @@ extern "C" fn cursed_vibez_spill(args_ptr: *const Value, args_len: usize) -> i32
     
     unsafe {
         let args = std::slice::from_raw_parts(args_ptr, args_len);
-        // For now, just print the arguments
-        println!("{:?}", args);
-        0
+        // Call the actual vibez::spill function
+        match spill(args) {
+            Ok(()) => 0,
+            Err(_) => -1,
+        }
     }
 }
 
@@ -919,9 +920,11 @@ extern "C" fn cursed_vibez_spillf(format_ptr: *const std::ffi::c_char, args_ptr:
     unsafe {
         let format_str = std::ffi::CStr::from_ptr(format_ptr).to_str().unwrap_or("");
         let args = std::slice::from_raw_parts(args_ptr, args_len);
-        // For now, just print the format string
-        println!("{}", format_str);
-        0
+        // Call the actual vibez::spillf function
+        match spillf(format_str, args) {
+            Ok(()) => 0,
+            Err(_) => -1,
+        }
     }
 }
 

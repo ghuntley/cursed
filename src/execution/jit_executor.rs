@@ -87,11 +87,26 @@ impl JitExecutor {
     pub fn new() -> Result<Self, CursedError> {
         Self::with_config(JitExecutorConfig::default())
     }
+    
+    /// Create a new JIT executor with JIT disabled (for testing)
+    pub fn new_no_jit() -> Result<Self, CursedError> {
+        let config = JitExecutorConfig {
+            enable_jit: false,
+            ..JitExecutorConfig::default()
+        };
+        Self::with_config(config)
+    }
 
     /// Create a new JIT executor with custom configuration
     pub fn with_config(config: JitExecutorConfig) -> Result<Self, CursedError> {
         // Initialize LLVM code generator - we'll always create it but defer initialization
-        let llvm_codegen = Arc::new(Mutex::new(LlvmCodeGenerator::new()?));
+        let llvm_codegen = match LlvmCodeGenerator::new() {
+            Ok(codegen) => Arc::new(Mutex::new(codegen)),
+            Err(e) => {
+                tracing::warn!("⚠️ LLVM code generator initialization failed: {}", e);
+                return Err(e);
+            }
+        };
 
         // Configure JIT runtime
         let jit_runtime_config = JitRuntimeConfig {
@@ -122,13 +137,30 @@ impl JitExecutor {
 
         // Create JIT engine only if enabled
         let jit_engine = if config.enable_jit {
-            let mut jit_engine = CursedJitEngine::new(jit_config)?;
-            jit_engine.initialize()?;
-            Arc::new(Mutex::new(jit_engine))
+            match CursedJitEngine::new(jit_config) {
+                Ok(mut jit_engine) => {
+                    match jit_engine.initialize() {
+                        Ok(()) => Arc::new(Mutex::new(jit_engine)),
+                        Err(e) => {
+                            tracing::warn!("⚠️ JIT engine initialization failed: {}", e);
+                            return Err(e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("⚠️ JIT engine creation failed: {}", e);
+                    return Err(e);
+                }
+            }
         } else {
             // Create a dummy engine that won't be used
-            let jit_engine = CursedJitEngine::new(jit_config)?;
-            Arc::new(Mutex::new(jit_engine))
+            match CursedJitEngine::new(jit_config) {
+                Ok(jit_engine) => Arc::new(Mutex::new(jit_engine)),
+                Err(e) => {
+                    tracing::warn!("⚠️ Dummy JIT engine creation failed: {}", e);
+                    return Err(e);
+                }
+            }
         };
 
         // Initialize global JIT runtime
@@ -154,6 +186,10 @@ impl JitExecutor {
             // Fall back to interpretation
             return self.execute_interpreted(source);
         }
+        
+        // For now, always fall back to interpretation until JIT issues are resolved
+        tracing::warn!("⚠️ JIT compilation temporarily disabled due to LLVM initialization issues");
+        return self.execute_interpreted(source);
 
         // Parse the source code
         let mut parser = new_parser(source)?;

@@ -244,6 +244,20 @@ pub fn run_file(path: &str) -> crate::error::Result<()> {
     Ok(())
 }
 
+/// Run file with JIT compilation disabled for safety
+pub fn run_file_no_jit(path: &str) -> crate::error::Result<()> {
+    let mut execution_engine = execution::CursedExecutionEngine::new_no_jit()?;
+    let result = execution_engine.execute_file(path)?;
+    
+    // Print the result for user feedback
+    match result {
+        execution::CursedValue::Nil => {}, // Don't print nil results
+        _ => println!("{}", execution_engine.get_value_manager().format_value(&result)),
+    }
+    
+    Ok(())
+}
+
 /// Compile and execute CURSED source file with enhanced optimization
 pub fn run_file_enhanced(
     path: &str, 
