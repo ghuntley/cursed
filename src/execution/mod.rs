@@ -374,6 +374,14 @@ impl CursedExecutionEngine {
                 
                 Ok(ExecutionFlow::Continue(last_value))
             },
+            Statement::Defer(defer_stmt) => {
+                log::info!("⏰ Adding defer statement to stack");
+                
+                // Add the expression to the defer stack instead of executing it immediately
+                context.push_defer(defer_stmt.expression.as_ref().clone());
+                
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            },
         }
     }
     
@@ -715,6 +723,16 @@ impl CursedExecutionEngine {
                                         result = value;
                                         break; // Early return from function
                                     }
+                                }
+                            }
+                            
+                            // Execute deferred expressions before function returns
+                            let deferred_exprs = func_context.execute_defers();
+                            for defer_expr in deferred_exprs {
+                                log::info!("⏰ Executing deferred expression");
+                                match self.evaluate_expression(&defer_expr, &mut func_context) {
+                                    Ok(_) => {}, // Ignore defer return values
+                                    Err(e) => log::warn!("⚠️ Error in deferred expression: {:?}", e),
                                 }
                             }
                             

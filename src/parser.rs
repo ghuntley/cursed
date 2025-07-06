@@ -388,6 +388,13 @@ impl Parser {
                 log::info!("📝 Parsing catch statement with 'catch' keyword");
                 Ok(Statement::Catch(self.parse_catch_statement()?))
             },
+            TokenKind::Later => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on defer statements"));
+                }
+                log::info!("📝 Parsing defer statement with 'later' keyword");
+                Ok(Statement::Defer(self.parse_defer_statement()?))
+            },
             _ => {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
@@ -1709,6 +1716,19 @@ impl Parser {
             protected_block,
             recovery_block,
             error_variable,
+        })
+    }
+
+    fn parse_defer_statement(&mut self) -> Result<crate::ast::DeferStatement, CursedError> {
+        log::debug!("⏰ Parsing defer statement");
+        self.consume(TokenKind::Later, "Expected 'later'")?;
+        
+        // Parse the deferred expression
+        let expression = Box::new(self.parse_expression()?);
+        
+        log::debug!("✅ Successfully parsed defer statement");
+        Ok(crate::ast::DeferStatement {
+            expression,
         })
     }
 

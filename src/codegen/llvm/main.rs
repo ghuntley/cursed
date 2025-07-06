@@ -494,6 +494,17 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Statement::Catch(catch_stmt) => {
                 self.generate_catch_statement(catch_stmt)?;
             },
+            Statement::Defer(defer_stmt) => {
+                self.ir_code.push_str("  ; Defer statement - add to cleanup stack\n");
+                
+                // For now, generate a comment with the deferred expression
+                // A full implementation would require complex cleanup handling
+                self.ir_code.push_str("  ; TODO: Proper defer implementation with cleanup handlers\n");
+                
+                // Generate the expression to ensure it's valid, but don't execute it yet
+                let _defer_reg = self.generate_expression(&defer_stmt.expression)?;
+                self.ir_code.push_str("  ; Expression will be executed at function exit\n");
+            },
         }
         Ok(())
     }

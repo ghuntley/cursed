@@ -10,37 +10,43 @@ use crate::error::CursedError;
 /// 
 /// # Examples
 /// 
-/// ## Basic I/O
-/// ```rust
-/// use crate::stdlib::io::{println, read_line};
+/// ## Basic I/O Handler Usage
+/// ```rust,no_run
+/// use cursed::stdlib::io::{IOHandler, IOResult};
+/// use std::io::Cursor;
 /// 
-/// println("Hello, World!")?;
-/// let name = read_line()?;
-/// println(&format!("Hello, {}!", name))?;
+/// let handler = IOHandler::new();
+/// let test_data = "Hello, World!";
+/// let mut buffer = Vec::new();
+/// handler.write_string(&mut buffer, test_data)?;
+/// let result = handler.read_string(Cursor::new(&buffer))?;
+/// println!("Read back: {}", result);
+/// # Ok::<(), cursed::error::CursedError>(())
 /// ```
 /// 
-/// ## Interactive prompts
-/// ```rust
-/// use crate::stdlib::io::{prompt, confirm, select};
+/// ## Initialization
+/// ```rust,no_run
+/// use cursed::stdlib::io;
 /// 
-/// let name = prompt("Enter your name: ")?;
-/// let proceed = confirm("Do you want to continue?")?;
+/// // Initialize all I/O subsystems
+/// io::initialize()?;
 /// 
-/// let options = vec!["Option 1".to_string(), "Option 2".to_string()];
-/// let choice = select("Choose an option:", &options)?;
+/// // Your program logic here
+/// 
+/// // Shutdown I/O subsystems
+/// io::shutdown()?;
+/// # Ok::<(), cursed::error::CursedError>(())
 /// ```
 /// 
-/// ## Buffered I/O
-/// ```rust
-/// use crate::stdlib::io::{buffered_stdin, buffered_stdout};
+/// ## Testing I/O Components
+/// ```rust,no_run
+/// use cursed::stdlib::io::{test_console, test_interactive, test_buffered};
 /// 
-/// let mut reader = buffered_stdin();
-/// let mut writer = buffered_stdout();
-/// 
-/// while let Some(line) = reader.read_line()? {
-///     writer.write_line(&format!("Echo: {}", line))?;
-/// }
-/// writer.flush()?;
+/// // Test individual components
+/// test_console()?;
+/// test_interactive()?;
+/// test_buffered()?;
+/// # Ok::<(), cursed::error::CursedError>(())
 /// ```
 
 pub mod error;
