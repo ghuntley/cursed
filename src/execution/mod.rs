@@ -265,6 +265,16 @@ impl CursedExecutionEngine {
                     self.expression_to_source(&let_stmt.value)
                 )
             },
+            Statement::ShortDeclaration(short_decl_stmt) => {
+                match &short_decl_stmt.target {
+                    crate::ast::ShortDeclarationTarget::Single(name) => {
+                        format!("{} := {};", name, self.expression_to_source(&short_decl_stmt.value))
+                    },
+                    crate::ast::ShortDeclarationTarget::Tuple(names) => {
+                        format!("({}) := {};", names.join(", "), self.expression_to_source(&short_decl_stmt.value))
+                    }
+                }
+            },
             Statement::Expression(expr) => {
                 format!("{};", self.expression_to_source(expr))
             },
@@ -399,6 +409,30 @@ impl CursedExecutionEngine {
                 let value = self.evaluate_expression(&assign_stmt.value, context)?;
                 self.execute_assignment(&assign_stmt.target, value.clone(), context)?;
                 // For assignment statements, return the value that was assigned
+                Ok(ExecutionFlow::Continue(value))
+            },
+            Statement::ShortDeclaration(short_decl_stmt) => {
+                let value = self.evaluate_expression(&short_decl_stmt.value, context)?;
+                match &short_decl_stmt.target {
+                    crate::ast::ShortDeclarationTarget::Single(name) => {
+                        context.set_variable(name.clone(), value.clone());
+                    },
+                    crate::ast::ShortDeclarationTarget::Tuple(names) => {
+                        // Handle tuple destructuring
+                        if let CursedValue::Tuple(elements) = &value {
+                            for (index, name) in names.iter().enumerate() {
+                                if let Some(element) = elements.get(index) {
+                                    context.set_variable(name.clone(), element.clone());
+                                } else {
+                                    return Err(CursedError::runtime_error(&format!("Tuple index {} out of bounds for destructuring", index)));
+                                }
+                            }
+                        } else {
+                            return Err(CursedError::runtime_error("Cannot destructure non-tuple value"));
+                        }
+                    }
+                }
+                // For short declaration statements, return the value that was assigned
                 Ok(ExecutionFlow::Continue(value))
             },
             Statement::Return(return_stmt) => {
@@ -819,6 +853,9 @@ impl CursedExecutionEngine {
             },
             Expression::ArrayAccess(array_access) => {
                 self.evaluate_array_access(array_access, context)
+            },
+            Expression::TypeAssertion(type_assertion) => {
+                self.evaluate_type_assertion(type_assertion, context)
             },
         }
     }
@@ -1416,6 +1453,103 @@ impl CursedExecutionEngine {
             _ => Err(CursedError::RuntimeError(
                 "Cannot access array element on non-array value".to_string()
             )),
+        }
+    }
+
+    /// Evaluate type assertion expression (value.(type))
+    fn evaluate_type_assertion(&mut self, type_assertion: &crate::ast::TypeAssertionExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        let value = self.evaluate_expression(&type_assertion.value, context)?;
+        
+        if type_assertion.is_safe {
+            // Safe type assertion returns a tuple (value, success)
+            let success = self.can_convert_to_type(&value, &type_assertion.target_type);
+            let converted_value = if success {
+                self.convert_to_type(&value, &type_assertion.target_type).unwrap_or(CursedValue::Nil)
+            } else {
+                CursedValue::Nil
+            };
+            Ok(CursedValue::Tuple(vec![
+                converted_value,
+                CursedValue::Boolean(success),
+            ]))
+        } else {
+            // Unsafe type assertion - panic if conversion fails
+            self.convert_to_type(&value, &type_assertion.target_type)
+        }
+    }
+
+    /// Check if a value can be converted to a specific type
+    fn can_convert_to_type(&self, value: &CursedValue, target_type: &crate::ast::Type) -> bool {
+        match (value, target_type) {
+            // Same type conversions
+            (CursedValue::Integer(_), crate::ast::Type::Normie) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Smol) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Mid) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Thicc) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Byte) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Rune) => true,
+            (CursedValue::Float(_), crate::ast::Type::Snack) => true,
+            (CursedValue::Float(_), crate::ast::Type::Meal) => true,
+            (CursedValue::String(_), crate::ast::Type::Tea) => true,
+            (CursedValue::Boolean(_), crate::ast::Type::Lit) => true,
+            (CursedValue::Character(_), crate::ast::Type::Sip) => true,
+            
+            // Cross-type conversions
+            (CursedValue::Integer(_), crate::ast::Type::Float) => true,
+            (CursedValue::Float(_), crate::ast::Type::Integer) => true,
+            (CursedValue::Boolean(_), crate::ast::Type::Integer) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Boolean) => true,
+            (CursedValue::Character(_), crate::ast::Type::Integer) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Sip) => true,
+            
+            _ => false,
+        }
+    }
+
+    /// Convert a value to a specific type
+    fn convert_to_type(&self, value: &CursedValue, target_type: &crate::ast::Type) -> Result<CursedValue, CursedError> {
+        match (value, target_type) {
+            // Direct type matches
+            (CursedValue::Integer(i), crate::ast::Type::Normie | crate::ast::Type::Integer) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::Integer(i), crate::ast::Type::Smol) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::Integer(i), crate::ast::Type::Mid) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::Integer(i), crate::ast::Type::Thicc) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::Integer(i), crate::ast::Type::Byte) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::Integer(i), crate::ast::Type::Rune) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::Float(f), crate::ast::Type::Snack | crate::ast::Type::Float) => Ok(CursedValue::Float(*f)),
+            (CursedValue::Float(f), crate::ast::Type::Meal) => Ok(CursedValue::Float(*f)),
+            (CursedValue::String(s), crate::ast::Type::Tea | crate::ast::Type::String) => Ok(CursedValue::String(s.clone())),
+            (CursedValue::Boolean(b), crate::ast::Type::Lit | crate::ast::Type::Boolean) => Ok(CursedValue::Boolean(*b)),
+            (CursedValue::Character(c), crate::ast::Type::Sip) => Ok(CursedValue::Character(*c)),
+            
+            // Type conversions
+            (CursedValue::Integer(i), crate::ast::Type::Float | crate::ast::Type::Snack | crate::ast::Type::Meal) => {
+                Ok(CursedValue::Float(*i as f64))
+            },
+            (CursedValue::Float(f), crate::ast::Type::Integer | crate::ast::Type::Normie | crate::ast::Type::Smol | crate::ast::Type::Mid | crate::ast::Type::Thicc | crate::ast::Type::Byte | crate::ast::Type::Rune) => {
+                Ok(CursedValue::Integer(*f as i64))
+            },
+            (CursedValue::Boolean(b), crate::ast::Type::Integer | crate::ast::Type::Normie | crate::ast::Type::Smol | crate::ast::Type::Mid | crate::ast::Type::Thicc | crate::ast::Type::Byte | crate::ast::Type::Rune) => {
+                Ok(CursedValue::Integer(if *b { 1 } else { 0 }))
+            },
+            (CursedValue::Integer(i), crate::ast::Type::Boolean | crate::ast::Type::Lit) => {
+                Ok(CursedValue::Boolean(*i != 0))
+            },
+            (CursedValue::Character(c), crate::ast::Type::Integer | crate::ast::Type::Normie | crate::ast::Type::Smol | crate::ast::Type::Mid | crate::ast::Type::Thicc | crate::ast::Type::Byte | crate::ast::Type::Rune) => {
+                Ok(CursedValue::Integer(*c as u8 as i64))
+            },
+            (CursedValue::Integer(i), crate::ast::Type::Sip) => {
+                if *i >= 0 && *i <= 255 {
+                    Ok(CursedValue::Character(*i as u8 as char))
+                } else {
+                    Err(CursedError::runtime_error(&format!("Cannot convert {} to character: out of range", i)))
+                }
+            },
+            
+            _ => Err(CursedError::runtime_error(&format!(
+                "Cannot convert {:?} to type {:?}",
+                value, target_type
+            ))),
         }
     }
 

@@ -50,6 +50,7 @@ pub enum Statement {
     Continue(ContinueStatement),
     Increment(IncrementStatement),
     Decrement(DecrementStatement),
+    ShortDeclaration(ShortDeclarationStatement),
 }
 
 /// Expression types
@@ -76,6 +77,7 @@ pub enum Expression {
     Tuple(TupleExpression),
     TupleAccess(TupleAccessExpression),
     ArrayAccess(ArrayAccessExpression),
+    TypeAssertion(TypeAssertionExpression),
 }
 
 /// Binary expression
@@ -139,6 +141,32 @@ pub struct TupleAccessExpression {
 pub struct ArrayAccessExpression {
     pub array: Box<Expression>,
     pub index: Box<Expression>,
+}
+
+/// Type assertion expression (e.g., value.(Type))
+#[derive(Debug, Clone)]
+pub struct TypeAssertionExpression {
+    pub value: Box<Expression>,
+    pub target_type: Type,
+    pub is_safe: bool, // true for value.(type)?, false for value.(type)
+}
+
+impl TypeAssertionExpression {
+    pub fn new(value: Box<Expression>, target_type: Type) -> Self {
+        Self {
+            value,
+            target_type,
+            is_safe: false,
+        }
+    }
+    
+    pub fn safe(value: Box<Expression>, target_type: Type) -> Self {
+        Self {
+            value,
+            target_type,
+            is_safe: true,
+        }
+    }
 }
 
 /// Visibility level for symbols
@@ -547,6 +575,34 @@ impl DecrementStatement {
     }
 }
 
+/// Short variable declaration (identifier := expression)
+#[derive(Debug, Clone)]
+pub struct ShortDeclarationStatement {
+    pub target: ShortDeclarationTarget,
+    pub value: Expression,
+}
+
+/// Target for short variable declaration (single variable or tuple destructuring)
+#[derive(Debug, Clone)]
+pub enum ShortDeclarationTarget {
+    Single(String),
+    Tuple(Vec<String>),
+}
+
+impl ShortDeclarationStatement {
+    pub fn new(target: ShortDeclarationTarget, value: Expression) -> Self {
+        Self { target, value }
+    }
+    
+    pub fn single(name: String, value: Expression) -> Self {
+        Self::new(ShortDeclarationTarget::Single(name), value)
+    }
+    
+    pub fn tuple(names: Vec<String>, value: Expression) -> Self {
+        Self::new(ShortDeclarationTarget::Tuple(names), value)
+    }
+}
+
 /// Type annotations
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
@@ -560,10 +616,18 @@ pub enum Type {
     Slice(Box<Type>),                 // Slice type []T
     Custom(String),
     // CURSED-specific types
-    Normie,              // Standard/basic integer type (normie)
+    Normie,              // Standard/basic integer type (normie) - i32
     Tea,                 // String/information type (tea)
     Lit,                 // Boolean/truth type (lit)
     Sip,                 // Character type (sip)
+    Smol,                // Small integer type (smol) - i8
+    Mid,                 // Medium integer type (mid) - i16
+    Thicc,               // Large integer type (thicc) - i64
+    Snack,               // Small float type (snack) - f32
+    Meal,                // Large float type (meal) - f64
+    Byte,                // Unsigned 8-bit integer (byte) - u8
+    Rune,                // Unicode code point (rune) - i32 alias
+    Extra,               // Complex number type (extra)
     Squad(Box<Type>),    // Array/collection type (squad)
     Collab(String),      // Interface type (collab)
     Dm(Box<Type>),       // Channel type (dm<T>)
@@ -599,6 +663,14 @@ impl std::fmt::Display for Type {
             Type::Tea => write!(f, "tea"),
             Type::Lit => write!(f, "lit"),
             Type::Sip => write!(f, "sip"),
+            Type::Smol => write!(f, "smol"),
+            Type::Mid => write!(f, "mid"),
+            Type::Thicc => write!(f, "thicc"),
+            Type::Snack => write!(f, "snack"),
+            Type::Meal => write!(f, "meal"),
+            Type::Byte => write!(f, "byte"),
+            Type::Rune => write!(f, "rune"),
+            Type::Extra => write!(f, "extra"),
             Type::Squad(inner) => write!(f, "squad<{}>", inner),
             Type::Collab(name) => write!(f, "collab<{}>", name),
             Type::Dm(inner) => write!(f, "dm<{}>", inner),
