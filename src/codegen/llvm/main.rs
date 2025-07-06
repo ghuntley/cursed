@@ -280,8 +280,8 @@ impl LlvmCodeGenerator {
         if !has_main_function && !top_level_statements.is_empty() {
             self.ir_code.push_str("\ndefine i32 @main() {\n");
             
-            // Main function register numbering starts at %1 according to LLVM convention
-            self.variable_counter = 1;
+            // Main function register numbering starts at %0 according to LLVM convention
+            self.variable_counter = 0;
             
             // Generate all top-level statements inside main function
             for statement in &top_level_statements {
