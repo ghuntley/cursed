@@ -369,13 +369,13 @@ impl ExpressionCompiler {
         }
         
         // Allocate array
-        self.ir_buffer.push_str(&format!("  {} = alloca [{}x i32], align 4\n", array_reg, len));
+        self.ir_buffer.push_str(&format!("  {} = alloca [{} x i32], align 4\n", array_reg, len));
         
         // Initialize elements
         for (i, element) in elements.iter().enumerate() {
             let elem_reg = self.compile_expression(element)?;
             let elem_ptr = self.next_register();
-            self.ir_buffer.push_str(&format!("  {} = getelementptr inbounds [{}x i32], [{}x i32]* {}, i64 0, i64 {}\n", 
+            self.ir_buffer.push_str(&format!("  {} = getelementptr inbounds [{} x i32], [{} x i32]* {}, i64 0, i64 {}\n", 
                 elem_ptr, len, len, array_reg, i));
             self.ir_buffer.push_str(&format!("  store i32 {}, i32* {}, align 4\n", elem_reg, elem_ptr));
         }

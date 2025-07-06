@@ -626,6 +626,15 @@ impl FunctionCompiler {
             Expression::Unary(_) => Ok("i32".to_string()), // Default for now
             Expression::Call(_) => Ok("i32".to_string()), // Default for now
             Expression::Literal(lit) => self.infer_literal_type(lit),
+            Expression::Array(elements) => {
+                // For arrays, return a pointer to the array type
+                let len = elements.len();
+                if len == 0 {
+                    Ok("[0 x i32]*".to_string()) // Empty array pointer
+                } else {
+                    Ok(format!("[{} x i32]*", len)) // Array pointer with length
+                }
+            },
             _ => Ok("i32".to_string()), // Default fallback
         }
     }

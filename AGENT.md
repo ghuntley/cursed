@@ -37,3 +37,12 @@ src/
 └── linter/                 # Code quality analysis
 ```
 
+## Language Features
+
+### Tuples
+- Basic syntax: `(1, "hello", based)`
+- Access elements: `tuple.0`, `tuple.1`, `tuple.2`
+- Destructuring: `(a, b, c) = tuple`
+- Tests: `tests/tuple_tests.rs` (all 14 tests pass)
+- Status: Works in interpretation mode, may have LLVM codegen issues
+
