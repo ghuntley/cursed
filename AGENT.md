@@ -96,6 +96,13 @@ src/
 - Type syntax: `[type]` for arrays, `[type; size]` for fixed arrays
 - Status: Fully functional in both interpretation and compilation modes
 
+### Array Indexing
+- Basic syntax: `array[index]`, `numbers[0]`, `data[variable]`
+- Examples: `sus first drip = numbers[0]`, `sus value drip = data[i]`
+- Support for nested arrays: `matrix[row][col]`
+- Tests: `test_array_indexing_test.csd` (comprehensive array access tests)
+- Status: Fully functional in both interpretation and compilation modes
+
 ### For-in Loops
 - For-in loop syntax is implemented and working at top level
 - Support for iteration over arrays and other collections

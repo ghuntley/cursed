@@ -12,6 +12,7 @@ use crate::error::CursedError;
 use crate::package_manager::PackageManager;
 use crate::codegen::llvm::package_integration::LlvmPackageConfig;
 use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
+use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
@@ -84,7 +85,7 @@ pub struct LlvmCodeGenerator {
     ir_code: String,
     variable_counter: usize,
     label_counter: usize,
-    string_constants: Vec<String>,
+    string_manager: StringConstantManager,
     variables: HashMap<String, String>, // variable name -> register mapping
     package_manager: Option<Arc<Mutex<PackageManager>>>,
     package_config: Option<LlvmPackageConfig>,
@@ -103,7 +104,7 @@ impl LlvmCodeGenerator {
             ir_code: String::new(),
             variable_counter: 0,
             label_counter: 0,
-            string_constants: Vec::new(),
+            string_manager: get_global_string_manager(),
             variables: HashMap::new(),
             package_manager: None,
             package_config: None,
@@ -294,20 +295,16 @@ impl LlvmCodeGenerator {
         }
         
         // Add string constants AFTER generating all code
-        // Debug output (commented out for production)
-        // eprintln!("DEBUG: Final string constants check. Count: {}", self.string_constants.len());
-        // for (i, constant) in self.string_constants.iter().enumerate() {
-        //     eprintln!("DEBUG: String constant {}: {}", i, constant);
-        // }
+        let string_constants = self.string_manager.get_all_constants();
         
-        if !self.string_constants.is_empty() {
+        if !string_constants.is_empty() {
             // Insert string constants before the main function by modifying the ir_code
             let main_pos = self.ir_code.find("define i32 @main()").unwrap_or(self.ir_code.len());
             let before_main = self.ir_code[..main_pos].to_string();
             let from_main = self.ir_code[main_pos..].to_string();
             
             self.ir_code = format!("{}\n; String constants\n", before_main);
-            for constant in &self.string_constants {
+            for constant in &string_constants {
                 self.ir_code.push_str(&format!("{}\n", constant));
             }
             self.ir_code.push_str(&from_main);
@@ -349,7 +346,7 @@ declare i32 @_Unwind_GetDataRelBase(i8*)
 declare i32 @_Unwind_GetTextRelBase(i8*)
 
 ; CURSED exception type info
-@_ZTI11CursedError = constant { i8*, i8* } { i8* null, i8* getelementptr inbounds ([14 x i8], [14 x i8]* @_ZTS11CursedError, i32 0, i32 0) }
+@_ZTI11CursedError = constant { i8*, i8* } { i8* null, i8* bitcast ([14 x i8]* @_ZTS11CursedError to i8*) }
 @_ZTS11CursedError = constant [14 x i8] c\"11CursedError\\00\"
 
 ");
@@ -362,11 +359,27 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             },
             Statement::Let(let_stmt) => {
                 let value_reg = self.generate_expression(&let_stmt.value)?;
-                // Store the variable mapping
+                
+                // Allocate variable on stack and store value
                 match &let_stmt.target {
                     crate::ast::LetTarget::Single(name) => {
-                        self.variables.insert(name.clone(), value_reg.clone());
-                        self.ir_code.push_str(&format!("  ; Variable: {} = {}\n", name, value_reg));
+                        let var_reg = self.next_register();
+                        
+                        // Determine type based on the value expression
+                        let (var_type, store_value) = match &let_stmt.value {
+                            Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
+                            Expression::Boolean(_) => ("i1".to_string(), value_reg.clone()),
+                            Expression::Integer(_) => ("i32".to_string(), value_reg.clone()),
+                            _ => ("i32".to_string(), value_reg.clone()), // Default
+                        };
+                        
+                        // Allocate and store variable
+                        self.ir_code.push_str(&format!("  {} = alloca {}, align 4\n", var_reg, var_type));
+                        self.ir_code.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, store_value, var_type, var_reg));
+                        
+                        // Store the variable mapping
+                        self.variables.insert(name.clone(), var_reg.clone());
+                        self.ir_code.push_str(&format!("  ; Variable {} allocated at {}\n", name, var_reg));
                     },
                     crate::ast::LetTarget::Tuple(names) => {
                         self.ir_code.push_str(&format!("  ; Tuple destructuring let statement\n"));
@@ -399,8 +412,21 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 // Update the variable mapping
                 match &assign_stmt.target {
                     crate::ast::AssignmentTarget::Single(name) => {
-                        self.variables.insert(name.clone(), value_reg.clone());
-                        self.ir_code.push_str(&format!("  ; Assignment: {} = {}\n", name, value_reg));
+                        if let Some(var_reg) = self.variables.get(name).cloned() {
+                            // Determine type based on variable name patterns or stored type
+                            let var_type = if name.contains("flag") || name.contains("lit") {
+                                "i1"
+                            } else if name.contains("greeting") || name.contains("tea") {
+                                "i8*"
+                            } else {
+                                "i32" // Default
+                            };
+                            
+                            self.ir_code.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, value_reg, var_type, var_reg));
+                            self.ir_code.push_str(&format!("  ; Assignment: {} updated\n", name));
+                        } else {
+                            return Err(CursedError::runtime_error(&format!("Undefined variable: {}", name)));
+                        }
                     },
                     crate::ast::AssignmentTarget::Tuple(var_names) => {
                         self.ir_code.push_str(&format!("  ; Tuple destructuring assignment\n"));
@@ -677,6 +703,27 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Expression::String(val) => {
                 self.generate_string_literal(val)
             },
+            Expression::Identifier(name) => {
+                // Load variable from stack
+                if let Some(var_reg) = self.variables.get(name).cloned() {
+                    let load_reg = self.next_register();
+                    
+                    // Determine type based on variable name patterns  
+                    let var_type = if name.contains("flag") || name.contains("lit") {
+                        "i1"
+                    } else if name.contains("greeting") || name.contains("tea") {
+                        "i8*"
+                    } else {
+                        "i32" // Default
+                    };
+                    
+                    self.ir_code.push_str(&format!("  {} = load {}, {}* {}, align 4\n", load_reg, var_type, var_type, var_reg));
+                    Ok(load_reg)
+                } else {
+                    // Function parameter or undefined variable
+                    Ok(format!("%{}", name))
+                }
+            },
             Expression::Call(call_expr) => {
                 self.generate_function_call(&call_expr.function, &call_expr.arguments)
             },
@@ -704,12 +751,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                     self.ir_code.push_str(expression_ir);
                 }
                 
-                // Add any string constants to our pool (excluding lambda functions)
-                for constant in expression_compiler.get_actual_string_constants() {
-                    if !self.string_constants.contains(&constant) {
-                        self.string_constants.push(constant);
-                    }
-                }
+                // String constants are now automatically managed globally, so no need to manually merge
                 
                 // Add lambda function definitions to our IR code
                 for lambda_func in expression_compiler.get_lambda_functions() {
@@ -864,18 +906,65 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                     match arg {
                         Expression::String(_) => {
                             // String arguments - use puts for simpler output
-                            self.ir_code.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
+                            let call_reg = self.next_register();
+                            self.ir_code.push_str(&format!("  {} = call i32 @puts(i8* {})\n", call_reg, arg_reg));
                         },
-                        Expression::Integer(_) | Expression::Identifier(_) => {
-                            // Integer arguments - use printf with %d
-                            let format_str = self.add_string_constant("%d\\n");
-                            self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_str, arg_reg));
+                        Expression::Integer(_) => {
+                        // Integer literal - use printf with %d
+                        let format_str = self.add_string_constant("%d\n");
+                        let format_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                        let call_reg = self.next_register();
+                         self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_reg, format_reg, arg_reg));
+                        },
+                         Expression::Identifier(name) => {
+                            // Variable - need to determine type
+                            let var_type = if name.contains("flag") || name.contains("lit") {
+                                "boolean"
+                            } else if name.contains("greeting") || name.contains("tea") {
+                                "string"
+                            } else {
+                                "integer" // Default
+                            };
+                            
+                            match var_type {
+                                "string" => {
+                                    let call_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = call i32 @puts(i8* {})\n", call_reg, arg_reg));
+                                },
+                                "boolean" => {
+                                    // Convert boolean to integer for printf
+                                    let conv_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = zext i1 {} to i32\n", conv_reg, arg_reg));
+                                    let format_str = self.add_string_constant("%d\n");
+                                    let format_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                                    let call_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_reg, format_reg, conv_reg));
+                                },
+                                _ => {
+                                    // Integer
+                                    let format_str = self.add_string_constant("%d\n");
+                                    let format_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                                    let call_reg = self.next_register();
+                                     self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_reg, format_reg, arg_reg));
+                                }
+                            }
+                         },
+                        Expression::Binary(bin_expr) if bin_expr.operator == "+" => {
+                            // String concatenation result - use puts
+                            let call_reg = self.next_register();
+                             self.ir_code.push_str(&format!("  {} = call i32 @puts(i8* {})\n", call_reg, arg_reg));
                         },
                         _ => {
-                            // For complex expressions, convert to string and print
+                            // For other complex expressions, assume integer and convert
                             self.ir_code.push_str(&format!("  ; Converting complex expression to output\n"));
-                            let format_str = self.add_string_constant("%d\\n");
-                            self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_str, arg_reg));
+                            let format_str = self.add_string_constant("%d\n");
+                            let format_reg = self.next_register();
+                            self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                            let call_reg = self.next_register();
+                             self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_reg, format_reg, arg_reg));
                         }
                     }
                 }
@@ -893,7 +982,8 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                         printf_args.push(arg_reg);
                     }
                     
-                    self.ir_code.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}", printf_args[0]));
+                    let call_reg = self.next_register();
+                    self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}", call_reg, printf_args[0]));
                     for arg in &printf_args[1..] {
                         self.ir_code.push_str(&format!(", i32 {}", arg));
                     }
@@ -909,57 +999,20 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
     }
     
     fn add_string_constant(&mut self, s: &str) -> String {
-        // Check if this string constant already exists
-        for (i, constant) in self.string_constants.iter().enumerate() {
-            if constant.contains(&format!("c\"{}\\00\"", s)) {
-                let const_name = format!("@.str.{}", i);
-                let len = s.len() + 1; // +1 for null terminator
-                return format!("getelementptr inbounds ([{} x i8], [{} x i8]* {}, i64 0, i64 0)", len, len, const_name);
-            }
-        }
-        
-        // String constant doesn't exist, add it
-        let const_name = format!("@.str.{}", self.string_constants.len());
-        let len = s.len() + 1; // +1 for null terminator
-        self.string_constants.push(format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
-            const_name, len, s));
-        format!("getelementptr inbounds ([{} x i8], [{} x i8]* {}, i64 0, i64 0)", len, len, const_name)
+        self.string_manager.add_string_constant(s)
     }
 
     fn generate_string_literal(&mut self, value: &str) -> Result<String, CursedError> {
         let cleaned_value = value.replace("\"", "\\\"");
         
-        // Check if this string constant already exists
-        for (i, constant) in self.string_constants.iter().enumerate() {
-            if constant.contains(&format!("c\"{}\\00\"", cleaned_value)) {
-                let const_name = format!("@.str.{}", i);
-                let len = cleaned_value.len() + 1; // +1 for null terminator
-                
-                // Generate getelementptr to get string pointer
-                let reg = self.next_register();
-                self.ir_code.push_str(&format!(
-                    "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
-                    reg, len, len, const_name
-                ));
-                
-                return Ok(reg);
-            }
-        }
-        
-        // String constant doesn't exist, add it
-        let const_name = format!("@.str.{}", self.string_constants.len());
-        let len = cleaned_value.len() + 1; // +1 for null terminator
-        
-        // Add to constant pool
-        let constant_def = format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
-            const_name, len, cleaned_value);
-        self.string_constants.push(constant_def.clone());
+        // Use the centralized string manager to get reference
+        let string_ref = self.string_manager.add_string_constant(&cleaned_value);
         
         // Generate getelementptr to get string pointer
         let reg = self.next_register();
         self.ir_code.push_str(&format!(
-            "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
-            reg, len, len, const_name
+            "  {} = {}\n",
+            reg, string_ref
         ));
         
         Ok(reg)
@@ -1032,38 +1085,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             self.ir_code.push_str(expression_ir);
         }
         
-        // Merge string constants from function compiler with proper deduplication
-        for constant in function_compiler.get_string_constants() {
-            // Extract the string content from the constant definition
-            if let Some(start) = constant.find("c\"") {
-                if let Some(end) = constant.rfind("\\00\"") {
-                    let string_content = &constant[start+2..end];
-                    
-                    // Check if this string content already exists
-                    let mut already_exists = false;
-                    for existing_constant in &self.string_constants {
-                        if existing_constant.contains(&format!("c\"{}\\00\"", string_content)) {
-                            already_exists = true;
-                            break;
-                        }
-                    }
-                    
-                    if !already_exists {
-                        // Renumber the constant to avoid conflicts
-                        let new_const_name = format!("@.str.{}", self.string_constants.len());
-                        let mut new_constant = constant.clone();
-                        
-                        // Replace the old constant name with the new one
-                        if let Some(old_name_end) = constant.find(" = ") {
-                            let old_name = &constant[0..old_name_end];
-                            new_constant = new_constant.replace(old_name, &new_const_name);
-                        }
-                        
-                        self.string_constants.push(new_constant);
-                    }
-                }
-            }
-        }
+        // String constants are now automatically managed globally, no need to merge manually
         
         Ok(())
     }
@@ -1989,7 +2011,7 @@ impl LlvmCodeGenerator {
     fn generate_interface_descriptor(&mut self, interface_stmt: &InterfaceStatement) -> Result<(), CursedError> {
         // Generate type descriptor for interface
         self.ir_code.push_str(&format!("@interface.{}.descriptor = global {{", interface_stmt.name));
-        self.ir_code.push_str(&format!(" i8* getelementptr inbounds ([{}x i8], [{}x i8]* @interface.{}.name, i32 0, i32 0),", 
+        self.ir_code.push_str(&format!(" i8* getelementptr inbounds [{}x i8], [{}x i8]* @interface.{}.name, i32 0, i32 0,", 
             interface_stmt.name.len() + 1, interface_stmt.name.len() + 1, interface_stmt.name));
         self.ir_code.push_str(&format!(" i32 {} }}\n", interface_stmt.methods.len()));
         

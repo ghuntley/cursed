@@ -3,23 +3,26 @@
 
 use crate::ast::{Expression, Literal, BinaryOperator, UnaryOperator};
 use crate::error::CursedError;
+use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use std::collections::HashMap;
 
 /// Complete expression compiler for CURSED expressions to LLVM IR
 pub struct ExpressionCompiler {
     pub variable_counter: usize,
-    pub string_constants: Vec<String>,
+    pub string_manager: StringConstantManager,
     pub variables: HashMap<String, String>,
     pub ir_buffer: String,
+    pub lambda_functions: Vec<String>,
 }
 
 impl ExpressionCompiler {
     pub fn new() -> Self {
         Self {
             variable_counter: 0,
-            string_constants: Vec::new(),
+            string_manager: get_global_string_manager(),
             variables: HashMap::new(),
             ir_buffer: String::new(),
+            lambda_functions: Vec::new(),
         }
     }
 
@@ -109,18 +112,16 @@ impl ExpressionCompiler {
 
     /// Compile string literals with constant pool management
     fn compile_string_literal(&mut self, value: &str) -> Result<String, CursedError> {
-        let const_name = format!("@.str.{}", self.string_constants.len());
-        let len = value.len() + 1; // +1 for null terminator
+        let cleaned_value = value.replace("\"", "\\\"");
         
-        // Add to constant pool
-        self.string_constants.push(format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
-            const_name, len, value.replace("\"", "\\\"")));
+        // Use centralized string manager
+        let string_ref = self.string_manager.add_string_constant(&cleaned_value);
         
-        // Generate getelementptr to get string pointer
+        // Generate register assignment
         let reg = self.next_register();
         self.ir_buffer.push_str(&format!(
-            "  {} = getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0\n",
-            reg, len, len, const_name
+            "  {} = {}\n",
+            reg, string_ref
         ));
         
         Ok(reg)
@@ -155,6 +156,11 @@ impl ExpressionCompiler {
         operator: &str,
         right: &Expression
     ) -> Result<String, CursedError> {
+        // Handle string concatenation specially
+        if operator == "+" && (matches!(left, Expression::String(_)) || matches!(right, Expression::String(_))) {
+            return self.compile_string_concatenation(left, right);
+        }
+        
         let left_reg = self.compile_expression(left)?;
         let right_reg = self.compile_expression(right)?;
         let result_reg = self.next_register();
@@ -252,6 +258,29 @@ impl ExpressionCompiler {
                 return Err(CursedError::CompilerError(format!("Unsupported binary operator: {}", operator)));
             }
         }
+        
+        Ok(result_reg)
+    }
+
+    /// Compile string concatenation (e.g., "Count: " + count)
+    fn compile_string_concatenation(&mut self, left: &Expression, right: &Expression) -> Result<String, CursedError> {
+        let left_reg = self.compile_expression(left)?;
+        let right_reg = self.compile_expression(right)?;
+        
+        // For string + integer concatenation, convert integer to string first
+        let right_str_reg = match right {
+            Expression::Integer(_) | Expression::Identifier(_) => {
+                // Call i32_to_string to convert integer to string
+                let convert_reg = self.next_register();
+                self.ir_buffer.push_str(&format!("  {} = call i8* @i32_to_string(i32 {})\n", convert_reg, right_reg));
+                convert_reg
+            },
+            _ => right_reg,
+        };
+        
+        // Call string_concat runtime function
+        let result_reg = self.next_register();
+        self.ir_buffer.push_str(&format!("  {} = call i8* @string_concat(i8* {}, i8* {})\n", result_reg, left_reg, right_str_reg));
         
         Ok(result_reg)
     }
@@ -487,8 +516,7 @@ impl ExpressionCompiler {
         self.ir_buffer = old_ir_buffer;
         
         // Store the lambda function definition to be emitted later
-        // For now, we'll append it to the string constants as a hack
-        self.string_constants.push(lambda_ir);
+        self.lambda_functions.push(lambda_ir);
         
         // Generate code to create a function pointer
         let lambda_ptr_reg = self.next_register();
@@ -543,8 +571,10 @@ impl ExpressionCompiler {
                             self.ir_buffer.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
                         },
                         _ => {
-                            let format_str = self.compile_string_literal("%d\\n")?;
-                            self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_str, arg_reg));
+                            let format_str = self.string_manager.add_string_constant("%d\\n");
+                            let format_reg = self.next_register();
+                            self.ir_buffer.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                            self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_reg, arg_reg));
                         }
                     }
                 }
@@ -605,25 +635,19 @@ impl ExpressionCompiler {
         reg
     }
 
-    /// Get string constants for global declaration
-    pub fn get_string_constants(&self) -> &[String] {
-        &self.string_constants
+    /// Get string constants for global declaration (now managed globally)
+    pub fn get_string_constants(&self) -> Vec<String> {
+        self.string_manager.get_all_constants()
     }
     
     /// Get lambda function definitions
-    pub fn get_lambda_functions(&self) -> Vec<String> {
-        self.string_constants.iter()
-            .filter(|s| s.starts_with("define i32 @lambda_"))
-            .cloned()
-            .collect()
+    pub fn get_lambda_functions(&self) -> &Vec<String> {
+        &self.lambda_functions
     }
     
     /// Get only actual string constants (not lambda functions)
     pub fn get_actual_string_constants(&self) -> Vec<String> {
-        self.string_constants.iter()
-            .filter(|s| !s.starts_with("define i32 @lambda_"))
-            .cloned()
-            .collect()
+        self.string_manager.get_all_constants()
     }
 
     /// Get generated IR code
@@ -686,14 +710,15 @@ impl ExpressionCompiler {
         let result_reg = format!("%var{}", self.variable_counter);
         self.variable_counter += 1;
 
-        let string_index = self.string_constants.len();
+        // Use centralized string manager for element type string
+        let type_str_ref = self.string_manager.add_string_constant(element_type);
+        let type_str_reg = self.next_register();
+        self.ir_buffer.push_str(&format!("  {} = {}\n", type_str_reg, type_str_ref));
+        
         self.ir_buffer.push_str(&format!(
-            "  {} = call i8* @cursed_channel_create(i32 {}, i8* getelementptr inbounds ([{}x i8], [{}x i8]* @.str.{}, i32 0, i32 0))\n",
-            result_reg, capacity_reg, element_type.len() + 1, element_type.len() + 1, string_index
+            "  {} = call i8* @cursed_channel_create(i32 {}, i8* {})\n",
+            result_reg, capacity_reg, type_str_reg
         ));
-
-        // Add the element type string to the strings section
-        self.string_constants.push(element_type.to_string());
 
         Ok(result_reg)
     }
