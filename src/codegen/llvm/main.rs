@@ -280,6 +280,9 @@ impl LlvmCodeGenerator {
         if !has_main_function && !top_level_statements.is_empty() {
             self.ir_code.push_str("\ndefine i32 @main() {\n");
             
+            // Main function register numbering starts at %1 according to LLVM convention
+            self.variable_counter = 1;
+            
             // Generate all top-level statements inside main function
             for statement in &top_level_statements {
                 self.generate_statement(statement)?;
@@ -1052,13 +1055,16 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         
         // Handle regular function calls
         if let Expression::Identifier(function_name) = function {
-            let result_reg = self.next_register();
             let mut arg_regs = Vec::new();
             
+            // First generate all arguments to get their registers
             for arg in arguments {
                 let arg_reg = self.generate_expression(arg)?;
                 arg_regs.push(arg_reg);
             }
+            
+            // Now allocate the result register after all arguments are processed
+            let result_reg = self.next_register();
             
             self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, function_name));
             for (i, arg_reg) in arg_regs.iter().enumerate() {

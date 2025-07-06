@@ -630,8 +630,8 @@ impl ExpressionCompiler {
 
     /// Generate next register name
     fn next_register(&mut self) -> String {
-        self.variable_counter += 1;
         let reg = format!("%{}", self.variable_counter);
+        self.variable_counter += 1;
         reg
     }
 

@@ -50,7 +50,8 @@ impl FunctionCompiler {
         self.variables.clear();
         self.variable_types.clear();
         self.function_params.clear();
-        self.variable_counter = 0;
+        // Main function register numbering starts at %1 according to LLVM convention
+        self.variable_counter = if name == "main" { 1 } else { 0 };
         self.label_counter = 0;
         self.current_function = Some(name.to_string());
         
@@ -136,9 +137,42 @@ impl FunctionCompiler {
                     self.infer_expression_type(&let_stmt.value)?
                 };
                 
-                // Allocate variable on stack with correct type
+                // Allocate variable on stack with correct type first
                 ir.push_str(&format!("  {} = alloca {}, align 4\n", var_reg, var_type));
-                ir.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, value_reg, var_type, var_reg));
+                
+                // Check if we need type conversion
+                let value_type = self.infer_expression_type(&let_stmt.value)?;
+                let final_value_reg = if var_type != value_type {
+                    // Need type conversion
+                    let conv_reg = self.next_register();
+                    match (value_type.as_str(), var_type.as_str()) {
+                        ("double", "i32") => {
+                            ir.push_str(&format!("  {} = fptosi double {} to i32\n", conv_reg, value_reg));
+                            conv_reg
+                        },
+                        ("i32", "double") => {
+                            ir.push_str(&format!("  {} = sitofp i32 {} to double\n", conv_reg, value_reg));
+                            conv_reg
+                        },
+                        ("i1", "i32") => {
+                            ir.push_str(&format!("  {} = zext i1 {} to i32\n", conv_reg, value_reg));
+                            conv_reg
+                        },
+                        ("i32", "i1") => {
+                            ir.push_str(&format!("  {} = icmp ne i32 {}, 0\n", conv_reg, value_reg));
+                            conv_reg
+                        },
+                        _ => {
+                            // No conversion available, use original value
+                            value_reg.clone()
+                        }
+                    }
+                } else {
+                    value_reg.clone()
+                };
+                
+                // Store the value (with conversion if needed)
+                ir.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, final_value_reg, var_type, var_reg));
                 
                 // Store variable mapping
                 match &let_stmt.target {
@@ -308,6 +342,7 @@ impl FunctionCompiler {
     pub fn compile_expression(&mut self, expression: &Expression) -> Result<String, CursedError> {
         match expression {
             Expression::Integer(val) => Ok(val.to_string()),
+            Expression::Float(val) => Ok(val.to_string()),
             Expression::Boolean(val) => Ok(if *val { "1" } else { "0" }.to_string()),
             Expression::String(val) => {
                 let cleaned_val = val.replace("\"", "\\\"");
@@ -390,36 +425,83 @@ impl FunctionCompiler {
         
         let left_reg = self.compile_expression(left)?;
         let right_reg = self.compile_expression(right)?;
+        
+        // Infer types of operands for mixed-type arithmetic
+        let left_type = self.infer_expression_type(left)?;
+        let right_type = self.infer_expression_type(right)?;
+        
+        // Determine the result type and required conversions
+        let (final_left_reg, final_right_reg, result_type, llvm_op) = if left_type == "double" || right_type == "double" {
+            // Mixed arithmetic: promote to double
+            let promoted_left = if left_type != "double" {
+                let conv_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = sitofp {} {} to double\n", conv_reg, left_type, left_reg));
+                conv_reg
+            } else {
+                left_reg
+            };
+            
+            let promoted_right = if right_type != "double" {
+                let conv_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = sitofp {} {} to double\n", conv_reg, right_type, right_reg));
+                conv_reg
+            } else {
+                right_reg
+            };
+            
+            let op_str = match operator {
+                "+" => "fadd",
+                "-" => "fsub", 
+                "*" => "fmul",
+                "/" => "fdiv",
+                "%" => "frem",
+                "==" => "fcmp oeq",
+                "!=" => "fcmp one",
+                "<" => "fcmp olt",
+                ">" => "fcmp ogt",
+                "<=" => "fcmp ole",
+                ">=" => "fcmp oge",
+                _ => return Err(CursedError::CompilerError(format!("Unsupported float operator: {}", operator))),
+            };
+            
+            (promoted_left, promoted_right, "double".to_string(), op_str.to_string())
+        } else {
+            // Integer arithmetic
+            let op_str = match operator {
+                "+" => "add",
+                "-" => "sub", 
+                "*" => "mul",
+                "/" => "sdiv",
+                "%" => "srem",
+                "==" => "icmp eq",
+                "!=" => "icmp ne",
+                "<" => "icmp slt",
+                ">" => "icmp sgt",
+                "<=" => "icmp sle",
+                ">=" => "icmp sge",
+                "&&" => "and",
+                "||" => "or",
+                "&" => "and",
+                "|" => "or",
+                "^" => "xor",
+                "<<" => "shl",
+                ">>" => "ashr",
+                _ => return Err(CursedError::CompilerError(format!("Unsupported binary operator: {}", operator))),
+            };
+            
+            (left_reg, right_reg, "i32".to_string(), op_str.to_string())
+        };
+        
         let result_reg = self.next_register();
         
-        let op_str = match operator {
-            "+" => "add",
-            "-" => "sub", 
-            "*" => "mul",
-            "/" => "sdiv",
-            "%" => "srem",
-            "==" => "icmp eq",
-            "!=" => "icmp ne",
-            "<" => "icmp slt",
-            ">" => "icmp sgt",
-            "<=" => "icmp sle",
-            ">=" => "icmp sge",
-            "&&" => "and",
-            "||" => "or",
-            "&" => "and",
-            "|" => "or",
-            "^" => "xor",
-            "<<" => "shl",
-            ">>" => "ashr",
-            _ => return Err(CursedError::CompilerError(format!("Unsupported binary operator: {}", operator))),
-        };
-        
-        // Choose appropriate type based on operation
-        let op_type = if operator.starts_with("icmp") {
-            self.ir_code.push_str(&format!("  {} = {} i32 {}, {}\n", result_reg, op_str, left_reg, right_reg));
+        // Generate the operation with proper types
+        if llvm_op.starts_with("icmp") || llvm_op.starts_with("fcmp") {
+            // Comparison operations return i1
+            self.ir_code.push_str(&format!("  {} = {} {} {}, {}\n", result_reg, llvm_op, result_type, final_left_reg, final_right_reg));
         } else {
-            self.ir_code.push_str(&format!("  {} = {} i32 {}, {}\n", result_reg, op_str, left_reg, right_reg));
-        };
+            // Arithmetic operations return the same type as operands
+            self.ir_code.push_str(&format!("  {} = {} {} {}, {}\n", result_reg, llvm_op, result_type, final_left_reg, final_right_reg));
+        }
         
         Ok(result_reg)
     }
@@ -470,8 +552,6 @@ impl FunctionCompiler {
                         return self.compile_vibez_method_call(&member_expr.property, arguments);
                     }
                     
-                    let result_reg = self.next_register();
-                    
                     // First compile all arguments to generate their intermediate IR
                     let mut arg_regs = Vec::new();
                     for arg in arguments {
@@ -479,7 +559,10 @@ impl FunctionCompiler {
                         arg_regs.push(arg_reg);
                     }
                     
-                    // Now generate the method call with compiled arguments
+                    // Now allocate result register after all arguments are compiled
+                    let result_reg = self.next_register();
+                    
+                    // Generate the method call with compiled arguments
                     let func_name = format!("{}_{}", obj_name, member_expr.property);
                     self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
                     
@@ -609,6 +692,7 @@ impl FunctionCompiler {
         match expr {
             Expression::String(_) => Ok("i8*".to_string()),
             Expression::Integer(_) => Ok("i32".to_string()),
+            Expression::Float(_) => Ok("double".to_string()),
             Expression::Boolean(_) => Ok("i1".to_string()),
             Expression::Identifier(name) => {
                 // Look up the variable type from the variable_types HashMap
@@ -620,16 +704,26 @@ impl FunctionCompiler {
             },
             Expression::Binary(binary_expr) => {
                 // For binary expressions, we need to check what kind of operation it is
+                let left_type = self.infer_expression_type(&binary_expr.left)?;
+                let right_type = self.infer_expression_type(&binary_expr.right)?;
+                
                 match binary_expr.operator.as_str() {
                     "+" => {
                         // For add operations, check if either operand is a string (string concatenation)
-                        let left_type = self.infer_expression_type(&binary_expr.left)?;
-                        let right_type = self.infer_expression_type(&binary_expr.right)?;
-                        
                         if left_type == "i8*" || right_type == "i8*" {
                             Ok("i8*".to_string()) // String concatenation result
+                        } else if left_type == "double" || right_type == "double" {
+                            Ok("double".to_string()) // Float arithmetic result
                         } else {
-                            Ok("i32".to_string()) // Numeric addition result
+                            Ok("i32".to_string()) // Integer arithmetic result
+                        }
+                    },
+                    "-" | "*" | "/" | "%" => {
+                        // Arithmetic operations: promote to double if either operand is double
+                        if left_type == "double" || right_type == "double" {
+                            Ok("double".to_string())
+                        } else {
+                            Ok("i32".to_string())
                         }
                     },
                     "<" | "<=" | ">" | ">=" | "==" | "!=" => {

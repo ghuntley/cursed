@@ -37,6 +37,14 @@ cargo test for_in_tests
 # Test native compilation with mixed types
 cargo run --bin cursed -- compile program.csd
 ./program  # Run the compiled executable
+
+# LLVM Compilation Verification
+# Always test both modes when verifying LLVM compilation:
+# 1. Test interpretation: cargo run --bin cursed program.csd
+# 2. Test native compilation: cargo run --bin cursed -- compile program.csd
+# 3. Ensure llc is available in PATH for native compilation
+# 4. Test generated executables run correctly
+# 5. Check LLVM IR register numbering consistency if issues arise
 ```
 
 ## Development Environment
