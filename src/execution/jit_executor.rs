@@ -191,19 +191,22 @@ impl JitExecutor {
         tracing::warn!("⚠️ JIT compilation temporarily disabled due to LLVM initialization issues");
         return self.execute_interpreted(source);
 
-        // Parse the source code
-        let mut parser = new_parser(source)?;
-        let program = parser.parse_program()?;
+        #[allow(unreachable_code)]
+        {
+            // Parse the source code
+            let mut parser = new_parser(source)?;
+            let program = parser.parse_program()?;
 
-        // Look for main function
-        let main_function = self.find_main_function(&program)?;
+            // Look for main function
+            let main_function = self.find_main_function(&program)?;
 
-        if let Some(main_func) = main_function {
-            // JIT compile and execute main function
-            self.jit_compile_and_execute_function(&main_func, source)
-        } else {
-            // Execute as script (compile everything and run)
-            self.jit_compile_and_execute_program(&program, source)
+            if let Some(main_func) = main_function {
+                // JIT compile and execute main function
+                self.jit_compile_and_execute_function(&main_func, source)
+            } else {
+                // Execute as script (compile everything and run)
+                self.jit_compile_and_execute_program(&program, source)
+            }
         }
     }
 
