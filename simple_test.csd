@@ -1,1 +1,1 @@
-slay test() { yolo 42 }
+slay main() { sus x normie = 42; vibez.spill(x); }

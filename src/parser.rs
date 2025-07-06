@@ -988,7 +988,10 @@ impl Parser {
                 
                 let mut body = Vec::new();
                 while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-                    body.push(self.parse_statement()?);
+                    self.skip_newlines(); // Skip newlines before parsing each statement
+                    if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                        body.push(self.parse_statement()?);
+                    }
                 }
                 
                 self.consume(TokenKind::RightBrace, "Expected '}' after for-in body")?;

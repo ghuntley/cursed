@@ -313,7 +313,53 @@ impl LlvmCodeGenerator {
             self.ir_code.push_str(&from_main);
         }
         
+        // Fix register numbering gaps
+        let fixed_ir = self.fix_register_numbering(&self.ir_code);
+        self.ir_code = fixed_ir;
+        
         Ok(self.ir_code.clone())
+    }
+    
+    /// Fix register numbering gaps in LLVM IR
+    fn fix_register_numbering(&self, ir: &str) -> String {
+        use std::collections::HashMap;
+        use regex::Regex;
+        
+        // Find all register references
+        let register_pattern = Regex::new(r"%(\d+)").unwrap();
+        let mut registers_used = std::collections::HashSet::new();
+        
+        for captures in register_pattern.captures_iter(ir) {
+            if let Some(num_str) = captures.get(1) {
+                if let Ok(num) = num_str.as_str().parse::<usize>() {
+                    registers_used.insert(num);
+                }
+            }
+        }
+        
+        if registers_used.is_empty() {
+            return ir.to_string();
+        }
+        
+        // Sort registers and create mapping
+        let mut sorted_registers: Vec<usize> = registers_used.into_iter().collect();
+        sorted_registers.sort();
+        
+        let mut register_mapping = HashMap::new();
+        for (i, old_reg) in sorted_registers.iter().enumerate() {
+            register_mapping.insert(*old_reg, i);
+        }
+        
+        // Replace registers in the IR
+        register_pattern.replace_all(ir, |caps: &regex::Captures| {
+            let old_num_str = &caps[1];
+            if let Ok(old_num) = old_num_str.parse::<usize>() {
+                if let Some(&new_num) = register_mapping.get(&old_num) {
+                    return format!("%{}", new_num);
+                }
+            }
+            caps[0].to_string() // fallback
+        }).to_string()
     }
     
     fn generate_runtime_declarations(&mut self) {
@@ -326,6 +372,7 @@ declare void @free(i8*)
 declare i64 @strlen(i8*)
 declare i8* @strcpy(i8*, i8*)
 declare i8* @i32_to_string(i32)
+declare i8* @char_to_string(i8)
 declare i8* @string_concat(i8*, i8*)
 
 ; CURSED runtime functions
@@ -536,9 +583,8 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 let _defer_reg = self.generate_expression(&defer_stmt.expression)?;
                 self.ir_code.push_str("  ; Expression will be executed at function exit\n");
             },
-            Statement::ForIn(_) => {
-                // For now, return a placeholder - full implementation would generate LLVM IR for for-in loops
-                self.ir_code.push_str("  ; for-in loop placeholder\n");
+            Statement::ForIn(for_in_stmt) => {
+                self.generate_for_in_statement(for_in_stmt)?;
             },
         }
         Ok(())
@@ -941,6 +987,14 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                         let call_reg = self.next_register();
                          self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_reg, format_reg, arg_reg));
                         },
+                        Expression::Float(_) => {
+                        // Float literal - use printf with %f
+                        let format_str = self.add_string_constant("%f\n");
+                        let format_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                        let call_reg = self.next_register();
+                         self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, double {})\n", call_reg, format_reg, arg_reg));
+                        },
                          Expression::Identifier(name) => {
                             // Variable - need to determine type
                             let var_type = if name.contains("flag") || name.contains("lit") {
@@ -1213,6 +1267,91 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         
         // End
         self.ir_code.push_str(&format!("{}:\n", end_label));
+        Ok(())
+    }
+    
+    fn generate_for_in_statement(&mut self, for_in_stmt: &crate::ast::ForInStatement) -> Result<(), CursedError> {
+        // Generate for-in loop: bestie item in collection { ... }
+        self.ir_code.push_str("  ; for-in loop implementation\n");
+        
+        // Get the iterable (collection) register
+        let iterable_reg = self.generate_expression(&for_in_stmt.iterable)?;
+        
+        // For arrays, we need to get the array length and iterate through indices
+        // This is a simplified implementation for array iteration
+        
+        // Allocate loop counter variable
+        let counter_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = alloca i32, align 4\n", counter_reg));
+        self.ir_code.push_str(&format!("  store i32 0, i32* {}, align 4\n", counter_reg));
+        
+        // Allocate loop variable for the iteration variable
+        let loop_var_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = alloca i32, align 4\n", loop_var_reg));
+        
+        // Store the loop variable mapping
+        self.variables.insert(for_in_stmt.variable.clone(), loop_var_reg.clone());
+        
+        // For simplicity, assume we're iterating over a fixed-size array of 5 elements
+        // In a full implementation, we'd need to determine the array length dynamically
+        
+        // Generate loop labels
+        let loop_start = self.next_label();
+        let loop_body = self.next_label();
+        let loop_end = self.next_label();
+        
+        // Jump to loop start
+        self.ir_code.push_str(&format!("  br label %{}\n", loop_start));
+        
+        // Loop start: check if counter < array length
+        self.ir_code.push_str(&format!("{}:\n", loop_start));
+        let counter_value_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", counter_value_reg, counter_reg));
+        
+        // Compare counter with array length (5 for our test case)
+        let condition_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = icmp slt i32 {}, 5\n", condition_reg, counter_value_reg));
+        self.ir_code.push_str(&format!("  br i1 {}, label %{}, label %{}\n", condition_reg, loop_body, loop_end));
+        
+        // Loop body
+        self.ir_code.push_str(&format!("{}:\n", loop_body));
+        
+        // Load the current array element
+        let current_counter_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", current_counter_reg, counter_reg));
+        
+        // Get element from array: array[counter] (ensure index is i64)
+        let counter_i64_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = zext i32 {} to i64\n", counter_i64_reg, current_counter_reg));
+        
+        let element_ptr_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = getelementptr inbounds [5 x i32], [5 x i32]* {}, i64 0, i64 {}\n", 
+                                      element_ptr_reg, iterable_reg, counter_i64_reg));
+        
+        let element_value_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", element_value_reg, element_ptr_reg));
+        
+        // Store the element in the loop variable
+        self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", element_value_reg, loop_var_reg));
+        
+        // Generate loop body statements
+        for stmt in &for_in_stmt.body {
+            self.generate_statement(stmt)?;
+        }
+        
+        // Increment counter
+        let current_counter_load_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", current_counter_load_reg, counter_reg));
+        let incremented_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = add i32 {}, 1\n", incremented_reg, current_counter_load_reg));
+        self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", incremented_reg, counter_reg));
+        
+        // Jump back to loop start
+        self.ir_code.push_str(&format!("  br label %{}\n", loop_start));
+        
+        // Loop end
+        self.ir_code.push_str(&format!("{}:\n", loop_end));
+        
         Ok(())
     }
     

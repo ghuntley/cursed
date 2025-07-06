@@ -40,7 +40,14 @@ impl StringConstantManager {
         
         // Check if this string already exists
         if let Some((const_name, _)) = inner.string_to_constant.get(content) {
-            let len = content.len() + 1; // +1 for null terminator
+            // Process escape sequences to get the actual string content for correct length
+            let processed_content = content
+                .replace("\\n", "\n")
+                .replace("\\t", "\t")
+                .replace("\\r", "\r")
+                .replace("\\\\", "\\")
+                .replace("\\\"", "\"");
+            let len = processed_content.len() + 1; // +1 for null terminator
             return format!("getelementptr inbounds [{} x i8], [{} x i8]* {}, i64 0, i64 0", len, len, const_name);
         }
         
@@ -48,10 +55,26 @@ impl StringConstantManager {
         let const_name = format!("@.str.{}", inner.counter);
         inner.counter += 1;
         
-        let len = content.len() + 1; // +1 for null terminator
-        let escaped_content = content.replace("\"", "\\\"");
+        // Process escape sequences to get the actual string content
+        let processed_content = content
+            .replace("\\n", "\n")
+            .replace("\\t", "\t")
+            .replace("\\r", "\r")
+            .replace("\\\\", "\\")
+            .replace("\\\"", "\"");
+        
+        let len = processed_content.len() + 1; // +1 for null terminator
+        
+        // For LLVM IR, we need to convert special characters to their escape sequences
+        let llvm_escaped_content = processed_content
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\0A")
+            .replace("\t", "\\09")
+            .replace("\r", "\\0D");
+        
         let constant_definition = format!("{} = private unnamed_addr constant [{} x i8] c\"{}\\00\", align 1", 
-            const_name, len, escaped_content);
+            const_name, len, llvm_escaped_content);
         
         inner.string_to_constant.insert(content.to_string(), (const_name.clone(), constant_definition));
         
