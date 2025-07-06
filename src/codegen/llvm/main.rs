@@ -700,6 +700,9 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Expression::Integer(val) => {
                 Ok(val.to_string())
             },
+            Expression::Float(val) => {
+                Ok(val.to_string())
+            },
             Expression::String(val) => {
                 self.generate_string_literal(val)
             },
@@ -840,21 +843,29 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
     }
     
     fn generate_call(&mut self, function: &Expression, arguments: &[Expression]) -> Result<String, CursedError> {
-        let result_reg = self.next_register();
-        
         match function {
             Expression::Identifier(func_name) => {
+                // First compile all arguments to generate their intermediate IR
+                let mut arg_regs = Vec::new();
+                for arg in arguments {
+                    let arg_reg = self.generate_expression(arg)?;
+                    arg_regs.push(arg_reg);
+                }
+                
+                // Now allocate result register after all arguments are compiled
+                let result_reg = self.next_register();
+                
                 self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
                 
-                for (i, arg) in arguments.iter().enumerate() {
+                for (i, arg_reg) in arg_regs.iter().enumerate() {
                     if i > 0 {
                         self.ir_code.push_str(", ");
                     }
-                    let arg_reg = self.generate_expression(arg)?;
                     self.ir_code.push_str(&format!("i32 {}", arg_reg));
                 }
                 
                 self.ir_code.push_str(")\n");
+                return Ok(result_reg);
             },
             Expression::MemberAccess(member_expr) => {
                 // Handle stdlib function calls like vibez.spill()
@@ -871,28 +882,38 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                         },
                         _ => {
                             // Generic member function call
+                            // First compile all arguments to generate their intermediate IR
+                            let mut arg_regs = Vec::new();
+                            for arg in arguments {
+                                let arg_reg = self.generate_expression(arg)?;
+                                arg_regs.push(arg_reg);
+                            }
+                            
+                            // Now allocate result register after all arguments are compiled
+                            let result_reg = self.next_register();
+                            
                             let func_name = format!("{}_{}", module_name, member_expr.property);
                             self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, func_name));
                             
-                            for (i, arg) in arguments.iter().enumerate() {
+                            for (i, arg_reg) in arg_regs.iter().enumerate() {
                                 if i > 0 {
                                     self.ir_code.push_str(", ");
                                 }
-                                let arg_reg = self.generate_expression(arg)?;
                                 self.ir_code.push_str(&format!("i32 {}", arg_reg));
                             }
                             
                             self.ir_code.push_str(")\n");
+                            return Ok(result_reg);
                         }
                     }
+                } else {
+                    return Err(CursedError::CompilerError("Unsupported member access in function call".to_string()));
                 }
             },
             _ => {
                 return Err(CursedError::CompilerError("Unsupported function expression type".to_string()));
             }
         }
-        
-        Ok(result_reg)
     }
     
     fn generate_stdlib_call(&mut self, function_name: &str, arguments: &[Expression]) -> Result<String, CursedError> {
@@ -1360,8 +1381,8 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
     }
     
     fn next_register(&mut self) -> String {
-        self.variable_counter += 1;
         let reg = format!("%{}", self.variable_counter);
+        self.variable_counter += 1;
         reg
     }
     
@@ -1829,6 +1850,7 @@ impl LlvmCodeGenerator {
         match expr {
             Expression::String(_) => Ok("i8*".to_string()),
             Expression::Integer(_) => Ok("i32".to_string()),
+            Expression::Float(_) => Ok("double".to_string()),
             Expression::Boolean(_) => Ok("i1".to_string()),
             Expression::Identifier(_) => Ok("i32".to_string()), // Default for now
             Expression::Binary(_) => Ok("i32".to_string()), // Default for now
