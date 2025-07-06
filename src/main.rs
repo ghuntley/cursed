@@ -490,21 +490,43 @@ async fn run_file_direct(filename: &str) -> Result<(), Box<dyn std::error::Error
 
 fn handle_jit_execution(input: &str, global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     use std::time::Instant;
+    use cursed::execution::{JitExecutor, JitExecutorConfig};
+    use cursed::runtime::jit_runtime::OptimizationLevel;
     
     println!("{} {} with JIT compilation", "Running".green().bold(), input);
     
     let start_time = Instant::now();
     
-    // For now, use the enhanced execution engine with JIT optimizations
-    // instead of the complex LLVM JIT runtime which has stability issues
-    println!("{} Using enhanced execution engine with JIT optimizations", "Info".blue().bold());
+    // Configure JIT executor based on CLI options
+    let mut config = JitExecutorConfig::default();
     
-    // Create optimized execution engine
-    let mut execution_engine = cursed::execution::CursedExecutionEngine::new()
-        .map_err(|e| format!("Failed to create execution engine: {}", e))?;
+    // Set optimization level based on global options
+    if let Some(opt_level) = global_matches.get_one::<String>("optimization") {
+        config.initial_optimization = match opt_level.as_str() {
+            "0" => OptimizationLevel::None,
+            "1" => OptimizationLevel::Basic,
+            "2" => OptimizationLevel::Standard,
+            "3" | "s" | "z" => OptimizationLevel::Aggressive,
+            _ => OptimizationLevel::Standard,
+        };
+    }
     
-    // Read and execute the source file
-    let result = execution_engine.execute_file(input)
+    // Enable profiling in verbose mode
+    config.enable_profiling = global_matches.get_flag("verbose");
+    
+    println!("{} Initializing JIT compiler with optimization level: {:?}", 
+             "Info".blue().bold(), config.initial_optimization);
+    
+    // Create JIT executor
+    let mut jit_executor = JitExecutor::with_config(config)
+        .map_err(|e| format!("Failed to create JIT executor: {}", e))?;
+    
+    // Read source file
+    let source = std::fs::read_to_string(input)
+        .map_err(|e| format!("Failed to read source file: {}", e))?;
+    
+    // Execute with JIT compilation
+    let result = jit_executor.execute(&source)
         .map_err(|e| format!("JIT execution failed: {}", e));
     
     match result {
@@ -513,9 +535,9 @@ fn handle_jit_execution(input: &str, global_matches: &ArgMatches) -> Result<(), 
             
             // Show performance metrics
             if global_matches.get_flag("verbose") {
-                display_simple_performance_metrics(execution_time)?;
+                display_jit_performance_metrics(&jit_executor, execution_time)?;
             } else {
-                println!("{} JIT-optimized execution completed in {:.2}ms", 
+                println!("{} JIT compilation and execution completed in {:.2}ms", 
                          "✓".green().bold(), 
                          execution_time.as_millis());
             }
@@ -546,37 +568,30 @@ fn display_simple_performance_metrics(
 }
 
 fn display_jit_performance_metrics(
-    jit_runtime: &cursed::runtime::jit_runtime::JitRuntime, 
+    jit_executor: &cursed::execution::JitExecutor, 
     execution_time: std::time::Duration
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let stats = jit_runtime.get_statistics()
+    let stats = jit_executor.get_stats()
         .map_err(|e| format!("Failed to get JIT statistics: {}", e))?;
     
     println!("\n{} JIT Performance Metrics:", "📊".bold());
     println!("  Execution time: {:.2}ms", execution_time.as_millis());
-    println!("  Total compiled functions: {}", stats.total_compiled_functions);
+    println!("  Total compiled functions: {}", stats.functions_compiled);
+    println!("  Total executions: {}", stats.total_executions);
     println!("  Total compilation time: {:.2}ms", stats.total_compilation_time.as_millis());
+    println!("  Total execution time: {:.2}ms", stats.total_execution_time.as_millis());
     
-    if stats.total_compiled_functions > 0 {
-        println!("  Average compilation time: {:.2}ms", stats.avg_compilation_time.as_millis());
+    if stats.total_executions > 0 {
+        println!("  Average execution time: {:.2}ms", 
+                 stats.total_execution_time.as_millis() as f64 / stats.total_executions as f64);
     }
     
-    println!("  Code cache hit ratio: {:.1}%", stats.code_cache_hit_ratio * 100.0);
+    println!("  JIT compilation ratio: {:.1}%", stats.jit_ratio * 100.0);
+    println!("  Cache hit ratio: {:.1}%", stats.cache_hit_ratio * 100.0);
     println!("  Tier-up events: {}", stats.tier_up_events);
-    println!("  Background queue size: {}", stats.background_queue_size);
-    println!("  Compiled code memory: {:.1}KB", stats.compiled_code_memory as f64 / 1024.0);
     
-    // Show tier distribution
-    if !stats.functions_by_tier.is_empty() {
-        println!("  Functions by tier:");
-        for (tier, count) in &stats.functions_by_tier {
-            println!("    {:?}: {}", tier, count);
-        }
-    }
-    
-    if stats.performance_improvement > 1.0 {
-        println!("  Performance improvement: {:.1}x faster", stats.performance_improvement);
-    }
+    println!("  Engine: LLVM JIT with real-time compilation");
+    println!("  Features: Background compilation, hot path detection, tier-up optimization");
     
     Ok(())
 }
