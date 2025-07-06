@@ -33,6 +33,10 @@ cargo test array_parsing_tests
 
 # Test for-in loops
 cargo test for_in_tests
+
+# Test native compilation with mixed types
+cargo run --bin cursed -- compile program.csd
+./program  # Run the compiled executable
 ```
 
 ## Development Environment
@@ -97,6 +101,13 @@ src/
 - Support for iteration over arrays and other collections
 - Status: Fully functional, working correctly in both modes
 
+### Native Compilation
+- LLVM-based native compilation fully functional
+- Mixed-type printf support for vibez.spill() with strings, integers, booleans
+- Automatic type inference for printf format strings (%s, %d, %f)
+- Boolean to integer conversion for printf compatibility
+- Status: Fully functional for core CURSED programs
+
 ## Known Issues
 
 ### JIT Execution Environment
@@ -104,4 +115,10 @@ src/
 - LLVM initialization can cause SIGSEGV in test environments
 - Native compilation works perfectly via `cursed compile`
 - JIT infrastructure is preserved for future activation when LLVM issues are resolved
+
+### LLVM Type Inference
+- LLVM codegen now properly handles mixed-type expressions in vibez.spill()
+- String variables correctly identified as i8* pointer types
+- Integer and boolean types properly converted for printf calls
+- Status: Fixed in v6.2.0 - native compilation works for mixed types
 
