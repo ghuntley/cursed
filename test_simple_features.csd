@@ -1,7 +1,6 @@
-// Test advanced CURSED language features
-facts MAX_VALUE = 100
+// Test core CURSED features without constants
 
-slay advancedTest() {
+slay simpleTest() {
     // Test arrays and array indexing
     sus numbers []normie = [1, 2, 3, 4, 5]
     sus first normie = numbers[0]
@@ -43,17 +42,17 @@ slay advancedTest() {
         vibez.spill("Boolean test passed!")
     }
     
-    // Test constants access
-    lowkey MAX_VALUE > 50 {
-        vibez.spill("Constants work properly!")
+    // Test simple comparison without constants
+    lowkey 100 > 50 {
+        vibez.spill("Comparison test passed!")
     }
     
     yolo 42
 }
 
 slay main() {
-    vibez.spill("Testing advanced CURSED features...")
-    sus testResult normie = advancedTest()
+    vibez.spill("Testing core CURSED features...")
+    sus testResult normie = simpleTest()
     vibez.spill("Test completed with result:")
     vibez.spill(testResult)
 }

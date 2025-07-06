@@ -570,6 +570,21 @@ impl ExpressionCompiler {
                         Expression::String(_) => {
                             self.ir_buffer.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
                         },
+                        Expression::Float(_) => {
+                            let format_str = self.string_manager.add_string_constant("%f\\n");
+                            let format_reg = self.next_register();
+                            self.ir_buffer.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                            self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, double {})\n", format_reg, arg_reg));
+                        },
+                        Expression::Boolean(_) => {
+                            let format_str = self.string_manager.add_string_constant("%d\\n");
+                            let format_reg = self.next_register();
+                            self.ir_buffer.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                            // Convert boolean to i32 for printf
+                            let conv_reg = self.next_register();
+                            self.ir_buffer.push_str(&format!("  {} = zext i1 {} to i32\n", conv_reg, arg_reg));
+                            self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_reg, conv_reg));
+                        },
                         _ => {
                             let format_str = self.string_manager.add_string_constant("%d\\n");
                             let format_reg = self.next_register();

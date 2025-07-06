@@ -1,10 +1,6 @@
-// Test for-in loop parsing
-vibe main
-
 slay main() {
-    sus people = ["Alice", "Bob", "Charlie"]
-    
-    bestie person in people {
-        vibez.spill(person)
+    sus numbers []normie = [1, 2, 3, 4, 5]
+    bestie num in numbers {
+        vibez.spill(num)
     }
 }

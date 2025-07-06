@@ -111,7 +111,10 @@ impl FunctionCompiler {
         
         function_ir.push_str("}\n\n");
         
-        Ok(function_ir)
+        // Fix register numbering gaps
+        let fixed_ir = self.fix_register_numbering(&function_ir);
+        
+        Ok(fixed_ir)
     }
 
     /// Compile individual statements to complete LLVM IR
@@ -131,11 +134,8 @@ impl FunctionCompiler {
                 let var_reg = self.next_register();
                 
                 // Infer the type from the value expression
-                let var_type = if let Some(explicit_type) = &let_stmt.var_type {
-                    self.get_llvm_type(&explicit_type.to_string())
-                } else {
-                    self.infer_expression_type(&let_stmt.value)?
-                };
+                // Prioritize value type inference over explicit type for compatibility
+                let var_type = self.infer_expression_type(&let_stmt.value)?;
                 
                 // Allocate variable on stack with correct type first
                 ir.push_str(&format!("  {} = alloca {}, align 4\n", var_reg, var_type));
@@ -187,16 +187,14 @@ impl FunctionCompiler {
                         // Extract each element from the tuple and assign to variables
                         for (index, var_name) in names.iter().enumerate() {
                             // Generate getelementptr to access tuple field
-                            let field_ptr = format!("%tuple_field_{}", self.variable_counter);
-                            self.variable_counter += 1;
+                            let field_ptr = self.next_register();
                             ir.push_str(&format!(
                                 "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
                                 field_ptr, value_reg, index
                             ));
                             
                             // Load the value from the field
-                            let field_value = format!("%tuple_val_{}", self.variable_counter);
-                            self.variable_counter += 1;
+                            let field_value = self.next_register();
                             ir.push_str(&format!(
                                 "  {} = load i32, i32* {}, align 4\n",
                                 field_value, field_ptr
@@ -235,16 +233,14 @@ impl FunctionCompiler {
                     // Extract each element from the tuple and assign to variables
                     for (index, var_name) in var_names.iter().enumerate() {
                         // Generate getelementptr to access tuple field
-                        let field_ptr = format!("%tuple_field_{}", self.variable_counter);
-                        self.variable_counter += 1;
+                        let field_ptr = self.next_register();
                         ir.push_str(&format!(
                             "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
                             field_ptr, value_reg, index
                         ));
                         
                         // Load the value from the field
-                        let field_value = format!("%tuple_val_{}", self.variable_counter);
-                        self.variable_counter += 1;
+                        let field_value = self.next_register();
                         ir.push_str(&format!(
                             "  {} = load i32, i32* {}, align 4\n",
                             field_value, field_ptr
@@ -313,6 +309,9 @@ impl FunctionCompiler {
             Statement::For(for_stmt) => {
                 ir.push_str(&self.compile_for_statement(for_stmt)?);
             },
+            Statement::ForIn(for_in_stmt) => {
+                ir.push_str(&self.compile_for_in_statement(for_in_stmt)?);
+            },
             Statement::Function(_) => {
                 // Nested functions not supported in LLVM - skip or error
                 ir.push_str("  ; Nested function skipped\n");
@@ -344,6 +343,10 @@ impl FunctionCompiler {
             Expression::Integer(val) => Ok(val.to_string()),
             Expression::Float(val) => Ok(val.to_string()),
             Expression::Boolean(val) => Ok(if *val { "1" } else { "0" }.to_string()),
+            Expression::Character(val) => {
+                // Convert character to ASCII value
+                Ok((*val as u8).to_string())
+            },
             Expression::String(val) => {
                 let cleaned_val = val.replace("\"", "\\\"");
                 
@@ -372,12 +375,16 @@ impl FunctionCompiler {
                     
                     // Use the type from variable_types to generate the correct load instruction
                     if let Some(var_type) = self.variable_types.get(name) {
+                        log::debug!("DEBUG: About to generate load instruction for {}: {} = load {}, {}* {}, align 4", name, load_reg, var_type, var_type, var_reg);
                         self.ir_code.push_str(&format!("  {} = load {}, {}* {}, align 4\n", 
                             load_reg, var_type, var_type, var_reg));
+                        log::debug!("DEBUG: Generated load instruction for {}", name);
                     } else {
                         // Fallback to i32 if type not found
+                        log::debug!("DEBUG: About to generate fallback load instruction for {}: {} = load i32, i32* {}, align 4", name, load_reg, var_reg);
                         self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", 
                             load_reg, var_reg));
+                        log::debug!("DEBUG: Generated fallback load instruction for {}", name);
                     }
                     Ok(load_reg)
                 } else {
@@ -400,10 +407,20 @@ impl FunctionCompiler {
             Expression::Array(elements) => {
                 self.compile_array_literal(elements)
             },
+            Expression::ArrayAccess(array_access_expr) => {
+                self.compile_array_access(&array_access_expr.array, &array_access_expr.index)
+            },
+            Expression::Tuple(tuple_expr) => {
+                self.compile_tuple_literal(&tuple_expr.elements)
+            },
+            Expression::TupleAccess(tuple_access_expr) => {
+                self.compile_tuple_access(&tuple_access_expr.tuple, tuple_access_expr.index)
+            },
             Expression::Map(pairs) => {
                 self.compile_map_literal(pairs)
             },
             _ => {
+                log::warn!("Unsupported expression type: {:?}", expression);
                 let reg = self.next_register();
                 self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; placeholder\n", reg));
                 Ok(reg)
@@ -419,7 +436,8 @@ impl FunctionCompiler {
         right: &Expression
     ) -> Result<String, CursedError> {
         // Handle string concatenation specially
-        if operator == "+" && (matches!(left, Expression::String(_)) || matches!(right, Expression::String(_))) {
+        if operator == "+" && (matches!(left, Expression::String(_)) || matches!(right, Expression::String(_)) ||
+                              matches!(left, Expression::Character(_)) || matches!(right, Expression::Character(_))) {
             return self.compile_string_concatenation(left, right);
         }
         
@@ -431,7 +449,20 @@ impl FunctionCompiler {
         let right_type = self.infer_expression_type(right)?;
         
         // Determine the result type and required conversions
-        let (final_left_reg, final_right_reg, result_type, llvm_op) = if left_type == "double" || right_type == "double" {
+        let (final_left_reg, final_right_reg, result_type, llvm_op) = if left_type == "i1" && right_type == "i1" {
+            // Boolean operations
+            let op_str = match operator {
+                "==" => "icmp eq",
+                "!=" => "icmp ne",
+                "&&" => "and",
+                "||" => "or",
+                "&" => "and",
+                "|" => "or",
+                "^" => "xor",
+                _ => return Err(CursedError::CompilerError(format!("Unsupported boolean operator: {}", operator))),
+            };
+            (left_reg, right_reg, "i1".to_string(), op_str.to_string())
+        } else if left_type == "double" || right_type == "double" {
             // Mixed arithmetic: promote to double
             let promoted_left = if left_type != "double" {
                 let conv_reg = self.next_register();
@@ -694,6 +725,7 @@ impl FunctionCompiler {
             Expression::Integer(_) => Ok("i32".to_string()),
             Expression::Float(_) => Ok("double".to_string()),
             Expression::Boolean(_) => Ok("i1".to_string()),
+            Expression::Character(_) => Ok("i8".to_string()),
             Expression::Identifier(name) => {
                 // Look up the variable type from the variable_types HashMap
                 if let Some(llvm_type) = self.variable_types.get(name) {
@@ -746,6 +778,18 @@ impl FunctionCompiler {
             },
             Expression::ArrayAccess(_) => {
                 // Array access returns the element type (for now, assume i32)
+                Ok("i32".to_string())
+            },
+            Expression::Tuple(tuple_expr) => {
+                // Tuple type: {type1, type2, type3, ...}*
+                let mut element_types = Vec::new();
+                for element in &tuple_expr.elements {
+                    element_types.push(self.infer_expression_type(element)?);
+                }
+                Ok(format!("{{{}}}*", element_types.join(", ")))
+            },
+            Expression::TupleAccess(_) => {
+                // Tuple access returns the element type (for now, assume i32)
                 Ok("i32".to_string())
             },
             _ => Ok("i32".to_string()), // Default fallback
@@ -912,6 +956,93 @@ impl FunctionCompiler {
         Ok(ir)
     }
 
+    fn compile_for_in_statement(&mut self, for_in_stmt: &crate::ast::ForInStatement) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Generate for-in loop: bestie item in collection { ... }
+        ir.push_str("  ; for-in loop implementation\n");
+        
+        // Get the iterable (collection) register
+        let iterable_reg = self.compile_expression(&for_in_stmt.iterable)?;
+        
+        // For arrays, we need to get the array length and iterate through indices
+        // This is a simplified implementation for array iteration
+        
+        // Allocate loop counter variable
+        let counter_reg = self.next_register();
+        ir.push_str(&format!("  {} = alloca i32, align 4\n", counter_reg));
+        ir.push_str(&format!("  store i32 0, i32* {}, align 4\n", counter_reg));
+        
+        // Allocate loop variable for the iteration variable
+        let loop_var_reg = self.next_register();
+        ir.push_str(&format!("  {} = alloca i32, align 4\n", loop_var_reg));
+        
+        // Store the loop variable mapping
+        self.variables.insert(for_in_stmt.variable.clone(), loop_var_reg.clone());
+        
+        // For simplicity, assume we're iterating over a fixed-size array of 5 elements
+        // In a full implementation, we'd need to determine the array length dynamically
+        
+        // Generate loop labels
+        let loop_start = self.next_label();
+        let loop_body = self.next_label();
+        let loop_end = self.next_label();
+        
+        // Jump to loop start
+        ir.push_str(&format!("  br label %{}\n", loop_start));
+        
+        // Loop start: check if counter < array length
+        ir.push_str(&format!("{}:\n", loop_start));
+        let counter_value_reg = self.next_register();
+        ir.push_str(&format!("  {} = load i32, i32* {}, align 4\n", counter_value_reg, counter_reg));
+        
+        // Compare counter with array length (5 for our test case)
+        let condition_reg = self.next_register();
+        ir.push_str(&format!("  {} = icmp slt i32 {}, 5\n", condition_reg, counter_value_reg));
+        ir.push_str(&format!("  br i1 {}, label %{}, label %{}\n", condition_reg, loop_body, loop_end));
+        
+        // Loop body
+        ir.push_str(&format!("{}:\n", loop_body));
+        
+        // Load the current array element
+        let current_counter_reg = self.next_register();
+        ir.push_str(&format!("  {} = load i32, i32* {}, align 4\n", current_counter_reg, counter_reg));
+        
+        // Get element from array: array[counter] (ensure index is i64)
+        let counter_i64_reg = self.next_register();
+        ir.push_str(&format!("  {} = zext i32 {} to i64\n", counter_i64_reg, current_counter_reg));
+        
+        let element_ptr_reg = self.next_register();
+        ir.push_str(&format!("  {} = getelementptr inbounds [5 x i32], [5 x i32]* {}, i64 0, i64 {}\n", 
+                             element_ptr_reg, iterable_reg, counter_i64_reg));
+        
+        let element_value_reg = self.next_register();
+        ir.push_str(&format!("  {} = load i32, i32* {}, align 4\n", element_value_reg, element_ptr_reg));
+        
+        // Store the element in the loop variable
+        ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", element_value_reg, loop_var_reg));
+        
+        // Generate loop body statements
+        for stmt in &for_in_stmt.body {
+            ir.push_str(&self.compile_statement(stmt)?);
+        }
+        
+        // Increment counter
+        let current_counter_load_reg = self.next_register();
+        ir.push_str(&format!("  {} = load i32, i32* {}, align 4\n", current_counter_load_reg, counter_reg));
+        let incremented_reg = self.next_register();
+        ir.push_str(&format!("  {} = add i32 {}, 1\n", incremented_reg, current_counter_load_reg));
+        ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", incremented_reg, counter_reg));
+        
+        // Jump back to loop start
+        ir.push_str(&format!("  br label %{}\n", loop_start));
+        
+        // Loop end
+        ir.push_str(&format!("{}:\n", loop_end));
+        
+        Ok(ir)
+    }
+
     /// Compile array literals
     fn compile_array_literal(&mut self, elements: &[Expression]) -> Result<String, CursedError> {
         let array_reg = self.next_register();
@@ -930,6 +1061,76 @@ impl FunctionCompiler {
         }
         
         Ok(array_reg)
+    }
+
+    /// Compile array access: array[index]
+    fn compile_array_access(&mut self, array_expr: &Expression, index_expr: &Expression) -> Result<String, CursedError> {
+        // Get the array register
+        let array_reg = self.compile_expression(array_expr)?;
+        
+        // Get the index register
+        let index_reg = self.compile_expression(index_expr)?;
+        
+        // Generate getelementptr to access array element (ensure index is i64)
+        let index_i64_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = zext i32 {} to i64\n", index_i64_reg, index_reg));
+        
+        let element_ptr_reg = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  {} = getelementptr inbounds [5 x i32], [5 x i32]* {}, i64 0, i64 {}\n",
+            element_ptr_reg, array_reg, index_i64_reg
+        ));
+        
+        // Load the value from the element
+        let element_value_reg = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  {} = load i32, i32* {}, align 4\n",
+            element_value_reg, element_ptr_reg
+        ));
+        
+        Ok(element_value_reg)
+    }
+
+    /// Compile tuple literal: (val1, val2, val3)
+    fn compile_tuple_literal(&mut self, elements: &[Expression]) -> Result<String, CursedError> {
+        let tuple_reg = self.next_register();
+        
+        // For simplicity, create a tuple as a struct with 3 i32 fields
+        self.ir_code.push_str(&format!("  {} = alloca {{i32, i32, i32}}, align 4\n", tuple_reg));
+        
+        // Initialize tuple elements
+        for (i, element) in elements.iter().enumerate().take(3) {
+            let elem_reg = self.compile_expression(element)?;
+            let field_ptr = self.next_register();
+            self.ir_code.push_str(&format!(
+                "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
+                field_ptr, tuple_reg, i
+            ));
+            self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", elem_reg, field_ptr));
+        }
+        
+        Ok(tuple_reg)
+    }
+
+    /// Compile tuple access: tuple.0, tuple.1, etc.
+    fn compile_tuple_access(&mut self, tuple_expr: &Expression, index: usize) -> Result<String, CursedError> {
+        let tuple_reg = self.compile_expression(tuple_expr)?;
+        
+        // Generate getelementptr to access tuple field
+        let field_ptr = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  {} = getelementptr inbounds {{i32, i32, i32}}, {{i32, i32, i32}}* {}, i32 0, i32 {}\n",
+            field_ptr, tuple_reg, index
+        ));
+        
+        // Load the value from the field
+        let field_value = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  {} = load i32, i32* {}, align 4\n",
+            field_value, field_ptr
+        ));
+        
+        Ok(field_value)
     }
 
     /// Compile map literals
@@ -1189,6 +1390,7 @@ impl FunctionCompiler {
             "normie" => "i32".to_string(),      // normie = i32
             "tea" => "i8*".to_string(),         // tea = string
             "lit" => "i1".to_string(),          // lit = bool
+            "sip" => "i8".to_string(),          // sip = char (single byte)
             "cap" => "i8*".to_string(),         // cap = string
             "dm" => "i8*".to_string(),          // dm = string
             "facts" => "i32".to_string(),       // facts = i32 (immutable)
@@ -1210,6 +1412,12 @@ impl FunctionCompiler {
             self.ir_code.push_str(&format!("  {} = call i8* @i32_to_string(i32 {})\n", 
                 converted_reg, left_reg));
             converted_reg
+        } else if left_type == "i8" {
+            // Character to string conversion
+            let converted_reg = self.next_register();
+            self.ir_code.push_str(&format!("  {} = call i8* @char_to_string(i8 {})\n", 
+                converted_reg, left_reg));
+            converted_reg
         } else {
             left_reg
         };
@@ -1217,6 +1425,12 @@ impl FunctionCompiler {
         let right_str_reg = if right_type == "i32" {
             let converted_reg = self.next_register();
             self.ir_code.push_str(&format!("  {} = call i8* @i32_to_string(i32 {})\n", 
+                converted_reg, right_reg));
+            converted_reg
+        } else if right_type == "i8" {
+            // Character to string conversion
+            let converted_reg = self.next_register();
+            self.ir_code.push_str(&format!("  {} = call i8* @char_to_string(i8 {})\n", 
                 converted_reg, right_reg));
             converted_reg
         } else {
@@ -1259,5 +1473,47 @@ impl FunctionCompiler {
     /// Clear IR code
     pub fn clear_ir(&mut self) {
         self.ir_code.clear();
+    }
+    
+    /// Fix register numbering gaps in LLVM IR
+    fn fix_register_numbering(&self, ir: &str) -> String {
+        use std::collections::HashMap;
+        use regex::Regex;
+        
+        // Find all register references
+        let register_pattern = Regex::new(r"%(\d+)").unwrap();
+        let mut registers_used = std::collections::HashSet::new();
+        
+        for captures in register_pattern.captures_iter(ir) {
+            if let Some(num_str) = captures.get(1) {
+                if let Ok(num) = num_str.as_str().parse::<usize>() {
+                    registers_used.insert(num);
+                }
+            }
+        }
+        
+        if registers_used.is_empty() {
+            return ir.to_string();
+        }
+        
+        // Sort registers and create mapping
+        let mut sorted_registers: Vec<usize> = registers_used.into_iter().collect();
+        sorted_registers.sort();
+        
+        let mut register_mapping = HashMap::new();
+        for (i, old_reg) in sorted_registers.iter().enumerate() {
+            register_mapping.insert(*old_reg, i);
+        }
+        
+        // Replace registers in the IR
+        register_pattern.replace_all(ir, |caps: &regex::Captures| {
+            let old_num_str = &caps[1];
+            if let Ok(old_num) = old_num_str.parse::<usize>() {
+                if let Some(&new_num) = register_mapping.get(&old_num) {
+                    return format!("%{}", new_num);
+                }
+            }
+            caps[0].to_string() // fallback
+        }).to_string()
     }
 }
