@@ -1861,3 +1861,23 @@ pub extern "C" fn network_http_request(
         }
     }
 }
+
+// ================================
+// Character to String Conversion Functions
+// ================================
+
+/// Convert a single character to a heap-allocated string (implementation for char_to_string)
+#[no_mangle]
+pub extern "C" fn char_to_string(c: c_char) -> *mut c_char {
+    // Convert i8 to char, handling both ASCII and extended characters
+    let character = c as u8 as char;
+    
+    // Create a string containing just this character
+    let char_string = character.to_string();
+    
+    // Convert to CString and return as raw pointer
+    match CString::new(char_string) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
