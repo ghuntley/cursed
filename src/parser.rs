@@ -497,6 +497,34 @@ impl Parser {
                 log::info!("📝 Parsing defer statement with 'later' keyword");
                 Ok(Statement::Defer(self.parse_defer_statement()?))
             },
+            TokenKind::Ghosted => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on break statements"));
+                }
+                log::info!("📝 Parsing break statement with 'ghosted' keyword");
+                Ok(Statement::Break(self.parse_break_statement()?))
+            },
+            TokenKind::Simp => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on continue statements"));
+                }
+                log::info!("📝 Parsing continue statement with 'simp' keyword");
+                Ok(Statement::Continue(self.parse_continue_statement()?))
+            },
+            TokenKind::PlusPlus => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on increment statements"));
+                }
+                log::info!("📝 Parsing prefix increment statement");
+                Ok(Statement::Increment(self.parse_prefix_increment_statement()?))
+            },
+            TokenKind::MinusMinus => {
+                if visibility != crate::ast::Visibility::Private {
+                    return Err(CursedError::parse_error("Visibility modifiers not allowed on decrement statements"));
+                }
+                log::info!("📝 Parsing prefix decrement statement");
+                Ok(Statement::Decrement(self.parse_prefix_decrement_statement()?))
+            },
             _ => {
                 if visibility != crate::ast::Visibility::Private {
                     return Err(CursedError::parse_error("Visibility modifiers not allowed on expressions"));
@@ -507,6 +535,12 @@ impl Parser {
                 if (self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal) ||
                    (self.check(&TokenKind::LeftParen) && self.is_tuple_assignment()) {
                     Ok(Statement::Assignment(self.parse_assignment_statement()?))
+                } else if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::PlusPlus {
+                    // Postfix increment (variable++)
+                    Ok(Statement::Increment(self.parse_postfix_increment_statement()?))
+                } else if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::MinusMinus {
+                    // Postfix decrement (variable--)
+                    Ok(Statement::Decrement(self.parse_postfix_decrement_statement()?))
                 } else {
                     Ok(Statement::Expression(self.parse_expression()?))
                 }
@@ -1412,6 +1446,11 @@ impl Parser {
                 self.advance();
                 Ok(Expression::Boolean(false))
             },
+            TokenKind::Cap => {
+                // Handle 'cringe' as nil literal
+                self.advance();
+                Ok(Expression::Literal(crate::ast::Literal::Nil))
+            },
             TokenKind::Number => {
                 let token = self.advance();
                 // Try parsing as integer first, then as float
@@ -1924,6 +1963,74 @@ impl Parser {
         Ok(crate::ast::DeferStatement {
             expression,
         })
+    }
+
+    fn parse_break_statement(&mut self) -> Result<crate::ast::BreakStatement, CursedError> {
+        log::debug!("💨 Parsing break statement");
+        self.consume(TokenKind::Ghosted, "Expected 'ghosted' for break statement")?;
+        
+        // Check for optional label
+        let label = if self.check(&TokenKind::Identifier) {
+            Some(self.advance().lexeme.clone())
+        } else {
+            None
+        };
+        
+        log::debug!("✅ Successfully parsed break statement");
+        Ok(crate::ast::BreakStatement { label })
+    }
+
+    fn parse_continue_statement(&mut self) -> Result<crate::ast::ContinueStatement, CursedError> {
+        log::debug!("🔄 Parsing continue statement");
+        self.consume(TokenKind::Simp, "Expected 'simp' for continue statement")?;
+        
+        // Check for optional label
+        let label = if self.check(&TokenKind::Identifier) {
+            Some(self.advance().lexeme.clone())
+        } else {
+            None
+        };
+        
+        log::debug!("✅ Successfully parsed continue statement");
+        Ok(crate::ast::ContinueStatement { label })
+    }
+
+    fn parse_prefix_increment_statement(&mut self) -> Result<crate::ast::IncrementStatement, CursedError> {
+        log::debug!("⬆️ Parsing prefix increment statement");
+        self.consume(TokenKind::PlusPlus, "Expected '++' for prefix increment")?;
+        let variable = self.consume(TokenKind::Identifier, "Expected variable name after '++'")?;
+        
+        log::debug!("✅ Successfully parsed prefix increment statement");
+        Ok(crate::ast::IncrementStatement::prefix(variable.lexeme.clone()))
+    }
+
+    fn parse_prefix_decrement_statement(&mut self) -> Result<crate::ast::DecrementStatement, CursedError> {
+        log::debug!("⬇️ Parsing prefix decrement statement");
+        self.consume(TokenKind::MinusMinus, "Expected '--' for prefix decrement")?;
+        let variable = self.consume(TokenKind::Identifier, "Expected variable name after '--'")?;
+        
+        log::debug!("✅ Successfully parsed prefix decrement statement");
+        Ok(crate::ast::DecrementStatement::prefix(variable.lexeme.clone()))
+    }
+
+    fn parse_postfix_increment_statement(&mut self) -> Result<crate::ast::IncrementStatement, CursedError> {
+        log::debug!("⬆️ Parsing postfix increment statement");
+        let variable = self.consume(TokenKind::Identifier, "Expected variable name")?;
+        let variable_name = variable.lexeme.clone();
+        self.consume(TokenKind::PlusPlus, "Expected '++' after variable name")?;
+        
+        log::debug!("✅ Successfully parsed postfix increment statement");
+        Ok(crate::ast::IncrementStatement::postfix(variable_name))
+    }
+
+    fn parse_postfix_decrement_statement(&mut self) -> Result<crate::ast::DecrementStatement, CursedError> {
+        log::debug!("⬇️ Parsing postfix decrement statement");
+        let variable = self.consume(TokenKind::Identifier, "Expected variable name")?;
+        let variable_name = variable.lexeme.clone();
+        self.consume(TokenKind::MinusMinus, "Expected '--' after variable name")?;
+        
+        log::debug!("✅ Successfully parsed postfix decrement statement");
+        Ok(crate::ast::DecrementStatement::postfix(variable_name))
     }
 
     /// Parse generic type parameters: <T, U: Clone, V: Debug + Send>

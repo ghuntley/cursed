@@ -336,14 +336,14 @@ CURSED follows Go's error handling pattern:
 
 ```
 slay doSomething() (tea, Error) {
-    lowkey err != cap {
+    lowkey err != cringe {
         yolo "", err
     }
-    yolo "success", cap
+    yolo "success", cringe
 }
 
 result, err := doSomething()
-lowkey err != cap {
+lowkey err != cringe {
     handleError(err)
 }
 ``` 

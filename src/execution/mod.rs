@@ -160,6 +160,8 @@ impl CursedExecutionEngine {
             match self.execute_statement(statement, &mut context)? {
                 ExecutionFlow::Continue(value) => last_value = value,
                 ExecutionFlow::Return(value) => return Ok(value), // Early return from program
+                ExecutionFlow::Break(_) => return Err(CursedError::runtime_error("Break statement outside of loop")),
+                ExecutionFlow::NextIteration(_) => return Err(CursedError::runtime_error("Continue statement outside of loop")),
             }
         }
         
@@ -422,6 +424,8 @@ impl CursedExecutionEngine {
                         match self.execute_statement(stmt, context)? {
                             ExecutionFlow::Continue(value) => last_value = value,
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                            ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                            ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
                         }
                     }
                     Ok(ExecutionFlow::Continue(last_value))
@@ -431,6 +435,8 @@ impl CursedExecutionEngine {
                         match self.execute_statement(stmt, context)? {
                             ExecutionFlow::Continue(value) => last_value = value,
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                            ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                            ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
                         }
                     }
                     Ok(ExecutionFlow::Continue(last_value))
@@ -445,11 +451,22 @@ impl CursedExecutionEngine {
                     if !self.is_truthy(&condition) {
                         break;
                     }
+                    let mut should_break = false;
                     for stmt in &while_stmt.body {
                         match self.execute_statement(stmt, context)? {
                             ExecutionFlow::Continue(value) => last_value = value,
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                            ExecutionFlow::Break(_) => {
+                                should_break = true;
+                                break;
+                            },
+                            ExecutionFlow::NextIteration(_) => {
+                                break; // Continue to next iteration
+                            },
                         }
+                    }
+                    if should_break {
+                        break;
                     }
                 }
                 Ok(ExecutionFlow::Continue(last_value))
@@ -460,6 +477,8 @@ impl CursedExecutionEngine {
                     match self.execute_statement(init, context)? {
                         ExecutionFlow::Continue(_) => {},
                         ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                        ExecutionFlow::Break(_) => return Ok(ExecutionFlow::Continue(CursedValue::Nil)),
+                        ExecutionFlow::NextIteration(_) => return Ok(ExecutionFlow::Continue(CursedValue::Nil)),
                     }
                 }
                 
@@ -474,11 +493,23 @@ impl CursedExecutionEngine {
                     }
                     
                     // Execute body
+                    let mut should_break = false;
                     for stmt in &for_stmt.body {
                         match self.execute_statement(stmt, context)? {
                             ExecutionFlow::Continue(value) => last_value = value,
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                            ExecutionFlow::Break(_) => {
+                                should_break = true;
+                                break;
+                            },
+                            ExecutionFlow::NextIteration(_) => {
+                                break; // Continue to next iteration
+                            },
                         }
+                    }
+                    
+                    if should_break {
+                        break;
                     }
                     
                     // Update
@@ -505,7 +536,7 @@ impl CursedExecutionEngine {
                 let mut last_value = CursedValue::Nil;
                 
                 // Iterate over each value
-                for value in values {
+                'outer: for value in values {
                     // Set the loop variable
                     context.set_variable(for_in_stmt.variable.clone(), value);
                     
@@ -514,6 +545,12 @@ impl CursedExecutionEngine {
                         match self.execute_statement(stmt, context)? {
                             ExecutionFlow::Continue(value) => last_value = value,
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                            ExecutionFlow::Break(_) => {
+                                break 'outer;
+                            },
+                            ExecutionFlow::NextIteration(_) => {
+                                continue 'outer; // Continue to next iteration
+                            },
                         }
                     }
                 }
@@ -532,6 +569,8 @@ impl CursedExecutionEngine {
                             match self.execute_statement(stmt, context)? {
                                 ExecutionFlow::Continue(value) => last_value = value,
                                 ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                                ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                                ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
                             }
                         }
                         return Ok(ExecutionFlow::Continue(last_value));
@@ -545,6 +584,8 @@ impl CursedExecutionEngine {
                         match self.execute_statement(stmt, context)? {
                             ExecutionFlow::Continue(value) => last_value = value,
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                            ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                            ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
                         }
                     }
                     Ok(ExecutionFlow::Continue(last_value))
@@ -596,6 +637,8 @@ impl CursedExecutionEngine {
                     match self.execute_statement(stmt, context) {
                         Ok(ExecutionFlow::Continue(val)) => last_value = val,
                         Ok(ExecutionFlow::Return(val)) => return Ok(ExecutionFlow::Return(val)),
+                        Ok(ExecutionFlow::Break(label)) => return Ok(ExecutionFlow::Break(label)),
+                        Ok(ExecutionFlow::NextIteration(label)) => return Ok(ExecutionFlow::NextIteration(label)),
                         Err(err) => {
                             log::warn!("🚨 Caught error in catch block: {:?}", err);
                             error_occurred = true;
@@ -612,6 +655,8 @@ impl CursedExecutionEngine {
                                     match self.execute_statement(recovery_stmt, context)? {
                                         ExecutionFlow::Continue(val) => last_value = val,
                                         ExecutionFlow::Return(val) => return Ok(ExecutionFlow::Return(val)),
+                                        ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                                        ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
                                     }
                                 }
                             }
@@ -633,6 +678,72 @@ impl CursedExecutionEngine {
                 context.push_defer(defer_stmt.expression.as_ref().clone());
                 
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            },
+            Statement::Break(break_stmt) => {
+                log::info!("💨 Break statement executed");
+                Ok(ExecutionFlow::Break(break_stmt.label.clone()))
+            },
+            Statement::Continue(continue_stmt) => {
+                log::info!("🔄 Continue statement executed");
+                Ok(ExecutionFlow::NextIteration(continue_stmt.label.clone()))
+            },
+            Statement::Increment(increment_stmt) => {
+                log::info!("⬆️ Increment statement executed for variable: {}", increment_stmt.variable);
+                let current_value = context.get_variable(&increment_stmt.variable)
+                    .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", increment_stmt.variable)))?;
+                    
+                let new_value = match current_value {
+                    CursedValue::Integer(i) => {
+                        let incremented = i + 1;
+                        context.set_variable(increment_stmt.variable.clone(), CursedValue::Integer(incremented));
+                        if increment_stmt.is_prefix {
+                            CursedValue::Integer(incremented)  // Return new value for prefix
+                        } else {
+                            CursedValue::Integer(i)  // Return old value for postfix
+                        }
+                    },
+                    CursedValue::Float(f) => {
+                        let incremented = f + 1.0;
+                        context.set_variable(increment_stmt.variable.clone(), CursedValue::Float(incremented));
+                        if increment_stmt.is_prefix {
+                            CursedValue::Float(incremented)  // Return new value for prefix
+                        } else {
+                            CursedValue::Float(f)  // Return old value for postfix
+                        }
+                    },
+                    _ => return Err(CursedError::RuntimeError(format!("Cannot increment non-numeric value: {}", increment_stmt.variable))),
+                };
+                
+                Ok(ExecutionFlow::Continue(new_value))
+            },
+            Statement::Decrement(decrement_stmt) => {
+                log::info!("⬇️ Decrement statement executed for variable: {}", decrement_stmt.variable);
+                let current_value = context.get_variable(&decrement_stmt.variable)
+                    .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", decrement_stmt.variable)))?;
+                    
+                let new_value = match current_value {
+                    CursedValue::Integer(i) => {
+                        let decremented = i - 1;
+                        context.set_variable(decrement_stmt.variable.clone(), CursedValue::Integer(decremented));
+                        if decrement_stmt.is_prefix {
+                            CursedValue::Integer(decremented)  // Return new value for prefix
+                        } else {
+                            CursedValue::Integer(i)  // Return old value for postfix
+                        }
+                    },
+                    CursedValue::Float(f) => {
+                        let decremented = f - 1.0;
+                        context.set_variable(decrement_stmt.variable.clone(), CursedValue::Float(decremented));
+                        if decrement_stmt.is_prefix {
+                            CursedValue::Float(decremented)  // Return new value for prefix
+                        } else {
+                            CursedValue::Float(f)  // Return old value for postfix
+                        }
+                    },
+                    _ => return Err(CursedError::RuntimeError(format!("Cannot decrement non-numeric value: {}", decrement_stmt.variable))),
+                };
+                
+                Ok(ExecutionFlow::Continue(new_value))
             },
         }
     }
@@ -1054,7 +1165,9 @@ impl CursedExecutionEngine {
                                     ExecutionFlow::Return(value) => {
                                         result = value;
                                         break; // Early return from function
-                                    }
+                                    },
+                                    ExecutionFlow::Break(_) => return Err(CursedError::runtime_error("Break statement outside of loop")),
+                                    ExecutionFlow::NextIteration(_) => return Err(CursedError::runtime_error("Continue statement outside of loop")),
                                 }
                             }
                             
@@ -1366,6 +1479,8 @@ pub struct LambdaValue {
 pub enum ExecutionFlow {
     Continue(CursedValue),
     Return(CursedValue),
+    Break(Option<String>),
+    NextIteration(Option<String>),
 }
 
 impl CursedValue {

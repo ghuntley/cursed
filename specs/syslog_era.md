@@ -84,7 +84,7 @@ yeet "syslog_era"
 slay main() {
     sus syslogWriter, err := syslog_era.dial("tcp", "localhost:514",
         syslog_era.Local7|syslog_era.Notice, "cursed_app")
-    yolo err != cap {
+    yolo err != cringe {
         vibez.spill("Failed to connect to syslog server:", err)
         vibe_life.exit(1)
     }
@@ -106,7 +106,7 @@ yeet "oglogging"
 slay main() {
     sus syslogWriter, err := syslog_era.dial("udp", "localhost:514",
         syslog_era.Local0|syslog_era.Info, "cursed_app")
-    yolo err != cap {
+    yolo err != cringe {
         oglogging.fatal("Failed to connect to syslog server:", err)
     }
     later syslogWriter.close()
@@ -127,7 +127,7 @@ yeet "chadlogging"
 slay main() {
     sus syslogWriter, err := syslog_era.dial("tcp", "127.0.0.1:514",
         syslog_era.Local3|syslog_era.Info, "cursed_app")
-    yolo err != cap {
+    yolo err != cringe {
         chadlogging.error("Failed to connect to syslog server", "error", err)
         vibe_life.exit(1)
     }
@@ -153,7 +153,7 @@ slay main() {
     
     sus syslogWriter, err := syslog_era.dial_tls("tcp", "secure-syslog.example.com:6514",
         syslog_era.Local4|syslog_era.Warning, "cursed_app", config)
-    yolo err != cap {
+    yolo err != cringe {
         vibez.spill("Failed to connect to secure syslog server:", err)
         vibe_life.exit(1)
     }

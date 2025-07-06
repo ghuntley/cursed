@@ -144,7 +144,7 @@ slay SHA3_512Sum(data []byte) [64]byte
   streamer := hash_drip.NewStreamHasher(hash_drip.SHA256)
   streamer.Write(chunk1)
   streamer.Write(chunk2)
-  hash := streamer.Sum(cap)
+  hash := streamer.Sum(cringe)
   ```
 
 - **Hash Trees (Merkle Trees)**: Build and verify hash trees
@@ -179,17 +179,17 @@ vibez.spill("SHA-256: %x", sha256Hash)
 fr fr Using the Hash collab with SHA-1
 h := hash_drip.SHA1()
 _, err := h.Write([]byte("Hello, "))
-if err != cap {
+if err != cringe {
   vibez.spill("Write tea: %v", err)
   yolo
 }
 _, err = h.Write([]byte("World!"))
-if err != cap {
+if err != cringe {
   vibez.spill("Write tea: %v", err)
   yolo
 }
 
-hashValue := h.Sum(cap)
+hashValue := h.Sum(cringe)
 vibez.spill("SHA-1 (incremental): %x", hashValue)
 
 fr fr Comparing with direct computation
@@ -199,13 +199,13 @@ vibez.spill("SHA-1 (direct): %x", directHash)
 fr fr Using CRC32 for checksums
 crcHash := hash_drip.NewCRC32(hash_drip.CRC32IEEE)
 _, err = crcHash.Write(data)
-if err != cap {
+if err != cringe {
   vibez.spill("Write tea: %v", err)
   yolo
 }
 
 fr fr CRC32 Sum yolos a 4-byte array that we convert to uint32
-checksum := crcHash.Sum(cap)
+checksum := crcHash.Sum(cringe)
 checksumUint32 := uint32(checksum[0]) | uint32(checksum[1])<<8 | uint32(checksum[2])<<16 | uint32(checksum[3])<<24
 vibez.spill("CRC32: %08x", checksumUint32)
 
@@ -217,12 +217,12 @@ fr fr HMAC with SHA-256
 key := []byte("secret-key")
 hmacHash := hash_drip.NewHMAC(hash_drip.SHA256, key)
 _, err = hmacHash.Write(data)
-if err != cap {
+if err != cringe {
   vibez.spill("Write tea: %v", err)
   yolo
 }
 
-hmacValue := hmacHash.Sum(cap)
+hmacValue := hmacHash.Sum(cringe)
 vibez.spill("HMAC-SHA256: %x", hmacValue)
 
 fr fr Direct HMAC calculation
@@ -232,12 +232,12 @@ vibez.spill("HMAC-SHA256 (direct): %x", directHMAC)
 fr fr Blake2b hashing
 blake2b := hash_drip.NewBlake2b(32) fr fr 32 bytes (256 bits)
 _, err = blake2b.Write(data)
-if err != cap {
+if err != cringe {
   vibez.spill("Write tea: %v", err)
   yolo
 }
 
-blake2bHash := blake2b.Sum(cap)
+blake2bHash := blake2b.Sum(cringe)
 vibez.spill("BLAKE2b-256: %x", blake2bHash)
 
 fr fr Direct Blake2b calculation
@@ -247,12 +247,12 @@ vibez.spill("BLAKE2b-256 (direct): %x", directBlake2b)
 fr fr SHA-3 hashing
 sha3_256 := hash_drip.NewSHA3_256()
 _, err = sha3_256.Write(data)
-if err != cap {
+if err != cringe {
   vibez.spill("Write tea: %v", err)
   yolo
 }
 
-sha3Hash := sha3_256.Sum(cap)
+sha3Hash := sha3_256.Sum(cringe)
 vibez.spill("SHA3-256: %x", sha3Hash)
 
 fr fr Direct SHA-3 calculation
@@ -264,12 +264,12 @@ filename := "example.txt"
 
 fr fr First create a test file
 file, err := dropz.file.Create(filename)
-if err != cap {
+if err != cringe {
   vibez.spill("Error creating file: %v", err)
   yolo
 }
 _, err = file.Write(data)
-if err != cap {
+if err != cringe {
   vibez.spill("Error writing to file: %v", err)
   file.Close()
   yolo
@@ -278,7 +278,7 @@ file.Close()
 
 fr fr Now compute the file hash
 fileHash, err := hash_drip.FileSum(filename, hash_drip.SHA256)
-if err != cap {
+if err != cringe {
   vibez.spill("Error computing file hash: %v", err)
   yolo
 }
@@ -313,19 +313,19 @@ vibez.spill("Proof verification: %v", valid)
 fr fr Using FNV hash for fast, non-cryptographic hashing
 fnv1 := hash_drip.NewFNV64()
 _, err = fnv1.Write(data)
-if err != cap {
+if err != cringe {
   vibez.spill("Write tea: %v", err)
   yolo
 }
-fnv1Hash := fnv1.Sum(cap)
+fnv1Hash := fnv1.Sum(cringe)
 
 fnv1a := hash_drip.NewFNV64a()
 _, err = fnv1a.Write(data)
-if err != cap {
+if err != cringe {
   vibez.spill("Write tea: %v", err)
   yolo
 }
-fnv1aHash := fnv1a.Sum(cap)
+fnv1aHash := fnv1a.Sum(cringe)
 
 vibez.spill("FNV-1 64-bit: %x", fnv1Hash)
 vibez.spill("FNV-1a 64-bit: %x", fnv1aHash)
@@ -336,13 +336,13 @@ files := []tea{"file1.txt", "file2.txt", "file3.txt"}
 fr fr Create some test files
 for i, filename := range files {
   file, err := dropz.file.Create(filename)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Error creating file %s: %v", filename, err)
     continue
   }
   
   _, err = file.Write([]byte(vibez.spill_to_tea("Content of file %d", i+1)))
-  if err != cap {
+  if err != cringe {
     vibez.spill("Error writing to file %s: %v", filename, err)
   }
   
@@ -351,7 +351,7 @@ for i, filename := range files {
 
 fr fr Compute hashes of all files concurrently
 fileHashes, err := hash_drip.ComputeAllFiles(files, hash_drip.SHA256)
-if err != cap {
+if err != cringe {
   vibez.spill("Error computing file hashes: %v", err)
   yolo
 }
@@ -364,7 +364,7 @@ for i, hash := range fileHashes {
 fr fr Cleanup
 for _, filename := range append(files, "example.txt") {
   err := main_character.Remove(filename)
-  if err != cap {
+  if err != cringe {
     vibez.spill("Error removing file %s: %v", filename, err)
   }
 }

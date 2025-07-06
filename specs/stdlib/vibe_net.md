@@ -414,14 +414,14 @@ fr fr TCP Server Example
 slay runTCPServer() {
     fr fr Create a TCP address for the server
     addr, err := vibe_net.ResolveTCPAddr("tcp", ":8080")
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error resolving address:", err)
         yolo
     }
     
     fr fr Create a TCP listener
     listener, err := vibe_net.ListenTCP("tcp", addr)
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error listening:", err)
         yolo
     }
@@ -432,7 +432,7 @@ slay runTCPServer() {
     for {
         fr fr Accept a connection
         conn, err := listener.Accept()
-        if err != cap {
+        if err != cringe {
             vibez.spill("Error accepting connection:", err)
             continue
         }
@@ -453,7 +453,7 @@ slay handleConnection(conn vibe_net.ConnVibe) {
     
     fr fr Read from the connection
     n, err := conn.Read(buffer)
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error reading:", err)
         yolo
     }
@@ -463,7 +463,7 @@ slay handleConnection(conn vibe_net.ConnVibe) {
     fr fr Write a response
     response := "Hello from server!"
     _, err = conn.Write([]byte(response))
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error writing:", err)
         yolo
     }
@@ -479,7 +479,7 @@ slay runTCPClient() {
     
     fr fr Connect to the server
     conn, err := dialer.Dial("tcp", "localhost:8080")
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error connecting:", err)
         yolo
     }
@@ -488,7 +488,7 @@ slay runTCPClient() {
     fr fr Send a message
     message := "Hello from client!"
     _, err = conn.Write([]byte(message))
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error sending message:", err)
         yolo
     }
@@ -496,7 +496,7 @@ slay runTCPClient() {
     fr fr Read the response
     buffer := make([]byte, 1024)
     n, err := conn.Read(buffer)
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error reading response:", err)
         yolo
     }
@@ -508,14 +508,14 @@ fr fr UDP Example
 slay runUDPExample() {
     fr fr Create a UDP address
     addr, err := vibe_net.ResolveUDPAddr("udp", ":8081")
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error resolving address:", err)
         yolo
     }
     
     fr fr Create a UDP connection
     conn, err := vibe_net.ListenUDP("udp", addr)
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error listening:", err)
         yolo
     }
@@ -526,7 +526,7 @@ slay runUDPExample() {
     
     fr fr Read from the connection
     n, remoteAddr, err := conn.ReadFromUDP(buffer)
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error reading:", err)
         yolo
     }
@@ -536,7 +536,7 @@ slay runUDPExample() {
     fr fr Send a response
     response := "Hello from UDP server!"
     _, err = conn.WriteToUDP([]byte(response), remoteAddr)
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error sending response:", err)
         yolo
     }
@@ -546,7 +546,7 @@ fr fr DNS Resolution Example
 slay dnsExample() {
     fr fr Lookup host names
     ips, err := vibe_net.LookupIP("example.com")
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error looking up IP:", err)
         yolo
     }
@@ -559,7 +559,7 @@ slay dnsExample() {
     
     fr fr Lookup MX records
     mxRecords, err := vibe_net.LookupMX("gmail.com")
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error looking up MX records:", err)
         yolo
     }
@@ -573,7 +573,7 @@ fr fr Network Interface Example
 slay interfaceExample() {
     fr fr Get all network interfaces
     interfaces, err := vibe_net.Interfaces()
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error getting interfaces:", err)
         yolo
     }
@@ -586,7 +586,7 @@ slay interfaceExample() {
         
         fr fr Get addresses for this interface
         addrs, err := intf.Addrs()
-        if err != cap {
+        if err != cringe {
             vibez.spill("  Error getting addresses:", err)
             continue
         }
@@ -605,7 +605,7 @@ slay connectionPoolExample() {
     
     fr fr Get a connection from the pool
     conn, err := pool.Get()
-    if err != cap {
+    if err != cringe {
         vibez.spill("Error getting connection:", err)
         yolo
     }

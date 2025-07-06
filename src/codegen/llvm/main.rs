@@ -586,7 +586,75 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Statement::ForIn(for_in_stmt) => {
                 self.generate_for_in_statement(for_in_stmt)?;
             },
+            Statement::Break(_) => {
+                self.ir_code.push_str("  ; Break statement - handled by function compiler\n");
+            },
+            Statement::Continue(_) => {
+                self.ir_code.push_str("  ; Continue statement - handled by function compiler\n");
+            },
+            Statement::Increment(increment_stmt) => {
+                self.generate_increment_statement(increment_stmt)?;
+            },
+            Statement::Decrement(decrement_stmt) => {
+                self.generate_decrement_statement(decrement_stmt)?;
+            },
         }
+        Ok(())
+    }
+    
+    fn generate_increment_statement(&mut self, increment_stmt: &crate::ast::IncrementStatement) -> Result<(), CursedError> {
+        self.ir_code.push_str(&format!("  ; Increment statement for variable: {}\n", increment_stmt.variable));
+        
+        // Get the variable register
+        if let Some(var_reg) = self.variables.get(&increment_stmt.variable).cloned() {
+            // Load current value
+            let current_val = self.next_register();
+            self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", current_val, var_reg));
+            
+            // Add 1 to the current value
+            let incremented_val = self.next_register();
+            self.ir_code.push_str(&format!("  {} = add i32 {}, 1\n", incremented_val, current_val));
+            
+            // Store the incremented value back
+            self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", incremented_val, var_reg));
+            
+            if increment_stmt.is_prefix {
+                self.ir_code.push_str(&format!("  ; Prefix increment - new value: {}\n", incremented_val));
+            } else {
+                self.ir_code.push_str(&format!("  ; Postfix increment - old value: {}\n", current_val));
+            }
+        } else {
+            return Err(CursedError::runtime_error(&format!("Undefined variable in increment: {}", increment_stmt.variable)));
+        }
+        
+        Ok(())
+    }
+    
+    fn generate_decrement_statement(&mut self, decrement_stmt: &crate::ast::DecrementStatement) -> Result<(), CursedError> {
+        self.ir_code.push_str(&format!("  ; Decrement statement for variable: {}\n", decrement_stmt.variable));
+        
+        // Get the variable register
+        if let Some(var_reg) = self.variables.get(&decrement_stmt.variable).cloned() {
+            // Load current value
+            let current_val = self.next_register();
+            self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", current_val, var_reg));
+            
+            // Subtract 1 from the current value
+            let decremented_val = self.next_register();
+            self.ir_code.push_str(&format!("  {} = sub i32 {}, 1\n", decremented_val, current_val));
+            
+            // Store the decremented value back
+            self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", decremented_val, var_reg));
+            
+            if decrement_stmt.is_prefix {
+                self.ir_code.push_str(&format!("  ; Prefix decrement - new value: {}\n", decremented_val));
+            } else {
+                self.ir_code.push_str(&format!("  ; Postfix decrement - old value: {}\n", current_val));
+            }
+        } else {
+            return Err(CursedError::runtime_error(&format!("Undefined variable in decrement: {}", decrement_stmt.variable)));
+        }
+        
         Ok(())
     }
     

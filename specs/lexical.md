@@ -74,8 +74,8 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | range      | flex          |
 | defer      | later         |
 | true       | based         |
-| false      | sus           |
-| nil        | cap           |
+| false      | cap           |
+| nil        | cringe        |
 
 ## Operators and Punctuation
 
@@ -148,8 +148,8 @@ Escape sequences in quoted strings:
 ### Boolean Literals
 
 - `based` (true)
-- `sus` (false)
+- `cap` (false)
 
 ### Nil Literal
 
-- `cap` (nil) 
+- `cringe` (nil)

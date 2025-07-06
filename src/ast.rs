@@ -46,6 +46,10 @@ pub enum Statement {
     Panic(PanicStatement),
     Catch(CatchStatement),
     Defer(DeferStatement),
+    Break(BreakStatement),
+    Continue(ContinueStatement),
+    Increment(IncrementStatement),
+    Decrement(DecrementStatement),
 }
 
 /// Expression types
@@ -454,6 +458,92 @@ pub struct DeferStatement {
 impl DeferStatement {
     pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
+    }
+}
+
+/// Break statement (ghosted)
+#[derive(Debug, Clone)]
+pub struct BreakStatement {
+    pub label: Option<String>,
+}
+
+impl BreakStatement {
+    pub fn new() -> Self {
+        Self { label: None }
+    }
+    
+    pub fn with_label(label: String) -> Self {
+        Self { label: Some(label) }
+    }
+}
+
+impl Default for BreakStatement {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Continue statement (simp)
+#[derive(Debug, Clone)]
+pub struct ContinueStatement {
+    pub label: Option<String>,
+}
+
+impl ContinueStatement {
+    pub fn new() -> Self {
+        Self { label: None }
+    }
+    
+    pub fn with_label(label: String) -> Self {
+        Self { label: Some(label) }
+    }
+}
+
+impl Default for ContinueStatement {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Increment statement (++variable or variable++)
+#[derive(Debug, Clone)]
+pub struct IncrementStatement {
+    pub variable: String,
+    pub is_prefix: bool,
+}
+
+impl IncrementStatement {
+    pub fn new(variable: String, is_prefix: bool) -> Self {
+        Self { variable, is_prefix }
+    }
+    
+    pub fn prefix(variable: String) -> Self {
+        Self::new(variable, true)
+    }
+    
+    pub fn postfix(variable: String) -> Self {
+        Self::new(variable, false)
+    }
+}
+
+/// Decrement statement (--variable or variable--)
+#[derive(Debug, Clone)]
+pub struct DecrementStatement {
+    pub variable: String,
+    pub is_prefix: bool,
+}
+
+impl DecrementStatement {
+    pub fn new(variable: String, is_prefix: bool) -> Self {
+        Self { variable, is_prefix }
+    }
+    
+    pub fn prefix(variable: String) -> Self {
+        Self::new(variable, true)
+    }
+    
+    pub fn postfix(variable: String) -> Self {
+        Self::new(variable, false)
     }
 }
 
