@@ -20,10 +20,10 @@ impl ExecutionContext {
         }
     }
     
-    /// Create a child context that inherits functions from parent
+    /// Create a child context that inherits functions and global constants from parent
     pub fn new_child(&self) -> Self {
         Self {
-            variables: HashMap::new(),
+            variables: self.variables.clone(), // Inherit global constants
             functions: self.functions.clone(),
             defer_stack: Vec::new(),
         }

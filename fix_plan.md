@@ -1,5 +1,45 @@
 # CURSED Compiler Fix Plan
 
+## **🎉 MAJOR BREAKTHROUGH - CONSTANTS SCOPE FIX COMPLETE** ✅
+
+### **COMPLETED: Constants Scope Fix**
+- **Critical Achievement**: Fixed global constants declared with `facts` not being accessible inside function scopes
+- **Technical Implementation**: Modified ExecutionContext::new_child() method to inherit variables (including constants) from parent context
+- **Root Cause**: Child execution contexts were not inheriting variables from parent contexts, causing constants to be inaccessible in function scopes
+- **Solution**: Enhanced ExecutionContext::new_child() to copy parent context variables into child context, ensuring constants are available in all execution scopes
+- **Impact**: Global constants declared with `facts` keyword are now properly accessible within function scopes, enabling proper constant usage throughout CURSED programs
+
+**✅ COMPLETED IMPLEMENTATIONS:**
+- **✅ Fixed context inheritance**: Modified ExecutionContext::new_child() to inherit variables from parent context
+- **✅ Fixed constant scope resolution**: Constants declared with `facts` now accessible in all function scopes
+- **✅ Enhanced variable propagation**: Parent context variables properly propagated to child execution contexts
+- **✅ Verified constant access**: Global constants work correctly in function calls and nested scopes
+
+**VERIFIED WORKING: Complete Constants Scope System**
+- ✅ **Global constants**: `facts PI = 3.14159` accessible in all function scopes
+- ✅ **Function constant access**: Constants available in function bodies and nested execution contexts
+- ✅ **Scope hierarchy**: Proper variable inheritance maintains constant visibility across scope boundaries
+- ✅ **Complex programs**: Programs with constants in multiple scopes execute correctly
+- ✅ **All tests pass**: All existing tests continue to pass with enhanced constant scope resolution
+
+**Example demonstrating the fix:**
+```cursed
+facts MAX_SIZE = 100
+
+slay processData(size normie) {
+    lowkey size > MAX_SIZE {  // MAX_SIZE now accessible in function scope
+        vibez.spill("Size exceeds maximum")
+    }
+    yolo size
+}
+```
+
+**Impact**: This resolves a critical scoping issue that was preventing proper constant usage in CURSED programs. The compiler now properly handles constant scope resolution, enabling clean and maintainable code with global constants accessible throughout the program execution context. This represents a significant improvement in the language's usability and adherence to standard programming language scoping rules.
+
+**ALL CONSTANTS SCOPE FIX REQUIREMENTS SATISFIED** ✅
+
+---
+
 ## **🎉 CRITICAL BUG FIX - JIT EXECUTION EXIT CODE -1 RESOLVED** ✅
 
 ### **COMPLETED: JIT Execution Exit Code -1 Fix**

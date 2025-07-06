@@ -55,6 +55,13 @@ src/
 - Tests: `tests/tuple_tests.rs` (all 14 tests pass)
 - Status: Works in interpretation mode, may have LLVM codegen issues
 
+### Boolean Literals
+- Specification-compliant syntax: `based` (true) and `sus` (false)
+- Boolean type: `lit` 
+- Usage: `sus flag lit = based` or `sus flag lit = sus`
+- Tests: Boolean literals work correctly in both variable declarations and expressions
+- Status: Fully compliant with language specification
+
 ## Known Issues
 
 ### JIT Execution Environment
