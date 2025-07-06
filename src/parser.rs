@@ -176,14 +176,11 @@ impl Parser {
                     let element_type = self.parse_type()?;
                     Ok(crate::ast::Type::Slice(Box::new(element_type)))
                 } else {
-                    // Array type: [N]T (for now, we'll just parse as slice)
-                    // TODO: In the future, we could parse the size expression
-                    while !self.check(&TokenKind::RightBracket) && !self.is_at_end() {
-                        self.advance(); // Skip array size for now
-                    }
+                    // Array type: [N]T - parse the size expression
+                    let size_expr = self.parse_expression()?;
                     self.consume(TokenKind::RightBracket, "Expected ']' after array size")?;
                     let element_type = self.parse_type()?;
-                    Ok(crate::ast::Type::Array(Box::new(element_type), None))
+                    Ok(crate::ast::Type::Array(Box::new(element_type), Some(Box::new(size_expr))))
                 }
             }
             TokenKind::Dm => {
@@ -732,6 +729,30 @@ impl Parser {
     }
 
     fn parse_import_statement(&mut self) -> Result<ImportStatement, CursedError> {
+        // Handle grouped imports: yeet ( "path1"; "path2"; "path3" )
+        if self.check(&TokenKind::LeftParen) {
+            self.advance(); // consume '('
+            let mut paths = Vec::new();
+            
+            while !self.check(&TokenKind::RightParen) && !self.is_at_end() {
+                let path_token = self.consume(TokenKind::String, "Expected import path")?;
+                paths.push(path_token.lexeme.clone());
+                
+                if !self.check(&TokenKind::RightParen) {
+                    self.consume(TokenKind::Semicolon, "Expected ';' between grouped imports")?;
+                }
+            }
+            
+            self.consume(TokenKind::RightParen, "Expected ')' after grouped imports")?;
+            
+            // Return a grouped import statement
+            return Ok(ImportStatement {
+                path: "".to_string(), // Empty path for grouped imports
+                alias: None,
+                items: paths, // Store the paths in the items field
+            });
+        }
+        
         // Handle selective imports: yeet {Symbol1, Symbol2} from "path"
         if self.check(&TokenKind::LeftBrace) {
             self.advance(); // consume '{'
@@ -1542,7 +1563,7 @@ impl Parser {
         let update = if self.check(&TokenKind::LeftBrace) {
             None
         } else {
-            Some(self.parse_expression()?)
+            Some(self.parse_for_update_clause()?)
         };
         
         self.consume(TokenKind::LeftBrace, "Expected '{' after for loop header")?;
@@ -1560,6 +1581,63 @@ impl Parser {
             update,
             body,
         }))
+    }
+
+    fn parse_for_update_clause(&mut self) -> Result<Expression, CursedError> {
+        // Handle increment/decrement operators in for loop update clause
+        if self.check(&TokenKind::PlusPlus) {
+            // Prefix increment: ++i
+            self.advance();
+            let variable = self.consume(TokenKind::Identifier, "Expected variable name after '++'")?;
+            return Ok(Expression::Increment(crate::ast::IncrementExpression {
+                variable: variable.lexeme.clone(),
+                is_prefix: true,
+            }));
+        }
+        
+        if self.check(&TokenKind::MinusMinus) {
+            // Prefix decrement: --i
+            self.advance();
+            let variable = self.consume(TokenKind::Identifier, "Expected variable name after '--'")?;
+            return Ok(Expression::Decrement(crate::ast::DecrementExpression {
+                variable: variable.lexeme.clone(),
+                is_prefix: true,
+            }));
+        }
+        
+        // Check for postfix increment/decrement or assignment
+        let checkpoint = self.current;
+        if self.check(&TokenKind::Identifier) {
+            let variable = self.advance().lexeme.clone();
+            if self.check(&TokenKind::PlusPlus) {
+                // Postfix increment: i++
+                self.advance();
+                return Ok(Expression::Increment(crate::ast::IncrementExpression {
+                    variable,
+                    is_prefix: false,
+                }));
+            } else if self.check(&TokenKind::MinusMinus) {
+                // Postfix decrement: i--
+                self.advance();
+                return Ok(Expression::Decrement(crate::ast::DecrementExpression {
+                    variable,
+                    is_prefix: false,
+                }));
+            } else if self.check(&TokenKind::Equal) {
+                // Assignment: i = expression
+                self.advance();
+                let value = self.parse_expression()?;
+                return Ok(Expression::Binary(crate::ast::BinaryExpression {
+                    left: Box::new(Expression::Identifier(variable)),
+                    operator: "=".to_string(),
+                    right: Box::new(value),
+                }));
+            }
+        }
+        
+        // Reset and parse as normal expression
+        self.current = checkpoint;
+        self.parse_expression()
     }
 
     fn parse_switch_statement(&mut self) -> Result<SwitchStatement, CursedError> {
@@ -1862,13 +1940,48 @@ impl Parser {
                     });
                 }
             } else if self.match_tokens(&[TokenKind::LeftBracket]) {
-                // Array indexing: array[index]
-                let index = self.parse_expression()?;
-                self.consume(TokenKind::RightBracket, "Expected ']' after array index")?;
+                // Array indexing or slice access: array[index] or array[start:end]
+                let mut start = None;
+                let mut end = None;
                 
-                expr = Expression::ArrayAccess(crate::ast::ArrayAccessExpression {
+                // Check for slice expressions
+                if self.check(&TokenKind::Colon) {
+                    // Slice starting from beginning: array[:end]
+                    self.advance(); // consume ':'
+                    if !self.check(&TokenKind::RightBracket) {
+                        end = Some(Box::new(self.parse_expression()?));
+                    }
+                } else if !self.check(&TokenKind::RightBracket) {
+                    // Parse first expression
+                    let first_expr = self.parse_expression()?;
+                    
+                    if self.check(&TokenKind::Colon) {
+                        // Slice expression: array[start:end] or array[start:]
+                        self.advance(); // consume ':'
+                        start = Some(Box::new(first_expr));
+                        
+                        if !self.check(&TokenKind::RightBracket) {
+                            end = Some(Box::new(self.parse_expression()?));
+                        }
+                    } else {
+                        // Regular array indexing: array[index]
+                        self.consume(TokenKind::RightBracket, "Expected ']' after array index")?;
+                        
+                        expr = Expression::ArrayAccess(crate::ast::ArrayAccessExpression {
+                            array: Box::new(expr),
+                            index: Box::new(first_expr),
+                        });
+                        continue;
+                    }
+                }
+                
+                // If we reach here, it's a slice expression
+                self.consume(TokenKind::RightBracket, "Expected ']' after slice expression")?;
+                
+                expr = Expression::SliceAccess(crate::ast::SliceAccessExpression {
                     array: Box::new(expr),
-                    index: Box::new(index),
+                    start,
+                    end,
                 });
             } else {
                 break;
@@ -1918,16 +2031,16 @@ impl Parser {
             self.consume(TokenKind::RightParen, "Expected ')' after channel arguments")?;
             
             // Create channel creation expression
-            Ok(Expression::ChannelCreation(crate::ast::ChannelCreationExpression {
-                element_type,
+            Ok(Expression::ChannelCreation(Box::new(crate::ast::ChannelCreationExpression {
+                element_type: Box::new(element_type),
                 capacity,
-            }))
+            })))
         } else {
             // Simple channel type without parentheses syntax (also valid)
-            Ok(Expression::ChannelCreation(crate::ast::ChannelCreationExpression {
-                element_type,
+            Ok(Expression::ChannelCreation(Box::new(crate::ast::ChannelCreationExpression {
+                element_type: Box::new(element_type),
                 capacity: None,
-            }))
+            })))
         }
     }
 

@@ -757,6 +757,60 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         Ok(())
     }
     
+    /// Evaluate a constant expression for array sizes
+    fn evaluate_constant_expression(&self, expr: &Box<crate::ast::Expression>) -> Result<usize, CursedError> {
+        match expr.as_ref() {
+            crate::ast::Expression::Integer(n) => {
+                if *n < 0 {
+                    Err(CursedError::TypeError("Array size must be non-negative".to_string()))
+                } else {
+                    Ok(*n as usize)
+                }
+            }
+            crate::ast::Expression::Literal(crate::ast::Literal::Integer(n)) => {
+                if *n < 0 {
+                    Err(CursedError::TypeError("Array size must be non-negative".to_string()))
+                } else {
+                    Ok(*n as usize)
+                }
+            }
+            crate::ast::Expression::Variable(name) => {
+                // For now, we don't support variable array sizes in types
+                // This would require compile-time constant evaluation
+                Err(CursedError::TypeError(format!("Array size '{}' must be a constant expression", name)))
+            }
+            crate::ast::Expression::Identifier(name) => {
+                // For now, we don't support identifier array sizes in types
+                // This would require compile-time constant evaluation
+                Err(CursedError::TypeError(format!("Array size '{}' must be a constant expression", name)))
+            }
+            crate::ast::Expression::Binary(bin_expr) => {
+                let left = self.evaluate_constant_expression(&bin_expr.left)?;
+                let right = self.evaluate_constant_expression(&bin_expr.right)?;
+                match bin_expr.operator.as_str() {
+                    "+" => Ok(left + right),
+                    "-" => {
+                        if left < right {
+                            Err(CursedError::TypeError("Array size must be non-negative".to_string()))
+                        } else {
+                            Ok(left - right)
+                        }
+                    }
+                    "*" => Ok(left * right),
+                    "/" => {
+                        if right == 0 {
+                            Err(CursedError::TypeError("Division by zero in array size expression".to_string()))
+                        } else {
+                            Ok(left / right)
+                        }
+                    }
+                    _ => Err(CursedError::TypeError(format!("Unsupported operator '{}' in array size expression", bin_expr.operator)))
+                }
+            }
+            _ => Err(CursedError::TypeError("Array size must be a constant expression".to_string()))
+        }
+    }
+    
     fn convert_cursed_type_to_llvm(&self, cursed_type: &crate::ast::Type) -> Result<String, CursedError> {
         match cursed_type {
             crate::ast::Type::Integer | crate::ast::Type::Normie => Ok("i32".to_string()),
@@ -774,8 +828,9 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             crate::ast::Type::Extra => Ok("{ double, double }".to_string()), // Complex number as {real, imag}
             crate::ast::Type::Array(element_type, size) => {
                 let element_llvm = self.convert_cursed_type_to_llvm(element_type)?;
-                if let Some(size) = size {
-                    Ok(format!("[{} x {}]", size, element_llvm))
+                if let Some(size_expr) = size {
+                    let size_value = self.evaluate_constant_expression(size_expr)?;
+                    Ok(format!("[{} x {}]", size_value, element_llvm))
                 } else {
                     Ok(format!("[0 x {}]", element_llvm))
                 }
@@ -931,6 +986,12 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             Expression::Unary(unary_expr) => {
                 self.generate_unary_expression(&unary_expr.operator, &unary_expr.operand)
             },
+            Expression::Increment(inc_expr) => {
+                self.generate_increment_expression(inc_expr)
+            },
+            Expression::Decrement(dec_expr) => {
+                self.generate_decrement_expression(dec_expr)
+            },
             _ => {
                 // For complex expressions, use the expression compiler
                 let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
@@ -969,6 +1030,56 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 
                 Ok(result_reg)
             }
+        }
+    }
+    
+    fn generate_increment_expression(&mut self, inc_expr: &crate::ast::IncrementExpression) -> Result<String, CursedError> {
+        // Load the current value
+        let var_reg = self.variables.get(&inc_expr.variable)
+            .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", inc_expr.variable)))?
+            .clone();
+        
+        let load_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, var_reg));
+        
+        // Increment the value
+        let inc_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = add i32 {}, 1\n", inc_reg, load_reg));
+        
+        // Store the incremented value back
+        self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", inc_reg, var_reg));
+        
+        if inc_expr.is_prefix {
+            // Return the incremented value
+            Ok(inc_reg)
+        } else {
+            // Return the original value
+            Ok(load_reg)
+        }
+    }
+    
+    fn generate_decrement_expression(&mut self, dec_expr: &crate::ast::DecrementExpression) -> Result<String, CursedError> {
+        // Load the current value
+        let var_reg = self.variables.get(&dec_expr.variable)
+            .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", dec_expr.variable)))?
+            .clone();
+        
+        let load_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, var_reg));
+        
+        // Decrement the value
+        let dec_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = sub i32 {}, 1\n", dec_reg, load_reg));
+        
+        // Store the decremented value back
+        self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", dec_reg, var_reg));
+        
+        if dec_expr.is_prefix {
+            // Return the decremented value
+            Ok(dec_reg)
+        } else {
+            // Return the original value
+            Ok(load_reg)
         }
     }
     
@@ -2197,6 +2308,7 @@ impl LlvmCodeGenerator {
             Expression::Call(_) => Ok("i32".to_string()), // Default for now
             Expression::Literal(lit) => self.infer_literal_type(lit),
             Expression::ArrayAccess(_) => Ok("i32".to_string()), // Array element type
+            Expression::SliceAccess(_) => Ok("[0 x i32]*".to_string()), // Slice type (pointer to array)
             _ => Ok("i32".to_string()), // Default fallback
         }
     }

@@ -132,8 +132,23 @@ impl ImportResolver {
         let mut resolved = Vec::new();
         
         for import in imports {
-            let resolved_import = self.resolve_single_import(import).await?;
-            resolved.push(resolved_import);
+            // Handle grouped imports (paths stored in items field, empty path indicates grouped import)
+            if import.path.is_empty() && !import.items.is_empty() {
+                // This is a grouped import - resolve each path individually
+                for path in &import.items {
+                    let individual_import = ImportStatement {
+                        path: path.clone(),
+                        alias: None,
+                        items: Vec::new(),
+                    };
+                    let resolved_import = self.resolve_single_import(&individual_import).await?;
+                    resolved.push(resolved_import);
+                }
+            } else {
+                // Regular single import
+                let resolved_import = self.resolve_single_import(import).await?;
+                resolved.push(resolved_import);
+            }
         }
         
         Ok(resolved)

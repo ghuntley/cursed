@@ -379,6 +379,12 @@ impl SymbolResolver {
         self.register_symbol("network_http_get", crate::execution::runtime_functions::network_http_get as usize);
         self.register_symbol("network_http_post", crate::execution::runtime_functions::network_http_post as usize);
         self.register_symbol("network_http_request", crate::execution::runtime_functions::network_http_request as usize);
+        
+        // Register vibez module functions
+        self.register_symbol("vibez_format", crate::execution::runtime_functions::vibez_format as usize);
+        self.register_symbol("vibez_sprintf", crate::execution::runtime_functions::vibez_sprintf as usize);
+        self.register_symbol("vibez_debug_log", crate::execution::runtime_functions::vibez_debug_log as usize);
+        self.register_symbol("vibez_debug_inspect", crate::execution::runtime_functions::vibez_debug_inspect as usize);
     }
     
     fn register_symbol(&mut self, name: &str, addr: usize) {
