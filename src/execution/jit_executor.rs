@@ -240,7 +240,9 @@ impl JitExecutor {
             
             Ok(CursedValue::String(result))
         } else {
-            Err(CursedError::RuntimeError("No main function found".to_string()))
+            // No main function found, try to run as a script using interpretation
+            tracing::info!("🔄 No main function found, falling back to interpreted execution");
+            self.execute_interpreted(source)
         }
     }
 

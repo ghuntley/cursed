@@ -153,7 +153,7 @@ fn test_tuple_execution_basic() {
     
     match result {
         CursedValue::Integer(value) => assert_eq!(value, 42),
-        _ => panic!("Expected integer value"),
+        _ => panic!("Expected integer value, got: {:?}", result),
     }
 }
 
@@ -171,7 +171,7 @@ fn test_tuple_execution_second_element() {
     
     match result {
         CursedValue::String(value) => assert_eq!(value, "world"),
-        _ => panic!("Expected string value"),
+        _ => panic!("Expected string value, got: {:?}", result),
     }
 }
 
