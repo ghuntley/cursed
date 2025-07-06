@@ -530,38 +530,61 @@ impl FunctionCompiler {
                 // Handle vibez.spill() calls
                 for arg in arguments {
                     let arg_reg = self.compile_expression(arg)?;
-                    // Check if this is a string-like expression (includes concatenations)
-                    let is_string = matches!(arg, Expression::String(_)) || 
+                    // Check if this is a string-like expression (includes concatenations and string variables)
+                    let arg_type = self.infer_expression_type(arg)?;
+                    let is_string = arg_type == "i8*" || matches!(arg, Expression::String(_)) || 
                                    matches!(arg, Expression::Binary(bin_expr) if bin_expr.operator == "+");
                     
                     if is_string {
                         let call_result = self.next_register();
                         self.ir_code.push_str(&format!("  {} = call i32 @puts(i8* {})\n", call_result, arg_reg));
                     } else {
-                            // For non-string types, use printf with %d format
-                            let format_string = "%d\\0A\\00";
-                            let mut const_name = String::new();
+                            // For non-string types, determine the correct format and type
+                            let arg_type = self.infer_expression_type(arg)?;
+                            let (format_string, llvm_type) = match arg_type.as_str() {
+                                "i32" => ("%d\\0A\\00", "i32"),
+                                "i1" => ("%d\\0A\\00", "i32"), // Convert boolean to int for printf
+                                "double" => ("%f\\0A\\00", "double"),
+                                _ => ("%d\\0A\\00", "i32"), // Default fallback
+                            };
                             
-                            // Check if this format string already exists
-                            let mut found = false;
-                            for (i, constant) in self.string_constants.iter().enumerate() {
-                                if constant.contains(format_string) {
-                                    const_name = format!("@.str.{}", i);
-                                    found = true;
-                                    break;
+                            // Find or create the format string constant
+                            let const_name = {
+                                // First, check if this format string already exists
+                                let mut existing_index = None;
+                                for (i, constant) in self.string_constants.iter().enumerate() {
+                                    if constant.contains(format_string) {
+                                        existing_index = Some(i);
+                                        break;
+                                    }
                                 }
-                            }
-                            
-                            if !found {
-                                const_name = format!("@.str.fmt.d.{}", self.string_constants.len());
-                                // Add format string constant
-                                self.string_constants.push(format!("{} = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\", align 1", const_name));
-                            }
+                                
+                                if let Some(i) = existing_index {
+                                    // Use existing constant
+                                    format!("@.str.{}", i)
+                                } else {
+                                    // Create new constant
+                                    let new_index = self.string_constants.len();
+                                    let const_name = format!("@.str.{}", new_index);
+                                    self.string_constants.push(format!("{} = private unnamed_addr constant [4 x i8] c\"{}\", align 1", const_name, format_string));
+                                    const_name
+                                }
+                            };
                             
                             let format_reg = self.next_register();
                             self.ir_code.push_str(&format!("  {} = getelementptr inbounds [4 x i8], [4 x i8]* {}, i64 0, i64 0\n", format_reg, const_name));
+                            
+                            // Convert boolean to integer if needed
+                            let final_arg_reg = if arg_type == "i1" {
+                                let convert_reg = self.next_register();
+                                self.ir_code.push_str(&format!("  {} = zext i1 {} to i32\n", convert_reg, arg_reg));
+                                convert_reg
+                            } else {
+                                arg_reg
+                            };
+                            
                             let call_result = self.next_register();
-                            self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_result, format_reg, arg_reg));
+                            self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, {} {})\n", call_result, format_reg, llvm_type, final_arg_reg));
                     }
                 }
                 // Return a dummy register for the result (vibez.spill returns void conceptually)
