@@ -403,7 +403,7 @@ name = "debug-full"
 path = "debug_full_program.rs"
 
 [profile.release]
-lto = true  # Enable Link Time Optimization for smaller binaries
+lto = false  # Disable LTO for compatibility with C runtime libraries
 codegen-units = 1  # Optimize for size and performance
 opt-level = 3  # Maximum optimization
 panic = "abort"  # Remove panic unwinding code in release builds
@@ -412,6 +412,16 @@ strip = true  # Strip symbols from the binary
 [profile.dev]
 opt-level = 0  # No optimization for faster compilation
 debug = true  # Full debug info
+
+# Production-ready release profile with LTO disabled for C library compatibility
+[profile.production]
+inherits = "release"
+lto = false
+codegen-units = 1
+opt-level = 3
+panic = "abort"
+strip = true
+debug = false
 
 [[test]]
 name = "jit_integration_tests"

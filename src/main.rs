@@ -667,8 +667,210 @@ async fn handle_run(matches: &ArgMatches, global_matches: &ArgMatches) -> Result
     Ok(())
 }
 
-async fn handle_test(_matches: &ArgMatches, _global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
-    println!("Test runner temporarily disabled - use `cargo test` instead");
+async fn handle_test(matches: &ArgMatches, _global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    use std::path::Path;
+    use std::fs;
+    use std::process::Command;
+    use glob::glob;
+    
+    // Parse command line arguments
+    let test_dir = matches.get_one::<String>("test_dir").unwrap();
+    let pattern = matches.get_one::<String>("pattern").unwrap();
+    let filter = matches.get_one::<String>("filter");
+    let parallel = matches.get_flag("parallel");
+    let timeout = matches.get_one::<u64>("timeout").unwrap();
+    let fail_fast = matches.get_flag("fail_fast");
+    let output_format = matches.get_one::<String>("output_format").unwrap();
+    
+    println!("{}", "🧪 CURSED Test Runner".bold().cyan());
+    println!("Test directory: {}", test_dir);
+    println!("Pattern: {}", pattern);
+    if let Some(f) = filter {
+        println!("Filter: {}", f);
+    }
+    println!("Format: {}", output_format);
+    println!();
+    
+    // Discover test files
+    let search_pattern = Path::new(test_dir).join(pattern);
+    let mut test_files = Vec::new();
+    
+    for entry in glob(&search_pattern.to_string_lossy()).map_err(|e| format!("Glob error: {}", e))? {
+        let path = entry.map_err(|e| format!("Path error: {}", e))?;
+        if path.is_file() {
+            if let Some(filter_str) = filter {
+                if !path.to_string_lossy().contains(filter_str) {
+                    continue;
+                }
+            }
+            test_files.push(path);
+        }
+    }
+    
+    // Also look for alternative patterns
+    let alt_pattern = Path::new(test_dir).join("*_test.csd");
+    for entry in glob(&alt_pattern.to_string_lossy()).map_err(|e| format!("Glob error: {}", e))? {
+        let path = entry.map_err(|e| format!("Path error: {}", e))?;
+        if path.is_file() && !test_files.contains(&path) {
+            if let Some(filter_str) = filter {
+                if !path.to_string_lossy().contains(filter_str) {
+                    continue;
+                }
+            }
+            test_files.push(path);
+        }
+    }
+    
+    test_files.sort();
+    
+    if test_files.is_empty() {
+        println!("{}", "No test files found".yellow());
+        return Ok(());
+    }
+    
+    println!("Found {} test file(s):", test_files.len());
+    for test_file in &test_files {
+        println!("  {}", test_file.display());
+    }
+    println!();
+    
+    // Run tests
+    let mut results = Vec::new();
+    let mut passed = 0;
+    let mut failed = 0;
+    
+    for (i, test_file) in test_files.iter().enumerate() {
+        println!("[{}/{}] Running: {}", i + 1, test_files.len(), test_file.display());
+        
+        let start_time = std::time::Instant::now();
+        
+        // Use cargo run to execute the test file
+        let output = Command::new("cargo")
+            .args(&["run", "--bin", "cursed", "--"])
+            .arg(test_file)
+            .output();
+        
+        let duration = start_time.elapsed();
+        
+        match output {
+            Ok(output) => {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                
+                if output.status.success() {
+                    println!("  {} {} ({:?})", "✓".green(), "PASSED".green(), duration);
+                    passed += 1;
+                } else {
+                    println!("  {} {} ({:?})", "✗".red(), "FAILED".red(), duration);
+                    if !stderr.is_empty() {
+                        println!("    Error: {}", stderr.lines().next().unwrap_or("Unknown error"));
+                    }
+                    failed += 1;
+                    
+                    if fail_fast {
+                        break;
+                    }
+                }
+                
+                // Store result for potential JSON/XML output
+                results.push((test_file.clone(), output.status.success(), duration, stdout.to_string(), stderr.to_string()));
+            }
+            Err(e) => {
+                println!("  {} {} ({:?})", "✗".red(), "ERROR".red(), duration);
+                println!("    Failed to execute: {}", e);
+                failed += 1;
+                
+                if fail_fast {
+                    break;
+                }
+            }
+        }
+        
+        // Apply timeout if specified
+        if duration.as_secs() > *timeout {
+            println!("    Warning: Test took longer than {} seconds", timeout);
+        }
+        
+        println!();
+    }
+    
+    // Print summary
+    println!("{}", "=== TEST SUMMARY ===".bold().underline());
+    println!("Total tests: {}", test_files.len());
+    println!("{} {}", "Passed:".green(), passed.to_string().green());
+    if failed > 0 {
+        println!("{} {}", "Failed:".red(), failed.to_string().red());
+    }
+    
+    if failed == 0 {
+        println!("{}", "🎉 ALL TESTS PASSED! 🎉".green().bold());
+    } else {
+        println!("{}", "❌ Some tests failed".red().bold());
+    }
+    
+    // Handle different output formats
+    match output_format.as_str() {
+        "json" => {
+            let json_results = serde_json::json!({
+                "summary": {
+                    "total": test_files.len(),
+                    "passed": passed,
+                    "failed": failed
+                },
+                "tests": results.iter().map(|(path, success, duration, stdout, stderr)| {
+                    serde_json::json!({
+                        "name": path.file_name().unwrap().to_string_lossy(),
+                        "path": path.to_string_lossy(),
+                        "passed": success,
+                        "duration_ms": duration.as_millis(),
+                        "stdout": stdout,
+                        "stderr": stderr
+                    })
+                }).collect::<Vec<_>>()
+            });
+            println!("\nJSON Output:");
+            println!("{}", serde_json::to_string_pretty(&json_results).unwrap());
+        }
+        "xml" => {
+            println!("\nXML Output:");
+            println!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+            println!("<testsuites>");
+            println!("  <testsuite name=\"cursed-tests\" tests=\"{}\" failures=\"{}\" time=\"{:.3}\">", 
+                     test_files.len(), failed, results.iter().map(|(_, _, d, _, _)| d.as_secs_f64()).sum::<f64>());
+            for (path, success, duration, stdout, stderr) in &results {
+                println!("    <testcase name=\"{}\" time=\"{:.3}\">", 
+                         path.file_name().unwrap().to_string_lossy(), duration.as_secs_f64());
+                if !success {
+                    println!("      <failure message=\"Test failed\">{}</failure>", stderr);
+                }
+                println!("    </testcase>");
+            }
+            println!("  </testsuite>");
+            println!("</testsuites>");
+        }
+        "html" => {
+            println!("\nHTML Output:");
+            println!("<!DOCTYPE html>");
+            println!("<html><head><title>CURSED Test Results</title></head><body>");
+            println!("<h1>CURSED Test Results</h1>");
+            println!("<p>Total: {}, Passed: {}, Failed: {}</p>", test_files.len(), passed, failed);
+            println!("<table border=\"1\">");
+            println!("<tr><th>Test</th><th>Status</th><th>Duration</th></tr>");
+            for (path, success, duration, _, _) in &results {
+                let status = if *success { "PASSED" } else { "FAILED" };
+                let color = if *success { "green" } else { "red" };
+                println!("<tr><td>{}</td><td style=\"color: {}\">{}</td><td>{:.3}s</td></tr>", 
+                         path.file_name().unwrap().to_string_lossy(), color, status, duration.as_secs_f64());
+            }
+            println!("</table></body></html>");
+        }
+        _ => {} // "pretty" format already handled above
+    }
+    
+    if failed > 0 {
+        std::process::exit(1);
+    }
+    
     Ok(())
 }
 
