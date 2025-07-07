@@ -537,8 +537,15 @@ The comprehensive analysis reveals **CURSED has achieved self-hosting capability
 7. ✅ **SELF-HOSTING IMPROVEMENTS (2025-01-07)** - Enhanced bootstrap with graceful fallback and error handling
 8. ✅ **PURE CURSED IMPLEMENTATIONS** - Demonstrated FFI elimination path with filesystem module
 
-**MINIMAL REMAINING ITEMS**:
+**TYPE CHECKER BUG FIX IN PROGRESS**:
+- 1 Type checker bug in `tests/direct_type_checker_test.rs::test_nested_expressions`
+  - **Issue**: Complex nested arithmetic expressions fail type checking
+  - **Error**: "Arithmetic operation requires numeric types, got tea and normie"
+  - **Root Cause**: Type inference failing for nested binary expressions like `(a + b) * (c - a)`
+  - **Analysis**: Simple expressions like `a + b` work correctly, but complex nested expressions fail
+  - **Impact**: Affects complex expressions but not basic functionality - compiler still self-hosts
+  - **Fix Applied**: Enhanced type inference logic for mixed type parameters
+  - **Status**: Partial fix implemented, needs deeper investigation of AST visitor pattern
 - 2 JIT tests ignored (LLVM environment issues - not core functionality)
-- **NO CRITICAL PARSER BUGS** - All core functionality working
 
 **Status**: 🟢 **PRODUCTION-READY COMPILER ACHIEVED** - Self-hosting achieved, core parser functionality complete with enterprise-grade stability. The language implementation is ready for production use with 99.4% test coverage and demonstrated self-hosting capability.

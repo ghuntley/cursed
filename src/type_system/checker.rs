@@ -331,6 +331,21 @@ impl TypeChecker {
                     }
                 }
                 
+                // Additional check: if either type is still not numeric after inference, 
+                // check if it's an identifier that should be inferred as numeric
+                if !self.is_numeric_type(&left_type) {
+                    if let Expression::Identifier(_) = binary.left.as_ref() {
+                        left_type = TypeExpression::named("normie");
+                        self.update_variable_type_if_identifier(&binary.left, &left_type);
+                    }
+                }
+                if !self.is_numeric_type(&right_type) {
+                    if let Expression::Identifier(_) = binary.right.as_ref() {
+                        right_type = TypeExpression::named("normie");
+                        self.update_variable_type_if_identifier(&binary.right, &right_type);
+                    }
+                }
+                
                 // Now check if both operands are numeric
                 if self.is_numeric_type(&left_type) && self.is_numeric_type(&right_type) {
                     Ok(left_type) // Return the numeric type

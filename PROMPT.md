@@ -45,3 +45,6 @@
 
 
 99999999999999999999999999. When @fix_plan.md becomes large periodically clean out the items that are completed from the file using a subagent.
+
+
+99999999999999999999999999. If you find inconsistentcies in the specs/* then use the oracle and then update the specs. Specifically around types and lexical tokens.

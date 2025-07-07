@@ -445,7 +445,7 @@ impl Parser {
                         return Ok(Some(Type::Array(Box::new(element_type), None)));
                     }
                 }
-            } else if token.kind == TokenKind::Identifier {
+            } else if token.kind == TokenKind::Identifier || token.kind == TokenKind::Normie || token.kind == TokenKind::Tea || token.kind == TokenKind::Lit {
                 // Basic type parsing
                 let type_name = token.lexeme.clone();
                 self.next_token()?;
@@ -623,14 +623,14 @@ impl Parser {
                                                     index,
                                                 });
                                             }
-                                            TokenKind::Identifier => {
-                                                // Member access with identifier
-                                                let property_name = token.lexeme.clone();
-                                                self.next_token()?;
-                                                expr = Expression::MemberAccess(MemberAccessExpression {
-                                                    object: Box::new(expr),
-                                                    property: property_name,
-                                                });
+                                            TokenKind::Identifier | TokenKind::Spill => {
+                                            // Member access with identifier or spill keyword
+                                            let property_name = token.lexeme.clone();
+                                            self.next_token()?;
+                                            expr = Expression::MemberAccess(MemberAccessExpression {
+                                            object: Box::new(expr),
+                                            property: property_name,
+                                            });
                                             }
                                             _ => {
                                                 return Err(Error::Parse("Expected number or identifier after '.' for member access".to_string()));
