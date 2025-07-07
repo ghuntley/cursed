@@ -71,7 +71,7 @@ mod tests {
     fn test_yield_point_compilation() {
         let source = r#"
             slay main() {
-                bestie (sus i = 0; i < 10; i++) {
+                bestie i := 0; i < 10; i++ {
                     yolo  // Yield point
                 }
             }
@@ -115,7 +115,7 @@ mod tests {
             }
             
             slay main() {
-                bestie (sus i = 0; i < 5; i++) {
+                bestie i := 0; i < 5; i++ {
                     stan worker(i)
                 }
             }
@@ -151,7 +151,7 @@ mod tests {
     fn test_goroutine_safe_points() {
         let source = r#"
             slay computation() {
-                bestie (sus i = 0; i < 1000; i++) {
+                bestie i := 0; i < 1000; i++ {
                     // Some computation
                     yolo  // Safe point for GC
                 }
@@ -260,7 +260,7 @@ mod tests {
     fn test_nested_goroutine_spawns() {
         let source = r#"
             slay spawn_workers() {
-                bestie (sus i = 0; i < 3; i++) {
+                bestie i := 0; i < 3; i++ {
                     stan worker(i)
                 }
             }

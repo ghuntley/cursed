@@ -131,6 +131,13 @@ impl Parser {
                         return Ok(Some(Statement::Function(self.parse_function()?)));
                     }
                     _ => {
+                        // Check if this is a short variable declaration (identifier := expr)
+                        if self.peek_token().map(|t| t.kind == TokenKind::ColonEqual).unwrap_or(false) {
+                            // Parse as assignment statement
+                            if let Ok(assignment) = self.parse_assignment_statement() {
+                                return Ok(Some(Statement::Assignment(assignment)));
+                            }
+                        }
                         // Try to parse as expression statement or assignment
                         if let Ok(expr) = self.parse_expression() {
                             return Ok(Some(Statement::Expression(expr)));
@@ -816,22 +823,20 @@ impl Parser {
         // Consume 'bestie' keyword
         self.next_token()?;
         
-        // Expect '('
-        match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::LeftParen => {
-                self.next_token()?;
-            }
-            _ => return Err(Error::Parse("Expected '(' after 'bestie'".to_string())),
-        }
-        
         // Parse init statement (optional)
         let init = if let Some(token) = self.current_token.as_ref() {
             if token.kind != TokenKind::Semicolon {
-                let stmt = self.parse_statement()?.unwrap_or_else(|| {
-                    // If no statement parsed, create a simple expression statement
-                    Statement::Expression(self.parse_expression().unwrap_or(Expression::Identifier("".to_string())))
-                });
-                Some(Box::new(stmt))
+                // Try to parse as assignment first (for short variable declarations)
+                if let Ok(assignment) = self.parse_assignment_statement() {
+                    Some(Box::new(Statement::Assignment(assignment)))
+                } else {
+                    // Otherwise try to parse as statement
+                    let stmt = self.parse_statement()?.unwrap_or_else(|| {
+                        // If no statement parsed, create a simple expression statement
+                        Statement::Expression(self.parse_expression().unwrap_or(Expression::Identifier("".to_string())))
+                    });
+                    Some(Box::new(stmt))
+                }
             } else {
                 None
             }
@@ -868,7 +873,7 @@ impl Parser {
         
         // Parse update (optional)
         let update = if let Some(token) = self.current_token.as_ref() {
-            if token.kind != TokenKind::RightParen {
+            if token.kind != TokenKind::LeftBrace {
                 Some(self.parse_expression()?)
             } else {
                 None
@@ -876,14 +881,6 @@ impl Parser {
         } else {
             None
         };
-        
-        // Expect ')'
-        match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::RightParen => {
-                self.next_token()?;
-            }
-            _ => return Err(Error::Parse("Expected ')' after for loop header".to_string())),
-        }
         
         // Parse body
         let body = self.parse_block()?;
