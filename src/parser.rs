@@ -6,6 +6,8 @@ use crate::error_types::{Error, Result};
 pub struct Parser {
     lexer: Lexer,
     current_token: Option<Token>,
+    tokens: Vec<Token>,
+    token_index: usize,
 }
 
 impl Parser {
@@ -17,21 +19,27 @@ impl Parser {
         Ok(Parser {
             lexer,
             current_token,
+            tokens: Vec::new(),
+            token_index: 0,
         })
     }
 
     pub fn from_tokens(tokens: Vec<Token>) -> Self {
-        // Create a basic lexer from tokens - simplified implementation
-        let mut lexer = Lexer::new(String::new());
+        // Create a parser that works with a list of tokens
+        let lexer = Lexer::new(String::new()); // Dummy lexer
         let current_token = tokens.first().cloned();
         Parser {
             lexer,
             current_token,
+            tokens: tokens,
+            token_index: 0,
         }
     }
 
     pub fn parse_program(&mut self) -> Result<Program> {
         let mut statements = Vec::new();
+        let mut imports = Vec::new();
+        let mut package = None;
         
         // Parse statements until we reach EOF
         while let Some(token) = self.current_token.as_ref() {
@@ -42,6 +50,18 @@ impl Parser {
             // Skip newlines
             if token.kind == TokenKind::Newline {
                 self.next_token()?;
+                continue;
+            }
+            
+            // Check for package declaration first
+            if token.kind == TokenKind::Vibe && package.is_none() {
+                package = Some(self.parse_package_declaration()?);
+                continue;
+            }
+            
+            // Check for import statements
+            if token.kind == TokenKind::Yeet {
+                imports.push(self.parse_import_statement()?);
                 continue;
             }
             
@@ -58,8 +78,8 @@ impl Parser {
         
         Ok(Program {
             statements,
-            imports: vec![],
-            package: None,
+            imports,
+            package,
         })
     }
 
@@ -74,10 +94,21 @@ impl Parser {
     }
 
     fn next_token(&mut self) -> Result<()> {
-        self.current_token = match self.lexer.next_token() {
-            Ok(token) => Some(token),
-            Err(_) => None,
-        };
+        if !self.tokens.is_empty() {
+            // Using tokens list (for testing)
+            self.token_index += 1;
+            self.current_token = if self.token_index < self.tokens.len() {
+                Some(self.tokens[self.token_index].clone())
+            } else {
+                None
+            };
+        } else {
+            // Using lexer (normal operation)
+            self.current_token = match self.lexer.next_token() {
+                Ok(token) => Some(token),
+                Err(_) => None,
+            };
+        }
         Ok(())
     }
 
@@ -339,6 +370,47 @@ impl Parser {
         }
         
         Ok(Expression::Literal(Literal::String("".to_string())))
+    }
+
+    fn parse_package_declaration(&mut self) -> Result<crate::ast::PackageDeclaration> {
+        // Consume 'vibe' keyword
+        self.next_token()?;
+        
+        // Parse package name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                name
+            }
+            _ => return Err(Error::Parse("Expected package name after 'vibe'".to_string())),
+        };
+        
+        Ok(crate::ast::PackageDeclaration {
+            name,
+            version: None,
+        })
+    }
+
+    fn parse_import_statement(&mut self) -> Result<crate::ast::ImportStatement> {
+        // Consume 'yeet' keyword
+        self.next_token()?;
+        
+        // Parse import path (string literal)
+        let path = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::String => {
+                let path = token.lexeme.clone().trim_matches('"').to_string();
+                self.next_token()?;
+                path
+            }
+            _ => return Err(Error::Parse("Expected string literal after 'yeet'".to_string())),
+        };
+        
+        Ok(crate::ast::ImportStatement {
+            path,
+            alias: None,
+            items: Vec::new(),
+        })
     }
 }
 
