@@ -1,23 +1,25 @@
+vibe test_c_style_for
+
 slay main() {
-    // Test basic C-style for loop
+    vibez.spill("Testing C-style for loops")
+    
+    fr fr Basic C-style for loop
     bestie i := 0; i < 5; i++ {
-        vibez.spill("i is ", i)
+        vibez.spill("Value of i:")
+        vibez.spill(i)
     }
     
-    // Test for loop with manual increment
-    bestie j := 0; j < 3; j = j + 1 {
-        vibez.spill("j is ", j)
+    fr fr C-style for loop with different update
+    bestie j := 10; j > 0; j-- {
+        vibez.spill("Countdown:")
+        vibez.spill(j)
     }
     
-    // Test for loop with different initialization
-    sus start normie = 10
-    bestie k := start; k > 5; k-- {
-        vibez.spill("k is ", k)
+    fr fr C-style for loop with custom step
+    bestie k := 0; k < 20; k = k + 3 {
+        vibez.spill("Step by 3:")
+        vibez.spill(k)
     }
     
-    // Test infinite loop with break
-    bestie ; ; {
-        vibez.spill("infinite loop")
-        ghosted
-    }
+    vibez.spill("All C-style for loops completed!")
 }

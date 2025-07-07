@@ -4,7 +4,7 @@
 # Build compiler
 cargo build
 
-# Run tests (all 336 tests pass)
+# Run tests (all 504 tests pass)
 cargo test
 
 # Compile CURSED program to native executable
@@ -53,6 +53,48 @@ cargo run --bin cursed -- compile program.csd
 # 5. Check LLVM IR register numbering consistency if issues arise
 ```
 
+## CURSED Testing Framework
+
+```bash
+# Run all CURSED stdlib tests
+cargo run --bin cursed test
+
+# Run tests in specific directory
+cargo run --bin cursed test --test-dir stdlib
+
+# Run tests with specific pattern
+cargo run --bin cursed test --pattern "test_*.csd"
+
+# Run tests with filter
+cargo run --bin cursed test --filter math
+
+# Run tests in parallel
+cargo run --bin cursed test --parallel
+
+# Run tests with verbose output
+cargo run --bin cursed test --verbose
+
+# Stop on first failure
+cargo run --bin cursed test --fail-fast
+
+# Generate different output formats
+cargo run --bin cursed test --format json
+cargo run --bin cursed test --format xml
+cargo run --bin cursed test --format html
+
+# Set test timeout
+cargo run --bin cursed test --timeout 60
+
+# Run specific module tests
+cargo run --bin cursed test --filter crypto
+cargo run --bin cursed test --filter math
+cargo run --bin cursed test --filter string
+
+# Test discovery shows all .csd test files in stdlib/
+# Automatically finds: test_*.csd and *_test.csd files
+# Uses CURSED testing framework (testz module)
+```
+
 ## Using the CURSED Compiler
 
 ```bash
@@ -68,6 +110,38 @@ cargo run --bin cursed -- compile test_simple.csd
 ## Tests
 
 - Tests for the cursed language MUST be authored in cursed and MUST use the cursed testing standard library. They should be stored in the tests/ folder under the appropriate subfolder that describes the test module/purpose.
+
+### CURSED Standard Library Testing
+
+The stdlib has comprehensive test coverage using the testz testing framework:
+
+```bash
+# Run individual stdlib module tests
+cargo run --bin cursed stdlib/math/test_math.csd
+cargo run --bin cursed stdlib/string/test_string.csd
+cargo run --bin cursed stdlib/crypto/test_crypto.csd
+cargo run --bin cursed stdlib/io/test_io.csd
+cargo run --bin cursed stdlib/collections/test_collections.csd
+cargo run --bin cursed stdlib/time/test_time.csd
+
+# Run simple working test example
+cargo run --bin cursed stdlib/test_simple_math.csd
+
+# Run all stdlib tests (when test runner is re-enabled)
+cargo run --bin cursed test --test-dir stdlib
+```
+
+### Test Framework (testz)
+
+The CURSED testing framework provides:
+- `test_start(name)` - Begin a new test
+- `assert_eq_int(actual, expected)` - Assert integer equality
+- `assert_eq_string(actual, expected)` - Assert string equality
+- `assert_true(condition)` - Assert condition is true
+- `assert_false(condition)` - Assert condition is false
+- `print_test_summary()` - Display test results
+
+Location: `stdlib/testz/mod.csd`
 
 ### Basic CURSED Syntax Examples
 

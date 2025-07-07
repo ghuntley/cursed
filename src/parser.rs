@@ -55,11 +55,28 @@ impl Parser {
             self.skip_newlines();
         }
 
-        // Parse statements
+        // Parse statements (and any additional imports)
         while !self.is_at_end() {
             self.skip_newlines();
             if self.is_at_end() {
                 break;
+            }
+            
+            // Check for imports that can appear anywhere
+            if self.match_tokens(&[TokenKind::Yeet]) {
+                match self.parse_import_statement() {
+                    Ok(import) => {
+                        log::debug!("➕ Adding import to program: {:?}", import);
+                        imports.push(import);
+                    },
+                    Err(e) => {
+                        log::error!("❌ Import parse error: {}", e);
+                        self.errors.push(format!("Import parse error: {}", e));
+                        self.synchronize();
+                    }
+                }
+                self.skip_newlines();
+                continue;
             }
             
             match self.parse_statement() {
@@ -734,12 +751,21 @@ impl Parser {
             self.advance(); // consume '('
             let mut paths = Vec::new();
             
+            self.skip_newlines(); // Skip newlines after opening paren
+            
             while !self.check(&TokenKind::RightParen) && !self.is_at_end() {
                 let path_token = self.consume(TokenKind::String, "Expected import path")?;
                 paths.push(path_token.lexeme.clone());
                 
-                if !self.check(&TokenKind::RightParen) {
-                    self.consume(TokenKind::Semicolon, "Expected ';' between grouped imports")?;
+                // Check for semicolon or right paren
+                if self.check(&TokenKind::Semicolon) {
+                    self.advance(); // consume semicolon
+                    self.skip_newlines(); // Skip newlines after semicolon
+                } else {
+                    self.skip_newlines(); // Skip newlines before checking for right paren
+                    if !self.check(&TokenKind::RightParen) {
+                        return Err(CursedError::parse_error("Expected ';' between grouped imports or ')' to close"));
+                    }
                 }
             }
             
@@ -1506,40 +1532,38 @@ impl Parser {
     fn parse_for_statement(&mut self) -> Result<Statement, CursedError> {
         self.consume(TokenKind::Bestie, "Expected 'bestie'")?;
         
-        // Check if this is a for-in loop by looking ahead
+        // Check if this is a for-in loop by looking ahead without consuming tokens
         // Pattern: bestie variable in iterable { ... }
         let checkpoint = self.current;
         
-        // Try to parse as for-in first
-        if self.check(&TokenKind::Identifier) {
+        // Check for for-in pattern: identifier followed by 'in'
+        if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::In {
+            // This is a for-in loop
             let variable = self.advance().lexeme.clone();
+            self.consume(TokenKind::In, "Expected 'in' for for-in loop")?;
+            let iterable = self.parse_expression()?;
             
-            if self.match_tokens(&[TokenKind::In]) {
-                // This is a for-in loop
-                let iterable = self.parse_expression()?;
-                
-                self.consume(TokenKind::LeftBrace, "Expected '{' after for-in header")?;
-                
-                let mut body = Vec::new();
-                while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-                    self.skip_newlines(); // Skip newlines before parsing each statement
-                    if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-                        body.push(self.parse_statement()?);
-                    }
+            self.consume(TokenKind::LeftBrace, "Expected '{' after for-in header")?;
+            
+            let mut body = Vec::new();
+            while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                self.skip_newlines(); // Skip newlines before parsing each statement
+                if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                    body.push(self.parse_statement()?);
                 }
-                
-                self.consume(TokenKind::RightBrace, "Expected '}' after for-in body")?;
-                
-                return Ok(Statement::ForIn(ForInStatement {
-                    variable,
-                    iterable,
-                    body,
-                }));
             }
+            
+            self.consume(TokenKind::RightBrace, "Expected '}' after for-in body")?;
+            
+            return Ok(Statement::ForIn(ForInStatement {
+                variable,
+                iterable,
+                body,
+            }));
         }
         
-        // Reset and parse as traditional C-style for loop
-        self.current = checkpoint;
+        // This is a traditional C-style for loop
+        // Current position is at the first token after 'bestie'
         
         // Parse for loop variants:
         // bestie init; condition; update { ... }
@@ -1547,7 +1571,9 @@ impl Parser {
         let init = if self.check(&TokenKind::Semicolon) {
             None
         } else {
-            Some(Box::new(self.parse_statement()?))
+            // For C-style for loops, we need to handle the initialization properly
+            // The initialization can be a short declaration or regular statement
+            Some(Box::new(self.parse_for_init_statement()?))
         };
         
         self.consume(TokenKind::Semicolon, "Expected ';' after for loop init")?;
@@ -1570,7 +1596,10 @@ impl Parser {
         
         let mut body = Vec::new();
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
-            body.push(self.parse_statement()?);
+            self.skip_newlines(); // Skip newlines before parsing each statement
+            if !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+                body.push(self.parse_statement()?);
+            }
         }
         
         self.consume(TokenKind::RightBrace, "Expected '}' after for body")?;
@@ -1581,6 +1610,22 @@ impl Parser {
             update,
             body,
         }))
+    }
+
+    fn parse_for_init_statement(&mut self) -> Result<Statement, CursedError> {
+        // In a for loop, the initialization can be:
+        // - A short variable declaration: i := 0
+        // - A regular assignment: i = 0
+        // - An expression statement
+        
+        // Check if this is a short declaration pattern: identifier := expression
+        if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::ColonEqual {
+            Ok(Statement::ShortDeclaration(self.parse_short_declaration_statement()?))
+        } else if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal {
+            Ok(Statement::Assignment(self.parse_assignment_statement()?))
+        } else {
+            Ok(Statement::Expression(self.parse_expression()?))
+        }
     }
 
     fn parse_for_update_clause(&mut self) -> Result<Expression, CursedError> {
@@ -2106,10 +2151,17 @@ impl Parser {
                 self.parse_lambda_expression()
             },
             TokenKind::LeftBracket => {
-                self.parse_array_literal()
+                // Could be array literal [1, 2, 3] or composite literal [5]int{1, 2, 3, 4, 5}
+                self.parse_array_literal_or_composite()
             },
             TokenKind::LeftBrace => {
                 self.parse_map_literal()
+            },
+            // Handle composite literals starting with type names
+            TokenKind::Normie | TokenKind::Tea | TokenKind::Lit | TokenKind::Sip |
+            TokenKind::Smol | TokenKind::Mid | TokenKind::Thicc | TokenKind::Snack |
+            TokenKind::Meal | TokenKind::Byte | TokenKind::Rune | TokenKind::Extra => {
+                self.parse_composite_literal()
             },
             _ => Err(CursedError::syntax_error("Expected expression")),
         }
@@ -2372,6 +2424,111 @@ impl Parser {
         self.consume(TokenKind::RightBrace, "Expected '}' to close map literal")?;
         
         Ok(Expression::Map(pairs))
+    }
+
+    fn parse_array_literal_or_composite(&mut self) -> Result<Expression, CursedError> {
+        // Look ahead to determine if this is a composite literal
+        let mut lookahead = 1;
+        let mut bracket_depth = 1; // We start inside brackets since we've already seen '['
+        let mut found_type = false;
+        
+        // Look ahead to see if we have a pattern like [size]type{ or []type{
+        while self.current + lookahead < self.tokens.len() {
+            let token = &self.tokens[self.current + lookahead];
+            match token.kind {
+                TokenKind::LeftBracket => bracket_depth += 1,
+                TokenKind::RightBracket => {
+                    bracket_depth -= 1;
+                    if bracket_depth == 0 {
+                        // Check if next token is a type followed by a left brace
+                        if self.current + lookahead + 1 < self.tokens.len() {
+                            let next_token = &self.tokens[self.current + lookahead + 1];
+                            if matches!(next_token.kind, 
+                                TokenKind::Normie | TokenKind::Tea | TokenKind::Lit | TokenKind::Sip |
+                                TokenKind::Smol | TokenKind::Mid | TokenKind::Thicc | TokenKind::Snack |
+                                TokenKind::Meal | TokenKind::Byte | TokenKind::Rune | TokenKind::Extra) {
+                                // Now check if there's a left brace after the type
+                                if self.current + lookahead + 2 < self.tokens.len() {
+                                    let brace_token = &self.tokens[self.current + lookahead + 2];
+                                    if brace_token.kind == TokenKind::LeftBrace {
+                                        found_type = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+                _ => {}
+            }
+            lookahead += 1;
+        }
+        
+        if found_type {
+            // Parse as composite literal: [size]type{...} or []type{...}
+            let type_spec = self.parse_type()?;
+            self.consume(TokenKind::LeftBrace, "Expected '{' after type in composite literal")?;
+            let elements = self.parse_composite_elements()?;
+            self.consume(TokenKind::RightBrace, "Expected '}' to close composite literal")?;
+            
+            Ok(Expression::CompositeLiteral(crate::ast::CompositeLiteralExpression {
+                type_spec,
+                elements,
+            }))
+        } else {
+            // Parse as regular array literal: [1, 2, 3]
+            self.parse_array_literal()
+        }
+    }
+
+    fn parse_composite_literal(&mut self) -> Result<Expression, CursedError> {
+        // Parse type specification
+        let type_spec = self.parse_type()?;
+        
+        // Expect opening brace
+        self.consume(TokenKind::LeftBrace, "Expected '{' after type in composite literal")?;
+        
+        // Parse elements
+        let elements = self.parse_composite_elements()?;
+        
+        // Expect closing brace
+        self.consume(TokenKind::RightBrace, "Expected '}' to close composite literal")?;
+        
+        Ok(Expression::CompositeLiteral(crate::ast::CompositeLiteralExpression {
+            type_spec,
+            elements,
+        }))
+    }
+
+    fn parse_composite_elements(&mut self) -> Result<Vec<Expression>, CursedError> {
+        let mut elements = Vec::new();
+        
+        // Handle empty initialization {}
+        if self.check(&TokenKind::RightBrace) {
+            return Ok(elements);
+        }
+        
+        // Parse elements
+        loop {
+            self.skip_newlines(); // Allow newlines between elements
+            
+            let element = self.parse_expression()?;
+            elements.push(element);
+            
+            self.skip_newlines(); // Allow newlines after elements
+            
+            if self.match_tokens(&[TokenKind::Comma]) {
+                // Continue parsing next element
+                continue;
+            } else if self.check(&TokenKind::RightBrace) {
+                break;
+            } else {
+                return Err(CursedError::syntax_error("Expected ',' or '}' in composite literal"));
+            }
+        }
+        
+        Ok(elements)
     }
 
     fn parse_interface_statement_with_visibility(&mut self, visibility: crate::ast::Visibility) -> Result<crate::ast::InterfaceStatement, CursedError> {

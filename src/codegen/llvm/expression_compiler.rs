@@ -114,6 +114,9 @@ impl ExpressionCompiler {
             Expression::Decrement(dec_expr) => {
                 self.compile_decrement_expression(dec_expr)
             },
+            Expression::CompositeLiteral(composite) => {
+                self.compile_composite_literal(composite)
+            },
 
         }
     }
@@ -505,6 +508,133 @@ impl ExpressionCompiler {
         }
         
         Ok(array_reg)
+    }
+
+    /// Compile composite literal expressions
+    fn compile_composite_literal(&mut self, composite: &crate::ast::CompositeLiteralExpression) -> Result<String, CursedError> {
+        use crate::ast::Type;
+        
+        match &composite.type_spec {
+            Type::Array(element_type, size_expr) => {
+                // Fixed-size array: [N]T{...}
+                let size = if let Some(size_expr) = size_expr {
+                    match size_expr.as_ref() {
+                        crate::ast::Expression::Integer(n) => *n as usize,
+                        _ => return Err(CursedError::CompilerError(
+                            "Only constant array sizes supported in composite literals".to_string()
+                        )),
+                    }
+                } else {
+                    return Err(CursedError::CompilerError(
+                        "Array composite literal requires size specification".to_string()
+                    ));
+                };
+                
+                // Get element type name for LLVM
+                let element_type_name = self.get_llvm_type_name(element_type)?;
+                
+                // Allocate array
+                let array_reg = self.next_register();
+                self.ir_buffer.push_str(&format!("  {} = alloca [{}x {}], align 4\n", array_reg, size, element_type_name));
+                
+                // Initialize provided elements
+                for (i, element) in composite.elements.iter().enumerate() {
+                    if i >= size {
+                        return Err(CursedError::CompilerError(format!(
+                            "Too many elements in array literal: expected {}, got {}",
+                            size, i + 1
+                        )));
+                    }
+                    
+                    let elem_reg = self.compile_expression(element)?;
+                    let elem_ptr = self.next_register();
+                    self.ir_buffer.push_str(&format!("  {} = getelementptr inbounds [{}x {}], [{}x {}]* {}, i64 0, i64 {}\n", 
+                        elem_ptr, size, element_type_name, size, element_type_name, array_reg, i));
+                    self.ir_buffer.push_str(&format!("  store {} {}, {}* {}, align 4\n", element_type_name, elem_reg, element_type_name, elem_ptr));
+                }
+                
+                // Zero-initialize remaining elements
+                let zero_value = self.get_zero_value_for_type(element_type)?;
+                for i in composite.elements.len()..size {
+                    let elem_ptr = self.next_register();
+                    self.ir_buffer.push_str(&format!("  {} = getelementptr inbounds [{}x {}], [{}x {}]* {}, i64 0, i64 {}\n", 
+                        elem_ptr, size, element_type_name, size, element_type_name, array_reg, i));
+                    self.ir_buffer.push_str(&format!("  store {} {}, {}* {}, align 4\n", element_type_name, zero_value, element_type_name, elem_ptr));
+                }
+                
+                Ok(array_reg)
+            },
+            Type::Slice(element_type) => {
+                // Dynamic slice: []T{...}
+                let size = composite.elements.len();
+                let element_type_name = self.get_llvm_type_name(element_type)?;
+                
+                // Allocate array
+                let array_reg = self.next_register();
+                self.ir_buffer.push_str(&format!("  {} = alloca [{}x {}], align 4\n", array_reg, size, element_type_name));
+                
+                // Initialize elements
+                for (i, element) in composite.elements.iter().enumerate() {
+                    let elem_reg = self.compile_expression(element)?;
+                    let elem_ptr = self.next_register();
+                    self.ir_buffer.push_str(&format!("  {} = getelementptr inbounds [{}x {}], [{}x {}]* {}, i64 0, i64 {}\n", 
+                        elem_ptr, size, element_type_name, size, element_type_name, array_reg, i));
+                    self.ir_buffer.push_str(&format!("  store {} {}, {}* {}, align 4\n", element_type_name, elem_reg, element_type_name, elem_ptr));
+                }
+                
+                Ok(array_reg)
+            },
+            _ => Err(CursedError::CompilerError(
+                "Composite literals only supported for arrays and slices".to_string()
+            )),
+        }
+    }
+
+    /// Get LLVM type name for a CURSED type
+    fn get_llvm_type_name(&self, type_spec: &crate::ast::Type) -> Result<String, CursedError> {
+        use crate::ast::Type;
+        
+        match type_spec {
+            Type::Normie | Type::Rune => Ok("i32".to_string()),
+            Type::Smol => Ok("i8".to_string()),
+            Type::Mid => Ok("i16".to_string()),
+            Type::Thicc => Ok("i64".to_string()),
+            Type::Byte => Ok("i8".to_string()),
+            Type::Snack => Ok("float".to_string()),
+            Type::Meal => Ok("double".to_string()),
+            Type::Lit => Ok("i1".to_string()),
+            Type::Tea => Ok("i8*".to_string()),
+            Type::Sip => Ok("i8".to_string()),
+            _ => Err(CursedError::CompilerError(
+                "Unsupported type in composite literal".to_string()
+            )),
+        }
+    }
+
+    /// Get zero value for a type in LLVM IR
+    fn get_zero_value_for_type(&self, type_spec: &crate::ast::Type) -> Result<String, CursedError> {
+        use crate::ast::Type;
+        
+        match type_spec {
+            Type::Normie | Type::Smol | Type::Mid | Type::Thicc | Type::Byte | Type::Rune => {
+                Ok("0".to_string())
+            },
+            Type::Snack | Type::Meal => {
+                Ok("0.0".to_string())
+            },
+            Type::Lit => {
+                Ok("false".to_string())
+            },
+            Type::Tea => {
+                Ok("null".to_string())
+            },
+            Type::Sip => {
+                Ok("0".to_string())
+            },
+            _ => Err(CursedError::CompilerError(
+                "Cannot get zero value for this type".to_string()
+            )),
+        }
     }
 
     /// Compile map expressions

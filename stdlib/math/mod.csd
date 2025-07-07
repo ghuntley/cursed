@@ -4,199 +4,199 @@
 // Constants
 // ================================
 
-fn math_pi() -> float {
-    return 3.141592653589793;
+slay math_pi() meal {
+    damn 3.141592653589793;
 }
 
-fn math_e() -> float {
-    return 2.718281828459045;
+slay math_e() meal {
+    damn 2.718281828459045;
 }
 
-fn math_tau() -> float {
-    return 6.283185307179586;
+slay math_tau() meal {
+    damn 6.283185307179586;
 }
 
 // ================================
 // Basic operations
 // ================================
 
-fn math_abs(x: float) -> float {
-    return math_abs_impl(x);
+slay math_abs(x meal) meal {
+    damn math_abs_impl(x);
 }
 
-fn math_abs_int(x: int) -> int {
-    return math_abs_int_impl(x);
+slay math_abs_int(x normie) normie {
+    damn math_abs_int_impl(x);
 }
 
-fn math_min(a: float, b: float) -> float {
-    return math_min_impl(a, b);
+slay math_min(a meal, b meal) meal {
+    damn math_min_impl(a, b);
 }
 
-fn math_max(a: float, b: float) -> float {
-    return math_max_impl(a, b);
+slay math_max(a meal, b meal) meal {
+    damn math_max_impl(a, b);
 }
 
-fn math_min_int(a: int, b: int) -> int {
-    return math_min_int_impl(a, b);
+slay math_min_int(a normie, b normie) normie {
+    damn math_min_int_impl(a, b);
 }
 
-fn math_max_int(a: int, b: int) -> int {
-    return math_max_int_impl(a, b);
+slay math_max_int(a normie, b normie) normie {
+    damn math_max_int_impl(a, b);
 }
 
-fn math_clamp(x: float, min: float, max: float) -> float {
-    return math_clamp_impl(x, min, max);
+slay math_clamp(x meal, min meal, max meal) meal {
+    damn math_clamp_impl(x, min, max);
 }
 
-fn math_sign(x: float) -> float {
-    return math_sign_impl(x);
+slay math_sign(x meal) meal {
+    damn math_sign_impl(x);
 }
 
 // ================================
 // Power and logarithm functions
 // ================================
 
-fn math_pow(base: float, exponent: float) -> float {
-    return math_pow_impl(base, exponent);
+slay math_pow(base meal, exponent meal) meal {
+    damn math_pow_impl(base, exponent);
 }
 
-fn math_sqrt(x: float) -> float {
-    return math_sqrt_impl(x);
+slay math_sqrt(x meal) meal {
+    damn math_sqrt_impl(x);
 }
 
-fn math_cbrt(x: float) -> float {
-    return math_cbrt_impl(x);
+slay math_cbrt(x meal) meal {
+    damn math_cbrt_impl(x);
 }
 
-fn math_log(x: float) -> float {
-    return math_log_impl(x);
+slay math_log(x meal) meal {
+    damn math_log_impl(x);
 }
 
-fn math_log10(x: float) -> float {
-    return math_log10_impl(x);
+slay math_log10(x meal) meal {
+    damn math_log10_impl(x);
 }
 
-fn math_log2(x: float) -> float {
-    return math_log2_impl(x);
+slay math_log2(x meal) meal {
+    damn math_log2_impl(x);
 }
 
-fn math_exp(x: float) -> float {
-    return math_exp_impl(x);
+slay math_exp(x meal) meal {
+    damn math_exp_impl(x);
 }
 
-fn math_exp2(x: float) -> float {
-    return math_exp2_impl(x);
+slay math_exp2(x meal) meal {
+    damn math_exp2_impl(x);
 }
 
 // ================================
 // Trigonometric functions
 // ================================
 
-fn math_sin(x: float) -> float {
-    return math_sin_impl(x);
+slay math_sin(x meal) meal {
+    damn math_sin_impl(x);
 }
 
-fn math_cos(x: float) -> float {
-    return math_cos_impl(x);
+slay math_cos(x meal) meal {
+    damn math_cos_impl(x);
 }
 
-fn math_tan(x: float) -> float {
-    return math_tan_impl(x);
+slay math_tan(x meal) meal {
+    damn math_tan_impl(x);
 }
 
-fn math_asin(x: float) -> float {
-    return math_asin_impl(x);
+slay math_asin(x meal) meal {
+    damn math_asin_impl(x);
 }
 
-fn math_acos(x: float) -> float {
-    return math_acos_impl(x);
+slay math_acos(x meal) meal {
+    damn math_acos_impl(x);
 }
 
-fn math_atan(x: float) -> float {
-    return math_atan_impl(x);
+slay math_atan(x meal) meal {
+    damn math_atan_impl(x);
 }
 
-fn math_atan2(y: float, x: float) -> float {
-    return math_atan2_impl(y, x);
+slay math_atan2(y meal, x meal) meal {
+    damn math_atan2_impl(y, x);
 }
 
-fn math_sinh(x: float) -> float {
-    return math_sinh_impl(x);
+slay math_sinh(x meal) meal {
+    damn math_sinh_impl(x);
 }
 
-fn math_cosh(x: float) -> float {
-    return math_cosh_impl(x);
+slay math_cosh(x meal) meal {
+    damn math_cosh_impl(x);
 }
 
-fn math_tanh(x: float) -> float {
-    return math_tanh_impl(x);
+slay math_tanh(x meal) meal {
+    damn math_tanh_impl(x);
 }
 
 // ================================
 // Rounding and truncation
 // ================================
 
-fn math_floor(x: float) -> float {
-    return math_floor_impl(x);
+slay math_floor(x meal) meal {
+    damn math_floor_impl(x);
 }
 
-fn math_ceil(x: float) -> float {
-    return math_ceil_impl(x);
+slay math_ceil(x meal) meal {
+    damn math_ceil_impl(x);
 }
 
-fn math_round(x: float) -> float {
-    return math_round_impl(x);
+slay math_round(x meal) meal {
+    damn math_round_impl(x);
 }
 
-fn math_trunc(x: float) -> float {
-    return math_trunc_impl(x);
+slay math_trunc(x meal) meal {
+    damn math_trunc_impl(x);
 }
 
-fn math_frac(x: float) -> float {
-    return math_frac_impl(x);
+slay math_frac(x meal) meal {
+    damn math_frac_impl(x);
 }
 
 // ================================
 // Statistical functions
 // ================================
 
-fn math_sum(values: array) -> float {
-    return math_sum_impl(values);
+slay math_sum(values [meal]) meal {
+    damn math_sum_impl(values);
 }
 
-fn math_mean(values: array) -> float {
-    return math_mean_impl(values);
+slay math_mean(values [meal]) meal {
+    damn math_mean_impl(values);
 }
 
-fn math_median(values: array) -> float {
-    return math_median_impl(values);
+slay math_median(values [meal]) meal {
+    damn math_median_impl(values);
 }
 
-fn math_variance(values: array) -> float {
-    return math_variance_impl(values);
+slay math_variance(values [meal]) meal {
+    damn math_variance_impl(values);
 }
 
-fn math_std_dev(values: array) -> float {
-    return math_std_dev_impl(values);
+slay math_std_dev(values [meal]) meal {
+    damn math_std_dev_impl(values);
 }
 
 // ================================
 // Random numbers
 // ================================
 
-fn math_random() -> float {
-    return math_random_impl();
+slay math_random() meal {
+    damn math_random_impl();
 }
 
-fn math_random_int(min: int, max: int) -> int {
-    return math_random_int_impl(min, max);
+slay math_random_int(min normie, max normie) normie {
+    damn math_random_int_impl(min, max);
 }
 
-fn math_random_float(min: float, max: float) -> float {
-    return math_random_float_impl(min, max);
+slay math_random_float(min meal, max meal) meal {
+    damn math_random_float_impl(min, max);
 }
 
-fn math_seed_random(seed: int) -> void {
+slay math_seed_random(seed normie) {
     math_seed_random_impl(seed);
 }
 
@@ -204,83 +204,83 @@ fn math_seed_random(seed: int) -> void {
 // Utility functions
 // ================================
 
-fn math_is_nan(x: float) -> bool {
-    return math_is_nan_impl(x);
+slay math_is_nan(x meal) lit {
+    damn math_is_nan_impl(x);
 }
 
-fn math_is_infinite(x: float) -> bool {
-    return math_is_infinite_impl(x);
+slay math_is_infinite(x meal) lit {
+    damn math_is_infinite_impl(x);
 }
 
-fn math_is_finite(x: float) -> bool {
-    return math_is_finite_impl(x);
+slay math_is_finite(x meal) lit {
+    damn math_is_finite_impl(x);
 }
 
-fn math_degrees(radians: float) -> float {
-    return radians * 180.0 / math_pi();
+slay math_degrees(radians meal) meal {
+    damn radians * 180.0 / math_pi();
 }
 
-fn math_radians(degrees: float) -> float {
-    return degrees * math_pi() / 180.0;
+slay math_radians(degrees meal) meal {
+    damn degrees * math_pi() / 180.0;
 }
 
-fn math_gcd(a: int, b: int) -> int {
-    return math_gcd_impl(a, b);
+slay math_gcd(a normie, b normie) normie {
+    damn math_gcd_impl(a, b);
 }
 
-fn math_lcm(a: int, b: int) -> int {
-    return math_lcm_impl(a, b);
+slay math_lcm(a normie, b normie) normie {
+    damn math_lcm_impl(a, b);
 }
 
-fn math_factorial(n: int) -> int {
-    return math_factorial_impl(n);
+slay math_factorial(n normie) normie {
+    damn math_factorial_impl(n);
 }
 
-fn math_fibonacci(n: int) -> int {
-    return math_fibonacci_impl(n);
+slay math_fibonacci(n normie) normie {
+    damn math_fibonacci_impl(n);
 }
 
 // ================================
 // Linear interpolation
 // ================================
 
-fn math_lerp(a: float, b: float, t: float) -> float {
-    return a + t * (b - a);
+slay math_lerp(a meal, b meal, t meal) meal {
+    damn a + t * (b - a);
 }
 
-fn math_inverse_lerp(a: float, b: float, value: float) -> float {
-    return (value - a) / (b - a);
+slay math_inverse_lerp(a meal, b meal, value meal) meal {
+    damn (value - a) / (b - a);
 }
 
-fn math_smoothstep(edge0: float, edge1: float, x: float) -> float {
-    return math_smoothstep_impl(edge0, edge1, x);
+slay math_smoothstep(edge0 meal, edge1 meal, x meal) meal {
+    damn math_smoothstep_impl(edge0, edge1, x);
 }
 
 // ================================
 // Distance and geometry
 // ================================
 
-fn math_distance_2d(x1: float, y1: float, x2: float, y2: float) -> float {
-    return math_sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+slay math_distance_2d(x1 meal, y1 meal, x2 meal, y2 meal) meal {
+    damn math_sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
-fn math_distance_3d(x1: float, y1: float, z1: float, x2: float, y2: float, z2: float) -> float {
-    return math_sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
+slay math_distance_3d(x1 meal, y1 meal, z1 meal, x2 meal, y2 meal, z2 meal) meal {
+    damn math_sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
 }
 
-fn math_dot_product_2d(x1: float, y1: float, x2: float, y2: float) -> float {
-    return x1 * x2 + y1 * y2;
+slay math_dot_product_2d(x1 meal, y1 meal, x2 meal, y2 meal) meal {
+    damn x1 * x2 + y1 * y2;
 }
 
-fn math_cross_product_2d(x1: float, y1: float, x2: float, y2: float) -> float {
-    return x1 * y2 - y1 * x2;
+slay math_cross_product_2d(x1 meal, y1 meal, x2 meal, y2 meal) meal {
+    damn x1 * y2 - y1 * x2;
 }
 
-fn math_magnitude_2d(x: float, y: float) -> float {
-    return math_sqrt(x * x + y * y);
+slay math_magnitude_2d(x meal, y meal) meal {
+    damn math_sqrt(x * x + y * y);
 }
 
-fn math_normalize_2d(x: float, y: float) -> array {
-    let mag = math_magnitude_2d(x, y);
-    return [x / mag, y / mag];
+slay math_normalize_2d(x meal, y meal) [meal] {
+    sus mag meal = math_magnitude_2d(x, y);
+    damn [x / mag, y / mag];
 }

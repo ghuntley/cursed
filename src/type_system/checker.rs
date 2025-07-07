@@ -50,6 +50,8 @@ pub enum TypeErrorKind {
     UnificationFailure,
     TypeNotFound,
     FieldNotFound,
+    UnsupportedOperation,
+    InvalidArraySize,
 }
 
 impl TypeCheckError {
@@ -261,6 +263,9 @@ impl TypeChecker {
             }
             Expression::Array(elements) => {
                 self.check_array_expression(elements)
+            }
+            Expression::CompositeLiteral(composite) => {
+                self.check_composite_literal_expression(composite)
             }
             Expression::Map(pairs) => {
                 self.check_map_expression(pairs)
@@ -562,6 +567,86 @@ impl TypeChecker {
         }
         
         Ok(TypeExpression::array(first_type))
+    }
+    
+    fn check_composite_literal_expression(&mut self, composite: &crate::ast::CompositeLiteralExpression) -> Result<TypeExpression, TypeCheckError> {
+        use crate::ast::Type;
+        
+        // First convert the AST type to TypeExpression
+        let target_type = self.ast_type_to_type_expression(&composite.type_spec)?;
+        
+        // Check each element against the target element type
+        let element_type = match &composite.type_spec {
+            Type::Array(elem_type, _) => self.ast_type_to_type_expression(elem_type)?,
+            Type::Slice(elem_type) => self.ast_type_to_type_expression(elem_type)?,
+            _ => return Err(TypeCheckError {
+                message: "Composite literals only supported for arrays and slices".to_string(),
+                location: None,
+                error_type: TypeErrorKind::UnsupportedOperation,
+            }),
+        };
+        
+        // Check all elements have the correct type
+        for (i, element) in composite.elements.iter().enumerate() {
+            let element_actual_type = self.check_expression(element)?;
+            if !self.types_compatible(&element_type, &element_actual_type) {
+                return Err(TypeCheckError {
+                    message: format!("Composite literal element {} type mismatch: expected {:?}, got {:?}", 
+                                   i, element_type, element_actual_type),
+                    location: None,
+                    error_type: TypeErrorKind::TypeMismatch,
+                });
+            }
+        }
+        
+        // For array types, check size constraints
+        if let Type::Array(_, Some(size_expr)) = &composite.type_spec {
+            // We would need to evaluate the size expression to check bounds
+            // For now, we'll just validate that we don't exceed any reasonable limits
+            if composite.elements.len() > 10000 {
+                return Err(TypeCheckError {
+                    message: "Array composite literal has too many elements".to_string(),
+                    location: None,
+                    error_type: TypeErrorKind::InvalidArraySize,
+                });
+            }
+        }
+        
+        Ok(target_type)
+    }
+    
+    /// Convert AST Type to TypeExpression
+    fn ast_type_to_type_expression(&self, ast_type: &crate::ast::Type) -> Result<TypeExpression, TypeCheckError> {
+        use crate::ast::Type;
+        
+        match ast_type {
+            Type::Normie => Ok(TypeExpression::named("normie")),
+            Type::Tea => Ok(TypeExpression::named("tea")),
+            Type::Lit => Ok(TypeExpression::named("lit")),
+            Type::Sip => Ok(TypeExpression::named("sip")),
+            Type::Smol => Ok(TypeExpression::named("smol")),
+            Type::Mid => Ok(TypeExpression::named("mid")),
+            Type::Thicc => Ok(TypeExpression::named("thicc")),
+            Type::Snack => Ok(TypeExpression::named("snack")),
+            Type::Meal => Ok(TypeExpression::named("meal")),
+            Type::Byte => Ok(TypeExpression::named("byte")),
+            Type::Rune => Ok(TypeExpression::named("rune")),
+            Type::Extra => Ok(TypeExpression::named("extra")),
+            Type::Array(elem_type, _) => {
+                let element_type = self.ast_type_to_type_expression(elem_type)?;
+                Ok(TypeExpression::array(element_type))
+            },
+            Type::Slice(elem_type) => {
+                let element_type = self.ast_type_to_type_expression(elem_type)?;
+                Ok(TypeExpression::array(element_type)) // For now, treat slices as arrays
+            },
+            Type::Custom(name) => Ok(TypeExpression::named(name)),
+            _ => Err(TypeCheckError {
+                message: format!("Unsupported type: {:?}", ast_type),
+                location: None,
+                error_type: TypeErrorKind::UnsupportedOperation,
+            }),
+        }
     }
     
     fn check_map_expression(&mut self, pairs: &[(Expression, Expression)]) -> Result<TypeExpression, TypeCheckError> {

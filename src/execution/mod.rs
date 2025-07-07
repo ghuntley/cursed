@@ -837,6 +837,9 @@ impl CursedExecutionEngine {
                 }
                 Ok(CursedValue::Array(array_values))
             },
+            Expression::CompositeLiteral(composite) => {
+                self.evaluate_composite_literal(composite, context)
+            },
             Expression::Map(pairs) => {
                 // For now, just return the size as an integer
                 Ok(CursedValue::Integer(pairs.len() as i64))
@@ -1647,6 +1650,98 @@ impl CursedExecutionEngine {
             },
             _ => Err(CursedError::RuntimeError(
                 "Cannot access array element on non-array value".to_string()
+            )),
+        }
+    }
+
+    /// Evaluate composite literal expression (e.g., [5]int{1, 2, 3, 4, 5})
+    fn evaluate_composite_literal(&mut self, composite: &crate::ast::CompositeLiteralExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        use crate::ast::Type;
+        
+        // Debug: Print the type_spec to see what we're getting
+        
+        // Evaluate the provided elements
+        let mut evaluated_elements = Vec::new();
+        for element in &composite.elements {
+            evaluated_elements.push(self.evaluate_expression(element, context)?);
+        }
+        
+        // Handle different composite literal types
+        match &composite.type_spec {
+            Type::Array(element_type, size_expr) => {
+                // Fixed-size array: [N]T{...}
+                let size = if let Some(size_expr) = size_expr {
+                    let size_value = self.evaluate_expression(size_expr, context)?;
+                    match size_value {
+                        CursedValue::Integer(s) => s as usize,
+                        _ => return Err(CursedError::RuntimeError("Array size must be an integer".to_string())),
+                    }
+                } else {
+                    return Err(CursedError::RuntimeError("Array composite literal requires size specification".to_string()));
+                };
+                
+                // Create array with proper size
+                let mut array = Vec::with_capacity(size);
+                
+                // Fill with provided elements
+                for (i, element) in evaluated_elements.into_iter().enumerate() {
+                    if i >= size {
+                        return Err(CursedError::RuntimeError(format!(
+                            "Too many elements in array literal: expected {}, got {}",
+                            size, i + 1
+                        )));
+                    }
+                    array.push(element);
+                }
+                
+                // Zero-fill remaining elements
+                let zero_value = self.get_zero_value(element_type)?;
+                while array.len() < size {
+                    array.push(zero_value.clone());
+                }
+                
+                Ok(CursedValue::Array(array))
+            },
+            Type::Slice(element_type) => {
+                // Dynamic slice: []T{...}
+                Ok(CursedValue::Array(evaluated_elements))
+            },
+            _ => Err(CursedError::RuntimeError(
+                "Composite literals only supported for arrays and slices".to_string()
+            )),
+        }
+    }
+
+    /// Get zero value for a type (used for zero-initialization)
+    fn get_zero_value(&self, type_spec: &crate::ast::Type) -> Result<CursedValue, CursedError> {
+        use crate::ast::Type;
+        
+        match type_spec {
+            Type::Normie | Type::Smol | Type::Mid | Type::Thicc | Type::Byte | Type::Rune => {
+                Ok(CursedValue::Integer(0))
+            },
+            Type::Snack | Type::Meal => {
+                Ok(CursedValue::Float(0.0))
+            },
+            Type::Lit => {
+                Ok(CursedValue::Boolean(false))
+            },
+            Type::Tea => {
+                Ok(CursedValue::String("".to_string()))
+            },
+            Type::Sip => {
+                Ok(CursedValue::Character('\0'))
+            },
+            Type::Array(element_type, size_expr) => {
+                // For zero-initialization of arrays, we need to create empty arrays
+                // This is a simplified implementation
+                Ok(CursedValue::Array(Vec::new()))
+            },
+            Type::Slice(_) => {
+                Ok(CursedValue::Array(Vec::new()))
+            },
+            _ => Err(CursedError::RuntimeError(
+                "Cannot get zero value for this type".to_string()
             )),
         }
     }
