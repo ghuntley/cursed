@@ -830,3 +830,134 @@ cargo run --bin cursed minimal_self_hosting_test.csd
 cargo test                                          # Should show 325/327 passing
 ```
 
+## Latest Development Session Learnings (2025-01-07)
+
+### Runtime Execution Debugging
+```bash
+# Diagnose runtime execution issues
+cargo run --bin cursed program.csd 2>&1 | head -20   # Check for runtime errors
+cargo run --bin cursed -- compile program.csd        # Test native compilation
+./program                                           # Run compiled executable
+diff <(cargo run --bin cursed program.csd) <(./program)  # Compare outputs
+
+# Test minimal programs to isolate issues
+echo 'vibez.spill("hello")' > minimal_test.csd
+cargo run --bin cursed minimal_test.csd
+
+# Debug specific features
+cargo run --bin cursed test_member_access.csd       # Member access debugging
+cargo run --bin cursed test_function_calls.csd      # Function call debugging
+```
+
+### Parser Debugging Techniques
+```bash
+# Member access and type parsing debugging
+cargo test tuple_tests                              # Test tuple parsing specifically
+cargo test binary_expression_tests                 # Test binary expression parsing
+
+# Create minimal test cases for parser issues
+echo 'vibez.spill("test")' > debug_function_call.csd
+echo 'sus x := (1, 2); x.0' > debug_tuple_access.csd
+echo 'sus arr [5]normie' > debug_type_parsing.csd
+
+# Debug parsing precedence issues
+cargo run --bin cursed debug_function_call.csd
+cargo run --bin cursed debug_tuple_access.csd
+cargo run --bin cursed debug_type_parsing.csd
+```
+
+### Individual Stdlib Module Testing
+```bash
+# Test specific stdlib modules in CURSED
+cargo run --bin cursed stdlib/math/test_math.csd
+cargo run --bin cursed stdlib/string/test_string.csd
+cargo run --bin cursed stdlib/crypto/test_crypto.csd
+cargo run --bin cursed stdlib/filesystem/test_filesystem.csd
+cargo run --bin cursed stdlib/json/test_json.csd
+cargo run --bin cursed stdlib/csv/test_csv.csd
+
+# Test both interpretation and compilation modes
+cargo run --bin cursed stdlib/module/test_module.csd           # Interpretation
+cargo run --bin cursed -- compile stdlib/module/test_module.csd # Compilation
+./test_module                                                 # Run compiled test
+
+# Test specific stdlib module functions
+cargo run --bin cursed test --filter math
+cargo run --bin cursed test --filter string
+cargo run --bin cursed test --filter crypto
+```
+
+### Pure CURSED Stdlib Module Implementation
+```bash
+# Create new pure CURSED module structure
+mkdir -p stdlib/newmodule/
+echo 'yeet "testz"' > stdlib/newmodule/mod.csd
+echo 'yeet "testz"' > stdlib/newmodule/test_newmodule.csd
+echo '# Module Documentation' > stdlib/newmodule/README.md
+
+# Test module implementation without FFI
+cargo run --bin cursed stdlib/newmodule/test_newmodule.csd
+
+# Verify module works in both modes
+cargo run --bin cursed stdlib/newmodule/test_newmodule.csd
+cargo run --bin cursed -- compile stdlib/newmodule/test_newmodule.csd
+./test_newmodule
+```
+
+### Build/Test Loop Optimizations
+```bash
+# Fast iteration workflow
+cargo check                                        # Quick syntax check (fastest)
+cargo test specific_test_name                     # Test specific functionality
+cargo test --lib                                  # Library tests only
+cargo test tuple_tests                            # Test specific parser features
+
+# Efficient debugging loop
+cargo run --bin cursed minimal_test.csd           # Test minimal case
+cargo run --bin cursed test_specific_feature.csd  # Test specific feature
+cargo test                                        # Full test suite
+
+# Performance testing workflow
+cargo build --release                             # Optimized build
+cargo run --bin cursed -- compile program.csd     # Native compilation
+time ./program                                    # Performance measurement
+```
+
+### CURSED Program Debugging Techniques
+```bash
+# Create minimal test cases for debugging
+echo 'vibez.spill("Debug test")' > debug_minimal.csd
+echo 'sus x := 42; vibez.spill(x)' > debug_variable.csd
+echo 'sus t := (1, 2); vibez.spill(t.0)' > debug_tuple.csd
+
+# Debug parser precedence issues
+echo 'sus x := 1 + 2 * 3' > debug_precedence.csd
+echo 'sus arr := [1, 2, 3]; arr[0]' > debug_array_access.csd
+
+# Test function calls with arguments
+echo 'vibez.spill("hello", "world")' > debug_multi_args.csd
+
+# Debug member access and method calls
+echo 'math.add(1, 2)' > debug_module_call.csd
+echo 'vibez.spill' > debug_member_access.csd
+
+# Isolate specific language features
+cargo run --bin cursed debug_minimal.csd
+cargo run --bin cursed debug_variable.csd
+cargo run --bin cursed debug_tuple.csd
+```
+
+### Key Debugging Insights
+- **Parser Precedence**: LeftParen tokens require careful precedence handling for tuple destructuring vs function calls
+- **Function Call Parsing**: Create minimal test cases to isolate function call parsing issues
+- **Member Access**: Test member access separately from function calls to identify parsing conflicts
+- **Type Parsing**: Use simple type declarations to debug type parsing issues
+- **Runtime vs Compile-time**: Test both interpretation and compilation modes to identify mode-specific issues
+
+### Optimal Development Workflow
+1. **Quick Check**: `cargo check` for syntax validation
+2. **Minimal Test**: Create simple test case for specific feature
+3. **Isolated Testing**: Test individual components before complex combinations
+4. **Both Modes**: Always test interpretation and compilation modes
+5. **Full Verification**: Run `cargo test` after fixes to ensure no regressions
+
