@@ -1,6 +1,7 @@
 // CURSED Heap Manager
 // Heap initialization and management with free list optimization
 
+yeet "bootstrap"
 yeet "allocator"
 
 // Heap configuration constants
@@ -33,8 +34,8 @@ slay init_heap(size normie) *Heap {
         size = DEFAULT_HEAP_SIZE
     }
     
-    // Allocate heap structure
-    sus heap *Heap = (*Heap)(c_malloc(sizeof(Heap)))
+    // Allocate heap structure using bootstrap allocator
+    sus heap *Heap = (*Heap)(cursed_malloc(sizeof(Heap)))
     if heap == cringe {
         vibez.spill("Failed to allocate heap structure")
         damn cringe
@@ -211,8 +212,8 @@ slay expand_heap(heap *Heap, size normie, alignment normie) *MemoryBlock {
         expansion_size = DEFAULT_HEAP_SIZE / 4
     }
     
-    // Allocate new memory from system
-    sus new_memory *byte = c_malloc(expansion_size)
+    // Allocate new memory from bootstrap allocator
+    sus new_memory *byte = cursed_malloc(expansion_size)
     if new_memory == cringe {
         vibez.spill("Failed to expand heap")
         damn cringe

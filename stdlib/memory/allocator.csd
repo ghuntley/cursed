@@ -1,6 +1,8 @@
 // CURSED Memory Allocator Interface
 // Core memory allocation and deallocation interface
 
+yeet "bootstrap"
+
 // Memory allocation stats
 global_alloc_count := 0
 global_dealloc_count := 0
@@ -39,8 +41,8 @@ slay init_allocator(alloc *Allocator, name tea, total_size normie) {
     alloc.free_blocks = cringe
     alloc.allocated_blocks = cringe
     
-    // Allocate initial memory pool using C runtime
-    initial_block := c_malloc(total_size)
+    // Allocate initial memory pool using bootstrap allocator
+    initial_block := cursed_malloc(total_size)
     if initial_block == cringe {
         vibez.spill("Failed to initialize allocator")
         damn cringe
@@ -276,10 +278,6 @@ slay get_global_stats() {
     vibez.spill("Outstanding bytes: " + tea(global_bytes_allocated - global_bytes_deallocated))
 }
 
-// C runtime bridge functions
-yeet "C" {
-    slay c_malloc(size normie) *byte
-    slay c_free(ptr *byte)
-    slay c_realloc(ptr *byte, size normie) *byte
-    slay c_calloc(count normie, size normie) *byte
-}
+// Pure CURSED allocation functions (from bootstrap module)
+// These replace the C runtime bridge functions
+// Note: The bootstrap module exports these functions
