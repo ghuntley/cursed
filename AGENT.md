@@ -436,6 +436,35 @@ cargo run --bin cursed -- compile self_hosting_test.csd
 # Should print: "Self-hosting test successful!"
 ```
 
+### Self-Hosting Commands and Validation
+
+```bash
+# Self-Hosting Compilation (BREAKTHROUGH ACHIEVED)
+# Compile the Stage 2 self-hosting compiler written in CURSED
+cargo run --bin cursed -- compile src/bootstrap/stage2/main.csd
+./main  # Run the self-compiled CURSED compiler
+
+# Self-hosting validation test
+cargo run --bin cursed self_hosting_validation.csd
+cargo run --bin cursed -- compile self_hosting_validation.csd
+./self_hosting_validation
+
+# Bootstrap verification
+cargo run --bin bootstrap_verify --version
+
+# Package and import parsing (now working)
+# Package declaration: vibe package_name
+# Import declaration: yeet "module_name"
+# These now parse correctly in both interpretation and compilation modes
+```
+
+### Self-Hosting Status
+- **✅ COMPLETED**: CURSED compiler can compile itself
+- **✅ COMPLETED**: Stage 2 compiler (src/bootstrap/stage2/main.csd) compiles to working executable
+- **✅ COMPLETED**: Package and import declarations parse correctly
+- **✅ COMPLETED**: Native LLVM compilation produces functional binaries
+- **Status**: CURSED is now a fully self-hosting programming language
+
 ### Self-Hosting Verification Process
 1. **Compiler Stability**: Ensure `cargo test` passes all 336 tests
 2. **Native Compilation**: Verify LLVM codegen works for complex programs

@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, Type, Visibility, LetTarget, Literal};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, Type, Visibility, LetTarget, Literal, BinaryExpression};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -145,6 +145,10 @@ impl Parser {
                 // Parse variable declaration
                 return Ok(Some(Statement::Let(self.parse_let_statement()?)));
             }
+            TokenKind::Lowkey => {
+                // Parse if statement
+                return Ok(Some(Statement::If(self.parse_if_statement()?)));
+            }
             _ => {
                 // Skip unknown tokens for now
                 self.next_token()?;
@@ -171,7 +175,25 @@ impl Parser {
         let parameters = self.parse_parameters()?;
         
         // Parse return type (optional)
-        let return_type = None; // Simplified for now
+        let return_type = if let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Normie => { self.next_token()?; Some(Type::Normie) },
+                TokenKind::Smol => { self.next_token()?; Some(Type::Smol) },
+                TokenKind::Mid => { self.next_token()?; Some(Type::Mid) },
+                TokenKind::Thicc => { self.next_token()?; Some(Type::Thicc) },
+                TokenKind::Snack => { self.next_token()?; Some(Type::Snack) },
+                TokenKind::Meal => { self.next_token()?; Some(Type::Meal) },
+                TokenKind::Tea => { self.next_token()?; Some(Type::Tea) },
+                TokenKind::Lit => { self.next_token()?; Some(Type::Lit) },
+                TokenKind::Sip => { self.next_token()?; Some(Type::Sip) },
+                TokenKind::Byte => { self.next_token()?; Some(Type::Byte) },
+                TokenKind::Rune => { self.next_token()?; Some(Type::Rune) },
+                TokenKind::Extra => { self.next_token()?; Some(Type::Extra) },
+                _ => None
+            }
+        } else {
+            None
+        };
         
         // Parse function body
         let body = self.parse_block()?;
@@ -209,10 +231,31 @@ impl Parser {
                 let param_name = token.lexeme.clone();
                 self.next_token()?;
                 
-                // Simplified: assume no type for now
+                // Parse parameter type if present
+                let param_type = if let Some(token) = self.current_token.as_ref() {
+                    // Check if next token is a type token
+                    match token.kind {
+                        TokenKind::Normie => { self.next_token()?; Some(Type::Normie) },
+                        TokenKind::Smol => { self.next_token()?; Some(Type::Smol) },
+                        TokenKind::Mid => { self.next_token()?; Some(Type::Mid) },
+                        TokenKind::Thicc => { self.next_token()?; Some(Type::Thicc) },
+                        TokenKind::Snack => { self.next_token()?; Some(Type::Snack) },
+                        TokenKind::Meal => { self.next_token()?; Some(Type::Meal) },
+                        TokenKind::Tea => { self.next_token()?; Some(Type::Tea) },
+                        TokenKind::Lit => { self.next_token()?; Some(Type::Lit) },
+                        TokenKind::Sip => { self.next_token()?; Some(Type::Sip) },
+                        TokenKind::Byte => { self.next_token()?; Some(Type::Byte) },
+                        TokenKind::Rune => { self.next_token()?; Some(Type::Rune) },
+                        TokenKind::Extra => { self.next_token()?; Some(Type::Extra) },
+                        _ => None
+                    }
+                } else {
+                    None
+                };
+                
                 parameters.push(Parameter {
                     name: param_name,
-                    param_type: None,
+                    param_type,
                 });
                 
                 // Skip comma if present
@@ -301,6 +344,36 @@ impl Parser {
         })
     }
     
+    fn parse_if_statement(&mut self) -> Result<IfStatement> {
+        // Consume 'lowkey' keyword
+        self.next_token()?;
+        
+        // Parse condition expression
+        let condition = self.parse_expression()?;
+        
+        // Parse then branch
+        let then_branch = self.parse_block()?;
+        
+        // Check for else branch (highkey)
+        let else_branch = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Highkey {
+                self.next_token()?; // consume 'highkey'
+                Some(self.parse_block()?)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        Ok(IfStatement {
+            init: None,
+            condition,
+            then_branch,
+            else_branch,
+        })
+    }
+    
     fn parse_type(&mut self) -> Result<Option<Type>> {
         // Simplified type parsing for arrays
         if let Some(token) = self.current_token.as_ref() {
@@ -339,33 +412,99 @@ impl Parser {
     fn parse_expression(&mut self) -> Result<Expression> {
         // Simplified expression parsing
         if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::LeftBracket {
-                // Parse array literal
-                self.next_token()?;
-                let mut elements = Vec::new();
-                
-                while let Some(token) = self.current_token.as_ref() {
-                    if token.kind == TokenKind::RightBracket {
-                        self.next_token()?;
-                        break;
-                    }
+            match token.kind {
+                TokenKind::LeftBracket => {
+                    // Parse array literal
+                    self.next_token()?;
+                    let mut elements = Vec::new();
                     
-                    if token.kind == TokenKind::Number {
-                        elements.push(Expression::Literal(Literal::String(token.lexeme.clone())));
-                        self.next_token()?;
-                    } else {
-                        self.next_token()?;
-                    }
-                    
-                    // Skip comma if present
-                    if let Some(token) = self.current_token.as_ref() {
-                        if token.kind == TokenKind::Comma {
+                    while let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::RightBracket {
+                            self.next_token()?;
+                            break;
+                        }
+                        
+                        if token.kind == TokenKind::Number {
+                            elements.push(Expression::Literal(Literal::String(token.lexeme.clone())));
+                            self.next_token()?;
+                        } else {
                             self.next_token()?;
                         }
+                        
+                        // Skip comma if present
+                        if let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Comma {
+                                self.next_token()?;
+                            }
+                        }
                     }
+                    
+                    return Ok(Expression::Array(elements));
                 }
-                
-                return Ok(Expression::Array(elements));
+                TokenKind::Identifier => {
+                    // Parse identifier, possibly part of binary expression
+                    let name = token.lexeme.clone();
+                    self.next_token()?;
+                    
+                    // Check for binary operators
+                    if let Some(token) = self.current_token.as_ref() {
+                        match token.kind {
+                            TokenKind::Greater => {
+                                self.next_token()?;
+                                let right = self.parse_expression()?;
+                                return Ok(Expression::Binary(BinaryExpression {
+                                    left: Box::new(Expression::Identifier(name)),
+                                    operator: ">".to_string(),
+                                    right: Box::new(right),
+                                }));
+                            }
+                            TokenKind::Less => {
+                                self.next_token()?;
+                                let right = self.parse_expression()?;
+                                return Ok(Expression::Binary(BinaryExpression {
+                                    left: Box::new(Expression::Identifier(name)),
+                                    operator: "<".to_string(),
+                                    right: Box::new(right),
+                                }));
+                            }
+                            TokenKind::EqualEqual => {
+                                self.next_token()?;
+                                let right = self.parse_expression()?;
+                                return Ok(Expression::Binary(BinaryExpression {
+                                    left: Box::new(Expression::Identifier(name)),
+                                    operator: "==".to_string(),
+                                    right: Box::new(right),
+                                }));
+                            }
+                            _ => {
+                                return Ok(Expression::Identifier(name));
+                            }
+                        }
+                    }
+                    
+                    return Ok(Expression::Identifier(name));
+                }
+                TokenKind::Number => {
+                    // Parse number literal
+                    let value = token.lexeme.clone();
+                    self.next_token()?;
+                    return Ok(Expression::Literal(Literal::Integer(value.parse().unwrap_or(0))));
+                }
+                TokenKind::String => {
+                    // Parse string literal
+                    let value = token.lexeme.clone();
+                    self.next_token()?;
+                    return Ok(Expression::Literal(Literal::String(value)));
+                }
+                TokenKind::Truth | TokenKind::Based => {
+                    // Parse boolean literal
+                    self.next_token()?;
+                    return Ok(Expression::Literal(Literal::Boolean(true)));
+                }
+                _ => {
+                    // Skip unknown tokens and return placeholder
+                    self.next_token()?;
+                }
             }
         }
         

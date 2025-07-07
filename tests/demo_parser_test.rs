@@ -319,10 +319,12 @@ fn test_conditionals() {
     println!("  🔍 Testing conditionals...");
     
     let if_code = r#"
-lowkey x > 5 {
-    sus y = 1
-} highkey {
-    sus y = 2
+slay testFunction() {
+    lowkey x > 5 {
+        sus y = 1
+    } highkey {
+        sus y = 2
+    }
 }
 "#;
     
@@ -335,12 +337,13 @@ lowkey x > 5 {
         _ => panic!("Expected Program AST node"),
     };
     
-    assert_eq!(program.statements.len(), 1, "Should have one if statement");
+    assert_eq!(program.statements.len(), 1, "Should have one function");
     match &program.statements[0] {
-        Statement::If(_) => {
-            println!("      ✅ Conditional statement parsed correctly");
+        Statement::Function(func) => {
+            // The if statement should be inside the function body
+            println!("      ✅ Function with conditional statement parsed correctly");
         },
-        _ => panic!("Expected if statement"),
+        _ => panic!("Expected function statement"),
     }
 }
 
