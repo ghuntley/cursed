@@ -1,6 +1,7 @@
 // CURSED Memory Utilities
 // Memory operations, profiling, and leak detection
 
+yeet "bootstrap"
 yeet "heap"
 yeet "allocator"
 yeet "gc"

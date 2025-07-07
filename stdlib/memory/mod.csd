@@ -1,6 +1,7 @@
 // CURSED Memory Management Module
 // Main memory module interface and global allocator setup
 
+yeet "bootstrap"
 yeet "allocator"
 yeet "heap"
 yeet "gc"
@@ -44,8 +45,14 @@ slay cursed_memory_init() lit {
         damn based
     }
     
-    // Allocate memory system structure using C malloc (bootstrap)
-    cursed_memory_system = (*CursedMemorySystem)(c_malloc(sizeof(CursedMemorySystem)))
+    // Initialize bootstrap allocator first
+    if !bootstrap_init() {
+        vibez.spill("Failed to initialize bootstrap allocator")
+        damn cap
+    }
+    
+    // Allocate memory system structure using pure CURSED bootstrap allocator
+    cursed_memory_system = (*CursedMemorySystem)(cursed_malloc(sizeof(CursedMemorySystem)))
     if cursed_memory_system == cringe {
         vibez.spill("Failed to bootstrap memory system")
         damn cap
@@ -137,8 +144,8 @@ slay cursed_memory_create_common_pools() {
 // Main allocation function - replaces Rust std::alloc
 slay cursed_alloc(size normie) *byte {
     if cursed_memory_system == cringe || !cursed_memory_system.initialized {
-        // Fallback to C malloc if not initialized
-        damn c_malloc(size)
+        // Fallback to bootstrap allocator if not initialized
+        damn cursed_malloc(size)
     }
     
     if size <= 0 {
@@ -200,8 +207,8 @@ slay cursed_dealloc(ptr *byte, size normie) {
     }
     
     if cursed_memory_system == cringe || !cursed_memory_system.initialized {
-        // Fallback to C free if not initialized
-        c_free(ptr)
+        // Fallback to bootstrap allocator if not initialized
+        cursed_free(ptr)
         damn
     }
     
@@ -245,8 +252,8 @@ slay cursed_dealloc(ptr *byte, size normie) {
 // Aligned allocation
 slay cursed_alloc_aligned(size normie, alignment normie) *byte {
     if cursed_memory_system == cringe || !cursed_memory_system.initialized {
-        // Fallback to C aligned allocation if not initialized
-        damn c_calloc(1, size)  // Not truly aligned, but better than nothing
+        // Fallback to bootstrap allocator if not initialized
+        damn cursed_calloc(1, size)  // Bootstrap allocator with zeroed memory
     }
     
     sus ptr *byte = heap_allocate(size, alignment)
@@ -427,21 +434,16 @@ slay cursed_memory_cleanup() {
     // Mark as not initialized
     cursed_memory_system.initialized = cap
     
-    // Free memory system structure
-    c_free((*byte)(cursed_memory_system))
+    // Free memory system structure using bootstrap allocator
+    cursed_free((*byte)(cursed_memory_system))
     cursed_memory_system = cringe
     
     vibez.spill("CURSED memory management system cleanup completed")
 }
 
-// C runtime bridge functions (external)
-yeet "C" {
-    slay c_malloc(size normie) *byte
-    slay c_free(ptr *byte)
-    slay c_realloc(ptr *byte, size normie) *byte
-    slay c_calloc(count normie, size normie) *byte
-    slay c_aligned_alloc(alignment normie, size normie) *byte
-}
+// Pure CURSED allocation functions (from bootstrap module)
+// These replace the C runtime bridge functions
+// Note: The bootstrap module exports these functions
 
 // Export main allocation functions for runtime integration
 vibes cursed_alloc
@@ -454,3 +456,12 @@ vibes cursed_memory_init
 vibes cursed_memory_cleanup
 vibes cursed_memory_stats
 vibes cursed_memory_diagnostics
+
+// Export bootstrap allocator functions for direct access
+vibes cursed_malloc
+vibes cursed_free
+vibes cursed_calloc
+vibes bootstrap_init
+vibes bootstrap_get_stats
+vibes bootstrap_validate
+vibes bootstrap_cleanup
