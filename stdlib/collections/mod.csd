@@ -4,352 +4,352 @@
 // Array/Vector operations
 // ================================
 
-fn array_new() -> array {
-    return [];
+slay array_new() [extra] {
+    damn [];
 }
 
-fn array_with_capacity(capacity: int) -> array {
-    return collections_array_with_capacity(capacity);
+slay array_with_capacity(capacity normie) [extra] {
+    damn collections_array_with_capacity(capacity);
 }
 
-fn array_push(arr: array, item: any) -> array {
+slay array_push(arr [extra], item extra) [extra] {
     collections_array_push(arr, item);
-    return arr;
+    damn arr;
 }
 
-fn array_pop(arr: array) -> any {
-    return collections_array_pop(arr);
+slay array_pop(arr [extra]) extra {
+    damn collections_array_pop(arr);
 }
 
-fn array_insert(arr: array, index: int, item: any) -> array {
+slay array_insert(arr [extra], index normie, item extra) [extra] {
     collections_array_insert(arr, index, item);
-    return arr;
+    damn arr;
 }
 
-fn array_remove(arr: array, index: int) -> any {
-    return collections_array_remove(arr, index);
+slay array_remove(arr [extra], index normie) extra {
+    damn collections_array_remove(arr, index);
 }
 
-fn array_get(arr: array, index: int) -> any {
-    return collections_array_get(arr, index);
+slay array_get(arr [extra], index normie) extra {
+    damn collections_array_get(arr, index);
 }
 
-fn array_set(arr: array, index: int, value: any) -> array {
+slay array_set(arr [extra], index normie, value extra) [extra] {
     collections_array_set(arr, index, value);
-    return arr;
+    damn arr;
 }
 
-fn array_len(arr: array) -> int {
-    return collections_array_len(arr);
+slay array_len(arr [extra]) normie {
+    damn collections_array_len(arr);
 }
 
-fn array_is_empty(arr: array) -> bool {
-    return collections_array_is_empty(arr);
+slay array_is_empty(arr [extra]) lit {
+    damn collections_array_is_empty(arr);
 }
 
-fn array_clear(arr: array) -> array {
+slay array_clear(arr [extra]) [extra] {
     collections_array_clear(arr);
-    return arr;
+    damn arr;
 }
 
-fn array_contains(arr: array, item: any) -> bool {
-    return collections_array_contains(arr, item);
+slay array_contains(arr [extra], item extra) lit {
+    damn collections_array_contains(arr, item);
 }
 
-fn array_index_of(arr: array, item: any) -> int {
-    return collections_array_index_of(arr, item);
+slay array_index_of(arr [extra], item extra) normie {
+    damn collections_array_index_of(arr, item);
 }
 
-fn array_reverse(arr: array) -> array {
+slay array_reverse(arr [extra]) [extra] {
     collections_array_reverse(arr);
-    return arr;
+    damn arr;
 }
 
-fn array_sort(arr: array) -> array {
+slay array_sort(arr [extra]) [extra] {
     collections_array_sort(arr);
-    return arr;
+    damn arr;
 }
 
-fn array_slice(arr: array, start: int, end: int) -> array {
-    return collections_array_slice(arr, start, end);
+slay array_slice(arr [extra], start normie, end normie) [extra] {
+    damn collections_array_slice(arr, start, end);
 }
 
-fn array_concat(arr1: array, arr2: array) -> array {
-    return collections_array_concat(arr1, arr2);
+slay array_concat(arr1 [extra], arr2 [extra]) [extra] {
+    damn collections_array_concat(arr1, arr2);
 }
 
-fn array_join(arr: array, separator: string) -> string {
-    return collections_array_join(arr, separator);
+slay array_join(arr [extra], separator tea) tea {
+    damn collections_array_join(arr, separator);
 }
 
-fn array_filter(arr: array, predicate: fn) -> array {
-    return collections_array_filter(arr, predicate);
+slay array_filter(arr [extra], predicate slay) [extra] {
+    damn collections_array_filter(arr, predicate);
 }
 
-fn array_map(arr: array, mapper: fn) -> array {
-    return collections_array_map(arr, mapper);
+slay array_map(arr [extra], mapper slay) [extra] {
+    damn collections_array_map(arr, mapper);
 }
 
-fn array_reduce(arr: array, reducer: fn, initial: any) -> any {
-    return collections_array_reduce(arr, reducer, initial);
+slay array_reduce(arr [extra], reducer slay, initial extra) extra {
+    damn collections_array_reduce(arr, reducer, initial);
 }
 
-fn array_find(arr: array, predicate: fn) -> any {
-    return collections_array_find(arr, predicate);
+slay array_find(arr [extra], predicate slay) extra {
+    damn collections_array_find(arr, predicate);
 }
 
-fn array_find_index(arr: array, predicate: fn) -> int {
-    return collections_array_find_index(arr, predicate);
+slay array_find_index(arr [extra], predicate slay) normie {
+    damn collections_array_find_index(arr, predicate);
 }
 
-fn array_any(arr: array, predicate: fn) -> bool {
-    return collections_array_any(arr, predicate);
+slay array_any(arr [extra], predicate slay) lit {
+    damn collections_array_any(arr, predicate);
 }
 
-fn array_all(arr: array, predicate: fn) -> bool {
-    return collections_array_all(arr, predicate);
+slay array_all(arr [extra], predicate slay) lit {
+    damn collections_array_all(arr, predicate);
 }
 
 // ================================
 // HashMap/Map operations  
 // ================================
 
-fn map_new() -> map {
-    return {};
+slay map_new() map {
+    damn {};
 }
 
-fn map_with_capacity(capacity: int) -> map {
-    return collections_map_with_capacity(capacity);
+slay map_with_capacity(capacity normie) map {
+    damn collections_map_with_capacity(capacity);
 }
 
-fn map_set(m: map, key: string, value: any) -> map {
+slay map_set(m map, key tea, value extra) map {
     collections_map_set(m, key, value);
-    return m;
+    damn m;
 }
 
-fn map_get(m: map, key: string) -> any {
-    return collections_map_get(m, key);
+slay map_get(m map, key tea) extra {
+    damn collections_map_get(m, key);
 }
 
-fn map_get_or_default(m: map, key: string, default: any) -> any {
-    return collections_map_get_or_default(m, key, default);
+slay map_get_or_default(m map, key tea, default extra) extra {
+    damn collections_map_get_or_default(m, key, default);
 }
 
-fn map_remove(m: map, key: string) -> any {
-    return collections_map_remove(m, key);
+slay map_remove(m map, key tea) extra {
+    damn collections_map_remove(m, key);
 }
 
-fn map_contains_key(m: map, key: string) -> bool {
-    return collections_map_contains_key(m, key);
+slay map_contains_key(m map, key tea) lit {
+    damn collections_map_contains_key(m, key);
 }
 
-fn map_keys(m: map) -> array {
-    return collections_map_keys(m);
+slay map_keys(m map) [tea] {
+    damn collections_map_keys(m);
 }
 
-fn map_values(m: map) -> array {
-    return collections_map_values(m);
+slay map_values(m map) [extra] {
+    damn collections_map_values(m);
 }
 
-fn map_entries(m: map) -> array {
-    return collections_map_entries(m);
+slay map_entries(m map) [extra] {
+    damn collections_map_entries(m);
 }
 
-fn map_len(m: map) -> int {
-    return collections_map_len(m);
+slay map_len(m map) normie {
+    damn collections_map_len(m);
 }
 
-fn map_is_empty(m: map) -> bool {
-    return collections_map_is_empty(m);
+slay map_is_empty(m map) lit {
+    damn collections_map_is_empty(m);
 }
 
-fn map_clear(m: map) -> map {
+slay map_clear(m map) map {
     collections_map_clear(m);
-    return m;
+    damn m;
 }
 
-fn map_merge(m1: map, m2: map) -> map {
-    return collections_map_merge(m1, m2);
+slay map_merge(m1 map, m2 map) map {
+    damn collections_map_merge(m1, m2);
 }
 
-fn map_filter(m: map, predicate: fn) -> map {
-    return collections_map_filter(m, predicate);
+slay map_filter(m map, predicate slay) map {
+    damn collections_map_filter(m, predicate);
 }
 
-fn map_map_values(m: map, mapper: fn) -> map {
-    return collections_map_map_values(m, mapper);
+slay map_map_values(m map, mapper slay) map {
+    damn collections_map_map_values(m, mapper);
 }
 
 // ================================
 // Set operations
 // ================================
 
-fn set_new() -> set {
-    return collections_set_new();
+slay set_new() set {
+    damn collections_set_new();
 }
 
-fn set_with_capacity(capacity: int) -> set {
-    return collections_set_with_capacity(capacity);
+slay set_with_capacity(capacity normie) set {
+    damn collections_set_with_capacity(capacity);
 }
 
-fn set_add(s: set, item: any) -> set {
+slay set_add(s set, item extra) set {
     collections_set_add(s, item);
-    return s;
+    damn s;
 }
 
-fn set_remove(s: set, item: any) -> bool {
-    return collections_set_remove(s, item);
+slay set_remove(s set, item extra) lit {
+    damn collections_set_remove(s, item);
 }
 
-fn set_contains(s: set, item: any) -> bool {
-    return collections_set_contains(s, item);
+slay set_contains(s set, item extra) lit {
+    damn collections_set_contains(s, item);
 }
 
-fn set_len(s: set) -> int {
-    return collections_set_len(s);
+slay set_len(s set) normie {
+    damn collections_set_len(s);
 }
 
-fn set_is_empty(s: set) -> bool {
-    return collections_set_is_empty(s);
+slay set_is_empty(s set) lit {
+    damn collections_set_is_empty(s);
 }
 
-fn set_clear(s: set) -> set {
+slay set_clear(s set) set {
     collections_set_clear(s);
-    return s;
+    damn s;
 }
 
-fn set_union(s1: set, s2: set) -> set {
-    return collections_set_union(s1, s2);
+slay set_union(s1 set, s2 set) set {
+    damn collections_set_union(s1, s2);
 }
 
-fn set_intersection(s1: set, s2: set) -> set {
-    return collections_set_intersection(s1, s2);
+slay set_intersection(s1 set, s2 set) set {
+    damn collections_set_intersection(s1, s2);
 }
 
-fn set_difference(s1: set, s2: set) -> set {
-    return collections_set_difference(s1, s2);
+slay set_difference(s1 set, s2 set) set {
+    damn collections_set_difference(s1, s2);
 }
 
-fn set_is_subset(s1: set, s2: set) -> bool {
-    return collections_set_is_subset(s1, s2);
+slay set_is_subset(s1 set, s2 set) lit {
+    damn collections_set_is_subset(s1, s2);
 }
 
-fn set_is_superset(s1: set, s2: set) -> bool {
-    return collections_set_is_superset(s1, s2);
+slay set_is_superset(s1 set, s2 set) lit {
+    damn collections_set_is_superset(s1, s2);
 }
 
-fn set_to_array(s: set) -> array {
-    return collections_set_to_array(s);
+slay set_to_array(s set) [extra] {
+    damn collections_set_to_array(s);
 }
 
-fn set_from_array(arr: array) -> set {
-    return collections_set_from_array(arr);
+slay set_from_array(arr [extra]) set {
+    damn collections_set_from_array(arr);
 }
 
 // ================================
 // Queue operations
 // ================================
 
-fn queue_new() -> queue {
-    return collections_queue_new();
+slay queue_new() queue {
+    damn collections_queue_new();
 }
 
-fn queue_enqueue(q: queue, item: any) -> queue {
+slay queue_enqueue(q queue, item extra) queue {
     collections_queue_enqueue(q, item);
-    return q;
+    damn q;
 }
 
-fn queue_dequeue(q: queue) -> any {
-    return collections_queue_dequeue(q);
+slay queue_dequeue(q queue) extra {
+    damn collections_queue_dequeue(q);
 }
 
-fn queue_front(q: queue) -> any {
-    return collections_queue_front(q);
+slay queue_front(q queue) extra {
+    damn collections_queue_front(q);
 }
 
-fn queue_back(q: queue) -> any {
-    return collections_queue_back(q);
+slay queue_back(q queue) extra {
+    damn collections_queue_back(q);
 }
 
-fn queue_len(q: queue) -> int {
-    return collections_queue_len(q);
+slay queue_len(q queue) normie {
+    damn collections_queue_len(q);
 }
 
-fn queue_is_empty(q: queue) -> bool {
-    return collections_queue_is_empty(q);
+slay queue_is_empty(q queue) lit {
+    damn collections_queue_is_empty(q);
 }
 
-fn queue_clear(q: queue) -> queue {
+slay queue_clear(q queue) queue {
     collections_queue_clear(q);
-    return q;
+    damn q;
 }
 
 // ================================
 // Stack operations
 // ================================
 
-fn stack_new() -> stack {
-    return collections_stack_new();
+slay stack_new() stack {
+    damn collections_stack_new();
 }
 
-fn stack_push(s: stack, item: any) -> stack {
+slay stack_push(s stack, item extra) stack {
     collections_stack_push(s, item);
-    return s;
+    damn s;
 }
 
-fn stack_pop(s: stack) -> any {
-    return collections_stack_pop(s);
+slay stack_pop(s stack) extra {
+    damn collections_stack_pop(s);
 }
 
-fn stack_peek(s: stack) -> any {
-    return collections_stack_peek(s);
+slay stack_peek(s stack) extra {
+    damn collections_stack_peek(s);
 }
 
-fn stack_len(s: stack) -> int {
-    return collections_stack_len(s);
+slay stack_len(s stack) normie {
+    damn collections_stack_len(s);
 }
 
-fn stack_is_empty(s: stack) -> bool {
-    return collections_stack_is_empty(s);
+slay stack_is_empty(s stack) lit {
+    damn collections_stack_is_empty(s);
 }
 
-fn stack_clear(s: stack) -> stack {
+slay stack_clear(s stack) stack {
     collections_stack_clear(s);
-    return s;
+    damn s;
 }
 
 // ================================
 // Utility functions
 // ================================
 
-fn range(start: int, end: int) -> array {
-    return collections_range(start, end);
+slay range(start normie, end normie) [normie] {
+    damn collections_range(start, end);
 }
 
-fn range_step(start: int, end: int, step: int) -> array {
-    return collections_range_step(start, end, step);
+slay range_step(start normie, end normie, step normie) [normie] {
+    damn collections_range_step(start, end, step);
 }
 
-fn zip(arr1: array, arr2: array) -> array {
-    return collections_zip(arr1, arr2);
+slay zip(arr1 [extra], arr2 [extra]) [extra] {
+    damn collections_zip(arr1, arr2);
 }
 
-fn flatten(nested_arr: array) -> array {
-    return collections_flatten(nested_arr);
+slay flatten(nested_arr [extra]) [extra] {
+    damn collections_flatten(nested_arr);
 }
 
-fn unique(arr: array) -> array {
-    return collections_unique(arr);
+slay unique(arr [extra]) [extra] {
+    damn collections_unique(arr);
 }
 
-fn count_occurrences(arr: array, item: any) -> int {
-    return collections_count_occurrences(arr, item);
+slay count_occurrences(arr [extra], item extra) normie {
+    damn collections_count_occurrences(arr, item);
 }
 
-fn group_by(arr: array, key_fn: fn) -> map {
-    return collections_group_by(arr, key_fn);
+slay group_by(arr [extra], key_fn slay) map {
+    damn collections_group_by(arr, key_fn);
 }
 
-fn partition(arr: array, predicate: fn) -> array {
-    return collections_partition(arr, predicate);
+slay partition(arr [extra], predicate slay) [extra] {
+    damn collections_partition(arr, predicate);
 }

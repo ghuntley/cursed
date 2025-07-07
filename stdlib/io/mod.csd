@@ -4,254 +4,254 @@
 // Console I/O
 // ================================
 
-fn print(message: string) -> void {
+slay print(message tea) {
     io_print(message);
 }
 
-fn println(message: string) -> void {
+slay println(message tea) {
     io_println(message);
 }
 
-fn printf(format: string, args: array) -> void {
+slay printf(format tea, args [tea]) {
     io_printf(format, args);
 }
 
-fn eprint(message: string) -> void {
+slay eprint(message tea) {
     io_eprint(message);
 }
 
-fn eprintln(message: string) -> void {
+slay eprintln(message tea) {
     io_eprintln(message);
 }
 
-fn read_line() -> string {
-    return io_read_line();
+slay read_line() tea {
+    damn io_read_line();
 }
 
-fn read_char() -> string {
-    return io_read_char();
+slay read_char() tea {
+    damn io_read_char();
 }
 
-fn read_int() -> int {
-    return io_read_int();
+slay read_int() normie {
+    damn io_read_int();
 }
 
-fn read_float() -> float {
-    return io_read_float();
+slay read_float() meal {
+    damn io_read_float();
 }
 
 // ================================
 // File I/O
 // ================================
 
-fn write_file(path: string, content: string) -> bool {
-    return io_write_file(path, content);
+slay write_file(path tea, content tea) lit {
+    damn io_write_file(path, content);
 }
 
-fn read_file(path: string) -> string {
-    return io_read_file(path);
+slay read_file(path tea) tea {
+    damn io_read_file(path);
 }
 
-fn read_file_bytes(path: string) -> array {
-    return io_read_file_bytes(path);
+slay read_file_bytes(path tea) [byte] {
+    damn io_read_file_bytes(path);
 }
 
-fn write_file_bytes(path: string, data: array) -> bool {
-    return io_write_file_bytes(path, data);
+slay write_file_bytes(path tea, data [byte]) lit {
+    damn io_write_file_bytes(path, data);
 }
 
-fn append_file(path: string, content: string) -> bool {
-    return io_append_file(path, content);
+slay append_file(path tea, content tea) lit {
+    damn io_append_file(path, content);
 }
 
-fn copy_file(src: string, dest: string) -> bool {
-    return io_copy_file(src, dest);
+slay copy_file(src tea, dest tea) lit {
+    damn io_copy_file(src, dest);
 }
 
-fn move_file(src: string, dest: string) -> bool {
-    return io_move_file(src, dest);
+slay move_file(src tea, dest tea) lit {
+    damn io_move_file(src, dest);
 }
 
-fn delete_file(path: string) -> bool {
-    return io_delete_file(path);
+slay delete_file(path tea) lit {
+    damn io_delete_file(path);
 }
 
-fn file_exists(path: string) -> bool {
-    return io_file_exists(path);
+slay file_exists(path tea) lit {
+    damn io_file_exists(path);
 }
 
-fn file_size(path: string) -> int {
-    return io_file_size(path);
+slay file_size(path tea) normie {
+    damn io_file_size(path);
 }
 
-fn file_modified_time(path: string) -> int {
-    return io_file_modified_time(path);
+slay file_modified_time(path tea) normie {
+    damn io_file_modified_time(path);
 }
 
-fn file_created_time(path: string) -> int {
-    return io_file_created_time(path);
+slay file_created_time(path tea) normie {
+    damn io_file_created_time(path);
 }
 
-fn is_file(path: string) -> bool {
-    return io_is_file(path);
+slay is_file(path tea) lit {
+    damn io_is_file(path);
 }
 
-fn is_directory(path: string) -> bool {
-    return io_is_directory(path);
+slay is_directory(path tea) lit {
+    damn io_is_directory(path);
 }
 
 // ================================
 // Directory Operations
 // ================================
 
-fn create_directory(path: string) -> bool {
-    return io_create_directory(path);
+slay create_directory(path tea) lit {
+    damn io_create_directory(path);
 }
 
-fn create_directory_recursive(path: string) -> bool {
-    return io_create_directory_recursive(path);
+slay create_directory_recursive(path tea) lit {
+    damn io_create_directory_recursive(path);
 }
 
-fn remove_directory(path: string) -> bool {
-    return io_remove_directory(path);
+slay remove_directory(path tea) lit {
+    damn io_remove_directory(path);
 }
 
-fn remove_directory_recursive(path: string) -> bool {
-    return io_remove_directory_recursive(path);
+slay remove_directory_recursive(path tea) lit {
+    damn io_remove_directory_recursive(path);
 }
 
-fn list_directory(path: string) -> array {
-    return io_list_directory(path);
+slay list_directory(path tea) [tea] {
+    damn io_list_directory(path);
 }
 
-fn list_directory_recursive(path: string) -> array {
-    return io_list_directory_recursive(path);
+slay list_directory_recursive(path tea) [tea] {
+    damn io_list_directory_recursive(path);
 }
 
-fn current_directory() -> string {
-    return io_current_directory();
+slay current_directory() tea {
+    damn io_current_directory();
 }
 
-fn change_directory(path: string) -> bool {
-    return io_change_directory(path);
+slay change_directory(path tea) lit {
+    damn io_change_directory(path);
 }
 
 // ================================
 // Path Operations
 // ================================
 
-fn path_join(parts: array) -> string {
-    return io_path_join(parts);
+slay path_join(parts [tea]) tea {
+    damn io_path_join(parts);
 }
 
-fn path_dirname(path: string) -> string {
-    return io_path_dirname(path);
+slay path_dirname(path tea) tea {
+    damn io_path_dirname(path);
 }
 
-fn path_basename(path: string) -> string {
-    return io_path_basename(path);
+slay path_basename(path tea) tea {
+    damn io_path_basename(path);
 }
 
-fn path_extension(path: string) -> string {
-    return io_path_extension(path);
+slay path_extension(path tea) tea {
+    damn io_path_extension(path);
 }
 
-fn path_absolute(path: string) -> string {
-    return io_path_absolute(path);
+slay path_absolute(path tea) tea {
+    damn io_path_absolute(path);
 }
 
-fn path_relative(from: string, to: string) -> string {
-    return io_path_relative(from, to);
+slay path_relative(from tea, to tea) tea {
+    damn io_path_relative(from, to);
 }
 
-fn path_exists(path: string) -> bool {
-    return io_path_exists(path);
+slay path_exists(path tea) lit {
+    damn io_path_exists(path);
 }
 
 // ================================
 // Stream I/O
 // ================================
 
-fn open_file_read(path: string) -> file_handle {
-    return io_open_file_read(path);
+slay open_file_read(path tea) file_handle {
+    damn io_open_file_read(path);
 }
 
-fn open_file_write(path: string) -> file_handle {
-    return io_open_file_write(path);
+slay open_file_write(path tea) file_handle {
+    damn io_open_file_write(path);
 }
 
-fn open_file_append(path: string) -> file_handle {
-    return io_open_file_append(path);
+slay open_file_append(path tea) file_handle {
+    damn io_open_file_append(path);
 }
 
-fn close_file(handle: file_handle) -> bool {
-    return io_close_file(handle);
+slay close_file(handle file_handle) lit {
+    damn io_close_file(handle);
 }
 
-fn read_from_file(handle: file_handle, size: int) -> string {
-    return io_read_from_file(handle, size);
+slay read_from_file(handle file_handle, size normie) tea {
+    damn io_read_from_file(handle, size);
 }
 
-fn write_to_file(handle: file_handle, data: string) -> bool {
-    return io_write_to_file(handle, data);
+slay write_to_file(handle file_handle, data tea) lit {
+    damn io_write_to_file(handle, data);
 }
 
-fn flush_file(handle: file_handle) -> bool {
-    return io_flush_file(handle);
+slay flush_file(handle file_handle) lit {
+    damn io_flush_file(handle);
 }
 
-fn seek_file(handle: file_handle, position: int) -> bool {
-    return io_seek_file(handle, position);
+slay seek_file(handle file_handle, position normie) lit {
+    damn io_seek_file(handle, position);
 }
 
-fn tell_file(handle: file_handle) -> int {
-    return io_tell_file(handle);
+slay tell_file(handle file_handle) normie {
+    damn io_tell_file(handle);
 }
 
 // ================================
 // Buffered I/O
 // ================================
 
-fn create_buffer(size: int) -> buffer {
-    return io_create_buffer(size);
+slay create_buffer(size normie) buffer {
+    damn io_create_buffer(size);
 }
 
-fn buffer_write(buf: buffer, data: string) -> bool {
-    return io_buffer_write(buf, data);
+slay buffer_write(buf buffer, data tea) lit {
+    damn io_buffer_write(buf, data);
 }
 
-fn buffer_read(buf: buffer, size: int) -> string {
-    return io_buffer_read(buf, size);
+slay buffer_read(buf buffer, size normie) tea {
+    damn io_buffer_read(buf, size);
 }
 
-fn buffer_flush(buf: buffer) -> bool {
-    return io_buffer_flush(buf);
+slay buffer_flush(buf buffer) lit {
+    damn io_buffer_flush(buf);
 }
 
-fn buffer_clear(buf: buffer) -> bool {
-    return io_buffer_clear(buf);
+slay buffer_clear(buf buffer) lit {
+    damn io_buffer_clear(buf);
 }
 
-fn buffer_size(buf: buffer) -> int {
-    return io_buffer_size(buf);
+slay buffer_size(buf buffer) normie {
+    damn io_buffer_size(buf);
 }
 
-fn buffer_available(buf: buffer) -> int {
-    return io_buffer_available(buf);
+slay buffer_available(buf buffer) normie {
+    damn io_buffer_available(buf);
 }
 
 // ================================
 // Temporary Files
 // ================================
 
-fn create_temp_file() -> string {
-    return io_create_temp_file();
+slay create_temp_file() tea {
+    damn io_create_temp_file();
 }
 
-fn create_temp_directory() -> string {
-    return io_create_temp_directory();
+slay create_temp_directory() tea {
+    damn io_create_temp_directory();
 }
 
-fn temp_directory() -> string {
-    return io_temp_directory();
+slay temp_directory() tea {
+    damn io_temp_directory();
 }

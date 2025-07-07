@@ -40,15 +40,12 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
 
 
 ; String constants
-@.str.0 = private unnamed_addr constant [6 x i8] c"x is \00", align 1
+@.str.0 = private unnamed_addr constant [12 x i8] c"Simple test\00", align 1
 define i32 @main() {
   %0 = alloca i32, align 4
-  store i32 5, i32* %0, align 4
+  store i32 42, i32* %0, align 4
   ; Variable x allocated at %0
-  %1 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.0, i64 0, i64 0
-  %2 = load i32, i32* %0, align 4
-  %3 = call i8* @i32_to_string(i32 %2)
-  %4 = call i8* @string_concat(i8* %1, i8* %3)
-  %5 = call i32 @puts(i8* %4)
+  %1 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.0, i64 0, i64 0
+  %2 = call i32 @puts(i8* %1)
   ret i32 0
 }

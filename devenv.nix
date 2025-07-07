@@ -15,6 +15,11 @@
     pkgs.llvmPackages_17.libllvm.dev
     pkgs.llvmPackages_17.mlir
     pkgs.llvmPackages_17.stdenv
+    # C compiler and build tools for cc-rs
+    pkgs.gcc
+    pkgs.binutils
+    pkgs.glibc
+    pkgs.glibc.dev
     pkgs.libffi
     pkgs.libffi.dev
     pkgs.libxml2
@@ -66,19 +71,24 @@
 
 
   enterShell = ''
+    # C compiler configuration for cc-rs
+    export CC="${pkgs.gcc}/bin/gcc"
+    export CXX="${pkgs.gcc}/bin/g++"
+    export AR="${pkgs.binutils}/bin/ar"
+
     # LLVM configuration
     export LLVM_SYS_170_PREFIX="${pkgs.llvmPackages_17.llvm.dev}"
     export LLVM_CONFIG_PATH="${pkgs.llvmPackages_17.llvm.dev}/bin/llvm-config"
-    
+
     # Library paths for runtime and compilation
     export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:$LD_LIBRARY_PATH"
     export LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:$LIBRARY_PATH"
     export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.zlib.dev}/lib/pkgconfig:${pkgs.ncurses.dev}/lib/pkgconfig:${pkgs.libxml2.dev}/lib/pkgconfig:${pkgs.sqlite.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
-    
+
     # Include paths for C/C++
     export C_INCLUDE_PATH="${pkgs.libffi.dev}/include:${pkgs.zlib.dev}/include:${pkgs.ncurses.dev}/include:${pkgs.libxml2.dev}/include/libxml2:${pkgs.sqlite.dev}/include:$C_INCLUDE_PATH"
     export CPLUS_INCLUDE_PATH="${pkgs.libffi.dev}/include:${pkgs.zlib.dev}/include:${pkgs.ncurses.dev}/include:${pkgs.libxml2.dev}/include/libxml2:${pkgs.sqlite.dev}/include:$CPLUS_INCLUDE_PATH"
-    
+
     # BFD linker configuration is handled by .cargo/config.toml
     # Just ensure gcc and binutils are available in PATH
     export PATH="${pkgs.gcc}/bin:${pkgs.binutils}/bin:$PATH"

@@ -270,6 +270,9 @@ impl ImportResolver {
     pub fn classify_import(&self, import_path: &str) -> Result<ImportSource> {
         if import_path.starts_with("std::") || import_path.starts_with("cursed::") {
             Ok(ImportSource::Stdlib(import_path.to_string()))
+        } else if self.is_stdlib_module(import_path) {
+            // Handle direct stdlib module names like "mathz", "stringz", "vibez"
+            Ok(ImportSource::Stdlib(import_path.to_string()))
         } else if import_path.starts_with("./") || import_path.starts_with("../") || import_path.ends_with(".csd") {
             Ok(ImportSource::Local(PathBuf::from(import_path)))
         } else if import_path.contains("@") {
@@ -287,6 +290,26 @@ impl ImportResolver {
         } else {
             // Default to local path
             Ok(ImportSource::Local(PathBuf::from(import_path)))
+        }
+    }
+
+    /// Check if a module name is a standard library module
+    fn is_stdlib_module(&self, name: &str) -> bool {
+        matches!(name, "mathz" | "stringz" | "vibez" | "testz" | "ioz" | "crypto" | "time" | "collections")
+    }
+
+    /// Get the stdlib path mapping for a module name
+    fn get_stdlib_path_mapping(&self, name: &str) -> Option<&'static str> {
+        match name {
+            "mathz" => Some("math"),
+            "stringz" => Some("string"),
+            "vibez" => Some("io"),  // vibez is actually the io module for output
+            "testz" => Some("testz"),
+            "ioz" => Some("io"),
+            "crypto" => Some("crypto"),
+            "time" => Some("time"),
+            "collections" => Some("collections"),
+            _ => None,
         }
     }
 
@@ -385,6 +408,27 @@ impl ImportResolver {
 
     /// Resolve a standard library import
     fn resolve_stdlib_import(&self, stdlib_name: &str) -> Result<PathBuf> {
+        // Handle direct stdlib module names like "mathz", "stringz", "vibez"
+        if let Some(actual_name) = self.get_stdlib_path_mapping(stdlib_name) {
+            let module_path = self.config.stdlib_path.join(actual_name);
+            let candidates = vec![
+                module_path.with_extension("csd"),
+                module_path.join("mod.csd"),
+                module_path.join("lib.csd"),
+            ];
+
+            for candidate in candidates {
+                if candidate.exists() {
+                    return Ok(candidate);
+                }
+            }
+
+            return Err(CursedError::ImportError(format!(
+                "Standard library module not found: {} (mapped to {})", 
+                stdlib_name, actual_name
+            )));
+        }
+
         // Convert std::module::submodule to stdlib/module/submodule.csd
         let path_parts: Vec<&str> = stdlib_name.split("::").collect();
         if path_parts.is_empty() {

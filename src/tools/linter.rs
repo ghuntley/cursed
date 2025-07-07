@@ -813,6 +813,11 @@ impl CursedLinter {
                     issues.extend(self.analyze_expression(element)?);
                 }
             },
+            Expression::CompositeLiteral(composite) => {
+                for element in &composite.elements {
+                    issues.extend(self.analyze_expression(element)?);
+                }
+            },
             Expression::Map(pairs) => {
                 for (key, value) in pairs {
                     issues.extend(self.analyze_expression(key)?);
@@ -2349,6 +2354,12 @@ impl AstVisitor<Vec<LintIssue>> for CursedLinter {
             
             Expression::Array(elements) => {
                 for element in elements {
+                    issues.extend(self.visit_expression(element));
+                }
+            },
+            
+            Expression::CompositeLiteral(composite) => {
+                for element in &composite.elements {
                     issues.extend(self.visit_expression(element));
                 }
             },

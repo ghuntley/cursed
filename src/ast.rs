@@ -70,6 +70,7 @@ pub enum Expression {
     Unary(UnaryExpression),
     Array(Vec<Expression>),
     Map(Vec<(Expression, Expression)>),
+    CompositeLiteral(CompositeLiteralExpression),
     ChannelSend(ChannelSendExpression),
     ChannelReceive(ChannelReceiveExpression),
     ChannelCreation(Box<ChannelCreationExpression>),
@@ -193,6 +194,13 @@ pub struct IncrementExpression {
 pub struct DecrementExpression {
     pub variable: String,
     pub is_prefix: bool,
+}
+
+/// Composite literal expression (e.g., [5]int{1, 2, 3, 4, 5}, []string{"hello", "world"})
+#[derive(Debug, Clone)]
+pub struct CompositeLiteralExpression {
+    pub type_spec: Type,
+    pub elements: Vec<Expression>,
 }
 
 /// Visibility level for symbols
