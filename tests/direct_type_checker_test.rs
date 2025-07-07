@@ -59,6 +59,17 @@ fn test_comparison_operations() {
 }
 
 #[test]
+fn test_simple_addition() {
+    let test_program = r#"
+        slay simple_add(a, b) {
+            yolo a + b;
+        }
+    "#;
+    
+    test_type_checking_passes(test_program);
+}
+
+#[test]
 fn test_nested_expressions() {
     let test_program = r#"
         slay nested_calc(a, b, c) {
@@ -70,30 +81,41 @@ fn test_nested_expressions() {
 }
 
 fn test_type_checking_passes(test_program: &str) {
-    println!("Testing program: {}", test_program);
-    
-    let mut lexer = Lexer::new(test_program.to_string());
-    let mut parser = Parser::new(lexer).unwrap();
-    let ast = parser.parse().unwrap();
-    
-    println!("AST parsed successfully");
-    
-    // Test the type checker directly
-    let program = match ast {
-        cursed::ast::Ast::Program(program) => program,
-        _ => panic!("Expected Program")
-    };
-    let mut type_checker = cursed::type_system::checker::TypeChecker::new();
-    match type_checker.check_program(&program) {
+println!("Testing program: {}", test_program);
+
+let mut lexer = Lexer::new(test_program.to_string());
+let mut parser = Parser::new(lexer).unwrap();
+let ast = parser.parse().unwrap();
+
+println!("AST parsed successfully");
+
+// Test the type checker directly
+let program = match ast {
+cursed::ast::Ast::Program(program) => program,
+_ => panic!("Expected Program")
+};
+let mut type_checker = cursed::type_system::checker::TypeChecker::new();
+
+// Debug: Print function statement details
+for statement in &program.statements {
+if let cursed::ast::Statement::Function(func_stmt) = statement {
+    println!("Function: {}", func_stmt.name);
+for param in &func_stmt.parameters {
+    println!("  Parameter: {} with type: {:?}", param.name, param.param_type);
+}
+}
+}
+
+match type_checker.check_program(&program) {
         Ok(_) => {
-            println!("SUCCESS: Type checking passed!");
-        }
-        Err(errors) => {
-            println!("ERROR: Type checking failed with {} errors:", errors.len());
-            for error in &errors {
-                println!("  - {}", error.message);
+                println!("SUCCESS: Type checking passed!");
             }
-            panic!("Type checking failed: {:?}", errors);
+            Err(errors) => {
+                println!("ERROR: Type checking failed with {} errors:", errors.len());
+                for error in &errors {
+                    println!("  - {}", error.message);
+                }
+                panic!("Type checking failed: {:?}", errors);
+            }
         }
     }
-}

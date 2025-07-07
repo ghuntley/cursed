@@ -564,6 +564,7 @@ impl CursedExecutionEngine {
                 let value = self.evaluate_expression(&let_stmt.value, context)?;
                 match &let_stmt.target {
                     crate::ast::LetTarget::Single(name) => {
+                        log::debug!("🔍 Setting variable: {} = {:?}", name, value);
                         context.set_variable(name.clone(), value.clone());
                     },
                     crate::ast::LetTarget::Tuple(names) => {
@@ -980,6 +981,7 @@ impl CursedExecutionEngine {
     fn evaluate_expression(&mut self, expression: &crate::ast::Expression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
         use crate::ast::Expression;
         
+        log::debug!("🔍 Evaluating expression type: {:?}", std::mem::discriminant(expression));
         match expression {
             Expression::Integer(i) => Ok(CursedValue::Integer(*i)),
             Expression::Float(f) => Ok(CursedValue::Float(*f)),
@@ -987,8 +989,11 @@ impl CursedExecutionEngine {
             Expression::Boolean(b) => Ok(CursedValue::Boolean(*b)),
             Expression::Character(c) => Ok(CursedValue::Character(*c)),
             Expression::Identifier(name) => {
-                context.get_variable(name)
-                    .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)))
+                log::debug!("🔍 Looking up variable: {}", name);
+                let result = context.get_variable(name)
+                    .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)));
+                log::debug!("🔍 Variable lookup result: {:?}", result);
+                result
             },
             Expression::Binary(binary_expr) => {
                 log::debug!("📊 Evaluating binary expression: {:?}", binary_expr.operator);
@@ -1009,12 +1014,17 @@ impl CursedExecutionEngine {
                 }
             },
             Expression::Call(call_expr) => {
+                log::debug!("🔍 Evaluating function call: {:?}", call_expr.function);
                 self.evaluate_call(call_expr, context)
             },
             Expression::MemberAccess(member_expr) => {
+                log::debug!("🔍 Evaluating standalone member access: {}.{}", 
+                    if let Expression::Identifier(name) = &*member_expr.object { name } else { "?" },
+                    member_expr.property);
                 self.evaluate_member_access(member_expr, context)
             },
             Expression::Literal(literal) => {
+                log::debug!("🔍 Evaluating literal: {:?}", literal);
                 match literal {
                     crate::ast::Literal::Integer(i) => Ok(CursedValue::Integer(*i)),
                     crate::ast::Literal::Float(f) => Ok(CursedValue::Float(*f)),
@@ -1778,19 +1788,22 @@ impl CursedExecutionEngine {
             },
             crate::ast::Expression::MemberAccess(member_expr) => {
                 // Handle member function calls like vibez.spill()
+                log::debug!("🔍 Evaluating member access call: {}.{}", 
+                    if let crate::ast::Expression::Identifier(name) = &*member_expr.object { name } else { "?" },
+                    member_expr.property);
                 if let crate::ast::Expression::Identifier(obj_name) = &*member_expr.object {
                     match (obj_name.as_str(), member_expr.property.as_str()) {
                         ("vibez", "spill") => {
-                            for arg in &call_expr.arguments {
-                                let value = self.evaluate_expression(arg, context)?;
-                                // Print raw value without quotes for strings
-                           match &value {
-                           CursedValue::String(s) => print!("{}", s),
-                           _ => print!("{}", self.format_value(&value)),
-                        }
-                        }
-                        println!(); // Add newline
-                        Ok(CursedValue::Nil)
+                        for arg in &call_expr.arguments {
+                        let value = self.evaluate_expression(arg, context)?;
+                        // Print raw value without quotes for strings
+                             match &value {
+                                 CursedValue::String(s) => print!("{}", s),
+                                 _ => print!("{}", self.format_value(&value)),
+                                }
+                            }
+                            println!(); // Add newline
+                            Ok(CursedValue::Nil)
                         },
                         ("vibez", "spillf") => {
                             // Format string print
