@@ -16,6 +16,8 @@ pub mod execution_context;
 pub mod jit_executor;
 pub mod runtime_functions;
 pub mod value_manager;
+// Temporarily disabled for JIT testing
+// pub mod cursed_bridge;
 
 pub use execution_context::ExecutionContext;
 pub use jit_executor::{JitExecutor, JitExecutorConfig, JitExecutionStats, jit_execute, new_jit_executor};
@@ -93,8 +95,15 @@ impl CursedExecutionEngine {
     }
     
     fn try_jit_execution_with_source(&mut self, source: &str) -> Result<CursedValue, CursedError> {
-        // Create JIT executor if not exists
-        let mut jit_executor = JitExecutor::new()?;
+        // Create JIT executor if not exists with graceful fallback
+        let mut jit_executor = match JitExecutor::new() {
+            Ok(executor) => executor,
+            Err(e) => {
+                tracing::warn!("⚠️ JIT executor creation failed: {}, disabling JIT", e);
+                self.jit_enabled = false;
+                return Err(e);
+            }
+        };
         
         // Execute with JIT using original source
         jit_executor.execute(source)

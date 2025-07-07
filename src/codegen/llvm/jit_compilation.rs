@@ -33,6 +33,7 @@ use inkwell::{
 };
 
 use std::cell::RefCell;
+use std::sync::Once;
 
 use crate::error::CursedError;
 use crate::runtime::value::Value;
@@ -42,9 +43,24 @@ use crate::runtime::jit_runtime::{
     JitRuntimeConfig, SafePointer, CodeGeneratorTrait
 };
 
+/// Global LLVM initialization flag
+static LLVM_INIT: Once = Once::new();
+
+/// Thread-local LLVM context manager
 thread_local! {
     /// Thread-local LLVM context wrapper
     static LLVM_CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
+}
+
+/// Initialize LLVM global state (call once per process)
+fn ensure_llvm_initialized() {
+    LLVM_INIT.call_once(|| {
+        // Initialize LLVM targets
+        Target::initialize_all(&Default::default());
+        
+        // Set up LLVM for JIT compilation
+        tracing::info!("🔧 LLVM global initialization complete");
+    });
 }
 
 /// Safe wrapper for LLVM compilation state
@@ -550,9 +566,16 @@ impl CursedJitCompiler {
     
     /// Initialize the JIT compiler
     pub fn initialize(&mut self) -> Result<(), CursedError> {
+        // Ensure LLVM is initialized globally first
+        ensure_llvm_initialized();
+        
         // Initialize thread-local LLVM context
         LLVM_CONTEXT.with(|context| {
-            *context.borrow_mut() = Some(Context::create());
+            let mut context_ref = context.borrow_mut();
+            if context_ref.is_none() {
+                *context_ref = Some(Context::create());
+                tracing::debug!("🔧 Created new LLVM context for thread {:?}", std::thread::current().id());
+            }
         });
         
         Ok(())

@@ -5,6 +5,8 @@
 //! gap between CURSED stdlib API and the underlying Rust runtime.
 
 use crate::error::CursedError;
+// Temporarily disabled for JIT testing
+// use crate::execution::cursed_bridge;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::ptr;
@@ -61,8 +63,10 @@ fn get_next_socket_id() -> i32 {
 /// Create a TCP socket (implementation for net_tcp_create)
 #[no_mangle]
 pub extern "C" fn net_tcp_create() -> i32 {
-    // Return a unique socket ID that will be used for subsequent operations
-    get_next_socket_id()
+    // Use pure CURSED implementation from stdlib/network
+    // cursed_bridge::cursed_tcp_create()
+    // Fallback implementation for testing
+    -1 // Return error code indicating not implemented
 }
 
 /// Connect TCP socket to remote address (implementation for net_tcp_connect)

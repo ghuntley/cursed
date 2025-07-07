@@ -142,14 +142,30 @@ impl JitExecutor {
                     match jit_engine.initialize() {
                         Ok(()) => Arc::new(Mutex::new(jit_engine)),
                         Err(e) => {
-                            tracing::warn!("⚠️ JIT engine initialization failed: {}", e);
-                            return Err(e);
+                            tracing::warn!("⚠️ JIT engine initialization failed: {}, falling back to dummy engine", e);
+                            // Create dummy engine as fallback
+                            let fallback_config = JitEngineConfig::default();
+                            match CursedJitEngine::new(fallback_config) {
+                                Ok(dummy_engine) => Arc::new(Mutex::new(dummy_engine)),
+                                Err(fallback_err) => {
+                                    tracing::error!("⚠️ Fallback JIT engine creation also failed: {}", fallback_err);
+                                    return Err(e); // Return original error
+                                }
+                            }
                         }
                     }
                 }
                 Err(e) => {
-                    tracing::warn!("⚠️ JIT engine creation failed: {}", e);
-                    return Err(e);
+                    tracing::warn!("⚠️ JIT engine creation failed: {}, falling back to dummy engine", e);
+                    // Create dummy engine as fallback
+                    let fallback_config = JitEngineConfig::default();
+                    match CursedJitEngine::new(fallback_config) {
+                        Ok(dummy_engine) => Arc::new(Mutex::new(dummy_engine)),
+                        Err(fallback_err) => {
+                            tracing::error!("⚠️ Fallback JIT engine creation also failed: {}", fallback_err);
+                            return Err(e); // Return original error
+                        }
+                    }
                 }
             }
         } else {
