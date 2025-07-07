@@ -218,6 +218,38 @@ impl SymbolResolver {
         self.register_symbol("io_append_file", crate::execution::runtime_functions::io_append_file as usize);
         self.register_symbol("io_copy_file", crate::execution::runtime_functions::io_copy_file as usize);
         self.register_symbol("io_move_file", crate::execution::runtime_functions::io_move_file as usize);
+        
+        // Register networking functions
+        self.register_symbol("net_tcp_create", crate::execution::runtime_functions::net_tcp_create as usize);
+        self.register_symbol("net_tcp_connect", crate::execution::runtime_functions::net_tcp_connect as usize);
+        self.register_symbol("net_tcp_bind", crate::execution::runtime_functions::net_tcp_bind as usize);
+        self.register_symbol("net_tcp_listen", crate::execution::runtime_functions::net_tcp_listen as usize);
+        self.register_symbol("net_tcp_accept", crate::execution::runtime_functions::net_tcp_accept as usize);
+        self.register_symbol("net_tcp_send", crate::execution::runtime_functions::net_tcp_send as usize);
+        self.register_symbol("net_tcp_recv", crate::execution::runtime_functions::net_tcp_recv as usize);
+        self.register_symbol("net_tcp_close", crate::execution::runtime_functions::net_tcp_close as usize);
+        
+        self.register_symbol("net_udp_create", crate::execution::runtime_functions::net_udp_create as usize);
+        self.register_symbol("net_udp_bind", crate::execution::runtime_functions::net_udp_bind as usize);
+        self.register_symbol("net_udp_send_to", crate::execution::runtime_functions::net_udp_send_to as usize);
+        self.register_symbol("net_udp_recv_from", crate::execution::runtime_functions::net_udp_recv_from as usize);
+        self.register_symbol("net_udp_close", crate::execution::runtime_functions::net_udp_close as usize);
+        
+        self.register_symbol("net_resolve_hostname", crate::execution::runtime_functions::net_resolve_hostname as usize);
+        self.register_symbol("net_resolve_ip", crate::execution::runtime_functions::net_resolve_ip as usize);
+        self.register_symbol("net_lookup_mx", crate::execution::runtime_functions::net_lookup_mx as usize);
+        self.register_symbol("net_lookup_txt", crate::execution::runtime_functions::net_lookup_txt as usize);
+        
+        self.register_symbol("net_http_send", crate::execution::runtime_functions::net_http_send as usize);
+        
+        self.register_symbol("net_tls_init", crate::execution::runtime_functions::net_tls_init as usize);
+        self.register_symbol("net_tls_send", crate::execution::runtime_functions::net_tls_send as usize);
+        self.register_symbol("net_tls_recv", crate::execution::runtime_functions::net_tls_recv as usize);
+        
+        self.register_symbol("net_get_local_ip", crate::execution::runtime_functions::net_get_local_ip as usize);
+        self.register_symbol("net_ping", crate::execution::runtime_functions::net_ping as usize);
+        self.register_symbol("net_network_scan", crate::execution::runtime_functions::net_network_scan as usize);
+        self.register_symbol("net_get_remote_addr", crate::execution::runtime_functions::net_get_remote_addr as usize);
         self.register_symbol("io_file_size", crate::execution::runtime_functions::io_file_size as usize);
         self.register_symbol("io_is_file", crate::execution::runtime_functions::io_is_file as usize);
         self.register_symbol("io_is_directory", crate::execution::runtime_functions::io_is_directory as usize);
@@ -327,7 +359,7 @@ impl SymbolResolver {
         // Register crypto functions
         self.register_symbol("crypto_sha256", crate::execution::runtime_functions::crypto_sha256 as usize);
         self.register_symbol("crypto_sha512", crate::execution::runtime_functions::crypto_sha512 as usize);
-        self.register_symbol("crypto_md5", crate::execution::runtime_functions::crypto_md5 as usize);
+        // crypto_md5 REMOVED - SECURITY VULNERABILITY (MD5 is cryptographically broken)
         self.register_symbol("crypto_blake3", crate::execution::runtime_functions::crypto_blake3 as usize);
         self.register_symbol("crypto_random_bytes", crate::execution::runtime_functions::crypto_random_bytes as usize);
         self.register_symbol("crypto_random_int", crate::execution::runtime_functions::crypto_random_int as usize);

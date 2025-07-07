@@ -389,10 +389,10 @@ impl CursedExecutionEngine {
         hex::encode(hash)
     }
 
-    fn crypto_md5(&self, data: &str) -> String {
-        let hash = md5::compute(data.as_bytes());
-        hex::encode(&hash[..])
-    }
+    // MD5 REMOVED - SECURITY VULNERABILITY
+    // MD5 is cryptographically broken and vulnerable to collision attacks
+    // This function has been removed for security reasons
+    // Use crypto_sha256() or crypto_blake3() instead
 
     fn crypto_blake3(&self, data: &str) -> String {
         use blake3::Hasher as Blake3Hasher;
@@ -1513,15 +1513,9 @@ impl CursedExecutionEngine {
                         }
                     },
                     "crypto_md5" => {
-                        if call_expr.arguments.len() != 1 {
-                            return Err(CursedError::RuntimeError("crypto_md5() expects exactly 1 argument".to_string()));
-                        }
-                        let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
-                        if let CursedValue::String(s) = arg {
-                            Ok(CursedValue::String(self.crypto_md5(&s)))
-                        } else {
-                            Err(CursedError::RuntimeError("crypto_md5() expects a string argument".to_string()))
-                        }
+                        // MD5 REMOVED - SECURITY VULNERABILITY
+                        // MD5 is cryptographically broken and vulnerable to collision attacks
+                        Err(CursedError::RuntimeError("crypto_md5() has been removed for security reasons. Use crypto_sha256() or crypto_blake3() instead.".to_string()))
                     },
                     "crypto_blake3" => {
                         if call_expr.arguments.len() != 1 {

@@ -35,12 +35,12 @@ impl Parser {
         
         // Parse statements until we reach EOF
         while let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::Eof {
+            if token.kind == TokenKind::EOF {
                 break;
             }
             
-            // Skip newlines
-            if token.kind == TokenKind::Newline {
+            // Skip whitespace and comments
+            if token.kind == TokenKind::Whitespace || token.kind == TokenKind::Comment {
                 self.next_token()?;
                 continue;
             }
@@ -93,11 +93,15 @@ impl Parser {
         
         match token.kind {
             TokenKind::Identifier => {
-                let value = token.lexeme.clone();
+                let value = token.value.clone();
                 match value.as_str() {
                     "slay" => {
                         // Parse function declaration
                         return Ok(Some(Statement::Function(self.parse_function()?)));
+                    }
+                    "sus" => {
+                        // Parse variable declaration
+                        return Ok(Some(Statement::Let(self.parse_let_statement()?)));
                     }
                     _ => {
                         // Skip unknown identifiers for now
@@ -105,14 +109,6 @@ impl Parser {
                         return Ok(None);
                     }
                 }
-            }
-            TokenKind::Slay => {
-                // Parse function declaration
-                return Ok(Some(Statement::Function(self.parse_function()?)));
-            }
-            TokenKind::Sus => {
-                // Parse variable declaration
-                return Ok(Some(Statement::Let(self.parse_let_statement()?)));
             }
             _ => {
                 // Skip unknown tokens for now
@@ -129,11 +125,11 @@ impl Parser {
         // Parse function name
         let name = match self.current_token.as_ref() {
             Some(token) if token.kind == TokenKind::Identifier => {
-                let name = token.lexeme.clone();
+                let name = token.value.clone();
                 self.next_token()?;
                 name
             }
-            _ => return Err(Error::Parse("Expected function name".to_string())),
+            _ => return Err(Error::ParseError("Expected function name".to_string())),
         };
         
         // Parse parameters
@@ -162,7 +158,7 @@ impl Parser {
             Some(token) if token.kind == TokenKind::LeftParen => {
                 self.next_token()?;
             }
-            _ => return Err(Error::Parse("Expected '(' after function name".to_string())),
+            _ => return Err(Error::ParseError("Expected '(' after function name".to_string())),
         }
         
         let mut parameters = Vec::new();
@@ -175,7 +171,7 @@ impl Parser {
             }
             
             if token.kind == TokenKind::Identifier {
-                let param_name = token.lexeme.clone();
+                let param_name = token.value.clone();
                 self.next_token()?;
                 
                 // Simplified: assume no type for now
@@ -204,7 +200,7 @@ impl Parser {
             Some(token) if token.kind == TokenKind::LeftBrace => {
                 self.next_token()?;
             }
-            _ => return Err(Error::Parse("Expected '{' to start function body".to_string())),
+            _ => return Err(Error::ParseError("Expected '{' to start function body".to_string())),
         }
         
         let mut statements = Vec::new();
@@ -216,8 +212,8 @@ impl Parser {
                 break;
             }
             
-            // Skip newlines
-            if token.kind == TokenKind::Newline {
+            // Skip whitespace and comments
+            if token.kind == TokenKind::Whitespace || token.kind == TokenKind::Comment {
                 self.next_token()?;
                 continue;
             }
@@ -243,11 +239,11 @@ impl Parser {
         // Parse variable name
         let name = match self.current_token.as_ref() {
             Some(token) if token.kind == TokenKind::Identifier => {
-                let name = token.lexeme.clone();
+                let name = token.value.clone();
                 self.next_token()?;
                 name
             }
-            _ => return Err(Error::Parse("Expected variable name".to_string())),
+            _ => return Err(Error::ParseError("Expected variable name".to_string())),
         };
         
         // Parse type (optional)
@@ -255,18 +251,18 @@ impl Parser {
         
         // Parse equals sign and value
         let value = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Equal => {
+            Some(token) if token.kind == TokenKind::Equals => {
                 self.next_token()?;
-                self.parse_expression()?
+                Some(self.parse_expression()?)
             }
-            _ => Expression::Literal(Literal::Nil),
+            _ => None,
         };
         
         Ok(LetStatement {
-            target: LetTarget::Single(name),
+            name,
             value,
             var_type,
-            visibility: Visibility::Private,
+            mutable: false,
         })
     }
     
@@ -288,15 +284,9 @@ impl Parser {
                 // Parse element type
                 if let Some(token) = self.current_token.as_ref() {
                     if token.kind == TokenKind::Identifier {
-                        let type_name = token.lexeme.clone();
+                        let type_name = token.value.clone();
                         self.next_token()?;
-                        let element_type = match type_name.as_str() {
-                            "normie" => Type::Normie,
-                            "tea" => Type::Tea,
-                            "lit" => Type::Lit,
-                            _ => Type::Custom(type_name),
-                        };
-                        return Ok(Some(Type::Array(Box::new(element_type), None)));
+                        return Ok(Some(Type::Array(Box::new(Type::Primitive(type_name)))));
                     }
                 }
             }
@@ -320,7 +310,7 @@ impl Parser {
                     }
                     
                     if token.kind == TokenKind::Number {
-                        elements.push(Expression::Literal(Literal::String(token.lexeme.clone())));
+                        elements.push(Expression::Literal(token.value.clone()));
                         self.next_token()?;
                     } else {
                         self.next_token()?;
@@ -338,7 +328,7 @@ impl Parser {
             }
         }
         
-        Ok(Expression::Literal(Literal::String("".to_string())))
+        Ok(Expression::Literal("".to_string()))
     }
 }
 

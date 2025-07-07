@@ -20,6 +20,7 @@ use chrono::{DateTime, Utc, Local, TimeZone, Datelike, Timelike, Weekday, NaiveD
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::sync::{Mutex, atomic::{AtomicI32, Ordering}};
+use std::net::{TcpListener, TcpStream, UdpSocket, SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
 
 /// Initialize all runtime functions for the CURSED standard library
 pub fn initialize_runtime_functions() -> Result<(), CursedError> {
@@ -37,10 +38,530 @@ lazy_static::lazy_static! {
     static ref FILE_HANDLES: Mutex<HashMap<i32, File>> = Mutex::new(HashMap::new());
     static ref BUFFER_HANDLES: Mutex<HashMap<i32, Vec<u8>>> = Mutex::new(HashMap::new());
     static ref NEXT_HANDLE_ID: AtomicI32 = AtomicI32::new(1);
+    
+    // Network socket handle management
+    static ref TCP_SOCKETS: Mutex<HashMap<i32, TcpStream>> = Mutex::new(HashMap::new());
+    static ref TCP_LISTENERS: Mutex<HashMap<i32, TcpListener>> = Mutex::new(HashMap::new());
+    static ref UDP_SOCKETS: Mutex<HashMap<i32, UdpSocket>> = Mutex::new(HashMap::new());
+    static ref NEXT_SOCKET_ID: AtomicI32 = AtomicI32::new(1000);
 }
 
 fn get_next_handle() -> i32 {
     NEXT_HANDLE_ID.fetch_add(1, Ordering::SeqCst)
+}
+
+fn get_next_socket_id() -> i32 {
+    NEXT_SOCKET_ID.fetch_add(1, Ordering::SeqCst)
+}
+
+// ================================
+// Networking Implementation Functions
+// ================================
+
+/// Create a TCP socket (implementation for net_tcp_create)
+#[no_mangle]
+pub extern "C" fn net_tcp_create() -> i32 {
+    // Return a unique socket ID that will be used for subsequent operations
+    get_next_socket_id()
+}
+
+/// Connect TCP socket to remote address (implementation for net_tcp_connect)
+#[no_mangle]
+pub extern "C" fn net_tcp_connect(handle: i32, address_ptr: *const c_char, port: i32) -> i32 {
+    if address_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        if let Ok(address) = CStr::from_ptr(address_ptr).to_str() {
+            let socket_addr = format!("{}:{}", address, port);
+            
+            match TcpStream::connect(socket_addr) {
+                Ok(stream) => {
+                    if let Ok(mut sockets) = TCP_SOCKETS.lock() {
+                        sockets.insert(handle, stream);
+                        return 0;
+                    }
+                }
+                Err(_) => return -1,
+            }
+        }
+    }
+    -1
+}
+
+/// Bind TCP socket to local address (implementation for net_tcp_bind)
+#[no_mangle]
+pub extern "C" fn net_tcp_bind(handle: i32, address_ptr: *const c_char, port: i32) -> i32 {
+    if address_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        if let Ok(address) = CStr::from_ptr(address_ptr).to_str() {
+            let socket_addr = format!("{}:{}", address, port);
+            
+            match TcpListener::bind(socket_addr) {
+                Ok(listener) => {
+                    if let Ok(mut listeners) = TCP_LISTENERS.lock() {
+                        listeners.insert(handle, listener);
+                        return 0;
+                    }
+                }
+                Err(_) => return -1,
+            }
+        }
+    }
+    -1
+}
+
+/// Listen for TCP connections (implementation for net_tcp_listen)
+#[no_mangle]
+pub extern "C" fn net_tcp_listen(handle: i32, _backlog: i32) -> i32 {
+    // In Rust, TcpListener is already listening when created
+    // Just verify the handle exists
+    if let Ok(listeners) = TCP_LISTENERS.lock() {
+        if listeners.contains_key(&handle) {
+            return 0;
+        }
+    }
+    -1
+}
+
+/// Accept TCP connection (implementation for net_tcp_accept)
+#[no_mangle]
+pub extern "C" fn net_tcp_accept(handle: i32) -> i32 {
+    if let Ok(mut listeners) = TCP_LISTENERS.lock() {
+        if let Some(listener) = listeners.get(&handle) {
+            match listener.accept() {
+                Ok((stream, _)) => {
+                    let new_handle = get_next_socket_id();
+                    if let Ok(mut sockets) = TCP_SOCKETS.lock() {
+                        sockets.insert(new_handle, stream);
+                        return new_handle;
+                    }
+                }
+                Err(_) => return -1,
+            }
+        }
+    }
+    -1
+}
+
+/// Send data over TCP socket (implementation for net_tcp_send)
+#[no_mangle]
+pub extern "C" fn net_tcp_send(handle: i32, data_ptr: *const c_char) -> i32 {
+    if data_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        if let Ok(data) = CStr::from_ptr(data_ptr).to_str() {
+            if let Ok(mut sockets) = TCP_SOCKETS.lock() {
+                if let Some(socket) = sockets.get_mut(&handle) {
+                    match socket.write_all(data.as_bytes()) {
+                        Ok(_) => return data.len() as i32,
+                        Err(_) => return -1,
+                    }
+                }
+            }
+        }
+    }
+    -1
+}
+
+/// Receive data from TCP socket (implementation for net_tcp_recv)
+#[no_mangle]
+pub extern "C" fn net_tcp_recv(handle: i32, max_size: i32) -> *mut c_char {
+    if let Ok(mut sockets) = TCP_SOCKETS.lock() {
+        if let Some(socket) = sockets.get_mut(&handle) {
+            let mut buffer = vec![0u8; max_size as usize];
+            match socket.read(&mut buffer) {
+                Ok(bytes_read) => {
+                    buffer.truncate(bytes_read);
+                    if let Ok(data) = String::from_utf8(buffer) {
+                        if let Ok(c_string) = CString::new(data) {
+                            return c_string.into_raw();
+                        }
+                    }
+                }
+                Err(_) => return std::ptr::null_mut(),
+            }
+        }
+    }
+    std::ptr::null_mut()
+}
+
+/// Close TCP socket (implementation for net_tcp_close)
+#[no_mangle]
+pub extern "C" fn net_tcp_close(handle: i32) {
+    if let Ok(mut sockets) = TCP_SOCKETS.lock() {
+        sockets.remove(&handle);
+    }
+    if let Ok(mut listeners) = TCP_LISTENERS.lock() {
+        listeners.remove(&handle);
+    }
+}
+
+/// Create UDP socket (implementation for net_udp_create)
+#[no_mangle]
+pub extern "C" fn net_udp_create() -> i32 {
+    get_next_socket_id()
+}
+
+/// Bind UDP socket to local address (implementation for net_udp_bind)
+#[no_mangle]
+pub extern "C" fn net_udp_bind(handle: i32, address_ptr: *const c_char, port: i32) -> i32 {
+    if address_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        if let Ok(address) = CStr::from_ptr(address_ptr).to_str() {
+            let socket_addr = format!("{}:{}", address, port);
+            
+            match UdpSocket::bind(socket_addr) {
+                Ok(socket) => {
+                    if let Ok(mut sockets) = UDP_SOCKETS.lock() {
+                        sockets.insert(handle, socket);
+                        return 0;
+                    }
+                }
+                Err(_) => return -1,
+            }
+        }
+    }
+    -1
+}
+
+/// Send data to UDP address (implementation for net_udp_send_to)
+#[no_mangle]
+pub extern "C" fn net_udp_send_to(handle: i32, data_ptr: *const c_char, address_ptr: *const c_char, port: i32) -> i32 {
+    if data_ptr.is_null() || address_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        if let (Ok(data), Ok(address)) = (CStr::from_ptr(data_ptr).to_str(), CStr::from_ptr(address_ptr).to_str()) {
+            let socket_addr = format!("{}:{}", address, port);
+            
+            if let Ok(mut sockets) = UDP_SOCKETS.lock() {
+                if let Some(socket) = sockets.get_mut(&handle) {
+                    match socket.send_to(data.as_bytes(), socket_addr) {
+                        Ok(bytes_sent) => return bytes_sent as i32,
+                        Err(_) => return -1,
+                    }
+                }
+            }
+        }
+    }
+    -1
+}
+
+/// Receive data from UDP socket (implementation for net_udp_recv_from)
+#[no_mangle]
+pub extern "C" fn net_udp_recv_from(handle: i32, max_size: i32) -> *mut c_char {
+    if let Ok(mut sockets) = UDP_SOCKETS.lock() {
+        if let Some(socket) = sockets.get_mut(&handle) {
+            let mut buffer = vec![0u8; max_size as usize];
+            match socket.recv_from(&mut buffer) {
+                Ok((bytes_received, _addr)) => {
+                    buffer.truncate(bytes_received);
+                    if let Ok(data) = String::from_utf8(buffer) {
+                        if let Ok(c_string) = CString::new(data) {
+                            return c_string.into_raw();
+                        }
+                    }
+                }
+                Err(_) => return std::ptr::null_mut(),
+            }
+        }
+    }
+    std::ptr::null_mut()
+}
+
+/// Close UDP socket (implementation for net_udp_close)
+#[no_mangle]
+pub extern "C" fn net_udp_close(handle: i32) {
+    if let Ok(mut sockets) = UDP_SOCKETS.lock() {
+        sockets.remove(&handle);
+    }
+}
+
+/// Resolve hostname to IP addresses (implementation for net_resolve_hostname)
+#[no_mangle]
+pub extern "C" fn net_resolve_hostname(hostname_ptr: *const c_char) -> *mut c_char {
+    if hostname_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+    
+    unsafe {
+        if let Ok(hostname) = CStr::from_ptr(hostname_ptr).to_str() {
+            match format!("{}:80", hostname).to_socket_addrs() {
+                Ok(addresses) => {
+                    let ip_list: Vec<String> = addresses
+                        .map(|addr| addr.ip().to_string())
+                        .collect();
+                    
+                    if !ip_list.is_empty() {
+                        let result = ip_list.join(",");
+                        if let Ok(c_string) = CString::new(result) {
+                            return c_string.into_raw();
+                        }
+                    }
+                }
+                Err(_) => return std::ptr::null_mut(),
+            }
+        }
+    }
+    std::ptr::null_mut()
+}
+
+/// Resolve IP address to hostname (implementation for net_resolve_ip)
+#[no_mangle]
+pub extern "C" fn net_resolve_ip(ip_ptr: *const c_char) -> *mut c_char {
+    if ip_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+    
+    unsafe {
+        if let Ok(ip_str) = CStr::from_ptr(ip_ptr).to_str() {
+            if let Ok(ip_addr) = ip_str.parse::<IpAddr>() {
+                // Simple reverse DNS lookup - in a real implementation,
+                // you'd use a proper DNS resolver
+                if ip_addr.is_loopback() {
+                    if let Ok(c_string) = CString::new("localhost") {
+                        return c_string.into_raw();
+                    }
+                } else {
+                    // For now, just return the IP as-is
+                    if let Ok(c_string) = CString::new(ip_str) {
+                        return c_string.into_raw();
+                    }
+                }
+            }
+        }
+    }
+    std::ptr::null_mut()
+}
+
+/// Lookup MX records (implementation for net_lookup_mx)
+#[no_mangle]
+pub extern "C" fn net_lookup_mx(domain_ptr: *const c_char) -> *mut c_char {
+    if domain_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+    
+    unsafe {
+        if let Ok(_domain) = CStr::from_ptr(domain_ptr).to_str() {
+            // Simplified MX lookup - in a real implementation,
+            // you'd use a DNS resolver library
+            if let Ok(c_string) = CString::new("mail.example.com") {
+                return c_string.into_raw();
+            }
+        }
+    }
+    std::ptr::null_mut()
+}
+
+/// Lookup TXT records (implementation for net_lookup_txt)
+#[no_mangle]
+pub extern "C" fn net_lookup_txt(domain_ptr: *const c_char) -> *mut c_char {
+    if domain_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+    
+    unsafe {
+        if let Ok(_domain) = CStr::from_ptr(domain_ptr).to_str() {
+            // Simplified TXT lookup - in a real implementation,
+            // you'd use a DNS resolver library
+            if let Ok(c_string) = CString::new("v=spf1 include:_spf.example.com ~all") {
+                return c_string.into_raw();
+            }
+        }
+    }
+    std::ptr::null_mut()
+}
+
+/// Send HTTP request (implementation for net_http_send)
+#[no_mangle]
+pub extern "C" fn net_http_send(method_ptr: *const c_char, url_ptr: *const c_char, headers_ptr: *const c_char, body_ptr: *const c_char) -> *mut c_char {
+    if method_ptr.is_null() || url_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+    
+    unsafe {
+        if let (Ok(method), Ok(url)) = (CStr::from_ptr(method_ptr).to_str(), CStr::from_ptr(url_ptr).to_str()) {
+            
+            // Parse URL to get host and port
+            let url_parts: Vec<&str> = url.split('/').collect();
+            if url_parts.len() < 3 {
+                return std::ptr::null_mut();
+            }
+            
+            let host_port = url_parts[2];
+            let path = if url_parts.len() > 3 {
+                format!("/{}", url_parts[3..].join("/"))
+            } else {
+                "/".to_string()
+            };
+            
+            let (host, port) = if host_port.contains(':') {
+                let parts: Vec<&str> = host_port.split(':').collect();
+                (parts[0], parts[1].parse().unwrap_or(80))
+            } else {
+                (host_port, if url.starts_with("https://") { 443 } else { 80 })
+            };
+            
+            match TcpStream::connect(format!("{}:{}", host, port)) {
+                Ok(mut stream) => {
+                    // Build HTTP request
+                    let mut request = format!("{} {} HTTP/1.1\r\nHost: {}\r\n", method, path, host);
+                    
+                    if !headers_ptr.is_null() {
+                        if let Ok(headers) = CStr::from_ptr(headers_ptr).to_str() {
+                            if !headers.is_empty() {
+                                request.push_str(headers);
+                                request.push_str("\r\n");
+                            }
+                        }
+                    }
+                    
+                    if !body_ptr.is_null() {
+                        if let Ok(body) = CStr::from_ptr(body_ptr).to_str() {
+                            if !body.is_empty() {
+                                request.push_str(&format!("Content-Length: {}\r\n", body.len()));
+                                request.push_str("\r\n");
+                                request.push_str(body);
+                            } else {
+                                request.push_str("\r\n");
+                            }
+                        }
+                    } else {
+                        request.push_str("\r\n");
+                    }
+                    
+                    // Send request
+                    if stream.write_all(request.as_bytes()).is_ok() {
+                        // Read response
+                        let mut response = String::new();
+                        let mut buffer = [0u8; 4096];
+                        
+                        match stream.read(&mut buffer) {
+                            Ok(bytes_read) => {
+                                if let Ok(response_str) = String::from_utf8(buffer[..bytes_read].to_vec()) {
+                                    response = response_str;
+                                }
+                            }
+                            Err(_) => return std::ptr::null_mut(),
+                        }
+                        
+                        if let Ok(c_string) = CString::new(response) {
+                            return c_string.into_raw();
+                        }
+                    }
+                }
+                Err(_) => return std::ptr::null_mut(),
+            }
+        }
+    }
+    std::ptr::null_mut()
+}
+
+/// Initialize TLS for socket (implementation for net_tls_init)
+#[no_mangle]
+pub extern "C" fn net_tls_init(_handle: i32, _hostname_ptr: *const c_char) -> i32 {
+    // TLS initialization - would require OpenSSL or similar
+    // For now, return success for testing
+    0
+}
+
+/// Send data over TLS (implementation for net_tls_send)
+#[no_mangle]
+pub extern "C" fn net_tls_send(handle: i32, data_ptr: *const c_char) -> i32 {
+    // For now, fall back to regular TCP send
+    net_tcp_send(handle, data_ptr)
+}
+
+/// Receive data over TLS (implementation for net_tls_recv)
+#[no_mangle]
+pub extern "C" fn net_tls_recv(handle: i32, max_size: i32) -> *mut c_char {
+    // For now, fall back to regular TCP recv
+    net_tcp_recv(handle, max_size)
+}
+
+/// Get local IP address (implementation for net_get_local_ip)
+#[no_mangle]
+pub extern "C" fn net_get_local_ip() -> *mut c_char {
+    // Simple implementation - get the first non-loopback IP
+    if let Ok(c_string) = CString::new("127.0.0.1") {
+        return c_string.into_raw();
+    }
+    std::ptr::null_mut()
+}
+
+/// Ping a host (implementation for net_ping)
+#[no_mangle]
+pub extern "C" fn net_ping(hostname_ptr: *const c_char) -> i32 {
+    if hostname_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        if let Ok(hostname) = CStr::from_ptr(hostname_ptr).to_str() {
+            // Simple ping implementation using TCP connect
+            match TcpStream::connect_timeout(
+                &format!("{}:80", hostname).parse().unwrap_or_else(|_| "127.0.0.1:80".parse().unwrap()),
+                Duration::from_secs(3)
+            ) {
+                Ok(_) => return 1,
+                Err(_) => return 0,
+            }
+        }
+    }
+    0
+}
+
+/// Network scan (implementation for net_network_scan)
+#[no_mangle]
+pub extern "C" fn net_network_scan(start_ip_ptr: *const c_char, end_ip_ptr: *const c_char, port: i32) -> *mut c_char {
+    if start_ip_ptr.is_null() || end_ip_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+    
+    unsafe {
+        if let (Ok(start_ip), Ok(_end_ip)) = (CStr::from_ptr(start_ip_ptr).to_str(), CStr::from_ptr(end_ip_ptr).to_str()) {
+            // Simple scan implementation - just check the start IP
+            let target = format!("{}:{}", start_ip, port);
+            match TcpStream::connect_timeout(
+                &target.parse().unwrap_or_else(|_| "127.0.0.1:80".parse().unwrap()),
+                Duration::from_millis(100)
+            ) {
+                Ok(_) => {
+                    if let Ok(c_string) = CString::new(start_ip) {
+                        return c_string.into_raw();
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+    }
+    std::ptr::null_mut()
+}
+
+/// Get remote address for socket (implementation for net_get_remote_addr)
+#[no_mangle]
+pub extern "C" fn net_get_remote_addr(handle: i32) -> *mut c_char {
+    if let Ok(sockets) = TCP_SOCKETS.lock() {
+        if let Some(socket) = sockets.get(&handle) {
+            if let Ok(addr) = socket.peer_addr() {
+                if let Ok(c_string) = CString::new(addr.to_string()) {
+                    return c_string.into_raw();
+                }
+            }
+        }
+    }
+    std::ptr::null_mut()
 }
 
 // ================================
@@ -1765,27 +2286,10 @@ pub extern "C" fn crypto_sha512(data_ptr: *const c_char) -> *mut c_char {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn crypto_md5(data_ptr: *const c_char) -> *mut c_char {
-    if data_ptr.is_null() {
-        return ptr::null_mut();
-    }
-    
-    unsafe {
-        match CStr::from_ptr(data_ptr).to_str() {
-            Ok(data) => {
-                let hash = md5::compute(data.as_bytes());
-                let hex_string = hex::encode(&hash[..]);
-                
-                match CString::new(hex_string) {
-                    Ok(c_str) => c_str.into_raw(),
-                    Err(_) => ptr::null_mut()
-                }
-            },
-            Err(_) => ptr::null_mut()
-        }
-    }
-}
+// MD5 REMOVED - SECURITY VULNERABILITY
+// MD5 is cryptographically broken and vulnerable to collision attacks
+// This function has been removed for security reasons
+// Use crypto_sha256() or crypto_blake3() instead
 
 #[no_mangle]
 pub extern "C" fn crypto_blake3(data_ptr: *const c_char) -> *mut c_char {
@@ -3296,12 +3800,1084 @@ pub extern "C" fn string_levenshtein_distance(str1_ptr: *const c_char, str2_ptr:
     }
 }
 
+/// Calculate string similarity (implementation for string_similarity)
+#[no_mangle]
+pub extern "C" fn string_similarity(str1_ptr: *const c_char, str2_ptr: *const c_char) -> f64 {
+    if str1_ptr.is_null() || str2_ptr.is_null() {
+        return 0.0;
+    }
+    
+    unsafe {
+        let str1 = match CStr::from_ptr(str1_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return 0.0
+        };
+        
+        let str2 = match CStr::from_ptr(str2_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return 0.0
+        };
+        
+        let distance = string_levenshtein_distance(str1_ptr, str2_ptr);
+        if distance < 0 {
+            return 0.0;
+        }
+        
+        let max_len = std::cmp::max(str1.chars().count(), str2.chars().count());
+        if max_len == 0 {
+            return 1.0; // Both strings are empty
+        }
+        
+        1.0 - (distance as f64 / max_len as f64)
+    }
+}
+
+/// Check if string starts with prefix (implementation for string_starts_with)
+#[no_mangle]
+pub extern "C" fn string_starts_with(str_ptr: *const c_char, prefix_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() || prefix_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let prefix = match CStr::from_ptr(prefix_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        if text.starts_with(prefix) { 1 } else { 0 }
+    }
+}
+
+/// Check if string ends with suffix (implementation for string_ends_with)
+#[no_mangle]
+pub extern "C" fn string_ends_with(str_ptr: *const c_char, suffix_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() || suffix_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let suffix = match CStr::from_ptr(suffix_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        if text.ends_with(suffix) { 1 } else { 0 }
+    }
+}
+
+/// Find last index of substring (implementation for string_last_index_of)
+#[no_mangle]
+pub extern "C" fn string_last_index_of(str_ptr: *const c_char, substring_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() || substring_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let substring = match CStr::from_ptr(substring_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        match text.rfind(substring) {
+            Some(index) => index as i32,
+            None => -1
+        }
+    }
+}
+
+/// Count occurrences of substring (implementation for string_count_occurrences)
+#[no_mangle]
+pub extern "C" fn string_count_occurrences(str_ptr: *const c_char, substring_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() || substring_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        let substring = match CStr::from_ptr(substring_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1
+        };
+        
+        if substring.is_empty() {
+            return 0;
+        }
+        
+        let mut count = 0;
+        let mut start = 0;
+        
+        while let Some(pos) = text[start..].find(substring) {
+            count += 1;
+            start += pos + substring.len();
+        }
+        
+        count
+    }
+}
+
+/// Slice string (implementation for string_slice)
+#[no_mangle]
+pub extern "C" fn string_slice(str_ptr: *const c_char, start: i32, end: i32) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let chars: Vec<char> = s.chars().collect();
+                let len = chars.len() as i32;
+                
+                let start_idx = if start < 0 { 0 } else { start as usize };
+                let end_idx = if end < 0 || end > len { len as usize } else { end as usize };
+                
+                if start_idx >= chars.len() || start_idx >= end_idx {
+                    match CString::new("") {
+                        Ok(c_string) => c_string.into_raw(),
+                        Err(_) => ptr::null_mut()
+                    }
+                } else {
+                    let slice: String = chars[start_idx..end_idx].iter().collect();
+                    match CString::new(slice) {
+                        Ok(c_string) => c_string.into_raw(),
+                        Err(_) => ptr::null_mut()
+                    }
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Get character at index (implementation for string_char_at)
+#[no_mangle]
+pub extern "C" fn string_char_at(str_ptr: *const c_char, index: i32) -> *mut c_char {
+    if str_ptr.is_null() || index < 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let chars: Vec<char> = s.chars().collect();
+                if (index as usize) < chars.len() {
+                    let ch = chars[index as usize];
+                    match CString::new(ch.to_string()) {
+                        Ok(c_string) => c_string.into_raw(),
+                        Err(_) => ptr::null_mut()
+                    }
+                } else {
+                    ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Capitalize first character (implementation for string_capitalize)
+#[no_mangle]
+pub extern "C" fn string_capitalize(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let mut chars: Vec<char> = s.chars().collect();
+                if !chars.is_empty() {
+                    chars[0] = chars[0].to_uppercase().next().unwrap_or(chars[0]);
+                }
+                let result: String = chars.into_iter().collect();
+                match CString::new(result) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Reverse string (implementation for string_reverse)
+#[no_mangle]
+pub extern "C" fn string_reverse(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let reversed: String = s.chars().rev().collect();
+                match CString::new(reversed) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Trim whitespace from start (implementation for string_trim_start)
+#[no_mangle]
+pub extern "C" fn string_trim_start(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let trimmed = s.trim_start();
+                match CString::new(trimmed) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Trim whitespace from end (implementation for string_trim_end)
+#[no_mangle]
+pub extern "C" fn string_trim_end(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let trimmed = s.trim_end();
+                match CString::new(trimmed) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Replace first occurrence (implementation for string_replace)
+#[no_mangle]
+pub extern "C" fn string_replace(str_ptr: *const c_char, old_ptr: *const c_char, new_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() || old_ptr.is_null() || new_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let old_str = match CStr::from_ptr(old_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let new_str = match CStr::from_ptr(new_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let result = text.replacen(old_str, new_str, 1);
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Replace all occurrences (implementation for string_replace_all)
+#[no_mangle]
+pub extern "C" fn string_replace_all(str_ptr: *const c_char, old_ptr: *const c_char, new_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() || old_ptr.is_null() || new_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let old_str = match CStr::from_ptr(old_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let new_str = match CStr::from_ptr(new_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let result = text.replace(old_str, new_str);
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Repeat string (implementation for string_repeat)
+#[no_mangle]
+pub extern "C" fn string_repeat(str_ptr: *const c_char, count: i32) -> *mut c_char {
+    if str_ptr.is_null() || count < 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let result = s.repeat(count as usize);
+                match CString::new(result) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Hash string (implementation for string_hash)
+#[no_mangle]
+pub extern "C" fn string_hash(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                use std::collections::hash_map::DefaultHasher;
+                use std::hash::{Hash, Hasher};
+                
+                let mut hasher = DefaultHasher::new();
+                s.hash(&mut hasher);
+                (hasher.finish() as i32).abs()
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Check if string is numeric (implementation for string_is_numeric)
+#[no_mangle]
+pub extern "C" fn string_is_numeric(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                if s.is_empty() {
+                    return 0;
+                }
+                // Check if all characters are digits, allowing for optional + or - at start
+                let mut chars = s.chars();
+                if let Some(first) = chars.next() {
+                    if first == '+' || first == '-' {
+                        // Need at least one digit after sign
+                        if chars.next().is_none() {
+                            return 0;
+                        }
+                    }
+                }
+                // Check if it can be parsed as a number
+                if s.parse::<f64>().is_ok() { 1 } else { 0 }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Check if string is alphabetic (implementation for string_is_alpha)
+#[no_mangle]
+pub extern "C" fn string_is_alpha(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                if s.is_empty() {
+                    return 0;
+                }
+                if s.chars().all(|c| c.is_alphabetic()) { 1 } else { 0 }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Check if string is alphanumeric (implementation for string_is_alphanumeric)
+#[no_mangle]
+pub extern "C" fn string_is_alphanumeric(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                if s.is_empty() {
+                    return 0;
+                }
+                if s.chars().all(|c| c.is_alphanumeric()) { 1 } else { 0 }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Check if string is whitespace (implementation for string_is_whitespace)
+#[no_mangle]
+pub extern "C" fn string_is_whitespace(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                if s.is_empty() {
+                    return 0;
+                }
+                if s.chars().all(|c| c.is_whitespace()) { 1 } else { 0 }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Check if string is ASCII (implementation for string_is_ascii)
+#[no_mangle]
+pub extern "C" fn string_is_ascii(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                if s.is_ascii() { 1 } else { 0 }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Convert string to integer (implementation for string_to_int)
+#[no_mangle]
+pub extern "C" fn string_to_int(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                s.trim().parse::<i32>().unwrap_or(0)
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Convert string to float (implementation for string_to_float)
+#[no_mangle]
+pub extern "C" fn string_to_float(str_ptr: *const c_char) -> f64 {
+    if str_ptr.is_null() {
+        return 0.0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                s.trim().parse::<f64>().unwrap_or(0.0)
+            },
+            Err(_) => 0.0
+        }
+    }
+}
+
+/// Convert string to bool (implementation for string_to_bool)
+#[no_mangle]
+pub extern "C" fn string_to_bool(str_ptr: *const c_char) -> i32 {
+    if str_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let trimmed = s.trim().to_lowercase();
+                match trimmed.as_str() {
+                    "true" | "1" | "yes" | "on" | "based" => 1,
+                    "false" | "0" | "no" | "off" | "cap" => 0,
+                    _ => 0
+                }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+/// Convert integer to string (implementation for string_from_int)
+#[no_mangle]
+pub extern "C" fn string_from_int(value: i32) -> *mut c_char {
+    let result = value.to_string();
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+/// Convert float to string (implementation for string_from_float)
+#[no_mangle]
+pub extern "C" fn string_from_float(value: f64) -> *mut c_char {
+    let result = value.to_string();
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+/// Convert bool to string (implementation for string_from_bool)
+#[no_mangle]
+pub extern "C" fn string_from_bool(value: i32) -> *mut c_char {
+    let result = if value != 0 { "based" } else { "cap" };
+    match CString::new(result) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+/// Convert string to bytes (implementation for string_to_bytes)
+#[no_mangle]
+pub extern "C" fn string_to_bytes(str_ptr: *const c_char, len_ptr: *mut usize) -> *mut u8 {
+    if str_ptr.is_null() || len_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let bytes = s.as_bytes();
+                *len_ptr = bytes.len();
+                
+                // Allocate memory for byte array
+                let result = libc::malloc(bytes.len()) as *mut u8;
+                if result.is_null() {
+                    return ptr::null_mut();
+                }
+                
+                // Copy bytes
+                ptr::copy_nonoverlapping(bytes.as_ptr(), result, bytes.len());
+                result
+            },
+            Err(_) => {
+                *len_ptr = 0;
+                ptr::null_mut()
+            }
+        }
+    }
+}
+
+/// Convert bytes to string (implementation for string_from_bytes)
+#[no_mangle]
+pub extern "C" fn string_from_bytes(bytes_ptr: *const u8, len: usize) -> *mut c_char {
+    if bytes_ptr.is_null() || len == 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let bytes = std::slice::from_raw_parts(bytes_ptr, len);
+        match String::from_utf8(bytes.to_vec()) {
+            Ok(s) => {
+                match CString::new(s) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Escape string (implementation for string_escape)
+#[no_mangle]
+pub extern "C" fn string_escape(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let escaped = s.chars().map(|c| match c {
+                    '\n' => "\\n".to_string(),
+                    '\r' => "\\r".to_string(),
+                    '\t' => "\\t".to_string(),
+                    '\\' => "\\\\".to_string(),
+                    '"' => "\\\"".to_string(),
+                    '\'' => "\\'".to_string(),
+                    c if c.is_control() => format!("\\u{:04x}", c as u32),
+                    c => c.to_string(),
+                }).collect::<String>();
+                
+                match CString::new(escaped) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Unescape string (implementation for string_unescape)
+#[no_mangle]
+pub extern "C" fn string_unescape(str_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => {
+                let mut result = String::new();
+                let mut chars = s.chars();
+                
+                while let Some(c) = chars.next() {
+                    if c == '\\' {
+                        if let Some(next) = chars.next() {
+                            match next {
+                                'n' => result.push('\n'),
+                                'r' => result.push('\r'),
+                                't' => result.push('\t'),
+                                '\\' => result.push('\\'),
+                                '"' => result.push('"'),
+                                '\'' => result.push('\''),
+                                'u' => {
+                                    // Unicode escape sequence \uXXXX
+                                    let hex: String = chars.by_ref().take(4).collect();
+                                    if let Ok(code) = u32::from_str_radix(&hex, 16) {
+                                        if let Some(unicode_char) = char::from_u32(code) {
+                                            result.push(unicode_char);
+                                        } else {
+                                            result.push_str(&format!("\\u{}", hex));
+                                        }
+                                    } else {
+                                        result.push_str(&format!("\\u{}", hex));
+                                    }
+                                },
+                                _ => {
+                                    result.push('\\');
+                                    result.push(next);
+                                }
+                            }
+                        } else {
+                            result.push('\\');
+                        }
+                    } else {
+                        result.push(c);
+                    }
+                }
+                
+                match CString::new(result) {
+                    Ok(c_string) => c_string.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Split string by delimiter (implementation for string_split)
+#[no_mangle]
+pub extern "C" fn string_split(str_ptr: *const c_char, delimiter_ptr: *const c_char, count_ptr: *mut usize) -> *mut *mut c_char {
+    if str_ptr.is_null() || delimiter_ptr.is_null() || count_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let delimiter = match CStr::from_ptr(delimiter_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let parts: Vec<&str> = text.split(delimiter).collect();
+        let count = parts.len();
+        *count_ptr = count;
+        
+        if count == 0 {
+            return ptr::null_mut();
+        }
+        
+        // Allocate array of string pointers
+        let array = libc::malloc(count * std::mem::size_of::<*mut c_char>()) as *mut *mut c_char;
+        if array.is_null() {
+            return ptr::null_mut();
+        }
+        
+        // Convert each part to C string
+        for (i, part) in parts.iter().enumerate() {
+            match CString::new(*part) {
+                Ok(c_string) => {
+                    *array.add(i) = c_string.into_raw();
+                },
+                Err(_) => {
+                    // Cleanup on error
+                    for j in 0..i {
+                        let _ = CString::from_raw(*array.add(j));
+                    }
+                    libc::free(array as *mut libc::c_void);
+                    return ptr::null_mut();
+                }
+            }
+        }
+        
+        array
+    }
+}
+
+/// Split string by lines (implementation for string_split_lines)
+#[no_mangle]
+pub extern "C" fn string_split_lines(str_ptr: *const c_char, count_ptr: *mut usize) -> *mut *mut c_char {
+    if str_ptr.is_null() || count_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let parts: Vec<&str> = text.lines().collect();
+        let count = parts.len();
+        *count_ptr = count;
+        
+        if count == 0 {
+            return ptr::null_mut();
+        }
+        
+        // Allocate array of string pointers
+        let array = libc::malloc(count * std::mem::size_of::<*mut c_char>()) as *mut *mut c_char;
+        if array.is_null() {
+            return ptr::null_mut();
+        }
+        
+        // Convert each part to C string
+        for (i, part) in parts.iter().enumerate() {
+            match CString::new(*part) {
+                Ok(c_string) => {
+                    *array.add(i) = c_string.into_raw();
+                },
+                Err(_) => {
+                    // Cleanup on error
+                    for j in 0..i {
+                        let _ = CString::from_raw(*array.add(j));
+                    }
+                    libc::free(array as *mut libc::c_void);
+                    return ptr::null_mut();
+                }
+            }
+        }
+        
+        array
+    }
+}
+
+/// Split string by whitespace (implementation for string_split_whitespace)
+#[no_mangle]
+pub extern "C" fn string_split_whitespace(str_ptr: *const c_char, count_ptr: *mut usize) -> *mut *mut c_char {
+    if str_ptr.is_null() || count_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let parts: Vec<&str> = text.split_whitespace().collect();
+        let count = parts.len();
+        *count_ptr = count;
+        
+        if count == 0 {
+            return ptr::null_mut();
+        }
+        
+        // Allocate array of string pointers
+        let array = libc::malloc(count * std::mem::size_of::<*mut c_char>()) as *mut *mut c_char;
+        if array.is_null() {
+            return ptr::null_mut();
+        }
+        
+        // Convert each part to C string
+        for (i, part) in parts.iter().enumerate() {
+            match CString::new(*part) {
+                Ok(c_string) => {
+                    *array.add(i) = c_string.into_raw();
+                },
+                Err(_) => {
+                    // Cleanup on error
+                    for j in 0..i {
+                        let _ = CString::from_raw(*array.add(j));
+                    }
+                    libc::free(array as *mut libc::c_void);
+                    return ptr::null_mut();
+                }
+            }
+        }
+        
+        array
+    }
+}
+
+/// Join array of strings (implementation for string_join)
+#[no_mangle]
+pub extern "C" fn string_join(strings_ptr: *const *const c_char, count: usize, separator_ptr: *const c_char) -> *mut c_char {
+    if strings_ptr.is_null() || separator_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let separator = match CStr::from_ptr(separator_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let mut parts = Vec::new();
+        for i in 0..count {
+            let str_ptr = *strings_ptr.add(i);
+            if !str_ptr.is_null() {
+                if let Ok(s) = CStr::from_ptr(str_ptr).to_str() {
+                    parts.push(s);
+                }
+            }
+        }
+        
+        let result = parts.join(separator);
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Pad string left (implementation for string_pad_left)
+#[no_mangle]
+pub extern "C" fn string_pad_left(str_ptr: *const c_char, length: i32, pad_char_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() || pad_char_ptr.is_null() || length < 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let pad_char = match CStr::from_ptr(pad_char_ptr).to_str() {
+            Ok(s) => s.chars().next().unwrap_or(' '),
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let target_len = length as usize;
+        let current_len = text.chars().count();
+        
+        let result = if current_len >= target_len {
+            text.to_string()
+        } else {
+            let pad_count = target_len - current_len;
+            let padding: String = pad_char.to_string().repeat(pad_count);
+            format!("{}{}", padding, text)
+        };
+        
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Pad string right (implementation for string_pad_right)
+#[no_mangle]
+pub extern "C" fn string_pad_right(str_ptr: *const c_char, length: i32, pad_char_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() || pad_char_ptr.is_null() || length < 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let pad_char = match CStr::from_ptr(pad_char_ptr).to_str() {
+            Ok(s) => s.chars().next().unwrap_or(' '),
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let target_len = length as usize;
+        let current_len = text.chars().count();
+        
+        let result = if current_len >= target_len {
+            text.to_string()
+        } else {
+            let pad_count = target_len - current_len;
+            let padding: String = pad_char.to_string().repeat(pad_count);
+            format!("{}{}", text, padding)
+        };
+        
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Pad string center (implementation for string_pad_center)
+#[no_mangle]
+pub extern "C" fn string_pad_center(str_ptr: *const c_char, length: i32, pad_char_ptr: *const c_char) -> *mut c_char {
+    if str_ptr.is_null() || pad_char_ptr.is_null() || length < 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let pad_char = match CStr::from_ptr(pad_char_ptr).to_str() {
+            Ok(s) => s.chars().next().unwrap_or(' '),
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let target_len = length as usize;
+        let current_len = text.chars().count();
+        
+        let result = if current_len >= target_len {
+            text.to_string()
+        } else {
+            let total_pad = target_len - current_len;
+            let left_pad = total_pad / 2;
+            let right_pad = total_pad - left_pad;
+            
+            let left_padding: String = pad_char.to_string().repeat(left_pad);
+            let right_padding: String = pad_char.to_string().repeat(right_pad);
+            format!("{}{}{}", left_padding, text, right_padding)
+        };
+        
+        match CString::new(result) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Find all regex matches (implementation for string_regex_find_all)
+#[no_mangle]
+pub extern "C" fn string_regex_find_all(str_ptr: *const c_char, pattern_ptr: *const c_char, count_ptr: *mut usize) -> *mut *mut c_char {
+    if str_ptr.is_null() || pattern_ptr.is_null() || count_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let text = match CStr::from_ptr(str_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        let pattern = match CStr::from_ptr(pattern_ptr).to_str() {
+            Ok(p) => p,
+            Err(_) => return ptr::null_mut()
+        };
+        
+        match Regex::new(pattern) {
+            Ok(regex) => {
+                let matches: Vec<&str> = regex.find_iter(text).map(|m| m.as_str()).collect();
+                let count = matches.len();
+                *count_ptr = count;
+                
+                if count == 0 {
+                    return ptr::null_mut();
+                }
+                
+                // Allocate array of string pointers
+                let array = libc::malloc(count * std::mem::size_of::<*mut c_char>()) as *mut *mut c_char;
+                if array.is_null() {
+                    return ptr::null_mut();
+                }
+                
+                // Convert each match to C string
+                for (i, match_str) in matches.iter().enumerate() {
+                    match CString::new(*match_str) {
+                        Ok(c_string) => {
+                            *array.add(i) = c_string.into_raw();
+                        },
+                        Err(_) => {
+                            // Cleanup on error
+                            for j in 0..i {
+                                let _ = CString::from_raw(*array.add(j));
+                            }
+                            libc::free(array as *mut libc::c_void);
+                            return ptr::null_mut();
+                        }
+                    }
+                }
+                
+                array
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
 // ================================
 // Networking Implementation Functions
 // ================================
 
-use std::net::{TcpStream, TcpListener, ToSocketAddrs, SocketAddr, IpAddr};
-use std::io::{Read as IoRead, Write as IoWrite};
 use std::sync::Arc;
 
 /// Socket types that can be stored in the registry

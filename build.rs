@@ -86,7 +86,7 @@ use std::thread;
 use chrono::{DateTime, Utc, Local, TimeZone, Datelike, Timelike, Weekday, NaiveDate, NaiveDateTime};
 use regex::Regex;
 use base64::{Engine as _, engine::general_purpose};
-use std::net::{TcpStream, TcpListener, ToSocketAddrs, SocketAddr, IpAddr};
+use std::net::{TcpStream, TcpListener, UdpSocket, ToSocketAddrs, SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr};
 use std::io::{Read as IoRead, Write as IoWrite};
 use std::sync::Arc;
 use sha2::{Sha256, Sha512, Digest};
@@ -108,10 +108,20 @@ lazy_static::lazy_static! {
     static ref FILE_HANDLES: Mutex<HashMap<i32, File>> = Mutex::new(HashMap::new());
     static ref BUFFER_HANDLES: Mutex<HashMap<i32, Vec<u8>>> = Mutex::new(HashMap::new());
     static ref NEXT_HANDLE_ID: AtomicI32 = AtomicI32::new(1);
+    
+    // Network socket handle management
+    static ref TCP_SOCKETS: Mutex<HashMap<i32, TcpStream>> = Mutex::new(HashMap::new());
+    static ref TCP_LISTENERS: Mutex<HashMap<i32, TcpListener>> = Mutex::new(HashMap::new());
+    static ref UDP_SOCKETS: Mutex<HashMap<i32, UdpSocket>> = Mutex::new(HashMap::new());
+    static ref NEXT_SOCKET_ID: AtomicI32 = AtomicI32::new(1000);
 }
 
 fn get_next_handle() -> i32 {
     NEXT_HANDLE_ID.fetch_add(1, Ordering::SeqCst)
+}
+
+fn get_next_socket_id() -> i32 {
+    NEXT_SOCKET_ID.fetch_add(1, Ordering::SeqCst)
 }
 
 // Export all runtime functions with C linkage
