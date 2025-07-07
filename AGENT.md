@@ -4,7 +4,7 @@
 # Build compiler
 cargo build
 
-# Run tests (all 504 tests pass)
+# Run tests (all 336 tests pass)
 cargo test
 
 # Compile CURSED program to native executable
@@ -39,6 +39,18 @@ cargo run --bin cursed test_short_declaration.csd
 
 # Test type assertions
 cargo run --bin cursed test_type_assertions.csd
+
+# Test composite literals
+cargo run --bin cursed comprehensive_composite_test.csd
+
+# Test C-style for loops
+cargo run --bin cursed test_c_style_for.csd
+
+# Test grouped imports
+cargo run --bin cursed test_grouped_imports.csd
+
+# Test array size expressions (fully implemented)
+cargo test array_size
 
 # Test native compilation with mixed types
 cargo run --bin cursed -- compile program.csd
@@ -113,7 +125,7 @@ cargo run --bin cursed -- compile test_simple.csd
 
 ### CURSED Standard Library Testing
 
-The stdlib has comprehensive test coverage using the testz testing framework:
+The stdlib has comprehensive test coverage using the testz testing framework with 82+ test functions across 6 modules:
 
 ```bash
 # Run individual stdlib module tests
@@ -262,6 +274,26 @@ src/
 - Array/slice type parsing is fully implemented
 - Support for both fixed arrays and dynamic slices
 - Type syntax: `[type]` for arrays, `[type; size]` for fixed arrays
+- Array size expressions [N]T are fully implemented with 9 passing tests
+- Status: Fully functional in both interpretation and compilation modes
+
+### Composite Literals
+- Composite literal syntax now fully supported
+- Array literals: `[5]int{1,2,3,4,5}` and `[]int{1,2,3}` syntax
+- Test: `comprehensive_composite_test.csd`
+- Status: Fully functional in both interpretation and compilation modes
+
+### C-Style For Loops
+- C-style for loop syntax now fully supported
+- Syntax: `bestie variable := init; condition; update`
+- Example: `bestie i := 0; i < 5; i++`
+- Test: `test_c_style_for.csd`
+- Status: Fully functional in both interpretation and compilation modes
+
+### Grouped Imports
+- Grouped import syntax now fully supported
+- Syntax: `yeet ( "module1"; "module2" )`
+- Test: `test_grouped_imports.csd`
 - Status: Fully functional in both interpretation and compilation modes
 
 ### Array Indexing

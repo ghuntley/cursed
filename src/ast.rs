@@ -266,6 +266,7 @@ pub struct ReturnStatement {
 /// If statement
 #[derive(Debug, Clone)]
 pub struct IfStatement {
+    pub init: Option<Box<Statement>>, // Optional simple statement prefix
     pub condition: Expression,
     pub then_branch: Vec<Statement>,
     pub else_branch: Option<Vec<Statement>>,
@@ -330,6 +331,7 @@ pub struct ForInStatement {
 /// Switch statement (vibe_check keyword)
 #[derive(Debug, Clone)]
 pub struct SwitchStatement {
+    pub init: Option<Box<Statement>>, // Optional simple statement prefix
     pub expression: Expression,
     pub cases: Vec<SwitchCase>,
     pub default_case: Option<Vec<Statement>>,

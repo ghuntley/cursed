@@ -1,1 +1,1 @@
-slay main() { sus x normie = 42; vibez.spill(x); }
+vibez.spill("Hello CURSED!")

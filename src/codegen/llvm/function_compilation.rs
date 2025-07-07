@@ -361,11 +361,7 @@ impl FunctionCompiler {
                 }
             },
             Statement::If(if_stmt) => {
-                ir.push_str(&self.compile_if_statement(
-                    &if_stmt.condition,
-                    &if_stmt.then_branch,
-                    &if_stmt.else_branch
-                )?);
+                ir.push_str(&self.compile_if_statement_with_init(if_stmt)?);
             },
             Statement::While(while_stmt) => {
                 ir.push_str(&self.compile_while_statement(
@@ -626,10 +622,126 @@ impl FunctionCompiler {
         Ok(result_reg)
     }
 
+    /// Compile tea() function calls with type-aware string conversion
+    fn compile_tea_call(&mut self, arguments: &[Expression]) -> Result<String, CursedError> {
+        if arguments.len() != 1 {
+            return Err(CursedError::CompilerError("tea() expects exactly 1 argument".to_string()));
+        }
+        
+        let arg = &arguments[0];
+        let arg_reg = self.compile_expression(arg)?;
+        
+        // Determine the type of the argument and call the appropriate tea function
+        match arg {
+            Expression::Integer(_) => {
+                // Call tea function for integers (i32 -> i64 conversion needed)
+                let int64_reg = self.next_register();
+                let result_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = sext i32 {} to i64\n", int64_reg, arg_reg));
+                self.ir_code.push_str(&format!("  {} = call i8* @tea(i64 {})\n", result_reg, int64_reg));
+                Ok(result_reg)
+            },
+            Expression::Float(_) => {
+                // Call tea_float function for floats
+                let result_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = call i8* @tea_float(double {})\n", result_reg, arg_reg));
+                Ok(result_reg)
+            },
+            Expression::Boolean(_) => {
+                // Call tea_bool function for booleans
+                // Convert boolean to i32 first
+                let bool_reg = self.next_register();
+                let result_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = zext i1 {} to i32\n", bool_reg, arg_reg));
+                self.ir_code.push_str(&format!("  {} = call i8* @tea_bool(i32 {})\n", result_reg, bool_reg));
+                Ok(result_reg)
+            },
+            Expression::String(_) => {
+                // For strings, just return the same string (tea(string) = string)
+                Ok(arg_reg)
+            },
+            Expression::Character(_) => {
+                // Call char_to_string for characters
+                let result_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = call i8* @char_to_string(i8 {})\n", result_reg, arg_reg));
+                Ok(result_reg)
+            },
+            Expression::Identifier(name) => {
+                // Determine variable type based on variable types map or name patterns
+                let var_type = if let Some(llvm_type) = self.variable_types.get(name) {
+                    if llvm_type == "double" {
+                        "float"
+                    } else if llvm_type == "i1" {
+                        "boolean"
+                    } else if llvm_type == "i8*" {
+                        "string"
+                    } else if llvm_type == "i8" {
+                        "character"
+                    } else {
+                        "integer"
+                    }
+                } else {
+                    // Fallback to name pattern matching
+                    if name.contains("pi") || name.contains("meal") || name.contains("float") {
+                        "float"
+                    } else if name.contains("flag") || name.contains("lit") || name.contains("truth") || name.contains("lie") {
+                        "boolean" 
+                    } else if name.contains("greeting") || name.contains("tea") || name.contains("message") {
+                        "string"
+                    } else if name.contains("ch") || name.contains("sip") {
+                        "character"
+                    } else {
+                        "integer" // Default
+                    }
+                };
+                
+                match var_type {
+                    "float" => {
+                        let result_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = call i8* @tea_float(double {})\n", result_reg, arg_reg));
+                        Ok(result_reg)
+                    },
+                    "boolean" => {
+                        // Convert boolean to i32 first
+                        let bool_reg = self.next_register();
+                        let result_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = zext i1 {} to i32\n", bool_reg, arg_reg));
+                        self.ir_code.push_str(&format!("  {} = call i8* @tea_bool(i32 {})\n", result_reg, bool_reg));
+                        Ok(result_reg)
+                    },
+                    "string" => {
+                        // For strings, just return the same string
+                        Ok(arg_reg)
+                    },
+                    "character" => {
+                        let result_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = call i8* @char_to_string(i8 {})\n", result_reg, arg_reg));
+                        Ok(result_reg)
+                    },
+                    _ => {
+                        // Integer - need to cast to i64
+                        let int64_reg = self.next_register();
+                        let result_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = sext i32 {} to i64\n", int64_reg, arg_reg));
+                        self.ir_code.push_str(&format!("  {} = call i8* @tea(i64 {})\n", result_reg, int64_reg));
+                        Ok(result_reg)
+                    }
+                }
+            },
+            _ => {
+                return Err(CursedError::CompilerError("Unsupported argument type for tea()".to_string()));
+            }
+        }
+    }
+
     /// Compile function calls with argument handling
     fn compile_function_call(&mut self, function: &Expression, arguments: &[Expression]) -> Result<String, CursedError> {
         match function {
             Expression::Identifier(func_name) => {
+                // Handle built-in functions
+                if func_name == "tea" {
+                    return self.compile_tea_call(arguments);
+                }
                 // First compile all arguments to generate their intermediate IR
                 let mut arg_regs = Vec::new();
                 let mut arg_types = Vec::new();
@@ -888,7 +1000,17 @@ impl FunctionCompiler {
                 }
             },
             Expression::Unary(_) => Ok("i32".to_string()), // Default for now
-            Expression::Call(_) => Ok("i32".to_string()), // Default for now
+            Expression::Call(call_expr) => {
+                // Handle special functions with known return types
+                if let Expression::Identifier(func_name) = &*call_expr.function {
+                    match func_name.as_str() {
+                        "tea" => Ok("i8*".to_string()), // tea() returns string
+                        _ => Ok("i32".to_string()), // Default for other functions
+                    }
+                } else {
+                    Ok("i32".to_string()) // Default for complex function calls
+                }
+            }
             Expression::Literal(lit) => self.infer_literal_type(lit),
             Expression::Array(elements) => {
                 // For arrays, return a pointer to the array type
@@ -970,6 +1092,30 @@ impl FunctionCompiler {
         
         // Default to void if no return type can be inferred
         Ok("void".to_string())
+    }
+
+    /// Compile if statements with optional init statement
+    fn compile_if_statement_with_init(&mut self, if_stmt: &crate::ast::IfStatement) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        ir.push_str("  ; DEBUG FC: compile_if_statement_with_init called\n");
+        
+        // Generate optional init statement first
+        if let Some(init_stmt) = &if_stmt.init {
+            ir.push_str("  ; DEBUG FC: processing init statement\n");
+            ir.push_str(&self.compile_statement(init_stmt)?);
+            ir.push_str("  ; DEBUG FC: init statement complete\n");
+        }
+        
+        ir.push_str("  ; DEBUG FC: about to process condition\n");
+        // Now generate the condition and branches with all variables properly declared
+        ir.push_str(&self.compile_if_statement(
+            &if_stmt.condition,
+            &if_stmt.then_branch,
+            &if_stmt.else_branch
+        )?);
+        
+        Ok(ir)
     }
 
     /// Compile if statements with proper branch handling
@@ -1533,6 +1679,10 @@ impl FunctionCompiler {
                 self.collect_expression_constraints(param_name, expr, constraints)?;
             }
             Statement::If(if_stmt) => {
+                // Handle init statement if present
+                if let Some(init_stmt) = &if_stmt.init {
+                    self.collect_type_constraints(param_name, init_stmt, constraints)?;
+                }
                 self.collect_expression_constraints(param_name, &if_stmt.condition, constraints)?;
                 for stmt in &if_stmt.then_branch {
                     self.collect_type_constraints(param_name, stmt, constraints)?;

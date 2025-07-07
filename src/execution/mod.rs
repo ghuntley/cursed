@@ -451,6 +451,14 @@ impl CursedExecutionEngine {
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::If(if_stmt) => {
+                // Execute optional init statement first
+                if let Some(init_stmt) = &if_stmt.init {
+                    match self.execute_statement(init_stmt, context)? {
+                        ExecutionFlow::Continue(_) => {},
+                        other => return Ok(other),
+                    }
+                }
+                
                 let condition = self.evaluate_expression(&if_stmt.condition, context)?;
                 if self.is_truthy(&condition) {
                     let mut last_value = CursedValue::Nil;
@@ -592,6 +600,14 @@ impl CursedExecutionEngine {
                 Ok(ExecutionFlow::Continue(last_value))
             },
             Statement::Switch(switch_stmt) => {
+                // Execute optional init statement first
+                if let Some(init_stmt) = &switch_stmt.init {
+                    match self.execute_statement(init_stmt, context)? {
+                        ExecutionFlow::Continue(_) => {},
+                        other => return Ok(other),
+                    }
+                }
+                
                 let switch_value = self.evaluate_expression(&switch_stmt.expression, context)?;
                 
                 // Try to match against each case
@@ -1234,6 +1250,43 @@ impl CursedExecutionEngine {
                             println!("{}", self.format_value(&value));
                         }
                         Ok(CursedValue::Nil)
+                    },
+                    "tea" => {
+                        // tea() function converts any value to string
+                        if call_expr.arguments.len() != 1 {
+                            return Err(CursedError::RuntimeError("tea() expects exactly 1 argument".to_string()));
+                        }
+                        
+                        let arg = &call_expr.arguments[0];
+                        let value = self.evaluate_expression(arg, context)?;
+                        
+                        // Convert value to string representation
+                        let string_value = match &value {
+                            CursedValue::Integer(i) => i.to_string(),
+                            CursedValue::Float(f) => f.to_string(),
+                            CursedValue::String(s) => s.clone(),
+                            CursedValue::Boolean(b) => if *b { "based".to_string() } else { "cap".to_string() },
+                            CursedValue::Character(c) => c.to_string(),
+                            CursedValue::Array(arr) => {
+                                let elements: Vec<String> = arr.iter().map(|v| self.format_value(v)).collect();
+                                format!("[{}]", elements.join(", "))
+                            },
+                            CursedValue::Tuple(tuple) => {
+                                let elements: Vec<String> = tuple.iter().map(|v| self.format_value(v)).collect();
+                                format!("({})", elements.join(", "))
+                            },
+                            CursedValue::Struct(s) => {
+                                let mut fields = Vec::new();
+                                for (k, v) in s.iter() {
+                                    fields.push(format!("{}: {}", k, self.format_value(v)));
+                                }
+                                format!("{{{}}}", fields.join(", "))
+                            },
+                            CursedValue::Nil => "cringe".to_string(),
+                            _ => format!("{:?}", value),
+                        };
+                        
+                        Ok(CursedValue::String(string_value))
                     },
                     _ => {
                         // First check if the identifier resolves to a lambda

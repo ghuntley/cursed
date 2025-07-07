@@ -1419,7 +1419,10 @@ impl Parser {
     fn parse_if_statement(&mut self) -> Result<IfStatement, CursedError> {
         self.consume(TokenKind::Lowkey, "Expected 'lowkey'")?;
         self.skip_newlines(); // Skip newlines after lowkey
-        let condition = self.parse_expression()?;
+        
+        // Try to parse optional simple statement prefix
+        let (init, condition) = self.parse_if_statement_parts()?;
+        
         self.skip_newlines(); // Skip newlines after condition
         self.consume(TokenKind::LeftBrace, "Expected '{' after if condition")?;
         
@@ -1483,10 +1486,140 @@ impl Parser {
         }
         
         Ok(IfStatement {
+            init,
             condition,
             then_branch,
             else_branch,
         })
+    }
+
+    /// Parse if statement parts: optional simple statement followed by semicolon, then condition
+    fn parse_if_statement_parts(&mut self) -> Result<(Option<Box<Statement>>, Expression), CursedError> {
+        // Check if this looks like a simple statement followed by semicolon
+        if self.is_simple_statement_prefix() {
+            // Parse the simple statement
+            let simple_stmt = self.parse_simple_statement()?;
+            
+            // Expect semicolon
+            self.consume(TokenKind::Semicolon, "Expected ';' after simple statement in if")?;
+            self.skip_newlines();
+            
+            // Parse the condition
+            let condition = self.parse_expression()?;
+            
+            Ok((Some(Box::new(simple_stmt)), condition))
+        } else {
+            // No simple statement prefix, just parse the condition
+            let condition = self.parse_expression()?;
+            Ok((None, condition))
+        }
+    }
+
+    /// Check if current position looks like a simple statement prefix for if/switch
+    fn is_simple_statement_prefix(&self) -> bool {
+        // Look ahead to see if this pattern matches: SimpleStmt ';'
+        // We need to look for patterns like:
+        // - identifier := expression ;
+        // - identifier = expression ;
+        // - identifier++ ;
+        // - identifier-- ;
+        // - (a, b) := expression ;
+        // - (a, b) = expression ;
+        
+        if self.check(&TokenKind::Identifier) {
+            match self.peek_ahead(1).kind {
+                TokenKind::ColonEqual => {
+                    // Check for semicolon after a reasonable expression
+                    self.find_semicolon_after_expression(2)
+                }
+                TokenKind::Equal => {
+                    // Check for semicolon after a reasonable expression
+                    self.find_semicolon_after_expression(2)
+                }
+                TokenKind::PlusPlus | TokenKind::MinusMinus => {
+                    // Increment/decrement followed by semicolon
+                    self.peek_ahead(2).kind == TokenKind::Semicolon
+                }
+                _ => false,
+            }
+        } else if self.check(&TokenKind::LeftParen) {
+            // Tuple assignment/declaration
+            self.is_tuple_statement_prefix()
+        } else {
+            false
+        }
+    }
+
+    /// Check if current position looks like a tuple statement prefix
+    fn is_tuple_statement_prefix(&self) -> bool {
+        // Look for pattern: ( identifier, ... ) := or = followed by semicolon
+        let mut pos = 1; // Skip initial '('
+        
+        // Skip identifiers and commas
+        while pos < 10 { // Reasonable lookahead limit
+            let token = self.peek_ahead(pos);
+            match token.kind {
+                TokenKind::Identifier => pos += 1,
+                TokenKind::Comma => pos += 1,
+                TokenKind::RightParen => {
+                    pos += 1;
+                    break;
+                }
+                _ => return false,
+            }
+        }
+        
+        // Check for := or = after closing paren
+        let op_token = self.peek_ahead(pos);
+        if op_token.kind == TokenKind::ColonEqual || op_token.kind == TokenKind::Equal {
+            pos += 1;
+            // Look for semicolon after expression
+            self.find_semicolon_after_expression(pos)
+        } else {
+            false
+        }
+    }
+
+    /// Look ahead to find semicolon after an expression starting at given position
+    fn find_semicolon_after_expression(&self, start_pos: usize) -> bool {
+        let mut pos = start_pos;
+        let mut paren_depth = 0;
+        let mut brace_depth = 0;
+        
+        // Simple heuristic: look for semicolon while tracking parentheses and braces
+        while pos < 20 { // Reasonable lookahead limit
+            let token = self.peek_ahead(pos);
+            match token.kind {
+                TokenKind::Semicolon if paren_depth == 0 && brace_depth == 0 => return true,
+                TokenKind::LeftParen => paren_depth += 1,
+                TokenKind::RightParen => paren_depth -= 1,
+                TokenKind::LeftBrace => brace_depth += 1,
+                TokenKind::RightBrace => brace_depth -= 1,
+                TokenKind::Newline | TokenKind::Eof => return false,
+                _ => {}
+            }
+            pos += 1;
+        }
+        false
+    }
+
+    /// Parse a simple statement (for use in if/switch prefixes)
+    fn parse_simple_statement(&mut self) -> Result<Statement, CursedError> {
+        // Parse the same simple statements as in regular statement parsing
+        if (self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::ColonEqual) ||
+           (self.check(&TokenKind::LeftParen) && self.is_tuple_short_declaration()) {
+            Ok(Statement::ShortDeclaration(self.parse_short_declaration_statement()?))
+        } else if (self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::Equal) ||
+                  (self.check(&TokenKind::LeftParen) && self.is_tuple_assignment()) {
+            Ok(Statement::Assignment(self.parse_assignment_statement()?))
+        } else if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::PlusPlus {
+            Ok(Statement::Increment(self.parse_postfix_increment_statement()?))
+        } else if self.check(&TokenKind::Identifier) && self.peek_ahead(1).kind == TokenKind::MinusMinus {
+            Ok(Statement::Decrement(self.parse_postfix_decrement_statement()?))
+        } else {
+            // For any other case, try to parse as expression statement
+            Ok(Statement::Expression(self.parse_expression()?))
+        }
     }
 
     fn parse_return_statement(&mut self) -> Result<ReturnStatement, CursedError> {
@@ -1513,11 +1646,22 @@ impl Parser {
 
     fn parse_while_statement(&mut self) -> Result<WhileStatement, CursedError> {
         self.consume(TokenKind::Periodt, "Expected 'periodt'")?;
+        log::debug!("🔍 After consuming periodt, current token: {:?}", self.peek());
+        self.consume(TokenKind::LeftParen, "Expected '(' after 'periodt'")?;
+        log::debug!("🔍 After consuming left paren, current token: {:?}", self.peek());
         let condition = self.parse_expression()?;
+        log::debug!("🔍 After parsing condition, current token: {:?}", self.peek());
+        self.consume(TokenKind::RightParen, "Expected ')' after while condition")?;
+        log::debug!("🔍 After consuming right paren, current token: {:?}", self.peek());
         self.consume(TokenKind::LeftBrace, "Expected '{' after while condition")?;
         
         let mut body = Vec::new();
         while !self.check(&TokenKind::RightBrace) && !self.is_at_end() {
+            // Skip newlines in the body
+            if self.check(&TokenKind::Newline) {
+                self.advance();
+                continue;
+            }
             body.push(self.parse_statement()?);
         }
         
@@ -1687,7 +1831,10 @@ impl Parser {
 
     fn parse_switch_statement(&mut self) -> Result<SwitchStatement, CursedError> {
         self.consume(TokenKind::VibeCheck, "Expected 'vibe_check'")?;
-        let expression = self.parse_expression()?;
+        
+        // Try to parse optional simple statement prefix
+        let (init, expression) = self.parse_switch_statement_parts()?;
+        
         self.consume(TokenKind::LeftBrace, "Expected '{' after switch expression")?;
         self.skip_newlines();
         
@@ -1762,10 +1909,33 @@ impl Parser {
         self.consume(TokenKind::RightBrace, "Expected '}' after switch body")?;
         
         Ok(SwitchStatement {
+            init,
             expression,
             cases,
             default_case,
         })
+    }
+
+    /// Parse switch statement parts: optional simple statement followed by semicolon, then expression
+    fn parse_switch_statement_parts(&mut self) -> Result<(Option<Box<Statement>>, Expression), CursedError> {
+        // Check if this looks like a simple statement followed by semicolon
+        if self.is_simple_statement_prefix() {
+            // Parse the simple statement
+            let simple_stmt = self.parse_simple_statement()?;
+            
+            // Expect semicolon
+            self.consume(TokenKind::Semicolon, "Expected ';' after simple statement in switch")?;
+            self.skip_newlines();
+            
+            // Parse the expression
+            let expression = self.parse_expression()?;
+            
+            Ok((Some(Box::new(simple_stmt)), expression))
+        } else {
+            // No simple statement prefix, just parse the expression
+            let expression = self.parse_expression()?;
+            Ok((None, expression))
+        }
     }
 
     pub fn parse_expression(&mut self) -> Result<Expression, CursedError> {
@@ -2161,7 +2331,14 @@ impl Parser {
             TokenKind::Normie | TokenKind::Tea | TokenKind::Lit | TokenKind::Sip |
             TokenKind::Smol | TokenKind::Mid | TokenKind::Thicc | TokenKind::Snack |
             TokenKind::Meal | TokenKind::Byte | TokenKind::Rune | TokenKind::Extra => {
-                self.parse_composite_literal()
+                // Check if this is actually a composite literal (type{...}) or a type conversion/function call (type(...))
+                if self.peek_ahead(1).kind == TokenKind::LeftBrace {
+                    self.parse_composite_literal()
+                } else {
+                    // Treat as identifier (type conversion or function call)
+                    let token = self.advance();
+                    Ok(Expression::Identifier(token.lexeme.clone()))
+                }
             },
             _ => Err(CursedError::syntax_error("Expected expression")),
         }

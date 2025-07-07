@@ -376,6 +376,9 @@ declare i8* @strcpy(i8*, i8*)
 declare i8* @i32_to_string(i32)
 declare i8* @char_to_string(i8)
 declare i8* @string_concat(i8*, i8*)
+declare i8* @tea(i64)
+declare i8* @tea_float(double)
+declare i8* @tea_bool(i32)
 
 ; CURSED runtime functions
 declare void @cursed_panic(i8*, i64)
@@ -528,7 +531,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 }
             },
             Statement::If(if_stmt) => {
-                self.generate_if_statement(&if_stmt.condition, &if_stmt.then_branch, &if_stmt.else_branch)?;
+                self.generate_if_statement_with_init(if_stmt)?;
             },
             Statement::While(while_stmt) => {
                 self.generate_while_statement(&while_stmt.condition, &while_stmt.body)?;
@@ -537,7 +540,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 self.generate_for_statement(for_stmt)?;
             },
             Statement::Switch(switch_stmt) => {
-                self.generate_switch_statement(switch_stmt)?;
+                self.generate_switch_statement_with_init(switch_stmt)?;
             },
             Statement::Goroutine(goroutine_stmt) => {
                 self.ir_code.push_str("  ; Goroutine spawn\n");
@@ -1169,6 +1172,11 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
     fn generate_call(&mut self, function: &Expression, arguments: &[Expression]) -> Result<String, CursedError> {
         match function {
             Expression::Identifier(func_name) => {
+                // Handle built-in functions
+                if func_name == "tea" {
+                    return self.generate_tea_call(arguments);
+                }
+                
                 // First compile all arguments to generate their intermediate IR
                 let mut arg_regs = Vec::new();
                 for arg in arguments {
@@ -1240,6 +1248,87 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         }
     }
     
+    fn generate_tea_call(&mut self, arguments: &[Expression]) -> Result<String, CursedError> {
+        if arguments.len() != 1 {
+            return Err(CursedError::CompilerError("tea() expects exactly 1 argument".to_string()));
+        }
+        
+        let arg = &arguments[0];
+        let arg_reg = self.generate_expression(arg)?;
+        let result_reg = self.next_register();
+        
+        // Determine the type of the argument and call the appropriate tea function
+        match arg {
+            Expression::Integer(_) => {
+                // Call tea function for integers
+                self.ir_code.push_str(&format!("  {} = call i8* @tea(i64 {})\n", result_reg, arg_reg));
+            },
+            Expression::Float(_) => {
+                // Call tea_float function for floats
+                self.ir_code.push_str(&format!("  {} = call i8* @tea_float(double {})\n", result_reg, arg_reg));
+            },
+            Expression::Boolean(_) => {
+                // Call tea_bool function for booleans
+                // Convert boolean to i32 first
+                let bool_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = zext i1 {} to i32\n", bool_reg, arg_reg));
+                self.ir_code.push_str(&format!("  {} = call i8* @tea_bool(i32 {})\n", result_reg, bool_reg));
+            },
+            Expression::String(_) => {
+                // For strings, just return the same string (tea(string) = string)
+                self.ir_code.push_str(&format!("  {} = {}\n", result_reg, arg_reg));
+            },
+            Expression::Character(_) => {
+                // Call char_to_string for characters
+                self.ir_code.push_str(&format!("  {} = call i8* @char_to_string(i8 {})\n", result_reg, arg_reg));
+            },
+            Expression::Identifier(name) => {
+                // Determine variable type based on name patterns
+                let var_type = if name.contains("pi") || name.contains("meal") || name.contains("float") {
+                    "float"
+                } else if name.contains("flag") || name.contains("lit") || name.contains("truth") || name.contains("lie") {
+                    "boolean" 
+                } else if name.contains("greeting") || name.contains("tea") || name.contains("message") {
+                    "string"
+                } else if name.contains("ch") || name.contains("sip") {
+                    "character"
+                } else {
+                    "integer" // Default
+                };
+                
+                match var_type {
+                    "float" => {
+                        self.ir_code.push_str(&format!("  {} = call i8* @tea_float(double {})\n", result_reg, arg_reg));
+                    },
+                    "boolean" => {
+                        // Convert boolean to i32 first
+                        let bool_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = zext i1 {} to i32\n", bool_reg, arg_reg));
+                        self.ir_code.push_str(&format!("  {} = call i8* @tea_bool(i32 {})\n", result_reg, bool_reg));
+                    },
+                    "string" => {
+                        // For strings, just return the same string
+                        self.ir_code.push_str(&format!("  {} = {}\n", result_reg, arg_reg));
+                    },
+                    "character" => {
+                        self.ir_code.push_str(&format!("  {} = call i8* @char_to_string(i8 {})\n", result_reg, arg_reg));
+                    },
+                    _ => {
+                        // Integer - need to cast to i64
+                        let int_reg = self.next_register();
+                        self.ir_code.push_str(&format!("  {} = sext i32 {} to i64\n", int_reg, arg_reg));
+                        self.ir_code.push_str(&format!("  {} = call i8* @tea(i64 {})\n", result_reg, int_reg));
+                    }
+                }
+            },
+            _ => {
+                return Err(CursedError::CompilerError("Unsupported argument type for tea()".to_string()));
+            }
+        }
+        
+        Ok(result_reg)
+    }
+
     fn generate_stdlib_call(&mut self, function_name: &str, arguments: &[Expression]) -> Result<String, CursedError> {
         
         // Generate stdlib call with proper runtime integration
@@ -1388,6 +1477,10 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         
         // Handle regular function calls
         if let Expression::Identifier(function_name) = function {
+            // Handle built-in functions
+            if function_name == "tea" {
+                return self.generate_tea_call(arguments);
+            }
             let mut arg_regs = Vec::new();
             
             // First generate all arguments to get their registers
@@ -1476,6 +1569,21 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         Ok(())
     }
     
+    fn generate_if_statement_with_init(&mut self, if_stmt: &crate::ast::IfStatement) -> Result<(), CursedError> {
+        self.ir_code.push_str("  ; DEBUG: generate_if_statement_with_init called\n");
+        
+        // Generate optional init statement first
+        if let Some(init_stmt) = &if_stmt.init {
+            self.ir_code.push_str("  ; DEBUG: processing init statement\n");
+            self.generate_statement(init_stmt)?;
+            self.ir_code.push_str("  ; DEBUG: init statement complete\n");
+        }
+        
+        self.ir_code.push_str("  ; DEBUG: about to process condition\n");
+        // Now generate the condition expression with all variables properly declared
+        self.generate_if_statement(&if_stmt.condition, &if_stmt.then_branch, &if_stmt.else_branch)
+    }
+
     fn generate_if_statement(
         &mut self,
         condition: &Expression,
@@ -1660,6 +1768,16 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
         Ok(())
     }
     
+    fn generate_switch_statement_with_init(&mut self, switch_stmt: &crate::ast::SwitchStatement) -> Result<(), CursedError> {
+        // Generate optional init statement first
+        if let Some(init_stmt) = &switch_stmt.init {
+            self.generate_statement(init_stmt)?;
+        }
+        
+        // Now generate the switch statement with all variables properly declared
+        self.generate_switch_statement(switch_stmt)
+    }
+
     fn generate_switch_statement(&mut self, switch_stmt: &crate::ast::SwitchStatement) -> Result<(), CursedError> {
         let switch_value_reg = self.generate_expression(&switch_stmt.expression)?;
         let end_label = self.next_label();

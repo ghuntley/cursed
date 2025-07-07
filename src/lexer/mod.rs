@@ -646,6 +646,7 @@ impl Lexer {
             // CURSED Gen Z keywords
             "slay" => TokenKind::Slay,
             "yolo" => TokenKind::Yolo,
+            "damn" => TokenKind::Yolo,  // alias for return statement
             "sus" => TokenKind::Sus,
             "facts" => TokenKind::Facts,
             "lowkey" => TokenKind::Lowkey,

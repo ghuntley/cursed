@@ -745,6 +745,11 @@ impl TypeChecker {
     }
     
     pub fn check_if_statement(&mut self, if_stmt: &IfStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Check optional init statement first
+        if let Some(init_stmt) = &if_stmt.init {
+            self.check_statement(init_stmt)?;
+        }
+        
         let condition_type = self.check_expression(&if_stmt.condition)?;
         
         if !self.is_bool_type(&condition_type) {
@@ -1670,6 +1675,7 @@ mod tests {
         
         // Test visiting statements
         let stmt = Statement::If(IfStatement {
+            init: None,
             condition: Expression::Boolean(true),
             then_branch: vec![Statement::Expression(Expression::Integer(1))],
             else_branch: None,

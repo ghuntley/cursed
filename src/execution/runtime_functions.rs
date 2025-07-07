@@ -2909,6 +2909,46 @@ pub extern "C" fn network_http_request(
 // Character to String Conversion Functions
 // ================================
 
+/// Convert any value to string (implementation for tea function)
+#[no_mangle]
+pub extern "C" fn tea(value: i64) -> *mut c_char {
+    // Convert integer to string
+    let result = value.to_string();
+    match CString::new(result) {
+        Ok(cstr) => {
+            let ptr = cstr.into_raw();
+            ptr
+        },
+        Err(_) => ptr::null_mut()
+    }
+}
+
+/// Convert float to string (implementation for tea function with floats)
+#[no_mangle]
+pub extern "C" fn tea_float(value: f64) -> *mut c_char {
+    let result = value.to_string();
+    match CString::new(result) {
+        Ok(cstr) => {
+            let ptr = cstr.into_raw();
+            ptr
+        },
+        Err(_) => ptr::null_mut()
+    }
+}
+
+/// Convert boolean to string (implementation for tea function with booleans)
+#[no_mangle]
+pub extern "C" fn tea_bool(value: i32) -> *mut c_char {
+    let result = if value != 0 { "based" } else { "cap" };
+    match CString::new(result) {
+        Ok(cstr) => {
+            let ptr = cstr.into_raw();
+            ptr
+        },
+        Err(_) => ptr::null_mut()
+    }
+}
+
 /// Convert a single character to a heap-allocated string (implementation for char_to_string)
 #[no_mangle]
 pub extern "C" fn char_to_string(c: c_char) -> *mut c_char {
