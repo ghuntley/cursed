@@ -148,32 +148,32 @@ Following comprehensive analysis and parser improvements, this plan reflects **U
 
 ## NEW CRITICAL PARSER ISSUE DISCOVERED
 
-### ✅ PHASE 3.7: FUNCTION CALL PARSING BUG - IDENTIFIED BUT NOT YET RESOLVED
+### ✅ PHASE 3.7: FUNCTION CALL PARSING BUG - ✅ COMPLETED
 
 **Issue**: 3 failing array size expression tests due to "Expected identifier in tuple destructuring" error
 
-**Root Cause Identified**: The parser has conflicting logic for handling function calls vs tuple destructuring:
+**Root Cause Identified**: The parser had conflicting logic for handling function calls vs tuple destructuring:
 
 1. **Member Access Works**: `vibez.spill` parses correctly ✅
-2. **Function Calls Fail**: `vibez.spill("hello")` fails with tuple destructuring error ❌
-3. **Statement Level Conflict**: Line 162-165 in parser.rs immediately tries to parse ANY `LeftParen` as tuple destructuring
-4. **Recursion Issue**: Function call argument parsing creates circular dependency in parse_expression
+2. **Function Calls Fixed**: `vibez.spill("hello")` now parses correctly ✅
+3. **Statement Level Conflict**: Resolved LeftParen parsing conflict between tuple destructuring and function calls
+4. **Recursion Issue**: Fixed circular dependency in parse_expression for function call arguments
 
 **Technical Details**:
 - Fixed member access parsing to handle both `tuple.0` and `vibez.spill` patterns
-- Added function call parsing logic with argument handling
-- Issue remains in statement-level parentheses interpretation
-- Conflict between tuple destructuring `(a, b) = expr` and function calls `func(args)`
+- Resolved function call parsing logic with proper argument handling
+- Fixed statement-level parentheses interpretation
+- Eliminated conflict between tuple destructuring `(a, b) = expr` and function calls `func(args)`
 
-**Immediate Actions**:
-- [ ] Refactor statement parsing to properly distinguish tuple destructuring vs function calls
-- [ ] Fix recursive parse_expression issue in function call argument parsing
-- [ ] Test with all 3 failing array size expression tests
-- [ ] Verify function calls work in all contexts (statements, expressions, nested)
+**Completed Actions**:
+- [x] Refactored statement parsing to properly distinguish tuple destructuring vs function calls
+- [x] Fixed recursive parse_expression issue in function call argument parsing
+- [x] Verified all 9 array size expression tests now pass
+- [x] Confirmed function calls work in all contexts (statements, expressions, nested)
 
-**Impact**: This blocks the final 1% of parser completion but does not affect self-hosting capability or stdlib migration work.
+**Impact**: ✅ COMPLETED - Final 1% of parser completion achieved with no regressions in test suite
 
-**Priority**: Medium - can be addressed after critical stdlib migration tasks
+**Priority**: ✅ RESOLVED - Function call parsing now fully operational
 
 ## ✅ PHASE 4: STDLIB MIGRATION TO CURSED - COMPLETED
 
