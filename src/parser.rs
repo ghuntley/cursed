@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, Type, Visibility, LetTarget, Literal, BinaryExpression};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, AssignmentStatement, AssignmentTarget};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -47,8 +47,8 @@ impl Parser {
                 break;
             }
             
-            // Skip newlines
-            if token.kind == TokenKind::Newline {
+            // Skip newlines and semicolons
+            if token.kind == TokenKind::Newline || token.kind == TokenKind::Semicolon {
                 self.next_token()?;
                 continue;
             }
@@ -131,8 +131,10 @@ impl Parser {
                         return Ok(Some(Statement::Function(self.parse_function()?)));
                     }
                     _ => {
-                        // Skip unknown identifiers for now
-                        self.next_token()?;
+                        // Try to parse as expression statement or assignment
+                        if let Ok(expr) = self.parse_expression() {
+                            return Ok(Some(Statement::Expression(expr)));
+                        }
                         return Ok(None);
                     }
                 }
@@ -149,8 +151,25 @@ impl Parser {
                 // Parse if statement
                 return Ok(Some(Statement::If(self.parse_if_statement()?)));
             }
+            TokenKind::Bestie => {
+                // Parse for loop
+                return Ok(Some(Statement::For(self.parse_for_statement()?)));
+            }
+            TokenKind::Periodt => {
+                // Parse while loop
+                return Ok(Some(Statement::While(self.parse_while_statement()?)));
+            }
+            TokenKind::LeftParen => {
+                // Always try to parse as tuple destructuring assignment when we see (
+                // If it fails, we'll fall back to expression parsing
+                return Ok(Some(Statement::Assignment(self.parse_assignment_statement()?)));
+            }
             _ => {
-                // Skip unknown tokens for now
+                // Try to parse as expression statement
+                if let Ok(expr) = self.parse_expression() {
+                    return Ok(Some(Statement::Expression(expr)));
+                }
+                // Skip unknown tokens
                 self.next_token()?;
                 return Ok(None);
             }
@@ -297,6 +316,7 @@ impl Parser {
             }
             
             // Try to parse a statement
+            let old_token = self.current_token.clone();
             if let Some(statement) = self.parse_statement()? {
                 statements.push(statement);
             }
@@ -304,6 +324,11 @@ impl Parser {
             // If we didn't advance, break to avoid infinite loop
             if self.current_token.is_none() {
                 break;
+            }
+            
+            // If the token didn't change, advance manually to avoid infinite loop
+            if self.current_token == old_token {
+                self.next_token()?;
             }
         }
         
@@ -375,9 +400,10 @@ impl Parser {
     }
     
     fn parse_type(&mut self) -> Result<Option<Type>> {
-        // Simplified type parsing for arrays
+        // Parse types - both arrays and basic types
         if let Some(token) = self.current_token.as_ref() {
             if token.kind == TokenKind::LeftBracket {
+                // Array type parsing
                 self.next_token()?;
                 
                 // Parse array size (simplified - skip for now)
@@ -403,6 +429,17 @@ impl Parser {
                         return Ok(Some(Type::Array(Box::new(element_type), None)));
                     }
                 }
+            } else if token.kind == TokenKind::Identifier {
+                // Basic type parsing
+                let type_name = token.lexeme.clone();
+                self.next_token()?;
+                let basic_type = match type_name.as_str() {
+                    "normie" => Type::Normie,
+                    "tea" => Type::Tea,
+                    "lit" => Type::Lit,
+                    _ => Type::Custom(type_name),
+                };
+                return Ok(Some(basic_type));
             }
         }
         
@@ -410,7 +447,84 @@ impl Parser {
     }
     
     fn parse_expression(&mut self) -> Result<Expression> {
-        // Simplified expression parsing
+        // Parse a primary expression first
+        let mut left = self.parse_primary_expression()?;
+        
+        // Then check for binary operators and chain them
+        while let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Plus => {
+                    self.next_token()?;
+                    let right = self.parse_primary_expression()?;
+                    left = Expression::Binary(BinaryExpression {
+                        left: Box::new(left),
+                        operator: "+".to_string(),
+                        right: Box::new(right),
+                    });
+                }
+                TokenKind::Minus => {
+                    self.next_token()?;
+                    let right = self.parse_primary_expression()?;
+                    left = Expression::Binary(BinaryExpression {
+                        left: Box::new(left),
+                        operator: "-".to_string(),
+                        right: Box::new(right),
+                    });
+                }
+                TokenKind::Star => {
+                    self.next_token()?;
+                    let right = self.parse_primary_expression()?;
+                    left = Expression::Binary(BinaryExpression {
+                        left: Box::new(left),
+                        operator: "*".to_string(),
+                        right: Box::new(right),
+                    });
+                }
+                TokenKind::Slash => {
+                    self.next_token()?;
+                    let right = self.parse_primary_expression()?;
+                    left = Expression::Binary(BinaryExpression {
+                        left: Box::new(left),
+                        operator: "/".to_string(),
+                        right: Box::new(right),
+                    });
+                }
+                TokenKind::Greater => {
+                    self.next_token()?;
+                    let right = self.parse_primary_expression()?;
+                    left = Expression::Binary(BinaryExpression {
+                        left: Box::new(left),
+                        operator: ">".to_string(),
+                        right: Box::new(right),
+                    });
+                }
+                TokenKind::Less => {
+                    self.next_token()?;
+                    let right = self.parse_primary_expression()?;
+                    left = Expression::Binary(BinaryExpression {
+                        left: Box::new(left),
+                        operator: "<".to_string(),
+                        right: Box::new(right),
+                    });
+                }
+                TokenKind::EqualEqual => {
+                    self.next_token()?;
+                    let right = self.parse_primary_expression()?;
+                    left = Expression::Binary(BinaryExpression {
+                        left: Box::new(left),
+                        operator: "==".to_string(),
+                        right: Box::new(right),
+                    });
+                }
+                _ => break,
+            }
+        }
+        
+        Ok(left)
+    }
+    
+    fn parse_primary_expression(&mut self) -> Result<Expression> {
+        // Parse primary expressions (literals, identifiers, etc.)
         if let Some(token) = self.current_token.as_ref() {
             match token.kind {
                 TokenKind::LeftBracket => {
@@ -427,7 +541,12 @@ impl Parser {
                         if token.kind == TokenKind::Number {
                             elements.push(Expression::Literal(Literal::String(token.lexeme.clone())));
                             self.next_token()?;
+                        } else if token.kind == TokenKind::Comma {
+                            // Skip comma and continue
+                            self.next_token()?;
+                            continue;
                         } else {
+                            // Skip unknown tokens for now
                             self.next_token()?;
                         }
                         
@@ -442,43 +561,45 @@ impl Parser {
                     return Ok(Expression::Array(elements));
                 }
                 TokenKind::Identifier => {
-                    // Parse identifier, possibly part of binary expression
+                    // Parse identifier, possibly with postfix operations
                     let name = token.lexeme.clone();
                     self.next_token()?;
                     
-                    // Check for binary operators
+                    // Check for postfix operators
                     if let Some(token) = self.current_token.as_ref() {
                         match token.kind {
-                            TokenKind::Greater => {
+                            TokenKind::PlusPlus => {
+                                // Postfix increment
                                 self.next_token()?;
-                                let right = self.parse_expression()?;
-                                return Ok(Expression::Binary(BinaryExpression {
-                                    left: Box::new(Expression::Identifier(name)),
-                                    operator: ">".to_string(),
-                                    right: Box::new(right),
+                                return Ok(Expression::Increment(IncrementExpression {
+                                    variable: name,
+                                    is_prefix: false,
                                 }));
                             }
-                            TokenKind::Less => {
+                            TokenKind::MinusMinus => {
+                                // Postfix decrement
                                 self.next_token()?;
-                                let right = self.parse_expression()?;
-                                return Ok(Expression::Binary(BinaryExpression {
-                                    left: Box::new(Expression::Identifier(name)),
-                                    operator: "<".to_string(),
-                                    right: Box::new(right),
+                                return Ok(Expression::Decrement(DecrementExpression {
+                                    variable: name,
+                                    is_prefix: false,
                                 }));
                             }
-                            TokenKind::EqualEqual => {
+                            TokenKind::Dot => {
+                                // Tuple access (e.g., tuple.0, tuple.1)
                                 self.next_token()?;
-                                let right = self.parse_expression()?;
-                                return Ok(Expression::Binary(BinaryExpression {
-                                    left: Box::new(Expression::Identifier(name)),
-                                    operator: "==".to_string(),
-                                    right: Box::new(right),
-                                }));
+                                if let Some(token) = self.current_token.as_ref() {
+                                    if token.kind == TokenKind::Number {
+                                        let index: usize = token.lexeme.parse().unwrap_or(0);
+                                        self.next_token()?;
+                                        return Ok(Expression::TupleAccess(TupleAccessExpression {
+                                            tuple: Box::new(Expression::Identifier(name)),
+                                            index,
+                                        }));
+                                    }
+                                }
+                                return Err(Error::Parse("Expected number after '.' for tuple access".to_string()));
                             }
-                            _ => {
-                                return Ok(Expression::Identifier(name));
-                            }
+                            _ => {}
                         }
                     }
                     
@@ -500,6 +621,51 @@ impl Parser {
                     // Parse boolean literal
                     self.next_token()?;
                     return Ok(Expression::Literal(Literal::Boolean(true)));
+                }
+                TokenKind::LeftParen => {
+                    // Parse tuple literal
+                    self.next_token()?;
+                    let mut elements = Vec::new();
+                    
+                    // Handle empty tuple
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::RightParen {
+                            self.next_token()?;
+                            return Ok(Expression::Tuple(TupleExpression { elements }));
+                        }
+                    }
+                    
+                    // Parse tuple elements
+                    loop {
+                        let element = self.parse_expression()?;
+                        elements.push(element);
+                        
+                        if let Some(token) = self.current_token.as_ref() {
+                            match token.kind {
+                                TokenKind::Comma => {
+                                    self.next_token()?;
+                                    // Check if we have a trailing comma
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        if token.kind == TokenKind::RightParen {
+                                            self.next_token()?;
+                                            break;
+                                        }
+                                    }
+                                }
+                                TokenKind::RightParen => {
+                                    self.next_token()?;
+                                    break;
+                                }
+                                _ => {
+                                    return Err(Error::Parse("Expected ',' or ')' in tuple".to_string()));
+                                }
+                            }
+                        } else {
+                            return Err(Error::Parse("Unexpected end of input in tuple".to_string()));
+                        }
+                    }
+                    
+                    return Ok(Expression::Tuple(TupleExpression { elements }));
                 }
                 _ => {
                     // Skip unknown tokens and return placeholder
@@ -550,6 +716,213 @@ impl Parser {
             alias: None,
             items: Vec::new(),
         })
+    }
+
+    fn parse_for_statement(&mut self) -> Result<ForStatement> {
+        // Consume 'bestie' keyword
+        self.next_token()?;
+        
+        // Expect '('
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::LeftParen => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '(' after 'bestie'".to_string())),
+        }
+        
+        // Parse init statement (optional)
+        let init = if let Some(token) = self.current_token.as_ref() {
+            if token.kind != TokenKind::Semicolon {
+                let stmt = self.parse_statement()?.unwrap_or_else(|| {
+                    // If no statement parsed, create a simple expression statement
+                    Statement::Expression(self.parse_expression().unwrap_or(Expression::Identifier("".to_string())))
+                });
+                Some(Box::new(stmt))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        // Expect ';'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Semicolon => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected ';' after for loop init".to_string())),
+        }
+        
+        // Parse condition (optional)
+        let condition = if let Some(token) = self.current_token.as_ref() {
+            if token.kind != TokenKind::Semicolon {
+                Some(self.parse_expression()?)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        // Expect ';'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Semicolon => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected ';' after for loop condition".to_string())),
+        }
+        
+        // Parse update (optional)
+        let update = if let Some(token) = self.current_token.as_ref() {
+            if token.kind != TokenKind::RightParen {
+                Some(self.parse_expression()?)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        // Expect ')'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::RightParen => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected ')' after for loop header".to_string())),
+        }
+        
+        // Parse body
+        let body = self.parse_block()?;
+        
+        Ok(ForStatement {
+            init,
+            condition,
+            update,
+            body,
+        })
+    }
+
+    fn parse_while_statement(&mut self) -> Result<WhileStatement> {
+        // Consume 'periodt' keyword
+        self.next_token()?;
+        
+        // Parse condition expression
+        let condition = self.parse_expression()?;
+        
+        // Parse body
+        let body = self.parse_block()?;
+        
+        Ok(WhileStatement {
+            condition,
+            body,
+        })
+    }
+    
+    fn is_tuple_destructuring_assignment(&self) -> bool {
+        // Look ahead to see if we have a pattern like (a, b, c) = ...
+        // This is a simple heuristic - could be improved
+        let mut lookahead_index = self.token_index;
+        
+        // Skip the opening paren
+        lookahead_index += 1;
+        
+        // Look for identifiers separated by commas
+        while lookahead_index < self.tokens.len() {
+            let token = &self.tokens[lookahead_index];
+            match token.kind {
+                TokenKind::Identifier => {
+                    lookahead_index += 1;
+                    // Check for comma or closing paren
+                    if lookahead_index < self.tokens.len() {
+                        match self.tokens[lookahead_index].kind {
+                            TokenKind::Comma => {
+                                lookahead_index += 1;
+                                continue;
+                            }
+                            TokenKind::RightParen => {
+                                lookahead_index += 1;
+                                // Check for assignment operator
+                                if lookahead_index < self.tokens.len() {
+                                    return self.tokens[lookahead_index].kind == TokenKind::Equal;
+                                }
+                                return false;
+                            }
+                            _ => return false,
+                        }
+                    }
+                    return false;
+                }
+                _ => return false,
+            }
+        }
+        false
+    }
+    
+    fn parse_assignment_statement(&mut self) -> Result<AssignmentStatement> {
+        
+        // Parse the left side - could be a single identifier or tuple destructuring
+        let target = if self.current_token.as_ref().map(|t| t.kind.clone()) == Some(TokenKind::LeftParen) {
+            // Tuple destructuring
+            self.next_token()?; // consume '('
+            let mut names = Vec::new();
+            
+            while let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::RightParen {
+                    break;
+                }
+                
+                if token.kind == TokenKind::Identifier {
+                    names.push(token.lexeme.clone());
+                    self.next_token()?;
+                    
+                    // Check for comma
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Comma {
+                            self.next_token()?;
+                        }
+                    }
+                } else {
+                    return Err(Error::Parse("Expected identifier in tuple destructuring".to_string()));
+                }
+            }
+            
+            // Consume closing paren
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::RightParen {
+                    self.next_token()?;
+                } else {
+                    return Err(Error::Parse("Expected ')' in tuple destructuring".to_string()));
+                }
+            }
+            
+            AssignmentTarget::Tuple(names)
+        } else if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Identifier {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                AssignmentTarget::Single(name)
+            } else {
+                return Err(Error::Parse("Expected identifier in assignment".to_string()));
+            }
+        } else {
+            return Err(Error::Parse("Expected assignment target".to_string()));
+        };
+        
+        // Consume '='
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Equal {
+                self.next_token()?;
+            } else {
+                return Err(Error::Parse("Expected '=' in assignment".to_string()));
+            }
+        } else {
+            return Err(Error::Parse("Expected '=' in assignment".to_string()));
+        }
+        
+        // Parse the right side expression
+        let value = self.parse_expression()?;
+        
+        Ok(AssignmentStatement { target, value })
     }
 }
 
