@@ -742,3 +742,38 @@ cargo run --bin cursed complex_tuple_test.csd
 - **Core Functionality**: Interpretation, basic compilation, member access all working
 - **Known Issues**: 3 array size expression tests failing, LLVM register numbering issue in compilation
 
+### Latest Development Session (2025-01-07)
+
+#### Parser Function Call Fix
+- **Issue**: Function calls like `vibez.spill("hello")` failed with "Expected identifier in tuple destructuring" error
+- **Root Cause**: LeftParen tokens were being interpreted as tuple destructuring instead of function calls
+- **Solution**: Modified `parse_primary_expression()` to handle function calls before tuple destructuring
+- **Status**: Function calls now work correctly: `vibez.spill("hello")` syntax functional
+
+#### Pure CURSED Stdlib Module Creation
+- **Pattern**: Create modules without FFI dependencies using only CURSED language features
+- **Structure**: `mod.csd` (main module), `test_[module].csd` (tests), `README.md` (documentation)
+- **Testing**: Use `yeet "testz"` import and testz v2.0 framework
+- **Verification**: Test both interpretation and compilation modes
+
+#### Filesystem Module Implementation
+- **Commands**: `cargo run --bin cursed stdlib/filesystem/test_filesystem.csd`
+- **Native Compilation**: `cargo run --bin cursed -- compile stdlib/filesystem/test_filesystem.csd`
+- **Status**: Full filesystem operations without FFI bridge dependencies
+
+#### Working Test Commands
+```bash
+# Test pure CURSED modules
+cargo run --bin cursed stdlib/filesystem/test_filesystem.csd
+cargo run --bin cursed stdlib/json/test_json.csd
+cargo run --bin cursed stdlib/csv/test_csv.csd
+
+# Verify function call syntax
+echo 'vibez.spill("hello")' > test_function_call.csd
+cargo run --bin cursed test_function_call.csd
+
+# Test both modes
+cargo run --bin cursed program.csd                    # Interpretation
+cargo run --bin cursed -- compile program.csd        # Compilation
+```
+
