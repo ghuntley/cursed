@@ -1,4 +1,2 @@
-slay main() {
-    sus x lit = 42
-    yolo x
-}
+sus x normie = 42
+vibez.spill("x = " + tea(x))

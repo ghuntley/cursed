@@ -61,6 +61,15 @@ pub mod type_switch;
 pub mod type_system;
 pub mod variable_management;
 pub mod web_vibez_integration;
+
+// New inkwell-based modules for migration from string-based IR (temporarily disabled for compilation)
+// pub mod inkwell_expression_compiler;
+// pub mod inkwell_statement_generator;
+// pub mod inkwell_codegen;
+
+// Test module for inkwell migration
+// #[cfg(test)]
+// pub mod test_inkwell_migration;
 use crate::error::CursedError;
 
 // Re-export from main module
@@ -92,3 +101,8 @@ pub use types::{
 pub use package_integration::{
     LlvmPackageConfig
 };
+
+// Re-export new inkwell-based types (temporarily disabled)
+// pub use inkwell_expression_compiler::InkwellExpressionCompiler;
+// pub use inkwell_statement_generator::InkwellStatementGenerator;
+// pub use inkwell_codegen::InkwellCodeGenerator;

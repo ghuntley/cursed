@@ -755,6 +755,10 @@ impl CursedLinter {
                 issues.extend(self.analyze_expression(&let_stmt.value)?);
             },
             Statement::If(if_stmt) => {
+                // Analyze init statement if present
+                if let Some(init_stmt) = &if_stmt.init {
+                    issues.extend(self.analyze_statement(init_stmt)?);
+                }
                 issues.extend(self.analyze_expression(&if_stmt.condition)?);
                 for stmt in &if_stmt.then_branch {
                     issues.extend(self.analyze_statement(stmt)?);

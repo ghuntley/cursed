@@ -205,6 +205,7 @@ mod tests {
         let mut checker = TypeChecker::new();
         
         let if_stmt = IfStatement {
+            init: None,
             condition: Expression::Boolean(true),
             then_branch: vec![
                 Statement::Expression(Expression::Integer(42))
@@ -219,6 +220,7 @@ mod tests {
         
         // Test invalid condition type
         let bad_if_stmt = IfStatement {
+            init: None,
             condition: Expression::Integer(42), // Should be bool
             then_branch: vec![],
             else_branch: None,
@@ -368,6 +370,7 @@ mod tests {
                     visibility: crate::ast::Visibility::Private,
                 }),
                 Statement::If(IfStatement {
+                    init: None,
                     condition: Expression::Binary(BinaryExpression {
                         left: Box::new(Expression::Identifier("x".to_string())),
                         operator: ">".to_string(),
