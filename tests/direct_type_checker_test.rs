@@ -16,8 +16,8 @@ fn test_basic_arithmetic_inference() {
 fn test_multiple_operations_inference() {
     let test_program = r#"
         slay calculate(x, y, z) {
-            facts sum = x + y;
-            facts product = sum * z;
+            sus sum = x + y;
+            sus product = sum * z;
             yolo product - 10;
         }
     "#;

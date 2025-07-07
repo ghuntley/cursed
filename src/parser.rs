@@ -159,15 +159,15 @@ impl Parser {
                 // Parse while loop
                 return Ok(Some(Statement::While(self.parse_while_statement()?)));
             }
-            TokenKind::LeftParen => {
-                // Always try to parse as tuple destructuring assignment when we see (
-                // If it fails, we'll fall back to expression parsing
-                return Ok(Some(Statement::Assignment(self.parse_assignment_statement()?)));
-            }
+
             _ => {
-                // Try to parse as expression statement
+                // Try to parse as expression statement first
                 if let Ok(expr) = self.parse_expression() {
                     return Ok(Some(Statement::Expression(expr)));
+                }
+                // Try to parse as assignment statement (handles tuple destructuring)
+                if let Ok(assignment) = self.parse_assignment_statement() {
+                    return Ok(Some(Statement::Assignment(assignment)));
                 }
                 // Skip unknown tokens
                 self.next_token()?;
@@ -986,15 +986,15 @@ impl Parser {
             return Err(Error::Parse("Expected assignment target".to_string()));
         };
         
-        // Consume '='
+        // Consume '=' or ':='
         if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::Equal {
+            if token.kind == TokenKind::Equal || token.kind == TokenKind::ColonEqual {
                 self.next_token()?;
             } else {
-                return Err(Error::Parse("Expected '=' in assignment".to_string()));
+                return Err(Error::Parse("Expected '=' or ':=' in assignment".to_string()));
             }
         } else {
-            return Err(Error::Parse("Expected '=' in assignment".to_string()));
+            return Err(Error::Parse("Expected '=' or ':=' in assignment".to_string()));
         }
         
         // Parse the right side expression
