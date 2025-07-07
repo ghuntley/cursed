@@ -1,40 +1,44 @@
-// Simple self-hosting validation test
-sus message tea = "Self-hosting test successful!"
-sus count normie = 42
-sus flag lit = based
-
-// Test function definition and call
-slay greet(name tea) normie {
-    vibez.spill("Hello from CURSED compiler!")
-    vibez.spill(name)
-    damn 100
+// Simple Self-Hosting Test
+slay main() {
+    vibez.spill("CURSED Self-Hosting Test")
+    vibez.spill("=======================")
+    
+    // Test basic arithmetic
+    sus a normie = 10
+    sus b normie = 20
+    sus result normie = a + b
+    vibez.spill("Arithmetic test: {} + {} = {}", a, b, result)
+    
+    // Test string operations
+    sus message tea = "Self-hosting compiler"
+    sus length normie = len(message)
+    vibez.spill("String test: '{}' has {} characters", message, length)
+    
+    // Test boolean operations
+    sus flag lit = based
+    sus check lit = (result > 25)
+    vibez.spill("Boolean test: flag={}, check={}", flag, check)
+    
+    // Test arrays
+    sus numbers := [1, 2, 3, 4, 5]
+    sus first normie = numbers[0]
+    sus array_length normie = len(numbers)
+    vibez.spill("Array test: first={}, length={}", first, array_length)
+    
+    // Test control flow
+    lowkey result > 25 {
+        vibez.spill("Control flow test: condition passed")
+    } highkey {
+        vibez.spill("Control flow test: condition failed")
+    }
+    
+    // Test manual loop simulation
+    sus counter normie = 0
+    counter = counter + 1
+    vibez.spill("Loop iteration: {}", counter)
+    counter = counter + 1
+    vibez.spill("Loop iteration: {}", counter)
+    
+    vibez.spill("=======================")
+    vibez.spill("Self-hosting test completed successfully!")
 }
-
-// Test basic output
-vibez.spill(message)
-vibez.spill("Count: " + count.(tea))
-vibez.spill("Flag: " + flag.(tea))
-
-// Test function call
-sus result normie = greet("Self-hosting compiler")
-vibez.spill("Function returned: " + result.(tea))
-
-// Test type assertions
-sus small_num smol = count.(smol)
-sus large_num thicc = count.(thicc)
-
-vibez.spill("Type assertions work:")
-vibez.spill("Small: " + small_num.(tea))
-vibez.spill("Large: " + large_num.(tea))
-
-// Test short variable declarations
-name := "CURSED"
-version := 1
-
-vibez.spill("Short declarations work:")
-vibez.spill("Name: " + name)
-vibez.spill("Version: " + version.(tea))
-
-vibez.spill("")
-vibez.spill("🎉 Self-hosting validation completed successfully!")
-vibez.spill("The CURSED compiler can handle its own syntax.")

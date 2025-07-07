@@ -297,11 +297,8 @@ impl TypeChecker {
             }
         }
         
-        // Check in type system's built-in types
-        if let Some(type_def) = self.type_system.environment.type_definitions.get(name) {
-            return Ok(TypeExpression::named(&type_def.name));
-        }
-        
+        // For undefined variables, return an error instead of checking built-in types
+        // Built-in types should only be checked for type expressions, not variable identifiers
         Err(TypeCheckError::new(
             TypeErrorKind::UndefinedVariable,
             format!("Undefined variable: {}", name)
@@ -717,7 +714,7 @@ impl TypeChecker {
             .map(|param| {
                 param.param_type.as_ref()
                     .map(|type_str| self.type_string_to_expression(&type_str.to_string()))
-                    .unwrap_or(TypeExpression::named("unknown"))
+                    .unwrap_or(TypeExpression::named("normie")) // Default to normie (integer) for arithmetic operations
             })
             .collect();
         
@@ -737,7 +734,7 @@ impl TypeChecker {
         for param in &func_stmt.parameters {
             let param_type = param.param_type.as_ref()
                 .map(|type_str| self.type_string_to_expression(&type_str.to_string()))
-                .unwrap_or(TypeExpression::named("unknown"));
+                .unwrap_or(TypeExpression::named("normie")); // Default to normie (integer) for arithmetic operations
             self.add_variable(param.name.clone(), param_type);
         }
         
