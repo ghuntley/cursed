@@ -226,6 +226,52 @@ impl SymbolResolver {
         self.register_symbol("io_current_directory", crate::execution::runtime_functions::io_current_directory as usize);
         self.register_symbol("io_change_directory", crate::execution::runtime_functions::io_change_directory as usize);
         
+        // Register new I/O stream functions (10 functions)
+        self.register_symbol("io_open_file_read", crate::execution::runtime_functions::io_open_file_read as usize);
+        self.register_symbol("io_open_file_write", crate::execution::runtime_functions::io_open_file_write as usize);
+        self.register_symbol("io_open_file_append", crate::execution::runtime_functions::io_open_file_append as usize);
+        self.register_symbol("io_close_file", crate::execution::runtime_functions::io_close_file as usize);
+        self.register_symbol("io_read_from_file", crate::execution::runtime_functions::io_read_from_file as usize);
+        self.register_symbol("io_write_to_file", crate::execution::runtime_functions::io_write_to_file as usize);
+        self.register_symbol("io_flush_file", crate::execution::runtime_functions::io_flush_file as usize);
+        self.register_symbol("io_seek_file", crate::execution::runtime_functions::io_seek_file as usize);
+        self.register_symbol("io_tell_file", crate::execution::runtime_functions::io_tell_file as usize);
+        
+        // Register buffered I/O functions (7 functions)
+        self.register_symbol("io_create_buffer", crate::execution::runtime_functions::io_create_buffer as usize);
+        self.register_symbol("io_buffer_write", crate::execution::runtime_functions::io_buffer_write as usize);
+        self.register_symbol("io_buffer_read", crate::execution::runtime_functions::io_buffer_read as usize);
+        self.register_symbol("io_buffer_flush", crate::execution::runtime_functions::io_buffer_flush as usize);
+        self.register_symbol("io_buffer_clear", crate::execution::runtime_functions::io_buffer_clear as usize);
+        self.register_symbol("io_buffer_size", crate::execution::runtime_functions::io_buffer_size as usize);
+        self.register_symbol("io_buffer_available", crate::execution::runtime_functions::io_buffer_available as usize);
+        
+        // Register path operations functions (8 functions)
+        self.register_symbol("io_path_join", crate::execution::runtime_functions::io_path_join as usize);
+        self.register_symbol("io_path_dirname", crate::execution::runtime_functions::io_path_dirname as usize);
+        self.register_symbol("io_path_basename", crate::execution::runtime_functions::io_path_basename as usize);
+        self.register_symbol("io_path_extension", crate::execution::runtime_functions::io_path_extension as usize);
+        self.register_symbol("io_path_absolute", crate::execution::runtime_functions::io_path_absolute as usize);
+        self.register_symbol("io_path_relative", crate::execution::runtime_functions::io_path_relative as usize);
+        self.register_symbol("io_path_exists", crate::execution::runtime_functions::io_path_exists as usize);
+        
+        // Register directory listing functions (2 functions)
+        self.register_symbol("io_list_directory", crate::execution::runtime_functions::io_list_directory as usize);
+        self.register_symbol("io_list_directory_recursive", crate::execution::runtime_functions::io_list_directory_recursive as usize);
+        
+        // Register file metadata functions (2 functions)
+        self.register_symbol("io_file_created_time", crate::execution::runtime_functions::io_file_created_time as usize);
+        self.register_symbol("io_file_modified_time", crate::execution::runtime_functions::io_file_modified_time as usize);
+        
+        // Register temporary files functions (3 functions)
+        self.register_symbol("io_create_temp_file", crate::execution::runtime_functions::io_create_temp_file as usize);
+        self.register_symbol("io_create_temp_directory", crate::execution::runtime_functions::io_create_temp_directory as usize);
+        self.register_symbol("io_temp_directory", crate::execution::runtime_functions::io_temp_directory as usize);
+        
+        // Register file bytes functions (2 functions)
+        self.register_symbol("io_read_file_bytes", crate::execution::runtime_functions::io_read_file_bytes as usize);
+        self.register_symbol("io_write_file_bytes", crate::execution::runtime_functions::io_write_file_bytes as usize);
+        
         // Register standard library math functions
         self.register_symbol("math_sin_impl", crate::execution::runtime_functions::math_sin_impl as usize);
         self.register_symbol("math_cos_impl", crate::execution::runtime_functions::math_cos_impl as usize);
