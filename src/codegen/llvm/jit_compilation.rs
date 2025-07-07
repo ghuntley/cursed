@@ -385,6 +385,59 @@ impl SymbolResolver {
         self.register_symbol("vibez_sprintf", crate::execution::runtime_functions::vibez_sprintf as usize);
         self.register_symbol("vibez_debug_log", crate::execution::runtime_functions::vibez_debug_log as usize);
         self.register_symbol("vibez_debug_inspect", crate::execution::runtime_functions::vibez_debug_inspect as usize);
+        
+        // Register time module functions
+        self.register_symbol("time_now_impl", crate::execution::runtime_functions::time_now_impl as usize);
+        self.register_symbol("time_now_millis_impl", crate::execution::runtime_functions::time_now_millis_impl as usize);
+        self.register_symbol("time_now_micros_impl", crate::execution::runtime_functions::time_now_micros_impl as usize);
+        self.register_symbol("time_now_nanos_impl", crate::execution::runtime_functions::time_now_nanos_impl as usize);
+        self.register_symbol("time_from_timestamp_impl", crate::execution::runtime_functions::time_from_timestamp_impl as usize);
+        self.register_symbol("time_from_millis_impl", crate::execution::runtime_functions::time_from_millis_impl as usize);
+        self.register_symbol("time_create_impl", crate::execution::runtime_functions::time_create_impl as usize);
+        self.register_symbol("time_parse_impl", crate::execution::runtime_functions::time_parse_impl as usize);
+        self.register_symbol("time_format_impl", crate::execution::runtime_functions::time_format_impl as usize);
+        self.register_symbol("time_to_string_impl", crate::execution::runtime_functions::time_to_string_impl as usize);
+        self.register_symbol("time_to_iso8601_impl", crate::execution::runtime_functions::time_to_iso8601_impl as usize);
+        self.register_symbol("time_to_rfc3339_impl", crate::execution::runtime_functions::time_to_rfc3339_impl as usize);
+        self.register_symbol("time_year_impl", crate::execution::runtime_functions::time_year_impl as usize);
+        self.register_symbol("time_month_impl", crate::execution::runtime_functions::time_month_impl as usize);
+        self.register_symbol("time_day_impl", crate::execution::runtime_functions::time_day_impl as usize);
+        self.register_symbol("time_hour_impl", crate::execution::runtime_functions::time_hour_impl as usize);
+        self.register_symbol("time_minute_impl", crate::execution::runtime_functions::time_minute_impl as usize);
+        self.register_symbol("time_second_impl", crate::execution::runtime_functions::time_second_impl as usize);
+        self.register_symbol("time_weekday_impl", crate::execution::runtime_functions::time_weekday_impl as usize);
+        self.register_symbol("time_day_of_year_impl", crate::execution::runtime_functions::time_day_of_year_impl as usize);
+        self.register_symbol("time_add_years_impl", crate::execution::runtime_functions::time_add_years_impl as usize);
+        self.register_symbol("time_add_months_impl", crate::execution::runtime_functions::time_add_months_impl as usize);
+        self.register_symbol("time_add_days_impl", crate::execution::runtime_functions::time_add_days_impl as usize);
+        self.register_symbol("time_add_hours_impl", crate::execution::runtime_functions::time_add_hours_impl as usize);
+        self.register_symbol("time_add_minutes_impl", crate::execution::runtime_functions::time_add_minutes_impl as usize);
+        self.register_symbol("time_add_seconds_impl", crate::execution::runtime_functions::time_add_seconds_impl as usize);
+        self.register_symbol("time_subtract_impl", crate::execution::runtime_functions::time_subtract_impl as usize);
+        self.register_symbol("time_diff_days_impl", crate::execution::runtime_functions::time_diff_days_impl as usize);
+        self.register_symbol("time_diff_hours_impl", crate::execution::runtime_functions::time_diff_hours_impl as usize);
+        self.register_symbol("time_diff_minutes_impl", crate::execution::runtime_functions::time_diff_minutes_impl as usize);
+        self.register_symbol("time_diff_seconds_impl", crate::execution::runtime_functions::time_diff_seconds_impl as usize);
+        self.register_symbol("time_utc_impl", crate::execution::runtime_functions::time_utc_impl as usize);
+        self.register_symbol("time_local_impl", crate::execution::runtime_functions::time_local_impl as usize);
+        self.register_symbol("time_to_utc_impl", crate::execution::runtime_functions::time_to_utc_impl as usize);
+        self.register_symbol("time_to_local_impl", crate::execution::runtime_functions::time_to_local_impl as usize);
+        self.register_symbol("time_timezone_offset_impl", crate::execution::runtime_functions::time_timezone_offset_impl as usize);
+        self.register_symbol("time_is_leap_year_impl", crate::execution::runtime_functions::time_is_leap_year_impl as usize);
+        self.register_symbol("time_days_in_month_impl", crate::execution::runtime_functions::time_days_in_month_impl as usize);
+        self.register_symbol("time_is_valid_date_impl", crate::execution::runtime_functions::time_is_valid_date_impl as usize);
+        self.register_symbol("time_sleep_impl", crate::execution::runtime_functions::time_sleep_impl as usize);
+        self.register_symbol("time_sleep_millis_impl", crate::execution::runtime_functions::time_sleep_millis_impl as usize);
+        self.register_symbol("time_sleep_micros_impl", crate::execution::runtime_functions::time_sleep_micros_impl as usize);
+        
+        // Register duration module functions
+        self.register_symbol("duration_from_seconds_impl", crate::execution::runtime_functions::duration_from_seconds_impl as usize);
+        self.register_symbol("duration_from_millis_impl", crate::execution::runtime_functions::duration_from_millis_impl as usize);
+        self.register_symbol("duration_from_nanos_impl", crate::execution::runtime_functions::duration_from_nanos_impl as usize);
+        self.register_symbol("duration_to_seconds_impl", crate::execution::runtime_functions::duration_to_seconds_impl as usize);
+        self.register_symbol("duration_to_millis_impl", crate::execution::runtime_functions::duration_to_millis_impl as usize);
+        self.register_symbol("duration_add_impl", crate::execution::runtime_functions::duration_add_impl as usize);
+        self.register_symbol("duration_subtract_impl", crate::execution::runtime_functions::duration_subtract_impl as usize);
     }
     
     fn register_symbol(&mut self, name: &str, addr: usize) {

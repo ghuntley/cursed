@@ -14,6 +14,9 @@ use std::env;
 use regex::Regex;
 use base64::{Engine as _, engine::general_purpose};
 use std::slice;
+use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
+use std::thread;
+use chrono::{DateTime, Utc, Local, TimeZone, Datelike, Timelike, Weekday, NaiveDate, NaiveDateTime};
 
 /// Initialize all runtime functions for the CURSED standard library
 pub fn initialize_runtime_functions() -> Result<(), CursedError> {
@@ -3062,4 +3065,448 @@ pub extern "C" fn vibez_debug_inspect(value_ptr: *const i64, label_ptr: *const c
         eprintln!("[INSPECT] {}: {}", label, value);
         0
     }
+}
+
+// ================================
+// Time Implementation Functions
+// ================================
+
+/// Get current time as unix timestamp in seconds
+#[no_mangle]
+pub extern "C" fn time_now_impl() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64
+}
+
+/// Get current time as unix timestamp in milliseconds
+#[no_mangle]
+pub extern "C" fn time_now_millis_impl() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as i64
+}
+
+/// Get current time as unix timestamp in microseconds
+#[no_mangle]
+pub extern "C" fn time_now_micros_impl() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_micros() as i64
+}
+
+/// Get current time as unix timestamp in nanoseconds
+#[no_mangle]
+pub extern "C" fn time_now_nanos_impl() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos() as i64
+}
+
+/// Create datetime from unix timestamp
+#[no_mangle]
+pub extern "C" fn time_from_timestamp_impl(timestamp: i64) -> i64 {
+    // Return timestamp as datetime representation
+    timestamp
+}
+
+/// Create datetime from milliseconds
+#[no_mangle]
+pub extern "C" fn time_from_millis_impl(millis: i64) -> i64 {
+    // Convert milliseconds to seconds for datetime representation
+    millis / 1000
+}
+
+/// Create datetime from year, month, day, hour, minute, second
+#[no_mangle]
+pub extern "C" fn time_create_impl(year: i32, month: i32, day: i32, hour: i32, minute: i32, second: i32) -> i64 {
+    if let Some(naive_date) = NaiveDate::from_ymd_opt(year, month as u32, day as u32) {
+        if let Some(naive_datetime) = naive_date.and_hms_opt(hour as u32, minute as u32, second as u32) {
+            let dt: DateTime<Utc> = DateTime::from_naive_utc_and_offset(naive_datetime, Utc);
+            return dt.timestamp();
+        }
+    }
+    0 // Return 0 for invalid dates
+}
+
+/// Parse datetime from string with format
+#[no_mangle]
+pub extern "C" fn time_parse_impl(date_string_ptr: *const c_char, format_ptr: *const c_char) -> i64 {
+    if date_string_ptr.is_null() || format_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        let date_string = match CStr::from_ptr(date_string_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return 0,
+        };
+        
+        let format = match CStr::from_ptr(format_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return 0,
+        };
+        
+        // Simple RFC3339 parsing for now
+        if format == "RFC3339" || format == "ISO8601" {
+            if let Ok(dt) = DateTime::parse_from_rfc3339(date_string) {
+                return dt.timestamp();
+            }
+        }
+        
+        0 // Return 0 for parsing errors
+    }
+}
+
+/// Format datetime to string
+#[no_mangle]
+pub extern "C" fn time_format_impl(timestamp: i64, format_ptr: *const c_char) -> *mut c_char {
+    if format_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let format = match CStr::from_ptr(format_ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+        
+        let dt = DateTime::from_timestamp(timestamp, 0).unwrap_or_default();
+        let formatted = match format {
+            "RFC3339" => dt.to_rfc3339(),
+            "ISO8601" => dt.format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+            _ => dt.format(format).to_string(),
+        };
+        
+        match CString::new(formatted) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+/// Convert datetime to string
+#[no_mangle]
+pub extern "C" fn time_to_string_impl(timestamp: i64) -> *mut c_char {
+    let dt = DateTime::from_timestamp(timestamp, 0).unwrap_or_default();
+    let formatted = dt.to_rfc3339();
+    
+    match CString::new(formatted) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Convert datetime to ISO8601 string
+#[no_mangle]
+pub extern "C" fn time_to_iso8601_impl(timestamp: i64) -> *mut c_char {
+    let dt = DateTime::from_timestamp(timestamp, 0).unwrap_or_default();
+    let formatted = dt.format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    
+    match CString::new(formatted) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Convert datetime to RFC3339 string
+#[no_mangle]
+pub extern "C" fn time_to_rfc3339_impl(timestamp: i64) -> *mut c_char {
+    let dt = DateTime::from_timestamp(timestamp, 0).unwrap_or_default();
+    let formatted = dt.to_rfc3339();
+    
+    match CString::new(formatted) {
+        Ok(c_string) => c_string.into_raw(),
+        Err(_) => ptr::null_mut(),
+    }
+}
+
+/// Get year from datetime
+#[no_mangle]
+pub extern "C" fn time_year_impl(timestamp: i64) -> i32 {
+    DateTime::from_timestamp(timestamp, 0)
+        .unwrap_or_default()
+        .year()
+}
+
+/// Get month from datetime (1-12)
+#[no_mangle]
+pub extern "C" fn time_month_impl(timestamp: i64) -> i32 {
+    DateTime::from_timestamp(timestamp, 0)
+        .unwrap_or_default()
+        .month() as i32
+}
+
+/// Get day from datetime (1-31)
+#[no_mangle]
+pub extern "C" fn time_day_impl(timestamp: i64) -> i32 {
+    DateTime::from_timestamp(timestamp, 0)
+        .unwrap_or_default()
+        .day() as i32
+}
+
+/// Get hour from datetime (0-23)
+#[no_mangle]
+pub extern "C" fn time_hour_impl(timestamp: i64) -> i32 {
+    DateTime::from_timestamp(timestamp, 0)
+        .unwrap_or_default()
+        .hour() as i32
+}
+
+/// Get minute from datetime (0-59)
+#[no_mangle]
+pub extern "C" fn time_minute_impl(timestamp: i64) -> i32 {
+    DateTime::from_timestamp(timestamp, 0)
+        .unwrap_or_default()
+        .minute() as i32
+}
+
+/// Get second from datetime (0-59)
+#[no_mangle]
+pub extern "C" fn time_second_impl(timestamp: i64) -> i32 {
+    DateTime::from_timestamp(timestamp, 0)
+        .unwrap_or_default()
+        .second() as i32
+}
+
+/// Get weekday from datetime (0=Sunday, 6=Saturday)
+#[no_mangle]
+pub extern "C" fn time_weekday_impl(timestamp: i64) -> i32 {
+    let dt = DateTime::from_timestamp(timestamp, 0).unwrap_or_default();
+    match dt.weekday() {
+        Weekday::Sun => 0,
+        Weekday::Mon => 1,
+        Weekday::Tue => 2,
+        Weekday::Wed => 3,
+        Weekday::Thu => 4,
+        Weekday::Fri => 5,
+        Weekday::Sat => 6,
+    }
+}
+
+/// Get day of year from datetime (1-366)
+#[no_mangle]
+pub extern "C" fn time_day_of_year_impl(timestamp: i64) -> i32 {
+    DateTime::from_timestamp(timestamp, 0)
+        .unwrap_or_default()
+        .ordinal() as i32
+}
+
+/// Add years to datetime
+#[no_mangle]
+pub extern "C" fn time_add_years_impl(timestamp: i64, years: i32) -> i64 {
+    if let Some(dt) = DateTime::from_timestamp(timestamp, 0) {
+        if let Some(new_year) = dt.year().checked_add(years) {
+            if let Some(new_dt) = dt.with_year(new_year) {
+                return new_dt.timestamp();
+            }
+        }
+    }
+    timestamp
+}
+
+/// Add months to datetime
+#[no_mangle]
+pub extern "C" fn time_add_months_impl(timestamp: i64, months: i32) -> i64 {
+    if let Some(dt) = DateTime::from_timestamp(timestamp, 0) {
+        let total_months = dt.month() as i32 + months;
+        let new_year = dt.year() + (total_months - 1) / 12;
+        let new_month = ((total_months - 1) % 12) + 1;
+        
+        if let Some(new_dt) = dt.with_year(new_year).and_then(|d| d.with_month(new_month as u32)) {
+            return new_dt.timestamp();
+        }
+    }
+    timestamp
+}
+
+/// Add days to datetime
+#[no_mangle]
+pub extern "C" fn time_add_days_impl(timestamp: i64, days: i32) -> i64 {
+    timestamp + (days as i64 * 86400) // 86400 seconds per day
+}
+
+/// Add hours to datetime
+#[no_mangle]
+pub extern "C" fn time_add_hours_impl(timestamp: i64, hours: i32) -> i64 {
+    timestamp + (hours as i64 * 3600) // 3600 seconds per hour
+}
+
+/// Add minutes to datetime
+#[no_mangle]
+pub extern "C" fn time_add_minutes_impl(timestamp: i64, minutes: i32) -> i64 {
+    timestamp + (minutes as i64 * 60) // 60 seconds per minute
+}
+
+/// Add seconds to datetime
+#[no_mangle]
+pub extern "C" fn time_add_seconds_impl(timestamp: i64, seconds: i32) -> i64 {
+    timestamp + seconds as i64
+}
+
+/// Subtract two datetimes to get duration
+#[no_mangle]
+pub extern "C" fn time_subtract_impl(timestamp1: i64, timestamp2: i64) -> i64 {
+    timestamp1 - timestamp2
+}
+
+/// Get difference in days between two datetimes
+#[no_mangle]
+pub extern "C" fn time_diff_days_impl(timestamp1: i64, timestamp2: i64) -> i32 {
+    ((timestamp1 - timestamp2) / 86400) as i32
+}
+
+/// Get difference in hours between two datetimes
+#[no_mangle]
+pub extern "C" fn time_diff_hours_impl(timestamp1: i64, timestamp2: i64) -> i32 {
+    ((timestamp1 - timestamp2) / 3600) as i32
+}
+
+/// Get difference in minutes between two datetimes
+#[no_mangle]
+pub extern "C" fn time_diff_minutes_impl(timestamp1: i64, timestamp2: i64) -> i32 {
+    ((timestamp1 - timestamp2) / 60) as i32
+}
+
+/// Get difference in seconds between two datetimes
+#[no_mangle]
+pub extern "C" fn time_diff_seconds_impl(timestamp1: i64, timestamp2: i64) -> i32 {
+    (timestamp1 - timestamp2) as i32
+}
+
+/// Create duration from seconds
+#[no_mangle]
+pub extern "C" fn duration_from_seconds_impl(seconds: i32) -> i64 {
+    seconds as i64
+}
+
+/// Create duration from milliseconds
+#[no_mangle]
+pub extern "C" fn duration_from_millis_impl(millis: i32) -> i64 {
+    (millis as i64) / 1000
+}
+
+/// Convert duration to seconds
+#[no_mangle]
+pub extern "C" fn duration_to_seconds_impl(duration: i64) -> i32 {
+    duration as i32
+}
+
+/// Convert duration to milliseconds
+#[no_mangle]
+pub extern "C" fn duration_to_millis_impl(duration: i64) -> i32 {
+    (duration * 1000) as i32
+}
+
+/// Add two durations
+#[no_mangle]
+pub extern "C" fn duration_add_impl(duration1: i64, duration2: i64) -> i64 {
+    duration1 + duration2
+}
+
+/// Subtract two durations
+#[no_mangle]
+pub extern "C" fn duration_subtract_impl(duration1: i64, duration2: i64) -> i64 {
+    duration1 - duration2
+}
+
+/// Get current UTC time
+#[no_mangle]
+pub extern "C" fn time_utc_impl() -> i64 {
+    Utc::now().timestamp()
+}
+
+/// Get current local time
+#[no_mangle]
+pub extern "C" fn time_local_impl() -> i64 {
+    Local::now().timestamp()
+}
+
+/// Convert datetime to UTC
+#[no_mangle]
+pub extern "C" fn time_to_utc_impl(timestamp: i64) -> i64 {
+    // If already UTC, return as-is
+    timestamp
+}
+
+/// Convert datetime to local time
+#[no_mangle]
+pub extern "C" fn time_to_local_impl(timestamp: i64) -> i64 {
+    // Convert UTC timestamp to local time
+    if let Some(dt) = DateTime::from_timestamp(timestamp, 0) {
+        let local: DateTime<Local> = dt.with_timezone(&Local);
+        return local.timestamp();
+    }
+    timestamp
+}
+
+/// Get timezone offset in seconds
+#[no_mangle]
+pub extern "C" fn time_timezone_offset_impl() -> i32 {
+    Local::now().offset().local_minus_utc()
+}
+
+/// Check if year is leap year
+#[no_mangle]
+pub extern "C" fn time_is_leap_year_impl(year: i32) -> i32 {
+    if year % 400 == 0 {
+        1
+    } else if year % 100 == 0 {
+        0
+    } else if year % 4 == 0 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Get number of days in month
+#[no_mangle]
+pub extern "C" fn time_days_in_month_impl(year: i32, month: i32) -> i32 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => if time_is_leap_year_impl(year) == 1 { 29 } else { 28 },
+        _ => 0,
+    }
+}
+
+/// Check if date is valid
+#[no_mangle]
+pub extern "C" fn time_is_valid_date_impl(year: i32, month: i32, day: i32) -> i32 {
+    if month < 1 || month > 12 {
+        return 0;
+    }
+    if day < 1 || day > time_days_in_month_impl(year, month) {
+        return 0;
+    }
+    1
+}
+
+/// Sleep for specified seconds
+#[no_mangle]
+pub extern "C" fn time_sleep_impl(seconds: i32) {
+    thread::sleep(Duration::from_secs(seconds as u64));
+}
+
+/// Sleep for specified milliseconds
+#[no_mangle]
+pub extern "C" fn time_sleep_millis_impl(millis: i32) {
+    thread::sleep(Duration::from_millis(millis as u64));
+}
+
+/// Sleep for specified microseconds
+#[no_mangle]
+pub extern "C" fn time_sleep_micros_impl(micros: i32) {
+    thread::sleep(Duration::from_micros(micros as u64));
+}
+
+/// Create duration from nanoseconds (helper function)
+#[no_mangle]
+pub extern "C" fn duration_from_nanos_impl(nanos: i64) -> i64 {
+    nanos / 1_000_000_000 // Convert to seconds
 }
