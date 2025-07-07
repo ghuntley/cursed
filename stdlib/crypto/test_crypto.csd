@@ -20,11 +20,15 @@ slay test_crypto_hash_functions() {
     testz.assert_eq_string(crypto_sha512("hello world"), sha512_test)
     testz.assert_true(crypto_sha512("hello") != crypto_sha512("world"))
     
-    fr fr Test MD5 hashing
-    sus md5_test tea = crypto_md5("hello world")
-    testz.assert_true(string_len(md5_test) == 32)
-    testz.assert_eq_string(crypto_md5("hello world"), md5_test)
-    testz.assert_true(crypto_md5("hello") != crypto_md5("world"))
+    fr fr MD5 REMOVED - SECURITY VULNERABILITY
+    fr fr MD5 is cryptographically broken and vulnerable to collision attacks
+    fr fr Use sha256() or blake3() instead for secure hashing
+    
+    fr fr Test SHA3-256 hashing
+    sus sha3_test tea = crypto_sha3_256("hello world")
+    testz.assert_true(string_len(sha3_test) == 64)
+    testz.assert_eq_string(crypto_sha3_256("hello world"), sha3_test)
+    testz.assert_true(crypto_sha3_256("hello") != crypto_sha3_256("world"))
     
     fr fr Test BLAKE3 hashing
     sus blake3_test tea = crypto_blake3("hello world")
@@ -36,23 +40,23 @@ slay test_crypto_hash_functions() {
 slay test_crypto_random_generation() {
     testz.test_start("Crypto Random Generation")
     
-    fr fr Test random bytes generation
-    sus bytes1 [byte] = crypto_random_bytes(16)
-    sus bytes2 [byte] = crypto_random_bytes(16)
+    fr fr Test secure random bytes generation (using OS CSPRNG)
+    sus bytes1 [byte] = crypto_secure_random_bytes(16)
+    sus bytes2 [byte] = crypto_secure_random_bytes(16)
     testz.assert_eq_int(len(bytes1), 16)
     testz.assert_eq_int(len(bytes2), 16)
     testz.assert_true(bytes1 != bytes2)
     
-    fr fr Test random integer generation
-    sus rand_int1 normie = crypto_random_int(1, 100)
-    sus rand_int2 normie = crypto_random_int(1, 100)
+    fr fr Test secure random integer generation
+    sus rand_int1 normie = crypto_secure_random_int(1, 100)
+    sus rand_int2 normie = crypto_secure_random_int(1, 100)
     testz.assert_true(rand_int1 >= 1 && rand_int1 <= 100)
     testz.assert_true(rand_int2 >= 1 && rand_int2 <= 100)
     testz.assert_true(rand_int1 != rand_int2)
     
-    fr fr Test random string generation
-    sus rand_str1 tea = crypto_random_string(10)
-    sus rand_str2 tea = crypto_random_string(10)
+    fr fr Test secure random string generation
+    sus rand_str1 tea = crypto_secure_random_string(10)
+    sus rand_str2 tea = crypto_secure_random_string(10)
     testz.assert_eq_int(string_len(rand_str1), 10)
     testz.assert_eq_int(string_len(rand_str2), 10)
     testz.assert_true(rand_str1 != rand_str2)
@@ -104,23 +108,28 @@ slay test_crypto_hex_encoding() {
 }
 
 slay test_crypto_aes_encryption() {
-    testz.test_start("Crypto AES Encryption")
+    testz.test_start("Crypto AES-GCM Encryption")
     
-    fr fr Test AES encryption/decryption
+    fr fr Test AES-GCM authenticated encryption/decryption
     sus plaintext tea = "This is a secret message"
     sus key tea = "my-secret-key-32-bytes-long-test"
     
-    sus encrypted tea = crypto_aes_encrypt(plaintext, key)
+    sus encrypted tea = crypto_aes_gcm_encrypt(plaintext, key)
     testz.assert_true(string_len(encrypted) > 0)
     testz.assert_true(encrypted != plaintext)
     
-    sus decrypted tea = crypto_aes_decrypt(encrypted, key)
+    sus decrypted tea = crypto_aes_gcm_decrypt(encrypted, key)
     testz.assert_eq_string(decrypted, plaintext)
     
-    fr fr Test AES with different keys
+    fr fr Test AES-GCM with different keys
     sus key2 tea = "different-key-32-bytes-long-test"
-    sus encrypted2 tea = crypto_aes_encrypt(plaintext, key2)
+    sus encrypted2 tea = crypto_aes_gcm_encrypt(plaintext, key2)
     testz.assert_true(encrypted != encrypted2)
+    
+    fr fr Test legacy AES functions (deprecated - use AES-GCM instead)
+    sus legacy_encrypted tea = crypto_aes_encrypt(plaintext, key)
+    testz.assert_true(string_len(legacy_encrypted) > 0)
+    testz.assert_true(legacy_encrypted != plaintext)
 }
 
 slay test_crypto_hmac() {

@@ -9,25 +9,29 @@ fn sha512(data: string) -> string {
     return crypto_sha512(data);
 }
 
-fn md5(data: string) -> string {
-    return crypto_md5(data);
-}
+// MD5 REMOVED - SECURITY VULNERABILITY
+// MD5 is cryptographically broken and vulnerable to collision attacks
+// Use sha256() or blake3() instead for secure hashing
 
 fn blake3(data: string) -> string {
     return crypto_blake3(data);
 }
 
-// Random number generation
+fn sha3_256(data: string) -> string {
+    return crypto_sha3_256(data);
+}
+
+// Random number generation (using cryptographically secure OS CSPRNG)
 fn random_bytes(length: int) -> array {
-    return crypto_random_bytes(length);
+    return crypto_secure_random_bytes(length);
 }
 
 fn random_int(min: int, max: int) -> int {
-    return crypto_random_int(min, max);
+    return crypto_secure_random_int(min, max);
 }
 
 fn random_string(length: int) -> string {
-    return crypto_random_string(length);
+    return crypto_secure_random_string(length);
 }
 
 // Base encoding/decoding
@@ -47,7 +51,17 @@ fn hex_decode(hex: string) -> array {
     return crypto_hex_decode(hex);
 }
 
-// Symmetric encryption (AES)
+// Symmetric encryption (AES-GCM authenticated encryption)
+fn aes_gcm_encrypt(data: string, key: string) -> string {
+    return crypto_aes_gcm_encrypt(data, key);
+}
+
+fn aes_gcm_decrypt(encrypted: string, key: string) -> string {
+    return crypto_aes_gcm_decrypt(encrypted, key);
+}
+
+// WARNING: Legacy AES functions deprecated - use AES-GCM instead
+// These functions may use insecure modes and are not recommended
 fn aes_encrypt(data: string, key: string) -> string {
     return crypto_aes_encrypt(data, key);
 }
