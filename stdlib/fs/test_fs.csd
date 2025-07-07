@@ -1,203 +1,259 @@
+fr fr CURSED Filesystem Module Tests
+fr fr Comprehensive test suite for filesystem operations
+
 yeet "testz"
 yeet "fs"
 
 fr fr ================================
-fr fr Filesystem Module Tests
+fr fr Test Setup
 fr fr ================================
 
-slay test_read_file() {
-    testz.test_start("fs.read_file")
-    
-    sus content tea = fs.read_file("test.txt")
-    testz.assert_eq_string(content, "mock file contents from test.txt")
-    
-    sus empty_content tea = fs.read_file("")
-    testz.assert_eq_string(empty_content, "mock file contents from ")
+slay setup_test_env() {
+    fr fr Create test directory if it doesn't exist
+    fs.create_dir("test_fs_temp")
 }
 
-slay test_write_file() {
-    testz.test_start("fs.write_file")
-    
-    sus result lit = fs.write_file("output.txt", "Hello, World!")
-    testz.assert_true(result)
-    
-    sus empty_result lit = fs.write_file("empty.txt", "")
-    testz.assert_true(empty_result)
+slay cleanup_test_env() {
+    fr fr Clean up test files
+    fs.delete_file("test_fs_temp/test_file.txt")
+    fs.delete_file("test_fs_temp/test_write.txt")
+    fs.delete_file("test_fs_temp/test_content.txt")
+    fs.remove_dir("test_fs_temp")
 }
 
-slay test_file_exists() {
-    testz.test_start("fs.file_exists")
+fr fr ================================
+fr fr File Operations Tests
+fr fr ================================
+
+slay test_file_operations() {
+    testz.test_start("File Operations")
     
-    sus exists lit = fs.file_exists("test.txt")
+    fr fr Setup test environment
+    setup_test_env()
+    
+    fr fr Test 1: Create and write file
+    sus test_path tea = "test_fs_temp/test_file.txt"
+    sus test_content tea = "Hello, CURSED filesystem!"
+    
+    sus write_success lit = fs.write_file(test_path, test_content)
+    testz.assert_true(write_success)
+    
+    fr fr Test 2: Check file exists
+    sus exists lit = fs.file_exists(test_path)
     testz.assert_true(exists)
     
-    sus not_exists lit = fs.file_exists("nonexistent.txt")
-    testz.assert_true(not_exists)  fr fr Mock returns true for now
+    fr fr Test 3: Read file content
+    sus read_content tea = fs.read_file(test_path)
+    testz.assert_eq_string(read_content, test_content)
+    
+    fr fr Test 4: Get file size
+    sus file_size thicc = fs.get_file_size(test_path)
+    testz.assert_true(file_size > 0)
+    
+    fr fr Test 5: Delete file
+    sus delete_success lit = fs.delete_file(test_path)
+    testz.assert_true(delete_success)
+    
+    fr fr Test 6: Verify file no longer exists
+    sus exists_after_delete lit = fs.file_exists(test_path)
+    testz.assert_false(exists_after_delete)
+    
+    fr fr Cleanup
+    cleanup_test_env()
 }
 
-slay test_create_dir() {
-    testz.test_start("fs.create_dir")
+slay test_directory_operations() {
+    testz.test_start("Directory Operations")
     
-    sus result lit = fs.create_dir("test_dir")
-    testz.assert_true(result)
+    fr fr Test 1: Create directory
+    sus test_dir tea = "test_fs_dir"
+    sus create_success lit = fs.create_dir(test_dir)
+    testz.assert_true(create_success)
     
-    sus nested_result lit = fs.create_dir("nested/test/dir")
-    testz.assert_true(nested_result)
-}
-
-slay test_list_dir() {
-    testz.test_start("fs.list_dir")
+    fr fr Test 2: Check directory exists
+    sus dir_exists lit = fs.file_exists(test_dir)
+    testz.assert_true(dir_exists)
     
-    sus files []tea = fs.list_dir(".")
-    testz.assert_eq_int(files.length, 3)
-    testz.assert_eq_string(files[0], "file1.txt")
-    testz.assert_eq_string(files[1], "file2.txt")
-    testz.assert_eq_string(files[2], "subdir")
-}
-
-slay test_delete_file() {
-    testz.test_start("fs.delete_file")
-    
-    sus result lit = fs.delete_file("temp.txt")
-    testz.assert_true(result)
-    
-    sus another_result lit = fs.delete_file("another_temp.txt")
-    testz.assert_true(another_result)
-}
-
-slay test_get_file_size() {
-    testz.test_start("fs.get_file_size")
-    
-    sus size normie = fs.get_file_size("test.txt")
-    testz.assert_eq_int(size, 42)
-    
-    sus zero_size normie = fs.get_file_size("empty.txt")
-    testz.assert_eq_int(zero_size, 42)  fr fr Mock returns 42 for now
-}
-
-slay test_join_path() {
-    testz.test_start("fs.join_path")
-    
-    sus joined tea = fs.join_path("/home", "user")
-    testz.assert_eq_string(joined, "/home/user")
-    
-    sus nested_joined tea = fs.join_path("src", "main.rs")
-    testz.assert_eq_string(nested_joined, "src/main.rs")
-}
-
-slay test_get_extension() {
-    testz.test_start("fs.get_extension")
-    
-    sus ext tea = fs.get_extension("file.txt")
-    testz.assert_eq_string(ext, ".txt")
-    
-    sus no_ext tea = fs.get_extension("README")
-    testz.assert_eq_string(no_ext, ".txt")  fr fr Mock returns .txt for now
-}
-
-slay test_get_basename() {
-    testz.test_start("fs.get_basename")
-    
-    sus name tea = fs.get_basename("/path/to/file.txt")
-    testz.assert_eq_string(name, "file.txt")
-    
-    sus simple_name tea = fs.get_basename("simple.txt")
-    testz.assert_eq_string(simple_name, "file.txt")  fr fr Mock returns file.txt for now
-}
-
-slay test_create_dir_recursive() {
-    testz.test_start("fs.create_dir_recursive")
-    
-    sus result lit = fs.create_dir_recursive("deep/nested/directory/structure")
-    testz.assert_true(result)
-}
-
-slay test_remove_dir() {
-    testz.test_start("fs.remove_dir")
-    
-    sus result lit = fs.remove_dir("temp_dir")
-    testz.assert_true(result)
-}
-
-slay test_is_dir() {
-    testz.test_start("fs.is_dir")
-    
-    sus is_directory lit = fs.is_dir("src")
+    fr fr Test 3: Check is directory
+    sus is_directory lit = fs.is_dir(test_dir)
     testz.assert_true(is_directory)
     
-    sus is_file lit = fs.is_dir("file.txt")
-    testz.assert_true(is_file)  fr fr Mock returns true for now
-}
-
-slay test_is_file() {
-    testz.test_start("fs.is_file")
+    fr fr Test 4: List directory contents (should be empty)
+    sus files []tea = fs.list_dir(test_dir)
+    testz.assert_true(files.length == 0)
     
-    sus is_file lit = fs.is_file("README.md")
+    fr fr Test 5: Create file in directory
+    sus file_in_dir tea = test_dir + "/test_file.txt"
+    sus file_content tea = "File in directory"
+    sus write_success lit = fs.write_file(file_in_dir, file_content)
+    testz.assert_true(write_success)
+    
+    fr fr Test 6: List directory contents (should have one file)
+    sus files_after []tea = fs.list_dir(test_dir)
+    testz.assert_true(files_after.length == 1)
+    
+    fr fr Test 7: Check file type
+    sus is_file lit = fs.is_file(file_in_dir)
     testz.assert_true(is_file)
     
-    sus is_directory lit = fs.is_file("src")
-    testz.assert_true(is_directory)  fr fr Mock returns true for now
+    fr fr Cleanup
+    fs.delete_file(file_in_dir)
+    fs.remove_dir(test_dir)
 }
 
-slay test_get_file_info() {
-    testz.test_start("fs.get_file_info")
+slay test_path_utilities() {
+    testz.test_start("Path Utilities")
     
-    sus info FileInfo = fs.get_file_info("test.txt")
-    testz.assert_eq_string(info.name, "file.txt")
-    testz.assert_eq_int(info.size, 42)
+    fr fr Test 1: Join paths
+    sus base tea = "/home/user"
+    sus component tea = "documents"
+    sus joined tea = fs.join_path(base, component)
+    testz.assert_eq_string(joined, "/home/user/documents")
+    
+    fr fr Test 2: Join paths with trailing slash
+    sus base_with_slash tea = "/home/user/"
+    sus joined_with_slash tea = fs.join_path(base_with_slash, component)
+    testz.assert_eq_string(joined_with_slash, "/home/user/documents")
+    
+    fr fr Test 3: Get file extension
+    sus filename tea = "document.txt"
+    sus extension tea = fs.get_extension(filename)
+    testz.assert_eq_string(extension, ".txt")
+    
+    fr fr Test 4: Get filename without extension
+    sus full_path tea = "/home/user/document.txt"
+    sus basename tea = fs.get_basename(full_path)
+    testz.assert_eq_string(basename, "document.txt")
+    
+    fr fr Test 5: Get extension from path
+    sus path_extension tea = fs.get_extension(full_path)
+    testz.assert_eq_string(path_extension, ".txt")
+    
+    fr fr Test 6: No extension case
+    sus no_ext tea = "README"
+    sus no_ext_result tea = fs.get_extension(no_ext)
+    testz.assert_eq_string(no_ext_result, "")
+}
+
+slay test_file_info() {
+    testz.test_start("File Information")
+    
+    fr fr Setup test file
+    sus test_path tea = "test_info_file.txt"
+    sus test_content tea = "Test file for info"
+    
+    sus write_success lit = fs.write_file(test_path, test_content)
+    testz.assert_true(write_success)
+    
+    fr fr Test 1: Get file info
+    sus info fs.FileInfo = fs.get_file_info(test_path)
+    testz.assert_eq_string(info.name, "test_info_file.txt")
+    testz.assert_true(info.size > 0)
     testz.assert_false(info.is_dir)
-    testz.assert_eq_int(info.modified_time, 1640995200)
-    testz.assert_eq_int(info.permissions, 644)
-}
-
-slay test_set_permissions() {
-    testz.test_start("fs.set_permissions")
     
-    sus result lit = fs.set_permissions("test.txt", 755)
-    testz.assert_true(result)
-    
-    sus readonly_result lit = fs.set_permissions("readonly.txt", 444)
-    testz.assert_true(readonly_result)
-}
-
-slay test_get_permissions() {
-    testz.test_start("fs.get_permissions")
-    
-    sus perms normie = fs.get_permissions("test.txt")
+    fr fr Test 2: File permissions
+    sus perms normie = fs.get_permissions(test_path)
     testz.assert_eq_int(perms, 644)
     
-    sus executable_perms normie = fs.get_permissions("script.sh")
-    testz.assert_eq_int(executable_perms, 644)  fr fr Mock returns 644 for now
+    fr fr Test 3: Set permissions
+    sus set_perms_success lit = fs.set_permissions(test_path, 755)
+    testz.assert_true(set_perms_success)
+    
+    fr fr Cleanup
+    fs.delete_file(test_path)
+}
+
+slay test_error_handling() {
+    testz.test_start("Error Handling")
+    
+    fr fr Test 1: Read non-existent file
+    sus nonexistent_content tea = fs.read_file("nonexistent_file.txt")
+    testz.assert_eq_string(nonexistent_content, "")
+    
+    fr fr Test 2: Check non-existent file
+    sus nonexistent_exists lit = fs.file_exists("nonexistent_file.txt")
+    testz.assert_false(nonexistent_exists)
+    
+    fr fr Test 3: Delete non-existent file
+    sus delete_nonexistent lit = fs.delete_file("nonexistent_file.txt")
+    testz.assert_false(delete_nonexistent)
+    
+    fr fr Test 4: List non-existent directory
+    sus nonexistent_files []tea = fs.list_dir("nonexistent_dir")
+    testz.assert_true(nonexistent_files.length == 0)
+    
+    fr fr Test 5: Get size of non-existent file
+    sus nonexistent_size thicc = fs.get_file_size("nonexistent_file.txt")
+    testz.assert_true(nonexistent_size == -1)
+}
+
+slay test_large_files() {
+    testz.test_start("Large File Operations")
+    
+    fr fr Test 1: Create large file content
+    sus large_content tea = ""
+    bestie i := 0; i < 1000; i++ {
+        large_content = large_content + "Line " + tea(i) + " of large file content\n"
+    }
+    
+    fr fr Test 2: Write large file
+    sus large_file_path tea = "large_test_file.txt"
+    sus write_large_success lit = fs.write_file(large_file_path, large_content)
+    testz.assert_true(write_large_success)
+    
+    fr fr Test 3: Read large file
+    sus read_large_content tea = fs.read_file(large_file_path)
+    testz.assert_eq_string(read_large_content, large_content)
+    
+    fr fr Test 4: Verify large file size
+    sus large_file_size thicc = fs.get_file_size(large_file_path)
+    testz.assert_true(large_file_size > 10000)
+    
+    fr fr Cleanup
+    fs.delete_file(large_file_path)
+}
+
+slay test_recursive_directory_creation() {
+    testz.test_start("Recursive Directory Creation")
+    
+    fr fr Test 1: Create nested directory structure
+    sus nested_path tea = "level1/level2/level3"
+    sus create_recursive_success lit = fs.create_dir_recursive(nested_path)
+    testz.assert_true(create_recursive_success)
+    
+    fr fr Test 2: Verify nested directories exist
+    testz.assert_true(fs.file_exists("level1"))
+    testz.assert_true(fs.file_exists("level1/level2"))
+    testz.assert_true(fs.file_exists("level1/level2/level3"))
+    
+    fr fr Test 3: Create file in nested directory
+    sus nested_file tea = "level1/level2/level3/nested_file.txt"
+    sus nested_content tea = "File in nested directory"
+    sus write_nested_success lit = fs.write_file(nested_file, nested_content)
+    testz.assert_true(write_nested_success)
+    
+    fr fr Test 4: Read file from nested directory
+    sus read_nested_content tea = fs.read_file(nested_file)
+    testz.assert_eq_string(read_nested_content, nested_content)
+    
+    fr fr Cleanup (manual cleanup due to recursive nature)
+    fs.delete_file(nested_file)
+    fs.remove_dir("level1/level2/level3")
+    fs.remove_dir("level1/level2")
+    fs.remove_dir("level1")
 }
 
 fr fr ================================
-fr fr Run All Tests
+fr fr Main Test Runner
 fr fr ================================
 
-slay run_fs_tests() {
-    vibez.spill("Running CURSED Filesystem Module Tests")
-    vibez.spill("====================================")
-    
-    test_read_file()
-    test_write_file()
-    test_file_exists()
-    test_create_dir()
-    test_list_dir()
-    test_delete_file()
-    test_get_file_size()
-    test_join_path()
-    test_get_extension()
-    test_get_basename()
-    test_create_dir_recursive()
-    test_remove_dir()
-    test_is_dir()
-    test_is_file()
-    test_get_file_info()
-    test_set_permissions()
-    test_get_permissions()
-    
-    testz.print_test_summary()
-}
+test_file_operations()
+test_directory_operations()
+test_path_utilities()
+test_file_info()
+test_error_handling()
+test_large_files()
+test_recursive_directory_creation()
 
-fr fr Execute tests
-run_fs_tests()
+fr fr Print test summary
+testz.print_test_summary()

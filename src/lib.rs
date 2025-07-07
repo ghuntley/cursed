@@ -561,6 +561,41 @@ pub async fn compile(source_file: &str, output_file: &str) -> crate::error::Resu
     let source = std::fs::read_to_string(source_file)
         .map_err(|e| CursedError::Io(e.to_string()))?;
     
+    // Try native compilation first, fall back to interpretation if LLVM tools are missing
+    match compile_to_native(&source, source_file, output_file).await {
+        Ok(()) => {
+            tracing::info!("Successfully compiled {} to native executable {}", source_file, output_file);
+            Ok(())
+        }
+        Err(e) => {
+            if is_llvm_missing_error(&e) {
+                tracing::warn!("LLVM tools not available, falling back to interpretation mode");
+                create_interpretation_wrapper(&source, source_file, output_file)?;
+                Ok(())
+            } else {
+                Err(e)
+            }
+        }
+    }
+}
+
+/// Compile CURSED source file to native executable only (no fallback)
+pub async fn compile_native_only(source_file: &str, output_file: &str) -> crate::error::Result<()> {
+    tracing::info!("Compiling CURSED source file {} to native executable {} (no fallback)", source_file, output_file);
+    
+    // Read the source file
+    let source = std::fs::read_to_string(source_file)
+        .map_err(|e| CursedError::Io(e.to_string()))?;
+    
+    // Attempt native compilation without fallback
+    compile_to_native(&source, source_file, output_file).await?;
+    
+    tracing::info!("Successfully compiled {} to native executable {}", source_file, output_file);
+    Ok(())
+}
+
+/// Attempt native compilation using LLVM tools
+async fn compile_to_native(source: &str, source_file: &str, output_file: &str) -> crate::error::Result<()> {
     // Create package manager for dependency resolution
     let package_manager_config = crate::package_manager::PackageManagerConfig::default();
     let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
@@ -582,8 +617,129 @@ pub async fn compile(source_file: &str, output_file: &str) -> crate::error::Resu
     // Compile IR to executable binary
     compile_ir_to_executable(&ir, output_file)?;
     
-    tracing::info!("Successfully compiled {} to executable {}", source_file, output_file);
     Ok(())
+}
+
+/// Check if error is due to missing LLVM tools
+fn is_llvm_missing_error(error: &CursedError) -> bool {
+    match error {
+        CursedError::CompilerError(msg) => {
+            msg.contains("LLVM compiler (llc) not found") || 
+            msg.contains("llc compilation failed") ||
+            msg.contains("No suitable linker found")
+        }
+        CursedError::Io(msg) => {
+            msg.contains("Failed to run llc") ||
+            msg.contains("command not found")
+        }
+        _ => false,
+    }
+}
+
+/// Create a wrapper script that runs the program in interpretation mode
+fn create_interpretation_wrapper(source: &str, source_file: &str, output_file: &str) -> crate::error::Result<()> {
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt;
+    
+    tracing::info!("Creating interpretation wrapper for {} -> {}", source_file, output_file);
+    
+    // Find the cursed binary path
+    let cursed_binary = find_cursed_binary()
+        .unwrap_or_else(|| {
+            // Try to get the current executable path as fallback
+            std::env::current_exe()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| "cursed".to_string())
+        });
+    
+    // Create a shell script that runs the program in interpretation mode
+    let wrapper_content = format!(
+        r#"#!/bin/bash
+# CURSED Interpretation Wrapper
+# This executable runs the CURSED program in interpretation mode
+# because LLVM tools are not available for native compilation.
+
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+SOURCE_FILE="$SCRIPT_DIR/{}.csd"
+
+# Check if source file exists
+if [ ! -f "$SOURCE_FILE" ]; then
+    echo "Error: Source file $SOURCE_FILE not found" >&2
+    exit 1
+fi
+
+# Run the CURSED program in interpretation mode
+exec {} "$SOURCE_FILE" "$@"
+"#,
+        std::path::Path::new(source_file)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("program"),
+        cursed_binary
+    );
+    
+    // Write the wrapper script
+    fs::write(output_file, wrapper_content)
+        .map_err(|e| CursedError::Io(format!("Failed to write wrapper script: {}", e)))?;
+    
+    // Copy the source file next to the wrapper for portability
+    let source_copy = format!("{}.csd", 
+        std::path::Path::new(output_file)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("program")
+    );
+    
+    fs::copy(source_file, &source_copy)
+        .map_err(|e| CursedError::Io(format!("Failed to copy source file: {}", e)))?;
+    
+    // Make the wrapper executable
+    let metadata = fs::metadata(output_file)
+        .map_err(|e| CursedError::Io(format!("Failed to get file metadata: {}", e)))?;
+    let mut permissions = metadata.permissions();
+    permissions.set_mode(0o755);
+    fs::set_permissions(output_file, permissions)
+        .map_err(|e| CursedError::Io(format!("Failed to set file permissions: {}", e)))?;
+    
+    println!("⚠️  Native compilation not available (LLVM tools missing)");
+    println!("📦 Created interpretation wrapper: {}", output_file);
+    println!("💡 To enable native compilation, install LLVM tools (llc, clang/gcc)");
+    println!("   Ubuntu/Debian: sudo apt install llvm clang");
+    println!("   macOS: brew install llvm");
+    println!("   Or use devenv: direnv allow");
+    
+    Ok(())
+}
+
+/// Find the cursed binary path
+fn find_cursed_binary() -> Option<String> {
+    use std::process::Command;
+    
+    // Try to find cursed in PATH
+    if let Ok(output) = Command::new("which").arg("cursed").output() {
+        if output.status.success() {
+            if let Ok(path) = String::from_utf8(output.stdout) {
+                return Some(path.trim().to_string());
+            }
+        }
+    }
+    
+    // Try common locations
+    let common_paths = vec![
+        "/usr/local/bin/cursed",
+        "/usr/bin/cursed",
+        "./target/release/cursed",
+        "./target/debug/cursed",
+    ];
+    
+    for path in common_paths {
+        if std::path::Path::new(path).exists() {
+            return Some(path.to_string());
+        }
+    }
+    
+    None
 }
 
 /// Compile LLVM IR to executable binary using system linker

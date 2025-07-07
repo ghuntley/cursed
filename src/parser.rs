@@ -160,6 +160,22 @@ impl Parser {
                 return Ok(Some(Statement::While(self.parse_while_statement()?)));
             }
 
+            TokenKind::LeftParen => {
+                // Check if this is tuple destructuring assignment
+                if self.is_tuple_destructuring_assignment() {
+                    // Try to parse as assignment statement
+                    if let Ok(assignment) = self.parse_assignment_statement() {
+                        return Ok(Some(Statement::Assignment(assignment)));
+                    }
+                }
+                // Otherwise, try to parse as expression statement
+                if let Ok(expr) = self.parse_expression() {
+                    return Ok(Some(Statement::Expression(expr)));
+                }
+                // Skip unknown tokens
+                self.next_token()?;
+                return Ok(None);
+            }
             _ => {
                 // Try to parse as expression statement first
                 if let Ok(expr) = self.parse_expression() {
@@ -897,43 +913,10 @@ impl Parser {
     }
     
     fn is_tuple_destructuring_assignment(&self) -> bool {
-        // Look ahead to see if we have a pattern like (a, b, c) = ...
-        // This is a simple heuristic - could be improved
-        let mut lookahead_index = self.token_index;
-        
-        // Skip the opening paren
-        lookahead_index += 1;
-        
-        // Look for identifiers separated by commas
-        while lookahead_index < self.tokens.len() {
-            let token = &self.tokens[lookahead_index];
-            match token.kind {
-                TokenKind::Identifier => {
-                    lookahead_index += 1;
-                    // Check for comma or closing paren
-                    if lookahead_index < self.tokens.len() {
-                        match self.tokens[lookahead_index].kind {
-                            TokenKind::Comma => {
-                                lookahead_index += 1;
-                                continue;
-                            }
-                            TokenKind::RightParen => {
-                                lookahead_index += 1;
-                                // Check for assignment operator
-                                if lookahead_index < self.tokens.len() {
-                                    return self.tokens[lookahead_index].kind == TokenKind::Equal;
-                                }
-                                return false;
-                            }
-                            _ => return false,
-                        }
-                    }
-                    return false;
-                }
-                _ => return false,
-            }
-        }
-        false
+        // Simple heuristic: for now, assume any LeftParen at statement level 
+        // is likely a tuple destructuring assignment
+        // This can be improved with better lookahead logic later
+        true
     }
     
     fn parse_assignment_statement(&mut self) -> Result<AssignmentStatement> {

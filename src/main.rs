@@ -141,7 +141,7 @@ fn build_cli() -> Command {
                 .about("Compile CURSED source to executable")
                 .arg(Arg::new("input")
                     .help("Input CURSED source file")
-                    .required(true)
+                    .required_unless_present("check-deps")
                     .index(1))
                 .arg(Arg::new("output")
                     .help("Output executable name")
@@ -159,6 +159,14 @@ fn build_cli() -> Command {
                 .arg(Arg::new("no-link")
                     .help("Compile to object file without linking")
                     .long("no-link")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("native-only")
+                    .help("Only try native compilation, fail if LLVM tools are missing")
+                    .long("native-only")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("check-deps")
+                    .help("Check if compilation dependencies are available")
+                    .long("check-deps")
                     .action(clap::ArgAction::SetTrue))
         )
         .subcommand(
@@ -614,6 +622,11 @@ fn display_jit_performance_metrics(
 }
 
 async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    // Handle dependency check first (doesn't need input file)
+    if matches.get_flag("check-deps") {
+        return check_compilation_dependencies().await;
+    }
+    
     let input = matches.get_one::<String>("input").unwrap();
     let output = matches.get_one::<String>("output")
         .map(|s| s.as_str())
@@ -641,8 +654,122 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         fs::write(format!("{}.s", output), assembly)?;
         println!("{} Assembly to {}.s", "Generated".green().bold(), output);
     } else {
-        cursed::compile(input, output).await?;
-        println!("{} executable: {}", "Generated".green().bold(), output);
+        // Handle native-only flag
+        if matches.get_flag("native-only") {
+            cursed::compile_native_only(input, output).await?;
+            println!("{} native executable: {}", "Generated".green().bold(), output);
+        } else {
+            cursed::compile(input, output).await?;
+            println!("{} executable: {}", "Generated".green().bold(), output);
+        }
+    }
+    
+    Ok(())
+}
+
+async fn check_compilation_dependencies() -> Result<(), Box<dyn std::error::Error>> {
+    use std::process::Command;
+    
+    println!("{} compilation dependencies...", "Checking".blue().bold());
+    
+    let mut all_available = true;
+    
+    // Check for LLVM tools
+    println!("🔍 Checking for LLVM tools:");
+    let llc_locations = vec![
+        "llc",
+        "/nix/store/013b6qj9g2n2pmxcllnch9drrf9m0zwf-llvm-17.0.6/bin/llc",
+        "/nix/store/s5a4igx64mngxrz3d4s2mxz6764mdv47-llvm-17.0.6/bin/llc",
+        "/nix/store/8qpf7pp0a71psdngm5nxc64jahw0vlwl-llvm-19.1.7/bin/llc",
+        "/nix/store/vnxd8nqfibccfbczxwd9li5hw42k5kmw-llvm-19.1.6/bin/llc",
+        "/usr/bin/llc",
+        "/usr/local/bin/llc",
+    ];
+    
+    let mut llc_found = false;
+    for location in &llc_locations {
+        if let Ok(output) = Command::new(location).arg("--version").output() {
+            if output.status.success() {
+                println!("  {} llc found at: {}", "✓".green(), location);
+                llc_found = true;
+                break;
+            }
+        }
+    }
+    
+    if !llc_found {
+        println!("  {} llc not found", "✗".red());
+        all_available = false;
+    }
+    
+    // Check for linkers
+    println!("🔗 Checking for linkers:");
+    let linkers = ["clang", "gcc", "ld"];
+    let mut linker_found = false;
+    
+    for linker in &linkers {
+        if let Ok(output) = Command::new(linker).arg("--version").output() {
+            if output.status.success() {
+                println!("  {} {} found", "✓".green(), linker);
+                linker_found = true;
+                break;
+            }
+        }
+    }
+    
+    if !linker_found {
+        println!("  {} No linkers found", "✗".red());
+        all_available = false;
+    }
+    
+    // Check for CURSED runtime library
+    println!("📚 Checking for CURSED runtime:");
+    let runtime_paths = vec![
+        format!("{}/libcursed_runtime.a", env!("OUT_DIR")),
+        "./libcursed_runtime.a".to_string(),
+        "/usr/lib/libcursed_runtime.a".to_string(),
+        "/usr/local/lib/libcursed_runtime.a".to_string(),
+    ];
+    
+    let mut runtime_found = false;
+    for path in &runtime_paths {
+        if std::path::Path::new(path).exists() {
+            println!("  {} Runtime library found at: {}", "✓".green(), path);
+            runtime_found = true;
+            break;
+        }
+    }
+    
+    if !runtime_found {
+        println!("  {} Runtime library not found (optional)", "⚠️".yellow());
+    }
+    
+    println!();
+    
+    if all_available {
+        println!("{} All compilation dependencies are available!", "🎉".green());
+        println!("You can use native compilation with: cursed compile program.csd");
+    } else {
+        println!("{} Some compilation dependencies are missing", "⚠️".yellow());
+        println!("Install missing dependencies:");
+        
+        if !llc_found {
+            println!("  LLVM tools:");
+            println!("    Ubuntu/Debian: sudo apt install llvm");
+            println!("    macOS: brew install llvm");
+            println!("    devenv: direnv allow");
+        }
+        
+        if !linker_found {
+            println!("  C compiler/linker:");
+            println!("    Ubuntu/Debian: sudo apt install clang gcc");
+            println!("    macOS: xcode-select --install");
+        }
+        
+        println!();
+        println!("💡 You can still use interpretation mode:");
+        println!("  cursed run program.csd");
+        println!("  cursed compile program.csd  # Will fall back to interpretation wrapper");
     }
     
     Ok(())
