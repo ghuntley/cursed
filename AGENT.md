@@ -1,3 +1,8 @@
+## IMPORTANT
+
+- IMPORTANT: NEVER EVER DELETE "specs/" or "benchmark/" (case insentive and including files in the folder)
+- IMPORTANT: NEVER EVER DELETE ANY FILE NAMED "PROMPT*.MD" (case insensitive)
+
 ## Development Commands
 
 ```bash

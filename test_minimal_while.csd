@@ -1,2 +1,0 @@
-periodt (based) {
-}

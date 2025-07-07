@@ -71,6 +71,14 @@ fn main() {
     // Step 3: Analyze results
     println!("🔍 Step 3: Analyzing parsed program...");
     
+    let program = match program {
+        cursed::ast::Ast::Program(program) => program,
+        _ => {
+            println!("❌ Expected Program AST node");
+            return;
+        }
+    };
+    
     // Check package
     if let Some(package) = &program.package {
         println!("✅ Package declaration: {}", package.name);
@@ -133,7 +141,7 @@ fn main() {
     println!("  Functions: {}", function_count);
     println!("  Let statements: {}", let_count);
     println!("  Other statements: {}", other_count);
-    println!("  Total statements: {}", program.statements.len());
+    println!("  Total statements: {}", function_count + let_count + other_count);
     
     // Expected counts for validation
     let expected_functions = 4; // main, calculateArea, greetUser, demonstrateBasics

@@ -30,7 +30,11 @@ fn test_demo_cursed_hello_parsing() {
     println!("\n🔍 Step 2: Parsing...");
     let mut parser = Parser::from_tokens(tokens);
     let program = match parser.parse() {
-        Ok(program) => {
+        Ok(ast) => {
+            let program = match ast {
+                cursed::ast::Ast::Program(program) => program,
+                _ => panic!("Expected Program AST node"),
+            };
             println!("✅ Parsing successful!");
             program
         },
@@ -270,7 +274,11 @@ slay testFunc(param1, param2) {
     let mut lexer = Lexer::new(func_code.to_string());
     let tokens = lexer.tokenize().expect("Should tokenize function");
     let mut parser = Parser::from_tokens(tokens);
-    let program = parser.parse().expect("Should parse function");
+    let ast = parser.parse().expect("Should parse function");
+    let program = match ast {
+        cursed::ast::Ast::Program(program) => program,
+        _ => panic!("Expected Program AST node"),
+    };
     
     assert_eq!(program.statements.len(), 1, "Should have one function");
     match &program.statements[0] {
@@ -297,7 +305,11 @@ sus flag = based
     let mut lexer = Lexer::new(var_code.to_string());
     let tokens = lexer.tokenize().expect("Should tokenize variables");
     let mut parser = Parser::from_tokens(tokens);
-    let program = parser.parse().expect("Should parse variables");
+    let ast = parser.parse().expect("Should parse variables");
+    let program = match ast {
+        cursed::ast::Ast::Program(program) => program,
+        _ => panic!("Expected Program AST node"),
+    };
     
     assert_eq!(program.statements.len(), 3, "Should have three variable declarations");
     println!("      ✅ Variable declarations parsed correctly");
@@ -317,7 +329,11 @@ lowkey x > 5 {
     let mut lexer = Lexer::new(if_code.to_string());
     let tokens = lexer.tokenize().expect("Should tokenize conditional");
     let mut parser = Parser::from_tokens(tokens);
-    let program = parser.parse().expect("Should parse conditional");
+    let ast = parser.parse().expect("Should parse conditional");
+    let program = match ast {
+        cursed::ast::Ast::Program(program) => program,
+        _ => panic!("Expected Program AST node"),
+    };
     
     assert_eq!(program.statements.len(), 1, "Should have one if statement");
     match &program.statements[0] {

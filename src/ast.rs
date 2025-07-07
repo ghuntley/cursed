@@ -2,6 +2,14 @@
 
 use crate::error::CursedError;
 
+/// Top-level AST node
+#[derive(Debug, Clone)]
+pub enum Ast {
+    Program(Program),
+    Statement(Statement),
+    Expression(Expression),
+}
+
 /// Root program node
 #[derive(Debug, Clone)]
 pub struct Program {
@@ -778,5 +786,5 @@ pub fn parse_program(source: &str) -> Result<Program, CursedError> {
     // Real parsing would use the lexer and parser modules
     let lexer = crate::lexer::Lexer::new(source.to_string());
     let mut parser = crate::parser::Parser::new(lexer)?;
-    parser.parse_program()
+    Ok(parser.parse_program()?)
 }

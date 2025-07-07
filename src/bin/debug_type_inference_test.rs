@@ -20,7 +20,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("AST parsed successfully");
     
-    match codegen.compile_ast(&ast) {
+    let program = match ast {
+        cursed::ast::Ast::Program(program) => program,
+        _ => {
+            println!("❌ Expected Program AST node");
+            return Err("Expected Program AST node".into());
+        }
+    };
+    
+    match codegen.compile_ast(&program) {
         Ok(_) => {
             let ir = codegen.module().print_to_string().to_string();
             println!("Compilation successful!");

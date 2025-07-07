@@ -1,5 +1,6 @@
 yeet "testz"
 yeet "collections"
+yeet "test_hashmap.csd"
 
 fr fr ========================================
 fr fr CURSED Collections Library Test Suite
@@ -446,6 +447,9 @@ slay run_all_collections_tests() {
     test_array_conversion()
     test_collections_edge_cases()
     test_collections_clear()
+    
+    fr fr Run native HashMap tests
+    run_all_hashmap_tests()
     
     testz.print_test_summary()
     damn testz.run_all_tests()

@@ -1,5 +1,7 @@
 // Standard collections library
 
+yeet "hashmap.csd"
+
 // ================================
 // Array/Vector operations
 // ================================

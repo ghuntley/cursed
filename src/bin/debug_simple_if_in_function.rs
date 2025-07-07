@@ -25,7 +25,14 @@ slay demonstrateBasics() {
     
     let mut parser = Parser::from_tokens(tokens);
     match parser.parse() {
-        Ok(program) => {
+        Ok(ast) => {
+            let program = match ast {
+                cursed::ast::Ast::Program(program) => program,
+                _ => {
+                    println!("❌ Expected Program AST node");
+                    return;
+                }
+            };
             println!("✅ Parse successful!");
             println!("Statements: {}", program.statements.len());
             for (i, stmt) in program.statements.iter().enumerate() {
