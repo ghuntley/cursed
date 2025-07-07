@@ -303,6 +303,8 @@ pub mod error_patterns {
             Result::Err(Error::Memory(msg)) => ErrorPattern::MemoryError(msg),
             Result::Err(Error::Debug(msg)) => ErrorPattern::DebugError(msg),
             Result::Err(Error::InvalidOptimizationLevel(msg)) => ErrorPattern::InvalidOptimizationLevelError(msg),
+            Result::Err(Error::Type(msg)) => ErrorPattern::TypeError(msg),
+            Result::Err(Error::Lexer(msg)) => ErrorPattern::ParseError(msg),
         }
     }
 

@@ -51,7 +51,14 @@ sus x = 42
     
     let mut parser = Parser::from_tokens(tokens);
     match parser.parse() {
-        Ok(program) => {
+        Ok(ast) => {
+            let program = match ast {
+                cursed::ast::Ast::Program(program) => program,
+                _ => {
+                    println!("❌ Expected Program AST node");
+                    return;
+                }
+            };
             println!("✅ Parsing successful!");
             println!("📋 Program has {} statements", program.statements.len());
             println!("📦 Package: {:?}", program.package);
@@ -87,7 +94,14 @@ slay testFunc() {
     
     let mut parser = Parser::from_tokens(tokens);
     match parser.parse() {
-        Ok(program) => {
+        Ok(ast) => {
+            let program = match ast {
+                cursed::ast::Ast::Program(program) => program,
+                _ => {
+                    println!("❌ Expected Program AST node");
+                    return;
+                }
+            };
             println!("✅ Function parsing successful!");
             println!("📋 Program has {} statements", program.statements.len());
         },

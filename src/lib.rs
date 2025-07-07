@@ -34,7 +34,7 @@ pub mod stdlib;
 
 // Test modules  
 #[cfg(test)]
-pub mod test_member_access;
+// pub mod test_member_access; // Removed - file no longer exists
 
 // Re-export common types for easy access
 pub use common::OptimizationLevel;
@@ -792,7 +792,8 @@ pub fn format(source: &str) -> crate::error::Result<String> {
     // Check for parse errors
     let errors = parser.errors();
     if !errors.is_empty() {
-        return Err(CursedError::Parse(format!("Cannot format source with parse errors: {}", errors.join(", "))));
+        let error_messages: Vec<String> = errors.iter().map(|e| e.to_string()).collect();
+        return Err(CursedError::Parse(format!("Cannot format source with parse errors: {}", error_messages.join(", "))));
     }
     
     // Use the formatter

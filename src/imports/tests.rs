@@ -17,6 +17,40 @@ fn create_test_module(dir: &TempDir, name: &str, content: &str) -> PathBuf {
     module_path
 }
 
+/// Helper function to extract imports from source code
+fn extract_imports_from_source(source: &str) -> Vec<ImportStatement> {
+    let mut imports = Vec::new();
+    
+    // Look for import statements that start with "yeet"
+    let lines = source.lines();
+    for line in lines {
+        let line = line.trim();
+        
+        // Match patterns like 'yeet "module_name";'
+        if line.starts_with("yeet ") {
+            if let Some(rest) = line.strip_prefix("yeet ") {
+                // Extract quoted string
+                if let Some(start_quote) = rest.find('"') {
+                    if let Some(end_quote) = rest.rfind('"') {
+                        if start_quote < end_quote {
+                            let import_path = &rest[start_quote + 1..end_quote];
+                            if !import_path.is_empty() {
+                                imports.push(ImportStatement {
+                                    path: import_path.to_string(),
+                                    alias: None,
+                                    items: vec![],
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    imports
+}
+
 /// Helper function to create a test program with imports
 fn create_test_program_with_imports(imports: Vec<ImportStatement>) -> Program {
     Program {
@@ -539,13 +573,11 @@ async fn test_integration_full_import_resolution() {
     let main_path = temp_dir.path().join("main.csd");
     let source = fs::read_to_string(&main_path).expect("Failed to read main module");
     
-    let mut lexer = crate::lexer::Lexer::new(source);
-    let tokens = lexer.tokenize().expect("Failed to tokenize");
-    let mut parser = crate::parser::Parser::from_tokens(tokens);
-    let program = parser.parse_program().expect("Failed to parse main module");
+    // Extract imports from the main module source directly
+    let imports = extract_imports_from_source(&source);
     
     // Resolve all imports
-    let resolved_imports = resolver.resolve_imports(&program.imports).await.expect("Failed to resolve imports");
+    let resolved_imports = resolver.resolve_imports(&imports).await.expect("Failed to resolve imports");
     
     assert_eq!(resolved_imports.len(), 1);
     

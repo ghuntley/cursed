@@ -390,17 +390,7 @@ path = "src/bin/cursed_repl.rs"
 name = "cursed-test"
 path = "src/bin/cursed_test.rs"
 
-[[bin]]
-name = "debug-tokens"
-path = "debug_lexer_simple.rs"
 
-[[bin]]
-name = "debug-parser"
-path = "debug_parser_trace.rs"
-
-[[bin]]
-name = "debug-full"
-path = "debug_full_program.rs"
 
 [profile.release]
 lto = false  # Disable LTO for compatibility with C runtime libraries
@@ -457,17 +447,4 @@ path = "src/bin/cursed_compile_fast.rs"
 name = "minimal_demo"
 path = "examples/minimal_demo.rs"
 
-[[bench]]
-name = "optimization_benchmark"
-harness = false
-required-features = ["benchmarks"]
 
-[[bench]]
-name = "compression_benchmark"
-harness = false
-required-features = ["benchmarks"]
-
-[[bench]]
-name = "system_monitoring_benchmark"
-harness = false
-required-features = ["benchmarks"]

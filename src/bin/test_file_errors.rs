@@ -67,16 +67,23 @@ fn test_parser_errors(filename: &str, content: &str) {
             match parser.parse() {
                 Ok(ast) => {
                     println!("✅ Parser completed successfully");
-                    println!("   Program has {} statements", ast.statements.len());
-                    if !ast.imports.is_empty() {
-                        println!("   Program has {} imports", ast.imports.len());
+                    if let cursed::ast::Ast::Program(program) = ast {
+                        println!("   Program has {} statements", program.statements.len());
+                        if !program.imports.is_empty() {
+                            println!("   Program has {} imports", program.imports.len());
+                        }
                     }
                 }
                 Err(e) => {
                     println!("❌ Parser error: {}", e);
                     
                     // Convert to structured error
-                    let structured_error = StructuredError::from(e);
+                    let structured_error = match e {
+                        cursed::error_types::Error::Parse(msg) => StructuredError::new(ErrorCode::E0001, msg),
+                        cursed::error_types::Error::Type(msg) => StructuredError::new(ErrorCode::E0100, msg),
+                        cursed::error_types::Error::Lexer(msg) => StructuredError::new(ErrorCode::E0001, msg),
+                        _ => StructuredError::new(ErrorCode::E0001, e.to_string()),
+                    };
                     reporter.add_error(structured_error);
                 }
             }

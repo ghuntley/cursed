@@ -1,4 +1,0 @@
-slay main() {
-    bestie ; based; {
-    }
-}

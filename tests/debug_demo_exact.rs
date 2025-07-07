@@ -31,7 +31,11 @@ fn test_debug_demo_exact() {
 
     // Step 2: Parse
     let mut parser = Parser::from_tokens(tokens);
-    let program = parser.parse().expect("Parsing failed");
+    let ast = parser.parse().expect("Parsing failed");
+    let program = match ast {
+        cursed::ast::Ast::Program(program) => program,
+        _ => panic!("Expected Program")
+    };
 
     println!("\nParsed {} statements:", program.statements.len());
     for (i, stmt) in program.statements.iter().enumerate() {

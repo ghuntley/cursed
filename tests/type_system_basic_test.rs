@@ -12,8 +12,12 @@ fn compile_to_ir(code: &str) -> Result<String, CursedError> {
     let mut lexer = Lexer::new(code.to_string());
     let mut parser = Parser::new(lexer)?;
     let ast = parser.parse()?;
+    let program = match ast {
+        cursed::ast::Ast::Program(program) => program,
+        _ => panic!("Expected Program")
+    };
 
-    codegen.compile_ast(&ast)?;
+    codegen.compile_ast(&program)?;
     Ok(codegen.module().print_to_string().to_string())
 }
 

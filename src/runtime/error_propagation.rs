@@ -350,6 +350,8 @@ impl ErrorRecoverySystem {
             Error::Optimization(_) => "Optimization",
             Error::Debug(_) => "Debug",
             Error::InvalidOptimizationLevel(_) => "InvalidOptimizationLevel",
+            Error::Type(_) => "Type",
+            Error::Lexer(_) => "Lexer",
         };
 
         let strategies = self.strategies.lock().unwrap();

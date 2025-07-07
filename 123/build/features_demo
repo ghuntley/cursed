@@ -1,3 +1,0 @@
-#!/bin/bash
-cd $(dirname $0)/../..
-./target/release/cursed 123/features_demo.csd

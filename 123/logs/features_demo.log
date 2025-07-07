@@ -1,5 +1,0 @@
-[2025-06-29T17:52:25Z INFO  cursed::execution] 🚀 Executing CURSED code with advanced features
-[2025-06-29T17:52:25Z INFO  cursed::execution] ⚡ JIT compilation enabled
-[2025-06-29T17:52:25Z INFO  cursed::execution] 🔄 Interpreted execution
-"====================================="
-Error: Runtime error: Undefined function: show_basic_features

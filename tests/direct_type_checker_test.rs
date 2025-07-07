@@ -79,8 +79,12 @@ fn test_type_checking_passes(test_program: &str) {
     println!("AST parsed successfully");
     
     // Test the type checker directly
+    let program = match ast {
+        cursed::ast::Ast::Program(program) => program,
+        _ => panic!("Expected Program")
+    };
     let mut type_checker = cursed::type_system::checker::TypeChecker::new();
-    match type_checker.check_program(&ast) {
+    match type_checker.check_program(&program) {
         Ok(_) => {
             println!("SUCCESS: Type checking passed!");
         }

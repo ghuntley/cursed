@@ -1494,7 +1494,8 @@ fn check_syntax(source: &str) -> Result<(), Box<dyn std::error::Error>> {
     
     let errors = parser.errors();
     if !errors.is_empty() {
-        return Err(format!("Parse errors: {}", errors.join(", ")).into());
+        let error_msgs: Vec<String> = errors.iter().map(|e| e.to_string()).collect();
+        return Err(format!("Parse errors: {}", error_msgs.join(", ")).into());
     }
     
     Ok(())

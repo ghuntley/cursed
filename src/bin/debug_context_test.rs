@@ -21,7 +21,14 @@ fn main() {
         
         let mut parser = Parser::from_tokens(tokens);
         match parser.parse() {
-            Ok(program) => {
+            Ok(ast) => {
+                let program = match ast {
+                    cursed::ast::Ast::Program(program) => program,
+                    _ => {
+                        println!("❌ Expected Program AST node");
+                        continue;
+                    }
+                };
                 println!("✅ Parse successful! {} statements", program.statements.len());
             },
             Err(e) => {

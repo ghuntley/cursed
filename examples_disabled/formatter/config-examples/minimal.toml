@@ -1,8 +1,0 @@
-# Minimal CURSED formatter configuration
-# Just the essentials for most projects
-
-[formatting]
-line_width = 120
-tab_size = 2
-trailing_commas = true
-sort_imports = true

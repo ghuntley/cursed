@@ -1,1 +1,0 @@
-sus n=1;sus b=[115,108,97,121,32,109,97,105,110,40,41,123,115,117,115,32,110,61,49,59];sus i=0;sus t=[];while(i<160){t=append(t,(b[i/8]>>(7-i%8))&1);i=i+1;}i=0;while(i<n){sus u=[];sus j=0;while(j<160){u=append(u,t[(j+159)%160]^(t[j]|t[(j+1)%160]));j=j+1;}t=u;i=i+1;}sus h="";i=0;while(i<160){h=h+substr("0123456789abcdef",t[i]*8+t[i+1]*4+t[i+2]*2+t[i+3],1);i=i+4;}print(h);
