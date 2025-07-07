@@ -4,7 +4,7 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality. Follow the fix_plan.md and choose the 10 important things. Before making changes search codebase (don't assume not implemented) using subagents. Think hard. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of rust.
+1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality. Follow the fix_plan.md and choose the 5 important things. Before making changes search codebase (don't assume not implemented) using subagents. Think hard. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of rust.
 
 2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think hard.
 

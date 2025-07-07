@@ -59,6 +59,7 @@ aes = "0.8"
 aes-gcm = "0.10"
 subtle = "2.5.0"
 base64ct = "=1.6.0"
+chrono = { version = "0.4", features = ["serde"] }
 "#;
     
     fs::write(runtime_dir.join("Cargo.toml"), runtime_cargo_toml).unwrap();
@@ -95,6 +96,9 @@ use argon2::{Argon2, password_hash::{PasswordHasher, PasswordVerifier, SaltStrin
 use bcrypt::{hash, verify};
 use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer};
 use subtle::ConstantTimeEq;
+use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
+use std::thread;
+use chrono::{DateTime, Utc, Local, TimeZone, Datelike, Timelike, Weekday, NaiveDate, NaiveDateTime};
 
 // Export all runtime functions with C linkage
 "#;
