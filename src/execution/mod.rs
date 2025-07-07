@@ -991,6 +991,7 @@ impl CursedExecutionEngine {
                     .ok_or_else(|| CursedError::RuntimeError(format!("Undefined variable: {}", name)))
             },
             Expression::Binary(binary_expr) => {
+                log::debug!("📊 Evaluating binary expression: {:?}", binary_expr.operator);
                 if binary_expr.operator == "=" {
                     // Handle assignment
                     if let Expression::Identifier(var_name) = &*binary_expr.left {
@@ -1003,6 +1004,7 @@ impl CursedExecutionEngine {
                 } else {
                     let left = self.evaluate_expression(&binary_expr.left, context)?;
                     let right = self.evaluate_expression(&binary_expr.right, context)?;
+                    log::debug!("📊 About to apply binary operator: {:?} {} {:?}", left, binary_expr.operator, right);
                     self.apply_binary_operator(&left, &binary_expr.operator, &right)
                 }
             },
@@ -1208,10 +1210,15 @@ impl CursedExecutionEngine {
     }
 
     fn apply_binary_operator(&self, left: &CursedValue, operator: &str, right: &CursedValue) -> Result<CursedValue, CursedError> {
+        log::debug!("📊 Binary operation: {:?} {} {:?}", left, operator, right);
         match (left, right) {
             (CursedValue::Integer(l), CursedValue::Integer(r)) => {
                 match operator {
-                    "+" => Ok(CursedValue::Integer(l + r)),
+                    "+" => {
+                        let result = l + r;
+                        log::debug!("📊 Integer addition: {} + {} = {}", l, r, result);
+                        Ok(CursedValue::Integer(result))
+                    },
                     "-" => Ok(CursedValue::Integer(l - r)),
                     "*" => Ok(CursedValue::Integer(l * r)),
                     "/" => {
@@ -1948,6 +1955,16 @@ impl CursedExecutionEngine {
                 struct_fields.get(&member_expr.property)
                     .cloned()
                     .ok_or_else(|| CursedError::RuntimeError(format!("Struct field '{}' not found", member_expr.property)))
+            },
+            CursedValue::Tuple(tuple_elements) => {
+                // Access tuple element by index
+                if let Ok(index) = member_expr.property.parse::<usize>() {
+                    tuple_elements.get(index)
+                        .cloned()
+                        .ok_or_else(|| CursedError::RuntimeError(format!("Tuple index {} out of bounds", index)))
+                } else {
+                    Err(CursedError::RuntimeError(format!("Invalid tuple index: {}", member_expr.property)))
+                }
             },
             _ => {
                 // For other types, return nil for now (could be method calls)

@@ -28,7 +28,7 @@ impl fmt::Display for Error {
             Error::Compile(msg) => write!(f, "Compile error: {}", msg),
             Error::Import(msg) => write!(f, "Import error: {}", msg),
             Error::Lexer(msg) => write!(f, "Lexer error: {}", msg),
-            Error::Io(msg) => write!(f, "IO error: {}", msg),
+            Error::Io(msg) => write!(f, "I/O error: {}", msg),
             Error::Memory(msg) => write!(f, "Memory error: {}", msg),
             Error::TypeCheck(msg) => write!(f, "Type check error: {}", msg),
             Error::Package(msg) => write!(f, "Package error: {}", msg),
