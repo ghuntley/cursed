@@ -70,8 +70,10 @@ mod tests {
     #[test]
     fn test_yield_point_compilation() {
         let source = r#"
-            lowkey (sus i = 0; i < 10; i++) {
-                yolo  // Yield point
+            slay main() {
+                bestie (sus i = 0; i < 10; i++) {
+                    yolo  // Yield point
+                }
             }
         "#;
         
@@ -108,12 +110,14 @@ mod tests {
     #[test]
     fn test_multiple_goroutine_spawns() {
         let source = r#"
-            slay worker(id: i64) {
+            slay worker(id thicc) {
                 // Do work
             }
             
-            lowkey (sus i = 0; i < 5; i++) {
-                stan worker(i)
+            slay main() {
+                bestie (sus i = 0; i < 5; i++) {
+                    stan worker(i)
+                }
             }
         "#;
         
@@ -147,7 +151,7 @@ mod tests {
     fn test_goroutine_safe_points() {
         let source = r#"
             slay computation() {
-                lowkey (sus i = 0; i < 1000; i++) {
+                bestie (sus i = 0; i < 1000; i++) {
                     // Some computation
                     yolo  // Safe point for GC
                 }
@@ -256,12 +260,12 @@ mod tests {
     fn test_nested_goroutine_spawns() {
         let source = r#"
             slay spawn_workers() {
-                lowkey (sus i = 0; i < 3; i++) {
+                bestie (sus i = 0; i < 3; i++) {
                     stan worker(i)
                 }
             }
             
-            slay worker(id: i64) {
+            slay worker(id thicc) {
                 // Do work
             }
             

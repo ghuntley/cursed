@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, AssignmentStatement, AssignmentTarget};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -565,45 +565,123 @@ impl Parser {
                     let name = token.lexeme.clone();
                     self.next_token()?;
                     
-                    // Check for postfix operators
-                    if let Some(token) = self.current_token.as_ref() {
-                        match token.kind {
-                            TokenKind::PlusPlus => {
-                                // Postfix increment
-                                self.next_token()?;
-                                return Ok(Expression::Increment(IncrementExpression {
-                                    variable: name,
-                                    is_prefix: false,
-                                }));
-                            }
-                            TokenKind::MinusMinus => {
-                                // Postfix decrement
-                                self.next_token()?;
-                                return Ok(Expression::Decrement(DecrementExpression {
-                                    variable: name,
-                                    is_prefix: false,
-                                }));
-                            }
-                            TokenKind::Dot => {
-                                // Tuple access (e.g., tuple.0, tuple.1)
-                                self.next_token()?;
-                                if let Some(token) = self.current_token.as_ref() {
-                                    if token.kind == TokenKind::Number {
-                                        let index: usize = token.lexeme.parse().unwrap_or(0);
-                                        self.next_token()?;
-                                        return Ok(Expression::TupleAccess(TupleAccessExpression {
-                                            tuple: Box::new(Expression::Identifier(name)),
-                                            index,
-                                        }));
+                    // Handle postfix operations in a loop to allow chaining
+                    let mut expr = Expression::Identifier(name);
+                    
+                    loop {
+                        if let Some(token) = self.current_token.as_ref() {
+                            match token.kind {
+                                TokenKind::PlusPlus => {
+                                    // Postfix increment
+                                    self.next_token()?;
+                                    expr = Expression::Increment(IncrementExpression {
+                                        variable: match expr {
+                                            Expression::Identifier(ref name) => name.clone(),
+                                            _ => return Err(Error::Parse("Invalid target for increment".to_string())),
+                                        },
+                                        is_prefix: false,
+                                    });
+                                }
+                                TokenKind::MinusMinus => {
+                                    // Postfix decrement
+                                    self.next_token()?;
+                                    expr = Expression::Decrement(DecrementExpression {
+                                        variable: match expr {
+                                            Expression::Identifier(ref name) => name.clone(),
+                                            _ => return Err(Error::Parse("Invalid target for decrement".to_string())),
+                                        },
+                                        is_prefix: false,
+                                    });
+                                }
+                                TokenKind::Dot => {
+                                    // Handle both tuple access (e.g., tuple.0, tuple.1) and member access (e.g., vibez.spill)
+                                    self.next_token()?;
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        match token.kind {
+                                            TokenKind::Number => {
+                                                // Tuple access with numeric index
+                                                let index: usize = token.lexeme.parse().unwrap_or(0);
+                                                self.next_token()?;
+                                                expr = Expression::TupleAccess(TupleAccessExpression {
+                                                    tuple: Box::new(expr),
+                                                    index,
+                                                });
+                                            }
+                                            TokenKind::Identifier => {
+                                                // Member access with identifier
+                                                let property_name = token.lexeme.clone();
+                                                self.next_token()?;
+                                                expr = Expression::MemberAccess(MemberAccessExpression {
+                                                    object: Box::new(expr),
+                                                    property: property_name,
+                                                });
+                                            }
+                                            _ => {
+                                                return Err(Error::Parse("Expected number or identifier after '.' for member access".to_string()));
+                                            }
+                                        }
+                                    } else {
+                                        return Err(Error::Parse("Expected number or identifier after '.' for member access".to_string()));
                                     }
                                 }
-                                return Err(Error::Parse("Expected number after '.' for tuple access".to_string()));
+                                TokenKind::LeftParen => {
+                                    // Function call - parse arguments
+                                    self.next_token()?; // consume '('
+                                    let mut arguments = Vec::new();
+                                    
+                                    // Parse arguments
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        if token.kind != TokenKind::RightParen {
+                                            loop {
+                                                arguments.push(self.parse_primary_expression()?);
+                                                
+                                                if let Some(token) = self.current_token.as_ref() {
+                                                    match token.kind {
+                                                        TokenKind::Comma => {
+                                                            self.next_token()?; // consume ','
+                                                        }
+                                                        TokenKind::RightParen => {
+                                                            break;
+                                                        }
+                                                        _ => {
+                                                            return Err(Error::Parse("Expected ',' or ')' in function call".to_string()));
+                                                        }
+                                                    }
+                                                } else {
+                                                    return Err(Error::Parse("Unexpected end of input in function call".to_string()));
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Consume ')'
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        if token.kind == TokenKind::RightParen {
+                                            self.next_token()?;
+                                        } else {
+                                            return Err(Error::Parse("Expected ')' to close function call".to_string()));
+                                        }
+                                    } else {
+                                        return Err(Error::Parse("Expected ')' to close function call".to_string()));
+                                    }
+                                    
+                                    expr = Expression::Call(CallExpression {
+                                        function: Box::new(expr),
+                                        arguments,
+                                    });
+                                }
+                                _ => {
+                                    // No more postfix operations
+                                    break;
+                                }
                             }
-                            _ => {}
+                        } else {
+                            // No more tokens
+                            break;
                         }
                     }
                     
-                    return Ok(Expression::Identifier(name));
+                    return Ok(expr);
                 }
                 TokenKind::Number => {
                     // Parse number literal
