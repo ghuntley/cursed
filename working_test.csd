@@ -1,1 +1,5 @@
-vibez.spill("Working test")
+slay main() {
+    vibez.spill("Working test")
+}
+
+main()

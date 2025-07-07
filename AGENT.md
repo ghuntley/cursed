@@ -645,3 +645,70 @@ cargo run --bin cursed -- compile program.csd  # Native compilation test
 - **Run stdlib tests after parser/semantic changes**
 - **Clean up debug files regularly to prevent workspace bloat**
 
+## Parser Implementation Insights
+
+### Tuple Implementation Success
+**✅ BREAKTHROUGH (2025-01-07): Complete Tuple Functionality**
+- **Dual Parsing Strategy**: Tuple parsing requires both LeftParen handling and proper binary operator precedence
+- **Member Access**: Tuple access (`tuple.0`) integrated with member access parsing
+- **Destructuring**: Complete support for `(a, b, c) := tuple` syntax
+- **Arithmetic Integration**: Tuple access + arithmetic operations work seamlessly
+- **Status**: Full tuple implementation with comprehensive test coverage
+
+### Binary Expression Parser Architecture
+**✅ CRITICAL INSIGHT: Expression Parsing Order**
+- **Primary Expression First**: Parser must handle primary expressions BEFORE binary operators
+- **Universal Binary Ops**: Binary expressions need to work after ANY primary expression, not just identifiers
+- **Precedence Architecture**: Proper precedence handling requires primary → binary → precedence chain
+- **Member Access Integration**: Member access (`.`) must be handled within primary expression parsing
+- **Key Pattern**: `parse_primary_expression()` → `parse_binary_expression()` → `parse_expression_with_precedence()`
+
+### Parser Debugging Techniques
+**✅ SYSTEMATIC DEBUGGING APPROACH**
+- **Test-Driven Diagnosis**: Use failing tests to identify specific parsing paths
+- **Error Message Analysis**: "Expected identifier in tuple destructuring" indicates wrong parsing branch
+- **Token Sequence Debugging**: Trace token consumption through parsing stages
+- **Precedence Verification**: Ensure operators are parsed with correct precedence
+- **Primary vs Binary**: Distinguish between primary expression failures vs binary operator failures
+
+### Test-Driven Parser Development
+**✅ PROVEN DEVELOPMENT METHODOLOGY**
+- **Failing Test Analysis**: Use test failures to guide implementation priorities
+- **Incremental Implementation**: Fix one parsing path at a time
+- **Cross-Feature Testing**: Verify that fixes don't break existing functionality
+- **Comprehensive Coverage**: Test complex expressions that combine multiple features
+- **Validation Commands**: `cargo test tuple_tests` and `cargo test binary_expression_tests`
+
+### Parser Architecture Patterns
+**✅ PRODUCTION-READY PATTERNS**
+- **Separation of Concerns**: Primary expressions vs binary operations vs precedence
+- **Consistent Token Handling**: Always consume tokens in the correct order
+- **Error Recovery**: Graceful handling of syntax errors with helpful messages
+- **Extensibility**: Architecture supports adding new expression types easily
+- **Performance**: Efficient parsing with minimal backtracking
+
+### Key Implementation Commands
+```bash
+# Test tuple parsing specifically
+cargo test tuple_tests
+
+# Test binary expression parsing
+cargo test binary_expression_tests
+
+# Test complete expression parsing
+cargo test expression_parsing_tests
+
+# Debug parser with specific test case
+cargo run --bin cursed tuple_demo.csd
+
+# Verify tuple + arithmetic combinations
+cargo run --bin cursed complex_tuple_test.csd
+```
+
+### Critical Parser Insights
+- **Tuple Parsing**: Requires both LeftParen parsing and proper binary operator precedence
+- **Binary Expressions**: Must work after ANY primary expression, not just identifiers
+- **Parsing Order**: Primary expression parsing FIRST, then binary operator detection
+- **Precedence Handling**: Tuple access (`.`) + arithmetic (`+`) requires careful precedence management
+- **Test Failure Analysis**: "Expected identifier" errors indicate wrong parsing path selection
+

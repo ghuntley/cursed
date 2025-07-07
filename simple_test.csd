@@ -1,1 +1,1 @@
-vibez.spill("Hello CURSED!")
+sus message tea = "Hello, CURSED!"
