@@ -3,6 +3,8 @@ fr fr CURSED Enhanced Testing Framework Self-Tests
 fr fr Tests the testz module itself to verify all functionality
 fr fr ================================
 
+yeet "testz"
+
 fr fr ================================
 fr fr Test Suite: Basic Assertions
 fr fr ================================
