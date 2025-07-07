@@ -60,6 +60,7 @@ aes-gcm = "0.10"
 subtle = "2.5.0"
 base64ct = "=1.6.0"
 chrono = { version = "0.4", features = ["serde"] }
+lazy_static = "1.4"
 "#;
     
     fs::write(runtime_dir.join("Cargo.toml"), runtime_cargo_toml).unwrap();
@@ -73,16 +74,21 @@ chrono = { version = "0.4", features = ["serde"] }
 use std::ffi::{CStr, CString, c_void};
 use std::os::raw::c_char;
 use std::ptr;
-use std::fs::{self, OpenOptions};
-use std::io::{self, Write, Read, BufRead, BufReader};
+use std::fs::{self, OpenOptions, File};
+use std::io::{self, Write, Read, BufRead, BufReader, BufWriter, Seek, SeekFrom};
 use std::env;
 use std::collections::{HashMap, HashSet};
 use std::slice;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, atomic::{AtomicI32, Ordering}};
+use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
+use std::thread;
+use chrono::{DateTime, Utc, Local, TimeZone, Datelike, Timelike, Weekday, NaiveDate, NaiveDateTime};
 use regex::Regex;
 use base64::{Engine as _, engine::general_purpose};
 use std::net::{TcpStream, TcpListener, ToSocketAddrs, SocketAddr, IpAddr};
 use std::io::{Read as IoRead, Write as IoWrite};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use sha2::{Sha256, Sha512, Digest};
 // MD5 import not needed, we'll use md5::compute directly
 use blake3::Hasher as Blake3Hasher;
@@ -96,9 +102,17 @@ use argon2::{Argon2, password_hash::{PasswordHasher, PasswordVerifier, SaltStrin
 use bcrypt::{hash, verify};
 use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer};
 use subtle::ConstantTimeEq;
-use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
-use std::thread;
-use chrono::{DateTime, Utc, Local, TimeZone, Datelike, Timelike, Weekday, NaiveDate, NaiveDateTime};
+
+// Global file handle management for stream I/O
+lazy_static::lazy_static! {
+    static ref FILE_HANDLES: Mutex<HashMap<i32, File>> = Mutex::new(HashMap::new());
+    static ref BUFFER_HANDLES: Mutex<HashMap<i32, Vec<u8>>> = Mutex::new(HashMap::new());
+    static ref NEXT_HANDLE_ID: AtomicI32 = AtomicI32::new(1);
+}
+
+fn get_next_handle() -> i32 {
+    NEXT_HANDLE_ID.fetch_add(1, Ordering::SeqCst)
+}
 
 // Export all runtime functions with C linkage
 "#;

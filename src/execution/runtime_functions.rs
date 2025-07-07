@@ -8,8 +8,8 @@ use crate::error::CursedError;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::ptr;
-use std::fs::{self, OpenOptions};
-use std::io::{self, Write, Read, BufRead, BufReader};
+use std::fs::{self, OpenOptions, File};
+use std::io::{self, Write, Read, BufRead, BufReader, BufWriter, Seek, SeekFrom};
 use std::env;
 use regex::Regex;
 use base64::{Engine as _, engine::general_purpose};
@@ -17,12 +17,30 @@ use std::slice;
 use std::time::{SystemTime, UNIX_EPOCH, Duration, Instant};
 use std::thread;
 use chrono::{DateTime, Utc, Local, TimeZone, Datelike, Timelike, Weekday, NaiveDate, NaiveDateTime};
+use std::path::{Path, PathBuf};
+use std::collections::HashMap;
+use std::sync::{Mutex, atomic::{AtomicI32, Ordering}};
 
 /// Initialize all runtime functions for the CURSED standard library
 pub fn initialize_runtime_functions() -> Result<(), CursedError> {
     // Runtime function initialization - registers all external functions
     // with the JIT compiler and execution engine
     Ok(())
+}
+
+// ================================
+// File Handle Management
+// ================================
+
+// Global file handle management for stream I/O
+lazy_static::lazy_static! {
+    static ref FILE_HANDLES: Mutex<HashMap<i32, File>> = Mutex::new(HashMap::new());
+    static ref BUFFER_HANDLES: Mutex<HashMap<i32, Vec<u8>>> = Mutex::new(HashMap::new());
+    static ref NEXT_HANDLE_ID: AtomicI32 = AtomicI32::new(1);
+}
+
+fn get_next_handle() -> i32 {
+    NEXT_HANDLE_ID.fetch_add(1, Ordering::SeqCst)
 }
 
 // ================================
@@ -534,10 +552,812 @@ pub extern "C" fn io_change_directory(path_ptr: *const c_char) -> i32 {
 }
 
 // ================================
+// Stream I/O Functions (10 functions)
+// ================================
+
+/// Open a file for reading (implementation for io_open_file_read)
+#[no_mangle]
+pub extern "C" fn io_open_file_read(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match File::open(path) {
+                    Ok(file) => {
+                        let handle = get_next_handle();
+                        if let Ok(mut handles) = FILE_HANDLES.lock() {
+                            handles.insert(handle, file);
+                            handle
+                        } else {
+                            -1
+                        }
+                    },
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Open a file for writing (implementation for io_open_file_write)
+#[no_mangle]
+pub extern "C" fn io_open_file_write(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match File::create(path) {
+                    Ok(file) => {
+                        let handle = get_next_handle();
+                        if let Ok(mut handles) = FILE_HANDLES.lock() {
+                            handles.insert(handle, file);
+                            handle
+                        } else {
+                            -1
+                        }
+                    },
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Open a file for appending (implementation for io_open_file_append)
+#[no_mangle]
+pub extern "C" fn io_open_file_append(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match OpenOptions::new().create(true).append(true).open(path) {
+                    Ok(file) => {
+                        let handle = get_next_handle();
+                        if let Ok(mut handles) = FILE_HANDLES.lock() {
+                            handles.insert(handle, file);
+                            handle
+                        } else {
+                            -1
+                        }
+                    },
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Close a file (implementation for io_close_file)
+#[no_mangle]
+pub extern "C" fn io_close_file(handle: i32) -> i32 {
+    if let Ok(mut handles) = FILE_HANDLES.lock() {
+        if handles.remove(&handle).is_some() {
+            0
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Read from a file (implementation for io_read_from_file)
+#[no_mangle]
+pub extern "C" fn io_read_from_file(handle: i32, size: usize) -> *mut c_char {
+    if let Ok(mut handles) = FILE_HANDLES.lock() {
+        if let Some(file) = handles.get_mut(&handle) {
+            let mut buffer = vec![0u8; size];
+            match file.read(&mut buffer) {
+                Ok(bytes_read) => {
+                    buffer.truncate(bytes_read);
+                    match String::from_utf8(buffer) {
+                        Ok(content) => {
+                            match CString::new(content) {
+                                Ok(c_str) => c_str.into_raw(),
+                                Err(_) => ptr::null_mut()
+                            }
+                        },
+                        Err(_) => ptr::null_mut()
+                    }
+                },
+                Err(_) => ptr::null_mut()
+            }
+        } else {
+            ptr::null_mut()
+        }
+    } else {
+        ptr::null_mut()
+    }
+}
+
+/// Write to a file (implementation for io_write_to_file)
+#[no_mangle]
+pub extern "C" fn io_write_to_file(handle: i32, data_ptr: *const c_char) -> i32 {
+    if data_ptr.is_null() {
+        return -1;
+    }
+    
+    if let Ok(mut handles) = FILE_HANDLES.lock() {
+        if let Some(file) = handles.get_mut(&handle) {
+            unsafe {
+                match CStr::from_ptr(data_ptr).to_str() {
+                    Ok(data) => {
+                        match file.write_all(data.as_bytes()) {
+                            Ok(_) => 0,
+                            Err(_) => -1
+                        }
+                    },
+                    Err(_) => -1
+                }
+            }
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Flush a file (implementation for io_flush_file)
+#[no_mangle]
+pub extern "C" fn io_flush_file(handle: i32) -> i32 {
+    if let Ok(mut handles) = FILE_HANDLES.lock() {
+        if let Some(file) = handles.get_mut(&handle) {
+            match file.flush() {
+                Ok(_) => 0,
+                Err(_) => -1
+            }
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Seek in a file (implementation for io_seek_file)
+#[no_mangle]
+pub extern "C" fn io_seek_file(handle: i32, position: i64) -> i32 {
+    if let Ok(mut handles) = FILE_HANDLES.lock() {
+        if let Some(file) = handles.get_mut(&handle) {
+            match file.seek(SeekFrom::Start(position as u64)) {
+                Ok(_) => 0,
+                Err(_) => -1
+            }
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Get current position in a file (implementation for io_tell_file)
+#[no_mangle]
+pub extern "C" fn io_tell_file(handle: i32) -> i32 {
+    if let Ok(mut handles) = FILE_HANDLES.lock() {
+        if let Some(file) = handles.get_mut(&handle) {
+            match file.seek(SeekFrom::Current(0)) {
+                Ok(position) => position as i32,
+                Err(_) => -1
+            }
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+// ================================
+// Buffered I/O Functions (7 functions)
+// ================================
+
+/// Create a buffer (implementation for io_create_buffer)
+#[no_mangle]
+pub extern "C" fn io_create_buffer(size: usize) -> i32 {
+    let handle = get_next_handle();
+    if let Ok(mut buffers) = BUFFER_HANDLES.lock() {
+        buffers.insert(handle, Vec::with_capacity(size));
+        handle
+    } else {
+        -1
+    }
+}
+
+/// Write to a buffer (implementation for io_buffer_write)
+#[no_mangle]
+pub extern "C" fn io_buffer_write(buf_handle: i32, data_ptr: *const c_char) -> i32 {
+    if data_ptr.is_null() {
+        return -1;
+    }
+    
+    if let Ok(mut buffers) = BUFFER_HANDLES.lock() {
+        if let Some(buffer) = buffers.get_mut(&buf_handle) {
+            unsafe {
+                match CStr::from_ptr(data_ptr).to_str() {
+                    Ok(data) => {
+                        buffer.extend_from_slice(data.as_bytes());
+                        0
+                    },
+                    Err(_) => -1
+                }
+            }
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Read from a buffer (implementation for io_buffer_read)
+#[no_mangle]
+pub extern "C" fn io_buffer_read(buf_handle: i32, size: usize) -> *mut c_char {
+    if let Ok(mut buffers) = BUFFER_HANDLES.lock() {
+        if let Some(buffer) = buffers.get_mut(&buf_handle) {
+            let read_size = std::cmp::min(size, buffer.len());
+            let data = buffer.drain(..read_size).collect::<Vec<u8>>();
+            match String::from_utf8(data) {
+                Ok(content) => {
+                    match CString::new(content) {
+                        Ok(c_str) => c_str.into_raw(),
+                        Err(_) => ptr::null_mut()
+                    }
+                },
+                Err(_) => ptr::null_mut()
+            }
+        } else {
+            ptr::null_mut()
+        }
+    } else {
+        ptr::null_mut()
+    }
+}
+
+/// Flush a buffer (implementation for io_buffer_flush)
+#[no_mangle]
+pub extern "C" fn io_buffer_flush(buf_handle: i32) -> i32 {
+    // For in-memory buffers, flush is a no-op
+    if let Ok(buffers) = BUFFER_HANDLES.lock() {
+        if buffers.contains_key(&buf_handle) {
+            0
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Clear a buffer (implementation for io_buffer_clear)
+#[no_mangle]
+pub extern "C" fn io_buffer_clear(buf_handle: i32) -> i32 {
+    if let Ok(mut buffers) = BUFFER_HANDLES.lock() {
+        if let Some(buffer) = buffers.get_mut(&buf_handle) {
+            buffer.clear();
+            0
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Get buffer size (implementation for io_buffer_size)
+#[no_mangle]
+pub extern "C" fn io_buffer_size(buf_handle: i32) -> i32 {
+    if let Ok(buffers) = BUFFER_HANDLES.lock() {
+        if let Some(buffer) = buffers.get(&buf_handle) {
+            buffer.len() as i32
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Get buffer available space (implementation for io_buffer_available)
+#[no_mangle]
+pub extern "C" fn io_buffer_available(buf_handle: i32) -> i32 {
+    if let Ok(buffers) = BUFFER_HANDLES.lock() {
+        if let Some(buffer) = buffers.get(&buf_handle) {
+            (buffer.capacity() - buffer.len()) as i32
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+// ================================
+// Path Operations Functions (8 functions)
+// ================================
+
+/// Join path components (implementation for io_path_join)
+#[no_mangle]
+pub extern "C" fn io_path_join(parts_ptr: *const *const c_char, count: usize) -> *mut c_char {
+    if parts_ptr.is_null() || count == 0 {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let mut path = PathBuf::new();
+        for i in 0..count {
+            let part_ptr = *parts_ptr.add(i);
+            if !part_ptr.is_null() {
+                if let Ok(part) = CStr::from_ptr(part_ptr).to_str() {
+                    path.push(part);
+                }
+            }
+        }
+        
+        if let Some(path_str) = path.to_str() {
+            match CString::new(path_str) {
+                Ok(c_str) => c_str.into_raw(),
+                Err(_) => ptr::null_mut()
+            }
+        } else {
+            ptr::null_mut()
+        }
+    }
+}
+
+/// Get directory name (implementation for io_path_dirname)
+#[no_mangle]
+pub extern "C" fn io_path_dirname(path_ptr: *const c_char) -> *mut c_char {
+    if path_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                let path_buf = Path::new(path);
+                if let Some(parent) = path_buf.parent() {
+                    if let Some(parent_str) = parent.to_str() {
+                        match CString::new(parent_str) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    } else {
+                        ptr::null_mut()
+                    }
+                } else {
+                    ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Get base name (implementation for io_path_basename)
+#[no_mangle]
+pub extern "C" fn io_path_basename(path_ptr: *const c_char) -> *mut c_char {
+    if path_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                let path_buf = Path::new(path);
+                if let Some(file_name) = path_buf.file_name() {
+                    if let Some(name_str) = file_name.to_str() {
+                        match CString::new(name_str) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    } else {
+                        ptr::null_mut()
+                    }
+                } else {
+                    ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Get file extension (implementation for io_path_extension)
+#[no_mangle]
+pub extern "C" fn io_path_extension(path_ptr: *const c_char) -> *mut c_char {
+    if path_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                let path_buf = Path::new(path);
+                if let Some(extension) = path_buf.extension() {
+                    if let Some(ext_str) = extension.to_str() {
+                        match CString::new(ext_str) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    } else {
+                        ptr::null_mut()
+                    }
+                } else {
+                    ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Get absolute path (implementation for io_path_absolute)
+#[no_mangle]
+pub extern "C" fn io_path_absolute(path_ptr: *const c_char) -> *mut c_char {
+    if path_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                let path_buf = Path::new(path);
+                match path_buf.canonicalize() {
+                    Ok(absolute_path) => {
+                        if let Some(abs_str) = absolute_path.to_str() {
+                            match CString::new(abs_str) {
+                                Ok(c_str) => c_str.into_raw(),
+                                Err(_) => ptr::null_mut()
+                            }
+                        } else {
+                            ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Get relative path (implementation for io_path_relative)
+#[no_mangle]
+pub extern "C" fn io_path_relative(from_ptr: *const c_char, to_ptr: *const c_char) -> *mut c_char {
+    if from_ptr.is_null() || to_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(from_ptr).to_str(), CStr::from_ptr(to_ptr).to_str()) {
+            (Ok(from), Ok(to)) => {
+                let from_path = Path::new(from);
+                let to_path = Path::new(to);
+                
+                if let Ok(relative) = to_path.strip_prefix(from_path) {
+                    if let Some(rel_str) = relative.to_str() {
+                        match CString::new(rel_str) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    } else {
+                        ptr::null_mut()
+                    }
+                } else {
+                    ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+/// Check if path exists (implementation for io_path_exists)
+#[no_mangle]
+pub extern "C" fn io_path_exists(path_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() {
+        return 0;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                if Path::new(path).exists() { 1 } else { 0 }
+            },
+            Err(_) => 0
+        }
+    }
+}
+
+// ================================
+// Directory Listing Functions (2 functions)
+// ================================
+
+/// List directory contents (implementation for io_list_directory)
+#[no_mangle]
+pub extern "C" fn io_list_directory(path_ptr: *const c_char) -> *mut c_char {
+    if path_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::read_dir(path) {
+                    Ok(entries) => {
+                        let mut result = Vec::new();
+                        for entry in entries {
+                            if let Ok(entry) = entry {
+                                if let Some(name) = entry.file_name().to_str() {
+                                    result.push(name.to_string());
+                                }
+                            }
+                        }
+                        let joined = result.join("\n");
+                        match CString::new(joined) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// List directory contents recursively (implementation for io_list_directory_recursive)
+#[no_mangle]
+pub extern "C" fn io_list_directory_recursive(path_ptr: *const c_char) -> *mut c_char {
+    if path_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                fn visit_dir(dir: &Path, result: &mut Vec<String>) -> io::Result<()> {
+                    if dir.is_dir() {
+                        for entry in fs::read_dir(dir)? {
+                            let entry = entry?;
+                            let path = entry.path();
+                            if let Some(path_str) = path.to_str() {
+                                result.push(path_str.to_string());
+                            }
+                            if path.is_dir() {
+                                visit_dir(&path, result)?;
+                            }
+                        }
+                    }
+                    Ok(())
+                }
+                
+                let mut result = Vec::new();
+                match visit_dir(Path::new(path), &mut result) {
+                    Ok(_) => {
+                        let joined = result.join("\n");
+                        match CString::new(joined) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+// ================================
+// File Metadata Functions (2 functions)
+// ================================
+
+/// Get file creation time (implementation for io_file_created_time)
+#[no_mangle]
+pub extern "C" fn io_file_created_time(path_ptr: *const c_char) -> i64 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::metadata(path) {
+                    Ok(metadata) => {
+                        match metadata.created() {
+                            Ok(created) => {
+                                match created.duration_since(UNIX_EPOCH) {
+                                    Ok(duration) => duration.as_secs() as i64,
+                                    Err(_) => -1
+                                }
+                            },
+                            Err(_) => -1
+                        }
+                    },
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+/// Get file modification time (implementation for io_file_modified_time)
+#[no_mangle]
+pub extern "C" fn io_file_modified_time(path_ptr: *const c_char) -> i64 {
+    if path_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::metadata(path) {
+                    Ok(metadata) => {
+                        match metadata.modified() {
+                            Ok(modified) => {
+                                match modified.duration_since(UNIX_EPOCH) {
+                                    Ok(duration) => duration.as_secs() as i64,
+                                    Err(_) => -1
+                                }
+                            },
+                            Err(_) => -1
+                        }
+                    },
+                    Err(_) => -1
+                }
+            },
+            Err(_) => -1
+        }
+    }
+}
+
+// ================================
+// Temporary Files Functions (3 functions)
+// ================================
+
+/// Create temporary file (implementation for io_create_temp_file)
+#[no_mangle]
+pub extern "C" fn io_create_temp_file() -> *mut c_char {
+    use std::env;
+    use std::fs::File;
+    use std::io::Write;
+    
+    let temp_dir = env::temp_dir();
+    let temp_name = format!("cursed_temp_{}", std::process::id());
+    let temp_path = temp_dir.join(temp_name);
+    
+    match File::create(&temp_path) {
+        Ok(_) => {
+            if let Some(path_str) = temp_path.to_str() {
+                match CString::new(path_str) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            } else {
+                ptr::null_mut()
+            }
+        },
+        Err(_) => ptr::null_mut()
+    }
+}
+
+/// Create temporary directory (implementation for io_create_temp_directory)
+#[no_mangle]
+pub extern "C" fn io_create_temp_directory() -> *mut c_char {
+    use std::env;
+    
+    let temp_dir = env::temp_dir();
+    let temp_name = format!("cursed_temp_dir_{}", std::process::id());
+    let temp_path = temp_dir.join(temp_name);
+    
+    match fs::create_dir(&temp_path) {
+        Ok(_) => {
+            if let Some(path_str) = temp_path.to_str() {
+                match CString::new(path_str) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            } else {
+                ptr::null_mut()
+            }
+        },
+        Err(_) => ptr::null_mut()
+    }
+}
+
+/// Get temporary directory path (implementation for io_temp_directory)
+#[no_mangle]
+pub extern "C" fn io_temp_directory() -> *mut c_char {
+    use std::env;
+    
+    let temp_dir = env::temp_dir();
+    if let Some(path_str) = temp_dir.to_str() {
+        match CString::new(path_str) {
+            Ok(c_str) => c_str.into_raw(),
+            Err(_) => ptr::null_mut()
+        }
+    } else {
+        ptr::null_mut()
+    }
+}
+
+// ================================
+// File Bytes Functions (2 functions)
+// ================================
+
+/// Read file as bytes (implementation for io_read_file_bytes)
+#[no_mangle]
+pub extern "C" fn io_read_file_bytes(path_ptr: *const c_char) -> *mut c_char {
+    if path_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(path_ptr).to_str() {
+            Ok(path) => {
+                match fs::read(path) {
+                    Ok(bytes) => {
+                        // Convert bytes to hex string for safe transport
+                        let hex_string = hex::encode(bytes);
+                        match CString::new(hex_string) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+/// Write bytes to file (implementation for io_write_file_bytes)
+#[no_mangle]
+pub extern "C" fn io_write_file_bytes(path_ptr: *const c_char, data_ptr: *const c_char) -> i32 {
+    if path_ptr.is_null() || data_ptr.is_null() {
+        return -1;
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(path_ptr).to_str(), CStr::from_ptr(data_ptr).to_str()) {
+            (Ok(path), Ok(hex_data)) => {
+                match hex::decode(hex_data) {
+                    Ok(bytes) => {
+                        match fs::write(path, bytes) {
+                            Ok(_) => 0,
+                            Err(_) => -1
+                        }
+                    },
+                    Err(_) => -1
+                }
+            },
+            _ => -1
+        }
+    }
+}
+
+// ================================
 // Collections Implementation Functions  
 // ================================
 
-use std::collections::HashMap;
 use std::collections::HashSet;
 
 // Array/Vector Operations
@@ -2482,7 +3302,7 @@ pub extern "C" fn string_levenshtein_distance(str1_ptr: *const c_char, str2_ptr:
 
 use std::net::{TcpStream, TcpListener, ToSocketAddrs, SocketAddr, IpAddr};
 use std::io::{Read as IoRead, Write as IoWrite};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 /// Socket types that can be stored in the registry
 #[derive(Debug)]
