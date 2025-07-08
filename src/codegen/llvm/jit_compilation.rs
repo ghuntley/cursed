@@ -388,6 +388,15 @@ impl SymbolResolver {
         self.register_symbol("crypto_aes_decrypt", crate::execution::runtime_functions::crypto_aes_decrypt as usize);
         self.register_symbol("crypto_pbkdf2", crate::execution::runtime_functions::crypto_pbkdf2 as usize);
         self.register_symbol("crypto_scrypt", crate::execution::runtime_functions::crypto_scrypt as usize);
+        
+        // Register new secure crypto functions
+        self.register_symbol("crypto_sha3_256", crate::execution::runtime_functions::crypto_sha3_256 as usize);
+        self.register_symbol("crypto_secure_random_bytes", crate::execution::runtime_functions::crypto_secure_random_bytes as usize);
+        self.register_symbol("crypto_secure_random_int", crate::execution::runtime_functions::crypto_secure_random_int as usize);
+        self.register_symbol("crypto_secure_random_string", crate::execution::runtime_functions::crypto_secure_random_string as usize);
+        self.register_symbol("crypto_aes_gcm_encrypt", crate::execution::runtime_functions::crypto_aes_gcm_encrypt as usize);
+        self.register_symbol("crypto_aes_gcm_decrypt", crate::execution::runtime_functions::crypto_aes_gcm_decrypt as usize);
+        
         self.register_symbol("crypto_ed25519_keypair", crate::execution::runtime_functions::crypto_ed25519_keypair as usize);
         self.register_symbol("crypto_ed25519_sign", crate::execution::runtime_functions::crypto_ed25519_sign as usize);
         self.register_symbol("crypto_ed25519_verify", crate::execution::runtime_functions::crypto_ed25519_verify as usize);

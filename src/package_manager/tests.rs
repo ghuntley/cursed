@@ -14,7 +14,11 @@ mod tests {
 
     #[test]
     fn test_package_manager_creation() {
-        let config = PackageManagerConfig::default();
+        let temp_dir = TempDir::new().unwrap();
+        let config = PackageManagerConfig {
+            cache_dir: temp_dir.path().to_path_buf(),
+            ..Default::default()
+        };
         let pm = PackageManager::new(config);
         assert!(pm.is_ok());
     }

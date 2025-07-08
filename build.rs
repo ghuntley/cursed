@@ -47,8 +47,8 @@ libc = "0.2"
 hex = "0.4"
 rand = "0.8"
 sha2 = "0.10"
-md5 = "0.7"
 blake3 = "1.5"
+sha3 = "0.10"
 hmac = "0.12"
 pbkdf2 = "0.12"
 scrypt = "0.11"
@@ -90,7 +90,7 @@ use std::net::{TcpStream, TcpListener, UdpSocket, ToSocketAddrs, SocketAddr, IpA
 use std::io::{Read as IoRead, Write as IoWrite};
 use std::sync::Arc;
 use sha2::{Sha256, Sha512, Digest};
-// MD5 import not needed, we'll use md5::compute directly
+use sha3::{Sha3_256, Sha3_512};
 use blake3::Hasher as Blake3Hasher;
 use rand::{Rng, RngCore};
 use rand::distributions::Alphanumeric;

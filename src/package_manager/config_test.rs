@@ -46,7 +46,13 @@ mod tests {
     #[test]
     fn test_package_manager_creation() {
         // Test that PackageManager can be created with configuration
-        let config = PackageManagerConfig::default();
+        use tempfile::TempDir;
+        
+        let temp_dir = TempDir::new().unwrap();
+        let config = PackageManagerConfig {
+            cache_dir: temp_dir.path().to_path_buf(),
+            ..Default::default()
+        };
         
         // This should not panic and should create a PackageManager successfully
         match PackageManager::new(config) {

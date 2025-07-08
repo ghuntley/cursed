@@ -13,6 +13,7 @@ use crate::package_manager::PackageManager;
 use crate::codegen::llvm::package_integration::LlvmPackageConfig;
 use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
+use crate::codegen::llvm::error_handling::{ErrorHandlingCodegen, generate_error_runtime_support};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
@@ -95,6 +96,7 @@ pub struct LlvmCodeGenerator {
     interface_registry: HashMap<String, InterfaceDefinition>,
     vtable_registry: HashMap<String, VTableDefinition>,
     current_function_defers: Option<Vec<crate::ast::Expression>>,
+    error_handler: ErrorHandlingCodegen,
 }
 
 impl LlvmCodeGenerator {
@@ -115,6 +117,7 @@ impl LlvmCodeGenerator {
             interface_registry: HashMap::new(),
             vtable_registry: HashMap::new(),
             current_function_defers: None,
+            error_handler: ErrorHandlingCodegen::new(),
         })
     }
 
@@ -405,6 +408,10 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
 @_ZTS11CursedError = constant [14 x i8] c\"11CursedError\\00\"
 
 ");
+        
+        // Add error handling runtime declarations
+        let error_runtime = generate_error_runtime_support();
+        self.ir_code.push_str(&error_runtime);
     }
     
     fn generate_statement(&mut self, statement: &Statement) -> Result<(), CursedError> {
@@ -691,13 +698,17 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                     }
                 }
             },
-            &Statement::Yikes(_) => {
-                // TODO: Implement error handling statement
-                self.ir_code.push_str("  ; Error handling statement (yikes) - not implemented\n");
+            Statement::Yikes(yikes_stmt) => {
+                // Generate error handling statement
+                self.ir_code.push_str("  ; Error handling statement (yikes)\n");
+                let error_ir = self.error_handler.generate_yikes_statement(yikes_stmt)?;
+                self.ir_code.push_str(&error_ir);
             },
-            &Statement::Fam(_) => {
-                // TODO: Implement error recovery statement
-                self.ir_code.push_str("  ; Error recovery statement (fam) - not implemented\n");
+            Statement::Fam(fam_stmt) => {
+                // Generate error recovery statement
+                self.ir_code.push_str("  ; Error recovery statement (fam)\n");
+                let recovery_ir = self.error_handler.generate_fam_statement(fam_stmt)?;
+                self.ir_code.push_str(&recovery_ir);
             },
         }
         Ok(())
@@ -1023,6 +1034,18 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
             },
             Expression::Decrement(dec_expr) => {
                 self.generate_decrement_expression(dec_expr)
+            },
+            Expression::Shook(shook_expr) => {
+                // Generate error propagation expression
+                let shook_ir = self.error_handler.generate_shook_expression(shook_expr)?;
+                self.ir_code.push_str(&shook_ir);
+                Ok("%result".to_string()) // Return the result register
+            },
+            Expression::ErrorValue(error_expr) => {
+                // Generate error value expression
+                let error_ir = self.error_handler.generate_error_value_expression(error_expr)?;
+                self.ir_code.push_str(&error_ir);
+                Ok("%error_result".to_string()) // Return the error register
             },
             _ => {
                 // For complex expressions, use the expression compiler

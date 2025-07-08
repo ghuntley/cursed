@@ -9,6 +9,7 @@
 use crate::error::CursedError;
 use crate::ast::{Program, Statement};
 use crate::runtime::channels::simple_channel::SimpleChannel;
+use sha2::Digest;
 
 use std::sync::Arc;
 
@@ -558,6 +559,100 @@ impl CursedExecutionEngine {
     fn crypto_constant_time_eq(&self, a: &str, b: &str) -> bool {
         use subtle::ConstantTimeEq;
         a.as_bytes().ct_eq(b.as_bytes()).into()
+    }
+
+    // New secure crypto functions
+    fn crypto_sha3_256(&self, data: &str) -> String {
+        use sha3::{Digest, Sha3_256};
+        let mut hasher = Sha3_256::new();
+        hasher.update(data.as_bytes());
+        let result = hasher.finalize();
+        hex::encode(result)
+    }
+
+    fn crypto_secure_random_bytes(&self, length: i64) -> Vec<u8> {
+        use rand::RngCore;
+        let mut rng = rand::thread_rng();
+        let mut bytes = vec![0u8; length as usize];
+        rng.fill_bytes(&mut bytes);
+        bytes
+    }
+
+    fn crypto_secure_random_int(&self, min: i64, max: i64) -> i64 {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        rng.gen_range(min..=max)
+    }
+
+    fn crypto_secure_random_string(&self, length: i64) -> String {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        let charset = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        (0..length)
+            .map(|_| {
+                let idx = rng.gen_range(0..charset.len());
+                charset[idx] as char
+            })
+            .collect()
+    }
+
+    fn crypto_aes_gcm_encrypt(&self, data: &str, key: &str) -> String {
+        use aes_gcm::{Aes256Gcm, Key, Nonce, AeadInPlace};
+        use aes_gcm::KeyInit;
+        use rand::RngCore;
+        
+        // Create a 256-bit key from the provided key string
+        let key_bytes = sha2::Sha256::digest(key.as_bytes()).to_vec();
+        let cipher_key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+        let cipher = Aes256Gcm::new(cipher_key);
+        
+        // Generate a random nonce
+        let mut nonce_bytes = [0u8; 12];
+        rand::thread_rng().fill_bytes(&mut nonce_bytes);
+        let nonce = Nonce::from_slice(&nonce_bytes);
+        
+        // Encrypt the data
+        let mut buffer = data.as_bytes().to_vec();
+        match cipher.encrypt_in_place(nonce, b"", &mut buffer) {
+            Ok(_) => {
+                // Prepend nonce to encrypted data
+                let mut result = nonce_bytes.to_vec();
+                result.extend_from_slice(&buffer);
+                hex::encode(result)
+            },
+            Err(_) => "encryption_failed".to_string()
+        }
+    }
+
+    fn crypto_aes_gcm_decrypt(&self, encrypted_hex: &str, key: &str) -> String {
+        use aes_gcm::{Aes256Gcm, Key, Nonce, AeadInPlace};
+        use aes_gcm::KeyInit;
+        
+        match hex::decode(encrypted_hex) {
+            Ok(encrypted_data) => {
+                if encrypted_data.len() < 12 {
+                    return "decryption_failed".to_string();
+                }
+                
+                // Extract nonce and ciphertext
+                let nonce_bytes = &encrypted_data[0..12];
+                let ciphertext = &encrypted_data[12..];
+                
+                // Create cipher
+                let key_bytes = sha2::Sha256::digest(key.as_bytes()).to_vec();
+                let cipher_key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+                let cipher = Aes256Gcm::new(cipher_key);
+                let nonce = Nonce::from_slice(nonce_bytes);
+                
+                // Decrypt
+                let mut buffer = ciphertext.to_vec();
+                match cipher.decrypt_in_place(nonce, b"", &mut buffer) {
+                    Ok(_) => String::from_utf8(buffer).unwrap_or_else(|_| "decryption_failed".to_string()),
+                    Err(_) => "decryption_failed".to_string()
+                }
+            },
+            Err(_) => "decryption_failed".to_string()
+        }
     }
     
     fn execute_statement(&mut self, statement: &crate::ast::Statement, context: &mut ExecutionContext) -> Result<ExecutionFlow, CursedError> {
@@ -1670,16 +1765,88 @@ impl CursedExecutionEngine {
                         }
                     },
                     "crypto_random_bytes" => {
+                    if call_expr.arguments.len() != 1 {
+                    return Err(CursedError::RuntimeError("crypto_random_bytes() expects exactly 1 argument".to_string()));
+                    }
+                    let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                    if let CursedValue::Integer(len) = arg {
+                    let bytes = self.crypto_random_bytes(len);
+                    let array_values: Vec<CursedValue> = bytes.into_iter().map(|b| CursedValue::Integer(b as i64)).collect();
+                    Ok(CursedValue::Array(array_values))
+                    } else {
+                    Err(CursedError::RuntimeError("crypto_random_bytes() expects an integer argument".to_string()))
+                    }
+                    },
+                    // NEW SECURE CRYPTO FUNCTIONS
+                    "crypto_sha3_256" => {
                         if call_expr.arguments.len() != 1 {
-                            return Err(CursedError::RuntimeError("crypto_random_bytes() expects exactly 1 argument".to_string()));
+                            return Err(CursedError::RuntimeError("crypto_sha3_256() expects exactly 1 argument".to_string()));
+                        }
+                        let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                        if let CursedValue::String(s) = arg {
+                            Ok(CursedValue::String(self.crypto_sha3_256(&s)))
+                        } else {
+                            Err(CursedError::RuntimeError("crypto_sha3_256() expects a string argument".to_string()))
+                        }
+                    },
+                    "crypto_secure_random_bytes" => {
+                        if call_expr.arguments.len() != 1 {
+                            return Err(CursedError::RuntimeError("crypto_secure_random_bytes() expects exactly 1 argument".to_string()));
                         }
                         let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
                         if let CursedValue::Integer(len) = arg {
-                            let bytes = self.crypto_random_bytes(len);
+                            let bytes = self.crypto_secure_random_bytes(len);
                             let array_values: Vec<CursedValue> = bytes.into_iter().map(|b| CursedValue::Integer(b as i64)).collect();
                             Ok(CursedValue::Array(array_values))
                         } else {
-                            Err(CursedError::RuntimeError("crypto_random_bytes() expects an integer argument".to_string()))
+                            Err(CursedError::RuntimeError("crypto_secure_random_bytes() expects an integer argument".to_string()))
+                        }
+                    },
+                    "crypto_secure_random_int" => {
+                        if call_expr.arguments.len() != 2 {
+                            return Err(CursedError::RuntimeError("crypto_secure_random_int() expects exactly 2 arguments".to_string()));
+                        }
+                        let min = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                        let max = self.evaluate_expression(&call_expr.arguments[1], context)?;
+                        if let (CursedValue::Integer(min_val), CursedValue::Integer(max_val)) = (min, max) {
+                            Ok(CursedValue::Integer(self.crypto_secure_random_int(min_val, max_val)))
+                        } else {
+                            Err(CursedError::RuntimeError("crypto_secure_random_int() expects integer arguments".to_string()))
+                        }
+                    },
+                    "crypto_secure_random_string" => {
+                        if call_expr.arguments.len() != 1 {
+                            return Err(CursedError::RuntimeError("crypto_secure_random_string() expects exactly 1 argument".to_string()));
+                        }
+                        let arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                        if let CursedValue::Integer(len) = arg {
+                            Ok(CursedValue::String(self.crypto_secure_random_string(len)))
+                        } else {
+                            Err(CursedError::RuntimeError("crypto_secure_random_string() expects an integer argument".to_string()))
+                        }
+                    },
+                    "crypto_aes_gcm_encrypt" => {
+                        if call_expr.arguments.len() != 2 {
+                            return Err(CursedError::RuntimeError("crypto_aes_gcm_encrypt() expects exactly 2 arguments".to_string()));
+                        }
+                        let data = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                        let key = self.evaluate_expression(&call_expr.arguments[1], context)?;
+                        if let (CursedValue::String(data_str), CursedValue::String(key_str)) = (data, key) {
+                            Ok(CursedValue::String(self.crypto_aes_gcm_encrypt(&data_str, &key_str)))
+                        } else {
+                            Err(CursedError::RuntimeError("crypto_aes_gcm_encrypt() expects string arguments".to_string()))
+                        }
+                    },
+                    "crypto_aes_gcm_decrypt" => {
+                        if call_expr.arguments.len() != 2 {
+                            return Err(CursedError::RuntimeError("crypto_aes_gcm_decrypt() expects exactly 2 arguments".to_string()));
+                        }
+                        let encrypted = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                        let key = self.evaluate_expression(&call_expr.arguments[1], context)?;
+                        if let (CursedValue::String(encrypted_str), CursedValue::String(key_str)) = (encrypted, key) {
+                            Ok(CursedValue::String(self.crypto_aes_gcm_decrypt(&encrypted_str, &key_str)))
+                        } else {
+                            Err(CursedError::RuntimeError("crypto_aes_gcm_decrypt() expects string arguments".to_string()))
                         }
                     },
                     "crypto_secure_random" => {
