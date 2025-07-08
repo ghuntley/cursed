@@ -4,7 +4,7 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to implement missing functionality and produce an compiled application in the cursed language via LLVM for that functionality. Follow the fix_plan.md and choose the 3 important things. Before making changes search codebase (don't assume not implemented) using subagents. Think hard. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of rust.
+1. Your task is to implement missing stdlib and compiler functionality and produce an compiled application in the cursed language via LLVM for that functionality using parrallel subagents. Follow the fix_plan.md and choose the 5 important things. Before making changes search codebase (don't assume not implemented) using subagents. Think hard. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of rust.
 
 2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think hard.
 
@@ -12,7 +12,8 @@
 
 3. When the tests pass update the @fix_plan.md`, then add changed code and @fix_plan.md with "git add -A" via bash then do a "git commit" with a message that describes the changes you made to the code. After the commit do a "git push" to push the changes to the remote repository.
 
-999. Important: When authoring documentation (ie. rust doc or cursed doc) capture the why tests and the backing implementation is important.
+999. Important: When authoring documentation (ie. rust doc or cursed stdlib documentation) capture the why tests and the backing implementation is important.
+
 9999. Important: We want single sources of truth, no migrations/adapters. If tests unrelated to your work fail then it's your job to resolve these tests as part of the increment of change.
 
 999999. As soon as there are no build or test errors create a git tag. If there are no git tags start at 0.0.0 and increment patch by 1 for example 0.0.1  if 0.0.0 does not exist.
