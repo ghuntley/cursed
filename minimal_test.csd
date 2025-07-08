@@ -1,9 +1,14 @@
-fr fr Minimal test to find the parsing issue
+vibez.spill("Testing minimal features")
 
-slay simple_test() tea {
-    damn "hello"
+be_like Person squad {
+    name tea
 }
 
-vibez.spill("Testing minimal function")
-sus result tea = simple_test()
-vibez.spill("Result: " + result)
+sus alice Person = Person{name: "Alice"}
+vibez.spill("Person name:", alice.name)
+
+later {
+    vibez.spill("Defer executed")
+}
+
+vibez.spill("Program complete")

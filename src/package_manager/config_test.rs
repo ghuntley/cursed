@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{PackageManagerConfig, PackageManager};
+    use crate::package_manager::{PackageManagerConfig, PackageManager};
     
     #[test]
     fn test_package_manager_config_fields() {

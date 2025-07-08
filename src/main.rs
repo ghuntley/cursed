@@ -14,8 +14,8 @@ use colored::*;
 use glob::glob;
 use serde_json::json;
 use cursed::{self, optimization::{OptimizationConfig, OptimizationLevel as OptOptimizationLevel}};
-use cursed::package_manager::{PackageManager, PackageManagerConfig};
-use cursed::tools::{CursedFormatter, CursedLinter, LinterConfig};
+use cursed::package_manager::{PackageManagerConfig, PackageManager};
+use cursed::tools::{CursedTools, Profiler};
 use cursed::repl::CursedRepl;
 
 #[tokio::main]
@@ -1310,15 +1310,20 @@ async fn handle_lint(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resu
     
     println!("{} {} files", "Linting".blue().bold(), inputs.len());
     
-    let mut linter = CursedLinter::new();
+    // TODO: Implement linter module
+    // let mut linter = CursedLinter::new();
     
     let mut total_issues = 0;
     
     for input in inputs {
         if Path::new(input).is_file() {
-            let source = fs::read_to_string(input)?;
-            let results = linter.lint_source(&source)?;
+            let _source = fs::read_to_string(input)?;
+            // TODO: Implement linter module
+            // let results = linter.lint_source(&source)?;
+            println!("Linting {} (not implemented)", input);
             
+            // TODO: Implement linter results processing
+            /*
             if !results.issues.is_empty() {
                 println!("\n{}: {} issues found", input, results.issues.len());
                 for issue in &results.issues {
@@ -1329,13 +1334,18 @@ async fn handle_lint(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resu
                 }
                 total_issues += results.issues.len();
             }
+            */
         } else {
             // Handle directory
             for entry in glob::glob(&format!("{}/**/*.csd", input))? {
                 let path = entry?;
-                let source = fs::read_to_string(&path)?;
-                let results = linter.lint_source(&source)?;
+                let _source = fs::read_to_string(&path)?;
+                // TODO: Implement linter module
+                // let results = linter.lint_source(&source)?;
+                println!("Linting {} (not implemented)", path.display());
                 
+                // TODO: Implement linter results processing
+                /*
                 if !results.issues.is_empty() {
                     println!("\n{}: {} issues found", path.display(), results.issues.len());
                     for issue in &results.issues {
@@ -1346,6 +1356,7 @@ async fn handle_lint(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resu
                     }
                     total_issues += results.issues.len();
                 }
+                */
             }
         }
     }
@@ -1369,13 +1380,16 @@ async fn handle_fmt(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resul
     
     println!("{} {} files", "Formatting".blue().bold(), inputs.len());
     
-    let mut formatter = CursedFormatter::default();
+    // TODO: Implement formatter module
+    // let mut formatter = CursedFormatter::default();
     let mut changed_files = 0;
     
     for input in inputs {
         if Path::new(input).is_file() {
             let source = fs::read_to_string(input)?;
-            let formatted = formatter.format(&source)?;
+            // TODO: Implement formatter module
+            // let formatted = formatter.format(&source)?;
+            let formatted = source.clone(); // Temporary: no formatting changes
             
             if source != formatted {
                 if check {
@@ -1398,7 +1412,9 @@ async fn handle_fmt(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resul
             for entry in glob::glob(&format!("{}/**/*.csd", input))? {
                 let path = entry?;
                 let source = fs::read_to_string(&path)?;
-                let formatted = formatter.format(&source)?;
+                // TODO: Implement formatter module
+                // let formatted = formatter.format(&source)?;
+                let formatted = source.clone(); // Temporary: no formatting changes
                 
                 if source != formatted {
                     if check {

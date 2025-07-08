@@ -144,6 +144,7 @@ ark-poly-commit = "0.3" # Polynomial commitment schemes
 
 # Package management dependencies
 tokio = { version = "1.0", features = ["full"] }  # Async runtime
+tokio-util = { version = "0.7", features = ["codec"] }  # Tokio utilities
 indicatif = "0.17"  # Progress bars for CLI
 
 # System interaction dependencies
@@ -442,6 +443,23 @@ path = "src/bin/cursed_doc.rs"
 [[bin]]
 name = "cursed-compile-fast"
 path = "src/bin/cursed_compile_fast.rs"
+
+# [[bin]]
+# name = "cursed-tools"
+# path = "src/bin/cursed_tools.rs"
+
+# Disabled problematic binaries until linter/formatter modules are implemented
+# [[bin]]
+# name = "test_linter"
+# path = "src/bin/test_linter.rs"
+
+# [[bin]]
+# name = "test_linter_issues"
+# path = "src/bin/test_linter_issues.rs"
+
+# [[bin]]
+# name = "cursed_tools_original"
+# path = "src/bin/cursed_tools_original.rs"
 
 [[example]]
 name = "minimal_demo"
