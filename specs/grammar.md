@@ -303,19 +303,82 @@ add(1, 2)
 
 ## Goroutines and Channels
 
+CURSED provides Go-style goroutines and channels for concurrent programming.
+
+### Goroutine Syntax
+
 ```
 GoStmt           = "stan" Expression .
+```
+
+The `stan` keyword spawns a new goroutine:
+
+```
+stan doSomething()                    // Spawn goroutine
+stan worker(ch, data)                 // Spawn with parameters
+stan {                                // Anonymous goroutine
+    processBatch(data)
+}
+```
+
+### Channel Syntax
+
+```
+ChannelType      = "dm" "<" Type ">" [ "[" Expression "]" ] .
 SendStmt         = Channel "<-" Expression .
-Channel          = Expression .
+ReceiveExpr      = "<-" Channel .
+CloseStmt        = "close" "(" Channel ")" .
+```
+
+### Channel Operations
+
+```
+sus ch dm<normie>                     // Unbuffered channel declaration
+sus buffered dm<tea>[10]              // Buffered channel declaration
+
+ch <- value                           // Send operation (blocking)
+value := <-ch                         // Receive operation (blocking)
+value, ok := <-ch                     // Receive with closed check
+close(ch)                             // Close channel
+```
+
+### Select Statements
+
+```
+SelectStmt       = "ready" "{" { SelectCase } "}" .
+SelectCase       = "mood" ( SendStmt | ReceiveStmt ) ":" StatementList |
+                   "basic" ":" StatementList .
+ReceiveStmt      = [ ExpressionList "=" | IdentifierList ":=" ] ReceiveExpr .
 ```
 
 Example:
 
 ```
-stan doSomething()
+ready {
+    mood ch1 <- value:
+        // Send succeeded
+    mood result := <-ch2:
+        // Receive succeeded
+    mood <-timeout:
+        // Timeout occurred
+    basic:
+        // No operations ready
+}
+```
 
-ch <- value
-x := <-ch
+### Goroutine Lifecycle
+
+```
+// Goroutine spawning
+stan worker(data)
+
+// Goroutine synchronization
+sus done dm<lit>
+stan {
+    doWork()
+    done <- based
+}
+<-done                                // Wait for completion
 ```
 
 ## Defer Statements

@@ -1,4 +1,28 @@
-// Standard I/O library
+// Standard I/O library (dropz module)
+
+// ================================
+// Core Specification Functions
+// ================================
+
+slay ReadFile(path tea) ([]byte, tea) {
+    // Read file and return data with error (from specification)
+    lowkey file_exists(path) {
+        sus data []byte = read_file_bytes(path);
+        damn data, "";
+    } highkey {
+        sus empty []byte = [];
+        damn empty, "file not found";
+    }
+}
+
+slay WriteFile(path tea, data []byte) tea {
+    // Write data to file (from specification)
+    lowkey write_file_bytes(path, data) {
+        damn "";
+    } highkey {
+        damn "write failed";
+    }
+}
 
 // ================================
 // Console I/O

@@ -1,8 +1,6 @@
 // CURSED Pure Network Module - FFI-Free Implementation
 // Provides networking capabilities without external C dependencies
 
-yeet "testz"
-
 // Network socket management using pure CURSED data structures
 be_like SocketHandle squad {
     id normie

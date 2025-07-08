@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -165,6 +165,26 @@ impl Parser {
             TokenKind::Periodt => {
                 // Parse while loop
                 return Ok(Some(Statement::While(self.parse_while_statement()?)));
+            }
+            TokenKind::Later => {
+                // Parse defer statement
+                return Ok(Some(Statement::Defer(self.parse_defer_statement()?)));
+            }
+            TokenKind::Select => {
+                // Parse select statement
+                return Ok(Some(Statement::Select(self.parse_select_statement()?)));
+            }
+            TokenKind::VibeCheck => {
+                // Parse CURSED-style select statement
+                return Ok(Some(Statement::Select(self.parse_vibe_check_statement()?)));
+            }
+            TokenKind::Yikes => {
+                // Parse error handling statement
+                return Ok(Some(Statement::Yikes(self.parse_yikes_statement()?)));
+            }
+            TokenKind::Fam => {
+                // Parse panic recovery block
+                return Ok(Some(Statement::Fam(self.parse_fam_statement()?)));
             }
 
             TokenKind::LeftParen => {
@@ -551,6 +571,11 @@ impl Parser {
                         right: Box::new(right),
                     });
                 }
+                TokenKind::Shook => {
+                    // Parse error propagation operator
+                    self.next_token()?;
+                    left = Expression::Shook(ShookExpression::new(Box::new(left)));
+                }
                 _ => break,
             }
         }
@@ -749,6 +774,11 @@ impl Parser {
                     self.next_token()?;
                     return Ok(Expression::Literal(Literal::Boolean(true)));
                 }
+                TokenKind::Yikes => {
+                    // Parse error value expression
+                    self.next_token()?;
+                    return Ok(self.parse_yikes_expression()?);
+                }
                 TokenKind::LeftParen => {
                     // Parse tuple literal
                     self.next_token()?;
@@ -935,6 +965,222 @@ impl Parser {
         })
     }
     
+    fn parse_defer_statement(&mut self) -> Result<DeferStatement> {
+        // Consume 'later' keyword
+        self.next_token()?;
+        
+        // Parse the expression to defer
+        let expression = self.parse_expression()?;
+        
+        Ok(DeferStatement {
+            expression: Box::new(expression),
+        })
+    }
+    
+    fn parse_select_statement(&mut self) -> Result<SelectStatement> {
+        // Consume 'select' keyword
+        self.next_token()?;
+        
+        // Expect '{'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::LeftBrace => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '{' after 'select'".to_string())),
+        }
+        
+        let mut cases = Vec::new();
+        let mut default_case = None;
+        
+        // Parse select cases
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                self.next_token()?;
+                break;
+            }
+            
+            // Skip newlines
+            if token.kind == TokenKind::Newline {
+                self.next_token()?;
+                continue;
+            }
+            
+            // Parse 'ready' keyword or 'basic' (default) case
+            if token.kind == TokenKind::Ready {
+                self.next_token()?;
+                
+                // Parse channel operation
+                let operation = self.parse_expression()?;
+                
+                // Expect ':'
+                match self.current_token.as_ref() {
+                    Some(token) if token.kind == TokenKind::Colon => {
+                        self.next_token()?;
+                    }
+                    _ => return Err(Error::Parse("Expected ':' after select case operation".to_string())),
+                }
+                
+                // Parse case body
+                let body = self.parse_select_case_body()?;
+                
+                cases.push(SelectCase {
+                    operation: Box::new(operation),
+                    body,
+                });
+            } else if token.kind == TokenKind::Basic {
+                // Parse default case
+                self.next_token()?;
+                
+                // Expect ':'
+                match self.current_token.as_ref() {
+                    Some(token) if token.kind == TokenKind::Colon => {
+                        self.next_token()?;
+                    }
+                    _ => return Err(Error::Parse("Expected ':' after 'basic' in select".to_string())),
+                }
+                
+                // Parse default case body
+                let body = self.parse_select_case_body()?;
+                default_case = Some(body);
+            } else {
+                return Err(Error::Parse("Expected 'ready' or 'basic' in select statement".to_string()));
+            }
+        }
+        
+        Ok(SelectStatement {
+            cases,
+            default_case,
+        })
+    }
+    
+    fn parse_vibe_check_statement(&mut self) -> Result<SelectStatement> {
+        // Consume 'vibe_check' keyword
+        self.next_token()?;
+        
+        // Expect '{'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::LeftBrace => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '{' after 'vibe_check'".to_string())),
+        }
+        
+        let mut cases = Vec::new();
+        let mut default_case = None;
+        
+        // Parse select cases
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                self.next_token()?;
+                break;
+            }
+            
+            // Skip newlines
+            if token.kind == TokenKind::Newline {
+                self.next_token()?;
+                continue;
+            }
+            
+            // Parse 'mood' keyword or 'basic' (default) case
+            if token.kind == TokenKind::Mood {
+                self.next_token()?;
+                
+                // Parse channel operation
+                let operation = self.parse_expression()?;
+                
+                // Expect ':'
+                match self.current_token.as_ref() {
+                    Some(token) if token.kind == TokenKind::Colon => {
+                        self.next_token()?;
+                    }
+                    _ => return Err(Error::Parse("Expected ':' after select case operation".to_string())),
+                }
+                
+                // Parse case body
+                let body = self.parse_vibe_check_case_body()?;
+                
+                cases.push(SelectCase {
+                    operation: Box::new(operation),
+                    body,
+                });
+            } else if token.kind == TokenKind::Basic {
+                // Parse default case
+                self.next_token()?;
+                
+                // Expect ':'
+                match self.current_token.as_ref() {
+                    Some(token) if token.kind == TokenKind::Colon => {
+                        self.next_token()?;
+                    }
+                    _ => return Err(Error::Parse("Expected ':' after 'basic' in select".to_string())),
+                }
+                
+                // Parse default case body
+                let body = self.parse_vibe_check_case_body()?;
+                default_case = Some(body);
+            } else {
+                return Err(Error::Parse("Expected 'mood' or 'basic' in vibe_check statement".to_string()));
+            }
+        }
+        
+        Ok(SelectStatement {
+            cases,
+            default_case,
+        })
+    }
+
+    fn parse_vibe_check_case_body(&mut self) -> Result<Vec<Statement>> {
+        let mut statements = Vec::new();
+        
+        // Parse statements until we hit a case or end of select
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace ||
+               token.kind == TokenKind::Mood ||
+               token.kind == TokenKind::Basic {
+                break;
+            }
+            
+            // Skip newlines
+            if token.kind == TokenKind::Newline {
+                self.next_token()?;
+                continue;
+            }
+            
+            // Parse statement
+            if let Some(statement) = self.parse_statement()? {
+                statements.push(statement);
+            }
+        }
+        
+        Ok(statements)
+    }
+    
+    fn parse_select_case_body(&mut self) -> Result<Vec<Statement>> {
+        let mut statements = Vec::new();
+        
+        // Parse statements until we hit a case or end of select
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace ||
+               token.kind == TokenKind::Ready ||
+               token.kind == TokenKind::Basic {
+                break;
+            }
+            
+            // Skip newlines
+            if token.kind == TokenKind::Newline {
+                self.next_token()?;
+                continue;
+            }
+            
+            // Parse statement
+            if let Some(statement) = self.parse_statement()? {
+                statements.push(statement);
+            }
+        }
+        
+        Ok(statements)
+    }
+    
     fn is_tuple_destructuring_assignment(&self) -> bool {
         // Simple heuristic: for now, assume any LeftParen at statement level 
         // is likely a tuple destructuring assignment
@@ -1093,6 +1339,215 @@ impl Parser {
         let value = self.parse_expression()?;
         
         Ok(AssignmentStatement { target, value })
+    }
+
+    // Error handling parsing functions
+    
+    fn parse_yikes_statement(&mut self) -> Result<YikesStatement> {
+        // Consume 'yikes' token
+        self.next_token()?;
+        
+        // Parse error variable name
+        let name = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Identifier {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                name
+            } else {
+                return Err(Error::Parse("Expected identifier after 'yikes'".to_string()));
+            }
+        } else {
+            return Err(Error::Parse("Expected identifier after 'yikes'".to_string()));
+        };
+        
+        let mut yikes_stmt = YikesStatement::new(name);
+        
+        // Optional type annotation
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Colon {
+                self.next_token()?;
+                if let Some(error_type) = self.parse_type()? {
+                    yikes_stmt = yikes_stmt.with_type(error_type);
+                }
+            }
+        }
+        
+        // Optional assignment
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Equal {
+                self.next_token()?;
+                let value = self.parse_expression()?;
+                yikes_stmt = yikes_stmt.with_value(value);
+            }
+        }
+        
+        Ok(yikes_stmt)
+    }
+    
+    fn parse_fam_statement(&mut self) -> Result<FamStatement> {
+        // Consume 'fam' token
+        self.next_token()?;
+        
+        // Parse protected block
+        let protected_block = self.parse_block()?;
+        
+        let mut fam_stmt = FamStatement::new(protected_block);
+        
+        // Optional recovery block with 'sus' keyword
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Sus {
+                self.next_token()?;
+                
+                // Parse panic variable name
+                let panic_variable = if let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::Identifier {
+                        let name = token.lexeme.clone();
+                        self.next_token()?;
+                        Some(name)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                
+                // Parse recovery block
+                let recovery_block = self.parse_block()?;
+                fam_stmt = fam_stmt.with_recovery(recovery_block, panic_variable);
+            }
+        }
+        
+        Ok(fam_stmt)
+    }
+    
+    fn parse_yikes_expression(&mut self) -> Result<Expression> {
+        // Parse error value expression: yikes("message") or yikes{...}
+        if let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::LeftParen => {
+                    // Parse yikes("message") or yikes("message", code)
+                    self.next_token()?;
+                    
+                    let message = if let Some(token) = self.current_token.as_ref() {
+                        if token.kind != TokenKind::RightParen {
+                            Some(Box::new(self.parse_expression()?))
+                        } else {
+                            None
+                        }
+                    } else {
+                        return Err(Error::Parse("Expected expression or ')' after 'yikes('".to_string()));
+                    };
+                    
+                    // Optional code parameter
+                    let code = if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Comma {
+                            self.next_token()?;
+                            Some(Box::new(self.parse_expression()?))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
+                    
+                    // Consume ')'
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::RightParen {
+                            self.next_token()?;
+                        } else {
+                            return Err(Error::Parse("Expected ')' after yikes expression".to_string()));
+                        }
+                    } else {
+                        return Err(Error::Parse("Expected ')' after yikes expression".to_string()));
+                    }
+                    
+                    let error_expr = if let Some(_msg_expr) = message {
+                        // For now, we'll create a placeholder string message
+                        let mut error_expr = ErrorValueExpression::new("Error".to_string());
+                        if let Some(code) = code {
+                            error_expr = error_expr.with_code(code);
+                        }
+                        error_expr
+                    } else {
+                        ErrorValueExpression::new("Unknown error".to_string())
+                    };
+                    
+                    Ok(Expression::ErrorValue(error_expr))
+                }
+                TokenKind::LeftBrace => {
+                    // Parse yikes{ message: "...", code: 123, details: "..." }
+                    self.next_token()?;
+                    
+                    let mut message = None;
+                    let mut code = None;
+                    let mut details = None;
+                    
+                    while let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::RightBrace {
+                            self.next_token()?;
+                            break;
+                        }
+                        
+                        if token.kind == TokenKind::Identifier {
+                            let field_name = token.lexeme.clone();
+                            self.next_token()?;
+                            
+                            // Expect ':'
+                            if let Some(token) = self.current_token.as_ref() {
+                                if token.kind == TokenKind::Colon {
+                                    self.next_token()?;
+                                } else {
+                                    return Err(Error::Parse("Expected ':' after field name in yikes literal".to_string()));
+                                }
+                            } else {
+                                return Err(Error::Parse("Expected ':' after field name in yikes literal".to_string()));
+                            }
+                            
+                            // Parse field value
+                            let value = Box::new(self.parse_expression()?);
+                            
+                            match field_name.as_str() {
+                                "message" => message = Some(value),
+                                "code" => code = Some(value),
+                                "details" => details = Some(value),
+                                _ => {} // Ignore unknown fields
+                            }
+                            
+                            // Optional comma
+                            if let Some(token) = self.current_token.as_ref() {
+                                if token.kind == TokenKind::Comma {
+                                    self.next_token()?;
+                                }
+                            }
+                        } else {
+                            return Err(Error::Parse("Expected field name in yikes literal".to_string()));
+                        }
+                    }
+                    
+                    let error_expr = if let Some(_msg_expr) = message {
+                        // For now, we'll create a placeholder string message
+                        let mut error_expr = ErrorValueExpression::new("Error".to_string());
+                        if let Some(code) = code {
+                            error_expr = error_expr.with_code(code);
+                        }
+                        if let Some(details) = details {
+                            error_expr = error_expr.with_details(details);
+                        }
+                        error_expr
+                    } else {
+                        ErrorValueExpression::new("Unknown error".to_string())
+                    };
+                    
+                    Ok(Expression::ErrorValue(error_expr))
+                }
+                _ => {
+                    // Simple yikes expression without parameters
+                    Ok(Expression::ErrorValue(ErrorValueExpression::new("Error".to_string())))
+                }
+            }
+        } else {
+            Ok(Expression::ErrorValue(ErrorValueExpression::new("Error".to_string())))
+        }
     }
 }
 

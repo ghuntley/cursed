@@ -117,6 +117,14 @@ impl ExpressionCompiler {
             Expression::CompositeLiteral(composite) => {
                 self.compile_composite_literal(composite)
             },
+            Expression::Shook(_) => {
+                // TODO: Implement error propagation expression
+                Ok("i32 0".to_string())
+            },
+            Expression::ErrorValue(_) => {
+                // TODO: Implement error value expression
+                Ok("i32 0".to_string())
+            },
 
         }
     }

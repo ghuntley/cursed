@@ -34,7 +34,38 @@ CURSED provides several ways to construct types from existing types:
 | Interface   | `collab` | Set of method signatures |
 | Pointer     | `@T`     | Pointer to a value of type T |
 | Function    | `slay`   | Function with parameters and return values |
-| Channel     | `dm<T>`  | Channel of type T |
+| Channel     | `dm<T>`  | Channel of type T for goroutine communication |
+
+## Channel Types
+
+Channels are first-class types for goroutine communication:
+
+### Channel Type Syntax
+```
+dm<T>           // Unbuffered channel of type T
+dm<T>[N]        // Buffered channel of type T with capacity N
+```
+
+### Channel Operations
+```
+sus ch dm<normie>             // Unbuffered channel declaration
+sus buffered dm<tea>[10]      // Buffered channel with capacity 10
+
+ch <- value                   // Send operation (blocking)
+value := <-ch                 // Receive operation (blocking)
+value, ok := <-ch             // Receive with closed check
+```
+
+### Channel States
+- **Open**: Channel can send/receive values
+- **Closed**: Channel cannot accept new values but can drain existing ones
+- **Nil**: Uninitialized channel (operations block forever)
+
+### Channel Closing
+```
+close(ch)                     // Close channel
+value, ok := <-ch             // ok is false if channel is closed
+```
 
 ## Type Declarations
 

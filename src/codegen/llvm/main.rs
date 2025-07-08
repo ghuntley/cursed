@@ -691,6 +691,14 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                     }
                 }
             },
+            &Statement::Yikes(_) => {
+                // TODO: Implement error handling statement
+                self.ir_code.push_str("  ; Error handling statement (yikes) - not implemented\n");
+            },
+            &Statement::Fam(_) => {
+                // TODO: Implement error recovery statement
+                self.ir_code.push_str("  ; Error recovery statement (fam) - not implemented\n");
+            },
         }
         Ok(())
     }

@@ -3,6 +3,90 @@
 
 vibe core
 
+# ================================
+# Core Specification Functions
+# ================================
+
+slay lit(x interface{}) lit {
+    # Convert to boolean (from specification)
+    # Basic implementation - would need runtime support
+    damn cap  # Placeholder
+}
+
+slay normie(x interface{}) normie {
+    # Convert to int32 (from specification)
+    # Basic implementation - would need runtime support
+    damn 0  # Placeholder
+}
+
+slay thicc(x interface{}) thicc {
+    # Convert to int64 (from specification)
+    # Basic implementation - would need runtime support
+    damn 0  # Placeholder
+}
+
+slay snack(x interface{}) snack {
+    # Convert to float32 (from specification)
+    # Basic implementation - would need runtime support
+    damn 0.0  # Placeholder
+}
+
+slay meal(x interface{}) meal {
+    # Convert to float64 (from specification)
+    # Basic implementation - would need runtime support
+    damn 0.0  # Placeholder
+}
+
+slay tea(x interface{}) tea {
+    # Convert to string (from specification)
+    # Basic implementation - would need runtime support
+    damn ""  # Placeholder
+}
+
+slay len(v interface{}) normie {
+    # Length of string, array, slice, map, or channel (from specification)
+    # Basic implementation - would need runtime support
+    damn 0  # Placeholder
+}
+
+slay cap(v interface{}) normie {
+    # Capacity of slice, map, or channel (from specification)
+    # Basic implementation - would need runtime support
+    damn 0  # Placeholder
+}
+
+slay make(T interface{}, size ...normie) interface{} {
+    # Create slice, map, or channel (from specification)
+    # Basic implementation - would need runtime support
+    sus empty interface{}
+    damn empty  # Placeholder
+}
+
+slay new(T interface{}) interface{} {
+    # Create pointer to zero value of type (from specification)
+    # Basic implementation - would need runtime support
+    sus empty interface{}
+    damn empty  # Placeholder
+}
+
+slay shook(v interface{}) {
+    # Cause panic with value (from specification)
+    panic("shook called");
+}
+
+slay unbothered() interface{} {
+    # Recover from panic (from specification)
+    # Basic implementation - would need runtime support
+    sus empty interface{}
+    damn empty  # Placeholder
+}
+
+slay append(slice []interface{}, elems ...interface{}) []interface{} {
+    # Append elements to slice (from specification)
+    # Basic implementation - would need runtime support
+    damn slice  # Placeholder
+}
+
 # Type Conversion Functions
 slay string_to_int(s tea) normie {
     # Convert string to integer
