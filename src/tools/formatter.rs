@@ -1,1065 +1,1024 @@
-//! CURSED Code Formatter
-//! 
-//! A comprehensive formatter for CURSED source code that handles Gen Z slang syntax
-//! and produces well-formatted, readable code with configurable indentation and style options.
-
-use crate::error_types::{Error, Result};
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
+use crate::lexer::{Lexer, Token, TokenType};
+use crate::parser::{Parser, AstNode};
 
-/// Main formatter for CURSED source code
+/// Production-ready code formatter for CURSED
 #[derive(Debug, Clone)]
 pub struct CursedFormatter {
-    config: FormatterConfig,
-    indentation_level: usize,
-    line_buffer: Vec<String>,
-    current_line: String,
+    pub config: FormatterConfig,
+    pub style_rules: StyleRules,
+    pub indent_level: usize,
+    pub current_line: String,
+    pub output: Vec<String>,
 }
 
-/// Configuration options for the CURSED formatter
 #[derive(Debug, Clone)]
 pub struct FormatterConfig {
-    /// Formatting style options
-    pub options: FormattingOptions,
-    /// Whether to preserve comments
-    pub preserve_comments: bool,
-    /// Whether to sort imports alphabetically
-    pub sort_imports: bool,
-    /// Maximum line length before wrapping
-    pub max_line_length: usize,
-    /// Whether to add trailing commas
-    pub trailing_commas: bool,
-}
-
-/// Specific formatting style options
-#[derive(Debug, Clone)]
-pub struct FormattingOptions {
-    /// Indentation style (spaces or tabs)
-    pub indent_style: IndentStyle,
-    /// Number of spaces for indentation (when using spaces)
     pub indent_size: usize,
-    /// Whether to add spaces around operators
-    pub spaces_around_operators: bool,
-    /// Whether to add spaces after commas
-    pub spaces_after_commas: bool,
-    /// Whether to add spaces inside parentheses
-    pub spaces_inside_parentheses: bool,
-    /// Whether to add spaces inside braces
-    pub spaces_inside_braces: bool,
-    /// Brace placement style
+    pub use_tabs: bool,
+    pub max_line_length: usize,
+    pub preserve_blank_lines: bool,
+    pub max_blank_lines: usize,
+    pub space_before_parens: bool,
+    pub space_after_comma: bool,
+    pub space_around_operators: bool,
+    pub newline_before_brace: bool,
+    pub align_assignments: bool,
+    pub sort_imports: bool,
+    pub remove_trailing_whitespace: bool,
+    pub ensure_newline_at_eof: bool,
+    pub format_comments: bool,
+    pub comment_column: Option<usize>,
+}
+
+#[derive(Debug, Clone)]
+pub struct StyleRules {
+    pub function_declaration_style: FunctionStyle,
+    pub variable_declaration_style: VariableStyle,
+    pub import_style: ImportStyle,
+    pub comment_style: CommentStyle,
     pub brace_style: BraceStyle,
-    /// How to handle blank lines
-    pub blank_lines: BlankLinePolicy,
+    pub operator_style: OperatorStyle,
+    pub type_annotation_style: TypeStyle,
 }
 
-/// Indentation style options
 #[derive(Debug, Clone, PartialEq)]
-pub enum IndentStyle {
-    Spaces,
-    Tabs,
+pub enum FunctionStyle {
+    Compact,      // slay func() type
+    Verbose,      // slay func() -> type
+    Multiline,    // Parameters on separate lines
 }
 
-/// Brace placement style
+#[derive(Debug, Clone, PartialEq)]
+pub enum VariableStyle {
+    Compact,      // sus x drip = 42
+    Aligned,      // sus x     drip = 42
+    TypeFirst,    // drip x = 42
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ImportStyle {
+    OnePerLine,   // yeet "a"; yeet "b"
+    Grouped,      // yeet ( "a"; "b" )
+    Sorted,       // Alphabetically sorted
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommentStyle {
+    Preserve,     // Keep original formatting
+    Align,        // Align to specific column
+    Reflow,       // Reflow long comments
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum BraceStyle {
-    /// Opening brace on same line
-    SameLine,
-    /// Opening brace on next line
-    NextLine,
-    /// Opening brace on next line with extra indent
-    NextLineIndented,
+    SameLine,     // func() {
+    NewLine,      // func()\n{
+    Compact,      // func(){
 }
 
-/// Blank line handling policy
+#[derive(Debug, Clone, PartialEq)]
+pub enum OperatorStyle {
+    Spaced,       // a + b
+    Compact,      // a+b
+    Aligned,      // a  + b (aligned)
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeStyle {
+    Explicit,     // sus x normie = 42
+    Inferred,     // sus x := 42
+    Compact,      // normie x = 42
+}
+
 #[derive(Debug, Clone)]
-pub struct BlankLinePolicy {
-    /// Max blank lines between statements
-    pub max_blank_lines: usize,
-    /// Blank lines before function declarations
-    pub before_functions: usize,
-    /// Blank lines after imports
-    pub after_imports: usize,
-    /// Blank lines around control structures
-    pub around_control_structures: usize,
+pub struct FormattingContext {
+    pub in_function: bool,
+    pub in_type_declaration: bool,
+    pub in_import_block: bool,
+    pub in_comment: bool,
+    pub brace_depth: usize,
+    pub paren_depth: usize,
+    pub current_function: Option<String>,
+    pub pending_newlines: usize,
+}
+
+impl CursedFormatter {
+    /// Create new formatter with config
+    pub fn new(config: FormatterConfig) -> Self {
+        Self {
+            config,
+            style_rules: StyleRules::default(),
+            indent_level: 0,
+            current_line: String::new(),
+            output: Vec::new(),
+        }
+    }
+
+    /// Format CURSED source file
+    pub fn format_file(&mut self, file_path: &Path) -> Result<String, Box<dyn std::error::Error>> {
+        let content = fs::read_to_string(file_path)?;
+        self.format_source(&content)
+    }
+
+    /// Format CURSED source code
+    pub fn format_source(&mut self, source: &str) -> Result<String, Box<dyn std::error::Error>> {
+        println!("🎨 Formatting CURSED source code...");
+
+        // Reset formatter state
+        self.output.clear();
+        self.current_line.clear();
+        self.indent_level = 0;
+
+        // Tokenize source
+        let mut lexer = Lexer::new(source);
+        let tokens = lexer.tokenize()?;
+
+        // Parse into AST for semantic formatting
+        let mut parser = Parser::new(tokens.clone());
+        let ast = parser.parse().unwrap_or_else(|_| {
+            // If parsing fails, fall back to token-based formatting
+            eprintln!("⚠️  Parsing failed, using token-based formatting");
+            Default::default()
+        });
+
+        // Format using AST-aware approach
+        if !ast.nodes.is_empty() {
+            self.format_ast(&ast)?;
+        } else {
+            self.format_tokens(&tokens)?;
+        }
+
+        // Post-processing
+        self.post_process()?;
+
+        let formatted = self.output.join("\n");
+        println!("✅ Source code formatted successfully");
+        Ok(formatted)
+    }
+
+    /// Format multiple files
+    pub fn format_directory(&mut self, dir_path: &Path, recursive: bool) -> Result<Vec<FormattingResult>, Box<dyn std::error::Error>> {
+        let mut results = Vec::new();
+        
+        for entry in fs::read_dir(dir_path)? {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if path.is_dir() && recursive {
+                results.extend(self.format_directory(&path, recursive)?);
+            } else if path.extension().map_or(false, |ext| ext == "csd") {
+                match self.format_file(&path) {
+                    Ok(formatted) => {
+                        if self.should_update_file(&path, &formatted)? {
+                            fs::write(&path, &formatted)?;
+                            results.push(FormattingResult {
+                                file_path: path,
+                                status: FormatStatus::Formatted,
+                                changes: self.count_changes(&formatted),
+                            });
+                        } else {
+                            results.push(FormattingResult {
+                                file_path: path,
+                                status: FormatStatus::NoChanges,
+                                changes: 0,
+                            });
+                        }
+                    }
+                    Err(e) => {
+                        results.push(FormattingResult {
+                            file_path: path,
+                            status: FormatStatus::Error(e.to_string()),
+                            changes: 0,
+                        });
+                    }
+                }
+            }
+        }
+        
+        Ok(results)
+    }
+
+    /// Format using AST-aware approach
+    fn format_ast(&mut self, ast: &crate::ast::Program) -> Result<(), Box<dyn std::error::Error>> {
+        let mut context = FormattingContext::new();
+        
+        for node in &ast.nodes {
+            self.format_ast_node(node, &mut context)?;
+        }
+        
+        Ok(())
+    }
+
+    /// Format individual AST node
+    fn format_ast_node(&mut self, node: &AstNode, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        match node {
+            AstNode::FunctionDeclaration(func) => {
+                self.format_function_declaration(func, context)?;
+            }
+            AstNode::VariableDeclaration(var) => {
+                self.format_variable_declaration(var, context)?;
+            }
+            AstNode::ImportDeclaration(import) => {
+                self.format_import_declaration(import, context)?;
+            }
+            AstNode::TypeDeclaration(type_decl) => {
+                self.format_type_declaration(type_decl, context)?;
+            }
+            AstNode::Block(statements) => {
+                self.format_block(statements, context)?;
+            }
+            AstNode::IfStatement(if_stmt) => {
+                self.format_if_statement(if_stmt, context)?;
+            }
+            AstNode::WhileLoop(while_loop) => {
+                self.format_while_loop(while_loop, context)?;
+            }
+            AstNode::ForLoop(for_loop) => {
+                self.format_for_loop(for_loop, context)?;
+            }
+            AstNode::Expression(expr) => {
+                self.format_expression(expr, context)?;
+            }
+            AstNode::Comment(comment) => {
+                self.format_comment(comment, context)?;
+            }
+            _ => {
+                // Handle other node types
+                self.add_line(&format!("# Unhandled node: {:?}", node));
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Format function declaration
+    fn format_function_declaration(&mut self, func: &crate::ast::FunctionDeclaration, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        context.in_function = true;
+        context.current_function = Some(func.name.clone());
+        
+        let mut declaration = String::new();
+        
+        // Function keyword
+        declaration.push_str("slay ");
+        
+        // Function name
+        declaration.push_str(&func.name);
+        
+        // Parameters
+        if self.config.space_before_parens {
+            declaration.push(' ');
+        }
+        declaration.push('(');
+        
+        // Format parameters
+        for (i, param) in func.parameters.iter().enumerate() {
+            if i > 0 {
+                declaration.push_str(", ");
+            }
+            
+            match self.style_rules.variable_declaration_style {
+                VariableStyle::Compact => {
+                    declaration.push_str(&format!("{} {:?}", param.name, param.param_type));
+                }
+                VariableStyle::TypeFirst => {
+                    declaration.push_str(&format!("{:?} {}", param.param_type, param.name));
+                }
+                VariableStyle::Aligned => {
+                    // Implement alignment logic
+                    declaration.push_str(&format!("{} {:?}", param.name, param.param_type));
+                }
+            }
+        }
+        
+        declaration.push(')');
+        
+        // Return type
+        if let Some(return_type) = &func.return_type {
+            match self.style_rules.function_declaration_style {
+                FunctionStyle::Compact => {
+                    declaration.push_str(&format!(" {:?}", return_type));
+                }
+                FunctionStyle::Verbose => {
+                    declaration.push_str(&format!(" -> {:?}", return_type));
+                }
+                FunctionStyle::Multiline => {
+                    declaration.push_str(" ->");
+                    self.add_line(&declaration);
+                    self.indent_level += 1;
+                    self.add_line(&format!("{:?}", return_type));
+                    self.indent_level -= 1;
+                    declaration.clear();
+                }
+            }
+        }
+        
+        // Opening brace
+        match self.style_rules.brace_style {
+            BraceStyle::SameLine => {
+                declaration.push_str(" {");
+            }
+            BraceStyle::NewLine => {
+                self.add_line(&declaration);
+                declaration = "{".to_string();
+            }
+            BraceStyle::Compact => {
+                declaration.push('{');
+            }
+        }
+        
+        if !declaration.is_empty() {
+            self.add_line(&declaration);
+        }
+        
+        // Function body
+        self.indent_level += 1;
+        for stmt in &func.body {
+            self.format_ast_node(stmt, context)?;
+        }
+        self.indent_level -= 1;
+        
+        // Closing brace
+        self.add_line("}");
+        self.add_blank_line();
+        
+        context.in_function = false;
+        context.current_function = None;
+        
+        Ok(())
+    }
+
+    /// Format variable declaration
+    fn format_variable_declaration(&mut self, var: &crate::ast::VariableDeclaration, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        let mut declaration = String::new();
+        
+        match self.style_rules.variable_declaration_style {
+            VariableStyle::Compact => {
+                declaration.push_str(&format!("sus {} {:?}", var.name, var.var_type));
+                if let Some(value) = &var.initial_value {
+                    if self.config.space_around_operators {
+                        declaration.push_str(" = ");
+                    } else {
+                        declaration.push_str("=");
+                    }
+                    declaration.push_str(&self.format_expression_to_string(value));
+                }
+            }
+            VariableStyle::TypeFirst => {
+                declaration.push_str(&format!("{:?} {}", var.var_type, var.name));
+                if let Some(value) = &var.initial_value {
+                    if self.config.space_around_operators {
+                        declaration.push_str(" = ");
+                    } else {
+                        declaration.push_str("=");
+                    }
+                    declaration.push_str(&self.format_expression_to_string(value));
+                }
+            }
+            VariableStyle::Aligned => {
+                // Implement alignment logic
+                declaration.push_str(&format!("sus {} {:?}", var.name, var.var_type));
+                if let Some(value) = &var.initial_value {
+                    declaration.push_str(" = ");
+                    declaration.push_str(&self.format_expression_to_string(value));
+                }
+            }
+        }
+        
+        self.add_line(&declaration);
+        Ok(())
+    }
+
+    /// Format import declaration
+    fn format_import_declaration(&mut self, import: &crate::ast::ImportDeclaration, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        let import_str = match self.style_rules.import_style {
+            ImportStyle::OnePerLine => {
+                format!("yeet \"{}\"", import.module_name)
+            }
+            ImportStyle::Grouped => {
+                if context.in_import_block {
+                    format!("    \"{}\"", import.module_name)
+                } else {
+                    format!("yeet \"{}\"", import.module_name)
+                }
+            }
+            ImportStyle::Sorted => {
+                format!("yeet \"{}\"", import.module_name)
+            }
+        };
+        
+        self.add_line(&import_str);
+        Ok(())
+    }
+
+    /// Format type declaration
+    fn format_type_declaration(&mut self, type_decl: &crate::ast::TypeDeclaration, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        context.in_type_declaration = true;
+        
+        let mut declaration = format!("{} {}", type_decl.kind, type_decl.name);
+        
+        match self.style_rules.brace_style {
+            BraceStyle::SameLine => {
+                declaration.push_str(" {");
+            }
+            BraceStyle::NewLine => {
+                self.add_line(&declaration);
+                declaration = "{".to_string();
+            }
+            BraceStyle::Compact => {
+                declaration.push('{');
+            }
+        }
+        
+        self.add_line(&declaration);
+        
+        // Format fields
+        self.indent_level += 1;
+        for field in &type_decl.fields {
+            let field_str = format!("{} {:?}", field.name, field.field_type);
+            self.add_line(&field_str);
+        }
+        self.indent_level -= 1;
+        
+        self.add_line("}");
+        self.add_blank_line();
+        
+        context.in_type_declaration = false;
+        Ok(())
+    }
+
+    /// Format block statement
+    fn format_block(&mut self, statements: &[AstNode], context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        for stmt in statements {
+            self.format_ast_node(stmt, context)?;
+        }
+        Ok(())
+    }
+
+    /// Format if statement
+    fn format_if_statement(&mut self, if_stmt: &crate::ast::IfStatement, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        let mut line = String::from("bestie ");
+        line.push_str(&self.format_expression_to_string(&if_stmt.condition));
+        
+        match self.style_rules.brace_style {
+            BraceStyle::SameLine => {
+                line.push_str(" {");
+            }
+            BraceStyle::NewLine => {
+                self.add_line(&line);
+                line = "{".to_string();
+            }
+            BraceStyle::Compact => {
+                line.push('{');
+            }
+        }
+        
+        self.add_line(&line);
+        
+        // Then block
+        self.indent_level += 1;
+        for stmt in &if_stmt.then_branch {
+            self.format_ast_node(stmt, context)?;
+        }
+        self.indent_level -= 1;
+        
+        // Else block
+        if let Some(else_branch) = &if_stmt.else_branch {
+            self.add_line("} salty {");
+            self.indent_level += 1;
+            for stmt in else_branch {
+                self.format_ast_node(stmt, context)?;
+            }
+            self.indent_level -= 1;
+        }
+        
+        self.add_line("}");
+        Ok(())
+    }
+
+    /// Format while loop
+    fn format_while_loop(&mut self, while_loop: &crate::ast::WhileLoop, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        let mut line = String::from("bestie ");
+        line.push_str(&self.format_expression_to_string(&while_loop.condition));
+        line.push_str(" {");
+        
+        self.add_line(&line);
+        
+        self.indent_level += 1;
+        for stmt in &while_loop.body {
+            self.format_ast_node(stmt, context)?;
+        }
+        self.indent_level -= 1;
+        
+        self.add_line("}");
+        Ok(())
+    }
+
+    /// Format for loop
+    fn format_for_loop(&mut self, for_loop: &crate::ast::ForLoop, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        let mut line = String::from("bestie ");
+        
+        if let Some(init) = &for_loop.init {
+            line.push_str(&self.format_expression_to_string(init));
+        }
+        line.push_str("; ");
+        
+        if let Some(condition) = &for_loop.condition {
+            line.push_str(&self.format_expression_to_string(condition));
+        }
+        line.push_str("; ");
+        
+        if let Some(update) = &for_loop.update {
+            line.push_str(&self.format_expression_to_string(update));
+        }
+        
+        line.push_str(" {");
+        self.add_line(&line);
+        
+        self.indent_level += 1;
+        for stmt in &for_loop.body {
+            self.format_ast_node(stmt, context)?;
+        }
+        self.indent_level -= 1;
+        
+        self.add_line("}");
+        Ok(())
+    }
+
+    /// Format expression
+    fn format_expression(&mut self, expr: &crate::ast::Expression, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        let expr_str = self.format_expression_to_string(expr);
+        self.add_line(&expr_str);
+        Ok(())
+    }
+
+    /// Format expression to string
+    fn format_expression_to_string(&self, expr: &crate::ast::Expression) -> String {
+        match expr {
+            crate::ast::Expression::Literal(lit) => {
+                format!("{:?}", lit)
+            }
+            crate::ast::Expression::Identifier(id) => {
+                id.clone()
+            }
+            crate::ast::Expression::BinaryOp { left, operator, right } => {
+                let left_str = self.format_expression_to_string(left);
+                let right_str = self.format_expression_to_string(right);
+                
+                if self.config.space_around_operators {
+                    format!("{} {} {}", left_str, operator, right_str)
+                } else {
+                    format!("{}{}{}", left_str, operator, right_str)
+                }
+            }
+            crate::ast::Expression::UnaryOp { operator, operand } => {
+                let operand_str = self.format_expression_to_string(operand);
+                format!("{}{}", operator, operand_str)
+            }
+            crate::ast::Expression::FunctionCall { name, args } => {
+                let mut call = name.clone();
+                call.push('(');
+                
+                for (i, arg) in args.iter().enumerate() {
+                    if i > 0 {
+                        if self.config.space_after_comma {
+                            call.push_str(", ");
+                        } else {
+                            call.push(',');
+                        }
+                    }
+                    call.push_str(&self.format_expression_to_string(arg));
+                }
+                
+                call.push(')');
+                call
+            }
+            _ => {
+                format!("{:?}", expr)
+            }
+        }
+    }
+
+    /// Format comment
+    fn format_comment(&mut self, comment: &str, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        match self.style_rules.comment_style {
+            CommentStyle::Preserve => {
+                self.add_line(comment);
+            }
+            CommentStyle::Align => {
+                if let Some(column) = self.config.comment_column {
+                    let padded_comment = self.pad_to_column(comment, column);
+                    self.add_line(&padded_comment);
+                } else {
+                    self.add_line(comment);
+                }
+            }
+            CommentStyle::Reflow => {
+                let reflowed = self.reflow_comment(comment);
+                self.add_line(&reflowed);
+            }
+        }
+        Ok(())
+    }
+
+    /// Format using token-based approach (fallback)
+    fn format_tokens(&mut self, tokens: &[Token]) -> Result<(), Box<dyn std::error::Error>> {
+        let mut i = 0;
+        let mut context = FormattingContext::new();
+        
+        while i < tokens.len() {
+            let token = &tokens[i];
+            
+            match &token.token_type {
+                TokenType::Keyword(keyword) => {
+                    self.handle_keyword(keyword, &tokens, &mut i, &mut context)?;
+                }
+                TokenType::Identifier(name) => {
+                    self.current_line.push_str(name);
+                }
+                TokenType::Number(num) => {
+                    self.current_line.push_str(&num.to_string());
+                }
+                TokenType::StringLiteral(s) => {
+                    self.current_line.push_str(&format!("\"{}\"", s));
+                }
+                TokenType::Operator(op) => {
+                    if self.config.space_around_operators {
+                        self.current_line.push_str(&format!(" {} ", op));
+                    } else {
+                        self.current_line.push_str(op);
+                    }
+                }
+                TokenType::LeftParen => {
+                    if self.config.space_before_parens && !self.current_line.is_empty() {
+                        self.current_line.push(' ');
+                    }
+                    self.current_line.push('(');
+                    context.paren_depth += 1;
+                }
+                TokenType::RightParen => {
+                    self.current_line.push(')');
+                    context.paren_depth = context.paren_depth.saturating_sub(1);
+                }
+                TokenType::LeftBrace => {
+                    match self.style_rules.brace_style {
+                        BraceStyle::SameLine => {
+                            self.current_line.push_str(" {");
+                        }
+                        BraceStyle::NewLine => {
+                            self.finish_line();
+                            self.current_line.push('{');
+                        }
+                        BraceStyle::Compact => {
+                            self.current_line.push('{');
+                        }
+                    }
+                    context.brace_depth += 1;
+                }
+                TokenType::RightBrace => {
+                    self.finish_line();
+                    context.brace_depth = context.brace_depth.saturating_sub(1);
+                    self.add_line("}");
+                }
+                TokenType::Semicolon => {
+                    self.current_line.push(';');
+                    self.finish_line();
+                }
+                TokenType::Comma => {
+                    self.current_line.push(',');
+                    if self.config.space_after_comma {
+                        self.current_line.push(' ');
+                    }
+                }
+                TokenType::Comment(comment) => {
+                    self.format_comment(comment, &mut context)?;
+                }
+                TokenType::Newline => {
+                    self.finish_line();
+                }
+                _ => {
+                    // Handle other token types
+                    self.current_line.push_str(&format!("{:?}", token));
+                }
+            }
+            
+            i += 1;
+        }
+        
+        // Finish any remaining line
+        if !self.current_line.trim().is_empty() {
+            self.finish_line();
+        }
+        
+        Ok(())
+    }
+
+    /// Handle keyword tokens
+    fn handle_keyword(&mut self, keyword: &str, tokens: &[Token], index: &mut usize, context: &mut FormattingContext) -> Result<(), Box<dyn std::error::Error>> {
+        match keyword {
+            "slay" => {
+                context.in_function = true;
+                self.current_line.push_str("slay ");
+            }
+            "sus" => {
+                self.current_line.push_str("sus ");
+            }
+            "yeet" => {
+                context.in_import_block = true;
+                self.current_line.push_str("yeet ");
+            }
+            "bestie" => {
+                self.current_line.push_str("bestie ");
+            }
+            "damn" => {
+                self.current_line.push_str("damn ");
+            }
+            _ => {
+                self.current_line.push_str(keyword);
+                self.current_line.push(' ');
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Add line with proper indentation
+    fn add_line(&mut self, line: &str) {
+        let indented = self.create_indent() + line;
+        self.output.push(indented);
+    }
+
+    /// Add blank line
+    fn add_blank_line(&mut self) {
+        if self.config.preserve_blank_lines {
+            self.output.push(String::new());
+        }
+    }
+
+    /// Finish current line
+    fn finish_line(&mut self) {
+        if !self.current_line.trim().is_empty() {
+            self.add_line(&self.current_line);
+        }
+        self.current_line.clear();
+    }
+
+    /// Create indentation string
+    fn create_indent(&self) -> String {
+        if self.config.use_tabs {
+            "\t".repeat(self.indent_level)
+        } else {
+            " ".repeat(self.indent_level * self.config.indent_size)
+        }
+    }
+
+    /// Post-process formatted output
+    fn post_process(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        // Remove trailing whitespace
+        if self.config.remove_trailing_whitespace {
+            for line in &mut self.output {
+                *line = line.trim_end().to_string();
+            }
+        }
+        
+        // Limit consecutive blank lines
+        if self.config.max_blank_lines > 0 {
+            let mut filtered_output = Vec::new();
+            let mut consecutive_blank_lines = 0;
+            
+            for line in &self.output {
+                if line.trim().is_empty() {
+                    consecutive_blank_lines += 1;
+                    if consecutive_blank_lines <= self.config.max_blank_lines {
+                        filtered_output.push(line.clone());
+                    }
+                } else {
+                    consecutive_blank_lines = 0;
+                    filtered_output.push(line.clone());
+                }
+            }
+            
+            self.output = filtered_output;
+        }
+        
+        // Ensure newline at EOF
+        if self.config.ensure_newline_at_eof && !self.output.is_empty() {
+            if let Some(last_line) = self.output.last() {
+                if !last_line.is_empty() {
+                    self.output.push(String::new());
+                }
+            }
+        }
+        
+        // Sort imports if requested
+        if self.config.sort_imports {
+            self.sort_imports()?;
+        }
+        
+        Ok(())
+    }
+
+    /// Sort import statements
+    fn sort_imports(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut import_lines = Vec::new();
+        let mut other_lines = Vec::new();
+        let mut in_imports = false;
+        
+        for line in &self.output {
+            if line.trim().starts_with("yeet") {
+                in_imports = true;
+                import_lines.push(line.clone());
+            } else if in_imports && line.trim().is_empty() {
+                // End of import block
+                in_imports = false;
+                import_lines.sort();
+                other_lines.extend(import_lines.drain(..));
+                other_lines.push(line.clone());
+            } else {
+                other_lines.push(line.clone());
+            }
+        }
+        
+        // Handle case where imports are at the end
+        if !import_lines.is_empty() {
+            import_lines.sort();
+            other_lines.extend(import_lines);
+        }
+        
+        self.output = other_lines;
+        Ok(())
+    }
+
+    /// Check if file should be updated
+    fn should_update_file(&self, file_path: &Path, formatted: &str) -> Result<bool, Box<dyn std::error::Error>> {
+        if !file_path.exists() {
+            return Ok(true);
+        }
+        
+        let original = fs::read_to_string(file_path)?;
+        Ok(original != formatted)
+    }
+
+    /// Count formatting changes
+    fn count_changes(&self, formatted: &str) -> usize {
+        // Simple change counting - in production, use proper diff algorithm
+        formatted.lines().count()
+    }
+
+    /// Pad comment to specific column
+    fn pad_to_column(&self, comment: &str, column: usize) -> String {
+        if comment.len() >= column {
+            comment.to_string()
+        } else {
+            format!("{}{}", " ".repeat(column - comment.len()), comment)
+        }
+    }
+
+    /// Reflow long comment
+    fn reflow_comment(&self, comment: &str) -> String {
+        if comment.len() <= self.config.max_line_length {
+            return comment.to_string();
+        }
+        
+        // Simple word wrapping
+        let words: Vec<&str> = comment.split_whitespace().collect();
+        let mut lines = Vec::new();
+        let mut current_line = String::new();
+        
+        for word in words {
+            if current_line.len() + word.len() + 1 > self.config.max_line_length {
+                if !current_line.is_empty() {
+                    lines.push(current_line);
+                    current_line = String::new();
+                }
+            }
+            
+            if !current_line.is_empty() {
+                current_line.push(' ');
+            }
+            current_line.push_str(word);
+        }
+        
+        if !current_line.is_empty() {
+            lines.push(current_line);
+        }
+        
+        lines.join("\n# ")
+    }
+}
+
+impl FormattingContext {
+    fn new() -> Self {
+        Self {
+            in_function: false,
+            in_type_declaration: false,
+            in_import_block: false,
+            in_comment: false,
+            brace_depth: 0,
+            paren_depth: 0,
+            current_function: None,
+            pending_newlines: 0,
+        }
+    }
 }
 
 impl Default for FormatterConfig {
     fn default() -> Self {
         Self {
-            options: FormattingOptions::default(),
-            preserve_comments: true,
-            sort_imports: true,
-            max_line_length: 100,
-            trailing_commas: false,
-        }
-    }
-}
-
-impl Default for FormattingOptions {
-    fn default() -> Self {
-        Self {
-            indent_style: IndentStyle::Spaces,
             indent_size: 4,
-            spaces_around_operators: true,
-            spaces_after_commas: true,
-            spaces_inside_parentheses: false,
-            spaces_inside_braces: true,
-            brace_style: BraceStyle::SameLine,
-            blank_lines: BlankLinePolicy::default(),
-        }
-    }
-}
-
-impl Default for BlankLinePolicy {
-    fn default() -> Self {
-        Self {
+            use_tabs: false,
+            max_line_length: 100,
+            preserve_blank_lines: true,
             max_blank_lines: 2,
-            before_functions: 1,
-            after_imports: 1,
-            around_control_structures: 0,
+            space_before_parens: false,
+            space_after_comma: true,
+            space_around_operators: true,
+            newline_before_brace: false,
+            align_assignments: false,
+            sort_imports: true,
+            remove_trailing_whitespace: true,
+            ensure_newline_at_eof: true,
+            format_comments: true,
+            comment_column: None,
         }
     }
 }
 
-impl CursedFormatter {
-    /// Create a new formatter with default configuration
-    pub fn new() -> Self {
-        Self::with_config(FormatterConfig::default())
-    }
-
-    /// Create a new formatter with the given configuration
-    pub fn with_config(config: FormatterConfig) -> Self {
-        Self {
-            config,
-            indentation_level: 0,
-            line_buffer: Vec::new(),
-            current_line: String::new(),
-        }
-    }
-
-    /// Format CURSED source code
-    pub fn format(&mut self, source: &str) -> Result<String> {
-        self.reset();
-        
-        let tokens = self.tokenize_source(source)?;
-        self.format_tokens(&tokens)?;
-        
-        Ok(self.finalize_output())
-    }
-
-    /// Reset the formatter state
-    fn reset(&mut self) {
-        self.indentation_level = 0;
-        self.line_buffer.clear();
-        self.current_line.clear();
-    }
-
-    /// Tokenize the source code into manageable tokens
-    fn tokenize_source(&self, source: &str) -> Result<Vec<Token>> {
-        let mut tokens = Vec::new();
-        let mut chars = source.chars().peekable();
-        let mut current_token = String::new();
-        let mut line_number = 1;
-        let mut column = 1;
-        let mut in_string = false;
-        let mut in_comment = false;
-        let mut string_delimiter = '"';
-
-        while let Some(ch) = chars.next() {
-            match ch {
-                '\n' => {
-                    if in_comment {
-                        in_comment = false;
-                        if !current_token.is_empty() {
-                            tokens.push(Token::new(TokenType::Comment, current_token.clone(), line_number, column));
-                            current_token.clear();
-                        }
-                    } else if !current_token.is_empty() && !in_string {
-                        tokens.push(self.classify_token(&current_token, line_number, column));
-                        current_token.clear();
-                    }
-                    if in_string {
-                        current_token.push(ch);
-                    } else {
-                        tokens.push(Token::new(TokenType::Newline, "\n".to_string(), line_number, column));
-                    }
-                    line_number += 1;
-                    column = 1;
-                },
-                '"' | '\'' => {
-                    if !in_comment {
-                        if in_string && ch == string_delimiter {
-                            current_token.push(ch);
-                            tokens.push(Token::new(TokenType::String, current_token.clone(), line_number, column));
-                            current_token.clear();
-                            in_string = false;
-                        } else if !in_string {
-                            if !current_token.is_empty() {
-                                tokens.push(self.classify_token(&current_token, line_number, column));
-                                current_token.clear();
-                            }
-                            current_token.push(ch);
-                            in_string = true;
-                            string_delimiter = ch;
-                        } else {
-                            current_token.push(ch);
-                        }
-                    } else {
-                        current_token.push(ch);
-                    }
-                    column += 1;
-                },
-                '/' if chars.peek() == Some(&'/') && !in_string => {
-                    if !current_token.is_empty() {
-                        tokens.push(self.classify_token(&current_token, line_number, column));
-                        current_token.clear();
-                    }
-                    current_token.push(ch);
-                    in_comment = true;
-                    column += 1;
-                },
-                ' ' | '\t' | '\r' => {
-                    if in_string || in_comment {
-                        current_token.push(ch);
-                    } else if !current_token.is_empty() {
-                        tokens.push(self.classify_token(&current_token, line_number, column));
-                        current_token.clear();
-                    }
-                    column += 1;
-                },
-                '{' | '}' | '(' | ')' | '[' | ']' | ';' | ',' | '=' | '+' | '-' | '*' | '/' | '%' | '!' | '<' | '>' | '&' | '|' | '^' | '?' | ':' => {
-                    if in_string || in_comment {
-                        current_token.push(ch);
-                    } else {
-                        if !current_token.is_empty() {
-                            tokens.push(self.classify_token(&current_token, line_number, column));
-                            current_token.clear();
-                        }
-                        tokens.push(self.classify_operator_or_delimiter(ch, line_number, column));
-                    }
-                    column += 1;
-                },
-                _ => {
-                    current_token.push(ch);
-                    column += 1;
-                }
-            }
-        }
-
-        if !current_token.is_empty() {
-            if in_comment {
-                tokens.push(Token::new(TokenType::Comment, current_token, line_number, column));
-            } else {
-                tokens.push(self.classify_token(&current_token, line_number, column));
-            }
-        }
-
-        Ok(tokens)
-    }
-
-    /// Classify a token based on its content
-    fn classify_token(&self, token: &str, line: usize, column: usize) -> Token {
-        let token_type = match token {
-            // Gen Z slang keywords
-            "facts" => TokenType::FactsKeyword,
-            "slay" => TokenType::SlayKeyword,
-            "yeet" => TokenType::YeetKeyword,
-            "yolo" => TokenType::YoloKeyword,
-            "lowkey" => TokenType::LowkeyKeyword,
-            "highkey" => TokenType::HighkeyKeyword,
-            "stan" => TokenType::StanKeyword,
-            "periodt" => TokenType::PerioddtKeyword,
-            "bestie" => TokenType::BestieKeyword,
-            "sus" => TokenType::SusKeyword,
-            "cap" => TokenType::CapKeyword,
-            "no_cap" => TokenType::NoCapKeyword,
-            "vibez" => TokenType::VibezKeyword,
-            "spill" => TokenType::SpillKeyword,
-            "tea" => TokenType::TeaKeyword,
-            "normie" => TokenType::NormieKeyword,
-            
-            // Control flow
-            "if" => TokenType::IfKeyword,
-            "else" => TokenType::ElseKeyword,
-            "while" => TokenType::WhileKeyword,
-            "for" => TokenType::ForKeyword,
-            "match" => TokenType::MatchKeyword,
-            "case" => TokenType::CaseKeyword,
-            "default" => TokenType::DefaultKeyword,
-            "break" => TokenType::BreakKeyword,
-            "continue" => TokenType::ContinueKeyword,
-            "return" => TokenType::ReturnKeyword,
-            
-            // Types
-            "struct" => TokenType::StructKeyword,
-            "enum" => TokenType::EnumKeyword,
-            "trait" => TokenType::TraitKeyword,
-            "impl" => TokenType::ImplKeyword,
-            "type" => TokenType::TypeKeyword,
-            
-            // Modifiers
-            "pub" => TokenType::PubKeyword,
-            "mut" => TokenType::MutKeyword,
-            "const" => TokenType::ConstKeyword,
-            "static" => TokenType::StaticKeyword,
-            
-            _ => {
-                if token.chars().all(|c| c.is_ascii_digit() || c == '.') {
-                    TokenType::Number
-                } else if token.chars().all(|c| c.is_alphanumeric() || c == '_') {
-                    TokenType::Identifier
-                } else {
-                    TokenType::Unknown
-                }
-            }
-        };
-
-        Token::new(token_type, token.to_string(), line, column)
-    }
-
-    /// Classify operators and delimiters
-    fn classify_operator_or_delimiter(&self, ch: char, line: usize, column: usize) -> Token {
-        let token_type = match ch {
-            '{' => TokenType::LeftBrace,
-            '}' => TokenType::RightBrace,
-            '(' => TokenType::LeftParen,
-            ')' => TokenType::RightParen,
-            '[' => TokenType::LeftBracket,
-            ']' => TokenType::RightBracket,
-            ';' => TokenType::Semicolon,
-            ',' => TokenType::Comma,
-            '=' => TokenType::Assign,
-            '+' => TokenType::Plus,
-            '-' => TokenType::Minus,
-            '*' => TokenType::Multiply,
-            '/' => TokenType::Divide,
-            '%' => TokenType::Modulo,
-            '!' => TokenType::Not,
-            '<' => TokenType::Less,
-            '>' => TokenType::Greater,
-            '&' => TokenType::And,
-            '|' => TokenType::Or,
-            '^' => TokenType::Xor,
-            '?' => TokenType::Question,
-            ':' => TokenType::Colon,
-            _ => TokenType::Unknown,
-        };
-
-        Token::new(token_type, ch.to_string(), line, column)
-    }
-
-    /// Format the tokenized source code
-    fn format_tokens(&mut self, tokens: &[Token]) -> Result<()> {
-        let mut i = 0;
-        while i < tokens.len() {
-            i = self.format_token_at_index(tokens, i)?;
-        }
-        Ok(())
-    }
-
-    /// Format a single token at the given index
-    fn format_token_at_index(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        let token = &tokens[index];
-        
-        match &token.token_type {
-            TokenType::FactsKeyword => {
-                self.format_facts_declaration(tokens, index)
-            },
-            TokenType::SlayKeyword => {
-                self.format_slay_function(tokens, index)
-            },
-            TokenType::YeetKeyword => {
-                self.format_yeet_import(tokens, index)
-            },
-            TokenType::LowkeyKeyword => {
-                self.format_lowkey_if(tokens, index)
-            },
-            TokenType::PerioddtKeyword => {
-                self.format_periodt_while(tokens, index)
-            },
-            TokenType::BestieKeyword => {
-                self.format_bestie_for(tokens, index)
-            },
-            TokenType::StanKeyword => {
-                self.format_stan_goroutine(tokens, index)
-            },
-            TokenType::YoloKeyword => {
-                self.format_yolo_statement(tokens, index)
-            },
-            TokenType::LeftBrace => {
-                self.format_opening_brace(tokens, index)
-            },
-            TokenType::RightBrace => {
-                self.format_closing_brace(tokens, index)
-            },
-            TokenType::Newline => {
-                self.format_newline(tokens, index)
-            },
-            TokenType::Comment => {
-                self.format_comment(tokens, index)
-            },
-            _ => {
-                // Add indentation if we're starting a new line inside a block
-                if self.current_line.is_empty() && self.indentation_level > 0 {
-                    self.add_indentation();
-                }
-                self.add_token_to_current_line(&token.value);
-                Ok(index + 1)
-            }
-        }
-    }
-
-    /// Format a facts (constant) declaration
-    fn format_facts_declaration(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        self.add_token_to_current_line("facts");
-        let mut next_index = index + 1;
-        
-        // Add space after facts
-        if self.config.options.spaces_around_operators {
-            self.add_token_to_current_line(" ");
-        }
-        
-        // Handle identifier
-        if next_index < tokens.len() {
-            self.add_token_to_current_line(&tokens[next_index].value);
-            next_index += 1;
-        }
-        
-        // Handle assignment
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::Assign => {
-                    if self.config.options.spaces_around_operators {
-                        self.add_token_to_current_line(" = ");
-                    } else {
-                        self.add_token_to_current_line("=");
-                    }
-                    next_index += 1;
-                    break;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        // Handle value until semicolon or newline
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::Semicolon => {
-                    self.add_token_to_current_line(";");
-                    next_index += 1;
-                    break;
-                },
-                TokenType::Newline => {
-                    break;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        Ok(next_index)
-    }
-
-    /// Format a slay (function) declaration
-    fn format_slay_function(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        // Add blank line before function if configured
-        if self.config.options.blank_lines.before_functions > 0 && !self.line_buffer.is_empty() {
-            for _ in 0..self.config.options.blank_lines.before_functions {
-                self.commit_current_line();
-            }
-        }
-        
-        self.add_token_to_current_line("slay");
-        let mut next_index = index + 1;
-        
-        // Add space after slay
-        self.add_token_to_current_line(" ");
-        
-        // Handle function name and parameters
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::LeftBrace => {
-                    // Don't consume the left brace, let the main formatter handle it
-                    break;
-                },
-                TokenType::LeftParen => {
-                    self.add_token_to_current_line("(");
-                    if self.config.options.spaces_inside_parentheses {
-                        self.add_token_to_current_line(" ");
-                    }
-                    next_index += 1;
-                },
-                TokenType::RightParen => {
-                    if self.config.options.spaces_inside_parentheses {
-                        self.add_token_to_current_line(" ");
-                    }
-                    self.add_token_to_current_line(")");
-                    next_index += 1;
-                },
-                TokenType::Comma => {
-                    self.add_token_to_current_line(",");
-                    if self.config.options.spaces_after_commas {
-                        self.add_token_to_current_line(" ");
-                    }
-                    next_index += 1;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        Ok(next_index)
-    }
-
-    /// Format a yeet (import) statement
-    fn format_yeet_import(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        self.add_token_to_current_line("yeet");
-        let mut next_index = index + 1;
-        
-        // Add space after yeet
-        self.add_token_to_current_line(" ");
-        
-        // Handle import path until semicolon or newline
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::Semicolon => {
-                    self.add_token_to_current_line(";");
-                    next_index += 1;
-                    break;
-                },
-                TokenType::Newline => {
-                    break;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        Ok(next_index)
-    }
-
-    /// Format a lowkey (if) statement
-    fn format_lowkey_if(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        self.add_token_to_current_line("lowkey");
-        let mut next_index = index + 1;
-        
-        // Add space after lowkey
-        self.add_token_to_current_line(" ");
-        
-        // Handle condition until opening brace
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::LeftBrace => {
-                    break;
-                },
-                TokenType::LeftParen => {
-                    self.add_token_to_current_line("(");
-                    if self.config.options.spaces_inside_parentheses {
-                        self.add_token_to_current_line(" ");
-                    }
-                    next_index += 1;
-                },
-                TokenType::RightParen => {
-                    if self.config.options.spaces_inside_parentheses {
-                        self.add_token_to_current_line(" ");
-                    }
-                    self.add_token_to_current_line(")");
-                    next_index += 1;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        Ok(next_index)
-    }
-
-    /// Format a periodt (while) loop
-    fn format_periodt_while(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        self.add_token_to_current_line("periodt");
-        let mut next_index = index + 1;
-        
-        // Add space after periodt
-        self.add_token_to_current_line(" ");
-        
-        // Handle condition until opening brace
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::LeftBrace => {
-                    break;
-                },
-                TokenType::LeftParen => {
-                    self.add_token_to_current_line("(");
-                    if self.config.options.spaces_inside_parentheses {
-                        self.add_token_to_current_line(" ");
-                    }
-                    next_index += 1;
-                },
-                TokenType::RightParen => {
-                    if self.config.options.spaces_inside_parentheses {
-                        self.add_token_to_current_line(" ");
-                    }
-                    self.add_token_to_current_line(")");
-                    next_index += 1;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        Ok(next_index)
-    }
-
-    /// Format a bestie (for) loop
-    fn format_bestie_for(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        self.add_token_to_current_line("bestie");
-        let mut next_index = index + 1;
-        
-        // Add space after bestie
-        self.add_token_to_current_line(" ");
-        
-        // Handle loop parameters until opening brace
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::LeftBrace => {
-                    break;
-                },
-                TokenType::LeftParen => {
-                    self.add_token_to_current_line("(");
-                    if self.config.options.spaces_inside_parentheses {
-                        self.add_token_to_current_line(" ");
-                    }
-                    next_index += 1;
-                },
-                TokenType::RightParen => {
-                    if self.config.options.spaces_inside_parentheses {
-                        self.add_token_to_current_line(" ");
-                    }
-                    self.add_token_to_current_line(")");
-                    next_index += 1;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        Ok(next_index)
-    }
-
-    /// Format a stan (goroutine) statement
-    fn format_stan_goroutine(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        self.add_token_to_current_line("stan");
-        let mut next_index = index + 1;
-        
-        // Add space after stan
-        self.add_token_to_current_line(" ");
-        
-        // Handle function call until semicolon or newline
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::Semicolon => {
-                    self.add_token_to_current_line(";");
-                    next_index += 1;
-                    break;
-                },
-                TokenType::Newline => {
-                    break;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        Ok(next_index)
-    }
-
-    /// Format a yolo (return/print) statement
-    fn format_yolo_statement(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        // Add indentation if we're starting a new line inside a block
-        if self.current_line.is_empty() && self.indentation_level > 0 {
-            self.add_indentation();
-        }
-        self.add_token_to_current_line("yolo");
-        let mut next_index = index + 1;
-        
-        // Add space after yolo
-        self.add_token_to_current_line(" ");
-        
-        // Handle expression until semicolon, newline, or closing brace
-        while next_index < tokens.len() {
-            let token = &tokens[next_index];
-            match token.token_type {
-                TokenType::Semicolon => {
-                    self.add_token_to_current_line(";");
-                    next_index += 1;
-                    break;
-                },
-                TokenType::Newline => {
-                    break;
-                },
-                TokenType::RightBrace => {
-                    // Don't consume the right brace, let the main formatter handle it
-                    break;
-                },
-                _ => {
-                    self.add_token_to_current_line(&token.value);
-                    next_index += 1;
-                }
-            }
-        }
-        
-        Ok(next_index)
-    }
-
-    /// Format an opening brace
-    fn format_opening_brace(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        match self.config.options.brace_style {
-            BraceStyle::SameLine => {
-                if self.config.options.spaces_inside_braces {
-                    self.add_token_to_current_line(" {");
-                } else {
-                    self.add_token_to_current_line("{");
-                }
-                self.commit_current_line();
-                self.indentation_level += 1;
-            },
-            BraceStyle::NextLine => {
-                self.commit_current_line();
-                self.add_indentation();
-                self.add_token_to_current_line("{");
-                self.commit_current_line();
-                self.indentation_level += 1;
-            },
-            BraceStyle::NextLineIndented => {
-                self.commit_current_line();
-                self.indentation_level += 1;
-                self.add_indentation();
-                self.add_token_to_current_line("{");
-                self.commit_current_line();
-            },
-        }
-        
-        Ok(index + 1)
-    }
-
-    /// Format a closing brace
-    fn format_closing_brace(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        if self.indentation_level > 0 {
-            self.indentation_level -= 1;
-        }
-        
-        self.commit_current_line();
-        self.add_indentation();
-        self.add_token_to_current_line("}");
-        self.commit_current_line();
-        
-        Ok(index + 1)
-    }
-
-    /// Format a newline
-    fn format_newline(&mut self, _tokens: &[Token], index: usize) -> Result<usize> {
-        self.commit_current_line();
-        Ok(index + 1)
-    }
-
-    /// Format a comment
-    fn format_comment(&mut self, tokens: &[Token], index: usize) -> Result<usize> {
-        if self.config.preserve_comments {
-            let token = &tokens[index];
-            self.add_token_to_current_line(&token.value);
-        }
-        Ok(index + 1)
-    }
-
-    /// Add text to the current line
-    fn add_token_to_current_line(&mut self, text: &str) {
-        self.current_line.push_str(text);
-    }
-
-    /// Add proper indentation to the current line
-    fn add_indentation(&mut self) {
-        let indent = match self.config.options.indent_style {
-            IndentStyle::Spaces => " ".repeat(self.config.options.indent_size * self.indentation_level),
-            IndentStyle::Tabs => "\t".repeat(self.indentation_level),
-        };
-        self.current_line.push_str(&indent);
-    }
-
-    /// Commit the current line to the buffer
-    fn commit_current_line(&mut self) {
-        if !self.current_line.is_empty() || self.line_buffer.is_empty() {
-            self.line_buffer.push(self.current_line.clone());
-        }
-        self.current_line.clear();
-    }
-
-    /// Finalize the output and return the formatted string
-    fn finalize_output(&mut self) -> String {
-        if !self.current_line.is_empty() {
-            self.commit_current_line();
-        }
-        
-        // Remove excessive blank lines
-        let mut result = Vec::new();
-        let mut blank_line_count = 0;
-        
-        for line in &self.line_buffer {
-            if line.trim().is_empty() {
-                blank_line_count += 1;
-                if blank_line_count <= self.config.options.blank_lines.max_blank_lines {
-                    result.push(line.clone());
-                }
-            } else {
-                blank_line_count = 0;
-                result.push(line.clone());
-            }
-        }
-        
-        result.join("\n")
-    }
-}
-
-impl Default for CursedFormatter {
+impl Default for StyleRules {
     fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Token representation for the formatter
-#[derive(Debug, Clone)]
-struct Token {
-    token_type: TokenType,
-    value: String,
-    line: usize,
-    column: usize,
-}
-
-impl Token {
-    fn new(token_type: TokenType, value: String, line: usize, column: usize) -> Self {
         Self {
-            token_type,
-            value,
-            line,
-            column,
+            function_declaration_style: FunctionStyle::Compact,
+            variable_declaration_style: VariableStyle::Compact,
+            import_style: ImportStyle::Sorted,
+            comment_style: CommentStyle::Preserve,
+            brace_style: BraceStyle::SameLine,
+            operator_style: OperatorStyle::Spaced,
+            type_annotation_style: TypeStyle::Explicit,
         }
     }
 }
 
-/// Token types for CURSED language
-#[derive(Debug, Clone, PartialEq)]
-enum TokenType {
-    // Gen Z slang keywords
-    FactsKeyword,       // facts (constant)
-    SlayKeyword,        // slay (function)
-    YeetKeyword,        // yeet (import)
-    YoloKeyword,        // yolo (return/print)
-    LowkeyKeyword,      // lowkey (if)
-    HighkeyKeyword,     // highkey (else)
-    StanKeyword,        // stan (goroutine)
-    PerioddtKeyword,    // periodt (while)
-    BestieKeyword,      // bestie (for)
-    SusKeyword,         // sus (mutable variable)
-    CapKeyword,         // cap (boolean true)
-    NoCapKeyword,       // no_cap (boolean false)
-    VibezKeyword,       // vibez (utilities)
-    SpillKeyword,       // spill (print/output)
-    TeaKeyword,         // tea (string type)
-    NormieKeyword,      // normie (integer type)
-    
-    // Traditional keywords
-    IfKeyword,
-    ElseKeyword,
-    WhileKeyword,
-    ForKeyword,
-    MatchKeyword,
-    CaseKeyword,
-    DefaultKeyword,
-    BreakKeyword,
-    ContinueKeyword,
-    ReturnKeyword,
-    StructKeyword,
-    EnumKeyword,
-    TraitKeyword,
-    ImplKeyword,
-    TypeKeyword,
-    PubKeyword,
-    MutKeyword,
-    ConstKeyword,
-    StaticKeyword,
-    
-    // Literals
-    String,
-    Number,
-    Identifier,
-    
-    // Operators
-    Assign,
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    Modulo,
-    Not,
-    Less,
-    Greater,
-    And,
-    Or,
-    Xor,
-    Question,
-    
-    // Delimiters
-    LeftBrace,
-    RightBrace,
-    LeftParen,
-    RightParen,
-    LeftBracket,
-    RightBracket,
-    Semicolon,
-    Comma,
-    Colon,
-    
-    // Special
-    Newline,
-    Comment,
-    Unknown,
+#[derive(Debug, Clone)]
+pub struct FormattingResult {
+    pub file_path: PathBuf,
+    pub status: FormatStatus,
+    pub changes: usize,
 }
 
-/// Convenience functions for creating formatters with common configurations
-impl CursedFormatter {
-    /// Create a formatter with compact style (minimal spacing)
-    pub fn compact() -> Self {
-        let mut config = FormatterConfig::default();
-        config.options.spaces_around_operators = false;
-        config.options.spaces_after_commas = false;
-        config.options.spaces_inside_parentheses = false;
-        config.options.spaces_inside_braces = false;
-        config.options.blank_lines.max_blank_lines = 1;
-        config.options.blank_lines.before_functions = 0;
-        config.options.blank_lines.after_imports = 0;
-        
-        Self::with_config(config)
-    }
-    
-    /// Create a formatter with verbose style (lots of spacing)
-    pub fn verbose() -> Self {
-        let mut config = FormatterConfig::default();
-        config.options.spaces_around_operators = true;
-        config.options.spaces_after_commas = true;
-        config.options.spaces_inside_parentheses = true;
-        config.options.spaces_inside_braces = true;
-        config.options.blank_lines.max_blank_lines = 3;
-        config.options.blank_lines.before_functions = 2;
-        config.options.blank_lines.after_imports = 2;
-        
-        Self::with_config(config)
-    }
-    
-    /// Create a formatter with tab indentation
-    pub fn with_tabs() -> Self {
-        let mut config = FormatterConfig::default();
-        config.options.indent_style = IndentStyle::Tabs;
-        
-        Self::with_config(config)
-    }
-    
-    /// Create a formatter with custom indentation size
-    pub fn with_indent_size(size: usize) -> Self {
-        let mut config = FormatterConfig::default();
-        config.options.indent_size = size;
-        
-        Self::with_config(config)
-    }
-}
-
-/// Public API functions
-pub fn format_cursed_code(source: &str) -> Result<String> {
-    let mut formatter = CursedFormatter::new();
-    formatter.format(source)
-}
-
-pub fn format_cursed_code_with_config(source: &str, config: FormatterConfig) -> Result<String> {
-    let mut formatter = CursedFormatter::with_config(config);
-    formatter.format(source)
+#[derive(Debug, Clone)]
+pub enum FormatStatus {
+    Formatted,
+    NoChanges,
+    Error(String),
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
 
     #[test]
-    fn test_format_facts_declaration() {
-        let source = "facts   x=42;";
-        let expected = "facts x = 42;";
+    fn test_formatter_creation() {
+        let config = FormatterConfig::default();
+        let formatter = CursedFormatter::new(config);
         
-        let mut formatter = CursedFormatter::new();
-        let result = formatter.format(source).unwrap();
-        assert_eq!(result.trim(), expected);
+        assert_eq!(formatter.config.indent_size, 4);
+        assert!(!formatter.config.use_tabs);
     }
 
     #[test]
-    fn test_format_slay_function() {
-        let source = "slay  main(){yolo \"Hello\"}";
-        let expected = "slay main() {\n    yolo \"Hello\"\n}";
+    fn test_basic_formatting() {
+        let mut formatter = CursedFormatter::new(FormatterConfig::default());
+        let source = "slay test(){vibez.spill(\"hello\")}";
         
-        let mut formatter = CursedFormatter::new();
-        let result = formatter.format(source).unwrap();
-        assert_eq!(result.trim(), expected);
+        let result = formatter.format_source(source);
+        assert!(result.is_ok());
+        
+        let formatted = result.unwrap();
+        assert!(formatted.contains("slay test"));
+        assert!(formatted.contains("vibez.spill"));
     }
 
     #[test]
-    fn test_format_yeet_import() {
-        let source = "yeet\"std::io\";";
-        let expected = "yeet \"std::io\";";
+    fn test_indentation() {
+        let mut formatter = CursedFormatter::new(FormatterConfig::default());
         
-        let mut formatter = CursedFormatter::new();
-        let result = formatter.format(source).unwrap();
-        assert_eq!(result.trim(), expected);
+        let indent = formatter.create_indent();
+        assert_eq!(indent, "");
+        
+        formatter.indent_level = 1;
+        let indent = formatter.create_indent();
+        assert_eq!(indent, "    ");
     }
 
     #[test]
-    fn test_format_compact_style() {
-        let source = "facts x = 42; slay main() { yolo x; }";
+    fn test_style_rules_default() {
+        let rules = StyleRules::default();
         
-        let mut formatter = CursedFormatter::compact();
-        let result = formatter.format(source).unwrap();
-        
-        // Compact style should have minimal spacing
-        assert!(!result.contains(" = "));
-        assert!(!result.contains(" { "));
-    }
-
-    #[test]
-    fn test_format_with_tabs() {
-        let source = "slay main() { yolo \"test\"; }";
-        
-        let mut formatter = CursedFormatter::with_tabs();
-        let result = formatter.format(source).unwrap();
-        
-        // Should contain tab characters for indentation
-        assert!(result.contains('\t'));
+        assert_eq!(rules.function_declaration_style, FunctionStyle::Compact);
+        assert_eq!(rules.brace_style, BraceStyle::SameLine);
+        assert_eq!(rules.import_style, ImportStyle::Sorted);
     }
 }

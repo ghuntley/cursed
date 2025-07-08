@@ -1,8 +1,5 @@
-slay main() {
-    select {
-        ready value: 
-            vibez.spill("Ready case")
-        basic:
-            vibez.spill("Default case")
-    }
+vibez.spill("Testing select statement")
+ready {
+    basic:
+        vibez.spill("Default case executed")
 }

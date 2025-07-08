@@ -1,19 +1,20 @@
-// Standard math library
+// Standard math library - Pure CURSED Implementation
+yeet "math/core"
 
 // ================================
 // Constants
 // ================================
 
 slay math_pi() meal {
-    damn 3.141592653589793;
+    damn PI();
 }
 
 slay math_e() meal {
-    damn 2.718281828459045;
+    damn E();
 }
 
 slay math_tau() meal {
-    damn 6.283185307179586;
+    damn TAU();
 }
 
 // ================================
@@ -21,35 +22,35 @@ slay math_tau() meal {
 // ================================
 
 slay math_abs(x meal) meal {
-    damn math_abs_impl(x);
+    damn abs(x);
 }
 
 slay math_abs_int(x normie) normie {
-    damn math_abs_int_impl(x);
+    damn abs_int(x);
 }
 
 slay math_min(a meal, b meal) meal {
-    damn math_min_impl(a, b);
+    damn min(a, b);
 }
 
 slay math_max(a meal, b meal) meal {
-    damn math_max_impl(a, b);
+    damn max(a, b);
 }
 
 slay math_min_int(a normie, b normie) normie {
-    damn math_min_int_impl(a, b);
+    damn min_int(a, b);
 }
 
 slay math_max_int(a normie, b normie) normie {
-    damn math_max_int_impl(a, b);
+    damn max_int(a, b);
 }
 
 slay math_clamp(x meal, min meal, max meal) meal {
-    damn math_clamp_impl(x, min, max);
+    damn clamp(x, min, max);
 }
 
 slay math_sign(x meal) meal {
-    damn math_sign_impl(x);
+    damn sign(x);
 }
 
 // ================================
@@ -57,35 +58,35 @@ slay math_sign(x meal) meal {
 // ================================
 
 slay math_pow(base meal, exponent meal) meal {
-    damn math_pow_impl(base, exponent);
+    damn pow(base, exponent);
 }
 
 slay math_sqrt(x meal) meal {
-    damn math_sqrt_impl(x);
+    damn sqrt(x);
 }
 
 slay math_cbrt(x meal) meal {
-    damn math_cbrt_impl(x);
+    damn cbrt(x);
 }
 
 slay math_log(x meal) meal {
-    damn math_log_impl(x);
+    damn ln(x);
 }
 
 slay math_log10(x meal) meal {
-    damn math_log10_impl(x);
+    damn log10(x);
 }
 
 slay math_log2(x meal) meal {
-    damn math_log2_impl(x);
+    damn log2(x);
 }
 
 slay math_exp(x meal) meal {
-    damn math_exp_impl(x);
+    damn exp(x);
 }
 
 slay math_exp2(x meal) meal {
-    damn math_exp2_impl(x);
+    damn exp2(x);
 }
 
 // ================================
@@ -93,43 +94,43 @@ slay math_exp2(x meal) meal {
 // ================================
 
 slay math_sin(x meal) meal {
-    damn math_sin_impl(x);
+    damn sin(x);
 }
 
 slay math_cos(x meal) meal {
-    damn math_cos_impl(x);
+    damn cos(x);
 }
 
 slay math_tan(x meal) meal {
-    damn math_tan_impl(x);
+    damn tan(x);
 }
 
 slay math_asin(x meal) meal {
-    damn math_asin_impl(x);
+    damn asin(x);
 }
 
 slay math_acos(x meal) meal {
-    damn math_acos_impl(x);
+    damn acos(x);
 }
 
 slay math_atan(x meal) meal {
-    damn math_atan_impl(x);
+    damn atan(x);
 }
 
 slay math_atan2(y meal, x meal) meal {
-    damn math_atan2_impl(y, x);
+    damn atan2(y, x);
 }
 
 slay math_sinh(x meal) meal {
-    damn math_sinh_impl(x);
+    damn sinh(x);
 }
 
 slay math_cosh(x meal) meal {
-    damn math_cosh_impl(x);
+    damn cosh(x);
 }
 
 slay math_tanh(x meal) meal {
-    damn math_tanh_impl(x);
+    damn tanh(x);
 }
 
 // ================================
@@ -137,23 +138,23 @@ slay math_tanh(x meal) meal {
 // ================================
 
 slay math_floor(x meal) meal {
-    damn math_floor_impl(x);
+    damn floor(x);
 }
 
 slay math_ceil(x meal) meal {
-    damn math_ceil_impl(x);
+    damn ceil(x);
 }
 
 slay math_round(x meal) meal {
-    damn math_round_impl(x);
+    damn round(x);
 }
 
 slay math_trunc(x meal) meal {
-    damn math_trunc_impl(x);
+    damn trunc(x);
 }
 
 slay math_frac(x meal) meal {
-    damn math_frac_impl(x);
+    damn frac(x);
 }
 
 // ================================
@@ -161,23 +162,23 @@ slay math_frac(x meal) meal {
 // ================================
 
 slay math_sum(values [meal]) meal {
-    damn math_sum_impl(values);
+    damn sum(values);
 }
 
 slay math_mean(values [meal]) meal {
-    damn math_mean_impl(values);
+    damn mean(values);
 }
 
 slay math_median(values [meal]) meal {
-    damn math_median_impl(values);
+    damn median(values);
 }
 
 slay math_variance(values [meal]) meal {
-    damn math_variance_impl(values);
+    damn variance(values);
 }
 
 slay math_std_dev(values [meal]) meal {
-    damn math_std_dev_impl(values);
+    damn std_dev(values);
 }
 
 // ================================
@@ -185,19 +186,19 @@ slay math_std_dev(values [meal]) meal {
 // ================================
 
 slay math_random() meal {
-    damn math_random_impl();
+    damn random();
 }
 
 slay math_random_int(min normie, max normie) normie {
-    damn math_random_int_impl(min, max);
+    damn random_int(min, max);
 }
 
 slay math_random_float(min meal, max meal) meal {
-    damn math_random_float_impl(min, max);
+    damn random_float(min, max);
 }
 
 slay math_seed_random(seed normie) {
-    math_seed_random_impl(seed);
+    seed_random(seed);
 }
 
 // ================================
@@ -205,39 +206,39 @@ slay math_seed_random(seed normie) {
 // ================================
 
 slay math_is_nan(x meal) lit {
-    damn math_is_nan_impl(x);
+    damn is_nan(x);
 }
 
 slay math_is_infinite(x meal) lit {
-    damn math_is_infinite_impl(x);
+    damn is_infinite(x);
 }
 
 slay math_is_finite(x meal) lit {
-    damn math_is_finite_impl(x);
+    damn is_finite(x);
 }
 
 slay math_degrees(radians meal) meal {
-    damn radians * 180.0 / math_pi();
+    damn degrees(radians);
 }
 
 slay math_radians(degrees meal) meal {
-    damn degrees * math_pi() / 180.0;
+    damn radians(degrees);
 }
 
 slay math_gcd(a normie, b normie) normie {
-    damn math_gcd_impl(a, b);
+    damn gcd(a, b);
 }
 
 slay math_lcm(a normie, b normie) normie {
-    damn math_lcm_impl(a, b);
+    damn lcm(a, b);
 }
 
 slay math_factorial(n normie) normie {
-    damn math_factorial_impl(n);
+    damn factorial(n);
 }
 
 slay math_fibonacci(n normie) normie {
-    damn math_fibonacci_impl(n);
+    damn fibonacci(n);
 }
 
 // ================================
@@ -253,7 +254,7 @@ slay math_inverse_lerp(a meal, b meal, value meal) meal {
 }
 
 slay math_smoothstep(edge0 meal, edge1 meal, x meal) meal {
-    damn math_smoothstep_impl(edge0, edge1, x);
+    damn smoothstep(edge0, edge1, x);
 }
 
 // ================================
@@ -261,26 +262,25 @@ slay math_smoothstep(edge0 meal, edge1 meal, x meal) meal {
 // ================================
 
 slay math_distance_2d(x1 meal, y1 meal, x2 meal, y2 meal) meal {
-    damn math_sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    damn distance_2d(x1, y1, x2, y2);
 }
 
 slay math_distance_3d(x1 meal, y1 meal, z1 meal, x2 meal, y2 meal, z2 meal) meal {
-    damn math_sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1));
+    damn distance_3d(x1, y1, z1, x2, y2, z2);
 }
 
 slay math_dot_product_2d(x1 meal, y1 meal, x2 meal, y2 meal) meal {
-    damn x1 * x2 + y1 * y2;
+    damn dot_product_2d(x1, y1, x2, y2);
 }
 
 slay math_cross_product_2d(x1 meal, y1 meal, x2 meal, y2 meal) meal {
-    damn x1 * y2 - y1 * x2;
+    damn cross_product_2d(x1, y1, x2, y2);
 }
 
 slay math_magnitude_2d(x meal, y meal) meal {
-    damn math_sqrt(x * x + y * y);
+    damn magnitude_2d(x, y);
 }
 
 slay math_normalize_2d(x meal, y meal) [meal] {
-    sus mag meal = math_magnitude_2d(x, y);
-    damn [x / mag, y / mag];
+    damn normalize_2d(x, y);
 }

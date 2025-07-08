@@ -3,10 +3,16 @@
 //! Comprehensive tooling ecosystem for CURSED language development
 
 pub mod package_manager;
+// pub mod doc_generator;
 pub mod profiler;
+// pub mod debug_info;
+// pub mod formatter;
 
 pub use package_manager::{PackageManager, PackageConfig};
+// pub use doc_generator::{DocGenerator, DocConfig, Documentation};
 pub use profiler::{Profiler, ProfilerConfig, ProfileReport};
+// pub use debug_info::{DebugInfoGenerator, DebugConfig, DebugLevel};
+// pub use formatter::{CursedFormatter, FormatterConfig, StyleRules};
 
 use std::path::Path;
 use std::fs;
@@ -15,7 +21,10 @@ use std::fs;
 #[derive(Debug, Clone)]
 pub struct CursedTools {
     pub package_manager: PackageManager,
+    // pub doc_generator: DocGenerator,
     pub profiler: Profiler,
+    // pub debug_generator: DebugInfoGenerator,
+    // pub formatter: CursedFormatter,
 }
 
 impl CursedTools {
@@ -23,7 +32,13 @@ impl CursedTools {
     pub fn new() -> Self {
         Self {
             package_manager: PackageManager::new("https://registry.cursed.dev".to_string()),
+            doc_generator: DocGenerator::new(
+                std::path::PathBuf::from("docs"),
+                DocConfig::default()
+            ),
             profiler: Profiler::new(ProfilerConfig::default()),
+            debug_generator: DebugInfoGenerator::new(DebugConfig::default()),
+            // formatter: CursedFormatter::new(FormatterConfig::default()),
         }
     }
 
@@ -52,6 +67,45 @@ impl CursedTools {
         self.create_example_files()?;
 
         println!("✅ Project initialized with full tooling support");
+        Ok(())
+    }
+
+    /// Format entire project
+    pub fn format_project(&mut self, project_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        println!("🎨 Formatting entire CURSED project...");
+
+        let results = self.formatter.format_directory(project_path, true)?;
+        
+        let mut formatted_count = 0;
+        let mut error_count = 0;
+
+        for result in results {
+            match result.status {
+                formatter::FormatStatus::Formatted => {
+                    formatted_count += 1;
+                    println!("✅ Formatted: {}", result.file_path.display());
+                }
+                formatter::FormatStatus::NoChanges => {
+                    println!("➡️  No changes: {}", result.file_path.display());
+                }
+                formatter::FormatStatus::Error(ref error) => {
+                    error_count += 1;
+                    eprintln!("❌ Error formatting {}: {}", result.file_path.display(), error);
+                }
+            }
+        }
+
+        println!("📊 Formatting complete: {} files formatted, {} errors", formatted_count, error_count);
+        Ok(())
+    }
+
+    /// Generate comprehensive documentation
+    pub fn generate_docs(&mut self, source_path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+        println!("📚 Generating comprehensive project documentation...");
+
+        self.doc_generator.generate_docs(source_path)?;
+
+        println!("✅ Documentation generated successfully");
         Ok(())
     }
 
@@ -96,6 +150,16 @@ impl CursedTools {
 
         let mut analysis = ProjectAnalysis::default();
 
+        // Code quality analysis
+        let format_results = self.formatter.format_directory(project_path, true)?;
+        analysis.format_issues = format_results.iter()
+            .filter(|r| matches!(r.status, formatter::FormatStatus::Error(_)))
+            .count();
+
+        // Documentation coverage
+        self.doc_generator.generate_docs(project_path)?;
+        analysis.doc_coverage = self.calculate_doc_coverage(project_path)?;
+
         // Dependency analysis
         self.package_manager.check_outdated().await?;
         analysis.outdated_dependencies = self.count_outdated_dependencies().await?;
@@ -106,6 +170,42 @@ impl CursedTools {
 
     /// Create configuration files
     fn create_config_files(&self) -> Result<(), Box<dyn std::error::Error>> {
+        // Create .cursed-fmt.toml
+        let fmt_config = r#"
+# CURSED Formatter Configuration
+
+[formatting]
+indent_size = 4
+use_tabs = false
+max_line_length = 100
+space_around_operators = true
+newline_before_brace = false
+
+[style]
+function_style = "compact"
+variable_style = "compact"
+import_style = "sorted"
+brace_style = "same_line"
+"#;
+        fs::write(".cursed-fmt.toml", fmt_config)?;
+
+        // Create .cursed-docs.toml
+        let docs_config = r#"
+# CURSED Documentation Configuration
+
+[docs]
+title = "Project Documentation"
+include_private = false
+include_tests = true
+include_examples = true
+output_formats = ["html", "markdown"]
+
+[html]
+theme = "default"
+custom_css = "docs/custom.css"
+"#;
+        fs::write(".cursed-docs.toml", docs_config)?;
+
         // Create .cursed-profile.toml
         let profile_config = r#"
 # CURSED Profiler Configuration
@@ -212,6 +312,31 @@ slay main() {
         Ok(())
     }
 
+    /// Calculate documentation coverage
+    fn calculate_doc_coverage(&self, project_path: &Path) -> Result<f64, Box<dyn std::error::Error>> {
+        // Simple implementation - count files with documentation comments
+        let mut total_files = 0;
+        let mut documented_files = 0;
+
+        for entry in fs::read_dir(project_path)? {
+            let entry = entry?;
+            if entry.path().extension().map_or(false, |ext| ext == "csd") {
+                total_files += 1;
+                
+                let content = fs::read_to_string(entry.path())?;
+                if content.contains("##") {
+                    documented_files += 1;
+                }
+            }
+        }
+
+        if total_files == 0 {
+            Ok(0.0)
+        } else {
+            Ok((documented_files as f64 / total_files as f64) * 100.0)
+        }
+    }
+
     /// Count outdated dependencies
     async fn count_outdated_dependencies(&self) -> Result<usize, Box<dyn std::error::Error>> {
         // This would integrate with the package manager
@@ -221,7 +346,7 @@ slay main() {
 }
 
 /// Project analysis results
-#[derive(Debug, Clone, Default, serde::Serialize)]
+#[derive(Debug, Clone, Default)]
 pub struct ProjectAnalysis {
     pub format_issues: usize,
     pub doc_coverage: f64,
@@ -261,6 +386,7 @@ mod tests {
         
         // Verify project structure was created
         assert!(temp_dir.path().join("cursed.toml").exists());
+        assert!(temp_dir.path().join("src").exists());
         assert!(temp_dir.path().join("tests").exists());
     }
 
