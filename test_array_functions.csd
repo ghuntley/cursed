@@ -1,0 +1,16 @@
+sus arr = array_new()
+vibez.spill("Empty array is empty:")
+vibez.spill(array_is_empty(arr))
+vibez.spill("Empty array length:")
+vibez.spill(array_len(arr))
+
+arr = array_push(arr, 1)
+arr = array_push(arr, 2)
+arr = array_push(arr, 3)
+
+vibez.spill("Array after pushes:")
+vibez.spill(arr)
+vibez.spill("Array is empty:")
+vibez.spill(array_is_empty(arr))
+vibez.spill("Array length:")
+vibez.spill(array_len(arr))

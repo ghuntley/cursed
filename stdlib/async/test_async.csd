@@ -1,7 +1,7 @@
 // CURSED Async System Tests
 // Comprehensive tests for the async/future system
 
-yeet "../testz/mod"
+yeet "testz"
 
 slay main() {
     vibez.spill("=== CURSED Async System Tests ===")

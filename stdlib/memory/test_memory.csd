@@ -1,7 +1,7 @@
 // CURSED Memory Management System Tests
 // Comprehensive testing of all memory management components
 
-yeet "../testz/mod"
+yeet "testz"
 yeet "mod"
 
 // Test configuration

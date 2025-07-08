@@ -1,7 +1,7 @@
 // CURSED Network Module - Comprehensive Test Suite
 // Tests all network module functions with testz framework
 
-yeet "stdlib/testz"
+yeet "testz"
 yeet "stdlib/network"
 
 // Test TCP Socket Operations
