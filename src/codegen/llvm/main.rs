@@ -473,6 +473,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 match &assign_stmt.target {
                     crate::ast::AssignmentTarget::Single(name) => {
                         if let Some(var_reg) = self.variables.get(name).cloned() {
+                            // Variable exists - update it
                             // Determine type based on variable name patterns or stored type
                             let var_type = if name.contains("flag") || name.contains("lit") {
                                 "i1"
@@ -485,7 +486,27 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                             self.ir_code.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, value_reg, var_type, var_reg));
                             self.ir_code.push_str(&format!("  ; Assignment: {} updated\n", name));
                         } else {
-                            return Err(CursedError::runtime_error(&format!("Undefined variable: {}", name)));
+                            // Variable doesn't exist - this is a short declaration (:=)
+                            // Allocate the variable and store the value
+                            let var_reg = self.next_register();
+                            
+                            // Determine type based on the value expression
+                            let (var_type, store_value) = match &assign_stmt.value {
+                                Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
+                                Expression::Boolean(_) => ("i1".to_string(), value_reg.clone()),
+                                Expression::Integer(_) => ("i32".to_string(), value_reg.clone()),
+                                Expression::Float(_) => ("double".to_string(), value_reg.clone()),
+                                Expression::Character(_) => ("i8".to_string(), value_reg.clone()),
+                                _ => ("i32".to_string(), value_reg.clone()), // Default
+                            };
+                            
+                            // Allocate and store variable
+                            self.ir_code.push_str(&format!("  {} = alloca {}, align 4\n", var_reg, var_type));
+                            self.ir_code.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, store_value, var_type, var_reg));
+                            
+                            // Store the variable mapping
+                            self.variables.insert(name.clone(), var_reg.clone());
+                            self.ir_code.push_str(&format!("  ; Short declaration: {} := {} ({})\n", name, value_reg, var_type));
                         }
                     },
                     crate::ast::AssignmentTarget::Tuple(var_names) => {

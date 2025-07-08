@@ -131,11 +131,11 @@ impl Parser {
                         return Ok(Some(Statement::Function(self.parse_function()?)));
                     }
                     _ => {
-                        // Check if this is a short variable declaration (identifier := expr)
-                        if self.peek_token().map(|t| t.kind == TokenKind::ColonEqual).unwrap_or(false) {
-                            // Parse as assignment statement
-                            if let Ok(assignment) = self.parse_assignment_statement() {
-                                return Ok(Some(Statement::Assignment(assignment)));
+                        // Check if this is a short variable declaration or assignment
+                        if self.peek_token().map(|t| t.kind == TokenKind::ColonEqual || t.kind == TokenKind::Equal).unwrap_or(false) {
+                            // Parse as assignment or short declaration
+                            if let Ok(stmt) = self.parse_assignment_or_short_declaration() {
+                                return Ok(Some(stmt));
                             }
                         }
                         // Try to parse as expression statement or assignment
@@ -170,9 +170,9 @@ impl Parser {
             TokenKind::LeftParen => {
                 // Check if this is tuple destructuring assignment
                 if self.is_tuple_destructuring_assignment() {
-                    // Try to parse as assignment statement
-                    if let Ok(assignment) = self.parse_assignment_statement() {
-                        return Ok(Some(Statement::Assignment(assignment)));
+                    // Try to parse as assignment or short declaration
+                    if let Ok(stmt) = self.parse_assignment_or_short_declaration() {
+                        return Ok(Some(stmt));
                     }
                 }
                 // Otherwise, try to parse as expression statement
@@ -188,9 +188,9 @@ impl Parser {
                 if let Ok(expr) = self.parse_expression() {
                     return Ok(Some(Statement::Expression(expr)));
                 }
-                // Try to parse as assignment statement (handles tuple destructuring)
-                if let Ok(assignment) = self.parse_assignment_statement() {
-                    return Ok(Some(Statement::Assignment(assignment)));
+                // Try to parse as assignment or short declaration (handles tuple destructuring)
+                if let Ok(stmt) = self.parse_assignment_or_short_declaration() {
+                    return Ok(Some(stmt));
                 }
                 // Skip unknown tokens
                 self.next_token()?;
@@ -447,12 +447,14 @@ impl Parser {
                             "normie" => Type::Normie,
                             "tea" => Type::Tea,
                             "lit" => Type::Lit,
+                            "sip" => Type::Sip,
+                            "drip" => Type::Float,
                             _ => Type::Custom(type_name),
                         };
                         return Ok(Some(Type::Array(Box::new(element_type), None)));
                     }
                 }
-            } else if token.kind == TokenKind::Identifier || token.kind == TokenKind::Normie || token.kind == TokenKind::Tea || token.kind == TokenKind::Lit {
+            } else if token.kind == TokenKind::Identifier || token.kind == TokenKind::Normie || token.kind == TokenKind::Tea || token.kind == TokenKind::Lit || token.kind == TokenKind::Sip {
                 // Basic type parsing
                 let type_name = token.lexeme.clone();
                 self.next_token()?;
@@ -460,6 +462,16 @@ impl Parser {
                     "normie" => Type::Normie,
                     "tea" => Type::Tea,
                     "lit" => Type::Lit,
+                    "sip" => Type::Sip,
+                    "smol" => Type::Smol,
+                    "mid" => Type::Mid,
+                    "thicc" => Type::Thicc,
+                    "snack" => Type::Snack,
+                    "meal" => Type::Meal,
+                    "byte" => Type::Byte,
+                    "rune" => Type::Rune,
+                    "extra" => Type::Extra,
+                    "drip" => Type::Float,  // Legacy support
                     _ => Type::Custom(type_name),
                 };
                 return Ok(Some(basic_type));
@@ -710,13 +722,27 @@ impl Parser {
                     // Parse number literal
                     let value = token.lexeme.clone();
                     self.next_token()?;
-                    return Ok(Expression::Literal(Literal::Integer(value.parse().unwrap_or(0))));
+                    // Check if it's a float (contains a decimal point)
+                    if value.contains('.') {
+                        return Ok(Expression::Literal(Literal::Float(value.parse().unwrap_or(0.0))));
+                    } else {
+                        return Ok(Expression::Literal(Literal::Integer(value.parse().unwrap_or(0))));
+                    }
                 }
                 TokenKind::String => {
                     // Parse string literal
                     let value = token.lexeme.clone();
                     self.next_token()?;
                     return Ok(Expression::Literal(Literal::String(value)));
+                }
+                TokenKind::Character => {
+                    // Parse character literal
+                    let value = token.lexeme.clone();
+                    self.next_token()?;
+                    // The lexer should have already extracted the character value
+                    // Just use the first character if available, otherwise use null character
+                    let char_value = value.chars().next().unwrap_or('\0');
+                    return Ok(Expression::Character(char_value));
                 }
                 TokenKind::Truth | TokenKind::Based => {
                     // Parse boolean literal
@@ -826,9 +852,9 @@ impl Parser {
         // Parse init statement (optional)
         let init = if let Some(token) = self.current_token.as_ref() {
             if token.kind != TokenKind::Semicolon {
-                // Try to parse as assignment first (for short variable declarations)
-                if let Ok(assignment) = self.parse_assignment_statement() {
-                    Some(Box::new(Statement::Assignment(assignment)))
+                // Try to parse as assignment or short declaration
+                if let Ok(stmt) = self.parse_assignment_or_short_declaration() {
+                    Some(Box::new(stmt))
                 } else {
                     // Otherwise try to parse as statement
                     let stmt = self.parse_statement()?.unwrap_or_else(|| {
@@ -916,6 +942,92 @@ impl Parser {
         true
     }
     
+    fn parse_assignment_or_short_declaration(&mut self) -> Result<Statement> {
+        // Parse the left side - could be a single identifier or tuple destructuring
+        let (names, is_tuple) = if self.current_token.as_ref().map(|t| t.kind.clone()) == Some(TokenKind::LeftParen) {
+            // Tuple destructuring
+            self.next_token()?; // consume '('
+            let mut names = Vec::new();
+            
+            while let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::RightParen {
+                    break;
+                }
+                
+                if token.kind == TokenKind::Identifier {
+                    names.push(token.lexeme.clone());
+                    self.next_token()?;
+                    
+                    // Check for comma
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Comma {
+                            self.next_token()?;
+                        }
+                    }
+                } else {
+                    return Err(Error::Parse("Expected identifier in tuple destructuring".to_string()));
+                }
+            }
+            
+            // Consume closing paren
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::RightParen {
+                    self.next_token()?;
+                } else {
+                    return Err(Error::Parse("Expected ')' in tuple destructuring".to_string()));
+                }
+            }
+            
+            (names, true)
+        } else if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Identifier {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                (vec![name], false)
+            } else {
+                return Err(Error::Parse("Expected identifier in assignment".to_string()));
+            }
+        } else {
+            return Err(Error::Parse("Expected assignment target".to_string()));
+        };
+        
+        // Check for ':=' or '='
+        let is_short_declaration = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::ColonEqual {
+                self.next_token()?;
+                true
+            } else if token.kind == TokenKind::Equal {
+                self.next_token()?;
+                false
+            } else {
+                return Err(Error::Parse("Expected '=' or ':=' in assignment".to_string()));
+            }
+        } else {
+            return Err(Error::Parse("Expected '=' or ':=' in assignment".to_string()));
+        };
+        
+        // Parse the right side expression
+        let value = self.parse_expression()?;
+        
+        if is_short_declaration {
+            // Create short declaration statement
+            let target = if is_tuple {
+                crate::ast::ShortDeclarationTarget::Tuple(names)
+            } else {
+                crate::ast::ShortDeclarationTarget::Single(names[0].clone())
+            };
+            Ok(Statement::ShortDeclaration(crate::ast::ShortDeclarationStatement { target, value }))
+        } else {
+            // Create assignment statement
+            let target = if is_tuple {
+                crate::ast::AssignmentTarget::Tuple(names)
+            } else {
+                crate::ast::AssignmentTarget::Single(names[0].clone())
+            };
+            Ok(Statement::Assignment(crate::ast::AssignmentStatement { target, value }))
+        }
+    }
+
     fn parse_assignment_statement(&mut self) -> Result<AssignmentStatement> {
         
         // Parse the left side - could be a single identifier or tuple destructuring
