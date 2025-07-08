@@ -40,15 +40,66 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
 @_ZTI11CursedError = constant { i8*, i8* } { i8* null, i8* bitcast ([14 x i8]* @_ZTS11CursedError to i8*) }
 @_ZTS11CursedError = constant [14 x i8] c"11CursedError\00"
 
+declare i8* @cursed_error_init(i8*, i8*)
+declare i8* @cursed_create_error(i8*)
+declare i1 @cursed_is_error(i8*)
+declare void @cursed_propagate_error(i8*)
+declare void @cursed_try_begin()
+declare void @cursed_try_end()
+declare i8* @cursed_get_panic_value()
+declare i8* @malloc(i32)
+declare void @free(i8*)
+@error_msg_default = private unnamed_addr constant [13 x i8] c"Error occurred\00"
+define i32 @test_basic_json() {
+entry:
+  %0 = getelementptr inbounds [16 x i8], [16 x i8]* @.str.0, i64 0, i64 0
+  %1 = call i32 @test_start(i32 %0)
+  ; Expression result: %1
+  %2 = call i32 @assert_true(i32 1)
+  ; Expression result: %2
+  %3 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.1, i64 0, i64 0
+  %4 = call i32 @assert_false(i32 %3)
+  ; Expression result: %4
+  %5 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.2, i64 0, i64 0
+  %6 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.2, i64 0, i64 0
+  %7 = call i32 @assert_eq_string(i32 %5, i32 %6)
+  ; Expression result: %7
+  %8 = call i32 @assert_eq_int(i32 42, i32 42)
+  ; Expression result: %8
+  %9 = getelementptr inbounds [36 x i8], [36 x i8]* @.str.3, i64 0, i64 0
+  %10 = call i32 @puts(i8* %9)
+  %11 = add i32 0, 0
+  ; Expression result: %11
+  ret i32 0
+}
+
+define i32 @run_basic_json_test() {
+entry:
+  %0 = getelementptr inbounds [29 x i8], [29 x i8]* @.str.4, i64 0, i64 0
+  %1 = call i32 @puts(i8* %0)
+  %2 = add i32 0, 0
+  ; Expression result: %2
+  %3 = getelementptr inbounds [25 x i8], [25 x i8]* @.str.5, i64 0, i64 0
+  %4 = call i32 @puts(i8* %3)
+  %5 = add i32 0, 0
+  ; Expression result: %5
+  %6 = call i32 @test_basic_json()
+  ; Expression result: %6
+  %7 = call i32 @print_test_summary()
+  ; Expression result: %7
+  ret i32 0
+}
+
 
 
 ; String constants
-@.str.0 = private unnamed_addr constant [21 x i8] c"Hello, CURSED world!\00", align 1
-@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@.str.4 = private unnamed_addr constant [29 x i8] c"🔧 Running Basic JSON Test\00", align 1
+@.str.1 = private unnamed_addr constant [1 x i8] c"\00", align 1
+@.str.5 = private unnamed_addr constant [25 x i8] c"========================\00", align 1
+@.str.0 = private unnamed_addr constant [16 x i8] c"Basic JSON Test\00", align 1
+@.str.3 = private unnamed_addr constant [36 x i8] c"Basic JSON module structure created\00", align 1
+@.str.2 = private unnamed_addr constant [6 x i8] c"hello\00", align 1
 define i32 @main() {
-  %0 = getelementptr inbounds [21 x i8], [21 x i8]* @.str.0, i64 0, i64 0
-  ; Converting complex expression to output
-  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
-  %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
+  %0 = call i32 @run_basic_json_test()
   ret i32 0
 }

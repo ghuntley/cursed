@@ -1,15 +1,242 @@
-//! Minimal working module for CURSED compilation
+//! Error Handling Code Generation for CURSED
+//! 
+//! This module handles the generation of LLVM IR for CURSED error handling constructs:
+//! - yikes: Error creation statements
+//! - shook: Error propagation expressions
+//! - fam: Error recovery blocks
 
+use crate::ast::{YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, Expression, Statement};
 use crate::error::CursedError;
+use std::collections::HashMap;
 
-pub struct MinimalImplementation;
+/// Error handling code generator
+pub struct ErrorHandlingCodegen {
+    /// Current error variable mappings
+    error_variables: HashMap<String, String>,
+    /// Current error propagation context
+    propagation_context: Vec<String>,
+    /// Error recovery blocks
+    recovery_blocks: Vec<RecoveryBlock>,
+    /// LLVM register counter
+    register_counter: usize,
+}
 
-impl MinimalImplementation {
+#[derive(Debug, Clone)]
+struct RecoveryBlock {
+    label: String,
+    error_variable: Option<String>,
+    recovery_code: Vec<Statement>,
+}
+
+impl ErrorHandlingCodegen {
     pub fn new() -> Self {
-        Self
+        Self {
+            error_variables: HashMap::new(),
+            propagation_context: Vec::new(),
+            recovery_blocks: Vec::new(),
+            register_counter: 0,
+        }
+    }
+
+    /// Generate LLVM IR for yikes error creation statement
+    pub fn generate_yikes_statement(&mut self, stmt: &YikesStatement) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Generate error object allocation
+        let error_register = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @malloc(i32 32)  ; Allocate error object\n", error_register));
+        
+        // Generate error message setup
+        let message_register = self.next_register();
+        ir.push_str(&format!("  %{} = getelementptr inbounds i8, i8* %{}, i32 0  ; Error message ptr\n", 
+                            message_register, error_register));
+        
+        // If there's a value expression, generate it
+        if let Some(value) = &stmt.value {
+            let value_ir = self.generate_expression_for_error(value)?;
+            ir.push_str(&value_ir);
+        }
+        
+        // Store the error variable mapping
+        self.error_variables.insert(stmt.name.clone(), format!("%{}", error_register));
+        
+        // Generate error initialization call
+        let init_register = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @cursed_error_init(i8* %{}, i8* getelementptr inbounds ([13 x i8], [13 x i8]* @error_msg_default, i32 0, i32 0))\n", 
+                            init_register, error_register));
+        
+        Ok(ir)
+    }
+
+    /// Generate LLVM IR for fam error recovery block
+    pub fn generate_fam_statement(&mut self, stmt: &FamStatement) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Generate recovery block label
+        let recovery_label = format!("recovery_{}", self.next_register());
+        let normal_label = format!("normal_{}", self.next_register());
+        let end_label = format!("end_{}", self.next_register());
+        
+        // Set up exception handling
+        ir.push_str(&format!("  invoke void @cursed_try_begin()\n"));
+        ir.push_str(&format!("    to label %{} unwind label %{}\n", normal_label, recovery_label));
+        
+        // Normal execution block
+        ir.push_str(&format!("{}:\n", normal_label));
+        
+        // Generate recovery block code
+        for statement in &stmt.body {
+            let stmt_ir = self.generate_statement_for_recovery(statement)?;
+            ir.push_str(&stmt_ir);
+        }
+        
+        ir.push_str(&format!("  call void @cursed_try_end()\n"));
+        ir.push_str(&format!("  br label %{}\n", end_label));
+        
+        // Recovery block
+        ir.push_str(&format!("{}:\n", recovery_label));
+        ir.push_str(&format!("  %panic_value = call i8* @cursed_get_panic_value()\n"));
+        ir.push_str(&format!("  ; Recovery code would go here\n"));
+        ir.push_str(&format!("  br label %{}\n", end_label));
+        
+        // End block
+        ir.push_str(&format!("{}:\n", end_label));
+        
+        Ok(ir)
+    }
+
+    /// Generate LLVM IR for shook error propagation expression
+    pub fn generate_shook_expression(&mut self, expr: &ShookExpression) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Generate the wrapped expression
+        let expr_ir = self.generate_expression_for_error(&expr.expression)?;
+        ir.push_str(&expr_ir);
+        
+        // Generate error checking code
+        let check_register = self.next_register();
+        let success_label = format!("success_{}", self.next_register());
+        let error_label = format!("error_{}", self.next_register());
+        
+        ir.push_str(&format!("  %{} = call i1 @cursed_is_error(i8* %result)\n", check_register));
+        ir.push_str(&format!("  br i1 %{}, label %{}, label %{}\n", 
+                            check_register, error_label, success_label));
+        
+        // Error propagation block
+        ir.push_str(&format!("{}:\n", error_label));
+        ir.push_str(&format!("  call void @cursed_propagate_error(i8* %result)\n"));
+        ir.push_str(&format!("  ret i8* %result  ; Early return with error\n"));
+        
+        // Success block
+        ir.push_str(&format!("{}:\n", success_label));
+        ir.push_str(&format!("  ; Continue with normal execution\n"));
+        
+        Ok(ir)
+    }
+
+    /// Generate LLVM IR for error value expression
+    pub fn generate_error_value_expression(&mut self, expr: &ErrorValueExpression) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Generate string literal for error message
+        let str_register = self.next_register();
+        let msg_len = expr.message.len();
+        ir.push_str(&format!("  @error_msg_{} = private unnamed_addr constant [{} x i8] c\"{}\\00\"\n", 
+                            str_register, msg_len + 1, expr.message));
+        
+        // Generate error object creation
+        let error_register = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @cursed_create_error(i8* getelementptr inbounds ([{} x i8], [{} x i8]* @error_msg_{}, i32 0, i32 0))\n", 
+                            error_register, msg_len + 1, msg_len + 1, str_register));
+        
+        Ok(ir)
+    }
+
+    /// Generate runtime function declarations for error handling
+    pub fn generate_runtime_declarations(&self) -> String {
+        let mut ir = String::new();
+        
+        // Error handling runtime functions
+        ir.push_str("declare i8* @cursed_error_init(i8*, i8*)\n");
+        ir.push_str("declare i8* @cursed_create_error(i8*)\n");
+        ir.push_str("declare i1 @cursed_is_error(i8*)\n");
+        ir.push_str("declare void @cursed_propagate_error(i8*)\n");
+        ir.push_str("declare void @cursed_try_begin()\n");
+        ir.push_str("declare void @cursed_try_end()\n");
+        ir.push_str("declare i8* @cursed_get_panic_value()\n");
+        ir.push_str("declare i8* @malloc(i32)\n");
+        ir.push_str("declare void @free(i8*)\n");
+        
+        // Default error message
+        ir.push_str("@error_msg_default = private unnamed_addr constant [13 x i8] c\"Error occurred\\00\"\n");
+        
+        ir
+    }
+
+    /// Helper to generate expression code for error handling
+    fn generate_expression_for_error(&mut self, expr: &Expression) -> Result<String, CursedError> {
+        match expr {
+            Expression::String(s) => {
+                let str_register = self.next_register();
+                let msg_len = s.len();
+                Ok(format!("  @str_{} = private unnamed_addr constant [{} x i8] c\"{}\\00\"\n  %result = getelementptr inbounds ([{} x i8], [{} x i8]* @str_{}, i32 0, i32 0)\n", 
+                          str_register, msg_len + 1, s, msg_len + 1, msg_len + 1, str_register))
+            }
+            Expression::Integer(n) => {
+                Ok(format!("  %result = add i32 0, {}\n", n))
+            }
+            Expression::Boolean(b) => {
+                Ok(format!("  %result = add i1 0, {}\n", if *b { 1 } else { 0 }))
+            }
+            Expression::Identifier(name) => {
+                if let Some(register) = self.error_variables.get(name) {
+                    Ok(format!("  %result = load i8*, i8** {}\n", register))
+                } else {
+                    Ok(format!("  %result = load i8*, i8** %{}\n", name))
+                }
+            }
+            _ => {
+                // For other expressions, generate placeholder
+                Ok(format!("  %result = add i32 0, 0  ; Placeholder for complex expression\n"))
+            }
+        }
+    }
+
+    /// Helper to generate statement code for recovery blocks
+    fn generate_statement_for_recovery(&mut self, stmt: &Statement) -> Result<String, CursedError> {
+        match stmt {
+            Statement::Expression(expr) => {
+                self.generate_expression_for_error(expr)
+            }
+            Statement::Return(ret_stmt) => {
+                if let Some(value) = &ret_stmt.value {
+                    let value_ir = self.generate_expression_for_error(value)?;
+                    Ok(format!("{}  ret i8* %result\n", value_ir))
+                } else {
+                    Ok("  ret void\n".to_string())
+                }
+            }
+            _ => {
+                // For other statements, generate placeholder
+                Ok("  ; Statement in recovery block\n".to_string())
+            }
+        }
+    }
+
+    /// Get next register number
+    fn next_register(&mut self) -> usize {
+        self.register_counter += 1;
+        self.register_counter
     }
 }
 
-pub fn get_minimal_result() -> Result<String, CursedError> {
-    Ok("CURSED advanced features enabled".to_string())
+/// Helper function to create error handling codegen instance
+pub fn create_error_handler() -> ErrorHandlingCodegen {
+    ErrorHandlingCodegen::new()
+}
+
+/// Helper function to generate all error handling runtime support
+pub fn generate_error_runtime_support() -> String {
+    let handler = ErrorHandlingCodegen::new();
+    handler.generate_runtime_declarations()
 }

@@ -125,7 +125,14 @@ impl HttpServer {
         E: std::error::Error + Send + Sync + 'static,
     {
         // Request processing logic
-        todo!("Request processing implementation")
+        // Validate request data
+        let request_data = request.validate()?;
+        
+        // Process the request
+        let processed_result = self.process_request(request_data).await?;
+        
+        // Return response
+        Ok(processed_result)
     }
 
     /// Generic method with lifetime parameters
@@ -142,7 +149,24 @@ impl HttpServer {
         U: Clone + Default,
     {
         // Processing logic with lifetimes
-        todo!("Lifetime processing implementation")
+        // Create a key for caching
+        let cache_key = format!("{}_{}", 
+            std::any::type_name::<T>(), 
+            std::any::type_name::<U>());
+        
+        // Check cache first
+        if let Some(cached_result) = cache.get(&cache_key) {
+            return cached_result;
+        }
+        
+        // Process the data
+        let result = processor(data);
+        
+        // Store in cache
+        cache.insert(cache_key, result.clone());
+        
+        // Return reference to cached result
+        cache.get(&cache_key).unwrap_or(&result)
     }
 
     /// Method with function pointer and closure parameters
@@ -155,7 +179,26 @@ impl HttpServer {
         async_callback: impl Future<Output = Result<String, Error>> + Send,
     ) -> CallbackResult {
         // Callback handling logic
-        todo!("Callback implementation")
+        // Execute simple callback
+        let simple_result = simple_callback("Test input".to_string());
+        
+        // Create mock request and response for complex callback
+        let mock_request = Request::new();
+        let mut mock_response = Response::new();
+        
+        // Execute complex callback
+        let complex_result = complex_callback(&mock_request, &mut mock_response);
+        
+        // Execute async callback
+        let async_result = async_callback.await;
+        
+        // Combine results
+        CallbackResult {
+            simple_success: simple_result,
+            complex_success: complex_result.is_ok(),
+            async_success: async_result.is_ok(),
+            response: mock_response,
+        }
     }
 
     // Private helper methods
@@ -322,7 +365,29 @@ where
         R: FromRow + Send,
     {
         // Database execution logic
-        todo!("Database execution implementation")
+        // Simulate database connection acquisition
+        let connection = self.connections.get(0).ok_or(DatabaseError::ConnectionPoolEmpty)?;
+        
+        // Convert query to string
+        let query_str = query.into();
+        
+        // Log the query for debugging
+        println!("Executing query: {}", query_str);
+        
+        // Simulate parameter binding
+        let param_count = params.into_iter().count();
+        println!("Query parameters: {}", param_count);
+        
+        // Simulate query execution
+        // In a real implementation, this would execute the query on the connection
+        // For demo purposes, we'll return a mock result
+        
+        // Update pool statistics
+        self.stats.total_queries += 1;
+        self.stats.successful_queries += 1;
+        
+        // Return mock result - in real implementation, this would be the actual query result
+        Ok(R::from_row_mock())
     }
 
     /// Transaction with nested closure types
@@ -336,8 +401,138 @@ where
         R: Send + Sync,
     {
         // Transaction logic
-        todo!("Transaction implementation")
+        // Simulate transaction start
+        println!("Starting database transaction");
+        
+        // Create a mock transaction
+        let mut transaction = Transaction::new();
+        
+        // Execute the operation within the transaction
+        let result = operation(&mut transaction).await;
+        
+        match result {
+            Ok(value) => {
+                // Commit the transaction
+                transaction.commit().await?;
+                println!("Transaction committed successfully");
+                Ok(value)
+            }
+            Err(error) => {
+                // Rollback the transaction
+                transaction.rollback().await?;
+                println!("Transaction rolled back due to error");
+                Err(TransactionError::OperationFailed(error))
+            }
+        }
     }
+}
+
+// Supporting types for database and request handling
+
+/// Mock database transaction
+pub struct Transaction {
+    id: String,
+    active: bool,
+}
+
+impl Transaction {
+    pub fn new() -> Self {
+        Transaction {
+            id: format!("tx_{}", rand::random::<u32>()),
+            active: true,
+        }
+    }
+    
+    pub async fn commit(&mut self) -> Result<(), DatabaseError> {
+        self.active = false;
+        println!("Transaction {} committed", self.id);
+        Ok(())
+    }
+    
+    pub async fn rollback(&mut self) -> Result<(), DatabaseError> {
+        self.active = false;
+        println!("Transaction {} rolled back", self.id);
+        Ok(())
+    }
+}
+
+/// Mock request structure
+pub struct Request {
+    method: String,
+    path: String,
+    headers: HashMap<String, String>,
+    body: Vec<u8>,
+}
+
+impl Request {
+    pub fn new() -> Self {
+        Request {
+            method: "GET".to_string(),
+            path: "/".to_string(),
+            headers: HashMap::new(),
+            body: Vec::new(),
+        }
+    }
+    
+    pub fn validate(&self) -> Result<RequestData, ProcessingError> {
+        Ok(RequestData {
+            method: self.method.clone(),
+            path: self.path.clone(),
+        })
+    }
+}
+
+/// Mock response structure
+pub struct Response {
+    status: u16,
+    headers: HashMap<String, String>,
+    body: Vec<u8>,
+}
+
+impl Response {
+    pub fn new() -> Self {
+        Response {
+            status: 200,
+            headers: HashMap::new(),
+            body: Vec::new(),
+        }
+    }
+}
+
+/// Request data structure
+pub struct RequestData {
+    method: String,
+    path: String,
+}
+
+/// Callback result structure
+pub struct CallbackResult {
+    simple_success: bool,
+    complex_success: bool,
+    async_success: bool,
+    response: Response,
+}
+
+/// Pool statistics
+pub struct PoolStats {
+    total_queries: u32,
+    successful_queries: u32,
+    failed_queries: u32,
+}
+
+impl PoolStats {
+    pub fn new() -> Self {
+        PoolStats {
+            total_queries: 0,
+            successful_queries: 0,
+            failed_queries: 0,
+        }
+    }
+}
+
+/// Mock FromRow trait for database results
+pub trait FromRow {
+    fn from_row_mock() -> Self;
 }
 
 // Error types for comprehensive error handling documentation
@@ -372,6 +567,9 @@ enum DatabaseError {
     ConnectionFailed,
     QueryFailed(String),
     TransactionAborted,
+    ConnectionPoolEmpty,
+    CommitFailed,
+    RollbackFailed,
 }
 
 /// Transaction errors with generic error wrapping
@@ -380,6 +578,7 @@ enum TransactionError<E> {
     RollbackFailed,
     CommitFailed,
     UserError(E),
+    OperationFailed(E),
 }
 
 // Trait definitions for comprehensive interface documentation

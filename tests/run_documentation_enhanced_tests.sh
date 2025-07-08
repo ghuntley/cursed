@@ -287,7 +287,9 @@ impl TestStruct$i {
         U: DeserializeOwned + Send + Sync,
         F: Fn(T) -> U + Send + Sync,
     {
-        todo!("Implementation")
+        // Transform implementation
+        let transformed_result = operation(input);
+        Box::new(std::iter::once(transformed_result))
     }
     
     /// Async method with complex return type
@@ -295,7 +297,18 @@ impl TestStruct$i {
         &mut self,
         params: Vec<Box<dyn OperationParam + Send + Sync>>,
     ) -> Result<impl Iterator<Item = ProcessResult<String>>, Box<dyn Error + Send + Sync>> {
-        todo!("Async implementation")
+        // Async implementation
+        let results: Vec<ProcessResult<String>> = params.into_iter()
+            .map(|param| {
+                ProcessResult {
+                    id: "async_op".to_string(),
+                    data: format!("Processed: {:?}", param),
+                    status: "completed".to_string(),
+                }
+            })
+            .collect();
+        
+        Ok(results.into_iter())
     }
 }
 

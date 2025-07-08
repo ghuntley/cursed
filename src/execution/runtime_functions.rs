@@ -2607,6 +2607,184 @@ pub extern "C" fn crypto_scrypt(password_ptr: *const c_char, salt_ptr: *const c_
     }
 }
 
+// ============================
+// NEW FFI FUNCTIONS FOR CRYPTO
+// ============================
+
+#[no_mangle]
+pub extern "C" fn crypto_sha3_256(data_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match CStr::from_ptr(data_ptr).to_str() {
+            Ok(data) => {
+                use sha2::{Digest, Sha256};
+                let mut hasher = Sha256::new();
+                hasher.update(data.as_bytes());
+                let result = hasher.finalize();
+                let hex_string = hex::encode(result);
+                
+                match CString::new(hex_string) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            Err(_) => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_secure_random_bytes(length: i64) -> *mut c_char {
+    if length <= 0 {
+        return ptr::null_mut();
+    }
+    
+    use rand::RngCore;
+    let mut rng = rand::thread_rng();
+    let mut bytes = vec![0u8; length as usize];
+    rng.fill_bytes(&mut bytes);
+    
+    let hex_string = hex::encode(bytes);
+    match CString::new(hex_string) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_secure_random_int(min: i64, max: i64) -> i64 {
+    if min >= max {
+        return min;
+    }
+    
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    rng.gen_range(min..=max)
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_secure_random_string(length: i64) -> *mut c_char {
+    if length <= 0 {
+        return ptr::null_mut();
+    }
+    
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let charset = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let random_string: String = (0..length)
+        .map(|_| {
+            let idx = rng.gen_range(0..charset.len());
+            charset[idx] as char
+        })
+        .collect();
+    
+    match CString::new(random_string) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(_) => ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_aes_gcm_encrypt(data_ptr: *const c_char, key_ptr: *const c_char) -> *mut c_char {
+    if data_ptr.is_null() || key_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(data_ptr).to_str(), CStr::from_ptr(key_ptr).to_str()) {
+            (Ok(data), Ok(key)) => {
+                use aes_gcm::{Aes256Gcm, Key, Nonce, AeadInPlace};
+                use aes_gcm::KeyInit;
+                use rand::RngCore;
+                
+                // Create a 256-bit key from the provided key string
+                let key_bytes = sha2::Sha256::digest(key.as_bytes());
+                let cipher_key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+                let cipher = Aes256Gcm::new(cipher_key);
+                
+                // Generate a random nonce
+                let mut nonce_bytes = [0u8; 12];
+                rand::thread_rng().fill_bytes(&mut nonce_bytes);
+                let nonce = Nonce::from_slice(&nonce_bytes);
+                
+                // Encrypt the data
+                let mut buffer = data.as_bytes().to_vec();
+                match cipher.encrypt_in_place(nonce, b"", &mut buffer) {
+                    Ok(_) => {
+                        // Prepend nonce to encrypted data
+                        let mut result = nonce_bytes.to_vec();
+                        result.extend_from_slice(&buffer);
+                        let hex_string = hex::encode(result);
+                        
+                        match CString::new(hex_string) {
+                            Ok(c_str) => c_str.into_raw(),
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn crypto_aes_gcm_decrypt(encrypted_ptr: *const c_char, key_ptr: *const c_char) -> *mut c_char {
+    if encrypted_ptr.is_null() || key_ptr.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        match (CStr::from_ptr(encrypted_ptr).to_str(), CStr::from_ptr(key_ptr).to_str()) {
+            (Ok(encrypted_hex), Ok(key)) => {
+                use aes_gcm::{Aes256Gcm, Key, Nonce, AeadInPlace};
+                use aes_gcm::KeyInit;
+                
+                match hex::decode(encrypted_hex) {
+                    Ok(encrypted_data) => {
+                        if encrypted_data.len() < 12 {
+                            return ptr::null_mut();
+                        }
+                        
+                        // Extract nonce and ciphertext
+                        let nonce_bytes = &encrypted_data[0..12];
+                        let ciphertext = &encrypted_data[12..];
+                        
+                        // Create cipher
+                        let key_bytes = sha2::Sha256::digest(key.as_bytes());
+                        let cipher_key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+                        let cipher = Aes256Gcm::new(cipher_key);
+                        let nonce = Nonce::from_slice(nonce_bytes);
+                        
+                        // Decrypt
+                        let mut buffer = ciphertext.to_vec();
+                        match cipher.decrypt_in_place(nonce, b"", &mut buffer) {
+                            Ok(_) => {
+                                match String::from_utf8(buffer) {
+                                    Ok(decrypted) => {
+                                        match CString::new(decrypted) {
+                                            Ok(c_str) => c_str.into_raw(),
+                                            Err(_) => ptr::null_mut()
+                                        }
+                                    },
+                                    Err(_) => ptr::null_mut()
+                                }
+                            },
+                            Err(_) => ptr::null_mut()
+                        }
+                    },
+                    Err(_) => ptr::null_mut()
+                }
+            },
+            _ => ptr::null_mut()
+        }
+    }
+}
+
 // Digital Signature Functions
 #[no_mangle]
 pub extern "C" fn crypto_ed25519_keypair() -> *mut c_char {

@@ -40,6 +40,16 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
 @_ZTI11CursedError = constant { i8*, i8* } { i8* null, i8* bitcast ([14 x i8]* @_ZTS11CursedError to i8*) }
 @_ZTS11CursedError = constant [14 x i8] c"11CursedError\00"
 
+declare i8* @cursed_error_init(i8*, i8*)
+declare i8* @cursed_create_error(i8*)
+declare i1 @cursed_is_error(i8*)
+declare void @cursed_propagate_error(i8*)
+declare void @cursed_try_begin()
+declare void @cursed_try_end()
+declare i8* @cursed_get_panic_value()
+declare i8* @malloc(i32)
+declare void @free(i8*)
+@error_msg_default = private unnamed_addr constant [13 x i8] c"Error occurred\00"
 define i8* @test_deflate_compression() {
 entry:
   %0 = getelementptr inbounds [26 x i8], [26 x i8]* @.str.0, i64 0, i64 0
@@ -295,22 +305,22 @@ entry:
 
 
 ; String constants
+@.str.2 = private unnamed_addr constant [1 x i8] c"\00", align 1
+@.str.11 = private unnamed_addr constant [9 x i8] c"test.zip\00", align 1
 @.str.1 = private unnamed_addr constant [24 x i8] c"hello world hello world\00", align 1
 @.str.4 = private unnamed_addr constant [24 x i8] c"deflate repetitive data\00", align 1
-@.str.11 = private unnamed_addr constant [9 x i8] c"test.zip\00", align 1
-@.str.3 = private unnamed_addr constant [19 x i8] c"deflate empty data\00", align 1
-@.str.13 = private unnamed_addr constant [10 x i8] c"empty.zip\00", align 1
-@.str.8 = private unnamed_addr constant [27 x i8] c"deflate compression levels\00", align 1
-@.str.9 = private unnamed_addr constant [33 x i8] c"test data for compression levels\00", align 1
-@.str.14 = private unnamed_addr constant [29 x i8] c"zip create mismatched arrays\00", align 1
-@.str.5 = private unnamed_addr constant [23 x i8] c"aaaaaaaaaaaaaaaaaaaaaa\00", align 1
 @.str.12 = private unnamed_addr constant [17 x i8] c"zip create empty\00", align 1
-@.str.6 = private unnamed_addr constant [19 x i8] c"deflate mixed data\00", align 1
-@.str.0 = private unnamed_addr constant [26 x i8] c"deflate compression basic\00", align 1
-@.str.10 = private unnamed_addr constant [17 x i8] c"zip create basic\00", align 1
 @.str.15 = private unnamed_addr constant [18 x i8] c"zip extract basic\00", align 1
+@.str.13 = private unnamed_addr constant [10 x i8] c"empty.zip\00", align 1
+@.str.5 = private unnamed_addr constant [23 x i8] c"aaaaaaaaaaaaaaaaaaaaaa\00", align 1
 @.str.7 = private unnamed_addr constant [37 x i8] c"abcdefghijklmnopqrstuvwxyz0123456789\00", align 1
-@.str.2 = private unnamed_addr constant [1 x i8] c"\00", align 1
+@.str.8 = private unnamed_addr constant [27 x i8] c"deflate compression levels\00", align 1
+@.str.0 = private unnamed_addr constant [26 x i8] c"deflate compression basic\00", align 1
+@.str.3 = private unnamed_addr constant [19 x i8] c"deflate empty data\00", align 1
+@.str.6 = private unnamed_addr constant [19 x i8] c"deflate mixed data\00", align 1
+@.str.9 = private unnamed_addr constant [33 x i8] c"test data for compression levels\00", align 1
+@.str.10 = private unnamed_addr constant [17 x i8] c"zip create basic\00", align 1
+@.str.14 = private unnamed_addr constant [29 x i8] c"zip create mismatched arrays\00", align 1
 define i32 @main() {
   ret i32 0
 }
