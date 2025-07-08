@@ -88,10 +88,16 @@ pub enum TokenKind {
     MainCharacter, // main function
     Dm,          // channel type
     Select,      // select statement
+    Ready,       // ready (for select statements)
     LeftArrow,   // <- channel operator
     Arrow,       // -> return type arrow
     Later,       // later (defer statement)
     In,          // in (for-in loops)
+    
+    // Error handling tokens
+    Yikes,       // error type declarations
+    Shook,       // error propagation operator
+    Fam,         // panic recovery blocks
     
     // Visibility modifiers
     Spill,       // pub (public)
@@ -686,8 +692,14 @@ impl Lexer {
             "main_character" => TokenKind::MainCharacter,
             "dm" => TokenKind::Dm,
             "select" => TokenKind::Select,
+            "ready" => TokenKind::Ready,
             "later" => TokenKind::Later,
             "in" => TokenKind::In,
+            
+            // Error handling keywords
+            "yikes" => TokenKind::Yikes,
+            "shook" => TokenKind::Shook,
+            "fam" => TokenKind::Fam,
             
             // Visibility modifiers
             "spill" => TokenKind::Spill,
@@ -1000,6 +1012,21 @@ slay main() {
         assert_eq!(tokens[1].kind, TokenKind::Fn);
         assert_eq!(tokens[2].kind, TokenKind::If);
         assert_eq!(tokens[3].kind, TokenKind::Else);
+    }
+
+    #[test]
+    fn test_error_handling_tokens() {
+        let mut lexer = Lexer::new("yikes shook fam".to_string());
+        let tokens = lexer.tokenize().unwrap();
+        
+        assert_eq!(tokens.len(), 4); // 3 error tokens + EOF
+        assert_eq!(tokens[0].kind, TokenKind::Yikes);
+        assert_eq!(tokens[0].lexeme, "yikes");
+        assert_eq!(tokens[1].kind, TokenKind::Shook);
+        assert_eq!(tokens[1].lexeme, "shook");
+        assert_eq!(tokens[2].kind, TokenKind::Fam);
+        assert_eq!(tokens[2].lexeme, "fam");
+        assert_eq!(tokens[3].kind, TokenKind::Eof);
     }
 
     #[test]

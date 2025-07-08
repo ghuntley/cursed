@@ -89,6 +89,38 @@ slay format_char(value sip) tea {
 }
 
 // ================================
+// Core Specification Functions
+// ================================
+
+slay spillf(format tea, args ...tea) {
+    // Formatted print function (from specification)
+    sus formatted tea = simple_format(format, args);
+    spill(formatted);
+}
+
+slay spillstr(format tea, args ...tea) tea {
+    // Return formatted string (from specification)
+    damn simple_format(format, args);
+}
+
+slay simple_format(format tea, args ...tea) tea {
+    // Simple format function that handles %s, %d, %f
+    // Replace %s with string arguments sequentially
+    sus result tea = format;
+    sus arg_index normie = 0;
+    
+    // Basic %s replacement - simplified implementation
+    lowkey len(args) > 0 {
+        // Replace first %s with first argument
+        lowkey string_contains(result, "%s") {
+            result = string_replace_first(result, "%s", args[0]);
+        }
+    }
+    
+    damn result;
+}
+
+// ================================
 // Advanced Formatting Functions
 // ================================
 

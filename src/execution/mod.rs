@@ -984,6 +984,14 @@ impl CursedExecutionEngine {
                 
                 Ok(ExecutionFlow::Continue(new_value))
             },
+            &Statement::Yikes(_) => {
+                // TODO: Implement error handling statement
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            },
+            &Statement::Fam(_) => {
+                // TODO: Implement error recovery statement
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            },
         }
     }
     
@@ -1100,6 +1108,14 @@ impl CursedExecutionEngine {
             },
             Expression::Decrement(dec_expr) => {
                 self.evaluate_decrement_expression(dec_expr, context)
+            },
+            Expression::Shook(_) => {
+                // TODO: Implement error propagation expression
+                Ok(CursedValue::Nil)
+            },
+            Expression::ErrorValue(_) => {
+                // TODO: Implement error value expression
+                Ok(CursedValue::Nil)
             },
         }
     }

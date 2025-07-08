@@ -1,4 +1,48 @@
-// Standard time and date library
+// Standard time and date library (timez module)
+
+// ================================
+// Core Specification Functions
+// ================================
+
+slay Now() datetime {
+    // Current time (from specification)
+    damn time_now_impl();
+}
+
+slay Sleep(d duration) {
+    // Sleep for duration (from specification)
+    sus seconds normie = duration_to_seconds(d);
+    time_sleep_impl(seconds);
+}
+
+slay Since(t datetime) duration {
+    // Duration since time t (from specification)
+    sus now datetime = Now();
+    damn time_subtract(now, t);
+}
+
+slay Until(t datetime) duration {
+    // Duration until time t (from specification)
+    sus now datetime = Now();
+    damn time_subtract(t, now);
+}
+
+// Duration constants (from specification)
+slay Second() duration {
+    damn duration_from_seconds(1);
+}
+
+slay Minute() duration {
+    damn duration_from_seconds(60);
+}
+
+slay Hour() duration {
+    damn duration_from_seconds(3600);
+}
+
+slay Day() duration {
+    damn duration_from_seconds(86400);
+}
 
 // ================================
 // Current time functions

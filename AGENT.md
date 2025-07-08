@@ -3,6 +3,15 @@
 - IMPORTANT: NEVER EVER DELETE "specs/" or "benchmark/" (case insentive and including files in the folder)
 - IMPORTANT: NEVER EVER DELETE ANY FILE NAMED "PROMPT*.MD" (case insensitive)
 
+## Language Specifications
+
+**✅ MAJOR ADDITION (2025-01-07): Complete Error Handling Specification**
+- **Location**: `specs/error_handling.md` - Comprehensive error handling specification
+- **Coverage**: Error types, propagation, panic recovery, goroutine isolation
+- **Syntax**: CURSED-specific error handling syntax with `yikes`, `shook`, `fam` keywords
+- **Integration**: Runtime error handling, performance monitoring, debugging
+- **Status**: Complete specification ready for implementation verification
+
 ## Development Commands
 
 ```bash

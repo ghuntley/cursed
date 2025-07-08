@@ -1,7 +1,7 @@
 //! LLVM Function Compilation Module
 //! Complete function compilation with full LLVM IR generation
 
-use crate::ast::{Statement, Expression, FunctionStatement, Literal};
+use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression};
 use crate::error::CursedError;
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use std::collections::HashMap;
@@ -504,6 +504,38 @@ impl FunctionCompiler {
             Expression::Map(pairs) => {
                 self.compile_map_literal(pairs)
             },
+            Expression::ChannelSend(channel_send_expr) => {
+                self.compile_channel_send(channel_send_expr)
+            },
+            Expression::ChannelReceive(channel_receive_expr) => {
+                self.compile_channel_receive(channel_receive_expr)
+            },
+            Expression::ChannelCreation(channel_creation_expr) => {
+                self.compile_channel_creation(channel_creation_expr)
+            },
+            Expression::StructLiteral(struct_literal_expr) => {
+                self.compile_struct_literal(struct_literal_expr)
+            },
+            Expression::Lambda(lambda_expr) => {
+                self.compile_lambda(lambda_expr)
+            },
+            Expression::TypeAssertion(type_assertion) => {
+                self.compile_type_assertion(type_assertion)
+            },
+            Expression::Increment(increment_expr) => {
+                self.compile_increment(increment_expr)
+            },
+            Expression::Decrement(decrement_expr) => {
+                self.compile_decrement(decrement_expr)
+            },
+            Expression::Variable(name) => {
+                // Variable access - same as Identifier
+                self.compile_expression(&Expression::Identifier(name.clone()))
+            },
+            Expression::Literal(literal) => {
+                self.compile_literal_expression(literal)
+            },
+            #[allow(unreachable_patterns)]
             _ => {
                 log::warn!("Unsupported expression type: {:?}", expression);
                 let reg = self.next_register();
@@ -1981,5 +2013,85 @@ impl FunctionCompiler {
             }
             caps[0].to_string() // fallback
         }).to_string()
+    }
+
+    /// Compile channel send expression
+    fn compile_channel_send(&mut self, channel_send_expr: &ChannelSendExpression) -> Result<String, CursedError> {
+        // Placeholder implementation - compile to placeholder register
+        let reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i32 @channel_send(...) ; placeholder\n", reg));
+        Ok(reg)
+    }
+
+    /// Compile channel receive expression
+    fn compile_channel_receive(&mut self, channel_receive_expr: &ChannelReceiveExpression) -> Result<String, CursedError> {
+        // Placeholder implementation - compile to placeholder register
+        let reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i32 @channel_receive(...) ; placeholder\n", reg));
+        Ok(reg)
+    }
+
+    /// Compile channel creation expression
+    fn compile_channel_creation(&mut self, channel_creation_expr: &ChannelCreationExpression) -> Result<String, CursedError> {
+        // Placeholder implementation - compile to placeholder register
+        let reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i32 @channel_create(...) ; placeholder\n", reg));
+        Ok(reg)
+    }
+
+    /// Compile struct literal expression
+    fn compile_struct_literal(&mut self, struct_literal_expr: &StructLiteralExpression) -> Result<String, CursedError> {
+        // Placeholder implementation - compile to placeholder register
+        let reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i32 @struct_literal(...) ; placeholder\n", reg));
+        Ok(reg)
+    }
+
+    /// Compile lambda expression
+    fn compile_lambda(&mut self, lambda_expr: &LambdaExpression) -> Result<String, CursedError> {
+        // Placeholder implementation - compile to placeholder register
+        let reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i32 @lambda(...) ; placeholder\n", reg));
+        Ok(reg)
+    }
+
+    /// Compile type assertion expression
+    fn compile_type_assertion(&mut self, type_assertion: &TypeAssertionExpression) -> Result<String, CursedError> {
+        // Compile the inner expression and perform type conversion
+        let value_reg = self.compile_expression(&type_assertion.value)?;
+        // For now, return the value as-is (type assertion is a no-op in LLVM)
+        Ok(value_reg)
+    }
+
+    /// Compile increment expression
+    fn compile_increment(&mut self, increment_expr: &IncrementExpression) -> Result<String, CursedError> {
+        // Placeholder implementation - compile to placeholder register
+        let reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = add i32 1, 0 ; increment placeholder\n", reg));
+        Ok(reg)
+    }
+
+    /// Compile decrement expression
+    fn compile_decrement(&mut self, decrement_expr: &DecrementExpression) -> Result<String, CursedError> {
+        // Placeholder implementation - compile to placeholder register
+        let reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = sub i32 0, 1 ; decrement placeholder\n", reg));
+        Ok(reg)
+    }
+
+    /// Compile literal expression
+    fn compile_literal_expression(&mut self, literal: &Literal) -> Result<String, CursedError> {
+        match literal {
+            Literal::Integer(val) => Ok(val.to_string()),
+            Literal::Float(val) => Ok(val.to_string()),
+            Literal::String(val) => self.compile_expression(&Expression::String(val.clone())),
+            Literal::Boolean(val) => Ok(if *val { "1" } else { "0" }.to_string()),
+            // Character literal handling removed - not in current AST
+            _ => {
+                let reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; literal placeholder\n", reg));
+                Ok(reg)
+            }
+        }
     }
 }

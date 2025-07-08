@@ -26,10 +26,10 @@ The following sections outline how core CURSED language features will map to LLV
 ### 1. Types (`types.md`)
 
 -   **Primitive Types**:
-    -   `lit` (Integer): Mapped to LLVM integer types (e.g., `i64`).
-    -   `normie` (Float): Mapped to LLVM floating-point types (e.g., `double`).
+    -   `normie` (Integer): Mapped to LLVM integer types (e.g., `i32`).
+    -   `snack/meal` (Float): Mapped to LLVM floating-point types (e.g., `float`/`double`).
     -   `tea` (String): Likely represented as a pointer to a struct containing length and character data (`{ i64, i8* }`). Requires runtime support for allocation and GC.
-    -   `bougie` (Boolean): Mapped to LLVM `i1`.
+    -   `lit` (Boolean): Mapped to LLVM `i1`.
     -   `based` (Nil/Null): Represented by a null pointer (`ptr`).
 -   **Composite Types**:
     -   `squad` (Struct): Mapped to LLVM `struct` types.

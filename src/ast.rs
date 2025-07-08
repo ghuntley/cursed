@@ -59,6 +59,9 @@ pub enum Statement {
     Increment(IncrementStatement),
     Decrement(DecrementStatement),
     ShortDeclaration(ShortDeclarationStatement),
+    // Error handling statements
+    Yikes(YikesStatement),
+    Fam(FamStatement),
 }
 
 /// Expression types
@@ -91,6 +94,9 @@ pub enum Expression {
     TypeAssertion(TypeAssertionExpression),
     Increment(IncrementExpression),
     Decrement(DecrementExpression),
+    // Error handling expressions
+    Shook(ShookExpression),
+    ErrorValue(ErrorValueExpression),
 }
 
 /// Binary expression
@@ -170,6 +176,85 @@ pub struct TypeAssertionExpression {
     pub value: Box<Expression>,
     pub target_type: Type,
     pub is_safe: bool, // true for value.(type)?, false for value.(type)
+}
+
+/// Error handling statement (yikes)
+#[derive(Debug, Clone)]
+pub struct YikesStatement {
+    pub name: String,
+    pub error_type: Option<Type>,
+    pub value: Option<Expression>,
+}
+
+/// Error recovery statement (fam)
+#[derive(Debug, Clone)]
+pub struct FamStatement {
+    pub body: Vec<Statement>,
+}
+
+/// Error propagation expression (shook)
+#[derive(Debug, Clone)]
+pub struct ShookExpression {
+    pub expression: Box<Expression>,
+}
+
+/// Error value expression
+#[derive(Debug, Clone)]
+pub struct ErrorValueExpression {
+    pub message: String,
+}
+
+impl YikesStatement {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            error_type: None,
+            value: None,
+        }
+    }
+    
+    pub fn with_type(mut self, error_type: Type) -> Self {
+        self.error_type = Some(error_type);
+        self
+    }
+    
+    pub fn with_value(self, _value: Expression) -> Self {
+        // Stub implementation for now - YikesStatement doesn't have a value field anymore
+        self
+    }
+}
+
+impl FamStatement {
+    pub fn new(body: Vec<Statement>) -> Self {
+        Self { body }
+    }
+    
+    pub fn with_recovery(self, _recovery_block: Vec<Statement>, _panic_variable: Option<String>) -> Self {
+        // Stub implementation for now - FamStatement has simplified structure
+        self
+    }
+}
+
+impl ShookExpression {
+    pub fn new(expression: Box<Expression>) -> Self {
+        Self { expression }
+    }
+}
+
+impl ErrorValueExpression {
+    pub fn new(message: String) -> Self {
+        Self { message }
+    }
+    
+    pub fn with_code(self, _code: Box<Expression>) -> Self {
+        // Stub implementation for now
+        self
+    }
+    
+    pub fn with_details(self, _details: Box<Expression>) -> Self {
+        // Stub implementation for now
+        self
+    }
 }
 
 impl TypeAssertionExpression {
@@ -788,3 +873,6 @@ pub fn parse_program(source: &str) -> Result<Program, CursedError> {
     let mut parser = crate::parser::Parser::new(lexer)?;
     Ok(parser.parse_program()?)
 }
+
+
+
