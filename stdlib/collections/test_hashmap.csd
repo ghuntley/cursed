@@ -1,7 +1,7 @@
 fr fr CURSED HashMap Test Suite
 fr fr Comprehensive tests for the native HashMap implementation
 
-yeet "../testz/mod.csd"
+yeet "testz"
 yeet "hashmap.csd"
 
 fr fr ================================

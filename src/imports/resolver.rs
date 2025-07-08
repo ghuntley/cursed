@@ -268,48 +268,108 @@ impl ImportResolver {
 
     /// Classify an import path to determine its source type
     pub fn classify_import(&self, import_path: &str) -> Result<ImportSource> {
+        // Handle std:: and cursed:: prefixed imports
         if import_path.starts_with("std::") || import_path.starts_with("cursed::") {
-            Ok(ImportSource::Stdlib(import_path.to_string()))
-        } else if self.is_stdlib_module(import_path) {
-            // Handle direct stdlib module names like "mathz", "stringz", "vibez"
-            Ok(ImportSource::Stdlib(import_path.to_string()))
-        } else if import_path.starts_with("./") || import_path.starts_with("../") || import_path.ends_with(".csd") {
-            Ok(ImportSource::Local(PathBuf::from(import_path)))
-        } else if import_path.contains("@") {
-            // Package with version: "package@1.0.0"
+            return Ok(ImportSource::Stdlib(import_path.to_string()));
+        }
+        
+        // Handle stdlib/ prefixed imports
+        if import_path.starts_with("stdlib/") {
+            return Ok(ImportSource::Stdlib(import_path.to_string()));
+        }
+        
+        // Handle relative imports (../testz/mod, ./module, etc.)
+        if import_path.starts_with("./") || import_path.starts_with("../") || import_path.ends_with(".csd") {
+            return Ok(ImportSource::Local(PathBuf::from(import_path)));
+        }
+        
+        // Handle package with version: "package@1.0.0"
+        if import_path.contains("@") {
             let parts: Vec<&str> = import_path.splitn(2, '@').collect();
-            Ok(ImportSource::Package(parts[0].to_string(), Some(parts[1].to_string())))
-        } else if !import_path.contains("/") && !import_path.contains("\\") {
-            // Simple name - check if it exists in search paths before treating as package
+            return Ok(ImportSource::Package(parts[0].to_string(), Some(parts[1].to_string())));
+        }
+        
+        // For simple names, check if it exists locally first
+        if !import_path.contains("/") && !import_path.contains("\\") {
             let path = PathBuf::from(import_path);
             if self.local_import_exists(&path) {
-                Ok(ImportSource::Local(path))
-            } else {
-                Ok(ImportSource::Package(import_path.to_string(), None))
+                return Ok(ImportSource::Local(path));
             }
-        } else {
-            // Default to local path
-            Ok(ImportSource::Local(PathBuf::from(import_path)))
         }
+        
+        // Check if it's a known stdlib module (only if not found locally)
+        if self.is_stdlib_module(import_path) {
+            return Ok(ImportSource::Stdlib(import_path.to_string()));
+        }
+        
+        // Handle any other path patterns - treat as local if they contain path separators
+        if import_path.contains("/") || import_path.contains("\\") {
+            return Ok(ImportSource::Local(PathBuf::from(import_path)));
+        }
+        
+        // Default to package for simple names that don't exist locally
+        Ok(ImportSource::Package(import_path.to_string(), None))
     }
 
     /// Check if a module name is a standard library module
     fn is_stdlib_module(&self, name: &str) -> bool {
-        matches!(name, "mathz" | "stringz" | "vibez" | "testz" | "ioz" | "crypto" | "time" | "collections")
+        // Check if it's a direct module name that exists in stdlib
+        let stdlib_modules = [
+            "asn1_mood", "async", "atomic_drip", "big_mood", "binary_drip", "bytefit", 
+            "chadlogging", "chaos_mode", "collections", "compression", "concurrenz", 
+            "config", "core", "crypto", "csv", "debug_tea", "error_drip", "exec_slay", 
+            "fs", "glowup_http", "grammar_drip", "hash_drip", "heap_slay", "htmlrizzler", 
+            "io", "json", "logging", "main_character", "math", "memory", "net", "network", 
+            "no_cap", "pathing", "pem_drip", "process", "regex", "rpc_vibes", 
+            "serialization", "smtp_tea", "sort_slay", "spill_facts", "sql_slay", 
+            "string", "string_pure", "testz", "time", "tls_vibe", "validation", 
+            "vibe_life", "vibe_lock", "vibez", "x509_certs_tea", "zip_zilla"
+        ];
+        
+        // Check for direct module name
+        if stdlib_modules.contains(&name) {
+            return true;
+        }
+        
+        // Check for legacy module names (for backward compatibility)
+        if matches!(name, "mathz" | "stringz" | "ioz") {
+            return true;
+        }
+        
+        // Check if it's a stdlib path (starts with "stdlib/")
+        if name.starts_with("stdlib/") {
+            let module_name = name.strip_prefix("stdlib/").unwrap_or(name);
+            return stdlib_modules.contains(&module_name);
+        }
+        
+        // Check if the module exists in the stdlib directory
+        let module_path = self.config.stdlib_path.join(name);
+        module_path.exists() || module_path.join("mod.csd").exists()
     }
 
     /// Get the stdlib path mapping for a module name
-    fn get_stdlib_path_mapping(&self, name: &str) -> Option<&'static str> {
+    fn get_stdlib_path_mapping(&self, name: &str) -> Option<String> {
         match name {
-            "mathz" => Some("math"),
-            "stringz" => Some("string"),
-            "vibez" => Some("io"),  // vibez is actually the io module for output
-            "testz" => Some("testz"),
-            "ioz" => Some("io"),
-            "crypto" => Some("crypto"),
-            "time" => Some("time"),
-            "collections" => Some("collections"),
-            _ => None,
+            // Legacy mappings for backward compatibility
+            "mathz" => Some("math".to_string()),
+            "stringz" => Some("string".to_string()),
+            "ioz" => Some("io".to_string()),
+            
+            // Handle stdlib/ prefixed paths
+            path if path.starts_with("stdlib/") => {
+                let module_name = path.strip_prefix("stdlib/").unwrap_or(path);
+                Some(module_name.to_string())
+            }
+            
+            // Direct module name - return as-is if it exists
+            _ => {
+                let module_path = self.config.stdlib_path.join(name);
+                if module_path.exists() || module_path.join("mod.csd").exists() {
+                    Some(name.to_string())
+                } else {
+                    None
+                }
+            }
         }
     }
 
@@ -352,12 +412,37 @@ impl ImportResolver {
         // Try relative to search paths
         for search_path in &self.config.search_paths {
             let candidates = vec![
+                // Direct file path
                 search_path.join(path),
+                // Add .csd extension if not present
                 search_path.join(path).with_extension("csd"),
+                // Look for mod.csd in directory
                 search_path.join(path).join("mod.csd"),
+                // Look for lib.csd in directory  
+                search_path.join(path).join("lib.csd"),
+                // Handle relative imports like "../testz/mod"
+                search_path.join(path).with_extension("csd"),
+                // Handle imports like "../testz/mod.csd"
+                search_path.join(path),
             ];
 
             for candidate in candidates {
+                if candidate.exists() && candidate.is_file() {
+                    return Ok(candidate);
+                }
+            }
+        }
+
+        // Special case: if it's a relative import, try from stdlib
+        if path.starts_with("../") {
+            let stdlib_relative = path.strip_prefix("../").unwrap_or(path);
+            let stdlib_candidates = vec![
+                self.config.stdlib_path.join(stdlib_relative),
+                self.config.stdlib_path.join(stdlib_relative).with_extension("csd"),
+                self.config.stdlib_path.join(stdlib_relative).join("mod.csd"),
+            ];
+            
+            for candidate in stdlib_candidates {
                 if candidate.exists() && candidate.is_file() {
                     return Ok(candidate);
                 }
@@ -410,7 +495,7 @@ impl ImportResolver {
     fn resolve_stdlib_import(&self, stdlib_name: &str) -> Result<PathBuf> {
         // Handle direct stdlib module names like "mathz", "stringz", "vibez"
         if let Some(actual_name) = self.get_stdlib_path_mapping(stdlib_name) {
-            let module_path = self.config.stdlib_path.join(actual_name);
+            let module_path = self.config.stdlib_path.join(&actual_name);
             let candidates = vec![
                 module_path.with_extension("csd"),
                 module_path.join("mod.csd"),
@@ -425,7 +510,7 @@ impl ImportResolver {
 
             return Err(CursedError::ImportError(format!(
                 "Standard library module not found: {} (mapped to {})", 
-                stdlib_name, actual_name
+                stdlib_name, &actual_name
             )));
         }
 

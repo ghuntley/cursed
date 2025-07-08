@@ -68,7 +68,7 @@ slay run_test_function(test_func TestFunction) lit {
     fr fr This would actually call the test function
     fr fr For now, we'll simulate test execution
     
-    testz.test_start(test_func.name)
+    test_start(test_func.name)
     
     fr fr Mock test execution - would call the actual function
     fr fr In a real implementation, this would use reflection or
@@ -77,10 +77,10 @@ slay run_test_function(test_func TestFunction) lit {
     sus success lit = based  fr fr Mock success
     
     lowkey success {
-        testz.test_pass("Test completed successfully")
+        test_pass("Test completed successfully")
         yolo based
     } highkey {
-        testz.test_fail("Test failed")
+        test_fail("Test failed")
         yolo cap
     }
 }
@@ -88,7 +88,7 @@ slay run_test_function(test_func TestFunction) lit {
 slay run_discovered_tests() normie {
     vibez.spill("Running " + discovered_tests.length + " discovered tests")
     
-    testz.reset_test_state()
+    reset_test_state()
     
     sus i normie = 0
     periodt i < discovered_tests.length {
@@ -97,9 +97,9 @@ slay run_discovered_tests() normie {
         i = i + 1
     }
     
-    testz.print_test_summary()
+    print_test_summary()
     
-    lowkey testz.test_failed > 0 {
+    lowkey test_failed > 0 {
         yolo 1
     } highkey {
         yolo 0
@@ -209,8 +209,8 @@ slay generate_json_report() {
     
     sus json_output tea = "{\n"
     json_output = json_output + "  \"total\": " + testz.test_count + ",\n"
-    json_output = json_output + "  \"passed\": " + testz.test_passed + ",\n"
-    json_output = json_output + "  \"failed\": " + testz.test_failed + ",\n"
+    json_output = json_output + "  \"passed\": " + test_passed + ",\n"
+    json_output = json_output + "  \"failed\": " + test_failed + ",\n"
     json_output = json_output + "  \"tests\": [\n"
     
     sus i normie = 0
@@ -239,7 +239,7 @@ slay generate_xml_report() {
     vibez.spill("Generating XML test report...")
     
     sus xml_output tea = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-    xml_output = xml_output + "<testsuite tests=\"" + testz.test_count + "\" failures=\"" + testz.test_failed + "\">\n"
+    xml_output = xml_output + "<testsuite tests=\"" + testz.test_count + "\" failures=\"" + test_failed + "\">\n"
     
     sus i normie = 0
     periodt i < testz.test_results.length {
@@ -276,8 +276,8 @@ slay generate_html_report() {
     html_output = html_output + "<div class=\"summary\">\n"
     html_output = html_output + "<h2>Summary</h2>\n"
     html_output = html_output + "<p>Total: " + testz.test_count + "</p>\n"
-    html_output = html_output + "<p>Passed: " + testz.test_passed + "</p>\n"
-    html_output = html_output + "<p>Failed: " + testz.test_failed + "</p>\n"
+    html_output = html_output + "<p>Passed: " + test_passed + "</p>\n"
+    html_output = html_output + "<p>Failed: " + test_failed + "</p>\n"
     html_output = html_output + "</div>\n"
     
     html_output = html_output + "<h2>Test Results</h2>\n"

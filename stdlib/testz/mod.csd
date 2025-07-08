@@ -146,6 +146,19 @@ slay example_test() {
     assert_eq_int(10 / 2, 5)
 }
 
+fr fr Export all testing functions
+vibes test_start
+vibes test_pass
+vibes test_fail
+vibes assert_eq_int
+vibes assert_eq_string
+vibes assert_eq_bool
+vibes assert_true
+vibes assert_false
+vibes print_test_summary
+vibes run_all_tests
+vibes reset_test_state
+
 fr fr Run example test
 example_test()
 print_test_summary()

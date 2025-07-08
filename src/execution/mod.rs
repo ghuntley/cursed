@@ -1531,6 +1531,60 @@ impl CursedExecutionEngine {
                              _ => Err(CursedError::RuntimeError("len() expects a string or array argument".to_string())),
                          }
                      },
+                     "append" => {
+                         if call_expr.arguments.len() != 2 {
+                             return Err(CursedError::RuntimeError("append() expects exactly 2 arguments".to_string()));
+                         }
+                         let array_arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                         let element_arg = self.evaluate_expression(&call_expr.arguments[1], context)?;
+                         match array_arg {
+                             CursedValue::Array(mut arr) => {
+                                 arr.push(element_arg);
+                                 Ok(CursedValue::Array(arr))
+                             },
+                             _ => Err(CursedError::RuntimeError("append() expects an array as first argument".to_string())),
+                         }
+                     },
+                     "array_new" => {
+                         if call_expr.arguments.len() != 0 {
+                             return Err(CursedError::RuntimeError("array_new() expects no arguments".to_string()));
+                         }
+                         Ok(CursedValue::Array(Vec::new()))
+                     },
+                     "array_push" => {
+                         if call_expr.arguments.len() != 2 {
+                             return Err(CursedError::RuntimeError("array_push() expects exactly 2 arguments".to_string()));
+                         }
+                         let array_arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                         let element_arg = self.evaluate_expression(&call_expr.arguments[1], context)?;
+                         match array_arg {
+                             CursedValue::Array(mut arr) => {
+                                 arr.push(element_arg);
+                                 Ok(CursedValue::Array(arr))
+                             },
+                             _ => Err(CursedError::RuntimeError("array_push() expects an array as first argument".to_string())),
+                         }
+                     },
+                     "array_len" => {
+                         if call_expr.arguments.len() != 1 {
+                             return Err(CursedError::RuntimeError("array_len() expects exactly 1 argument".to_string()));
+                         }
+                         let array_arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                         match array_arg {
+                             CursedValue::Array(arr) => Ok(CursedValue::Integer(arr.len() as i64)),
+                             _ => Err(CursedError::RuntimeError("array_len() expects an array argument".to_string())),
+                         }
+                     },
+                     "array_is_empty" => {
+                         if call_expr.arguments.len() != 1 {
+                             return Err(CursedError::RuntimeError("array_is_empty() expects exactly 1 argument".to_string()));
+                         }
+                         let array_arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                         match array_arg {
+                             CursedValue::Array(arr) => Ok(CursedValue::Boolean(arr.is_empty())),
+                             _ => Err(CursedError::RuntimeError("array_is_empty() expects an array argument".to_string())),
+                         }
+                     },
                     // Crypto functions
                     "crypto_sha256" => {
                         if call_expr.arguments.len() != 1 {

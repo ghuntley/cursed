@@ -1218,3 +1218,195 @@ cargo run --bin cursed -- compile stdlib/module/test_module.csd
 - **FFI-Free**: Prefer pure CURSED implementations over FFI bridges
 - **Documentation**: Include comprehensive README with examples and usage patterns
 
+## Major Implementation Session Learnings (2025-01-07)
+
+### 1. Testing New Language Features
+```bash
+# Error handling implementation testing
+cargo run --bin cursed test_error_handling.csd        # Test error handling syntax
+cargo run --bin cursed -- compile test_error_handling.csd  # Compile error handling
+./test_error_handling                                  # Run compiled error handling
+
+# Select statement testing
+cargo run --bin cursed test_select_ready.csd          # Test select statements
+cargo run --bin cursed test_select_simple.csd         # Simple select operations
+cargo test ready_lexer                                # Test ready keyword parsing
+
+# Defer statement testing
+cargo run --bin cursed test_defer_simple.csd          # Test defer statements
+cargo run --bin cursed test_defer_comprehensive.csd   # Complex defer scenarios
+cargo run --bin cursed -- compile test_defer_simple.csd  # Compile defer
+./test_defer_simple                                   # Run compiled defer
+```
+
+### 2. Parallel Subagent Stdlib Implementation Strategy
+```bash
+# Parallel module implementation pattern
+# Create multiple modules simultaneously with standardized structure
+mkdir -p stdlib/{module1,module2,module3,module4}
+
+# Template for parallel development
+for module in module1 module2 module3 module4; do
+    cat > stdlib/$module/mod.csd << 'EOF'
+yeet "testz"
+slay ${module}_function(param tea) lit { damn based }
+EOF
+    cat > stdlib/$module/test_${module}.csd << 'EOF'
+yeet "testz"; yeet "${module}"
+test_start("${module} test"); assert_true(${module}_function("test")); print_test_summary()
+EOF
+done
+
+# Test all modules in parallel
+cargo run --bin cursed stdlib/module1/test_module1.csd &
+cargo run --bin cursed stdlib/module2/test_module2.csd &
+cargo run --bin cursed stdlib/module3/test_module3.csd &
+cargo run --bin cursed stdlib/module4/test_module4.csd &
+wait
+
+# Verify parallel compilation
+find stdlib/ -name "test_*.csd" -exec cargo run --bin cursed -- compile {} \;
+```
+
+### 3. Both-Mode Verification Commands
+```bash
+# Systematic both-mode verification workflow
+test_both_modes() {
+    local program=$1
+    echo "Testing $program in both modes..."
+    
+    # Test interpretation mode
+    cargo run --bin cursed "$program" > interpretation_output.txt
+    
+    # Test compilation mode
+    cargo run --bin cursed -- compile "$program"
+    local executable=$(basename "$program" .csd)
+    ./"$executable" > compilation_output.txt
+    
+    # Compare outputs
+    if diff interpretation_output.txt compilation_output.txt; then
+        echo "✅ Both modes produce identical output"
+    else
+        echo "❌ Output differs between modes"
+        diff interpretation_output.txt compilation_output.txt
+    fi
+}
+
+# Use function for any program
+test_both_modes "test_error_handling.csd"
+test_both_modes "test_select_ready.csd"
+test_both_modes "test_defer_simple.csd"
+
+# Batch verification for stdlib modules
+for module in stdlib/*/test_*.csd; do
+    test_both_modes "$module"
+done
+```
+
+### 4. Parser/Lexer Debugging Techniques
+```bash
+# Systematic parser debugging workflow
+debug_parser_issue() {
+    local feature=$1
+    
+    # Create minimal test case
+    echo "Creating minimal test for $feature..."
+    echo 'vibez.spill("test")' > debug_${feature}_minimal.csd
+    
+    # Test basic parsing
+    cargo run --bin cursed debug_${feature}_minimal.csd
+    
+    # Test specific feature
+    case $feature in
+        "error_handling")
+            echo 'yikes error_var := "test error"' > debug_${feature}_specific.csd
+            ;;
+        "select_stmt")
+            echo 'ready { case_expr -> action }' > debug_${feature}_specific.csd
+            ;;
+        "defer_stmt")
+            echo 'defer cleanup_function()' > debug_${feature}_specific.csd
+            ;;
+    esac
+    
+    # Test parsing stages
+    cargo test lexer_tests --filter $feature
+    cargo test parser_tests --filter $feature
+    cargo test semantic_tests --filter $feature
+}
+
+# Debug specific features
+debug_parser_issue "error_handling"
+debug_parser_issue "select_stmt"
+debug_parser_issue "defer_stmt"
+
+# Parser precedence debugging
+echo 'sus x := 1 + 2 * 3' > debug_precedence.csd
+echo 'sus t := (1, 2); t.0 + 5' > debug_tuple_precedence.csd
+cargo run --bin cursed debug_precedence.csd
+cargo run --bin cursed debug_tuple_precedence.csd
+```
+
+### 5. Version Tagging Strategy for Major Milestones
+```bash
+# Progressive milestone tagging strategy
+# Tag after each major feature implementation
+
+# Error handling milestone
+git add -A
+git commit -m "Implement complete error handling system with yikes/shook/fam keywords"
+git tag -a v8.0.0-alpha.1 -m "Error handling system implementation"
+
+# Select statement milestone
+git add -A
+git commit -m "Implement select statements with ready keyword and case expressions"
+git tag -a v8.0.0-alpha.2 -m "Select statement implementation"
+
+# Defer statement milestone
+git add -A
+git commit -m "Implement defer statements with cleanup semantics"
+git tag -a v8.0.0-alpha.3 -m "Defer statement implementation"
+
+# Combined language features milestone
+git add -A
+git commit -m "Complete advanced language features: error handling, select, defer"
+git tag -a v8.0.0-beta.1 -m "Advanced language features complete"
+
+# Stdlib completion milestone
+git add -A
+git commit -m "Complete stdlib implementation with all modules"
+git tag -a v8.0.0-rc.1 -m "Complete stdlib implementation"
+
+# Production release
+git add -A
+git commit -m "Production-ready release with full language specification"
+git tag -a v8.0.0 -m "Production release: Complete CURSED language implementation"
+
+# Push tags
+git push origin --tags
+```
+
+### 6. Effective Development Commands Summary
+```bash
+# Quick iteration cycle
+cargo check                                           # Fast syntax validation
+cargo test specific_feature                          # Targeted testing
+cargo run --bin cursed minimal_test.csd             # Test minimal case
+
+# Feature verification cycle
+cargo run --bin cursed test_feature.csd             # Test interpretation
+cargo run --bin cursed -- compile test_feature.csd  # Test compilation
+./test_feature                                       # Run compiled version
+diff <(cargo run --bin cursed test_feature.csd) <(./test_feature)  # Compare
+
+# Full validation cycle
+cargo test                                           # All Rust tests
+cargo run --bin cursed test --test-dir stdlib       # All CURSED tests
+cargo build --release                               # Production build
+
+# Debugging cycle
+echo 'debug_code_here' > debug_test.csd
+cargo run --bin cursed debug_test.csd
+cargo test parser_tests --filter debug_feature
+```
+
