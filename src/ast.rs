@@ -97,6 +97,12 @@ pub enum Expression {
     // Error handling expressions
     Shook(ShookExpression),
     ErrorValue(ErrorValueExpression),
+    StructuredError {
+        message: Box<Expression>,
+        code: Option<Box<Expression>>,
+        details: Option<Box<Expression>>,
+        fields: Vec<(String, Expression)>,
+    },
 }
 
 /// Binary expression

@@ -1,4 +1,1 @@
-slay main() {
-    vibez.spill("Hello, CURSED!")
-    vibez.spill("Function calls work!")
-}
+vibez.spill("Enhanced error handling test")

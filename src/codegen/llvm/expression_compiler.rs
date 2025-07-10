@@ -125,6 +125,50 @@ impl ExpressionCompiler {
                 // TODO: Implement error value expression
                 Ok("i32 0".to_string())
             },
+            Expression::StructuredError { message, code, details, fields } => {
+                // Generate LLVM IR for structured error
+                let mut ir = String::new();
+                
+                // Generate error object allocation
+                let error_reg = self.next_register();
+                ir.push_str(&format!("  {} = call i8* @cursed_create_structured_error()\n", error_reg));
+                
+                // Generate message
+                let message_val = self.compile_expression(message)?;
+                let message_set_reg = self.next_register();
+                ir.push_str(&format!("  {} = call i8* @cursed_set_error_message(i8* {}, i8* {})\n", 
+                                    message_set_reg, error_reg, message_val));
+                
+                // Generate code if provided
+                if let Some(code_expr) = code {
+                    let code_val = self.compile_expression(code_expr)?;
+                    let code_set_reg = self.next_register();
+                    ir.push_str(&format!("  {} = call i8* @cursed_set_error_code(i8* {}, i32 {})\n", 
+                                        code_set_reg, error_reg, code_val));
+                }
+                
+                // Generate details if provided
+                if let Some(details_expr) = details {
+                    let details_val = self.compile_expression(details_expr)?;
+                    let details_set_reg = self.next_register();
+                    ir.push_str(&format!("  {} = call i8* @cursed_set_error_details(i8* {}, i8* {})\n", 
+                                        details_set_reg, error_reg, details_val));
+                }
+                
+                // Generate custom fields
+                for (field_name, field_expr) in fields {
+                    let field_val = self.compile_expression(field_expr)?;
+                    let field_set_reg = self.next_register();
+                    let field_name_reg = self.next_register();
+                    ir.push_str(&format!("  {} = getelementptr inbounds [{}], [{}]* @field_name_{}, i32 0, i32 0\n", 
+                                        field_name_reg, field_name.len() + 1, field_name.len() + 1, field_name));
+                    ir.push_str(&format!("  {} = call i8* @cursed_set_error_field(i8* {}, i8* {}, i8* {})\n", 
+                                        field_set_reg, error_reg, field_name_reg, field_val));
+                }
+                
+                self.ir_buffer.push_str(&ir);
+                Ok(error_reg)
+            },
 
         }
     }

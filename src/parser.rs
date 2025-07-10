@@ -1430,6 +1430,71 @@ impl Parser {
                 yikes_stmt = yikes_stmt.with_value(Expression::String(message));
                 return Ok(yikes_stmt);
             }
+            
+            // Check for structured error creation: yikes{...}
+            if token.kind == TokenKind::LeftBrace {
+                self.next_token()?;
+                let mut fields = Vec::new();
+                let mut error_message = None;
+                let mut error_code = None;
+                let mut error_details = None;
+                
+                // Parse structured error fields
+                while let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::RightBrace {
+                        self.next_token()?;
+                        break;
+                    }
+                    
+                    if token.kind == TokenKind::Identifier {
+                        let field_name = token.lexeme.clone();
+                        self.next_token()?;
+                        
+                        // Expect ':'
+                        if let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Colon {
+                                self.next_token()?;
+                                let field_value = self.parse_expression()?;
+                                
+                                // Store specific error fields
+                                match field_name.as_str() {
+                                    "message" => error_message = Some(field_value),
+                                    "code" => error_code = Some(field_value),
+                                    "details" => error_details = Some(field_value),
+                                    _ => fields.push((field_name, field_value)),
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Skip comma if present
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Comma {
+                            self.next_token()?;
+                        }
+                    }
+                }
+                
+                // Create structured error expression
+                let temp_name = format!("_struct_error_{}", self.error_count);
+                self.error_count += 1;
+                let mut yikes_stmt = YikesStatement::new(temp_name);
+                
+                // Create structured error value
+                let error_value = if let Some(message) = error_message {
+                    Expression::StructuredError {
+                        message: Box::new(message),
+                        code: error_code.map(Box::new),
+                        details: error_details.map(Box::new),
+                        fields,
+                    }
+                } else {
+                    Expression::String("Structured error".to_string())
+                };
+                
+                yikes_stmt = yikes_stmt.with_value(error_value);
+                return Ok(yikes_stmt);
+            }
         }
         
         // Parse error variable name

@@ -9,6 +9,7 @@ pub mod generic_optimization;
 pub mod generic_enhanced;
 pub mod checker;
 pub mod compilation_integration;
+pub mod test_result_simple;
 
 #[cfg(test)]
 mod tests;
@@ -27,6 +28,7 @@ pub use crate::ast::Type as AstType;
 pub use type_inference::TypeInference;
 pub use checker::{TypeChecker, TypeCheckError, TypeErrorKind};
 pub use compilation_integration::{TypedCompilationPipeline, CompilationError, TypedProgram};
+pub use test_result_simple::{TestResult, TestStatus, TestSuite, TestReport, TestResultBuilder};
 
 // Core type system structures
 #[derive(Debug, Clone)]
@@ -65,10 +67,12 @@ impl TypeSystem {
         };
         environment.type_definitions.insert("vibez".to_string(), vibez_type);
         
-        Self {
+        let mut type_system = Self {
             environment,
             inference: InferenceContext::new(),
-        }
+        };
+        
+        type_system
     }
     
     pub fn check_expression(&mut self, expr: &crate::ast::Expression) -> Result<TypeExpression, String> {

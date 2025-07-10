@@ -47,29 +47,31 @@ declare void @cursed_propagate_error(i8*)
 declare void @cursed_try_begin()
 declare void @cursed_try_end()
 declare i8* @cursed_get_panic_value()
+declare i8* @cursed_create_structured_error()
+declare i8* @cursed_set_error_message(i8*, i8*)
+declare i8* @cursed_set_error_code(i8*, i32)
+declare i8* @cursed_set_error_details(i8*, i8*)
+declare i8* @cursed_set_error_field(i8*, i8*, i8*)
+declare i8* @cursed_get_error_field(i8*, i8*)
+declare i32 @cursed_get_error_code(i8*)
+declare i8* @cursed_get_error_message(i8*)
+declare i8* @cursed_get_error_details(i8*)
+declare void @cursed_enhanced_try_begin(i64)
+declare void @cursed_enhanced_try_end(i64)
+declare i8* @cursed_get_panic_context(i64)
+declare i8* @cursed_extract_panic_value(i8*)
+declare i8* @cursed_extract_stack_trace(i8*)
+declare void @cursed_clear_panic_context(i64)
+declare void @cursed_register_panic_handler(i64, i8*)
+declare i8* @cursed_handle_panic(i64, i8*)
+declare void @cursed_propagate_error_context(i64, i64)
+declare i8* @cursed_get_goroutine_error_context(i64)
+declare void @cursed_clear_goroutine_error_context(i64)
+declare i8* @cursed_create_enhanced_context(i8*, i64)
 declare i8* @malloc(i32)
 declare void @free(i8*)
 @error_msg_default = private unnamed_addr constant [13 x i8] c"Error occurred\00"
-define i32 @simple_defer_test() {
-entry:
-  %0 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.0, i64 0, i64 0
-  %1 = call i32 @puts(i8* %0)
-  %2 = add i32 0, 0
-  ; Expression result: %2
-  ; Unsupported statement
-  %3 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
-  %4 = call i32 @puts(i8* %3)
-  %5 = add i32 0, 0
-  ; Expression result: %5
-  ret i32 0
-}
 
-
-
-; String constants
-@.str.1 = private unnamed_addr constant [4 x i8] c"End\00", align 1
-@.str.0 = private unnamed_addr constant [6 x i8] c"Start\00", align 1
 define i32 @main() {
-  %0 = call i32 @simple_defer_test()
   ret i32 0
 }
