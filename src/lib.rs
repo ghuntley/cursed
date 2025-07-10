@@ -30,6 +30,8 @@ pub mod type_helper;
 pub mod types;
 pub mod crypto_pki_types;
 pub mod stdlib;
+pub mod linter;
+pub mod formatter;
 // pub mod security; // Temporarily disabled due to dependency issues
 
 // Test modules  
@@ -57,6 +59,12 @@ pub use optimization::{
 
 // Re-export crypto/PKI types for tests
 pub use crypto_pki_types::*;
+
+// Re-export linter types
+pub use linter::{
+    CursedLinter, LintIssue, LintResults, LintStats, Severity, Category, 
+    OutputFormat, LinterConfig, LintRule, LintContext
+};
 
 // Re-export runtime types that are actually implemented
 pub use runtime::{

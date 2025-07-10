@@ -316,6 +316,11 @@ impl<T: Send + 'static> Channel<T> {
     pub fn receiver_count(&self) -> usize {
         self.receiver_count.load(Ordering::Acquire)
     }
+    
+    /// Get the underlying buffer for select operations
+    pub fn get_buffer(&self) -> Arc<dyn ChannelBuffer<T>> {
+        self.buffer.clone()
+    }
 }
 
 impl<T: Send + 'static> Clone for Channel<T> {

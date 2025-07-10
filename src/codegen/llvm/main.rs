@@ -578,14 +578,7 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 self.ir_code.push_str(&format!("  ; Channel creation: {}\n", channel_stmt.name));
             },
             Statement::Select(select_stmt) => {
-                self.ir_code.push_str("  ; Select statement\n");
-                for (i, case) in select_stmt.cases.iter().enumerate() {
-                    self.ir_code.push_str(&format!("  ; Select case {}\n", i));
-                    self.generate_expression(&case.operation)?;
-                }
-                if let Some(_) = &select_stmt.default_case {
-                    self.ir_code.push_str("  ; Select default case\n");
-                }
+                self.generate_select_statement(select_stmt)?;
             },
             Statement::Struct(struct_stmt) => {
                 self.generate_struct_definition(struct_stmt)?;
@@ -1046,6 +1039,27 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 let error_ir = self.error_handler.generate_error_value_expression(error_expr)?;
                 self.ir_code.push_str(&error_ir);
                 Ok("%error_result".to_string()) // Return the error register
+            },
+            Expression::ChannelSend(send_expr) => {
+                // Generate channel send operation
+                let channel_codegen = crate::codegen::llvm::channels::ChannelCodegen::new();
+                let send_ir = channel_codegen.generate_channel_send(&send_expr.channel, &send_expr.value, self)?;
+                self.ir_code.push_str(&send_ir);
+                Ok("%send_result".to_string()) // Return the send result register
+            },
+            Expression::ChannelReceive(recv_expr) => {
+                // Generate channel receive operation
+                let channel_codegen = crate::codegen::llvm::channels::ChannelCodegen::new();
+                let recv_ir = channel_codegen.generate_channel_receive(&recv_expr.channel, self)?;
+                self.ir_code.push_str(&recv_ir);
+                Ok("%recv_result".to_string()) // Return the receive result register
+            },
+            Expression::ChannelCreation(create_expr) => {
+                // Generate channel creation operation
+                let channel_codegen = crate::codegen::llvm::channels::ChannelCodegen::new();
+                let create_ir = channel_codegen.generate_channel_creation(&create_expr.element_type, create_expr.capacity.as_ref().map(|c| c.as_ref()), self)?;
+                self.ir_code.push_str(&create_ir);
+                Ok("%create_result".to_string()) // Return the creation result register
             },
             _ => {
                 // For complex expressions, use the expression compiler
@@ -2824,6 +2838,160 @@ impl LlvmCodeGenerator {
     /// Mark a function as declared (no-op for now)
     pub fn mark_function_declared(&mut self, _name: &str) {
         // No-op implementation for now
+    }
+    
+    fn generate_select_statement(&mut self, select_stmt: &crate::ast::SelectStatement) -> Result<(), CursedError> {
+        self.ir_code.push_str("  ; Select statement - begin\n");
+        
+        // Generate labels for control flow
+        let select_end_label = self.next_label();
+        let case_labels: Vec<String> = (0..select_stmt.cases.len())
+            .map(|i| format!("select_case_{}", i))
+            .collect();
+        let default_label = format!("select_default");
+        
+        // Declare runtime functions for select operation
+        if !self.has_function_declaration("cursed_select_prepare") {
+            self.ir_code.push_str("declare i8* @cursed_select_prepare(i32)\n");
+            self.mark_function_declared("cursed_select_prepare");
+        }
+        
+        if !self.has_function_declaration("cursed_select_add_case") {
+            self.ir_code.push_str("declare i32 @cursed_select_add_case(i8*, i8*, i32, i8*)\n");
+            self.mark_function_declared("cursed_select_add_case");
+        }
+        
+        if !self.has_function_declaration("cursed_select_execute") {
+            self.ir_code.push_str("declare i32 @cursed_select_execute(i8*, i1)\n");
+            self.mark_function_declared("cursed_select_execute");
+        }
+        
+        if !self.has_function_declaration("cursed_select_cleanup") {
+            self.ir_code.push_str("declare void @cursed_select_cleanup(i8*)\n");
+            self.mark_function_declared("cursed_select_cleanup");
+        }
+        
+        // Prepare select context
+        let select_ctx_reg = self.next_register();
+        let num_cases = select_stmt.cases.len() as i32;
+        self.ir_code.push_str(&format!(
+            "  {} = call i8* @cursed_select_prepare(i32 {})\n",
+            select_ctx_reg, num_cases
+        ));
+        
+        // Add each case to the select context
+        for (i, case) in select_stmt.cases.iter().enumerate() {
+            self.ir_code.push_str(&format!("  ; Adding select case {}\n", i));
+            
+            // Parse the channel operation
+            let (channel_reg, operation_type, value_reg) = self.parse_channel_operation(&case.operation)?;
+            
+            // Add case to select context
+            let case_index_reg = self.next_register();
+            self.ir_code.push_str(&format!(
+                "  {} = call i32 @cursed_select_add_case(i8* {}, i8* {}, i32 {}, i8* {})\n",
+                case_index_reg, select_ctx_reg, channel_reg, operation_type, value_reg
+            ));
+        }
+        
+        // Execute the select operation
+        let has_default = select_stmt.default_case.is_some();
+        let selected_case_reg = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  {} = call i32 @cursed_select_execute(i8* {}, i1 {})\n",
+            selected_case_reg, select_ctx_reg, if has_default { "true" } else { "false" }
+        ));
+        
+        // Generate switch statement to handle the selected case
+        self.ir_code.push_str(&format!(
+            "  switch i32 {}, label %{} [\n",
+            selected_case_reg, if has_default { &default_label } else { &select_end_label }
+        ));
+        
+        // Add switch cases
+        for (i, _) in select_stmt.cases.iter().enumerate() {
+            self.ir_code.push_str(&format!("    i32 {}, label %{}\n", i, case_labels[i]));
+        }
+        
+        // Add default case if present
+        if has_default {
+            self.ir_code.push_str(&format!("    i32 -1, label %{}\n", default_label));
+        }
+        
+        self.ir_code.push_str("  ]\n");
+        
+        // Generate code for each case
+        for (i, case) in select_stmt.cases.iter().enumerate() {
+            self.ir_code.push_str(&format!("{}:\n", case_labels[i]));
+            self.ir_code.push_str(&format!("  ; Execute select case {}\n", i));
+            
+            // Generate the body of the case
+            for stmt in &case.body {
+                self.generate_statement(stmt)?;
+            }
+            
+            // Branch to end
+            self.ir_code.push_str(&format!("  br label %{}\n", select_end_label));
+        }
+        
+        // Generate default case if present
+        if let Some(ref default_body) = select_stmt.default_case {
+            self.ir_code.push_str(&format!("{}:\n", default_label));
+            self.ir_code.push_str("  ; Execute select default case\n");
+            
+            for stmt in default_body {
+                self.generate_statement(stmt)?;
+            }
+            
+            // Branch to end
+            self.ir_code.push_str(&format!("  br label %{}\n", select_end_label));
+        }
+        
+        // End label
+        self.ir_code.push_str(&format!("{}:\n", select_end_label));
+        
+        // Cleanup select context
+        self.ir_code.push_str(&format!(
+            "  call void @cursed_select_cleanup(i8* {})\n",
+            select_ctx_reg
+        ));
+        
+        self.ir_code.push_str("  ; Select statement - end\n");
+        
+        Ok(())
+    }
+    
+    fn parse_channel_operation(&mut self, operation: &Expression) -> Result<(String, i32, String), CursedError> {
+        match operation {
+            // For complex expressions involving channel operations, try to parse as basic operation
+            // Channel send: channel <- value
+            Expression::ChannelSend(send_expr) => {
+                let channel_reg = self.generate_expression(&send_expr.channel)?;
+                let value_reg = self.generate_expression(&send_expr.value)?;
+                // Convert value to i8* for the runtime call
+                let value_ptr_reg = self.next_register();
+                let value_i8_ptr_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = alloca i64\n", value_ptr_reg));
+                self.ir_code.push_str(&format!("  store i64 {}, i64* {}\n", value_reg, value_ptr_reg));
+                self.ir_code.push_str(&format!("  {} = bitcast i64* {} to i8*\n", value_i8_ptr_reg, value_ptr_reg));
+                Ok((channel_reg, 1, value_i8_ptr_reg)) // 1 = send operation
+            },
+            // Direct channel receive: <-channel
+            Expression::ChannelReceive(recv_expr) => {
+                let channel_reg = self.generate_expression(&recv_expr.channel)?;
+                let null_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = inttoptr i64 0 to i8*\n", null_reg));
+                Ok((channel_reg, 0, null_reg)) // 0 = receive operation
+            },
+            _ => {
+                // This is a fallback for parsing complex channel operations
+                // For now, treat as a basic receive operation
+                let channel_reg = self.generate_expression(operation)?;
+                let null_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = inttoptr i64 0 to i8*\n", null_reg));
+                Ok((channel_reg, 0, null_reg)) // Default to receive operation
+            }
+        }
     }
 }
 

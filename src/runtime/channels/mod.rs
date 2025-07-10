@@ -16,6 +16,8 @@ pub mod buffer;
 #[allow(dead_code)]
 pub mod select;
 #[allow(dead_code)]
+pub mod select_runtime;
+#[allow(dead_code)]
 pub mod channel;
 #[allow(dead_code)]
 pub mod operations;

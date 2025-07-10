@@ -252,7 +252,7 @@ uuid = { version = "1.6", features = ["v4", "serde"] }  # For generating unique 
 # Package management dependencies (simplified for now)
 semver = "1.0"          # Semantic version parsing and comparison
 url = "2.4"             # URL parsing and manipulation
-reqwest = { version = "0.11", features = ["json", "stream", "rustls-tls"], default-features = false }  # HTTP client for package registry
+reqwest = { version = "0.11", features = ["json", "stream", "rustls-tls", "multipart"], default-features = false }  # HTTP client for package registry
 bytes = "1.5"           # Byte manipulation for package data
 
 # Archive and compression dependencies
