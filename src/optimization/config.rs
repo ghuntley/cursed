@@ -33,7 +33,7 @@ pub struct OptimizationConfig {
     pub max_cache_size: usize,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OptimizationLevel {
     None,        // -O0: No optimizations
     Less,        // -O1: Basic optimizations
@@ -43,6 +43,22 @@ pub enum OptimizationLevel {
     SizeZ,       // -Oz: Optimize aggressively for size
     SizeAggressive, // Additional size optimization level
     Custom(HashMap<String, bool>),  // Custom optimization settings
+}
+
+// Manual Hash implementation excluding Custom variant
+impl std::hash::Hash for OptimizationLevel {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            OptimizationLevel::None => 0.hash(state),
+            OptimizationLevel::Less => 1.hash(state),
+            OptimizationLevel::Default => 2.hash(state),
+            OptimizationLevel::Aggressive => 3.hash(state),
+            OptimizationLevel::Size => 4.hash(state),
+            OptimizationLevel::SizeZ => 5.hash(state),
+            OptimizationLevel::SizeAggressive => 6.hash(state),
+            OptimizationLevel::Custom(_) => 7.hash(state), // Hash only the variant discriminant
+        }
+    }
 }
 
 impl OptimizationLevel {

@@ -29,6 +29,11 @@ pub mod distributed;
 pub mod performance_integration;
 pub mod build_integration;
 
+// New comprehensive optimization modules
+pub mod production_llvm_optimization;
+pub mod enhanced_performance_monitor;
+pub mod comprehensive_benchmarking;
+
 // Re-export key types
 pub use config::{OptimizationConfig, OptimizationLevel, OptimizationProfile};
 pub use real_llvm_passes::RealLlvmPassManager;
@@ -45,6 +50,26 @@ pub use performance_integration::{
 };
 pub use build_integration::{BuildContext, create_build_optimizer_from_args_with_performance};
 pub use benchmarking::BenchmarkResults;
+
+// New comprehensive optimization exports
+pub use production_llvm_optimization::{
+    ProductionLlvmOptimizer, ComprehensiveOptimizationResult, ModuleMetrics,
+    OptimizationStatistics, PassDependencyResolver, InliningDecision, LoopInfo
+};
+pub use enhanced_performance_monitor::{
+    EnhancedPerformanceMonitor, PerformanceSummary, BaselineMetrics,
+    PerformanceThresholds, BenchmarkConfig as EnhancedBenchmarkConfig, 
+    BenchmarkResult as EnhancedBenchmarkResult, BaselineComparison
+};
+pub use comprehensive_benchmarking::{
+    ComprehensiveBenchmarkingSystem, BenchmarkSuiteConfig, BenchmarkSuiteResult,
+    BenchmarkStatistics, BenchmarkMeasurement, CrossBenchmarkAnalysis,
+    RegressionAnalysis, RegressionSeverity as BenchmarkRegressionSeverity
+};
+pub use optimization_levels::{
+    OptimizationLevelController, OptimizationLevelConfig, LevelRecommendation,
+    BuildContext as OptBuildContext, BuildType, TargetPlatform, ValidationResult
+};
 
 // Stub types that examples are trying to import
 #[derive(Debug, Clone)]
