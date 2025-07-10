@@ -152,11 +152,104 @@ impl ErrorHandlingCodegen {
         Ok(ir)
     }
 
+    /// Generate LLVM IR for structured error expression
+    pub fn generate_structured_error_expression(&mut self, 
+        message: &Expression, 
+        code: Option<&Expression>, 
+        details: Option<&Expression>,
+        fields: &[(String, Expression)]
+    ) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Generate error object allocation
+        let error_register = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @cursed_create_structured_error()\n", error_register));
+        
+        // Generate message
+        let message_ir = self.generate_expression_for_error(message)?;
+        ir.push_str(&message_ir);
+        let message_register = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @cursed_set_error_message(i8* %{}, i8* %result)\n", 
+                            message_register, error_register));
+        
+        // Generate error code if provided
+        if let Some(code_expr) = code {
+            let code_ir = self.generate_expression_for_error(code_expr)?;
+            ir.push_str(&code_ir);
+            let code_register = self.next_register();
+            ir.push_str(&format!("  %{} = call i8* @cursed_set_error_code(i8* %{}, i32 %result)\n", 
+                                code_register, error_register));
+        }
+        
+        // Generate error details if provided
+        if let Some(details_expr) = details {
+            let details_ir = self.generate_expression_for_error(details_expr)?;
+            ir.push_str(&details_ir);
+            let details_register = self.next_register();
+            ir.push_str(&format!("  %{} = call i8* @cursed_set_error_details(i8* %{}, i8* %result)\n", 
+                                details_register, error_register));
+        }
+        
+        // Generate custom fields
+        for (field_name, field_expr) in fields {
+            let field_ir = self.generate_expression_for_error(field_expr)?;
+            ir.push_str(&field_ir);
+            let field_register = self.next_register();
+            let field_name_register = self.next_register();
+            ir.push_str(&format!("  @field_name_{} = private unnamed_addr constant [{} x i8] c\"{}\\00\"\n", 
+                                field_name_register, field_name.len() + 1, field_name));
+            ir.push_str(&format!("  %{} = call i8* @cursed_set_error_field(i8* %{}, i8* getelementptr inbounds ([{} x i8], [{} x i8]* @field_name_{}, i32 0, i32 0), i8* %result)\n", 
+                                field_register, error_register, field_name.len() + 1, field_name.len() + 1, field_name_register));
+        }
+        
+        ir.push_str(&format!("  %result = add i8* %{}, null\n", error_register));
+        Ok(ir)
+    }
+
+    /// Generate LLVM IR for enhanced panic recovery
+    pub fn generate_enhanced_panic_recovery(&mut self, goroutine_id: u64, recovery_body: &[Statement]) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Generate panic recovery setup
+        let recovery_label = format!("panic_recovery_{}", self.next_register());
+        let normal_label = format!("normal_execution_{}", self.next_register());
+        let end_label = format!("end_recovery_{}", self.next_register());
+        
+        // Set up enhanced exception handling with goroutine isolation
+        ir.push_str(&format!("  invoke void @cursed_enhanced_try_begin(i64 {})\n", goroutine_id));
+        ir.push_str(&format!("    to label %{} unwind label %{}\n", normal_label, recovery_label));
+        
+        // Normal execution block
+        ir.push_str(&format!("{}:\n", normal_label));
+        ir.push_str(&format!("  call void @cursed_enhanced_try_end(i64 {})\n", goroutine_id));
+        ir.push_str(&format!("  br label %{}\n", end_label));
+        
+        // Enhanced recovery block with context
+        ir.push_str(&format!("{}:\n", recovery_label));
+        ir.push_str(&format!("  %panic_context = call i8* @cursed_get_panic_context(i64 {})\n", goroutine_id));
+        ir.push_str(&format!("  %panic_value = call i8* @cursed_extract_panic_value(i8* %panic_context)\n"));
+        ir.push_str(&format!("  %stack_trace = call i8* @cursed_extract_stack_trace(i8* %panic_context)\n"));
+        
+        // Generate recovery body
+        for statement in recovery_body {
+            let stmt_ir = self.generate_statement_for_recovery(statement)?;
+            ir.push_str(&stmt_ir);
+        }
+        
+        ir.push_str(&format!("  call void @cursed_clear_panic_context(i64 {})\n", goroutine_id));
+        ir.push_str(&format!("  br label %{}\n", end_label));
+        
+        // End block
+        ir.push_str(&format!("{}:\n", end_label));
+        
+        Ok(ir)
+    }
+
     /// Generate runtime function declarations for error handling
     pub fn generate_runtime_declarations(&self) -> String {
         let mut ir = String::new();
         
-        // Error handling runtime functions
+        // Basic error handling runtime functions
         ir.push_str("declare i8* @cursed_error_init(i8*, i8*)\n");
         ir.push_str("declare i8* @cursed_create_error(i8*)\n");
         ir.push_str("declare i1 @cursed_is_error(i8*)\n");
@@ -164,6 +257,35 @@ impl ErrorHandlingCodegen {
         ir.push_str("declare void @cursed_try_begin()\n");
         ir.push_str("declare void @cursed_try_end()\n");
         ir.push_str("declare i8* @cursed_get_panic_value()\n");
+        
+        // Enhanced error handling runtime functions
+        ir.push_str("declare i8* @cursed_create_structured_error()\n");
+        ir.push_str("declare i8* @cursed_set_error_message(i8*, i8*)\n");
+        ir.push_str("declare i8* @cursed_set_error_code(i8*, i32)\n");
+        ir.push_str("declare i8* @cursed_set_error_details(i8*, i8*)\n");
+        ir.push_str("declare i8* @cursed_set_error_field(i8*, i8*, i8*)\n");
+        ir.push_str("declare i8* @cursed_get_error_field(i8*, i8*)\n");
+        ir.push_str("declare i32 @cursed_get_error_code(i8*)\n");
+        ir.push_str("declare i8* @cursed_get_error_message(i8*)\n");
+        ir.push_str("declare i8* @cursed_get_error_details(i8*)\n");
+        
+        // Enhanced panic recovery runtime functions
+        ir.push_str("declare void @cursed_enhanced_try_begin(i64)\n");
+        ir.push_str("declare void @cursed_enhanced_try_end(i64)\n");
+        ir.push_str("declare i8* @cursed_get_panic_context(i64)\n");
+        ir.push_str("declare i8* @cursed_extract_panic_value(i8*)\n");
+        ir.push_str("declare i8* @cursed_extract_stack_trace(i8*)\n");
+        ir.push_str("declare void @cursed_clear_panic_context(i64)\n");
+        ir.push_str("declare void @cursed_register_panic_handler(i64, i8*)\n");
+        ir.push_str("declare i8* @cursed_handle_panic(i64, i8*)\n");
+        
+        // Error context and propagation functions
+        ir.push_str("declare void @cursed_propagate_error_context(i64, i64)\n");
+        ir.push_str("declare i8* @cursed_get_goroutine_error_context(i64)\n");
+        ir.push_str("declare void @cursed_clear_goroutine_error_context(i64)\n");
+        ir.push_str("declare i8* @cursed_create_enhanced_context(i8*, i64)\n");
+        
+        // Memory management functions
         ir.push_str("declare i8* @malloc(i32)\n");
         ir.push_str("declare void @free(i8*)\n");
         

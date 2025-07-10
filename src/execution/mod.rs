@@ -394,6 +394,26 @@ impl CursedExecutionEngine {
                     None => format!("Error: {}", message),
                 }
             },
+            CursedValue::StructuredError { message, code, details, fields } => {
+                let mut parts = vec![format!("StructuredError: {}", message)];
+                
+                if let Some(c) = code {
+                    parts.push(format!("Code: {}", c));
+                }
+                
+                if let Some(d) = details {
+                    parts.push(format!("Details: {}", d));
+                }
+                
+                if !fields.is_empty() {
+                    let field_strs: Vec<String> = fields.iter()
+                        .map(|(k, v)| format!("{}: {}", k, self.format_value(v)))
+                        .collect();
+                    parts.push(format!("Fields: {{{}}}", field_strs.join(", ")));
+                }
+                
+                parts.join(", ")
+            },
         }
     }
 
@@ -1304,6 +1324,44 @@ impl CursedExecutionEngine {
                 Ok(CursedValue::Error {
                     message: error_expr.message.clone(),
                     code: None,
+                })
+            },
+            Expression::StructuredError { message, code, details, fields } => {
+                // Evaluate structured error expression
+                let message_val = self.evaluate_expression(message, context)?;
+                let message_str = match message_val {
+                    CursedValue::String(s) => s,
+                    other => other.to_string(),
+                };
+                
+                let code_val = if let Some(code_expr) = code {
+                    match self.evaluate_expression(code_expr, context)? {
+                        CursedValue::Integer(i) => Some(i as i32),
+                        CursedValue::Float(f) => Some(f as i32),
+                        _ => None,
+                    }
+                } else {
+                    None
+                };
+                
+                let details_val = if let Some(details_expr) = details {
+                    match self.evaluate_expression(details_expr, context)? {
+                        CursedValue::String(s) => Some(s),
+                        other => Some(other.to_string()),
+                    }
+                } else {
+                    None
+                };
+                
+                // Create structured error value
+                Ok(CursedValue::StructuredError {
+                    message: message_str,
+                    code: code_val,
+                    details: details_val,
+                    fields: fields.iter().map(|(name, expr)| {
+                        let value = self.evaluate_expression(expr, context).unwrap_or(CursedValue::Nil);
+                        (name.clone(), value)
+                    }).collect(),
                 })
             },
         }
@@ -2387,6 +2445,7 @@ impl CursedExecutionEngine {
             CursedValue::Character(c) => *c != '\0', // Characters are truthy unless null character
             CursedValue::Array(elements) => !elements.is_empty(), // Arrays are truthy if they have elements
             CursedValue::Error { .. } => true, // Errors are truthy (they exist)
+            CursedValue::StructuredError { .. } => true, // Structured errors are truthy (they exist)
         }
     }
     
@@ -2839,6 +2898,12 @@ pub enum CursedValue {
     Lambda(LambdaValue),
     Tuple(Vec<CursedValue>),
     Error { message: String, code: Option<i32> },
+    StructuredError { 
+        message: String, 
+        code: Option<i32>,
+        details: Option<String>,
+        fields: Vec<(String, CursedValue)>,
+    },
     Nil,
 }
 
@@ -2874,8 +2939,16 @@ impl CursedValue {
             CursedValue::Lambda(_) => "lambda",
             CursedValue::Tuple(_) => "tuple",
             CursedValue::Error { .. } => "error",
+            CursedValue::StructuredError { .. } => "structured_error",
             CursedValue::Nil => "nil",
         }
+    }
+}
+
+impl std::fmt::Display for CursedValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let manager = ValueManager::new();
+        write!(f, "{}", manager.format_value(self))
     }
 }
 
@@ -2926,6 +2999,26 @@ impl ValueManager {
                     Some(c) => format!("Error({}): {}", c, message),
                     None => format!("Error: {}", message),
                 }
+            },
+            CursedValue::StructuredError { message, code, details, fields } => {
+                let mut parts = vec![format!("StructuredError: {}", message)];
+                
+                if let Some(c) = code {
+                    parts.push(format!("Code: {}", c));
+                }
+                
+                if let Some(d) = details {
+                    parts.push(format!("Details: {}", d));
+                }
+                
+                if !fields.is_empty() {
+                    let field_strs: Vec<String> = fields.iter()
+                        .map(|(k, v)| format!("{}: {}", k, self.format_value(v)))
+                        .collect();
+                    parts.push(format!("Fields: {{{}}}", field_strs.join(", ")));
+                }
+                
+                parts.join(", ")
             },
         }
     }

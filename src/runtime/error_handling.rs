@@ -242,6 +242,102 @@ pub trait ErrorPerformanceMonitor: Send + Sync {
     fn analyze_error_patterns(&self) -> Vec<String>;
 }
 
+/// Panic handling trait for goroutine isolation
+pub trait PanicHandler: Send + Sync {
+    /// Handle panic in specific goroutine
+    fn handle_panic(&self, goroutine_id: GoroutineId, panic_value: &str) -> RecoveryAction;
+    /// Pre-panic hook
+    fn pre_panic_hook(&self, goroutine_id: GoroutineId, context: &ErrorContext);
+    /// Post-panic hook
+    fn post_panic_hook(&self, goroutine_id: GoroutineId, recovered: bool);
+}
+
+/// Structured error trait for advanced error types
+pub trait StructuredError: Send + Sync {
+    /// Get error code
+    fn code(&self) -> i32;
+    /// Get error message
+    fn message(&self) -> &str;
+    /// Get error details
+    fn details(&self) -> &str;
+    /// Get error category
+    fn category(&self) -> ErrorCategory;
+    /// Get error severity
+    fn severity(&self) -> ErrorSeverity;
+    /// Get error context
+    fn context(&self) -> HashMap<String, String>;
+    /// Check if error is temporary
+    fn is_temporary(&self) -> bool;
+    /// Check if error is recoverable
+    fn is_recoverable(&self) -> bool;
+    /// Get suggested recovery action
+    fn suggested_recovery(&self) -> RecoveryAction;
+}
+
+/// Enhanced error context with stack trace and correlation
+#[derive(Debug, Clone)]
+pub struct EnhancedErrorContext {
+    /// Base error context
+    pub base: ErrorContext,
+    /// Stack trace frames
+    pub stack_frames: Vec<StackFrame>,
+    /// Error correlation ID
+    pub correlation_id: String,
+    /// Related errors
+    pub related_errors: Vec<String>,
+    /// Error chain
+    pub error_chain: Vec<ErrorContext>,
+    /// Performance metrics
+    pub performance_metrics: HashMap<String, f64>,
+}
+
+/// Stack frame information
+#[derive(Debug, Clone)]
+pub struct StackFrame {
+    /// Function name
+    pub function_name: String,
+    /// File name
+    pub file_name: String,
+    /// Line number
+    pub line_number: u32,
+    /// Column number
+    pub column_number: u32,
+    /// Source code snippet
+    pub source_snippet: Option<String>,
+}
+
+/// Panic recovery context
+#[derive(Debug, Clone)]
+pub struct PanicRecoveryContext {
+    /// Goroutine ID where panic occurred
+    pub goroutine_id: GoroutineId,
+    /// Panic value
+    pub panic_value: String,
+    /// Stack trace at panic
+    pub panic_stack_trace: Vec<StackFrame>,
+    /// Recovery attempt count
+    pub recovery_attempts: u32,
+    /// Maximum recovery attempts
+    pub max_recovery_attempts: u32,
+    /// Recovery strategy
+    pub recovery_strategy: RecoveryStrategy,
+}
+
+/// Recovery strategy for panic handling
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecoveryStrategy {
+    /// Ignore panic and continue
+    Ignore,
+    /// Restart goroutine
+    Restart,
+    /// Escalate to parent
+    Escalate,
+    /// Shutdown gracefully
+    Shutdown,
+    /// Custom recovery
+    Custom,
+}
+
 /// Main error handling runtime system
 pub struct ErrorRuntime {
     /// Configuration
@@ -264,6 +360,12 @@ pub struct ErrorRuntime {
     performance_monitor: Option<Arc<dyn ErrorPerformanceMonitor>>,
     /// Error sequence counter
     error_sequence: AtomicU64,
+    /// Panic recovery handlers
+    panic_handlers: RwLock<Vec<Arc<dyn PanicHandler>>>,
+    /// Error context propagation
+    context_propagation: RwLock<HashMap<GoroutineId, ErrorContext>>,
+    /// Structured error types registry
+    structured_errors: RwLock<HashMap<String, Arc<dyn StructuredError>>>,
 }
 
 impl ErrorRuntime {
@@ -285,6 +387,9 @@ impl ErrorRuntime {
             start_time: Instant::now(),
             performance_monitor: None,
             error_sequence: AtomicU64::new(1),
+            panic_handlers: RwLock::new(Vec::new()),
+            context_propagation: RwLock::new(HashMap::new()),
+            structured_errors: RwLock::new(HashMap::new()),
         }
     }
 
@@ -480,6 +585,165 @@ impl ErrorRuntime {
     /// Get configuration
     pub fn get_config(&self) -> &ErrorRuntimeConfig {
         &self.config
+    }
+
+    /// Register panic handler
+    pub fn register_panic_handler(&self, handler: Arc<dyn PanicHandler>) -> Result<()> {
+        let mut handlers = self.panic_handlers.write().map_err(|_| {
+            Error::Runtime("Failed to acquire panic handlers lock".to_string())
+        })?;
+        handlers.push(handler);
+        Ok(())
+    }
+
+    /// Handle panic in goroutine
+    pub fn handle_panic(&self, goroutine_id: GoroutineId, panic_value: String) -> Result<RecoveryAction> {
+        let handlers = self.panic_handlers.read().map_err(|_| {
+            Error::Runtime("Failed to read panic handlers".to_string())
+        })?;
+
+        // Create enhanced error context for panic
+        let panic_context = ErrorContext {
+            error: Error::Runtime(format!("Panic in goroutine {}: {}", goroutine_id, panic_value)),
+            severity: ErrorSeverity::Fatal,
+            category: ErrorCategory::Runtime,
+            location: None,
+            goroutine_id: Some(goroutine_id),
+            thread_id: Some(std::thread::current().id()),
+            stack_trace: self.capture_stack_trace(),
+            timestamp: Instant::now(),
+            metadata: HashMap::new(),
+            recovery_attempts: 0,
+            max_recovery_attempts: 3,
+            suggested_recovery: RecoveryAction::RestartGoroutine,
+        };
+
+        // Store panic context for propagation
+        if let Ok(mut propagation) = self.context_propagation.write() {
+            propagation.insert(goroutine_id, panic_context.clone());
+        }
+
+        // Call panic handlers
+        for handler in handlers.iter() {
+            handler.pre_panic_hook(goroutine_id, &panic_context);
+            let recovery = handler.handle_panic(goroutine_id, &panic_value);
+            if recovery != RecoveryAction::Continue {
+                handler.post_panic_hook(goroutine_id, true);
+                return Ok(recovery);
+            }
+        }
+
+        // Default panic recovery
+        Ok(RecoveryAction::EscalateToPanic)
+    }
+
+    /// Register structured error type
+    pub fn register_structured_error(&self, name: String, error: Arc<dyn StructuredError>) -> Result<()> {
+        let mut errors = self.structured_errors.write().map_err(|_| {
+            Error::Runtime("Failed to acquire structured errors lock".to_string())
+        })?;
+        errors.insert(name, error);
+        Ok(())
+    }
+
+    /// Get structured error by name
+    pub fn get_structured_error(&self, name: &str) -> Result<Option<Arc<dyn StructuredError>>> {
+        let errors = self.structured_errors.read().map_err(|_| {
+            Error::Runtime("Failed to read structured errors".to_string())
+        })?;
+        Ok(errors.get(name).cloned())
+    }
+
+    /// Create enhanced error context with stack trace
+    pub fn create_enhanced_context(&self, error: Error, goroutine_id: Option<GoroutineId>) -> Result<EnhancedErrorContext> {
+        let base_context = self.create_error_context(error, goroutine_id, None)?;
+        let stack_frames = self.capture_detailed_stack_trace();
+        let correlation_id = format!("err-{}-{}", 
+            base_context.timestamp.elapsed().as_nanos(),
+            self.error_sequence.fetch_add(1, Ordering::SeqCst));
+
+        Ok(EnhancedErrorContext {
+            base: base_context,
+            stack_frames,
+            correlation_id,
+            related_errors: Vec::new(),
+            error_chain: Vec::new(),
+            performance_metrics: HashMap::new(),
+        })
+    }
+
+    /// Capture detailed stack trace with source information
+    pub fn capture_detailed_stack_trace(&self) -> Vec<StackFrame> {
+        let mut frames = Vec::new();
+        
+        // Use backtrace crate to capture the current stack
+        let bt = backtrace::Backtrace::new();
+        
+        for (i, frame) in bt.frames().iter().enumerate() {
+            if i > self.config.max_stack_trace_depth {
+                break;
+            }
+            
+            for symbol in frame.symbols() {
+                let function_name = symbol.name()
+                    .map(|n| rustc_demangle::demangle(&n.to_string()).to_string())
+                    .unwrap_or_else(|| "<unknown>".to_string());
+                
+                let file_name = symbol.filename()
+                    .map(|f| f.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "<unknown>".to_string());
+                
+                let line_number = symbol.lineno().unwrap_or(0);
+                let column_number = symbol.colno().unwrap_or(0);
+                
+                frames.push(StackFrame {
+                    function_name,
+                    file_name,
+                    line_number,
+                    column_number,
+                    source_snippet: None, // Could be enhanced to read actual source
+                });
+            }
+        }
+        
+        frames
+    }
+
+    /// Propagate error context between goroutines
+    pub fn propagate_error_context(&self, source_goroutine: GoroutineId, target_goroutine: GoroutineId) -> Result<()> {
+        let mut propagation = self.context_propagation.write().map_err(|_| {
+            Error::Runtime("Failed to acquire context propagation lock".to_string())
+        })?;
+        
+        if let Some(context) = propagation.get(&source_goroutine).cloned() {
+            // Create derived context for target goroutine
+            let mut derived_context = context.clone();
+            derived_context.goroutine_id = Some(target_goroutine);
+            derived_context.timestamp = Instant::now();
+            
+            propagation.insert(target_goroutine, derived_context);
+        }
+        
+        Ok(())
+    }
+
+    /// Get error context for goroutine
+    pub fn get_goroutine_error_context(&self, goroutine_id: GoroutineId) -> Result<Option<ErrorContext>> {
+        let propagation = self.context_propagation.read().map_err(|_| {
+            Error::Runtime("Failed to read context propagation".to_string())
+        })?;
+        
+        Ok(propagation.get(&goroutine_id).cloned())
+    }
+
+    /// Clear error context for goroutine
+    pub fn clear_goroutine_error_context(&self, goroutine_id: GoroutineId) -> Result<()> {
+        let mut propagation = self.context_propagation.write().map_err(|_| {
+            Error::Runtime("Failed to acquire context propagation lock".to_string())
+        })?;
+        
+        propagation.remove(&goroutine_id);
+        Ok(())
     }
 
     // Private methods
