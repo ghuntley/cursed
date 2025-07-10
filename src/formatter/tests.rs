@@ -7,7 +7,7 @@ mod tests {
 
     #[test]
     fn test_basic_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 sus x drip=42
 sus y tea="hello world"
@@ -23,7 +23,7 @@ vibez.spill(x)
 
     #[test]
     fn test_indentation_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 nah x > 0 {
 vibez.spill("positive")
@@ -40,7 +40,7 @@ vibez.spill("negative")
 
     #[test]
     fn test_function_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 slay add(a normie,b normie) normie {
 damn a+b
@@ -55,7 +55,7 @@ damn a+b
 
     #[test]
     fn test_import_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 yeet "math"
 yeet "string"
@@ -74,7 +74,7 @@ yeet "crypto"
 
     #[test]
     fn test_array_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 sus arr = [1,2,3,4,5]
 "#;
@@ -86,7 +86,7 @@ sus arr = [1,2,3,4,5]
 
     #[test]
     fn test_struct_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 flex Person {
 name tea
@@ -104,7 +104,7 @@ age normie
 
     #[test]
     fn test_short_declaration_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 x:=42
 (a,b,c):=(1,2,3)
@@ -118,7 +118,7 @@ x:=42
 
     #[test]
     fn test_operator_spacing() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 sus result = x+y*z
 sus compare = a==b&&c!=d
@@ -132,7 +132,7 @@ sus compare = a==b&&c!=d
 
     #[test]
     fn test_for_loop_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 bestie i:=0;i<10;i++ {
 vibez.spill(i)
@@ -147,7 +147,7 @@ vibez.spill(i)
 
     #[test]
     fn test_while_loop_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 lol x>0 {
 x--
@@ -162,7 +162,7 @@ x--
 
     #[test]
     fn test_switch_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 periodt x {
 case 1:
@@ -183,7 +183,7 @@ vibez.spill("other")
 
     #[test]
     fn test_channel_operations() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 sus ch chan normie = make(chan normie)
 ch<-42
@@ -192,6 +192,8 @@ value:=<-ch
         
         let formatted = formatter.format(source.trim()).unwrap();
         
+
+        
         assert!(formatted.contains("sus ch chan normie = make(chan normie)"));
         assert!(formatted.contains("ch <- 42"));
         assert!(formatted.contains("value := <-ch"));
@@ -199,7 +201,7 @@ value:=<-ch
 
     #[test]
     fn test_error_handling_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 yikes err:=risky_function()
 fam err {
@@ -216,7 +218,7 @@ vibez.spill("error occurred")
 
     #[test]
     fn test_compact_config() {
-        let mut formatter = CursedFormatter::new(FormatterConfig::compact());
+        let formatter = CursedFormatter::new(FormatterConfig::compact());
         let source = r#"
 nah x > 0 {
 vibez.spill("positive")
@@ -232,7 +234,7 @@ vibez.spill("positive")
 
     #[test]
     fn test_verbose_config() {
-        let mut formatter = CursedFormatter::new(FormatterConfig::verbose());
+        let formatter = CursedFormatter::new(FormatterConfig::verbose());
         let source = r#"
 sus arr = [1, 2, 3]
 "#;
@@ -249,7 +251,7 @@ sus arr = [1, 2, 3]
 
     #[test]
     fn test_diff_generation() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let original = "sus x=42";
         let diff = formatter.format_diff(original).unwrap();
         
@@ -259,7 +261,7 @@ sus arr = [1, 2, 3]
 
     #[test]
     fn test_is_formatted() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let well_formatted = "sus x drip = 42";
         let poorly_formatted = "sus x drip=42";
         
@@ -269,7 +271,7 @@ sus arr = [1, 2, 3]
 
     #[test]
     fn test_comment_preservation() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 // This is a comment
 sus x drip = 42 // Inline comment
@@ -288,7 +290,7 @@ vibez.spill(x)
     fn test_line_length_handling() {
         let mut config = FormatterConfig::default();
         config.max_line_length = 20;
-        let mut formatter = CursedFormatter::new(config);
+        let formatter = CursedFormatter::new(config);
         
         let source = "sus very_long_variable_name_that_exceeds_limit drip = 42";
         let formatted = formatter.format(source).unwrap();
@@ -299,7 +301,7 @@ vibez.spill(x)
 
     #[test]
     fn test_nested_structures() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 flex Person {
 name tea
@@ -323,7 +325,7 @@ city tea
 
     #[test]
     fn test_tuple_formatting() {
-        let mut formatter = CursedFormatter::default();
+        let formatter = CursedFormatter::default();
         let source = r#"
 sus t = (1,2,3)
 sus (a,b,c) = t
