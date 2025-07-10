@@ -255,6 +255,12 @@ impl From<std::net::AddrParseError> for CursedError {
     }
 }
 
+impl From<crate::type_system::ConstraintViolation> for CursedError {
+    fn from(err: crate::type_system::ConstraintViolation) -> Self {
+        CursedError::TypeError(err.context)
+    }
+}
+
 impl From<Box<dyn std::error::Error>> for CursedError {
     fn from(error: Box<dyn std::error::Error>) -> Self {
         CursedError::General(error.to_string())

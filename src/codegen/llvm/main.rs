@@ -905,6 +905,11 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 Ok(format!("{} ({})*", ret_type, param_types.join(", ")))
             },
             crate::ast::Type::Void => Ok("void".to_string()),
+            crate::ast::Type::Generic(name, _type_args) => {
+                // For now, just return the base type name
+                // In a full implementation, we'd need to handle specialization
+                Ok(name.clone())
+            }
         }
     }
     
@@ -1626,11 +1631,15 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                         self.ir_code.push_str("  ; Deferred expression completed\n");
                     },
                     Err(e) => {
-                        // Log error but don't fail the function
+                        // Log error but don't fail the function - defer cleanup must complete
                         self.ir_code.push_str(&format!("  ; Error in deferred expression: {:?}\n", e));
+                        self.ir_code.push_str("  ; Continuing with remaining deferred expressions\n");
                     }
                 }
             }
+            
+            // Clear the defer list after cleanup
+            self.current_function_defers = None;
         }
         Ok(())
     }

@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, InterfaceStatement, MethodSignature, TypeParameter};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -236,6 +236,43 @@ impl Parser {
             _ => return Err(Error::Parse("Expected function name".to_string())),
         };
         
+        // Parse type parameters (generics) <T, U>
+        let mut type_parameters = Vec::new();
+        if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Less) {
+            self.next_token()?; // consume '<'
+            
+            // Parse first type parameter
+            if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::Greater) {
+                if let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::Identifier {
+                        type_parameters.push(TypeParameter {
+                            name: token.lexeme.clone(),
+                            bounds: Vec::new(),
+                        });
+                        self.next_token()?;
+                    }
+                }
+                
+                // Parse additional type parameters
+                while self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Comma) {
+                    self.next_token()?; // consume ','
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Identifier {
+                            type_parameters.push(TypeParameter {
+                                name: token.lexeme.clone(),
+                                bounds: Vec::new(),
+                            });
+                            self.next_token()?;
+                        }
+                    }
+                }
+            }
+            
+            if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Greater) {
+                self.next_token()?; // consume '>'
+            }
+        }
+        
         // Parse parameters
         let parameters = self.parse_parameters()?;
         
@@ -265,7 +302,7 @@ impl Parser {
         
         Ok(FunctionStatement {
             name,
-            type_parameters: vec![],
+            type_parameters,
             parameters,
             body,
             return_type,
@@ -495,8 +532,37 @@ impl Parser {
                     "rune" => Type::Rune,
                     "extra" => Type::Extra,
                     "drip" => Type::Float,  // Legacy support
-                    _ => Type::Custom(type_name),
+                    _ => Type::Custom(type_name.clone()),
                 };
+                
+                // Check for generic type parameters <T, U>
+                if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Less) {
+                    self.next_token()?; // consume '<'
+                    
+                    let mut type_args = Vec::new();
+                    
+                    // Parse first type argument
+                    if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::Greater) {
+                        if let Some(arg_type) = self.parse_type()? {
+                            type_args.push(arg_type);
+                        }
+                        
+                        // Parse additional type arguments
+                        while self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Comma) {
+                            self.next_token()?; // consume ','
+                            if let Some(arg_type) = self.parse_type()? {
+                                type_args.push(arg_type);
+                            }
+                        }
+                    }
+                    
+                    if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Greater) {
+                        self.next_token()?; // consume '>'
+                    }
+                    
+                    return Ok(Some(Type::Generic(type_name, type_args)));
+                }
+                
                 return Ok(Some(basic_type));
             }
         }

@@ -771,6 +771,7 @@ pub enum Type {
     Dm(Box<Type>),       // Channel type (dm<T>)
     Tuple(Vec<Type>),    // Tuple type (tuple)
     Pointer(Box<Type>),  // Pointer type (@T)
+    Generic(String, Vec<Type>), // Generic type with type parameters
 }
 
 /// Helper function to convert Expression to string representation
@@ -838,6 +839,18 @@ impl std::fmt::Display for Type {
                 write!(f, ")")
             }
             Type::Pointer(inner) => write!(f, "@{}", inner),
+            Type::Generic(name, type_args) => {
+                write!(f, "{}", name)?;
+                if !type_args.is_empty() {
+                    write!(f, "<")?;
+                    for (i, arg) in type_args.iter().enumerate() {
+                        if i > 0 { write!(f, ", ")?; }
+                        write!(f, "{}", arg)?;
+                    }
+                    write!(f, ">")?;
+                }
+                Ok(())
+            }
         }
     }
 }

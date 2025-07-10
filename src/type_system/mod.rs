@@ -6,6 +6,7 @@ pub mod associated_types;
 pub mod variance;
 pub mod higher_kinded_types;
 pub mod generic_optimization;
+pub mod generic_enhanced;
 pub mod checker;
 pub mod compilation_integration;
 
@@ -607,6 +608,7 @@ pub struct TypeParameter {
 
 // Re-exports
 pub use generic_instantiator::GenericInstantiator;
+pub use generic_enhanced::{GenericTypeChecker, InterfaceChecker, TypeSpecializer};
 pub use constraint_resolver::{
     ConstraintResolver, ConstraintSolution, ConstraintViolation, ViolationReason,
     TypeUnifier, ConstraintPropagator, ConstraintGraph, ConstraintNode
