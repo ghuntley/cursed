@@ -59,6 +59,9 @@ pub enum TokenKind {
     Simp,        // continue
     Squad,       // struct
     Collab,      // interface
+    Impl,        // implementation
+    Extends,     // interface inheritance
+    ForImpl,     // for (used in impl for)
     Vibe,        // package
     Yeet,        // import
     BeLike,      // assignment operator
@@ -665,6 +668,8 @@ impl Lexer {
             "simp" => TokenKind::Simp,
             "squad" => TokenKind::Squad,
             "collab" => TokenKind::Collab,
+            "impl" => TokenKind::Impl,
+            "extends" => TokenKind::Extends,
             "vibe" => TokenKind::Vibe,
             "yeet" => TokenKind::Yeet,
             "be_like" => TokenKind::BeLike,

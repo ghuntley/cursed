@@ -1047,8 +1047,8 @@ impl CursedExecutionEngine {
             Statement::Defer(defer_stmt) => {
                 log::info!("⏰ Adding defer statement to stack");
                 
-                // Add the expression to the defer stack instead of executing it immediately
-                context.push_defer(defer_stmt.expression.as_ref().clone());
+                // Add the expression to the current defer scope (function-level)
+                context.push_defer_to_scope(defer_stmt.expression.as_ref().clone());
                 
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
@@ -2097,27 +2097,48 @@ impl CursedExecutionEngine {
                             
                             // Execute function body with proper return handling
                             let mut result = CursedValue::Nil;
+                            let mut early_return = false;
+                            let mut error_occurred = false;
+                            
                             for stmt in &func_def.body {
-                                match self.execute_statement(stmt, &mut func_context)? {
-                                    ExecutionFlow::Continue(value) => result = value,
-                                    ExecutionFlow::Return(value) => {
+                                match self.execute_statement(stmt, &mut func_context) {
+                                    Ok(ExecutionFlow::Continue(value)) => result = value,
+                                    Ok(ExecutionFlow::Return(value)) => {
                                         result = value;
+                                        early_return = true;
                                         break; // Early return from function
                                     },
-                                    ExecutionFlow::Break(_) => return Err(CursedError::runtime_error("Break statement outside of loop")),
-                                    ExecutionFlow::NextIteration(_) => return Err(CursedError::runtime_error("Continue statement outside of loop")),
-                                    ExecutionFlow::Error(error_value) => {
+                                    Ok(ExecutionFlow::Break(_)) => {
+                                        error_occurred = true;
+                                        break; // Will be handled as error after defer cleanup
+                                    },
+                                    Ok(ExecutionFlow::NextIteration(_)) => {
+                                        error_occurred = true;
+                                        break; // Will be handled as error after defer cleanup
+                                    },
+                                    Ok(ExecutionFlow::Error(error_value)) => {
                                         match error_value {
                                             CursedValue::Error { message, .. } => {
-                                                return Err(CursedError::runtime_error(&message));
+                                                log::warn!("⚠️ Function error: {}", message);
+                                                error_occurred = true;
+                                                break; // Will be handled as error after defer cleanup
                                             }
-                                            _ => return Err(CursedError::runtime_error("Unknown error occurred")),
+                                            _ => {
+                                                log::warn!("⚠️ Unknown error occurred");
+                                                error_occurred = true;
+                                                break; // Will be handled as error after defer cleanup
+                                            }
                                         }
                                     },
+                                    Err(e) => {
+                                        log::warn!("⚠️ Execution error: {:?}", e);
+                                        error_occurred = true;
+                                        break; // Will be handled as error after defer cleanup
+                                    }
                                 }
                             }
                             
-                            // Execute deferred expressions from this function's scope
+                            // Execute deferred expressions from this function's scope in LIFO order
                             let deferred_exprs = func_context.pop_defer_scope();
                             for defer_expr in deferred_exprs {
                                 log::info!("⏰ Executing deferred expression from function scope");
@@ -2135,6 +2156,11 @@ impl CursedExecutionEngine {
                                     Ok(_) => {}, // Ignore defer return values
                                     Err(e) => log::warn!("⚠️ Error in deferred expression: {:?}", e),
                                 }
+                            }
+                            
+                            // Now handle any errors that occurred during function execution
+                            if error_occurred {
+                                return Err(CursedError::runtime_error("Function execution failed"));
                             }
                             
                             // Decrement recursion depth before returning

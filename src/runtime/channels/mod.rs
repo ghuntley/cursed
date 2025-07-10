@@ -25,6 +25,9 @@ pub mod operations;
 pub mod memory;
 #[allow(dead_code)]
 pub mod sync;
+// pub mod advanced_channel;
+// pub mod enhanced_select;
+// pub mod simple_advanced_channel;
 
 // Re-export the simple implementation as the main interface
 pub use simple_channel::{
