@@ -1,0 +1,8 @@
+[package]
+name = "test_package"
+version = "0.1.0"
+description = "A test package for CURSED"
+authors = ["Test Author <test@example.com>"]
+license = "MIT"
+
+[dependencies]

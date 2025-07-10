@@ -7,12 +7,8 @@
 // - Stack trace generation
 // - DWARF debugging format support
 
-// TODO: Enable these modules once they are implemented
-// pub mod enhanced_debug;
-// pub mod debug_info_types;
-// pub mod source_location;
-// pub mod dwarf_gen;
-// pub mod debug_info;
+// Debug modules
+pub mod simple_dwarf_integration;
 
 // Re-export key types
 pub use crate::error::SourceLocation;

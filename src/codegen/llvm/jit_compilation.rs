@@ -578,14 +578,27 @@ impl CursedJitCompiler {
         // Ensure LLVM is initialized globally first
         ensure_llvm_initialized();
         
-        // Initialize thread-local LLVM context
-        LLVM_CONTEXT.with(|context| {
+        // Initialize thread-local LLVM context with error handling
+        LLVM_CONTEXT.with(|context| -> Result<(), CursedError> {
             let mut context_ref = context.borrow_mut();
             if context_ref.is_none() {
-                *context_ref = Some(Context::create());
-                tracing::debug!("🔧 Created new LLVM context for thread {:?}", std::thread::current().id());
+                // Try to create LLVM context, but handle potential failures gracefully
+                match std::panic::catch_unwind(|| Context::create()) {
+                    Ok(context) => {
+                        *context_ref = Some(context);
+                        tracing::debug!("🔧 Created new LLVM context for thread {:?}", std::thread::current().id());
+                        Ok(())
+                    }
+                    Err(e) => {
+                        tracing::error!("⚠️ LLVM context creation panicked: {:?}", e);
+                        Err(CursedError::compiler_error("LLVM context creation failed"))
+                    }
+                }
+            } else {
+                tracing::debug!("🔧 Using existing LLVM context for thread {:?}", std::thread::current().id());
+                Ok(())
             }
-        });
+        })?;
         
         Ok(())
     }

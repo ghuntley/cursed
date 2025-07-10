@@ -11,15 +11,6 @@ sus test_passed normie = 0
 sus test_failed normie = 0
 sus current_test_name tea = ""
 
-fr fr Test result structure
-be_like TestResult squad {
-    name tea
-    passed lit
-    message tea
-    file tea
-    line normie
-}
-
 fr fr ================================
 fr fr Core Test Functions
 fr fr ================================
@@ -124,41 +115,7 @@ slay reset_test_state() {
 }
 
 fr fr ================================
-fr fr Example test usage
+fr fr Export all testing functions
 fr fr ================================
 
-slay example_test() {
-    test_start("Example Test")
-    
-    fr fr Test integers
-    assert_eq_int(42, 42)
-    assert_eq_int(1 + 1, 2)
-    
-    fr fr Test strings
-    assert_eq_string("hello", "hello")
-    
-    fr fr Test booleans
-    assert_true(based)
-    assert_false(cap)
-    
-    fr fr Test math
-    assert_eq_int(5 * 2, 10)
-    assert_eq_int(10 / 2, 5)
-}
-
-fr fr Export all testing functions
-vibes test_start
-vibes test_pass
-vibes test_fail
-vibes assert_eq_int
-vibes assert_eq_string
-vibes assert_eq_bool
-vibes assert_true
-vibes assert_false
-vibes print_test_summary
-vibes run_all_tests
-vibes reset_test_state
-
-fr fr Run example test
-example_test()
-print_test_summary()
+fr fr Note: vibes export system not working, functions available globally

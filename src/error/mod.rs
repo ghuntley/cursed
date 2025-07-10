@@ -46,6 +46,7 @@ pub enum CursedError {
     // New error variants for stdlib integration
     CollectionsError(String),
     StringError(String),
+    ConfigError(String),
 }
 
 #[derive(Debug, Clone)]
@@ -86,6 +87,7 @@ impl std::fmt::Display for CursedError {
             CursedError::InternalError(msg) => write!(f, "Internal error: {}", msg),
             CursedError::CollectionsError(msg) => write!(f, "Collections error: {}", msg),
             CursedError::StringError(msg) => write!(f, "String error: {}", msg),
+            CursedError::ConfigError(msg) => write!(f, "Config error: {}", msg),
         }
     }
 }

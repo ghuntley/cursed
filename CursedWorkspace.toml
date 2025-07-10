@@ -1,0 +1,7 @@
+members = ["main"]
+exclude = []
+workspace_dir = "/home/ghuntley/code/cursed"
+
+[dependencies]
+
+[dev_dependencies]

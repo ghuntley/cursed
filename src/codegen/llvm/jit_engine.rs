@@ -671,6 +671,30 @@ impl CursedJitEngine {
     
     /// Initialize the JIT engine
     pub fn initialize(&mut self) -> Result<(), CursedError> {
+        // Only initialize if JIT is enabled
+        if !self.state.config.base_config.enable_jit {
+            tracing::debug!("JIT disabled, skipping engine initialization");
+            return Ok(());
+        }
+        
+        // Try to initialize LLVM targets with error handling
+        match std::panic::catch_unwind(|| {
+            use inkwell::targets::Target;
+            Target::initialize_native(&Default::default())
+        }) {
+            Ok(Ok(_)) => {
+                tracing::debug!("✅ LLVM targets initialized successfully");
+            }
+            Ok(Err(e)) => {
+                tracing::error!("⚠️ LLVM target initialization failed: {}", e);
+                return Err(CursedError::compiler_error(&format!("LLVM target initialization failed: {}", e)));
+            }
+            Err(e) => {
+                tracing::error!("⚠️ LLVM target initialization panicked: {:?}", e);
+                return Err(CursedError::compiler_error("LLVM target initialization panicked"));
+            }
+        }
+        
         // Start background compilation workers
         if self.state.config.base_config.enable_background_compilation {
             self.start_background_workers()?;

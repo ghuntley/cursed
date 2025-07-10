@@ -190,6 +190,8 @@ pub struct YikesStatement {
 #[derive(Debug, Clone)]
 pub struct FamStatement {
     pub body: Vec<Statement>,
+    pub recovery_body: Option<Vec<Statement>>,
+    pub error_variable: Option<String>,
 }
 
 /// Error propagation expression (shook)
@@ -218,19 +220,24 @@ impl YikesStatement {
         self
     }
     
-    pub fn with_value(self, _value: Expression) -> Self {
-        // Stub implementation for now - YikesStatement doesn't have a value field anymore
+    pub fn with_value(mut self, value: Expression) -> Self {
+        self.value = Some(value);
         self
     }
 }
 
 impl FamStatement {
     pub fn new(body: Vec<Statement>) -> Self {
-        Self { body }
+        Self { 
+            body,
+            recovery_body: None,
+            error_variable: None,
+        }
     }
     
-    pub fn with_recovery(self, _recovery_block: Vec<Statement>, _panic_variable: Option<String>) -> Self {
-        // Stub implementation for now - FamStatement has simplified structure
+    pub fn with_recovery(mut self, recovery_block: Vec<Statement>, panic_variable: Option<String>) -> Self {
+        self.recovery_body = Some(recovery_block);
+        self.error_variable = panic_variable;
         self
     }
 }

@@ -172,6 +172,15 @@ impl CursedExecutionEngine {
                 ExecutionFlow::Return(value) => return Ok(value), // Early return from program
                 ExecutionFlow::Break(_) => return Err(CursedError::runtime_error("Break statement outside of loop")),
                 ExecutionFlow::NextIteration(_) => return Err(CursedError::runtime_error("Continue statement outside of loop")),
+                ExecutionFlow::Error(error_value) => {
+                    // Handle error flow - convert to runtime error
+                    match error_value {
+                        CursedValue::Error { message, .. } => {
+                            return Err(CursedError::runtime_error(&message));
+                        }
+                        _ => return Err(CursedError::runtime_error("Unknown error occurred")),
+                    }
+                },
             }
         }
         
@@ -378,6 +387,12 @@ impl CursedExecutionEngine {
                     .map(|v| self.format_value(v))
                     .collect();
                 format!("[{}]", element_strs.join(", "))
+            },
+            CursedValue::Error { message, code } => {
+                match code {
+                    Some(c) => format!("Error({}): {}", c, message),
+                    None => format!("Error: {}", message),
+                }
             },
         }
     }
@@ -655,6 +670,20 @@ impl CursedExecutionEngine {
         }
     }
     
+    fn execute_statements(&mut self, statements: &[crate::ast::Statement], context: &mut ExecutionContext) -> Result<ExecutionFlow, CursedError> {
+        let mut last_value = CursedValue::Nil;
+        for statement in statements {
+            match self.execute_statement(statement, context)? {
+                ExecutionFlow::Continue(value) => last_value = value,
+                ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
+            }
+        }
+        Ok(ExecutionFlow::Continue(last_value))
+    }
+    
     fn execute_statement(&mut self, statement: &crate::ast::Statement, context: &mut ExecutionContext) -> Result<ExecutionFlow, CursedError> {
         use crate::ast::Statement;
         
@@ -752,6 +781,7 @@ impl CursedExecutionEngine {
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
                             ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
                             ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                            ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                         }
                     }
                     Ok(ExecutionFlow::Continue(last_value))
@@ -763,6 +793,7 @@ impl CursedExecutionEngine {
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
                             ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
                             ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                            ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                         }
                     }
                     Ok(ExecutionFlow::Continue(last_value))
@@ -789,6 +820,7 @@ impl CursedExecutionEngine {
                             ExecutionFlow::NextIteration(_) => {
                                 break; // Continue to next iteration
                             },
+                            ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                         }
                     }
                     if should_break {
@@ -805,6 +837,7 @@ impl CursedExecutionEngine {
                         ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
                         ExecutionFlow::Break(_) => return Ok(ExecutionFlow::Continue(CursedValue::Nil)),
                         ExecutionFlow::NextIteration(_) => return Ok(ExecutionFlow::Continue(CursedValue::Nil)),
+                        ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                     }
                 }
                 
@@ -831,6 +864,7 @@ impl CursedExecutionEngine {
                             ExecutionFlow::NextIteration(_) => {
                                 break; // Continue to next iteration
                             },
+                            ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                         }
                     }
                     
@@ -877,6 +911,7 @@ impl CursedExecutionEngine {
                             ExecutionFlow::NextIteration(_) => {
                                 continue 'outer; // Continue to next iteration
                             },
+                            ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                         }
                     }
                 }
@@ -905,6 +940,7 @@ impl CursedExecutionEngine {
                                 ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
                                 ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
                                 ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                            ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                             }
                         }
                         return Ok(ExecutionFlow::Continue(last_value));
@@ -920,6 +956,7 @@ impl CursedExecutionEngine {
                             ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
                             ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
                             ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                            ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                         }
                     }
                     Ok(ExecutionFlow::Continue(last_value))
@@ -973,6 +1010,7 @@ impl CursedExecutionEngine {
                         Ok(ExecutionFlow::Return(val)) => return Ok(ExecutionFlow::Return(val)),
                         Ok(ExecutionFlow::Break(label)) => return Ok(ExecutionFlow::Break(label)),
                         Ok(ExecutionFlow::NextIteration(label)) => return Ok(ExecutionFlow::NextIteration(label)),
+                        Ok(ExecutionFlow::Error(error)) => return Ok(ExecutionFlow::Error(error)),
                         Err(err) => {
                             log::warn!("🚨 Caught error in catch block: {:?}", err);
                             error_occurred = true;
@@ -991,6 +1029,7 @@ impl CursedExecutionEngine {
                                         ExecutionFlow::Return(val) => return Ok(ExecutionFlow::Return(val)),
                                         ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
                                         ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                            ExecutionFlow::Error(error) => return Ok(ExecutionFlow::Error(error)),
                                     }
                                 }
                             }
@@ -1079,13 +1118,56 @@ impl CursedExecutionEngine {
                 
                 Ok(ExecutionFlow::Continue(new_value))
             },
-            &Statement::Yikes(_) => {
-                // TODO: Implement error handling statement
-                Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            Statement::Yikes(yikes_stmt) => {
+                // Implement error handling statement
+                let error_value = if let Some(value) = &yikes_stmt.value {
+                    self.evaluate_expression(value, context)?
+                } else {
+                    CursedValue::String("Error occurred".to_string())
+                };
+                
+                // Create error object
+                let error_obj = CursedValue::Error {
+                    message: match error_value {
+                        CursedValue::String(s) => s,
+                        _ => "Error occurred".to_string(),
+                    },
+                    code: None,
+                };
+                
+                // Store error in context
+                context.set_variable(yikes_stmt.name.clone(), error_obj.clone());
+                
+                // For yikes statements, we store the error but continue execution
+                // unless we're in a panic context. This allows error handling to work properly.
+                Ok(ExecutionFlow::Continue(error_obj))
             },
-            &Statement::Fam(_) => {
-                // TODO: Implement error recovery statement
-                Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            Statement::Fam(fam_stmt) => {
+                // Implement error recovery statement
+                let protected_result = self.execute_statements(&fam_stmt.body, context);
+                
+                match protected_result {
+                    Ok(flow) => Ok(flow),
+                    Err(cursed_error) => {
+                        // Handle error recovery
+                        if let Some(recovery_body) = &fam_stmt.recovery_body {
+                            // Set error variable if specified
+                            if let Some(error_var) = &fam_stmt.error_variable {
+                                let error_value = CursedValue::Error {
+                                    message: cursed_error.to_string(),
+                                    code: None,
+                                };
+                                context.set_variable(error_var.clone(), error_value);
+                            }
+                            
+                            // Execute recovery block
+                            self.execute_statements(recovery_body, context)
+                        } else {
+                            // No recovery block, propagate error
+                            Err(cursed_error)
+                        }
+                    }
+                }
             },
         }
     }
@@ -1204,13 +1286,25 @@ impl CursedExecutionEngine {
             Expression::Decrement(dec_expr) => {
                 self.evaluate_decrement_expression(dec_expr, context)
             },
-            Expression::Shook(_) => {
-                // TODO: Implement error propagation expression
-                Ok(CursedValue::Nil)
+            Expression::Shook(shook_expr) => {
+                // Implement error propagation expression
+                let result = self.evaluate_expression(&shook_expr.expression, context)?;
+                
+                // Check if the result is an error
+                match result {
+                    CursedValue::Error { message, .. } => {
+                        // Propagate error by returning it as a runtime error with the original message
+                        Err(CursedError::RuntimeError(message))
+                    }
+                    _ => Ok(result)
+                }
             },
-            Expression::ErrorValue(_) => {
-                // TODO: Implement error value expression
-                Ok(CursedValue::Nil)
+            Expression::ErrorValue(error_expr) => {
+                // Implement error value expression
+                Ok(CursedValue::Error {
+                    message: error_expr.message.clone(),
+                    code: None,
+                })
             },
         }
     }
@@ -1998,6 +2092,9 @@ impl CursedExecutionEngine {
                                 func_context.set_variable(param.name.clone(), arg_value);
                             }
                             
+                            // Push a new defer scope for this function
+                            func_context.push_defer_scope();
+                            
                             // Execute function body with proper return handling
                             let mut result = CursedValue::Nil;
                             for stmt in &func_def.body {
@@ -2009,13 +2106,31 @@ impl CursedExecutionEngine {
                                     },
                                     ExecutionFlow::Break(_) => return Err(CursedError::runtime_error("Break statement outside of loop")),
                                     ExecutionFlow::NextIteration(_) => return Err(CursedError::runtime_error("Continue statement outside of loop")),
+                                    ExecutionFlow::Error(error_value) => {
+                                        match error_value {
+                                            CursedValue::Error { message, .. } => {
+                                                return Err(CursedError::runtime_error(&message));
+                                            }
+                                            _ => return Err(CursedError::runtime_error("Unknown error occurred")),
+                                        }
+                                    },
                                 }
                             }
                             
-                            // Execute deferred expressions before function returns
-                            let deferred_exprs = func_context.execute_defers();
+                            // Execute deferred expressions from this function's scope
+                            let deferred_exprs = func_context.pop_defer_scope();
                             for defer_expr in deferred_exprs {
-                                log::info!("⏰ Executing deferred expression");
+                                log::info!("⏰ Executing deferred expression from function scope");
+                                match self.evaluate_expression(&defer_expr, &mut func_context) {
+                                    Ok(_) => {}, // Ignore defer return values
+                                    Err(e) => log::warn!("⚠️ Error in deferred expression: {:?}", e),
+                                }
+                            }
+                            
+                            // Execute any remaining deferred expressions in the main stack
+                            let remaining_defers = func_context.execute_defers();
+                            for defer_expr in remaining_defers {
+                                log::info!("⏰ Executing remaining deferred expression");
                                 match self.evaluate_expression(&defer_expr, &mut func_context) {
                                     Ok(_) => {}, // Ignore defer return values
                                     Err(e) => log::warn!("⚠️ Error in deferred expression: {:?}", e),
@@ -2245,6 +2360,7 @@ impl CursedExecutionEngine {
             CursedValue::Nil => false,
             CursedValue::Character(c) => *c != '\0', // Characters are truthy unless null character
             CursedValue::Array(elements) => !elements.is_empty(), // Arrays are truthy if they have elements
+            CursedValue::Error { .. } => true, // Errors are truthy (they exist)
         }
     }
     
@@ -2696,6 +2812,7 @@ pub enum CursedValue {
     Struct(std::collections::HashMap<String, CursedValue>),
     Lambda(LambdaValue),
     Tuple(Vec<CursedValue>),
+    Error { message: String, code: Option<i32> },
     Nil,
 }
 
@@ -2714,6 +2831,7 @@ pub enum ExecutionFlow {
     Return(CursedValue),
     Break(Option<String>),
     NextIteration(Option<String>),
+    Error(CursedValue),
 }
 
 impl CursedValue {
@@ -2729,6 +2847,7 @@ impl CursedValue {
             CursedValue::Struct(_) => "struct",
             CursedValue::Lambda(_) => "lambda",
             CursedValue::Tuple(_) => "tuple",
+            CursedValue::Error { .. } => "error",
             CursedValue::Nil => "nil",
         }
     }
@@ -2776,6 +2895,12 @@ impl ValueManager {
             },
             CursedValue::Nil => "nil".to_string(),
             CursedValue::Character(c) => format!("'{}'", c),
+            CursedValue::Error { message, code } => {
+                match code {
+                    Some(c) => format!("Error({}): {}", c, message),
+                    None => format!("Error: {}", message),
+                }
+            },
         }
     }
     

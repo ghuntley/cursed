@@ -24,6 +24,9 @@ mod tests;
 #[cfg(test)]
 mod config_test;
 
+#[cfg(test)]
+mod test_search_publish;
+
 // Import and re-export main types
 pub use registry::{PackageRegistry, PackageInfo, RegistryConfig, PackageMetadata};
 pub use resolver::{PackageResolver, ResolvedPackage, ResolutionResult, ResolutionConfig};
@@ -36,7 +39,7 @@ pub use lock_file::{LockFileManager, LockedPackage, LockFileStats, LockFileValid
 
 use std::collections::HashMap;
 use std::str::FromStr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Main package manager
 #[derive(Debug)]
@@ -217,6 +220,259 @@ impl PackageManager {
     pub async fn search_packages(&self, query: &str) -> crate::error::Result<Vec<PackageInfo>> {
         tracing::info!("Searching packages for: {}", query);
         self.registry.search_packages(query).await
+    }
+
+    /// Publish a package to the registry
+    pub async fn publish_package(&self, package_dir: &str, dry_run: bool) -> crate::error::Result<()> {
+        use std::fs;
+        use std::path::Path;
+        
+        let package_path = Path::new(package_dir);
+        if !package_path.exists() {
+            return Err(crate::error::CursedError::General(format!("Package directory does not exist: {}", package_dir)));
+        }
+        
+        // Load package metadata from package.toml
+        let package_toml_path = package_path.join("package.toml");
+        if !package_toml_path.exists() {
+            return Err(crate::error::CursedError::General("No package.toml found in package directory".to_string()));
+        }
+        
+        let package_toml_content = fs::read_to_string(&package_toml_path)
+            .map_err(|e| crate::error::CursedError::General(format!("Failed to read package.toml: {}", e)))?;
+        
+        let package_config: toml::Value = toml::from_str(&package_toml_content)
+            .map_err(|e| crate::error::CursedError::General(format!("Failed to parse package.toml: {}", e)))?;
+        
+        // Extract package metadata from [package] section
+        let package_section = package_config.get("package")
+            .and_then(|v| v.as_table())
+            .ok_or_else(|| crate::error::CursedError::General("No [package] section found in package.toml".to_string()))?;
+        
+        let package_name = package_section.get("name")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| crate::error::CursedError::General("Package name not found in package.toml".to_string()))?;
+        
+        let version_str = package_section.get("version")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| crate::error::CursedError::General("Package version not found in package.toml".to_string()))?;
+        
+        let version = Version::parse(version_str)
+            .map_err(|e| crate::error::CursedError::General(format!("Invalid version format: {}", e)))?;
+        
+        let description = package_section.get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("No description provided")
+            .to_string();
+        
+        let authors = package_section.get("authors")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>())
+            .unwrap_or_default();
+        
+        let keywords = package_section.get("keywords")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>())
+            .unwrap_or_default();
+        
+        let categories = package_section.get("categories")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>())
+            .unwrap_or_default();
+        
+        let license = package_section.get("license")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        
+        let homepage = package_section.get("homepage")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        
+        let repository = package_section.get("repository")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        
+        // Parse dependencies
+        let dependencies = if let Some(deps_table) = package_config.get("dependencies").and_then(|v| v.as_table()) {
+            let mut deps = Vec::new();
+            for (name, version_spec) in deps_table {
+                let version_req = if let Some(version_str) = version_spec.as_str() {
+                    VersionReq::parse(version_str)
+                        .map_err(|e| crate::error::CursedError::General(format!("Invalid dependency version for {}: {}", name, e)))?
+                } else {
+                    VersionReq::Any
+                };
+                
+                deps.push(crate::package_manager::registry::Dependency {
+                    name: name.clone(),
+                    version_req,
+                    optional: false,
+                    features: Vec::new(),
+                });
+            }
+            deps
+        } else {
+            Vec::new()
+        };
+        
+        // Validate package structure
+        self.validate_package_structure(package_path)?;
+        
+        // Check if package already exists
+        if let Ok(true) = self.registry.package_exists(package_name, &version).await {
+            return Err(crate::error::CursedError::General(format!("Package {} v{} already exists", package_name, version)));
+        }
+        
+        if dry_run {
+            tracing::info!("Dry run: Package {} v{} would be published", package_name, version);
+            return Ok(());
+        }
+        
+        // Create package archive
+        let archive_data = self.create_package_archive(package_path)?;
+        
+        // Create package metadata
+        let metadata = PackageMetadata {
+            name: package_name.to_string(),
+            version,
+            description,
+            dependencies,
+            download_url: String::new(), // Will be set by registry
+            checksum: String::new(), // Will be calculated by registry
+            authors,
+            license,
+            homepage,
+            repository,
+            keywords,
+            categories,
+        };
+        
+        // Publish to registry
+        self.registry.publish_package(&metadata, &archive_data).await?;
+        
+        tracing::info!("Package {} v{} published successfully", package_name, metadata.version);
+        Ok(())
+    }
+
+    /// Validate package structure before publishing
+    fn validate_package_structure(&self, package_path: &Path) -> crate::error::Result<()> {
+        // Check for required files
+        let required_files = ["package.toml", "src/mod.csd"];
+        for file in &required_files {
+            let file_path = package_path.join(file);
+            if !file_path.exists() {
+                return Err(crate::error::CursedError::General(format!("Required file missing: {}", file)));
+            }
+        }
+        
+        // Check for README
+        let readme_files = ["README.md", "README.txt", "readme.md", "readme.txt"];
+        if !readme_files.iter().any(|&readme| package_path.join(readme).exists()) {
+            tracing::warn!("No README file found. Consider adding one for better documentation.");
+        }
+        
+        // Validate source files
+        self.validate_source_files(package_path)?;
+        
+        Ok(())
+    }
+
+    /// Validate source files in the package
+    fn validate_source_files(&self, package_path: &Path) -> crate::error::Result<()> {
+        let src_dir = package_path.join("src");
+        if !src_dir.exists() {
+            return Err(crate::error::CursedError::General("src directory is required".to_string()));
+        }
+        
+        // Check for .csd files
+        let pattern = format!("{}/**/*.csd", src_dir.display());
+        let paths = glob::glob(&pattern)
+            .map_err(|e| crate::error::CursedError::General(format!("Failed to glob source files: {}", e)))?;
+        
+        let mut found_sources = false;
+        for path in paths {
+            found_sources = true;
+            let path = path.map_err(|e| crate::error::CursedError::General(format!("Failed to read source file: {}", e)))?;
+            
+            // Basic syntax validation (could be enhanced with actual parser)
+            let content = std::fs::read_to_string(&path)
+                .map_err(|e| crate::error::CursedError::General(format!("Failed to read {}: {}", path.display(), e)))?;
+            
+            if content.trim().is_empty() {
+                tracing::warn!("Empty source file found: {}", path.display());
+            }
+        }
+        
+        if !found_sources {
+            return Err(crate::error::CursedError::General("No .csd source files found in src directory".to_string()));
+        }
+        
+        Ok(())
+    }
+
+    /// Create package archive for publishing
+    fn create_package_archive(&self, package_path: &Path) -> crate::error::Result<Vec<u8>> {
+        use flate2::write::GzEncoder;
+        use flate2::Compression;
+        use tar::Builder;
+        
+        let mut archive_data = Vec::new();
+        {
+            let encoder = GzEncoder::new(&mut archive_data, Compression::default());
+            let mut tar_builder = Builder::new(encoder);
+            
+            // Add package files (excluding target/, .git/, etc.)
+            let exclude_dirs = [".git", "target", ".cursed", "node_modules"];
+            let exclude_files = [".gitignore", ".cursed-lock.toml"];
+            
+            for entry in walkdir::WalkDir::new(package_path) {
+                let entry = entry.map_err(|e| crate::error::CursedError::General(format!("Failed to read directory entry: {}", e)))?;
+                let path = entry.path();
+                
+                // Skip excluded directories and files
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    if exclude_dirs.contains(&name) || exclude_files.contains(&name) {
+                        continue;
+                    }
+                }
+                
+                // Skip if any parent directory is excluded
+                let mut skip = false;
+                for ancestor in path.ancestors() {
+                    if let Some(name) = ancestor.file_name().and_then(|n| n.to_str()) {
+                        if exclude_dirs.contains(&name) {
+                            skip = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if skip {
+                    continue;
+                }
+                
+                let relative_path = path.strip_prefix(package_path)
+                    .map_err(|e| crate::error::CursedError::General(format!("Failed to create relative path: {}", e)))?;
+                
+                if path.is_file() {
+                    tar_builder.append_path_with_name(path, relative_path)
+                        .map_err(|e| crate::error::CursedError::General(format!("Failed to add file to archive: {}", e)))?;
+                }
+            }
+            
+            tar_builder.finish().map_err(|e| crate::error::CursedError::General(format!("Failed to finish tar archive: {}", e)))?;
+        }
+        
+        Ok(archive_data)
     }
 
     /// Update a specific package to latest version

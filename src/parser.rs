@@ -8,6 +8,7 @@ pub struct Parser {
     current_token: Option<Token>,
     tokens: Vec<Token>,
     token_index: usize,
+    error_count: usize,
 }
 
 impl Parser {
@@ -21,6 +22,7 @@ impl Parser {
             current_token,
             tokens: Vec::new(),
             token_index: 0,
+            error_count: 0,
         })
     }
 
@@ -33,6 +35,7 @@ impl Parser {
             current_token,
             tokens: tokens,
             token_index: 0,
+            error_count: 0,
         }
     }
 
@@ -1347,6 +1350,22 @@ impl Parser {
         // Consume 'yikes' token
         self.next_token()?;
         
+        // Check for direct error creation: yikes "message"
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::String {
+                // Direct error creation
+                let message = token.lexeme.clone();
+                self.next_token()?;
+                
+                // Create a temporary error variable
+                let temp_name = format!("_error_{}", self.error_count);
+                self.error_count += 1;
+                let mut yikes_stmt = YikesStatement::new(temp_name);
+                yikes_stmt = yikes_stmt.with_value(Expression::String(message));
+                return Ok(yikes_stmt);
+            }
+        }
+        
         // Parse error variable name
         let name = if let Some(token) = self.current_token.as_ref() {
             if token.kind == TokenKind::Identifier {
@@ -1374,7 +1393,7 @@ impl Parser {
         
         // Optional assignment
         if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::Equal {
+            if token.kind == TokenKind::Equal || token.kind == TokenKind::ColonEqual {
                 self.next_token()?;
                 let value = self.parse_expression()?;
                 yikes_stmt = yikes_stmt.with_value(value);

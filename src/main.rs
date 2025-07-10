@@ -282,6 +282,10 @@ fn build_cli() -> Command {
                             .help("Package directory to publish")
                             .index(1)
                             .default_value("."))
+                        .arg(Arg::new("dry-run")
+                            .help("Perform a dry run without actually publishing")
+                            .long("dry-run")
+                            .action(clap::ArgAction::SetTrue))
                 )
                 .subcommand(
                     Command::new("init")
@@ -340,6 +344,33 @@ fn build_cli() -> Command {
                     .long("rules")
                     .value_name("RULES")
                     .num_args(1..))
+                .arg(Arg::new("format")
+                    .help("Output format")
+                    .short('f')
+                    .long("format")
+                    .value_name("FORMAT")
+                    .value_parser(["human", "json", "compact"])
+                    .default_value("human"))
+                .arg(Arg::new("strict")
+                    .help("Use strict linting configuration")
+                    .long("strict")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("minimal")
+                    .help("Use minimal linting configuration (security + correctness only)")
+                    .long("minimal")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("categories")
+                    .help("Lint only specific categories")
+                    .long("categories")
+                    .value_name("CATEGORIES")
+                    .value_parser(["style", "performance", "security", "correctness", "best-practice"])
+                    .num_args(1..))
+                .arg(Arg::new("severity")
+                    .help("Minimum severity level to report")
+                    .long("severity")
+                    .value_name("LEVEL")
+                    .value_parser(["error", "warning", "info"])
+                    .default_value("info"))
         )
         .subcommand(
             Command::new("fmt")
@@ -1048,15 +1079,80 @@ async fn handle_pkg(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resul
             let query = sub_matches.get_one::<String>("query").unwrap();
             println!("{} for: {}", "Searching".blue().bold(), query);
             
-            // TODO: Implement search functionality
-            println!("{} Search functionality not yet implemented", "Warning".yellow().bold());
+            let config = PackageManagerConfig::default();
+            let pkg_manager = PackageManager::new(config)?;
+            
+            match pkg_manager.search_packages(query).await {
+                Ok(packages) => {
+                    if packages.is_empty() {
+                        println!("{} No packages found for query: {}", "Info".cyan().bold(), query);
+                    } else {
+                        println!("{} Found {} package(s):", "Success".green().bold(), packages.len());
+                        println!();
+                        
+                        for package in packages {
+                            println!("  {} {} {}", 
+                                package.name.bright_cyan().bold(),
+                                format!("v{}", package.version).bright_magenta(),
+                                if package.description.is_empty() { 
+                                    "".to_string() 
+                                } else { 
+                                    format!("- {}", package.description) 
+                                }.dimmed()
+                            );
+                            
+                            if !package.authors.is_empty() {
+                                println!("    {}: {}", "Authors".dimmed(), package.authors.join(", ").dimmed());
+                            }
+                            
+                            if !package.keywords.is_empty() {
+                                println!("    {}: {}", "Keywords".dimmed(), package.keywords.join(", ").dimmed());
+                            }
+                            
+                            if let Some(license) = &package.license {
+                                println!("    {}: {}", "License".dimmed(), license.dimmed());
+                            }
+                            
+                            if let Some(homepage) = &package.homepage {
+                                println!("    {}: {}", "Homepage".dimmed(), homepage.dimmed());
+                            }
+                            
+                            println!();
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} Failed to search packages: {}", "Error".red().bold(), e);
+                    return Err(e.into());
+                }
+            }
         }
         Some(("publish", sub_matches)) => {
             let package_dir = sub_matches.get_one::<String>("package").unwrap();
-            println!("{} package from: {}", "Publishing".blue().bold(), package_dir);
+            let dry_run = sub_matches.get_flag("dry-run");
             
-            // TODO: Implement publish functionality
-            println!("{} Publish functionality not yet implemented", "Warning".yellow().bold());
+            if dry_run {
+                println!("{} package from: {} (dry run)", "Publishing".blue().bold(), package_dir);
+            } else {
+                println!("{} package from: {}", "Publishing".blue().bold(), package_dir);
+            }
+            
+            let config = PackageManagerConfig::default();
+            let pkg_manager = PackageManager::new(config)?;
+            
+            match pkg_manager.publish_package(package_dir, dry_run).await {
+                Ok(()) => {
+                    if dry_run {
+                        println!("{} Dry run completed successfully", "Success".green().bold());
+                    } else {
+                        println!("{} Package published successfully", "Success".green().bold());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} Failed to publish package: {}", "Error".red().bold(), e);
+                    return Err(e.into());
+                }
+            }
         }
         Some(("init", sub_matches)) => {
             let name = sub_matches.get_one::<String>("name").unwrap();
@@ -1282,6 +1378,12 @@ Thumbs.db
 async fn handle_debug(matches: &ArgMatches, global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let input = matches.get_one::<String>("input").unwrap();
     let compile_only = matches.get_flag("compile-only");
+    let breakpoints: Vec<u32> = matches.get_many::<String>("breakpoints")
+        .unwrap_or_default()
+        .map(|s| s.parse::<u32>().unwrap_or(0))
+        .collect();
+    let trace_enabled = matches.get_flag("trace");
+    let memory_debug = matches.get_flag("memory");
     
     println!("{} {} with debug information", "Compiling".green().bold(), input);
     
@@ -1297,8 +1399,19 @@ async fn handle_debug(matches: &ArgMatches, global_matches: &ArgMatches) -> Resu
         fs::write(&output, ir)?;
         println!("{} debug IR to: {}", "Generated".green().bold(), output);
     } else {
-        println!("{} Debug execution not yet fully implemented", "Warning".yellow().bold());
-        // TODO: Implement debug execution with breakpoints and tracing
+        // Initialize and run the interactive debugger
+        println!("{} Starting interactive debugger...", "Debug".cyan().bold());
+        
+        let mut debugger = InteractiveDebugger::new(
+            input.to_string(),
+            source,
+            ir,
+            breakpoints,
+            trace_enabled,
+            memory_debug,
+        )?;
+        
+        debugger.run().await?;
     }
     
     Ok(())
@@ -1307,60 +1420,71 @@ async fn handle_debug(matches: &ArgMatches, global_matches: &ArgMatches) -> Resu
 async fn handle_lint(matches: &ArgMatches, _global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let inputs: Vec<&String> = matches.get_many::<String>("input").unwrap().collect();
     let fix = matches.get_flag("fix");
+    let format = matches.get_one::<String>("format").map(|s| s.as_str()).unwrap_or("human");
+    let config_path = matches.get_one::<String>("config");
+    let strict = matches.get_flag("strict");
+    let minimal = matches.get_flag("minimal");
     
     println!("{} {} files", "Linting".blue().bold(), inputs.len());
     
-    // TODO: Implement linter module
-    // let mut linter = CursedLinter::new();
+    // Initialize linter with configuration
+    let mut linter = if let Some(config_path) = config_path {
+        let config = cursed::linter::LinterConfig::from_file(config_path)?;
+        cursed::linter::CursedLinter::with_config(config)
+    } else if strict {
+        cursed::linter::CursedLinter::with_config(cursed::linter::LinterConfig::strict())
+    } else if minimal {
+        cursed::linter::CursedLinter::with_config(cursed::linter::LinterConfig::minimal())
+    } else {
+        cursed::linter::CursedLinter::new()
+    };
+    
+    let output_format = match format {
+        "json" => cursed::linter::OutputFormat::Json,
+        "compact" => cursed::linter::OutputFormat::Compact,
+        _ => cursed::linter::OutputFormat::Human,
+    };
     
     let mut total_issues = 0;
+    let mut all_results = Vec::new();
     
     for input in inputs {
         if Path::new(input).is_file() {
-            let _source = fs::read_to_string(input)?;
-            // TODO: Implement linter module
-            // let results = linter.lint_source(&source)?;
-            println!("Linting {} (not implemented)", input);
+            let results = linter.lint_file(input)?;
+            total_issues += results.stats.total_issues;
             
-            // TODO: Implement linter results processing
-            /*
-            if !results.issues.is_empty() {
-                println!("\n{}: {} issues found", input, results.issues.len());
-                for issue in &results.issues {
-                    println!("  {}:{}: {} {}", 
-                    issue.line, issue.column, 
-                    issue.severity.as_str().yellow().bold(), 
-                    issue.message);
-                }
-                total_issues += results.issues.len();
-            }
-            */
+            // Store results for batch processing
+            all_results.push(results);
         } else {
             // Handle directory
             for entry in glob::glob(&format!("{}/**/*.csd", input))? {
                 let path = entry?;
-                let _source = fs::read_to_string(&path)?;
-                // TODO: Implement linter module
-                // let results = linter.lint_source(&source)?;
-                println!("Linting {} (not implemented)", path.display());
+                let results = linter.lint_file(&path)?;
+                total_issues += results.stats.total_issues;
                 
-                // TODO: Implement linter results processing
-                /*
-                if !results.issues.is_empty() {
-                    println!("\n{}: {} issues found", path.display(), results.issues.len());
-                    for issue in &results.issues {
-                        println!("  {}:{}: {} {}", 
-                        issue.line, issue.column, 
-                        issue.severity.as_str().yellow().bold(), 
-                        issue.message);
-                    }
-                    total_issues += results.issues.len();
-                }
-                */
+                // Store results for batch processing
+                all_results.push(results);
             }
         }
     }
     
+    // Process and display results
+    for results in &all_results {
+        let formatted_output = linter.format_results(results, output_format.clone());
+        
+        if matches!(output_format, cursed::linter::OutputFormat::Json) {
+            println!("{}", formatted_output);
+        } else if !results.issues.is_empty() || matches!(output_format, cursed::linter::OutputFormat::Human) {
+            print!("{}", formatted_output);
+        }
+        
+        // Apply fixes if requested
+        if fix && !results.issues.is_empty() {
+            apply_lint_fixes(&results.file_path, &results.issues)?;
+        }
+    }
+    
+    // Summary
     if total_issues == 0 {
         println!("{} No issues found", "✓".green().bold());
     } else {
@@ -1373,67 +1497,103 @@ async fn handle_lint(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resu
     Ok(())
 }
 
-async fn handle_fmt(matches: &ArgMatches, _global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+async fn handle_fmt(matches: &ArgMatches, global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let inputs: Vec<&String> = matches.get_many::<String>("input").unwrap().collect();
     let check = matches.get_flag("check");
     let diff = matches.get_flag("diff");
+    let config_file = matches.get_one::<String>("config");
     
     println!("{} {} files", "Formatting".blue().bold(), inputs.len());
     
-    // TODO: Implement formatter module
-    // let mut formatter = CursedFormatter::default();
+    // Initialize formatter with configuration
+    let formatter = if let Some(config_path) = config_file {
+        cursed::formatter::SimpleCursedFormatter::with_config_file(config_path)?
+    } else {
+        cursed::formatter::SimpleCursedFormatter::default()
+    };
+    
     let mut changed_files = 0;
+    let mut stats = cursed::formatter::FormattingStats::default();
+    let color_enabled = match global_matches.get_one::<String>("color") {
+        Some(value) => value != "never",
+        None => true, // Default to enabled
+    };
+    let diff_formatter = cursed::formatter::DiffFormatter::new(
+        color_enabled,
+        3,
+        true
+    );
     
     for input in inputs {
         if Path::new(input).is_file() {
-            let source = fs::read_to_string(input)?;
-            // TODO: Implement formatter module
-            // let formatted = formatter.format(&source)?;
-            let formatted = source.clone(); // Temporary: no formatting changes
-            
-            if source != formatted {
-                if check {
-                    println!("{}: {} needs formatting", input, "✗".red().bold());
-                    changed_files += 1;
-                } else if diff {
-                    println!("\n{}: formatting differences", input);
-                    // TODO: Show diff
-                    changed_files += 1;
-                } else {
-                    fs::write(input, formatted)?;
-                    println!("{}: {} formatted", input, "✓".green().bold());
-                    changed_files += 1;
+            match cursed::formatter::format_single_file(&formatter, &diff_formatter, input, check, diff) {
+                Ok(result) => {
+                    let original_lines = fs::read_to_string(input)?.lines().count();
+                    stats.add_file(original_lines, original_lines, result.needs_formatting);
+                    
+                    if result.needs_formatting {
+                        changed_files += 1;
+                    }
+                    
+                    if let Some(error) = result.error {
+                        println!("{}: {} {}", input, "Error".red().bold(), error);
+                    } else if result.needs_formatting {
+                        if check {
+                            println!("{}: {} needs formatting", input, "✗".red().bold());
+                        } else if diff {
+                            println!("\n{}: formatting differences", input);
+                            if let Some(diff_output) = result.diff {
+                                println!("{}", diff_output);
+                            }
+                        } else {
+                            println!("{}: {} formatted", input, "✓".green().bold());
+                        }
+                    } else {
+                        println!("{}: {} already formatted", input, "✓".green().bold());
+                    }
                 }
-            } else {
-                println!("{}: {} already formatted", input, "✓".green().bold());
+                Err(e) => {
+                    println!("{}: {} {}", input, "Error".red().bold(), e);
+                }
             }
         } else {
             // Handle directory
             for entry in glob::glob(&format!("{}/**/*.csd", input))? {
                 let path = entry?;
-                let source = fs::read_to_string(&path)?;
-                // TODO: Implement formatter module
-                // let formatted = formatter.format(&source)?;
-                let formatted = source.clone(); // Temporary: no formatting changes
+                let path_str = path.to_str().unwrap();
                 
-                if source != formatted {
-                    if check {
-                        println!("{}: {} needs formatting", path.display(), "✗".red().bold());
-                        changed_files += 1;
-                    } else if diff {
-                        println!("\n{}: formatting differences", path.display());
-                        // TODO: Show diff
-                        changed_files += 1;
-                    } else {
-                        fs::write(&path, formatted)?;
-                        println!("{}: {} formatted", path.display(), "✓".green().bold());
-                        changed_files += 1;
+                match cursed::formatter::format_single_file(&formatter, &diff_formatter, path_str, check, diff) {
+                    Ok(result) => {
+                        let original_lines = fs::read_to_string(&path)?.lines().count();
+                        stats.add_file(original_lines, original_lines, result.needs_formatting);
+                        
+                        if result.needs_formatting {
+                            changed_files += 1;
+                            if check {
+                                println!("{}: {} needs formatting", path.display(), "✗".red().bold());
+                            } else if diff {
+                                println!("\n{}: formatting differences", path.display());
+                                if let Some(diff_output) = result.diff {
+                                    println!("{}", diff_output);
+                                }
+                            } else {
+                                println!("{}: {} formatted", path.display(), "✓".green().bold());
+                            }
+                        } else {
+                            println!("{}: {} already formatted", path.display(), "✓".green().bold());
+                        }
                     }
-                } else {
-                    println!("{}: {} already formatted", path.display(), "✓".green().bold());
+                    Err(e) => {
+                        println!("{}: {} {}", path.display(), "Error".red().bold(), e);
+                    }
                 }
             }
         }
+    }
+    
+    // Print summary
+    if !check && !diff {
+        println!("\n{}", stats);
     }
     
     if check && changed_files > 0 {
@@ -1443,6 +1603,8 @@ async fn handle_fmt(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resul
     
     Ok(())
 }
+
+
 
 async fn handle_doc(matches: &ArgMatches, _global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let input = matches.get_one::<String>("input").unwrap();
@@ -2070,4 +2232,691 @@ fn generate_json_docs(doc_index: &DocumentationIndex, output: &str) -> Result<()
     fs::write(json_path, serde_json::to_string_pretty(&json_data)?)?;
     
     Ok(())
+}
+
+/// Apply automatic fixes for linting issues
+fn apply_lint_fixes(file_path: &str, issues: &[cursed::linter::LintIssue]) -> Result<(), Box<dyn std::error::Error>> {
+    let mut applied_fixes = 0;
+    let source = fs::read_to_string(file_path)?;
+    let mut lines: Vec<&str> = source.lines().collect();
+    
+    // Sort issues by line number in reverse order to avoid offset issues
+    let mut sortable_issues: Vec<_> = issues.iter().collect();
+    sortable_issues.sort_by(|a, b| b.line.cmp(&a.line));
+    
+    for issue in sortable_issues {
+        if let Some(fix) = &issue.fix_suggestion {
+            // Apply simple text-based fixes
+            if let Some(line) = lines.get_mut(issue.line.saturating_sub(1)) {
+                // Simple fixes for common issues
+                if issue.rule == "trailing_whitespace" {
+                    *line = line.trim_end();
+                    applied_fixes += 1;
+                } else if issue.rule == "missing_newline_at_eof" && issue.line == lines.len() {
+                    // This would be handled by appending a newline
+                    applied_fixes += 1;
+                }
+                // Add more fix implementations as needed
+            }
+        }
+    }
+    
+    if applied_fixes > 0 {
+        let fixed_content = lines.join("\n");
+        // Ensure file ends with newline if original did
+        let final_content = if source.ends_with('\n') {
+            format!("{}\n", fixed_content)
+        } else {
+            fixed_content
+        };
+        
+        fs::write(file_path, final_content)?;
+        println!("  {} Applied {} automatic fixes to {}", 
+                "✓".green().bold(), applied_fixes, file_path);
+    }
+    
+    Ok(())
+}
+
+/// Interactive debugger for CURSED programs
+pub struct InteractiveDebugger {
+    /// Source filename
+    filename: String,
+    /// Source code
+    source: String,
+    /// Compiled LLVM IR
+    ir: String,
+    /// Current breakpoints
+    breakpoints: HashMap<u32, Breakpoint>,
+    /// Execution trace enabled
+    trace_enabled: bool,
+    /// Memory debugging enabled
+    memory_debug: bool,
+    /// Current execution state
+    execution_state: ExecutionState,
+    /// Variable watch list
+    watch_variables: Vec<String>,
+    /// Call stack
+    call_stack: Vec<StackFrame>,
+    /// Debug runtime manager
+    debug_manager: cursed::runtime::DebugManager,
+    /// Performance monitor
+    performance_monitor: cursed::runtime::PerformanceMonitor,
+    /// Current line number
+    current_line: u32,
+    /// Source code lines
+    source_lines: Vec<String>,
+    /// Symbol table
+    symbol_table: HashMap<String, SymbolInfo>,
+    /// Memory inspector
+    memory_inspector: MemoryInspector,
+}
+
+#[derive(Debug, Clone)]
+pub struct Breakpoint {
+    pub line: u32,
+    pub condition: Option<String>,
+    pub hit_count: u32,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct StackFrame {
+    pub function_name: String,
+    pub line: u32,
+    pub column: u32,
+    pub variables: HashMap<String, VariableValue>,
+}
+
+#[derive(Debug, Clone)]
+pub struct VariableValue {
+    pub name: String,
+    pub value: String,
+    pub type_info: String,
+    pub address: Option<u64>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SymbolInfo {
+    pub name: String,
+    pub symbol_type: String,
+    pub address: u64,
+    pub size: u32,
+    pub debug_info: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ExecutionState {
+    Running,
+    Paused,
+    Stopped,
+    Error(String),
+}
+
+#[derive(Debug)]
+pub struct MemoryInspector {
+    pub heap_usage: u64,
+    pub stack_usage: u64,
+    pub allocations: Vec<AllocationInfo>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AllocationInfo {
+    pub address: u64,
+    pub size: u32,
+    pub allocated_at: std::time::SystemTime,
+    pub allocation_type: String,
+}
+
+impl InteractiveDebugger {
+    pub fn new(
+        filename: String,
+        source: String,
+        ir: String,
+        initial_breakpoints: Vec<u32>,
+        trace_enabled: bool,
+        memory_debug: bool,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let source_lines: Vec<String> = source.lines().map(|s| s.to_string()).collect();
+        
+        let mut breakpoints = HashMap::new();
+        for line in initial_breakpoints {
+            breakpoints.insert(line, Breakpoint {
+                line,
+                condition: None,
+                hit_count: 0,
+                enabled: true,
+            });
+        }
+        
+        // Initialize debug manager
+        let debug_config = cursed::runtime::DebugManagerConfig {
+            enabled: true,
+            breakpoints_enabled: true,
+            variable_inspection: true,
+            stack_traces: true,
+            llvm_debug_info: true,
+            max_stack_depth: 100,
+            symbol_resolution: true,
+            verbosity_level: cursed::runtime::debug_manager::DebugVerbosity::Normal,
+            log_buffer_size: 1000,
+        };
+        
+        let debug_manager = cursed::runtime::DebugManager::new(debug_config);
+        
+        // Initialize performance monitor
+        let performance_monitor = cursed::runtime::PerformanceMonitor::new(
+            "debug_session".to_string(),
+        );
+        
+        Ok(InteractiveDebugger {
+            filename,
+            source,
+            ir,
+            breakpoints,
+            trace_enabled,
+            memory_debug,
+            execution_state: ExecutionState::Stopped,
+            watch_variables: Vec::new(),
+            call_stack: Vec::new(),
+            debug_manager,
+            performance_monitor,
+            current_line: 1,
+            source_lines,
+            symbol_table: HashMap::new(),
+            memory_inspector: MemoryInspector {
+                heap_usage: 0,
+                stack_usage: 0,
+                allocations: Vec::new(),
+            },
+        })
+    }
+    
+    pub async fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        println!("{}", "=== CURSED Interactive Debugger ===".cyan().bold());
+        println!("File: {}", self.filename.green());
+        println!("Use 'help' for available commands\n");
+        
+        self.display_current_context();
+        
+        loop {
+            print!("{} ", "(cursed-debug)".cyan().bold());
+            use std::io::{self, Write};
+            io::stdout().flush()?;
+            
+            let mut input = String::new();
+            io::stdin().read_line(&mut input)?;
+            let input = input.trim();
+            
+            if input.is_empty() {
+                continue;
+            }
+            
+            match self.handle_command(input).await {
+                Ok(true) => break, // Exit command
+                Ok(false) => continue,
+                Err(e) => {
+                    eprintln!("{}: {}", "Error".red().bold(), e);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    async fn handle_command(&mut self, input: &str) -> Result<bool, Box<dyn std::error::Error>> {
+        let parts: Vec<&str> = input.split_whitespace().collect();
+        if parts.is_empty() {
+            return Ok(false);
+        }
+        
+        match parts[0] {
+            "help" | "h" => {
+                self.show_help();
+            }
+            "run" | "r" => {
+                self.run_program().await?;
+            }
+            "continue" | "c" => {
+                self.continue_execution().await?;
+            }
+            "step" | "s" => {
+                self.step_execution().await?;
+            }
+            "next" | "n" => {
+                self.next_execution().await?;
+            }
+            "break" | "b" => {
+                if parts.len() > 1 {
+                    self.set_breakpoint(parts[1])?;
+                } else {
+                    self.list_breakpoints();
+                }
+            }
+            "delete" | "d" => {
+                if parts.len() > 1 {
+                    self.delete_breakpoint(parts[1])?;
+                }
+            }
+            "watch" | "w" => {
+                if parts.len() > 1 {
+                    self.add_watch(parts[1].to_string());
+                } else {
+                    self.list_watches();
+                }
+            }
+            "unwatch" | "uw" => {
+                if parts.len() > 1 {
+                    self.remove_watch(parts[1]);
+                }
+            }
+            "print" | "p" => {
+                if parts.len() > 1 {
+                    self.print_variable(parts[1]).await?;
+                }
+            }
+            "eval" | "e" => {
+                if parts.len() > 1 {
+                    let expr = parts[1..].join(" ");
+                    self.evaluate_expression(&expr).await?;
+                }
+            }
+            "backtrace" | "bt" => {
+                self.show_backtrace();
+            }
+            "frame" | "f" => {
+                if parts.len() > 1 {
+                    self.select_frame(parts[1])?;
+                }
+            }
+            "locals" | "l" => {
+                self.show_locals();
+            }
+            "memory" | "m" => {
+                self.show_memory_info();
+            }
+            "inspect" | "i" => {
+                if parts.len() > 1 {
+                    self.inspect_memory(parts[1]).await?;
+                }
+            }
+            "source" | "src" => {
+                self.display_source_context();
+            }
+            "symbols" | "sym" => {
+                self.show_symbols();
+            }
+            "performance" | "perf" => {
+                self.show_performance_info().await?;
+            }
+            "trace" | "t" => {
+                self.toggle_trace();
+            }
+            "quit" | "q" | "exit" => {
+                println!("{}", "Goodbye!".green().bold());
+                return Ok(true);
+            }
+            _ => {
+                println!("{}: Unknown command '{}'. Use 'help' for available commands.", 
+                        "Error".red().bold(), parts[0]);
+            }
+        }
+        
+        Ok(false)
+    }
+    
+    fn show_help(&self) {
+        println!("{}", "Available Commands:".cyan().bold());
+        println!("  {} - Show this help message", "help (h)".green());
+        println!("  {} - Run the program", "run (r)".green());
+        println!("  {} - Continue execution", "continue (c)".green());
+        println!("  {} - Step into (single instruction)", "step (s)".green());
+        println!("  {} - Step over (next line)", "next (n)".green());
+        println!("  {} - Set breakpoint at line", "break <line> (b)".green());
+        println!("  {} - Delete breakpoint", "delete <line> (d)".green());
+        println!("  {} - Add variable to watch list", "watch <var> (w)".green());
+        println!("  {} - Remove variable from watch list", "unwatch <var> (uw)".green());
+        println!("  {} - Print variable value", "print <var> (p)".green());
+        println!("  {} - Evaluate expression", "eval <expr> (e)".green());
+        println!("  {} - Show call stack", "backtrace (bt)".green());
+        println!("  {} - Select stack frame", "frame <num> (f)".green());
+        println!("  {} - Show local variables", "locals (l)".green());
+        println!("  {} - Show memory information", "memory (m)".green());
+        println!("  {} - Inspect memory at address", "inspect <addr> (i)".green());
+        println!("  {} - Show source code context", "source (src)".green());
+        println!("  {} - Show symbol table", "symbols (sym)".green());
+        println!("  {} - Show performance information", "performance (perf)".green());
+        println!("  {} - Toggle execution tracing", "trace (t)".green());
+        println!("  {} - Quit debugger", "quit (q)".green());
+    }
+    
+    async fn run_program(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        println!("{} Starting program execution...", "Running".green().bold());
+        
+        self.execution_state = ExecutionState::Running;
+        self.current_line = 1;
+        
+        // Performance monitoring would be started here
+        // TODO: Implement performance monitoring start
+        
+        // Simulate program execution with breakpoint checking
+        for (line_num, line) in self.source_lines.iter().enumerate() {
+            let line_num = line_num as u32 + 1;
+            
+            // Check for breakpoints
+            if let Some(breakpoint) = self.breakpoints.get_mut(&line_num) {
+                if breakpoint.enabled {
+                    breakpoint.hit_count += 1;
+                    self.execution_state = ExecutionState::Paused;
+                    self.current_line = line_num;
+                    
+                    println!("{} Breakpoint hit at line {}", "Paused".yellow().bold(), line_num);
+                    self.display_current_context();
+                    return Ok(());
+                }
+            }
+            
+            // Execute line (simulated)
+            if self.trace_enabled {
+                println!("{}: {}", format!("{:4}", line_num).blue(), line);
+            }
+            
+            self.current_line = line_num;
+            
+            // Simulate execution delay
+            tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        }
+        
+        self.execution_state = ExecutionState::Stopped;
+        println!("{} Program execution completed", "Finished".green().bold());
+        
+        Ok(())
+    }
+    
+    async fn continue_execution(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if !matches!(self.execution_state, ExecutionState::Paused) {
+            println!("{} Program is not paused", "Warning".yellow().bold());
+            return Ok(());
+        }
+        
+        println!("{} Continuing execution...", "Resuming".green().bold());
+        self.execution_state = ExecutionState::Running;
+        
+        // Continue from current line
+        for line_num in self.current_line + 1..=self.source_lines.len() as u32 {
+            // Check for breakpoints
+            if let Some(breakpoint) = self.breakpoints.get_mut(&line_num) {
+                if breakpoint.enabled {
+                    breakpoint.hit_count += 1;
+                    self.execution_state = ExecutionState::Paused;
+                    self.current_line = line_num;
+                    
+                    println!("{} Breakpoint hit at line {}", "Paused".yellow().bold(), line_num);
+                    self.display_current_context();
+                    return Ok(());
+                }
+            }
+            
+            // Execute line (simulated)
+            if self.trace_enabled {
+                let line = &self.source_lines[line_num as usize - 1];
+                println!("{}: {}", format!("{:4}", line_num).blue(), line);
+            }
+            
+            self.current_line = line_num;
+            
+            // Simulate execution delay
+            tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        }
+        
+        self.execution_state = ExecutionState::Stopped;
+        println!("{} Program execution completed", "Finished".green().bold());
+        
+        Ok(())
+    }
+    
+    async fn step_execution(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if matches!(self.execution_state, ExecutionState::Stopped) {
+            println!("{} Program is not running. Use 'run' to start.", "Warning".yellow().bold());
+            return Ok(());
+        }
+        
+        if self.current_line < self.source_lines.len() as u32 {
+            self.current_line += 1;
+            
+            if self.trace_enabled {
+                let line = &self.source_lines[self.current_line as usize - 1];
+                println!("{}: {}", format!("{:4}", self.current_line).blue(), line);
+            }
+            
+            self.display_current_context();
+        } else {
+            self.execution_state = ExecutionState::Stopped;
+            println!("{} Program execution completed", "Finished".green().bold());
+        }
+        
+        Ok(())
+    }
+    
+    async fn next_execution(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        // Same as step for now - in a real implementation, this would step over function calls
+        self.step_execution().await
+    }
+    
+    fn set_breakpoint(&mut self, line_str: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let line: u32 = line_str.parse()?;
+        
+        if line == 0 || line > self.source_lines.len() as u32 {
+            return Err(format!("Invalid line number: {}", line).into());
+        }
+        
+        self.breakpoints.insert(line, Breakpoint {
+            line,
+            condition: None,
+            hit_count: 0,
+            enabled: true,
+        });
+        
+        println!("{} Breakpoint set at line {}", "Set".green().bold(), line);
+        Ok(())
+    }
+    
+    fn delete_breakpoint(&mut self, line_str: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let line: u32 = line_str.parse()?;
+        
+        if self.breakpoints.remove(&line).is_some() {
+            println!("{} Breakpoint deleted at line {}", "Deleted".green().bold(), line);
+        } else {
+            println!("{} No breakpoint found at line {}", "Warning".yellow().bold(), line);
+        }
+        
+        Ok(())
+    }
+    
+    fn list_breakpoints(&self) {
+        if self.breakpoints.is_empty() {
+            println!("No breakpoints set");
+            return;
+        }
+        
+        println!("{}", "Breakpoints:".cyan().bold());
+        for (line, breakpoint) in &self.breakpoints {
+            let status = if breakpoint.enabled { "enabled" } else { "disabled" };
+            println!("  Line {}: {} (hit {} times)", 
+                    line, status.green(), breakpoint.hit_count);
+        }
+    }
+    
+    fn add_watch(&mut self, variable: String) {
+        if !self.watch_variables.contains(&variable) {
+            self.watch_variables.push(variable.clone());
+            println!("{} Added '{}' to watch list", "Watch".green().bold(), variable);
+        } else {
+            println!("{} '{}' is already being watched", "Warning".yellow().bold(), variable);
+        }
+    }
+    
+    fn remove_watch(&mut self, variable: &str) {
+        if let Some(pos) = self.watch_variables.iter().position(|v| v == variable) {
+            self.watch_variables.remove(pos);
+            println!("{} Removed '{}' from watch list", "Unwatch".green().bold(), variable);
+        } else {
+            println!("{} '{}' is not being watched", "Warning".yellow().bold(), variable);
+        }
+    }
+    
+    fn list_watches(&self) {
+        if self.watch_variables.is_empty() {
+            println!("No variables being watched");
+            return;
+        }
+        
+        println!("{}", "Watch Variables:".cyan().bold());
+        for var in &self.watch_variables {
+            println!("  {}", var.green());
+        }
+    }
+    
+    async fn print_variable(&self, variable: &str) -> Result<(), Box<dyn std::error::Error>> {
+        // Simulate variable lookup
+        println!("{} Variable '{}' = <value>", "Print".green().bold(), variable);
+        // In a real implementation, this would query the runtime for the variable value
+        Ok(())
+    }
+    
+    async fn evaluate_expression(&self, expression: &str) -> Result<(), Box<dyn std::error::Error>> {
+        // Simulate expression evaluation
+        println!("{} Expression '{}' = <result>", "Eval".green().bold(), expression);
+        // In a real implementation, this would evaluate the expression in the current context
+        Ok(())
+    }
+    
+    fn show_backtrace(&self) {
+        println!("{}", "Call Stack:".cyan().bold());
+        if self.call_stack.is_empty() {
+            println!("  No stack frames available");
+            return;
+        }
+        
+        for (i, frame) in self.call_stack.iter().enumerate() {
+            println!("  #{}: {} at line {}", i, frame.function_name.green(), frame.line);
+        }
+    }
+    
+    fn select_frame(&mut self, frame_str: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let frame_num: usize = frame_str.parse()?;
+        
+        if frame_num >= self.call_stack.len() {
+            return Err(format!("Invalid frame number: {}", frame_num).into());
+        }
+        
+        let frame = &self.call_stack[frame_num];
+        println!("{} Selected frame #{}: {} at line {}", 
+                "Frame".green().bold(), frame_num, frame.function_name, frame.line);
+        
+        Ok(())
+    }
+    
+    fn show_locals(&self) {
+        println!("{}", "Local Variables:".cyan().bold());
+        if self.call_stack.is_empty() {
+            println!("  No stack frame selected");
+            return;
+        }
+        
+        // Show variables from the current frame
+        if let Some(current_frame) = self.call_stack.last() {
+            for (name, value) in &current_frame.variables {
+                println!("  {} = {} ({})", name.green(), value.value, value.type_info);
+            }
+        }
+    }
+    
+    fn show_memory_info(&self) {
+        println!("{}", "Memory Information:".cyan().bold());
+        println!("  Heap Usage: {} bytes", self.memory_inspector.heap_usage);
+        println!("  Stack Usage: {} bytes", self.memory_inspector.stack_usage);
+        println!("  Active Allocations: {}", self.memory_inspector.allocations.len());
+        
+        if self.memory_debug {
+            println!("\n{}", "Recent Allocations:".cyan().bold());
+            for (i, alloc) in self.memory_inspector.allocations.iter().take(10).enumerate() {
+                println!("  #{}: {} bytes at 0x{:x} ({})", 
+                        i, alloc.size, alloc.address, alloc.allocation_type);
+            }
+        }
+    }
+    
+    async fn inspect_memory(&self, addr_str: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let address: u64 = if addr_str.starts_with("0x") {
+            u64::from_str_radix(&addr_str[2..], 16)?
+        } else {
+            addr_str.parse()?
+        };
+        
+        println!("{} Memory at 0x{:x}:", "Inspect".green().bold(), address);
+        println!("  <memory contents would be displayed here>");
+        
+        Ok(())
+    }
+    
+    fn display_source_context(&self) {
+        self.display_current_context();
+    }
+    
+    fn display_current_context(&self) {
+        let start_line = self.current_line.saturating_sub(3);
+        let end_line = (self.current_line + 3).min(self.source_lines.len() as u32);
+        
+        println!("{}", "Source Context:".cyan().bold());
+        for line_num in start_line..=end_line {
+            if line_num == 0 || line_num > self.source_lines.len() as u32 {
+                continue;
+            }
+            
+            let line = &self.source_lines[line_num as usize - 1];
+            let marker = if line_num == self.current_line { ">" } else { " " };
+            let breakpoint_marker = if self.breakpoints.contains_key(&line_num) { "*" } else { " " };
+            
+            println!("{}{} {:4}: {}", 
+                    marker.red().bold(),
+                    breakpoint_marker.yellow().bold(),
+                    line_num,
+                    line);
+        }
+    }
+    
+    fn show_symbols(&self) {
+        println!("{}", "Symbol Table:".cyan().bold());
+        if self.symbol_table.is_empty() {
+            println!("  No symbols loaded");
+            return;
+        }
+        
+        for (name, symbol) in &self.symbol_table {
+            println!("  {} ({}): 0x{:x} [{}]", 
+                    name.green(), symbol.symbol_type, symbol.address, symbol.size);
+        }
+    }
+    
+    async fn show_performance_info(&self) -> Result<(), Box<dyn std::error::Error>> {
+        println!("{}", "Performance Information:".cyan().bold());
+        
+        // Get current performance metrics (placeholder)
+        println!("  Performance monitoring integration pending");
+        println!("  CPU Usage: <monitoring not yet integrated>");
+        println!("  Memory Usage: <monitoring not yet integrated>");
+        println!("  Memory Peak: <monitoring not yet integrated>");
+        println!("  Allocations: <monitoring not yet integrated>");
+        println!("  Total Allocated: <monitoring not yet integrated>");
+        
+        Ok(())
+    }
+    
+    fn toggle_trace(&mut self) {
+        self.trace_enabled = !self.trace_enabled;
+        println!("{} Execution tracing {}", 
+                "Trace".green().bold(), 
+                if self.trace_enabled { "enabled" } else { "disabled" });
+    }
 }

@@ -5,7 +5,8 @@ pub mod value;
 
 // Core runtime modules - ENABLING ADVANCED FEATURES
 pub mod runtime;
-pub mod debug_info;  // RE-ENABLED - Advanced debug information
+pub mod debug_info;
+pub mod dwarf_parser;  // RE-ENABLED - Advanced debug information
 pub mod panic;
 pub mod goroutine;
 pub mod error_handling;

@@ -1,0 +1,47 @@
+# CURSED Formatter Configuration
+# This file configures the behavior of the CURSED code formatter
+
+# Indentation settings
+use_tabs = false
+indent_size = 4
+
+# Line length settings
+max_line_length = 100
+
+# Spacing settings
+spaces_around_operators = true
+space_before_brace = true
+space_inside_parentheses = false
+space_inside_brackets = false
+space_inside_braces = false
+
+# Array and structure formatting
+max_array_elements_single_line = 5
+max_map_elements_single_line = 3
+max_struct_fields_single_line = 3
+trailing_comma = true
+
+# Import settings
+group_imports = true
+sort_imports = true
+
+# Blank line settings
+blank_lines_between_statements = 0
+blank_lines_between_functions = 1
+preserve_empty_lines = true
+max_empty_lines = 2
+
+# Function formatting
+break_function_parameters = true
+break_function_arguments = true
+
+# Alignment settings
+align_assignments = false
+align_struct_fields = false
+
+# Comment settings
+format_comments = true
+
+# File settings
+insert_final_newline = true
+trim_trailing_whitespace = true
