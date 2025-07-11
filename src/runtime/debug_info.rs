@@ -10,6 +10,8 @@
 //! - Complete DWARF debug information parsing
 //! - Variable location tracking and stack frame reconstruction
 
+#![allow(non_upper_case_globals)]
+
 use crate::error::{CursedError, SourceLocation};
 use crate::debug::{DebugSymbol, DebugSymbolType};
 use std::collections::{HashMap, BTreeMap};
@@ -1040,7 +1042,7 @@ impl DwarfDebugDatabase {
         let mut child_entries = unit.entries_at_offset(function_offset)
             .map_err(|e| CursedError::RuntimeError(format!("Failed to get function children: {}", e)))?;
         
-        child_entries.next_dfs(); // Skip the function entry itself
+        let _ = child_entries.next_dfs(); // Skip the function entry itself
         
         while let Some((child_depth, child_entry)) = child_entries.next_dfs()
             .map_err(|e| CursedError::RuntimeError(format!("Failed to read child entry: {}", e)))? {
@@ -1187,7 +1189,7 @@ impl DwarfDebugDatabase {
         let mut child_entries = unit.entries_at_offset(block_offset)
             .map_err(|e| CursedError::RuntimeError(format!("Failed to get lexical block children: {}", e)))?;
         
-        child_entries.next_dfs(); // Skip the lexical block entry itself
+        let _ = child_entries.next_dfs(); // Skip the lexical block entry itself
         
         while let Some((_, child_entry)) = child_entries.next_dfs()
             .map_err(|e| CursedError::RuntimeError(format!("Failed to read lexical block child: {}", e)))? {
@@ -1324,7 +1326,7 @@ impl DwarfDebugDatabase {
         let mut child_entries = unit.entries_at_offset(type_offset)
             .map_err(|e| CursedError::RuntimeError(format!("Failed to get type children: {}", e)))?;
         
-        child_entries.next_dfs(); // Skip the type entry itself
+        let _ = child_entries.next_dfs(); // Skip the type entry itself
         
         while let Some((_, child_entry)) = child_entries.next_dfs()
             .map_err(|e| CursedError::RuntimeError(format!("Failed to read type member: {}", e)))? {

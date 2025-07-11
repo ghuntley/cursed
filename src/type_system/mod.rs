@@ -47,6 +47,12 @@ impl TypeSystem {
         environment.add_builtin_type("bool", TypeKind::Primitive);
         environment.add_builtin_type("void", TypeKind::Primitive);
         
+        // Add TestResult type system
+        environment.add_builtin_type("TestResult", TypeKind::Struct);
+        environment.add_builtin_type("TestStatus", TypeKind::Enum);
+        environment.add_builtin_type("TestSuite", TypeKind::Struct);
+        environment.add_builtin_type("TestReport", TypeKind::Struct);
+        
         // Add built-in objects like 'vibez'
         let vibez_type = TypeDefinition {
             name: "vibez".to_string(),

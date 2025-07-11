@@ -509,6 +509,11 @@ impl Parser {
                             "lit" => Type::Lit,
                             "sip" => Type::Sip,
                             "drip" => Type::Float,
+                            // TestResult type system
+                            "TestResult" => Type::TestResult,
+                            "TestStatus" => Type::TestStatus,
+                            "TestSuite" => Type::TestSuite,
+                            "TestReport" => Type::TestReport,
                             _ => Type::Custom(type_name),
                         };
                         return Ok(Some(Type::Array(Box::new(element_type), None)));
@@ -532,6 +537,11 @@ impl Parser {
                     "rune" => Type::Rune,
                     "extra" => Type::Extra,
                     "drip" => Type::Float,  // Legacy support
+                    // TestResult type system
+                    "TestResult" => Type::TestResult,
+                    "TestStatus" => Type::TestStatus,
+                    "TestSuite" => Type::TestSuite,
+                    "TestReport" => Type::TestReport,
                     _ => Type::Custom(type_name.clone()),
                 };
                 

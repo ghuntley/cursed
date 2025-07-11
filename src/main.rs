@@ -168,6 +168,17 @@ fn build_cli() -> Command {
                     .help("Check if compilation dependencies are available")
                     .long("check-deps")
                     .action(clap::ArgAction::SetTrue))
+                // New optimization flags
+                .arg(Arg::new("optimize")
+                    .help("Enable basic optimization")
+                    .long("optimize")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("opt-level")
+                    .help("Set optimization level (0-3)")
+                    .long("opt-level")
+                    .value_name("LEVEL")
+                    .value_parser(["0", "1", "2", "3"])
+                    .conflicts_with("optimize"))
         )
         .subcommand(
             Command::new("run")
@@ -668,17 +679,32 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
                 .unwrap_or("output")
         });
     
+    // Determine optimization level
+    let optimization_level = if matches.get_flag("optimize") {
+        Some("2") // Basic optimization (O2)
+    } else if let Some(level) = matches.get_one::<String>("opt-level") {
+        Some(level.as_str())
+    } else {
+        global_matches.get_one::<String>("optimization").map(|s| s.as_str())
+    };
+    
     if matches.get_flag("verbose") || global_matches.get_flag("verbose") {
         println!("{} {} to {}", "Compiling".green().bold(), input, output);
+        if let Some(level) = optimization_level {
+            println!("{} optimization level: {}", "Using".blue().bold(), level);
+        }
     }
     
     if matches.get_flag("emit-ir") {
         let ir = cursed::compile_to_ir_with_optimization(
             &fs::read_to_string(input)?,
-            global_matches.get_one::<String>("optimization").map(|s| s.as_str())
+            optimization_level
         )?;
         fs::write(format!("{}.ll", output), ir)?;
         println!("{} LLVM IR to {}.ll", "Generated".green().bold(), output);
+        if let Some(level) = optimization_level {
+            println!("{} optimization level {} applied", "Optimization".green().bold(), level);
+        }
     } else if matches.get_flag("emit-asm") {
         let source = fs::read_to_string(input)?;
         let assembly = cursed::compile_to_assembly(&source)?;
@@ -687,10 +713,10 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
     } else {
         // Handle native-only flag
         if matches.get_flag("native-only") {
-            cursed::compile_native_only(input, output).await?;
+            cursed::compile_native_only_with_optimization(input, output, optimization_level).await?;
             println!("{} native executable: {}", "Generated".green().bold(), output);
         } else {
-            cursed::compile(input, output).await?;
+            cursed::compile_with_optimization(input, output, optimization_level).await?;
             println!("{} executable: {}", "Generated".green().bold(), output);
         }
     }

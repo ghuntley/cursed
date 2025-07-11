@@ -47,6 +47,10 @@ pub enum CursedError {
     CollectionsError(String),
     StringError(String),
     ConfigError(String),
+    // Documentation error variants
+    IoError(String),
+    ParseError(String),
+    SerializationError(String),
 }
 
 #[derive(Debug, Clone)]
@@ -88,6 +92,9 @@ impl std::fmt::Display for CursedError {
             CursedError::CollectionsError(msg) => write!(f, "Collections error: {}", msg),
             CursedError::StringError(msg) => write!(f, "String error: {}", msg),
             CursedError::ConfigError(msg) => write!(f, "Config error: {}", msg),
+            CursedError::IoError(msg) => write!(f, "IO error: {}", msg),
+            CursedError::ParseError(msg) => write!(f, "Parse error: {}", msg),
+            CursedError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
         }
     }
 }

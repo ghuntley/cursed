@@ -42,6 +42,9 @@ impl From<CursedError> for StructuredError {
             CursedError::General(msg) => StructuredError::new(ErrorCode::E0309, msg),
             CursedError::InvalidOptimizationLevel(msg) => StructuredError::new(ErrorCode::E0208, msg),
             CursedError::ConfigError(msg) => StructuredError::new(ErrorCode::E0208, msg),
+            CursedError::IoError(msg) => StructuredError::new(ErrorCode::E0500, msg),
+            CursedError::ParseError(msg) => StructuredError::new(ErrorCode::E0001, msg),
+            CursedError::SerializationError(msg) => StructuredError::new(ErrorCode::E0309, msg),
         }
     }
 }

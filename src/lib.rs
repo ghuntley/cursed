@@ -563,6 +563,10 @@ pub fn check_with_packages(source: &str, source_file: Option<&std::path::Path>) 
 
 /// Compile CURSED source file to executable binary
 pub async fn compile(source_file: &str, output_file: &str) -> crate::error::Result<()> {
+    compile_with_optimization(source_file, output_file, None).await
+}
+
+pub async fn compile_with_optimization(source_file: &str, output_file: &str, optimization_level: Option<&str>) -> crate::error::Result<()> {
     tracing::info!("Compiling CURSED source file {} to executable {}", source_file, output_file);
     
     // Read the source file
@@ -570,7 +574,7 @@ pub async fn compile(source_file: &str, output_file: &str) -> crate::error::Resu
         .map_err(|e| CursedError::Io(e.to_string()))?;
     
     // Try native compilation first, fall back to interpretation if LLVM tools are missing
-    match compile_to_native(&source, source_file, output_file).await {
+    match compile_to_native_with_optimization(&source, source_file, output_file, optimization_level).await {
         Ok(()) => {
             tracing::info!("Successfully compiled {} to native executable {}", source_file, output_file);
             Ok(())
@@ -589,6 +593,10 @@ pub async fn compile(source_file: &str, output_file: &str) -> crate::error::Resu
 
 /// Compile CURSED source file to native executable only (no fallback)
 pub async fn compile_native_only(source_file: &str, output_file: &str) -> crate::error::Result<()> {
+    compile_native_only_with_optimization(source_file, output_file, None).await
+}
+
+pub async fn compile_native_only_with_optimization(source_file: &str, output_file: &str, optimization_level: Option<&str>) -> crate::error::Result<()> {
     tracing::info!("Compiling CURSED source file {} to native executable {} (no fallback)", source_file, output_file);
     
     // Read the source file
@@ -596,7 +604,7 @@ pub async fn compile_native_only(source_file: &str, output_file: &str) -> crate:
         .map_err(|e| CursedError::Io(e.to_string()))?;
     
     // Attempt native compilation without fallback
-    compile_to_native(&source, source_file, output_file).await?;
+    compile_to_native_with_optimization(&source, source_file, output_file, optimization_level).await?;
     
     tracing::info!("Successfully compiled {} to native executable {}", source_file, output_file);
     Ok(())
@@ -604,6 +612,10 @@ pub async fn compile_native_only(source_file: &str, output_file: &str) -> crate:
 
 /// Attempt native compilation using LLVM tools
 async fn compile_to_native(source: &str, source_file: &str, output_file: &str) -> crate::error::Result<()> {
+    compile_to_native_with_optimization(source, source_file, output_file, None).await
+}
+
+async fn compile_to_native_with_optimization(source: &str, source_file: &str, output_file: &str, optimization_level: Option<&str>) -> crate::error::Result<()> {
     // Create package manager for dependency resolution
     let package_manager_config = crate::package_manager::PackageManagerConfig::default();
     let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
@@ -616,14 +628,22 @@ async fn compile_to_native(source: &str, source_file: &str, output_file: &str) -
     let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
     
     codegen.initialize_package_integration(package_manager, package_config)?;
-    codegen.enable_release_optimizations()?;
+    
+    // Apply optimization level
+    if let Some(level) = optimization_level {
+        codegen.configure_optimization_from_string(level)?;
+        tracing::info!("Applied optimization level: {}", level);
+    } else {
+        // Default to release optimizations
+        codegen.enable_release_optimizations()?;
+    }
     
     // Generate LLVM IR from CURSED source
     tracing::info!("Generating LLVM IR for compilation...");
     let ir = codegen.compile_with_packages(&source, Some(std::path::Path::new(source_file))).await?;
     
-    // Compile IR to executable binary
-    compile_ir_to_executable(&ir, output_file)?;
+    // Compile IR to executable binary with optimization
+    compile_ir_to_executable_with_optimization(&ir, output_file, optimization_level)?;
     
     Ok(())
 }
@@ -752,10 +772,14 @@ fn find_cursed_binary() -> Option<String> {
 
 /// Compile LLVM IR to executable binary using system linker
 fn compile_ir_to_executable(ir: &str, output_file: &str) -> crate::error::Result<()> {
+    compile_ir_to_executable_with_optimization(ir, output_file, None)
+}
+
+fn compile_ir_to_executable_with_optimization(ir: &str, output_file: &str, optimization_level: Option<&str>) -> crate::error::Result<()> {
     use std::process::Command;
     use std::io::Write;
     
-    tracing::info!("Compiling LLVM IR to executable binary...");
+    tracing::info!("Compiling LLVM IR to executable binary with optimization...");
     
     // Write IR to temporary file
     let temp_ir_file = format!("{}.ll", output_file);
@@ -798,14 +822,30 @@ fn compile_ir_to_executable(ir: &str, output_file: &str) -> crate::error::Result
         ))
     };
     
-    // Compile IR to object file using llc
-    tracing::info!("Compiling IR to object file with llc...");
-    let llc_output = Command::new(&llc_command)
-        .arg("-filetype=obj")
+    // Compile IR to object file using llc with optimization
+    tracing::info!("Compiling IR to object file with llc (optimization level: {:?})...", optimization_level);
+    let mut llc_cmd = Command::new(&llc_command);
+    llc_cmd.arg("-filetype=obj")
         .arg("-o")
         .arg(&temp_obj_file)
-        .arg(&temp_ir_file)
-        .output()
+        .arg(&temp_ir_file);
+    
+    // Apply optimization level to llc
+    if let Some(level) = optimization_level {
+        match level {
+            "0" => llc_cmd.arg("-O0"),
+            "1" => llc_cmd.arg("-O1"),
+            "2" => llc_cmd.arg("-O2"),
+            "3" => llc_cmd.arg("-O3"),
+            _ => llc_cmd.arg("-O2"), // Default to O2
+        };
+        tracing::info!("Applied llc optimization level: {}", level);
+    } else {
+        // Default optimization
+        llc_cmd.arg("-O2");
+    }
+    
+    let llc_output = llc_cmd.output()
         .map_err(|e| CursedError::Io(format!("Failed to run llc: {}", e)))?;
     
     if !llc_output.status.success() {

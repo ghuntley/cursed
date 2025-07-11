@@ -909,7 +909,12 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 // For now, just return the base type name
                 // In a full implementation, we'd need to handle specialization
                 Ok(name.clone())
-            }
+            },
+            // TestResult type system
+            crate::ast::Type::TestResult => Ok("%struct.TestResult".to_string()),
+            crate::ast::Type::TestStatus => Ok("i32".to_string()), // enum as i32
+            crate::ast::Type::TestSuite => Ok("%struct.TestSuite".to_string()),
+            crate::ast::Type::TestReport => Ok("%struct.TestReport".to_string()),
         }
     }
     
