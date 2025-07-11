@@ -83,8 +83,15 @@ async fn test_resolver_performance_comparison() {
     println!("Original resolver time: {:?}", original_time);
     println!("Optimized resolver time: {:?}", optimized_time);
     
+    // Extract just the ResolutionResult from the optimized resolver tuple
+    let optimized_result_only = optimized_result.as_ref().map(|(result, _metrics)| result);
+    
+
+    
+
+    
     // Both should have the same success/failure outcome
-    match (&original_result, &optimized_result) {
+    match (&original_result, &optimized_result_only) {
         (Ok(_), Ok(_)) => {
             println!("✅ Both resolvers succeeded");
             

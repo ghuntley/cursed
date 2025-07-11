@@ -117,9 +117,21 @@ pub enum SendResult<T> {
 impl<T> SendResult<T> {
     pub fn unwrap(self) -> T {
         match self {
-            SendResult::Sent => panic!("called `SendResult::unwrap()` on a `Sent` value"),
+            SendResult::Sent => {
+                // This is not a valid unwrap for Sent variant - return a default or handle differently
+                // For now, we'll provide a better error message
+                unreachable!("SendResult::Sent has no value to unwrap - use is_ok() to check success")
+            },
             SendResult::Closed(t) => t,
             SendResult::WouldBlock(t) => t,
+        }
+    }
+    
+    pub fn unwrap_value(self) -> Option<T> {
+        match self {
+            SendResult::Sent => None,
+            SendResult::Closed(t) => Some(t),
+            SendResult::WouldBlock(t) => Some(t),
         }
     }
     
@@ -143,8 +155,20 @@ impl<T> ReceiveResult<T> {
     pub fn unwrap(self) -> T {
         match self {
             ReceiveResult::Received(t) => t,
-            ReceiveResult::Closed => panic!("called `ReceiveResult::unwrap()` on a `Closed` value"),
-            ReceiveResult::WouldBlock => panic!("called `ReceiveResult::unwrap()` on a `WouldBlock` value"),
+            ReceiveResult::Closed => {
+                unreachable!("ReceiveResult::Closed has no value to unwrap - use is_ok() to check success")
+            },
+            ReceiveResult::WouldBlock => {
+                unreachable!("ReceiveResult::WouldBlock has no value to unwrap - use is_ok() to check success")
+            },
+        }
+    }
+    
+    pub fn unwrap_or_default(self) -> Option<T> {
+        match self {
+            ReceiveResult::Received(t) => Some(t),
+            ReceiveResult::Closed => None,
+            ReceiveResult::WouldBlock => None,
         }
     }
     

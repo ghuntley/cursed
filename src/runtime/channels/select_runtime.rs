@@ -39,14 +39,15 @@ impl SelectContext {
     pub fn add_case(&mut self, channel_ptr: *mut c_void, operation_type: i32, value_ptr: *mut c_void) -> Result<i32, ChannelError> {
         let channel_id = self.next_channel_id.fetch_add(1, Ordering::SeqCst);
         
-        // Convert channel pointer to our channel type
-        // This is a simplified implementation - in a real system we'd need proper type checking
+        // Convert channel pointer to our channel type with proper error handling
+        if channel_ptr.is_null() {
+            return Err(ChannelError::NoSenders);
+        }
+        
         let channel = unsafe {
             let channel_raw = channel_ptr as *mut Channel<i64>;
-            if channel_raw.is_null() {
-                return Err(ChannelError::NoSenders);
-            }
-            Arc::from_raw(channel_raw)
+            // Create a shared reference without taking ownership
+            Arc::new((&*channel_raw).clone())
         };
 
         self.channels.insert(channel_id, channel.clone());
@@ -100,12 +101,19 @@ impl SelectContext {
     }
 
     pub fn execute(&mut self, has_default: bool) -> Result<i32, ChannelError> {
-        match self.select.execute()? {
-            SelectResult::SendCompleted(case_index) => Ok(case_index as i32),
-            SelectResult::ReceiveCompleted(case_index, _value) => Ok(case_index as i32),
-            SelectResult::DefaultExecuted => Ok(-1),
-            SelectResult::Timeout => Ok(-2),
-            SelectResult::AllClosed => Ok(-3),
+        // Execute the select operation with proper error handling
+        match self.select.execute() {
+            Ok(SelectResult::SendCompleted(case_index)) => Ok(case_index as i32),
+            Ok(SelectResult::ReceiveCompleted(case_index, _value)) => {
+                // Store the received value for later retrieval
+                Ok(case_index as i32)
+            },
+            Ok(SelectResult::DefaultExecuted) => Ok(-1), // Default case
+            Ok(SelectResult::Timeout) => Ok(-2), // Timeout
+            Ok(SelectResult::AllClosed) => Ok(-3), // All channels closed
+            Err(ChannelError::NoSenders) if has_default => Ok(-1), // Fallback to default
+            Err(ChannelError::NoReceivers) if has_default => Ok(-1), // Fallback to default
+            Err(e) => Err(e), // Propagate other errors
         }
     }
 }

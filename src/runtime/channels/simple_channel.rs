@@ -427,7 +427,14 @@ mod tests {
         // Receive in main thread
         match receiver.recv() {
             ReceiveResult::Received(value) => assert_eq!(value, 42),
-            _ => panic!("Should receive value"),
+            ReceiveResult::Closed => {
+                eprintln!("Channel closed unexpectedly");
+                assert!(false, "Channel should not be closed")
+            },
+            ReceiveResult::WouldBlock => {
+                eprintln!("Receive would block unexpectedly");
+                assert!(false, "Receive should not block on unbuffered channel")
+            },
         }
         
         sender_handle.join().unwrap();

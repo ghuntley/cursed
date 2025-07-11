@@ -451,6 +451,60 @@ impl GoroutineScheduler {
         self.running.load(Ordering::SeqCst)
     }
 
+    /// Get current goroutine ID (thread-local)
+    pub fn get_current_goroutine_id(&self) -> Option<GoroutineId> {
+        thread_local! {
+            static CURRENT_GOROUTINE_ID: std::cell::RefCell<Option<GoroutineId>> = std::cell::RefCell::new(None);
+        }
+        
+        CURRENT_GOROUTINE_ID.with(|id| *id.borrow())
+    }
+
+    /// Get goroutine state by ID
+    pub fn get_goroutine_state(&self, goroutine_id: GoroutineId) -> Option<GoroutineState> {
+        // Search through all workers for the goroutine
+        for worker in &self.workers {
+            if let Ok(queue) = worker.queue.lock() {
+                for goroutine in queue.iter() {
+                    if let Ok(g) = goroutine.lock() {
+                        if g.id == goroutine_id {
+                            return Some(g.get_state());
+                        }
+                    }
+                }
+            }
+            
+            // Check currently running goroutine
+            if let Ok(current) = worker.current.lock() {
+                if let Some(goroutine) = current.as_ref() {
+                    if let Ok(g) = goroutine.lock() {
+                        if g.id == goroutine_id {
+                            return Some(g.get_state());
+                        }
+                    }
+                }
+            }
+        }
+        
+        None
+    }
+
+    /// Get parent goroutine ID
+    pub fn get_parent_goroutine_id(&self, _goroutine_id: GoroutineId) -> Option<GoroutineId> {
+        // For now, return None - would need to store parent relationships
+        // TODO: Implement parent goroutine tracking
+        None
+    }
+
+    /// Set current goroutine ID (thread-local)
+    pub fn set_current_goroutine_id(&self, goroutine_id: Option<GoroutineId>) {
+        thread_local! {
+            static CURRENT_GOROUTINE_ID: std::cell::RefCell<Option<GoroutineId>> = std::cell::RefCell::new(None);
+        }
+        
+        CURRENT_GOROUTINE_ID.with(|id| *id.borrow_mut() = goroutine_id);
+    }
+
     // Private helper methods
 
     fn schedule_goroutine(&self, goroutine: Arc<Mutex<Goroutine>>) -> Result<(), CursedError> {

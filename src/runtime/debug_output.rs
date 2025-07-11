@@ -5,6 +5,7 @@
 
 use crate::error_types::{Error, Result as CursedResult};
 use crate::runtime::stack_trace::{StackTrace, StackFrame};
+use crate::runtime::goroutine::{GoroutineId, GoroutineState};
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex, RwLock};
@@ -92,6 +93,38 @@ pub struct DebugMessage {
     pub thread_id: Option<usize>,
     /// Goroutine ID (if applicable)
     pub goroutine_id: Option<usize>,
+}
+
+/// Goroutine context for debug tracking
+#[derive(Debug, Clone)]
+pub struct GoroutineDebugContext {
+    /// Goroutine ID
+    pub id: GoroutineId,
+    /// Current state
+    pub state: GoroutineState,
+    /// Parent goroutine ID
+    pub parent_id: Option<GoroutineId>,
+    /// Creation timestamp
+    pub created_at: Instant,
+    /// Stack trace at creation
+    pub creation_stack: Vec<StackFrame>,
+    /// Current stack trace
+    pub current_stack: Vec<StackFrame>,
+    /// Debug metadata
+    pub metadata: HashMap<String, String>,
+}
+
+/// Performance metrics for debug operations
+#[derive(Debug, Clone)]
+pub struct DebugPerformanceMetrics {
+    /// Total number of messages processed
+    pub total_messages: u64,
+    /// Current buffer size
+    pub buffer_size: usize,
+    /// Average message size in bytes
+    pub average_message_size: f64,
+    /// Peak memory usage in bytes
+    pub peak_memory_usage: usize,
 }
 
 /// Debug value that can hold different types
@@ -378,18 +411,32 @@ impl DebugOutputSystem {
             *counter
         };
 
+        // Capture stack trace for function name and location
+        let stack_trace = self.capture_stack_trace()?;
+        let (function_name, location) = if let Some(frame) = stack_trace.frames.get(1) {
+            (
+                Some(frame.function_name.clone()),
+                frame.file.as_ref().and_then(|f| frame.line.map(|l| (f.clone(), l as u32)))
+            )
+        } else {
+            (None, None)
+        };
+
+        // Get current goroutine context
+        let goroutine_context = self.get_current_goroutine_context()?;
+        
         let debug_message = DebugMessage {
             id: message_id,
             level,
             message: message.to_string(),
             module: module.to_string(),
-            function: None, // TODO: Capture from stack trace
-            location: None, // TODO: Capture from caller
+            function: function_name,
+            location,
             timestamp: SystemTime::now(),
             data,
             tags,
             thread_id: Some(get_current_thread_id()),
-            goroutine_id: None, // TODO: Get from goroutine context
+            goroutine_id: goroutine_context.map(|ctx| ctx.id as usize),
         };
 
         // Add to buffer
@@ -495,6 +542,245 @@ impl DebugOutputSystem {
             writer.flush()?;
         }
         Ok(())
+    }
+
+    /// Capture stack trace for debugging
+    pub fn capture_stack_trace(&self) -> CursedResult<StackTrace> {
+        use std::backtrace::Backtrace;
+        
+        let backtrace = Backtrace::capture();
+        let mut frames = Vec::new();
+        
+        // Parse backtrace symbols
+        let backtrace_str = format!("{}", backtrace);
+        for (i, line) in backtrace_str.lines().enumerate() {
+            if i > 20 { break; } // Limit stack depth
+            
+            if let Some(frame) = self.parse_backtrace_line(line) {
+                frames.push(frame);
+            }
+        }
+        
+        Ok(StackTrace {
+            frames,
+            thread_id: Some(get_current_thread_id()),
+            timestamp: Instant::now(),
+            context: {
+                let mut ctx = HashMap::new();
+                ctx.insert("captured_at".to_string(), format!("thread_{}", get_current_thread_id()));
+                ctx
+            },
+        })
+    }
+    
+    /// Parse a single backtrace line into a StackFrame
+    pub fn parse_backtrace_line(&self, line: &str) -> Option<StackFrame> {
+        // Simple regex-based parsing for Rust backtrace format
+        use std::path::Path;
+        
+        if line.trim().is_empty() {
+            return None;
+        }
+        
+        // Try to extract function name
+        let function_name = if let Some(start) = line.find(' ') {
+            if let Some(end) = line[start..].find(':') {
+                line[start..start+end].trim().to_string()
+            } else {
+                line[start..].trim().to_string()
+            }
+        } else {
+            "unknown".to_string()
+        };
+        
+        // Try to extract file and line info
+        let (file, line_num) = if let Some(file_start) = line.rfind('/') {
+            if let Some(colon_pos) = line[file_start..].find(':') {
+                let file_part = &line[file_start+1..file_start+colon_pos];
+                let line_part = &line[file_start+colon_pos+1..];
+                
+                if let Some(line_end) = line_part.find(':') {
+                    let line_num_str = &line_part[..line_end];
+                    if let Ok(line_num) = line_num_str.parse::<usize>() {
+                        (Some(file_part.to_string()), Some(line_num))
+                    } else {
+                        (Some(file_part.to_string()), None)
+                    }
+                } else {
+                    (Some(file_part.to_string()), None)
+                }
+            } else {
+                (None, None)
+            }
+        } else {
+            (None, None)
+        };
+        
+        Some(StackFrame::with_location(
+            function_name,
+            crate::runtime::stack_trace::FrameType::Function,
+            file.unwrap_or("unknown".to_string()),
+            line_num.unwrap_or(0),
+            None,
+        ))
+    }
+
+    /// Get current goroutine context
+    pub fn get_current_goroutine_context(&self) -> CursedResult<Option<GoroutineDebugContext>> {
+        // Try to get current goroutine from global scheduler
+        if let Some(scheduler) = crate::runtime::goroutine::get_global_scheduler() {
+            if let Some(current_id) = scheduler.get_current_goroutine_id() {
+                let state = scheduler.get_goroutine_state(current_id).unwrap_or(GoroutineState::Ready);
+                
+                // Create debug context
+                let context = GoroutineDebugContext {
+                    id: current_id,
+                    state,
+                    parent_id: scheduler.get_parent_goroutine_id(current_id),
+                    created_at: Instant::now(),
+                    creation_stack: Vec::new(), // TODO: Get from scheduler
+                    current_stack: self.capture_stack_trace()?.frames,
+                    metadata: HashMap::new(),
+                };
+                
+                return Ok(Some(context));
+            }
+        }
+        
+        Ok(None)
+    }
+
+    /// Enhanced debug output with performance monitoring
+    pub fn log_with_performance(&self, level: DebugLevel, module: &str, message: &str) -> CursedResult<()> {
+        let start_time = Instant::now();
+        
+        // Perform regular logging
+        self.log(level, module, message)?;
+        
+        let duration = start_time.elapsed();
+        
+        // Monitor performance if debug logging is taking too long
+        if duration.as_millis() > 10 {
+            self.log(
+                DebugLevel::Warn,
+                "debug_system",
+                &format!("Debug logging took {}ms for message: {}", duration.as_millis(), message)
+            )?;
+        }
+        
+        Ok(())
+    }
+
+    /// Format debug message with enhanced formatting
+    pub fn format_enhanced_message(&self, message: &DebugMessage) -> String {
+        use std::fmt::Write;
+        
+        let mut result = String::new();
+        
+        // Add timestamp
+        if self.config.read().unwrap().show_timestamps {
+            if let Ok(duration) = message.timestamp.duration_since(SystemTime::UNIX_EPOCH) {
+                write!(&mut result, "[{}] ", duration.as_secs()).unwrap();
+            }
+        }
+        
+        // Add level with emoji
+        write!(&mut result, "{} {} ", message.level.emoji(), message.level).unwrap();
+        
+        // Add goroutine context if available
+        if let Some(goroutine_id) = message.goroutine_id {
+            write!(&mut result, "[G{}] ", goroutine_id).unwrap();
+        }
+        
+        // Add thread ID
+        if self.config.read().unwrap().show_thread_ids {
+            if let Some(thread_id) = message.thread_id {
+                write!(&mut result, "[T{}] ", thread_id).unwrap();
+            }
+        }
+        
+        // Add module and function
+        write!(&mut result, "[{}] ", message.module).unwrap();
+        if let Some(function) = &message.function {
+            write!(&mut result, "{}() ", function).unwrap();
+        }
+        
+        // Add location
+        if self.config.read().unwrap().show_locations {
+            if let Some((file, line)) = &message.location {
+                write!(&mut result, "{}:{} ", file, line).unwrap();
+            }
+        }
+        
+        // Add message
+        write!(&mut result, "{}", message.message).unwrap();
+        
+        // Add structured data
+        if !message.data.is_empty() {
+            write!(&mut result, " [data: {}]", format_debug_data_as_json(&message.data)).unwrap();
+        }
+        
+        // Add tags
+        if !message.tags.is_empty() {
+            write!(&mut result, " [tags: {}]", message.tags.join(", ")).unwrap();
+        }
+        
+        result
+    }
+
+    /// Integration with DWARF debug information
+    pub fn enhance_with_dwarf_info(&self, frame: &mut StackFrame, dwarf_data: &[u8]) -> CursedResult<()> {
+        use crate::runtime::dwarf_parser::DwarfParser;
+        
+        let parser = DwarfParser::new(dwarf_data)
+            .map_err(|e| Error::Runtime(format!("DWARF parser error: {}", e)))?;
+        
+        // Try to get more detailed information from DWARF
+        if let Ok(debug_info) = parser.get_function_info(&frame.function_name) {
+            frame.file = debug_info.source_file.as_ref().map(|p| p.to_string_lossy().to_string());
+            frame.line = debug_info.line_range.map(|(start, _)| start as usize);
+            frame.column = None; // Column info not available in this structure
+            
+            // Add local variables if available
+            if let Ok(locals) = parser.get_local_variables(&frame.function_name) {
+                for (name, value) in locals {
+                    frame.locals.insert(name, value);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Performance monitoring for debug operations
+    pub fn monitor_performance(&self) -> DebugPerformanceMetrics {
+        DebugPerformanceMetrics {
+            total_messages: *self.message_counter.lock().unwrap(),
+            buffer_size: self.message_buffer.read().unwrap().len(),
+            average_message_size: self.calculate_average_message_size(),
+            peak_memory_usage: self.get_peak_memory_usage(),
+        }
+    }
+
+    /// Calculate average message size
+    fn calculate_average_message_size(&self) -> f64 {
+        let buffer = self.message_buffer.read().unwrap();
+        if buffer.is_empty() {
+            return 0.0;
+        }
+        
+        let total_size: usize = buffer.iter()
+            .map(|msg| msg.message.len() + msg.module.len())
+            .sum();
+        
+        total_size as f64 / buffer.len() as f64
+    }
+
+    /// Get peak memory usage
+    fn get_peak_memory_usage(&self) -> usize {
+        // Simplified memory usage calculation
+        let buffer = self.message_buffer.read().unwrap();
+        buffer.len() * std::mem::size_of::<DebugMessage>()
     }
 }
 

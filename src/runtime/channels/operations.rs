@@ -132,7 +132,7 @@ impl<T> SendOperation<T> {
     ) -> SendResult<T> {
         // Prevent double execution
         if self.executed {
-            panic!("SendOperation executed twice - this is a programming error");
+            return SendResult::Closed(self.value.take().expect("Send operation value should be present"));
         }
         self.executed = true;
         
@@ -755,7 +755,7 @@ mod tests {
         
         match operation.execute(&buffer) {
             SendResult::Sent => assert!(true),
-            _ => panic!("Send should succeed"),
+            result => assert!(false, "Send should succeed, got {:?}", result),
         }
     }
 
@@ -771,7 +771,7 @@ mod tests {
         
         match operation.execute(&buffer) {
             ReceiveResult::Received(value) => assert_eq!(value, 42),
-            _ => panic!("Receive should succeed"),
+            result => assert!(false, "Receive should succeed, got {:?}", result),
         }
     }
 
@@ -785,7 +785,7 @@ mod tests {
         
         match batch_op.execute(&buffer) {
             Ok(count) => assert_eq!(count, 5),
-            Err(_) => panic!("Batch send should succeed"),
+            Err(e) => assert!(false, "Batch send should succeed, got error: {:?}", e),
         }
     }
 
@@ -806,7 +806,7 @@ mod tests {
                 assert_eq!(values.len(), 3);
                 assert_eq!(values, vec![1, 2, 3]);
             }
-            Err(_) => panic!("Batch receive should succeed"),
+            Err(e) => assert!(false, "Batch receive should succeed, got error: {:?}", e),
         }
     }
 }

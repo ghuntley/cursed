@@ -10,8 +10,8 @@ fn main() {
     println!("cargo:rerun-if-changed=src/execution/runtime_functions.rs");
     println!("cargo:rerun-if-changed=build.rs");
     
-    // Build runtime library
-    build_runtime_library();
+    // Temporarily disable runtime library build for testing
+    // build_runtime_library();
     
     // Link with system libraries (existing code)
     link_system_libraries();

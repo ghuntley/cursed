@@ -2446,6 +2446,15 @@ impl LlvmCodeGenerator {
         enhanced_source.push_str("declare void @cursed_gc_free(i8*)\n");
         enhanced_source.push_str("declare void @cursed_panic(i8*)\n");
         enhanced_source.push_str("declare i32 @cursed_error_propagate(i32, i8*)\n");
+        
+        // Error handling runtime functions
+        enhanced_source.push_str("\n; Error Handling Runtime Functions\n");
+        enhanced_source.push_str("declare i8* @cursed_create_error()\n");
+        enhanced_source.push_str("declare i1 @cursed_is_error(i8*)\n");
+        enhanced_source.push_str("declare i8* @cursed_propagate_error(i8*)\n");
+        enhanced_source.push_str("declare i8* @cursed_extract_value(i8*)\n");
+        enhanced_source.push_str("declare i8* @cursed_set_error_message(i8*, i8*)\n");
+        enhanced_source.push_str("declare void @llvm.memcpy.p0i8.p0i8.i32(i8*, i8*, i32, i1)\n");
         enhanced_source.push_str("\n");
     }
     

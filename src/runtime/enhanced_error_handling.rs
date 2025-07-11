@@ -575,7 +575,9 @@ impl EnhancedErrorRuntime {
             }
             RecoveryAction::EscalateToPanic => {
                 // Re-panic
-                panic!("Unrecoverable panic in goroutine {}", goroutine_id);
+                eprintln!("Unrecoverable panic in goroutine {} - escalating to runtime", goroutine_id);
+                // Instead of panicking, let the runtime handle it
+                std::process::exit(1);
             }
             _ => {
                 // Handle other recovery actions

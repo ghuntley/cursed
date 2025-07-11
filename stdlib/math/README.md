@@ -1,110 +1,211 @@
-# Math Module
+# Pure CURSED Math Library
 
-Comprehensive mathematical functions and calculations for CURSED.
-
-## Overview
-
-The `math` module provides a complete set of mathematical functions including basic arithmetic, trigonometry, statistics, and specialized mathematical operations. All functions are implemented with high precision and performance.
+A comprehensive mathematical library implemented entirely in pure CURSED without any FFI dependencies.
 
 ## Features
 
-### Mathematical Constants
-- **PI**: `math_pi()` - π (3.14159...)
-- **E**: `math_e()` - Euler's number (2.71828...)
-- **TAU**: `math_tau()` - τ = 2π (6.28318...)
+### ✅ FFI-Free Implementation
+- **Zero External Dependencies**: All mathematical functions implemented in pure CURSED
+- **Self-Contained**: No Rust FFI bridges or external library calls
+- **Portable**: Works consistently across all platforms and compilation modes
+- **Performance Optimized**: Efficient algorithms for both interpretation and compilation
 
-### Basic Operations
-- **Absolute Value**: `math_abs()`, `math_abs_int()`
-- **Min/Max**: `math_min()`, `math_max()`, `math_min_int()`, `math_max_int()`
-- **Clamping**: `math_clamp()`
-- **Sign**: `math_sign()`
+### 🧮 Mathematical Constants
+- `math_pi()` - π (pi) constant with full precision
+- `math_e()` - e (Euler's number) constant with full precision  
+- `math_tau()` - τ (tau) constant (2π) with full precision
 
-### Power & Logarithmic Functions
-- **Power**: `math_pow()`, `math_sqrt()`, `math_cbrt()`
-- **Exponential**: `math_exp()`, `math_exp2()`
-- **Logarithms**: `math_log()`, `math_log10()`, `math_log2()`
+### 🔢 Basic Operations
+- `math_abs(x)` - Absolute value for floats
+- `math_abs_int(x)` - Absolute value for integers
+- `math_min(a, b)` / `math_max(a, b)` - Minimum/maximum for floats
+- `math_min_int(a, b)` / `math_max_int(a, b)` - Minimum/maximum for integers
+- `math_clamp(x, min, max)` - Clamp value between bounds
+- `math_sign(x)` - Sign of a number (-1, 0, or 1)
 
-### Trigonometric Functions
-- **Basic Trig**: `math_sin()`, `math_cos()`, `math_tan()`
-- **Inverse Trig**: `math_asin()`, `math_acos()`, `math_atan()`, `math_atan2()`
-- **Hyperbolic**: `math_sinh()`, `math_cosh()`, `math_tanh()`
+### 🔋 Power Functions
+- `math_pow(base, exponent)` - Power function using Newton-Raphson method
+- `math_sqrt(x)` - Square root using Newton-Raphson method
+- `math_cbrt(x)` - Cube root using Newton-Raphson method
 
-### Rounding & Truncation
-- **Rounding**: `math_floor()`, `math_ceil()`, `math_round()`, `math_trunc()`
-- **Fractional**: `math_frac()`
+### 📊 Logarithmic Functions
+- `math_log(x)` - Natural logarithm using Taylor series
+- `math_log10(x)` - Base-10 logarithm
+- `math_log2(x)` - Base-2 logarithm
 
-### Statistical Functions
-- **Aggregate**: `math_sum()`, `math_mean()`, `math_median()`
-- **Variance**: `math_variance()`, `math_std_dev()`
+### 🌊 Exponential Functions
+- `math_exp(x)` - Natural exponential using Taylor series
+- `math_exp2(x)` - Base-2 exponential
 
-### Random Number Generation
-- **Random**: `math_random()`, `math_random_int()`, `math_random_float()`
-- **Seeding**: `math_seed_random()`
+### 📐 Trigonometric Functions
+- `math_sin(x)` - Sine using Taylor series
+- `math_cos(x)` - Cosine using Taylor series
+- `math_tan(x)` - Tangent (sin/cos)
+- `math_asin(x)` - Inverse sine
+- `math_acos(x)` - Inverse cosine
+- `math_atan(x)` - Inverse tangent using Taylor series
+- `math_atan2(y, x)` - Two-argument arctangent
 
-### Utility Functions
-- **Validation**: `math_is_nan()`, `math_is_infinite()`, `math_is_finite()`
-- **Conversion**: `math_degrees()`, `math_radians()`
-- **Number Theory**: `math_gcd()`, `math_lcm()`, `math_factorial()`, `math_fibonacci()`
+### 🌀 Hyperbolic Functions
+- `math_sinh(x)` - Hyperbolic sine
+- `math_cosh(x)` - Hyperbolic cosine
+- `math_tanh(x)` - Hyperbolic tangent
 
-### Interpolation
-- **Linear**: `math_lerp()`, `math_inverse_lerp()`
-- **Smooth**: `math_smoothstep()`
+### 🔄 Rounding Functions
+- `math_floor(x)` - Floor function
+- `math_ceil(x)` - Ceiling function
+- `math_round(x)` - Round to nearest integer
+- `math_trunc(x)` - Truncate decimal part
+- `math_frac(x)` - Fractional part
 
-### Distance & Geometry
-- **2D/3D Distance**: `math_distance_2d()`, `math_distance_3d()`
-- **Vector Operations**: `math_dot_product_2d()`, `math_cross_product_2d()`
-- **Magnitude**: `math_magnitude_2d()`, `math_normalize_2d()`
+### 🎯 Utility Functions
+- `math_is_nan(x)` - Check if value is NaN
+- `math_is_infinite(x)` - Check if value is infinite
+- `math_is_finite(x)` - Check if value is finite
+- `math_degrees(radians)` - Convert radians to degrees
+- `math_radians(degrees)` - Convert degrees to radians
 
-## Usage Examples
+### 🔢 Number Theory
+- `math_gcd(a, b)` - Greatest common divisor using Euclidean algorithm
+- `math_lcm(a, b)` - Least common multiple
+- `math_factorial(n)` - Factorial function
+- `math_fibonacci(n)` - Fibonacci sequence
+
+### 🎲 Random Numbers
+- `math_random()` - Random float between 0 and 1
+- `math_random_int(min, max)` - Random integer in range
+- `math_random_float(min, max)` - Random float in range
+- `math_seed_random(seed)` - Seed the random number generator
+
+### 📈 Statistical Functions
+- `math_sum(values)` - Sum of array elements
+- `math_mean(values)` - Arithmetic mean
+- `math_median(values)` - Median value
+- `math_variance(values)` - Variance
+- `math_std_dev(values)` - Standard deviation
+
+### 🎨 Interpolation Functions
+- `math_lerp(a, b, t)` - Linear interpolation
+- `math_inverse_lerp(a, b, value)` - Inverse linear interpolation
+- `math_smoothstep(edge0, edge1, x)` - Smooth interpolation
+
+### 📏 Geometry Functions
+- `math_distance_2d(x1, y1, x2, y2)` - 2D distance
+- `math_distance_3d(x1, y1, z1, x2, y2, z2)` - 3D distance
+- `math_dot_product_2d(x1, y1, x2, y2)` - 2D dot product
+- `math_cross_product_2d(x1, y1, x2, y2)` - 2D cross product
+- `math_magnitude_2d(x, y)` - 2D vector magnitude
+- `math_normalize_2d(x, y)` - 2D vector normalization
+
+## Usage
 
 ```cursed
 yeet "math"
 
-// Basic calculations
-sus radius meal = 5.0
-sus area meal = math_pi() * math_pow(radius, 2.0)
-sus circumference meal = 2.0 * math_pi() * radius
+// Basic operations
+sus absolute meal = math_abs(-42.5)
+sus minimum meal = math_min(10.0, 20.0)
+sus maximum meal = math_max(10.0, 20.0)
+
+// Power functions
+sus power meal = math_pow(2.0, 3.0)  // 8.0
+sus square_root meal = math_sqrt(16.0)  // 4.0
 
 // Trigonometry
-sus angle meal = math_radians(45.0)  // Convert degrees to radians
-sus sin_val meal = math_sin(angle)
-sus cos_val meal = math_cos(angle)
+sus sine meal = math_sin(math_pi() / 2.0)  // 1.0
+sus cosine meal = math_cos(0.0)  // 1.0
 
-// Statistics
-sus data [meal] = [1.0, 2.0, 3.0, 4.0, 5.0]
-sus average meal = math_mean(data)
-sus std_deviation meal = math_std_dev(data)
+// Logarithms and exponentials
+sus natural_log meal = math_log(math_e())  // 1.0
+sus exponential meal = math_exp(1.0)  // e
 
 // Random numbers
 math_seed_random(42)
-sus random_float meal = math_random()
+sus random_val meal = math_random()
 sus random_int normie = math_random_int(1, 100)
 
-// Number theory
-sus gcd_result normie = math_gcd(48, 18)
-sus factorial_5 normie = math_factorial(5)
-sus fib_10 normie = math_fibonacci(10)
+// Geometry
+sus distance meal = math_distance_2d(0.0, 0.0, 3.0, 4.0)  // 5.0
+sus interpolated meal = math_lerp(0.0, 10.0, 0.5)  // 5.0
 ```
-
-## Performance
-
-The math module is optimized for performance:
-- Uses efficient algorithms for transcendental functions
-- Leverages hardware acceleration where available
-- Minimizes floating-point precision errors
-- Optimized random number generation
 
 ## Testing
 
 Run the comprehensive test suite:
+
 ```bash
-cargo run --bin cursed stdlib/math/test_math.csd
+# Test pure CURSED implementation
+cargo run --bin cursed stdlib/math/test_math_pure.csd
+
+# Test both interpretation and compilation modes
+cargo run --bin cursed stdlib/math/test_math_pure.csd           # Interpretation
+cargo run --bin cursed -- compile stdlib/math/test_math_pure.csd  # Compilation
+./test_math_pure                                               # Run compiled tests
 ```
 
-## Status
+## Implementation Details
 
-✅ **Production Ready**: All functions implemented and tested
-✅ **High Precision**: IEEE 754 compliant floating-point operations
-✅ **Pure CURSED**: Core implementations use native CURSED code
-✅ **Cross-Platform**: Consistent results across all platforms
-✅ **Fully Tested**: Comprehensive test coverage including edge cases
+### Algorithm Choices
+
+1. **Newton-Raphson Method**: Used for square root, cube root, and power functions
+2. **Taylor Series**: Used for trigonometric, logarithmic, and exponential functions
+3. **Argument Reduction**: Applied to improve convergence for transcendental functions
+4. **Linear Congruential Generator**: Used for random number generation
+
+### Precision and Accuracy
+
+- **Floating Point**: Uses 64-bit double precision (`meal` type)
+- **Convergence**: Iterative algorithms use epsilon = 1e-15 for convergence
+- **Special Cases**: Proper handling of edge cases (NaN, infinity, division by zero)
+- **Range Reduction**: Trigonometric functions normalized to [-π, π] range
+
+### Performance Optimizations
+
+- **Efficient Algorithms**: Optimized for both interpretation and compilation modes
+- **Minimal Allocations**: Avoids unnecessary memory allocations
+- **Inlined Constants**: Mathematical constants computed at compile time
+- **Branch Optimization**: Efficient conditional logic for special cases
+
+## Migration from FFI
+
+This library has been completely migrated from Rust FFI to pure CURSED:
+
+### ✅ Eliminated Dependencies
+- Removed all `extern` function declarations
+- Eliminated Rust FFI bridges
+- Removed external library dependencies
+- No more unsafe code blocks
+
+### ✅ Maintained Compatibility
+- All function signatures preserved
+- Identical behavior to FFI version
+- Same precision and accuracy
+- Compatible with existing code
+
+### ✅ Performance Benefits
+- Native CURSED compilation optimizations
+- Reduced function call overhead
+- Better integration with CURSED type system
+- Improved debugging and error reporting
+
+## Backward Compatibility
+
+The pure CURSED implementation maintains 100% backward compatibility:
+
+- All existing function calls work unchanged
+- Same return types and parameter types
+- Identical numerical results (within floating-point precision)
+- No breaking changes to the API
+
+## Future Enhancements
+
+- Additional statistical functions (mode, quartiles, etc.)
+- More geometry functions (polygon area, angle calculations)
+- Complex number support
+- Matrix operations
+- Numerical integration and differentiation
+- Optimization algorithms (gradient descent, etc.)
+
+## License
+
+This math library is part of the CURSED programming language project and follows the same license terms.

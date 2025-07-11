@@ -590,3 +590,48 @@ mod tests {
         assert_eq!(frame.address, 0x1000);
     }
 }
+
+/// DWARF parser for debug information integration
+pub struct DwarfParser {
+    /// DWARF debug database
+    database: DwarfDebugDatabase,
+}
+
+impl DwarfParser {
+    /// Create a new DWARF parser
+    pub fn new(dwarf_data: &[u8]) -> Result<Self, CursedError> {
+        let mut database = DwarfDebugDatabase::new();
+        database.load_from_dwarf(dwarf_data)?;
+        
+        Ok(Self { database })
+    }
+
+    /// Get function information by name
+    pub fn get_function_info(&self, function_name: &str) -> Result<FunctionDebugInfo, CursedError> {
+        for (_, func_info) in &self.database.functions {
+            if func_info.name == function_name {
+                return Ok(func_info.clone());
+            }
+        }
+        
+        Err(CursedError::runtime_error(&format!("Function '{}' not found in debug info", function_name)))
+    }
+
+    /// Get local variables for a function
+    pub fn get_local_variables(&self, function_name: &str) -> Result<HashMap<String, String>, CursedError> {
+        // Find function by name
+        for (address, func_info) in &self.database.functions {
+            if func_info.name == function_name {
+                if let Some(variables) = self.database.variables.get(address) {
+                    let mut result = HashMap::new();
+                    for var in variables {
+                        result.insert(var.name.clone(), format!("{}:{:?}", var.type_id, var.location));
+                    }
+                    return Ok(result);
+                }
+            }
+        }
+        
+        Ok(HashMap::new())
+    }
+}

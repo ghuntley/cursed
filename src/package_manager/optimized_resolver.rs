@@ -210,8 +210,15 @@ impl OptimizedPackageResolver {
                 self.solver_state.assign_variable(package.clone(), version.clone());
                 self.solver_state.decision_level += 1;
                 
-                // Create resolved package for the decision
-                let metadata = self.get_cached_metadata(&package, &version, metrics).await?;
+                // Create resolved package for the decision - handle metadata failures gracefully
+                let metadata = match self.get_cached_metadata(&package, &version, metrics).await {
+                    Ok(metadata) => metadata,
+                    Err(e) => {
+                        tracing::warn!("Failed to get metadata for {}@{}: {}", package, version, e);
+                        // Skip this decision and continue, like the original resolver
+                        continue;
+                    }
+                };
                 let resolved_package = ResolvedPackage {
                     name: package.clone(),
                     version: version.clone(),
@@ -284,8 +291,16 @@ impl OptimizedPackageResolver {
             // Assign variable
             self.solver_state.assign_variable(package.clone(), version.clone());
             
-            // Create resolved package
-            let metadata = self.get_cached_metadata(&package, &version, metrics).await?;
+            // Create resolved package - handle metadata failures gracefully like original resolver
+            let metadata = match self.get_cached_metadata(&package, &version, metrics).await {
+                Ok(metadata) => metadata,
+                Err(e) => {
+                    tracing::warn!("Failed to get metadata for {}@{}: {}", package, version, e);
+                    // Skip this package and continue processing, like the original resolver
+                    continue;
+                }
+            };
+            
             let resolved_package = ResolvedPackage {
                 name: package.clone(),
                 version: version.clone(),
@@ -326,7 +341,14 @@ impl OptimizedPackageResolver {
         config: &ResolutionConfig,
         metrics: &mut ResolutionMetrics,
     ) -> Result<Option<Version>> {
-        let versions = self.get_cached_versions(package, metrics).await?;
+        let versions = match self.get_cached_versions(package, metrics).await {
+            Ok(versions) => versions,
+            Err(e) => {
+                tracing::warn!("Failed to get versions for {}: {}", package, e);
+                // Return None to indicate no unit assignment can be made
+                return Ok(None);
+            }
+        };
         
         let matching_versions: Vec<Version> = versions.into_iter()
             .filter(|v| version_req.matches(v))
@@ -383,7 +405,14 @@ impl OptimizedPackageResolver {
         }
         
         metrics.cache_misses += 1;
-        let metadata = self.registry.get_package_metadata(package, version).await?;
+        let metadata = match self.registry.get_package_metadata(package, version).await {
+            Ok(metadata) => metadata,
+            Err(e) => {
+                tracing::warn!("Failed to get metadata for {}@{}: {}", package, version, e);
+                // Return a minimal metadata structure to allow graceful handling
+                return Err(e);
+            }
+        };
         
         {
             let mut cache = self.metadata_cache.write().await;
@@ -476,8 +505,15 @@ impl OptimizedPackageResolver {
         }
 
         if let Some(package) = best_package {
-            // Choose best version (highest by default)
-            let versions = self.get_cached_versions(&package, metrics).await?;
+            // Choose best version (highest by default) - handle version lookup failures gracefully
+            let versions = match self.get_cached_versions(&package, metrics).await {
+                Ok(versions) => versions,
+                Err(e) => {
+                    tracing::warn!("Failed to get versions for {}: {}", package, e);
+                    // Return None to indicate no decision can be made, like original resolver
+                    return Ok(None);
+                }
+            };
             
             // Find versions that satisfy all constraints for this package
             let satisfying_versions: Vec<Version> = versions.into_iter()

@@ -117,13 +117,11 @@ impl ExpressionCompiler {
             Expression::CompositeLiteral(composite) => {
                 self.compile_composite_literal(composite)
             },
-            Expression::Shook(_) => {
-                // TODO: Implement error propagation expression
-                Ok("i32 0".to_string())
+            Expression::Shook(shook_expr) => {
+                self.compile_shook_expression(shook_expr)
             },
-            Expression::ErrorValue(_) => {
-                // TODO: Implement error value expression
-                Ok("i32 0".to_string())
+            Expression::ErrorValue(error_value_expr) => {
+                self.compile_error_value_expression(error_value_expr)
             },
             Expression::StructuredError { message, code, details, fields } => {
                 // Generate LLVM IR for structured error
@@ -1163,5 +1161,58 @@ impl ExpressionCompiler {
         
         // Return the slice pointer
         Ok(slice_ptr)
+    }
+
+    /// Compile shook (error propagation) expression
+    fn compile_shook_expression(&mut self, shook_expr: &crate::ast::ShookExpression) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Compile the inner expression that might produce an error
+        let inner_result = self.compile_expression(&shook_expr.expression)?;
+        
+        // Generate error checking code
+        let error_check_reg = self.next_register();
+        let error_label = format!("error_propagation_{}", self.variable_counter);
+        let success_label = format!("error_success_{}", self.variable_counter);
+        
+        // Check if the result is an error
+        ir.push_str(&format!("  %{} = call i1 @cursed_is_error(i8* {})\n", error_check_reg, inner_result));
+        ir.push_str(&format!("  br i1 %{}, label %{}, label %{}\n", error_check_reg, error_label, success_label));
+        
+        // Error propagation block
+        ir.push_str(&format!("{}:\n", error_label));
+        let propagated_error_reg = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @cursed_propagate_error(i8* {})\n", propagated_error_reg, inner_result));
+        ir.push_str(&format!("  ret i8* %{}\n", propagated_error_reg));
+        
+        // Success block
+        ir.push_str(&format!("{}:\n", success_label));
+        let success_value_reg = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @cursed_extract_value(i8* {})\n", success_value_reg, inner_result));
+        
+        self.ir_buffer.push_str(&ir);
+        
+        Ok(format!("i8* %{}", success_value_reg))
+    }
+
+    /// Compile error value expression (yikes)
+    fn compile_error_value_expression(&mut self, error_expr: &crate::ast::ErrorValueExpression) -> Result<String, CursedError> {
+        let mut ir = String::new();
+        
+        // Allocate error object
+        let error_obj_reg = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @cursed_create_error()\n", error_obj_reg));
+        
+        // Create a string constant for the error message
+        let string_ptr = self.string_manager.add_string_constant(&error_expr.message);
+        
+        // Set error message in error object
+        let error_with_msg_reg = self.next_register();
+        ir.push_str(&format!("  %{} = call i8* @cursed_set_error_message(i8* %{}, i8* {})\n", 
+                           error_with_msg_reg, error_obj_reg, string_ptr));
+        
+        self.ir_buffer.push_str(&ir);
+        
+        Ok(format!("i8* %{}", error_with_msg_reg))
     }
 }
