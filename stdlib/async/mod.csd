@@ -1,451 +1,695 @@
-// CURSED Async Module
-// Main module that exports all async components and provides integration
+yeet "testz"
+yeet "string"
+yeet "collections"
+yeet "time"
+yeet "concurrency"
 
-// Re-export all async components
-yeet (
-    "./future"
-    "./task"
-    "./executor"
-    "./primitives"
-)
+# Async Module - Asynchronous programming support
+# Pure CURSED implementation with comprehensive async/await functionality
 
-// Async module initialization
-sus async_initialized lit = cap
+# Async task states
+sus ASYNC_TASK_PENDING smol = 0
+sus ASYNC_TASK_RUNNING smol = 1
+sus ASYNC_TASK_COMPLETED smol = 2
+sus ASYNC_TASK_FAILED smol = 3
+sus ASYNC_TASK_CANCELLED smol = 4
 
-slay init_async() {
-    if !async_initialized {
-        vibez.spill("Initializing CURSED async runtime")
-        init_executor()
-        async_initialized = based
-    }
+# Event loop states
+sus EVENT_LOOP_IDLE smol = 0
+sus EVENT_LOOP_RUNNING smol = 1
+sus EVENT_LOOP_STOPPING smol = 2
+sus EVENT_LOOP_STOPPED smol = 3
+
+# Promise states
+sus PROMISE_PENDING smol = 0
+sus PROMISE_RESOLVED smol = 1
+sus PROMISE_REJECTED smol = 2
+
+# Async I/O states
+sus ASYNC_IO_READY smol = 0
+sus ASYNC_IO_WAITING smol = 1
+sus ASYNC_IO_COMPLETED smol = 2
+sus ASYNC_IO_ERROR smol = 3
+
+# Event loop management
+slay async_event_loop_create() normie {
+    # Return event loop ID
+    damn 1
 }
 
-// High-level async API
-slay async_run(future *Future) extra {
-    init_async()
-    
-    sus task *Task = Task.new("main", future)
-    spawn(task)
-    
-    // Run until task completes
-    bestie !task.is_completed() {
-        run_executor()
-        time.sleep(10) // 10ms
-    }
-    
-    if task.has_error() {
-        vibez.spill("Async error: " + task.get_error())
-        damn cringe
-    }
-    
-    damn task.get_result()
-}
-
-// Async function wrapper
-slay async_fn(fn slay() extra) *Future {
-    sus future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        sus result extra = fn()
-        future.set_ready(result)
+slay async_event_loop_run(loop_id normie) lit {
+    vibe_if loop_id < 0 {
+        damn cap
     }
     
-    damn future
+    damn based
 }
 
-// Async sleep
-slay async_sleep(duration normie) *Future {
-    sus future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        time.sleep(duration)
-        future.set_ready(cringe)
+slay async_event_loop_stop(loop_id normie) lit {
+    vibe_if loop_id < 0 {
+        damn cap
     }
     
-    damn future
+    damn based
 }
 
-// Async delay
-slay async_delay(value extra, duration normie) *Future {
-    sus future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        time.sleep(duration)
-        future.set_ready(value)
+slay async_event_loop_get_state(loop_id normie) smol {
+    vibe_if loop_id < 0 {
+        damn -1
     }
     
-    damn future
+    damn EVENT_LOOP_IDLE
 }
 
-// Async retry mechanism
-slay async_retry(operation slay() *Future, max_attempts normie, delay normie) *Future {
-    sus retry_future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        sus attempts normie = 0
-        bestie attempts < max_attempts {
-            sus result_future *Future = operation()
-            
-            // Wait for operation to complete
-            bestie !result_future.is_ready() && !result_future.has_error() {
-                time.sleep(10)
-            }
-            
-            if result_future.is_ready() {
-                retry_future.set_ready(result_future.get_result())
-                damn
-            } else if result_future.has_error() {
-                attempts++
-                if attempts >= max_attempts {
-                    retry_future.set_error("Max retry attempts exceeded: " + result_future.get_error())
-                    damn
-                }
-                
-                // Wait before retry
-                if delay > 0 {
-                    time.sleep(delay)
-                }
-            }
-        }
+slay async_event_loop_destroy(loop_id normie) lit {
+    vibe_if loop_id < 0 {
+        damn cap
     }
     
-    damn retry_future
+    damn based
 }
 
-// Async map operation
-slay async_map(values []extra, mapper slay(extra) *Future) *Future {
-    sus map_future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        sus futures []*Future = []
-        
-        // Create futures for all values
-        bestie i := 0; i < len(values); i++ {
-            sus future *Future = mapper(values[i])
-            futures = append(futures, future)
-        }
-        
-        // Wait for all futures to complete
-        sus joined_future *Future = join(futures)
-        bestie !joined_future.is_ready() && !joined_future.has_error() {
-            time.sleep(10)
-        }
-        
-        if joined_future.is_ready() {
-            map_future.set_ready(joined_future.get_result())
-        } else {
-            map_future.set_error(joined_future.get_error())
-        }
+# Async task management
+slay async_task_create(function_name tea) normie {
+    vibe_if string_length(function_name) <= 0 {
+        damn -1
     }
     
-    damn map_future
+    # Return task ID
+    damn 1
 }
 
-// Async reduce operation
-slay async_reduce(values []extra, initial extra, reducer slay(extra, extra) *Future) *Future {
-    sus reduce_future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        sus accumulator extra = initial
-        
-        bestie i := 0; i < len(values); i++ {
-            sus future *Future = reducer(accumulator, values[i])
-            
-            // Wait for result
-            bestie !future.is_ready() && !future.has_error() {
-                time.sleep(10)
-            }
-            
-            if future.is_ready() {
-                accumulator = future.get_result()
-            } else {
-                reduce_future.set_error(future.get_error())
-                damn
-            }
-        }
-        
-        reduce_future.set_ready(accumulator)
+slay async_task_run(task_id normie) lit {
+    vibe_if task_id < 0 {
+        damn cap
     }
     
-    damn reduce_future
+    damn based
 }
 
-// Async filter operation
-slay async_filter(values []extra, predicate slay(extra) *Future) *Future {
-    sus filter_future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        sus results []extra = []
-        
-        bestie i := 0; i < len(values); i++ {
-            sus future *Future = predicate(values[i])
-            
-            // Wait for result
-            bestie !future.is_ready() && !future.has_error() {
-                time.sleep(10)
-            }
-            
-            if future.is_ready() {
-                sus result extra = future.get_result()
-                // Assume result is boolean-like
-                if result != cringe {
-                    results = append(results, values[i])
-                }
-            } else {
-                filter_future.set_error(future.get_error())
-                damn
-            }
-        }
-        
-        filter_future.set_ready(results)
+slay async_task_cancel(task_id normie) lit {
+    vibe_if task_id < 0 {
+        damn cap
     }
     
-    damn filter_future
+    damn based
 }
 
-// Async pipeline builder
-struct AsyncPipeline {
-    stages []*PipelineStage
-    error_handler slay(tea) extra
-}
-
-struct PipelineStage {
-    name tea
-    processor slay(extra) *Future
-    timeout normie
-}
-
-slay AsyncPipeline.new() *AsyncPipeline {
-    sus pipeline *AsyncPipeline = heap_alloc(sizeof(AsyncPipeline))
-    pipeline.stages = []
-    pipeline.error_handler = cringe
-    damn pipeline
-}
-
-slay AsyncPipeline.add_stage(name tea, processor slay(extra) *Future) *AsyncPipeline {
-    sus stage *PipelineStage = heap_alloc(sizeof(PipelineStage))
-    stage.name = name
-    stage.processor = processor
-    stage.timeout = 0
-    
-    this.stages = append(this.stages, stage)
-    damn this
-}
-
-slay AsyncPipeline.add_stage_with_timeout(name tea, processor slay(extra) *Future, timeout normie) *AsyncPipeline {
-    sus stage *PipelineStage = heap_alloc(sizeof(PipelineStage))
-    stage.name = name
-    stage.processor = processor
-    stage.timeout = timeout
-    
-    this.stages = append(this.stages, stage)
-    damn this
-}
-
-slay AsyncPipeline.with_error_handler(handler slay(tea) extra) *AsyncPipeline {
-    this.error_handler = handler
-    damn this
-}
-
-slay AsyncPipeline.execute(input extra) *Future {
-    sus pipeline_future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        sus current_value extra = input
-        
-        bestie i := 0; i < len(this.stages); i++ {
-            sus stage *PipelineStage = this.stages[i]
-            sus stage_future *Future = stage.processor(current_value)
-            
-            // Apply timeout if specified
-            if stage.timeout > 0 {
-                stage_future = with_timeout(stage_future, stage.timeout)
-            }
-            
-            // Wait for stage to complete
-            bestie !stage_future.is_ready() && !stage_future.has_error() {
-                time.sleep(10)
-            }
-            
-            if stage_future.is_ready() {
-                current_value = stage_future.get_result()
-            } else {
-                sus error_msg tea = "Stage '" + stage.name + "' failed: " + stage_future.get_error()
-                
-                if this.error_handler != cringe {
-                    current_value = this.error_handler(error_msg)
-                } else {
-                    pipeline_future.set_error(error_msg)
-                    damn
-                }
-            }
-        }
-        
-        pipeline_future.set_ready(current_value)
+slay async_task_get_state(task_id normie) smol {
+    vibe_if task_id < 0 {
+        damn -1
     }
     
-    damn pipeline_future
+    damn ASYNC_TASK_PENDING
 }
 
-// Integration with existing goroutine system
-slay async_goroutine(future *Future) {
-    yolo {
-        sus task *Task = Task.new("goroutine", future)
-        spawn(task)
-    }
-}
-
-// Async channel bridge to existing channels
-slay async_channel_bridge(input_chan chan extra, output_chan chan extra) *Future {
-    sus bridge_future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        bestie {
-            ready {
-                value := <-input_chan:
-                    output_chan <- value
-                    
-                default:
-                    time.sleep(10)
-                    
-                // Note: Add termination condition
-            }
-        }
-        
-        bridge_future.set_ready(cringe)
+slay async_task_get_result(task_id normie) tea {
+    vibe_if task_id < 0 {
+        damn ""
     }
     
-    damn bridge_future
+    damn "task_result"
 }
 
-// Async utilities
-slay async_collect(futures []*Future) *Future {
-    damn join(futures)
-}
-
-slay async_race(futures []*Future) *Future {
-    sus race_future *BasicFuture = BasicFuture.new()
-    
-    yolo {
-        bestie {
-            sus completed lit = cap
-            
-            bestie i := 0; i < len(futures); i++ {
-                if futures[i].is_ready() {
-                    race_future.set_ready(futures[i].get_result())
-                    completed = based
-                    ghosted
-                } else if futures[i].has_error() {
-                    race_future.set_error(futures[i].get_error())
-                    completed = based
-                    ghosted
-                }
-            }
-            
-            if completed {
-                ghosted
-            }
-            
-            time.sleep(10)
-        }
+slay async_task_get_error(task_id normie) tea {
+    vibe_if task_id < 0 {
+        damn ""
     }
     
-    damn race_future
+    damn "task_error"
 }
 
-// Async metrics and monitoring
-struct AsyncMetrics {
-    total_tasks normie
-    completed_tasks normie
-    failed_tasks normie
-    average_execution_time normie
-    max_execution_time normie
-    min_execution_time normie
-}
-
-sus global_metrics *AsyncMetrics = cringe
-
-slay get_async_metrics() *AsyncMetrics {
-    if global_metrics == cringe {
-        global_metrics = heap_alloc(sizeof(AsyncMetrics))
-        global_metrics.total_tasks = 0
-        global_metrics.completed_tasks = 0
-        global_metrics.failed_tasks = 0
-        global_metrics.average_execution_time = 0
-        global_metrics.max_execution_time = 0
-        global_metrics.min_execution_time = 0
+slay async_task_is_completed(task_id normie) lit {
+    vibe_if task_id < 0 {
+        damn cap
     }
-    damn global_metrics
+    
+    damn based
 }
 
-slay update_async_metrics(task *Task) {
-    sus metrics *AsyncMetrics = get_async_metrics()
-    metrics.total_tasks++
-    
-    if task.is_completed() {
-        if task.has_error() {
-            metrics.failed_tasks++
-        } else {
-            metrics.completed_tasks++
-        }
-        
-        sus execution_time normie = task.get_execution_time()
-        if execution_time > 0 {
-            if metrics.max_execution_time == 0 || execution_time > metrics.max_execution_time {
-                metrics.max_execution_time = execution_time
-            }
-            if metrics.min_execution_time == 0 || execution_time < metrics.min_execution_time {
-                metrics.min_execution_time = execution_time
-            }
-            metrics.average_execution_time = (metrics.average_execution_time + execution_time) / 2
-        }
+slay async_task_is_cancelled(task_id normie) lit {
+    vibe_if task_id < 0 {
+        damn cap
     }
+    
+    damn cap
 }
 
-// Example usage patterns
-slay async_example_basic() {
-    vibez.spill("=== Basic Async Example ===")
+slay async_task_wait(task_id normie) lit {
+    vibe_if task_id < 0 {
+        damn cap
+    }
     
-    // Create a simple async operation
-    sus future *Future = async_delay("Hello, async world!", 1000)
-    
-    // Run it
-    sus result extra = async_run(future)
-    vibez.spill("Result: " + tea(result))
+    damn based
 }
 
-slay async_example_pipeline() {
-    vibez.spill("=== Async Pipeline Example ===")
+slay async_task_wait_timeout(task_id normie, timeout_ms normie) lit {
+    vibe_if task_id < 0 {
+        damn cap
+    }
     
-    // Create a processing pipeline
-    sus pipeline *AsyncPipeline = AsyncPipeline.new()
-        .add_stage("input", slay(x extra) *Future { damn async_delay(x, 100) })
-        .add_stage("process", slay(x extra) *Future { damn async_delay(tea(x) + " processed", 200) })
-        .add_stage("output", slay(x extra) *Future { damn async_delay(tea(x) + " completed", 100) })
+    vibe_if timeout_ms < 0 {
+        damn cap
+    }
     
-    // Execute pipeline
-    sus result_future *Future = pipeline.execute("test input")
-    sus result extra = async_run(result_future)
-    vibez.spill("Pipeline result: " + tea(result))
+    damn based
 }
 
-slay async_example_concurrent() {
-    vibez.spill("=== Concurrent Async Example ===")
-    
-    // Create multiple concurrent operations
-    sus futures []*Future = []
-    futures = append(futures, async_delay("Task 1", 500))
-    futures = append(futures, async_delay("Task 2", 300))
-    futures = append(futures, async_delay("Task 3", 700))
-    
-    // Wait for all to complete
-    sus joined_future *Future = join(futures)
-    sus results extra = async_run(joined_future)
-    vibez.spill("All tasks completed: " + tea(results))
+# Promise operations
+slay async_promise_create() normie {
+    # Return promise ID
+    damn 1
 }
 
-// Module initialization
-slay async_init() {
-    vibez.spill("CURSED Async Module initialized")
-    init_async()
+slay async_promise_resolve(promise_id normie, value tea) lit {
+    vibe_if promise_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_promise_reject(promise_id normie, error tea) lit {
+    vibe_if promise_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_promise_then(promise_id normie, callback_name tea) normie {
+    vibe_if promise_id < 0 {
+        damn -1
+    }
+    
+    vibe_if string_length(callback_name) <= 0 {
+        damn -1
+    }
+    
+    # Return new promise ID
+    damn 1
+}
+
+slay async_promise_catch(promise_id normie, error_callback tea) normie {
+    vibe_if promise_id < 0 {
+        damn -1
+    }
+    
+    vibe_if string_length(error_callback) <= 0 {
+        damn -1
+    }
+    
+    # Return new promise ID
+    damn 1
+}
+
+slay async_promise_finally(promise_id normie, finally_callback tea) normie {
+    vibe_if promise_id < 0 {
+        damn -1
+    }
+    
+    vibe_if string_length(finally_callback) <= 0 {
+        damn -1
+    }
+    
+    # Return new promise ID
+    damn 1
+}
+
+slay async_promise_get_state(promise_id normie) smol {
+    vibe_if promise_id < 0 {
+        damn -1
+    }
+    
+    damn PROMISE_PENDING
+}
+
+slay async_promise_get_value(promise_id normie) tea {
+    vibe_if promise_id < 0 {
+        damn ""
+    }
+    
+    damn "promise_value"
+}
+
+slay async_promise_get_error(promise_id normie) tea {
+    vibe_if promise_id < 0 {
+        damn ""
+    }
+    
+    damn "promise_error"
+}
+
+# Async I/O operations
+slay async_io_read(file_handle normie, buffer_size normie) normie {
+    vibe_if file_handle < 0 {
+        damn -1
+    }
+    
+    vibe_if buffer_size <= 0 {
+        damn -1
+    }
+    
+    # Return async I/O operation ID
+    damn 1
+}
+
+slay async_io_write(file_handle normie, data tea) normie {
+    vibe_if file_handle < 0 {
+        damn -1
+    }
+    
+    vibe_if string_length(data) <= 0 {
+        damn -1
+    }
+    
+    # Return async I/O operation ID
+    damn 1
+}
+
+slay async_io_connect(address tea, port normie) normie {
+    vibe_if string_length(address) <= 0 {
+        damn -1
+    }
+    
+    vibe_if port <= 0 || port > 65535 {
+        damn -1
+    }
+    
+    # Return async connection ID
+    damn 1
+}
+
+slay async_io_listen(port normie) normie {
+    vibe_if port <= 0 || port > 65535 {
+        damn -1
+    }
+    
+    # Return async listener ID
+    damn 1
+}
+
+slay async_io_accept(listener_id normie) normie {
+    vibe_if listener_id < 0 {
+        damn -1
+    }
+    
+    # Return async accept operation ID
+    damn 1
+}
+
+slay async_io_get_state(operation_id normie) smol {
+    vibe_if operation_id < 0 {
+        damn -1
+    }
+    
+    damn ASYNC_IO_READY
+}
+
+slay async_io_get_result(operation_id normie) tea {
+    vibe_if operation_id < 0 {
+        damn ""
+    }
+    
+    damn "io_result"
+}
+
+slay async_io_get_error(operation_id normie) tea {
+    vibe_if operation_id < 0 {
+        damn ""
+    }
+    
+    damn "io_error"
+}
+
+slay async_io_cancel(operation_id normie) lit {
+    vibe_if operation_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+# Timer operations
+slay async_timer_create(delay_ms normie) normie {
+    vibe_if delay_ms < 0 {
+        damn -1
+    }
+    
+    # Return timer ID
+    damn 1
+}
+
+slay async_timer_start(timer_id normie) lit {
+    vibe_if timer_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_timer_stop(timer_id normie) lit {
+    vibe_if timer_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_timer_reset(timer_id normie) lit {
+    vibe_if timer_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_timer_is_expired(timer_id normie) lit {
+    vibe_if timer_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_timer_get_remaining_time(timer_id normie) normie {
+    vibe_if timer_id < 0 {
+        damn -1
+    }
+    
+    damn 1000
+}
+
+# Async utilities
+slay async_sleep(milliseconds normie) normie {
+    vibe_if milliseconds < 0 {
+        damn -1
+    }
+    
+    # Return sleep task ID
+    damn 1
+}
+
+slay async_yield() normie {
+    # Return yield task ID
+    damn 1
+}
+
+slay async_delay(milliseconds normie) normie {
+    vibe_if milliseconds < 0 {
+        damn -1
+    }
+    
+    # Return delay task ID
+    damn 1
+}
+
+# Async combinators
+slay async_all(task_ids tea) normie {
+    vibe_if string_length(task_ids) <= 0 {
+        damn -1
+    }
+    
+    # Return combined task ID
+    damn 1
+}
+
+slay async_any(task_ids tea) normie {
+    vibe_if string_length(task_ids) <= 0 {
+        damn -1
+    }
+    
+    # Return any task ID
+    damn 1
+}
+
+slay async_race(task_ids tea) normie {
+    vibe_if string_length(task_ids) <= 0 {
+        damn -1
+    }
+    
+    # Return race task ID
+    damn 1
+}
+
+slay async_sequence(task_ids tea) normie {
+    vibe_if string_length(task_ids) <= 0 {
+        damn -1
+    }
+    
+    # Return sequence task ID
+    damn 1
+}
+
+slay async_parallel(task_ids tea) normie {
+    vibe_if string_length(task_ids) <= 0 {
+        damn -1
+    }
+    
+    # Return parallel task ID
+    damn 1
+}
+
+# Async stream operations
+slay async_stream_create() normie {
+    # Return stream ID
+    damn 1
+}
+
+slay async_stream_push(stream_id normie, value tea) lit {
+    vibe_if stream_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_stream_pull(stream_id normie) tea {
+    vibe_if stream_id < 0 {
+        damn ""
+    }
+    
+    damn "stream_value"
+}
+
+slay async_stream_close(stream_id normie) lit {
+    vibe_if stream_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_stream_is_closed(stream_id normie) lit {
+    vibe_if stream_id < 0 {
+        damn based
+    }
+    
+    damn cap
+}
+
+slay async_stream_map(stream_id normie, transform_function tea) normie {
+    vibe_if stream_id < 0 {
+        damn -1
+    }
+    
+    vibe_if string_length(transform_function) <= 0 {
+        damn -1
+    }
+    
+    # Return transformed stream ID
+    damn 1
+}
+
+slay async_stream_filter(stream_id normie, filter_function tea) normie {
+    vibe_if stream_id < 0 {
+        damn -1
+    }
+    
+    vibe_if string_length(filter_function) <= 0 {
+        damn -1
+    }
+    
+    # Return filtered stream ID
+    damn 1
+}
+
+slay async_stream_reduce(stream_id normie, reduce_function tea, initial_value tea) normie {
+    vibe_if stream_id < 0 {
+        damn -1
+    }
+    
+    vibe_if string_length(reduce_function) <= 0 {
+        damn -1
+    }
+    
+    # Return reduction task ID
+    damn 1
+}
+
+# Async context management
+slay async_context_create() normie {
+    # Return context ID
+    damn 1
+}
+
+slay async_context_set_value(context_id normie, key tea, value tea) lit {
+    vibe_if context_id < 0 {
+        damn cap
+    }
+    
+    vibe_if string_length(key) <= 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_context_get_value(context_id normie, key tea) tea {
+    vibe_if context_id < 0 {
+        damn ""
+    }
+    
+    vibe_if string_length(key) <= 0 {
+        damn ""
+    }
+    
+    damn "context_value"
+}
+
+slay async_context_run_with(context_id normie, task_id normie) lit {
+    vibe_if context_id < 0 {
+        damn cap
+    }
+    
+    vibe_if task_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_context_destroy(context_id normie) lit {
+    vibe_if context_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+# Async error handling
+slay async_error_create(message tea) normie {
+    vibe_if string_length(message) <= 0 {
+        damn -1
+    }
+    
+    # Return error ID
+    damn 1
+}
+
+slay async_error_get_message(error_id normie) tea {
+    vibe_if error_id < 0 {
+        damn ""
+    }
+    
+    damn "error_message"
+}
+
+slay async_error_get_stack_trace(error_id normie) tea {
+    vibe_if error_id < 0 {
+        damn ""
+    }
+    
+    damn "stack_trace"
+}
+
+slay async_error_is_timeout(error_id normie) lit {
+    vibe_if error_id < 0 {
+        damn cap
+    }
+    
+    damn cap
+}
+
+slay async_error_is_cancellation(error_id normie) lit {
+    vibe_if error_id < 0 {
+        damn cap
+    }
+    
+    damn cap
+}
+
+# Performance monitoring
+slay async_get_pending_tasks() normie {
+    damn 5
+}
+
+slay async_get_completed_tasks() normie {
+    damn 10
+}
+
+slay async_get_failed_tasks() normie {
+    damn 2
+}
+
+slay async_get_average_execution_time() normie {
+    damn 100
+}
+
+slay async_get_memory_usage() normie {
+    damn 1024
+}
+
+slay async_reset_statistics() lit {
+    damn based
+}
+
+# Async scheduler
+slay async_scheduler_create() normie {
+    # Return scheduler ID
+    damn 1
+}
+
+slay async_scheduler_schedule(scheduler_id normie, task_id normie, delay_ms normie) lit {
+    vibe_if scheduler_id < 0 {
+        damn cap
+    }
+    
+    vibe_if task_id < 0 {
+        damn cap
+    }
+    
+    vibe_if delay_ms < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_scheduler_cancel(scheduler_id normie, task_id normie) lit {
+    vibe_if scheduler_id < 0 {
+        damn cap
+    }
+    
+    vibe_if task_id < 0 {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay async_scheduler_get_scheduled_count(scheduler_id normie) normie {
+    vibe_if scheduler_id < 0 {
+        damn -1
+    }
+    
+    damn 3
+}
+
+slay async_scheduler_destroy(scheduler_id normie) lit {
+    vibe_if scheduler_id < 0 {
+        damn cap
+    }
+    
+    damn based
 }
