@@ -196,6 +196,10 @@ impl Default for BenchmarkConfig {
     }
 }
 
+// Test module
+#[cfg(test)]
+pub mod tests;
+
 // Additional types for optimization examples
 #[derive(Debug, Clone)]
 pub struct TimingContext {

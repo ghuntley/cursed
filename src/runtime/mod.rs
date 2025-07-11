@@ -10,6 +10,8 @@ pub mod dwarf_parser;  // RE-ENABLED - Advanced debug information
 pub mod panic;
 pub mod goroutine;
 pub mod error_handling;
+pub mod enhanced_error_handling;
+pub mod simple_enhanced_error_handling;
 pub mod error_propagation;
 pub mod recovery;
 pub mod debug_manager;  // RE-ENABLED - Advanced debug management
@@ -48,6 +50,11 @@ pub use memory::{MemoryManager, MemoryConfig, MemoryStats, MemoryError, ObjectHa
 pub use goroutine::{GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};
 pub use panic::PanicRuntime;
 pub use error_handling::ErrorRuntime;
+pub use simple_enhanced_error_handling::{
+    SimpleCursedErrorType, SimpleEnhancedErrorRuntime,
+    initialize_simple_error_runtime, get_simple_error_runtime,
+    simple_handle_yikes, simple_handle_shook, simple_handle_fam
+};
 pub use jit_runtime::JitRuntime;
 pub use debug_manager::{DebugManager, DebugManagerConfig, DebugManagerStats, FunctionDebugInfo, SourceFile};
 pub use debug_runtime::{PerformanceMonitor, RuntimeDebugger, VariableInspection, RuntimeStackFrame, Breakpoint};

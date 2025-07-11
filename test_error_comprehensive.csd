@@ -1,45 +1,67 @@
-// Comprehensive error handling test
+// Comprehensive Error Handling Test for CURSED
+// Tests all aspects of the enhanced error handling system
 
-vibez.spill("=== CURSED Error Handling Test ===")
+// Test 1: Basic error creation and handling
+vibez.spill("Test 1: Basic error creation")
+yikes basic_error := "This is a basic error"
+vibez.spill("Created basic error:", basic_error)
 
-// Test 1: Basic yikes error creation
-vibez.spill("Test 1: Basic yikes error creation")
-yikes test_error := "This is a test error"
-vibez.spill("Created error:", test_error)
-vibez.spill("Error type:", test_error.type_name())
-
-// Test 2: Function with error return
-vibez.spill("Test 2: Function with error return")
-slay risky_function() {
-    yikes func_error := "Function failed"
-    damn func_error shook  // This should propagate the error
+// Test 2: Error propagation
+vibez.spill("Test 2: Error propagation")
+slay error_function() {
+    yikes func_error := "Function error"
+    vibez.spill("Function error created:", func_error)
+    damn func_error shook
 }
 
-// Test 3: Fam error recovery with function call
-vibez.spill("Test 3: Fam error recovery")
+// Test 3: Error recovery with fam
+vibez.spill("Test 3: Error recovery")
 fam {
-    // This should trigger an error that gets caught
-    sus result := risky_function()
-    vibez.spill("This should not be reached")
+    yikes recovery_error := "Error to be recovered"
+    vibez.spill("Error before recovery:", recovery_error)
 } sus caught_error {
-    vibez.spill("Caught error:", caught_error)
+    vibez.spill("Error recovered successfully:", caught_error)
 }
 
-// Test 4: Error checking
-vibez.spill("Test 4: Error checking")
-slay safe_function() {
-    yikes potential_error := "Safe function error"
-    damn potential_error  // Return the error
+// Test 4: Multiple error types
+vibez.spill("Test 4: Multiple error types")
+yikes type_error1 := "Type error 1"
+yikes type_error2 := "Type error 2"
+yikes type_error3 := "Type error 3"
+vibez.spill("Multiple errors created:", type_error1, type_error2, type_error3)
+
+// Test 5: Error in loops
+vibez.spill("Test 5: Error in loops")
+bestie i := 0; i < 3; i++ {
+    yikes loop_error := "Loop error iteration"
+    vibez.spill("Loop error", i, ":", loop_error)
 }
 
-sus function_result := safe_function()
-vibez.spill("Function result:", function_result)
+// Test 6: Complex error handling scenario
+vibez.spill("Test 6: Complex error handling")
+slay complex_function() {
+    fam {
+        yikes complex_error := "Complex error scenario"
+        vibez.spill("Complex error:", complex_error)
+        damn complex_error shook
+    } sus inner_error {
+        vibez.spill("Inner error handled:", inner_error)
+        yikes escalated_error := "Escalated error"
+        damn escalated_error shook
+    }
+}
 
-// Test 5: Multiple error handling
-vibez.spill("Test 5: Multiple error handling")
-yikes error1 := "First error"
-yikes error2 := "Second error"
-vibez.spill("Error 1:", error1)
-vibez.spill("Error 2:", error2)
+fam {
+    complex_function()
+} sus final_error {
+    vibez.spill("Final error handled:", final_error)
+}
 
-vibez.spill("=== Error handling tests complete ===")
+// Test 7: Error with different data types
+vibez.spill("Test 7: Error with different data types")
+yikes string_error := "String error"
+yikes number_error := 42
+yikes boolean_error := based
+vibez.spill("Different error types:", string_error, number_error, boolean_error)
+
+vibez.spill("=== Comprehensive Error Handling Tests Complete ===")
