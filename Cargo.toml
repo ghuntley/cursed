@@ -322,6 +322,9 @@ mach2 = "0.4"  # Mach kernel interface for shared memory
 # md5, dashmap, ropey, tree-sitter moved to main dependencies section
 
 [features]
+# Default features for production builds
+default = ["concurrent_gc", "enhanced_dynamic_dispatch"]
+
 # Enable binary compilation support
 binary_compiler = []
 # Enable enhanced dynamic dispatch for interfaces
@@ -464,5 +467,10 @@ path = "src/bin/cursed_compile_fast.rs"
 [[example]]
 name = "minimal_demo"
 path = "examples/minimal_demo.rs"
+
+[[bench]]
+name = "heap_stress_benchmark"
+harness = false
+path = "benchmarks/heap_stress_benchmark.rs"
 
 

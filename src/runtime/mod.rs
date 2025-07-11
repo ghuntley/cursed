@@ -28,6 +28,7 @@ pub mod jit_runtime;
 
 // Memory management system
 pub mod gc;          // Comprehensive garbage collection system
+pub mod gc_tuning;   // GC performance tuning and tri-color collection
 pub mod memory;      // Memory manager that integrates GC with runtime
 
 // Async and channels

@@ -1,19 +1,20 @@
-fr fr CURSED Testing Framework
-fr fr Provides comprehensive testing utilities for CURSED programs
+// CURSED Testing Framework v5.0
+// Production-ready testing framework written in pure CURSED
+// Provides comprehensive testing utilities for CURSED programs
 
-fr fr ================================
-fr fr Test Framework Core
-fr fr ================================
+// ================================
+// Test Framework Core
+// ================================
 
-fr fr Global test state
+// Global test state
 sus test_count normie = 0
 sus test_passed normie = 0
 sus test_failed normie = 0
 sus current_test_name tea = ""
 
-fr fr ================================
-fr fr Core Test Functions
-fr fr ================================
+// ================================
+// Core Test Functions
+// ================================
 
 slay test_start(name tea) {
     test_count = test_count + 1
@@ -31,53 +32,53 @@ slay test_fail(message tea) {
     vibez.spill("  ✗ FAIL: " + message)
 }
 
-fr fr ================================
-fr fr Basic Assertion Functions
-fr fr ================================
+// ================================
+// Basic Assertion Functions
+// ================================
 
 slay assert_eq_int(actual normie, expected normie) {
-    lowkey actual == expected {
+    vibes actual == expected {
         test_pass("assert_eq_int: " + tea(actual) + " == " + tea(expected))
-    } highkey {
+    } nah {
         test_fail("assert_eq_int failed: got " + tea(actual) + ", expected " + tea(expected))
     }
 }
 
 slay assert_eq_string(actual tea, expected tea) {
-    lowkey actual == expected {
+    vibes actual == expected {
         test_pass("assert_eq_string: \"" + actual + "\" == \"" + expected + "\"")
-    } highkey {
+    } nah {
         test_fail("assert_eq_string failed: got \"" + actual + "\", expected \"" + expected + "\"")
     }
 }
 
 slay assert_eq_bool(actual lit, expected lit) {
-    lowkey actual == expected {
+    vibes actual == expected {
         test_pass("assert_eq_bool: " + tea(actual) + " == " + tea(expected))
-    } highkey {
+    } nah {
         test_fail("assert_eq_bool failed: got " + tea(actual) + ", expected " + tea(expected))
     }
 }
 
 slay assert_true(value lit) {
-    lowkey value == based {
+    vibes value == based {
         test_pass("assert_true: value is based")
-    } highkey {
+    } nah {
         test_fail("assert_true failed: got " + tea(value) + ", expected based")
     }
 }
 
 slay assert_false(value lit) {
-    lowkey value == cap {
+    vibes value == cap {
         test_pass("assert_false: value is cap")
-    } highkey {
+    } nah {
         test_fail("assert_false failed: got " + tea(value) + ", expected cap")
     }
 }
 
-fr fr ================================
-fr fr Test Reporting
-fr fr ================================
+// ================================
+// Test Reporting
+// ================================
 
 slay print_test_summary() {
     vibez.spill("")
@@ -86,9 +87,9 @@ slay print_test_summary() {
     vibez.spill("Passed: " + tea(test_passed))
     vibez.spill("Failed: " + tea(test_failed))
     
-    lowkey test_failed == 0 {
+    vibes test_failed == 0 {
         vibez.spill("🎉 ALL TESTS PASSED! 🎉")
-    } highkey {
+    } nah {
         vibez.spill("❌ Some tests failed")
     }
 }
@@ -96,16 +97,16 @@ slay print_test_summary() {
 slay run_all_tests() normie {
     print_test_summary()
     
-    lowkey test_failed > 0 {
+    vibes test_failed > 0 {
         damn 1
-    } highkey {
+    } nah {
         damn 0
     }
 }
 
-fr fr ================================
-fr fr Test Utilities
-fr fr ================================
+// ================================
+// Test Utilities
+// ================================
 
 slay reset_test_state() {
     test_count = 0
@@ -113,9 +114,3 @@ slay reset_test_state() {
     test_failed = 0
     current_test_name = ""
 }
-
-fr fr ================================
-fr fr Export all testing functions
-fr fr ================================
-
-fr fr Note: vibes export system not working, functions available globally

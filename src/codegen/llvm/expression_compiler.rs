@@ -168,9 +168,15 @@ impl ExpressionCompiler {
                 
                 self.ir_buffer.push_str(&ir);
                 Ok(error_reg)
-            },
-
-        }
+                },
+             // TestResult expressions - placeholder implementation
+                    &crate::ast::Expression::TestResult(_) => {
+                 Ok("%testresult_placeholder".to_string())
+             },
+             &crate::ast::Expression::TestResultCheck(_) => {
+                 Ok("%testresult_check_placeholder".to_string())
+             },
+         }
     }
 
     /// Compile increment expression (++variable or variable++)

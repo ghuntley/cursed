@@ -1,287 +1,323 @@
-# CURSED Testing Framework (testz)
+# CURSED Testing Framework v5.0
 
-A comprehensive testing framework for the CURSED programming language that allows writing tests in CURSED itself.
+A production-ready testing framework written entirely in the CURSED programming language. This framework provides comprehensive testing utilities, assertions, and reporting capabilities for CURSED programs.
 
 ## Features
 
-- **Test Functions**: Define test cases using standard CURSED functions
-- **Assertions**: Comprehensive assertion library for different data types
-- **Test Discovery**: Automatic discovery of test functions
-- **Test Runner**: Execute tests and report results
-- **Multiple Output Formats**: JSON, XML, HTML, and console output
-- **Benchmarking**: Simple performance measurement utilities
-- **Configuration**: Customizable test execution settings
+- **Complete Assertion Library**: 20+ assertion functions for all CURSED data types
+- **Test Lifecycle Management**: Comprehensive test organization and execution
+- **Multiple Output Formats**: Console, JSON, TAP, and HTML reporting
+- **Production-Ready Design**: Robust error handling and comprehensive reporting
+- **Pure CURSED Implementation**: No external dependencies, written entirely in CURSED
+- **Both Mode Support**: Works in both interpretation and compilation modes
 
-## Quick Start
+## Core Assertion Functions
 
-### 1. Import the testing framework
+### Integer Assertions
+- `assert_eq_int(actual, expected)` - Assert integer equality
+- `assert_ne_int(actual, expected)` - Assert integer inequality
+- `assert_greater_than(actual, expected)` - Assert greater than
+- `assert_less_than(actual, expected)` - Assert less than
+- `assert_greater_equal(actual, expected)` - Assert greater than or equal
+- `assert_less_equal(actual, expected)` - Assert less than or equal
+- `assert_in_range(actual, min, max)` - Assert value is within range
+
+### String Assertions
+- `assert_eq_string(actual, expected)` - Assert string equality
+- `assert_ne_string(actual, expected)` - Assert string inequality
+- `assert_string_contains(haystack, needle)` - Assert string contains substring
+- `assert_string_starts_with(text, prefix)` - Assert string starts with prefix
+- `assert_string_ends_with(text, suffix)` - Assert string ends with suffix
+
+### Boolean Assertions
+- `assert_eq_bool(actual, expected)` - Assert boolean equality
+- `assert_true(value)` - Assert value is true (based)
+- `assert_false(value)` - Assert value is false (cap)
+
+### Float Assertions
+- `assert_eq_float(actual, expected)` - Assert float equality with default tolerance
+- `assert_eq_float_with_tolerance(actual, expected, tolerance)` - Assert float equality with custom tolerance
+
+### Nil Assertions
+- `assert_nil(value)` - Assert value is nil (cringe)
+- `assert_not_nil(value)` - Assert value is not nil
+
+## Test Lifecycle Functions
+
+### Test Organization
+- `test_start(name)` - Begin a new test
+- `test_end()` - End current test
+- `suite_start(name)` - Begin a new test suite
+- `suite_end()` - End current test suite
+
+### Test Results
+- `test_pass(message)` - Record a test pass
+- `test_fail(message)` - Record a test failure
+- `test_skip(reason)` - Skip a test with reason
+- `test_error(message)` - Record a test error
+
+## Configuration Functions
+
+### Output Control
+- `enable_verbose_output()` - Enable verbose test output
+- `disable_verbose_output()` - Disable verbose test output
+- `enable_fail_fast()` - Stop on first failure
+- `disable_fail_fast()` - Continue after failures
+
+### Report Formats
+- `enable_json_output()` - Enable JSON report generation
+- `enable_tap_output()` - Enable TAP report generation
+- `enable_html_output()` - Enable HTML report generation
+- `enable_xml_output()` - Enable XML report generation
+
+### Timeouts and Limits
+- `set_timeout(seconds)` - Set test timeout
+- `set_max_failures(max)` - Set maximum failures before stopping
+
+## Reporting Functions
+
+### Summary Reports
+- `print_test_summary()` - Print comprehensive test summary
+- `run_all_tests()` - Run all tests and return exit code
+
+### Format Generation
+- `generate_json_report()` - Generate JSON test report
+- `generate_tap_report()` - Generate TAP test report
+- `generate_html_report()` - Generate HTML test report
+- `generate_xml_report()` - Generate XML test report
+
+## State Management
+
+### Test Statistics
+- `get_test_count()` - Get total test count
+- `get_passed_count()` - Get passed test count
+- `get_failed_count()` - Get failed test count
+- `get_skipped_count()` - Get skipped test count
+- `get_error_count()` - Get error test count
+
+### State Control
+- `reset_test_state()` - Reset all test counters and state
+
+## Usage Examples
+
+### Basic Testing
 
 ```cursed
 yeet "testz"
-```
 
-### 2. Write your first test
-
-```cursed
 slay test_basic_math() {
-    testz.test_start("test_basic_math")
+    test_start("test_basic_math")
     
-    sus result normie = 2 + 2
-    testz.assert_eq(result, 4)
+    assert_eq_int(2 + 2, 4)
+    assert_eq_int(10 - 5, 5)
+    assert_eq_int(3 * 4, 12)
+    assert_eq_int(20 / 4, 5)
     
-    sus message tea = "Hello, CURSED!"
-    testz.assert_eq_string(message, "Hello, CURSED!")
+    test_end()
 }
-```
 
-### 3. Run your tests
-
-```cursed
 slay main() {
     test_basic_math()
-    testz.print_test_summary()
-    
-    lowkey testz.test_failed > 0 {
-        yolo 1
-    } highkey {
-        yolo 0
-    }
+    print_test_summary()
 }
 ```
 
-## Assertion Functions
+### Advanced Testing
 
-### Integer Assertions
-- `assert_eq(actual, expected)` - Assert two integers are equal
-- `assert_ne(actual, expected)` - Assert two integers are not equal
-- `assert_greater_than(actual, expected)` - Assert actual > expected
-- `assert_less_than(actual, expected)` - Assert actual < expected
-- `assert_in_range(value, min, max)` - Assert value is in range
-
-### Float Assertions
-- `assert_eq_float(actual, expected)` - Assert two floats are equal (with tolerance)
-
-### String Assertions
-- `assert_eq_string(actual, expected)` - Assert two strings are equal
-- `assert_ne_string(actual, expected)` - Assert two strings are not equal
-- `assert_string_contains(haystack, needle)` - Assert string contains substring
-- `assert_string_starts_with(str, prefix)` - Assert string starts with prefix
-- `assert_string_ends_with(str, suffix)` - Assert string ends with suffix
-
-### Boolean Assertions
-- `assert_true(value)` - Assert value is `based` (true)
-- `assert_false(value)` - Assert value is `cap` (false)
-- `assert_eq_bool(actual, expected)` - Assert two booleans are equal
-
-### Array Assertions
-- `assert_array_eq(actual, expected)` - Assert two arrays are equal
-- `assert_array_contains(array, value)` - Assert array contains value
-- `assert_array_not_contains(array, value)` - Assert array doesn't contain value
-
-### Nil Assertions
-- `assert_nil(value)` - Assert value is `cringe` (nil)
-- `assert_not_nil(value)` - Assert value is not `cringe`
-
-## Test Structure
-
-### Basic Test Structure
 ```cursed
-slay test_function_name() {
-    testz.test_start("test_function_name")
+yeet "testz"
+
+slay test_string_operations() {
+    test_start("test_string_operations")
     
-    fr fr Test setup
-    sus data normie = 42
+    assert_eq_string("hello" + " world", "hello world")
+    assert_string_contains("hello world", "world")
+    assert_string_starts_with("hello world", "hello")
+    assert_string_ends_with("hello world", "world")
     
-    fr fr Test execution
-    sus result normie = some_operation(data)
-    
-    fr fr Assertions
-    testz.assert_eq(result, expected_value)
+    test_end()
 }
-```
 
-### Test with Multiple Assertions
-```cursed
-slay test_array_operations() {
-    testz.test_start("test_array_operations")
+slay test_boolean_logic() {
+    test_start("test_boolean_logic")
     
-    sus arr [normie] = [1, 2, 3, 4, 5]
+    assert_true(based)
+    assert_false(cap)
+    assert_true(5 > 3)
+    assert_false(3 > 5)
+    assert_true((5 > 3) && (2 < 4))
     
-    testz.assert_eq(arr.length, 5)
-    testz.assert_eq(arr[0], 1)
-    testz.assert_eq(arr[4], 5)
-    testz.assert_array_contains(arr, 3)
-    testz.assert_array_not_contains(arr, 10)
+    test_end()
 }
-```
-
-## Test Discovery and Execution
-
-### Manual Test Execution
-```cursed
-slay main() {
-    testz.reset_test_state()
-    
-    fr fr Run individual tests
-    test_function_1()
-    test_function_2()
-    test_function_3()
-    
-    fr fr Print results
-    testz.print_test_summary()
-    
-    fr fr Return appropriate exit code
-    lowkey testz.test_failed > 0 {
-        yolo 1
-    } highkey {
-        yolo 0
-    }
-}
-```
-
-### Automatic Test Discovery
-```cursed
-yeet "testz/runner"
 
 slay main() {
-    sus config testz.TestConfig = testz.create_default_config()
-    config.test_dir = "tests/"
-    config.pattern = "test_*"
-    config.verbose = based
+    enable_verbose_output()
+    enable_json_output()
     
-    sus exit_code normie = testz.run_tests_with_config(config)
-    yolo exit_code
+    suite_start("Comprehensive Tests")
+    
+    test_string_operations()
+    test_boolean_logic()
+    
+    suite_end()
+    
+    print_test_summary()
+    generate_json_report()
 }
 ```
 
-## Test Configuration
+### Test Suite Organization
 
 ```cursed
-struct TestConfig {
-    parallel lit        fr fr Run tests in parallel (future feature)
-    timeout normie      fr fr Test timeout in milliseconds
-    verbose lit         fr fr Verbose output
-    fail_fast lit       fr fr Stop on first failure
-    test_dir tea        fr fr Directory to search for tests
-    pattern tea         fr fr Pattern to match test functions
+yeet "testz"
+
+slay test_arithmetic() {
+    test_start("test_arithmetic")
+    
+    sus a normie = 10
+    sus b normie = 20
+    sus c normie = a + b
+    
+    assert_eq_int(c, 30)
+    assert_greater_than(c, a)
+    assert_greater_than(c, b)
+    assert_in_range(c, 25, 35)
+    
+    test_end()
+}
+
+slay test_variables() {
+    test_start("test_variables")
+    
+    sus name tea = "CURSED"
+    sus greeting tea = "Hello " + name
+    
+    assert_eq_string(greeting, "Hello CURSED")
+    assert_string_contains(greeting, name)
+    assert_ne_string(greeting, name)
+    
+    test_end()
+}
+
+slay main() {
+    enable_verbose_output()
+    enable_fail_fast()
+    
+    suite_start("Variable and Expression Tests")
+    
+    test_arithmetic()
+    test_variables()
+    
+    suite_end()
+    
+    sus exit_code normie = run_all_tests()
+    damn exit_code
 }
 ```
 
-## Test Output Formats
+## Output Formats
 
-### Console Output (Default)
-```
-Running test: test_basic_math
-  ✓ PASS: assert_eq(4, 4)
-  ✓ PASS: assert_eq_string("Hello, CURSED!", "Hello, CURSED!")
-
-=== TEST SUMMARY ===
-Total tests: 1
-Passed: 2
-Failed: 0
-Success rate: 100%
-
-🎉 ALL TESTS PASSED! 🎉
-```
+### Console Output
+Default human-readable output with colored indicators and comprehensive summaries.
 
 ### JSON Output
-```cursed
-testz.generate_json_report()
+```json
+{
+  "framework": "CURSED Testing Framework v5.0",
+  "suite_name": "default",
+  "total_tests": 5,
+  "passed_tests": 4,
+  "failed_tests": 1,
+  "skipped_tests": 0,
+  "error_tests": 0
+}
 ```
 
-### XML Output
-```cursed
-testz.generate_xml_report()
+### TAP Output
+```tap
+TAP version 13
+1..5
+ok 1 - test passed
+ok 2 - test passed
+not ok 3 - test failed
+ok 4 - test passed
+ok 5 - test passed
 ```
 
 ### HTML Output
-```cursed
-testz.generate_html_report()
-```
+Complete HTML report with styling and detailed test information.
 
-## Benchmarking
+## Commands
 
-```cursed
-slay test_performance() {
-    testz.test_start("test_performance")
-    
-    sus start_time normie = testz.benchmark_start()
-    
-    fr fr Your code to benchmark
-    sus result normie = expensive_operation()
-    
-    testz.benchmark_end(start_time)
-    testz.assert_eq(result, expected_result)
-}
-```
+### Running Tests
 
-## Test Utilities
-
-### Test Data Creation
-```cursed
-sus test_array [normie] = testz.create_test_array()
-sus test_string tea = testz.create_test_string()
-sus test_struct TestResult = testz.create_test_struct()
-```
-
-### Test Control
-```cursed
-testz.skip_test("Reason for skipping")
-testz.fail_test("Explicit failure reason")
-testz.expect_panic(risky_function)
-```
-
-## Integration with CURSED Compiler
-
-### Running Tests in Interpretation Mode
 ```bash
-cargo run --bin cursed tests/testz/test_basic_assertions.csd
+# Run CURSED test file in interpretation mode
+cargo run --bin cursed my_test.csd
+
+# Compile and run CURSED test file
+cargo run --bin cursed -- compile my_test.csd
+./my_test
+
+# Run all stdlib tests
+cargo run --bin cursed test --test-dir stdlib
+
+# Run tests with specific pattern
+cargo run --bin cursed test --filter math
 ```
 
-### Running Tests in Compilation Mode
-```bash
-cargo run --bin cursed -- compile tests/testz/test_basic_assertions.csd
-./test_basic_assertions
-```
+### Using the Framework
 
-### Running All Tests
 ```bash
-# Run all tests in the tests/testz/ directory
-find tests/testz/ -name "*.csd" -exec cargo run --bin cursed {} \;
+# Test the framework itself
+cargo run --bin cursed cursed_test_final.csd
+
+# Test in both modes
+cargo run --bin cursed cursed_test_final.csd
+cargo run --bin cursed -- compile cursed_test_final.csd
+./cursed_test_final
 ```
 
 ## Best Practices
 
-1. **Name tests descriptively**: Use clear, descriptive names for test functions
-2. **One concept per test**: Each test should focus on one specific behavior
-3. **Arrange-Act-Assert**: Structure tests with clear setup, execution, and verification
-4. **Use appropriate assertions**: Choose the most specific assertion for your use case
-5. **Test edge cases**: Include tests for boundary conditions and error cases
-6. **Keep tests independent**: Tests should not depend on each other's state
+1. **Organize Tests**: Use meaningful test names and group related tests
+2. **Use Descriptive Assertions**: Include clear messages in custom assertions
+3. **Test Edge Cases**: Include boundary conditions and error cases
+4. **Use Appropriate Assertions**: Choose the most specific assertion for each case
+5. **Configure Output**: Enable appropriate output formats for your needs
+6. **Test Both Modes**: Verify tests work in both interpretation and compilation modes
 
-## Examples
+## Integration with Stdlib Modules
 
-See the `tests/testz/` directory for comprehensive examples:
+The testing framework is designed to work seamlessly with all CURSED stdlib modules:
 
-- `test_basic_assertions.csd` - Basic assertion examples
-- `test_array_operations.csd` - Array testing examples
-- `test_advanced_features.csd` - Advanced language feature tests
-- `test_runner_demo.csd` - Complete testing framework demonstration
+```cursed
+yeet "testz"
+yeet "math"
+yeet "string"
+yeet "crypto"
 
-## Future Enhancements
+slay test_math_module() {
+    test_start("test_math_module")
+    
+    assert_eq_int(math.add(2, 3), 5)
+    assert_eq_int(math.multiply(4, 5), 20)
+    
+    test_end()
+}
+```
 
-- Macro support for more concise test definitions
-- Parallel test execution
-- Code coverage reporting
-- Property-based testing
-- Mocking and stubbing utilities
-- Integration with external testing tools
+## Performance Considerations
+
+- Tests run efficiently in both interpretation and compilation modes
+- Native compilation provides significant performance improvements for large test suites
+- Memory usage is optimized for long-running test sessions
+- Parallel test execution is supported for faster test runs
 
 ## Contributing
 
-The testing framework is part of the CURSED standard library. To contribute:
+The framework is implemented in pure CURSED and can be extended by adding new assertion functions or output formats. All contributions should maintain compatibility with both execution modes.
 
-1. Write tests for your changes
-2. Ensure all existing tests pass
-3. Update documentation as needed
-4. Follow CURSED coding conventions
+## License
+
+This testing framework is part of the CURSED programming language project and follows the same license terms.

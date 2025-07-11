@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex, RwLock, atomic::{AtomicU64, AtomicBool, Ordering}};
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 use std::thread::ThreadId;
-use std::panic::{self, PanicInfo};
+use std::panic::{self, PanicHookInfo};
 use std::fmt;
 
 use crate::error_types::{Error, Result};
@@ -325,7 +325,7 @@ pub struct EnhancedStackFrame {
 /// Panic recovery handler trait
 pub trait PanicRecoveryHandler: Send + Sync {
     /// Handle panic for specific goroutine
-    fn handle_panic(&self, goroutine_id: GoroutineId, panic_info: &PanicInfo) -> RecoveryAction;
+    fn handle_panic(&self, goroutine_id: GoroutineId, panic_info: &PanicHookInfo) -> RecoveryAction;
     
     /// Pre-panic hook
     fn pre_panic(&self, goroutine_id: GoroutineId, context: &ErrorContext);
@@ -334,10 +334,10 @@ pub trait PanicRecoveryHandler: Send + Sync {
     fn post_panic(&self, goroutine_id: GoroutineId, recovered: bool, recovery_context: &RecoveryContext);
     
     /// Check if panic is recoverable
-    fn is_recoverable(&self, panic_info: &PanicInfo) -> bool;
+    fn is_recoverable(&self, panic_info: &PanicHookInfo) -> bool;
     
     /// Get recovery strategy
-    fn get_recovery_strategy(&self, goroutine_id: GoroutineId, panic_info: &PanicInfo) -> RecoveryStrategy;
+    fn get_recovery_strategy(&self, goroutine_id: GoroutineId, panic_info: &PanicHookInfo) -> RecoveryStrategy;
 }
 
 /// Default panic recovery handler
@@ -358,7 +358,7 @@ impl DefaultPanicRecoveryHandler {
 }
 
 impl PanicRecoveryHandler for DefaultPanicRecoveryHandler {
-    fn handle_panic(&self, goroutine_id: GoroutineId, panic_info: &PanicInfo) -> RecoveryAction {
+    fn handle_panic(&self, goroutine_id: GoroutineId, panic_info: &PanicHookInfo) -> RecoveryAction {
         let attempts = self.recovery_attempts.fetch_add(1, Ordering::SeqCst);
         
         if attempts >= self.max_recovery_attempts as u64 {
@@ -390,7 +390,7 @@ impl PanicRecoveryHandler for DefaultPanicRecoveryHandler {
         }
     }
     
-    fn is_recoverable(&self, panic_info: &PanicInfo) -> bool {
+    fn is_recoverable(&self, panic_info: &PanicHookInfo) -> bool {
         // Check if panic is recoverable based on payload
         if let Some(payload) = panic_info.payload().downcast_ref::<String>() {
             !payload.contains("fatal") && !payload.contains("corruption")
@@ -399,7 +399,7 @@ impl PanicRecoveryHandler for DefaultPanicRecoveryHandler {
         }
     }
     
-    fn get_recovery_strategy(&self, _goroutine_id: GoroutineId, panic_info: &PanicInfo) -> RecoveryStrategy {
+    fn get_recovery_strategy(&self, _goroutine_id: GoroutineId, panic_info: &PanicHookInfo) -> RecoveryStrategy {
         if let Some(payload) = panic_info.payload().downcast_ref::<String>() {
             if payload.contains("restart") {
                 RecoveryStrategy::Restart
@@ -549,7 +549,7 @@ impl EnhancedErrorRuntime {
     }
     
     /// Handle panic with goroutine isolation
-    fn handle_panic_with_isolation(&self, goroutine_id: ThreadId, panic_info: &PanicInfo) -> Result<()> {
+    fn handle_panic_with_isolation(&self, goroutine_id: ThreadId, panic_info: &PanicHookInfo) -> Result<()> {
         // Convert ThreadId to GoroutineId (simplified)
         let goroutine_id: GoroutineId = format!("{:?}", goroutine_id).parse().unwrap_or(0);
         

@@ -1,106 +1,95 @@
-# CURSED String Library Tests
+# String Module
 
-This directory contains comprehensive tests for the CURSED string standard library.
+Enhanced string manipulation and processing module for CURSED.
 
-## Test Coverage
+## Overview
 
-The `test_string.csd` file provides complete test coverage for all string functions:
+The `string` module provides comprehensive string manipulation, validation, and processing capabilities. It includes functions for string transformation, searching, slicing, formatting, and advanced operations like regex matching and distance calculations.
 
-### String Properties
-- `string_len()` - String length calculation
-- `string_is_empty()` - Empty string detection
+## Features
 
-### Case Conversion
-- `string_to_upper()` - Convert to uppercase
-- `string_to_lower()` - Convert to lowercase
-- `string_capitalize()` - Capitalize first letter
+### Core String Operations
+- **Length & Validation**: `string_len()`, `string_is_empty()`
+- **Case Conversion**: `string_to_upper()`, `string_to_lower()`, `string_capitalize()`
+- **Trimming**: `string_trim()`, `string_trim_start()`, `string_trim_end()`
+- **Reversal**: `string_reverse()`
 
-### String Trimming
-- `string_trim()` - Remove leading/trailing whitespace
-- `string_trim_start()` - Remove leading whitespace
-- `string_trim_end()` - Remove trailing whitespace
+### String Searching & Matching
+- **Search**: `string_contains()`, `string_starts_with()`, `string_ends_with()`
+- **Indexing**: `string_index_of()`, `string_last_index_of()`, `string_count_occurrences()`
 
-### String Search
-- `string_contains()` - Check if substring exists
-- `string_starts_with()` - Check prefix
-- `string_ends_with()` - Check suffix
-- `string_index_of()` - Find first occurrence
-- `string_last_index_of()` - Find last occurrence
-- `string_count_occurrences()` - Count substring occurrences
+### String Slicing & Splitting
+- **Slicing**: `string_slice()`, `string_substring()`, `string_char_at()`
+- **Splitting**: `string_split()`, `string_split_lines()`, `string_split_whitespace()`
 
-### String Slicing
-- `string_slice()` - Extract substring by indices
-- `string_substring()` - Extract substring by start/length
-- `string_char_at()` - Get character at index
-
-### String Splitting
-- `string_split()` - Split by delimiter
-- `string_split_lines()` - Split by line breaks
-- `string_split_whitespace()` - Split by whitespace
-
-### String Replacement
-- `string_replace()` - Replace first occurrence
-- `string_replace_all()` - Replace all occurrences
-- `string_repeat()` - Repeat string N times
-
-### String Padding
-- `string_pad_left()` - Left-pad with characters
-- `string_pad_right()` - Right-pad with characters
-- `string_pad_center()` - Center-pad with characters
+### String Formatting & Transformation
+- **Replacement**: `string_replace()`, `string_replace_all()`
+- **Repetition**: `string_repeat()`
+- **Padding**: `string_pad_left()`, `string_pad_right()`, `string_pad_center()`
+- **Formatting**: `string_format()`
 
 ### String Validation
-- `string_is_numeric()` - Check if numeric
-- `string_is_alpha()` - Check if alphabetic
-- `string_is_alphanumeric()` - Check if alphanumeric
-- `string_is_whitespace()` - Check if whitespace
-- `string_is_ascii()` - Check if ASCII
+- **Type Checking**: `string_is_numeric()`, `string_is_alpha()`, `string_is_alphanumeric()`
+- **Content Validation**: `string_is_whitespace()`, `string_is_ascii()`
 
-### Type Conversion
-- `string_to_int()` - Parse integer
-- `string_to_float()` - Parse float
-- `string_to_bool()` - Parse boolean
-- `string_from_int()` - Convert from integer
-- `string_from_float()` - Convert from float
-- `string_from_bool()` - Convert from boolean
+### String Conversion
+- **To Types**: `string_to_int()`, `string_to_float()`, `string_to_bool()`
+- **From Types**: `string_from_int()`, `string_from_float()`, `string_from_bool()`
 
-### String Utilities
-- `string_reverse()` - Reverse string
-- `string_join()` - Join array of strings
-- `string_hash()` - Calculate hash
-- `string_levenshtein_distance()` - Edit distance
-- `string_similarity()` - String similarity metric
+### String Encoding
+- **Byte Operations**: `string_to_bytes()`, `string_from_bytes()`
+- **Escaping**: `string_escape()`, `string_unescape()`
 
 ### Regular Expressions
-- `regex_match()` - Check if pattern matches
-- `regex_find()` - Find first match
-- `regex_find_all()` - Find all matches
-- `regex_replace()` - Replace with regex
-- `regex_split()` - Split with regex
+- **Pattern Matching**: `regex_match()`, `regex_find()`, `regex_find_all()`
+- **Replacement**: `regex_replace()`, `regex_split()`
 
-### Edge Cases Tested
-- Empty string operations
-- Single character strings
-- Unicode character handling
-- Very long strings
-- Invalid input handling
+### String Utilities
+- **Joining**: `string_join()`
+- **Distance**: `string_levenshtein_distance()`, `string_similarity()`
+- **Hashing**: `string_hash()`
 
-## Running Tests
+## Usage Examples
 
-```bash
-# Run string tests specifically
-cargo run --bin cursed stdlib/string/test_string.csd
+```cursed
+yeet "string"
 
-# Run all stdlib tests
-cargo run --bin cursed test
+// Basic operations
+sus text tea = "  Hello, World!  "
+sus length normie = string_len(text)
+sus trimmed tea = string_trim(text)
+sus upper tea = string_to_upper(trimmed)
+
+// Search and replace
+sus contains_hello lit = string_contains(text, "Hello")
+sus replaced tea = string_replace(text, "World", "CURSED")
+
+// Splitting and joining
+sus words [tea] = string_split_whitespace(text)
+sus rejoined tea = string_join(words, "-")
+
+// Validation
+sus is_numeric lit = string_is_numeric("123")
+sus is_email lit = regex_match("\\S+@\\S+\\.\\S+", "user@example.com")
 ```
 
-## Test Results
+## Performance
 
-All tests verify:
-- Correct string manipulation
-- Proper Unicode handling
-- Expected behavior with edge cases
-- Performance with large strings
-- Integration with other stdlib modules
+The string module uses efficient algorithms for all operations:
+- Linear time complexity for most operations
+- Optimized pattern matching for regex operations
+- Memory-efficient string building for concatenation
 
-The tests ensure that the string library functions work correctly in both interpretation and native compilation modes.
+## Testing
+
+Run the comprehensive test suite:
+```bash
+cargo run --bin cursed stdlib/string/test_string.csd
+```
+
+## Status
+
+✅ **Production Ready**: All functions implemented and tested
+✅ **Pure CURSED**: No external dependencies
+✅ **Cross-Platform**: Works on all supported platforms
+✅ **Fully Tested**: Comprehensive test coverage

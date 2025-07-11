@@ -179,6 +179,58 @@ fn build_cli() -> Command {
                     .value_name("LEVEL")
                     .value_parser(["0", "1", "2", "3"])
                     .conflicts_with("optimize"))
+                // Advanced optimization flags
+                .arg(Arg::new("enable-pgo")
+                    .help("Enable Profile-Guided Optimization")
+                    .long("enable-pgo")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("pgo-profile")
+                    .help("Path to PGO profile data")
+                    .long("pgo-profile")
+                    .value_name("PATH")
+                    .requires("enable-pgo"))
+                .arg(Arg::new("pgo-generate")
+                    .help("Generate PGO profile data")
+                    .long("pgo-generate")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("enable-lto")
+                    .help("Enable Link-Time Optimization")
+                    .long("enable-lto")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("lto-level")
+                    .help("Set LTO level (thin, full)")
+                    .long("lto-level")
+                    .value_name("LEVEL")
+                    .value_parser(["thin", "full"])
+                    .requires("enable-lto"))
+                .arg(Arg::new("size-opt")
+                    .help("Enable size optimization")
+                    .long("size-opt")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("size-level")
+                    .help("Set size optimization level (s, z)")
+                    .long("size-level")
+                    .value_name("LEVEL")
+                    .value_parser(["s", "z"])
+                    .requires("size-opt"))
+                .arg(Arg::new("enable-bolt")
+                    .help("Enable BOLT optimization")
+                    .long("enable-bolt")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("bolt-profile")
+                    .help("Path to BOLT profile data")
+                    .long("bolt-profile")
+                    .value_name("PATH")
+                    .requires("enable-bolt"))
+                .arg(Arg::new("pass-pipeline")
+                    .help("Set optimization pass pipeline")
+                    .long("pass-pipeline")
+                    .value_name("PIPELINE")
+                    .value_parser(["default", "pgo", "size", "production"]))
+                .arg(Arg::new("benchmark")
+                    .help("Generate optimization benchmark report")
+                    .long("benchmark")
+                    .action(clap::ArgAction::SetTrue))
         )
         .subcommand(
             Command::new("run")
@@ -687,18 +739,32 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
     } else {
         global_matches.get_one::<String>("optimization").map(|s| s.as_str())
     };
+
+    // Create advanced optimization configuration
+    let advanced_config = create_advanced_optimization_config(matches, global_matches)?;
     
     if matches.get_flag("verbose") || global_matches.get_flag("verbose") {
         println!("{} {} to {}", "Compiling".green().bold(), input, output);
         if let Some(level) = optimization_level {
             println!("{} optimization level: {}", "Using".blue().bold(), level);
         }
+        
+        // Print advanced optimization info
+        if advanced_config.enable_pgo {
+            println!("{} PGO enabled", "Advanced".cyan().bold());
+        }
+        if advanced_config.enable_lto {
+            println!("{} LTO enabled ({:?})", "Advanced".cyan().bold(), advanced_config.lto_level);
+        }
+        if advanced_config.enable_size_optimization {
+            println!("{} Size optimization enabled ({:?})", "Advanced".cyan().bold(), advanced_config.size_optimization_level);
+        }
     }
     
     if matches.get_flag("emit-ir") {
-        let ir = cursed::compile_to_ir_with_optimization(
+        let ir = cursed::compile_to_ir_with_advanced_optimization(
             &fs::read_to_string(input)?,
-            optimization_level
+            &advanced_config
         )?;
         fs::write(format!("{}.ll", output), ir)?;
         println!("{} LLVM IR to {}.ll", "Generated".green().bold(), output);
@@ -707,21 +773,100 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         }
     } else if matches.get_flag("emit-asm") {
         let source = fs::read_to_string(input)?;
-        let assembly = cursed::compile_to_assembly(&source)?;
+        let assembly = cursed::compile_to_assembly_with_advanced_optimization(&source, &advanced_config)?;
         fs::write(format!("{}.s", output), assembly)?;
         println!("{} Assembly to {}.s", "Generated".green().bold(), output);
     } else {
         // Handle native-only flag
         if matches.get_flag("native-only") {
-            cursed::compile_native_only_with_optimization(input, output, optimization_level).await?;
+            cursed::compile_native_only_with_advanced_optimization(input, output, &advanced_config).await?;
             println!("{} native executable: {}", "Generated".green().bold(), output);
         } else {
-            cursed::compile_with_optimization(input, output, optimization_level).await?;
+            let result = cursed::compile_with_advanced_optimization(input, output, &advanced_config).await?;
             println!("{} executable: {}", "Generated".green().bold(), output);
+            
+            // Generate benchmark report if requested
+            if matches.get_flag("benchmark") {
+                if let Some(report) = result.benchmark_report {
+                    report.print_report();
+                }
+            }
         }
     }
     
     Ok(())
+}
+
+fn create_advanced_optimization_config(matches: &ArgMatches, global_matches: &ArgMatches) -> Result<cursed::optimization::AdvancedOptimizationConfig, Box<dyn std::error::Error>> {
+    use cursed::optimization::advanced_llvm_passes::cli_integration;
+    
+    let optimization_level = if matches.get_flag("optimize") {
+        Some("2")
+    } else if let Some(level) = matches.get_one::<String>("opt-level") {
+        Some(level.as_str())
+    } else {
+        global_matches.get_one::<String>("optimization").map(|s| s.as_str())
+    };
+
+    let enable_pgo = matches.get_flag("enable-pgo");
+    let pgo_profile_path = matches.get_one::<String>("pgo-profile").map(|s| s.as_str());
+    let enable_lto = matches.get_flag("enable-lto");
+    let size_optimized = matches.get_flag("size-opt");
+
+    let mut config = cli_integration::create_config_from_cli(
+        optimization_level,
+        enable_pgo,
+        pgo_profile_path,
+        enable_lto,
+        size_optimized,
+    )?;
+
+    // Set PGO generation if requested
+    if matches.get_flag("pgo-generate") {
+        config.pgo_generate_profile = true;
+        if config.pgo_profile_path.is_none() {
+            config.pgo_profile_path = Some(std::path::PathBuf::from("target/pgo-profile.profdata"));
+        }
+    }
+
+    // Set LTO level if specified
+    if let Some(lto_level) = matches.get_one::<String>("lto-level") {
+        config.lto_level = match lto_level.as_str() {
+            "thin" => cursed::optimization::LtoLevel::Thin,
+            "full" => cursed::optimization::LtoLevel::Full,
+            _ => cursed::optimization::LtoLevel::Full,
+        };
+    }
+
+    // Set size optimization level if specified
+    if let Some(size_level) = matches.get_one::<String>("size-level") {
+        config.size_optimization_level = match size_level.as_str() {
+            "s" => cursed::optimization::SizeOptLevel::Size,
+            "z" => cursed::optimization::SizeOptLevel::SizeAggressive,
+            _ => cursed::optimization::SizeOptLevel::Size,
+        };
+    }
+
+    // Set pass pipeline if specified
+    if let Some(pipeline) = matches.get_one::<String>("pass-pipeline") {
+        config.pass_pipeline = match pipeline.as_str() {
+            "default" => cursed::optimization::PassPipeline::Default,
+            "pgo" => cursed::optimization::PassPipeline::ProfileGuided,
+            "size" => cursed::optimization::PassPipeline::SizeOptimized,
+            "production" => cursed::optimization::PassPipeline::Production,
+            _ => cursed::optimization::PassPipeline::Default,
+        };
+    }
+
+    // Enable BOLT if requested
+    if matches.get_flag("enable-bolt") {
+        config.enable_bolt = true;
+        if let Some(bolt_profile) = matches.get_one::<String>("bolt-profile") {
+            config.bolt_profile_path = Some(std::path::PathBuf::from(bolt_profile));
+        }
+    }
+
+    Ok(config)
 }
 
 async fn check_compilation_dependencies() -> Result<(), Box<dyn std::error::Error>> {

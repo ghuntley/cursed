@@ -33,6 +33,7 @@ pub mod build_integration;
 pub mod production_llvm_optimization;
 pub mod enhanced_performance_monitor;
 pub mod comprehensive_benchmarking;
+pub mod advanced_llvm_passes;
 
 // Re-export key types
 pub use config::{OptimizationConfig, OptimizationLevel, OptimizationProfile};
@@ -69,6 +70,10 @@ pub use comprehensive_benchmarking::{
 pub use optimization_levels::{
     OptimizationLevelController, OptimizationLevelConfig, LevelRecommendation,
     BuildContext as OptBuildContext, BuildType, TargetPlatform, ValidationResult
+};
+pub use advanced_llvm_passes::{
+    AdvancedLlvmPassManager, AdvancedOptimizationConfig, PgoManager, OptimizationResult as AdvancedOptimizationResult,
+    OptimizationStats as AdvancedOptimizationStats, BenchmarkReport, LtoLevel, SizeOptLevel, PassPipeline
 };
 
 // Stub types that examples are trying to import

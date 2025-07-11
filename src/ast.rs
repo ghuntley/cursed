@@ -148,6 +148,9 @@ pub enum Expression {
         details: Option<Box<Expression>>,
         fields: Vec<(String, Expression)>,
     },
+    // TestResult expressions
+    TestResult(TestResultExpression),
+    TestResultCheck(TestResultCheckExpression),
 }
 
 /// Binary expression
@@ -255,6 +258,33 @@ pub struct ShookExpression {
 #[derive(Debug, Clone)]
 pub struct ErrorValueExpression {
     pub message: String,
+}
+
+/// TestResult construction expression (e.g., TestResult.pass(...))
+#[derive(Debug, Clone)]
+pub struct TestResultExpression {
+    pub result_type: TestResultType,
+    pub test_name: String,
+    pub assertion_name: String,
+    pub message: String,
+    pub expected: Option<String>,
+    pub actual: Option<String>,
+}
+
+/// TestResult type variants
+#[derive(Debug, Clone)]
+pub enum TestResultType {
+    Pass,
+    Fail,
+    Skip,
+    Error,
+}
+
+/// TestResult status check expression (e.g., TestResult.is_pass(result))
+#[derive(Debug, Clone)]
+pub struct TestResultCheckExpression {
+    pub result: Box<Expression>,
+    pub check_type: TestResultType,
 }
 
 impl YikesStatement {

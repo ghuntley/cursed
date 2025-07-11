@@ -65,6 +65,9 @@ struct TestResult {
     error: Option<String>,
 }
 
+// Import the CURSED TestResult type system
+use cursed::type_system::{TestResult as CursedTestResult, TestStatus, TestSuite, TestReport};
+
 fn run(matches: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let pattern = matches.get_one::<String>("pattern").unwrap();
     let verbose = matches.get_flag("verbose");
@@ -355,4 +358,51 @@ fn print_results(results: &[TestResult]) {
     
     let total_duration: std::time::Duration = results.iter().map(|r| r.duration).sum();
     println!("  Total time: {:?}", total_duration);
+}
+
+fn print_json_results(results: &[TestResult]) {
+    let mut report = TestReport::new();
+    let mut suite = TestSuite::new("cursed_tests");
+    
+    for result in results {
+        let status = if result.passed { TestStatus::Pass } else { TestStatus::Fail };
+        let cursed_result = CursedTestResult {
+            test_name: result.name.clone(),
+            assertion_name: "main".to_string(),
+            status,
+            message: if result.passed { "Test passed".to_string() } else { 
+                result.error.as_ref().unwrap_or(&"Test failed".to_string()).clone()
+            },
+            expected: None,
+            actual: None,
+            execution_time: Some(result.duration.as_millis() as u64),
+            line_number: None,
+            file_name: Some(result.path.to_string_lossy().to_string()),
+        };
+        suite.add_test(cursed_result);
+    }
+    
+    report.add_suite(suite);
+    match report.to_json() {
+        Ok(json) => println!("{}", json),
+        Err(e) => eprintln!("Failed to generate JSON: {}", e),
+    }
+}
+
+fn print_tap_results(results: &[TestResult]) {
+    println!("1..{}", results.len());
+    
+    for (i, result) in results.iter().enumerate() {
+        let test_number = i + 1;
+        if result.passed {
+            println!("ok {} - {}", test_number, result.name);
+        } else {
+            println!("not ok {} - {}", test_number, result.name);
+            if let Some(error) = &result.error {
+                println!("  ---");
+                println!("  message: {}", error);
+                println!("  ...");
+            }
+        }
+    }
 }

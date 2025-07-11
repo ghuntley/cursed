@@ -19,6 +19,9 @@ use crate::error::CursedError;
 use crate::memory::{Tag, Traceable, Visitor};
 use crate::runtime::stack::RuntimeStack;
 
+#[cfg(feature = "concurrent_gc")]
+use crate::runtime::gc_tuning::{TriColorCollector, GcPerformanceTuner, GcTuningParams};
+
 // Integration stubs - inline to avoid module loading issues
 
 // Tests are included inline to avoid module loading issues
@@ -242,6 +245,12 @@ pub struct GarbageCollector {
     allocation_counter: AtomicUsize,
     /// Last collection time
     last_collection: RwLock<Instant>,
+    /// Tri-color collector for concurrent GC
+    #[cfg(feature = "concurrent_gc")]
+    tri_color_collector: Arc<TriColorCollector>,
+    /// Performance tuner for adaptive GC
+    #[cfg(feature = "concurrent_gc")]
+    performance_tuner: Arc<GcPerformanceTuner>,
 }
 
 /// Incremental collection state
@@ -356,7 +365,7 @@ impl GarbageCollector {
         regions.push(old_region);
         
         let gc = Arc::new(GarbageCollector {
-            config,
+            config: config.clone(),
             regions: RwLock::new(regions),
             state: RwLock::new(GcState::Idle),
             stats: RwLock::new(GcStats::default()),
@@ -388,6 +397,10 @@ impl GarbageCollector {
             stack_manager,
             allocation_counter: AtomicUsize::new(0),
             last_collection: RwLock::new(Instant::now()),
+            #[cfg(feature = "concurrent_gc")]
+            tri_color_collector: Arc::new(TriColorCollector::new()),
+            #[cfg(feature = "concurrent_gc")]
+            performance_tuner: Arc::new(GcPerformanceTuner::new(GcTuningParams::default())),
         });
         
         // Start concurrent collection threads if enabled
