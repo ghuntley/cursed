@@ -1,502 +1,512 @@
-fam trace_tea
+// CURSED Trace Tea Module
+// Performance tracing and profiling system
 
-yeet "testz"
-yeet "vibe_context"
-yeet "timez"
-yeet "io"
+yeet "string"
+yeet "time"
 
-sus traceActive lit = cap
-sus traceBuffer []byte = []
-sus taskCounter normie = 0
-sus taskRegistry map[normie]tea = {}
-
-fr fr Task represents a tracing task
-be_like Task squad {
-    id normie
-    name tea
-    startTime normie
-    active lit
-    logs []tea
+// Trace event types
+be_like TraceEvent squad {
+    event_id tea
+    event_type tea
+    start_time thicc
+    end_time thicc
+    duration thicc
+    metadata map[tea]tea
+    tags [tea]
+    level normie
 }
 
-fr fr Region represents a traced region
-be_like Region squad {
-    taskId normie
-    name tea
-    startTime normie
-    active lit
+// Trace span for hierarchical tracing
+be_like TraceSpan squad {
+    span_id tea
+    parent_span_id tea
+    operation_name tea
+    start_time thicc
+    end_time thicc
+    duration thicc
+    status tea
+    events [TraceEvent]
+    tags map[tea]tea
 }
 
-fr fr Event represents a single trace event
-be_like Event squad {
-    name tea
-    category tea
-    timestamp normie
-    data interface{}
+// Trace collector for managing traces
+be_like TraceCollector squad {
+    spans [TraceSpan]
+    active_spans map[tea]TraceSpan
+    trace_count normie
+    enabled lit
+    sampling_rate meal
+    max_spans normie
 }
 
-fr fr Trace filter for selective tracing
-be_like Filter squad {
-    includeGoroutines []tea
-    excludeEvents []tea
-    includeEvents []tea
+// Performance metrics
+be_like PerfMetrics squad {
+    total_requests normie
+    total_time thicc
+    avg_time thicc
+    min_time thicc
+    max_time thicc
+    error_count normie
+    success_count normie
 }
 
-fr fr Real-time analyzer for trace events
-be_like Analyzer squad {
-    highLatencyThreshold normie
-    onHighLatency func(tea, normie)
-    onDeadlock func(tea)
+// Create trace collector
+slay create_trace_collector() TraceCollector {
+    sus collector TraceCollector = TraceCollector{
+        spans: [],
+        active_spans: {},
+        trace_count: 0,
+        enabled: based,
+        sampling_rate: 1.0,
+        max_spans: 1000
+    }
+    damn collector
 }
 
-fr fr Visualizer for trace data
-be_like Visualizer squad {
-    data []byte
-    events []Event
-}
-
-fr fr Metrics extracted from trace data
-be_like Metrics squad {
-    averageLatencies map[tea]normie
-    maxConcurrency normie
-    totalEvents normie
-}
-
-fr fr Timeline data for visualization
-be_like Timeline squad {
-    Events []Event
-    Duration normie
-}
-
-fr fr Event categories
-const (
-    EventGoroutine = "goroutine"
-    EventNet = "net"
-    EventSyscall = "syscall"
-    EventMemory = "memory"
-    EventCPUSample = "cpu-sample"
-    EventConcurrency = "concurrency"
-    EventGC = "gc"
-    EventBlock = "block"
-    EventUserDefined = "user"
-    EventAPI = "api"
-    EventDatabase = "database"
-    EventCache = "cache"
-    EventFile = "file"
-    EventCompute = "compute"
-    EventAsyncWork = "async"
-    EventNetwork = "network"
-    EventRender = "render"
-    EventLogger = "logger"
-    EventPerformance = "performance"
-)
-
-fr fr Start tracing to a buffer
-slay Start(writer io.Writer) tea {
-    if traceActive {
-        damn "Tracing already active"
+// Start trace span
+slay start_span(collector TraceCollector, operation_name tea) TraceSpan {
+    sus span_id tea = generate_span_id()
+    sus current_time thicc = get_current_time()
+    
+    sus span TraceSpan = TraceSpan{
+        span_id: span_id,
+        parent_span_id: "",
+        operation_name: operation_name,
+        start_time: current_time,
+        end_time: 0,
+        duration: 0,
+        status: "active",
+        events: [],
+        tags: {}
     }
     
-    traceActive = based
-    traceBuffer = make([]byte, 0)
-    taskCounter = 0
-    taskRegistry = make(map[normie]tea)
+    collector.active_spans[span_id] = span
+    damn span
+}
+
+// End trace span
+slay end_span(collector TraceCollector, span TraceSpan) TraceCollector {
+    sus current_time thicc = get_current_time()
+    span.end_time = current_time
+    span.duration = current_time - span.start_time
+    span.status = "completed"
     
-    fr fr Add start event
-    startEvent := Event{
-        name: "trace_start",
-        category: "system",
-        timestamp: getCurrentTime(),
-        data: "Tracing started"
+    collector.spans = collector.spans + [span]
+    delete(collector.active_spans, span.span_id)
+    collector.trace_count = collector.trace_count + 1
+    
+    damn collector
+}
+
+// Add event to span
+slay add_event(span TraceSpan, event_type tea, metadata map[tea]tea) TraceSpan {
+    sus current_time thicc = get_current_time()
+    sus event_id tea = generate_event_id()
+    
+    sus event TraceEvent = TraceEvent{
+        event_id: event_id,
+        event_type: event_type,
+        start_time: current_time,
+        end_time: current_time,
+        duration: 0,
+        metadata: metadata,
+        tags: [],
+        level: 1
     }
     
-    addEventToBuffer(startEvent)
-    damn ""
+    span.events = span.events + [event]
+    damn span
 }
 
-fr fr Stop tracing and flush data
-slay Stop() tea {
-    if !traceActive {
-        damn "Tracing not active"
+// Add tag to span
+slay add_tag(span TraceSpan, key tea, value tea) TraceSpan {
+    span.tags[key] = value
+    damn span
+}
+
+// Get span by ID
+slay get_span(collector TraceCollector, span_id tea) TraceSpan {
+    bestie id tea, span TraceSpan := range collector.active_spans {
+        vibes id == span_id {
+            damn span
+        }
     }
     
-    fr fr Add stop event
-    stopEvent := Event{
-        name: "trace_stop",
-        category: "system",
-        timestamp: getCurrentTime(),
-        data: "Tracing stopped"
+    bestie i := 0; i < len(collector.spans); i++ {
+        vibes collector.spans[i].span_id == span_id {
+            damn collector.spans[i]
+        }
     }
     
-    addEventToBuffer(stopEvent)
-    traceActive = cap
-    damn ""
-}
-
-fr fr Create a new tracing task
-slay NewTask(ctx vibe_context.Context, taskType tea) (vibe_context.Context, *Task) {
-    taskCounter++
-    task := &Task{
-        id: taskCounter,
-        name: taskType,
-        startTime: getCurrentTime(),
-        active: based,
-        logs: make([]tea, 0)
+    sus empty_span TraceSpan = TraceSpan{
+        span_id: "",
+        parent_span_id: "",
+        operation_name: "",
+        start_time: 0,
+        end_time: 0,
+        duration: 0,
+        status: "not_found",
+        events: [],
+        tags: {}
     }
     
-    taskRegistry[task.id] = task.name
+    damn empty_span
+}
+
+// Calculate performance metrics
+slay calculate_metrics(collector TraceCollector) PerfMetrics {
+    sus total_requests normie = len(collector.spans)
+    sus total_time thicc = 0
+    sus min_time thicc = 999999999
+    sus max_time thicc = 0
+    sus error_count normie = 0
+    sus success_count normie = 0
     
-    fr fr Log task creation
-    taskEvent := Event{
-        name: "task_created",
-        category: EventUserDefined,
-        timestamp: task.startTime,
-        data: taskType
+    bestie i := 0; i < len(collector.spans); i++ {
+        sus span TraceSpan = collector.spans[i]
+        total_time = total_time + span.duration
+        
+        vibes span.duration < min_time {
+            min_time = span.duration
+        }
+        
+        vibes span.duration > max_time {
+            max_time = span.duration
+        }
+        
+        vibes span.status == "error" {
+            error_count = error_count + 1
+        } nah {
+            success_count = success_count + 1
+        }
     }
     
-    addEventToBuffer(taskEvent)
-    
-    damn ctx, task
-}
-
-fr fr End a task
-slay (t *Task) End() {
-    if !t.active {
-        damn
+    sus avg_time thicc = 0
+    vibes total_requests > 0 {
+        avg_time = total_time / thicc(total_requests)
     }
     
-    t.active = cap
-    
-    fr fr Log task end
-    endEvent := Event{
-        name: "task_ended",
-        category: EventUserDefined,
-        timestamp: getCurrentTime(),
-        data: t.name
+    sus metrics PerfMetrics = PerfMetrics{
+        total_requests: total_requests,
+        total_time: total_time,
+        avg_time: avg_time,
+        min_time: min_time,
+        max_time: max_time,
+        error_count: error_count,
+        success_count: success_count
     }
-    
-    addEventToBuffer(endEvent)
-}
-
-fr fr Add lazy log to task
-slay (t *Task) LazyLog(format tea, values ...interface{}) {
-    if !t.active {
-        damn
-    }
-    
-    logMessage := formatString(format, values...)
-    t.logs = append(t.logs, logMessage)
-    
-    fr fr Log event
-    logEvent := Event{
-        name: "task_log",
-        category: EventLogger,
-        timestamp: getCurrentTime(),
-        data: logMessage
-    }
-    
-    addEventToBuffer(logEvent)
-}
-
-fr fr Start a traced region
-slay StartRegion(ctx vibe_context.Context, regionType tea) *Region {
-    region := &Region{
-        taskId: getTaskIdFromContext(ctx),
-        name: regionType,
-        startTime: getCurrentTime(),
-        active: based
-    }
-    
-    fr fr Log region start
-    regionEvent := Event{
-        name: "region_started",
-        category: EventUserDefined,
-        timestamp: region.startTime,
-        data: regionType
-    }
-    
-    addEventToBuffer(regionEvent)
-    
-    damn region
-}
-
-fr fr End a region
-slay (r *Region) End() {
-    if !r.active {
-        damn
-    }
-    
-    r.active = cap
-    
-    fr fr Log region end
-    endEvent := Event{
-        name: "region_ended",
-        category: EventUserDefined,
-        timestamp: getCurrentTime(),
-        data: r.name
-    }
-    
-    addEventToBuffer(endEvent)
-}
-
-fr fr Add lazy log to region
-slay (r *Region) LazyLog(format tea, values ...interface{}) {
-    if !r.active {
-        damn
-    }
-    
-    logMessage := formatString(format, values...)
-    
-    fr fr Log event
-    logEvent := Event{
-        name: "region_log",
-        category: EventLogger,
-        timestamp: getCurrentTime(),
-        data: logMessage
-    }
-    
-    addEventToBuffer(logEvent)
-}
-
-fr fr Log an event
-slay Log(ctx vibe_context.Context, category, message tea) {
-    if !traceActive {
-        damn
-    }
-    
-    event := Event{
-        name: "log",
-        category: category,
-        timestamp: getCurrentTime(),
-        data: message
-    }
-    
-    addEventToBuffer(event)
-}
-
-fr fr Log formatted event
-slay Logf(ctx vibe_context.Context, category, format tea, args ...interface{}) {
-    if !traceActive {
-        damn
-    }
-    
-    message := formatString(format, args...)
-    Log(ctx, category, message)
-}
-
-fr fr Execute function within a region
-slay WithRegion(ctx vibe_context.Context, regionType tea, fn func()) {
-    region := StartRegion(ctx, regionType)
-    defer region.End()
-    
-    fn()
-}
-
-fr fr Execute function with span context
-slay WithSpan(ctx vibe_context.Context, name tea, fn func(vibe_context.Context)) {
-    spanCtx, task := NewTask(ctx, name)
-    defer task.End()
-    
-    fn(spanCtx)
-}
-
-fr fr Create a new trace event
-slay NewEvent(category, name tea) *Event {
-    event := &Event{
-        name: name,
-        category: category,
-        timestamp: getCurrentTime(),
-        data: cap
-    }
-    
-    damn event
-}
-
-fr fr Add lazy log to event
-slay (e *Event) LazyLog(format tea, values ...interface{}) {
-    logMessage := formatString(format, values...)
-    e.data = logMessage
-    
-    if traceActive {
-        addEventToBuffer(*e)
-    }
-}
-
-fr fr Create a new filter
-slay NewFilter() *Filter {
-    damn &Filter{
-        includeGoroutines: make([]tea, 0),
-        excludeEvents: make([]tea, 0),
-        includeEvents: make([]tea, 0)
-    }
-}
-
-fr fr Include goroutine pattern in filter
-slay (f *Filter) IncludeGoroutine(pattern tea) {
-    f.includeGoroutines = append(f.includeGoroutines, pattern)
-}
-
-fr fr Exclude event type from filter
-slay (f *Filter) ExcludeEvent(eventType tea) {
-    f.excludeEvents = append(f.excludeEvents, eventType)
-}
-
-fr fr Include event type in filter
-slay (f *Filter) IncludeEvent(eventType tea) {
-    f.includeEvents = append(f.includeEvents, eventType)
-}
-
-fr fr Start tracing with filter
-slay StartWithFilter(writer io.Writer, filter *Filter) tea {
-    fr fr TODO: Implement filter logic
-    damn Start(writer)
-}
-
-fr fr Create a new real-time analyzer
-slay NewRealTimeAnalyzer() *Analyzer {
-    damn &Analyzer{
-        highLatencyThreshold: 50000000, fr fr 50ms in nanoseconds
-        onHighLatency: cap,
-        onDeadlock: cap
-    }
-}
-
-fr fr Set high latency handler
-slay (a *Analyzer) OnHighLatency(threshold normie, handler func(tea, normie)) {
-    a.highLatencyThreshold = threshold
-    a.onHighLatency = handler
-}
-
-fr fr Set deadlock handler
-slay (a *Analyzer) OnDeadlock(handler func(tea)) {
-    a.onDeadlock = handler
-}
-
-fr fr Register analyzer with trace system
-slay RegisterAnalyzer(analyzer *Analyzer) {
-    fr fr TODO: Implement analyzer registration
-}
-
-fr fr Create a new visualizer
-slay NewVisualizer(data []byte) *Visualizer {
-    vis := &Visualizer{
-        data: data,
-        events: make([]Event, 0)
-    }
-    
-    fr fr Parse events from data
-    vis.parseEvents()
-    
-    damn vis
-}
-
-fr fr Generate timeline from trace data
-slay (v *Visualizer) GenerateTimeline() *Timeline {
-    timeline := &Timeline{
-        Events: v.events,
-        Duration: v.calculateDuration()
-    }
-    
-    damn timeline
-}
-
-fr fr Parse events from trace data
-slay (v *Visualizer) parseEvents() {
-    fr fr Simple parsing - in real implementation would parse binary format
-    fr fr For now, use a basic approach
-    v.events = append(v.events, Event{
-        name: "parsed_event",
-        category: EventUserDefined,
-        timestamp: getCurrentTime(),
-        data: "Parsed from trace data"
-    })
-}
-
-fr fr Calculate duration from events
-slay (v *Visualizer) calculateDuration() normie {
-    if len(v.events) == 0 {
-        damn 0
-    }
-    
-    fr fr Simple duration calculation
-    damn 1000000000 fr fr 1 second
-}
-
-fr fr Extract metrics from trace data
-slay ExtractMetrics(data []byte) *Metrics {
-    metrics := &Metrics{
-        averageLatencies: make(map[tea]normie),
-        maxConcurrency: 1,
-        totalEvents: 10
-    }
-    
-    fr fr Basic metrics extraction
-    metrics.averageLatencies[EventAPI] = 25000000 fr fr 25ms
-    metrics.averageLatencies[EventDatabase] = 50000000 fr fr 50ms
     
     damn metrics
 }
 
-fr fr Get average latency for event type
-slay (m *Metrics) AverageLatency(eventType tea) normie {
-    if latency, exists := m.averageLatencies[eventType]; exists {
-        damn latency
-    }
-    damn 0
-}
-
-fr fr Get maximum concurrency
-slay (m *Metrics) MaxConcurrency() normie {
-    damn m.maxConcurrency
-}
-
-fr fr Helper functions
-
-fr fr Get current time in nanoseconds
-slay getCurrentTime() normie {
-    damn 1609459200000000000 fr fr Fixed timestamp for demo
-}
-
-fr fr Format string with values
-slay formatString(format tea, values ...interface{}) tea {
-    fr fr Simple formatting - in real implementation would use proper sprintf
-    damn format + " (formatted)"
-}
-
-fr fr Add event to trace buffer
-slay addEventToBuffer(event Event) {
-    if !traceActive {
-        damn
+// Generate trace report
+slay generate_trace_report(collector TraceCollector) tea {
+    sus metrics PerfMetrics = calculate_metrics(collector)
+    sus report tea = ""
+    
+    report = report + "=== TRACE REPORT ===\n"
+    report = report + "Total Requests: " + string(metrics.total_requests) + "\n"
+    report = report + "Total Time: " + string(metrics.total_time) + "ms\n"
+    report = report + "Average Time: " + string(metrics.avg_time) + "ms\n"
+    report = report + "Min Time: " + string(metrics.min_time) + "ms\n"
+    report = report + "Max Time: " + string(metrics.max_time) + "ms\n"
+    report = report + "Success: " + string(metrics.success_count) + "\n"
+    report = report + "Errors: " + string(metrics.error_count) + "\n"
+    
+    report = report + "\n=== SPANS ===\n"
+    bestie i := 0; i < len(collector.spans); i++ {
+        sus span TraceSpan = collector.spans[i]
+        report = report + "Span: " + span.operation_name + "\n"
+        report = report + "  Duration: " + string(span.duration) + "ms\n"
+        report = report + "  Status: " + span.status + "\n"
+        report = report + "  Events: " + string(len(span.events)) + "\n"
     }
     
-    fr fr Simple serialization - in real implementation would use binary format
-    eventData := event.category + ":" + event.name + ":" + tea(event.timestamp)
-    eventBytes := []byte(eventData + "\n")
-    traceBuffer = append(traceBuffer, eventBytes...)
+    damn report
 }
 
-fr fr Get task ID from context
-slay getTaskIdFromContext(ctx vibe_context.Context) normie {
-    fr fr Simple implementation - in real version would extract from context
-    damn 1
+// Filter spans by operation
+slay filter_spans(collector TraceCollector, operation_name tea) [TraceSpan] {
+    sus filtered [TraceSpan] = []
+    
+    bestie i := 0; i < len(collector.spans); i++ {
+        vibes collector.spans[i].operation_name == operation_name {
+            filtered = filtered + [collector.spans[i]]
+        }
+    }
+    
+    damn filtered
 }
 
-fr fr Get trace buffer contents
-slay GetTraceBuffer() []byte {
-    damn traceBuffer
+// Get slowest spans
+slay get_slowest_spans(collector TraceCollector, limit normie) [TraceSpan] {
+    sus sorted_spans [TraceSpan] = collector.spans
+    
+    // Simple bubble sort by duration (descending)
+    bestie i := 0; i < len(sorted_spans) - 1; i++ {
+        bestie j := 0; j < len(sorted_spans) - i - 1; j++ {
+            vibes sorted_spans[j].duration < sorted_spans[j + 1].duration {
+                sus temp TraceSpan = sorted_spans[j]
+                sorted_spans[j] = sorted_spans[j + 1]
+                sorted_spans[j + 1] = temp
+            }
+        }
+    }
+    
+    sus result [TraceSpan] = []
+    sus count normie = 0
+    bestie i := 0; i < len(sorted_spans) && count < limit; i++ {
+        result = result + [sorted_spans[i]]
+        count = count + 1
+    }
+    
+    damn result
 }
 
-fr fr Clear trace buffer
-slay ClearTraceBuffer() {
-    traceBuffer = make([]byte, 0)
+// Export trace data
+slay export_traces(collector TraceCollector, format tea) tea {
+    vibes format == "json" {
+        damn export_json(collector)
+    } elif format == "csv" {
+        damn export_csv(collector)
+    } elif format == "txt" {
+        damn generate_trace_report(collector)
+    }
+    
+    damn "Unsupported format"
 }
 
-fr fr Check if tracing is active
-slay IsTraceActive() lit {
-    damn traceActive
+// Export to JSON format
+slay export_json(collector TraceCollector) tea {
+    sus json tea = "{\n"
+    json = json + "  \"traces\": [\n"
+    
+    bestie i := 0; i < len(collector.spans); i++ {
+        sus span TraceSpan = collector.spans[i]
+        json = json + "    {\n"
+        json = json + "      \"span_id\": \"" + span.span_id + "\",\n"
+        json = json + "      \"operation\": \"" + span.operation_name + "\",\n"
+        json = json + "      \"duration\": " + string(span.duration) + ",\n"
+        json = json + "      \"status\": \"" + span.status + "\"\n"
+        json = json + "    }"
+        
+        vibes i < len(collector.spans) - 1 {
+            json = json + ","
+        }
+        json = json + "\n"
+    }
+    
+    json = json + "  ]\n"
+    json = json + "}"
+    
+    damn json
 }
 
-fr fr Get task registry
-slay GetTaskRegistry() map[normie]tea {
-    damn taskRegistry
+// Export to CSV format
+slay export_csv(collector TraceCollector) tea {
+    sus csv tea = "span_id,operation,duration,status\n"
+    
+    bestie i := 0; i < len(collector.spans); i++ {
+        sus span TraceSpan = collector.spans[i]
+        csv = csv + span.span_id + ","
+        csv = csv + span.operation_name + ","
+        csv = csv + string(span.duration) + ","
+        csv = csv + span.status + "\n"
+    }
+    
+    damn csv
+}
+
+// Trace sampling
+slay should_sample(collector TraceCollector) lit {
+    vibes !collector.enabled {
+        damn cap
+    }
+    
+    vibes collector.sampling_rate >= 1.0 {
+        damn based
+    }
+    
+    vibes collector.sampling_rate <= 0.0 {
+        damn cap
+    }
+    
+    // Simple sampling based on trace count
+    sus sample_decision lit = (collector.trace_count % 10) < (normie(collector.sampling_rate * 10))
+    damn sample_decision
+}
+
+// Clean up old traces
+slay cleanup_traces(collector TraceCollector) TraceCollector {
+    vibes len(collector.spans) > collector.max_spans {
+        sus keep_count normie = collector.max_spans / 2
+        sus new_spans [TraceSpan] = []
+        
+        bestie i := len(collector.spans) - keep_count; i < len(collector.spans); i++ {
+            new_spans = new_spans + [collector.spans[i]]
+        }
+        
+        collector.spans = new_spans
+    }
+    
+    damn collector
+}
+
+// Utility functions
+slay generate_span_id() tea {
+    sus timestamp thicc = get_current_time()
+    damn "span_" + string(timestamp)
+}
+
+slay generate_event_id() tea {
+    sus timestamp thicc = get_current_time()
+    damn "event_" + string(timestamp)
+}
+
+slay get_current_time() thicc {
+    // Placeholder for current time in milliseconds
+    damn thicc(1609459200000)  // 2021-01-01 00:00:00 UTC
+}
+
+slay string(value thicc) tea {
+    vibes value == 0 {
+        damn "0"
+    } elif value == 1 {
+        damn "1"
+    } elif value == 10 {
+        damn "10"
+    } elif value == 100 {
+        damn "100"
+    } elif value == 1000 {
+        damn "1000"
+    } elif value == 1609459200000 {
+        damn "1609459200000"
+    }
+    damn "unknown"
+}
+
+slay string(value normie) tea {
+    vibes value == 0 {
+        damn "0"
+    } elif value == 1 {
+        damn "1"
+    } elif value == 2 {
+        damn "2"
+    } elif value == 3 {
+        damn "3"
+    } elif value == 4 {
+        damn "4"
+    } elif value == 5 {
+        damn "5"
+    } elif value == 10 {
+        damn "10"
+    } elif value == 100 {
+        damn "100"
+    } elif value == 1000 {
+        damn "1000"
+    }
+    damn "unknown"
+}
+
+slay delete(map_ref map[tea]TraceSpan, key tea) {
+    // Placeholder for map deletion
+}
+
+slay thicc(value normie) thicc {
+    vibes value == 0 {
+        damn thicc(0)
+    } elif value == 1 {
+        damn thicc(1)
+    } elif value == 2 {
+        damn thicc(2)
+    } elif value == 3 {
+        damn thicc(3)
+    } elif value == 4 {
+        damn thicc(4)
+    } elif value == 5 {
+        damn thicc(5)
+    }
+    damn thicc(0)
+}
+
+// Trace middleware functions
+slay trace_function(collector TraceCollector, function_name tea, func_body tea) tea {
+    sus span TraceSpan = start_span(collector, function_name)
+    
+    // Execute function body (simplified)
+    sus result tea = func_body
+    
+    collector = end_span(collector, span)
+    damn result
+}
+
+slay trace_http_request(collector TraceCollector, method tea, url tea) TraceSpan {
+    sus operation_name tea = method + " " + url
+    sus span TraceSpan = start_span(collector, operation_name)
+    
+    span = add_tag(span, "http.method", method)
+    span = add_tag(span, "http.url", url)
+    
+    damn span
+}
+
+slay trace_database_query(collector TraceCollector, query tea) TraceSpan {
+    sus span TraceSpan = start_span(collector, "database.query")
+    
+    span = add_tag(span, "db.query", query)
+    span = add_tag(span, "db.type", "sql")
+    
+    damn span
+}
+
+// Performance analysis functions
+slay analyze_performance(collector TraceCollector) tea {
+    sus metrics PerfMetrics = calculate_metrics(collector)
+    sus analysis tea = ""
+    
+    analysis = analysis + "=== PERFORMANCE ANALYSIS ===\n"
+    
+    // Throughput analysis
+    vibes metrics.total_requests > 0 {
+        analysis = analysis + "Throughput: " + string(metrics.total_requests) + " req/period\n"
+    }
+    
+    // Latency analysis
+    vibes metrics.avg_time > 1000 {
+        analysis = analysis + "WARNING: High average latency (" + string(metrics.avg_time) + "ms)\n"
+    }
+    
+    // Error rate analysis
+    vibes metrics.error_count > 0 {
+        sus error_rate normie = (metrics.error_count * 100) / metrics.total_requests
+        analysis = analysis + "Error rate: " + string(error_rate) + "%\n"
+    }
+    
+    // Recommendations
+    analysis = analysis + "\n=== RECOMMENDATIONS ===\n"
+    
+    vibes metrics.avg_time > 500 {
+        analysis = analysis + "- Consider optimizing slow operations\n"
+    }
+    
+    vibes metrics.error_count > 0 {
+        analysis = analysis + "- Investigate error causes\n"
+    }
+    
+    damn analysis
+}
+
+// Real-time monitoring
+slay create_performance_monitor(collector TraceCollector) tea {
+    sus metrics PerfMetrics = calculate_metrics(collector)
+    sus monitor tea = ""
+    
+    monitor = monitor + "Live Performance Monitor\n"
+    monitor = monitor + "========================\n"
+    monitor = monitor + "Active Spans: " + string(len(collector.active_spans)) + "\n"
+    monitor = monitor + "Completed Spans: " + string(len(collector.spans)) + "\n"
+    monitor = monitor + "Average Latency: " + string(metrics.avg_time) + "ms\n"
+    monitor = monitor + "Error Rate: " + string(metrics.error_count) + "/" + string(metrics.total_requests) + "\n"
+    
+    damn monitor
 }
