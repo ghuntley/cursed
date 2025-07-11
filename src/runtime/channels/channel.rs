@@ -529,7 +529,10 @@ mod tests {
             SendResult::Sent => {
                 // This can happen if receiver is ready
             }
-            _ => panic!("Unexpected send result"),
+            SendResult::Closed(_) => {
+                eprintln!("Channel closed unexpectedly during send");
+                assert!(false, "Channel should not be closed during test")
+            }
         }
         
         // Test that try_recv would block when empty
@@ -540,7 +543,10 @@ mod tests {
             ReceiveResult::Received(_) => {
                 // This can happen if sender already sent
             }
-            _ => panic!("Unexpected receive result"),
+            ReceiveResult::Closed => {
+                eprintln!("Channel closed unexpectedly during receive");
+                assert!(false, "Channel should not be closed during test")
+            }
         }
         
         let elapsed = start_time.elapsed();
@@ -580,8 +586,14 @@ mod tests {
         // Should still be able to receive buffered value
         match receiver.recv_timeout(Duration::from_secs(5)) {
             ReceiveResult::Received(value) => assert_eq!(value, 42),
-            ReceiveResult::WouldBlock => panic!("Receive timed out after 5 seconds"),
-            _ => panic!("Should receive buffered value"),
+            ReceiveResult::WouldBlock => {
+                eprintln!("Receive timed out after 5 seconds");
+                assert!(false, "Receive should not timeout on buffered channel")
+            },
+            ReceiveResult::Closed => {
+                eprintln!("Channel closed before receiving buffered value");
+                assert!(false, "Should receive buffered value before channel closes")
+            },
         }
         
         // Further receives should indicate closed (use try_recv to avoid hanging)
@@ -639,8 +651,14 @@ mod tests {
         
         match receiver.recv_timeout(Duration::from_secs(5)) {
             ReceiveResult::Received(value) => assert_eq!(value, "hello"),
-            ReceiveResult::WouldBlock => panic!("Receive timed out after 5 seconds"),
-            _ => panic!("Should receive value"),
+            ReceiveResult::WouldBlock => {
+                eprintln!("Receive timed out after 5 seconds");
+                assert!(false, "Receive should not timeout on buffered channel")
+            },
+            ReceiveResult::Closed => {
+                eprintln!("Channel closed before receiving value");
+                assert!(false, "Should receive value from buffered channel")
+            },
         }
         
         let elapsed = start_time.elapsed();

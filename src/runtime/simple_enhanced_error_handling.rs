@@ -122,11 +122,14 @@ static SIMPLE_ERROR_RUNTIME: once_cell::sync::OnceCell<Arc<SimpleEnhancedErrorRu
 pub fn initialize_simple_error_runtime() -> Result<()> {
     let runtime = Arc::new(SimpleEnhancedErrorRuntime::new());
     
-    SIMPLE_ERROR_RUNTIME.set(runtime).map_err(|_| {
-        Error::Runtime("Failed to initialize simple error runtime".to_string())
-    })?;
-    
-    Ok(())
+    // Try to set runtime, but if it's already set, that's ok
+    match SIMPLE_ERROR_RUNTIME.set(runtime) {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            // Runtime is already initialized, which is fine
+            Ok(())
+        }
+    }
 }
 
 /// Get simple error runtime

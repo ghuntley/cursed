@@ -269,8 +269,12 @@ impl Select {
             matches!(case.operation, SelectOperation::Default { .. })
         });
         
+        // Use exponential backoff for better performance
+        let mut backoff_nanos = 100;
+        let max_backoff_nanos = 1_000_000; // 1ms max
+        
         loop {
-            // Check timeout
+            // Check timeout first
             if let Some(timeout) = self.timeout {
                 if start_time.elapsed() >= timeout {
                     return Ok(SelectResult::Timeout);
@@ -286,7 +290,7 @@ impl Select {
                 return self.execute_case(selected_index);
             }
             
-            // If no cases are ready and we have a default case, execute it
+            // If no cases are ready and we have a default case, execute it immediately
             if has_default {
                 return Ok(SelectResult::DefaultExecuted);
             }
@@ -296,8 +300,9 @@ impl Select {
                 return Ok(SelectResult::AllClosed);
             }
             
-            // Sleep briefly to avoid busy waiting
-            thread::sleep(Duration::from_millis(1));
+            // Exponential backoff to avoid busy waiting
+            thread::sleep(Duration::from_nanos(backoff_nanos));
+            backoff_nanos = (backoff_nanos * 2).min(max_backoff_nanos);
         }
     }
     
@@ -434,7 +439,10 @@ macro_rules! select {
             Ok($crate::runtime::channels::select::SelectResult::ReceiveCompleted(0, value)) => {
                 $body
             }
-            _ => panic!("Unexpected select result"),
+            result => {
+                eprintln!("Unexpected select result: {:?}", result);
+                return Err($crate::runtime::channels::ChannelError::NoReceivers);
+            }
         }
     }};
     
@@ -446,7 +454,10 @@ macro_rules! select {
             Ok($crate::runtime::channels::select::SelectResult::SendCompleted(0)) => {
                 $body
             }
-            _ => panic!("Unexpected select result"),
+            result => {
+                eprintln!("Unexpected select result: {:?}", result);
+                return Err($crate::runtime::channels::ChannelError::NoSenders);
+            }
         }
     }};
     
@@ -458,7 +469,10 @@ macro_rules! select {
             Ok($crate::runtime::channels::select::SelectResult::DefaultExecuted) => {
                 $body
             }
-            _ => panic!("Unexpected select result"),
+            result => {
+                eprintln!("Unexpected select result: {:?}", result);
+                return Err($crate::runtime::channels::ChannelError::NoSenders);
+            }
         }
     }};
 }

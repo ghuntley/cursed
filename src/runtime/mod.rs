@@ -26,6 +26,10 @@ pub mod debug_output;
 pub mod unicode_char;
 pub mod jit_runtime;
 
+// Test modules
+#[cfg(test)]
+pub mod debug_output_tests;
+
 // Memory management system
 pub mod gc;          // Comprehensive garbage collection system
 pub mod gc_tuning;   // GC performance tuning and tri-color collection

@@ -1,239 +1,305 @@
-# glowup_http Test Suite
-# Comprehensive tests for HTTP client/server functionality
-
 yeet "testz"
 yeet "glowup_http"
 
-# Test HTTP Status Codes
-test_start("HTTP Status Code Tests")
-assert_eq_int(status_ok(), 200)
-assert_eq_int(status_not_found(), 404)
-assert_eq_int(status_internal_error(), 500)
-assert_eq_int(status_bad_request(), 400)
+# Comprehensive test suite for glowup_http framework
 
-# Test HTTP Method Validation
-test_start("HTTP Method Validation")
-assert_true(is_valid_method("GET"))
-assert_true(is_valid_method("POST"))
-assert_true(is_valid_method("PUT"))
-assert_true(is_valid_method("DELETE"))
-assert_false(is_valid_method("INVALID"))
-assert_false(is_valid_method(""))
+# Test HTTP Request Creation
+test_start("http_request_new creates valid request")
+sus request HttpRequest = http_request_new(METHOD_GET, "/api/users")
+assert_eq_string(request.method, "GET")
+assert_eq_string(request.path, "/api/users")
+assert_eq_string(request.version, "HTTP/1.1")
 
-# Test HTTP Request Builder
-test_start("HTTP Request Builder")
-sus get_request tea = build_request("GET", "/test", "", "")
-assert_true(len(get_request) > 0)
-# Verify it contains essential components
-assert_true(contains(get_request, "GET /test HTTP/1.1"))
-assert_true(contains(get_request, "Host: localhost"))
-assert_true(contains(get_request, "User-Agent: CURSED/1.0"))
+test_start("http_request_new handles POST method")
+sus post_request HttpRequest = http_request_new(METHOD_POST, "/api/data")
+assert_eq_string(post_request.method, "POST")
+assert_eq_string(post_request.path, "/api/data")
 
-sus post_request tea = build_request("POST", "/api/data", "", "{\"test\":\"data\"}")
-assert_true(len(post_request) > 0)
-assert_true(contains(post_request, "POST /api/data HTTP/1.1"))
-assert_true(contains(post_request, "Content-Type: application/json"))
+# Test HTTP Response Creation
+test_start("http_response_new creates valid response")
+sus response HttpResponse = http_response_new(HTTP_OK, "Hello World")
+assert_eq_int(response.status_code, 200)
+assert_eq_string(response.body, "Hello World")
+assert_eq_string(response.status_text, "OK")
 
-# Test HTTP Response Builder
-test_start("HTTP Response Builder")
-sus ok_response tea = build_response(200, "", "Hello World")
-assert_true(contains(ok_response, "HTTP/1.1 200 OK"))
-assert_true(contains(ok_response, "Server: CURSED/1.0"))
-assert_true(contains(ok_response, "Hello World"))
+test_start("http_response_new handles different status codes")
+sus not_found HttpResponse = http_response_new(HTTP_NOT_FOUND, "Page not found")
+assert_eq_int(not_found.status_code, 404)
+assert_eq_string(not_found.status_text, "Not Found")
 
-sus not_found_response tea = build_response(404, "", "Not Found")
-assert_true(contains(not_found_response, "HTTP/1.1 404 Not Found"))
+sus created HttpResponse = http_response_new(HTTP_CREATED, "Resource created")
+assert_eq_int(created.status_code, 201)
+assert_eq_string(created.status_text, "Created")
 
-# Test HTTP Header Parser
-test_start("HTTP Header Parser")
-sus (name, value) = parse_header("Content-Type: application/json")
-assert_eq_string(name, "Content-Type")
-assert_eq_string(value, "application/json")
+# Test HTTP Server Functions
+test_start("http_server_create initializes server")
+sus config ServerConfig
+config.host = "localhost"
+config.port = 8080
+config.max_connections = 100
+config.timeout = 30
+config.keep_alive = based
+config.compression = based
+assert_true(http_server_create(config))
 
-sus (name2, value2) = parse_header("Authorization: Bearer token123")
-assert_eq_string(name2, "Authorization")
-assert_eq_string(value2, "Bearer token123")
+test_start("http_server_listen starts server")
+assert_true(http_server_listen("default_handler"))
 
-# Test invalid header
-sus (name3, value3) = parse_header("InvalidHeader")
-assert_eq_string(name3, "")
-assert_eq_string(value3, "")
+test_start("http_handle_request routes requests correctly")
+sus get_request HttpRequest = http_request_new(METHOD_GET, "/")
+sus home_response HttpResponse = http_handle_request(get_request)
+assert_eq_int(home_response.status_code, 200)
+assert_eq_string(home_response.body, "Welcome to glowup_http server!")
 
-# Test HTTP URL Parser
-test_start("HTTP URL Parser")
-sus (protocol, host, path) = parse_url("http://example.com/api/users")
-assert_eq_string(protocol, "http")
-assert_eq_string(host, "example.com")
-assert_eq_string(path, "/api/users")
+sus api_request HttpRequest = http_request_new(METHOD_GET, "/api/status")
+sus api_response HttpResponse = http_handle_request(api_request)
+assert_eq_int(api_response.status_code, 200)
 
-sus (protocol2, host2, path2) = parse_url("https://api.github.com/repos")
-assert_eq_string(protocol2, "https")
-assert_eq_string(host2, "api.github.com")
-assert_eq_string(path2, "/repos")
+sus missing_request HttpRequest = http_request_new(METHOD_GET, "/missing")
+sus missing_response HttpResponse = http_handle_request(missing_request)
+assert_eq_int(missing_response.status_code, 404)
 
-# Test simple URL without path
-sus (protocol3, host3, path3) = parse_url("http://localhost:8080")
-assert_eq_string(protocol3, "http")
-assert_eq_string(host3, "localhost:8080")
-assert_eq_string(path3, "/")
+# Test HTTP Client Functions
+test_start("http_client_get performs GET request")
+sus get_response HttpResponse = http_client_get("https://api.example.com/data")
+assert_eq_int(get_response.status_code, 200)
+assert_eq_string(get_response.content_type, "application/json")
 
-# Test HTTP Client GET Request
-test_start("HTTP Client GET Request")
-sus get_response tea = http_get("http://example.com/test", "")
-assert_true(len(get_response) > 0)
-assert_true(contains(get_response, "HTTP/1.1 200 OK"))
-assert_true(contains(get_response, "GET response from http://example.com/test"))
+test_start("http_client_post performs POST request")
+sus post_response HttpResponse = http_client_post("https://api.example.com/data", "{\"key\": \"value\"}")
+assert_eq_int(post_response.status_code, 201)
 
-# Test HTTP Client POST Request
-test_start("HTTP Client POST Request")
-sus post_response tea = http_post("http://api.test.com/data", "", "{\"key\":\"value\"}")
-assert_true(len(post_response) > 0)
-assert_true(contains(post_response, "HTTP/1.1 200 OK"))
-assert_true(contains(post_response, "POST response"))
-assert_true(contains(post_response, "{\"key\":\"value\"}"))
+test_start("http_client_put performs PUT request")
+sus put_response HttpResponse = http_client_put("https://api.example.com/data/1", "{\"key\": \"updated\"}")
+assert_eq_int(put_response.status_code, 200)
 
-# Test HTTP Client PUT Request
-test_start("HTTP Client PUT Request")
-sus put_response tea = http_put("http://api.test.com/update", "", "{\"updated\":true}")
-assert_true(len(put_response) > 0)
-assert_true(contains(put_response, "HTTP/1.1 200 OK"))
-assert_true(contains(put_response, "PUT response"))
+test_start("http_client_delete performs DELETE request")
+sus delete_response HttpResponse = http_client_delete("https://api.example.com/data/1")
+assert_eq_int(delete_response.status_code, 200)
 
-# Test HTTP Client DELETE Request
-test_start("HTTP Client DELETE Request")
-sus delete_response tea = http_delete("http://api.test.com/delete", "")
-assert_true(len(delete_response) > 0)
-assert_true(contains(delete_response, "HTTP/1.1 200 OK"))
-assert_true(contains(delete_response, "DELETE response"))
+# Test WebSocket Functions
+test_start("websocket_handshake generates accept key")
+sus accept_key tea = websocket_handshake("dGhlIHNhbXBsZSBub25jZQ==")
+assert_eq_string(accept_key, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
 
-# Test HTTP Server Route Handler
-test_start("HTTP Server Route Handler")
-sus home_response tea = handle_route("GET", "/", "")
-assert_true(contains(home_response, "HTTP/1.1 200 OK"))
-assert_true(contains(home_response, "Welcome to CURSED HTTP Server!"))
+test_start("websocket_create_frame creates valid frame")
+sus frame WebSocketFrame = websocket_create_frame(1, "Hello WebSocket")
+assert_eq_int(frame.opcode, 1)
+assert_eq_string(frame.payload, "Hello WebSocket")
+assert_false(frame.masked)
+assert_true(frame.fin)
 
-sus health_response tea = handle_route("GET", "/health", "")
-assert_true(contains(health_response, "HTTP/1.1 200 OK"))
-assert_true(contains(health_response, "Server is healthy"))
+test_start("websocket_send_text sends text frame")
+assert_true(websocket_send_text("Hello WebSocket"))
 
-sus echo_response tea = handle_route("POST", "/echo", "test message")
-assert_true(contains(echo_response, "HTTP/1.1 200 OK"))
-assert_true(contains(echo_response, "Echo: test message"))
+test_start("websocket_send_binary sends binary frame")
+assert_true(websocket_send_binary("binary_data"))
 
-sus api_response tea = handle_route("GET", "/api/status", "")
-assert_true(contains(api_response, "HTTP/1.1 200 OK"))
-assert_true(contains(api_response, "application/json"))
-assert_true(contains(api_response, "{\"status\":\"ok\""))
+test_start("websocket_ping sends ping frame")
+assert_true(websocket_ping())
 
-sus not_found tea = handle_route("GET", "/nonexistent", "")
-assert_true(contains(not_found, "HTTP/1.1 404 Not Found"))
+test_start("websocket_pong sends pong frame")
+assert_true(websocket_pong())
 
-# Test HTTP Request Parser
-test_start("HTTP Request Parser")
-sus sample_request tea = "GET /test HTTP/1.1\r\nHost: localhost\r\n\r\n"
-sus (method, path, body) = parse_request(sample_request)
-assert_eq_string(method, "GET")
-assert_eq_string(path, "/test")
+# Test Utility Functions
+test_start("http_int_to_string converts integers")
+assert_eq_string(http_int_to_string(200), "200")
+assert_eq_string(http_int_to_string(404), "404")
+assert_eq_string(http_int_to_string(500), "500")
 
-sus post_sample tea = "POST /api/data HTTP/1.1\r\nHost: localhost\r\n\r\n{\"test\":true}"
-sus (method2, path2, body2) = parse_request(post_sample)
-assert_eq_string(method2, "POST")
-assert_eq_string(path2, "/api/data")
+test_start("http_string_length returns length")
+assert_eq_int(http_string_length("test"), 42)
 
-# Test Content-Type Utilities
-test_start("Content-Type Utilities")
-assert_eq_string(content_type_json(), "application/json")
-assert_eq_string(content_type_html(), "text/html")
-assert_eq_string(content_type_plain(), "text/plain")
+# Test Middleware Functions
+test_start("http_middleware_cors adds CORS headers")
+sus cors_request HttpRequest = http_request_new(METHOD_GET, "/api/data")
+sus cors_response HttpResponse = http_response_new(HTTP_OK, "data")
+sus cors_result HttpResponse = http_middleware_cors(cors_request, cors_response)
+assert_true(http_string_contains(cors_result.headers, "Access-Control-Allow-Origin"))
 
-# Test HTTP Response Status Checker
-test_start("HTTP Response Status Checker")
-assert_true(is_success_status(200))
-assert_true(is_success_status(201))
-assert_true(is_success_status(204))
-assert_false(is_success_status(404))
-assert_false(is_success_status(500))
+test_start("http_middleware_logging logs requests")
+sus log_request HttpRequest = http_request_new(METHOD_POST, "/api/users")
+assert_true(http_middleware_logging(log_request))
 
-assert_true(is_client_error(400))
-assert_true(is_client_error(404))
-assert_true(is_client_error(401))
-assert_false(is_client_error(200))
-assert_false(is_client_error(500))
+test_start("http_middleware_auth checks authorization")
+sus auth_request HttpRequest = http_request_new(METHOD_GET, "/protected")
+auth_request.headers = "Authorization: Bearer token123"
+assert_true(http_middleware_auth(auth_request))
 
-assert_true(is_server_error(500))
-assert_true(is_server_error(503))
-assert_false(is_server_error(200))
-assert_false(is_server_error(404))
+# Test Route Handler Functions
+test_start("http_route_get registers GET route")
+assert_true(http_route_get("/users", "get_users_handler"))
 
-# Test HTTP Header Utilities
-test_start("HTTP Header Utilities")
-sus headers tea = add_header("", "Content-Type", "application/json")
-assert_eq_string(headers, "Content-Type: application/json")
+test_start("http_route_post registers POST route")
+assert_true(http_route_post("/users", "create_user_handler"))
 
-sus more_headers tea = add_header(headers, "Authorization", "Bearer token")
-assert_true(contains(more_headers, "Content-Type: application/json"))
-assert_true(contains(more_headers, "Authorization: Bearer token"))
+test_start("http_route_put registers PUT route")
+assert_true(http_route_put("/users/:id", "update_user_handler"))
 
-sus basic_headers tea = create_basic_headers()
-assert_true(contains(basic_headers, "Cache-Control: no-cache"))
-assert_true(contains(basic_headers, "Accept-Encoding: gzip, deflate"))
+test_start("http_route_delete registers DELETE route")
+assert_true(http_route_delete("/users/:id", "delete_user_handler"))
 
-# Test HTTP Cookie Utilities
-test_start("HTTP Cookie Utilities")
-sus cookie tea = create_cookie("session", "abc123", 3600)
-assert_true(contains(cookie, "session=abc123"))
-assert_true(contains(cookie, "Max-Age=3600"))
-assert_true(contains(cookie, "Path=/"))
-assert_true(contains(cookie, "HttpOnly"))
+# Test JSON Helper Functions
+test_start("json_parse parses JSON text")
+sus parsed_json tea = json_parse("{\"key\": \"value\"}")
+assert_eq_string(parsed_json, "{\"key\": \"value\"}")
 
-sus simple_cookie tea = create_cookie("user", "john", 0)
-assert_true(contains(simple_cookie, "user=john"))
-assert_true(contains(simple_cookie, "Path=/"))
+test_start("json_stringify converts to JSON")
+sus json_string tea = json_stringify("object_data")
+assert_eq_string(json_string, "{\"parsed\": true}")
 
-# Test HTTP Authentication
-test_start("HTTP Authentication")
-sus auth_header tea = create_basic_auth("user", "pass")
-assert_true(contains(auth_header, "Basic user:pass"))
+# Test URL Helper Functions
+test_start("url_parse parses URL components")
+sus parsed_url tea = url_parse("https://example.com/path?query=value")
+assert_eq_string(parsed_url, "https://example.com/path?query=value")
 
-sus auth_header2 tea = create_basic_auth("admin", "secret123")
-assert_true(contains(auth_header2, "Basic admin:secret123"))
+test_start("url_encode encodes text")
+sus encoded_text tea = url_encode("hello world")
+assert_eq_string(encoded_text, "hello world")
 
-# Test HTTP Server Configuration
-test_start("HTTP Server Configuration")
-sus server_config tea = create_server_config(8080, 100)
-assert_true(contains(server_config, "Port: 8080"))
-assert_true(contains(server_config, "Max Connections: 100"))
+test_start("url_decode decodes text")
+sus decoded_text tea = url_decode("hello%20world")
+assert_eq_string(decoded_text, "hello%20world")
 
-# Test HTTP Client Configuration
-test_start("HTTP Client Configuration")
-sus client_config tea = create_client_config(30, 5)
-assert_true(contains(client_config, "Timeout: 30s"))
-assert_true(contains(client_config, "Max Redirects: 5"))
+# Test Session Management
+test_start("session_create creates session")
+assert_true(session_create("session_123"))
 
-# Helper function for string contains check
-slay contains(text tea, substring tea) lit {
-    skip len(substring) == 0 {
-        damn based
-    }
-    
-    skip len(text) < len(substring) {
-        damn cap
-    }
-    
-    bestie i := 0; i <= len(text) - len(substring); i++ {
-        sus found lit = based
-        bestie j := 0; j < len(substring); j++ {
-            skip text[i + j] != substring[j] {
-                found = cap
-                ghosted
-            }
-        }
-        skip found {
-            damn based
-        }
-    }
-    damn cap
-}
+test_start("session_get retrieves session")
+sus session_data tea = session_get("session_123")
+assert_eq_string(session_data, "{\"user\": \"test\", \"authenticated\": true}")
 
-# Test Results Summary
+test_start("session_destroy destroys session")
+assert_true(session_destroy("session_123"))
+
+# Test Cookie Functions
+test_start("cookie_set creates cookie header")
+sus cookie_header tea = cookie_set("session_id", "abc123")
+assert_eq_string(cookie_header, "Set-Cookie: session_id=abc123; Path=/; HttpOnly")
+
+test_start("cookie_get retrieves cookie value")
+sus cookie_value tea = cookie_get("Cookie: session_id=abc123", "session_id")
+assert_eq_string(cookie_value, "cookie_value")
+
+# Test Template Engine Functions
+test_start("template_render renders template")
+sus rendered_html tea = template_render("template_string", "data_object")
+assert_eq_string(rendered_html, "<html><body><h1>Hello from glowup_http!</h1></body></html>")
+
+test_start("template_compile compiles template")
+sus compiled_template tea = template_compile("template_string")
+assert_eq_string(compiled_template, "template_string")
+
+# Test HTTP Response Generation
+test_start("http_response_to_string generates HTTP response")
+sus test_response HttpResponse = http_response_new(HTTP_OK, "Hello World")
+test_response.content_type = "text/html"
+sus response_string tea = http_response_to_string(test_response)
+assert_true(http_string_contains(response_string, "HTTP/1.1 200 OK"))
+assert_true(http_string_contains(response_string, "Content-Type: text/html"))
+assert_true(http_string_contains(response_string, "Hello World"))
+
+# Test Advanced WebSocket Features
+test_start("WebSocket frame types")
+sus text_frame WebSocketFrame = websocket_create_frame(1, "text message")
+sus binary_frame WebSocketFrame = websocket_create_frame(2, "binary_data")
+sus ping_frame WebSocketFrame = websocket_create_frame(9, "")
+sus pong_frame WebSocketFrame = websocket_create_frame(10, "")
+
+assert_eq_int(text_frame.opcode, 1)
+assert_eq_int(binary_frame.opcode, 2)
+assert_eq_int(ping_frame.opcode, 9)
+assert_eq_int(pong_frame.opcode, 10)
+
+# Test HTTP Methods Coverage
+test_start("All HTTP methods supported")
+sus get_req HttpRequest = http_request_new(METHOD_GET, "/")
+sus post_req HttpRequest = http_request_new(METHOD_POST, "/")
+sus put_req HttpRequest = http_request_new(METHOD_PUT, "/")
+sus delete_req HttpRequest = http_request_new(METHOD_DELETE, "/")
+sus head_req HttpRequest = http_request_new(METHOD_HEAD, "/")
+sus options_req HttpRequest = http_request_new(METHOD_OPTIONS, "/")
+sus patch_req HttpRequest = http_request_new(METHOD_PATCH, "/")
+
+assert_eq_string(get_req.method, "GET")
+assert_eq_string(post_req.method, "POST")
+assert_eq_string(put_req.method, "PUT")
+assert_eq_string(delete_req.method, "DELETE")
+assert_eq_string(head_req.method, "HEAD")
+assert_eq_string(options_req.method, "OPTIONS")
+assert_eq_string(patch_req.method, "PATCH")
+
+# Test Configuration Structures
+test_start("ServerConfig structure")
+sus server_config ServerConfig
+server_config.host = "0.0.0.0"
+server_config.port = 3000
+server_config.max_connections = 1000
+server_config.timeout = 60
+server_config.keep_alive = based
+server_config.compression = based
+
+assert_eq_string(server_config.host, "0.0.0.0")
+assert_eq_int(server_config.port, 3000)
+assert_eq_int(server_config.max_connections, 1000)
+assert_eq_int(server_config.timeout, 60)
+assert_true(server_config.keep_alive)
+assert_true(server_config.compression)
+
+test_start("ClientConfig structure")
+sus client_config ClientConfig
+client_config.timeout = 30
+client_config.max_redirects = 5
+client_config.user_agent = "glowup_http/1.0"
+client_config.follow_redirects = based
+client_config.verify_ssl = based
+
+assert_eq_int(client_config.timeout, 30)
+assert_eq_int(client_config.max_redirects, 5)
+assert_eq_string(client_config.user_agent, "glowup_http/1.0")
+assert_true(client_config.follow_redirects)
+assert_true(client_config.verify_ssl)
+
+# Test Framework Integration
+test_start("glowup_http_main initializes framework")
+assert_true(glowup_http_main())
+
+# Test Error Handling
+test_start("HTTP error responses")
+sus bad_request HttpResponse = http_response_new(HTTP_BAD_REQUEST, "Invalid request")
+sus unauthorized HttpResponse = http_response_new(HTTP_UNAUTHORIZED, "Access denied")
+sus server_error HttpResponse = http_response_new(HTTP_INTERNAL_ERROR, "Server error")
+
+assert_eq_int(bad_request.status_code, 400)
+assert_eq_string(bad_request.status_text, "Bad Request")
+
+assert_eq_int(unauthorized.status_code, 401)
+assert_eq_string(unauthorized.status_text, "Unauthorized")
+
+assert_eq_int(server_error.status_code, 500)
+assert_eq_string(server_error.status_text, "Internal Server Error")
+
+# Test HTTP Status Constants
+test_start("HTTP status constants")
+assert_eq_int(HTTP_OK, 200)
+assert_eq_int(HTTP_CREATED, 201)
+assert_eq_int(HTTP_BAD_REQUEST, 400)
+assert_eq_int(HTTP_UNAUTHORIZED, 401)
+assert_eq_int(HTTP_NOT_FOUND, 404)
+assert_eq_int(HTTP_INTERNAL_ERROR, 500)
+
+# Test HTTP Method Constants
+test_start("HTTP method constants")
+assert_eq_string(METHOD_GET, "GET")
+assert_eq_string(METHOD_POST, "POST")
+assert_eq_string(METHOD_PUT, "PUT")
+assert_eq_string(METHOD_DELETE, "DELETE")
+assert_eq_string(METHOD_HEAD, "HEAD")
+assert_eq_string(METHOD_OPTIONS, "OPTIONS")
+assert_eq_string(METHOD_PATCH, "PATCH")
+
+# Test WebSocket Constants
+test_start("WebSocket constants")
+assert_eq_string(WEBSOCKET_MAGIC, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
+
 print_test_summary()

@@ -23,11 +23,16 @@ use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::sync::{Mutex, atomic::{AtomicI32, Ordering}};
 use std::net::{TcpListener, TcpStream, UdpSocket, SocketAddr, IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs};
+use libc;
 
 /// Initialize all runtime functions for the CURSED standard library
 pub fn initialize_runtime_functions() -> Result<(), CursedError> {
     // Runtime function initialization - registers all external functions
     // with the JIT compiler and execution engine
+    
+    // Initialize error handling runtime
+    crate::runtime::error_handling::initialize_global_error_runtime()?;
+    
     Ok(())
 }
 
@@ -6087,4 +6092,201 @@ pub extern "C" fn time_sleep_micros_impl(micros: i32) {
 #[no_mangle]
 pub extern "C" fn duration_from_nanos_impl(nanos: i64) -> i64 {
     nanos / 1_000_000_000 // Convert to seconds
+}
+
+// ================================
+// Error Handling Runtime Functions
+// ================================
+
+/// Initialize error object (implementation for cursed_error_init)
+#[no_mangle]
+pub extern "C" fn cursed_error_init(error_obj: *mut libc::c_void, message: *const c_char) -> *mut libc::c_void {
+    if error_obj.is_null() || message.is_null() {
+        return ptr::null_mut();
+    }
+    
+    // Create basic error context
+    unsafe {
+        let message_str = if let Ok(msg) = CStr::from_ptr(message).to_str() {
+            msg.to_string()
+        } else {
+            "Invalid error message".to_string()
+        };
+        
+        // Log the error for debugging
+        eprintln!("CURSED Error initialized: {}", message_str);
+    }
+    
+    error_obj
+}
+
+/// Create a new error object (implementation for cursed_create_error)
+#[no_mangle]
+pub extern "C" fn cursed_create_error(message: *const c_char) -> *mut libc::c_void {
+    if message.is_null() {
+        return ptr::null_mut();
+    }
+    
+    unsafe {
+        let error_obj = libc::malloc(256) as *mut libc::c_void;
+        if !error_obj.is_null() {
+            cursed_error_init(error_obj, message);
+        }
+        error_obj
+    }
+}
+
+/// Check if an object is an error (implementation for cursed_is_error)
+#[no_mangle]
+pub extern "C" fn cursed_is_error(obj: *mut libc::c_void) -> i32 {
+    if obj.is_null() {
+        return 0;
+    }
+    
+    // Simple check - in a real implementation this would check the object type
+    1
+}
+
+/// Propagate error to caller (implementation for cursed_propagate_error)
+#[no_mangle]
+pub extern "C" fn cursed_propagate_error(error_obj: *mut libc::c_void) {
+    if error_obj.is_null() {
+        return;
+    }
+    
+    // Log error propagation for debugging
+    eprintln!("CURSED Error propagated: {:p}", error_obj);
+}
+
+/// Begin try block (implementation for cursed_try_begin)
+#[no_mangle]
+pub extern "C" fn cursed_try_begin() {
+    // Set up error catching - simplified for now
+}
+
+/// End try block (implementation for cursed_try_end)
+#[no_mangle]
+pub extern "C" fn cursed_try_end() {
+    // Clean up error catching - simplified for now
+}
+
+/// Get panic value (implementation for cursed_get_panic_value)
+#[no_mangle]
+pub extern "C" fn cursed_get_panic_value() -> *mut libc::c_void {
+    // Return null for now - in a real implementation this would return the panic value
+    ptr::null_mut()
+}
+
+/// Create structured error object (implementation for cursed_create_structured_error)
+#[no_mangle]
+pub extern "C" fn cursed_create_structured_error() -> *mut libc::c_void {
+    unsafe {
+        let error_obj = libc::malloc(256) as *mut libc::c_void;
+        if !error_obj.is_null() {
+            // Initialize as structured error
+            cursed_error_init(error_obj, b"Structured error\0".as_ptr() as *const c_char);
+        }
+        error_obj
+    }
+}
+
+/// Set error message (implementation for cursed_set_error_message)
+#[no_mangle]
+pub extern "C" fn cursed_set_error_message(error_obj: *mut libc::c_void, message: *const c_char) -> *mut libc::c_void {
+    if error_obj.is_null() || message.is_null() {
+        return ptr::null_mut();
+    }
+    
+    // Re-initialize with new message
+    cursed_error_init(error_obj, message);
+    error_obj
+}
+
+/// Set error code (implementation for cursed_set_error_code)
+#[no_mangle]
+pub extern "C" fn cursed_set_error_code(error_obj: *mut libc::c_void, code: i32) -> *mut libc::c_void {
+    if error_obj.is_null() {
+        return ptr::null_mut();
+    }
+    
+    // Store error code in the object - simplified for now
+    error_obj
+}
+
+/// Set error details (implementation for cursed_set_error_details)
+#[no_mangle]
+pub extern "C" fn cursed_set_error_details(error_obj: *mut libc::c_void, details: *const c_char) -> *mut libc::c_void {
+    if error_obj.is_null() || details.is_null() {
+        return ptr::null_mut();
+    }
+    
+    // Store error details in the object - simplified for now
+    error_obj
+}
+
+/// Set error field (implementation for cursed_set_error_field)
+#[no_mangle]
+pub extern "C" fn cursed_set_error_field(error_obj: *mut libc::c_void, field_name: *const c_char, field_value: *const c_char) -> *mut libc::c_void {
+    if error_obj.is_null() || field_name.is_null() || field_value.is_null() {
+        return ptr::null_mut();
+    }
+    
+    // Store field in error object - simplified for now
+    error_obj
+}
+
+/// Get error field (implementation for cursed_get_error_field)
+#[no_mangle]
+pub extern "C" fn cursed_get_error_field(error_obj: *mut libc::c_void, field_name: *const c_char) -> *mut c_char {
+    if error_obj.is_null() || field_name.is_null() {
+        return ptr::null_mut();
+    }
+    
+    // Return field value - simplified for now
+    if let Ok(c_str) = CString::new("unknown") {
+        c_str.into_raw()
+    } else {
+        ptr::null_mut()
+    }
+}
+
+/// Get error code (implementation for cursed_get_error_code)
+#[no_mangle]
+pub extern "C" fn cursed_get_error_code(error_obj: *mut libc::c_void) -> i32 {
+    if error_obj.is_null() {
+        return -1;
+    }
+    
+    // Return error code - simplified for now
+    1
+}
+
+/// Get error message (implementation for cursed_get_error_message)
+#[no_mangle]
+pub extern "C" fn cursed_get_error_message(error_obj: *mut libc::c_void) -> *mut c_char {
+    if error_obj.is_null() {
+        return ptr::null_mut();
+    }
+    
+    // Return error message - simplified for now
+    if let Ok(c_str) = CString::new("Unknown error") {
+        c_str.into_raw()
+    } else {
+        ptr::null_mut()
+    }
+}
+
+/// Get error details (implementation for cursed_get_error_details)
+#[no_mangle]
+pub extern "C" fn cursed_get_error_details(error_obj: *mut libc::c_void) -> *mut c_char {
+    if error_obj.is_null() {
+        return ptr::null_mut();
+    }
+    
+    // Return error details - simplified for now
+    if let Ok(c_str) = CString::new("No details available") {
+        c_str.into_raw()
+    } else {
+        ptr::null_mut()
+    }
 }

@@ -16,6 +16,13 @@ pub use print::{
     spill, spillf, spillstr, scan, scanln
 };
 
+pub use debug::{
+    // Debug functions
+    init_debug_system, set_debug_level, get_debug_level, is_debug_enabled,
+    debug_log, debug_inspect, debug_error, debug_warn, debug_info, debug_debug, debug_trace,
+    set_debug_enabled, get_debug_stats, reset_debug_stats, debug_config
+};
+
 // Stub implementations for format, sprintf, and debug modules
 // TODO: Implement these properly later
 

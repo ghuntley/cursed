@@ -1,264 +1,546 @@
-//! Functional implementation for query_builder
+//! Enhanced query builder for CURSED ORM
 
-use crate::error::CursedError;
 use std::collections::HashMap;
-use crate::stdlib::packages::ModuleError;
+use crate::error::CursedError;
+use super::{SqlValue, DatabaseError};
 
-/// Result type for query_builder operations
-pub type ModuleResult<T> = Result<T, CursedError>;
+/// Result type for query builder operations
+pub type QueryResult<T> = Result<T, DatabaseError>;
 
-/// WHERE clause builder for queries
+/// Advanced query builder with fluent interface
+#[derive(Debug, Clone)]
+pub struct QueryBuilder {
+    table_name: String,
+    select_columns: Vec<String>,
+    where_clauses: Vec<WhereClause>,
+    join_clauses: Vec<JoinClause>,
+    order_by_clauses: Vec<OrderByClause>,
+    group_by_clauses: Vec<GroupByClause>,
+    having_clauses: Vec<HavingClause>,
+    limit_value: Option<i64>,
+    offset_value: Option<i64>,
+    distinct: bool,
+    parameters: Vec<SqlValue>,
+}
+
+/// WHERE clause builder
 #[derive(Debug, Clone)]
 pub struct WhereClause {
-    pub conditions: Vec<WhereCondition>,
-    pub conjunction: WhereConjunction,
+    pub column: String,
+    pub operator: String,
+    pub value: SqlValue,
+    pub conjunction: Option<String>,
 }
 
+/// JOIN clause builder
 #[derive(Debug, Clone)]
-pub struct WhereCondition {
-    pub field: String,
-    pub operator: WhereOperator,
-    pub value: String,
+pub struct JoinClause {
+    pub join_type: String,
+    pub table: String,
+    pub on_condition: String,
 }
 
+/// ORDER BY clause builder
 #[derive(Debug, Clone)]
-pub enum WhereOperator {
-    Equal,
-    NotEqual,
-    GreaterThan,
-    LessThan,
-    GreaterThanOrEqual,
-    LessThanOrEqual,
-    Like,
-    In,
-    NotIn,
-    IsNull,
-    IsNotNull,
+pub struct OrderByClause {
+    pub column: String,
+    pub direction: String,
 }
 
+/// GROUP BY clause builder
 #[derive(Debug, Clone)]
-pub enum WhereConjunction {
-    And,
-    Or,
+pub struct GroupByClause {
+    pub columns: Vec<String>,
+}
+
+/// HAVING clause builder
+#[derive(Debug, Clone)]
+pub struct HavingClause {
+    pub condition: String,
+    pub parameters: Vec<SqlValue>,
+}
+
+/// Subquery builder
+#[derive(Debug, Clone)]
+pub struct SubqueryBuilder {
+    pub query: QueryBuilder,
+    pub alias: String,
+}
+
+/// CTE (Common Table Expression) builder
+#[derive(Debug, Clone)]
+pub struct CTEBuilder {
+    pub name: String,
+    pub query: QueryBuilder,
+    pub recursive: bool,
+}
+
+impl QueryBuilder {
+    /// Create a new query builder
+    pub fn new(table_name: &str) -> Self {
+        Self {
+            table_name: table_name.to_string(),
+            select_columns: vec!["*".to_string()],
+            where_clauses: Vec::new(),
+            join_clauses: Vec::new(),
+            order_by_clauses: Vec::new(),
+            group_by_clauses: Vec::new(),
+            having_clauses: Vec::new(),
+            limit_value: None,
+            offset_value: None,
+            distinct: false,
+            parameters: Vec::new(),
+        }
+    }
+
+    /// Select specific columns
+    pub fn select(mut self, columns: &[&str]) -> Self {
+        self.select_columns = columns.iter().map(|s| s.to_string()).collect();
+        self
+    }
+
+    /// Select with column aliases
+    pub fn select_as(mut self, column_aliases: &[(&str, &str)]) -> Self {
+        self.select_columns = column_aliases
+            .iter()
+            .map(|(col, alias)| format!("{} AS {}", col, alias))
+            .collect();
+        self
+    }
+
+    /// Select distinct records
+    pub fn distinct(mut self) -> Self {
+        self.distinct = true;
+        self
+    }
+
+    /// Add a WHERE clause
+    pub fn where_clause(mut self, column: &str, operator: &str, value: SqlValue) -> Self {
+        self.where_clauses.push(WhereClause {
+            column: column.to_string(),
+            operator: operator.to_string(),
+            value,
+            conjunction: None,
+        });
+        self
+    }
+
+    /// Add an AND WHERE clause
+    pub fn and_where(mut self, column: &str, operator: &str, value: SqlValue) -> Self {
+        if let Some(last_clause) = self.where_clauses.last_mut() {
+            last_clause.conjunction = Some("AND".to_string());
+        }
+        self.where_clauses.push(WhereClause {
+            column: column.to_string(),
+            operator: operator.to_string(),
+            value,
+            conjunction: None,
+        });
+        self
+    }
+
+    /// Add an OR WHERE clause
+    pub fn or_where(mut self, column: &str, operator: &str, value: SqlValue) -> Self {
+        if let Some(last_clause) = self.where_clauses.last_mut() {
+            last_clause.conjunction = Some("OR".to_string());
+        }
+        self.where_clauses.push(WhereClause {
+            column: column.to_string(),
+            operator: operator.to_string(),
+            value,
+            conjunction: None,
+        });
+        self
+    }
+
+    /// Add a WHERE IN clause
+    pub fn where_in(mut self, column: &str, values: Vec<SqlValue>) -> Self {
+        let placeholders = values.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
+        self.where_clauses.push(WhereClause {
+            column: column.to_string(),
+            operator: "IN".to_string(),
+            value: SqlValue::String(format!("({})", placeholders)),
+            conjunction: None,
+        });
+        self.parameters.extend(values);
+        self
+    }
+
+    /// Add a WHERE BETWEEN clause
+    pub fn where_between(mut self, column: &str, start: SqlValue, end: SqlValue) -> Self {
+        self.where_clauses.push(WhereClause {
+            column: column.to_string(),
+            operator: "BETWEEN".to_string(),
+            value: SqlValue::String("? AND ?".to_string()),
+            conjunction: None,
+        });
+        self.parameters.push(start);
+        self.parameters.push(end);
+        self
+    }
+
+    /// Add a WHERE NULL clause
+    pub fn where_null(mut self, column: &str) -> Self {
+        self.where_clauses.push(WhereClause {
+            column: column.to_string(),
+            operator: "IS".to_string(),
+            value: SqlValue::Null,
+            conjunction: None,
+        });
+        self
+    }
+
+    /// Add a WHERE NOT NULL clause
+    pub fn where_not_null(mut self, column: &str) -> Self {
+        self.where_clauses.push(WhereClause {
+            column: column.to_string(),
+            operator: "IS NOT".to_string(),
+            value: SqlValue::Null,
+            conjunction: None,
+        });
+        self
+    }
+
+    /// Add a JOIN clause
+    pub fn join(mut self, table: &str, on_condition: &str) -> Self {
+        self.join_clauses.push(JoinClause::inner(table, on_condition));
+        self
+    }
+
+    /// Add a LEFT JOIN clause
+    pub fn left_join(mut self, table: &str, on_condition: &str) -> Self {
+        self.join_clauses.push(JoinClause::left(table, on_condition));
+        self
+    }
+
+    /// Add a RIGHT JOIN clause
+    pub fn right_join(mut self, table: &str, on_condition: &str) -> Self {
+        self.join_clauses.push(JoinClause::right(table, on_condition));
+        self
+    }
+
+    /// Add an ORDER BY clause
+    pub fn order_by(mut self, column: &str, direction: &str) -> Self {
+        self.order_by_clauses.push(OrderByClause::new(column, direction));
+        self
+    }
+
+    /// Add an ORDER BY ASC clause
+    pub fn order_by_asc(mut self, column: &str) -> Self {
+        self.order_by_clauses.push(OrderByClause::asc(column));
+        self
+    }
+
+    /// Add an ORDER BY DESC clause
+    pub fn order_by_desc(mut self, column: &str) -> Self {
+        self.order_by_clauses.push(OrderByClause::desc(column));
+        self
+    }
+
+    /// Add a GROUP BY clause
+    pub fn group_by(mut self, columns: &[&str]) -> Self {
+        self.group_by_clauses.push(GroupByClause::new(
+            columns.iter().map(|s| s.to_string()).collect()
+        ));
+        self
+    }
+
+    /// Add a HAVING clause
+    pub fn having(mut self, condition: &str, parameters: Vec<SqlValue>) -> Self {
+        self.having_clauses.push(HavingClause {
+            condition: condition.to_string(),
+            parameters,
+        });
+        self
+    }
+
+    /// Add a LIMIT clause
+    pub fn limit(mut self, limit: i64) -> Self {
+        self.limit_value = Some(limit);
+        self
+    }
+
+    /// Add an OFFSET clause
+    pub fn offset(mut self, offset: i64) -> Self {
+        self.offset_value = Some(offset);
+        self
+    }
+
+    /// Add pagination (LIMIT + OFFSET)
+    pub fn paginate(mut self, page: i64, per_page: i64) -> Self {
+        self.limit_value = Some(per_page);
+        self.offset_value = Some((page - 1) * per_page);
+        self
+    }
+
+    /// Build the SELECT SQL query
+    pub fn build_select(&self) -> QueryResult<(String, Vec<SqlValue>)> {
+        let mut sql = String::new();
+        let mut params = Vec::new();
+
+        // SELECT clause
+        sql.push_str("SELECT ");
+        if self.distinct {
+            sql.push_str("DISTINCT ");
+        }
+        sql.push_str(&self.select_columns.join(", "));
+
+        // FROM clause
+        sql.push_str(&format!(" FROM {}", self.table_name));
+
+        // JOIN clauses
+        for join in &self.join_clauses {
+            sql.push_str(&format!(" {} {} ON {}", join.join_type, join.table, join.on_condition));
+        }
+
+        // WHERE clauses
+        if !self.where_clauses.is_empty() {
+            sql.push_str(" WHERE ");
+            for (i, clause) in self.where_clauses.iter().enumerate() {
+                if i > 0 {
+                    if let Some(ref conjunction) = clause.conjunction {
+                        sql.push_str(&format!(" {} ", conjunction));
+                    }
+                }
+                sql.push_str(&format!("{} {} ?", clause.column, clause.operator));
+                params.push(clause.value.clone());
+            }
+        }
+
+        // GROUP BY clauses
+        if !self.group_by_clauses.is_empty() {
+            sql.push_str(" GROUP BY ");
+            let group_columns: Vec<String> = self.group_by_clauses
+                .iter()
+                .flat_map(|g| g.columns.clone())
+                .collect();
+            sql.push_str(&group_columns.join(", "));
+        }
+
+        // HAVING clauses
+        if !self.having_clauses.is_empty() {
+            sql.push_str(" HAVING ");
+            for (i, having) in self.having_clauses.iter().enumerate() {
+                if i > 0 {
+                    sql.push_str(" AND ");
+                }
+                sql.push_str(&having.condition);
+                params.extend(having.parameters.clone());
+            }
+        }
+
+        // ORDER BY clauses
+        if !self.order_by_clauses.is_empty() {
+            sql.push_str(" ORDER BY ");
+            let order_parts: Vec<String> = self.order_by_clauses
+                .iter()
+                .map(|o| format!("{} {}", o.column, o.direction))
+                .collect();
+            sql.push_str(&order_parts.join(", "));
+        }
+
+        // LIMIT clause
+        if let Some(limit) = self.limit_value {
+            sql.push_str(&format!(" LIMIT {}", limit));
+        }
+
+        // OFFSET clause
+        if let Some(offset) = self.offset_value {
+            sql.push_str(&format!(" OFFSET {}", offset));
+        }
+
+        // Add additional parameters
+        params.extend(self.parameters.clone());
+
+        Ok((sql, params))
+    }
+
+    /// Build an INSERT SQL query
+    pub fn build_insert(&self, data: &HashMap<String, SqlValue>) -> QueryResult<(String, Vec<SqlValue>)> {
+        let columns: Vec<String> = data.keys().cloned().collect();
+        let values: Vec<SqlValue> = data.values().cloned().collect();
+        let placeholders: Vec<String> = values.iter().map(|_| "?".to_string()).collect();
+
+        let sql = format!(
+            "INSERT INTO {} ({}) VALUES ({})",
+            self.table_name,
+            columns.join(", "),
+            placeholders.join(", ")
+        );
+
+        Ok((sql, values))
+    }
+
+    /// Build an UPDATE SQL query
+    pub fn build_update(&self, data: &HashMap<String, SqlValue>) -> QueryResult<(String, Vec<SqlValue>)> {
+        let mut sql = format!("UPDATE {}", self.table_name);
+        let mut params = Vec::new();
+
+        // SET clause
+        let set_clauses: Vec<String> = data.keys().map(|k| format!("{} = ?", k)).collect();
+        sql.push_str(&format!(" SET {}", set_clauses.join(", ")));
+        params.extend(data.values().cloned());
+
+        // WHERE clauses
+        if !self.where_clauses.is_empty() {
+            sql.push_str(" WHERE ");
+            for (i, clause) in self.where_clauses.iter().enumerate() {
+                if i > 0 {
+                    if let Some(ref conjunction) = clause.conjunction {
+                        sql.push_str(&format!(" {} ", conjunction));
+                    }
+                }
+                sql.push_str(&format!("{} {} ?", clause.column, clause.operator));
+                params.push(clause.value.clone());
+            }
+        }
+
+        Ok((sql, params))
+    }
+
+    /// Build a DELETE SQL query
+    pub fn build_delete(&self) -> QueryResult<(String, Vec<SqlValue>)> {
+        let mut sql = format!("DELETE FROM {}", self.table_name);
+        let mut params = Vec::new();
+
+        // WHERE clauses
+        if !self.where_clauses.is_empty() {
+            sql.push_str(" WHERE ");
+            for (i, clause) in self.where_clauses.iter().enumerate() {
+                if i > 0 {
+                    if let Some(ref conjunction) = clause.conjunction {
+                        sql.push_str(&format!(" {} ", conjunction));
+                    }
+                }
+                sql.push_str(&format!("{} {} ?", clause.column, clause.operator));
+                params.push(clause.value.clone());
+            }
+        }
+
+        Ok((sql, params))
+    }
+
+    /// Build a COUNT SQL query
+    pub fn build_count(&self) -> QueryResult<(String, Vec<SqlValue>)> {
+        let mut builder = self.clone();
+        builder.select_columns = vec!["COUNT(*)".to_string()];
+        builder.order_by_clauses.clear();
+        builder.limit_value = None;
+        builder.offset_value = None;
+        builder.build_select()
+    }
+
+    /// Build an EXISTS SQL query
+    pub fn build_exists(&self) -> QueryResult<(String, Vec<SqlValue>)> {
+        let (select_sql, params) = self.build_select()?;
+        let sql = format!("SELECT EXISTS ({})", select_sql);
+        Ok((sql, params))
+    }
 }
 
 impl WhereClause {
-    pub fn new() -> Self {
+    pub fn new(column: &str, operator: &str, value: SqlValue) -> Self {
         Self {
-            conditions: Vec::new(),
-            conjunction: WhereConjunction::And,
+            column: column.to_string(),
+            operator: operator.to_string(),
+            value,
+            conjunction: None,
         }
     }
     
-    pub fn and(field: &str, operator: WhereOperator, value: &str) -> Self {
-        let mut clause = Self::new();
-        clause.add_condition(field, operator, value);
-        clause
+    pub fn and(mut self) -> Self {
+        self.conjunction = Some("AND".to_string());
+        self
     }
     
-    pub fn or(field: &str, operator: WhereOperator, value: &str) -> Self {
-        let mut clause = Self::new();
-        clause.conjunction = WhereConjunction::Or;
-        clause.add_condition(field, operator, value);
-        clause
+    pub fn or(mut self) -> Self {
+        self.conjunction = Some("OR".to_string());
+        self
     }
-    
-    pub fn add_condition(&mut self, field: &str, operator: WhereOperator, value: &str) {
-        self.conditions.push(WhereCondition {
-            field: field.to_string(),
-            operator,
-            value: value.to_string(),
-        });
-    }
-}
-
-/// JOIN clause builder for queries
-#[derive(Debug, Clone)]
-pub struct JoinClause {
-    pub join_type: JoinType,
-    pub table: String,
-    pub on_conditions: Vec<JoinCondition>,
-}
-
-#[derive(Debug, Clone)]
-pub enum JoinType {
-    Inner,
-    Left,
-    Right,
-    Full,
-}
-
-#[derive(Debug, Clone)]
-pub struct JoinCondition {
-    pub left_field: String,
-    pub right_field: String,
-    pub operator: WhereOperator,
 }
 
 impl JoinClause {
-    pub fn inner(table: &str) -> Self {
+    pub fn new(join_type: &str, table: &str, on_condition: &str) -> Self {
         Self {
-            join_type: JoinType::Inner,
+            join_type: join_type.to_string(),
             table: table.to_string(),
-            on_conditions: Vec::new(),
+            on_condition: on_condition.to_string(),
         }
     }
     
-    pub fn left(table: &str) -> Self {
-        Self {
-            join_type: JoinType::Left,
-            table: table.to_string(),
-            on_conditions: Vec::new(),
-        }
+    pub fn inner(table: &str, on_condition: &str) -> Self {
+        Self::new("INNER JOIN", table, on_condition)
     }
     
-    pub fn on(mut self, left_field: &str, right_field: &str) -> Self {
-        self.on_conditions.push(JoinCondition {
-            left_field: left_field.to_string(),
-            right_field: right_field.to_string(),
-            operator: WhereOperator::Equal,
-        });
-        self
+    pub fn left(table: &str, on_condition: &str) -> Self {
+        Self::new("LEFT JOIN", table, on_condition)
     }
-}
-
-/// ORDER BY clause builder for queries
-#[derive(Debug, Clone)]
-pub struct OrderByClause {
-    pub fields: Vec<OrderByField>,
-}
-
-#[derive(Debug, Clone)]
-pub struct OrderByField {
-    pub field: String,
-    pub direction: OrderDirection,
-}
-
-#[derive(Debug, Clone)]
-pub enum OrderDirection {
-    Asc,
-    Desc,
+    
+    pub fn right(table: &str, on_condition: &str) -> Self {
+        Self::new("RIGHT JOIN", table, on_condition)
+    }
+    
+    pub fn full(table: &str, on_condition: &str) -> Self {
+        Self::new("FULL JOIN", table, on_condition)
+    }
 }
 
 impl OrderByClause {
-    pub fn new() -> Self {
+    pub fn new(column: &str, direction: &str) -> Self {
         Self {
-            fields: Vec::new(),
+            column: column.to_string(),
+            direction: direction.to_string(),
         }
     }
     
-    pub fn asc(field: &str) -> Self {
-        let mut clause = Self::new();
-        clause.add_field(field, OrderDirection::Asc);
-        clause
+    pub fn asc(column: &str) -> Self {
+        Self::new(column, "ASC")
     }
     
-    pub fn desc(field: &str) -> Self {
-        let mut clause = Self::new();
-        clause.add_field(field, OrderDirection::Desc);
-        clause
+    pub fn desc(column: &str) -> Self {
+        Self::new(column, "DESC")
     }
-    
-    pub fn add_field(&mut self, field: &str, direction: OrderDirection) {
-        self.fields.push(OrderByField {
-            field: field.to_string(),
-            direction,
-        });
-    }
-}
-
-/// GROUP BY clause builder for queries
-#[derive(Debug, Clone)]
-pub struct GroupByClause {
-    pub fields: Vec<String>,
-    pub having: Option<WhereClause>,
 }
 
 impl GroupByClause {
-    pub fn new() -> Self {
-        Self {
-            fields: Vec::new(),
-            having: None,
-        }
+    pub fn new(columns: Vec<String>) -> Self {
+        Self { columns }
     }
     
-    pub fn by(field: &str) -> Self {
-        let mut clause = Self::new();
-        clause.add_field(field);
-        clause
-    }
-    
-    pub fn add_field(&mut self, field: &str) {
-        self.fields.push(field.to_string());
-    }
-    
-    pub fn having(mut self, having_clause: WhereClause) -> Self {
-        self.having = Some(having_clause);
-        self
+    pub fn single(column: &str) -> Self {
+        Self::new(vec![column.to_string()])
     }
 }
 
-/// query_builder operations handler
-pub struct ModuleHandler {
-    enabled: bool,
-}
-
-impl ModuleHandler {
-    /// Create a new module handler
-    pub fn new() -> Self {
-        Self {
-            enabled: true,
-        }
-    }
-    
-    /// Enable or disable the module
-    pub fn enabled(mut self, enabled: bool) -> Self {
-        self.enabled = enabled;
-        self
-    }
-    
-    /// Check if module is enabled
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-    
-    /// Process data
-    pub fn process(&self, data: &str) -> ModuleResult<String> {
-        if !self.enabled {
-            return Err(CursedError::runtime_error(&"Module is disabled"));
-        }
-        Ok(format!("Processed: {}", data))
-    }
-    
-    /// Get module info
-    pub fn info(&self) -> String {
-        format!("Module: query_builder, Enabled: {}", self.enabled)
-    }
-}
-
-impl Default for ModuleHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Initialize query_builder processing
-pub fn init_query_builder() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("test")?;
-    if !result.contains("test") {
-        return Err(CursedError::runtime_error(&"Module test failed"));
-    }
-    println!("⚙️  Module processing (query_builder) initialized");
+/// Initialize query builder system
+pub fn init_query_builder() -> Result<(), CursedError> {
+    println!("📁 Query builder system initialized");
     Ok(())
 }
 
-/// Test query_builder functionality
-pub fn test_query_builder() -> ModuleResult<()> {
-    let handler = ModuleHandler::new();
-    let result = handler.process("Hello, CURSED!")?;
-    if !result.contains("Hello, CURSED!") {
-        return Err(CursedError::runtime_error(&"Module test failed"));
-    }
+/// Test query builder functionality
+pub fn test_query_builder() -> Result<(), CursedError> {
+    let builder = QueryBuilder::new("users")
+        .select(&["id", "name", "email"])
+        .where_clause("active", "=", SqlValue::Boolean(true))
+        .and_where("age", ">=", SqlValue::Integer(18))
+        .order_by_desc("created_at")
+        .limit(10);
+
+    let (sql, params) = builder.build_select().unwrap();
+    println!("Generated SQL: {}", sql);
+    println!("Parameters: {:?}", params);
+
+    let insert_data = HashMap::from([
+        ("name".to_string(), SqlValue::String("John Doe".to_string())),
+        ("email".to_string(), SqlValue::String("john@example.com".to_string())),
+        ("age".to_string(), SqlValue::Integer(25)),
+    ]);
+
+    let (insert_sql, insert_params) = builder.build_insert(&insert_data).unwrap();
+    println!("Insert SQL: {}", insert_sql);
+    println!("Insert Parameters: {:?}", insert_params);
+
+    println!("✅ Query builder tests passed");
     Ok(())
 }

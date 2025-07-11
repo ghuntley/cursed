@@ -10,6 +10,8 @@ pub mod generic_enhanced;
 pub mod checker;
 pub mod compilation_integration;
 pub mod test_result_simple;
+// pub mod advanced_constraints;
+// pub mod generic_interfaces;
 
 #[cfg(test)]
 mod tests;
@@ -622,4 +624,16 @@ pub use generic_enhanced::{GenericTypeChecker, InterfaceChecker, TypeSpecializer
 pub use constraint_resolver::{
     ConstraintResolver, ConstraintSolution, ConstraintViolation, ViolationReason,
     TypeUnifier, ConstraintPropagator, ConstraintGraph, ConstraintNode
+};
+// pub use crate::type_system::advanced_constraints::{
+//     AdvancedConstraint, AdvancedConstraintChecker, ConstraintDependencyGraph, ConstraintNode as AdvancedConstraintNode
+// };
+// pub use crate::type_system::generic_interfaces::{
+//     GenericInterface, GenericTypeParameter, AssociatedType, InterfaceMethod, 
+//     WhereClause, Variance, InterfaceImplementation, GenericInterfaceChecker,
+//     InterfaceHierarchy
+// };
+pub use crate::type_system::higher_kinded_types::{
+    Kind, TypeConstructor, KindedTypeParameter, HigherKindedConstraint,
+    HigherKindedTypeSystem, TypeConstructorInstance
 };
