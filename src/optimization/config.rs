@@ -382,11 +382,71 @@ impl OptimizationConfig {
                 "--debug" | "-g" => config = Self::debug(),
                 "--release" | "-O3" => config = Self::release(),
                 "--size" | "-Os" => config = Self::size_optimized(),
+                "--optimize" => config = Self::new(OptimizationLevel::Default),
+                "--opt-level=0" => config = Self::new(OptimizationLevel::None),
+                "--opt-level=1" => config = Self::new(OptimizationLevel::Less),
+                "--opt-level=2" => config = Self::new(OptimizationLevel::Default),
+                "--opt-level=3" => config = Self::new(OptimizationLevel::Aggressive),
                 _ => {} // Ignore unknown args
             }
         }
         
         Ok(config)
+    }
+    
+    /// Create configuration from CLI optimization level string
+    pub fn from_cli_level(level: &str) -> Result<Self, CursedError> {
+        let optimization_level = match level {
+            "0" => OptimizationLevel::None,
+            "1" => OptimizationLevel::Less,
+            "2" => OptimizationLevel::Default,
+            "3" => OptimizationLevel::Aggressive,
+            "s" => OptimizationLevel::Size,
+            "z" => OptimizationLevel::SizeZ,
+            _ => return Err(CursedError::runtime_error(&format!("Invalid optimization level: {}", level))),
+        };
+        
+        Ok(Self::new(optimization_level))
+    }
+    
+    /// Create configuration for benchmarking
+    pub fn for_benchmarking() -> Self {
+        Self {
+            level: OptimizationLevel::Aggressive,
+            target_features: vec!["sse2".to_string(), "sse3".to_string(), "sse4.1".to_string(), "avx".to_string()],
+            inline_threshold: 400,
+            unroll_threshold: 300,
+            vectorize: true,
+            parallel_codegen: true,
+            lto: true,
+            debug_info: false,
+            custom_passes: vec![
+                "mem2reg".to_string(),
+                "instcombine".to_string(),
+                "reassociate".to_string(),
+                "gvn".to_string(),
+                "simplifycfg".to_string(),
+                "loop-unroll".to_string(),
+                "sroa".to_string(),
+                "jump-threading".to_string(),
+                "tail-call-elim".to_string(),
+            ],
+            pass_manager_config: PassManagerConfig::release(),
+            optimization_level: OptimizationLevel::Aggressive,
+            enable_profiling: true,
+            profile_data_dir: None,
+            profile_guided: true,
+            parallel_workers: 32,
+            enable_parallel: true,
+            enable_incremental: true,
+            cache_directory: None,
+            generate_reports: true,
+            verbose_optimization: false,
+            workspace_dir: std::env::current_dir()
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| ".".to_string()),
+            max_cache_size: 8 * 1024 * 1024 * 1024, // 8GB for benchmarking
+        }
     }
 }
 

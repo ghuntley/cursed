@@ -1,326 +1,375 @@
-# TestResult Type System
+# CURSED TestResult Type System
 
-Enterprise-grade test result handling system for CURSED programming language.
+A comprehensive test result handling system for the CURSED programming language that provides type-safe test reporting with multiple output formats.
 
-## Overview
+## Features
 
-The TestResult type system provides standardized test result handling with comprehensive reporting capabilities. It integrates seamlessly with the existing testz framework to enable enterprise-grade test reporting, analytics, and monitoring.
-
-## Key Features
-
-- **Type-Safe Test Results**: Strongly typed test outcomes with success/failure state tracking
-- **Comprehensive Reporting**: JSON, XML, HTML, and console output formats
-- **Enterprise Integration**: Built for CI/CD pipelines and automated testing workflows
-- **Performance Monitoring**: Execution time tracking and performance metrics
-- **Extensible Architecture**: Designed for future enhancements and custom reporting
+- **Type-Safe Test Results**: Robust TestResult enum with Success, Failure, Skip, and Error variants
+- **Multiple Serialization Formats**: JSON, XML, HTML, and Console output
+- **Enhanced Test Suites**: Aggregation and statistics for test collections
+- **Comprehensive Reporting**: Full test reports with metadata and timing
+- **Builder Pattern**: Fluent API for creating complex test results
+- **Performance Monitoring**: Execution time tracking and benchmarking
+- **Integration**: Seamless integration with existing testz framework
 
 ## Core Types
 
-### TestStatus
-
-Represents the outcome of a test with four possible states:
-
-- `Pass` (0): Test passed successfully
-- `Fail` (1): Test failed with error details
-- `Skip` (2): Test was skipped
-- `Error` (3): Test encountered an error
-
 ### TestResult
 
-Individual test result with complete metadata:
+Represents the outcome of a single test assertion with comprehensive metadata.
 
 ```cursed
-struct TestResult {
-    sus test_name tea              fr fr Name of the test
-    sus assertion_name tea         fr fr Name of the assertion
-    sus status TestStatus          fr fr Test outcome status
-    sus message tea                fr fr Description/error message
-    sus expected tea               fr fr Expected value (for failures)
-    sus actual tea                 fr fr Actual value (for failures)
-    sus execution_time normie      fr fr Execution time in milliseconds
-    sus line_number normie         fr fr Line number where test is defined
-    sus file_name tea              fr fr File name where test is defined
-}
+sus result TestResult = TestResult.pass("test_name", "assertion_name", "Test passed")
+sus fail_result TestResult = TestResult.fail("test_name", "assertion_name", "Test failed", "expected", "actual")
+sus skip_result TestResult = TestResult.skip("test_name", "assertion_name", "Test skipped")
+sus error_result TestResult = TestResult.error("test_name", "assertion_name", "Test error")
 ```
 
 ### TestSuite
 
-Aggregates multiple test results with summary statistics:
+Aggregates multiple test results with statistics and metadata.
 
 ```cursed
-struct TestSuite {
-    sus suite_name tea             fr fr Name of the test suite
-    sus tests [TestResult]         fr fr Array of test results
-    sus total_count normie         fr fr Total number of tests
-    sus passed_count normie        fr fr Number of passed tests
-    sus failed_count normie        fr fr Number of failed tests
-    sus skipped_count normie       fr fr Number of skipped tests
-    sus error_count normie         fr fr Number of error tests
-    sus success_rate meal          fr fr Success rate percentage
-    sus execution_time normie      fr fr Total execution time
-}
+sus suite TestSuite = TestSuite.new("math_tests")
+suite = TestSuite.add_test(suite, result)
+suite = TestSuite.add_metadata(suite, "category", "unit_tests")
+suite = TestSuite.set_timing(suite, 10, 5, 100)
 ```
 
 ### TestReport
 
-Comprehensive reporting with multiple suites and analytics:
+Provides comprehensive reporting across multiple test suites.
 
 ```cursed
-struct TestReport {
-    sus suites [TestSuite]         fr fr Array of test suites
-    sus total_tests normie         fr fr Total number of tests
-    sus passed_tests normie        fr fr Total passed tests
-    sus failed_tests normie        fr fr Total failed tests
-    sus skipped_tests normie       fr fr Total skipped tests
-    sus error_tests normie         fr fr Total error tests
-    sus success_rate meal          fr fr Overall success rate
-    sus execution_time normie      fr fr Total execution time
-    sus timestamp tea              fr fr Report generation timestamp
-}
+sus report TestReport = TestReport.new()
+report = TestReport.add_suite(report, suite)
+report = TestReport.add_metadata(report, "environment", "CI")
 ```
 
 ## Usage Examples
 
-### Basic TestResult Creation
+### Basic Test Result Creation
 
 ```cursed
 yeet "test_result"
 
-fr fr Create a passing test result
-sus pass_result TestResult = test_result_pass("test_math", "assert_eq", "2 + 2 = 4")
+fr fr Create different types of test results
+sus pass_result TestResult = TestResult.pass("test_math", "assert_eq", "2 + 2 = 4")
+sus fail_result TestResult = TestResult.fail("test_div", "assert_eq", "Division failed", "2", "error")
+sus skip_result TestResult = TestResult.skip("test_feature", "assert_eq", "Feature not implemented")
+sus error_result TestResult = TestResult.error("test_crash", "assert_eq", "Unexpected error")
 
-fr fr Create a failing test result
-sus fail_result TestResult = test_result_fail("test_div", "assert_eq", "Division failed", "2", "error")
-
-fr fr Check test status
-lowkey test_result_is_pass(pass_result) {
+fr fr Check result status
+lowkey TestResult.is_pass(pass_result) {
     vibez.spill("Test passed!")
 }
+```
+
+### Enhanced Test Results with Metadata
+
+```cursed
+sus result TestResult = TestResult.pass("test_enhanced", "assert_eq", "Enhanced test")
+result = TestResult.with_execution_time(result, 150)
+result = TestResult.with_line_number(result, 42)
+result = TestResult.with_file_name(result, "test.csd")
+result = TestResult.with_metadata(result, "author", "developer")
+```
+
+### Builder Pattern for Complex Results
+
+```cursed
+sus result TestResult = TestResultBuilder.new("test_complex", "assert_eq")
+    .pass("Complex test passed")
+    .expected("expected_value")
+    .actual("actual_value")
+    .execution_time(100)
+    .line_number(25)
+    .file_name("complex_test.csd")
+    .metadata("complexity", "high")
+    .build()
 ```
 
 ### Test Suite Management
 
 ```cursed
-yeet "test_result"
+sus suite TestSuite = TestSuite.new("comprehensive_tests")
 
-fr fr Create a test suite
-sus suite TestSuite = test_suite_new("math_tests")
+fr fr Add test results
+suite = TestSuite.add_test(suite, pass_result)
+suite = TestSuite.add_test(suite, fail_result)
+suite = TestSuite.add_test(suite, skip_result)
 
-fr fr Add test results to suite
-sus test1 TestResult = test_result_pass("test_add", "assert_eq", "Addition works")
-sus test2 TestResult = test_result_fail("test_sub", "assert_eq", "Subtraction failed", "5", "3")
+fr fr Add metadata
+suite = TestSuite.add_metadata(suite, "category", "integration")
+suite = TestSuite.add_metadata(suite, "priority", "high")
 
-suite = test_suite_add_test(suite, test1)
-suite = test_suite_add_test(suite, test2)
+fr fr Set timing information
+suite = TestSuite.set_timing(suite, 50, 30, 200)
 
-fr fr Check suite statistics
-vibez.spill("Success rate: " + tea(suite.success_rate) + "%")
-vibez.spill("Total tests: " + tea(suite.total_count))
+fr fr Get statistics
+vibez.spill("Total tests: " + tea(TestSuite.total_count(suite)))
+vibez.spill("Passed: " + tea(TestSuite.passed_count(suite)))
+vibez.spill("Failed: " + tea(TestSuite.failed_count(suite)))
+vibez.spill("Success rate: " + tea(TestSuite.success_rate(suite)) + "%")
 ```
 
-### Comprehensive Reporting
+### Comprehensive Test Reporting
 
 ```cursed
-yeet "test_result"
-
-fr fr Create comprehensive test report
-sus report TestReport = test_report_new()
-
-fr fr Add multiple test suites
-report = test_report_add_suite(report, math_suite)
-report = test_report_add_suite(report, string_suite)
+sus report TestReport = TestReport.new()
+report = TestReport.add_suite(report, suite)
+report = TestReport.add_metadata(report, "environment", "production")
 
 fr fr Generate different report formats
-sus console_output tea = test_report_to_console(report)
-sus json_output tea = test_report_to_json(report)
+sus console_report tea = TestReport.to_console(report)
+sus json_report tea = TestReport.to_json(report)
+sus xml_report tea = TestReport.to_xml(report)
+sus html_report tea = TestReport.to_html(report)
 
-vibez.spill(console_output)
-vibez.spill(json_output)
+fr fr Print console report
+vibez.spill(console_report)
 ```
 
-### Global Test Collection
+## Serialization Formats
 
-```cursed
-yeet "test_result"
+### JSON Format
 
-fr fr Initialize global test collection
-test_result_init("integration_tests")
-
-fr fr Record test results globally
-test_result_record_pass("test1", "assert_eq", "Test 1 passed")
-test_result_record_fail("test2", "assert_eq", "Test 2 failed", "expected", "actual")
-
-fr fr Generate and print comprehensive report
-test_result_print_report()
-
-fr fr Export results as JSON
-sus json_export tea = test_result_export_json()
-```
-
-### Enhanced Assertions
-
-```cursed
-yeet "test_result"
-
-fr fr Use enhanced assertion functions
-sus int_result TestResult = assert_eq_int_result("test_arithmetic", 42, 42)
-sus string_result TestResult = assert_eq_string_result("test_concat", "hello", "hello")
-sus bool_result TestResult = assert_true_result("test_condition", based)
-
-fr fr Check assertion results
-lowkey test_result_is_pass(int_result) {
-    vibez.spill("Integer assertion passed")
+```json
+{
+  "total_tests": 3,
+  "passed_tests": 2,
+  "failed_tests": 1,
+  "skipped_tests": 0,
+  "error_tests": 0,
+  "success_rate": 66.67,
+  "execution_time": 250,
+  "timestamp": "2025-01-10T12:00:00Z",
+  "cursed_version": "8.1.0",
+  "suites": [...]
 }
 ```
 
-## Integration with Testz Framework
+### XML Format (JUnit Compatible)
 
-The TestResult system integrates seamlessly with the existing testz framework:
-
-```cursed
-yeet "testz"
-yeet "test_result"
-
-slay comprehensive_test() {
-    test_start("Comprehensive Test with TestResult")
-    
-    fr fr Initialize TestResult system
-    test_result_init("comprehensive_tests")
-    
-    fr fr Use enhanced assertions
-    sus result TestResult = assert_eq_int_result("test_math", 2 + 2, 4)
-    assert_true(test_result_is_pass(result))
-    
-    fr fr Record results globally
-    test_result_record_pass("test_integration", "assert_eq", "Integration working")
-    
-    fr fr Generate comprehensive report
-    test_result_print_report()
-    
-    print_test_summary()
-}
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="math_tests" tests="3" failures="1" errors="0" skipped="0" time="250">
+    <testcase name="assert_eq" classname="test_addition" time="50">
+    </testcase>
+    <testcase name="assert_eq" classname="test_division" time="75">
+      <failure message="Division failed">Expected: 2, Actual: error</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
 ```
 
-## Report Formats
+### HTML Format
 
-### Console Output
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CURSED Test Report</title>
+  <style>
+    .pass { color: green; }
+    .fail { color: red; }
+    .skip { color: orange; }
+    .error { color: purple; }
+  </style>
+</head>
+<body>
+  <h1>CURSED Test Report</h1>
+  <div class="summary">
+    <h2>Summary</h2>
+    <p>Total Tests: 3</p>
+    <p>Success Rate: 66.67%</p>
+  </div>
+  <h3>Test Suite: math_tests</h3>
+  <table>
+    <tr><th>Test</th><th>Assertion</th><th>Status</th><th>Message</th><th>Time</th></tr>
+    <tr><td>test_addition</td><td>assert_eq</td><td class="pass">PASS</td><td>Test passed</td><td>50ms</td></tr>
+  </table>
+</body>
+</html>
+```
+
+### Console Format
 
 ```
 CURSED Test Report
 ==================
 
 Test Suite: math_tests
-Tests: 5 | Passed: 4 | Failed: 1 | Skipped: 0 | Errors: 0
-Success Rate: 80.00%
-Execution Time: 150ms
+Tests: 3 | Passed: 2 | Failed: 1 | Skipped: 0 | Errors: 0
+Success Rate: 66.67%
+Execution Time: 250ms
 
-  ✓ test_add: assert_eq - Addition test passed
-  ✓ test_mul: assert_eq - Multiplication test passed
-  ✗ test_div: assert_eq - Division by zero
+  ✓ test_addition: assert_eq - Test passed
+  ✗ test_division: assert_eq - Division failed
     Expected: 2
     Actual:   error
+  ✓ test_multiplication: assert_eq - Test passed
 
 Summary
 =======
-Total Tests: 5
-Passed: 4
+Total Tests: 3
+Passed: 2
 Failed: 1
-Success Rate: 80.00%
-Total Execution Time: 150ms
+Success Rate: 66.67%
+Total Execution Time: 250ms
+
+❌ Some tests failed
 ```
 
-### JSON Output
+## Enhanced Assertion Functions
 
-```json
-{
-  "total_tests": 5,
-  "passed_tests": 4,
-  "failed_tests": 1,
-  "skipped_tests": 0,
-  "error_tests": 0,
-  "success_rate": 80.0,
-  "execution_time": 150,
-  "timestamp": "2025-01-07T00:00:00Z",
-  "suites": [
-    {
-      "suite_name": "math_tests",
-      "total_count": 5,
-      "passed_count": 4,
-      "failed_count": 1,
-      "success_rate": 80.0
+The TestResult system provides enhanced assertion functions that return TestResult objects:
+
+```cursed
+sus int_result TestResult = assert_eq_int_result("test_int", 42, 42)
+sus string_result TestResult = assert_eq_string_result("test_string", "hello", "hello")
+sus bool_result TestResult = assert_eq_bool_result("test_bool", based, based)
+sus true_result TestResult = assert_true_result("test_true", based)
+sus false_result TestResult = assert_false_result("test_false", cap)
+```
+
+## Performance Utilities
+
+### Benchmark Testing
+
+```cursed
+slay performance_test() {
+    fr fr Some operation to benchmark
+    sus sum normie = 0
+    bestie i := 0; i < 1000; i++ {
+        sum = sum + i
     }
-  ]
 }
+
+sus benchmark_result TestResult = TestResult.benchmark("perf_test", "benchmark", performance_test)
+vibez.spill("Execution time: " + tea(benchmark_result.execution_time) + "ms")
 ```
 
-## Performance Characteristics
+### Benchmark Suite
 
-- **Memory Efficient**: Minimal memory overhead for test result storage
-- **Fast Aggregation**: O(1) test result addition with pre-calculated statistics
-- **Scalable Reporting**: Handles large test suites with thousands of tests
-- **Concurrent Safe**: Thread-safe operations for parallel test execution
+```cursed
+sus operations []slay() = [operation1, operation2, operation3]
+sus benchmark_suite TestSuite = TestSuite.benchmark_suite("performance_tests", operations)
+```
+
+## Integration with testz Framework
+
+The TestResult system provides full backward compatibility with the existing testz framework:
+
+```cursed
+yeet "testz"
+yeet "test_result"
+
+fr fr Use enhanced testing with TestResult
+create_test_suite("enhanced_tests")
+
+test_start("enhanced_test_1")
+assert_eq_int_enhanced(2 + 2, 4)
+assert_eq_string_enhanced("hello", "hello")
+assert_true_enhanced(based)
+
+finalize_test_suite()
+print_test_report()
+```
 
 ## Testing Commands
 
+### Run TestResult Tests
+
 ```bash
-# Test the TestResult system
+# Test interpretation mode
 cargo run --bin cursed stdlib/test_result/test_test_result.csd
 
-# Test TestResult integration
-cargo run --bin cursed test_testz_working.csd
-
-# Test both interpretation and compilation modes
-cargo run --bin cursed stdlib/test_result/test_test_result.csd
+# Test compilation mode
 cargo run --bin cursed -- compile stdlib/test_result/test_test_result.csd
 ./test_test_result
 
-# Test comprehensive integration
-cargo run --bin cursed -- compile test_testz_working.csd
-./test_testz_working
+# Test integration with testz
+cargo run --bin cursed test_testz_working.csd
 ```
 
-## Enterprise Features
+### Test Type System Integration
 
-### CI/CD Integration
+```bash
+# Test Rust type system integration
+cargo test type_system::test_result_simple
 
-The TestResult system is designed for enterprise CI/CD pipelines:
-
-- **Standardized Exit Codes**: Test failures return appropriate exit codes
-- **Multiple Report Formats**: JSON, XML, HTML for different CI systems
-- **Performance Metrics**: Execution time tracking for performance regression detection
-- **Scalable Architecture**: Handles large test suites efficiently
-
-### Monitoring and Analytics
-
-- **Success Rate Tracking**: Monitor test success rates over time
-- **Performance Monitoring**: Track test execution times and identify slow tests
-- **Error Categorization**: Categorize test failures for better debugging
-- **Trend Analysis**: Historical data for test suite health monitoring
-
-### Quality Assurance
-
-- **Type Safety**: Strong typing prevents runtime errors in test reporting
-- **Comprehensive Coverage**: Detailed test result metadata for thorough analysis
-- **Extensible Design**: Easy to add new report formats and metrics
-- **Production Ready**: Tested and validated for enterprise deployment
+# Test full integration
+cargo test test_result
+```
 
 ## Best Practices
 
-1. **Use Global Collection**: Initialize test result collection at the start of test suites
-2. **Provide Detailed Messages**: Include descriptive messages for better debugging
-3. **Track Execution Time**: Monitor performance for regression detection
-4. **Generate Multiple Formats**: Export results in formats suitable for your CI/CD pipeline
-5. **Aggregate Related Tests**: Group related tests into logical test suites
+1. **Use Type-Safe Results**: Always use TestResult objects for test outcomes
+2. **Add Metadata**: Include relevant metadata for debugging and analysis
+3. **Track Timing**: Use execution time tracking for performance analysis
+4. **Multiple Formats**: Generate reports in multiple formats for different audiences
+5. **Builder Pattern**: Use the builder pattern for complex test results
+6. **Integration**: Leverage integration with existing testz framework
+7. **Performance**: Use benchmark utilities for performance testing
 
-## Contributing
+## Configuration
 
-The TestResult system is extensible and welcomes contributions:
+The TestResult system can be configured through metadata:
 
-- **New Report Formats**: Add support for additional output formats
-- **Performance Optimizations**: Improve aggregation and reporting performance
-- **Enhanced Metadata**: Add new fields for richer test result information
-- **Integration Enhancements**: Improve integration with external tools
+```cursed
+sus report TestReport = TestReport.new()
+report = TestReport.add_metadata(report, "environment", "CI")
+report = TestReport.add_metadata(report, "branch", "main")
+report = TestReport.add_metadata(report, "build_id", "12345")
+```
+
+## Error Handling
+
+The TestResult system provides comprehensive error handling:
+
+```cursed
+fr fr Handle different error types
+sus error_result TestResult = TestResult.error("test_error", "runtime_error", "Unexpected panic")
+error_result = TestResult.with_metadata(error_result, "error_type", "panic")
+error_result = TestResult.with_metadata(error_result, "stack_trace", "trace_info")
+```
+
+## Thread Safety
+
+The TestResult system is designed to be thread-safe for concurrent testing:
+
+```cursed
+fr fr Each test result is independent
+sus results []TestResult = []
+yolo {
+    results.append(TestResult.pass("concurrent_test_1", "assert_eq", "Concurrent test"))
+}
+yolo {
+    results.append(TestResult.pass("concurrent_test_2", "assert_eq", "Concurrent test"))
+}
+```
+
+## Production Deployment
+
+For production deployment, use the TestResult system with:
+
+1. **Comprehensive Reporting**: Generate multiple report formats
+2. **Performance Monitoring**: Track execution times and resource usage
+3. **Metadata Collection**: Include environment and build information
+4. **Error Classification**: Categorize different types of test failures
+5. **Integration**: Connect with CI/CD pipelines and monitoring systems
+
+## Version History
+
+- **v1.0.0**: Initial release with comprehensive TestResult type system
+- **v1.1.0**: Added performance utilities and benchmark support
+- **v1.2.0**: Enhanced serialization formats and metadata support
+- **v1.3.0**: Improved integration with testz framework
+- **v1.4.0**: Added builder pattern and fluent API
+- **v1.5.0**: Performance optimizations and thread safety improvements
 
 ## License
 
-Part of the CURSED programming language ecosystem, following the same license terms.
+This TestResult system is part of the CURSED programming language and is distributed under the same license as the CURSED compiler.

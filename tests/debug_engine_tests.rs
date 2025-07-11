@@ -466,7 +466,7 @@ mod tests {
         
         // Continue stepping
         debugger.execution_state = ExecutionState::Running;
-        while debugger.current_line < debugger.source_lines.len() as u32 {
+        while debugger.current_line <= debugger.source_lines.len() as u32 {
             if debugger.step_execution().is_err() {
                 break;
             }

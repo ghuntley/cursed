@@ -9,9 +9,14 @@
 use crate::error::CursedError;
 use crate::ast::{Program, Statement};
 use crate::runtime::channels::simple_channel::SimpleChannel;
+use crate::runtime::{
+    initialize_simple_error_runtime, get_simple_error_runtime,
+    simple_handle_yikes, simple_handle_shook, simple_handle_fam, SimpleCursedErrorType
+};
 use sha2::Digest;
 
 use std::sync::Arc;
+use std::collections::HashMap;
 
 pub mod execution_context;
 pub mod jit_executor;
@@ -34,6 +39,11 @@ pub struct CursedExecutionEngine {
 
 impl CursedExecutionEngine {
     pub fn new() -> Result<Self, CursedError> {
+        // Initialize simple error runtime
+        initialize_simple_error_runtime().map_err(|e| {
+            CursedError::RuntimeError(format!("Failed to initialize simple error runtime: {}", e))
+        })?;
+        
         Ok(Self {
             jit_enabled: true,
             goroutine_support: true,
