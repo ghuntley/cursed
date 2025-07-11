@@ -1374,6 +1374,13 @@ impl CursedExecutionEngine {
                     }).collect(),
                 })
             },
+            // TestResult expressions - placeholder implementation
+            Expression::TestResult(_) => {
+                Ok(CursedValue::Nil)
+            },
+            Expression::TestResultCheck(_) => {
+                Ok(CursedValue::Boolean(false))
+            },
         }
     }
     

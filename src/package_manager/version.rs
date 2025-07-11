@@ -181,7 +181,7 @@ impl VersionReq {
     pub fn matches(&self, version: &Version) -> bool {
         match self {
             VersionReq::Exact(v) => version == v,
-            VersionReq::Range(min, max) => version >= min && version <= max,
+            VersionReq::Range(min, max) => version >= min && version < max,
             VersionReq::Caret(v) => {
                 version.major == v.major && version >= v
             }
@@ -201,6 +201,27 @@ impl VersionReq {
     pub fn parse(s: &str) -> Result<Self, CursedError> {
         if s == "*" {
             return Ok(VersionReq::Any);
+        }
+
+        // Handle comma-separated constraints like ">=1.0.0, <2.0.0"
+        if s.contains(',') {
+            let parts: Vec<&str> = s.split(',').map(|p| p.trim()).collect();
+            if parts.len() == 2 {
+                let first = parts[0].trim();
+                let second = parts[1].trim();
+                
+                // Parse range constraints (>=min, <max)
+                if first.starts_with(">=") && second.starts_with('<') {
+                    let min_str = first.strip_prefix(">=").unwrap().trim();
+                    let max_str = second.strip_prefix('<').unwrap().trim();
+                    
+                    let min = Version::from_str(min_str)?;
+                    let max = Version::from_str(max_str)?;
+                    
+                    return Ok(VersionReq::Range(min, max));
+                }
+            }
+            return Err(CursedError::General("Unsupported comma-separated version constraint format".to_string()));
         }
 
         if s.starts_with('^') {

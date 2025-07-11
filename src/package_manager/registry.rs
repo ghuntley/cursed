@@ -136,19 +136,64 @@ impl PackageRegistry {
 
         // Mock implementation for testing
         if self.config.url.contains("test") || self.config.url.contains("mock") {
+            let mock_version = version.cloned().unwrap_or_else(|| self.mock_get_latest_version(name));
+            
+            // Create realistic mock dependencies based on package name
+            let mock_dependencies = match name {
+                "large-framework" => vec![
+                    Dependency::new("utils".to_string(), VersionReq::parse("^1.0.0").unwrap()),
+                    Dependency::new("logging".to_string(), VersionReq::parse("^2.0.0").unwrap()),
+                ],
+                "data-processing" => vec![
+                    Dependency::new("parser".to_string(), VersionReq::parse("^1.5.0").unwrap()),
+                    Dependency::new("compression".to_string(), VersionReq::parse("^3.0.0").unwrap()),
+                ],
+                "web-server" => vec![
+                    Dependency::new("http-core".to_string(), VersionReq::parse("^1.2.0").unwrap()),
+                    Dependency::new("security".to_string(), VersionReq::parse("^2.1.0").unwrap()),
+                ],
+                "database-client" => vec![
+                    Dependency::new("connection-pool".to_string(), VersionReq::parse("^1.0.0").unwrap()),
+                    Dependency::new("query-builder".to_string(), VersionReq::parse("^2.0.0").unwrap()),
+                ],
+                "crypto-library" => vec![
+                    Dependency::new("random".to_string(), VersionReq::parse("^1.0.0").unwrap()),
+                    Dependency::new("hashing".to_string(), VersionReq::parse("^1.5.0").unwrap()),
+                ],
+                "medium-root-1" => vec![
+                    Dependency::new("common-dep".to_string(), VersionReq::parse("^1.0.0").unwrap()),
+                ],
+                "medium-root-2" => vec![
+                    Dependency::new("common-dep".to_string(), VersionReq::parse("^1.1.0").unwrap()),
+                ],
+                "medium-root-3" => vec![
+                    Dependency::new("common-dep".to_string(), VersionReq::parse("^1.0.0").unwrap()),
+                ],
+                "high-complexity" => vec![
+                    Dependency::new("dep-a".to_string(), VersionReq::parse("^1.0.0").unwrap()),
+                    Dependency::new("dep-b".to_string(), VersionReq::parse("^2.0.0").unwrap()),
+                    Dependency::new("dep-c".to_string(), VersionReq::parse("^1.5.0").unwrap()),
+                ],
+                // Dependencies for the main packages - these are leaf nodes
+                "utils" | "logging" | "parser" | "compression" | "http-core" | "security" | 
+                "connection-pool" | "query-builder" | "random" | "hashing" | "common-dep" | 
+                "dep-a" | "dep-b" | "dep-c" => Vec::new(),
+                _ => Vec::new(),
+            };
+            
             return Ok(PackageInfo {
                 name: name.to_string(),
-                version: version.cloned().unwrap_or_else(|| Version::new(1, 0, 0)),
-                description: "Test package".to_string(),
-                authors: vec!["Test Author".to_string()],
-                dependencies: Vec::new(),
-                keywords: Vec::new(),
-                categories: Vec::new(),
+                version: mock_version,
+                description: format!("Mock package: {}", name),
+                authors: vec!["Mock Author".to_string()],
+                dependencies: mock_dependencies,
+                keywords: vec!["mock".to_string(), "test".to_string()],
+                categories: vec!["testing".to_string()],
                 license: Some("MIT".to_string()),
-                homepage: Some("test-homepage".to_string()),
-                repository: Some("test-repository".to_string()),
-                download_url: "test-url".to_string(),
-                checksum: "test-checksum".to_string(),
+                homepage: Some(format!("https://mock-homepage.test/{}", name)),
+                repository: Some(format!("https://mock-repo.test/{}", name)),
+                download_url: format!("https://mock-download.test/{}", name),
+                checksum: format!("mock-checksum-{}", name),
                 file_size: 1024,
             });
         }
@@ -173,7 +218,42 @@ impl PackageRegistry {
 
         // Mock implementation for testing
         if self.config.url.contains("test") || self.config.url.contains("mock") {
-            return Ok(vec![Version::parse("1.0.0").unwrap()]);
+            // Return realistic version lists based on package name
+            let versions = match name {
+                "large-framework" => vec!["1.0.0", "1.2.0", "1.4.1", "1.5.2"],
+                "data-processing" => vec!["2.0.0", "2.1.0", "2.2.3", "2.3.1"],
+                "web-server" => vec!["1.5.0", "1.6.2", "1.7.1", "1.8.4"],
+                "database-client" => vec!["3.0.0", "3.1.0", "3.2.0"],
+                "crypto-library" => vec!["2.5.0", "2.6.1", "2.7.3"],
+                "medium-root-1" => vec!["1.0.0", "1.1.0", "1.2.3"],
+                "medium-root-2" => vec!["2.0.0", "2.1.4"],
+                "medium-root-3" => vec!["1.5.0", "1.6.2"],
+                "high-complexity" => vec!["1.0.0", "1.0.5"],
+                "utils" => vec!["1.0.0", "1.1.0"],
+                "logging" => vec!["2.0.0", "2.1.0"],
+                "parser" => vec!["1.5.0", "1.6.0"],
+                "compression" => vec!["3.0.0"],
+                "http-core" => vec!["1.2.0"],
+                "security" => vec!["2.1.0"],
+                "connection-pool" => vec!["1.0.0"],
+                "query-builder" => vec!["2.0.0"],
+                "random" => vec!["1.0.0"],
+                "hashing" => vec!["1.5.0"],
+                "common-dep" => vec!["1.0.0", "1.1.0"],
+                "dep-a" => vec!["1.0.0"],
+                "dep-b" => vec!["2.0.0"],
+                "dep-c" => vec!["1.5.0"],
+                _ => vec!["1.0.0"],
+            };
+            
+            let mut parsed_versions = Vec::new();
+            for version_str in versions {
+                if let Ok(version) = Version::parse(version_str) {
+                    parsed_versions.push(version);
+                }
+            }
+            
+            return Ok(parsed_versions);
         }
 
         let url = format!("{}/api/v1/packages/{}/versions", self.config.url, name);
@@ -421,8 +501,34 @@ impl PackageRegistry {
     }
     
     /// Mock implementation for get_latest_version
-    fn mock_get_latest_version(&self, _name: &str) -> Version {
-        Version::parse("1.0.0").unwrap()
+    fn mock_get_latest_version(&self, name: &str) -> Version {
+        // Return different versions based on package name for more realistic testing
+        match name {
+            "large-framework" => Version::parse("1.5.2").unwrap(),
+            "data-processing" => Version::parse("2.3.1").unwrap(),
+            "web-server" => Version::parse("1.8.4").unwrap(),
+            "database-client" => Version::parse("3.2.0").unwrap(),
+            "crypto-library" => Version::parse("2.7.3").unwrap(),
+            "medium-root-1" => Version::parse("1.2.3").unwrap(),
+            "medium-root-2" => Version::parse("2.1.4").unwrap(),
+            "medium-root-3" => Version::parse("1.6.2").unwrap(),
+            "high-complexity" => Version::parse("1.0.5").unwrap(),
+            "utils" => Version::parse("1.1.0").unwrap(),
+            "logging" => Version::parse("2.1.0").unwrap(),
+            "parser" => Version::parse("1.6.0").unwrap(),
+            "compression" => Version::parse("3.0.0").unwrap(),
+            "http-core" => Version::parse("1.2.0").unwrap(),
+            "security" => Version::parse("2.1.0").unwrap(),
+            "connection-pool" => Version::parse("1.0.0").unwrap(),
+            "query-builder" => Version::parse("2.0.0").unwrap(),
+            "random" => Version::parse("1.0.0").unwrap(),
+            "hashing" => Version::parse("1.5.0").unwrap(),
+            "common-dep" => Version::parse("1.1.0").unwrap(),
+            "dep-a" => Version::parse("1.0.0").unwrap(),
+            "dep-b" => Version::parse("2.0.0").unwrap(),
+            "dep-c" => Version::parse("1.5.0").unwrap(),
+            _ => Version::parse("1.0.0").unwrap(),
+        }
     }
 }
 

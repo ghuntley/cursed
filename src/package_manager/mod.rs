@@ -9,6 +9,8 @@
 // Re-export sub-modules
 pub mod registry;
 pub mod resolver;
+pub mod optimized_resolver;
+pub mod resolver_tests;
 pub mod downloader;
 pub mod cache;
 pub mod version;
@@ -27,9 +29,13 @@ mod config_test;
 #[cfg(test)]
 mod test_search_publish;
 
+#[cfg(test)]
+mod version_tests;
+
 // Import and re-export main types
 pub use registry::{PackageRegistry, PackageInfo, RegistryConfig, PackageMetadata};
 pub use resolver::{PackageResolver, ResolvedPackage, ResolutionResult, ResolutionConfig};
+pub use optimized_resolver::{OptimizedPackageResolver, ResolutionMetrics};
 pub use downloader::{PackageDownloader, DownloadedPackage, DownloadConfig};
 pub use cache::{PackageCache, CachedPackage, CacheConfig};
 pub use version::{Version, VersionReq};

@@ -17,6 +17,7 @@ use std::sync::{Arc, Mutex, RwLock, Condvar};
 use std::sync::atomic::{AtomicU64, AtomicUsize, AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
+use std::panic::{self, AssertUnwindSafe};
 
 /// Global scheduler instance
 static GLOBAL_SCHEDULER: once_cell::sync::OnceCell<Arc<GoroutineScheduler>> = once_cell::sync::OnceCell::new();
@@ -42,6 +43,8 @@ pub enum GoroutineState {
     Completed,
     /// Panicked during execution
     Panicked,
+    /// Error isolated - panic contained
+    ErrorIsolated,
 }
 
 /// Goroutine priority levels
@@ -55,6 +58,38 @@ pub enum GoroutinePriority {
     High = 2,
     /// Critical system tasks
     Critical = 3,
+}
+
+/// Goroutine error context for error isolation
+#[derive(Debug, Clone)]
+pub struct GoroutineErrorContext {
+    /// Panic information if available
+    pub panic_info: Option<String>,
+    /// Stack trace at panic
+    pub stack_trace: Vec<String>,
+    /// Error isolation enabled
+    pub isolation_enabled: bool,
+    /// Recovery attempts
+    pub recovery_attempts: u32,
+    /// Maximum recovery attempts
+    pub max_recovery_attempts: u32,
+    /// Error timestamp
+    pub error_timestamp: Option<Instant>,
+    /// Error propagation chain
+    pub error_chain: Vec<String>,
+}
+
+/// Join handle for goroutine error propagation
+#[derive(Debug)]
+pub struct GoroutineJoinHandle {
+    /// Goroutine ID
+    pub goroutine_id: GoroutineId,
+    /// Result of goroutine execution
+    pub result: Arc<Mutex<Option<Result<(), String>>>>,
+    /// Error notification channel
+    pub error_notifier: Arc<Condvar>,
+    /// Completion status
+    pub completed: Arc<AtomicBool>,
 }
 
 impl Default for GoroutinePriority {
@@ -87,6 +122,10 @@ pub struct Goroutine {
     pub children: Vec<GoroutineId>,
     /// Associated channels for cleanup
     pub channels: Vec<Box<dyn std::any::Any + Send>>,
+    /// Error isolation context
+    pub error_context: Option<GoroutineErrorContext>,
+    /// Join handle for error propagation
+    pub join_handle: Option<GoroutineJoinHandle>,
 }
 
 impl Goroutine {
@@ -107,6 +146,8 @@ impl Goroutine {
             parent_id: None,
             children: Vec::new(),
             channels: Vec::new(),
+            error_context: None,
+            join_handle: None,
         }
     }
 
@@ -119,6 +160,7 @@ impl Goroutine {
             3 => GoroutineState::Yielded,
             4 => GoroutineState::Completed,
             5 => GoroutineState::Panicked,
+            6 => GoroutineState::ErrorIsolated,
             _ => GoroutineState::Ready, // Default fallback
         }
     }
@@ -493,38 +535,111 @@ impl GoroutineScheduler {
     fn execute_goroutine(worker_id: WorkerId, goroutine: Arc<Mutex<Goroutine>>) {
         let execution_start = Instant::now();
         
-        // Extract the entry function from the goroutine
-        // We need to move the function out of the goroutine struct to execute it
-        let entry_fn = {
+        // Extract the entry function and set up error isolation
+        let (entry_fn, goroutine_id, join_handle) = {
             if let Ok(mut goroutine_guard) = goroutine.lock() {
                 goroutine_guard.set_state(GoroutineState::Running);
                 
+                // Initialize error isolation context
+                let error_context = GoroutineErrorContext {
+                    panic_info: None,
+                    stack_trace: Vec::new(),
+                    isolation_enabled: true,
+                    recovery_attempts: 0,
+                    max_recovery_attempts: 3,
+                    error_timestamp: None,
+                    error_chain: Vec::new(),
+                };
+                
+                // Create join handle for error propagation
+                let join_handle = GoroutineJoinHandle {
+                    goroutine_id: goroutine_guard.id,
+                    result: Arc::new(Mutex::new(None)),
+                    error_notifier: Arc::new(Condvar::new()),
+                    completed: Arc::new(AtomicBool::new(false)),
+                };
+                
+                goroutine_guard.error_context = Some(error_context);
+                let join_handle_clone = GoroutineJoinHandle {
+                    goroutine_id: join_handle.goroutine_id,
+                    result: join_handle.result.clone(),
+                    error_notifier: join_handle.error_notifier.clone(),
+                    completed: join_handle.completed.clone(),
+                };
+                goroutine_guard.join_handle = Some(join_handle_clone);
+                
                 // Take the entry function out of the goroutine
-                // Note: This is a one-time operation as FnOnce can only be called once
                 let fake_fn = Box::new(|| {}) as Box<dyn FnOnce() + Send + 'static>;
-                std::mem::replace(&mut goroutine_guard.entry_fn, fake_fn)
+                let entry_fn = std::mem::replace(&mut goroutine_guard.entry_fn, fake_fn);
+                
+                (entry_fn, goroutine_guard.id, join_handle)
             } else {
                 return; // Can't acquire lock, skip execution
             }
         };
 
-        // Execute the goroutine function with proper error handling
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+        // Execute the goroutine function with enhanced error isolation
+        let result = std::panic::catch_unwind(AssertUnwindSafe(move || {
             // Call the actual entry function
             entry_fn();
         }));
 
-        // Update goroutine state based on execution result
+        // Update goroutine state and join handle based on execution result
         {
-            if let Ok(goroutine_guard) = goroutine.lock() {
+            if let Ok(mut goroutine_guard) = goroutine.lock() {
                 match result {
                     Ok(_) => {
                         goroutine_guard.set_state(GoroutineState::Completed);
-                        log::debug!("Worker {} completed goroutine {}", worker_id, goroutine_guard.id);
+                        
+                        // Update join handle with success
+                        if let Ok(mut join_result) = join_handle.result.lock() {
+                            *join_result = Some(Ok(()));
+                        }
+                        join_handle.completed.store(true, Ordering::Release);
+                        join_handle.error_notifier.notify_all();
+                        
+                        log::debug!("Worker {} completed goroutine {}", worker_id, goroutine_id);
                     },
                     Err(panic_info) => {
-                        goroutine_guard.set_state(GoroutineState::Panicked);
-                        log::error!("Worker {} - goroutine {} panicked: {:?}", worker_id, goroutine_guard.id, panic_info);
+                        // Extract panic message
+                        let panic_msg = if let Some(s) = panic_info.downcast_ref::<&str>() {
+                            s.to_string()
+                        } else if let Some(s) = panic_info.downcast_ref::<String>() {
+                            s.clone()
+                        } else {
+                            "Unknown panic".to_string()
+                        };
+                        
+                        // Check if error isolation is enabled
+                        let isolation_enabled = goroutine_guard.error_context
+                            .as_ref()
+                            .map(|ctx| ctx.isolation_enabled)
+                            .unwrap_or(false);
+                        
+                        if isolation_enabled {
+                            // Error is isolated - don't propagate to scheduler
+                            goroutine_guard.set_state(GoroutineState::ErrorIsolated);
+                            
+                            // Update error context
+                            if let Some(ref mut error_context) = goroutine_guard.error_context {
+                                error_context.panic_info = Some(panic_msg.clone());
+                                error_context.error_timestamp = Some(Instant::now());
+                                error_context.stack_trace = Self::capture_stack_trace();
+                            }
+                            
+                            // Update join handle with error
+                            if let Ok(mut join_result) = join_handle.result.lock() {
+                                *join_result = Some(Err(panic_msg.clone()));
+                            }
+                            join_handle.completed.store(true, Ordering::Release);
+                            join_handle.error_notifier.notify_all();
+                            
+                            log::warn!("Worker {} - goroutine {} error isolated: {}", worker_id, goroutine_id, panic_msg);
+                        } else {
+                            // Error is not isolated - panic propagates
+                            goroutine_guard.set_state(GoroutineState::Panicked);
+                            log::error!("Worker {} - goroutine {} panicked: {}", worker_id, goroutine_id, panic_msg);
+                        }
                     },
                 }
             }
@@ -543,6 +658,24 @@ impl GoroutineScheduler {
     fn try_steal_work(worker: &Arc<Worker>, stats: &mut WorkerStats) -> bool {
         stats.work_stolen += 1;
         false // Simplified - would implement actual work stealing
+    }
+    
+    /// Capture stack trace for error isolation
+    fn capture_stack_trace() -> Vec<String> {
+        let mut stack_trace = Vec::new();
+        let backtrace = std::backtrace::Backtrace::capture();
+        
+        for frame in backtrace.to_string().lines() {
+            if frame.trim().starts_with("at ") {
+                stack_trace.push(frame.trim().to_string());
+            }
+        }
+        
+        if stack_trace.is_empty() {
+            stack_trace.push("Stack trace not available".to_string());
+        }
+        
+        stack_trace
     }
 }
 
@@ -593,6 +726,65 @@ pub fn yolo() -> Result<(), CursedError> {
     get_global_scheduler()
         .ok_or_else(|| CursedError::runtime_error("Global scheduler not initialized"))?
         .yield_current()
+}
+
+/// Join a goroutine and await its completion with error handling
+pub fn join_goroutine(goroutine_id: GoroutineId) -> Result<Result<(), String>, CursedError> {
+    let scheduler = get_global_scheduler()
+        .ok_or_else(|| CursedError::runtime_error("Global scheduler not initialized"))?;
+    
+    // Find the goroutine by ID
+    for worker in &scheduler.workers {
+        if let Ok(current_guard) = worker.current.lock() {
+            if let Some(ref goroutine) = *current_guard {
+                if let Ok(goroutine_guard) = goroutine.lock() {
+                    if goroutine_guard.id == goroutine_id {
+                        if let Some(ref join_handle) = goroutine_guard.join_handle {
+                            // Wait for completion
+                            let result_guard = join_handle.result.lock()
+                                .map_err(|_| CursedError::runtime_error("Failed to lock join handle result"))?;
+                            
+                            if join_handle.completed.load(Ordering::Acquire) {
+                                // Already completed
+                                return Ok(result_guard.clone().unwrap_or(Ok(())));
+                            }
+                            
+                            // Wait for notification
+                            let _result = join_handle.error_notifier.wait(result_guard)
+                                .map_err(|_| CursedError::runtime_error("Failed to wait for goroutine completion"))?;
+                            
+                            // Check result
+                            if let Some(result) = _result.as_ref() {
+                                return Ok(result.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    Err(CursedError::runtime_error("Goroutine not found"))
+}
+
+/// Get error information for a goroutine
+pub fn get_goroutine_error(goroutine_id: GoroutineId) -> Option<GoroutineErrorContext> {
+    let scheduler = get_global_scheduler()?;
+    
+    // Search for the goroutine
+    for worker in &scheduler.workers {
+        if let Ok(current_guard) = worker.current.lock() {
+            if let Some(ref goroutine) = *current_guard {
+                if let Ok(goroutine_guard) = goroutine.lock() {
+                    if goroutine_guard.id == goroutine_id {
+                        return goroutine_guard.error_context.clone();
+                    }
+                }
+            }
+        }
+    }
+    
+    None
 }
 
 // LLVM FFI Integration
