@@ -46,9 +46,8 @@ use crate::runtime::jit_runtime::{
 /// Global LLVM initialization flag
 static LLVM_INIT: Once = Once::new();
 
-/// Thread-local LLVM context manager
 thread_local! {
-    /// Thread-local LLVM context wrapper
+    /// Thread-local LLVM context wrapper - provides thread-local LLVM context management
     static LLVM_CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
 }
 

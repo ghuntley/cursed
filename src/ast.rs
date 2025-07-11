@@ -10,6 +10,51 @@ pub enum Ast {
     Expression(Expression),
 }
 
+/// Generic AST node trait
+pub trait AstNode {
+    fn accept<T>(&self, visitor: &mut dyn Visitor<T>) -> T;
+}
+
+/// Visitor pattern for AST traversal
+pub trait Visitor<T> {
+    fn visit_program(&mut self, program: &Program) -> T;
+    fn visit_statement(&mut self, statement: &Statement) -> T;
+    fn visit_expression(&mut self, expression: &Expression) -> T;
+}
+
+/// Function declaration AST node
+#[derive(Debug, Clone)]
+pub struct FunctionDeclaration {
+    pub name: String,
+    pub parameters: Vec<Parameter>,
+    pub return_type: Option<Type>,
+    pub body: Vec<Statement>,
+    pub visibility: Visibility,
+    pub is_async: bool,
+    pub type_parameters: Vec<TypeParameter>,
+    pub comments: Vec<Comment>,
+}
+
+/// Variable declaration AST node
+#[derive(Debug, Clone)]
+pub struct VariableDeclaration {
+    pub name: String,
+    pub var_type: Option<Type>,
+    pub initializer: Option<Expression>,
+    pub is_mutable: bool,
+    pub visibility: Visibility,
+    pub comments: Vec<Comment>,
+}
+
+/// Comment AST node
+#[derive(Debug, Clone)]
+pub struct Comment {
+    pub text: String,
+    pub is_doc_comment: bool,
+    pub line: usize,
+    pub column: usize,
+}
+
 /// Root program node
 #[derive(Debug, Clone)]
 pub struct Program {
@@ -778,6 +823,11 @@ pub enum Type {
     Tuple(Vec<Type>),    // Tuple type (tuple)
     Pointer(Box<Type>),  // Pointer type (@T)
     Generic(String, Vec<Type>), // Generic type with type parameters
+    // TestResult type system
+    TestResult,              // TestResult type for test outcomes
+    TestStatus,              // TestStatus enum for test status
+    TestSuite,               // TestSuite type for test aggregation
+    TestReport,              // TestReport type for comprehensive reporting
 }
 
 /// Helper function to convert Expression to string representation
@@ -857,6 +907,11 @@ impl std::fmt::Display for Type {
                 }
                 Ok(())
             }
+            // TestResult type system
+            Type::TestResult => write!(f, "TestResult"),
+            Type::TestStatus => write!(f, "TestStatus"),
+            Type::TestSuite => write!(f, "TestSuite"),
+            Type::TestReport => write!(f, "TestReport"),
         }
     }
 }

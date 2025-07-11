@@ -41,7 +41,10 @@ license = "MIT"
             "# Test Package\n\nThis is a test package."
         ).unwrap();
         
-        let config = PackageManagerConfig::default();
+        // Use temp directory for package manager cache
+        let mut config = PackageManagerConfig::default();
+        config.cache_dir = temp_dir.path().join("cache");
+        config.workspace_dir = temp_dir.path().to_path_buf();
         let pkg_manager = PackageManager::new(config).unwrap();
         
         // Test package structure validation
@@ -57,7 +60,10 @@ license = "MIT"
         // Create package directory but missing required files
         fs::create_dir_all(&package_path).unwrap();
         
-        let config = PackageManagerConfig::default();
+        // Use temp directory for package manager cache
+        let mut config = PackageManagerConfig::default();
+        config.cache_dir = temp_dir.path().join("cache");
+        config.workspace_dir = temp_dir.path().to_path_buf();
         let pkg_manager = PackageManager::new(config).unwrap();
         
         // Test package structure validation with missing files
@@ -88,7 +94,10 @@ license = "MIT"
         fs::create_dir_all(package_path.join("target")).unwrap();
         fs::write(package_path.join("target/debug"), "debug binary").unwrap();
         
-        let config = PackageManagerConfig::default();
+        // Use temp directory for package manager cache
+        let mut config = PackageManagerConfig::default();
+        config.cache_dir = temp_dir.path().join("cache");
+        config.workspace_dir = temp_dir.path().to_path_buf();
         let pkg_manager = PackageManager::new(config).unwrap();
         
         // Test archive creation
@@ -105,7 +114,10 @@ license = "MIT"
 
     #[test]
     fn test_package_manager_creation() {
-        let config = PackageManagerConfig::default();
+        let temp_dir = TempDir::new().unwrap();
+        let mut config = PackageManagerConfig::default();
+        config.cache_dir = temp_dir.path().join("cache");
+        config.workspace_dir = temp_dir.path().to_path_buf();
         let pkg_manager_result = PackageManager::new(config);
         assert!(pkg_manager_result.is_ok(), "Package manager creation should succeed");
     }
@@ -148,7 +160,10 @@ license = "MIT"
             "slay hello() { vibez.spill(\"Hello from dry run!\") }"
         ).unwrap();
         
-        let config = PackageManagerConfig::default();
+        // Use temp directory for package manager cache
+        let mut config = PackageManagerConfig::default();
+        config.cache_dir = temp_dir.path().join("cache");
+        config.workspace_dir = temp_dir.path().to_path_buf();
         let pkg_manager = PackageManager::new(config).unwrap();
         
         // Test dry run publish (should not fail even without network)
@@ -179,7 +194,10 @@ version = "1.0.0"
         // Create source file
         fs::write(package_path.join("src/mod.csd"), "// source").unwrap();
         
-        let config = PackageManagerConfig::default();
+        // Use temp directory for package manager cache
+        let mut config = PackageManagerConfig::default();
+        config.cache_dir = temp_dir.path().join("cache");
+        config.workspace_dir = temp_dir.path().to_path_buf();
         let pkg_manager = PackageManager::new(config).unwrap();
         
         // Test publish with invalid TOML
@@ -196,7 +214,10 @@ version = "1.0.0"
 
     #[tokio::test]
     async fn test_missing_package_directory() {
-        let config = PackageManagerConfig::default();
+        let temp_dir = TempDir::new().unwrap();
+        let mut config = PackageManagerConfig::default();
+        config.cache_dir = temp_dir.path().join("cache");
+        config.workspace_dir = temp_dir.path().to_path_buf();
         let pkg_manager = PackageManager::new(config).unwrap();
         
         // Test publish with non-existent directory

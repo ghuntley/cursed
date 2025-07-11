@@ -23,6 +23,12 @@ pub mod metadata;
 pub mod cycle_detection;
 pub mod regions;
 
+// Memory optimization modules
+pub mod adaptive_gc;
+pub mod pressure_detection;
+pub mod pool_optimization;
+pub mod profiling;
+
 // Export main interfaces
 pub use gc::{MinimalImplementation as GcMinimal, get_minimal_result};
 pub use enhanced_gc::{MinimalImplementation as EnhancedGcMinimal};
