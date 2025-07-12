@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use std::fmt;
 
-use crate::runtime::channels::{SendResult, ReceiveResult};
+use crate::runtime::channels::{SendResult, ReceiveResult, ChannelStats};
 use crate::runtime::goroutine::GoroutineId;
 
 /// Simple channel implementation
@@ -237,6 +237,61 @@ impl<T> SimpleChannel<T> {
         self.recv()
     }
     
+    /// Get detailed channel statistics
+    pub fn stats(&self) -> ChannelStats {
+        ChannelStats {
+            id: self.id,
+            capacity: self.capacity,
+            current_length: self.len(),
+            sender_count: self.sender_count.load(Ordering::SeqCst),
+            receiver_count: self.receiver_count.load(Ordering::SeqCst),
+            is_closed: self.is_closed(),
+            total_sent: 0, // TODO: Add counters for these
+            total_received: 0,
+            messages_dropped: 0,
+        }
+    }
+    
+    /// Check if channel has buffering capacity
+    pub fn is_buffered(&self) -> bool {
+        self.capacity > 0
+    }
+    
+    /// Get available buffer space
+    pub fn available_space(&self) -> usize {
+        if self.capacity == 0 {
+            if self.receiver_count.load(Ordering::SeqCst) > 0 { 1 } else { 0 }
+        } else {
+            self.capacity.saturating_sub(self.len())
+        }
+    }
+    
+    /// Force close the channel and drop all buffered messages
+    pub fn force_close(&self) -> usize {
+        let mut buffer = self.buffer.lock().unwrap();
+        let dropped_count = buffer.len();
+        buffer.clear();
+        self.close();
+        dropped_count
+    }
+    
+    /// Flush channel - wait for all buffered messages to be consumed
+    pub fn flush(&self) -> Result<(), ()> {
+        let mut iterations = 0;
+        const MAX_ITERATIONS: u32 = 1000;
+        
+        while !self.is_empty() && !self.is_closed() && iterations < MAX_ITERATIONS {
+            std::thread::sleep(Duration::from_millis(1));
+            iterations += 1;
+        }
+        
+        if self.is_empty() || self.is_closed() {
+            Ok(())
+        } else {
+            Err(())
+        }
+    }
+    
     /// Create a sender handle
     pub fn sender(&self) -> SimpleChannelSender<T> {
         self.sender_count.fetch_add(1, Ordering::SeqCst);
@@ -304,6 +359,11 @@ impl<T> SimpleChannelSender<T> {
     pub fn channel_id(&self) -> usize {
         self.channel.id()
     }
+    
+    /// Get the underlying channel for statistics
+    pub fn channel(&self) -> &SimpleChannel<T> {
+        &self.channel
+    }
 }
 
 impl<T> Clone for SimpleChannelSender<T> {
@@ -359,6 +419,11 @@ impl<T> SimpleChannelReceiver<T> {
     /// Create an iterator
     pub fn into_iter(self) -> SimpleChannelIterator<T> {
         SimpleChannelIterator { receiver: self }
+    }
+    
+    /// Get the underlying channel for statistics
+    pub fn channel(&self) -> &SimpleChannel<T> {
+        &self.channel
     }
 }
 

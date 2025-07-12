@@ -392,6 +392,13 @@ impl CursedExecutionEngine {
             },
             CursedValue::Nil => "nil".to_string(),
             CursedValue::Character(c) => format!("'{}'", c),
+            CursedValue::Complex { real, imag } => {
+                if *imag >= 0.0 {
+                    format!("{}+{}i", real, imag)
+                } else {
+                    format!("{}{}i", real, imag)
+                }
+            },
             CursedValue::Array(elements) => {
                 let element_strs: Vec<String> = elements.iter()
                     .map(|v| self.format_value(v))
@@ -725,14 +732,26 @@ impl CursedExecutionEngine {
             },
             Statement::Let(let_stmt) => {
                 let value = self.evaluate_expression(&let_stmt.value, context)?;
+                
+                // Apply type conversion if a type is specified
+                let final_value = if let Some(ref var_type) = let_stmt.var_type {
+                    if self.can_convert_to_type(&value, var_type) {
+                        self.convert_to_type(&value, var_type)?
+                    } else {
+                        return Err(CursedError::runtime_error(&format!("Cannot convert {:?} to type {:?}", value, var_type)));
+                    }
+                } else {
+                    value
+                };
+                
                 match &let_stmt.target {
                     crate::ast::LetTarget::Single(name) => {
-                        log::debug!("🔍 Setting variable: {} = {:?}", name, value);
-                        context.set_variable(name.clone(), value.clone());
+                        log::debug!("🔍 Setting variable: {} = {:?} (type: {:?})", name, final_value, let_stmt.var_type);
+                        context.set_variable(name.clone(), final_value.clone());
                     },
                     crate::ast::LetTarget::Tuple(names) => {
                         // Handle tuple destructuring
-                        if let CursedValue::Tuple(elements) = &value {
+                        if let CursedValue::Tuple(elements) = &final_value {
                             for (index, name) in names.iter().enumerate() {
                                 if let Some(element) = elements.get(index) {
                                     context.set_variable(name.clone(), element.clone());
@@ -746,7 +765,7 @@ impl CursedExecutionEngine {
                     }
                 }
                 // For assignment statements, return the value that was assigned
-                Ok(ExecutionFlow::Continue(value))
+                Ok(ExecutionFlow::Continue(final_value))
             },
             Statement::Assignment(assign_stmt) => {
                 let value = self.evaluate_expression(&assign_stmt.value, context)?;
@@ -1010,13 +1029,19 @@ impl CursedExecutionEngine {
             Statement::Struct(struct_stmt) => {
                 // Store struct definition in context for type checking
                 log::info!("📝 Storing struct definition: {} with {} fields", struct_stmt.name, struct_stmt.fields.len());
-                // TODO: Implement actual struct storage
+                
+                // Store struct definition in context
+                context.store_struct_definition(struct_stmt.name.clone(), struct_stmt.clone());
+                
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::Interface(interface_stmt) => {
                 // Store interface definition in context for type checking
                 log::info!("📝 Storing interface definition: {} with {} methods", interface_stmt.name, interface_stmt.methods.len());
-                // TODO: Implement actual interface storage
+                
+                // Store interface definition in context
+                context.store_interface_definition(interface_stmt.name.clone(), interface_stmt.clone());
+                
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             Statement::Panic(panic_stmt) => {
@@ -1198,6 +1223,19 @@ impl CursedExecutionEngine {
                         }
                     }
                 }
+            },
+            Statement::Const(const_decl) => {
+                // Execute constant declarations
+                log::debug!("🔧 Executing constant declarations (facts)");
+                for spec in &const_decl.specs {
+                    for (name, value) in spec.names.iter().zip(spec.values.iter()) {
+                        let const_value = self.evaluate_expression(value, context)?;
+                        // Store constant in context as immutable
+                        context.set_constant(name.clone(), const_value.clone());
+                        log::debug!("🔍 Set constant: {} = {:?}", name, const_value);
+                    }
+                }
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
         }
     }
@@ -1829,6 +1867,45 @@ impl CursedExecutionEngine {
                              _ => Err(CursedError::RuntimeError("array_push() expects an array as first argument".to_string())),
                          }
                      },
+                     "make" => {
+                         // Handle channel creation: make(dm<Type>) or make(dm<Type>, capacity)
+                         if call_expr.arguments.is_empty() {
+                             return Err(CursedError::RuntimeError("make() expects at least 1 argument".to_string()));
+                         }
+                         
+                         // For now, create an unbuffered channel regardless of first argument
+                         // TODO: Parse channel type from first argument
+                         let capacity = if call_expr.arguments.len() > 1 {
+                             match self.evaluate_expression(&call_expr.arguments[1], context)? {
+                                 CursedValue::Integer(cap) => cap as usize,
+                                 _ => return Err(CursedError::RuntimeError("make() channel capacity must be an integer".to_string())),
+                             }
+                         } else {
+                             0 // unbuffered
+                         };
+                         
+                         // Create a ChannelCreationExpression to reuse existing logic
+                         let create_expr = crate::ast::ChannelCreationExpression {
+                             element_type: Box::new(crate::ast::Type::Normie), // Default type for now
+                             capacity: if capacity > 0 { Some(Box::new(crate::ast::Expression::Literal(crate::ast::Literal::Integer(capacity as i64)))) } else { None },
+                         };
+                         self.execute_channel_creation(&create_expr, context)
+                     },
+                     "close" => {
+                         // Handle channel close: close(channel)
+                         if call_expr.arguments.len() != 1 {
+                             return Err(CursedError::RuntimeError("close() expects exactly 1 argument".to_string()));
+                         }
+                         
+                         let channel_arg = self.evaluate_expression(&call_expr.arguments[0], context)?;
+                         match channel_arg {
+                             CursedValue::Channel(ch) => {
+                                 ch.close();
+                                 Ok(CursedValue::Nil)
+                             },
+                             _ => Err(CursedError::RuntimeError("close() expects a channel argument".to_string())),
+                         }
+                     },
                      "array_len" => {
                          if call_expr.arguments.len() != 1 {
                              return Err(CursedError::RuntimeError("array_len() expects exactly 1 argument".to_string()));
@@ -2395,7 +2472,13 @@ impl CursedExecutionEngine {
                                  _ => Err(CursedError::RuntimeError("ceil() expects a number".to_string())),
                              }
                          },
-                         _ => Err(CursedError::RuntimeError(format!("Unknown method: {}.{}", obj_name, member_expr.property))),
+                         _ => {
+                              // Check if this is an interface method call
+                              if let Ok(result) = self.dispatch_interface_method(obj_name, &member_expr.property, &call_expr.arguments, context) {
+                                  return Ok(result);
+                              }
+                              Err(CursedError::RuntimeError(format!("Unknown method: {}.{}", obj_name, member_expr.property)))
+                          },
                     }
                 } else {
                     Err(CursedError::RuntimeError("Complex member access not supported yet".to_string()))
@@ -2463,6 +2546,7 @@ impl CursedExecutionEngine {
             CursedValue::Array(elements) => !elements.is_empty(), // Arrays are truthy if they have elements
             CursedValue::Error { .. } => true, // Errors are truthy (they exist)
             CursedValue::StructuredError { .. } => true, // Structured errors are truthy (they exist)
+            CursedValue::Complex { real, imag } => *real != 0.0 || *imag != 0.0, // Complex numbers are truthy if not zero
         }
     }
     
@@ -2542,6 +2626,32 @@ impl CursedExecutionEngine {
         
         // Execute lambda body
         self.evaluate_expression(&lambda_value.body, &mut lambda_context)
+    }
+    
+    /// Dispatch interface method call
+    fn dispatch_interface_method(&mut self, obj_name: &str, method_name: &str, arguments: &[crate::ast::Expression], context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        // Check if the object variable exists
+        if let Some(obj_value) = context.get_variable(obj_name) {
+            // For now, we'll implement basic interface method dispatch
+            // In a full implementation, this would check if the object's type implements the interface
+            // and dispatch to the appropriate method implementation
+            
+            // Example: Check if object implements a hypothetical interface
+            match (obj_name, method_name) {
+                (_, "print") => {
+                    // Default print implementation for any object that has a print method
+                    println!("{}", self.format_value(&obj_value));
+                    Ok(CursedValue::Nil)
+                },
+                (_, "to_string") => {
+                    // Default to_string implementation
+                    Ok(CursedValue::String(self.format_value(&obj_value)))
+                },
+                _ => Err(CursedError::RuntimeError(format!("Method {} not found on object {}", method_name, obj_name)))
+            }
+        } else {
+            Err(CursedError::RuntimeError(format!("Object {} not found", obj_name)))
+        }
     }
 
     /// Evaluate tuple expression
@@ -2810,6 +2920,7 @@ impl CursedExecutionEngine {
             (CursedValue::String(_), crate::ast::Type::Tea) => true,
             (CursedValue::Boolean(_), crate::ast::Type::Lit) => true,
             (CursedValue::Character(_), crate::ast::Type::Sip) => true,
+            (CursedValue::Complex { .. }, crate::ast::Type::Extra) => true,
             
             // Cross-type conversions
             (CursedValue::Integer(_), crate::ast::Type::Float) => true,
@@ -2838,6 +2949,7 @@ impl CursedExecutionEngine {
             (CursedValue::String(s), crate::ast::Type::Tea | crate::ast::Type::String) => Ok(CursedValue::String(s.clone())),
             (CursedValue::Boolean(b), crate::ast::Type::Lit | crate::ast::Type::Boolean) => Ok(CursedValue::Boolean(*b)),
             (CursedValue::Character(c), crate::ast::Type::Sip) => Ok(CursedValue::Character(*c)),
+            (CursedValue::Complex { real, imag }, crate::ast::Type::Extra) => Ok(CursedValue::Complex { real: *real, imag: *imag }),
             
             // Type conversions
             (CursedValue::Integer(i), crate::ast::Type::Float | crate::ast::Type::Snack | crate::ast::Type::Meal) => {
@@ -2921,6 +3033,7 @@ pub enum CursedValue {
         details: Option<String>,
         fields: Vec<(String, CursedValue)>,
     },
+    Complex { real: f64, imag: f64 },  // Complex number for extra type
     Nil,
 }
 
@@ -2957,6 +3070,7 @@ impl CursedValue {
             CursedValue::Tuple(_) => "tuple",
             CursedValue::Error { .. } => "error",
             CursedValue::StructuredError { .. } => "structured_error",
+            CursedValue::Complex { .. } => "complex",
             CursedValue::Nil => "nil",
         }
     }
@@ -3011,6 +3125,13 @@ impl ValueManager {
             },
             CursedValue::Nil => "nil".to_string(),
             CursedValue::Character(c) => format!("'{}'", c),
+            CursedValue::Complex { real, imag } => {
+                if *imag >= 0.0 {
+                    format!("{}+{}i", real, imag)
+                } else {
+                    format!("{}{}i", real, imag)
+                }
+            },
             CursedValue::Error { message, code } => {
                 match code {
                     Some(c) => format!("Error({}): {}", c, message),
@@ -3069,4 +3190,20 @@ impl ValueManager {
             }
         }
     }
+    /// Get current stack trace for error reporting
+    fn get_current_stack_trace(&self) -> String {
+        format!("Stack trace: Current execution context")
+    }
+    
+    /// Capture detailed stack trace with context
+    fn capture_stack_trace(&self, _context: &ExecutionContext) -> String {
+        format!("Stack trace: Current execution context with details")
+    }
+    
+    /// Dispatch interface method calls
+    fn dispatch_interface_method(&mut self, obj_name: &str, method_name: &str, args: &[crate::ast::Expression], context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        // For now, return a generic error. This will be implemented when we have proper interface support.
+        Err(CursedError::RuntimeError(format!("Interface method dispatch not yet implemented: {}.{}", obj_name, method_name)))
+    }
+
 }

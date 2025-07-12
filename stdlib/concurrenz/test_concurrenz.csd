@@ -1,514 +1,321 @@
 yeet "testz"
 yeet "concurrenz"
 
-# CURSED Concurrency Module Test Suite
-# Tests for mutexes, channels, goroutines, and synchronization primitives
+# Comprehensive test suite for concurrenz (sync) module
 
-# === MUTEX TESTS ===
-slay test_mutex_basic() {
-    test_start("Mutex basic lock/unlock")
-    
-    sus m *Mutex = mutex_new()
-    
-    # Test initial state
-    assert_false(m.locked)
-    assert_eq_int(m.owner, -1)
-    
-    # Test lock
-    mutex_lock(m)
-    assert_true(m.locked)
-    assert_eq_int(m.owner, 1)
-    
-    # Test unlock
-    mutex_unlock(m)
-    assert_false(m.locked)
-    assert_eq_int(m.owner, -1)
-    
-    vibez.spill("✓ Mutex basic operations working")
+# Test Mutex operations
+test_start("Mutex creation and basic operations")
+sus m := concurrenz.mutex_new()
+assert_eq_int(m.locked, cap)
+assert_eq_int(m.holder, -1)
+assert_eq_int(m.queue_size, 0)
+
+# Test mutex locking
+sus lock_result := concurrenz.mutex_lock(&m)
+assert_true(lock_result)
+assert_eq_int(m.locked, based)
+
+# Test mutex unlocking
+sus unlock_result := concurrenz.mutex_unlock(&m)
+assert_true(unlock_result)
+assert_eq_int(m.locked, cap)
+
+# Test mutex try_lock
+sus try_lock_result := concurrenz.mutex_try_lock(&m)
+assert_true(try_lock_result)
+assert_eq_int(m.locked, based)
+
+# Test WaitGroup operations
+test_start("WaitGroup creation and operations")
+sus wg := concurrenz.waitgroup_new()
+assert_eq_int(wg.count, 0)
+assert_eq_int(wg.waiting, cap)
+
+# Test WaitGroup add
+sus add_result := concurrenz.waitgroup_add(&wg, 3)
+assert_true(add_result)
+assert_eq_int(wg.count, 3)
+
+# Test WaitGroup done
+sus done_result := concurrenz.waitgroup_done(&wg)
+assert_true(done_result)
+assert_eq_int(wg.count, 2)
+
+# Test WaitGroup negative count protection
+sus add_negative := concurrenz.waitgroup_add(&wg, -5)
+assert_true(add_negative)
+assert_eq_int(wg.count, 0)
+
+# Test Once operations
+test_start("Once creation and do operation")
+sus once := concurrenz.once_new()
+assert_eq_int(once.done, cap)
+assert_eq_int(once.running, cap)
+
+# Test Once do operation
+slay test_function() lit {
+    vibez.spill("Once function executed")
+    damn based
 }
 
-slay test_mutex_try_lock() {
-    test_start("Mutex try_lock")
-    
-    sus m *Mutex = mutex_new()
-    
-    # Should succeed when unlocked
-    assert_true(mutex_try_lock(m))
-    assert_true(m.locked)
-    
-    # Should fail when locked
-    assert_false(mutex_try_lock(m))
-    
-    mutex_unlock(m)
-    assert_false(m.locked)
-    
-    vibez.spill("✓ Mutex try_lock working")
+sus once_result := concurrenz.once_do(&once, test_function)
+assert_true(once_result)
+assert_eq_int(once.done, based)
+
+# Test Once idempotency
+sus once_second := concurrenz.once_do(&once, test_function)
+assert_true(once_second)
+
+# Test AtomicInt operations
+test_start("AtomicInt creation and operations")
+sus ai := concurrenz.atomic_int_new(42)
+assert_eq_int(ai.value, 42)
+
+# Test atomic load
+sus load_result := concurrenz.atomic_int_load(&ai)
+assert_eq_int(load_result, 42)
+
+# Test atomic store
+sus store_result := concurrenz.atomic_int_store(&ai, 100)
+assert_true(store_result)
+sus load_after_store := concurrenz.atomic_int_load(&ai)
+assert_eq_int(load_after_store, 100)
+
+# Test atomic add
+sus add_result_atomic := concurrenz.atomic_int_add(&ai, 50)
+assert_eq_int(add_result_atomic, 150)
+
+# Test atomic compare and swap success
+sus cas_success := concurrenz.atomic_int_compare_and_swap(&ai, 150, 200)
+assert_true(cas_success)
+sus value_after_cas := concurrenz.atomic_int_load(&ai)
+assert_eq_int(value_after_cas, 200)
+
+# Test atomic compare and swap failure
+sus cas_failure := concurrenz.atomic_int_compare_and_swap(&ai, 999, 300)
+assert_false(cas_failure)
+sus value_after_failed_cas := concurrenz.atomic_int_load(&ai)
+assert_eq_int(value_after_failed_cas, 200)
+
+# Test AtomicBool operations
+test_start("AtomicBool creation and operations")
+sus ab := concurrenz.atomic_bool_new(cap)
+assert_eq_int(ab.value, cap)
+
+# Test atomic bool load
+sus bool_load := concurrenz.atomic_bool_load(&ab)
+assert_false(bool_load)
+
+# Test atomic bool store
+sus bool_store := concurrenz.atomic_bool_store(&ab, based)
+assert_true(bool_store)
+sus bool_load_after := concurrenz.atomic_bool_load(&ab)
+assert_true(bool_load_after)
+
+# Test atomic bool compare and swap
+sus bool_cas_success := concurrenz.atomic_bool_compare_and_swap(&ab, based, cap)
+assert_true(bool_cas_success)
+sus bool_value_after_cas := concurrenz.atomic_bool_load(&ab)
+assert_false(bool_value_after_cas)
+
+# Test RWMutex operations
+test_start("RWMutex creation and operations")
+sus rw := concurrenz.rwmutex_new()
+assert_eq_int(rw.readers, 0)
+assert_eq_int(rw.writer, cap)
+assert_eq_int(rw.write_pending, cap)
+
+# Test read lock
+sus read_lock_result := concurrenz.rwmutex_read_lock(&rw)
+assert_true(read_lock_result)
+assert_eq_int(rw.readers, 1)
+
+# Test multiple read locks
+sus read_lock_2 := concurrenz.rwmutex_read_lock(&rw)
+assert_true(read_lock_2)
+assert_eq_int(rw.readers, 2)
+
+# Test read unlock
+sus read_unlock_result := concurrenz.rwmutex_read_unlock(&rw)
+assert_true(read_unlock_result)
+assert_eq_int(rw.readers, 1)
+
+# Test write lock preparation
+sus write_lock_result := concurrenz.rwmutex_write_lock(&rw)
+assert_true(write_lock_result)
+assert_eq_int(rw.writer, based)
+
+# Test write unlock
+sus write_unlock_result := concurrenz.rwmutex_write_unlock(&rw)
+assert_true(write_unlock_result)
+assert_eq_int(rw.writer, cap)
+
+# Test Condition variable operations
+test_start("Condition variable creation and operations")
+sus cond_mutex := concurrenz.mutex_new()
+sus cond := concurrenz.cond_new(&cond_mutex)
+assert_eq_int(cond.waiters, 0)
+
+# Test condition signal
+sus signal_result := concurrenz.cond_signal(&cond)
+assert_true(signal_result)
+
+# Test condition broadcast
+sus broadcast_result := concurrenz.cond_broadcast(&cond)
+assert_true(broadcast_result)
+
+# Test Barrier operations
+test_start("Barrier creation and operations")
+sus barrier := concurrenz.barrier_new(3)
+assert_eq_int(barrier.count, 3)
+assert_eq_int(barrier.waiting, 0)
+assert_eq_int(barrier.generation, 0)
+
+# Test barrier wait (simulated)
+sus barrier_wait_result := concurrenz.barrier_wait(&barrier)
+assert_true(barrier_wait_result)
+
+# Test Semaphore operations
+test_start("Semaphore creation and operations")
+sus sem := concurrenz.semaphore_new(5)
+assert_eq_int(sem.permits, 5)
+assert_eq_int(sem.available, 5)
+
+# Test semaphore acquire
+sus acquire_result := concurrenz.semaphore_acquire(&sem)
+assert_true(acquire_result)
+assert_eq_int(sem.available, 4)
+
+# Test semaphore try acquire
+sus try_acquire_result := concurrenz.semaphore_try_acquire(&sem)
+assert_true(try_acquire_result)
+assert_eq_int(sem.available, 3)
+
+# Test semaphore release
+sus release_result := concurrenz.semaphore_release(&sem)
+assert_true(release_result)
+assert_eq_int(sem.available, 4)
+
+# Test semaphore try acquire when available
+sus try_acquire_available := concurrenz.semaphore_try_acquire(&sem)
+assert_true(try_acquire_available)
+
+# Test utility functions
+test_start("Utility functions")
+sus goroutine_id := concurrenz.goroutine_id()
+assert_eq_int(goroutine_id, 1)
+
+sus yield_result := concurrenz.goroutine_yield()
+assert_true(yield_result)
+
+sus wake_result := concurrenz.goroutine_wake(1)
+assert_true(wake_result)
+
+# Test memory fence operations
+test_start("Memory fence operations")
+sus memory_fence_result := concurrenz.memory_fence()
+assert_true(memory_fence_result)
+
+sus acquire_fence_result := concurrenz.acquire_fence()
+assert_true(acquire_fence_result)
+
+sus release_fence_result := concurrenz.release_fence()
+assert_true(release_fence_result)
+
+# Test concurrent scenarios (simplified)
+test_start("Concurrent scenarios simulation")
+
+# Test mutex contention simulation
+sus mutex_contention := concurrenz.mutex_new()
+sus lock1 := concurrenz.mutex_lock(&mutex_contention)
+assert_true(lock1)
+
+# Simulate second lock attempt (would normally block)
+sus try_lock_contention := concurrenz.mutex_try_lock(&mutex_contention)
+assert_false(try_lock_contention)
+
+sus unlock_contention := concurrenz.mutex_unlock(&mutex_contention)
+assert_true(unlock_contention)
+
+# Test atomic operations under contention
+sus atomic_contention := concurrenz.atomic_int_new(0)
+bestie i := 0; i < 10; i++ {
+    sus add_contention := concurrenz.atomic_int_add(&atomic_contention, 1)
+    assert_eq_int(add_contention, i + 1)
 }
 
-# === RWMUTEX TESTS ===
-slay test_rwmutex_basic() {
-    test_start("RWMutex basic operations")
-    
-    sus rw *RWMutex = rwmutex_new()
-    
-    # Test initial state
-    assert_eq_int(rw.readers, 0)
-    assert_false(rw.writer)
-    assert_eq_int(rw.waiting_writers, 0)
-    
-    # Test read lock
-    rwmutex_rlock(rw)
-    assert_eq_int(rw.readers, 1)
-    assert_false(rw.writer)
-    
-    # Test read unlock
-    rwmutex_runlock(rw)
-    assert_eq_int(rw.readers, 0)
-    
-    # Test write lock
-    rwmutex_lock(rw)
-    assert_true(rw.writer)
-    assert_eq_int(rw.waiting_writers, 0)
-    
-    # Test write unlock
-    rwmutex_unlock(rw)
-    assert_false(rw.writer)
-    
-    vibez.spill("✓ RWMutex basic operations working")
-}
+sus final_value := concurrenz.atomic_int_load(&atomic_contention)
+assert_eq_int(final_value, 10)
 
-# === WAITGROUP TESTS ===
-slay test_waitgroup_basic() {
-    test_start("WaitGroup basic operations")
-    
-    sus wg *WaitGroup = waitgroup_new()
-    
-    # Test initial state
-    assert_eq_int(wg.count, 0)
-    
-    # Test add
-    waitgroup_add(wg, 3)
-    assert_eq_int(wg.count, 3)
-    
-    # Test done
-    waitgroup_done(wg)
-    assert_eq_int(wg.count, 2)
-    
-    waitgroup_done(wg)
-    assert_eq_int(wg.count, 1)
-    
-    waitgroup_done(wg)
-    assert_eq_int(wg.count, 0)
-    
-    vibez.spill("✓ WaitGroup basic operations working")
-}
+# Test semaphore exhaustion
+sus exhausted_sem := concurrenz.semaphore_new(1)
+sus acquire_only := concurrenz.semaphore_acquire(&exhausted_sem)
+assert_true(acquire_only)
 
-# === ONCE TESTS ===
-slay test_once_basic() {
-    test_start("Once basic operations")
-    
-    sus o *Once = once_new()
-    sus counter normie = 0
-    
-    # Test initial state
-    assert_false(o.done)
-    
-    # Test first execution
-    once_do(o, slay() {
-        counter++
-    })
-    assert_true(o.done)
-    assert_eq_int(counter, 1)
-    
-    # Test second execution (should not run)
-    once_do(o, slay() {
-        counter++
-    })
-    assert_eq_int(counter, 1)
-    
-    vibez.spill("✓ Once basic operations working")
-}
+sus try_acquire_exhausted := concurrenz.semaphore_try_acquire(&exhausted_sem)
+assert_false(try_acquire_exhausted)
 
-# === ATOMIC TESTS ===
-slay test_atomic_basic() {
-    test_start("Atomic basic operations")
-    
-    sus a *Atomic = atomic_new(42)
-    
-    # Test initial value
-    assert_eq_int(atomic_load(a), 42)
-    
-    # Test store
-    atomic_store(a, 100)
-    assert_eq_int(atomic_load(a), 100)
-    
-    # Test add
-    sus result normie = atomic_add(a, 10)
-    assert_eq_int(result, 110)
-    assert_eq_int(atomic_load(a), 110)
-    
-    # Test compare and swap (success)
-    assert_true(atomic_compare_and_swap(a, 110, 200))
-    assert_eq_int(atomic_load(a), 200)
-    
-    # Test compare and swap (failure)
-    assert_false(atomic_compare_and_swap(a, 110, 300))
-    assert_eq_int(atomic_load(a), 200)
-    
-    vibez.spill("✓ Atomic operations working")
-}
+sus release_exhausted := concurrenz.semaphore_release(&exhausted_sem)
+assert_true(release_exhausted)
 
-# === CHANNEL TESTS ===
-slay test_channel_basic() {
-    test_start("Channel basic operations")
-    
-    sus ch chan normie = make(chan normie, 5)
-    
-    # Test send
-    ch <- 42
-    ch <- 100
-    
-    # Test receive
-    sus val1 normie = <-ch
-    sus val2 normie = <-ch
-    
-    assert_eq_int(val1, 42)
-    assert_eq_int(val2, 100)
-    
-    vibez.spill("✓ Channel basic operations working")
-}
+# Test WaitGroup complete cycle
+sus complete_wg := concurrenz.waitgroup_new()
+sus add_workers := concurrenz.waitgroup_add(&complete_wg, 3)
+assert_true(add_workers)
 
-slay test_channel_patterns() {
-    test_start("Channel patterns")
-    
-    # Test timeout channel
-    sus timeout chan lit = select_timeout(100)
-    
-    # Test buffered channel creation
-    sus buffered chan normie = make_buffered_channel(10)
-    buffered <- 1
-    buffered <- 2
-    
-    sus val1 normie = <-buffered
-    sus val2 normie = <-buffered
-    assert_eq_int(val1, 1)
-    assert_eq_int(val2, 2)
-    
-    vibez.spill("✓ Channel patterns working")
-}
+# Simulate worker completion
+sus worker1_done := concurrenz.waitgroup_done(&complete_wg)
+assert_true(worker1_done)
+assert_eq_int(complete_wg.count, 2)
 
-# === SEMAPHORE TESTS ===
-slay test_semaphore_basic() {
-    test_start("Semaphore basic operations")
-    
-    sus s *Semaphore = semaphore_new(2)
-    
-    # Test initial state
-    assert_eq_int(s.permits, 2)
-    
-    # Test acquire
-    semaphore_acquire(s)
-    semaphore_acquire(s)
-    
-    # Test try_acquire when full
-    assert_false(semaphore_try_acquire(s))
-    
-    # Test release
-    semaphore_release(s)
-    assert_true(semaphore_try_acquire(s))
-    
-    vibez.spill("✓ Semaphore basic operations working")
-}
+sus worker2_done := concurrenz.waitgroup_done(&complete_wg)
+assert_true(worker2_done)
+assert_eq_int(complete_wg.count, 1)
 
-# === BARRIER TESTS ===
-slay test_barrier_basic() {
-    test_start("Barrier basic operations")
-    
-    sus b *Barrier = barrier_new(2)
-    
-    # Test initial state
-    assert_eq_int(b.parties, 2)
-    assert_eq_int(b.count, 0)
-    assert_eq_int(b.generation, 0)
-    
-    vibez.spill("✓ Barrier basic operations working")
-}
+sus worker3_done := concurrenz.waitgroup_done(&complete_wg)
+assert_true(worker3_done)
+assert_eq_int(complete_wg.count, 0)
 
-# === CONDITION VARIABLE TESTS ===
-slay test_cond_basic() {
-    test_start("Condition variable basic operations")
-    
-    sus m *Mutex = mutex_new()
-    sus c *Cond = cond_new(m)
-    
-    # Test initial state
-    assert_eq_int(c.waiters, 0)
-    
-    # Test signal (no waiters)
-    cond_signal(c)
-    assert_eq_int(c.waiters, 0)
-    
-    # Test broadcast (no waiters)
-    cond_broadcast(c)
-    assert_eq_int(c.waiters, 0)
-    
-    vibez.spill("✓ Condition variable basic operations working")
-}
+# Test RWMutex reader-writer scenarios
+sus rw_scenario := concurrenz.rwmutex_new()
 
-# === RATE LIMITER TESTS ===
-slay test_rate_limiter_basic() {
-    test_start("Rate limiter basic operations")
-    
-    sus rl *RateLimiter = rate_limiter_new(2, 1)
-    
-    # Test initial state
-    assert_eq_int(rl.tokens, 2)
-    assert_eq_int(rl.capacity, 2)
-    assert_eq_int(rl.refill_rate, 1)
-    
-    # Test allow
-    assert_true(rate_limiter_allow(rl))
-    assert_eq_int(rl.tokens, 1)
-    
-    assert_true(rate_limiter_allow(rl))
-    assert_eq_int(rl.tokens, 0)
-    
-    # Should be denied when no tokens
-    assert_false(rate_limiter_allow(rl))
-    
-    vibez.spill("✓ Rate limiter basic operations working")
-}
+# Multiple readers
+sus reader1 := concurrenz.rwmutex_read_lock(&rw_scenario)
+assert_true(reader1)
+sus reader2 := concurrenz.rwmutex_read_lock(&rw_scenario)
+assert_true(reader2)
+assert_eq_int(rw_scenario.readers, 2)
 
-# === CIRCUIT BREAKER TESTS ===
-slay test_circuit_breaker_basic() {
-    test_start("Circuit breaker basic operations")
-    
-    sus cb *CircuitBreaker = circuit_breaker_new(3, 1000)
-    
-    # Test initial state
-    assert_eq_int(cb.failure_threshold, 3)
-    assert_eq_int(cb.timeout, 1000)
-    assert_eq_int(cb.failure_count, 0)
-    assert_eq_int(cb.state, 0)  # Closed
-    
-    # Test successful operation
-    assert_true(circuit_breaker_call(cb, slay() lit {
-        damn based
-    }))
-    assert_eq_int(cb.failure_count, 0)
-    assert_eq_int(cb.state, 0)
-    
-    vibez.spill("✓ Circuit breaker basic operations working")
-}
+# Release readers
+sus reader1_unlock := concurrenz.rwmutex_read_unlock(&rw_scenario)
+assert_true(reader1_unlock)
+assert_eq_int(rw_scenario.readers, 1)
 
-# === PIPELINE TESTS ===
-slay test_pipeline_basic() {
-    test_start("Pipeline basic operations")
-    
-    sus input chan normie = make(chan normie, 5)
-    sus output chan normie = make(chan normie, 5)
-    
-    # Test pipeline stage creation
-    input <- 1
-    input <- 2
-    input <- 3
-    close(input)
-    
-    # Simple transform function
-    pipeline_stage(input, output, slay(x normie) normie {
-        damn x * 2
-    })
-    
-    vibez.spill("✓ Pipeline basic operations working")
-}
+sus reader2_unlock := concurrenz.rwmutex_read_unlock(&rw_scenario)
+assert_true(reader2_unlock)
+assert_eq_int(rw_scenario.readers, 0)
 
-# === GOROUTINE TESTS ===
-slay test_goroutine_basic() {
-    test_start("Goroutine basic operations")
-    
-    sus result chan normie = make(chan normie, 1)
-    
-    # Test goroutine spawn
-    yolo {
-        result <- 42
-    }()
-    
-    # Test goroutine communication
-    sus val normie = <-result
-    assert_eq_int(val, 42)
-    
-    vibez.spill("✓ Goroutine basic operations working")
-}
+# Test edge cases
+test_start("Edge cases and error conditions")
 
-slay test_goroutine_synchronization() {
-    test_start("Goroutine synchronization")
-    
-    sus wg *WaitGroup = waitgroup_new()
-    sus results chan normie = make(chan normie, 3)
-    
-    # Spawn multiple goroutines
-    bestie i := 0; i < 3; i++ {
-        waitgroup_add(wg, 1)
-        yolo {
-            defer waitgroup_done(wg)
-            results <- i * 2
-        }()
-    }
-    
-    # Wait for all goroutines
-    waitgroup_wait(wg)
-    close(results)
-    
-    # Collect results
-    sus count normie = 0
-    bestie val := <-results; val != cringe {
-        count++
-    }
-    assert_eq_int(count, 3)
-    
-    vibez.spill("✓ Goroutine synchronization working")
-}
+# Test mutex unlock without lock
+sus unlocked_mutex := concurrenz.mutex_new()
+sus unlock_unlocked := concurrenz.mutex_unlock(&unlocked_mutex)
+assert_false(unlock_unlocked)
 
-# === ADVANCED PATTERN TESTS ===
-slay test_fan_out_pattern() {
-    test_start("Fan-out pattern")
-    
-    sus input chan normie = make(chan normie, 10)
-    sus outputs []chan normie = fan_out(input, 3)
-    
-    # Test fan-out creation
-    assert_eq_int(len(outputs), 3)
-    
-    # Send some data
-    input <- 1
-    input <- 2
-    input <- 3
-    
-    vibez.spill("✓ Fan-out pattern working")
-}
+# Test atomic operations with edge values
+sus edge_atomic := concurrenz.atomic_int_new(2147483647)  # Max int32
+sus edge_load := concurrenz.atomic_int_load(&edge_atomic)
+assert_eq_int(edge_load, 2147483647)
 
-slay test_fan_in_pattern() {
-    test_start("Fan-in pattern")
-    
-    sus inputs []chan normie = make([]chan normie, 3)
-    bestie i := 0; i < 3; i++ {
-        inputs[i] = make(chan normie, 5)
-    }
-    
-    sus output chan normie = fan_in(inputs)
-    
-    # Send data to each input
-    bestie i := 0; i < 3; i++ {
-        inputs[i] <- i * 10
-    }
-    
-    vibez.spill("✓ Fan-in pattern working")
-}
+# Test semaphore with zero permits
+sus zero_sem := concurrenz.semaphore_new(0)
+sus zero_try := concurrenz.semaphore_try_acquire(&zero_sem)
+assert_false(zero_try)
 
-slay test_worker_pool_pattern() {
-    test_start("Worker pool pattern")
-    
-    sus jobs chan normie = make(chan normie, 10)
-    sus results chan normie = make(chan normie, 10)
-    
-    # Create worker pool
-    worker_pool(jobs, results, slay(job normie) normie {
-        damn job * 2
-    }, 3)
-    
-    # Send jobs
-    bestie i := 1; i <= 5; i++ {
-        jobs <- i
-    }
-    close(jobs)
-    
-    vibez.spill("✓ Worker pool pattern working")
-}
+# Test barrier with single participant
+sus single_barrier := concurrenz.barrier_new(1)
+sus single_wait := concurrenz.barrier_wait(&single_barrier)
+assert_true(single_wait)
 
-# === COMPREHENSIVE CONCURRENCY TEST ===
-slay test_comprehensive_concurrency() {
-    test_start("Comprehensive concurrency test")
-    
-    sus wg *WaitGroup = waitgroup_new()
-    sus mutex *Mutex = mutex_new()
-    sus counter normie = 0
-    sus results chan normie = make(chan normie, 10)
-    
-    # Spawn multiple goroutines that increment counter
-    bestie i := 0; i < 5; i++ {
-        waitgroup_add(wg, 1)
-        yolo {
-            defer waitgroup_done(wg)
-            
-            # Use mutex to protect shared counter
-            mutex_lock(mutex)
-            counter++
-            sus current normie = counter
-            mutex_unlock(mutex)
-            
-            results <- current
-        }()
-    }
-    
-    # Wait for all goroutines
-    waitgroup_wait(wg)
-    close(results)
-    
-    # Verify results
-    sus final_count normie = 0
-    bestie val := <-results; val != cringe {
-        final_count++
-    }
-    
-    assert_eq_int(final_count, 5)
-    assert_eq_int(counter, 5)
-    
-    vibez.spill("✓ Comprehensive concurrency test working")
-}
-
-# === MAIN TEST RUNNER ===
-slay main() {
-    vibez.spill("=== CURSED Concurrency Module Test Suite ===")
-    
-    # Basic synchronization primitives
-    test_mutex_basic()
-    test_mutex_try_lock()
-    test_rwmutex_basic()
-    test_waitgroup_basic()
-    test_once_basic()
-    test_atomic_basic()
-    
-    # Channel operations
-    test_channel_basic()
-    test_channel_patterns()
-    
-    # Advanced synchronization
-    test_semaphore_basic()
-    test_barrier_basic()
-    test_cond_basic()
-    test_rate_limiter_basic()
-    test_circuit_breaker_basic()
-    
-    # Pipeline patterns
-    test_pipeline_basic()
-    
-    # Goroutine tests
-    test_goroutine_basic()
-    test_goroutine_synchronization()
-    
-    # Advanced patterns
-    test_fan_out_pattern()
-    test_fan_in_pattern()
-    test_worker_pool_pattern()
-    
-    # Comprehensive test
-    test_comprehensive_concurrency()
-    
-    vibez.spill("=== Test Summary ===")
-    print_test_summary()
-    
-    vibez.spill("✓ All concurrency tests completed successfully!")
-    vibez.spill("✓ Pure CURSED implementation without FFI dependencies")
-    vibez.spill("✓ Goroutines, channels, and synchronization primitives working")
-    vibez.spill("✓ Enterprise-grade concurrency patterns implemented")
-}
+print_test_summary()

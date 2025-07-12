@@ -107,6 +107,8 @@ pub enum Statement {
     // Error handling statements
     Yikes(YikesStatement),
     Fam(FamStatement),
+    // Constants declaration
+    Const(ConstDecl),
 }
 
 /// Expression types
@@ -570,6 +572,20 @@ pub struct SelectStatement {
 pub struct SelectCase {
     pub operation: Box<Expression>, // ChannelSend or ChannelReceive
     pub body: Vec<Statement>,
+}
+
+/// Constants declaration (facts keyword)
+#[derive(Debug, Clone)]
+pub struct ConstDecl {
+    pub specs: Vec<ConstSpec>,
+}
+
+/// Individual constant specification
+#[derive(Debug, Clone)]
+pub struct ConstSpec {
+    pub names: Vec<String>,
+    pub const_type: Option<Type>,
+    pub values: Vec<Expression>,
 }
 
 /// Struct statement (squad keyword)

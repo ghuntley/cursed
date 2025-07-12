@@ -1,1 +1,1 @@
-vibez.spill("hello world")
+vibez.spill("Hello World")

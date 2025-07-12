@@ -1140,6 +1140,86 @@ impl TypeChecker {
         Ok(TypeExpression::named(&interface_stmt.name))
     }
     
+    /// Check if a type implements an interface
+    fn check_interface_implementation(&self, type_name: &str, interface_name: &str) -> Result<bool, TypeCheckError> {
+        // Get the interface definition
+        let interface_def = self.type_system.environment.type_definitions.get(interface_name)
+            .ok_or_else(|| TypeCheckError {
+                message: format!("Interface '{}' not found", interface_name),
+                location: None,
+                error_type: TypeErrorKind::TypeNotFound,
+            })?;
+        
+        // Get the type definition
+        let type_def = self.type_system.environment.type_definitions.get(type_name)
+            .ok_or_else(|| TypeCheckError {
+                message: format!("Type '{}' not found", type_name),
+                location: None,
+                error_type: TypeErrorKind::TypeNotFound,
+            })?;
+        
+        // Check if the type implements all required methods
+        for interface_method in &interface_def.methods {
+            let mut found_matching_method = false;
+            
+            for type_method in &type_def.methods {
+                if type_method.name == interface_method.name {
+                    // Check method signature compatibility
+                    if self.check_method_signature_compatibility(type_method, interface_method)? {
+                        found_matching_method = true;
+                        break;
+                    }
+                }
+            }
+            
+            if !found_matching_method {
+                return Ok(false);
+            }
+        }
+        
+        Ok(true)
+    }
+    
+    /// Check if two method signatures are compatible
+    fn check_method_signature_compatibility(&self, impl_method: &MethodSignature, interface_method: &MethodSignature) -> Result<bool, TypeCheckError> {
+        // Check parameter count
+        if impl_method.parameters.len() != interface_method.parameters.len() {
+            return Ok(false);
+        }
+        
+        // Check parameter types
+        for (impl_param, interface_param) in impl_method.parameters.iter().zip(interface_method.parameters.iter()) {
+            if !self.check_type_compatibility(impl_param, interface_param)? {
+                return Ok(false);
+            }
+        }
+        
+        // Check return type compatibility
+        match (&impl_method.return_type, &interface_method.return_type) {
+            (Some(impl_return), Some(interface_return)) => {
+                if !self.check_type_compatibility(impl_return, interface_return)? {
+                    return Ok(false);
+                }
+            }
+            (None, None) => {
+                // Both have no return type, compatible
+            }
+            _ => {
+                // One has return type, other doesn't, incompatible
+                return Ok(false);
+            }
+        }
+        
+        Ok(true)
+    }
+    
+    /// Check if two types are compatible
+    fn check_type_compatibility(&self, type1: &TypeExpression, type2: &TypeExpression) -> Result<bool, TypeCheckError> {
+        // For now, just check if they're the same type
+        // In a full implementation, this would handle subtyping, coercion, etc.
+        Ok(type1.name == type2.name)
+    }
+    
     fn check_channel_statement(&mut self, _channel_stmt: &ChannelStatement) -> Result<TypeExpression, TypeCheckError> {
         // Channel statements typically declare channels
         // Return a generic channel type for now

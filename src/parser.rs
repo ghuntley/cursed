@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, InterfaceStatement, MethodSignature, TypeParameter};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, InterfaceStatement, MethodSignature, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -114,6 +114,23 @@ impl Parser {
         }
         Ok(())
     }
+    
+    fn consume_token(&mut self, expected: TokenKind) -> Result<()> {
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == expected {
+                self.next_token()?;
+                Ok(())
+            } else {
+                Err(Error::Parse(format!("Expected {:?}, found {:?}", expected, token.kind)))
+            }
+        } else {
+            Err(Error::Parse("Unexpected end of input".to_string()))
+        }
+    }
+    
+    fn advance_token(&mut self) {
+        let _ = self.next_token();
+    }
 
     fn peek_token(&self) -> Option<&Token> {
         self.current_token.as_ref()
@@ -157,6 +174,10 @@ impl Parser {
                 // Parse variable declaration
                 return Ok(Some(Statement::Let(self.parse_let_statement()?)));
             }
+            TokenKind::Facts => {
+                // Parse constants declaration
+                return Ok(Some(Statement::Const(self.parse_facts_statement()?)));
+            }
             TokenKind::Lowkey => {
                 // Parse if statement
                 return Ok(Some(Statement::If(self.parse_if_statement()?)));
@@ -188,6 +209,18 @@ impl Parser {
             TokenKind::Fam => {
                 // Parse panic recovery block
                 return Ok(Some(Statement::Fam(self.parse_fam_statement()?)));
+            }
+            TokenKind::Squad => {
+                // Parse struct declaration
+                return Ok(Some(Statement::Struct(self.parse_struct_statement()?)));
+            }
+            TokenKind::Collab => {
+                // Parse interface declaration
+                return Ok(Some(Statement::Interface(self.parse_interface_statement()?)));
+            }
+            TokenKind::Stan => {
+                // Parse goroutine statement
+                return Ok(Some(Statement::Goroutine(self.parse_stan_statement()?)));
             }
 
             TokenKind::LeftParen => {
@@ -374,6 +407,44 @@ impl Parser {
         Ok(parameters)
     }
     
+    fn parse_parameter(&mut self) -> Result<Parameter> {
+        // Parse parameter name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                name
+            }
+            _ => return Err(Error::Parse("Expected parameter name".to_string())),
+        };
+        
+        // Parse parameter type if present
+        let param_type = if let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Normie => { self.next_token()?; Some(Type::Normie) },
+                TokenKind::Smol => { self.next_token()?; Some(Type::Smol) },
+                TokenKind::Mid => { self.next_token()?; Some(Type::Mid) },
+                TokenKind::Thicc => { self.next_token()?; Some(Type::Thicc) },
+                TokenKind::Snack => { self.next_token()?; Some(Type::Snack) },
+                TokenKind::Meal => { self.next_token()?; Some(Type::Meal) },
+                TokenKind::Tea => { self.next_token()?; Some(Type::Tea) },
+                TokenKind::Lit => { self.next_token()?; Some(Type::Lit) },
+                TokenKind::Sip => { self.next_token()?; Some(Type::Sip) },
+                TokenKind::Byte => { self.next_token()?; Some(Type::Byte) },
+                TokenKind::Rune => { self.next_token()?; Some(Type::Rune) },
+                TokenKind::Extra => { self.next_token()?; Some(Type::Extra) },
+                _ => None
+            }
+        } else {
+            None
+        };
+        
+        Ok(Parameter {
+            name,
+            param_type,
+        })
+    }
+    
     fn parse_block(&mut self) -> Result<Vec<Statement>> {
         // Expect '{'
         match self.current_token.as_ref() {
@@ -451,6 +522,115 @@ impl Parser {
             visibility: Visibility::Private,
         })
     }
+
+    fn parse_facts_statement(&mut self) -> Result<ConstDecl> {
+        // Consume 'facts' keyword
+        self.next_token()?;
+        
+        let mut specs = Vec::new();
+        
+        // Check if we have grouped constants: facts ( ... )
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::LeftParen {
+                self.next_token()?; // consume '('
+                
+                // Parse multiple constant specs
+                while let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::RightParen {
+                        break;
+                    }
+                    
+                    // Skip newlines and semicolons
+                    if token.kind == TokenKind::Newline || token.kind == TokenKind::Semicolon {
+                        self.next_token()?;
+                        continue;
+                    }
+                    
+                    specs.push(self.parse_const_spec()?);
+                }
+                
+                // Consume ')'
+                if let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::RightParen {
+                        self.next_token()?;
+                    } else {
+                        return Err(Error::Parse("Expected ')' after constants block".to_string()));
+                    }
+                }
+            } else {
+                // Single constant spec
+                specs.push(self.parse_const_spec()?);
+            }
+        }
+        
+        Ok(ConstDecl { specs })
+    }
+    
+    fn parse_const_spec(&mut self) -> Result<ConstSpec> {
+        // Parse identifier list
+        let mut names = Vec::new();
+        
+        // Parse first identifier
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Identifier {
+                names.push(token.lexeme.clone());
+                self.next_token()?;
+            } else {
+                return Err(Error::Parse("Expected constant name".to_string()));
+            }
+        }
+        
+        // Parse additional identifiers separated by commas
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Comma {
+                self.next_token()?; // consume ','
+                
+                if let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::Identifier {
+                        names.push(token.lexeme.clone());
+                        self.next_token()?;
+                    } else {
+                        return Err(Error::Parse("Expected constant name after comma".to_string()));
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+        
+        // Parse optional type
+        let const_type = self.parse_type()?;
+        
+        // Parse '=' and expression list
+        let mut values = Vec::new();
+        
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Equal {
+                self.next_token()?; // consume '='
+                
+                // Parse first expression
+                values.push(self.parse_expression()?);
+                
+                // Parse additional expressions separated by commas
+                while let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::Comma {
+                        self.next_token()?; // consume ','
+                        values.push(self.parse_expression()?);
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                return Err(Error::Parse("Expected '=' in constant declaration".to_string()));
+            }
+        }
+        
+        Ok(ConstSpec {
+            names,
+            const_type,
+            values,
+        })
+    }
     
     fn parse_if_statement(&mut self) -> Result<IfStatement> {
         // Consume 'lowkey' keyword
@@ -519,7 +699,59 @@ impl Parser {
                         return Ok(Some(Type::Array(Box::new(element_type), None)));
                     }
                 }
-            } else if token.kind == TokenKind::Identifier || token.kind == TokenKind::Normie || token.kind == TokenKind::Tea || token.kind == TokenKind::Lit || token.kind == TokenKind::Sip {
+            } else if token.kind == TokenKind::Dm {
+                // Channel type parsing (dm<type>)
+                self.next_token()?; // consume 'dm'
+                
+                // Expect '<'
+                if let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::Less {
+                        self.next_token()?; // consume '<'
+                        
+                        // Parse channel element type
+                        if let Some(element_type) = self.parse_type()? {
+                            // Expect '>'
+                            if let Some(token) = self.current_token.as_ref() {
+                                if token.kind == TokenKind::Greater {
+                                    self.next_token()?; // consume '>'
+                                    
+                                    // Check for optional buffer size [N]
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        if token.kind == TokenKind::LeftBracket {
+                                            self.next_token()?; // consume '['
+                                            
+                                            // Parse buffer size expression
+                                            let _buffer_size = self.parse_expression()?;
+                                            
+                                            // Expect ']'
+                                            if let Some(token) = self.current_token.as_ref() {
+                                                if token.kind == TokenKind::RightBracket {
+                                                    self.next_token()?; // consume ']'
+                                                }
+                                            }
+                                            
+                                            // For now, return basic channel type (buffered channels handled later)
+                                            return Ok(Some(Type::Dm(Box::new(element_type))));
+                                        }
+                                    }
+                                    
+                                    return Ok(Some(Type::Dm(Box::new(element_type))));
+                                } else {
+                                    return Err(Error::Parse("Expected '>' after channel element type".to_string()));
+                                }
+                            } else {
+                                return Err(Error::Parse("Expected '>' after channel element type".to_string()));
+                            }
+                        } else {
+                            return Err(Error::Parse("Expected channel element type after 'dm<'".to_string()));
+                        }
+                    } else {
+                        return Err(Error::Parse("Expected '<' after 'dm' for channel type".to_string()));
+                    }
+                } else {
+                    return Err(Error::Parse("Expected '<' after 'dm' for channel type".to_string()));
+                }
+            } else if token.kind == TokenKind::Identifier || token.kind == TokenKind::Normie || token.kind == TokenKind::Tea || token.kind == TokenKind::Lit || token.kind == TokenKind::Sip || token.kind == TokenKind::Smol || token.kind == TokenKind::Mid || token.kind == TokenKind::Thicc || token.kind == TokenKind::Snack || token.kind == TokenKind::Meal || token.kind == TokenKind::Byte || token.kind == TokenKind::Rune || token.kind == TokenKind::Extra {
                 // Basic type parsing
                 let type_name = token.lexeme.clone();
                 self.next_token()?;
@@ -650,6 +882,15 @@ impl Parser {
                         right: Box::new(right),
                     });
                 }
+                TokenKind::LeftArrow => {
+                    // Channel send expression (channel <- value)
+                    self.next_token()?; // consume '<-'
+                    let right = self.parse_primary_expression()?;
+                    left = Expression::ChannelSend(crate::ast::ChannelSendExpression {
+                        channel: Box::new(left),
+                        value: Box::new(right),
+                    });
+                }
                 TokenKind::Shook => {
                     // Parse error propagation operator
                     self.next_token()?;
@@ -666,6 +907,14 @@ impl Parser {
         // Parse primary expressions (literals, identifiers, etc.)
         if let Some(token) = self.current_token.as_ref() {
             match token.kind {
+                TokenKind::LeftArrow => {
+                    // Channel receive expression (<-channel)
+                    self.next_token()?; // consume '<-'
+                    let channel_expr = self.parse_primary_expression()?;
+                    return Ok(Expression::ChannelReceive(crate::ast::ChannelReceiveExpression {
+                        channel: Box::new(channel_expr),
+                    }));
+                }
                 TokenKind::LeftBracket => {
                     // Parse array literal
                     self.next_token()?;
@@ -804,9 +1053,100 @@ impl Parser {
                                         return Err(Error::Parse("Expected ')' to close function call".to_string()));
                                     }
                                     
-                                    expr = Expression::Call(CallExpression {
-                                        function: Box::new(expr),
-                                        arguments,
+                                    // Special handling for "make" function calls for channels
+                                    if let Expression::Identifier(ref func_name) = expr {
+                                        if func_name == "make" && !arguments.is_empty() {
+                                            // Check if first argument is a channel type (dm<Type>)
+                                            // For now, we'll handle this as a regular function call
+                                             // and let the runtime handle channel creation
+                                             expr = Expression::Call(CallExpression {
+                                                 function: Box::new(expr),
+                                                 arguments,
+                                             });
+                                         } else {
+                                             expr = Expression::Call(CallExpression {
+                                                 function: Box::new(expr),
+                                                 arguments,
+                                             });
+                                         }
+                                     } else {
+                                         expr = Expression::Call(CallExpression {
+                                             function: Box::new(expr),
+                                             arguments,
+                                         });
+                                     }
+                                     }
+                                    TokenKind::LeftBrace => {
+                                    // Struct literal
+                                    let struct_name = match expr {
+                                            Expression::Identifier(name) => name,
+                                        _ => return Err(Error::Parse("Expected struct name before '{' in struct literal".to_string())),
+                                    };
+                                    
+                                    self.next_token()?; // consume '{'
+                                    let mut fields = Vec::new();
+                                    
+                                    // Parse struct fields
+                                    while let Some(token) = self.current_token.as_ref() {
+                                        if token.kind == TokenKind::RightBrace {
+                                            break;
+                                        }
+                                        
+                                        // Parse field name
+                                        let field_name = match token.kind {
+                                            TokenKind::Identifier => {
+                                                let name = token.lexeme.clone();
+                                                self.next_token()?;
+                                                name
+                                            }
+                                            _ => return Err(Error::Parse("Expected field name in struct literal".to_string())),
+                                        };
+                                        
+                                        // Expect ':'
+                                        if let Some(token) = self.current_token.as_ref() {
+                                            if token.kind == TokenKind::Colon {
+                                                self.next_token()?;
+                                            } else {
+                                                return Err(Error::Parse("Expected ':' after field name in struct literal".to_string()));
+                                            }
+                                        } else {
+                                            return Err(Error::Parse("Expected ':' after field name in struct literal".to_string()));
+                                        }
+                                        
+                                        // Parse field value
+                                        let field_value = self.parse_expression()?;
+                                        
+                                        fields.push(crate::ast::StructFieldAssignment {
+                                            field_name,
+                                            value: field_value,
+                                        });
+                                        
+                                        // Check for comma or end
+                                        if let Some(token) = self.current_token.as_ref() {
+                                            if token.kind == TokenKind::Comma {
+                                                self.next_token()?;
+                                            } else if token.kind == TokenKind::RightBrace {
+                                                break;
+                                            } else {
+                                                return Err(Error::Parse("Expected ',' or '}' in struct literal".to_string()));
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Consume '}'
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        if token.kind == TokenKind::RightBrace {
+                                            self.next_token()?;
+                                        } else {
+                                            return Err(Error::Parse("Expected '}' to close struct literal".to_string()));
+                                        }
+                                    } else {
+                                        return Err(Error::Parse("Expected '}' to close struct literal".to_string()));
+                                    }
+                                    
+                                    expr = Expression::StructLiteral(crate::ast::StructLiteralExpression {
+                                        struct_name,
+                                        fields,
                                     });
                                 }
                                 _ => {
@@ -1708,6 +2048,285 @@ impl Parser {
         } else {
             Ok(Expression::ErrorValue(ErrorValueExpression::new("Error".to_string())))
         }
+    }
+
+    // Parse struct statement
+    pub fn parse_struct_statement(&mut self) -> Result<StructStatement> {
+        // Consume 'squad' token
+        self.consume_token(TokenKind::Squad)?;
+        
+        // Parse struct name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.advance_token();
+                name
+            }
+            _ => return Err(Error::Parse("Expected struct name".to_string())),
+        };
+        
+        // Expect '{'
+        self.consume_token(TokenKind::LeftBrace)?;
+        
+        // Parse fields
+        let mut fields = Vec::new();
+        
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                break;
+            }
+            
+            // Parse field
+            let field = self.parse_struct_field()?;
+            fields.push(field);
+            
+            // Consume comma if present
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Comma {
+                    self.advance_token();
+                }
+            }
+        }
+        
+        // Expect '}'
+        self.consume_token(TokenKind::RightBrace)?;
+        
+        Ok(StructStatement {
+            name,
+            fields,
+            visibility: Visibility::Public,
+        })
+    }
+    
+    // Parse struct field
+    fn parse_struct_field(&mut self) -> Result<StructField> {
+        // Parse field name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.advance_token();
+                name
+            }
+            _ => return Err(Error::Parse("Expected field name".to_string())),
+        };
+        
+        // Parse field type
+        let field_type = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Identifier {
+                self.parse_type()?
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        Ok(StructField {
+            name,
+            field_type: field_type,
+            visibility: Visibility::Public,
+        })
+    }
+
+    fn parse_interface_statement(&mut self) -> Result<InterfaceStatement> {
+        // Consume 'collab' keyword
+        self.consume_token(TokenKind::Collab)?;
+        
+        // Parse interface name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.advance_token();
+                name
+            }
+            _ => return Err(Error::Parse("Expected interface name".to_string())),
+        };
+        
+        // Expect '{'
+        self.consume_token(TokenKind::LeftBrace)?;
+        
+        // Parse method signatures
+        let mut methods = Vec::new();
+        
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                break;
+            }
+            
+            // Parse method signature
+            let method = self.parse_method_signature()?;
+            methods.push(method);
+            
+            // Consume comma if present
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Comma {
+                    self.advance_token();
+                }
+            }
+        }
+        
+        // Expect '}'
+        self.consume_token(TokenKind::RightBrace)?;
+        
+        Ok(InterfaceStatement {
+            name,
+            methods,
+            visibility: Visibility::Public,
+        })
+    }
+    
+    fn parse_method_signature(&mut self) -> Result<MethodSignature> {
+        // Parse method name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.advance_token();
+                name
+            }
+            _ => return Err(Error::Parse("Expected method name".to_string())),
+        };
+        
+        // Parse parameters
+        self.consume_token(TokenKind::LeftParen)?;
+        let mut parameters = Vec::new();
+        
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightParen {
+                break;
+            }
+            
+            let param = self.parse_parameter()?;
+            parameters.push(param);
+            
+            // Consume comma if present
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Comma {
+                    self.advance_token();
+                }
+            }
+        }
+        
+        self.consume_token(TokenKind::RightParen)?;
+        
+        // Parse return type (optional)
+        let return_type = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Identifier {
+                self.parse_type()?
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        Ok(MethodSignature {
+            name,
+            parameters,
+            return_type,
+        })
+    }
+    
+    fn parse_interface_method_signature(&mut self) -> Result<MethodSignature> {
+        // Expect 'slay' keyword
+        if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::Slay) {
+            return Err(Error::Parse("Expected 'slay' keyword for method".to_string()));
+        }
+        self.next_token()?; // consume 'slay'
+        
+        // Parse method name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                name
+            }
+            _ => return Err(Error::Parse("Expected method name".to_string())),
+        };
+        
+        // Parse parameters
+        let parameters = self.parse_interface_method_parameters()?;
+        
+        // Parse return type (optional)
+        let return_type = if let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::Normie => { self.next_token()?; Some(Type::Normie) },
+                TokenKind::Tea => { self.next_token()?; Some(Type::Tea) },
+                TokenKind::Lit => { self.next_token()?; Some(Type::Lit) },
+                TokenKind::Sip => { self.next_token()?; Some(Type::Sip) },
+                _ => None
+            }
+        } else {
+            None
+        };
+        
+        Ok(MethodSignature {
+            name,
+            parameters,
+            return_type,
+        })
+    }
+    
+    fn parse_interface_method_parameters(&mut self) -> Result<Vec<Parameter>> {
+        // Expect '('
+        if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::LeftParen) {
+            return Err(Error::Parse("Expected '(' for method parameters".to_string()));
+        }
+        self.next_token()?; // consume '('
+        
+        let mut parameters = Vec::new();
+        
+        // Parse parameters
+        while self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::RightParen) {
+            // Skip newlines
+            if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Newline) {
+                self.next_token()?;
+                continue;
+            }
+            
+            // Parse parameter name
+            let name = match self.current_token.as_ref() {
+                Some(token) if token.kind == TokenKind::Identifier => {
+                    let name = token.lexeme.clone();
+                    self.next_token()?;
+                    name
+                }
+                _ => return Err(Error::Parse("Expected parameter name".to_string())),
+            };
+            
+            // Parse parameter type
+            let param_type = self.parse_type()?;
+            
+            parameters.push(Parameter {
+                name,
+                param_type,
+            });
+            
+            // Check for comma
+            if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Comma) {
+                self.next_token()?; // consume ','
+            } else {
+                break;
+            }
+        }
+        
+        // Expect ')'
+        if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::RightParen) {
+            self.next_token()?; // consume ')'
+        }
+        
+        Ok(parameters)
+    }
+    
+    fn parse_stan_statement(&mut self) -> Result<GoroutineStatement> {
+        // Consume 'stan' keyword
+        self.next_token()?;
+        
+        // Parse the expression (function call or block)
+        let expression = self.parse_expression()?;
+        
+        Ok(GoroutineStatement {
+            expression,
+        })
     }
 }
 

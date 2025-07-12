@@ -24,7 +24,7 @@ pub mod integration_tests;
 
 // Import base types from core and AST
 pub use crate::core::{Type};
-pub use crate::ast::Type as AstType;
+pub use crate::ast::{Type as AstType, Expression};
 
 // Re-export key types
 pub use type_inference::TypeInference;
@@ -103,6 +103,9 @@ impl TypeSystem {
             }
             Expression::Call(call_expr) => {
                 self.check_call_expression(call_expr)
+            }
+            Expression::Map(pairs) => {
+                self.check_map_pairs(pairs)
             }
             Expression::Binary(binary) => {
                 let left_type = self.check_expression(&binary.left)?;
@@ -185,6 +188,43 @@ impl TypeSystem {
         Ok(TypeExpression::named("unknown"))
     }
     
+    fn check_map_pairs(&mut self, map_pairs: &[(Expression, Expression)]) -> Result<TypeExpression, String> {
+        if map_pairs.is_empty() {
+            // Empty map - return Map with Unknown key/value types
+            return Ok(TypeExpression::map(
+                TypeExpression::named("unknown"), 
+                TypeExpression::named("unknown")
+            ));
+        }
+        
+        // Infer key and value types from first pair
+        let first_pair = &map_pairs[0];
+        let key_type = self.check_expression(&first_pair.0)?;
+        let value_type = self.check_expression(&first_pair.1)?;
+        
+        // Check that all other pairs have compatible types
+        for pair in &map_pairs[1..] {
+            let pair_key_type = self.check_expression(&pair.0)?;
+            let pair_value_type = self.check_expression(&pair.1)?;
+            
+            if !self.types_compatible(&key_type, &pair_key_type) {
+                return Err(format!(
+                    "Map key type mismatch: expected {:?}, got {:?}",
+                    key_type, pair_key_type
+                ));
+            }
+            
+            if !self.types_compatible(&value_type, &pair_value_type) {
+                return Err(format!(
+                    "Map value type mismatch: expected {:?}, got {:?}",
+                    value_type, pair_value_type
+                ));
+            }
+        }
+        
+        Ok(TypeExpression::map(key_type, value_type))
+    }
+    
     fn check_binary_operation(&self, left: &TypeExpression, op: &str, right: &TypeExpression) -> Result<TypeExpression, String> {
         match op {
             "+" | "-" | "*" | "/" => {
@@ -214,8 +254,47 @@ impl TypeSystem {
     }
     
     fn types_compatible(&self, t1: &TypeExpression, t2: &TypeExpression) -> bool {
-        // Simple compatibility check for now
-        t1.name == t2.name
+        // Enhanced compatibility check with type coercion
+        if t1.name == t2.name {
+            return true;
+        }
+        
+        // Check for coercible types
+        if let (Some(t1_name), Some(t2_name)) = (&t1.name, &t2.name) {
+            match (t1_name.as_str(), t2_name.as_str()) {
+                // Integer type coercions
+                ("normie", "thicc") | ("thicc", "normie") => true,
+                ("normie", "smol") | ("smol", "normie") => true,
+                ("normie", "mid") | ("mid", "normie") => true,
+                
+                // Float type coercions
+                ("snack", "meal") | ("meal", "snack") => true,
+                ("drip", "meal") | ("meal", "drip") => true,
+                
+                // Integer to float coercions
+                ("normie", "meal") | ("normie", "snack") => true,
+                ("thicc", "meal") | ("smol", "snack") => true,
+                
+                // String type compatibility
+                ("tea", "string") | ("string", "tea") => true,
+                
+                // Boolean type compatibility
+                ("lit", "bool") | ("bool", "lit") => true,
+                
+                // Character type compatibility
+                ("sip", "char") | ("char", "sip") => true,
+                
+                // Array type compatibility
+                ("squad", "array") | ("array", "squad") => true,
+                
+                // Channel type compatibility
+                ("dm", "chan") | ("chan", "dm") => true,
+                
+                _ => false,
+            }
+        } else {
+            false
+        }
     }
     
     fn check_tuple_access(&self, tuple_type: &TypeExpression, index: usize) -> Result<TypeExpression, String> {
@@ -239,9 +318,12 @@ impl TypeSystem {
     fn is_numeric_type(&self, type_expr: &TypeExpression) -> bool {
         if let Some(name) = &type_expr.name {
             matches!(name.as_str(), 
-                "normie" | "thicc" |       // CURSED integer types
-                "snack" | "meal" |         // CURSED float types
-                "int" | "float"            // Standard types (fallback)
+                // CURSED integer types
+                "normie" | "thicc" | "smol" | "mid" |
+                // CURSED float types
+                "snack" | "meal" | "drip" |
+                // Standard types (fallback)
+                "int" | "float" | "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "f32" | "f64"
             )
         } else {
             false
