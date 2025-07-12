@@ -3,6 +3,27 @@
 
 yeet "vibez"
 
+# Export all test functions and variables
+vibes test_start
+vibes assert_eq_int
+vibes assert_eq_string
+vibes assert_eq_float
+vibes assert_true
+vibes assert_false
+vibes assert_ne_int
+vibes assert_gt_int
+vibes assert_lt_int
+vibes test_end
+vibes print_test_summary
+vibes reset_test_state
+vibes get_test_results
+vibes all_tests_passed
+vibes current_test_name
+vibes total_tests
+vibes passed_tests
+vibes failed_tests
+vibes current_test_passed
+
 # Global test state
 sus current_test_name tea = ""
 sus total_tests normie = 0

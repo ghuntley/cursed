@@ -235,6 +235,10 @@ impl Parser {
                 // Parse goroutine statement
                 return Ok(Some(Statement::Goroutine(self.parse_stan_statement()?)));
             }
+            TokenKind::Ready => {
+                // Parse ready select statement
+                return Ok(Some(Statement::Select(self.parse_ready_statement()?)));
+            }
 
             TokenKind::LeftParen => {
                 // Check if this is tuple destructuring assignment
@@ -1567,6 +1571,82 @@ impl Parser {
             default_case,
         })
     }
+
+    fn parse_ready_statement(&mut self) -> Result<SelectStatement> {
+        // Consume 'ready' keyword
+        self.next_token()?;
+        
+        // Expect '{'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::LeftBrace => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '{' after 'ready'".to_string())),
+        }
+        
+        let mut cases = Vec::new();
+        let mut default_case = None;
+        
+        // Parse select cases
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                self.next_token()?;
+                break;
+            }
+            
+            // Skip newlines
+            if token.kind == TokenKind::Newline {
+                self.next_token()?;
+                continue;
+            }
+            
+            // Parse 'mood' keyword or 'basic' (default) case
+            if token.kind == TokenKind::Mood {
+                self.next_token()?;
+                
+                // Parse channel operation
+                let operation = self.parse_expression()?;
+                
+                // Expect ':'
+                match self.current_token.as_ref() {
+                    Some(token) if token.kind == TokenKind::Colon => {
+                        self.next_token()?;
+                    }
+                    _ => return Err(Error::Parse("Expected ':' after select case operation".to_string())),
+                }
+                
+                // Parse case body
+                let body = self.parse_select_case_body()?;
+                
+                cases.push(SelectCase {
+                    operation: Box::new(operation),
+                    body,
+                });
+            } else if token.kind == TokenKind::Basic {
+                // Parse default case
+                self.next_token()?;
+                
+                // Expect ':'
+                match self.current_token.as_ref() {
+                    Some(token) if token.kind == TokenKind::Colon => {
+                        self.next_token()?;
+                    }
+                    _ => return Err(Error::Parse("Expected ':' after 'basic' in select".to_string())),
+                }
+                
+                // Parse default case body
+                let body = self.parse_select_case_body()?;
+                default_case = Some(body);
+            } else {
+                return Err(Error::Parse("Expected 'mood' or 'basic' in ready statement".to_string()));
+            }
+        }
+        
+        Ok(SelectStatement {
+            cases,
+            default_case,
+        })
+    }
     
     fn parse_vibe_check_statement(&mut self) -> Result<SelectStatement> {
         // Consume 'vibe_check' keyword
@@ -1676,7 +1756,7 @@ impl Parser {
         // Parse statements until we hit a case or end of select
         while let Some(token) = self.current_token.as_ref() {
             if token.kind == TokenKind::RightBrace ||
-               token.kind == TokenKind::Ready ||
+               token.kind == TokenKind::Mood ||
                token.kind == TokenKind::Basic {
                 break;
             }

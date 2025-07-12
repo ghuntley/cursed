@@ -38,6 +38,8 @@ pub struct ExecutionContext {
     loaded_modules: HashMap<String, crate::ast::Program>,
     /// Module search paths
     module_search_paths: Vec<std::path::PathBuf>,
+    /// Type aliases registry for runtime type resolution
+    type_aliases: HashMap<String, crate::ast::Type>,
 }
 
 impl ExecutionContext {
@@ -61,6 +63,7 @@ impl ExecutionContext {
             fam_context_stack: Vec::new(),
             loaded_modules: HashMap::new(),
             module_search_paths: search_paths,
+            type_aliases: HashMap::new(),
         }
     }
     
@@ -80,6 +83,7 @@ impl ExecutionContext {
             fam_context_stack: Vec::new(),
             loaded_modules: self.loaded_modules.clone(),
             module_search_paths: self.module_search_paths.clone(),
+            type_aliases: self.type_aliases.clone(),
         }
     }
     
@@ -312,6 +316,31 @@ impl ExecutionContext {
     /// Get loaded module
     pub fn get_module(&self, module_path: &str) -> Option<&crate::ast::Program> {
         self.loaded_modules.get(module_path)
+    }
+
+    /// Register a type alias for runtime type resolution
+    pub fn set_type_alias(&mut self, name: String, target_type: crate::ast::Type) {
+        self.type_aliases.insert(name, target_type);
+    }
+
+    /// Get the resolved type for a type alias
+    pub fn get_type_alias(&self, name: &str) -> Option<&crate::ast::Type> {
+        self.type_aliases.get(name)
+    }
+
+    /// Resolve a type, following type aliases if necessary
+    pub fn resolve_type(&self, ty: &crate::ast::Type) -> crate::ast::Type {
+        match ty {
+            crate::ast::Type::Custom(name) => {
+                if let Some(resolved_type) = self.get_type_alias(name) {
+                    // Recursively resolve in case of nested aliases
+                    self.resolve_type(resolved_type)
+                } else {
+                    ty.clone()
+                }
+            }
+            _ => ty.clone()
+        }
     }
 
 }
