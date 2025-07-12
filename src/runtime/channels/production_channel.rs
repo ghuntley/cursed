@@ -948,7 +948,9 @@ mod tests {
         // Spawn sender thread
         let sender_handle = thread::spawn(move || {
             for i in 0..50 {
-                sender_clone.send(i).unwrap();
+                if !sender_clone.send(i).is_ok() {
+                    break; // Channel closed, exit gracefully
+                }
             }
         });
         

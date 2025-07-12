@@ -174,6 +174,13 @@ impl CursedExecutionEngine {
         // Create execution context
         let mut context = ExecutionContext::new();
         
+        // Process imports first
+        for import in &program.imports {
+            tracing::info!("📦 Loading module: {}", import.path);
+            context.load_module(&import.path)
+                .map_err(|e| CursedError::RuntimeError(format!("Failed to load module '{}': {}", import.path, e)))?;
+        }
+        
         // Execute each statement
         let mut last_value = CursedValue::Nil;
         for statement in &program.statements {

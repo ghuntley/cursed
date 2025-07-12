@@ -34,10 +34,19 @@ pub struct ExecutionContext {
     interface_definitions: HashMap<String, InterfaceStatement>,
     /// Fam context tracking
     fam_context_stack: Vec<bool>,
+    /// Loaded modules registry
+    loaded_modules: HashMap<String, crate::ast::Program>,
+    /// Module search paths
+    module_search_paths: Vec<std::path::PathBuf>,
 }
 
 impl ExecutionContext {
     pub fn new() -> Self {
+        let mut search_paths = vec![
+            std::path::PathBuf::from("stdlib"),
+            std::path::PathBuf::from(".")
+        ];
+        
         Self {
             variables: HashMap::new(),
             functions: HashMap::new(),
@@ -50,6 +59,8 @@ impl ExecutionContext {
             struct_definitions: HashMap::new(),
             interface_definitions: HashMap::new(),
             fam_context_stack: Vec::new(),
+            loaded_modules: HashMap::new(),
+            module_search_paths: search_paths,
         }
     }
     
@@ -67,6 +78,8 @@ impl ExecutionContext {
             struct_definitions: self.struct_definitions.clone(),
             interface_definitions: self.interface_definitions.clone(),
             fam_context_stack: Vec::new(),
+            loaded_modules: self.loaded_modules.clone(),
+            module_search_paths: self.module_search_paths.clone(),
         }
     }
     
@@ -223,6 +236,82 @@ impl ExecutionContext {
     /// Check if we're in a fam context
     pub fn is_in_fam_context(&self) -> bool {
         self.fam_context_stack.last().unwrap_or(&false).clone()
+    }
+    
+    /// Load a module by path
+    pub fn load_module(&mut self, module_path: &str) -> Result<(), CursedError> {
+        // Check if module is already loaded
+        if self.loaded_modules.contains_key(module_path) {
+            return Ok(());
+        }
+        
+        // Try to find the module file
+        let module_file = self.find_module_file(module_path)?;
+        
+        // Parse the module
+        let module_source = std::fs::read_to_string(&module_file)
+            .map_err(|e| CursedError::RuntimeError(format!("Failed to read module {}: {}", module_path, e)))?;
+        
+        let mut lexer = crate::lexer::Lexer::new(module_source);
+        let mut parser = crate::parser::Parser::new(lexer)
+            .map_err(|e| CursedError::RuntimeError(format!("Failed to create parser for module {}: {}", module_path, e)))?;
+        
+        let module_program = parser.parse_program()
+            .map_err(|e| CursedError::RuntimeError(format!("Failed to parse module {}: {}", module_path, e)))?;
+        
+        // Store the loaded module
+        self.loaded_modules.insert(module_path.to_string(), module_program.clone());
+        
+        // Import functions from the module into our context
+        self.import_module_functions(&module_program)?;
+        
+        Ok(())
+    }
+    
+    /// Find module file in search paths
+    fn find_module_file(&self, module_path: &str) -> Result<std::path::PathBuf, CursedError> {
+        for search_path in &self.module_search_paths {
+            let candidate = search_path.join(module_path).join("mod.csd");
+            if candidate.exists() {
+                return Ok(candidate);
+            }
+            
+            // Also try direct .csd file
+            let candidate = search_path.join(format!("{}.csd", module_path));
+            if candidate.exists() {
+                return Ok(candidate);
+            }
+        }
+        
+        Err(CursedError::RuntimeError(format!("Module not found: {}", module_path)))
+    }
+    
+    /// Import functions from a loaded module
+    fn import_module_functions(&mut self, program: &crate::ast::Program) -> Result<(), CursedError> {
+        // First, process any imports this module depends on
+        for import in &program.imports {
+            if !self.is_module_loaded(&import.path) {
+                self.load_module(&import.path)?;
+            }
+        }
+        
+        // Then import the functions from this module
+        for statement in &program.statements {
+            if let crate::ast::Statement::Function(func) = statement {
+                self.functions.insert(func.name.clone(), func.clone());
+            }
+        }
+        Ok(())
+    }
+    
+    /// Check if module is loaded
+    pub fn is_module_loaded(&self, module_path: &str) -> bool {
+        self.loaded_modules.contains_key(module_path)
+    }
+    
+    /// Get loaded module
+    pub fn get_module(&self, module_path: &str) -> Option<&crate::ast::Program> {
+        self.loaded_modules.get(module_path)
     }
 
 }
