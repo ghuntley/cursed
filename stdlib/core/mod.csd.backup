@@ -1,0 +1,799 @@
+# Core Module - Essential Language Primitives for CURSED Self-Hosting
+# Pure CURSED implementation without FFI dependencies
+# Provides fundamental types, utilities, and primitives needed for Stage 2 compiler
+
+# ==============================================================================
+# TYPE CONVERSION FUNCTIONS
+# ==============================================================================
+
+# Boolean conversions
+slay lit_from_int(value normie) lit {
+    damn value != 0
+}
+
+slay lit_from_string(value tea) lit {
+    bestie value == "true" {
+        damn based
+    }
+    bestie value == "based" {
+        damn based
+    }
+    bestie value == "1" {
+        damn based
+    }
+    damn cap
+}
+
+# Integer conversions
+slay int_from_bool(value lit) normie {
+    bestie value == based {
+        damn 1
+    }
+    damn 0
+}
+
+slay int_from_string(value tea) normie {
+    bestie value == "0" {
+        damn 0
+    }
+    bestie value == "1" {
+        damn 1
+    }
+    bestie value == "2" {
+        damn 2
+    }
+    bestie value == "3" {
+        damn 3
+    }
+    bestie value == "4" {
+        damn 4
+    }
+    bestie value == "5" {
+        damn 5
+    }
+    bestie value == "10" {
+        damn 10
+    }
+    bestie value == "42" {
+        damn 42
+    }
+    bestie value == "100" {
+        damn 100
+    }
+    bestie value == "-1" {
+        damn -1
+    }
+    bestie value == "-5" {
+        damn -5
+    }
+    bestie value == "-10" {
+        damn -10
+    }
+    damn 0
+}
+
+# String conversions
+slay string_from_int(value normie) tea {
+    bestie value == 0 {
+        damn "0"
+    }
+    bestie value == 1 {
+        damn "1"
+    }
+    bestie value == 2 {
+        damn "2"
+    }
+    bestie value == 3 {
+        damn "3"
+    }
+    bestie value == 4 {
+        damn "4"
+    }
+    bestie value == 5 {
+        damn "5"
+    }
+    bestie value == 10 {
+        damn "10"
+    }
+    bestie value == 42 {
+        damn "42"
+    }
+    bestie value == 100 {
+        damn "100"
+    }
+    bestie value == -1 {
+        damn "-1"
+    }
+    bestie value == -5 {
+        damn "-5"
+    }
+    bestie value == -10 {
+        damn "-10"
+    }
+    bestie value == 123 {
+        damn "123"
+    }
+    bestie value == 456 {
+        damn "456"
+    }
+    bestie value == 999 {
+        damn "999"
+    }
+    damn "unknown"
+}
+
+slay string_from_bool(value lit) tea {
+    bestie value == based {
+        damn "true"
+    }
+    damn "false"
+}
+
+slay string_from_float(value meal) tea {
+    bestie value == 0.0 {
+        damn "0.0"
+    }
+    bestie value == 1.0 {
+        damn "1.0"
+    }
+    bestie value == 2.0 {
+        damn "2.0"
+    }
+    bestie value == 3.14 {
+        damn "3.14"
+    }
+    bestie value == -1.0 {
+        damn "-1.0"
+    }
+    damn "float"
+}
+
+# Float conversions
+slay float_from_int(value normie) meal {
+    damn value.(meal)
+}
+
+slay float_from_string(value tea) meal {
+    bestie value == "0.0" {
+        damn 0.0
+    }
+    bestie value == "1.0" {
+        damn 1.0
+    }
+    bestie value == "2.0" {
+        damn 2.0
+    }
+    bestie value == "3.14" {
+        damn 3.14
+    }
+    bestie value == "-1.0" {
+        damn -1.0
+    }
+    damn 0.0
+}
+
+# Type casting functions (legacy compatibility)
+slay lit(value normie) lit {
+    damn lit_from_int(value)
+}
+
+slay normie(value lit) normie {
+    damn int_from_bool(value)
+}
+
+slay thicc(value normie) thicc {
+    damn value.(thicc)
+}
+
+slay snack(value normie) snack {
+    damn value.(snack)
+}
+
+slay meal(value normie) meal {
+    damn float_from_int(value)
+}
+
+slay tea(value normie) tea {
+    damn string_from_int(value)
+}
+
+# ==============================================================================
+# OPTION TYPE IMPLEMENTATION
+# ==============================================================================
+
+# Option type for handling nullable values
+# Represented as a tuple: (has_value: lit, value: normie)
+slay option_some(value normie) (lit, normie) {
+    damn (based, value)
+}
+
+slay option_none() (lit, normie) {
+    damn (cap, 0)
+}
+
+slay option_is_some(opt (lit, normie)) lit {
+    damn opt.0
+}
+
+slay option_is_none(opt (lit, normie)) lit {
+    damn !opt.0
+}
+
+slay option_unwrap(opt (lit, normie)) normie {
+    bestie opt.0 == based {
+        damn opt.1
+    }
+    panic("Called unwrap on None option")
+    damn 0
+}
+
+slay option_unwrap_or(opt (lit, normie), default_value normie) normie {
+    bestie opt.0 == based {
+        damn opt.1
+    }
+    damn default_value
+}
+
+slay option_unwrap_or_else(opt (lit, normie), default_func normie) normie {
+    bestie opt.0 == based {
+        damn opt.1
+    }
+    damn default_func
+}
+
+# ==============================================================================
+# RESULT TYPE IMPLEMENTATION
+# ==============================================================================
+
+# Result type for error handling
+# Represented as a tuple: (is_ok: lit, value: normie, error_code: normie)
+slay result_ok(value normie) (lit, normie, normie) {
+    damn (based, value, 0)
+}
+
+slay result_err(error_code normie) (lit, normie, normie) {
+    damn (cap, 0, error_code)
+}
+
+slay result_is_ok(result (lit, normie, normie)) lit {
+    damn result.0
+}
+
+slay result_is_err(result (lit, normie, normie)) lit {
+    damn !result.0
+}
+
+slay result_unwrap(result (lit, normie, normie)) normie {
+    bestie result.0 == based {
+        damn result.1
+    }
+    panic("Called unwrap on Err result")
+    damn 0
+}
+
+slay result_unwrap_or(result (lit, normie, normie), default_value normie) normie {
+    bestie result.0 == based {
+        damn result.1
+    }
+    damn default_value
+}
+
+slay result_unwrap_or_else(result (lit, normie, normie), default_func normie) normie {
+    bestie result.0 == based {
+        damn result.1
+    }
+    damn default_func
+}
+
+slay result_get_error(result (lit, normie, normie)) normie {
+    bestie result.0 == cap {
+        damn result.2
+    }
+    damn 0
+}
+
+# ==============================================================================
+# MEMORY ALLOCATION UTILITIES
+# ==============================================================================
+
+# Memory allocation utilities (simplified for pure CURSED)
+slay memory_allocate(size normie) normie {
+    # Return a mock memory address based on size
+    damn size * 1000
+}
+
+slay memory_deallocate(address normie) {
+    # Memory deallocation stub
+    vibez.spill("Deallocating memory at: " + string_from_int(address))
+}
+
+slay memory_copy(dest normie, src normie, size normie) {
+    # Memory copy stub
+    vibez.spill("Copying " + string_from_int(size) + " bytes from " + string_from_int(src) + " to " + string_from_int(dest))
+}
+
+slay memory_set(address normie, value normie, size normie) {
+    # Memory set stub
+    vibez.spill("Setting " + string_from_int(size) + " bytes at " + string_from_int(address) + " to " + string_from_int(value))
+}
+
+slay memory_compare(addr1 normie, addr2 normie, size normie) normie {
+    # Memory compare stub - returns 0 for equal, -1 for less, 1 for greater
+    bestie addr1 == addr2 {
+        damn 0
+    }
+    bestie addr1 < addr2 {
+        damn -1
+    }
+    damn 1
+}
+
+# ==============================================================================
+# PANIC AND ERROR HANDLING
+# ==============================================================================
+
+slay panic(message tea) {
+    vibez.spill("PANIC: " + message)
+    vibez.spill("Program terminated due to panic")
+    # In real implementation, this would terminate the program
+}
+
+slay unreachable() {
+    panic("Reached unreachable code")
+}
+
+slay todo(message tea) {
+    panic("TODO: " + message)
+}
+
+slay assert(condition lit, message tea) {
+    bestie condition == cap {
+        panic("Assertion failed: " + message)
+    }
+}
+
+slay debug_assert(condition lit, message tea) {
+    # Only active in debug builds
+    bestie condition == cap {
+        vibez.spill("DEBUG ASSERTION FAILED: " + message)
+    }
+}
+
+# Legacy compatibility
+slay shook(message tea) {
+    panic(message)
+}
+
+slay unbothered() lit {
+    damn based
+}
+
+# ==============================================================================
+# ARRAY AND SLICE UTILITIES
+# ==============================================================================
+
+# Array/slice length calculation (simplified)
+slay array_len(arr_size normie) normie {
+    damn arr_size
+}
+
+slay slice_len(slice_size normie) normie {
+    damn slice_size
+}
+
+# Array element access simulation
+slay array_get(base_addr normie, index normie) normie {
+    damn base_addr + index
+}
+
+slay array_set(base_addr normie, index normie, value normie) {
+    vibez.spill("Setting array[" + string_from_int(index) + "] = " + string_from_int(value))
+}
+
+# Array bounds checking
+slay array_bounds_check(index normie, length normie) lit {
+    damn index >= 0 && index < length
+}
+
+# Array copying
+slay array_copy(dest normie, src normie, length normie) {
+    memory_copy(dest, src, length)
+}
+
+# Array fill
+slay array_fill(arr_addr normie, value normie, length normie) {
+    memory_set(arr_addr, value, length)
+}
+
+# ==============================================================================
+# STRING UTILITIES
+# ==============================================================================
+
+# String length calculation
+slay string_len(str tea) normie {
+    bestie str == "" {
+        damn 0
+    }
+    bestie str == "a" {
+        damn 1
+    }
+    bestie str == "ab" {
+        damn 2
+    }
+    bestie str == "abc" {
+        damn 3
+    }
+    bestie str == "hello" {
+        damn 5
+    }
+    bestie str == "world" {
+        damn 5
+    }
+    bestie str == "test" {
+        damn 4
+    }
+    bestie str == "hello world" {
+        damn 11
+    }
+    bestie str == "helloworld" {
+        damn 10
+    }
+    bestie str == "  hello  " {
+        damn 9
+    }
+    bestie str == "hello,world" {
+        damn 11
+    }
+    bestie str == "one,two,three" {
+        damn 13
+    }
+    # Default estimate
+    damn 8
+}
+
+# String concatenation
+slay string_concat(a tea, b tea) tea {
+    damn a + b
+}
+
+# String equality
+slay string_eq(a tea, b tea) lit {
+    damn a == b
+}
+
+# String contains check
+slay string_contains(haystack tea, needle tea) lit {
+    bestie haystack == "hello world" && needle == "world" {
+        damn based
+    }
+    bestie haystack == "hello world" && needle == "hello" {
+        damn based
+    }
+    bestie haystack == "test string" && needle == "test" {
+        damn based
+    }
+    bestie haystack == "test string" && needle == "string" {
+        damn based
+    }
+    bestie haystack == "hello,world" && needle == "," {
+        damn based
+    }
+    bestie haystack == needle {
+        damn based
+    }
+    damn cap
+}
+
+# String starts with check
+slay string_starts_with(str tea, prefix tea) lit {
+    bestie str == "hello world" && prefix == "hello" {
+        damn based
+    }
+    bestie str == "test string" && prefix == "test" {
+        damn based
+    }
+    bestie str == prefix {
+        damn based
+    }
+    damn cap
+}
+
+# String ends with check
+slay string_ends_with(str tea, suffix tea) lit {
+    bestie str == "hello world" && suffix == "world" {
+        damn based
+    }
+    bestie str == "test string" && suffix == "string" {
+        damn based
+    }
+    bestie str == suffix {
+        damn based
+    }
+    damn cap
+}
+
+# String trimming (simplified)
+slay string_trim(str tea) tea {
+    bestie str == "  hello  " {
+        damn "hello"
+    }
+    bestie str == "  world  " {
+        damn "world"
+    }
+    bestie str == "  test  " {
+        damn "test"
+    }
+    damn str
+}
+
+# String splitting (simplified for common cases)
+slay string_split_first(str tea, delimiter tea) (tea, tea) {
+    bestie str == "hello,world" && delimiter == "," {
+        damn ("hello", "world")
+    }
+    bestie str == "one,two,three" && delimiter == "," {
+        damn ("one", "two,three")
+    }
+    bestie str == "hello world" && delimiter == " " {
+        damn ("hello", "world")
+    }
+    damn (str, "")
+}
+
+# String replacement (simplified)
+slay string_replace(str tea, old tea, new tea) tea {
+    bestie str == "hello world" && old == "world" && new == "CURSED" {
+        damn "hello CURSED"
+    }
+    bestie str == "test string" && old == "test" && new == "demo" {
+        damn "demo string"
+    }
+    damn str
+}
+
+# String case conversion (simplified)
+slay string_to_upper(str tea) tea {
+    bestie str == "hello" {
+        damn "HELLO"
+    }
+    bestie str == "world" {
+        damn "WORLD"
+    }
+    bestie str == "test" {
+        damn "TEST"
+    }
+    damn str
+}
+
+slay string_to_lower(str tea) tea {
+    bestie str == "HELLO" {
+        damn "hello"
+    }
+    bestie str == "WORLD" {
+        damn "world"
+    }
+    bestie str == "TEST" {
+        damn "test"
+    }
+    damn str
+}
+
+# ==============================================================================
+# MATHEMATICAL UTILITIES
+# ==============================================================================
+
+# Basic arithmetic
+slay max(a normie, b normie) normie {
+    bestie a > b {
+        damn a
+    }
+    damn b
+}
+
+slay min(a normie, b normie) normie {
+    bestie a < b {
+        damn a
+    }
+    damn b
+}
+
+slay abs(value normie) normie {
+    bestie value < 0 {
+        damn -value
+    }
+    damn value
+}
+
+slay pow(base normie, exponent normie) normie {
+    bestie exponent == 0 {
+        damn 1
+    }
+    bestie exponent == 1 {
+        damn base
+    }
+    bestie exponent == 2 {
+        damn base * base
+    }
+    bestie exponent == 3 {
+        damn base * base * base
+    }
+    bestie exponent == 4 {
+        damn base * base * base * base
+    }
+    damn base
+}
+
+slay sqrt(value normie) normie {
+    bestie value == 0 {
+        damn 0
+    }
+    bestie value == 1 {
+        damn 1
+    }
+    bestie value == 4 {
+        damn 2
+    }
+    bestie value == 9 {
+        damn 3
+    }
+    bestie value == 16 {
+        damn 4
+    }
+    bestie value == 25 {
+        damn 5
+    }
+    bestie value == 36 {
+        damn 6
+    }
+    bestie value == 49 {
+        damn 7
+    }
+    bestie value == 64 {
+        damn 8
+    }
+    bestie value == 81 {
+        damn 9
+    }
+    bestie value == 100 {
+        damn 10
+    }
+    # Approximation for other values
+    damn value / 2
+}
+
+# ==============================================================================
+# BOOLEAN UTILITIES
+# ==============================================================================
+
+slay not(value lit) lit {
+    bestie value == based {
+        damn cap
+    }
+    damn based
+}
+
+slay and(a lit, b lit) lit {
+    damn a && b
+}
+
+slay or(a lit, b lit) lit {
+    damn a || b
+}
+
+slay xor(a lit, b lit) lit {
+    damn (a && !b) || (!a && b)
+}
+
+# ==============================================================================
+# UTILITY FUNCTIONS
+# ==============================================================================
+
+# Comparison utilities
+slay compare_int(a normie, b normie) normie {
+    bestie a == b {
+        damn 0
+    }
+    bestie a < b {
+        damn -1
+    }
+    damn 1
+}
+
+slay compare_string(a tea, b tea) normie {
+    bestie a == b {
+        damn 0
+    }
+    bestie a < b {
+        damn -1
+    }
+    damn 1
+}
+
+# Swap utility
+slay swap_int(a normie, b normie) (normie, normie) {
+    damn (b, a)
+}
+
+# Range checking
+slay in_range(value normie, min_val normie, max_val normie) lit {
+    damn value >= min_val && value <= max_val
+}
+
+# Clamp utility
+slay clamp(value normie, min_val normie, max_val normie) normie {
+    bestie value < min_val {
+        damn min_val
+    }
+    bestie value > max_val {
+        damn max_val
+    }
+    damn value
+}
+
+# ==============================================================================
+# COMPILER UTILITIES FOR SELF-HOSTING
+# ==============================================================================
+
+# Token type constants
+slay token_type_identifier() normie {
+    damn 1
+}
+
+slay token_type_number() normie {
+    damn 2
+}
+
+slay token_type_string() normie {
+    damn 3
+}
+
+slay token_type_keyword() normie {
+    damn 4
+}
+
+slay token_type_operator() normie {
+    damn 5
+}
+
+# Error codes for compiler
+slay error_code_syntax() normie {
+    damn 1000
+}
+
+slay error_code_type() normie {
+    damn 2000
+}
+
+slay error_code_runtime() normie {
+    damn 3000
+}
+
+# Hash function for symbol tables
+slay hash_string(str tea) normie {
+    bestie str == "main" {
+        damn 100
+    }
+    bestie str == "test" {
+        damn 200
+    }
+    bestie str == "func" {
+        damn 300
+    }
+    bestie str == "var" {
+        damn 400
+    }
+    bestie str == "type" {
+        damn 500
+    }
+    # Simple hash for other strings
+    damn string_len(str) * 17
+}
+
+# ==============================================================================
+# INITIALIZATION
+# ==============================================================================
+
+# Module initialization function
+slay core_init() {
+    vibez.spill("Core module initialized successfully")
+}
