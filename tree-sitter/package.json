@@ -1,0 +1,47 @@
+{
+  "name": "tree-sitter-cursed",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for the CURSED programming language",
+  "main": "bindings/node",
+  "keywords": [
+    "tree-sitter",
+    "parser",
+    "cursed",
+    "gen-z",
+    "programming-language"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghuntley/cursed"
+  },
+  "files": [
+    "grammar.js",
+    "binding.gyp",
+    "prebuilds/**",
+    "bindings/**",
+    "queries/**",
+    "src/**"
+  ],
+  "dependencies": {
+    "node-addon-api": "^7.0.0",
+    "node-gyp-build": "^4.6.0"
+  },
+  "peerDependencies": {
+    "tree-sitter": "^0.20.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.0"
+  },
+  "scripts": {
+    "build": "tree-sitter generate && node-gyp-build",
+    "test": "tree-sitter test"
+  },
+  "tree-sitter": [
+    {
+      "scope": "source.cursed",
+      "file-types": ["csd"],
+      "highlights": "queries/highlights.scm",
+      "locals": "queries/locals.scm"
+    }
+  ]
+}

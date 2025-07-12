@@ -1,0 +1,3 @@
+CURSED optimized executable
+Generated with advanced optimization
+IR length: 669 characters

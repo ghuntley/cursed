@@ -1,0 +1,511 @@
+CURSED Stdlib Dependency Graph (Text Format)
+==================================================
+
+archive_handling
+
+asn1_mood
+  Dependencies:
+    └── binary_drip
+  Used by:
+    └── x509_certs_tea
+
+async
+  Dependencies:
+    └── collections
+    └── concurrency
+    └── string
+    └── testz
+    └── time
+
+atomic_drip
+
+big_mood
+
+binary_drip
+  Used by:
+    └── asn1_mood
+
+bytefit
+
+chadlogging
+
+chaos_mode
+
+clock_bait
+  Dependencies:
+    └── testz
+
+collections
+  Used by:
+    └── async
+    └── concurrency
+    └── config
+    └── database
+    └── json
+    └── parser
+    └── signal_boost
+    └── template_engine
+    └── web
+
+collections_simple
+  Dependencies:
+    └── testz
+
+command_line
+
+compare_mood
+
+complex_vibe
+
+compression
+  Dependencies:
+    └── string
+
+concurrency
+  Dependencies:
+    └── collections
+    └── string
+    └── testz
+    └── time
+  Used by:
+    └── async
+
+concurrenz
+  Dependencies:
+    └── testz
+  Used by:
+    └── vibe_context
+
+config
+  Dependencies:
+    └── collections
+    └── json
+    └── string
+
+core
+  Used by:
+    └── vibez
+
+crypto
+  Dependencies:
+    └── testz
+  Used by:
+    └── elliptic_curve_tea
+    └── x509_certs_tea
+
+csv
+  Dependencies:
+    └── string
+
+cursed_pointer
+  Dependencies:
+    └── testz
+
+data_drip
+
+database
+  Dependencies:
+    └── collections
+    └── json
+    └── string
+    └── testz
+
+debug_tea
+  Dependencies:
+    └── testz
+
+dropz
+  Dependencies:
+    └── testz
+
+elliptic_curve_tea
+  Dependencies:
+    └── crypto
+
+embed_that
+
+encoding_flex
+  Dependencies:
+    └── testz
+
+error_core
+  Used by:
+    └── io_enhanced
+
+error_drip
+
+error_handling
+  Dependencies:
+    └── testz
+
+exec_slay
+
+fmt
+  Dependencies:
+    └── stringz
+    └── testz
+
+fs
+
+glowup_http
+  Dependencies:
+    └── testz
+
+glyph_gang
+
+gob_encode_vibes
+  Dependencies:
+    └── testz
+
+grammar_drip
+
+hash_drip
+
+hashtag
+  Dependencies:
+    └── testz
+
+heap_slay
+
+htmlrizzler
+
+image_processing
+
+io
+  Dependencies:
+    └── testz
+  Used by:
+    └── vibe_mime
+
+io_enhanced
+  Dependencies:
+    └── error_core
+
+io_simple
+  Dependencies:
+    └── testz
+
+json
+  Dependencies:
+    └── collections
+    └── string
+  Used by:
+    └── config
+    └── database
+    └── parser
+    └── web
+
+logging
+
+lookin_glass
+  Dependencies:
+    └── testz
+
+main_character
+  Used by:
+    └── user_check
+
+math
+
+math_float
+
+math_float_simple
+
+math_int
+
+math_rand_tea
+
+math_simple
+  Dependencies:
+    └── testz
+
+mathz
+
+memory
+
+mime_vibe
+  Dependencies:
+    └── testz
+
+mood_map
+  Dependencies:
+    └── testz
+
+net
+  Used by:
+    └── web
+
+network
+
+no_cap
+
+option
+  Dependencies:
+    └── testz
+
+packrat
+  Dependencies:
+    └── testz
+
+parser
+  Dependencies:
+    └── collections
+    └── json
+    └── string
+    └── testz
+
+pathing
+
+pem_drip
+  Used by:
+    └── x509_certs_tea
+
+plug_vibes
+  Dependencies:
+    └── testz
+
+plugin_system
+  Dependencies:
+    └── testz
+
+process
+
+quick_test
+
+reflect
+  Dependencies:
+    └── testz
+
+reflection
+  Dependencies:
+    └── testz
+
+regex
+  Dependencies:
+    └── string
+
+result
+  Dependencies:
+    └── testz
+
+rizz_template
+  Dependencies:
+    └── testz
+
+rpc_vibes
+
+serialization
+  Dependencies:
+    └── string
+
+signal_boost
+  Dependencies:
+    └── collections
+    └── string
+
+sketchy_math
+
+slay_io
+
+slices_on_slices
+  Dependencies:
+    └── testz
+
+smtp_tea
+
+sort_slay
+
+sorta_fresh
+
+spill_facts
+
+sql_slay
+  Dependencies:
+    └── testz
+
+stat_flexin
+  Dependencies:
+    └── testz
+
+string
+  Used by:
+    └── async
+    └── compression
+    └── concurrency
+    └── config
+    └── csv
+    └── database
+    └── json
+    └── parser
+    └── regex
+    └── serialization
+    └── signal_boost
+    └── template_engine
+    └── trace_tea
+    └── user_check
+    └── vibe_mime
+    └── web
+    └── x509_certs_tea
+
+string_pure
+
+string_simple
+  Dependencies:
+    └── testz
+
+stringz
+  Dependencies:
+    └── testz
+  Used by:
+    └── fmt
+    └── vibez
+
+sus_containers
+  Dependencies:
+    └── testz
+
+sus_log
+  Dependencies:
+    └── testz
+
+sys_core
+  Dependencies:
+    └── testz
+
+tag_core
+  Dependencies:
+    └── testz
+
+template_engine
+  Dependencies:
+    └── collections
+    └── string
+
+test_result
+
+testz
+  Used by:
+    └── async
+    └── clock_bait
+    └── collections_simple
+    └── concurrency
+    └── concurrenz
+    └── crypto
+    └── cursed_pointer
+    └── database
+    └── debug_tea
+    └── dropz
+    └── encoding_flex
+    └── error_handling
+    └── fmt
+    └── glowup_http
+    └── gob_encode_vibes
+    └── hashtag
+    └── io
+    └── io_simple
+    └── lookin_glass
+    └── math_simple
+    └── mime_vibe
+    └── mood_map
+    └── option
+    └── packrat
+    └── parser
+    └── plug_vibes
+    └── plugin_system
+    └── reflect
+    └── reflection
+    └── result
+    └── rizz_template
+    └── slices_on_slices
+    └── sql_slay
+    └── stat_flexin
+    └── string_simple
+    └── stringz
+    └── sus_containers
+    └── sus_log
+    └── sys_core
+    └── tag_core
+    └── unicode
+    └── user_check
+    └── vibe_context
+    └── vibe_life
+    └── vibe_mime
+    └── vibecheck
+    └── web
+
+testz_simple
+
+time
+  Used by:
+    └── async
+    └── concurrency
+    └── trace_tea
+
+time_zone_drip
+
+tls_vibe
+
+trace_tea
+  Dependencies:
+    └── string
+    └── time
+
+unicode
+  Dependencies:
+    └── testz
+
+url_parsing
+
+user_check
+  Dependencies:
+    └── main_character
+    └── string
+    └── testz
+
+validation
+
+vibe_context
+  Dependencies:
+    └── concurrenz
+    └── testz
+
+vibe_life
+  Dependencies:
+    └── testz
+
+vibe_lock
+
+vibe_mime
+  Dependencies:
+    └── io
+    └── string
+    └── testz
+
+vibecheck
+  Dependencies:
+    └── testz
+
+vibez
+  Dependencies:
+    └── core
+    └── stringz
+
+web
+  Dependencies:
+    └── collections
+    └── json
+    └── net
+    └── string
+    └── testz
+
+x509_certs_tea
+  Dependencies:
+    └── asn1_mood
+    └── crypto
+    └── pem_drip
+    └── string
+
+yeet_io
+
+zip_zilla
+

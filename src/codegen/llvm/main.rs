@@ -88,6 +88,7 @@ pub struct LlvmCodeGenerator {
     label_counter: usize,
     string_manager: StringConstantManager,
     variables: HashMap<String, String>, // variable name -> register mapping
+    declared_functions: HashMap<String, String>, // function name -> signature for deduplication
     package_manager: Option<Arc<Mutex<PackageManager>>>,
     package_config: Option<LlvmPackageConfig>,
     optimization_config: OptimizationConfig,
@@ -109,6 +110,7 @@ impl LlvmCodeGenerator {
             label_counter: 0,
             string_manager: get_global_string_manager(),
             variables: HashMap::new(),
+            declared_functions: HashMap::new(),
             package_manager: None,
             package_config: None,
             optimization_config: OptimizationConfig::default(),
@@ -367,49 +369,58 @@ impl LlvmCodeGenerator {
         }).to_string()
     }
     
+    fn declare_function(&mut self, name: &str, signature: &str) {
+        if !self.declared_functions.contains_key(name) {
+            self.declared_functions.insert(name.to_string(), signature.to_string());
+            self.ir_code.push_str(&format!("declare {}\n", signature));
+        }
+    }
+
     fn generate_runtime_declarations(&mut self) {
-        self.ir_code.push_str("
-; Runtime function declarations
-declare i32 @printf(i8*, ...)
-declare i32 @puts(i8*)
-declare i8* @malloc(i64)
-declare void @free(i8*)
-declare i64 @strlen(i8*)
-declare i8* @strcpy(i8*, i8*)
-declare i8* @i32_to_string(i32)
-declare i8* @char_to_string(i8)
-declare i8* @string_concat(i8*, i8*)
-declare i8* @tea(i64)
-declare i8* @tea_float(double)
-declare i8* @tea_bool(i32)
-
-; CURSED runtime functions
-declare void @cursed_panic(i8*, i64)
-declare i8* @cursed_alloc(i64)
-declare void @cursed_free(i8*)
-declare i32 @cursed_goroutine_spawn(i8*)
-declare void @cursed_channel_send(i8*, i8*)
-declare i8* @cursed_channel_receive(i8*)
-
-; Exception handling declarations
-declare i32 @__gxx_personality_v0(...)
-declare i8* @__cxa_begin_catch(i8*)
-declare void @__cxa_end_catch()
-declare void @__cxa_rethrow()
-declare i8* @__cxa_allocate_exception(i64)
-declare void @__cxa_throw(i8*, i8*, i8*)
-declare i8* @_Unwind_GetLanguageSpecificData(i8*)
-declare i32 @_Unwind_GetRegionStart(i8*)
-declare i32 @_Unwind_GetDataRelBase(i8*)
-declare i32 @_Unwind_GetTextRelBase(i8*)
-
-; CURSED exception type info
-@_ZTI11CursedError = constant { i8*, i8* } { i8* null, i8* bitcast ([14 x i8]* @_ZTS11CursedError to i8*) }
-@_ZTS11CursedError = constant [14 x i8] c\"11CursedError\\00\"
-
-");
+        self.ir_code.push_str("\n; Runtime function declarations\n");
         
-        // Add error handling runtime declarations
+        // Declare external functions with deduplication
+        self.declare_function("printf", "i32 @printf(i8*, ...)");
+        self.declare_function("puts", "i32 @puts(i8*)");
+        self.declare_function("malloc", "i8* @malloc(i64)");
+        self.declare_function("free", "void @free(i8*)");
+        self.declare_function("strlen", "i64 @strlen(i8*)");
+        self.declare_function("strcpy", "i8* @strcpy(i8*, i8*)");
+        self.declare_function("i32_to_string", "i8* @i32_to_string(i32)");
+        self.declare_function("char_to_string", "i8* @char_to_string(i8)");
+        self.declare_function("string_concat", "i8* @string_concat(i8*, i8*)");
+        self.declare_function("tea", "i8* @tea(i64)");
+        self.declare_function("tea_float", "i8* @tea_float(double)");
+        self.declare_function("tea_bool", "i8* @tea_bool(i32)");
+        
+        // CURSED runtime functions
+        self.declare_function("cursed_panic", "void @cursed_panic(i8*, i64)");
+        self.declare_function("cursed_alloc", "i8* @cursed_alloc(i64)");
+        self.declare_function("cursed_free", "void @cursed_free(i8*)");
+        self.declare_function("cursed_goroutine_spawn", "i32 @cursed_goroutine_spawn(i8*)");
+        self.declare_function("cursed_channel_send", "void @cursed_channel_send(i8*, i8*)");
+        self.declare_function("cursed_channel_receive", "i8* @cursed_channel_receive(i8*)");
+        
+        // Exception handling declarations
+        self.declare_function("__gxx_personality_v0", "i32 @__gxx_personality_v0(...)");
+        self.declare_function("__cxa_begin_catch", "i8* @__cxa_begin_catch(i8*)");
+        self.declare_function("__cxa_end_catch", "void @__cxa_end_catch()");
+        self.declare_function("__cxa_rethrow", "void @__cxa_rethrow()");
+        self.declare_function("__cxa_allocate_exception", "i8* @__cxa_allocate_exception(i64)");
+        self.declare_function("__cxa_throw", "void @__cxa_throw(i8*, i8*, i8*)");
+        self.declare_function("_Unwind_GetLanguageSpecificData", "i8* @_Unwind_GetLanguageSpecificData(i8*)");
+        self.declare_function("_Unwind_GetRegionStart", "i32 @_Unwind_GetRegionStart(i8*)");
+        self.declare_function("_Unwind_GetDataRelBase", "i32 @_Unwind_GetDataRelBase(i8*)");
+        self.declare_function("_Unwind_GetTextRelBase", "i32 @_Unwind_GetTextRelBase(i8*)");
+        
+        // CURSED exception type info
+        self.ir_code.push_str("\n; CURSED exception type info\n");
+        self.ir_code.push_str("@_ZTI11CursedError = constant { i8*, i8* } { i8* null, i8* bitcast ([14 x i8]* @_ZTS11CursedError to i8*) }\n");
+        self.ir_code.push_str("@_ZTS11CursedError = constant [14 x i8] c\"11CursedError\\00\"\n");
+        
+        self.ir_code.push_str("\n");
+        
+        // Add error handling runtime declarations (will be deduplicated)
         let error_runtime = generate_error_runtime_support();
         self.ir_code.push_str(&error_runtime);
     }
@@ -733,6 +744,11 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                         self.ir_code.push_str("\n");
                     }
                 }
+            },
+            Statement::TypeAlias(ref type_alias) => {
+                // Type aliases are handled at semantic analysis time
+                // For codegen, we just ignore them as they're compile-time constructs
+                // Type alias handled at semantic analysis
             },
         }
         Ok(())

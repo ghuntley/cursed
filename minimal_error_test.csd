@@ -1,16 +1,24 @@
 // Minimal error handling test
+vibez.spill("Testing basic error handling")
 
-vibez.spill("Starting error handling test...")
-
-// Test yikes error creation
+// Test 1: Basic yikes error creation
 yikes test_error := "Basic error message"
-vibez.spill("Error created:", test_error)
+vibez.spill("Created error:", test_error)
 
-// Test fam error recovery
-fam {
-    vibez.spill("This should print")
-} sus catch_error {
-    vibez.spill("Error caught:", catch_error)
+// Test 2: Simple function
+slay test_function() {
+    yikes func_error := "Function error"
+    vibez.spill("Function error:", func_error)
 }
 
-vibez.spill("Error handling test complete")
+test_function()
+
+// Test 3: Error recovery
+fam {
+    yikes panic_error := "Test panic"
+    vibez.spill("In protected block")
+} sus caught {
+    vibez.spill("Caught error:", caught)
+}
+
+vibez.spill("Test completed")

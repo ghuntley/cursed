@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, InterfaceStatement, MethodSignature, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, InterfaceStatement, MethodSignature, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -64,7 +64,12 @@ impl Parser {
             
             // Check for import statements
             if token.kind == TokenKind::Yeet {
-                imports.push(self.parse_import_statement()?);
+                let import_statements = self.parse_import_statement()?;
+                if let Some(single_import) = import_statements.single {
+                    imports.push(single_import);
+                } else if let Some(group_imports) = import_statements.group {
+                    imports.extend(group_imports);
+                }
                 continue;
             }
             
@@ -186,6 +191,10 @@ impl Parser {
                 // Parse for loop
                 return Ok(Some(Statement::For(self.parse_for_statement()?)));
             }
+            TokenKind::Flex => {
+                // Parse flex range-based loop
+                return Ok(Some(Statement::For(self.parse_flex_statement()?)));
+            }
             TokenKind::Periodt => {
                 // Parse while loop
                 return Ok(Some(Statement::While(self.parse_while_statement()?)));
@@ -217,6 +226,10 @@ impl Parser {
             TokenKind::Collab => {
                 // Parse interface declaration
                 return Ok(Some(Statement::Interface(self.parse_interface_statement()?)));
+            }
+            TokenKind::BeLike => {
+                // Parse type alias declaration
+                return Ok(Some(Statement::TypeAlias(self.parse_type_alias_statement()?)));
             }
             TokenKind::Stan => {
                 // Parse goroutine statement
@@ -1077,30 +1090,57 @@ impl Parser {
                                      }
                                      }
                                     TokenKind::LeftBrace => {
-                                    // Struct literal
-                                    let struct_name = match expr {
-                                            Expression::Identifier(name) => name,
-                                        _ => return Err(Error::Parse("Expected struct name before '{' in struct literal".to_string())),
+                                    // Check if this is actually a struct literal context
+                                    // A struct literal should have the pattern: identifier { field: value }
+                                    // If we can't parse it as a struct literal, we should not consume the token
+                                    
+                                    let struct_name = match &expr {
+                                    Expression::Identifier(name) => name.clone(),
+                                    _ => {
+                                    // If the previous expression isn't an identifier, this can't be a struct literal
+                                    // Return the current expression without consuming the '{'
+                                    return Ok(expr);
+                                    }
                                     };
                                     
-                                    self.next_token()?; // consume '{'
-                                    let mut fields = Vec::new();
+                                    // Look ahead to see if this looks like a struct literal
+                                    // We need to be more careful here to avoid consuming tokens incorrectly
+                                    let saved_index = self.token_index;
+                                    let saved_token = self.current_token.clone();
                                     
-                                    // Parse struct fields
-                                    while let Some(token) = self.current_token.as_ref() {
-                                        if token.kind == TokenKind::RightBrace {
-                                            break;
-                                        }
-                                        
-                                        // Parse field name
-                                        let field_name = match token.kind {
-                                            TokenKind::Identifier => {
-                                                let name = token.lexeme.clone();
-                                                self.next_token()?;
-                                                name
-                                            }
-                                            _ => return Err(Error::Parse("Expected field name in struct literal".to_string())),
-                                        };
+                                    self.next_token()?; // consume '{'
+                                    
+                                    // Check if the next token could be the start of a struct field
+                                    let is_struct_literal = if let Some(token) = self.current_token.as_ref() {
+                                    token.kind == TokenKind::Identifier || token.kind == TokenKind::RightBrace
+                                    } else {
+                                         false
+                                     };
+                                     
+                                     if !is_struct_literal {
+                                         // This doesn't look like a struct literal, backtrack
+                                         self.token_index = saved_index;
+                                         self.current_token = saved_token;
+                                         return Ok(expr);
+                                     }
+                                     
+                                     let mut fields = Vec::new();
+                                     
+                                     // Parse struct fields
+                                     while let Some(token) = self.current_token.as_ref() {
+                                         if token.kind == TokenKind::RightBrace {
+                                             break;
+                                         }
+                                         
+                                         // Parse field name
+                                         let field_name = match token.kind {
+                                             TokenKind::Identifier => {
+                                                 let name = token.lexeme.clone();
+                                                 self.next_token()?;
+                                                 name
+                                             }
+                                             _ => return Err(Error::Parse("Expected field name in struct literal".to_string())),
+                                         };
                                         
                                         // Expect ':'
                                         if let Some(token) = self.current_token.as_ref() {
@@ -1273,25 +1313,81 @@ impl Parser {
         })
     }
 
-    fn parse_import_statement(&mut self) -> Result<crate::ast::ImportStatement> {
+    fn parse_import_statement(&mut self) -> Result<ImportParseResult> {
         // Consume 'yeet' keyword
         self.next_token()?;
         
-        // Parse import path (string literal)
-        let path = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::String => {
-                let path = token.lexeme.clone().trim_matches('"').to_string();
-                self.next_token()?;
-                path
+        // Check if this is a grouped import (starts with '(')
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::LeftParen {
+                // Parse grouped imports: yeet ( "path1"; "path2"; ... )
+                self.next_token()?; // consume '('
+                let mut imports = Vec::new();
+                
+                while let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::RightParen {
+                        break;
+                    }
+                    
+                    // Skip semicolons and newlines
+                    if token.kind == TokenKind::Semicolon || token.kind == TokenKind::Newline {
+                        self.next_token()?;
+                        continue;
+                    }
+                    
+                    // Parse import path (string literal)
+                    let path = match token.kind {
+                        TokenKind::String => {
+                            let path = token.lexeme.clone().trim_matches('"').to_string();
+                            self.next_token()?;
+                            path
+                        }
+                        _ => return Err(Error::Parse("Expected string literal in grouped import".to_string())),
+                    };
+                    
+                    imports.push(crate::ast::ImportStatement {
+                        path,
+                        alias: None,
+                        items: Vec::new(),
+                    });
+                }
+                
+                // Consume ')'
+                if let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::RightParen {
+                        self.next_token()?;
+                    } else {
+                        return Err(Error::Parse("Expected ')' after grouped imports".to_string()));
+                    }
+                }
+                
+                Ok(ImportParseResult {
+                    single: None,
+                    group: Some(imports),
+                })
+            } else {
+                // Parse single import
+                let path = match token.kind {
+                    TokenKind::String => {
+                        let path = token.lexeme.clone().trim_matches('"').to_string();
+                        self.next_token()?;
+                        path
+                    }
+                    _ => return Err(Error::Parse("Expected string literal after 'yeet'".to_string())),
+                };
+                
+                Ok(ImportParseResult {
+                    single: Some(crate::ast::ImportStatement {
+                        path,
+                        alias: None,
+                        items: Vec::new(),
+                    }),
+                    group: None,
+                })
             }
-            _ => return Err(Error::Parse("Expected string literal after 'yeet'".to_string())),
-        };
-        
-        Ok(crate::ast::ImportStatement {
-            path,
-            alias: None,
-            items: Vec::new(),
-        })
+        } else {
+            Err(Error::Parse("Expected import path after 'yeet'".to_string()))
+        }
     }
 
     fn parse_for_statement(&mut self) -> Result<ForStatement> {
@@ -2326,6 +2422,122 @@ impl Parser {
         
         Ok(GoroutineStatement {
             expression,
+        })
+    }
+    
+    fn parse_type_alias_statement(&mut self) -> Result<TypeAliasStatement> {
+        // Consume 'be_like' keyword
+        self.next_token()?;
+        
+        // Parse type alias name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                name
+            }
+            _ => return Err(Error::Parse("Expected identifier after 'be_like'".to_string())),
+        };
+        
+        // Expect '='
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Equal => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '=' after type alias name".to_string())),
+        }
+        
+        // Parse target type
+        let target_type = self.parse_type()?.unwrap_or(Type::Custom("unknown".to_string()));
+        
+        Ok(TypeAliasStatement {
+            name,
+            target_type,
+            visibility: Visibility::Private, // Default to private
+        })
+    }
+    
+
+    
+    fn parse_flex_statement(&mut self) -> Result<ForStatement> {
+        // Consume 'flex' keyword
+        self.next_token()?;
+        
+        // Parse range expression: flex variable in start..end
+        let variable = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let var = token.lexeme.clone();
+                self.next_token()?;
+                var
+            }
+            _ => return Err(Error::Parse("Expected variable name after 'flex'".to_string())),
+        };
+        
+        // Expect 'in'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::In => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected 'in' after variable in flex loop".to_string())),
+        }
+        
+        // Parse range expression (start..end)
+        let start = self.parse_expression()?;
+        
+        // Expect '..'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::DotDot => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '..' in range expression".to_string())),
+        }
+        
+        let end = self.parse_expression()?;
+        
+        // Expect '{'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::LeftBrace => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '{' after range expression".to_string())),
+        }
+        
+        // Parse body
+        let mut body = Vec::new();
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                self.next_token()?;
+                break;
+            }
+            
+            if token.kind == TokenKind::Newline {
+                self.next_token()?;
+                continue;
+            }
+            
+            if let Some(stmt) = self.parse_statement()? {
+                body.push(stmt);
+            }
+        }
+        
+        // Create a for loop with range initialization
+        Ok(ForStatement {
+            init: Some(Box::new(Statement::Let(LetStatement {
+                target: LetTarget::Single(variable.clone()),
+                var_type: None,
+                value: start,
+                visibility: Visibility::Private,
+            }))),
+            condition: Some(Expression::Binary(BinaryExpression {
+                left: Box::new(Expression::Identifier(variable.clone())),
+                operator: "<".to_string(),
+                right: Box::new(end),
+            })),
+            update: Some(Expression::Increment(IncrementExpression {
+                variable: variable,
+                is_prefix: false,
+            })),
+            body,
         })
     }
 }

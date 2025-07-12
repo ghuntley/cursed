@@ -1,6 +1,0 @@
-vibez.spill("FFI Elimination Test")
-vibez.spill("✅ Pure CURSED modules ready")
-vibez.spill("✅ Crypto: 638 lines of pure CURSED")
-vibez.spill("✅ Network: 1030 lines of pure CURSED")
-vibez.spill("✅ Zero FFI dependencies")
-vibez.spill("🚀 FFI elimination complete!")

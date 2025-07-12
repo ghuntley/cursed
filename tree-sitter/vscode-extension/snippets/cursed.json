@@ -1,0 +1,178 @@
+{
+  "main function": {
+    "prefix": "main",
+    "body": [
+      "vibe main",
+      "",
+      "slay main() {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Main function"
+  },
+  "function": {
+    "prefix": "slay",
+    "body": [
+      "slay ${1:name}(${2:params}) ${3:type} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Function declaration"
+  },
+  "if statement": {
+    "prefix": "lowkey",
+    "body": [
+      "lowkey ${1:condition} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "If statement"
+  },
+  "if-else statement": {
+    "prefix": "lowkeyhighkey",
+    "body": [
+      "lowkey ${1:condition} {",
+      "\t$2",
+      "} highkey {",
+      "\t$0",
+      "}"
+    ],
+    "description": "If-else statement"
+  },
+  "for loop": {
+    "prefix": "bestie",
+    "body": [
+      "bestie ${1:init}; ${2:condition}; ${3:update} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "For loop"
+  },
+  "for-in loop": {
+    "prefix": "bestieflex",
+    "body": [
+      "bestie ${1:key}, ${2:value} := flex ${3:collection} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "For-in loop"
+  },
+  "while loop": {
+    "prefix": "periodt",
+    "body": [
+      "periodt ${1:condition} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "While loop"
+  },
+  "switch statement": {
+    "prefix": "vibe_check",
+    "body": [
+      "vibe_check ${1:expression} {",
+      "\tmood ${2:case1}:",
+      "\t\t$3",
+      "\tmood ${4:case2}:",
+      "\t\t$5",
+      "\tbasic:",
+      "\t\t$0",
+      "}"
+    ],
+    "description": "Switch statement"
+  },
+  "select statement": {
+    "prefix": "ready",
+    "body": [
+      "ready {",
+      "\tmood ${1:channel_op}:",
+      "\t\t$2",
+      "\tbasic:",
+      "\t\t$0",
+      "}"
+    ],
+    "description": "Select statement"
+  },
+  "variable declaration": {
+    "prefix": "sus",
+    "body": [
+      "sus ${1:name} ${2:type} = ${3:value}"
+    ],
+    "description": "Variable declaration"
+  },
+  "constant declaration": {
+    "prefix": "facts",
+    "body": [
+      "facts ${1:name} = ${2:value}"
+    ],
+    "description": "Constant declaration"
+  },
+  "goroutine": {
+    "prefix": "stan",
+    "body": [
+      "stan ${1:function_call}"
+    ],
+    "description": "Goroutine"
+  },
+  "channel": {
+    "prefix": "dm",
+    "body": [
+      "dm<${1:type}>"
+    ],
+    "description": "Channel type"
+  },
+  "struct": {
+    "prefix": "squad",
+    "body": [
+      "squad {",
+      "\t${1:field} ${2:type}",
+      "\t$0",
+      "}"
+    ],
+    "description": "Struct definition"
+  },
+  "interface": {
+    "prefix": "vibes",
+    "body": [
+      "vibes {",
+      "\t${1:method}(${2:params}) ${3:return_type}",
+      "\t$0",
+      "}"
+    ],
+    "description": "Interface definition"
+  },
+  "defer": {
+    "prefix": "later",
+    "body": [
+      "later ${1:function_call}"
+    ],
+    "description": "Defer statement"
+  },
+  "return": {
+    "prefix": "yolo",
+    "body": [
+      "yolo ${1:value}"
+    ],
+    "description": "Return statement"
+  },
+  "break": {
+    "prefix": "ghosted",
+    "body": [
+      "ghosted"
+    ],
+    "description": "Break statement"
+  },
+  "continue": {
+    "prefix": "simp",
+    "body": [
+      "simp"
+    ],
+    "description": "Continue statement"
+  },
+  "print": {
+    "prefix": "spill",
+    "body": [
+      "vibez.spill(${1:value})"
+    ],
+    "description": "Print statement"
+  }
+}

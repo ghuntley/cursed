@@ -32,6 +32,8 @@ pub struct ExecutionContext {
     struct_definitions: HashMap<String, StructStatement>,
     /// Interface definitions storage
     interface_definitions: HashMap<String, InterfaceStatement>,
+    /// Fam context tracking
+    fam_context_stack: Vec<bool>,
 }
 
 impl ExecutionContext {
@@ -47,6 +49,7 @@ impl ExecutionContext {
             current_location: None,
             struct_definitions: HashMap::new(),
             interface_definitions: HashMap::new(),
+            fam_context_stack: Vec::new(),
         }
     }
     
@@ -63,6 +66,7 @@ impl ExecutionContext {
             current_location: self.current_location.clone(),
             struct_definitions: self.struct_definitions.clone(),
             interface_definitions: self.interface_definitions.clone(),
+            fam_context_stack: Vec::new(),
         }
     }
     
@@ -206,5 +210,19 @@ impl ExecutionContext {
         self.call_stack.last()
     }
     
+    /// Enter fam context
+    pub fn enter_fam_context(&mut self) {
+        self.fam_context_stack.push(true);
+    }
+    
+    /// Exit fam context
+    pub fn exit_fam_context(&mut self) {
+        self.fam_context_stack.pop();
+    }
+    
+    /// Check if we're in a fam context
+    pub fn is_in_fam_context(&self) -> bool {
+        self.fam_context_stack.last().unwrap_or(&false).clone()
+    }
 
 }

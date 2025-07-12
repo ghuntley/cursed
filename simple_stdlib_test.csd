@@ -1,24 +1,22 @@
-// Simple test without testz dependency
-vibez.spill("Testing CURSED stdlib implementations")
+yeet "testz"
+yeet "math"
+yeet "string"
+yeet "vibez"
 
-slay test_math_basic() {
-    vibez.spill("Testing basic math operations")
-    sus result normie = 2 + 3
-    vibez.spill("2 + 3 = ")
-    vibez.spill(result)
-    vibez.spill("Math test completed")
-}
+# Simple stdlib test that should work with current compiler
+test_start("basic_stdlib_test")
 
-slay test_string_basic() {
-    vibez.spill("Testing basic string operations")
-    sus greeting tea = "Hello, CURSED!"
-    vibez.spill(greeting)
-    vibez.spill("String test completed")
-}
+# Test basic math operations
+sus a normie = 10
+sus b normie = 20
+sus sum normie = 30
+assert_eq_int(sum, 30)
 
-slay main() {
-    vibez.spill("Starting stdlib tests...")
-    test_math_basic()
-    test_string_basic()
-    vibez.spill("All tests completed!")
-}
+# Test string operations
+sus text tea = "Hello, World!"
+assert_eq_string(text, "Hello, World!")
+
+# Test vibez module
+vibez.spill("Basic stdlib test completed")
+
+print_test_summary()

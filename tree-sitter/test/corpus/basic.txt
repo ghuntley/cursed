@@ -1,0 +1,308 @@
+==================
+Simple hello world
+==================
+
+vibe main
+
+slay main() {
+    vibez.spill("Hello, world!")
+}
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (function_declaration
+    name: (identifier)
+    (signature (parameters))
+    (block
+      (expression_statement
+        (call_expression
+          function: (selector_expression
+            operand: (identifier)
+            field: (identifier))
+          arguments: (argument_list
+            (expression_list
+              (string_literal))))))))
+
+==================
+Variable declarations
+==================
+
+vibe main
+
+sus name tea = "World"
+sus age normie = 25
+sus height, weight = 180.5, 70.2
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (var_declaration
+    (var_spec
+      (identifier_list (identifier))
+      (builtin_type)
+      (expression_list (string_literal))))
+  (var_declaration
+    (var_spec
+      (identifier_list (identifier))
+      (builtin_type)
+      (expression_list (int_literal))))
+  (var_declaration
+    (var_spec
+      (identifier_list (identifier) (identifier))
+      (expression_list (float_literal) (float_literal)))))
+
+==================
+Constants
+==================
+
+vibe main
+
+facts (
+    PI = 3.14159
+    E = 2.71828
+    MAX_SIZE = 1000
+)
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (const_declaration
+    (const_spec
+      (identifier_list (identifier))
+      (expression_list (float_literal)))
+    (const_spec
+      (identifier_list (identifier))
+      (expression_list (float_literal)))
+    (const_spec
+      (identifier_list (identifier))
+      (expression_list (int_literal)))))
+
+==================
+If statements
+==================
+
+vibe main
+
+slay test(x normie) {
+    lowkey x > 0 {
+        yolo x
+    } highkey lowkey x < 0 {
+        yolo -x
+    } highkey {
+        yolo 0
+    }
+}
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (function_declaration
+    name: (identifier)
+    (signature
+      (parameters
+        (parameter_list
+          (parameter_declaration
+            (identifier_list (identifier))
+            (builtin_type)))))
+    (block
+      (if_statement
+        condition: (binary_expression
+          left: (identifier)
+          operator: ">"
+          right: (int_literal))
+        consequence: (block
+          (return_statement
+            (expression_list (identifier))))
+        alternative: (if_statement
+          condition: (binary_expression
+            left: (identifier)
+            operator: "<"
+            right: (int_literal))
+          consequence: (block
+            (return_statement
+              (expression_list
+                (unary_expression
+                  operator: "-"
+                  operand: (identifier)))))
+          alternative: (block
+            (return_statement
+              (expression_list (int_literal)))))))))
+
+==================
+For loops
+==================
+
+vibe main
+
+slay test() {
+    bestie i := 0; i < 10; i++ {
+        vibez.spill(i)
+    }
+    
+    bestie _, val := flex items {
+        process(val)
+    }
+}
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (function_declaration
+    name: (identifier)
+    (signature (parameters))
+    (block
+      (for_statement
+        (for_clause
+          init: (short_var_declaration
+            left: (identifier_list (identifier))
+            right: (expression_list (int_literal)))
+          condition: (binary_expression
+            left: (identifier)
+            operator: "<"
+            right: (int_literal))
+          update: (inc_dec_statement
+            operand: (identifier)))
+        body: (block
+          (expression_statement
+            (call_expression
+              function: (selector_expression
+                operand: (identifier)
+                field: (identifier))
+              arguments: (argument_list
+                (expression_list (identifier)))))))
+      (for_statement
+        (range_clause
+          (identifier_list (identifier) (identifier))
+          (expression_list (identifier)))
+        body: (block
+          (expression_statement
+            (call_expression
+              function: (identifier)
+              arguments: (argument_list
+                (expression_list (identifier))))))))))
+
+==================
+Goroutines and channels
+==================
+
+vibe main
+
+slay test() {
+    sus ch dm<normie>
+    
+    stan worker(ch)
+    
+    ch <- 42
+    value := <-ch
+    
+    ready {
+        mood ch <- 1:
+            vibez.spill("sent")
+        mood result := <-ch:
+            vibez.spill("received")
+        basic:
+            vibez.spill("timeout")
+    }
+}
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (function_declaration
+    name: (identifier)
+    (signature (parameters))
+    (block
+      (var_declaration
+        (var_spec
+          (identifier_list (identifier))
+          (channel_type
+            element: (builtin_type))))
+      (go_statement
+        call: (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (expression_list (identifier)))))
+      (expression_statement
+        (send_statement
+          channel: (identifier)
+          value: (int_literal)))
+      (short_var_declaration
+        left: (identifier_list (identifier))
+        right: (expression_list
+          (receive_expression
+            channel: (identifier))))
+      (select_statement
+        (select_case
+          (send_statement
+            channel: (identifier)
+            value: (int_literal))
+          (expression_statement
+            (call_expression
+              function: (selector_expression
+                operand: (identifier)
+                field: (identifier))
+              arguments: (argument_list
+                (expression_list (string_literal))))))
+        (select_case
+          (receive_statement
+            (identifier_list (identifier))
+            channel: (receive_expression
+              channel: (identifier)))
+          (expression_statement
+            (call_expression
+              function: (selector_expression
+                operand: (identifier)
+                field: (identifier))
+              arguments: (argument_list
+                (expression_list (string_literal))))))
+        (select_case
+          (expression_statement
+            (call_expression
+              function: (selector_expression
+                operand: (identifier)
+                field: (identifier))
+              arguments: (argument_list
+                (expression_list (string_literal))))))))))
+
+==================
+Boolean literals
+==================
+
+vibe main
+
+sus flag1 lit = based
+sus flag2 lit = cap
+sus nothing = cringe
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (var_declaration
+    (var_spec
+      (identifier_list (identifier))
+      (builtin_type)
+      (expression_list (bool_literal))))
+  (var_declaration
+    (var_spec
+      (identifier_list (identifier))
+      (builtin_type)
+      (expression_list (bool_literal))))
+  (var_declaration
+    (var_spec
+      (identifier_list (identifier))
+      (expression_list (nil_literal)))))

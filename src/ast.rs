@@ -71,6 +71,13 @@ pub struct ImportStatement {
     pub items: Vec<String>,
 }
 
+/// Import parsing result for grouped imports
+#[derive(Debug, Clone)]
+pub struct ImportParseResult {
+    pub single: Option<ImportStatement>,
+    pub group: Option<Vec<ImportStatement>>,
+}
+
 /// Package declaration
 #[derive(Debug, Clone)]
 pub struct PackageDeclaration {
@@ -96,6 +103,7 @@ pub enum Statement {
     Select(SelectStatement),
     Struct(StructStatement),
     Interface(InterfaceStatement),
+    TypeAlias(TypeAliasStatement),
     Panic(PanicStatement),
     Catch(CatchStatement),
     Defer(DeferStatement),
@@ -609,6 +617,14 @@ pub struct StructField {
 pub struct InterfaceStatement {
     pub name: String,
     pub methods: Vec<MethodSignature>,
+    pub visibility: Visibility,
+}
+
+/// Type alias statement (be_like keyword)
+#[derive(Debug, Clone)]
+pub struct TypeAliasStatement {
+    pub name: String,
+    pub target_type: Type,
     pub visibility: Visibility,
 }
 

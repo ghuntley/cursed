@@ -765,7 +765,7 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         let ir = cursed::compile_to_ir_with_advanced_optimization(
             &fs::read_to_string(input)?,
             &advanced_config
-        )?;
+        ).await?;
         fs::write(format!("{}.ll", output), ir)?;
         println!("{} LLVM IR to {}.ll", "Generated".green().bold(), output);
         if let Some(level) = optimization_level {
@@ -773,7 +773,7 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         }
     } else if matches.get_flag("emit-asm") {
         let source = fs::read_to_string(input)?;
-        let assembly = cursed::compile_to_assembly_with_advanced_optimization(&source, &advanced_config)?;
+        let assembly = cursed::compile_to_assembly_with_advanced_optimization(&source, &advanced_config).await?;
         fs::write(format!("{}.s", output), assembly)?;
         println!("{} Assembly to {}.s", "Generated".green().bold(), output);
     } else {

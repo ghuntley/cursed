@@ -1,42 +1,104 @@
-// Simple Concurrency Test for CURSED
-// Tests basic channel operations and goroutine spawning
+// Simple CURSED Concurrency Test
+// Tests basic goroutine and channel functionality
 
 yeet "testz"
 
-// Test 1: Basic Channel Communication
-test_start("basic channel communication")
-vibez.spill("Testing basic channel communication...")
+// Test basic goroutine spawning
+test_start("Basic goroutine spawning")
+sus result drip = 0
 
-// Basic channel test would be implemented here
-// For now, we'll just verify the test framework works
-assert_true(based)
+// Spawn a goroutine
+stan {
+    result = 42
+}
 
-// Test 2: Goroutine Spawning
-test_start("goroutine spawning")
-vibez.spill("Testing goroutine spawning...")
+// Give goroutine time to execute
+yolo
 
-// Basic goroutine test would be implemented here
-assert_true(based)
+assert_eq_int(result, 42)
 
-// Test 3: Channel Timeout
-test_start("channel timeout")
-vibez.spill("Testing channel timeout...")
+// Test channel communication
+test_start("Channel communication")
+sus channel_value drip = 0
 
-// Basic timeout test would be implemented here
-assert_true(based)
+// Create channel
+dm ch := make_channel(drip)
 
-// Test 4: Channel Closing
-test_start("channel closing")
-vibez.spill("Testing channel closing...")
+// Send value in goroutine
+stan {
+    ch <- 100
+}
 
-// Basic closing test would be implemented here
-assert_true(based)
+// Receive value
+channel_value = <- ch
 
-// Test 5: Buffered Channel
-test_start("buffered channel")
-vibez.spill("Testing buffered channel...")
+assert_eq_int(channel_value, 100)
 
-// Basic buffered channel test would be implemented here
-assert_true(based)
+// Test multiple goroutines
+test_start("Multiple goroutines")
+sus counter drip = 0
+
+// Spawn multiple goroutines
+stan {
+    counter = counter + 1
+}
+
+stan {
+    counter = counter + 2
+}
+
+stan {
+    counter = counter + 3
+}
+
+// Yield to allow execution
+yolo
+yolo
+yolo
+
+assert_eq_int(counter, 6)
+
+// Test buffered channel
+test_start("Buffered channel")
+sus buffered_result drip = 0
+
+// Create buffered channel
+dm buffered_ch := make_buffered_channel(drip, 3)
+
+// Send without blocking
+buffered_ch <- 1
+buffered_ch <- 2
+buffered_ch <- 3
+
+// Receive all values
+sus val1 drip = <- buffered_ch
+sus val2 drip = <- buffered_ch
+sus val3 drip = <- buffered_ch
+
+buffered_result = val1 + val2 + val3
+
+assert_eq_int(buffered_result, 6)
+
+// Test simple select
+test_start("Simple select")
+sus select_result drip = 0
+
+dm ch1 := make_channel(drip)
+dm ch2 := make_channel(drip)
+
+// Send to first channel
+stan {
+    ch1 <- 99
+}
+
+// Select from channels
+ready {
+    case val := <- ch1:
+        select_result = val
+    case val := <- ch2:
+        select_result = val * 2
+}
+
+assert_eq_int(select_result, 99)
 
 print_test_summary()

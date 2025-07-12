@@ -1,120 +1,146 @@
-# CURSED I/O Library Tests
+# Pure CURSED I/O Module
 
-This directory contains comprehensive tests for the CURSED I/O standard library.
+Comprehensive I/O operations implemented in pure CURSED without FFI dependencies.
 
-## Test Coverage
+## Features
 
-The `test_io.csd` file provides complete test coverage for all I/O functions:
+### Console I/O Operations
+- `console_print(message)` - Print message to console
+- `console_println(message)` - Print message with newline
+- `console_print_int(value)` - Print integer value
+- `console_print_float(value)` - Print float value
+- `console_print_bool(value)` - Print boolean value
 
-### Console I/O
-- `print()` / `println()` - Standard output
-- `eprint()` / `eprintln()` - Error output
-- `printf()` - Formatted output
-- `read_line()` - Read line from input
-- `read_char()` - Read single character
-- `read_int()` / `read_float()` - Read typed input
+### Buffered I/O Operations
+- `create_buffer(capacity)` - Create I/O buffer
+- `buffer_write(buffer, data)` - Write data to buffer
+- `buffer_read(buffer, length)` - Read data from buffer
+- `buffer_flush(buffer)` - Flush buffer contents
 
-### File Operations
-- `write_file()` / `read_file()` - Text file I/O
-- `write_file_bytes()` / `read_file_bytes()` - Binary file I/O
-- `append_file()` - Append to existing file
-- `copy_file()` / `move_file()` - File operations
-- `delete_file()` - File deletion
-- `file_exists()` - Check file existence
-- `file_size()` - Get file size
-- `is_file()` / `is_directory()` - Type checking
+### Stream I/O Operations
+- `create_stream(id, readable, writable)` - Create I/O stream
+- `stream_write(stream, data)` - Write data to stream
+- `stream_read(stream, length)` - Read data from stream
+- `stream_seek(stream, position)` - Seek to position in stream
 
-### Directory Operations
-- `create_directory()` - Create single directory
-- `create_directory_recursive()` - Create directory tree
-- `remove_directory()` / `remove_directory_recursive()` - Directory removal
-- `list_directory()` / `list_directory_recursive()` - Directory listing
-- `current_directory()` / `change_directory()` - Working directory
+### File I/O Operations
+- `file_write(filename, content)` - Write content to file
+- `file_read(filename)` - Read content from file
+- `file_exists(filename)` - Check if file exists
+- `file_delete(filename)` - Delete file
 
-### Path Operations
-- `path_join()` - Join path components
-- `path_dirname()` / `path_basename()` - Path components
-- `path_extension()` - File extension
-- `path_absolute()` / `path_relative()` - Path conversion
-- `path_exists()` - Check path existence
+### Interactive I/O Operations
+- `prompt_user(message)` - Prompt user for input
+- `confirm_user(message)` - Ask user for confirmation
+- `select_option(message, options)` - Present multiple choice
 
-### Stream I/O
-- `open_file_read()` / `open_file_write()` / `open_file_append()` - File handles
-- `close_file()` - Close file handle
-- `read_from_file()` / `write_to_file()` - Stream operations
-- `flush_file()` - Force write
-- `seek_file()` / `tell_file()` - File positioning
+## Types
 
-### Buffered I/O
-- `create_buffer()` - Create I/O buffer
-- `buffer_write()` / `buffer_read()` - Buffered operations
-- `buffer_flush()` / `buffer_clear()` - Buffer management
-- `buffer_size()` / `buffer_available()` - Buffer status
+### IOResult
+Result type for I/O operations containing:
+- `success` - Operation success status
+- `data` - Operation result data
+- `error` - Error message if failed
 
-### Temporary Files
-- `create_temp_file()` - Create temporary file
-- `create_temp_directory()` - Create temporary directory
-- `temp_directory()` - Get system temp directory
+### IOBuffer
+Buffer for efficient I/O operations:
+- `data` - Buffer content
+- `capacity` - Buffer capacity
+- `position` - Current position
+- `size` - Current size
 
-### File Metadata
-- `file_modified_time()` / `file_created_time()` - Timestamps
-- File size and existence checking
-- Directory vs file type detection
+### IOStream
+Stream handle for I/O operations:
+- `id` - Stream identifier
+- `buffer` - Stream buffer
+- `position` - Current position
+- `size` - Stream size
+- `readable` - Read permission
+- `writable` - Write permission
 
-### Edge Cases Tested
-- Empty file operations
-- Non-existent file handling
-- Permission errors (system-dependent)
-- Invalid path operations
-- Large file handling
-- Concurrent file access
+## Usage Examples
 
-## File System Operations
+### Basic Console I/O
+```cursed
+yeet "io"
 
-The I/O library provides cross-platform file system operations:
-
-- **Text Files**: UTF-8 encoded text file reading/writing
-- **Binary Files**: Raw byte array operations
-- **Directories**: Recursive creation and deletion
-- **Paths**: Cross-platform path manipulation
-- **Streaming**: Efficient large file processing
-- **Buffering**: Optimized I/O performance
-- **Temporary Files**: Secure temporary file creation
-
-## Running Tests
-
-```bash
-# Run I/O tests specifically
-cargo run --bin cursed stdlib/io/test_io.csd
-
-# Run all stdlib tests
-cargo run --bin cursed test
+sus result IOResult = console_println("Hello, World!")
+bestie result.success {
+    console_println("Print successful")
+}
 ```
 
-## Test Results
+### Buffered I/O
+```cursed
+yeet "io"
 
-All tests verify:
-- Correct file reading/writing
-- Proper directory operations
-- Path manipulation accuracy
-- Stream I/O functionality
-- Buffer management
-- Error handling for invalid operations
-- Cross-platform compatibility
+sus buffer IOBuffer = create_buffer(1024)
+sus write_result IOResult = buffer_write(buffer, "Hello Buffer")
+sus read_result IOResult = buffer_read(buffer, 5)
+```
 
-The tests create temporary files and directories for testing, which are cleaned up automatically.
+### Stream I/O
+```cursed
+yeet "io"
 
-## Platform Notes
+sus stream IOStream = create_stream(1, based, based)
+sus write_result IOResult = stream_write(stream, "Hello Stream")
+sus read_result IOResult = stream_read(stream, 5)
+```
 
-- **File Permissions**: Some tests may behave differently on different operating systems
-- **Path Separators**: Path operations handle platform-specific separators automatically
-- **Case Sensitivity**: File system case sensitivity varies by platform
-- **Temporary Directories**: System temp directory location varies by platform
+### File I/O
+```cursed
+yeet "io"
 
-## Important Considerations
+sus write_result IOResult = file_write("test.txt", "Hello File")
+sus read_result IOResult = file_read("test.txt")
+```
 
-- **Always close file handles** when done to prevent resource leaks
-- **Check file existence** before attempting operations
-- **Handle errors gracefully** for network drives or permission issues
-- **Use buffered I/O** for better performance with large files
-- **Clean up temporary files** when no longer needed
+### Interactive I/O
+```cursed
+yeet "io"
+
+sus name_result IOResult = prompt_user("Enter your name")
+sus confirm_result IOResult = confirm_user("Are you sure?")
+sus options []tea = ["Yes", "No", "Maybe"]
+sus select_result IOResult = select_option("Choose", options)
+```
+
+## Legacy Compatibility
+
+The module provides legacy compatibility functions that match the original API:
+- `print()`, `println()`, `print_int()`, `print_float()`, `print_bool()`
+- `read_line()`, `read_int()`
+- `write_file()`, `read_file()`
+
+## Architecture
+
+This implementation eliminates all FFI dependencies from the original Rust code:
+- No `std::io` usage
+- Pure CURSED data structures
+- Runtime integration through language primitives
+- Comprehensive error handling with `IOResult` type
+
+## Testing
+
+Run the comprehensive test suite:
+```bash
+cargo run --bin cursed stdlib/io/test_io.csd
+```
+
+Test both interpretation and compilation modes:
+```bash
+cargo run --bin cursed stdlib/io/test_io.csd
+cargo run --bin cursed -- compile stdlib/io/test_io.csd
+./test_io
+```
+
+## Migration from Rust Implementation
+
+This module replaces the Rust implementations in:
+- `src/stdlib/io/console.rs` → Pure CURSED console operations
+- `src/stdlib/io/buffered.rs` → Pure CURSED buffered operations
+- `src/stdlib/io/streams.rs` → Pure CURSED stream operations
+- `src/stdlib/io/interactive.rs` → Pure CURSED interactive operations
+
+All functionality is preserved while eliminating FFI dependencies.
