@@ -1,6 +1,8 @@
 # CURSED Testing Framework (testz v2.0)
 # Pure CURSED implementation without FFI dependencies
 
+yeet "vibez"
+
 # Global test state
 sus current_test_name tea = ""
 sus total_tests normie = 0

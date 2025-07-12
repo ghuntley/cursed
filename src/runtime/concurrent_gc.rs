@@ -278,7 +278,7 @@ impl ConcurrentGarbageCollector {
         // Wait for all threads to finish
         let mut threads = self.collector_threads.write().unwrap();
         for thread in threads.drain(..) {
-            thread.join().map_err(|_| CursedError::runtime_error("Failed to join collector thread"))?;
+            let _ = thread.join().map_err(|_| CursedError::runtime_error("Failed to join collector thread"))?;
         }
 
         Ok(())

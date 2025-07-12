@@ -1,0 +1,36 @@
+warning: cursed@0.1.0: Building CURSED runtime library...
+warning: cursed@0.1.0: Successfully built runtime library at /home/ghuntley/code/cursed/target/x86_64-unknown-linux-gnu/debug/build/cursed-57b590244a198ae0/out/libcursed_runtime.a
+warning: unused `std::result::Result` that must be used
+   --> src/runtime/concurrent_gc.rs:281:13
+    |
+281 |             thread.join().map_err(|_| CursedError::runtime_error("Failed to join collector thread"))?;
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+    = note: `#[warn(unused_must_use)]` on by default
+help: use `let _ = ...` to ignore the resulting value
+    |
+281 |             let _ = thread.join().map_err(|_| CursedError::runtime_error("Failed to join collector thread"))?;
+    |             +++++++
+
+warning: `cursed` (lib) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
+     Running `target/x86_64-unknown-linux-gnu/debug/cursed compile test_simple_output.csd`
+[2025-07-12T10:47:49Z INFO  cursed] Compiling CURSED source file test_simple_output.csd to executable test_simple_output with advanced optimization
+[2025-07-12T10:47:49Z INFO  cursed] Compiling CURSED source to LLVM IR with advanced optimization
+[2025-07-12T10:47:49Z INFO  cursed] Applied advanced optimization level: 2
+[2025-07-12T10:47:49Z INFO  cursed] Generating real LLVM IR for advanced optimization...
+[2025-07-12T10:47:49Z INFO  cursed] Compiling optimized LLVM IR to native executable
+[2025-07-12T10:47:49Z INFO  cursed] Compiling LLVM IR to executable binary with optimization...
+[2025-07-12T10:47:49Z INFO  cursed] Found llc at: llc
+[2025-07-12T10:47:49Z INFO  cursed] Compiling IR to object file with llc (optimization level: Some("3"))...
+[2025-07-12T10:47:49Z INFO  cursed] Applied llc optimization level: 3
+[2025-07-12T10:47:49Z WARN  cursed] LLVM tools not available, falling back to interpretation mode
+[2025-07-12T10:47:49Z INFO  cursed] Creating interpretation wrapper for test_simple_output.csd -> test_simple_output
+⚠️  Native compilation not available (LLVM tools missing)
+📦 Created interpretation wrapper: test_simple_output
+💡 To enable native compilation, install LLVM tools (llc, clang/gcc)
+   Ubuntu/Debian: sudo apt install llvm clang
+   macOS: brew install llvm
+   Or use devenv: direnv allow
+Generated executable: test_simple_output

@@ -1,0 +1,22 @@
+warning: cursed@0.1.0: Building CURSED runtime library...
+warning: cursed@0.1.0: Successfully built runtime library at /home/ghuntley/code/cursed/target/x86_64-unknown-linux-gnu/debug/build/cursed-57b590244a198ae0/out/libcursed_runtime.a
+warning: unused `std::result::Result` that must be used
+   --> src/runtime/concurrent_gc.rs:281:13
+    |
+281 |             thread.join().map_err(|_| CursedError::runtime_error("Failed to join collector thread"))?;
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+    = note: `#[warn(unused_must_use)]` on by default
+help: use `let _ = ...` to ignore the resulting value
+    |
+281 |             let _ = thread.join().map_err(|_| CursedError::runtime_error("Failed to join collector thread"))?;
+    |             +++++++
+
+warning: `cursed` (lib) generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.33s
+     Running `target/x86_64-unknown-linux-gnu/debug/cursed test_simple_output.csd`
+Running test_simple_output.csd
+[2025-07-12T10:47:46Z INFO  cursed::execution] 🚀 Executing CURSED code with advanced features
+[2025-07-12T10:47:46Z INFO  cursed::execution] 🔄 Interpreted execution
+Hello, CURSED runtime!
