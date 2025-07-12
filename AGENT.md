@@ -104,6 +104,16 @@ cargo run --bin cursed test_goroutine_syntax.csd         # Test goroutines
 cargo run --bin cursed test_channel_parsing.csd          # Test channels  
 cargo run --bin cursed test_basic_types_working.csd      # Test all basic types
 
+# Test type alias implementation
+cargo test test_type_alias --lib                         # 6/6 tests passing
+echo 'be_like MyInt = normie; sus x MyInt = 42; vibez.spill(x)' > test_be_like.csd
+cargo run --bin cursed test_be_like.csd                  # Should output: 42
+
+# Test select statement compilation
+echo 'ready { basic: vibez.spill("default case") }' > test_select.csd
+cargo run --bin cursed -- compile test_select.csd
+./test_select
+
 # Test array size expressions (fully implemented)
 cargo test array_size
 
@@ -1944,7 +1954,139 @@ git push && git push --tags
 - **Both-Mode Testing**: Critical for LLVM compilation verification
 - **Performance Focus**: Optimization flags provide significant performance gains
 
+## Module System Integration and Testing
+
+### Module Testing Patterns
+**✅ STANDARDIZED MODULE TESTING**
+```bash
+# Module structure template
+mkdir -p stdlib/module/{mod.csd,test_module.csd,README.md}
+
+# Testing both modes
+cargo run --bin cursed stdlib/module/test_module.csd        # Interpretation
+cargo run --bin cursed -- compile stdlib/module/test_module.csd  # Compilation
+./test_module                                              # Native execution
+
+# Parallel module testing
+for module in crypto math string json; do
+    cargo run --bin cursed test --filter $module &
+done
+wait
+```
+
+### Module Integration Best Practices
+- **Structure**: Always use `mod.csd` (main), `test_module.csd` (tests), `README.md` (docs)
+- **Testing**: Use `yeet "testz"` import and testz v2.0 framework
+- **Both Modes**: Test interpretation and compilation modes
+- **FFI-Free**: Prefer pure CURSED implementations over FFI bridges
+- **Documentation**: Include comprehensive README with examples and usage patterns
+
+## Fix Plan Management and Updating
+
+### Fix Plan Tracking Strategy
+**✅ SYSTEMATIC PRIORITY MANAGEMENT**
+```bash
+# Track critical priorities in fix_plan.md
+echo "## High Priority" > fix_plan.md
+echo "- [ ] Fix parser precedence issue" >> fix_plan.md
+echo "- [ ] Implement error handling" >> fix_plan.md
+
+# Test-driven development cycle
+cargo test specific_feature                         # Identify failing tests
+# Fix implementation
+cargo test specific_feature                         # Verify fix
+cargo test                                          # Ensure no regressions
+
+# Update fix plan after completion
+sed -i 's/- \[ \]/- \[x\]/' fix_plan.md            # Mark completed items
+```
+
+### Update Strategies
+- **Completion Strategy**: Test-driven development with immediate verification
+- **Priority Tracking**: Maintain fix_plan.md with critical priorities
+- **Verification**: Run `cargo test` after each major fix
+- **Documentation**: Update AGENT.md with key learnings and working commands
+
+## Build/Test Loop Optimization
+
+### Efficient Development Commands
+**✅ OPTIMIZED BUILD/TEST WORKFLOW**
+```bash
+# Quick iteration cycle (fastest to slowest)
+cargo check                                        # Fast syntax validation (0.5s)
+cargo test specific_feature                       # Targeted testing
+cargo run --bin cursed minimal_test.csd           # Test minimal case
+cargo test --lib                                  # Library tests only
+cargo test                                        # Full test suite
+
+# Both-mode verification function
+test_both_modes() {
+    local program=$1
+    cargo run --bin cursed "$program" > interp_output.txt
+    cargo run --bin cursed -- compile "$program"
+    ./"$(basename "$program" .csd)" > comp_output.txt
+    diff interp_output.txt comp_output.txt
+}
+
+# Module-specific testing patterns
+cargo run --bin cursed stdlib/module/test_module.csd              # Interpretation
+cargo run --bin cursed -- compile stdlib/module/test_module.csd   # Compilation
+./test_module                                                     # Native execution
+```
+
+### Performance Optimization
+- **Quick Validation**: Use `cargo check` for syntax verification (0.5s)
+- **Targeted Testing**: Use specific test names for focused debugging
+- **Parallel Testing**: Run multiple module tests simultaneously
+- **Incremental Builds**: Leverage cargo's caching for faster rebuilds
+
+## Large File Management in Git
+
+### Git Large File Handling
+**✅ WORKSPACE CLEANUP STRATEGIES**
+```bash
+# Identify large files before commit
+find . -type f -size +10M -not -path './.git/*' -not -path './target/*'
+
+# Cleanup broken debug files
+find . -name "*debug*" -type f -name "*.csd" -delete
+find . -name "*.ll" -type f -size +1M -delete        # Large LLVM IR files
+
+# Verify cleanup doesn't break functionality
+cargo test                                           # Should maintain 526/526 passing
+
+# Git repository health check
+git gc --aggressive --prune=now                      # Cleanup git objects
+git count-objects -vH                               # Check repository size
+```
+
+### Large File Prevention
+- **Debug File Proliferation**: Watch for accumulation of `*debug*.csd` files
+- **LLVM IR Files**: Clean large `.ll` files after testing
+- **Safe Removal**: Debug files are safe to remove - they don't affect production code
+- **Regular Cleanup**: Run cleanup commands after major development sessions
+- **Git Ignore**: Add patterns to .gitignore for temporary large files
+
 ## FFI Elimination and Pure CURSED Development
+
+### FFI Elimination Process
+**✅ SYSTEMATIC FFI REMOVAL WORKFLOW**
+```bash
+# 1. Identify FFI dependencies
+grep -r "extern\|ffi::" stdlib/module/              # Check for FFI usage
+grep -r "unsafe\|libc" src/module/                  # Check for unsafe code
+
+# 2. Test FFI-free compilation
+cargo run --bin cursed -- compile stdlib/module/test_module.csd
+./test_module                                       # Should work without external deps
+
+# 3. Security audit for crypto
+grep -r "MD5\|SHA1\|DES\|RC4" stdlib/crypto/        # Check for insecure algorithms
+
+# 4. Verify elimination
+cargo run --bin cursed stdlib/module/test_module.csd    # Test interpretation
+cargo run --bin cursed -- compile stdlib/module/test_module.csd  # Test compilation
+```
 
 ### Pure CURSED Migration Guide
 **✅ FFI ELIMINATION STRATEGY**
@@ -1953,14 +2095,6 @@ git push && git push --tags
 - **Testing**: Use `yeet "testz"` import and test both interpretation and compilation modes
 - **Module Structure**: Create `mod.csd` (main), `test_module.csd` (tests), `README.md` (docs)
 - **Verification**: Ensure no external dependencies with compilation testing
-
-```bash
-# FFI elimination workflow
-grep -r "extern" stdlib/module/                    # Check for FFI usage
-cargo run --bin cursed stdlib/module/test_module.csd  # Test pure CURSED implementation
-cargo run --bin cursed -- compile stdlib/module/test_module.csd  # Test compilation
-./test_module                                       # Verify native execution
-```
 
 ### New Stdlib Modules (2025-01-07)
 **✅ 12 NEW MODULES IMPLEMENTED**

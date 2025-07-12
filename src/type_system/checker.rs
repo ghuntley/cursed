@@ -8,7 +8,7 @@ use crate::ast::{Expression, Statement, Program, BinaryExpression, CallExpressio
                  WhileStatement, ReturnStatement, Literal, StructStatement, InterfaceStatement,
                  ChannelStatement, GoroutineStatement, SelectStatement, PanicStatement, 
                  CatchStatement, ChannelSendExpression, ChannelReceiveExpression, 
-                 ChannelCreationExpression, AstVisitor};
+                 ChannelCreationExpression, TypeAliasStatement, AstVisitor};
 use crate::error::CursedError;
 use crate::core::Type;
 use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext, 
@@ -22,6 +22,8 @@ pub struct TypeChecker {
     pub scopes: Vec<HashMap<String, TypeExpression>>,
     pub current_function_return_type: Option<TypeExpression>,
     pub errors: Vec<TypeCheckError>,
+    pub type_aliases: HashMap<String, TypeExpression>,
+    pub type_alias_resolution_stack: Vec<String>, // For circular reference detection
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -76,6 +78,8 @@ impl TypeChecker {
             scopes: vec![HashMap::new()],
             current_function_return_type: None,
             errors: Vec::new(),
+            type_aliases: HashMap::new(),
+            type_alias_resolution_stack: Vec::new(),
         };
         
         // Initialize built-in types and functions
@@ -118,8 +122,45 @@ impl TypeChecker {
             "bool" => TypeExpression::named("bool"),
             "void" => TypeExpression::named("void"),
             
-            // Default for unknown types
-            _ => TypeExpression::named("unknown"),
+            // Check for type aliases
+            _ => {
+                // First check if it's a type alias
+                if let Some(resolved_type) = self.type_aliases.get(type_str) {
+                    resolved_type.clone()
+                } else {
+                    // Default for unknown types
+                    TypeExpression::named(type_str)
+                }
+            }
+        }
+    }
+    
+    /// Mutable version of type_string_to_expression with full alias resolution
+    fn resolve_type_string_to_expression(&mut self, type_str: &str) -> Result<TypeExpression, TypeCheckError> {
+        match type_str {
+            // CURSED primitive types
+            "normie" => Ok(TypeExpression::named("normie")),
+            "tea" => Ok(TypeExpression::named("tea")),
+            "vibes" => Ok(TypeExpression::named("vibes")),
+            "lit" => Ok(TypeExpression::named("lit")),
+            "thicc" => Ok(TypeExpression::named("thicc")),
+            "snack" => Ok(TypeExpression::named("snack")),
+            "meal" => Ok(TypeExpression::named("meal")),
+            "sip" => Ok(TypeExpression::named("sip")),
+            "cap" => Ok(TypeExpression::named("cap")),
+            "int" => Ok(TypeExpression::named("int")),
+            "string" => Ok(TypeExpression::named("string")),
+            "bool" => Ok(TypeExpression::named("bool")),
+            "void" => Ok(TypeExpression::named("void")),
+            
+            // Check for type aliases with full resolution
+            _ => {
+                if let Some(resolved_type) = self.resolve_type_alias(type_str)? {
+                    Ok(resolved_type)
+                } else {
+                    Ok(TypeExpression::named(type_str))
+                }
+            }
         }
     }
     
@@ -236,6 +277,9 @@ impl TypeChecker {
             }
             Statement::Catch(catch_stmt) => {
                 self.check_catch_statement(catch_stmt)
+            }
+            Statement::TypeAlias(type_alias_stmt) => {
+                self.check_type_alias_statement(type_alias_stmt)
             }
             _ => Ok(TypeExpression::named("void")),
         }
@@ -1662,6 +1706,192 @@ impl TypeChecker {
     fn visit_channel_creation_expression(&mut self, channel_creation: &ChannelCreationExpression) -> Result<TypeExpression, TypeCheckError> {
         self.check_channel_creation_expression(channel_creation)
     }
+    
+    /// Check type alias statement and register it
+    pub fn check_type_alias_statement(&mut self, type_alias: &TypeAliasStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Check if alias name conflicts with built-in types
+        if self.is_builtin_type(&type_alias.name) {
+            return Err(TypeCheckError::new(
+                TypeErrorKind::InvalidOperation,
+                format!("Type alias '{}' conflicts with built-in type", type_alias.name),
+            ));
+        }
+        
+        // Check if alias already exists
+        if self.type_aliases.contains_key(&type_alias.name) {
+            return Err(TypeCheckError::new(
+                TypeErrorKind::InvalidOperation,
+                format!("Type alias '{}' is already defined", type_alias.name),
+            ));
+        }
+        
+        // Convert AST Type to TypeExpression and validate target type
+        let target_type_expr = self.convert_ast_type_to_type_expression(&type_alias.target_type)?;
+        
+        // Register the type alias
+        self.type_aliases.insert(type_alias.name.clone(), target_type_expr.clone());
+        
+        Ok(TypeExpression::named("void"))
+    }
+    
+    /// Convert AST Type to TypeExpression with proper validation
+    fn convert_ast_type_to_type_expression(&mut self, ast_type: &crate::ast::Type) -> Result<TypeExpression, TypeCheckError> {
+        use crate::ast::Type;
+        
+        match ast_type {
+            // CURSED primitive types
+            Type::Normie => Ok(TypeExpression::named("normie")),
+            Type::Tea => Ok(TypeExpression::named("tea")),
+            Type::Lit => Ok(TypeExpression::named("lit")),
+            Type::Sip => Ok(TypeExpression::named("sip")),
+            Type::Smol => Ok(TypeExpression::named("smol")),
+            Type::Mid => Ok(TypeExpression::named("mid")),
+            Type::Thicc => Ok(TypeExpression::named("thicc")),
+            Type::Snack => Ok(TypeExpression::named("snack")),
+            Type::Meal => Ok(TypeExpression::named("meal")),
+            Type::Byte => Ok(TypeExpression::named("byte")),
+            Type::Rune => Ok(TypeExpression::named("rune")),
+            Type::Extra => Ok(TypeExpression::named("extra")),
+            
+            // Standard types
+            Type::Integer => Ok(TypeExpression::named("int")),
+            Type::Float => Ok(TypeExpression::named("float")),
+            Type::String => Ok(TypeExpression::named("string")),
+            Type::Boolean => Ok(TypeExpression::named("bool")),
+            Type::Void => Ok(TypeExpression::named("void")),
+            
+            Type::Custom(name) => {
+                // Check if it's a type alias
+                if let Some(resolved_type) = self.resolve_type_alias(name)? {
+                    Ok(resolved_type)
+                } else {
+                    // Check if it's a valid custom type (struct, interface, etc.)
+                    Ok(TypeExpression::named(name))
+                }
+            }
+            Type::Array(element_type, _size) => {
+                let element_type_expr = self.convert_ast_type_to_type_expression(element_type)?;
+                Ok(TypeExpression::array(element_type_expr))
+            }
+            Type::Slice(element_type) => {
+                let element_type_expr = self.convert_ast_type_to_type_expression(element_type)?;
+                // Use named type for slices since slice constructor doesn't exist
+                Ok(TypeExpression::named(&format!("[]{}", element_type_expr.name.unwrap_or("unknown".to_string()))))
+            }
+            Type::Pointer(target_type) => {
+                let target_type_expr = self.convert_ast_type_to_type_expression(target_type)?;
+                // Use named type for pointers since pointer constructor doesn't exist
+                Ok(TypeExpression::named(&format!("*{}", target_type_expr.name.unwrap_or("unknown".to_string()))))
+            }
+            Type::Function(parameters, return_type) => {
+                let param_types: Result<Vec<_>, _> = parameters
+                    .iter()
+                    .map(|p| self.convert_ast_type_to_type_expression(p))
+                    .collect();
+                let param_types = param_types?;
+                
+                let return_type_expr = self.convert_ast_type_to_type_expression(return_type)?;
+                
+                Ok(TypeExpression::function(param_types, return_type_expr))
+            }
+            Type::Dm(inner_type) => {
+                let inner_type_expr = self.convert_ast_type_to_type_expression(inner_type)?;
+                // Use named type for channels since channel constructor doesn't exist
+                Ok(TypeExpression::named(&format!("dm<{}>", inner_type_expr.name.unwrap_or("unknown".to_string()))))
+            }
+            Type::Collab(name) => Ok(TypeExpression::named(&format!("collab {}", name))),
+            Type::Squad(element_type) => {
+                let element_type_expr = self.convert_ast_type_to_type_expression(element_type)?;
+                Ok(TypeExpression::array(element_type_expr))
+            }
+            Type::Tuple(types) => {
+                let type_names: Result<Vec<_>, _> = types
+                    .iter()
+                    .map(|t| self.convert_ast_type_to_type_expression(t))
+                    .collect();
+                let type_names = type_names?;
+                let tuple_repr = type_names
+                    .iter()
+                    .map(|t| t.name.clone().unwrap_or("unknown".to_string()))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                Ok(TypeExpression::named(&format!("({})", tuple_repr)))
+            }
+            Type::Generic(name, type_params) => {
+                let param_names: Result<Vec<_>, _> = type_params
+                    .iter()
+                    .map(|t| self.convert_ast_type_to_type_expression(t))
+                    .collect();
+                let param_names = param_names?;
+                let params_repr = param_names
+                    .iter()
+                    .map(|t| t.name.clone().unwrap_or("unknown".to_string()))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                Ok(TypeExpression::named(&format!("{}<{}>", name, params_repr)))
+            }
+            Type::TestResult => Ok(TypeExpression::named("TestResult")),
+            Type::TestStatus => Ok(TypeExpression::named("TestStatus")),
+            Type::TestSuite => Ok(TypeExpression::named("TestSuite")),
+            Type::TestReport => Ok(TypeExpression::named("TestReport")),
+        }
+    }
+    
+    /// Resolve type alias with circular reference detection
+    pub fn resolve_type_alias(&mut self, alias_name: &str) -> Result<Option<TypeExpression>, TypeCheckError> {
+        // Check for circular reference
+        if self.type_alias_resolution_stack.contains(&alias_name.to_string()) {
+            return Err(TypeCheckError::new(
+                TypeErrorKind::InvalidOperation,
+                format!("Circular type alias detected: {}", 
+                       self.type_alias_resolution_stack.join(" -> ") + " -> " + alias_name),
+            ));
+        }
+        
+        if let Some(target_type) = self.type_aliases.get(alias_name).cloned() {
+            // Add to resolution stack for circular reference detection
+            self.type_alias_resolution_stack.push(alias_name.to_string());
+            
+            // Recursively resolve if the target is also a type alias
+            let resolved_type = self.fully_resolve_type_expression(&target_type)?;
+            
+            // Remove from resolution stack
+            self.type_alias_resolution_stack.pop();
+            
+            Ok(Some(resolved_type))
+        } else {
+            Ok(None)
+        }
+    }
+    
+    /// Fully resolve a type expression, expanding all type aliases
+    fn fully_resolve_type_expression(&mut self, type_expr: &TypeExpression) -> Result<TypeExpression, TypeCheckError> {
+        // Check if this type expression has a name that might be a type alias
+        if let Some(name) = &type_expr.name {
+            // Check if this is a type alias
+            if let Some(resolved) = self.resolve_type_alias(name)? {
+                Ok(resolved)
+            } else {
+                Ok(type_expr.clone())
+            }
+        } else {
+            Ok(type_expr.clone())
+        }
+    }
+    
+    /// Check if a name is a built-in type
+    fn is_builtin_type(&self, name: &str) -> bool {
+        matches!(name, 
+            "normie" | "tea" | "lit" | "sip" | "smol" | "mid" | "thicc" | 
+            "drip" | "snack" | "meal" | "byte" | "rune" | "extra" | 
+            "vibes" | "cap" | "void"
+        )
+    }
+    
+    /// Get all registered type aliases (for debugging/inspection)
+    pub fn get_type_aliases(&self) -> &HashMap<String, TypeExpression> {
+        &self.type_aliases
+    }
 }
 
 #[cfg(test)]
@@ -1803,5 +2033,166 @@ mod tests {
         
         let result = checker.visit_statement(&stmt);
         assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_type_alias_basic() {
+        use crate::ast::{Type, TypeAliasStatement, Visibility};
+        
+        let mut checker = TypeChecker::new();
+        
+        // Create a simple type alias: be_like MyInt = normie
+        let type_alias = TypeAliasStatement {
+            name: "MyInt".to_string(),
+            target_type: Type::Normie,
+            visibility: Visibility::Private,
+        };
+        
+        // Check the type alias
+        let result = checker.check_type_alias_statement(&type_alias);
+        assert!(result.is_ok());
+        
+        // Verify the alias was registered
+        assert!(checker.type_aliases.contains_key("MyInt"));
+        
+        // Verify resolution works
+        let resolved = checker.resolve_type_alias("MyInt").unwrap();
+        assert!(resolved.is_some());
+        assert_eq!(resolved.unwrap().name, Some("normie".to_string()));
+    }
+    
+    #[test]
+    fn test_type_alias_circular_detection() {
+        use crate::ast::{Type, TypeAliasStatement, Visibility};
+        
+        let mut checker = TypeChecker::new();
+        
+        // Create circular type aliases
+        let alias_a = TypeAliasStatement {
+            name: "TypeA".to_string(),
+            target_type: Type::Custom("TypeB".to_string()),
+            visibility: Visibility::Private,
+        };
+        
+        let alias_b = TypeAliasStatement {
+            name: "TypeB".to_string(),
+            target_type: Type::Custom("TypeA".to_string()),
+            visibility: Visibility::Private,
+        };
+        
+        // Register both aliases
+        assert!(checker.check_type_alias_statement(&alias_a).is_ok());
+        assert!(checker.check_type_alias_statement(&alias_b).is_ok());
+        
+        // Try to resolve - should detect circular reference
+        let result = checker.resolve_type_alias("TypeA");
+        assert!(result.is_err());
+        assert!(result.err().unwrap().message.contains("Circular type alias"));
+    }
+    
+    #[test]
+    fn test_type_alias_builtin_conflict() {
+        use crate::ast::{Type, TypeAliasStatement, Visibility};
+        
+        let mut checker = TypeChecker::new();
+        
+        // Try to create alias with built-in type name
+        let type_alias = TypeAliasStatement {
+            name: "normie".to_string(),
+            target_type: Type::Tea,
+            visibility: Visibility::Private,
+        };
+        
+        let result = checker.check_type_alias_statement(&type_alias);
+        assert!(result.is_err());
+        assert!(result.err().unwrap().message.contains("conflicts with built-in type"));
+    }
+    
+    #[test]
+    fn test_type_alias_duplicate() {
+        use crate::ast::{Type, TypeAliasStatement, Visibility};
+        
+        let mut checker = TypeChecker::new();
+        
+        let type_alias1 = TypeAliasStatement {
+            name: "MyType".to_string(),
+            target_type: Type::Normie,
+            visibility: Visibility::Private,
+        };
+        
+        let type_alias2 = TypeAliasStatement {
+            name: "MyType".to_string(),
+            target_type: Type::Tea,
+            visibility: Visibility::Private,
+        };
+        
+        // First definition should succeed
+        assert!(checker.check_type_alias_statement(&type_alias1).is_ok());
+        
+        // Second definition should fail
+        let result = checker.check_type_alias_statement(&type_alias2);
+        assert!(result.is_err());
+        assert!(result.err().unwrap().message.contains("already defined"));
+    }
+    
+    #[test]
+    fn test_type_alias_nested_resolution() {
+        use crate::ast::{Type, TypeAliasStatement, Visibility};
+        
+        let mut checker = TypeChecker::new();
+        
+        // Create nested aliases: MyInt -> Counter -> FinalType -> normie
+        let alias1 = TypeAliasStatement {
+            name: "MyInt".to_string(),
+            target_type: Type::Normie,
+            visibility: Visibility::Private,
+        };
+        
+        let alias2 = TypeAliasStatement {
+            name: "Counter".to_string(),
+            target_type: Type::Custom("MyInt".to_string()),
+            visibility: Visibility::Private,
+        };
+        
+        let alias3 = TypeAliasStatement {
+            name: "FinalType".to_string(),
+            target_type: Type::Custom("Counter".to_string()),
+            visibility: Visibility::Private,
+        };
+        
+        // Register all aliases
+        assert!(checker.check_type_alias_statement(&alias1).is_ok());
+        assert!(checker.check_type_alias_statement(&alias2).is_ok());
+        assert!(checker.check_type_alias_statement(&alias3).is_ok());
+        
+        // Resolve final type - should resolve to normie
+        let resolved = checker.resolve_type_alias("FinalType").unwrap();
+        assert!(resolved.is_some());
+        assert_eq!(resolved.unwrap().name, Some("normie".to_string()));
+    }
+    
+    #[test]
+    fn test_type_alias_array_resolution() {
+        use crate::ast::{Type, TypeAliasStatement, Visibility};
+        
+        let mut checker = TypeChecker::new();
+        
+        // Create array type alias: IntArray = []normie
+        let type_alias = TypeAliasStatement {
+            name: "IntArray".to_string(),
+            target_type: Type::Array(Box::new(Type::Normie), None),
+            visibility: Visibility::Private,
+        };
+        
+        let result = checker.check_type_alias_statement(&type_alias);
+        assert!(result.is_ok());
+        
+        // Verify array type was registered correctly
+        let resolved = checker.resolve_type_alias("IntArray").unwrap();
+        assert!(resolved.is_some());
+        
+        let resolved_type = resolved.unwrap();
+        // Since we're using named types, just check the name is present
+        assert!(resolved_type.name.is_some());
     }
 }

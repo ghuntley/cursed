@@ -15,16 +15,12 @@ declare i8* @string_concat(i8*, i8*)
 declare i8* @tea(i64)
 declare i8* @tea_float(double)
 declare i8* @tea_bool(i32)
-
-; CURSED runtime functions
 declare void @cursed_panic(i8*, i64)
 declare i8* @cursed_alloc(i64)
 declare void @cursed_free(i8*)
 declare i32 @cursed_goroutine_spawn(i8*)
 declare void @cursed_channel_send(i8*, i8*)
 declare i8* @cursed_channel_receive(i8*)
-
-; Exception handling declarations
 declare i32 @__gxx_personality_v0(...)
 declare i8* @__cxa_begin_catch(i8*)
 declare void @__cxa_end_catch()
@@ -68,10 +64,27 @@ declare void @cursed_propagate_error_context(i64, i64)
 declare i8* @cursed_get_goroutine_error_context(i64)
 declare void @cursed_clear_goroutine_error_context(i64)
 declare i8* @cursed_create_enhanced_context(i8*, i64)
-declare i8* @malloc(i32)
-declare void @free(i8*)
-@error_msg_default = private unnamed_addr constant [13 x i8] c"Error occurred\00"
+@error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
+define i32 @test_select_default() {
+entry:
+  %0 = getelementptr inbounds [36 x i8], [36 x i8]* @.str.0, i64 0, i64 0
+  %1 = call i32 @puts(i8* %0)
+  %2 = add i32 0, 0
+  ; Expression result: %2
+  ; Unsupported statement
+  %3 = getelementptr inbounds [23 x i8], [23 x i8]* @.str.1, i64 0, i64 0
+  %4 = call i32 @puts(i8* %3)
+  %5 = add i32 0, 0
+  ; Expression result: %5
+  ret i32 0
+}
 
+
+
+; String constants
+@.str.0 = private unnamed_addr constant [36 x i8] c"Testing select with default case...\00", align 1
+@.str.1 = private unnamed_addr constant [23 x i8] c"Select test completed!\00", align 1
 define i32 @main() {
+  %0 = call i32 @test_select_default()
   ret i32 0
 }

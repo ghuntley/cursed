@@ -742,8 +742,8 @@ impl CursedExecutionEngine {
                 
                 // Apply type conversion if a type is specified
                 let final_value = if let Some(ref var_type) = let_stmt.var_type {
-                    if self.can_convert_to_type(&value, var_type) {
-                        self.convert_to_type(&value, var_type)?
+                    if self.can_convert_to_type(&value, var_type, context) {
+                        self.convert_to_type(&value, var_type, context)?
                     } else {
                         return Err(CursedError::runtime_error(&format!("Cannot convert {:?} to type {:?}", value, var_type)));
                     }
@@ -1028,10 +1028,8 @@ impl CursedExecutionEngine {
                 // For now, just return nil - channels need more complex implementation
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
-            Statement::Select(_) => {
-                // For now, just return nil - select statements need more complex implementation
-                log::info!("📺 Select statement execution not yet implemented");
-                Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            Statement::Select(select_stmt) => {
+                self.execute_select_statement(select_stmt, context)
             },
             Statement::Struct(struct_stmt) => {
                 // Store struct definition in context for type checking
@@ -1262,8 +1260,9 @@ impl CursedExecutionEngine {
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
             &Statement::TypeAlias(ref type_alias) => {
-                // Type aliases are handled at semantic analysis time
-                // For execution, we just ignore them as they're compile-time constructs
+                // Store type alias in execution context for runtime type resolution
+                log::debug!("🔧 Registering type alias: {} = {:?}", type_alias.name, type_alias.target_type);
+                context.set_type_alias(type_alias.name.clone(), type_alias.target_type.clone());
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
         }
@@ -2918,9 +2917,9 @@ impl CursedExecutionEngine {
         
         if type_assertion.is_safe {
             // Safe type assertion returns a tuple (value, success)
-            let success = self.can_convert_to_type(&value, &type_assertion.target_type);
+            let success = self.can_convert_to_type(&value, &type_assertion.target_type, context);
             let converted_value = if success {
-                self.convert_to_type(&value, &type_assertion.target_type).unwrap_or(CursedValue::Nil)
+                self.convert_to_type(&value, &type_assertion.target_type, context).unwrap_or(CursedValue::Nil)
             } else {
                 CursedValue::Nil
             };
@@ -2930,13 +2929,15 @@ impl CursedExecutionEngine {
             ]))
         } else {
             // Unsafe type assertion - panic if conversion fails
-            self.convert_to_type(&value, &type_assertion.target_type)
+            self.convert_to_type(&value, &type_assertion.target_type, context)
         }
     }
 
     /// Check if a value can be converted to a specific type
-    fn can_convert_to_type(&self, value: &CursedValue, target_type: &crate::ast::Type) -> bool {
-        match (value, target_type) {
+    fn can_convert_to_type(&self, value: &CursedValue, target_type: &crate::ast::Type, context: &ExecutionContext) -> bool {
+        // Resolve type aliases first
+        let resolved_type = context.resolve_type(target_type);
+        match (value, &resolved_type) {
             // Same type conversions
             (CursedValue::Integer(_), crate::ast::Type::Normie) => true,
             (CursedValue::Integer(_), crate::ast::Type::Smol) => true,
@@ -2953,6 +2954,8 @@ impl CursedExecutionEngine {
             
             // Cross-type conversions
             (CursedValue::Integer(_), crate::ast::Type::Float) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Snack) => true,
+            (CursedValue::Integer(_), crate::ast::Type::Meal) => true,
             (CursedValue::Float(_), crate::ast::Type::Integer) => true,
             (CursedValue::Boolean(_), crate::ast::Type::Integer) => true,
             (CursedValue::Integer(_), crate::ast::Type::Boolean) => true,
@@ -2964,8 +2967,10 @@ impl CursedExecutionEngine {
     }
 
     /// Convert a value to a specific type
-    fn convert_to_type(&self, value: &CursedValue, target_type: &crate::ast::Type) -> Result<CursedValue, CursedError> {
-        match (value, target_type) {
+    fn convert_to_type(&self, value: &CursedValue, target_type: &crate::ast::Type, context: &ExecutionContext) -> Result<CursedValue, CursedError> {
+        // Resolve type aliases first
+        let resolved_type = context.resolve_type(target_type);
+        match (value, &resolved_type) {
             // Direct type matches
             (CursedValue::Integer(i), crate::ast::Type::Normie | crate::ast::Type::Integer) => Ok(CursedValue::Integer(*i)),
             (CursedValue::Integer(i), crate::ast::Type::Smol) => Ok(CursedValue::Integer(*i)),
@@ -3039,6 +3044,34 @@ impl CursedExecutionEngine {
                 }
             }
         }
+    }
+
+    /// Execute a select statement for channel multiplexing
+    fn execute_select_statement(
+        &mut self, 
+        select_stmt: &crate::ast::SelectStatement, 
+        context: &mut ExecutionContext
+    ) -> Result<ExecutionFlow, CursedError> {
+        log::info!("📺 Executing select statement with {} cases", select_stmt.cases.len());
+        
+        // For the initial implementation, we'll handle the simple case:
+        // If there's a default case, execute it immediately
+        if let Some(default_body) = &select_stmt.default_case {
+            log::info!("📺 Select: executing default case");
+            let mut last_value = CursedValue::Nil;
+            for stmt in default_body {
+                match self.execute_statement(stmt, context)? {
+                    ExecutionFlow::Continue(value) => last_value = value,
+                    other => return Ok(other),
+                }
+            }
+            return Ok(ExecutionFlow::Continue(last_value));
+        }
+        
+        // For now, if there are no default cases and no operations can proceed,
+        // we'll return nil to avoid hanging
+        log::info!("📺 Select: no default case, returning nil for now");
+        Ok(ExecutionFlow::Continue(CursedValue::Nil))
     }
 }
 
