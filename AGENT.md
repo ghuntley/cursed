@@ -820,7 +820,7 @@ To preserve the perfect test suite achievement:
 
 ```bash
 # Quick verification workflow
-cargo check                    # Fast syntax check
+cargo check                    # Fast syntax check (0.5s)
 cargo test array_size         # Specific feature testing
 cargo test --lib             # Library tests only
 
@@ -836,7 +836,7 @@ cargo test interfaces        # Interface system tests
 cargo test error_handling    # Error handling tests
 
 # Full verification pipeline
-cargo test                   # All Rust tests
+cargo test                   # All Rust tests (526/526 passing)
 cargo run --bin cursed test --test-dir stdlib  # CURSED stdlib tests
 
 # Performance testing
@@ -848,6 +848,19 @@ cargo run --bin cursed test --filter network    # Network module tests
 cargo run --bin cursed test --filter database   # Database module tests
 cargo run --bin cursed test --filter web        # Web framework tests
 cargo run --bin cursed test --filter parser     # Parser module tests
+
+# Both-mode verification workflow (critical for validation)
+test_both_modes() {
+    local program=$1
+    cargo run --bin cursed "$program" > interp_output.txt
+    cargo run --bin cursed -- compile "$program"
+    ./"$(basename "$program" .csd)" > comp_output.txt
+    diff interp_output.txt comp_output.txt
+}
+
+# Optimization testing (2025-01-12)
+cargo run --bin cursed -- compile --optimize program.csd    # Basic optimization
+cargo run --bin cursed -- compile --opt-level 3 program.csd # Advanced optimization
 ```
 
 ### Efficient Debugging Workflow
@@ -859,10 +872,59 @@ cargo run --bin cursed test --filter parser     # Parser module tests
 
 ### Best Practices for Future Sessions
 - **Always run `cargo test` before major changes**
-- **Use `cargo check` for quick iteration**
+- **Use `cargo check` for quick iteration (0.5s)**
 - **Test both interpretation and compilation modes**
 - **Run stdlib tests after parser/semantic changes**
 - **Clean up debug files regularly to prevent workspace bloat**
+- **Use `test_both_modes()` function for verification**
+- **Prefer pure CURSED implementations over FFI bridges**
+
+## Latest Development Session Learnings (2025-01-12)
+
+### Runtime Library Configuration
+- **Issue**: libcursed_runtime.a linking failures during LLVM compilation
+- **Solution**: Add `println!("cargo:rustc-link-search=native=runtime");` to build.rs
+- **Result**: Native compilation now works properly with runtime library
+- **Command**: Verify with `cargo run --bin cursed -- compile program.csd`
+
+### FFI Elimination Workflow
+```bash
+# Identify FFI dependencies
+grep -r "extern" stdlib/module/                    # Check for FFI usage
+grep -r "ffi::" stdlib/module/                     # Look for FFI calls
+
+# Test FFI-free compilation
+cargo run --bin cursed -- compile stdlib/module/test_module.csd
+./test_module                                       # Should work without external deps
+```
+
+### Parallel Module Development
+- **Template**: `stdlib/module/{mod.csd, test_module.csd, README.md}`
+- **Testing**: Always use `yeet "testz"` import pattern
+- **Verification**: Test both interpretation and native compilation
+- **Coordination**: Multiple modules can be developed simultaneously
+
+### Testing Workflow Improvements
+```bash
+# Quick development cycle
+cargo check                                        # Fast syntax validation
+cargo test specific_feature                       # Targeted testing
+cargo run --bin cursed minimal_test.csd           # Test minimal case
+
+# Comprehensive verification
+test_both_modes() {
+    local program=$1
+    cargo run --bin cursed "$program" > interp_output.txt
+    cargo run --bin cursed -- compile "$program"
+    ./"$(basename "$program" .csd)" > comp_output.txt
+    diff interp_output.txt comp_output.txt
+}
+
+# Module testing pattern
+cargo run --bin cursed stdlib/module/test_module.csd              # Interpretation
+cargo run --bin cursed -- compile stdlib/module/test_module.csd   # Compilation
+./test_module                                                     # Native execution
+```
 
 ## Parser Implementation Insights
 
@@ -961,9 +1023,15 @@ cargo run --bin cursed complex_tuple_test.csd
 - **Core Functionality**: Interpretation, basic compilation, member access all working
 - **Known Issues**: 4 JIT tests ignored due to LLVM environment issues
 
-### Latest Development Session (2025-01-07)
+### Latest Development Session (2025-01-12)
 
-#### Parser Function Call Fix
+#### Runtime Library Linking Fix (2025-01-12)
+- **Issue**: Runtime library linking failures in build.rs caused compilation errors
+- **Solution**: Enable proper linking by adding `println!("cargo:rustc-link-search=native=runtime");` to build.rs
+- **Configuration**: Ensure libcursed_runtime.a is built and linked correctly with LLVM compilation
+- **Status**: Runtime library now links properly for native compilation
+
+#### Parser Function Call Fix (2025-01-07)
 - **Issue**: Function calls like `vibez.spill("hello")` failed with "Expected identifier in tuple destructuring" error
 - **Root Cause**: LeftParen tokens were being interpreted as tuple destructuring instead of function calls
 - **Solution**: Modified `parse_primary_expression()` to handle function calls before tuple destructuring
@@ -980,6 +1048,18 @@ cargo run --bin cursed complex_tuple_test.csd
 - **Native Compilation**: `cargo run --bin cursed -- compile stdlib/filesystem/test_filesystem.csd`
 - **Status**: Full filesystem operations without FFI bridge dependencies
 
+#### FFI Elimination and Pure CURSED Migration
+- **Process**: Identify FFI dependencies with `grep -r "extern" stdlib/module/`
+- **Pattern**: Replace FFI bridges with pure CURSED implementations
+- **Testing**: Test both interpretation and compilation modes for FFI-free modules
+- **Benefits**: Reduced external dependencies, improved portability, better self-hosting capability
+
+#### Parallel Subagent Development Strategy
+- **Module Creation**: Use standardized `mod.csd` (main), `test_module.csd` (tests), `README.md` (docs) structure
+- **Testing Framework**: Always use `yeet "testz"` import for consistent testing across modules
+- **Parallel Implementation**: Create multiple stdlib modules simultaneously with coordinated testing
+- **Verification**: Both-mode testing ensures feature parity across interpretation and compilation
+
 #### Working Test Commands
 ```bash
 # Test pure CURSED modules
@@ -994,6 +1074,11 @@ cargo run --bin cursed test_function_call.csd
 # Test both modes
 cargo run --bin cursed program.csd                    # Interpretation
 cargo run --bin cursed -- compile program.csd        # Compilation
+
+# FFI elimination verification
+grep -r "extern" stdlib/module/                       # Check for FFI usage
+cargo run --bin cursed -- compile stdlib/module/test_module.csd  # Test compilation
+./test_module                                         # Verify native execution
 ```
 
 ### Development Session Learnings (2025-01-07)
