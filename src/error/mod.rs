@@ -43,6 +43,7 @@ pub enum CursedError {
     ValidationError(String),
     RandomGenerationFailed(String),
     InternalError(String),
+    MemoryError(String),
     // New error variants for stdlib integration
     CollectionsError(String),
     StringError(String),
@@ -51,6 +52,8 @@ pub enum CursedError {
     IoError(String),
     ParseError(String),
     SerializationError(String),
+    // Error handling variants
+    FamRecovery(String),
 }
 
 #[derive(Debug, Clone)]
@@ -95,6 +98,8 @@ impl std::fmt::Display for CursedError {
             CursedError::IoError(msg) => write!(f, "IO error: {}", msg),
             CursedError::ParseError(msg) => write!(f, "Parse error: {}", msg),
             CursedError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
+            CursedError::FamRecovery(msg) => write!(f, "Fam recovery: {}", msg),
+            CursedError::MemoryError(msg) => write!(f, "Memory error: {}", msg),
         }
     }
 }
@@ -286,5 +291,11 @@ impl From<Error> for CursedError {
             Error::General(msg) => CursedError::General(msg),
             Error::Other(msg) => CursedError::General(msg),
         }
+    }
+}
+
+impl From<crate::runtime::channels::ChannelError> for CursedError {
+    fn from(err: crate::runtime::channels::ChannelError) -> Self {
+        CursedError::RuntimeError(format!("Channel error: {:?}", err))
     }
 }

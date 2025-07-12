@@ -73,6 +73,22 @@ impl<T: Send + Clone + 'static> SimpleSelect<T> {
         }
     }
     
+    /// Add a case to the select statement
+    pub fn add_case(&mut self, case: SelectCase<T>) {
+        match &case {
+            SelectCase::Send { channel_id, .. } => {
+                // Channel should already be registered
+            }
+            SelectCase::Receive { channel_id, .. } => {
+                // Channel should already be registered
+            }
+            SelectCase::Default { .. } => {
+                // No channel needed for default case
+            }
+        }
+        self.cases.push(case);
+    }
+    
     /// Add a send case
     pub fn send(
         &mut self,

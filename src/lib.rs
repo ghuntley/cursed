@@ -598,6 +598,7 @@ pub async fn compile_with_advanced_optimization(
         Err(e) => {
             if is_llvm_missing_error(&e) {
                 tracing::warn!("LLVM tools not available, falling back to interpretation mode");
+                tracing::debug!("LLVM error details: {:?}", e);
                 create_interpretation_wrapper(&source, source_file, output_file)?;
                 Ok(AdvancedCompilationResult {
                     success: true,
@@ -630,64 +631,55 @@ pub async fn compile_native_only_with_advanced_optimization(
     Ok(())
 }
 
-pub fn compile_to_ir_with_advanced_optimization(
+pub async fn compile_to_ir_with_advanced_optimization(
     source: &str, 
     config: &optimization::AdvancedOptimizationConfig
 ) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to LLVM IR with advanced optimization");
     
-    // Parse source
-    let mut parser = parser::new_parser(source)?;
-    let program = parser.parse_program()?;
+    // Create package manager for dependency resolution
+    let package_manager_config = crate::package_manager::PackageManagerConfig::default();
+    let package_manager = std::sync::Arc::new(std::sync::Mutex::new(
+        crate::package_manager::PackageManager::new(package_manager_config)
+            .map_err(|e| CursedError::Parse(format!("Failed to create package manager: {}", e)))?
+    ));
     
-    // For now, we'll generate IR without full LLVM infrastructure
-    // This is a simplified version for demonstration
-    let optimized_ir = format!(
-        "; CURSED LLVM IR with Advanced Optimization\n\
-         ; Optimization Level: {:?}\n\
-         ; PGO Enabled: {}\n\
-         ; LTO Enabled: {}\n\
-         ; Size Optimization: {}\n\
-         ; Pass Pipeline: {:?}\n\
-         \n\
-         target triple = \"x86_64-unknown-linux-gnu\"\n\
-         \n\
-         ; Runtime function declarations\n\
-         declare i32 @printf(i8*, ...)\n\
-         declare i32 @puts(i8*)\n\
-         \n\
-         ; String constants\n\
-         @.str = private unnamed_addr constant [30 x i8] c\"Hello, optimized world!\\0A\\00\", align 1\n\
-         \n\
-         ; Main function with optimizations applied\n\
-         define i32 @main() {{\n\
-         entry:\n\
-         {}  call i32 @puts(i8* getelementptr inbounds ([30 x i8], [30 x i8]* @.str, i64 0, i64 0))\n\
-           ret i32 0\n\
-         }}\n\
-         \n\
-         ; Optimization metadata\n\
-         !llvm.module.flags = !{{!0}}\n\
-         !0 = !{{i32 1, !\"wchar_size\", i32 4}}\n",
-        config.base_config.level,
-        config.enable_pgo,
-        config.enable_lto,
-        config.enable_size_optimization,
-        config.pass_pipeline,
-        if config.enable_pgo { "; PGO optimized branch\n" } else { "" }
-    );
+    // Initialize LLVM code generator with advanced optimizations
+    let mut codegen = crate::codegen::LlvmCodeGenerator::new()?;
+    let package_config = crate::codegen::llvm::LlvmPackageConfig::default();
     
-    Ok(optimized_ir)
+    codegen.initialize_package_integration(package_manager, package_config)?;
+    
+    // Apply advanced optimization configuration
+    let optimization_level = match config.base_config.level {
+        optimization::OptimizationLevel::None => "0",
+        optimization::OptimizationLevel::Less => "1", 
+        optimization::OptimizationLevel::Default => "2",
+        optimization::OptimizationLevel::Aggressive => "3",
+        optimization::OptimizationLevel::Size => "s",
+        optimization::OptimizationLevel::SizeZ => "z",
+        optimization::OptimizationLevel::SizeAggressive => "z",
+        optimization::OptimizationLevel::Custom(_) => "2", // Default to O2 for custom
+    };
+    
+    codegen.configure_optimization_from_string(optimization_level)?;
+    tracing::info!("Applied advanced optimization level: {}", optimization_level);
+    
+    // Generate LLVM IR from CURSED source using real LLVM code generator
+    tracing::info!("Generating real LLVM IR for advanced optimization...");
+    let ir = codegen.compile_with_packages(&source, None).await?;
+    
+    Ok(ir)
 }
 
-pub fn compile_to_assembly_with_advanced_optimization(
+pub async fn compile_to_assembly_with_advanced_optimization(
     source: &str, 
     config: &optimization::AdvancedOptimizationConfig
 ) -> crate::error::Result<String> {
     tracing::info!("Compiling CURSED source to assembly with advanced optimization");
     
     // First compile to optimized IR
-    let optimized_ir = compile_to_ir_with_advanced_optimization(source, config)?;
+    let optimized_ir = compile_to_ir_with_advanced_optimization(source, config).await?;
     
     // Convert IR to assembly (simplified conversion)
     let assembly = format!(
@@ -726,7 +718,7 @@ async fn compile_to_native_with_advanced_optimization(
     config: &optimization::AdvancedOptimizationConfig,
 ) -> crate::error::Result<AdvancedCompilationResult> {
     // Generate optimized LLVM IR
-    let optimized_ir = compile_to_ir_with_advanced_optimization(source, config)?;
+    let optimized_ir = compile_to_ir_with_advanced_optimization(source, config).await?;
     
     // Compile IR to native executable
     compile_optimized_ir_to_native(&optimized_ir, output_file).await?;
@@ -783,40 +775,9 @@ async fn compile_to_native_with_advanced_optimization(
 async fn compile_optimized_ir_to_native(ir: &str, output_file: &str) -> crate::error::Result<()> {
     tracing::info!("Compiling optimized LLVM IR to native executable");
     
-    // Write IR to temporary file
-    let temp_ir_file = format!("{}.ll", output_file);
-    std::fs::write(&temp_ir_file, ir)
-        .map_err(|e| CursedError::Io(format!("Failed to write IR file: {}", e)))?;
-    
-    // Use existing compilation function with a simple wrapper
-    // For now, we'll just create a simple executable that prints the IR
-    let executable_content = format!(
-        "#!/bin/bash\n\
-         echo \"CURSED optimized executable\"\n\
-         echo \"Generated with advanced optimization\"\n\
-         echo \"IR length: {} characters\"\n",
-        ir.len()
-    );
-    
-    std::fs::write(output_file, executable_content)
-        .map_err(|e| CursedError::Io(format!("Failed to write executable: {}", e)))?;
-    
-    // Make it executable
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mut perms = std::fs::metadata(output_file)
-            .map_err(|e| CursedError::Io(format!("Failed to get file permissions: {}", e)))?
-            .permissions();
-        perms.set_mode(0o755);
-        std::fs::set_permissions(output_file, perms)
-            .map_err(|e| CursedError::Io(format!("Failed to set executable permissions: {}", e)))?;
-    }
-    
-    // Clean up temporary file
-    let _ = std::fs::remove_file(&temp_ir_file);
-    
-    Ok(())
+    // Use the existing LLVM compilation infrastructure with highest optimization level
+    // This will produce a real native executable instead of a shell script stub
+    compile_ir_to_executable_with_optimization(ir, output_file, Some("3"))
 }
 
 pub async fn compile_with_optimization(source_file: &str, output_file: &str, optimization_level: Option<&str>) -> crate::error::Result<()> {
@@ -1059,10 +1020,14 @@ fn compile_ir_to_executable_with_optimization(ir: &str, output_file: &str, optim
             .arg("--version")
             .output();
         
-        if llc_result.is_ok() {
-            tracing::info!("Found llc at: {}", location);
-            llc_path = Some(location.clone());
-            break;
+        if let Ok(output) = llc_result {
+            if output.status.success() {
+                tracing::info!("Found llc at: {}", location);
+                llc_path = Some(location.clone());
+                break;
+            } else {
+                tracing::debug!("llc command failed at: {}", location);
+            }
         } else {
             tracing::debug!("llc not found at: {}", location);
         }
@@ -1129,9 +1094,15 @@ fn link_object_to_executable(obj_file: &str, output_file: &str) -> crate::error:
             .arg("--version")
             .output();
             
-        if result.is_ok() {
-            tracing::info!("Using {} as linker", linker);
-            return link_with_linker(linker, obj_file, output_file);
+        if let Ok(output) = result {
+            if output.status.success() {
+                tracing::info!("Using {} as linker", linker);
+                return link_with_linker(linker, obj_file, output_file);
+            } else {
+                tracing::debug!("Linker command failed: {}", linker);
+            }
+        } else {
+            tracing::debug!("Linker not found: {}", linker);
         }
     }
     

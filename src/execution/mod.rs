@@ -1193,13 +1193,24 @@ impl CursedExecutionEngine {
                 // Store error in context
                 context.set_variable(yikes_stmt.name.clone(), error_obj.clone());
                 
-                // For yikes statements, we store the error but continue execution
-                // unless we're in a panic context. This allows error handling to work properly.
+                // Check if we're in a fam context - if so, trigger recovery
+                if context.is_in_fam_context() {
+                    // Trigger fam recovery by throwing the error
+                    let error_message = match error_obj {
+                        CursedValue::Error { message, .. } => message,
+                        _ => "Error occurred".to_string(),
+                    };
+                    return Err(CursedError::FamRecovery(error_message));
+                }
+                
+                // For yikes statements outside fam, we store the error but continue execution
                 Ok(ExecutionFlow::Continue(error_obj))
             },
             Statement::Fam(fam_stmt) => {
                 // Implement error recovery statement
+                context.enter_fam_context();
                 let protected_result = self.execute_statements(&fam_stmt.body, context);
+                context.exit_fam_context();
                 
                 match protected_result {
                     Ok(flow) => Ok(flow),
@@ -1208,9 +1219,15 @@ impl CursedExecutionEngine {
                         if let Some(recovery_body) = &fam_stmt.recovery_body {
                             // Set error variable if specified
                             if let Some(error_var) = &fam_stmt.error_variable {
-                                let error_value = CursedValue::Error {
-                                    message: cursed_error.to_string(),
-                                    code: None,
+                                let error_value = match cursed_error {
+                                    CursedError::FamRecovery(msg) => CursedValue::Error {
+                                        message: msg,
+                                        code: None,
+                                    },
+                                    _ => CursedValue::Error {
+                                        message: cursed_error.to_string(),
+                                        code: None,
+                                    },
                                 };
                                 context.set_variable(error_var.clone(), error_value);
                             }
@@ -1235,6 +1252,11 @@ impl CursedExecutionEngine {
                         log::debug!("🔍 Set constant: {} = {:?}", name, const_value);
                     }
                 }
+                Ok(ExecutionFlow::Continue(CursedValue::Nil))
+            },
+            &Statement::TypeAlias(ref type_alias) => {
+                // Type aliases are handled at semantic analysis time
+                // For execution, we just ignore them as they're compile-time constructs
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
         }

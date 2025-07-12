@@ -143,37 +143,20 @@ pub use utils::{
 /// 
 /// This function should be called once at program startup to initialize
 /// platform-specific networking components and set up proper socket handling.
+/// 
+/// Pure CURSED implementation without FFI dependencies.
 pub fn initialize() -> NetResult<()> {
-    #[cfg(windows)]
-    {
-        // Initialize Winsock on Windows
-        use std::mem;
-        use std::ptr;
-        
-        #[repr(C)]
-        struct WSAData {
-            wVersion: u16,
-            wHighVersion: u16,
-            szDescription: [u8; 257],
-            szSystemStatus: [u8; 129],
-            iMaxSockets: u16,
-            iMaxUdpDg: u16,
-            lpVendorInfo: *mut u8,
-        }
-        
-        extern "system" {
-            fn WSAStartup(version_requested: u16, wsa_data: *mut WSAData) -> i32;
-        }
-        
-        let mut wsa_data: WSAData = unsafe { mem::zeroed() };
-        let result = unsafe { WSAStartup(0x0202, &mut wsa_data) };
-        
-        if result != 0 {
-            return Err(NetError::System {
-                message: "Failed to initialize Winsock".to_string(),
-            });
-        }
-    }
+    // Pure CURSED networking initialization
+    // Platform-specific initialization handled by Rust std library
+    // No FFI dependencies required
+    
+    // Initialize network statistics
+    let mut stats = NETWORK_STATS.write().unwrap();
+    stats.active_connections = 0;
+    stats.total_bytes_sent = 0;
+    stats.total_bytes_received = 0;
+    stats.dns_queries = 0;
+    stats.failed_connections = 0;
     
     Ok(())
 }
@@ -182,20 +165,16 @@ pub fn initialize() -> NetResult<()> {
 /// 
 /// This function should be called at program shutdown to properly clean up
 /// networking resources and close any remaining connections.
+/// 
+/// Pure CURSED implementation without FFI dependencies.
 pub fn shutdown() -> NetResult<()> {
-    #[cfg(windows)]
-    {
-        extern "system" {
-            fn WSACleanup() -> i32;
-        }
-        
-        let result = unsafe { WSACleanup() };
-        if result != 0 {
-            return Err(NetError::System {
-                message: "Failed to cleanup Winsock".to_string(),
-            });
-        }
-    }
+    // Pure CURSED networking shutdown
+    // Platform-specific cleanup handled by Rust std library
+    // No FFI dependencies required
+    
+    // Reset network statistics
+    let mut stats = NETWORK_STATS.write().unwrap();
+    stats.active_connections = 0;
     
     Ok(())
 }

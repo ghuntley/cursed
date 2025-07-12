@@ -1,0 +1,3 @@
+Arithmetic test: 
+70
+Test complete

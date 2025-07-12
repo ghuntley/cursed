@@ -32,6 +32,9 @@ pub mod sync;
 // Enhanced select for simple channels
 pub mod enhanced_select_simple;
 
+// Production-grade channel implementation
+pub mod production_channel;
+
 // Re-export the simple implementation as the main interface
 pub use simple_channel::{
     SimpleChannel,
@@ -49,6 +52,21 @@ pub use enhanced_select_simple::{
     MixedSelectBuilder,
     select_receive,
     select_send,
+};
+
+// Re-export production channel
+pub use production_channel::{
+    ProductionChannel,
+    ProductionChannelSender,
+    ProductionChannelReceiver,
+    ChannelConfig,
+    ChannelPriority,
+    PriorityMessage,
+    ProductionChannelStats,
+    production_channel,
+    production_channel_default,
+    production_channel_with_capacity,
+    production_channel_unbounded,
 };
 
 // Main channel API using simple implementation

@@ -62,7 +62,7 @@ impl ErrorHandlingCodegen {
         
         // Generate error initialization call
         let init_register = self.next_register();
-        ir.push_str(&format!("  %{} = call i8* @cursed_error_init(i8* %{}, i8* getelementptr inbounds ([13 x i8], [13 x i8]* @error_msg_default, i32 0, i32 0))\n", 
+        ir.push_str(&format!("  %{} = call i8* @cursed_error_init(i8* %{}, i8* getelementptr inbounds ([15 x i8], [15 x i8]* @error_msg_default, i32 0, i32 0))\n", 
                             init_register, error_register));
         
         Ok(ir)
@@ -285,12 +285,11 @@ impl ErrorHandlingCodegen {
         ir.push_str("declare void @cursed_clear_goroutine_error_context(i64)\n");
         ir.push_str("declare i8* @cursed_create_enhanced_context(i8*, i64)\n");
         
-        // Memory management functions
-        ir.push_str("declare i8* @malloc(i32)\n");
-        ir.push_str("declare void @free(i8*)\n");
+        // Memory management functions - handled by main codegen deduplication
+        // malloc and free are declared in main.rs to avoid duplicates
         
         // Default error message
-        ir.push_str("@error_msg_default = private unnamed_addr constant [13 x i8] c\"Error occurred\\00\"\n");
+        ir.push_str("@error_msg_default = private unnamed_addr constant [15 x i8] c\"Error occurred\\00\"\n");
         
         ir
     }

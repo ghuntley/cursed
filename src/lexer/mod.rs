@@ -149,6 +149,7 @@ pub enum TokenKind {
     Colon,
     DoubleColon,    // :: (for paths and type annotations)
     Dot,
+    DotDot,         // .. (for range expressions)
     Question,       // ?
     
     // Special
@@ -251,7 +252,13 @@ impl Lexer {
                     Ok(self.make_token(TokenKind::Colon, ":".to_string(), start_column))
                 }
             },
-            '.' => Ok(self.make_token(TokenKind::Dot, ".".to_string(), start_column)),
+            '.' => {
+                if self.match_char('.') {
+                    Ok(self.make_token(TokenKind::DotDot, "..".to_string(), start_column))
+                } else {
+                    Ok(self.make_token(TokenKind::Dot, ".".to_string(), start_column))
+                }
+            },
             '?' => Ok(self.make_token(TokenKind::Question, "?".to_string(), start_column)),
             '@' => Ok(self.make_token(TokenKind::At, "@".to_string(), start_column)),
             '=' => {

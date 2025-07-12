@@ -29,11 +29,17 @@ pub mod jit_runtime;
 // Test modules
 #[cfg(test)]
 pub mod debug_output_tests;
+#[cfg(test)]
+pub mod production_gc_test;
 
 // Memory management system
 pub mod gc;          // Comprehensive garbage collection system
 pub mod gc_tuning;   // GC performance tuning and tri-color collection
 pub mod memory;      // Memory manager that integrates GC with runtime
+pub mod memory_profiler; // Memory profiling and leak detection
+pub mod concurrent_gc;   // Concurrent garbage collection
+pub mod heap_optimizer;  // Heap allocation optimization
+pub mod gc_monitor;      // GC monitoring and alerting
 
 // Async and channels
 pub mod r#async;
@@ -44,12 +50,29 @@ pub use stack::RuntimeStack;
 pub use value::{ValueManager, CursedValue, Value};
 pub use runtime::{Runtime, RuntimeConfig, RuntimeStats, RuntimeError, RuntimeErrorType};
 
+// Production runtime exports
+pub mod production_runtime;
+pub use production_runtime::{
+    ProductionRuntime, ProductionRuntimeConfig, ProductionRuntimeStats,
+    ChannelConfig, ErrorStats, PerformanceMetrics,
+    initialize_production_runtime, get_production_runtime, shutdown_production_runtime,
+    spawn_goroutine, create_production_channel, create_production_buffered_channel,
+    get_production_stats
+};
+
 // Memory management exports
 pub use gc::{GarbageCollector, GcConfig, GcStats, GcState, RootType,
              GcMemoryManager, RuntimeMemoryManager};
 pub use memory::{MemoryManager, MemoryConfig, MemoryStats, MemoryError, ObjectHandle, 
                 initialize_memory_manager, get_global_memory_manager, shutdown_memory_manager,
                 allocate, allocate_raw, collect_garbage};
+pub use memory_profiler::{MemoryProfiler, ProfilingConfig, ProfilingStats, LeakInfo, 
+                         initialize_profiler, get_profiler, record_allocation, record_deallocation};
+pub use concurrent_gc::{ConcurrentGarbageCollector, ConcurrentGcConfig, ConcurrentStats, 
+                       initialize_concurrent_gc, get_concurrent_gc};
+pub use heap_optimizer::{HeapOptimizer, HeapOptimizerConfig, HeapStats, AllocationStrategy};
+pub use gc_monitor::{GcMonitor, GcMonitorConfig, GcEvent, GcEventType, EventSeverity, 
+                    TuningRecommendation, RecommendationType};
 
 // Additional exports needed by other modules - ADVANCED FEATURES ENABLED
 pub use goroutine::{GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};

@@ -29,13 +29,9 @@ fn test_debug_demo_exact() {
         }
     }
 
-    // Step 2: Parse
+    // Step 2: Parse using the correct method
     let mut parser = Parser::from_tokens(tokens);
-    let ast = parser.parse().expect("Parsing failed");
-    let program = match ast {
-        cursed::ast::Ast::Program(program) => program,
-        _ => panic!("Expected Program")
-    };
+    let program = parser.parse_program().expect("Parsing failed");
 
     println!("\nParsed {} statements:", program.statements.len());
     for (i, stmt) in program.statements.iter().enumerate() {
