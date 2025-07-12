@@ -60,7 +60,7 @@ impl StyleRule {
 
     fn check_variable_naming(&self, name: &str, context: &mut LintContext) {
         // Check for snake_case convention
-        if name.contains(char::is_uppercase) && !name.contains('_') {
+        if name.contains(char::is_uppercase) || (!name.contains('_') && name.chars().any(|c| c.is_uppercase())) {
             context.add_issue(LintIssue {
                 rule: "variable_naming".to_string(),
                 severity: Severity::Info,
@@ -88,7 +88,7 @@ impl StyleRule {
 
     fn check_function_naming(&self, name: &str, context: &mut LintContext) {
         // Check for camelCase convention for functions
-        if name.contains('_') {
+        if name.contains('_') || (name.chars().any(|c| c.is_uppercase()) && name.chars().next().map_or(false, |c| c.is_uppercase())) {
             context.add_issue(LintIssue {
                 rule: "function_naming".to_string(),
                 severity: Severity::Info,

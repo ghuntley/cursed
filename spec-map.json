@@ -1,0 +1,728 @@
+{
+  "grammar": [
+    {
+      "rule": "PackageClause",
+      "description": "Package declaration using 'vibe' keyword",
+      "syntax": "vibe PackageName",
+      "required": true
+    },
+    {
+      "rule": "ImportDecl",
+      "description": "Import declaration using 'yeet' keyword",
+      "syntax": "yeet ( ImportSpec | \"(\" { ImportSpec \";\" } \")\" )",
+      "required": true
+    },
+    {
+      "rule": "FuncDecl",
+      "description": "Function declaration using 'slay' keyword",
+      "syntax": "slay FunctionName [ TypeParameters ] Signature [ FunctionBody ]",
+      "required": true
+    },
+    {
+      "rule": "VarDecl",
+      "description": "Variable declaration using 'sus' keyword",
+      "syntax": "sus ( VarSpec | \"(\" { VarSpec \";\" } \")\" )",
+      "required": true
+    },
+    {
+      "rule": "ConstDecl",
+      "description": "Constants declaration using 'facts' keyword",
+      "syntax": "facts ( ConstSpec | \"(\" { ConstSpec \";\" } \")\" )",
+      "required": true
+    },
+    {
+      "rule": "TypeDecl",
+      "description": "Type declaration using 'be_like' keyword",
+      "syntax": "be_like TypeSpec",
+      "required": true
+    },
+    {
+      "rule": "IfStmt",
+      "description": "If statement using 'lowkey'/'highkey' keywords",
+      "syntax": "lowkey [ SimpleStmt \";\" ] Expression Block [ \"highkey\" ( IfStmt | Block ) ]",
+      "required": true
+    },
+    {
+      "rule": "ForStmt",
+      "description": "For loop using 'bestie' keyword",
+      "syntax": "bestie [ Condition | ForClause | RangeClause ] Block",
+      "required": true
+    },
+    {
+      "rule": "WhileStmt",
+      "description": "While loop using 'periodt' keyword",
+      "syntax": "periodt Expression Block",
+      "required": true
+    },
+    {
+      "rule": "SwitchStmt",
+      "description": "Switch statement using 'vibe_check' keyword",
+      "syntax": "vibe_check [ SimpleStmt \";\" ] [ Expression ] \"{\" { ExprCaseClause } \"}\"",
+      "required": true
+    },
+    {
+      "rule": "ReturnStmt",
+      "description": "Return statement using 'yolo' keyword",
+      "syntax": "yolo [ ExpressionList ]",
+      "required": true
+    },
+    {
+      "rule": "BreakStmt",
+      "description": "Break statement using 'ghosted' keyword",
+      "syntax": "ghosted [ Label ]",
+      "required": true
+    },
+    {
+      "rule": "ContinueStmt",
+      "description": "Continue statement using 'simp' keyword",
+      "syntax": "simp [ Label ]",
+      "required": true
+    },
+    {
+      "rule": "DeferStmt",
+      "description": "Defer statement using 'later' keyword",
+      "syntax": "later Expression",
+      "required": true
+    },
+    {
+      "rule": "GoStmt",
+      "description": "Goroutine spawn using 'stan' keyword",
+      "syntax": "stan Expression",
+      "required": true
+    },
+    {
+      "rule": "SelectStmt",
+      "description": "Select statement using 'ready' keyword",
+      "syntax": "ready \"{\" { SelectCase } \"}\"",
+      "required": true
+    },
+    {
+      "rule": "ShortVarDecl",
+      "description": "Short variable declaration using ':=' operator",
+      "syntax": "IdentifierList \":=\" ExpressionList",
+      "required": true
+    },
+    {
+      "rule": "TupleDestructuring",
+      "description": "Tuple destructuring assignment",
+      "syntax": "(a, b, c) := tuple",
+      "required": true
+    }
+  ],
+  "lexical": [
+    {
+      "token": "Keywords",
+      "description": "Gen Z slang keywords replacing traditional programming keywords",
+      "mapping": {
+        "vibe": "package",
+        "yeet": "import",
+        "slay": "func",
+        "yolo": "return",
+        "sus": "var",
+        "facts": "const",
+        "lowkey": "if",
+        "highkey": "else",
+        "bestie": "for",
+        "periodt": "while",
+        "vibe_check": "switch",
+        "mood": "case",
+        "basic": "default",
+        "ghosted": "break",
+        "simp": "continue",
+        "be_like": "type",
+        "squad": "struct",
+        "collab": "interface",
+        "tea": "string",
+        "dm": "chan",
+        "stan": "go",
+        "flex": "range",
+        "later": "defer",
+        "based": "true",
+        "cap": "false",
+        "cringe": "nil",
+        "ready": "select"
+      },
+      "required": true
+    },
+    {
+      "token": "Comments",
+      "description": "Line and block comments",
+      "patterns": [
+        "fr fr - line comment",
+        "no cap ... on god - block comment"
+      ],
+      "required": true
+    },
+    {
+      "token": "Literals",
+      "description": "Basic literal types",
+      "types": [
+        "Integer literals (decimal, hex, octal, binary)",
+        "Float literals",
+        "String literals (quoted and raw)",
+        "Character literals",
+        "Boolean literals (based, cap)",
+        "Nil literal (cringe)"
+      ],
+      "required": true
+    },
+    {
+      "token": "Operators",
+      "description": "Arithmetic, logical, and assignment operators",
+      "required": true
+    }
+  ],
+  "types": [
+    {
+      "type": "Basic Types",
+      "description": "Built-in primitive types",
+      "types": {
+        "lit": "Boolean type (based/cap)",
+        "smol": "8-bit signed integer",
+        "mid": "16-bit signed integer", 
+        "normie": "32-bit signed integer",
+        "thicc": "64-bit signed integer",
+        "snack": "32-bit floating point",
+        "meal": "64-bit floating point",
+        "byte": "Unsigned 8-bit integer",
+        "rune": "Unicode code point (int32)",
+        "tea": "String type",
+        "sip": "Character type",
+        "extra": "Complex number type"
+      },
+      "required": true
+    },
+    {
+      "type": "Composite Types",
+      "description": "Complex types built from basic types",
+      "types": {
+        "Array": "[n]T - Fixed-size array",
+        "Slice": "[]T - Dynamic array",
+        "Map": "tea[K]V - Key-value mapping",
+        "Struct": "squad - Collection of fields",
+        "Interface": "collab - Set of method signatures",
+        "Pointer": "@T - Pointer to type T",
+        "Function": "Function type with parameters and return values",
+        "Channel": "dm<T> - Communication channel for goroutines"
+      },
+      "required": true
+    },
+    {
+      "type": "Channel Types",
+      "description": "First-class channel types for concurrency",
+      "implementation": "Unbuffered (dm<T>) and buffered (dm<T>[N]) channels with send/receive operations",
+      "required": true
+    },
+    {
+      "type": "Generic Types",
+      "description": "Generic types using square brackets",
+      "syntax": "Stack[T], func[T], map[K]V",
+      "required": true
+    },
+    {
+      "type": "Type Inference",
+      "description": "Automatic type inference for short variable declarations",
+      "syntax": "x := 10 // inferred as normie",
+      "required": true
+    },
+    {
+      "type": "Type Assertions",
+      "description": "Runtime type checking and conversion",
+      "syntax": "value.(type)",
+      "required": true
+    },
+    {
+      "type": "Zero Values",
+      "description": "Default values for uninitialized variables",
+      "required": true
+    }
+  ],
+  "concurrency": [
+    {
+      "feature": "Goroutines",
+      "description": "Lightweight threads using 'stan' keyword",
+      "implementation": "Work-stealing scheduler with M:N threading model",
+      "required": true
+    },
+    {
+      "feature": "Channels",
+      "description": "Communication channels for goroutines",
+      "types": [
+        "Unbuffered channels (synchronous)",
+        "Buffered channels (asynchronous)",
+        "Directional channels (send-only, receive-only)"
+      ],
+      "operations": [
+        "Send: ch <- value",
+        "Receive: value := <-ch",
+        "Close: close(ch)"
+      ],
+      "required": true
+    },
+    {
+      "feature": "Select Statements",
+      "description": "Non-blocking communication using 'ready' keyword",
+      "syntax": "ready { mood ch <- value: ... basic: ... }",
+      "required": true
+    },
+    {
+      "feature": "Concurrency Patterns",
+      "description": "Common patterns for concurrent programming",
+      "patterns": [
+        "Worker Pool Pattern",
+        "Fan-Out/Fan-In Pattern",
+        "Producer-Consumer Pattern",
+        "Pipeline Pattern",
+        "Broadcast Pattern"
+      ],
+      "required": true
+    },
+    {
+      "feature": "Memory Model",
+      "description": "Happens-before relationships and memory synchronization",
+      "requirements": [
+        "Goroutine creation happens-before execution",
+        "Channel operations provide memory barriers",
+        "Data race prevention through synchronization"
+      ],
+      "required": true
+    },
+    {
+      "feature": "Runtime Scheduler",
+      "description": "Goroutine scheduling and management",
+      "implementation": "Work-stealing scheduler with configurable worker threads",
+      "required": true
+    }
+  ],
+  "error_handling": [
+    {
+      "feature": "Error Type",
+      "description": "Built-in error type using 'yikes' keyword",
+      "interface": "message() tea, code() normie, details() tea",
+      "required": true
+    },
+    {
+      "feature": "Error Categories",
+      "description": "Classification of error types",
+      "categories": [
+        "memory_yikes - Memory management errors",
+        "io_yikes - Input/output errors",
+        "network_yikes - Network communication errors",
+        "parse_yikes - Parsing and syntax errors",
+        "type_yikes - Type system errors",
+        "runtime_yikes - Runtime execution errors",
+        "security_yikes - Security and permission errors",
+        "performance_yikes - Performance and resource errors"
+      ],
+      "required": true
+    },
+    {
+      "feature": "Error Propagation",
+      "description": "Automatic error propagation using 'shook' operator",
+      "syntax": "result := operation() shook",
+      "required": true
+    },
+    {
+      "feature": "Panic Handling",
+      "description": "Panic/recover mechanism using 'shook' and 'fam' keywords",
+      "syntax": "fam { ... } sus panic_value { ... }",
+      "required": true
+    },
+    {
+      "feature": "Goroutine Error Isolation",
+      "description": "Panics in goroutines are isolated from other goroutines",
+      "implementation": "Per-goroutine panic recovery with optional propagation",
+      "required": true
+    },
+    {
+      "feature": "Error Wrapping",
+      "description": "Error context and wrapping for better debugging",
+      "implementation": "Contextual error information with stack traces",
+      "required": true
+    },
+    {
+      "feature": "Error Patterns",
+      "description": "Common error handling patterns",
+      "patterns": [
+        "Multiple Error Handling",
+        "Error Retry Pattern",
+        "Circuit Breaker Pattern"
+      ],
+      "required": true
+    }
+  ],
+  "memory_management": [
+    {
+      "feature": "Garbage Collection",
+      "description": "Automatic memory management with generational GC",
+      "algorithm": "Mark-and-sweep with generational optimization",
+      "performance": "Young GC <5ms, Old GC <50ms pause times",
+      "required": true
+    },
+    {
+      "feature": "Heap Management",
+      "description": "Multi-generational heap structure",
+      "structure": "Young generation (33%) with Eden/Survivor spaces, Old generation (67%)",
+      "required": true
+    },
+    {
+      "feature": "Memory Safety",
+      "description": "Prevention of memory-related bugs",
+      "guarantees": [
+        "No dangling pointers",
+        "Automatic memory leak prevention",
+        "Stack overflow detection",
+        "Heap corruption detection"
+      ],
+      "required": true
+    },
+    {
+      "feature": "Memory Pool Management",
+      "description": "Efficient memory allocation with pools",
+      "implementation": "Small and large object pools with recycling",
+      "required": true
+    },
+    {
+      "feature": "Stack Management",
+      "description": "Per-goroutine stack allocation",
+      "configuration": "Default 2MB, minimum 4KB, maximum 16MB per goroutine",
+      "required": true
+    },
+    {
+      "feature": "Memory Monitoring",
+      "description": "Memory usage tracking and debugging",
+      "features": [
+        "Memory leak detection",
+        "Allocation profiling",
+        "GC statistics",
+        "Performance monitoring"
+      ],
+      "required": true
+    }
+  ],
+  "ffi": [
+    {
+      "feature": "C Runtime Bridge",
+      "description": "Interface for calling C functions",
+      "implementation": "Type marshaling between CURSED and C types",
+      "required": true
+    },
+    {
+      "feature": "Type Marshaling",
+      "description": "Automatic conversion between CURSED and C types",
+      "conversions": [
+        "normie <-> int32",
+        "meal <-> double",
+        "tea <-> char*",
+        "lit <-> bool",
+        "Arrays and structs"
+      ],
+      "required": true
+    },
+    {
+      "feature": "Memory Safety",
+      "description": "Safe memory handling across language boundaries",
+      "features": [
+        "Pointer validation",
+        "Buffer overflow protection",
+        "Memory ownership tracking",
+        "Automatic cleanup"
+      ],
+      "required": true
+    },
+    {
+      "feature": "Standard Library Bridge",
+      "description": "Integration with C standard library functions",
+      "functions": [
+        "String functions (strlen, strcpy, etc.)",
+        "Memory functions (malloc, free, etc.)",
+        "I/O functions (printf, fopen, etc.)",
+        "Math functions (sin, cos, sqrt, etc.)"
+      ],
+      "required": true
+    },
+    {
+      "feature": "Callback Support",
+      "description": "Support for C callbacks into CURSED code",
+      "implementation": "Thread-safe callback mechanism with proper cleanup",
+      "required": true
+    }
+  ],
+  "performance": [
+    {
+      "feature": "Compilation Performance",
+      "description": "Build time targets for different project sizes",
+      "targets": {
+        "Small (<1K LOC)": "Debug <100ms, Release <500ms",
+        "Medium (1-10K LOC)": "Debug <1s, Release <5s",
+        "Large (10-100K LOC)": "Debug <10s, Release <30s"
+      },
+      "required": true
+    },
+    {
+      "feature": "Runtime Performance",
+      "description": "Execution speed targets for different operations",
+      "targets": {
+        "Arithmetic Operations": "50M ops/sec (interpreted), 500M ops/sec (native)",
+        "Function Calls": "10M calls/sec (interpreted), 100M calls/sec (native)",
+        "Memory Allocation": "1M allocs/sec (interpreted), 10M allocs/sec (native)"
+      },
+      "required": true
+    },
+    {
+      "feature": "Optimization Levels",
+      "description": "Multiple optimization levels for different use cases",
+      "levels": [
+        "O0 - No optimization (fastest compile)",
+        "O1 - Basic optimization",
+        "O2 - Standard optimization (default)",
+        "O3 - Aggressive optimization",
+        "Os - Size optimization"
+      ],
+      "required": true
+    },
+    {
+      "feature": "LLVM Integration",
+      "description": "LLVM-based optimization and code generation",
+      "implementation": "Full LLVM optimization pipeline with custom passes",
+      "required": true
+    },
+    {
+      "feature": "Performance Monitoring",
+      "description": "Runtime performance tracking and analysis",
+      "features": [
+        "Function call profiling",
+        "Memory allocation tracking",
+        "GC performance metrics",
+        "Execution statistics"
+      ],
+      "required": true
+    }
+  ],
+  "compilation_stages": [
+    {
+      "stage": "Lexical Analysis",
+      "description": "Convert source code to token stream",
+      "implementation": "UTF-8 aware lexer with Gen Z keyword mapping",
+      "required": true
+    },
+    {
+      "stage": "Parsing",
+      "description": "Generate Abstract Syntax Tree from tokens",
+      "implementation": "Recursive descent parser with error recovery",
+      "required": true
+    },
+    {
+      "stage": "Semantic Analysis",
+      "description": "Type checking and semantic validation",
+      "implementation": "Multi-pass semantic analyzer with type inference",
+      "required": true
+    },
+    {
+      "stage": "Optimization",
+      "description": "Code optimization passes",
+      "implementation": "AST-level optimizations and LLVM optimization pipeline",
+      "required": true
+    },
+    {
+      "stage": "Code Generation",
+      "description": "Generate LLVM IR from AST",
+      "implementation": "LLVM IR generation with runtime integration",
+      "required": true
+    },
+    {
+      "stage": "Linking",
+      "description": "Link with runtime libraries and dependencies",
+      "implementation": "Static and dynamic linking support",
+      "required": true
+    }
+  ],
+  "stdlib": [
+    {
+      "module": "vibez (fmt)",
+      "description": "Formatted I/O with print functions",
+      "functions": [
+        "spill() - Print with newline",
+        "spillf() - Formatted print",
+        "spillstr() - Format to string",
+        "scan() - Scan input"
+      ],
+      "required": true
+    },
+    {
+      "module": "core (builtin)",
+      "description": "Fundamental types and functions",
+      "functions": [
+        "Type conversion functions",
+        "append(), len(), cap()",
+        "make(), new()",
+        "shook(), unbothered()"
+      ],
+      "required": true
+    },
+    {
+      "module": "dropz (io)",
+      "description": "Basic I/O primitives",
+      "interfaces": [
+        "Reader", "Writer", "Closer"
+      ],
+      "required": true
+    },
+    {
+      "module": "vibe_life (os)",
+      "description": "Operating system functionality",
+      "functions": [
+        "Args - Command line arguments",
+        "Getenv/Setenv - Environment variables",
+        "Exit - Process termination",
+        "File operations"
+      ],
+      "required": true
+    },
+    {
+      "module": "stringz (strings)",
+      "description": "String manipulation functions",
+      "functions": [
+        "Contains, Count, Index functions",
+        "Split, Join, Replace functions",
+        "Case conversion functions",
+        "Trim functions"
+      ],
+      "required": true
+    },
+    {
+      "module": "mathz (math)",
+      "description": "Mathematical functions and constants",
+      "functions": [
+        "Abs, Ceil, Floor, Round",
+        "Min, Max, Pow, Sqrt",
+        "Trigonometric functions",
+        "Constants (Pi, E)"
+      ],
+      "required": true
+    },
+    {
+      "module": "timez (time)",
+      "description": "Time and duration handling",
+      "types": [
+        "Time - Point in time",
+        "Duration - Time span"
+      ],
+      "functions": [
+        "Now(), Sleep(), Since(), Until()"
+      ],
+      "required": true
+    },
+    {
+      "module": "concurrenz (sync)",
+      "description": "Synchronization primitives",
+      "types": [
+        "Mutex - Mutual exclusion",
+        "RWMutex - Reader/writer lock",
+        "WaitGroup - Goroutine synchronization",
+        "Cond - Condition variable"
+      ],
+      "required": true
+    },
+    {
+      "module": "web_vibez (net/http)",
+      "description": "HTTP client and server",
+      "types": [
+        "Client - HTTP client",
+        "Server - HTTP server",
+        "Request - HTTP request",
+        "ResponseWriter - HTTP response"
+      ],
+      "required": true
+    },
+    {
+      "module": "json_tea (encoding/json)",
+      "description": "JSON encoding and decoding",
+      "functions": [
+        "Marshal() - Encode to JSON",
+        "Unmarshal() - Decode from JSON"
+      ],
+      "required": true
+    },
+    {
+      "module": "cryptz (crypto)",
+      "description": "Cryptographic functions",
+      "features": [
+        "Hash functions (SHA256, SHA512, BLAKE3)",
+        "Symmetric encryption (AES-GCM)",
+        "Asymmetric crypto (RSA, ECDSA, Ed25519)",
+        "Password hashing",
+        "Random number generation"
+      ],
+      "required": true
+    },
+    {
+      "module": "math_rand_tea (math/rand)",
+      "description": "Random number generation",
+      "features": [
+        "Multiple RNG algorithms (PCG, Xoshiro256)",
+        "Probability distributions",
+        "Random sampling utilities",
+        "Seedable generators"
+      ],
+      "required": true
+    }
+  ],
+  "self_hosting_requirements": [
+    {
+      "requirement": "Bootstrap Compiler",
+      "description": "Initial compiler written in Rust",
+      "implementation": "Minimal subset compiler capable of compiling full CURSED",
+      "required": true
+    },
+    {
+      "requirement": "Self-Compilation",
+      "description": "Compiler written in CURSED compiles itself",
+      "validation": "Stage 2 compiler compiles Stage 3 compiler",
+      "required": true
+    },
+    {
+      "requirement": "Runtime System",
+      "description": "Complete runtime supporting all language features",
+      "components": [
+        "Garbage collector",
+        "Goroutine scheduler",
+        "Channel implementation",
+        "Memory manager",
+        "Error handling system"
+      ],
+      "required": true
+    },
+    {
+      "requirement": "Standard Library",
+      "description": "Complete standard library implementation",
+      "implementation": "All stdlib modules implemented in CURSED",
+      "required": true
+    },
+    {
+      "requirement": "Testing Framework",
+      "description": "Comprehensive testing system",
+      "features": [
+        "Unit testing (testz framework)",
+        "Integration testing",
+        "Performance testing",
+        "Self-hosting validation"
+      ],
+      "required": true
+    },
+    {
+      "requirement": "Development Tools",
+      "description": "Complete development toolchain",
+      "tools": [
+        "Compiler",
+        "Linker", 
+        "Debugger",
+        "Formatter",
+        "Linter",
+        "Package manager",
+        "Documentation generator"
+      ],
+      "required": true
+    }
+  ]
+}

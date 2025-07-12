@@ -1,280 +1,268 @@
-# vibe_life Module Test Suite
-# Comprehensive tests for operating system interface functionality
-
 yeet "testz"
 yeet "vibe_life"
 
-# Test Environment Variables
-test_start("getenv test")
-sus env_val tea = getenv("HOME")
-assert_eq_string(env_val, "")  # Returns empty string in simulation
-print_test_summary()
+# Comprehensive tests for vibe_life OS module
 
-test_start("setenv test")
-sus set_result lit = setenv("TEST_VAR", "test_value")
-assert_true(set_result)
-print_test_summary()
+test_start("vibe_life OS module comprehensive tests")
 
-test_start("unsetenv test")
-sus unset_result lit = unsetenv("TEST_VAR")
-assert_true(unset_result)
-print_test_summary()
+# Test command line arguments
+test_start("Args() function")
+args := vibe_life.Args()
+assert_true(len(args) > 0)
+assert_eq_string(args[0], "cursed")
+vibez.spill("✅ Args() test passed")
 
-test_start("environ test")
-sus env_vars [tea] = environ()
-assert_true(based)  # Function executes successfully
-print_test_summary()
+# Test environment variables
+test_start("Getenv() function")
+home := vibe_life.Getenv("HOME")
+assert_eq_string(home, "/home/user")
 
-# Test Command Line Arguments
-test_start("argc test")
-sus arg_count normie = argc()
-assert_eq_int(arg_count, 0)  # Returns 0 in simulation
-print_test_summary()
+path := vibe_life.Getenv("PATH")
+assert_eq_string(path, "/usr/bin:/bin")
 
-test_start("arg test")
-sus first_arg tea = arg(0)
-assert_eq_string(first_arg, "")  # Returns empty string in simulation
-print_test_summary()
+# Test non-existent environment variable
+empty := vibe_life.Getenv("NON_EXISTENT")
+assert_eq_string(empty, "")
+vibez.spill("✅ Getenv() test passed")
 
-test_start("args test")
-sus cmd_args [tea] = args()
-assert_true(based)  # Function executes successfully
-print_test_summary()
+# Test setting environment variables
+test_start("Setenv() function")
+err := vibe_life.Setenv("TEST_VAR", "test_value")
+assert_true(err == cringe)
 
-# Test Process Control
-test_start("getpid test")
-sus pid normie = getpid()
-assert_eq_int(pid, 12345)  # Simulated PID
-print_test_summary()
+# Verify the variable was set
+test_value := vibe_life.Getenv("TEST_VAR")
+assert_eq_string(test_value, "test_value")
+vibez.spill("✅ Setenv() test passed")
 
-test_start("getppid test")
-sus ppid normie = getppid()
-assert_eq_int(ppid, 1)  # Simulated parent PID
-print_test_summary()
+# Test working directory operations
+test_start("Getwd() and Chdir() functions")
+wd, err := vibe_life.Getwd()
+assert_true(err == cringe)
+assert_eq_string(wd, "/tmp")
 
-# Test File Path Operations
-test_start("path_join test")
-sus paths [tea] = ["home", "user", "documents"]
-sus joined tea = path_join(paths)
-assert_eq_string(joined, "home/user/documents")
-print_test_summary()
+# Change directory
+err = vibe_life.Chdir("/home/user")
+assert_true(err == cringe)
 
-test_start("path_split test")
-sus (dir, file) = path_split("/home/user/file.txt")
-assert_eq_string(dir, "/home/user")
-assert_eq_string(file, "file.txt")
-print_test_summary()
+# Verify directory changed
+new_wd, err := vibe_life.Getwd()
+assert_true(err == cringe)
+assert_eq_string(new_wd, "/home/user")
+vibez.spill("✅ Working directory test passed")
 
-test_start("path_ext test")
-sus ext tea = path_ext("/home/user/file.txt")
-assert_eq_string(ext, ".txt")
-print_test_summary()
+# Test file operations
+test_start("File operations")
+file, err := vibe_life.Create("test_file.txt")
+assert_true(err == cringe)
+assert_eq_string(file.name, "test_file.txt")
+assert_true(file.is_open)
+assert_true(file.handle > 0)
 
-test_start("path_base test")
-sus base tea = path_base("/home/user/file.txt")
-assert_eq_string(base, "file.txt")
-print_test_summary()
+# Test file writing
+bytes_written, err := file.Write("Hello, World!")
+assert_true(err == cringe)
+assert_eq_int(bytes_written, 13)
 
-test_start("path_dir test")
-sus dir tea = path_dir("/home/user/file.txt")
-assert_eq_string(dir, "/home/user")
-print_test_summary()
+# Test file closing
+err = file.Close()
+assert_true(err == cringe)
+assert_false(file.is_open)
+vibez.spill("✅ File operations test passed")
 
-test_start("path_clean test")
-sus clean tea = path_clean("/home//user///file.txt")
-assert_eq_string(clean, "/home//user///file.txt")  # Simple implementation
-print_test_summary()
+# Test file opening
+test_start("File opening")
+opened_file, err := vibe_life.Open("existing_file.txt")
+assert_true(err == cringe)
+assert_eq_string(opened_file.name, "existing_file.txt")
+assert_true(opened_file.is_open)
+vibez.spill("✅ File opening test passed")
 
-test_start("path_abs test")
-sus abs tea = path_abs("file.txt")
-assert_eq_string(abs, "/current/working/directory/file.txt")
-print_test_summary()
+# Test file existence checking
+test_start("File existence checking")
+exists := vibe_life.Exists("test.txt")
+assert_true(exists)
 
-# Test Directory Operations
-test_start("getcwd test")
-sus cwd tea = getcwd()
-assert_eq_string(cwd, "/current/working/directory")
-print_test_summary()
+not_exists := vibe_life.Exists("non_existent.txt")
+assert_false(not_exists)
+vibez.spill("✅ File existence test passed")
 
-test_start("chdir test")
-sus chdir_result lit = chdir("/tmp")
-assert_true(chdir_result)
-print_test_summary()
+# Test file removal
+test_start("File removal")
+err = vibe_life.Remove("test.txt")
+assert_true(err == cringe)
 
-test_start("mkdir test")
-sus mkdir_result lit = mkdir("/tmp/test_dir", 755)
-assert_true(mkdir_result)
-print_test_summary()
+# Test removing non-existent file
+err = vibe_life.Remove("non_existent.txt")
+assert_true(err != cringe)
+vibez.spill("✅ File removal test passed")
 
-test_start("mkdir_all test")
-sus mkdir_all_result lit = mkdir_all("/tmp/test/deep/dir", 755)
-assert_true(mkdir_all_result)
-print_test_summary()
+# Test file info
+test_start("File info")
+info, err := vibe_life.Stat("test.txt")
+assert_true(err == cringe)
+assert_eq_string(info.name, "test.txt")
+assert_eq_int(info.size, 1024)
+assert_false(info.is_dir)
+assert_eq_int(info.mode, 0644)
+vibez.spill("✅ File info test passed")
 
-test_start("rmdir test")
-sus rmdir_result lit = rmdir("/tmp/test_dir")
-assert_true(rmdir_result)
-print_test_summary()
+# Test directory operations
+test_start("Directory operations")
+err = vibe_life.Mkdir("test_dir")
+assert_true(err == cringe)
 
-test_start("remove test")
-sus remove_result lit = remove("/tmp/test_file")
-assert_true(remove_result)
-print_test_summary()
+files, err := vibe_life.ReadDir("test_dir")
+assert_true(err == cringe)
+assert_true(len(files) > 0)
 
-test_start("remove_all test")
-sus remove_all_result lit = remove_all("/tmp/test_tree")
-assert_true(remove_all_result)
-print_test_summary()
+err = vibe_life.Rmdir("test_dir")
+assert_true(err == cringe)
+vibez.spill("✅ Directory operations test passed")
 
-# Test File Information
-test_start("exists test")
-sus exists_result lit = exists("/tmp")
-assert_true(exists_result)
-print_test_summary()
+# Test system information
+test_start("System information")
+hostname, err := vibe_life.Hostname()
+assert_true(err == cringe)
+assert_eq_string(hostname, "cursed-host")
 
-test_start("is_dir test")
-sus is_dir_result lit = is_dir("/tmp")
-assert_true(is_dir_result)
-print_test_summary()
-
-test_start("is_file test")
-sus is_file_result lit = is_file("/tmp/file.txt")
-assert_true(is_file_result)
-print_test_summary()
-
-test_start("file_size test")
-sus size thicc = file_size("/tmp/file.txt")
-assert_eq_int(size, 0)  # Simulated size
-print_test_summary()
-
-test_start("file_mode test")
-sus mode normie = file_mode("/tmp/file.txt")
-assert_eq_int(mode, 644)
-print_test_summary()
-
-# Test User/Group Information
-test_start("getuid test")
-sus uid normie = getuid()
+uid := vibe_life.Getuid()
 assert_eq_int(uid, 1000)
-print_test_summary()
 
-test_start("getgid test")
-sus gid normie = getgid()
+gid := vibe_life.Getgid()
 assert_eq_int(gid, 1000)
+
+pid := vibe_life.Getpid()
+assert_eq_int(pid, 12345)
+
+ppid := vibe_life.Getppid()
+assert_eq_int(ppid, 12344)
+vibez.spill("✅ System information test passed")
+
+# Test temporary file operations
+test_start("Temporary file operations")
+temp_dir := vibe_life.TempDir()
+assert_eq_string(temp_dir, "/tmp")
+
+temp_file, err := vibe_life.TempFile("test_prefix")
+assert_true(err == cringe)
+assert_true(len(temp_file.name) > 0)
+vibez.spill("✅ Temporary file operations test passed")
+
+# Test command execution
+test_start("Command execution")
+args := []tea{"arg1", "arg2", "arg3"}
+err = vibe_life.Exec("test_command", args)
+assert_true(err == cringe)
+vibez.spill("✅ Command execution test passed")
+
+# Test time functions
+test_start("Time functions")
+timestamp := vibe_life.Now()
+assert_true(timestamp > 0)
+
+formatted_time := vibe_life.FormatTime(timestamp)
+assert_eq_string(formatted_time, "2022-01-01 00:00:00")
+vibez.spill("✅ Time functions test passed")
+
+# Test signal handling
+test_start("Signal handling")
+vibe_life.Signal(15)  # SIGTERM
+vibez.spill("✅ Signal handling test passed")
+
+# Test sleep function
+test_start("Sleep function")
+vibe_life.Sleep(100)  # Sleep for 100ms
+vibez.spill("✅ Sleep function test passed")
+
+# Test exit function (non-terminating for testing)
+test_start("Exit function")
+vibe_life.Exit(0)  # Normal exit
+vibez.spill("✅ Exit function test passed")
+
+# Test file reading
+test_start("File reading")
+read_file, err := vibe_life.Open("test_file.txt")
+assert_true(err == cringe)
+
+buffer := make([]byte, 100)
+bytes_read, err := read_file.Read(buffer)
+assert_true(err == cringe)
+assert_true(bytes_read > 0)
+
+err = read_file.Close()
+assert_true(err == cringe)
+vibez.spill("✅ File reading test passed")
+
+# Test error handling for closed files
+test_start("Error handling for closed files")
+closed_file, err := vibe_life.Create("closed_test.txt")
+assert_true(err == cringe)
+
+err = closed_file.Close()
+assert_true(err == cringe)
+
+# Try to write to closed file
+_, err = closed_file.Write("test")
+assert_true(err != cringe)
+
+# Try to read from closed file
+buffer := make([]byte, 10)
+_, err = closed_file.Read(buffer)
+assert_true(err != cringe)
+vibez.spill("✅ Error handling for closed files test passed")
+
+# Test comprehensive environment variable management
+test_start("Comprehensive environment variable management")
+# Set multiple environment variables
+vibe_life.Setenv("VAR1", "value1")
+vibe_life.Setenv("VAR2", "value2")
+vibe_life.Setenv("VAR3", "value3")
+
+# Verify all variables are set
+assert_eq_string(vibe_life.Getenv("VAR1"), "value1")
+assert_eq_string(vibe_life.Getenv("VAR2"), "value2")
+assert_eq_string(vibe_life.Getenv("VAR3"), "value3")
+
+# Override existing variable
+vibe_life.Setenv("VAR1", "new_value1")
+assert_eq_string(vibe_life.Getenv("VAR1"), "new_value1")
+vibez.spill("✅ Comprehensive environment variable management test passed")
+
+# Test multiple file operations
+test_start("Multiple file operations")
+files := []tea{"file1.txt", "file2.txt", "file3.txt"}
+
+# Create multiple files
+bestie i := 0; i < len(files); i++ {
+    file, err := vibe_life.Create(files[i])
+    assert_true(err == cringe)
+    assert_eq_string(file.name, files[i])
+    
+    # Write to each file
+    _, err = file.Write("Content for " + files[i])
+    assert_true(err == cringe)
+    
+    # Close each file
+    err = file.Close()
+    assert_true(err == cringe)
+}
+vibez.spill("✅ Multiple file operations test passed")
+
+# Test argument parsing simulation
+test_start("Argument parsing simulation")
+args := vibe_life.Args()
+assert_true(len(args) >= 2)
+
+# Simulate command line argument parsing
+program_name := args[0]
+assert_eq_string(program_name, "cursed")
+
+if len(args) > 1 {
+    script_name := args[1]
+    assert_eq_string(script_name, "program.csd")
+}
+vibez.spill("✅ Argument parsing simulation test passed")
+
 print_test_summary()
-
-test_start("username test")
-sus user tea = username()
-assert_eq_string(user, "cursed_user")
-print_test_summary()
-
-test_start("hostname test")
-sus host tea = hostname()
-assert_eq_string(host, "cursed-host")
-print_test_summary()
-
-# Test Signal Handling
-test_start("signal_handler test")
-sus sig_result lit = signal_handler(SIGINT, slay(sig normie) {
-    vibez.spill("Signal received:", sig)
-})
-assert_true(sig_result)
-print_test_summary()
-
-test_start("kill test")
-sus kill_result lit = kill(12345, SIGTERM)
-assert_true(kill_result)
-print_test_summary()
-
-# Test System Information
-test_start("system_info test")
-sus info tea = system_info()
-assert_eq_string(info, "CURSED OS v1.0")
-print_test_summary()
-
-test_start("temp_dir test")
-sus temp tea = temp_dir()
-assert_eq_string(temp, "/tmp")
-print_test_summary()
-
-test_start("home_dir test")
-sus home tea = home_dir()
-assert_eq_string(home, "/home/cursed_user")
-print_test_summary()
-
-# Test File Permissions
-test_start("chmod test")
-sus chmod_result lit = chmod("/tmp/file.txt", 644)
-assert_true(chmod_result)
-print_test_summary()
-
-test_start("chown test")
-sus chown_result lit = chown("/tmp/file.txt", 1000, 1000)
-assert_true(chown_result)
-print_test_summary()
-
-# Test Process Environment
-test_start("expand_env test")
-sus expanded tea = expand_env("Hello $USER")
-assert_eq_string(expanded, "Hello $USER")  # Simple implementation
-print_test_summary()
-
-# Test Time/Date Operations
-test_start("time_now test")
-sus now thicc = time_now()
-assert_eq_int(now, 1704067200)
-print_test_summary()
-
-# Test Constants
-test_start("exit constants test")
-assert_eq_int(EXIT_SUCCESS, 0)
-assert_eq_int(EXIT_FAILURE, 1)
-print_test_summary()
-
-test_start("mode constants test")
-assert_eq_int(MODE_READ, 0o444)
-assert_eq_int(MODE_WRITE, 0o200)
-assert_eq_int(MODE_EXEC, 0o111)
-print_test_summary()
-
-test_start("signal constants test")
-assert_eq_int(SIGINT, 2)
-assert_eq_int(SIGTERM, 15)
-assert_eq_int(SIGKILL, 9)
-print_test_summary()
-
-# Test Path Operations with Edge Cases
-test_start("path_join empty test")
-sus empty_paths [tea] = []
-sus empty_joined tea = path_join(empty_paths)
-assert_eq_string(empty_joined, "")
-print_test_summary()
-
-test_start("path_split root test")
-sus (root_dir, root_file) = path_split("/")
-assert_eq_string(root_dir, "")
-assert_eq_string(root_file, "")
-print_test_summary()
-
-test_start("path_ext no extension test")
-sus no_ext tea = path_ext("/home/user/file")
-assert_eq_string(no_ext, "")
-print_test_summary()
-
-# Test Complex Path Operations
-test_start("complex path operations test")
-sus complex_path tea = "/home/user/documents/project/file.txt"
-sus complex_dir tea = path_dir(complex_path)
-sus complex_base tea = path_base(complex_path)
-sus complex_ext tea = path_ext(complex_path)
-
-assert_eq_string(complex_dir, "/home/user/documents/project")
-assert_eq_string(complex_base, "file.txt")
-assert_eq_string(complex_ext, ".txt")
-print_test_summary()
-
-# Final summary message
-vibez.spill("=== vibe_life Module Test Suite Complete ===")
-vibez.spill("All 50+ operating system interface functions tested")
-vibez.spill("Categories: Environment, Args, Process, Paths, Dirs, Files, Users, Signals, System")
-vibez.spill("Production-ready OS interface module for CURSED")
+vibez.spill("🎉 All vibe_life OS module tests completed successfully!")

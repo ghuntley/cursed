@@ -703,6 +703,37 @@ declare i32 @_Unwind_GetTextRelBase(i8*)
                 let recovery_ir = self.error_handler.generate_fam_statement(fam_stmt)?;
                 self.ir_code.push_str(&recovery_ir);
             },
+            Statement::Const(const_decl) => {
+                // Generate constant declarations
+                self.ir_code.push_str("  ; Constant declarations (facts)\n");
+                for spec in &const_decl.specs {
+                    for (name, value) in spec.names.iter().zip(spec.values.iter()) {
+                        let value_reg = self.generate_expression(value)?;
+                        self.ir_code.push_str(&format!("  @{} = constant ", name));
+                        
+                        // Determine type and generate constant
+                        match value {
+                            crate::ast::Expression::Integer(_) => {
+                                self.ir_code.push_str("i32 ");
+                            },
+                            crate::ast::Expression::Float(_) => {
+                                self.ir_code.push_str("double ");
+                            },
+                            crate::ast::Expression::String(_) => {
+                                self.ir_code.push_str("i8* ");
+                            },
+                            crate::ast::Expression::Boolean(_) => {
+                                self.ir_code.push_str("i1 ");
+                            },
+                            _ => {
+                                self.ir_code.push_str("i32 ");
+                            }
+                        }
+                        self.ir_code.push_str(&value_reg);
+                        self.ir_code.push_str("\n");
+                    }
+                }
+            },
         }
         Ok(())
     }

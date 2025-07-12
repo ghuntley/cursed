@@ -130,6 +130,7 @@ impl SimpleCursedFormatter {
             *line = self.format_arrays_and_tuples(line);
             *line = self.format_function_parameters(line);
             *line = self.format_channel_operations(line);
+            // Function signatures formatting would go here
             
             // Add spaces after semicolons
             *line = self.add_semicolon_spaces(line);
@@ -791,5 +792,82 @@ mod tests {
         println!("DEBUG: brace spacing formatted result: '{}'", formatted);
         
         assert!(formatted.contains("nah x > 0 {"));
+    }
+
+    #[test]
+    fn test_complex_expressions() {
+        let formatter = SimpleCursedFormatter::default();
+        let source = "sus result normie=x*2+y/3.14-1\nsus array[5]normie={1,2,3,4,5}\nsus tuple:=(x,y,z)";
+        
+        let formatted = formatter.format(source).unwrap();
+        
+        println!("DEBUG: complex expressions formatted result: '{}'", formatted);
+        
+        assert!(formatted.contains("sus result normie = x * 2 + y / 3.14 - 1"));
+        assert!(formatted.contains("sus array[5]normie = {1, 2, 3, 4, 5}"));
+        assert!(formatted.contains("sus tuple := (x, y, z)"));
+    }
+
+    #[test]
+    fn test_nested_structures() {
+        let formatter = SimpleCursedFormatter::default();
+        let source = "nah x>0{\nnah y<10{\nvibez.spill(\"nested\")\n}\n}";
+        
+        let formatted = formatter.format(source).unwrap();
+        
+        println!("DEBUG: nested structures formatted result: '{}'", formatted);
+        
+        assert!(formatted.contains("nah x > 0 {"));
+        assert!(formatted.contains("    nah y < 10 {"));
+        assert!(formatted.contains("        vibez.spill(\"nested\")"));
+    }
+
+    #[test]
+    fn test_channel_operations() {
+        let formatter = SimpleCursedFormatter::default();
+        let source = "ch<-42\nsus value:=<-ch";
+        
+        let formatted = formatter.format(source).unwrap();
+        
+        println!("DEBUG: channel operations formatted result: '{}'", formatted);
+        
+        assert!(formatted.contains("ch <- 42"));
+        assert!(formatted.contains("sus value := <-ch"));
+    }
+
+    #[test]
+    fn test_deterministic_output() {
+        let formatter = SimpleCursedFormatter::default();
+        let source = "sus x drip=3.14\nvibez.spill(x)";
+        
+        let formatted1 = formatter.format(source).unwrap();
+        let formatted2 = formatter.format(&formatted1).unwrap();
+        
+        assert_eq!(formatted1, formatted2, "Formatter output should be deterministic");
+    }
+
+    #[test]
+    fn test_function_parameters() {
+        let formatter = SimpleCursedFormatter::default();
+        let source = "slay test_func(x normie,y drip,z lit)normie{\ndamn x+1\n}";
+        
+        let formatted = formatter.format(source).unwrap();
+        
+        println!("DEBUG: function parameters formatted result: '{}'", formatted);
+        
+        assert!(formatted.contains("slay test_func(x normie, y drip, z lit)normie {"));
+    }
+
+    #[test]
+    fn test_array_literals() {
+        let formatter = SimpleCursedFormatter::default();
+        let source = "sus arr:=[1,2,3,4,5]\nsus tuple:=(a,b,c)";
+        
+        let formatted = formatter.format(source).unwrap();
+        
+        println!("DEBUG: array literals formatted result: '{}'", formatted);
+        
+        assert!(formatted.contains("sus arr := [1, 2, 3, 4, 5]"));
+        assert!(formatted.contains("sus tuple := (a, b, c)"));
     }
 }

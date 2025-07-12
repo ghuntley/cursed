@@ -103,6 +103,30 @@ slay spillstr(format tea, args ...tea) tea {
     damn simple_format(format, args);
 }
 
+slay scan(format tea, args ...tea) normie {
+    // Scan input according to format (from specification)
+    // Simplified implementation - reads from stdin
+    sus input tea = builtin_read_line();
+    
+    // Basic parsing - just return 1 for success, 0 for failure
+    lowkey string_len(input) > 0 {
+        damn 1;
+    }
+    damn 0;
+}
+
+slay scanln(format tea, args ...tea) normie {
+    // Scan line input according to format (from specification)
+    // Simplified implementation - reads a line from stdin
+    sus input tea = builtin_read_line();
+    
+    // Basic parsing - just return 1 for success, 0 for failure
+    lowkey string_len(input) > 0 {
+        damn 1;
+    }
+    damn 0;
+}
+
 slay simple_format(format tea, args ...tea) tea {
     // Simple format function that handles %s, %d, %f
     // Replace %s with string arguments sequentially

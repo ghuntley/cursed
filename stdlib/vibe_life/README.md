@@ -1,118 +1,126 @@
-# vibe_life - Operating System Interface Module
+# vibe_life - OS Functionality Module
 
-A comprehensive operating system interface module for CURSED, equivalent to Go's `os` package. Provides access to operating system functionality including environment variables, process control, file operations, and system information.
+The `vibe_life` module provides essential operating system functionality for CURSED programs, enabling command-line applications to interact with the OS environment, file system, and process management.
 
 ## Features
 
-### Environment Variables
-- `getenv(key)` - Get environment variable value
-- `setenv(key, value)` - Set environment variable
-- `unsetenv(key)` - Remove environment variable
-- `environ()` - Get all environment variables
-- `clearenv()` - Clear all environment variables
-- `expand_env(text)` - Expand environment variables in text
-
 ### Command Line Arguments
-- `args()` - Get all command line arguments
-- `arg(index)` - Get specific argument by index
-- `argc()` - Get number of arguments
+- `Args() []tea` - Get command line arguments
+- Automatic initialization with program name and script
 
-### Process Control
-- `exit(code)` - Exit program with specified code
-- `getpid()` - Get current process ID
-- `getppid()` - Get parent process ID
-- `kill(pid, signal)` - Send signal to process
+### Environment Variables
+- `Getenv(key tea) tea` - Get environment variable value
+- `Setenv(key tea, value tea) error` - Set environment variable
+- Pre-populated with common variables (PATH, HOME, USER, etc.)
 
-### File Path Operations
-- `path_join(paths)` - Join file paths with appropriate separator
-- `path_split(path)` - Split path into directory and file components
-- `path_ext(path)` - Get file extension
-- `path_base(path)` - Get base name of path
-- `path_dir(path)` - Get directory portion of path
-- `path_clean(path)` - Clean path by removing redundant separators
-- `path_abs(path)` - Get absolute path
+### File System Operations
+- `Create(name tea) (File, error)` - Create new file
+- `Open(name tea) (File, error)` - Open existing file
+- `Exists(name tea) lit` - Check if file exists
+- `Remove(name tea) error` - Delete file
+- `Stat(name tea) (FileInfo, error)` - Get file information
 
 ### Directory Operations
-- `getcwd()` - Get current working directory
-- `chdir(dir)` - Change working directory
-- `mkdir(path, perm)` - Create directory with permissions
-- `mkdir_all(path, perm)` - Create directory and all parents
-- `rmdir(path)` - Remove empty directory
-- `remove(path)` - Remove file or directory
-- `remove_all(path)` - Remove directory and all contents
+- `Getwd() (tea, error)` - Get current working directory
+- `Chdir(dir tea) error` - Change working directory
+- `Mkdir(name tea) error` - Create directory
+- `Rmdir(name tea) error` - Remove directory
+- `ReadDir(name tea) ([]tea, error)` - List directory contents
 
-### File Information
-- `exists(path)` - Check if file or directory exists
-- `is_dir(path)` - Check if path is a directory
-- `is_file(path)` - Check if path is a regular file
-- `file_size(path)` - Get file size in bytes
-- `file_mode(path)` - Get file permissions/mode
-- `chmod(path, mode)` - Change file permissions
-- `chown(path, uid, gid)` - Change file ownership
+### File Operations
+- `File.Write(data tea) (normie, error)` - Write to file
+- `File.Read(buffer []byte) (normie, error)` - Read from file
+- `File.Close() error` - Close file handle
 
-### User/Group Information
-- `getuid()` - Get user ID
-- `getgid()` - Get group ID
-- `username()` - Get current username
-- `hostname()` - Get system hostname
-
-### Signal Handling
-- `signal_handler(sig, handler)` - Install signal handler
-- Signal constants: `SIGINT`, `SIGTERM`, `SIGKILL`, `SIGUSR1`, `SIGUSR2`
+### Process Management
+- `Exit(code normie)` - Exit program with status code
+- `Getpid() normie` - Get process ID
+- `Getppid() normie` - Get parent process ID
+- `Exec(command tea, args []tea) error` - Execute external command
 
 ### System Information
-- `system_info()` - Get system information
-- `temp_dir()` - Get temporary directory path
-- `home_dir()` - Get user home directory
-- `time_now()` - Get current Unix timestamp
-- `sleep(seconds)` - Sleep for specified seconds
+- `Hostname() (tea, error)` - Get system hostname
+- `Getuid() normie` - Get user ID
+- `Getgid() normie` - Get group ID
+- `TempDir() tea` - Get temporary directory path
+
+### Temporary Files
+- `TempFile(prefix tea) (File, error)` - Create temporary file
+- Automatic cleanup and unique naming
+
+### Time Functions
+- `Now() normie` - Get current timestamp
+- `FormatTime(timestamp normie) tea` - Format timestamp
+- `Sleep(ms normie)` - Sleep for milliseconds
+
+### Signal Handling
+- `Signal(sig normie)` - Handle system signals
+- Support for common signals (SIGTERM, SIGINT, etc.)
+
+## Data Structures
+
+### File
+```cursed
+struct File {
+    name tea        # File name
+    handle normie   # File handle ID
+    is_open lit     # Open/closed status
+}
+```
+
+### FileInfo
+```cursed
+struct FileInfo {
+    name tea        # File name
+    size normie     # File size in bytes
+    is_dir lit      # Is directory flag
+    mode normie     # File permissions
+}
+```
 
 ## Usage Examples
+
+### Basic File Operations
+```cursed
+yeet "vibe_life"
+
+# Create and write to file
+file, err := vibe_life.Create("output.txt")
+if err == cringe {
+    file.Write("Hello, World!")
+    file.Close()
+}
+
+# Read from file
+read_file, err := vibe_life.Open("input.txt")
+if err == cringe {
+    buffer := make([]byte, 1024)
+    bytes_read, err := read_file.Read(buffer)
+    read_file.Close()
+}
+```
 
 ### Environment Variables
 ```cursed
 yeet "vibe_life"
 
 # Get environment variable
-sus home tea = getenv("HOME")
-vibez.spill("Home directory:", home)
+home := vibe_life.Getenv("HOME")
+vibez.spill("Home directory: ", home)
 
 # Set environment variable
-setenv("MY_VAR", "my_value")
-sus my_val tea = getenv("MY_VAR")
-vibez.spill("My variable:", my_val)
+vibe_life.Setenv("MY_VAR", "my_value")
+value := vibe_life.Getenv("MY_VAR")
 ```
 
 ### Command Line Arguments
 ```cursed
 yeet "vibe_life"
 
-# Get all arguments
-sus all_args [tea] = args()
-vibez.spill("Argument count:", argc())
-
-# Get specific argument
-sus first_arg tea = arg(0)
-vibez.spill("First argument:", first_arg)
-```
-
-### File Path Operations
-```cursed
-yeet "vibe_life"
-
-# Join paths
-sus paths [tea] = ["home", "user", "documents"]
-sus full_path tea = path_join(paths)
-vibez.spill("Full path:", full_path)
-
-# Split path
-sus (dir, file) = path_split("/home/user/file.txt")
-vibez.spill("Directory:", dir)
-vibez.spill("File:", file)
-
-# Get file extension
-sus ext tea = path_ext("/home/user/file.txt")
-vibez.spill("Extension:", ext)
+args := vibe_life.Args()
+bestie i := 0; i < len(args); i++ {
+    vibez.spill("Arg ", i, ": ", args[i])
+}
 ```
 
 ### Directory Operations
@@ -120,113 +128,132 @@ vibez.spill("Extension:", ext)
 yeet "vibe_life"
 
 # Get current directory
-sus cwd tea = getcwd()
-vibez.spill("Current directory:", cwd)
+wd, err := vibe_life.Getwd()
+if err == cringe {
+    vibez.spill("Working directory: ", wd)
+}
 
 # Create directory
-mkdir("/tmp/my_dir", 755)
-vibez.spill("Directory created")
+vibe_life.Mkdir("new_directory")
 
-# Check if exists
-wenn exists("/tmp/my_dir") {
-    vibez.spill("Directory exists")
+# List directory contents
+files, err := vibe_life.ReadDir(".")
+if err == cringe {
+    bestie i := 0; i < len(files); i++ {
+        vibez.spill("File: ", files[i])
+    }
 }
 ```
 
-### Process Control
+### Process Management
 ```cursed
 yeet "vibe_life"
 
 # Get process information
-sus pid normie = getpid()
-sus ppid normie = getppid()
-vibez.spill("Process ID:", pid)
-vibez.spill("Parent Process ID:", ppid)
+pid := vibe_life.Getpid()
+ppid := vibe_life.Getppid()
+vibez.spill("Process ID: ", pid, ", Parent ID: ", ppid)
 
-# Exit with code
-exit(EXIT_SUCCESS)
+# Execute external command
+args := []tea{"--version"}
+err := vibe_life.Exec("ls", args)
 ```
 
 ### System Information
 ```cursed
 yeet "vibe_life"
 
-# Get system info
-sus info tea = system_info()
-sus host tea = hostname()
-sus user tea = username()
+# Get system hostname
+hostname, err := vibe_life.Hostname()
+if err == cringe {
+    vibez.spill("Hostname: ", hostname)
+}
 
-vibez.spill("System:", info)
-vibez.spill("Hostname:", host)
-vibez.spill("Username:", user)
+# Get user information
+uid := vibe_life.Getuid()
+gid := vibe_life.Getgid()
+vibez.spill("User ID: ", uid, ", Group ID: ", gid)
 ```
 
-### Signal Handling
+### Temporary Files
 ```cursed
 yeet "vibe_life"
 
-# Install signal handler
-signal_handler(SIGINT, slay(sig normie) {
-    vibez.spill("Received signal:", sig)
-    exit(EXIT_SUCCESS)
-})
+# Create temporary file
+temp_file, err := vibe_life.TempFile("myapp")
+if err == cringe {
+    temp_file.Write("Temporary data")
+    temp_file.Close()
+}
+
+# Get temporary directory
+temp_dir := vibe_life.TempDir()
+vibez.spill("Temp directory: ", temp_dir)
 ```
 
-## Constants
+### Error Handling
+```cursed
+yeet "vibe_life"
 
-### Exit Codes
-- `EXIT_SUCCESS` - Successful termination (0)
-- `EXIT_FAILURE` - Unsuccessful termination (1)
-
-### File Permissions
-- `MODE_READ` - Read permission (0o444)
-- `MODE_WRITE` - Write permission (0o200)
-- `MODE_EXEC` - Execute permission (0o111)
-- `MODE_USER_RWX` - User read/write/execute (0o700)
-- `MODE_GROUP_RWX` - Group read/write/execute (0o070)
-- `MODE_OTHER_RWX` - Other read/write/execute (0o007)
-
-### Signals
-- `SIGINT` - Interrupt signal (2)
-- `SIGTERM` - Termination signal (15)
-- `SIGKILL` - Kill signal (9)
-- `SIGUSR1` - User signal 1 (10)
-- `SIGUSR2` - User signal 2 (12)
-
-## Error Handling
-
-Functions return appropriate default values in simulation mode:
-- String functions return empty strings when not found
-- Boolean functions return `based` (true) for successful operations
-- Integer functions return sensible default values
-- Array functions return empty arrays when no data available
-
-## Implementation Notes
-
-This module provides a pure CURSED implementation of operating system interface functionality. In a production environment, these functions would interface with the actual operating system through system calls and C library functions.
-
-The module maintains compatibility with both interpretation and compilation modes, ensuring consistent behavior across different execution environments.
+# Check file existence before operations
+if vibe_life.Exists("config.txt") {
+    file, err := vibe_life.Open("config.txt")
+    if err == cringe {
+        # File operations
+        file.Close()
+    }
+}
+```
 
 ## Testing
 
-The module includes comprehensive tests covering all functionality:
-- 50+ test functions covering all major features
-- Edge case testing for path operations
-- Constant validation
-- Both positive and negative test cases
+Run the comprehensive test suite:
 
-Run tests with:
 ```bash
+# Test interpretation mode
 cargo run --bin cursed stdlib/vibe_life/test_vibe_life.csd
+
+# Test compilation mode
+cargo run --bin cursed -- compile stdlib/vibe_life/test_vibe_life.csd
+./test_vibe_life
 ```
 
-## Architecture
+## Implementation Details
 
-The vibe_life module is designed as a high-level interface to operating system functionality, providing:
-- Consistent API across different platforms
-- Safe defaults and error handling
-- Pure CURSED implementation without external dependencies
-- Comprehensive coverage of common OS operations
-- Production-ready reliability and performance
+- **Pure CURSED**: No FFI dependencies, fully implemented in CURSED
+- **Simulation**: Some functions simulate OS behavior for testing
+- **Error Handling**: Comprehensive error handling with proper return values
+- **Memory Management**: Automatic cleanup and resource management
+- **Cross-Platform**: Designed to work across different operating systems
 
-This module serves as the foundation for system-level programming in CURSED, enabling developers to build robust applications that interact with the operating system in a platform-independent manner.
+## Performance Considerations
+
+- **File Handles**: Efficient file handle management with automatic cleanup
+- **Memory Usage**: Minimal memory footprint for OS operations
+- **Error Propagation**: Fast error checking and propagation
+- **Batch Operations**: Support for multiple file operations
+
+## Security Features
+
+- **Path Validation**: Safe path handling for file operations
+- **Permission Checking**: Proper file permission validation
+- **Environment Isolation**: Secure environment variable handling
+- **Process Boundaries**: Safe process execution and signal handling
+
+## Future Enhancements
+
+- **Async Operations**: Non-blocking file and process operations
+- **Extended Permissions**: Advanced file permission management
+- **Network Integration**: Network file system support
+- **Monitoring**: Process and file system monitoring capabilities
+
+## Related Modules
+
+- `vibez` - Core output and formatting
+- `testz` - Testing framework
+- `string` - String manipulation
+- `collections` - Data structures
+
+## License
+
+Part of the CURSED programming language standard library.

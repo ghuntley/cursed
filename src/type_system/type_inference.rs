@@ -60,7 +60,7 @@ impl TypeInference {
         match expr {
             Expression::Integer(_) => Ok(TypeExpression::named("normie")),
             Expression::String(_) => Ok(TypeExpression::named("tea")),
-            Expression::Boolean(_) => Ok(TypeExpression::named("vibes")),
+            Expression::Boolean(_) => Ok(TypeExpression::named("lit")),
             Expression::Identifier(name) => {
                 // Look up or create fresh type variable
                 if let Some(type_expr) = self.inference_context.type_vars.get(name) {
@@ -92,25 +92,25 @@ impl TypeInference {
                     "==" | "!=" | "<" | ">" | "<=" | ">=" => {
                         // For simple comparisons with concrete types, return concrete type
                         if left_type.name.is_some() && right_type.name.is_some() {
-                            Ok(TypeExpression::named("vibes"))
+                            Ok(TypeExpression::named("lit"))
                         } else {
                             // Create constraints for complex cases
                             let result_type = self.fresh_type_variable();
                             self.add_unification_constraint(left_type, right_type, "comparison operands".to_string());
-                            self.add_unification_constraint(result_type.clone(), TypeExpression::named("vibes"), "comparison result".to_string());
+                            self.add_unification_constraint(result_type.clone(), TypeExpression::named("lit"), "comparison result".to_string());
                             Ok(result_type)
                         }
                     }
                     "&&" | "||" => {
                         // For simple logical with concrete types, return concrete type
-                        if left_type.name == Some("vibes".to_string()) && right_type.name == Some("vibes".to_string()) {
-                            Ok(TypeExpression::named("vibes"))
+                        if left_type.name == Some("lit".to_string()) && right_type.name == Some("lit".to_string()) {
+                            Ok(TypeExpression::named("lit"))
                         } else {
                             // Create constraints for complex cases
                             let result_type = self.fresh_type_variable();
-                            self.add_unification_constraint(left_type, TypeExpression::named("vibes"), "logical left operand".to_string());
-                            self.add_unification_constraint(right_type, TypeExpression::named("vibes"), "logical right operand".to_string());
-                            self.add_unification_constraint(result_type.clone(), TypeExpression::named("vibes"), "logical result".to_string());
+                            self.add_unification_constraint(left_type, TypeExpression::named("lit"), "logical left operand".to_string());
+                            self.add_unification_constraint(right_type, TypeExpression::named("lit"), "logical right operand".to_string());
+                            self.add_unification_constraint(result_type.clone(), TypeExpression::named("lit"), "logical result".to_string());
                             Ok(result_type)
                         }
                     }

@@ -29,6 +29,9 @@ pub mod sync;
 // pub mod enhanced_select;
 // pub mod simple_advanced_channel;
 
+// Enhanced select for simple channels
+pub mod enhanced_select_simple;
+
 // Re-export the simple implementation as the main interface
 pub use simple_channel::{
     SimpleChannel,
@@ -36,6 +39,16 @@ pub use simple_channel::{
     SimpleChannelReceiver,
     simple_channel,
     simple_buffered_channel,
+};
+
+// Re-export enhanced select
+pub use enhanced_select_simple::{
+    SimpleSelect,
+    SelectResult,
+    SelectCase,
+    MixedSelectBuilder,
+    select_receive,
+    select_send,
 };
 
 // Main channel API using simple implementation
@@ -149,6 +162,29 @@ pub enum ReceiveResult<T> {
     Closed,
     /// Receive would block (non-blocking mode)
     WouldBlock,
+}
+
+/// Channel statistics
+#[derive(Debug, Clone)]
+pub struct ChannelStats {
+    /// Channel ID
+    pub id: usize,
+    /// Channel capacity
+    pub capacity: usize,
+    /// Current number of buffered messages
+    pub current_length: usize,
+    /// Number of active senders
+    pub sender_count: usize,
+    /// Number of active receivers
+    pub receiver_count: usize,
+    /// Whether channel is closed
+    pub is_closed: bool,
+    /// Total messages sent
+    pub total_sent: u64,
+    /// Total messages received
+    pub total_received: u64,
+    /// Messages dropped due to overflow
+    pub messages_dropped: u64,
 }
 
 impl<T> ReceiveResult<T> {
