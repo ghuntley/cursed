@@ -1,426 +1,324 @@
-# Plugin System for CURSED
+# Plugin System Module
 
-A comprehensive plugin system implementation in pure CURSED that provides dynamic loading, plugin management, and extension APIs.
+Pure CURSED implementation of a comprehensive plugin management system for dynamic loading, discovery, lifecycle management, and security without FFI dependencies.
 
-## Features
+## Overview
 
-### Core Plugin Management
-- **Dynamic Plugin Loading**: Load and unload plugins at runtime
-- **Plugin Registration**: Register plugins with metadata and dependencies
-- **Plugin Discovery**: Automatic plugin discovery and registration
-- **Hot Reload**: Reload plugins without restarting the application
-- **Dependency Resolution**: Automatic dependency loading and management
+The plugin_system module provides functionality for loading and managing plugins to extend applications at runtime. It includes features for plugin discovery, loading/unloading, sandboxing, security verification, and lifecycle management.
 
-### Hook System
-- **Plugin Hooks**: Register and execute hooks at specific points in the application
-- **Priority-Based Execution**: Execute hooks in priority order
-- **Conditional Hooks**: Execute hooks based on conditions
-- **Hook Statistics**: Track hook execution performance and errors
+## Core Types
 
-### Event System
-- **Event Listeners**: Register event listeners for plugin lifecycle events
-- **Event Triggering**: Trigger events and notify registered listeners
-- **Event Filtering**: Filter events based on conditions
-- **Event Statistics**: Track event execution and performance
+### `Plug`
+Represents a loaded plugin handle.
+- Type: `normie` (plugin ID)
 
-### Security and Permissions
-- **Permission System**: Control plugin access to system resources
-- **API Context**: Manage plugin API access and rate limiting
-- **Sandboxing**: Isolate plugins in secure environments
-- **Resource Limits**: Enforce resource usage limits per plugin
+### `PlugStatus`
+Plugin status enumeration.
+- `PLUG_STATUS_UNLOADED = 0` - Plugin is not loaded
+- `PLUG_STATUS_LOADED = 1` - Plugin is loaded and active
+- `PLUG_STATUS_ERROR = 2` - Plugin encountered an error
+- `PLUG_STATUS_SANDBOXED = 3` - Plugin is loaded in sandbox mode
 
-### Configuration Management
-- **Plugin Configuration**: Store and retrieve plugin-specific configuration
-- **Configuration Validation**: Validate configuration against schemas
-- **Environment Overrides**: Override configuration with environment variables
-- **Configuration Encryption**: Encrypt sensitive configuration data
+### `PlugCapability`
+String type representing plugin capabilities.
+- Type: `tea` (capability name)
 
-## Usage
+## Plugin Discovery
 
-### Basic Plugin System Setup
+### `discover_plugins(directory tea) normie`
+Discovers plugins in the specified directory.
+- **Parameters**: `directory` - Path to search for plugins
+- **Returns**: Number of plugins found
+
+```cursed
+sus count := plugin_system.discover_plugins("./plugins")
+vibez.spill("Found plugins:", count)
+```
+
+## Plugin Loading
+
+### `load_plugin(path tea) Plug`
+Loads a plugin from the specified path.
+- **Parameters**: `path` - Path to plugin file
+- **Returns**: Plugin handle
+
+### `load_plugin_with_options(path tea, verify_signature lit, sandbox lit) Plug`
+Loads a plugin with additional security options.
+- **Parameters**: 
+  - `path` - Path to plugin file
+  - `verify_signature` - Whether to verify plugin signature
+  - `sandbox` - Whether to load in sandboxed mode
+- **Returns**: Plugin handle
+
+```cursed
+sus plugin := plugin_system.load_plugin("./plugins/math_tools.so")
+sus secure_plugin := plugin_system.load_plugin_with_options("./plugins/secure.so", based, based)
+```
+
+## Plugin Information
+
+### `get_plugin_name(plugin Plug) tea`
+Gets the name of a loaded plugin.
+
+### `get_plugin_path(plugin Plug) tea`
+Gets the file path of a plugin.
+
+### `get_plugin_status(plugin Plug) PlugStatus`
+Gets the current status of a plugin.
+
+### `get_plugin_version(plugin Plug) tea`
+Gets the version string of a plugin.
+
+### `get_plugin_author(plugin Plug) tea`
+Gets the author of a plugin.
+
+### `get_plugin_description(plugin Plug) tea`
+Gets the description of a plugin.
+
+```cursed
+sus plugin := plugin_system.load_plugin("./plugins/demo.so")
+sus name := plugin_system.get_plugin_name(plugin)
+sus version := plugin_system.get_plugin_version(plugin)
+sus author := plugin_system.get_plugin_author(plugin)
+vibez.spill("Plugin:", name, "v" + version, "by", author)
+```
+
+## Plugin Capabilities
+
+### `get_plugin_capabilities(plugin Plug) tea`
+Gets comma-separated list of plugin capabilities.
+
+### `has_capability(plugin Plug, capability tea) lit`
+Checks if plugin has a specific capability.
+
+```cursed
+sus capabilities := plugin_system.get_plugin_capabilities(plugin)
+vibez.spill("Capabilities:", capabilities)
+
+sus has_math := plugin_system.has_capability(plugin, "math")
+if has_math {
+    vibez.spill("Plugin supports math operations")
+}
+```
+
+## Plugin Registry
+
+### `register_plugin(name tea, plugin Plug) lit`
+Registers a plugin with a friendly name.
+
+### `find_plugin_by_name(name tea) Plug`
+Finds a plugin by its registered name.
+
+### `list_loaded_plugins() normie`
+Returns the count of currently loaded plugins.
+
+```cursed
+sus success := plugin_system.register_plugin("math_tools", plugin)
+sus found := plugin_system.find_plugin_by_name("math_tools")
+sus count := plugin_system.list_loaded_plugins()
+```
+
+## Plugin Lifecycle
+
+### `initialize_plugin(plugin Plug) lit`
+Initializes a loaded plugin.
+
+### `cleanup_plugin(plugin Plug) lit`
+Cleans up plugin resources.
+
+### `unload_plugin(plugin Plug) lit`
+Unloads a plugin from memory.
+
+### `reload_plugin(plugin Plug) lit`
+Reloads a plugin (unload + load).
+
+```cursed
+sus init_success := plugin_system.initialize_plugin(plugin)
+sus cleanup_success := plugin_system.cleanup_plugin(plugin)
+sus unload_success := plugin_system.unload_plugin(plugin)
+```
+
+## Plugin Security
+
+### `verify_plugin_signature(path tea, public_key tea) lit`
+Verifies the digital signature of a plugin.
+
+### `generate_plugin_manifest(name tea, version tea, author tea, description tea) tea`
+Generates a plugin manifest in JSON format.
+
+### `validate_plugin(path tea) lit`
+Validates plugin format and dependencies.
+
+```cursed
+sus signature_valid := plugin_system.verify_plugin_signature("./plugin.so", "public_key")
+sus manifest := plugin_system.generate_plugin_manifest("MyPlugin", "1.0.0", "Developer", "Description")
+sus is_valid := plugin_system.validate_plugin("./plugin.so")
+```
+
+## Plugin Sandboxing
+
+### `create_sandbox() normie`
+Creates a new sandbox environment.
+
+### `execute_in_sandbox(sandbox_id normie, plugin Plug, function_name tea) lit`
+Executes a plugin function within a sandbox.
+
+```cursed
+sus sandbox := plugin_system.create_sandbox()
+sus exec_success := plugin_system.execute_in_sandbox(sandbox, plugin, "calculate")
+```
+
+## Plugin Manager
+
+### `create_plugin_manager(plugin_dir tea, auto_load lit) normie`
+Creates a plugin manager instance.
+
+### `start_plugin_manager(manager_id normie) lit`
+Starts the plugin manager.
+
+### `stop_plugin_manager(manager_id normie) lit`
+Stops the plugin manager.
+
+```cursed
+sus manager := plugin_system.create_plugin_manager("./plugins", based)
+sus start_ok := plugin_system.start_plugin_manager(manager)
+# ... use manager ...
+sus stop_ok := plugin_system.stop_plugin_manager(manager)
+```
+
+## Plugin Installation
+
+### `install_plugin_from_url(url tea, destination tea) lit`
+Downloads and installs a plugin from URL.
+
+### `uninstall_plugin(name tea) lit`
+Uninstalls a plugin by name.
+
+### `is_plugin_compatible(plugin Plug, api_version tea) lit`
+Checks plugin compatibility with host API version.
+
+```cursed
+sus install_ok := plugin_system.install_plugin_from_url("https://example.com/plugin.so", "./plugins/")
+sus uninstall_ok := plugin_system.uninstall_plugin("old_plugin")
+sus compatible := plugin_system.is_plugin_compatible(plugin, "1.0")
+```
+
+## Extension Points
+
+### `create_extension_point(name tea) normie`
+Creates a new extension point for plugins to hook into.
+
+### `register_extension(point_id normie, plugin Plug) lit`
+Registers a plugin with an extension point.
+
+### `call_extension_point(point_id normie, data tea) tea`
+Calls all plugins registered to an extension point.
+
+```cursed
+sus ext_point := plugin_system.create_extension_point("filter_content")
+sus register_ok := plugin_system.register_extension(ext_point, plugin)
+sus result := plugin_system.call_extension_point(ext_point, "input_data")
+```
+
+## Utility Functions
+
+### `is_valid_plugin(plugin Plug) lit`
+Checks if a plugin handle is valid.
+
+### `get_total_plugins() normie`
+Gets total number of plugins in registry.
+
+### `get_plugin_memory_usage(plugin Plug) normie`
+Gets estimated memory usage of a plugin.
+
+### `reset_plugin_registry()`
+Resets the plugin registry (for testing).
+
+```cursed
+sus valid := plugin_system.is_valid_plugin(plugin)
+sus total := plugin_system.get_total_plugins()
+sus memory := plugin_system.get_plugin_memory_usage(plugin)
+```
+
+## Complete Example
 
 ```cursed
 yeet "plugin_system"
+yeet "vibez"
 
-# Initialize the plugin system
-plugin_system_init()
-
-# Create plugin metadata
-sus metadata := plugin_create_metadata(
-    "my_plugin",
-    "1.0.0",
-    "My awesome plugin",
-    "Your Name"
-)
-
-# Register the plugin
-plugin_register(metadata)
-
-# Load the plugin
-plugin_load("my_plugin")
-```
-
-### Plugin Hooks
-
-```cursed
-# Register a hook
-plugin_register_hook("my_plugin", "before_process", "my_callback", PLUGIN_PRIORITY_HIGH)
-
-# Execute hooks
-plugin_execute_hooks("before_process", "context_data")
-```
-
-### Event System
-
-```cursed
-# Register event listener
-plugin_register_event_listener("my_plugin", PLUGIN_EVENT_LOAD, "on_load_callback")
-
-# Trigger event
-plugin_trigger_event(PLUGIN_EVENT_LOAD, "my_plugin", "Plugin loaded successfully")
-```
-
-### Configuration
-
-```cursed
-# Set configuration
-plugin_set_config("my_plugin", "setting1", "value1")
-
-# Get configuration
-sus value := plugin_get_config("my_plugin", "setting1")
-```
-
-### Security
-
-```cursed
-# Check permission
-sus has_permission := plugin_check_permission("my_plugin", "read_files")
-
-# Create API context
-sus context := plugin_create_api_context("my_plugin")
-```
-
-## Plugin Structure
-
-A typical plugin should implement the following structure:
-
-```cursed
-# Plugin metadata
-fam MyPluginMetadata {
-    name tea
-    version tea
-    description tea
-    author tea
-    dependencies [5]tea
-    entry_point tea
-}
-
-# Plugin initialization
-slay plugin_main() lit {
-    # Plugin initialization code
-    damn based
-}
-
-# Plugin cleanup
-slay plugin_cleanup() lit {
-    # Plugin cleanup code
-    damn based
-}
-
-# Hook implementations
-slay my_hook_callback(context tea) lit {
-    # Hook implementation
-    damn based
-}
-
-# Event handlers
-slay on_event_callback(event_data tea) lit {
-    # Event handler implementation
-    damn based
+slay main() {
+    # Create plugin manager
+    sus manager := plugin_system.create_plugin_manager("./plugins", based)
+    plugin_system.start_plugin_manager(manager)
+    
+    # Load and register a plugin
+    sus math_plugin := plugin_system.load_plugin("./plugins/math_tools.so")
+    plugin_system.register_plugin("math", math_plugin)
+    
+    # Check plugin info
+    sus name := plugin_system.get_plugin_name(math_plugin)
+    sus version := plugin_system.get_plugin_version(math_plugin)
+    sus capabilities := plugin_system.get_plugin_capabilities(math_plugin)
+    
+    vibez.spill("Loaded plugin:", name)
+    vibez.spill("Version:", version)
+    vibez.spill("Capabilities:", capabilities)
+    
+    # Create extension point
+    sus filter_point := plugin_system.create_extension_point("data_filter")
+    plugin_system.register_extension(filter_point, math_plugin)
+    
+    # Use extension point
+    sus result := plugin_system.call_extension_point(filter_point, "test_data")
+    vibez.spill("Filtered result:", result)
+    
+    # Load secure plugin with sandboxing
+    sus secure_plugin := plugin_system.load_plugin_with_options("./plugins/untrusted.so", based, based)
+    
+    if plugin_system.is_plugin_compatible(secure_plugin, "1.0") {
+        sus sandbox := plugin_system.create_sandbox()
+        plugin_system.execute_in_sandbox(sandbox, secure_plugin, "process_data")
+    }
+    
+    # Cleanup
+    plugin_system.unload_plugin(math_plugin)
+    plugin_system.unload_plugin(secure_plugin)
+    plugin_system.stop_plugin_manager(manager)
 }
 ```
-
-## Constants
-
-### Plugin Status
-- `PLUGIN_STATUS_UNLOADED` (0): Plugin is not loaded
-- `PLUGIN_STATUS_LOADED` (1): Plugin is loaded and ready
-- `PLUGIN_STATUS_ACTIVE` (2): Plugin is active and running
-- `PLUGIN_STATUS_ERROR` (3): Plugin has an error
-
-### Plugin Priority
-- `PLUGIN_PRIORITY_LOW` (0): Low priority execution
-- `PLUGIN_PRIORITY_NORMAL` (1): Normal priority execution
-- `PLUGIN_PRIORITY_HIGH` (2): High priority execution
-- `PLUGIN_PRIORITY_CRITICAL` (3): Critical priority execution
-
-### Plugin Events
-- `PLUGIN_EVENT_LOAD` (0): Plugin loading event
-- `PLUGIN_EVENT_UNLOAD` (1): Plugin unloading event
-- `PLUGIN_EVENT_ACTIVATE` (2): Plugin activation event
-- `PLUGIN_EVENT_DEACTIVATE` (3): Plugin deactivation event
-- `PLUGIN_EVENT_UPDATE` (4): Plugin update event
-- `PLUGIN_EVENT_ERROR` (5): Plugin error event
-
-## API Reference
-
-### Core Functions
-
-#### `plugin_system_init() -> lit`
-Initialize the plugin system.
-
-#### `plugin_create_metadata(name: tea, version: tea, description: tea, author: tea) -> PluginMetadata`
-Create plugin metadata with the specified information.
-
-#### `plugin_register(metadata: PluginMetadata) -> lit`
-Register a plugin with the system.
-
-#### `plugin_load(plugin_name: tea) -> lit`
-Load a plugin by name.
-
-#### `plugin_unload(plugin_name: tea) -> lit`
-Unload a plugin by name.
-
-#### `plugin_find_by_name(plugin_name: tea) -> normie`
-Find a plugin by name and return its index.
-
-#### `plugin_get_info(plugin_name: tea) -> PluginMetadata`
-Get plugin information by name.
-
-#### `plugin_get_status(plugin_name: tea) -> normie`
-Get plugin status by name.
-
-### Hook Functions
-
-#### `plugin_register_hook(plugin_name: tea, hook_name: tea, callback_function: tea, priority: normie) -> lit`
-Register a plugin hook.
-
-#### `plugin_execute_hooks(hook_name: tea, context: tea) -> lit`
-Execute all hooks for a given hook name.
-
-#### `plugin_remove_hooks(plugin_name: tea) -> lit`
-Remove all hooks for a plugin.
-
-### Event Functions
-
-#### `plugin_register_event_listener(plugin_name: tea, event_type: normie, callback_function: tea) -> lit`
-Register an event listener.
-
-#### `plugin_trigger_event(event_type: normie, plugin_name: tea, message: tea) -> lit`
-Trigger an event.
-
-#### `plugin_remove_listeners(plugin_name: tea) -> lit`
-Remove all event listeners for a plugin.
-
-### Configuration Functions
-
-#### `plugin_set_config(plugin_name: tea, key: tea, value: tea) -> lit`
-Set plugin configuration.
-
-#### `plugin_get_config(plugin_name: tea, key: tea) -> tea`
-Get plugin configuration.
-
-### Security Functions
-
-#### `plugin_check_permission(plugin_name: tea, permission: tea) -> lit`
-Check if a plugin has a specific permission.
-
-#### `plugin_create_api_context(plugin_name: tea) -> PluginAPIContext`
-Create an API context for a plugin.
-
-### Management Functions
-
-#### `plugin_hot_reload(plugin_name: tea) -> lit`
-Hot reload a plugin.
-
-#### `plugin_health_check(plugin_name: tea) -> lit`
-Check plugin health.
-
-#### `plugin_resolve_dependencies(plugin_name: tea) -> lit`
-Resolve plugin dependencies.
-
-#### `plugin_list_all() -> normie`
-List all plugins.
-
-#### `plugin_list_active() -> normie`
-List active plugins.
-
-#### `plugin_get_system_stats() -> normie`
-Get plugin system statistics.
-
-#### `plugin_cleanup_all() -> lit`
-Cleanup all plugins.
-
-## Data Structures
-
-### PluginMetadata
-Contains plugin information including name, version, description, author, dependencies, permissions, and configuration.
-
-### PluginRegistry
-The main registry that manages all plugins, hooks, event listeners, and system configuration.
-
-### PluginHook
-Represents a plugin hook with callback information, priority, and execution statistics.
-
-### PluginEventListener
-Represents an event listener with event type, callback, and execution tracking.
-
-### PluginAPIContext
-Manages plugin API access, permissions, rate limiting, and security context.
-
-### PluginConfiguration
-Handles plugin configuration storage, validation, and encryption.
 
 ## Testing
 
 Run the comprehensive test suite:
 
 ```bash
+# Test interpretation mode
 cargo run --bin cursed stdlib/plugin_system/test_plugin_system.csd
+
+# Test compilation mode
+cargo run --bin cursed -- compile stdlib/plugin_system/test_plugin_system.csd
+./test_plugin_system
+
+# Both-mode verification
+test_both_modes() {
+    cargo run --bin cursed stdlib/plugin_system/test_plugin_system.csd > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/plugin_system/test_plugin_system.csd
+    ./test_plugin_system > comp_output.txt
+    diff interp_output.txt comp_output.txt
+}
 ```
 
-The test suite covers:
-- Plugin system initialization
-- Plugin metadata creation
-- Plugin registration and management
-- Plugin loading and unloading
-- Hook system functionality
-- Event system functionality
-- Configuration management
-- Security and permissions
-- API context management
-- Dependency resolution
-- Hot reload functionality
-- Health checks
-- Error handling
-- System cleanup
+## Implementation Notes
 
-## Examples
+This module provides a pure CURSED implementation without FFI dependencies, using arrays and counters to simulate plugin management. In a production implementation, this would interface with actual dynamic library loading, file system operations, and process sandboxing.
 
-### Example Plugin
+The module includes:
+- Dynamic plugin discovery and loading
+- Plugin lifecycle management
+- Security features (signature verification, sandboxing)
+- Extension point system for host application integration
+- Hot reloading capabilities
+- Memory and resource management
+- Comprehensive error handling
 
-```cursed
-yeet "plugin_system"
-
-# Initialize plugin system
-plugin_system_init()
-
-# Create and register a simple plugin
-sus metadata := plugin_create_metadata(
-    "logger_plugin",
-    "1.0.0",
-    "Logging plugin for application events",
-    "CURSED Team"
-)
-
-plugin_register(metadata)
-
-# Register a hook for logging
-plugin_register_hook("logger_plugin", "before_request", "log_request", PLUGIN_PRIORITY_HIGH)
-
-# Register event listener
-plugin_register_event_listener("logger_plugin", PLUGIN_EVENT_LOAD, "on_plugin_loaded")
-
-# Load the plugin
-plugin_load("logger_plugin")
-
-# Execute hooks
-plugin_execute_hooks("before_request", "GET /api/users")
-
-# Check plugin status
-sus status := plugin_get_status("logger_plugin")
-vibez.spill("Plugin status: " + status)
-```
-
-### Advanced Plugin with Dependencies
-
-```cursed
-yeet "plugin_system"
-
-# Initialize plugin system
-plugin_system_init()
-
-# Create base plugin
-sus base_metadata := plugin_create_metadata(
-    "base_plugin",
-    "1.0.0",
-    "Base functionality plugin",
-    "CURSED Team"
-)
-plugin_register(base_metadata)
-
-# Create dependent plugin
-sus dependent_metadata := plugin_create_metadata(
-    "dependent_plugin",
-    "1.0.0",
-    "Plugin that depends on base_plugin",
-    "CURSED Team"
-)
-
-# Add dependency
-dependent_metadata.dependencies[0] = "base_plugin"
-dependent_metadata.dependency_count = 1
-
-plugin_register(dependent_metadata)
-
-# Load dependent plugin (will automatically load base_plugin)
-plugin_load("dependent_plugin")
-
-# Verify both plugins are loaded
-vibez.spill("Base plugin status: " + plugin_get_status("base_plugin"))
-vibez.spill("Dependent plugin status: " + plugin_get_status("dependent_plugin"))
-```
-
-## Performance Considerations
-
-- **Plugin Limits**: Maximum of 100 plugins by default
-- **Hook Limits**: Maximum of 200 hooks
-- **Event Listener Limits**: Maximum of 150 event listeners
-- **Resource Monitoring**: Automatic resource usage tracking
-- **Performance Statistics**: Hook and event execution time tracking
-
-## Security Features
-
-- **Permission System**: Fine-grained permission control
-- **Sandboxing**: Plugin isolation for security
-- **Resource Limits**: Prevent resource exhaustion
-- **API Rate Limiting**: Control API access rates
-- **Security Tokens**: Secure plugin authentication
-
-## Configuration
-
-The plugin system can be configured through:
-- Configuration files
-- Environment variables
-- Runtime API calls
-- Plugin-specific settings
-
-Default configuration:
-- Plugin directory: `/plugins`
-- Config file: `/etc/cursed/plugins.conf`
-- Sandbox enabled: `based`
-- Hot reload enabled: `based`
-- Dependency resolution enabled: `based`
-
-## Future Enhancements
-
-- **Plugin Marketplace**: Integration with plugin repositories
-- **Plugin Signing**: Digital signature verification
-- **Advanced Sandboxing**: Enhanced security isolation
-- **Plugin Metrics**: Detailed performance and usage metrics
-- **Plugin Templates**: Code generation for plugin scaffolding
-- **Plugin Documentation**: Automatic documentation generation
-
-## Contributing
-
-To contribute to the plugin system:
-
-1. Follow the CURSED coding standards
-2. Write comprehensive tests for new features
-3. Update documentation for API changes
-4. Test with both interpretation and compilation modes
-5. Ensure security best practices are followed
-
-## License
-
-This plugin system is part of the CURSED language project and follows the same license terms.
+All functions follow CURSED naming conventions and use appropriate Gen Z slang terms while maintaining professional functionality.

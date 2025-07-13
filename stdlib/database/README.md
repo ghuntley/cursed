@@ -1,211 +1,476 @@
-# Database Module
+# CURSED Database Layer
 
-The database module provides comprehensive database connectivity and ORM functionality for the CURSED language. It supports multiple database types and provides a clean, type-safe API for database operations.
+A comprehensive database abstraction layer for CURSED with support for PostgreSQL, MySQL, and SQLite. This module provides connection management, query building, ORM functionality, and database-specific optimizations.
 
 ## Features
 
-- **Multi-Database Support**: MySQL, PostgreSQL, SQLite, MongoDB
-- **ORM Functionality**: Create, Read, Update, Delete operations
-- **Transaction Management**: Begin, commit, rollback transactions
-- **Connection Pooling**: Efficient connection management
-- **Schema Management**: Create/drop schemas and migrations
-- **Backup/Restore**: Database backup and restore operations
-- **Pure CURSED Implementation**: No external dependencies
+- **Multi-Database Support**: PostgreSQL, MySQL, and SQLite
+- **Connection Pooling**: Efficient connection management with configurable pools
+- **Query Builder**: Fluent API for building SQL queries
+- **ORM Functionality**: Simple object-relational mapping
+- **Prepared Statements**: Secure parameterized queries
+- **Transaction Support**: ACID transaction management
+- **Migration System**: Schema versioning and migration management
+- **Database-Specific Optimizations**: Leverages unique features of each database
+- **Pure CURSED Implementation**: Minimal FFI dependencies
 
-## Database Types
-
-```cursed
-ConnectionType_MySQL = 1
-ConnectionType_PostgreSQL = 2
-ConnectionType_SQLite = 3
-ConnectionType_MongoDB = 4
-```
-
-## Query Result Types
-
-```cursed
-QueryResult_Success = 1
-QueryResult_Error = 2
-QueryResult_NotFound = 3
-```
-
-## Basic Usage
-
-### Connection Management
+## Quick Start
 
 ```cursed
 yeet "database"
 
+# Create database configuration
+sus config DatabaseConfig = create_database_config(
+    DB_POSTGRES,
+    "localhost",
+    5432,
+    "myapp",
+    "username",
+    "password"
+)
+
 # Connect to database
-sus connected lit = database_connect("localhost:5432/mydb", ConnectionType_PostgreSQL)
+sus conn tea = connect_database(config)
 
 # Execute query
-sus result normie = database_execute(1, "SELECT * FROM users")
+sus result QueryResult = execute_query(
+    conn,
+    "SELECT * FROM users WHERE age > ?",
+    ["18"]
+)
 
-# Validate connection
-sus valid lit = database_validate_connection(1)
+# Process results
+bestie i := 0; i < result.rows.length; i++ {
+    vibez.spill(stringz.format("User: {}", result.rows[i][1]))
+}
 ```
 
-### Transaction Management
+## Database Types
+
+The module supports three database types:
+
+- `DB_POSTGRES` (1) - PostgreSQL
+- `DB_MYSQL` (2) - MySQL/MariaDB  
+- `DB_SQLITE` (3) - SQLite
+
+## Core Structures
+
+### DatabaseConfig
+
+Configuration for database connections:
 
 ```cursed
-# Begin transaction
-database_begin_transaction(1)
-
-# Execute operations
-database_execute(1, "INSERT INTO users (name) VALUES ('John')")
-database_execute(1, "UPDATE users SET active = true WHERE id = 1")
-
-# Commit or rollback
-database_commit_transaction(1)
-# OR
-database_rollback_transaction(1)
+be_like DatabaseConfig = {
+    db_type DatabaseType
+    host tea
+    port normie
+    database tea
+    username tea
+    password tea
+    connection_string tea
+    pool_size normie
+    timeout normie
+}
 ```
 
-### ORM Operations
+### QueryResult
+
+Results from query execution:
 
 ```cursed
-# Create table
-orm_create_table("users", "id INT PRIMARY KEY, name VARCHAR(255), active BOOLEAN")
+be_like QueryResult = {
+    rows [][]tea           # Result rows
+    columns []tea          # Column names
+    affected_rows normie   # Number of affected rows
+    last_insert_id tea     # Last inserted ID
+    error_message tea      # Error message if any
+    success lit           # Success status
+}
+```
 
-# Insert record
-sus user_id normie = orm_insert_record("users", "{\"name\": \"John\", \"active\": true}")
+## Connection Management
 
-# Select records
-sus records tea = orm_select_records("users", "active = true")
+### Basic Connection
 
-# Update record
-orm_update_record("users", user_id, "{\"name\": \"Jane\", \"active\": false}")
+```cursed
+# PostgreSQL
+sus pg_config DatabaseConfig = create_database_config(
+    DB_POSTGRES, "localhost", 5432, "mydb", "user", "pass"
+)
+sus pg_conn tea = connect_database(pg_config)
 
-# Delete record
-orm_delete_record("users", user_id)
+# MySQL
+sus mysql_config DatabaseConfig = create_database_config(
+    DB_MYSQL, "127.0.0.1", 3306, "mydb", "root", "password"
+)
+sus mysql_conn tea = connect_database(mysql_config)
+
+# SQLite
+sus sqlite_conn tea = connect_sqlite("/path/to/database.db")
 ```
 
 ### Connection Pooling
 
 ```cursed
 # Create connection pool
-sus pool_id normie = database_create_pool("localhost:5432/mydb", 10)
+sus pool ConnectionPool = create_connection_pool(config)
 
 # Get connection from pool
-sus conn_id normie = database_get_connection_from_pool(pool_id)
+sus conn tea = get_connection_from_pool(pool)
 
-# Use connection
-database_execute(conn_id, "SELECT COUNT(*) FROM users")
+# Use connection...
 
 # Return connection to pool
-database_return_connection_to_pool(pool_id, conn_id)
+return_connection_to_pool(pool, conn)
 ```
 
-### Schema Management
+## Query Execution
+
+### Basic Queries
 
 ```cursed
-# Create schema
-database_create_schema("myapp_schema")
+# SELECT query
+sus result QueryResult = execute_query(
+    conn,
+    "SELECT id, name, email FROM users WHERE active = ?",
+    ["true"]
+)
 
-# Run migration
-database_run_migration("001_create_users_table.sql")
+# INSERT query
+sus insert_result QueryResult = execute_query(
+    conn,
+    "INSERT INTO users (name, email) VALUES (?, ?)",
+    ["John Doe", "john@example.com"]
+)
+
+# UPDATE query
+sus update_result QueryResult = execute_query(
+    conn,
+    "UPDATE users SET email = ? WHERE id = ?",
+    ["newemail@example.com", "123"]
+)
+
+# DELETE query
+sus delete_result QueryResult = execute_query(
+    conn,
+    "DELETE FROM users WHERE id = ?",
+    ["123"]
+)
+```
+
+### Prepared Statements
+
+```cursed
+# Prepare statement
+sus stmt PreparedStatement = prepare_statement(
+    conn,
+    "SELECT * FROM users WHERE age > ? AND city = ?"
+)
+
+# Execute prepared statement
+sus result QueryResult = execute_prepared_statement(
+    stmt,
+    ["21", "New York"]
+)
+```
+
+## Query Builder
+
+Build SQL queries programmatically:
+
+```cursed
+# Create query builder
+sus builder QueryBuilder = new_query_builder("users")
+
+# Build SELECT query
+builder = query_select(builder, ["id", "name", "email"])
+builder = query_where(builder, "age > 18")
+builder = query_where(builder, "status = 'active'")
+builder = query_order_by(builder, "name ASC")
+builder = query_limit(builder, 10)
+builder = query_offset(builder, 20)
+
+sus sql tea = build_select_query(builder)
+# Result: SELECT id, name, email FROM users WHERE age > 18 AND status = 'active' ORDER BY name ASC LIMIT 10 OFFSET 20
+```
+
+## Transaction Management
+
+```cursed
+# Begin transaction
+sus tx Transaction = begin_transaction(conn)
+
+# Execute queries within transaction
+sus result1 QueryResult = execute_query(conn, "INSERT INTO users ...", [...])
+sus result2 QueryResult = execute_query(conn, "UPDATE accounts ...", [...])
+
+# Commit or rollback
+yikes result1.success && result2.success {
+    commit_transaction(tx)
+} shook {
+    rollback_transaction(tx)
+}
+```
+
+## ORM Functionality
+
+Simple object-relational mapping:
+
+```cursed
+# Create new record
+sus user Record = new_record("users")
+
+# Set fields
+set_field(user, "name", "Alice Johnson")
+set_field(user, "email", "alice@example.com")
+set_field(user, "age", "28")
+
+# Save record (INSERT)
+sus success lit = save_record(conn, user)
+
+# Get field value
+sus name tea = get_field(user, "name")
+```
+
+## Migration System
+
+Database schema versioning:
+
+```cursed
+# Create migration
+sus migration Migration = create_migration(
+    "001",
+    "Create users table",
+    "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), email VARCHAR(255))",
+    "DROP TABLE users"
+)
+
+# Apply migration
+sus success lit = apply_migration(conn, migration)
 
 # Rollback migration
-database_rollback_migration(1)
-
-# Drop schema
-database_drop_schema("myapp_schema")
+sus rollback_success lit = rollback_migration(conn, migration)
 ```
 
-### Backup and Restore
+## Database-Specific Features
+
+### PostgreSQL
 
 ```cursed
-# Backup database
-database_backup(1, "backup_20240107.sql")
+yeet "database/postgres"
 
-# Restore database
-database_restore(1, "backup_20240107.sql")
+# PostgreSQL configuration
+sus pg_config PostgresConfig = postgres_create_config(
+    "localhost", 5432, "mydb", "user", "pass"
+)
+
+# JSON operations
+sus json_data tea = postgres_json_extract("data", "user.name")
+sus json_text tea = postgres_json_extract_text("data", "user.email")
+
+# Array operations
+sus array_contains tea = postgres_array_contains("tags", "'programming'")
+
+# Full-text search
+sus fts_query tea = postgres_full_text_search("content", "'search terms'", "english")
+
+# Window functions
+sus row_num tea = postgres_row_number(["department"], ["salary DESC"])
 ```
 
-## Functions
+### MySQL
 
-### Connection Functions
-- `database_connect(connection_string tea, db_type smol) lit` - Connect to database
-- `database_validate_connection(connection_id normie) lit` - Validate connection
+```cursed
+yeet "database/mysql"
 
-### Query Functions
-- `database_execute(connection_id normie, query tea) normie` - Execute SQL query
-- `database_escape_string(input tea) tea` - Escape string for SQL
+# MySQL configuration
+sus mysql_config MySQLConfig = mysql_create_config(
+    "127.0.0.1", 3306, "mydb", "root", "password"
+)
 
-### Transaction Functions
-- `database_begin_transaction(connection_id normie) lit` - Begin transaction
-- `database_commit_transaction(connection_id normie) lit` - Commit transaction
-- `database_rollback_transaction(connection_id normie) lit` - Rollback transaction
+# JSON operations (MySQL 5.7+)
+sus json_extract tea = mysql_json_extract("data", "user.name")
+sus json_valid tea = mysql_json_unquote(json_extract)
 
-### ORM Functions
-- `orm_create_table(table_name tea, columns tea) lit` - Create table
-- `orm_insert_record(table_name tea, data tea) normie` - Insert record
-- `orm_select_records(table_name tea, conditions tea) tea` - Select records
-- `orm_update_record(table_name tea, id normie, data tea) lit` - Update record
-- `orm_delete_record(table_name tea, id normie) lit` - Delete record
+# Full-text search
+sus fts_query tea = mysql_fulltext_search(["title", "content"], "search terms", "boolean")
 
-### Schema Functions
-- `database_create_schema(schema_name tea) lit` - Create schema
-- `database_drop_schema(schema_name tea) lit` - Drop schema
-- `database_run_migration(migration_file tea) lit` - Run migration
-- `database_rollback_migration(migration_version normie) lit` - Rollback migration
+# UPSERT (INSERT ... ON DUPLICATE KEY UPDATE)
+sus upsert_sql tea = mysql_upsert_query("users", ["name", "email"], ["email"])
+```
 
-### Pool Functions
-- `database_create_pool(connection_string tea, pool_size normie) normie` - Create pool
-- `database_get_connection_from_pool(pool_id normie) normie` - Get connection
-- `database_return_connection_to_pool(pool_id normie, connection_id normie) lit` - Return connection
+### SQLite
 
-### Utility Functions
-- `database_get_last_insert_id(connection_id normie) normie` - Get last insert ID
-- `database_get_affected_rows(connection_id normie) normie` - Get affected rows
-- `database_backup(connection_id normie, backup_file tea) lit` - Backup database
-- `database_restore(connection_id normie, backup_file tea) lit` - Restore database
+```cursed
+yeet "database/sqlite"
+
+# SQLite configuration
+sus sqlite_config SQLiteConfig = sqlite_create_config("/path/to/db.sqlite")
+
+# Pragmas
+sus enable_fk tea = sqlite_enable_foreign_keys()
+sus wal_mode tea = sqlite_set_journal_mode("WAL")
+
+# JSON operations (with JSON1 extension)
+sus json_extract tea = sqlite_json_extract("data", "user.name")
+sus json_valid tea = sqlite_json_valid("data")
+
+# Full-text search (FTS5)
+sus fts_table tea = sqlite_create_fts_table("search_index", ["title", "content"], "")
+sus fts_query tea = sqlite_fts_search("search_index", "search terms")
+
+# Date functions
+sus current_time tea = sqlite_current_timestamp()
+sus date_diff tea = sqlite_date_diff("'2023-12-31'", "'2023-01-01'", "days")
+```
+
+## Error Handling
+
+The database layer provides comprehensive error handling:
+
+```cursed
+# Execute query with error handling
+sus result QueryResult = execute_query(conn, sql, params)
+
+yikes !result.success {
+    vibez.spill(stringz.format("Query failed: {}", result.error_message))
+    
+    # Parse database-specific errors
+    sus error_type tea = postgres_parse_error(result.error_message)
+    ready error_type {
+        "DUPLICATE_KEY_ERROR" -> {
+            vibez.spill("Duplicate key constraint violation")
+        }
+        "FOREIGN_KEY_ERROR" -> {
+            vibez.spill("Foreign key constraint violation")
+        }
+        basic -> {
+            vibez.spill("Unknown database error")
+        }
+    }
+}
+```
+
+## Performance Optimization
+
+### Connection Pooling
+
+```cursed
+# Create optimized connection pool
+sus config DatabaseConfig = create_database_config(...)
+config.pool_size = 20  # Adjust based on load
+
+sus pool ConnectionPool = create_connection_pool(config)
+```
+
+### Query Optimization
+
+```cursed
+# Use prepared statements for repeated queries
+sus stmt PreparedStatement = prepare_statement(conn, sql)
+
+# Use query builder for complex queries
+sus builder QueryBuilder = new_query_builder("users")
+builder = query_select(builder, ["id", "name"])  # Select only needed columns
+builder = query_where(builder, "indexed_column = ?")  # Use indexed columns
+builder = query_limit(builder, 100)  # Limit result size
+```
+
+### Database-Specific Optimizations
+
+```cursed
+# PostgreSQL: Use indexes
+sus index_sql tea = postgres_add_index("users", "idx_email", ["email"], based)
+
+# MySQL: Use storage engines
+sus innodb_table tea = mysql_create_innodb_table("users", [...], "ROW_FORMAT=COMPRESSED")
+
+# SQLite: Memory optimization
+sus pragmas []tea = sqlite_memory_optimization()
+bestie pragma := range pragmas {
+    execute_query(conn, pragma, [])
+}
+```
 
 ## Testing
 
 Run the comprehensive test suite:
 
 ```bash
+# Test interpretation mode
 cargo run --bin cursed stdlib/database/test_database.csd
-```
 
-Test both interpretation and compilation modes:
-
-```bash
-cargo run --bin cursed stdlib/database/test_database.csd
+# Test compilation mode
 cargo run --bin cursed -- compile stdlib/database/test_database.csd
 ./test_database
 ```
 
-## Error Handling
+## Advanced Usage
 
-All functions return appropriate error values:
-- Boolean functions return `cap` (false) on error
-- Integer functions return -1 on error
-- String functions return empty string on error
+### Custom Query Builder Extensions
 
-## Security
+```cursed
+# Extend query builder for specific use cases
+slay advanced_user_query(min_age normie, city tea, limit normie) tea {
+    sus builder QueryBuilder = new_query_builder("users")
+    builder = query_select(builder, ["id", "name", "email", "created_at"])
+    builder = query_where(builder, stringz.format("age >= {}", min_age))
+    builder = query_where(builder, stringz.format("city = '{}'", city))
+    builder = query_order_by(builder, "created_at DESC")
+    builder = query_limit(builder, limit)
+    
+    damn build_select_query(builder)
+}
+```
 
-- Input validation on all parameters
-- SQL injection prevention through parameter validation
-- Connection validation before operations
-- Transaction isolation support
+### Migration Management
 
-## Performance
+```cursed
+# Migration runner
+slay run_migrations(conn tea, migrations []Migration) lit {
+    bestie migration := range migrations {
+        sus success lit = apply_migration(conn, migration)
+        yikes !success {
+            vibez.spill(stringz.format("Migration {} failed", migration.version))
+            damn cap
+        }
+        vibez.spill(stringz.format("Applied migration {}: {}", migration.version, migration.description))
+    }
+    damn based
+}
+```
 
-- Connection pooling for efficient resource management
-- Minimal memory allocation
-- Fast query execution
-- Optimized for both interpretation and compilation modes
+### Connection Health Monitoring
 
-## Dependencies
+```cursed
+# Health check function
+slay check_connection_health(conn tea) lit {
+    sus result QueryResult = execute_query(conn, "SELECT 1", [])
+    damn result.success
+}
+```
 
-- `testz` - Testing framework
-- `string` - String manipulation
-- `collections` - Data structures
-- `json` - JSON handling
+## Best Practices
+
+1. **Always use parameterized queries** to prevent SQL injection
+2. **Use connection pooling** for high-traffic applications
+3. **Close connections** when done to free resources
+4. **Use transactions** for multi-step operations
+5. **Handle errors gracefully** with proper error checking
+6. **Choose appropriate data types** for your database
+7. **Use indexes** for frequently queried columns
+8. **Monitor connection pool** usage and adjust size as needed
+
+## Contributing
+
+When extending the database layer:
+
+1. Follow the pure CURSED implementation pattern
+2. Add comprehensive tests for new features
+3. Document all public functions
+4. Support all three database backends when possible
+5. Include error handling for edge cases
 
 ## License
 
-Part of the CURSED language standard library.
+This module is part of the CURSED standard library and follows the same license terms.

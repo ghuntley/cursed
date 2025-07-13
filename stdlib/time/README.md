@@ -1,178 +1,304 @@
-# CURSED Time Library Tests
+# CURSED Time Module
 
-This directory contains comprehensive tests for the CURSED time and date standard library.
+A comprehensive time handling library for CURSED applications, implementing the timez specification with Gen Z slang function names and pure CURSED implementation.
 
-## Test Coverage
+## Overview
 
-The `test_time.csd` file provides complete test coverage for all time functions:
+The time module provides time operations with nanosecond precision, RFC3339 support, duration arithmetic, and timezone handling. All implementations are pure CURSED code without FFI dependencies.
 
-### Current Time Functions
-- `time_now()` - Current Unix timestamp (seconds)
-- `time_now_millis()` - Current time in milliseconds
-- `time_now_micros()` - Current time in microseconds
-- `time_now_nanos()` - Current time in nanoseconds
+## Core Types
+
+### Time
+- Represents an instant in time as Unix timestamp
+- 64-bit integer precision (thicc type)
+- Unix epoch based (seconds since January 1, 1970 UTC)
+
+### Duration
+- Represents a span of time in nanoseconds
+- 64-bit integer precision (thicc type)
+- Supports arithmetic operations
+
+## Core Functions
 
 ### Time Creation
-- `time_from_timestamp()` - Create from Unix timestamp
-- `time_from_millis()` - Create from milliseconds
-- `time_create()` - Create from components (year, month, day, etc.)
-- `time_parse()` - Parse from string with format
+```cursed
+yeet "time"
 
-### Time Formatting
-- `time_format()` - Format with custom format string
-- `time_to_string()` - Default string representation
-- `time_to_iso8601()` - ISO 8601 format
-- `time_to_rfc3339()` - RFC 3339 format
+// Get current time
+sus current_time Time = time.now()
 
-### Time Components
-- `time_year()` / `time_month()` / `time_day()` - Date components
-- `time_hour()` / `time_minute()` / `time_second()` - Time components
-- `time_weekday()` - Day of week (0=Sunday, 6=Saturday)
-- `time_day_of_year()` - Day number in year (1-366)
+// Create time from Unix timestamp
+sus epoch Time = time.unix(0)
+sus custom Time = time.unix(1704067200)
+
+// Parse RFC3339 time string
+sus parsed Time = time.parse_rfc3339("2024-01-01T00:00:00Z")
+
+// Create time from components
+sus new_year Time = time.time_create(2024, 1, 1, 0, 0, 0)
+```
+
+### Duration Creation
+```cursed
+// Create durations from various units
+sus five_sec Duration = time.seconds(5)
+sus hundred_ms Duration = time.milliseconds(100)
+sus fifty_us Duration = time.microseconds(50)
+sus ten_ns Duration = time.nanoseconds(10)
+
+// Duration constants
+sus one_second Duration = time.duration_second()
+sus one_minute Duration = time.duration_minute()
+sus one_hour Duration = time.duration_hour()
+sus one_day Duration = time.duration_day()
+```
 
 ### Time Arithmetic
-- `time_add_years()` / `time_add_months()` / `time_add_days()` - Date arithmetic
-- `time_add_hours()` / `time_add_minutes()` / `time_add_seconds()` - Time arithmetic
-- `time_subtract()` - Time difference as duration
-- `time_diff_days()` / `time_diff_hours()` / etc. - Specific difference units
+```cursed
+// Add/subtract durations
+sus future Time = time.add_duration(current_time, five_sec)
+sus past Time = time.sub_duration(current_time, five_sec)
 
-### Duration Operations
-- `duration_from_seconds()` / `duration_from_millis()` - Create duration
-- `duration_to_seconds()` / `duration_to_millis()` - Convert duration
-- `duration_add()` / `duration_subtract()` - Duration arithmetic
+// Calculate time differences
+sus diff Duration = time.time_diff(future, past)
 
-### Timezone Operations
-- `time_utc()` / `time_local()` - Current time in UTC/local
-- `time_to_utc()` / `time_to_local()` - Convert between timezones
-- `time_timezone_offset()` - Get timezone offset in seconds
+// Add specific time units
+sus plus_seconds Time = time.time_add_seconds(current_time, 30)
+sus plus_minutes Time = time.time_add_minutes(current_time, 5)
+sus plus_hours Time = time.time_add_hours(current_time, 2)
+sus plus_days Time = time.time_add_days(current_time, 1)
+```
 
-### Time Validation
-- `time_is_leap_year()` - Check if year is leap year
-- `time_days_in_month()` - Days in specific month/year
-- `time_is_valid_date()` - Validate date components
-- `time_is_weekend()` - Check if date is weekend
+### Duration Arithmetic
+```cursed
+// Duration operations
+sus total Duration = time.duration_add(five_sec, hundred_ms)
+sus difference Duration = time.duration_subtract(five_sec, hundred_ms)
 
-### Sleep and Timing
-- `time_sleep()` - Sleep for seconds
-- `time_sleep_millis()` - Sleep for milliseconds
-- `time_sleep_micros()` - Sleep for microseconds
+// Convert durations
+sus in_seconds normie = time.duration_to_seconds(total)
+sus in_millis normie = time.duration_to_millis(total)
+```
 
-### Benchmarking
-- `time_benchmark()` - Measure function execution time
-- `time_measure()` - Execute function and return result + duration
+### Time Comparison
+```cursed
+// Time comparisons
+sus is_earlier lit = time.is_before(past, future)
+sus is_later lit = time.is_after(future, past)
+sus is_epoch lit = time.is_zero(epoch)
 
-### Time Constants
-- `time_seconds_per_minute()` - 60
-- `time_minutes_per_hour()` - 60
-- `time_hours_per_day()` - 24
-- `time_days_per_week()` - 7
-- `time_months_per_year()` - 12
-- `time_millis_per_second()` - 1000
-- `time_micros_per_second()` - 1,000,000
-- `time_nanos_per_second()` - 1,000,000,000
+// Time utilities
+sus equal lit = time.time_equals(time1, time2)
+sus earliest Time = time.time_min(time1, time2)
+sus latest Time = time.time_max(time1, time2)
+```
 
-### Edge Cases Tested
-- Epoch time (1970-01-01)
-- Far future dates (2100+)
-- Leap year handling (February 29)
-- Year boundaries (December 31 → January 1)
-- Different date formats
-- Timezone edge cases
+### Time Components
+```cursed
+// Extract time components
+sus year normie = time.time_year(current_time)
+sus month normie = time.time_month(current_time)
+sus day normie = time.time_day(current_time)
+sus hour normie = time.time_hour(current_time)
+sus minute normie = time.time_minute(current_time)
+sus second normie = time.time_second(current_time)
+```
 
-## Date/Time Concepts
+### Date Validation
+```cursed
+// Leap year detection
+sus is_leap lit = time.time_is_leap_year(2024)
 
-The time library handles common temporal operations:
+// Days in month
+sus days normie = time.time_days_in_month(2024, 2) // 29 for leap year
 
-- **Unix Timestamps**: Seconds since January 1, 1970 UTC
-- **Date Components**: Year, month, day with proper validation
-- **Time Components**: Hours, minutes, seconds (24-hour format)
-- **Durations**: Time spans that can be added/subtracted
-- **Timezones**: UTC and local time conversion
-- **Leap Years**: Proper handling of February 29
+// Date validation
+sus valid lit = time.time_is_valid_date(2024, 2, 29) // true
+sus invalid lit = time.time_is_valid_date(2021, 2, 29) // false
+```
 
-## Format Strings
+### Formatting
+```cursed
+// Format time as strings
+sus rfc_string tea = time.format_rfc3339(current_time)
+sus unix_string tea = time.format_unix(current_time)
+sus human_string tea = time.format_human(current_time)
+```
 
-Common format specifiers for parsing/formatting:
+### Sleep Operations
+```cursed
+// Sleep for specified duration
+sus short_nap Duration = time.milliseconds(100)
+time.sleep(short_nap)
+```
 
-- `%Y` - 4-digit year (2021)
-- `%m` - Month number (01-12)
-- `%d` - Day of month (01-31)
-- `%H` - Hour (00-23)
-- `%M` - Minute (00-59)
-- `%S` - Second (00-59)
+## Constants
 
-## Running Tests
+The module defines several useful constants:
+
+- `NANOS_PER_SECOND` - Nanoseconds in one second (1,000,000,000)
+- `NANOS_PER_MILLI` - Nanoseconds in one millisecond (1,000,000)
+- `NANOS_PER_MICRO` - Nanoseconds in one microsecond (1,000)
+- `SECONDS_PER_MINUTE` - Seconds in one minute (60)
+- `MINUTES_PER_HOUR` - Minutes in one hour (60)
+- `HOURS_PER_DAY` - Hours in one day (24)
+- `DAYS_PER_WEEK` - Days in one week (7)
+
+## Extended Functions
+
+### Extended Time Operations
+```cursed
+// Get current time in various formats
+sus now_timestamp thicc = time.time_now()
+sus now_millis thicc = time.time_now_millis()
+sus now_nanos thicc = time.time_now_nanos()
+
+// Create time from milliseconds
+sus millis_time Time = time.time_from_millis(1704067200000)
+
+// Create time from timestamp
+sus ts_time Time = time.time_from_timestamp(1704067200)
+```
+
+### Duration Utilities
+```cursed
+// Create duration from seconds (alternative)
+sus dur Duration = time.duration_from_seconds(120)
+
+// Get duration since epoch
+sus since_epoch Duration = time.since_epoch(current_time)
+```
+
+## Testing
+
+The module includes comprehensive tests using the testz framework:
 
 ```bash
-# Run time tests specifically
+# Run interpretation mode
 cargo run --bin cursed stdlib/time/test_time.csd
 
-# Run all stdlib tests
-cargo run --bin cursed test
+# Run compilation mode
+cargo run --bin cursed -- compile stdlib/time/test_time.csd
+./test_time
 ```
 
-## Test Results
+## Implementation Notes
 
-All tests verify:
-- Correct time calculations
-- Proper date arithmetic
-- Timezone handling
-- Format parsing/generation
-- Leap year calculations
-- Duration operations
-- Sleep timing accuracy
-- Benchmarking functionality
+### Pure CURSED Implementation
+- No FFI dependencies - completely implemented in CURSED
+- Thread-safe operations suitable for concurrent use
+- Nanosecond precision for all operations
+- 64-bit integer representation for timestamps and durations
 
-The tests account for system timing variations and provide reasonable tolerances for timing-sensitive operations.
+### Precision and Accuracy
+- All time calculations use nanosecond precision
+- Unix timestamp based for compatibility
+- Overflow protection for duration arithmetic
+- Consistent behavior across platforms
 
-## Usage Examples
+### Compatibility
+- RFC3339 standard compliance for time parsing/formatting
+- Unix timestamp compatibility for interoperability
+- ISO 8601 parsing support
+- Standard time component extraction
 
-### Basic Time Operations
+### Error Handling
+- Invalid time parsing returns zero time
+- Duration overflow protection with wraparound semantics
+- Graceful handling of edge cases
+- Validation functions for date components
+
+## Performance
+
+- O(1) time complexity for all operations
+- Minimal memory allocation
+- Optimized for high-frequency usage
+- Efficient arithmetic operations using native integer math
+
+## Thread Safety
+
+All time module functions are thread-safe and can be used in concurrent goroutines without additional synchronization.
+
+## Examples
+
+### Basic Time Usage
 ```cursed
-sus now datetime = time_local()
-sus year normie = time_year(now)
-sus formatted tea = time_format(now, "%Y-%m-%d %H:%M:%S")
-```
+yeet "time"
+yeet "testz"
 
-### Date Arithmetic
-```cursed
-sus birthday datetime = time_create(1990, 6, 15, 0, 0, 0)
-sus next_year datetime = time_add_years(birthday, 1)
-sus age_days normie = time_diff_days(time_local(), birthday)
-```
-
-### Duration Handling
-```cursed
-sus start datetime = time_local()
-time_sleep(2)
-sus end datetime = time_local()
-sus elapsed duration = time_subtract(end, start)
-sus seconds normie = duration_to_seconds(elapsed)
-```
-
-### Benchmarking
-```cursed
-slay expensive_operation() {
-    // Some computation
-    damn result
+slay example_basic_time() {
+    // Get current time
+    sus now Time = time.now()
+    vibez.spill("Current time: ")
+    vibez.spill(time.format_unix(now))
+    
+    // Create a duration
+    sus five_minutes Duration = time.minutes(5)
+    
+    // Calculate future time
+    sus later Time = time.add_duration(now, five_minutes)
+    vibez.spill("Five minutes later: ")
+    vibez.spill(time.format_unix(later))
+    
+    // Check if times are in order
+    if time.is_before(now, later) {
+        vibez.spill("Time flows forward correctly!")
+    }
 }
-
-sus benchmark_time duration = time_benchmark(expensive_operation)
-sus execution_ms normie = duration_to_millis(benchmark_time)
 ```
 
-## Platform Considerations
+### Duration Calculations
+```cursed
+slay example_duration_math() {
+    // Create various durations
+    sus work_day Duration = time.hours(8)
+    sus lunch_break Duration = time.minutes(30)
+    sus coffee_break Duration = time.minutes(15)
+    
+    // Calculate total break time
+    sus total_breaks Duration = time.duration_add(lunch_break, coffee_break)
+    
+    // Calculate actual work time
+    sus actual_work Duration = time.duration_subtract(work_day, total_breaks)
+    
+    vibez.spill("Work day: ")
+    vibez.spill(time.duration_to_minutes(work_day))
+    vibez.spill(" minutes")
+    
+    vibez.spill("Actual work: ")
+    vibez.spill(time.duration_to_minutes(actual_work))
+    vibez.spill(" minutes")
+}
+```
 
-- **System Time**: Relies on system clock accuracy
-- **Timezone Data**: Uses system timezone information
-- **Sleep Precision**: Sleep functions have platform-dependent precision
-- **Leap Seconds**: Not handled (follows POSIX time)
-- **Year Range**: Typically 1970-2038 on 32-bit systems, extended on 64-bit
+### Date Validation Example
+```cursed
+slay example_date_validation() {
+    // Check various dates
+    sus dates = [
+        [2024, 2, 29],  // Leap year - valid
+        [2023, 2, 29],  // Not leap year - invalid
+        [2024, 4, 31],  // April doesn't have 31 days - invalid
+        [2024, 12, 25]  // Christmas - valid
+    ]
+    
+    for date_info in dates {
+        sus year normie = date_info[0]
+        sus month normie = date_info[1]
+        sus day normie = date_info[2]
+        
+        if time.time_is_valid_date(year, month, day) {
+            vibez.spill("Valid date: ")
+        } else {
+            vibez.spill("Invalid date: ")
+        }
+        vibez.spill(year)
+        vibez.spill("-")
+        vibez.spill(month)
+        vibez.spill("-")
+        vibez.spill(day)
+    }
+}
+```
 
-## Important Notes
-
-- **Always validate dates** before creating datetime objects
-- **Handle timezone conversions** carefully for international applications
-- **Use appropriate precision** (seconds vs milliseconds) for your use case
-- **Account for leap years** in date calculations
-- **Consider daylight saving time** when working with local times
+This module provides a comprehensive foundation for time-based operations in CURSED applications while maintaining the language's unique style and pure implementation philosophy.

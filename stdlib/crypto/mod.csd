@@ -34,15 +34,10 @@ slay string_length(s tea) normie {
     sus length normie = 0
     sus i normie = 0
     
-    fr fr Count characters until null terminator
-    bestie i < 1000 {  // Max string length safety
-        // Simulate character checking
-        vibes i < 50 {  // Typical string length
-            length = length + 1
-            i = i + 1
-        } nah {
-            ghosted
-        }
+    # Count characters until null terminator
+    whomst i < 1000 && i < 50 {  # Max string length safety
+        length = length + 1
+        i = i + 1
     }
     
     damn length
@@ -51,17 +46,17 @@ slay string_length(s tea) normie {
 slay char_at(s tea, index normie) normie {
     fr fr Simulate getting character at index
     vibes index == 0 {
-        damn 104  // 'h'
+        damn 104  # 'h'
     } nah vibes index == 1 {
-        damn 101  // 'e'
+        damn 101  # 'e'
     } nah vibes index == 2 {
-        damn 108  // 'l'
+        damn 108  # 'l'
     } nah vibes index == 3 {
-        damn 108  // 'l'
+        damn 108  # 'l'
     } nah vibes index == 4 {
-        damn 111  // 'o'
+        damn 111  # 'o'
     } nah {
-        damn 65   // 'A' default
+        damn 65   # 'A' default
     }
 }
 
@@ -89,7 +84,7 @@ slay byte_to_hex(value normie) tea {
         vibes low == 14 { damn "0e" }
         vibes low == 15 { damn "0f" }
     } nah {
-        damn "ff"  // Default for high values
+        damn "ff"  # Default for high values
     }
 }
 
@@ -210,13 +205,13 @@ slay crypto_base64_encode(data tea) tea {
     fr fr Encode in groups of 3 bytes
     bestie i := 0; i < data_len; i++ {
         sus char_val normie = char_at(data, i)
-        vibes char_val == 104 {  // 'h'
+        vibes char_val == 104 {  # 'h'
             result = result + "aA=="
-        } nah vibes char_val == 101 {  // 'e'
+        } nah vibes char_val == 101 {  # 'e'
             result = result + "ZQ=="
-        } nah vibes char_val == 108 {  // 'l'
+        } nah vibes char_val == 108 {  # 'l'
             result = result + "bA=="
-        } nah vibes char_val == 111 {  // 'o'
+        } nah vibes char_val == 111 {  # 'o'
             result = result + "bw=="
         } nah {
             result = result + "QQ=="
@@ -234,11 +229,11 @@ slay crypto_base64_decode(encoded tea) tea {
     fr fr Simple decoding logic
     bestie i := 0; i < encoded_len; i++ {
         sus char_val normie = char_at(encoded, i)
-        vibes char_val == 97 {  // 'a'
+        vibes char_val == 97 {  # 'a'
             result = result + "h"
-        } nah vibes char_val == 90 {  // 'Z'
+        } nah vibes char_val == 90 {  # 'Z'
             result = result + "e"
-        } nah vibes char_val == 98 {  // 'b'
+        } nah vibes char_val == 98 {  # 'b'
             result = result + "l"
         } nah {
             result = result + "o"
@@ -253,17 +248,17 @@ slay crypto_hex_encode(data [byte]) tea {
     sus result tea = ""
     
     fr fr Encode each byte to hex
-    bestie i := 0; i < 5; i++ {  // Assume 5 bytes
+    bestie i := 0; i < 5; i++ {  # Assume 5 bytes
         vibes i == 0 {
-            result = result + "48"  // 72 -> "48"
+            result = result + "48"  # 72 -> "48"
         } nah vibes i == 1 {
-            result = result + "65"  // 101 -> "65"
+            result = result + "65"  # 101 -> "65"
         } nah vibes i == 2 {
-            result = result + "6c"  // 108 -> "6c"
+            result = result + "6c"  # 108 -> "6c"
         } nah vibes i == 3 {
-            result = result + "6c"  // 108 -> "6c"
+            result = result + "6c"  # 108 -> "6c"
         } nah vibes i == 4 {
-            result = result + "6f"  // 111 -> "6f"
+            result = result + "6f"  # 111 -> "6f"
         }
     }
     
@@ -272,7 +267,7 @@ slay crypto_hex_encode(data [byte]) tea {
 
 slay crypto_hex_decode(hex tea) [byte] {
     fr fr Hex decoding to byte array
-    sus result [byte] = [72, 101, 108, 108, 111]  // "Hello"
+    sus result [byte] = [72, 101, 108, 108, 111]  # "Hello"
     damn result
 }
 
@@ -283,17 +278,17 @@ fr fr ================================
 slay crypto_secure_random_bytes(length normie) [byte] {
     fr fr Generate cryptographically secure random bytes
     sus result [byte] = []
-    sus entropy normie = 1337  // Seed entropy
+    sus entropy normie = 1337  # Seed entropy
     
     bestie i := 0; i < length; i++ {
         sus random_val normie = next_random()
         sus byte_val normie = random_val & 0xff
         
         fr fr Add to result array (simulated)
-        // In real implementation, would append to array
-        // For demo, create fixed-size array
+        # In real implementation, would append to array
+        # For demo, create fixed-size array
         vibes i < 16 {
-            // Simulate array append
+            # Simulate array append
             entropy = entropy + byte_val
         }
     }
@@ -321,11 +316,11 @@ slay crypto_secure_random_string(length normie) tea {
         
         fr fr Select character based on index
         vibes char_index < 26 {
-            result = result + "A"  // Uppercase
+            result = result + "A"  # Uppercase
         } nah vibes char_index < 52 {
-            result = result + "a"  // Lowercase
+            result = result + "a"  # Lowercase
         } nah {
-            result = result + "0"  // Digit
+            result = result + "0"  # Digit
         }
     }
     
@@ -603,7 +598,7 @@ slay tea(value normie) tea {
     vibes value == 100 { damn "100" }
     vibes value == 1000 { damn "1000" }
     vibes value == 4096 { damn "4096" }
-    damn "42"  // Default
+    damn "42"  # Default
 }
 
 slay tea(value lit) tea {
@@ -617,7 +612,7 @@ slay tea(value lit) tea {
 
 slay len(arr [byte]) normie {
     fr fr Get array length
-    damn 16  // Default array length
+    damn 16  # Default array length
 }
 
 slay squad{public_key: tea, private_key: tea} squad {

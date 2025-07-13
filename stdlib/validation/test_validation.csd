@@ -127,6 +127,79 @@ assert_false(invalid_url_result7.is_valid)
 sus invalid_url_result8 ValidationResult = validate_url("http://example.com-")
 assert_false(invalid_url_result8.is_valid)
 
+// Test IP address validation
+test_start("IP address validation tests")
+
+// Valid IPv4 addresses
+sus valid_ipv4_result ValidationResult = validate_ip_address("192.168.1.1")
+assert_true(valid_ipv4_result.is_valid)
+
+sus valid_ipv4_result2 ValidationResult = validate_ip_address("10.0.0.1")
+assert_true(valid_ipv4_result2.is_valid)
+
+sus valid_ipv4_result3 ValidationResult = validate_ip_address("172.16.254.1")
+assert_true(valid_ipv4_result3.is_valid)
+
+sus valid_ipv4_result4 ValidationResult = validate_ip_address("127.0.0.1")
+assert_true(valid_ipv4_result4.is_valid)
+
+sus valid_ipv4_result5 ValidationResult = validate_ip_address("8.8.8.8")
+assert_true(valid_ipv4_result5.is_valid)
+
+// Valid IPv6 addresses
+sus valid_ipv6_result ValidationResult = validate_ip_address("2001:0db8:85a3:0000:0000:8a2e:0370:7334")
+assert_true(valid_ipv6_result.is_valid)
+
+sus valid_ipv6_result2 ValidationResult = validate_ip_address("2001:db8:85a3::8a2e:370:7334")
+assert_true(valid_ipv6_result2.is_valid)
+
+sus valid_ipv6_result3 ValidationResult = validate_ip_address("::1")
+assert_true(valid_ipv6_result3.is_valid)
+
+sus valid_ipv6_result4 ValidationResult = validate_ip_address("fe80::1")
+assert_true(valid_ipv6_result4.is_valid)
+
+// Invalid IP addresses
+sus invalid_ip_result ValidationResult = validate_ip_address("")
+assert_false(invalid_ip_result.is_valid)
+
+sus invalid_ip_result2 ValidationResult = validate_ip_address("256.1.1.1")
+assert_false(invalid_ip_result2.is_valid)
+
+sus invalid_ip_result3 ValidationResult = validate_ip_address("192.168.1")
+assert_false(invalid_ip_result3.is_valid)
+
+sus invalid_ip_result4 ValidationResult = validate_ip_address("192.168.1.1.1")
+assert_false(invalid_ip_result4.is_valid)
+
+sus invalid_ip_result5 ValidationResult = validate_ip_address("192.168.01.1")
+assert_false(invalid_ip_result5.is_valid)
+
+sus invalid_ip_result6 ValidationResult = validate_ip_address("192.168.1.256")
+assert_false(invalid_ip_result6.is_valid)
+
+sus invalid_ip_result7 ValidationResult = validate_ip_address("abc.def.ghi.jkl")
+assert_false(invalid_ip_result7.is_valid)
+
+sus invalid_ip_result8 ValidationResult = validate_ip_address("192.168.1.")
+assert_false(invalid_ip_result8.is_valid)
+
+sus invalid_ip_result9 ValidationResult = validate_ip_address(".192.168.1.1")
+assert_false(invalid_ip_result9.is_valid)
+
+sus invalid_ip_result10 ValidationResult = validate_ip_address("192..168.1.1")
+assert_false(invalid_ip_result10.is_valid)
+
+// Invalid IPv6 addresses
+sus invalid_ipv6_result ValidationResult = validate_ip_address("gggg::1")
+assert_false(invalid_ipv6_result.is_valid)
+
+sus invalid_ipv6_result2 ValidationResult = validate_ip_address("2001::85a3::7334")
+assert_false(invalid_ipv6_result2.is_valid)
+
+sus invalid_ipv6_result3 ValidationResult = validate_ip_address("2001:0db8:85a3:0000:0000:8a2e:0370:7334:extra")
+assert_false(invalid_ipv6_result3.is_valid)
+
 // Test credit card validation
 test_start("Credit card validation tests")
 

@@ -1,434 +1,237 @@
-# CURSED Configuration Management Library
+# CURSED Config Module
 
-A comprehensive configuration management system for CURSED applications with support for multiple formats, type conversion, variable expansion, and schema validation.
+A comprehensive configuration management library for the CURSED programming language. This module provides multi-format configuration parsing, environment variable handling, and validation capabilities with pure CURSED implementation.
 
-## Overview
+## Features
 
-The config module provides a unified interface for loading, parsing, and managing configuration files in various formats. It supports INI, environment variables, JSON, and YAML-like formats with advanced features like variable expansion, schema validation, and configuration merging.
+- **Multi-Format Support**: JSON, YAML, TOML, INI, and ENV file formats
+- **Auto-Detection**: Automatic format detection from content or filename
+- **Environment Variables**: Full environment variable support with expansion
+- **Validation**: Configuration validation and schema checking
+- **Merging**: Configuration merging and value manipulation
+- **Pure CURSED**: No FFI dependencies, fully portable implementation
 
 ## Supported Formats
 
-### INI Format
-Classic INI format with sections, comments, and key-value pairs:
-
-```ini
-# Global configuration
-debug=true
-app_name=MyApp
-
-[database]
-host=localhost
-port=5432
-name=myapp
-username=admin
-password="secret123"
-
-[server]
-host=0.0.0.0
-port=8080
-workers=4
-timeout=30
-
-; Alternative comment style
-[logging]
-level=info
-file=/var/log/app.log
-rotate=daily
-```
-
-**Features:**
-- Section support with `[section]` syntax
-- Comments with `#` and `;`
-- Quoted values with `"` and `'`
-- Global keys outside sections
-- Whitespace handling
-
-### Environment Variables
-Environment variable format with optional export statements:
-
-```bash
-# Environment configuration
-NODE_ENV=production
-DEBUG=false
-export DATABASE_URL=postgres://localhost:5432/myapp
-API_KEY="sk-1234567890abcdef"
-REDIS_URL='redis://localhost:6379'
-WORKERS=8
-TIMEOUT=60
-
-# Web server configuration
-WEB_HOST=0.0.0.0
-WEB_PORT=3000
-WEB_CORS_ORIGIN=*
-```
-
-**Features:**
-- Standard `KEY=value` syntax
-- Support for `export` statements
-- Quoted values with `"` and `'`
-- Comments with `#`
-- Automatic uppercase conversion for output
-
-### JSON Format
-Standard JSON with automatic flattening to dot notation:
-
+### JSON Configuration
 ```json
 {
-  "app": {
-    "name": "MyApp",
-    "version": "1.0.0",
-    "debug": true
-  },
   "database": {
     "host": "localhost",
-    "port": 5432,
-    "credentials": {
-      "username": "admin",
-      "password": "secret"
-    }
+    "port": "5432"
   },
-  "features": {
-    "authentication": true,
-    "caching": false,
-    "logging": {
-      "level": "info",
-      "file": "/var/log/app.log"
-    }
+  "app": {
+    "name": "MyApp",
+    "debug": "true"
   }
 }
 ```
 
-**Features:**
-- Automatic flattening to dot notation (e.g., `app.name`, `database.credentials.username`)
-- Full JSON spec compliance
-- Nested object support
-- Type preservation
+### INI Configuration
+```ini
+[database]
+host=localhost
+port=5432
 
-### YAML-like Format
-Simple YAML-like format with indentation-based structure:
+[app]
+name=MyApp
+debug=true
+```
 
+### YAML Configuration
 ```yaml
-# YAML-like configuration
+database:
+  host: localhost
+  port: 5432
 app:
   name: MyApp
-  version: 2.0.0
-  debug: false
-
-database:
-  host: db.example.com
-  port: 5432
-  pool:
-    min: 2
-    max: 10
-
-server:
-  host: 0.0.0.0
-  port: 8080
-  ssl:
-    enabled: true
-    cert: /path/to/cert.pem
-    key: /path/to/key.pem
+  debug: true
 ```
 
-**Features:**
-- Indentation-based structure
-- Colon-separated key-value pairs
-- Comments with `#`
-- Nested configuration support
+### TOML Configuration
+```toml
+[database]
+host = "localhost"
+port = "5432"
 
-## Core Functions
+[app]
+name = "MyApp"
+debug = "true"
+```
 
-### File Operations
+### Environment Configuration
+```env
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+APP_NAME=MyApp
+DEBUG=true
+```
 
-#### `load_file(filepath tea) map`
-Load configuration from file with automatic format detection based on file extension.
+## API Reference
+
+### Core Functions
+
+#### `parse(content tea) tea`
+Parse configuration with automatic format detection.
 
 ```cursed
-sus config map = load_file("config.ini");
-sus json_config map = load_file("app.json");
-sus env_config map = load_file(".env");
+sus config_content tea = "{\"api\": \"localhost\", \"port\": \"8080\"}"
+sus parsed_config tea = config.parse(config_content)
 ```
 
-#### `save_file(config map, filepath tea) lit`
-Save configuration to file in the appropriate format.
+#### `parse_with_format(content tea, format tea) tea`
+Parse configuration with explicit format specification.
 
 ```cursed
-sus success lit = save_file(config, "output.ini");
-sus json_success lit = save_file(config, "output.json");
+sus ini_content tea = "[api]\nhost=localhost\nport=8080"
+sus parsed_ini tea = config.parse_with_format(ini_content, "ini")
 ```
 
-### Format-Specific Parsing
-
-#### `parse_ini(content tea) map`
-Parse INI format configuration from string content.
+#### `load_config_from_file(filename tea) tea`
+Load configuration from file (simulated).
 
 ```cursed
-sus ini_content tea = "[database]\nhost=localhost\nport=5432";
-sus config map = parse_ini(ini_content);
+sus file_config tea = config.load_config_from_file("config.json")
 ```
 
-#### `parse_env(content tea) map`
-Parse environment variable format from string content.
+### Format Detection
+
+#### `detect_format(content tea) tea`
+Auto-detect configuration format from content.
 
 ```cursed
-sus env_content tea = "DATABASE_HOST=localhost\nDATABASE_PORT=5432";
-sus config map = parse_env(env_content);
+sus format tea = config.detect_format("{\"key\": \"value\"}")
+# Returns: "json"
 ```
 
-#### `parse_json_config(content tea) map`
-Parse JSON configuration with automatic flattening.
+#### `detect_format_from_filename(filename tea) tea`
+Detect format from file extension.
 
 ```cursed
-sus json_content tea = "{\"db\": {\"host\": \"localhost\"}}";
-sus config map = parse_json_config(json_content);
-// Access as: get_value(config, "db.host")
+sus format tea = config.detect_format_from_filename("app.yaml")
+# Returns: "yaml"
 ```
 
-### Format-Specific Serialization
+### Environment Variables
 
-#### `stringify_ini(config map) tea`
-Convert configuration to INI format string.
+#### `get_env(key tea) tea`
+Get environment variable value.
 
 ```cursed
-sus ini_output tea = stringify_ini(config);
+sus home_path tea = config.get_env("HOME")
 ```
 
-#### `stringify_env(config map) tea`
-Convert configuration to environment variable format.
+#### `set_env(key tea, value tea) lit`
+Set environment variable (simulated).
 
 ```cursed
-sus env_output tea = stringify_env(config);
+config.set_env("MY_VAR", "my_value")
 ```
 
-### Configuration Access
-
-#### `get_value(config map, key tea) tea`
-Get configuration value with path support using dot notation.
+#### `has_env(key tea) lit`
+Check if environment variable exists.
 
 ```cursed
-sus host tea = get_value(config, "database.host");
-sus port tea = get_value(config, "server.port");
+bestie config.has_env("PATH") {
+    vibez.spill("PATH is set")
+}
 ```
 
-#### `set_value(config map, key tea, value tea) map`
-Set configuration value with path support.
+#### `expand_env_vars(input tea) tea`
+Expand environment variables in string.
 
 ```cursed
-sus updated_config map = set_value(config, "database.host", "remote.db.com");
+sus template tea = "Config at ${HOME}/app.conf"
+sus expanded tea = config.expand_env_vars(template)
+# Returns: "Config at /home/user/app.conf"
 ```
 
-#### `has_key(config map, key tea) lit`
-Check if configuration key exists.
+### Configuration Manipulation
+
+#### `get_value(config tea, key tea) tea`
+Get value from configuration by key.
 
 ```cursed
-sus exists lit = has_key(config, "database.host");
+sus db_host tea = config.get_value(my_config, "database_host")
 ```
 
-#### `get_default(config map, key tea, default_value tea) tea`
-Get configuration value with default fallback.
+#### `set_value(config tea, key tea, value tea) tea`
+Set value in configuration.
 
 ```cursed
-sus host tea = get_default(config, "database.host", "localhost");
-sus port tea = get_default(config, "server.port", "8080");
+sus updated_config tea = config.set_value(my_config, "debug", "false")
 ```
 
-#### `get_section(config map, section tea) map`
-Get entire configuration section as a separate map.
+#### `has_key(config tea, key tea) lit`
+Check if configuration has a specific key.
 
 ```cursed
-sus db_config map = get_section(config, "database");
-sus host tea = get_value(db_config, "host"); // No need for "database." prefix
+bestie config.has_key(my_config, "api_key") {
+    vibez.spill("API key is configured")
+}
 ```
 
-### Configuration Merging
-
-#### `merge_configs(base map, override map) map`
-Merge two configurations with override priority.
+#### `merge(config1 tea, config2 tea) tea`
+Merge two configurations (config2 takes precedence).
 
 ```cursed
-sus base_config map = load_file("base.ini");
-sus env_config map = load_file("production.ini");
-sus final_config map = merge_configs(base_config, env_config);
+sus base_config tea = config.parse("{\"host\": \"localhost\"}")
+sus env_config tea = config.parse("{\"port\": \"8080\"}")
+sus merged tea = config.merge(base_config, env_config)
 ```
 
-#### `apply_overrides(config map, overrides map) map`
-Apply command-line style overrides to configuration.
+### Validation
+
+#### `validate(config tea) lit`
+Validate configuration format.
 
 ```cursed
-sus overrides map = map_create();
-overrides = set_value(overrides, "debug", "true");
-overrides = set_value(overrides, "database.host", "localhost");
-
-sus final_config map = apply_overrides(config, overrides);
+bestie config.validate(my_config) {
+    vibez.spill("Configuration is valid")
+} else {
+    vibez.spill("Invalid configuration")
+}
 ```
 
-### Schema Validation
-
-#### `validate_schema(config map, schema map) lit`
-Validate configuration against a schema definition.
+#### `validate_config(config tea, schema tea) lit`
+Validate configuration against schema.
 
 ```cursed
-sus schema map = map_create();
-sus required_keys [tea] = ["database.host", "database.port", "server.host"];
-schema = map_set(schema, "required", required_keys);
-
-sus is_valid lit = validate_schema(config, schema);
+sus schema tea = "{\"host\": \"string\", \"port\": \"number\"}"
+bestie config.validate_config(my_config, schema) {
+    vibez.spill("Configuration matches schema")
+}
 ```
 
-### Variable Expansion
+## Usage Examples
 
-#### `expand_variables(config map) map`
-Expand `${VAR}` and `${VAR:default}` style variables.
-
-```cursed
-// Configuration with variables
-sus config map = map_create();
-config = set_value(config, "app_name", "MyApp");
-config = set_value(config, "database.url", "postgres://${database.host:localhost}:5432/${app_name}");
-
-sus expanded_config map = expand_variables(config);
-// Result: database.url = "postgres://localhost:5432/MyApp"
-```
-
-### Environment Integration
-
-#### `load_environment() map`
-Load system environment variables into configuration map.
-
-```cursed
-sus env_vars map = load_environment();
-sus path tea = get_value(env_vars, "PATH");
-```
-
-### Type Conversion
-
-#### `get_int_value(config map, key tea, default_value normie) normie`
-Get integer value with type conversion and default.
-
-```cursed
-sus port normie = get_int_value(config, "server.port", 8080);
-```
-
-#### `get_bool_value(config map, key tea, default_value lit) lit`
-Get boolean value with type conversion and default.
-
-```cursed
-sus debug lit = get_bool_value(config, "debug", cap);
-```
-
-#### `get_float_value(config map, key tea, default_value meal) meal`
-Get float value with type conversion and default.
-
-```cursed
-sus timeout meal = get_float_value(config, "server.timeout", 30.0);
-```
-
-#### `get_typed_value(config map, key tea) extra`
-Get value with automatic type inference.
-
-```cursed
-sus value extra = get_typed_value(config, "some.key");
-```
-
-## Usage Patterns
-
-### Basic Application Configuration
+### Basic Configuration Loading
 
 ```cursed
 yeet "config"
 
-slay load_app_config() map {
-    // Load base configuration
-    sus config map = load_file("config.ini");
-    
-    // Load environment-specific overrides
-    sus env_config map = load_file("production.ini");
-    
-    // Merge configurations
-    sus final_config map = merge_configs(config, env_config);
-    
-    // Expand variables
-    damn expand_variables(final_config);
-}
+# Load JSON configuration
+sus json_config tea = "{\"database\": {\"host\": \"localhost\", \"port\": \"5432\"}}"
+sus parsed tea = config.parse(json_config)
 
-slay main() {
-    sus config map = load_app_config();
-    
-    sus db_host tea = get_value(config, "database.host");
-    sus db_port normie = get_int_value(config, "database.port", 5432);
-    sus debug lit = get_bool_value(config, "debug", cap);
-    
-    vibez.spill("Database: " + db_host + ":" + string_from_int(db_port));
-    vibez.spill("Debug mode: " + string_from_bool(debug));
-}
+# Get database host
+sus db_host tea = config.get_value(parsed, "host")
+vibez.spill("Database host: " + db_host)
 ```
 
-### Environment-Specific Configuration
+### Environment Variable Expansion
 
 ```cursed
 yeet "config"
 
-slay load_environment_config(environment tea) map {
-    // Load base configuration
-    sus base_config map = load_file("config/base.ini");
-    
-    // Load environment-specific configuration
-    sus env_file tea = "config/" + environment + ".ini";
-    sus env_config map = load_file(env_file);
-    
-    // Load system environment variables
-    sus system_env map = load_environment();
-    
-    // Merge in priority order: base -> environment -> system
-    sus config map = merge_configs(base_config, env_config);
-    config = merge_configs(config, system_env);
-    
-    // Expand variables and return
-    damn expand_variables(config);
-}
+# Configuration template with environment variables
+sus template tea = "database_url=${HOME}/app.db\nuser=${USER}"
 
-slay main() {
-    sus environment tea = get_default(load_environment(), "NODE_ENV", "development");
-    sus config map = load_environment_config(environment);
-    
-    vibez.spill("Environment: " + environment);
-    vibez.spill("Database URL: " + get_value(config, "database.url"));
-}
-```
+# Expand variables
+sus expanded tea = config.expand_env_vars(template)
 
-### Configuration with Schema Validation
-
-```cursed
-yeet "config"
-
-slay create_app_schema() map {
-    sus schema map = map_create();
-    
-    // Define required keys
-    sus required_keys [tea] = [
-        "database.host",
-        "database.port",
-        "database.name",
-        "server.host",
-        "server.port"
-    ];
-    
-    schema = map_set(schema, "required", required_keys);
-    damn schema;
-}
-
-slay load_validated_config() map {
-    sus config map = load_file("app.ini");
-    sus schema map = create_app_schema();
-    
-    simp !validate_schema(config, schema) {
-        vibez.spill("Configuration validation failed!");
-        // Handle validation error
-        damn map_create();
-    }
-    
-    damn config;
-}
+# Parse as environment configuration
+sus env_config tea = config.parse_with_format(expanded, "env")
 ```
 
 ### Multi-Format Configuration Loading
@@ -436,184 +239,129 @@ slay load_validated_config() map {
 ```cursed
 yeet "config"
 
-slay load_multi_format_config() map {
-    sus config map = map_create();
-    
-    // Load from multiple sources
-    sus ini_config map = load_file("config.ini");
-    sus json_config map = load_file("config.json");
-    sus env_config map = parse_env(load_environment_file(".env"));
-    
-    // Merge configurations
-    config = merge_configs(config, ini_config);
-    config = merge_configs(config, json_config);
-    config = merge_configs(config, env_config);
-    
-    // Apply command-line overrides
-    sus overrides map = parse_command_line_args();
-    config = apply_overrides(config, overrides);
-    
-    damn expand_variables(config);
+# Auto-detect and parse different formats
+sus formats [tea] = [
+    "{\"api\": \"localhost\"}",           # JSON
+    "[api]\nhost=localhost",              # INI
+    "api:\n  host: localhost",            # YAML
+    "api = \"localhost\"",                # TOML
+    "API_HOST=localhost"                  # ENV
+]
+
+bestie i := 0; i < len(formats); i++ {
+    sus parsed tea = config.parse(formats[i])
+    sus format tea = config.detect_format(formats[i])
+    vibez.spill("Parsed " + format + " configuration")
 }
 ```
 
-## Best Practices
-
-### 1. Configuration Layering
-Use a layered approach with base configuration and environment-specific overrides:
-
-```
-config/
-├── base.ini          # Base configuration
-├── development.ini   # Development overrides
-├── staging.ini       # Staging overrides
-├── production.ini    # Production overrides
-└── local.ini         # Local development overrides (gitignored)
-```
-
-### 2. Environment Variables
-Use environment variables for sensitive data and deployment-specific values:
+### Configuration Merging and Override
 
 ```cursed
-// Don't put secrets in config files
-sus db_password tea = get_default(load_environment(), "DATABASE_PASSWORD", "");
+yeet "config"
+
+# Base configuration
+sus base tea = config.parse("{\"host\": \"localhost\", \"port\": \"8080\", \"debug\": \"false\"}")
+
+# Environment overrides
+sus overrides tea = config.parse("{\"port\": \"9090\", \"debug\": \"true\"}")
+
+# Merge configurations (overrides take precedence)
+sus final_config tea = config.merge(base, overrides)
+
+# Get final values
+sus final_port tea = config.get_value(final_config, "port")
+sus debug_mode tea = config.get_value(final_config, "debug")
+
+vibez.spill("Final port: " + final_port)      # "9090"
+vibez.spill("Debug mode: " + debug_mode)      # "true"
 ```
 
-### 3. Variable Expansion
-Use variable expansion for dynamic configuration:
+### Dynamic Configuration Updates
 
 ```cursed
-# In config file
-app_name=MyApp
-log_file=/var/log/${app_name}.log
-backup_dir=/backup/${app_name}/${NODE_ENV}
-```
+yeet "config"
 
-### 4. Schema Validation
-Always validate configuration in production:
+# Start with basic configuration
+sus app_config tea = config.parse("{\"version\": \"1.0\", \"features\": \"basic\"}")
 
-```cursed
-sus config map = load_file("production.ini");
-sus schema map = create_production_schema();
+# Add new configuration values
+app_config = config.set_value(app_config, "environment", "production")
+app_config = config.set_value(app_config, "logging", "enabled")
 
-simp !validate_schema(config, schema) {
-    vibez.spill("CRITICAL: Configuration validation failed!");
-    // Exit or use safe defaults
+# Validate the updated configuration
+bestie config.validate(app_config) {
+    vibez.spill("Configuration is valid and ready for deployment")
+} else {
+    vibez.spill("Configuration validation failed")
 }
 ```
-
-### 5. Type Conversion
-Use typed accessors for type safety:
-
-```cursed
-// Instead of string parsing
-sus port normie = get_int_value(config, "server.port", 8080);
-sus debug lit = get_bool_value(config, "debug", cap);
-sus timeout meal = get_float_value(config, "timeout", 30.0);
-```
-
-## Security Considerations
-
-### 1. Sensitive Data
-- Never commit sensitive data to version control
-- Use environment variables for secrets
-- Consider using secret management systems
-
-### 2. File Permissions
-- Ensure configuration files have appropriate permissions
-- Restrict access to configuration directories
-- Use secure file storage for production
-
-### 3. Variable Expansion
-- Be cautious with variable expansion to prevent injection
-- Validate variable names and values
-- Use whitelisting for allowed variables
-
-### 4. Input Validation
-- Always validate configuration values
-- Use schema validation for structure
-- Implement range checks for numerical values
-
-## Error Handling
-
-The configuration module handles errors gracefully:
-
-- **Malformed files**: Parses valid sections, skips invalid ones
-- **Missing files**: Returns empty configuration
-- **Invalid formats**: Falls back to default parsing
-- **Type conversion errors**: Uses default values
 
 ## Testing
 
 Run the comprehensive test suite:
 
 ```bash
-# Run configuration module tests
+# Test interpretation mode
 cargo run --bin cursed stdlib/config/test_config.csd
 
-# Run specific test categories
-cargo run --bin cursed test --filter config
+# Test compilation mode
+cargo run --bin cursed -- compile stdlib/config/test_config.csd
+./test_config
+
+# Test both modes with verification
+test_both_modes stdlib/config/test_config.csd
 ```
 
-The test suite includes:
-- 15+ test functions covering all features
-- Edge case testing (empty files, malformed config)
-- Unicode and special character support
-- Cross-format compatibility testing
-- Schema validation testing
-- Variable expansion testing
+## Error Handling
+
+The config module provides robust error handling:
+
+- **Invalid JSON**: Returns empty string for malformed JSON
+- **Missing Keys**: Returns empty string for non-existent keys
+- **Format Detection**: Defaults to JSON for unknown formats
+- **Environment Variables**: Returns empty string for undefined variables
 
 ## Performance Considerations
 
-- Configuration parsing is optimized for startup time
-- Use caching for frequently accessed configurations
-- Consider lazy loading for large configuration files
-- Profile configuration loading in production
+- **Pure CURSED Implementation**: No FFI overhead
+- **String-Based Processing**: Optimized for text configuration formats
+- **Minimal Dependencies**: Only requires `json` and `string` modules
+- **Efficient Parsing**: Lightweight parsers for each format
 
-## Integration with Other Modules
+## Format-Specific Notes
 
-The config module integrates with:
-- **string**: For text processing and manipulation
-- **json**: For JSON format support
-- **collections**: For map and array operations
-- **io**: For file operations (when implemented)
+### JSON
+- Full RFC 7159 compliance via json module
+- Supports nested objects and arrays
+- Handles escape sequences properly
 
-## Migration Guide
+### INI
+- Supports sections and key-value pairs
+- Handles comments (# and ;)
+- Quoted values are properly unquoted
 
-### From Manual Configuration
-Replace manual string parsing with config module functions:
+### YAML
+- Basic YAML support for simple configurations
+- Handles document separators (---)
+- Supports quoted and unquoted values
 
-```cursed
-// Before
-sus config_line tea = "database.host=localhost";
-sus parts [tea] = string_split(config_line, "=");
-sus host tea = parts[1];
+### TOML
+- Basic TOML support for key-value pairs
+- Handles quoted strings
+- Section support (basic implementation)
 
-// After
-sus config map = parse_ini("database.host=localhost");
-sus host tea = get_value(config, "database.host");
-```
+### ENV
+- Standard environment file format
+- Supports quoted values (single and double quotes)
+- Handles comments starting with #
 
-### From Single Format
-Migrate from single format to multi-format support:
+## Dependencies
 
-```cursed
-// Before
-sus config map = parse_ini(file_content);
-
-// After
-sus config map = load_file("config.ini"); // Auto-detects format
-```
-
-## Contributing
-
-When contributing to the config module:
-1. Follow existing code patterns
-2. Add comprehensive tests for new features
-3. Update documentation
-4. Ensure backward compatibility
-5. Test with all supported formats
+- `testz` - For comprehensive testing framework
+- `json` - For JSON parsing and validation
+- `string` - For string manipulation utilities
 
 ## License
 
-This module is part of the CURSED standard library and follows the same licensing terms as the CURSED language.
+This module is part of the CURSED programming language standard library and follows the same licensing terms.

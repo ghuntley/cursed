@@ -1,0 +1,1 @@
+Running stdlib/compression/test_compression.csd

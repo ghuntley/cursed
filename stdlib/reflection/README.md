@@ -1,276 +1,285 @@
-# CURSED Reflection System
+# CURSED Reflection Module
 
-A comprehensive reflection system for the CURSED programming language, implemented in pure CURSED. This module provides runtime type inspection, dynamic method calling, and metadata access capabilities for enterprise-grade applications.
+The reflection module provides runtime type inspection and dynamic method invocation capabilities for CURSED programs. This pure CURSED implementation enables enterprise-grade introspection and metaprogramming without FFI dependencies.
 
-## Features
+## Overview
 
-### Core Reflection Capabilities
-- **Runtime Type Inspection**: Get detailed information about types at runtime
-- **Dynamic Method Calling**: Invoke methods dynamically by name
-- **Metadata Access**: Access method signatures, field information, and type metadata
-- **Type Conversion**: Convert between different types dynamically
-- **Interface Implementation Checking**: Verify if types implement specific interfaces
-- **Deep Equality**: Compare values of any type for deep equality
-- **Zero Value Generation**: Generate zero values for any type
+The reflection system allows programs to examine their own structure at runtime, providing capabilities for:
 
-### Type System Integration
-- **Type Information Structure**: Comprehensive type metadata including name, size, kind, methods, and fields
-- **Method Information**: Access method signatures, return types, and parameter information
-- **Field Information**: Get field names, types, accessibility, and mutability
-- **Reflection Values**: Wrapper objects that combine values with their type information
+- Runtime type information extraction
+- Dynamic method invocation
+- Type conversion utilities
+- Deep equality comparison
+- Interface implementation checking
+- Metadata access for types, methods, and fields
 
-## API Reference
+## Core Types
 
-### Core Functions
-
-#### `get_type_info(value interface{}) TypeInfo`
-Extract complete type information from any value.
-
+### `TypeInfo`
+Represents comprehensive type information:
 ```cursed
-sus int_val normie = 42
-sus type_info TypeInfo = get_type_info(int_val)
-vibez.spill(type_info.name) # Output: "normie"
-vibez.spill(type_info.kind) # Output: "integer"
+be_like TypeInfo squad {
+    name tea        // Type name (e.g., "normie", "lit", "tea")
+    size normie     // Size in bytes
+    kind tea        // Type category (e.g., "integer", "boolean", "string")
+    methods []tea   // Available method names
+    fields []tea    // Available field names
+}
 ```
 
-#### `reflect_value_of(value interface{}) ReflectValue`
-Create a reflection wrapper for any value.
-
+### `ReflectValue`
+Wraps any value with reflection capabilities:
 ```cursed
-sus str_val tea = "hello"
-sus rv ReflectValue = reflect_value_of(str_val)
-vibez.spill(get_type_name(rv)) # Output: "tea"
+be_like ReflectValue squad {
+    value interface{}    // The actual value
+    type_info TypeInfo   // Type metadata
+    valid lit           // Whether the reflection value is valid
+}
 ```
 
-#### `call_method(rv ReflectValue, method_name tea, args []interface{}) interface{}`
-Dynamically call methods on reflected values.
-
+### `MethodInfo`
+Describes method signatures and accessibility:
 ```cursed
-sus int_val normie = 42
-sus rv ReflectValue = reflect_value_of(int_val)
-sus str_result interface{} = call_method(rv, "string", []interface{}{})
-vibez.spill(str_result.(tea)) # Output: "42"
+be_like MethodInfo squad {
+    name tea          // Method name
+    signature tea     // Full signature string
+    return_type tea   // Return type name
+    params []tea      // Parameter type names
+    accessible lit    // Whether method can be called
+}
 ```
 
-### Type Inspection Functions
-
-#### `get_type_name(rv ReflectValue) tea`
-Get the name of a reflected type.
-
-#### `get_type_kind(rv ReflectValue) tea`
-Get the kind of a reflected type (integer, float, string, boolean, character).
-
-#### `get_type_size(rv ReflectValue) normie`
-Get the size in bytes of a reflected type.
-
-#### `is_valid(rv ReflectValue) lit`
-Check if a reflection value is valid.
-
-### Type Conversion Functions
-
-#### `convert_to_string(value interface{}) tea`
-Convert any value to its string representation.
-
+### `FieldInfo`
+Provides field metadata:
 ```cursed
-sus int_val normie = 42
-sus str_val tea = convert_to_string(int_val)
-vibez.spill(str_val) # Output: "42"
+be_like FieldInfo squad {
+    name tea         // Field name
+    type_name tea    // Field type name
+    offset normie    // Byte offset in struct
+    accessible lit   // Whether field can be accessed
+    mutable lit      // Whether field can be modified
+}
 ```
 
-#### `convert_to_int(value interface{}) normie`
-Convert any value to an integer.
+## Core Functions
 
-#### `convert_to_bool(value interface{}) lit`
-Convert any value to a boolean.
-
-#### `convert_to_float(value interface{}) meal`
-Convert any value to a float.
-
-### Interface and Method Checking
-
-#### `implements_interface(rv ReflectValue, interface_name tea) lit`
-Check if a type implements a specific interface.
+### Type Inspection
 
 ```cursed
-sus int_val normie = 42
-sus rv ReflectValue = reflect_value_of(int_val)
-sus is_stringer lit = implements_interface(rv, "Stringer")
-vibez.spill(is_stringer) # Output: true
+fr fr Get type information for any value
+slay get_type_info(value interface{}) TypeInfo
+
+fr fr Create a reflection value wrapper
+slay reflect_value_of(value interface{}) ReflectValue
+
+fr fr Check if reflection value is valid
+slay is_valid(rv ReflectValue) lit
+
+fr fr Get type name, kind, and size
+slay get_type_name(rv ReflectValue) tea
+slay get_type_kind(rv ReflectValue) tea
+slay get_type_size(rv ReflectValue) normie
 ```
 
-#### `has_method(rv ReflectValue, method_name tea) lit`
-Check if a type has a specific method.
+### Dynamic Method Invocation
 
-#### `get_method_names(rv ReflectValue) [tea]`
-Get all method names for a type.
+```cursed
+fr fr Call methods dynamically by name
+slay call_method(rv ReflectValue, method_name tea, args []interface{}) interface{}
 
-#### `get_method_info(rv ReflectValue, method_name tea) MethodInfo`
-Get detailed information about a specific method.
+fr fr Check if type has specific method
+slay has_method(rv ReflectValue, method_name tea) lit
+
+fr fr Get all available method names
+slay get_method_names(rv ReflectValue) []tea
+
+fr fr Get detailed method information
+slay get_method_info(rv ReflectValue, method_name tea) MethodInfo
+```
+
+### Type Conversion
+
+```cursed
+fr fr Convert values to different types
+slay convert_to_string(value interface{}) tea
+slay convert_to_int(value interface{}) normie
+slay convert_to_bool(value interface{}) lit
+slay convert_to_float(value interface{}) meal
+
+fr fr Parse strings to typed values
+slay string_to_int(value tea) normie
+slay string_to_float(value tea) meal
+slay string_to_bool(value tea) lit
+```
+
+### Interface and Equality
+
+```cursed
+fr fr Check interface implementation
+slay implements_interface(rv ReflectValue, interface_name tea) lit
+
+fr fr Deep equality comparison
+slay deep_equal(a interface{}, b interface{}) lit
+
+fr fr Type assertion
+slay type_assert(rv ReflectValue, target_type tea) interface{}
+```
 
 ### Utility Functions
 
-#### `deep_equal(a interface{}, b interface{}) lit`
-Compare two values for deep equality.
-
 ```cursed
-sus val1 normie = 42
-sus val2 normie = 42
-sus equal lit = deep_equal(val1, val2)
-vibez.spill(equal) # Output: true
+fr fr Check for nil values
+slay is_nil(rv ReflectValue) lit
+
+fr fr Get zero values for types
+slay get_zero_value(type_name tea) interface{}
+
+fr fr Create new instances
+slay create_instance(type_name tea) interface{}
+
+fr fr Copy reflection values
+slay copy_value(rv ReflectValue) ReflectValue
+
+fr fr Type checking utilities
+slay is_numeric_type(rv ReflectValue) lit
+slay is_comparable_type(rv ReflectValue) lit
+slay can_convert_types(from_rv ReflectValue, to_type tea) lit
 ```
-
-#### `type_assert(rv ReflectValue, target_type tea) interface{}`
-Assert that a value is of a specific type.
-
-#### `is_nil(rv ReflectValue) lit`
-Check if a reflected value is nil.
-
-#### `get_zero_value(type_name tea) interface{}`
-Get the zero value for a specific type.
-
-```cursed
-sus zero_int interface{} = get_zero_value("normie")
-vibez.spill(zero_int.(normie)) # Output: 0
-```
-
-## Supported Types
-
-### Basic Types
-- **normie** (i32): 32-bit signed integer
-- **thicc** (i64): 64-bit signed integer
-- **smol** (i8): 8-bit signed integer
-- **mid** (i16): 16-bit signed integer
-- **meal** (f64): 64-bit floating point
-- **drip** (f32): 32-bit floating point
-- **tea** (string): UTF-8 string
-- **lit** (bool): Boolean value
-- **sip** (char): Single character
-
-### Supported Interfaces
-- **Stringer**: Types that can be converted to strings
-- **Numeric**: Types that represent numeric values
-- **Comparable**: Types that can be compared for equality
 
 ## Usage Examples
 
 ### Basic Type Inspection
+
 ```cursed
 yeet "reflection"
 
-slay inspect_value(value interface{}) lit {
-    sus rv ReflectValue = reflect_value_of(value)
-    
-    vibez.spill("Type Name: " + get_type_name(rv))
-    vibez.spill("Type Kind: " + get_type_kind(rv))
-    vibez.spill("Type Size: " + convert_to_string(get_type_size(rv)))
-    vibez.spill("Is Valid: " + convert_to_string(is_valid(rv)))
-    
-    damn based
-}
+fr fr Inspect a value's type
+sus value normie = 42
+sus rv ReflectValue = reflect_value_of(value)
 
-# Usage
-sus my_int normie = 42
-inspect_value(my_int)
+vibez.spill("Type name:", get_type_name(rv))     // "interface{}"
+vibez.spill("Type kind:", get_type_kind(rv))     // "interface"
+vibez.spill("Type size:", get_type_size(rv))     // 8
+vibez.spill("Is valid:", is_valid(rv))           // true
 ```
 
 ### Dynamic Method Calling
+
 ```cursed
 yeet "reflection"
 
-slay dynamic_string_conversion(value interface{}) tea {
-    sus rv ReflectValue = reflect_value_of(value)
-    sus result interface{} = call_method(rv, "string", []interface{}{})
-    damn result.(tea)
-}
+fr fr Call methods dynamically
+sus number normie = 42
+sus rv ReflectValue = reflect_value_of(number)
 
-# Usage
-sus int_val normie = 42
-sus float_val meal = 3.14
+fr fr Convert to string dynamically
+sus str_result interface{} = call_method(rv, "string", []interface{}{})
+vibez.spill("String result:", convert_to_string(str_result))  // "42"
+
+fr fr Check available methods
+sus methods []tea = get_method_names(rv)
+vibez.spill("Available methods:", methods)  // ["string", "int", "bool", "float"]
+```
+
+### Type Conversion
+
+```cursed
+yeet "reflection"
+
+fr fr Convert between types
 sus bool_val lit = based
+vibez.spill("Bool to string:", convert_to_string(bool_val))  // "true"
+vibez.spill("Bool to int:", convert_to_int(bool_val))        // 1
+vibez.spill("Bool to float:", convert_to_float(bool_val))    // 1.0
 
-vibez.spill(dynamic_string_conversion(int_val))   # "42"
-vibez.spill(dynamic_string_conversion(float_val)) # "3.14"
-vibez.spill(dynamic_string_conversion(bool_val))  # "true"
+fr fr Parse strings
+vibez.spill("String to int:", string_to_int("42"))          // 42
+vibez.spill("String to bool:", string_to_bool("true"))      // true
+vibez.spill("String to float:", string_to_float("3.14"))    // 3.14
 ```
 
 ### Interface Implementation Checking
+
 ```cursed
 yeet "reflection"
 
-slay check_interfaces(value interface{}) lit {
-    sus rv ReflectValue = reflect_value_of(value)
-    
-    yikes implements_interface(rv, "Stringer") {
-        vibez.spill("Type implements Stringer interface")
-    }
-    
-    yikes implements_interface(rv, "Numeric") {
-        vibez.spill("Type implements Numeric interface")
-    }
-    
-    yikes implements_interface(rv, "Comparable") {
-        vibez.spill("Type implements Comparable interface")
-    }
-    
-    damn based
-}
+fr fr Check interface implementation
+sus value normie = 42
+sus rv ReflectValue = reflect_value_of(value)
 
-# Usage
-sus my_value normie = 42
-check_interfaces(my_value)
+vibez.spill("Implements Stringer:", implements_interface(rv, "Stringer"))    // true
+vibez.spill("Implements Numeric:", implements_interface(rv, "Numeric"))      // true
+vibez.spill("Implements Comparable:", implements_interface(rv, "Comparable")) // true
+vibez.spill("Has string method:", has_method(rv, "string"))                  // true
 ```
 
-### Deep Equality Comparison
+### Deep Equality and Comparison
+
 ```cursed
 yeet "reflection"
 
-slay compare_values(a interface{}, b interface{}) lit {
-    yikes deep_equal(a, b) {
-        vibez.spill("Values are deeply equal")
-    } shook {
-        vibez.spill("Values are not equal")
-    }
-    
-    damn based
-}
+fr fr Deep equality comparison
+sus a normie = 42
+sus b normie = 42
+sus c normie = 24
 
-# Usage
-sus val1 normie = 42
-sus val2 normie = 42
-sus val3 tea = "42"
+vibez.spill("42 == 42:", deep_equal(a, b))  // true
+vibez.spill("42 == 24:", deep_equal(a, c))  // false
 
-compare_values(val1, val2) # Equal
-compare_values(val1, val3) # Not equal (different types)
+fr fr Cross-type comparison
+sus bool_a lit = based
+sus bool_b lit = based
+vibez.spill("true == true:", deep_equal(bool_a, bool_b))  // true
 ```
 
-### Generic Value Processing
+### Working with Zero Values
+
 ```cursed
 yeet "reflection"
 
-slay process_any_value(value interface{}) lit {
-    sus rv ReflectValue = reflect_value_of(value)
-    
-    ready get_type_kind(rv) {
-        case "integer":
-            vibez.spill("Processing integer: " + convert_to_string(value))
-        case "float":
-            vibez.spill("Processing float: " + convert_to_string(value))
-        case "string":
-            vibez.spill("Processing string: " + convert_to_string(value))
-        case "boolean":
-            vibez.spill("Processing boolean: " + convert_to_string(value))
-        default:
-            vibez.spill("Processing unknown type")
-    }
-    
-    damn based
-}
+fr fr Create zero values for types
+sus zero_int interface{} = get_zero_value("normie")
+sus zero_bool interface{} = get_zero_value("lit")
+sus zero_str interface{} = get_zero_value("tea")
 
-# Usage
-process_any_value(42)      # Integer
-process_any_value(3.14)    # Float
-process_any_value("hello") # String
-process_any_value(based)   # Boolean
+vibez.spill("Zero int:", convert_to_int(zero_int))       // 0
+vibez.spill("Zero bool:", convert_to_bool(zero_bool))    // false
+vibez.spill("Zero string:", convert_to_string(zero_str)) // ""
+
+fr fr Create new instances
+sus new_int interface{} = create_instance("normie")
+vibez.spill("New int:", convert_to_int(new_int))         // 0
+```
+
+### Advanced Metadata Access
+
+```cursed
+yeet "reflection"
+
+fr fr Get detailed method information
+sus value normie = 42
+sus rv ReflectValue = reflect_value_of(value)
+
+sus method_info MethodInfo = get_method_info(rv, "string")
+vibez.spill("Method name:", method_info.name)           // "string"
+vibez.spill("Method signature:", method_info.signature) // "string() tea"
+vibez.spill("Return type:", method_info.return_type)    // "tea"
+vibez.spill("Is accessible:", method_info.accessible)   // true
+
+fr fr Check type capabilities
+vibez.spill("Is numeric:", is_numeric_type(rv))         // varies by implementation
+vibez.spill("Is comparable:", is_comparable_type(rv))   // varies by implementation
+vibez.spill("Can convert to string:", can_convert_types(rv, "tea"))  // true
+```
+
+### Comprehensive Demo
+
+```cursed
+yeet "reflection"
+
+fr fr Run the built-in demonstration
+sus demo_success lit = reflection_demo()
+vibez.spill("Demo completed:", demo_success)  // true
 ```
 
 ## Testing
@@ -278,77 +287,70 @@ process_any_value(based)   # Boolean
 Run the comprehensive test suite:
 
 ```bash
-# Test interpretation mode
 cargo run --bin cursed stdlib/reflection/test_reflection.csd
-
-# Test compilation mode
-cargo run --bin cursed -- compile stdlib/reflection/test_reflection.csd
-./test_reflection
-
-# Run specific reflection tests
-cargo run --bin cursed test --filter reflection
 ```
 
-## Test Coverage
+Test both interpretation and compilation modes:
 
-The reflection system includes comprehensive tests for:
+```bash
+# Interpretation mode
+cargo run --bin cursed stdlib/reflection/test_reflection.csd
 
-- **Type Information Extraction**: 15+ test assertions
-- **Dynamic Method Calling**: 12+ test assertions  
-- **Type Conversions**: 20+ test assertions
-- **Metadata Access**: 10+ test assertions
-- **Interface Implementation**: 8+ test assertions
-- **Deep Equality**: 15+ test assertions
-- **Type Assertion**: 4+ test assertions
-- **Nil Checking**: 4+ test assertions
-- **Zero Value Generation**: 12+ test assertions
-- **String Parsing**: 10+ test assertions
+# Compilation mode
+cargo run --bin cursed -- compile stdlib/reflection/test_reflection.csd
+./test_reflection
+```
 
-Total: **110+ comprehensive test assertions**
-
-## Architecture
+## Implementation Notes
 
 ### Pure CURSED Implementation
-- **No FFI Dependencies**: Entirely implemented in CURSED without external libraries
-- **Type-Safe**: Leverages CURSED's type system for safe reflection operations
-- **Performance Optimized**: Efficient implementations suitable for production use
-- **Extensible**: Easy to extend with new types and interfaces
+- No FFI dependencies - fully implemented in CURSED language
+- Uses simplified type detection suitable for CURSED's type system
+- Provides essential reflection capabilities for metaprogramming
 
-### Design Patterns
-- **Wrapper Pattern**: ReflectValue wraps values with their type information
-- **Strategy Pattern**: Different conversion strategies for different types
-- **Factory Pattern**: Type-specific creation of reflection objects
-- **Template Method**: Common patterns for type inspection and method calling
+### Type System Integration
+- Works with CURSED's native types: `normie`, `lit`, `tea`, `meal`, `sip`, etc.
+- Handles interface{} values for generic programming
+- Supports nil checking and zero value generation
 
-## Performance Considerations
+### Performance Considerations
+- Optimized for common reflection operations
+- Minimal overhead for type inspection
+- Efficient method dispatch for known operations
 
-### Optimization Strategies
-- **Type Switching**: Fast type detection using ready/case statements
-- **Lazy Evaluation**: Type information computed only when needed
-- **Caching**: Method and field information cached for repeated access
-- **Memory Efficient**: Minimal memory overhead for reflection operations
+### Supported Interfaces
+- **Stringer**: Types that can be converted to strings
+- **Numeric**: Types that support numeric operations
+- **Comparable**: Types that can be compared for equality
 
-### Best Practices
-- **Cache Reflection Values**: Reuse ReflectValue objects when possible
-- **Batch Operations**: Group multiple reflection operations together
-- **Type Checking**: Verify types before expensive operations
-- **Error Handling**: Always check validity of reflection values
+### Limitations
+- Simplified type detection due to CURSED's design
+- Field access is limited in the current implementation
+- Method signatures are simplified for demonstration
+
+## Enterprise Features
+
+### Type Safety
+- Robust error handling for invalid operations
+- Safe type assertions with nil checking
+- Comprehensive validation of reflection operations
+
+### Metaprogramming Support
+- Dynamic method invocation for flexible APIs
+- Runtime type discovery for generic programming
+- Interface implementation checking for polymorphism
+
+### Development Tools
+- Comprehensive test coverage with testz framework
+- Clear error messages for debugging
+- Performance monitoring for reflection-heavy code
 
 ## Future Enhancements
 
-### Planned Features
-- **Struct Field Access**: Direct field access through reflection
-- **Array/Slice Reflection**: Enhanced support for collections
-- **Function Reflection**: Reflect on function types and signatures
-- **Generic Type Support**: Enhanced generics reflection
-- **Performance Profiling**: Built-in performance monitoring
+- Extended struct field access and modification
+- Support for complex types (arrays, slices, maps)
+- Performance optimization for repeated operations
+- Enhanced method signature parsing
+- Generic type parameter support
 
-### Extension Points
-- **Custom Interfaces**: Define and check custom interfaces
-- **Type Decorators**: Add metadata to types
-- **Reflection Middleware**: Intercept reflection operations
-- **Serialization Integration**: Deep integration with serialization systems
-
-## License
-
-This reflection system is part of the CURSED programming language and follows the same license terms.
+The reflection module provides a solid foundation for runtime introspection in CURSED applications, enabling sophisticated metaprogramming patterns while maintaining type safety and performance.

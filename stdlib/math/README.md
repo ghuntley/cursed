@@ -1,211 +1,278 @@
-# Pure CURSED Math Library
+# CURSED Math Module
 
-A comprehensive mathematical library implemented entirely in pure CURSED without any FFI dependencies.
+A comprehensive mathematical library for the CURSED programming language, providing advanced mathematical functions with high numerical accuracy.
 
-## Features
+## Overview
 
-### ✅ FFI-Free Implementation
-- **Zero External Dependencies**: All mathematical functions implemented in pure CURSED
-- **Self-Contained**: No Rust FFI bridges or external library calls
-- **Portable**: Works consistently across all platforms and compilation modes
-- **Performance Optimized**: Efficient algorithms for both interpretation and compilation
+The math module implements a full suite of mathematical functions including:
+- Basic arithmetic operations
+- Trigonometric and inverse trigonometric functions
+- Logarithmic and exponential functions
+- Hyperbolic functions
+- Special functions (gamma, beta, Bessel)
+- Statistical analysis functions
+- Numerical analysis tools
+- Number theory utilities
 
-### 🧮 Mathematical Constants
-- `math_pi()` - π (pi) constant with full precision
-- `math_e()` - e (Euler's number) constant with full precision  
-- `math_tau()` - τ (tau) constant (2π) with full precision
+## Core Features
 
-### 🔢 Basic Operations
-- `math_abs(x)` - Absolute value for floats
-- `math_abs_int(x)` - Absolute value for integers
-- `math_min(a, b)` / `math_max(a, b)` - Minimum/maximum for floats
-- `math_min_int(a, b)` / `math_max_int(a, b)` - Minimum/maximum for integers
-- `math_clamp(x, min, max)` - Clamp value between bounds
-- `math_sign(x)` - Sign of a number (-1, 0, or 1)
+### Mathematical Constants
+- `PI` - π (3.141592653589793)
+- `E` - Euler's number (2.718281828459045)
+- `LN2` - Natural logarithm of 2
+- `LN10` - Natural logarithm of 10
+- `SQRT2` - Square root of 2
+- `EPSILON` - Machine epsilon for floating-point comparisons
 
-### 🔋 Power Functions
-- `math_pow(base, exponent)` - Power function using Newton-Raphson method
-- `math_sqrt(x)` - Square root using Newton-Raphson method
-- `math_cbrt(x)` - Cube root using Newton-Raphson method
+### Function Categories
 
-### 📊 Logarithmic Functions
-- `math_log(x)` - Natural logarithm using Taylor series
-- `math_log10(x)` - Base-10 logarithm
-- `math_log2(x)` - Base-2 logarithm
-
-### 🌊 Exponential Functions
-- `math_exp(x)` - Natural exponential using Taylor series
-- `math_exp2(x)` - Base-2 exponential
-
-### 📐 Trigonometric Functions
-- `math_sin(x)` - Sine using Taylor series
-- `math_cos(x)` - Cosine using Taylor series
-- `math_tan(x)` - Tangent (sin/cos)
-- `math_asin(x)` - Inverse sine
-- `math_acos(x)` - Inverse cosine
-- `math_atan(x)` - Inverse tangent using Taylor series
-- `math_atan2(y, x)` - Two-argument arctangent
-
-### 🌀 Hyperbolic Functions
-- `math_sinh(x)` - Hyperbolic sine
-- `math_cosh(x)` - Hyperbolic cosine
-- `math_tanh(x)` - Hyperbolic tangent
-
-### 🔄 Rounding Functions
-- `math_floor(x)` - Floor function
-- `math_ceil(x)` - Ceiling function
-- `math_round(x)` - Round to nearest integer
-- `math_trunc(x)` - Truncate decimal part
-- `math_frac(x)` - Fractional part
-
-### 🎯 Utility Functions
-- `math_is_nan(x)` - Check if value is NaN
-- `math_is_infinite(x)` - Check if value is infinite
-- `math_is_finite(x)` - Check if value is finite
-- `math_degrees(radians)` - Convert radians to degrees
-- `math_radians(degrees)` - Convert degrees to radians
-
-### 🔢 Number Theory
-- `math_gcd(a, b)` - Greatest common divisor using Euclidean algorithm
-- `math_lcm(a, b)` - Least common multiple
-- `math_factorial(n)` - Factorial function
-- `math_fibonacci(n)` - Fibonacci sequence
-
-### 🎲 Random Numbers
-- `math_random()` - Random float between 0 and 1
-- `math_random_int(min, max)` - Random integer in range
-- `math_random_float(min, max)` - Random float in range
-- `math_seed_random(seed)` - Seed the random number generator
-
-### 📈 Statistical Functions
-- `math_sum(values)` - Sum of array elements
-- `math_mean(values)` - Arithmetic mean
-- `math_median(values)` - Median value
-- `math_variance(values)` - Variance
-- `math_std_dev(values)` - Standard deviation
-
-### 🎨 Interpolation Functions
-- `math_lerp(a, b, t)` - Linear interpolation
-- `math_inverse_lerp(a, b, value)` - Inverse linear interpolation
-- `math_smoothstep(edge0, edge1, x)` - Smooth interpolation
-
-### 📏 Geometry Functions
-- `math_distance_2d(x1, y1, x2, y2)` - 2D distance
-- `math_distance_3d(x1, y1, z1, x2, y2, z2)` - 3D distance
-- `math_dot_product_2d(x1, y1, x2, y2)` - 2D dot product
-- `math_cross_product_2d(x1, y1, x2, y2)` - 2D cross product
-- `math_magnitude_2d(x, y)` - 2D vector magnitude
-- `math_normalize_2d(x, y)` - 2D vector normalization
-
-## Usage
-
+#### Basic Arithmetic
 ```cursed
 yeet "math"
 
-// Basic operations
-sus absolute meal = math_abs(-42.5)
-sus minimum meal = math_min(10.0, 20.0)
-sus maximum meal = math_max(10.0, 20.0)
+# Integer operations
+sus sum normie = add(5, 3)                    # Returns 8
+sus diff normie = subtract(10, 4)             # Returns 6
+sus product normie = multiply(6, 7)           # Returns 42
+sus quotient normie = divide(15, 3)           # Returns 5
 
-// Power functions
-sus power meal = math_pow(2.0, 3.0)  // 8.0
-sus square_root meal = math_sqrt(16.0)  // 4.0
+# Power functions
+sus power_result normie = pow_int(2, 3)       # Returns 8
+sus float_power meal = pow_float(2.5, 3.0)    # Returns 15.625
 
-// Trigonometry
-sus sine meal = math_sin(math_pi() / 2.0)  // 1.0
-sus cosine meal = math_cos(0.0)  // 1.0
+# Absolute values
+sus abs_int normie = abs_int(-5)              # Returns 5
+sus abs_float meal = abs_float(-3.14)         # Returns 3.14
+```
 
-// Logarithms and exponentials
-sus natural_log meal = math_log(math_e())  // 1.0
-sus exponential meal = math_exp(1.0)  // e
+#### Exponential and Logarithmic Functions
+```cursed
+# Exponential functions
+sus exp_result meal = exp_float(1.0)          # Returns e ≈ 2.718
+sus exp2_result meal = exp2(3.0)              # Returns 2³ = 8.0
+sus sqrt_result meal = sqrt(16.0)             # Returns 4.0
 
-// Random numbers
-math_seed_random(42)
-sus random_val meal = math_random()
-sus random_int normie = math_random_int(1, 100)
+# Logarithmic functions
+sus ln_result meal = ln(E)                    # Returns 1.0
+sus log10_result meal = log10(100.0)          # Returns 2.0
+sus log2_result meal = log2(8.0)              # Returns 3.0
+sus logn_result meal = log_base(8.0, 2.0)     # Returns 3.0
+```
 
-// Geometry
-sus distance meal = math_distance_2d(0.0, 0.0, 3.0, 4.0)  // 5.0
-sus interpolated meal = math_lerp(0.0, 10.0, 0.5)  // 5.0
+#### Trigonometric Functions
+```cursed
+# Basic trigonometric functions
+sus sin_result meal = sin(PI / 2.0)           # Returns 1.0
+sus cos_result meal = cos(0.0)                # Returns 1.0
+sus tan_result meal = tan(PI / 4.0)           # Returns 1.0
+
+# Inverse trigonometric functions
+sus asin_result meal = asin(1.0)              # Returns π/2
+sus acos_result meal = acos(0.0)              # Returns π/2
+sus atan_result meal = atan(1.0)              # Returns π/4
+sus atan2_result meal = atan2(1.0, 1.0)       # Returns π/4
+```
+
+#### Hyperbolic Functions
+```cursed
+# Hyperbolic functions
+sus sinh_result meal = sinh(1.0)              # Returns (e - e⁻¹)/2
+sus cosh_result meal = cosh(0.0)              # Returns 1.0
+sus tanh_result meal = tanh(0.0)              # Returns 0.0
+```
+
+#### Special Functions
+```cursed
+# Special mathematical functions
+sus factorial_result meal = factorial(5)       # Returns 120.0
+sus gamma_result meal = gamma(4.0)            # Returns 6.0 (3!)
+sus beta_result meal = beta(2.0, 3.0)         # Returns Γ(2)Γ(3)/Γ(5)
+sus bessel_result meal = bessel_j0(0.0)       # Returns 1.0
+```
+
+#### Statistical Functions
+```cursed
+# Statistical analysis
+sus data [5]meal = [1.0, 2.0, 3.0, 4.0, 5.0]
+sus mean_val meal = mean(data, 5)             # Returns 3.0
+sus variance_val meal = variance(data, 5)     # Returns sample variance
+sus std_dev meal = standard_deviation(data, 5) # Returns standard deviation
+sus median_val meal = median(data, 5)         # Returns 3.0 (middle value)
+```
+
+#### Numerical Analysis
+```cursed
+# Numerical integration using Simpson's rule
+sus function_values [5]meal = [1.0, 4.0, 6.0, 4.0, 1.0]
+sus integral meal = integrate_simpson(function_values, 5, 0.5)
+
+# Numerical differentiation using central difference
+sus derivative meal = differentiate_central(function_values, 5, 0.5, 2)
+
+# Linear system solver (2x2)
+sus x1 meal = solve_linear_2x2(2.0, 1.0, 3.0, 1.0, 1.0, 2.0)  # Solve Ax = b
+```
+
+#### Utility Functions
+```cursed
+# Rounding and floor/ceiling
+sus floor_val meal = floor_float(3.7)         # Returns 3.0
+sus ceil_val meal = ceil_float(3.2)           # Returns 4.0
+sus round_val meal = round_float(3.6)         # Returns 4.0
+
+# Number theory
+sus gcd_result normie = gcd(48, 18)           # Returns 6
+sus lcm_result normie = lcm(4, 6)             # Returns 12
+sus is_prime_result lit = is_prime(17)        # Returns based (true)
+sus fib_result normie = fibonacci(10)         # Returns 55
+```
+
+## Type System
+
+The math module uses CURSED's native type system:
+- `normie` - 32-bit signed integers (i32)
+- `meal` - 64-bit floating-point numbers (f64) 
+- `snack` - 32-bit floating-point numbers (f32)
+- `lit` - Boolean values (`based`/`cap`)
+
+## Numerical Accuracy
+
+All functions are implemented with high numerical accuracy:
+- Taylor series expansions for trigonometric functions
+- Newton-Raphson methods for square roots
+- Stirling's approximation for gamma function
+- IEEE 754 compliance for floating-point operations
+- Epsilon-based convergence testing (1e-15)
+
+## Error Handling
+
+The module handles edge cases gracefully:
+- Division by zero returns safe defaults
+- Invalid domain inputs return appropriate boundary values
+- Negative inputs to sqrt return 0.0
+- Overflow conditions are managed with large finite values
+
+## Performance
+
+The implementation prioritizes accuracy over raw speed:
+- Iterative algorithms with convergence testing
+- Maximum iteration limits to prevent infinite loops
+- Optimized series expansions for common functions
+- Efficient Newton-Raphson implementations
+
+## Usage Examples
+
+### Complex Calculations
+```cursed
+yeet "math"
+
+# Calculate trajectory using projectile motion
+sus angle meal = PI / 4.0  # 45 degrees
+sus velocity meal = 20.0
+sus gravity meal = 9.81
+
+sus vx meal = velocity * cos(angle)
+sus vy meal = velocity * sin(angle)
+sus flight_time meal = 2.0 * vy / gravity
+sus range meal = vx * flight_time
+
+vibez.spill("Projectile range:", range)
+```
+
+### Statistical Analysis
+```cursed
+yeet "math"
+
+# Analyze data set
+sus measurements [10]meal = [12.5, 13.1, 12.8, 13.0, 12.7, 13.2, 12.9, 13.1, 12.6, 13.0]
+
+sus avg meal = mean(measurements, 10)
+sus var meal = variance(measurements, 10)
+sus std meal = standard_deviation(measurements, 10)
+
+vibez.spill("Mean:", avg)
+vibez.spill("Standard deviation:", std)
+```
+
+### Numerical Integration
+```cursed
+yeet "math"
+
+# Integrate x² from 0 to 2 using Simpson's rule
+sus n normie = 21  # Number of points (must be odd)
+sus h meal = 2.0 / (n - 1).(meal)
+sus values [21]meal
+
+# Fill with x² values
+sus i normie = 0
+bestie i < n {
+    sus x meal = i.(meal) * h
+    values[i] = x * x
+    i = i + 1
+}
+
+sus result meal = integrate_simpson(values, n, h)
+vibez.spill("Integral of x² from 0 to 2:", result)  # Should be ≈ 2.67
 ```
 
 ## Testing
 
 Run the comprehensive test suite:
-
 ```bash
-# Test pure CURSED implementation
-cargo run --bin cursed stdlib/math/test_math_pure.csd
-
-# Test both interpretation and compilation modes
-cargo run --bin cursed stdlib/math/test_math_pure.csd           # Interpretation
-cargo run --bin cursed -- compile stdlib/math/test_math_pure.csd  # Compilation
-./test_math_pure                                               # Run compiled tests
+cargo run --bin cursed stdlib/math/test_math.csd
 ```
+
+The test suite includes:
+- 100+ test cases covering all functions
+- Accuracy validation within numerical tolerance
+- Edge case testing
+- Statistical function validation
+- Numerical analysis verification
 
 ## Implementation Details
 
-### Algorithm Choices
+### Trigonometric Functions
+- Uses Taylor series expansions
+- Input normalization to [-π, π] range
+- Convergence testing with machine epsilon
+- Special handling for exact values (0, π/2, π)
 
-1. **Newton-Raphson Method**: Used for square root, cube root, and power functions
-2. **Taylor Series**: Used for trigonometric, logarithmic, and exponential functions
-3. **Argument Reduction**: Applied to improve convergence for transcendental functions
-4. **Linear Congruential Generator**: Used for random number generation
+### Logarithmic Functions
+- Newton's method for natural logarithm
+- Base conversion using change of base formula
+- Domain validation for positive inputs
+- High precision for values near 1
 
-### Precision and Accuracy
+### Special Functions
+- Stirling's approximation for gamma function
+- Asymptotic expansions for Bessel functions
+- Recursive relationships for factorial computation
+- Series expansions with controlled convergence
 
-- **Floating Point**: Uses 64-bit double precision (`meal` type)
-- **Convergence**: Iterative algorithms use epsilon = 1e-15 for convergence
-- **Special Cases**: Proper handling of edge cases (NaN, infinity, division by zero)
-- **Range Reduction**: Trigonometric functions normalized to [-π, π] range
+### Statistical Functions
+- Sample variance calculation (n-1 denominator)
+- Numerically stable algorithms
+- Efficient single-pass computations where possible
+- Proper handling of edge cases (empty/single element arrays)
 
-### Performance Optimizations
+## Dependencies
 
-- **Efficient Algorithms**: Optimized for both interpretation and compilation modes
-- **Minimal Allocations**: Avoids unnecessary memory allocations
-- **Inlined Constants**: Mathematical constants computed at compile time
-- **Branch Optimization**: Efficient conditional logic for special cases
+The math module is implemented in pure CURSED without external dependencies:
+- No FFI bridges required
+- Self-contained mathematical implementations
+- Platform-independent algorithms
+- Compatible with both interpretation and compilation modes
 
-## Migration from FFI
+## Contributing
 
-This library has been completely migrated from Rust FFI to pure CURSED:
-
-### ✅ Eliminated Dependencies
-- Removed all `extern` function declarations
-- Eliminated Rust FFI bridges
-- Removed external library dependencies
-- No more unsafe code blocks
-
-### ✅ Maintained Compatibility
-- All function signatures preserved
-- Identical behavior to FFI version
-- Same precision and accuracy
-- Compatible with existing code
-
-### ✅ Performance Benefits
-- Native CURSED compilation optimizations
-- Reduced function call overhead
-- Better integration with CURSED type system
-- Improved debugging and error reporting
-
-## Backward Compatibility
-
-The pure CURSED implementation maintains 100% backward compatibility:
-
-- All existing function calls work unchanged
-- Same return types and parameter types
-- Identical numerical results (within floating-point precision)
-- No breaking changes to the API
-
-## Future Enhancements
-
-- Additional statistical functions (mode, quartiles, etc.)
-- More geometry functions (polygon area, angle calculations)
-- Complex number support
-- Matrix operations
-- Numerical integration and differentiation
-- Optimization algorithms (gradient descent, etc.)
+When adding new mathematical functions:
+1. Implement using pure CURSED syntax
+2. Add comprehensive test cases
+3. Document function behavior and accuracy
+4. Handle edge cases gracefully
+5. Use appropriate CURSED types (`meal`, `normie`, `lit`)
+6. Follow existing naming conventions
 
 ## License
 
-This math library is part of the CURSED programming language project and follows the same license terms.
+This module is part of the CURSED standard library and follows the same licensing terms as the main CURSED project.
