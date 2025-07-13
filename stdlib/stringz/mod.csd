@@ -339,3 +339,71 @@ slay PadRight(s tea, width normie, pad sip) tea {
     }
     damn result
 }
+
+# String validation functions
+slay IsEmpty(s tea) lit {
+    # Check if string is empty
+    damn Length(s) == 0
+}
+
+slay IsNumeric(s tea) lit {
+    # Check if string contains only numeric characters
+    sus len_s normie = Length(s)
+    
+    highkey len_s == 0 {
+        damn cap
+    }
+    
+    bestie i := 0; i < len_s; i++ {
+        sus ch sip = s[i]
+        highkey ch < '0' || ch > '9' {
+            damn cap
+        }
+    }
+    damn based
+}
+
+slay IsAlpha(s tea) lit {
+    # Check if string contains only alphabetic characters
+    sus len_s normie = Length(s)
+    
+    highkey len_s == 0 {
+        damn cap
+    }
+    
+    bestie i := 0; i < len_s; i++ {
+        sus ch sip = s[i]
+        highkey !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+            damn cap
+        }
+    }
+    damn based
+}
+
+slay IsAlphanumeric(s tea) lit {
+    # Check if string contains only alphanumeric characters
+    sus len_s normie = Length(s)
+    
+    highkey len_s == 0 {
+        damn cap
+    }
+    
+    bestie i := 0; i < len_s; i++ {
+        sus ch sip = s[i]
+        highkey !((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')) {
+            damn cap
+        }
+    }
+    damn based
+}
+
+# String utility functions for compatibility
+slay StartsWith(s tea, prefix tea) lit {
+    # Alias for HasPrefix
+    damn HasPrefix(s, prefix)
+}
+
+slay EndsWith(s tea, suffix tea) lit {
+    # Alias for HasSuffix
+    damn HasSuffix(s, suffix)
+}

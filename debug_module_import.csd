@@ -1,3 +1,4 @@
-yeet "sketchy_math"
+yeet "testz"
 
-vibez.spill("Module imported successfully")
+test_start("simple test")
+vibez.spill("Debug: Testing module import")

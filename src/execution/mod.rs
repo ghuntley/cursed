@@ -2962,6 +2962,9 @@ impl CursedExecutionEngine {
             (CursedValue::Character(_), crate::ast::Type::Integer) => true,
             (CursedValue::Integer(_), crate::ast::Type::Sip) => true,
             
+            // String to Boolean conversion
+            (CursedValue::String(_), crate::ast::Type::Lit | crate::ast::Type::Boolean) => true,
+            
             _ => false,
         }
     }
@@ -3007,6 +3010,10 @@ impl CursedExecutionEngine {
                 } else {
                     Err(CursedError::runtime_error(&format!("Cannot convert {} to character: out of range", i)))
                 }
+            },
+            // String to Boolean conversion (CURSED semantics: empty string is false, non-empty is true)
+            (CursedValue::String(s), crate::ast::Type::Lit | crate::ast::Type::Boolean) => {
+                Ok(CursedValue::Boolean(!s.is_empty()))
             },
             
             _ => Err(CursedError::runtime_error(&format!(

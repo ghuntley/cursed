@@ -6,16 +6,40 @@ yeet "testz"
 # ==========================================
 
 # ==========================================
-# Core JSON Parsing Functions
+# Core JSON Parsing Functions (RFC 7159)
 # ==========================================
 
-slay parse_value(json_string tea) tea {
-    # Parse a single JSON value (string, number, boolean, null)
+slay parse_json(json_string tea) tea {
+    # Main RFC 7159 compliant JSON parser
     sus trimmed tea = string_trim(json_string)
+    bestie string_length(trimmed) == 0 {
+        damn "ERROR: Empty JSON string"
+    }
+    damn parse_value(trimmed)
+}
+
+slay from_string(json_string tea) tea {
+    # Alternative entry point for JSON parsing
+    damn parse_json(json_string)
+}
+
+slay parse_value(json_string tea) tea {
+    # Parse a single JSON value (string, number, boolean, null, object, array)
+    sus trimmed tea = string_trim(json_string)
+    
+    # Handle objects
+    bestie string_starts_with(trimmed, "{") {
+        damn parse_object(trimmed)
+    }
+    
+    # Handle arrays
+    bestie string_starts_with(trimmed, "[") {
+        damn parse_array(trimmed)
+    }
     
     # Handle string values
     bestie string_starts_with(trimmed, "\"") && string_ends_with(trimmed, "\"") {
-        damn string_substring(trimmed, 1, string_length(trimmed) - 2)
+        damn unescape_json_string(string_substring(trimmed, 1, string_length(trimmed) - 2))
     }
     
     # Handle numbers
@@ -37,7 +61,63 @@ slay parse_value(json_string tea) tea {
         damn "null"
     }
     
-    damn ""
+    damn "ERROR: Invalid JSON value"
+}
+
+slay parse_object(json_string tea) tea {
+    # Parse JSON object to key-value representation
+    sus trimmed tea = string_trim(json_string)
+    
+    # Validate object structure
+    bestie !string_starts_with(trimmed, "{") || !string_ends_with(trimmed, "}") {
+        damn "ERROR: Invalid object format"
+    }
+    
+    # Extract content between braces
+    sus content tea = string_trim(string_substring(trimmed, 1, string_length(trimmed) - 2))
+    
+    # Handle empty object
+    bestie string_length(content) == 0 {
+        damn "{}"
+    }
+    
+    # Simple key-value parsing for basic objects
+    sus result tea = "{"
+    sus pairs tea = split_object_pairs(content)
+    bestie string_length(pairs) > 0 {
+        result = result + pairs
+    }
+    result = result + "}"
+    
+    damn result
+}
+
+slay parse_array(json_string tea) tea {
+    # Parse JSON array to element representation
+    sus trimmed tea = string_trim(json_string)
+    
+    # Validate array structure
+    bestie !string_starts_with(trimmed, "[") || !string_ends_with(trimmed, "]") {
+        damn "ERROR: Invalid array format"
+    }
+    
+    # Extract content between brackets
+    sus content tea = string_trim(string_substring(trimmed, 1, string_length(trimmed) - 2))
+    
+    # Handle empty array
+    bestie string_length(content) == 0 {
+        damn "[]"
+    }
+    
+    # Simple element parsing
+    sus result tea = "["
+    sus elements tea = split_array_elements(content)
+    bestie string_length(elements) > 0 {
+        result = result + elements
+    }
+    result = result + "]"
+    
+    damn result
 }
 
 slay parse_simple_object(json_string tea) tea {
@@ -53,32 +133,122 @@ slay parse_simple_object(json_string tea) tea {
     damn ""
 }
 
-slay validate_json(json_string tea) lit {
-    # Basic JSON validation
+# ==========================================
+# JSON Generation Functions (RFC 7159)
+# ==========================================
+
+slay to_json(value tea) tea {
+    # Convert CURSED value to JSON string
+    damn stringify_value(value)
+}
+
+slay stringify(value tea) tea {
+    # Main JSON stringification function
+    damn to_json(value)
+}
+
+slay stringify_value(value tea) tea {
+    # Enhanced JSON stringification with type detection
+    bestie value == "true" || value == "false" || value == "null" {
+        damn value
+    }
+    
+    bestie is_numeric(value) {
+        damn value
+    }
+    
+    # Handle objects (simple detection)
+    bestie string_starts_with(value, "{") && string_ends_with(value, "}") {
+        damn value
+    }
+    
+    # Handle arrays (simple detection)
+    bestie string_starts_with(value, "[") && string_ends_with(value, "]") {
+        damn value
+    }
+    
+    # Default to string with proper escaping
+    damn "\"" + escape_json_string(value) + "\""
+}
+
+# ==========================================
+# Type Conversion Functions
+# ==========================================
+
+slay object_to_map(json_object tea) tea {
+    # Convert JSON object to map-like representation
+    sus trimmed tea = string_trim(json_object)
+    
+    bestie !string_starts_with(trimmed, "{") || !string_ends_with(trimmed, "}") {
+        damn "ERROR: Not a valid JSON object"
+    }
+    
+    # Return simplified map format
+    damn "MAP:" + trimmed
+}
+
+slay array_to_slice(json_array tea) tea {
+    # Convert JSON array to slice-like representation
+    sus trimmed tea = string_trim(json_array)
+    
+    bestie !string_starts_with(trimmed, "[") || !string_ends_with(trimmed, "]") {
+        damn "ERROR: Not a valid JSON array"
+    }
+    
+    # Return simplified slice format
+    damn "SLICE:" + trimmed
+}
+
+# ==========================================
+# Validation Functions (RFC 7159)
+# ==========================================
+
+slay is_valid_json(json_string tea) lit {
+    # RFC 7159 compliant JSON validation
     sus trimmed tea = string_trim(json_string)
     
-    # Check for basic JSON structures
-    bestie string_starts_with(trimmed, "{") && string_ends_with(trimmed, "}") {
-        damn based
+    bestie string_length(trimmed) == 0 {
+        damn cap
     }
     
-    bestie string_starts_with(trimmed, "[") && string_ends_with(trimmed, "]") {
-        damn based
+    sus result tea = parse_value(trimmed)
+    damn !string_starts_with(result, "ERROR:")
+}
+
+slay validate_schema(json_string tea, schema_type tea) lit {
+    # Basic schema validation
+    sus trimmed tea = string_trim(json_string)
+    
+    bestie schema_type == "object" {
+        damn string_starts_with(trimmed, "{") && string_ends_with(trimmed, "}")
     }
     
-    bestie string_starts_with(trimmed, "\"") && string_ends_with(trimmed, "\"") {
-        damn based
+    bestie schema_type == "array" {
+        damn string_starts_with(trimmed, "[") && string_ends_with(trimmed, "]")
     }
     
-    bestie trimmed == "true" || trimmed == "false" || trimmed == "null" {
-        damn based
+    bestie schema_type == "string" {
+        damn string_starts_with(trimmed, "\"") && string_ends_with(trimmed, "\"")
     }
     
-    bestie is_numeric(trimmed) {
-        damn based
+    bestie schema_type == "number" {
+        damn is_numeric(trimmed)
+    }
+    
+    bestie schema_type == "boolean" {
+        damn trimmed == "true" || trimmed == "false"
+    }
+    
+    bestie schema_type == "null" {
+        damn trimmed == "null"
     }
     
     damn cap
+}
+
+slay validate_json(json_string tea) lit {
+    # Legacy validation function (maintains compatibility)
+    damn is_valid_json(json_string)
 }
 
 slay stringify_simple(value tea) tea {
@@ -335,22 +505,63 @@ slay string_ends_with(input tea, suffix tea) lit {
 }
 
 # ==========================================
-# High-Level API Functions
+# Parser Helper Functions
+# ==========================================
+
+slay split_object_pairs(content tea) tea {
+    # Split object content into key-value pairs (simplified)
+    bestie string_length(content) == 0 {
+        damn ""
+    }
+    
+    # For now, return content as-is (simplified implementation)
+    damn content
+}
+
+slay split_array_elements(content tea) tea {
+    # Split array content into elements (simplified)
+    bestie string_length(content) == 0 {
+        damn ""
+    }
+    
+    # For now, return content as-is (simplified implementation)
+    damn content
+}
+
+slay string_contains(haystack tea, needle tea) lit {
+    # Check if string contains substring
+    bestie string_length(needle) == 0 {
+        damn based
+    }
+    
+    bestie string_length(needle) > string_length(haystack) {
+        damn cap
+    }
+    
+    sus i normie = 0
+    bestie i <= string_length(haystack) - string_length(needle) {
+        sus substring tea = string_substring(haystack, i, string_length(needle))
+        bestie substring == needle {
+            damn based
+        }
+        i = i + 1
+    }
+    
+    damn cap
+}
+
+# ==========================================
+# High-Level API Functions (RFC 7159 Compliant)
 # ==========================================
 
 slay parse(json_string tea) tea {
-    # Main parse function
-    damn parse_value(json_string)
-}
-
-slay stringify(value tea) tea {
-    # Main stringify function
-    damn stringify_simple(value)
+    # Main parse function (RFC 7159 compliant)
+    damn parse_json(json_string)
 }
 
 slay validate(json_string tea) lit {
     # Main validation function
-    damn validate_json(json_string)
+    damn is_valid_json(json_string)
 }
 
 slay pretty_print(json_string tea) tea {

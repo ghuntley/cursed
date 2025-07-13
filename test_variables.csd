@@ -1,1 +1,1 @@
-sus name tea = "test"; vibez.spill(name)
+sus x := 42; vibez.spill("The answer is:", x)

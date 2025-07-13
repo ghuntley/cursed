@@ -1237,6 +1237,11 @@ impl Parser {
                     self.next_token()?;
                     return Ok(Expression::Literal(Literal::Boolean(true)));
                 }
+                TokenKind::Lies => {
+                    // Parse boolean literal for false (cap)
+                    self.next_token()?;
+                    return Ok(Expression::Literal(Literal::Boolean(false)));
+                }
                 TokenKind::Yikes => {
                     // Parse error value expression
                     self.next_token()?;

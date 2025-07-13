@@ -1,0 +1,2 @@
+warning: /home/ghuntley/code/cursed/Cargo.toml: `panic` setting is ignored for `test` profile
+    Blocking waiting for file lock on build directory

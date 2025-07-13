@@ -6,6 +6,22 @@ yeet "json"
 # RFC 7159 Compliant JSON Processing Tests
 # ==========================================
 
+slay test_json_parse_main_api() {
+    test_start("JSON Main API - parse_json() and from_string()")
+    
+    # Test main parse_json function
+    sus result1 tea = json.parse_json("\"hello\"")
+    assert_eq_string(result1, "hello")
+    
+    # Test from_string alias
+    sus result2 tea = json.from_string("42")
+    assert_eq_string(result2, "42")
+    
+    # Test empty string error handling
+    sus empty_result tea = json.parse_json("")
+    assert_true(json.string_contains(empty_result, "ERROR"))
+}
+
 slay test_json_parse_primitives() {
     test_start("JSON Parse Primitive Values")
     
@@ -32,33 +48,132 @@ slay test_json_parse_primitives() {
     assert_eq_string(null_result, "null")
 }
 
+slay test_json_parse_objects() {
+    test_start("JSON Parse Objects")
+    
+    # Test empty object
+    sus empty_obj tea = json.parse_object("{}")
+    assert_eq_string(empty_obj, "{}")
+    
+    # Test simple object
+    sus simple_obj tea = json.parse_object("{\"name\": \"John\"}")
+    assert_true(json.string_contains(simple_obj, "name"))
+    assert_true(json.string_contains(simple_obj, "John"))
+    
+    # Test invalid object
+    sus invalid_obj tea = json.parse_object("invalid")
+    assert_true(json.string_contains(invalid_obj, "ERROR"))
+}
+
+slay test_json_parse_arrays() {
+    test_start("JSON Parse Arrays")
+    
+    # Test empty array
+    sus empty_arr tea = json.parse_array("[]")
+    assert_eq_string(empty_arr, "[]")
+    
+    # Test simple array
+    sus simple_arr tea = json.parse_array("[1, 2, 3]")
+    assert_true(json.string_contains(simple_arr, "1"))
+    assert_true(json.string_contains(simple_arr, "2"))
+    assert_true(json.string_contains(simple_arr, "3"))
+    
+    # Test invalid array
+    sus invalid_arr tea = json.parse_array("invalid")
+    assert_true(json.string_contains(invalid_arr, "ERROR"))
+}
+
 slay test_json_validation() {
-    test_start("JSON Validation")
+    test_start("JSON Validation - is_valid_json()")
     
-    # Test valid JSON
-    assert_true(json.validate("{\"name\": \"John\"}"))
-    assert_true(json.validate("[1, 2, 3]"))
+    # Test valid JSON with is_valid_json
+    assert_true(json.is_valid_json("{\"name\": \"John\"}"))
+    assert_true(json.is_valid_json("[1, 2, 3]"))
+    assert_true(json.is_valid_json("\"hello\""))
+    assert_true(json.is_valid_json("42"))
+    assert_true(json.is_valid_json("true"))
+    assert_true(json.is_valid_json("false"))
+    assert_true(json.is_valid_json("null"))
+    
+    # Test invalid JSON
+    assert_false(json.is_valid_json("invalid"))
+    assert_false(json.is_valid_json(""))
+    assert_false(json.is_valid_json("undefined"))
+    
+    # Test legacy validate function
     assert_true(json.validate("\"hello\""))
-    assert_true(json.validate("42"))
-    assert_true(json.validate("true"))
-    assert_true(json.validate("false"))
-    assert_true(json.validate("null"))
-    
-    # Test invalid JSON (basic cases)
     assert_false(json.validate("invalid"))
-    assert_false(json.validate(""))
-    assert_false(json.validate("undefined"))
+}
+
+slay test_json_schema_validation() {
+    test_start("JSON Schema Validation")
+    
+    # Test object schema validation
+    assert_true(json.validate_schema("{\"key\": \"value\"}", "object"))
+    assert_false(json.validate_schema("\"string\"", "object"))
+    
+    # Test array schema validation
+    assert_true(json.validate_schema("[1, 2, 3]", "array"))
+    assert_false(json.validate_schema("{}", "array"))
+    
+    # Test string schema validation
+    assert_true(json.validate_schema("\"hello\"", "string"))
+    assert_false(json.validate_schema("42", "string"))
+    
+    # Test number schema validation
+    assert_true(json.validate_schema("42", "number"))
+    assert_true(json.validate_schema("3.14", "number"))
+    assert_false(json.validate_schema("\"42\"", "number"))
+    
+    # Test boolean schema validation
+    assert_true(json.validate_schema("true", "boolean"))
+    assert_true(json.validate_schema("false", "boolean"))
+    assert_false(json.validate_schema("\"true\"", "boolean"))
+    
+    # Test null schema validation
+    assert_true(json.validate_schema("null", "null"))
+    assert_false(json.validate_schema("\"null\"", "null"))
 }
 
 slay test_json_stringify() {
-    test_start("JSON Stringify")
+    test_start("JSON Stringify - to_json() and stringify()")
     
-    # Test stringify primitives
+    # Test to_json function
+    assert_eq_string(json.to_json("hello"), "\"hello\"")
+    assert_eq_string(json.to_json("42"), "42")
+    assert_eq_string(json.to_json("true"), "true")
+    
+    # Test stringify alias
     assert_eq_string(json.stringify("hello"), "\"hello\"")
     assert_eq_string(json.stringify("42"), "42")
     assert_eq_string(json.stringify("true"), "true")
     assert_eq_string(json.stringify("false"), "false")
     assert_eq_string(json.stringify("null"), "null")
+    
+    # Test object/array passthrough
+    assert_eq_string(json.stringify("{}"), "{}")
+    assert_eq_string(json.stringify("[]"), "[]")
+}
+
+slay test_json_type_conversion() {
+    test_start("JSON Type Conversion")
+    
+    # Test object_to_map conversion
+    sus obj_map tea = json.object_to_map("{\"key\": \"value\"}")
+    assert_true(json.string_contains(obj_map, "MAP:"))
+    assert_true(json.string_contains(obj_map, "key"))
+    
+    # Test array_to_slice conversion
+    sus arr_slice tea = json.array_to_slice("[1, 2, 3]")
+    assert_true(json.string_contains(arr_slice, "SLICE:"))
+    assert_true(json.string_contains(arr_slice, "1"))
+    
+    # Test error handling for invalid inputs
+    sus invalid_obj tea = json.object_to_map("invalid")
+    assert_true(json.string_contains(invalid_obj, "ERROR"))
+    
+    sus invalid_arr tea = json.array_to_slice("invalid")
+    assert_true(json.string_contains(invalid_arr, "ERROR"))
 }
 
 slay test_json_minify() {
@@ -70,8 +185,8 @@ slay test_json_minify() {
     
     # Should remove spaces around punctuation
     assert_true(string_length(minified) < string_length(spaced_json))
-    assert_false(string_contains(minified, " : "))
-    assert_false(string_contains(minified, " , "))
+    assert_false(json.string_contains(minified, " : "))
+    assert_false(json.string_contains(minified, " , "))
 }
 
 slay test_json_pretty_print() {
@@ -82,10 +197,10 @@ slay test_json_pretty_print() {
     sus pretty_json tea = json.pretty_print(compact_json)
     
     # Should contain original data
-    assert_true(string_contains(pretty_json, "name"))
-    assert_true(string_contains(pretty_json, "John"))
-    assert_true(string_contains(pretty_json, "age"))
-    assert_true(string_contains(pretty_json, "30"))
+    assert_true(json.string_contains(pretty_json, "name"))
+    assert_true(json.string_contains(pretty_json, "John"))
+    assert_true(json.string_contains(pretty_json, "age"))
+    assert_true(json.string_contains(pretty_json, "30"))
     
     # Should be longer due to formatting
     assert_true(string_length(pretty_json) > string_length(compact_json))
@@ -99,14 +214,14 @@ slay test_json_escape_unescape() {
     sus escaped tea = json.escape_string(original)
     
     # Should contain escape sequences
-    assert_true(string_contains(escaped, "\\n"))
-    assert_true(string_contains(escaped, "\\t"))
-    assert_true(string_contains(escaped, "\\\""))
+    assert_true(json.string_contains(escaped, "\\n"))
+    assert_true(json.string_contains(escaped, "\\t"))
+    assert_true(json.string_contains(escaped, "\\\""))
     
     # Test unescape
     sus unescaped tea = json.unescape_string(escaped)
-    assert_true(string_contains(unescaped, "Hello"))
-    assert_true(string_contains(unescaped, "World"))
+    assert_true(json.string_contains(unescaped, "Hello"))
+    assert_true(json.string_contains(unescaped, "World"))
 }
 
 slay test_json_numeric_validation() {
@@ -183,13 +298,13 @@ slay test_json_complex_strings() {
     # Test strings with special characters
     sus special_json tea = "\"Hello\\nWorld\\t!\""
     sus special_result tea = json.parse_value(special_json)
-    assert_true(string_contains(special_result, "Hello"))
-    assert_true(string_contains(special_result, "World"))
+    assert_true(json.string_contains(special_result, "Hello"))
+    assert_true(json.string_contains(special_result, "World"))
     
     # Test unicode handling (basic)
     sus unicode_json tea = "\"Hello 🌍\""
     sus unicode_result tea = json.parse_value(unicode_json)
-    assert_true(string_contains(unicode_result, "Hello"))
+    assert_true(json.string_contains(unicode_result, "Hello"))
 }
 
 slay test_json_performance_basics() {
@@ -229,9 +344,18 @@ slay test_json_api_consistency() {
 }
 
 slay run_all_json_tests() {
-    vibez.spill("🔧 Running CURSED JSON Library Tests")
-    vibez.spill("====================================")
+    vibez.spill("🔧 Running Enhanced CURSED JSON Library Tests")
+    vibez.spill("=============================================")
+    vibez.spill("RFC 7159 Compliant JSON Processing")
     
+    # Test new RFC 7159 features
+    test_json_parse_main_api()
+    test_json_parse_objects()
+    test_json_parse_arrays()
+    test_json_schema_validation()
+    test_json_type_conversion()
+    
+    # Test enhanced API
     test_json_parse_primitives()
     test_json_validation()
     test_json_stringify()
