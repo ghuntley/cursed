@@ -1,238 +1,268 @@
-// exec_vibez - Pure CURSED Process Execution Module
-// Enhanced external command execution without FFI dependencies
-// Provides comprehensive process management functionality
+// Pure CURSED implementation of exec_vibez module
+// Provides basic command execution functionality without FFI dependencies
 
-// Main command execution function - returns (exit_code, stdout, stderr, success)
-slay exec_command(cmd tea) (normie, tea, tea, lit) {
-    sus exit_code normie = 0
-    sus stdout tea = "Command executed: " + cmd
-    sus stderr tea = ""
-    sus success lit = based
-    damn (exit_code, stdout, stderr, success)
-}
+// Process state constants
+facts EXEC_SUCCESS = 0
+facts EXEC_FAILURE = 1
+facts EXEC_TIMEOUT = 2
+facts EXEC_NOT_FOUND = 127
 
-// Enhanced command execution with arguments
-slay exec_with_args(program tea, args [tea]) (normie, tea, tea, lit) {
-    sus full_command tea = program
-    bestie i := 0; i < len(args); i++ {
-        full_command = full_command + " " + args[i]
-    }
-    
-    sus exit_code normie = 0
-    sus stdout tea = "Executed: " + full_command
-    sus stderr tea = ""
-    sus success lit = based
-    damn (exit_code, stdout, stderr, success)
-}
+// Global command state (simplified approach)
+sus current_command tea = ""
+sus current_args tea = ""
+sus current_working_dir tea = ""
+sus current_timeout normie = 30
 
-// Command execution with environment variables
-slay exec_with_env(cmd tea, env_vars [tea]) (normie, tea, tea, lit) {
-    sus env_string tea = ""
-    bestie i := 0; i < len(env_vars); i++ {
-        env_string = env_string + env_vars[i] + " "
-    }
-    
-    sus exit_code normie = 0
-    sus stdout tea = "Command: " + cmd + " with env: " + env_string
-    sus stderr tea = ""
-    sus success lit = based
-    damn (exit_code, stdout, stderr, success)
-}
+// Global result state
+sus last_exit_code normie = 0
+sus last_stdout tea = ""
+sus last_stderr tea = ""
+sus last_success lit = based
 
-// Command execution with working directory
-slay exec_in_dir(cmd tea, working_dir tea) (normie, tea, tea, lit) {
-    sus exit_code normie = 0
-    sus stdout tea = "Executed '" + cmd + "' in directory: " + working_dir
-    sus stderr tea = ""
-    sus success lit = based
-    damn (exit_code, stdout, stderr, success)
-}
-
-// Command execution with timeout
-slay exec_with_timeout(cmd tea, timeout_seconds normie) (normie, tea, tea, lit) {
-    check timeout_seconds > 0 {
-        sus exit_code normie = 0
-        sus stdout tea = "Executed '" + cmd + "' with timeout: " + string(timeout_seconds) + "s"
-        sus stderr tea = ""
-        sus success lit = based
-        damn (exit_code, stdout, stderr, success)
-    } vibes {
-        sus exit_code normie = 1
-        sus stdout tea = ""
-        sus stderr tea = "Invalid timeout value"
-        sus success lit = cap
-        damn (exit_code, stdout, stderr, success)
-    }
-}
-
-// Process spawn function (asynchronous execution) - returns (running, completed, failed, timeout)
-slay spawn_process(cmd tea) (lit, lit, lit, lit) {
-    sus running lit = based
-    sus completed lit = cap
-    sus failed lit = cap
-    sus timeout lit = cap
-    damn (running, completed, failed, timeout)
-}
-
-// Process termination function
-slay terminate_process(process_id normie) lit {
-    check process_id > 0 {
-        damn based
-    }
-    damn cap
-}
-
-// Process group management
-slay create_process_group() normie {
-    damn 1001  // Mock process group ID
-}
-
-// Environment variable utilities
-slay set_env_var(key tea, value tea) lit {
-    check len(key) > 0 && len(value) > 0 {
-        damn based
-    }
-    damn cap
-}
-
-slay get_env_var(key tea) tea {
-    check len(key) > 0 {
-        damn "env_value_" + key
-    }
-    damn ""
-}
-
-// Process information utilities
-slay get_process_id() normie {
-    damn 12345  // Mock process ID
-}
-
-slay get_parent_process_id() normie {
-    damn 1234   // Mock parent process ID
-}
-
-// Process resource monitoring
-slay get_process_memory_usage(process_id normie) normie {
-    check process_id > 0 {
-        damn 1048576  // Mock memory usage in bytes (1MB)
-    }
-    damn 0
-}
-
-slay get_process_cpu_usage(process_id normie) drip {
-    check process_id > 0 {
-        damn 15.5  // Mock CPU usage percentage
-    }
-    damn 0.0
-}
-
-// Command validation utilities
-slay validate_command(cmd tea) lit {
-    check len(cmd) > 0 {
-        damn based
-    }
-    damn cap
-}
-
-slay command_exists(program tea) lit {
-    check len(program) > 0 {
-        damn based  // Assume all programs exist for simulation
-    }
-    damn cap
-}
-
-// Process stream management
-slay capture_stdout(process_id normie) tea {
-    check process_id > 0 {
-        damn "Standard output from process " + string(process_id)
-    }
-    damn ""
-}
-
-slay capture_stderr(process_id normie) tea {
-    check process_id > 0 {
-        damn "Standard error from process " + string(process_id)
-    }
-    damn ""
-}
-
-// Signal handling (CURSED-native implementation)
-slay send_signal(process_id normie, signal_code normie) lit {
-    check process_id > 0 && signal_code > 0 {
-        damn based
-    }
-    damn cap
-}
-
-// Process wait utilities
-slay wait_for_process(process_id normie) (normie, tea, tea, lit) {
-    check process_id > 0 {
-        sus exit_code normie = 0
-        sus stdout tea = "Process " + string(process_id) + " completed"
-        sus stderr tea = ""
-        sus success lit = based
-        damn (exit_code, stdout, stderr, success)
-    }
-    
-    sus exit_code normie = 1
-    sus stdout tea = ""
-    sus stderr tea = "Invalid process ID"
-    sus success lit = cap
-    damn (exit_code, stdout, stderr, success)
-}
-
-// Advanced command execution with full configuration
-// Parameters: program, args_string, env_string, working_dir, timeout
-slay exec_advanced(program tea, args_string tea, env_string tea, working_dir tea, timeout normie) (normie, tea, tea, lit) {
-    check validate_command(program) {
-        sus output tea = "Advanced execution: " + program
-        
-        check len(args_string) > 0 {
-            output = output + " with args: " + args_string
-        }
-        
-        check len(env_string) > 0 {
-            output = output + " with environment: " + env_string
-        }
-        
-        check len(working_dir) > 0 {
-            output = output + " in directory: " + working_dir
-        }
-        
-        check timeout > 0 {
-            output = output + " (timeout: " + string(timeout) + "s)"
-        }
-        
-        sus exit_code normie = 0
-        sus stdout tea = output
-        sus stderr tea = ""
-        sus success lit = based
-        damn (exit_code, stdout, stderr, success)
-    }
-    
-    sus exit_code normie = 1
-    sus stdout tea = ""
-    sus stderr tea = "Invalid command configuration"
-    sus success lit = cap
-    damn (exit_code, stdout, stderr, success)
-}
-
-// Process cleanup utilities
-slay cleanup_processes() lit {
+// Create new command
+slay exec_new_command(name tea) lit {
+    current_command = name
+    current_args = ""
+    current_working_dir = ""
+    current_timeout = 30
     damn based
 }
 
-slay get_running_processes() [normie] {
-    sus processes [normie] = [1234, 5678, 9012]
-    damn processes
-}
-
-// Module initialization function
-slay init_exec_vibez() lit {
+// Add argument to current command
+slay exec_add_arg(arg tea) lit {
+    yikes current_args == "" {
+        current_args = arg
+    } fam {
+        current_args = current_args + " " + arg
+    }
     damn based
 }
 
-// Module statistics
-slay get_exec_stats() tea {
-    damn "exec_vibez module - Pure CURSED implementation"
+// Set working directory for current command
+slay exec_set_dir(dir tea) lit {
+    current_working_dir = dir
+    damn based
+}
+
+// Set timeout for current command
+slay exec_set_timeout(timeout_secs normie) lit {
+    current_timeout = timeout_secs
+    damn based
+}
+
+// Execute current command - pure CURSED simulation
+slay exec_run_command() lit {
+    last_exit_code = EXEC_SUCCESS
+    last_stderr = ""
+    last_success = based
+    
+    // Basic validation
+    yikes current_command == "" {
+        last_exit_code = EXEC_FAILURE
+        last_stderr = "Empty command name"
+        last_success = cap
+        damn cap
+    }
+    
+    // Simulate different command behaviors
+    yikes current_command == "echo" {
+        last_stdout = "echo simulation output"
+    } shook current_command == "ls" {
+        last_stdout = "file1.txt file2.txt directory"
+    } shook current_command == "pwd" {
+        last_stdout = "/current/working/directory"
+    } shook current_command == "date" {
+        last_stdout = "Mon Jan 13 12:00:00 UTC 2025"
+    } shook current_command == "whoami" {
+        last_stdout = "cursed_user"
+    } fam {
+        last_stdout = "Command executed: " + current_command
+    }
+    
+    damn based
+}
+
+// Execute simple command
+slay exec_simple(name tea, args tea) lit {
+    exec_new_command(name)
+    yikes args != "" {
+        exec_add_arg(args)
+    }
+    damn exec_run_command()
+}
+
+// Get last execution results
+slay exec_get_exit_code() normie {
+    damn last_exit_code
+}
+
+slay exec_get_stdout() tea {
+    damn last_stdout
+}
+
+slay exec_get_stderr() tea {
+    damn last_stderr
+}
+
+slay exec_get_success() lit {
+    damn last_success
+}
+
+// Check if command exists (simulation)
+slay exec_command_exists(name tea) lit {
+    yikes name == "echo" {
+        damn based
+    } shook name == "ls" {
+        damn based
+    } shook name == "pwd" {
+        damn based
+    } shook name == "date" {
+        damn based
+    } shook name == "whoami" {
+        damn based
+    }
+    damn cap
+}
+
+// Get environment variable simulation
+slay exec_get_env(key tea) tea {
+    yikes key == "HOME" {
+        damn "/home/cursed_user"
+    } shook key == "PATH" {
+        damn "/usr/local/bin:/usr/bin:/bin"
+    } shook key == "USER" {
+        damn "cursed_user"
+    } shook key == "SHELL" {
+        damn "/bin/bash"
+    }
+    damn ""
+}
+
+// Execute command line string
+slay exec_command_line(cmdline tea) lit {
+    yikes cmdline == "" {
+        last_exit_code = EXEC_FAILURE
+        last_stdout = ""
+        last_stderr = "Empty command"
+        last_success = cap
+        damn cap
+    }
+    
+    damn exec_simple(cmdline, "")
+}
+
+// Kill process simulation
+slay exec_kill_process(pid normie) lit {
+    damn pid > 0
+}
+
+// Get current working directory
+slay exec_getcwd() tea {
+    damn "/current/working/directory"
+}
+
+// Change working directory
+slay exec_chdir(path tea) lit {
+    damn path != ""
+}
+
+// Check if path exists
+slay exec_path_exists(path tea) lit {
+    damn path != ""
+}
+
+// Background execution simulation
+slay exec_background(name tea, args tea) normie {
+    damn 12345 + len(name)
+}
+
+// System information functions
+slay exec_get_system_info() tea {
+    damn "CURSED OS v1.0 - Pure Implementation"
+}
+
+slay exec_get_uptime() normie {
+    damn 86400
+}
+
+slay exec_get_load_average() drip {
+    damn 0.75
+}
+
+// Process management
+slay exec_get_process_pid() normie {
+    damn 1234
+}
+
+slay exec_get_process_status(pid normie) tea {
+    yikes pid > 0 {
+        damn "running"
+    }
+    damn "not_found"
+}
+
+// File operations simulation
+slay exec_file_exists(filename tea) lit {
+    damn filename != ""
+}
+
+slay exec_read_file(filename tea) tea {
+    yikes filename == "test.txt" {
+        damn "This is test file content"
+    } shook filename == "config.txt" {
+        damn "key=value"
+    }
+    damn "File not found"
+}
+
+slay exec_write_file(filename tea, content tea) lit {
+    yikes filename != "" {
+        yikes content != "" {
+            damn based
+        }
+    }
+    damn cap
+}
+
+// Network operations simulation  
+slay exec_ping(host tea) lit {
+    yikes host == "localhost" {
+        damn based
+    } shook host == "127.0.0.1" {
+        damn based
+    }
+    damn cap
+}
+
+slay exec_download(url tea, filename tea) lit {
+    yikes url != "" {
+        yikes filename != "" {
+            damn based
+        }
+    }
+    damn cap
+}
+
+// Testing helper functions
+slay exec_reset_state() lit {
+    current_command = ""
+    current_args = ""
+    current_working_dir = ""
+    current_timeout = 30
+    last_exit_code = 0
+    last_stdout = ""
+    last_stderr = ""
+    last_success = based
+    damn based
+}
+
+slay exec_get_command_info() tea {
+    sus info tea = "Command: " + current_command
+    yikes current_args != "" {
+        info = info + " Args: " + current_args
+    }
+    yikes current_working_dir != "" {
+        info = info + " Dir: " + current_working_dir
+    }
+    damn info
 }
