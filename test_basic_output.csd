@@ -1,5 +1,4 @@
-#!/usr/bin/env cursed
-
-slay main() {
-    vibez.spill("Hello, world!")
-}
+# Test basic output functionality
+vibez.spill("Testing basic output")
+vibez.spill("Number: 42")
+vibez.spill("Boolean: based")

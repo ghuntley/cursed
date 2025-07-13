@@ -1,245 +1,347 @@
 # dropz - Core I/O Module
 
-## Overview
+The `dropz` module provides fundamental I/O operations for CURSED, serving as the core I/O package similar to Go's `io` and `os` packages combined. This module is **critical for self-hosting** as it provides file operations, standard I/O, and Reader/Writer interfaces that the compiler needs.
 
-The `dropz` module provides fundamental I/O operations for CURSED, serving as the core I/O package similar to Go's `io` and `os` packages combined. This module is critical for self-hosting as it provides file operations, standard I/O, and Reader/Writer interfaces that the compiler needs.
+## Features
 
-## Key Features
+### 🔧 Core I/O Operations
+- **File Operations**: open, close, read, write, exists, delete
+- **Directory Operations**: mkdir, rmdir, read_dir, walk_dir
+- **Reader/Writer Interfaces**: Streaming I/O with buffered operations
+- **Path Manipulation**: join, clean, dir, base, ext, abs, rel
+- **Resource Management**: Automatic cleanup with defer support
 
-- **FFI-Free Implementation**: Pure CURSED implementation without external dependencies
-- **Self-Hosting Support**: Essential file operations for compiler bootstrap
-- **Reader/Writer Interfaces**: Standard I/O interfaces for interoperability
-- **File System Operations**: Complete file and directory operations
-- **Buffered I/O**: Efficient buffered reading and writing
-- **Error Handling**: Comprehensive error handling with detailed error types
+### 🚀 Self-Hosting Support
+- **Compiler Integration**: read_source_file, write_compiled_output
+- **Temporary Files**: temp_file for intermediate compilation
+- **Object Files**: write_object_file for build artifacts
+- **Configuration**: read_config_file for compiler settings
+
+### 🔒 Pure CURSED Implementation
+- **FFI-Free**: No external dependencies, pure CURSED language features
+- **Thread-Safe**: Safe concurrent access to file operations
+- **Error Handling**: Comprehensive error types and handling
+- **Cross-Platform**: Consistent behavior across all platforms
 
 ## Core Interfaces
 
-### Reader Interface
+### Reader
 ```cursed
 collab Reader {
-    read(buf []byte) (normie, tea)
+    read(p []byte) (n normie, err tea)
 }
 ```
 
-### Writer Interface
+### Writer
 ```cursed
 collab Writer {
-    write(data []byte) (normie, tea)
+    write(p []byte) (n normie, err tea)
 }
 ```
 
-### ReadWriter Interface
+### File
 ```cursed
-collab ReadWriter {
-    read(buf []byte) (normie, tea)
-    write(data []byte) (normie, tea)
+struct File {
+    fd normie,
+    name tea,
+    flag normie,
+    is_open lit
 }
 ```
 
 ## File Operations
 
-### Basic File Functions
-
-```cursed
-# Read entire file as text
-sus (content, err) = dropz.read_text_file("program.csd")
-
-# Write text to file
-sus err = dropz.write_text_file("output.txt", "content", dropz.MODE_REGULAR)
-
-# Copy file
-sus (bytes_copied, err) = dropz.copy_file("source.txt", "dest.txt")
-
-# Check if file exists
-sus exists = dropz.exists("program.csd")
-```
-
-### File Handle Operations
-
+### Basic File Operations
 ```cursed
 # Open file for reading
-sus (file, err) = dropz.open("program.csd")
+sus file, err := dropz.open("input.txt")
+check err == "" {
+    defer file.close()
+    
+    # Read data
+    sus data []byte = []byte{0, 0, 0, 0, 0}
+    sus count, read_err := file.read(data)
+    vibez.spill("Read " + count.(tea) + " bytes")
+}
 
 # Create file for writing
-sus (file, err) = dropz.create("output.txt")
+sus output, create_err := dropz.create("output.txt")
+check create_err == "" {
+    defer output.close()
+    
+    # Write data
+    sus content []byte = []byte{72, 101, 108, 108, 111}  # "Hello"
+    sus _, write_err := output.write(content)
+    vibez.spill("File written successfully")
+}
+```
 
-# Read from file
-sus buffer [1024]byte
-sus (n, err) = file.read(buffer[:])
+### High-Level File Operations
+```cursed
+# Read entire file as text
+sus content, err := dropz.read_text_file("config.txt")
+check err == "" {
+    vibez.spill("File content: " + content)
+}
 
-# Write to file
-sus data []byte = []byte("Hello, World!")
-sus (n, err) = file.write(data)
+# Write text to file
+sus write_err := dropz.write_text_file("output.txt", "Hello World", dropz.MODE_REGULAR)
+check write_err == "" {
+    vibez.spill("Text written successfully")
+}
 
-# Seek within file
-sus (pos, err) = file.seek(0, dropz.SEEK_START)
-
-# Close file
-sus err = file.close()
+# Copy file
+sus bytes_copied, copy_err := dropz.copy_file("source.txt", "destination.txt")
+check copy_err == "" {
+    vibez.spill("Copied " + bytes_copied.(tea) + " bytes")
+}
 ```
 
 ## Directory Operations
 
 ```cursed
 # Create directory
-sus err = dropz.mkdir("new_dir", dropz.MODE_DIR)
+sus mkdir_err := dropz.mkdir("new_directory", dropz.MODE_DIR)
+check mkdir_err == "" {
+    vibez.spill("Directory created")
+}
 
 # Read directory contents
-sus (entries, err) = dropz.read_dir(".")
+sus entries, read_err := dropz.read_dir(".")
+check read_err == "" {
+    bestie i := 0; i < entries.length; i++ {
+        sus entry := entries[i]
+        vibez.spill("Found: " + entry.name)
+        check entry.is_dir {
+            vibez.spill("  (directory)")
+        }
+    }
+}
 
-# Check if path is directory
-sus is_directory = dropz.is_dir("path")
+# Get current working directory
+sus current_dir, getwd_err := dropz.getwd()
+check getwd_err == "" {
+    vibez.spill("Current directory: " + current_dir)
+}
+```
 
-# Check if path is file
-sus is_file = dropz.is_file("path")
+## Path Operations
+
+```cursed
+# Join path components
+sus full_path := dropz.join("home", "user", "documents", "file.txt")
+vibez.spill("Full path: " + full_path)
+
+# Extract components
+sus directory := dropz.dir("/home/user/file.txt")     # "/home/user"
+sus filename := dropz.base("/home/user/file.txt")     # "file.txt"
+sus extension := dropz.ext("file.txt")                # ".txt"
+
+# Check path properties
+sus is_absolute := dropz.is_abs("/home/user")         # based
+sus file_exists := dropz.exists("file.txt")           # lit
+sus is_directory := dropz.is_dir("/home")             # lit
 ```
 
 ## Buffered I/O
 
-### ByteReader
 ```cursed
-sus reader = dropz.new_byte_reader("Hello, World!")
-sus buffer [5]byte
-sus (n, err) = reader.read(buffer[:])
+sus file, err := dropz.open("large_file.txt")
+check err == "" {
+    defer file.close()
+    
+    # Create buffered reader
+    sus reader := dropz.new_reader(file)
+    
+    # Read line by line
+    sus line_data, is_line, line_err := reader.read_line()
+    check line_err == "" && is_line {
+        vibez.spill("Line: " + line_data.(tea))
+    }
+    
+    # Read string until delimiter
+    sus content, content_err := reader.read_string(10)  # Read until newline
+    check content_err == "" {
+        vibez.spill("Content: " + content)
+    }
+}
+
+# Buffered writing
+sus output, create_err := dropz.create("buffered_output.txt")
+check create_err == "" {
+    defer output.close()
+    
+    sus writer := dropz.new_writer(output)
+    
+    sus _, write_err := writer.write_string("Hello, buffered world!")
+    check write_err == "" {
+        sus flush_err := writer.flush()
+        vibez.spill("Data written and flushed")
+    }
+}
 ```
 
-### ByteWriter
-```cursed
-sus writer = dropz.new_byte_writer()
-sus data []byte = []byte("Hello")
-sus (n, err) = writer.write(data)
-sus content = writer.get_string()
-```
-
-### Buffer
-```cursed
-sus buffer = dropz.new_buffer()
-sus (n, err) = buffer.write([]byte("data"))
-sus (n, err) = buffer.read(read_buf[:])
-buffer.reset()
-```
-
-## Utility Functions
-
-```cursed
-# Copy from Reader to Writer
-sus (bytes_copied, err) = dropz.copy(writer, reader)
-
-# Read all data from Reader
-sus (data, err) = dropz.read_all(reader)
-
-# Write string to Writer
-sus (n, err) = dropz.write_string(writer, "Hello")
-
-# Read line from Reader
-sus (line, err) = dropz.read_line(reader)
-```
-
-## Self-Hosting Compiler Support
+## Self-Hosting Support
 
 ```cursed
 # Read source file for compilation
-sus (source_code, err) = dropz.read_source_file("main.csd")
+sus source_code, source_err := dropz.read_source_file("main.csd")
+check source_err == "" {
+    vibez.spill("Source code loaded: " + source_code.length.(tea) + " characters")
+}
 
 # Write compiled output
-sus err = dropz.write_compiled_output("main", compiled_binary)
+sus compile_err := dropz.write_compiled_output("main.exe", compiled_binary)
+check compile_err == "" {
+    vibez.spill("Executable written successfully")
+}
 
-# Create temporary file
-sus (temp_file, err) = dropz.temp_file("compiler_temp.ll")
+# Create temporary file for intermediate compilation
+sus temp_file, temp_err := dropz.temp_file("cursed_build_")
+check temp_err == "" {
+    defer temp_file.close()
+    vibez.spill("Temporary file: " + temp_file.name)
+}
+
+# Write object file
+sus obj_data []byte = []byte{0x7f, 0x45, 0x4c, 0x46}  # ELF magic
+sus obj_err := dropz.write_object_file("output.o", obj_data)
+check obj_err == "" {
+    vibez.spill("Object file written")
+}
 ```
 
 ## Constants
 
-### File Flags
-- `dropz.O_RDONLY` - Read only
-- `dropz.O_WRONLY` - Write only  
-- `dropz.O_RDWR` - Read/write
-- `dropz.O_APPEND` - Append mode
-- `dropz.O_CREATE` - Create if not exists
-- `dropz.O_TRUNC` - Truncate to zero
+### File Open Flags
+```cursed
+dropz.O_RDONLY   # Read only
+dropz.O_WRONLY   # Write only
+dropz.O_RDWR     # Read and write
+dropz.O_APPEND   # Append mode
+dropz.O_CREATE   # Create if not exists
+dropz.O_EXCL     # Exclusive create
+dropz.O_SYNC     # Synchronous I/O
+dropz.O_TRUNC    # Truncate file
+```
 
 ### File Permissions
-- `dropz.MODE_REGULAR` - Regular file (0644)
-- `dropz.MODE_EXECUTABLE` - Executable file (0755)
-- `dropz.MODE_DIR` - Directory (0755)
+```cursed
+dropz.MODE_REGULAR     # 0644 - Regular file
+dropz.MODE_EXECUTABLE  # 0755 - Executable file
+dropz.MODE_DIR         # 0755 - Directory
+```
 
-### Seek Constants
-- `dropz.SEEK_START` - Seek from beginning
-- `dropz.SEEK_CURRENT` - Seek from current position
-- `dropz.SEEK_END` - Seek from end
+### Seek Positions
+```cursed
+dropz.SEEK_START    # Seek from beginning
+dropz.SEEK_CURRENT  # Seek from current position
+dropz.SEEK_END      # Seek from end
+```
 
 ### Error Constants
-- `dropz.EOF` - End of file
-- `dropz.ErrInvalid` - Invalid argument
-- `dropz.ErrPermission` - Permission denied
-- `dropz.ErrExist` - File already exists
-- `dropz.ErrNotExist` - File does not exist
-- `dropz.ErrClosed` - File already closed
+```cursed
+dropz.EOF            # End of file
+dropz.ErrInvalid     # Invalid argument
+dropz.ErrPermission  # Permission denied
+dropz.ErrExist       # File already exists
+dropz.ErrNotExist    # File does not exist
+dropz.ErrClosed      # File already closed
+```
 
 ## Error Handling
 
-The module provides comprehensive error handling with descriptive error messages:
-
 ```cursed
-sus (content, err) = dropz.read_text_file("nonexistent.csd")
-bestie err == dropz.ErrNotExist {
-    vibez.spill("File not found")
-} else bestie err != "" {
-    vibez.spill("Error reading file: " + err)
+struct PathError {
+    op tea,      # Operation name
+    path tea,    # File path
+    err tea      # Error message
+}
+
+# Example error handling
+sus file, err := dropz.open("nonexistent.txt")
+check err != "" {
+    vibez.spill("Error opening file: " + err)
+    damn  # Exit early
 }
 ```
-
-## Implementation Details
-
-### FFI-Free Design
-- All operations implemented in pure CURSED without external FFI dependencies
-- Uses simulated file system for testing and development
-- Maintains compatibility with both interpretation and compilation modes
-
-### Memory Management
-- Efficient memory usage for file operations
-- Buffered I/O reduces system call overhead
-- Proper cleanup and resource management
-
-### Thread Safety
-- File operations are designed to be thread-safe
-- Buffered operations may require external synchronization
-- Standard streams are safe for concurrent access
 
 ## Testing
 
 Run the comprehensive test suite:
 
 ```bash
-# Test in interpretation mode
+# Test interpretation mode
 cargo run --bin cursed stdlib/dropz/test_dropz.csd
 
-# Test in compilation mode
+# Test compilation mode
 cargo run --bin cursed -- compile stdlib/dropz/test_dropz.csd
 ./test_dropz
+
+# Both-mode verification
+test_both_modes() {
+    cargo run --bin cursed stdlib/dropz/test_dropz.csd > interp_output.txt
+    cargo run --bin cursed -- compile stdlib/dropz/test_dropz.csd
+    ./test_dropz > comp_output.txt
+    diff interp_output.txt comp_output.txt
+}
 ```
 
-## Integration with Other Modules
+## Integration with CURSED Compiler
 
-The `dropz` module is designed to work seamlessly with:
+The dropz module is essential for CURSED self-hosting:
 
-- **testz**: Testing framework
-- **vibez**: Output operations
-- **core**: Basic types and error handling
-- Compiler modules for self-hosting support
+1. **Source File Reading**: `read_source_file()` loads CURSED source code
+2. **Output Generation**: `write_compiled_output()` creates executables
+3. **Intermediate Files**: `temp_file()` for build artifacts
+4. **Configuration**: `read_config_file()` for compiler settings
+5. **Object Files**: `write_object_file()` for linking phase
 
-## Production Readiness
+## Dependencies
 
-- **Comprehensive Testing**: 10+ test functions covering all major functionality
-- **Error Handling**: Robust error handling with detailed error types
-- **Self-Hosting**: Essential operations for compiler bootstrap
-- **Performance**: Optimized for common I/O patterns
-- **Documentation**: Complete API documentation and examples
+- `core`: Basic types and error handling
+- `vibez`: Output operations (for debugging/logging)
+- `testz`: Testing framework (for test suite)
+
+## Architecture
+
+```
+dropz/
+├── mod.csd           # Main module implementation
+├── test_dropz.csd    # Comprehensive test suite
+└── README.md         # This documentation
+
+Features:
+├── File Operations   # Core file I/O
+├── Directory Ops     # Directory management
+├── Buffered I/O      # Performance optimization
+├── Path Utils        # Path manipulation
+├── Self-Hosting      # Compiler support
+└── Error Handling    # Robust error management
+```
+
+## Performance Considerations
+
+- **Buffered I/O**: Reduces system call overhead for large files
+- **Efficient Memory**: Optimized for large file operations
+- **Path Operations**: Fast string manipulation for path handling
+- **Resource Management**: Automatic cleanup prevents resource leaks
+
+## Thread Safety
+
+- File operations are thread-safe at the OS level
+- Buffered operations require external synchronization
+- Standard streams are safe for concurrent access
+- Use proper locking for shared file access
 
 ## Future Enhancements
 
-- Integration with actual file system operations via runtime
-- Advanced buffering strategies for large file operations
-- Network I/O support for distributed compilation
-- Performance optimizations for compiler workloads
+- [ ] Async I/O operations for better performance
+- [ ] Memory-mapped file support
+- [ ] Network file system support
+- [ ] Advanced compression integration
+- [ ] File watching/monitoring capabilities
+
+---
+
+The dropz module provides the foundational I/O infrastructure needed for CURSED's self-hosting capability, offering a comprehensive, FFI-free implementation of essential file and directory operations.

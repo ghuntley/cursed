@@ -299,12 +299,43 @@ impl ExecutionContext {
             }
         }
         
-        // Then import the functions from this module
+        // Import functions and initialize basic variables from the module
         for statement in &program.statements {
-            if let crate::ast::Statement::Function(func) = statement {
-                self.functions.insert(func.name.clone(), func.clone());
+            match statement {
+                crate::ast::Statement::Let(let_stmt) => {
+                    // Initialize global variables from the module with basic values
+                    match &let_stmt.target {
+                        crate::ast::LetTarget::Single(name) => {
+                            // For simple cases, initialize with basic values
+                            let value = match &let_stmt.value {
+                                crate::ast::Expression::String(s) => crate::execution::CursedValue::String(s.clone()),
+                                crate::ast::Expression::Integer(i) => crate::execution::CursedValue::Integer(*i),
+                                crate::ast::Expression::Boolean(b) => crate::execution::CursedValue::Boolean(*b),
+                                crate::ast::Expression::Literal(lit) => {
+                                    match lit {
+                                        crate::ast::Literal::String(s) => crate::execution::CursedValue::String(s.clone()),
+                                        crate::ast::Literal::Integer(i) => crate::execution::CursedValue::Integer(*i),
+                                        crate::ast::Literal::Boolean(b) => crate::execution::CursedValue::Boolean(*b),
+                                        _ => crate::execution::CursedValue::Nil,
+                                    }
+                                },
+                                _ => crate::execution::CursedValue::Nil, // Default for complex expressions
+                            };
+                            tracing::info!("📦 Importing variable: {} = {:?} from module", name, value);
+                            self.variables.insert(name.clone(), value);
+                        },
+                        _ => {} // Skip tuple destructuring for now
+                    }
+                },
+                crate::ast::Statement::Function(func) => {
+                    tracing::info!("📦 Importing function: {} from module", func.name);
+                    self.functions.insert(func.name.clone(), func.clone());
+                },
+                _ => {} // Skip other statement types
             }
         }
+        
+        tracing::info!("📦 Module import complete");
         Ok(())
     }
     
