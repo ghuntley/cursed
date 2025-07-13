@@ -19,6 +19,17 @@ unused_mut = "allow"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# Test optimization settings
+[profile.test]
+opt-level = 0
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = false
+panic = 'unwind'
+incremental = true
+codegen-units = 256
+
 [dependencies]
 thiserror = "1.0"  # For ergonomic error handling
 clap = { version = "4.4", features = ["derive"] }  # For command-line argument parsing

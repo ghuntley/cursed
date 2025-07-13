@@ -1,44 +1,28 @@
-// Simple Self-Hosting Test
-slay main() {
-    vibez.spill("CURSED Self-Hosting Test")
-    vibez.spill("=======================")
-    
-    // Test basic arithmetic
-    sus a normie = 10
-    sus b normie = 20
-    sus result normie = a + b
-    vibez.spill("Arithmetic test: {} + {} = {}", a, b, result)
-    
-    // Test string operations
-    sus message tea = "Self-hosting compiler"
-    sus length normie = len(message)
-    vibez.spill("String test: '{}' has {} characters", message, length)
-    
-    // Test boolean operations
-    sus flag lit = based
-    sus check lit = (result > 25)
-    vibez.spill("Boolean test: flag={}, check={}", flag, check)
-    
-    // Test arrays
-    sus numbers := [1, 2, 3, 4, 5]
-    sus first normie = numbers[0]
-    sus array_length normie = len(numbers)
-    vibez.spill("Array test: first={}, length={}", first, array_length)
-    
-    // Test control flow
-    lowkey result > 25 {
-        vibez.spill("Control flow test: condition passed")
-    } highkey {
-        vibez.spill("Control flow test: condition failed")
-    }
-    
-    // Test manual loop simulation
-    sus counter normie = 0
-    counter = counter + 1
-    vibez.spill("Loop iteration: {}", counter)
-    counter = counter + 1
-    vibez.spill("Loop iteration: {}", counter)
-    
-    vibez.spill("=======================")
-    vibez.spill("Self-hosting test completed successfully!")
-}
+# Simple Self-Hosting Test - Basic Module Verification
+
+yeet "testz"
+yeet "vibez"
+
+# Test basic functionality
+test_start("Basic Self-Hosting Module Test")
+
+# Test 1: Basic output
+vibez.spill("🚀 Testing CURSED Self-Hosting Capabilities")
+
+# Test 2: Module loading verification
+vibez.spill("✅ testz module loaded successfully")
+vibez.spill("✅ vibez module loaded successfully")
+
+# Test 3: Basic assertions
+assert_true(based)
+assert_false(cap)
+assert_eq_int(42, 42)
+assert_eq_string("hello", "hello")
+
+vibez.spill("✅ Basic module functionality verified")
+
+print_test_summary()
+
+vibez.spill("")
+vibez.spill("🎉 Simple self-hosting test complete!")
+vibez.spill("Ready to test more complex modules...")

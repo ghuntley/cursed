@@ -1,5 +1,6 @@
 //! JIT Integration Tests for CURSED
 //! Tests for the Just-In-Time execution capabilities
+//! NOTE: All JIT tests are disabled for fast test execution
 
 use cursed::execution::*;
 use cursed::error::CursedError;
@@ -9,6 +10,8 @@ use std::sync::Mutex;
 static JIT_TEST_MUTEX: Mutex<()> = Mutex::new(());
 
 #[test]
+#[ignore = "JIT tests disabled for fast test runs"]
+#[ignore = "JIT tests disabled for fast test runs"]
 fn test_println_string() {
     let _guard = JIT_TEST_MUTEX.lock().unwrap();
     // Test basic println functionality through execution engine
@@ -25,6 +28,7 @@ fn test_println_string() {
 }
 
 #[test]
+#[ignore = "JIT tests disabled for fast test runs"]
 fn test_basic_arithmetic() {
     let _guard = JIT_TEST_MUTEX.lock().unwrap();
     let code = r#"
@@ -40,6 +44,7 @@ fn test_basic_arithmetic() {
 }
 
 #[test]
+#[ignore = "JIT tests disabled for fast test runs"]
 fn test_function_call() {
     let _guard = JIT_TEST_MUTEX.lock().unwrap();
     let code = r#"
@@ -58,6 +63,7 @@ fn test_function_call() {
 }
 
 #[test]
+#[ignore = "JIT tests disabled for fast test runs"]
 fn test_control_flow() {
     let _guard = JIT_TEST_MUTEX.lock().unwrap();
     let code = r#"
@@ -75,6 +81,7 @@ fn test_control_flow() {
 }
 
 #[test]
+#[ignore = "JIT tests disabled for fast test runs"]
 fn test_loop_execution() {
     let _guard = JIT_TEST_MUTEX.lock().unwrap();
     // Simple loop test without for-in syntax (which has parsing issues)

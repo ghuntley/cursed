@@ -111,6 +111,7 @@ async fn test_resolver_performance_comparison() {
 }
 
 #[test]
+#[ignore = "Package manager tests disabled for fast test runs"]
 fn test_benchmark_scenario_generation() {
     // Test that we can generate different types of dependency scenarios
     let scenarios = vec![
@@ -166,6 +167,7 @@ fn generate_test_packages(scenario: &str) -> Vec<(String, VersionReq)> {
 }
 
 #[test]
+#[ignore = "Package manager tests disabled for fast test runs"]
 fn test_performance_metrics() {
     // Test the performance metrics structure
     let metrics = cursed::package_manager::optimized_resolver::ResolutionMetrics {

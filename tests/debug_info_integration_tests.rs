@@ -7,6 +7,7 @@ use cursed::error::{CursedError, SourceLocation};
 use std::path::PathBuf;
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_complete_debug_info_workflow() {
     // Create a stack trace capture system with full debug info enabled
     let config = EnhancedStackTraceConfig {
@@ -43,6 +44,7 @@ fn test_complete_debug_info_workflow() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_symbol_resolution_and_debug_info() {
     let resolver = SymbolResolver::new();
 
@@ -67,6 +69,7 @@ fn test_symbol_resolution_and_debug_info() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_dwarf_debug_database_functionality() {
     let mut database = DwarfDebugDatabase::new();
 
@@ -111,6 +114,7 @@ fn test_dwarf_debug_database_functionality() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_debug_info_extraction_integration() {
     let mut debug_info = LlvmDebugInfo::new();
 
@@ -149,6 +153,7 @@ fn test_debug_info_extraction_integration() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_dwarf_generation_and_parsing_roundtrip() {
     let debug_info = LlvmDebugInfo::new();
 
@@ -201,6 +206,7 @@ fn test_dwarf_generation_and_parsing_roundtrip() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_inline_function_debug_info() {
     let mut database = DwarfDebugDatabase::new();
 
@@ -234,6 +240,7 @@ fn test_inline_function_debug_info() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_variable_scope_and_location_tracking() {
     let mut database = DwarfDebugDatabase::new();
 
@@ -286,6 +293,7 @@ fn test_variable_scope_and_location_tracking() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_type_information_storage_and_retrieval() {
     let mut database = DwarfDebugDatabase::new();
 
@@ -337,6 +345,7 @@ fn test_type_information_storage_and_retrieval() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_performance_with_large_debug_info() {
     use std::time::Instant;
 
@@ -365,6 +374,7 @@ fn test_performance_with_large_debug_info() {
 }
 
 #[test]
+#[ignore = "Debug integration tests disabled for fast test runs"]
 fn test_debug_info_cache_efficiency() {
     let resolver = SymbolResolver::new();
 

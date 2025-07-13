@@ -10,6 +10,38 @@ module.exports = grammar({
     [$.expression, $.type],
     [$.expression, $.simple_statement],
     [$.primary_expression, $.type],
+    [$.type, $.type_literal],
+    [$.signature],
+    [$.operand, $.qualified_identifier],
+    [$.type, $.type_literal, $.composite_literal],
+    [$.method_receiver, $.pointer_type],
+    [$.type_name, $.identifier_list],
+    [$.type, $.tuple_type],
+    [$.type_name, $.operand],
+    [$.function_type, $.function_literal],
+    [$.pointer_type, $.composite_literal],
+    [$.unary_expression, $.conditional_expression],
+    [$.return_statement],
+    [$.break_statement],
+    [$.continue_statement],
+    [$.operand, $.identifier_list],
+    [$.statement, $.simple_statement],
+    [$.inc_dec_statement, $.expression_statement],
+    [$.unary_expression, $.call_expression],
+    [$.unary_expression, $.index_expression, $.slice_expression],
+    [$.parameter_declaration, $.type, $.tuple_type],
+    [$.parameter_declaration, $.tuple_type],
+    [$.element_list],
+    [$.binary_expression],
+    [$.expression_list],
+    [$.type_name, $.tuple_destructure, $.operand],
+    [$.simple_statement, $.for_clause],
+    [$.method_receiver, $.identifier_list],
+    [$.method_receiver, $.parameter_declaration],
+    [$.function_declaration],
+    [$.method_declaration],
+    [$.if_statement, $.operand],
+    [$.channel_type],
   ],
   
   rules: {
@@ -156,7 +188,8 @@ module.exports = grammar({
       $.function_type,
       $.interface_type,
       $.map_type,
-      $.struct_type
+      $.struct_type,
+      $.tuple_type
     ),
     
     type_name: $ => choice(
@@ -189,7 +222,8 @@ module.exports = grammar({
       $.interface_type,
       $.slice_type,
       $.map_type,
-      $.channel_type
+      $.channel_type,
+      $.tuple_type
     ),
     
     // Specific type definitions
@@ -211,12 +245,18 @@ module.exports = grammar({
       field('element', $.type)
     ),
     
-    channel_type: $ => seq(
-      'dm',
-      '<',
-      field('element', $.type),
-      '>',
-      optional(seq('[', field('capacity', $.expression), ']'))
+    channel_type: $ => choice(
+      seq(
+        'dm',
+        '<',
+        field('element', $.type),
+        '>',
+        optional(seq('[', field('capacity', $.expression), ']'))
+      ),
+      seq(
+        'chan',
+        field('element', $.type)
+      )
     ),
     
     struct_type: $ => seq(
@@ -268,7 +308,23 @@ module.exports = grammar({
       field('value', $.type)
     ),
     
+    tuple_type: $ => seq(
+      '(',
+      $.type,
+      repeat(seq(',', $.type)),
+      optional(','),
+      ')'
+    ),
+    
     // Statements
+    declaration: $ => choice(
+      $.const_declaration,
+      $.type_declaration,
+      $.var_declaration,
+      $.function_declaration,
+      $.method_declaration
+    ),
+    
     statement: $ => choice(
       $.declaration,
       $.simple_statement,
@@ -282,6 +338,8 @@ module.exports = grammar({
       $.continue_statement,
       $.defer_statement,
       $.go_statement,
+      $.error_statement,
+      $.recovery_statement,
       $.block,
       $.expression_statement
     ),
@@ -411,13 +469,31 @@ module.exports = grammar({
     ),
     
     defer_statement: $ => seq(
-      'later',
+      'defer',
       field('call', $.expression)
     ),
     
     go_statement: $ => seq(
       'stan',
       field('call', $.expression)
+    ),
+    
+    // Error handling statements
+    error_statement: $ => seq(
+      'yikes',
+      field('variable', $.identifier),
+      ':=',
+      field('value', $.expression)
+    ),
+    
+    recovery_statement: $ => seq(
+      'fam',
+      field('error_variable', $.identifier),
+      field('body', $.block),
+      optional(seq(
+        'highkey',
+        field('recovery_body', $.block)
+      ))
     ),
     
     assignment_statement: $ => seq(
@@ -427,9 +503,20 @@ module.exports = grammar({
     ),
     
     short_var_declaration: $ => seq(
-      field('left', $.identifier_list),
+      field('left', choice(
+        $.identifier_list,
+        $.tuple_destructure
+      )),
       ':=',
       field('right', $.expression_list)
+    ),
+    
+    tuple_destructure: $ => seq(
+      '(',
+      $.identifier,
+      repeat(seq(',', $.identifier)),
+      optional(','),
+      ')'
     ),
     
     inc_dec_statement: $ => choice(
@@ -451,7 +538,7 @@ module.exports = grammar({
     unary_expression: $ => choice(
       $.primary_expression,
       seq(
-        field('operator', choice('+', '-', '!', '^', '*', '&', '<-')),
+        field('operator', choice('+', '-', '!', '^', '*', '&', '<-', 'shook')),
         field('operand', $.expression)
       )
     ),
@@ -463,8 +550,8 @@ module.exports = grammar({
         ['==', 3], ['!=', 3], ['<', 3], ['<=', 3], ['>', 3], ['>=', 3],
         ['+', 4], ['-', 4], ['|', 4], ['^', 4],
         ['*', 5], ['/', 5], ['%', 5], ['<<', 5], ['>>', 5], ['&', 5], ['&^', 5],
-      ].map(([op, prec]) => 
-        prec(prec, seq(
+      ].map(([op, precedence]) => 
+        prec(precedence, seq(
           field('left', $.expression),
           field('operator', op),
           field('right', $.expression)
@@ -554,11 +641,20 @@ module.exports = grammar({
       $.string_literal,
       $.char_literal,
       $.bool_literal,
-      $.nil_literal
+      $.nil_literal,
+      $.tuple_literal
     ),
     
     bool_literal: $ => choice('based', 'cap'),
     nil_literal: $ => 'cringe',
+    
+    tuple_literal: $ => seq(
+      '(',
+      $.expression,
+      repeat1(seq(',', $.expression)),
+      optional(','),
+      ')'
+    ),
     
     composite_literal: $ => seq(
       field('type', choice($.type, $.struct_type, $.array_type, $.slice_type, $.map_type)),

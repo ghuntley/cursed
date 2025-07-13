@@ -152,13 +152,16 @@ tree-sitter test
 
 ```bash
 # Generate parser
-tree-sitter generate
+npx tree-sitter generate
 
-# Build bindings
+# Build bindings  
 npm run build
 
 # Run tests
-npm test
+npx tree-sitter test
+
+# Parse a file
+npx tree-sitter parse examples/hello.csd
 ```
 
 ### Adding New Features
@@ -167,7 +170,7 @@ npm test
 2. Add test cases in `test/corpus/`
 3. Update highlighting queries in `queries/highlights.scm`
 4. Update locals queries in `queries/locals.scm`
-5. Run `tree-sitter generate` and `tree-sitter test`
+5. Run `npx tree-sitter generate` and `npx tree-sitter test`
 
 ## VS Code Extension
 
