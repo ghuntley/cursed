@@ -957,10 +957,18 @@ mod tests {
         // Spawn receiver thread
         let receiver_handle = thread::spawn(move || {
             let mut received = 0;
-            for _ in 0..50 {
+            let mut attempts = 0;
+            let max_attempts = 1000; // Prevent infinite loop
+            
+            while received < 50 && attempts < max_attempts {
                 match receiver_clone.receive() {
                     ReceiveResult::Received(_) => received += 1,
-                    _ => {},
+                    ReceiveResult::WouldBlock => {
+                        // Wait a bit and retry
+                        thread::sleep(Duration::from_millis(1));
+                        attempts += 1;
+                    },
+                    ReceiveResult::Closed => break,
                 }
             }
             received

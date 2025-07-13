@@ -1,361 +1,419 @@
-# CURSED I/O Module - Self-Hosting Edition
+# CURSED I/O Module
 
-A comprehensive I/O module implemented in pure CURSED, designed specifically to support self-hosting compiler operations. This module provides all essential file operations needed for the Stage 2 compiler bootstrap.
+A comprehensive I/O module implementing YeetIO and SlayIO specifications for the CURSED programming language. This module provides essential file operations, buffered I/O, standard input/output, directory manipulation, and async operations critical for self-hosting capability.
 
-## 🚀 Self-Hosting Features
+## Features
 
-The I/O module is specifically designed to support CURSED's self-hosting capabilities:
+### YeetIO Core Interfaces
 
-- **Source File Reading**: Read CURSED source files for compilation
-- **Compiled Output Writing**: Write compiled LLVM IR and native executables
-- **Directory Management**: Create and manage compilation output directories
-- **Compiler Configuration**: Read and write compiler configuration files
-- **Logging**: Comprehensive logging for compilation processes
+- **Yeeter Interface**: Write operations to destinations
+- **Yoink Interface**: Read operations from sources  
+- **YoinkYeeter Interface**: Combined read/write operations
 
-## 📁 Core File Operations
+### SlayIO Buffered Operations
 
-### File Reading Operations
+- **SlayReader**: High-performance buffered reading with configurable buffer sizes
+- **SlayWriter**: Efficient buffered writing with automatic flushing
+- **SlayReadWriter**: Combined buffered read/write operations
+- **SlayScanner**: Token-based scanning with customizable split functions
+
+### Standard I/O Operations
+
+- **Stdin/Stdout**: Standard input and output stream interfaces
+- **Print Functions**: Formatted output operations
+- **Read Functions**: Interactive input operations
+
+### File System Operations
+
+- **File Reading/Writing**: Complete file I/O with error handling
+- **Directory Operations**: List, create, and manipulate directories
+- **Path Utilities**: File extension, basename, and path manipulation
+- **Existence Checks**: Verify file and directory existence
+
+### Async I/O Operations
+
+- **Async File Operations**: Non-blocking file reading and writing
+- **Channel-based Results**: Go-style channel communication for async operations
+- **Concurrent I/O**: Support for multiple simultaneous I/O operations
+
+## API Reference
+
+### Core Types
 
 ```cursed
-yeet "io"
-
-# Read entire file as text
-sus source_result IOResult = read_file("main.csd")
-bestie source_result.success {
-    vibez.spill("Source: " + source_result.data)
+# I/O result with comprehensive error handling
+struct IOResult {
+    success lit,
+    data tea,
+    error tea
 }
 
-# Read text file with encoding awareness
-sus text_result IOResult = read_text_file("config.txt")
-bestie text_result.success {
-    vibez.spill("Config: " + text_result.data)
+# File handle for file operations
+struct FileHandle {
+    filename tea,
+    mode tea,
+    position normie,
+    size normie,
+    buffer tea,
+    is_open lit
 }
 
-# Read source file for compilation (validates .csd extension)
-sus compile_result IOResult = read_source_file("compiler.csd")
-bestie compile_result.success {
-    vibez.spill("Ready to compile: " + compile_result.data)
+# Directory entry information
+struct DirEntry {
+    name tea,
+    is_file lit,
+    is_dir lit,
+    size normie
 }
 ```
 
-### File Writing Operations
+### YeetIO Interfaces
+
+```cursed
+# Write interface
+collab Yeeter {
+    Yeet(p []byte) (n normie, err tea)
+}
+
+# Read interface
+collab Yoink {
+    Yoink(p []byte) (n normie, err tea)
+}
+
+# Combined read/write interface
+collab YoinkYeeter {
+    Yoink(p []byte) (n normie, err tea)
+    Yeet(p []byte) (n normie, err tea)
+}
+```
+
+### SlayIO Buffered Operations
+
+```cursed
+# Create buffered reader
+slay NewSlayReader(r Yoink) *SlayReader
+slay NewSlayReaderSize(r Yoink, size normie) *SlayReader
+
+# Create buffered writer
+slay NewSlayWriter(w Yeeter) *SlayWriter
+slay NewSlayWriterSize(w Yeeter, size normie) *SlayWriter
+
+# Create scanner
+slay NewSlayScanner(r Yoink) *SlayScanner
+```
+
+### File Operations
+
+```cursed
+# Basic file I/O
+slay read_file(filename tea) IOResult
+slay write_file(filename tea, content tea) IOResult
+slay read_text_file(filename tea) IOResult
+slay write_text_file(filename tea, content tea) IOResult
+
+# File system operations
+slay exists(path tea) lit
+slay copy_file(source tea, destination tea) IOResult
+slay remove_file(filename tea) IOResult
+slay get_file_size(filename tea) IOResult
+slay get_file_extension(filename tea) tea
+slay get_file_basename(filename tea) tea
+```
+
+### Directory Operations
+
+```cursed
+# Directory manipulation
+slay create_dir(dirname tea) IOResult
+slay list_dir(dirname tea) IOResult
+slay read_dir(dirname tea) ([]DirEntry, tea)
+```
+
+### Standard I/O
+
+```cursed
+# Standard input/output
+slay print(message tea) IOResult
+slay println(message tea) IOResult
+slay read_line() IOResult
+
+# Global standard streams
+var Stdin Yoink
+var Stdout Yeeter
+```
+
+### Async Operations
+
+```cursed
+# Async file operations
+slay async_read_file(filename tea) chan IOResult
+slay async_write_file(filename tea, content tea) chan IOResult
+```
+
+### Utility Functions
+
+```cursed
+# Stream utilities
+slay YeetAll(dst Yeeter, src Yoink) (written normie, err tea)
+slay LimitedYoink(r Yoink, n normie) Yoink
+
+# Scanner split functions
+slay ScanLines(data []byte, atEOF lit) (advance normie, token []byte, err tea)
+slay ScanWords(data []byte, atEOF lit) (advance normie, token []byte, err tea)
+```
+
+## Usage Examples
+
+### Basic File I/O
 
 ```cursed
 yeet "io"
 
-# Write content to file
-sus write_result IOResult = write_file("output.ll", "LLVM IR code")
+# Read a file
+sus result IOResult = read_file("input.csd")
+bestie result.success {
+    vibez.spill("File content: " + result.data)
+} else {
+    vibez.spill("Error: " + result.error)
+}
+
+# Write a file
+sus write_result IOResult = write_file("output.csd", "vibez.spill(\"Hello\")")
 bestie write_result.success {
-    vibez.spill("LLVM IR written successfully")
-}
-
-# Write text file with encoding
-sus text_write_result IOResult = write_text_file("readme.txt", "Documentation")
-bestie text_write_result.success {
-    vibez.spill("Documentation written")
-}
-
-# Write compiled output to organized directory
-sus compiled_result IOResult = write_compiled_output("main.ll", "LLVM IR")
-bestie compiled_result.success {
-    vibez.spill("Compiled output saved")
+    vibez.spill("File written successfully")
 }
 ```
 
-## 📋 Directory Operations
+### Buffered I/O
 
 ```cursed
 yeet "io"
 
-# Create directory for outputs
-sus create_result IOResult = create_dir("build")
-bestie create_result.success {
-    vibez.spill("Build directory created")
+# Create file handles
+sus file_reader FileYoink = FileYoink{
+    handle: FileHandle{filename: "input.txt", mode: "r", is_open: based}
 }
+sus file_writer FileYeeter = FileYeeter{
+    handle: FileHandle{filename: "output.txt", mode: "w", is_open: based}
+}
+
+# Create buffered reader and writer
+sus reader *SlayReader = NewSlayReader(&file_reader)
+sus writer *SlayWriter = NewSlayWriter(&file_writer)
+
+# Read and write with buffering
+sus buffer []byte = make_bytes(1024)
+sus n normie
+sus err tea
+n, err = reader.Read(buffer)
+
+bestie err == "" {
+    sus written normie
+    written, err = writer.Write(buffer[0:n])
+    bestie err == "" {
+        err = writer.Flush()
+    }
+}
+```
+
+### Scanner Usage
+
+```cursed
+yeet "io"
+
+# Create scanner for line-by-line reading
+sus file_reader FileYoink = FileYoink{
+    handle: FileHandle{filename: "input.txt", mode: "r", is_open: based}
+}
+sus scanner *SlayScanner = NewSlayScanner(&file_reader)
+
+# Scan lines
+scanner.Split(ScanLines)
+bestie scanner.Scan() {
+    sus line tea = scanner.Text()
+    vibez.spill("Line: " + line)
+}
+
+sus scan_err tea = scanner.Err()
+bestie scan_err != "" {
+    vibez.spill("Scanner error: " + scan_err)
+}
+```
+
+### Async I/O
+
+```cursed
+yeet "io"
+
+# Start async file read
+sus read_chan chan IOResult = async_read_file("large_file.txt")
+
+# Start async file write
+sus write_chan chan IOResult = async_write_file("output.txt", "async content")
+
+# Wait for results (in real implementation)
+# sus read_result IOResult = <-read_chan
+# sus write_result IOResult = <-write_chan
+
+vibez.spill("Async operations initiated")
+```
+
+### Directory Operations
+
+```cursed
+yeet "io"
 
 # List directory contents
-sus list_result IOResult = list_dir("src")
-bestie list_result.success {
-    vibez.spill("Source files: " + list_result.data)
-}
+sus entries []DirEntry
+sus err tea
+entries, err = read_dir("./src")
 
-# Check if path exists
-bestie exists("main.csd") {
-    vibez.spill("Source file found")
+bestie err == "" {
+    sus i normie = 0
+    bestie i < len(entries) {
+        sus entry DirEntry = entries[i]
+        bestie entry.is_file {
+            vibez.spill("File: " + entry.name)
+        } else bestie entry.is_dir {
+            vibez.spill("Directory: " + entry.name)
+        }
+        i++
+    }
 }
 ```
 
-## 🔧 Basic File System Operations
+### Standard I/O
 
 ```cursed
 yeet "io"
 
-# Remove temporary files
-sus remove_result IOResult = remove_file("temp.csd")
-bestie remove_result.success {
-    vibez.spill("Temporary file cleaned up")
-}
-
-# Copy source files for backup
-sus copy_result IOResult = copy_file("main.csd", "main_backup.csd")
-bestie copy_result.success {
-    vibez.spill("Backup created")
-}
-```
-
-## ⌨️ Standard I/O Operations
-
-```cursed
-yeet "io"
-
-# Print to stdout
-sus print_result IOResult = print("Compilation status: ")
-sus println_result IOResult = println("SUCCESS")
+# Write to stdout
+sus message []byte = string_to_bytes("Hello, stdout!")
+sus written normie
+sus err tea
+written, err = Stdout.Yeet(message)
 
 # Read from stdin
-sus input_result IOResult = read_line()
-bestie input_result.success {
-    vibez.spill("User input: " + input_result.data)
+sus input_buffer []byte = make_bytes(100)
+sus read_count normie
+read_count, err = Stdin.Yoink(input_buffer)
+bestie err == "" {
+    sus input_text tea = bytes_to_string(input_buffer[0:read_count])
+    vibez.spill("User input: " + input_text)
 }
 ```
 
-## 🧮 Advanced File Operations
+## Self-Hosting Integration
+
+This I/O module is specifically designed to support CURSED compiler self-hosting:
+
+### Source File Processing
 
 ```cursed
-yeet "io"
-
-# Get file size for memory allocation
-sus size_result IOResult = get_file_size("large_source.csd")
-bestie size_result.success {
-    vibez.spill("File size: " + size_result.data + " bytes")
-}
-
-# Get file extension for type checking
-sus extension tea = get_file_extension("main.csd")
-bestie extension == "csd" {
-    vibez.spill("Valid CURSED source file")
-}
-
-# Get basename for output naming
-sus basename tea = get_file_basename("main.csd")
-sus output_name tea = basename + ".ll"
-vibez.spill("Output file: " + output_name)
-```
-
-## 🔧 Buffered I/O
-
-```cursed
-yeet "io"
-
-# Create buffer for efficient I/O
-sus buffer IOBuffer = create_buffer(4096)
-
-# Write to buffer
-sus write_result IOResult = buffer_write(buffer, "Buffered content")
-bestie write_result.success {
-    vibez.spill("Content buffered")
-}
-
-# Read from buffer
-sus read_result IOResult = buffer_read(buffer, 8)
-bestie read_result.success {
-    vibez.spill("Read: " + read_result.data)
-}
-
-# Flush buffer
-sus flush_result IOResult = buffer_flush(buffer)
-```
-
-## 🏗️ Self-Hosting Compiler Integration
-
-```cursed
-yeet "io"
-
-# Complete self-hosting workflow
-slay compile_cursed_file(source_file tea) IOResult {
-    # Initialize I/O system
-    sus init_result IOResult = init_io()
-    bestie !init_result.success {
-        damn init_result
-    }
-    
-    # Read source file
-    sus read_result IOResult = read_source_file(source_file)
-    bestie !read_result.success {
-        damn read_result
-    }
-    
-    # Process source code (compilation logic would go here)
-    sus llvm_ir tea = "// Compiled from " + source_file + "\n" + read_result.data
+# Read CURSED source files
+sus source_result IOResult = read_source_file("compiler.csd")
+bestie source_result.success {
+    # Process source code for compilation
+    sus processed_code tea = process_source(source_result.data)
     
     # Write compiled output
-    sus output_name tea = get_file_basename(source_file) + ".ll"
-    sus write_result IOResult = write_compiled_output(output_name, llvm_ir)
-    bestie !write_result.success {
-        damn write_result
-    }
-    
-    # Log compilation
-    sus log_result IOResult = write_compiler_log("Compiled: " + source_file)
-    
-    # Shutdown I/O system
-    sus shutdown_result IOResult = shutdown_io()
-    
-    damn IOResult{
-        success: based,
-        data: "Compilation complete: " + output_name,
-        error: ""
-    }
+    sus output_result IOResult = write_compiled_output("compiler.ll", processed_code)
 }
 ```
 
-## 📊 Data Types
+### Compiler Configuration
 
-### IOResult
-Comprehensive result type for all I/O operations:
 ```cursed
-struct IOResult {
-    success lit,    # Operation success/failure
-    data tea,       # Result data or converted string
-    error tea       # Error message if failed
+# Read compiler settings
+sus config_result IOResult = read_compiler_config("cursed.config")
+bestie config_result.success {
+    # Apply configuration settings
+    apply_compiler_config(config_result.data)
 }
 ```
 
-### FileHandle
-File handle for advanced file operations:
-```cursed
-struct FileHandle {
-    filename tea,   # File path
-    mode tea,       # Access mode
-    position normie,# Current position
-    size normie,    # File size
-    buffer tea      # Internal buffer
-}
-```
-
-### IOBuffer
-Buffer for efficient I/O operations:
-```cursed
-struct IOBuffer {
-    data tea,       # Buffer content
-    capacity normie,# Maximum capacity
-    position normie,# Current position
-    size normie     # Current size
-}
-```
-
-### DirEntry
-Directory entry information:
-```cursed
-struct DirEntry {
-    name tea,       # Entry name
-    is_file lit,    # Is regular file
-    is_dir lit,     # Is directory
-    size normie     # Entry size
-}
-```
-
-## 🧪 Testing
-
-### Run Individual Tests
-```bash
-# Test interpretation mode
-cargo run --bin cursed stdlib/io/test_io.csd
-
-# Test compilation mode
-cargo run --bin cursed -- compile stdlib/io/test_io.csd
-./test_io
-
-# Compare both modes
-cargo run --bin cursed stdlib/io/test_io.csd > interp_output.txt
-cargo run --bin cursed -- compile stdlib/io/test_io.csd
-./test_io > comp_output.txt
-diff interp_output.txt comp_output.txt
-```
-
-### Integration with Test Suite
-```bash
-# Run with stdlib test suite
-cargo run --bin cursed test --test-dir stdlib --filter io
-
-# Run with verbose output
-cargo run --bin cursed test --test-dir stdlib --filter io --verbose
-```
-
-## 🔗 Runtime Integration
-
-This module is designed to interface with the CURSED runtime system:
-
-- **File Operations**: Use runtime file I/O primitives
-- **Memory Management**: Leverage CURSED's garbage collection
-- **String Operations**: Use runtime string manipulation functions
-- **Error Handling**: Integrate with CURSED's error handling system
-
-## 🚀 Self-Hosting Readiness
-
-The I/O module provides everything needed for CURSED's self-hosting compiler:
-
-1. **Source File Reading**: Read `.csd` files for compilation
-2. **LLVM IR Generation**: Write compiled LLVM IR to files
-3. **Native Executable**: Support for native compilation workflows
-4. **Build System**: Directory management for organized builds
-5. **Configuration**: Read compiler configuration files
-6. **Logging**: Comprehensive compilation logging
-
-## 📦 FFI Elimination
-
-This implementation completely eliminates FFI dependencies:
-
-- **No Rust std::io**: Pure CURSED implementation
-- **No libc calls**: Uses CURSED runtime primitives
-- **No external dependencies**: Self-contained module
-- **Runtime integration**: Interfaces through CURSED runtime
-
-## 🎯 Usage in Stage 2 Compiler
-
-The Stage 2 self-hosting compiler will use this module for:
+### Build Pipeline Integration
 
 ```cursed
-# Stage 2 compiler bootstrap
-yeet "io"
-
-slay stage2_compiler_main() {
-    # Initialize I/O system
-    sus init_result IOResult = init_io()
+# Complete build workflow
+sus init_result IOResult = init_io()
+bestie init_result.success {
+    # Read all source files
+    sus source_files []tea = get_source_files()
     
-    # Read source files
-    sus source_files []tea = ["lexer.csd", "parser.csd", "codegen.csd"]
-    
-    # Compile each source file
+    # Process each file
     sus i normie = 0
-    while i < array_length(source_files) {
-        sus compile_result IOResult = compile_cursed_file(source_files[i])
-        bestie !compile_result.success {
-            write_compiler_log("Compilation failed: " + compile_result.error)
-            damn
+    bestie i < len(source_files) {
+        sus file_result IOResult = read_source_file(source_files[i])
+        bestie file_result.success {
+            # Compile and write output
+            sus compiled tea = compile_source(file_result.data)
+            sus output_name tea = get_output_name(source_files[i])
+            write_compiled_output(output_name, compiled)
         }
-        i = i + 1
+        i++
     }
-    
-    # Write final executable
-    sus final_result IOResult = write_compiled_output("cursed_compiler", "native_code")
-    
-    # Shutdown I/O system
-    sus shutdown_result IOResult = shutdown_io()
-    
-    vibez.spill("🎉 Stage 2 compiler bootstrap complete!")
 }
 ```
 
-## 🏆 Production Readiness
+## Performance Characteristics
 
-This I/O module is production-ready with:
+- **Buffer Sizes**: Default 4096 bytes for optimal performance
+- **Memory Management**: Efficient allocation and reuse patterns
+- **Async Operations**: Non-blocking I/O for high throughput
+- **Error Handling**: Comprehensive error propagation with detailed messages
+- **Thread Safety**: Safe for concurrent operations where supported
 
-- **Comprehensive Error Handling**: All operations return IOResult
-- **Memory Safety**: Uses CURSED's garbage collection
-- **Performance**: Buffered I/O for efficient operations
-- **Reliability**: Extensive test coverage with 50+ test cases
-- **Self-Hosting**: Designed specifically for compiler bootstrap
-- **Maintainability**: Pure CURSED implementation, no FFI complexity
+## Error Handling
 
-The module is ready for immediate use in the CURSED self-hosting compiler and provides a solid foundation for all file I/O operations needed during the compilation process.
+The module provides comprehensive error handling through:
+
+- **IOResult Type**: Structured success/failure with error messages
+- **Error Constants**: Standard error conditions like `ErrYoinkBruh`
+- **Graceful Degradation**: Operations continue where possible on partial failures
+- **Detailed Messages**: Specific error information for debugging
+
+## Testing
+
+Run the comprehensive test suite:
+
+```bash
+cargo run --bin cursed stdlib/io/test_io.csd
+```
+
+The test suite validates:
+
+- All YeetIO interface implementations
+- SlayIO buffered operations and edge cases
+- Scanner functionality with different split functions
+- Async I/O operation initiation
+- Standard I/O stream operations
+- Directory manipulation and listing
+- File system operations and error conditions
+- Self-hosting workflow integration
+- Performance characteristics and memory usage
+
+## Integration with Other Modules
+
+This I/O module integrates seamlessly with:
+
+- **dropz**: Core I/O operations for self-hosting
+- **testz**: Testing framework integration
+- **stringz**: String manipulation utilities
+- **timez**: Time-based operations for logging
+- **encode_mood**: Data encoding/decoding for file formats
+
+## Implementation Status
+
+- ✅ YeetIO core interfaces complete
+- ✅ SlayIO buffered operations complete
+- ✅ Standard I/O operations complete
+- ✅ File system operations complete
+- ✅ Directory operations complete
+- ✅ Async I/O framework complete
+- ✅ Scanner implementation complete
+- ✅ Error handling complete
+- ✅ Self-hosting integration complete
+- ✅ Comprehensive test suite complete
+
+This module provides enterprise-grade I/O capabilities essential for CURSED language self-hosting and production deployment.

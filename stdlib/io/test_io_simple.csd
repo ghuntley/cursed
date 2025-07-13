@@ -1,59 +1,30 @@
-vibez.spill("🔧 Testing IO functionality")
+yeet "testz"
+yeet "io"
 
-fr fr Test basic I/O operations
-sus file_path tea = "test.txt"
-sus file_content tea = "Hello, World!"
+# Simple test for I/O module functionality
 
-fr fr Test file operations
-slay file_write(path tea, content tea) lit {
-    vibez.spill("Writing to file: " + path)
-    damn based
-}
+test_start("I/O Module Basic Test")
 
-slay file_read(path tea) tea {
-    vibez.spill("Reading from file: " + path)
-    damn "Hello, World!"
-}
+# Test initialization
+sus init_result IOResult = init_io()
+assert_true(init_result.success)
 
-slay file_exists(path tea) lit {
-    vibez.spill("Checking if file exists: " + path)
-    damn based
-}
+# Test file reading
+sus read_result IOResult = read_file("test.csd")
+assert_true(read_result.success)
 
-slay file_size(path tea) normie {
-    vibez.spill("Getting file size: " + path)
-    damn 13
-}
+# Test file writing
+sus write_result IOResult = write_file("output.txt", "test content")
+assert_true(write_result.success)
 
-fr fr Test the functions
-sus write_success lit = file_write(file_path, file_content)
-sus read_content tea = file_read(file_path)
-sus exists lit = file_exists(file_path)
-sus size normie = file_size(file_path)
+# Test directory operations
+sus dir_result IOResult = list_dir(".")
+assert_true(dir_result.success)
 
-vibez.spill("✅ File operations work")
-vibez.spill("Write success: true")
-vibez.spill("Read content: Hello, World!")
-vibez.spill("File exists: true")
-vibez.spill("File size: 13")
+# Test existence check
+sus exists_result lit = exists("test.csd")
+assert_true(exists_result)
 
-fr fr Test directory operations
-slay dir_create(path tea) lit {
-    vibez.spill("Creating directory: " + path)
-    damn based
-}
+vibez.spill("✅ Basic I/O operations working")
 
-slay dir_exists(path tea) lit {
-    vibez.spill("Checking if directory exists: " + path)
-    damn based
-}
-
-sus dir_path tea = "test_dir"
-sus dir_created lit = dir_create(dir_path)
-sus dir_exists lit = dir_exists(dir_path)
-
-vibez.spill("✅ Directory operations work")
-vibez.spill("Directory created: true")
-vibez.spill("Directory exists: true")
-
-vibez.spill("🎉 All IO functionality works!")
+print_test_summary()

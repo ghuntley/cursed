@@ -420,19 +420,19 @@ label2:
 
 
 ; String constants
-@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
-@.str.4 = private unnamed_addr constant [17 x i8] c", expected based\00", align 1
-@.str.8 = private unnamed_addr constant [22 x i8] c"Basic Math Operations\00", align 1
-@.str.1 = private unnamed_addr constant [5 x i8] c" == \00", align 1
-@.str.7 = private unnamed_addr constant [22 x i8] c"❌ Some tests failed\00", align 1
 @.str.10 = private unnamed_addr constant [25 x i8] c"Boolean Logic Operations\00", align 1
-@.str.6 = private unnamed_addr constant [28 x i8] c"🎉 ALL TESTS PASSED! 🎉\00", align 1
-@.str.2 = private unnamed_addr constant [12 x i8] c", expected \00", align 1
-@.str.5 = private unnamed_addr constant [21 x i8] c"=== TEST SUMMARY ===\00", align 1
-@.str.9 = private unnamed_addr constant [21 x i8] c"Math Type Operations\00", align 1
+@.str.1 = private unnamed_addr constant [5 x i8] c" == \00", align 1
+@.str.4 = private unnamed_addr constant [17 x i8] c", expected based\00", align 1
+@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
 @.str.3 = private unnamed_addr constant [28 x i8] c"assert_true: value is based\00", align 1
-@.str.11 = private unnamed_addr constant [38 x i8] c"🧮 Running Simple CURSED Math Tests\00", align 1
+@.str.6 = private unnamed_addr constant [28 x i8] c"🎉 ALL TESTS PASSED! 🎉\00", align 1
+@.str.8 = private unnamed_addr constant [22 x i8] c"Basic Math Operations\00", align 1
+@.str.9 = private unnamed_addr constant [21 x i8] c"Math Type Operations\00", align 1
 @.str.12 = private unnamed_addr constant [35 x i8] c"==================================\00", align 1
+@.str.5 = private unnamed_addr constant [21 x i8] c"=== TEST SUMMARY ===\00", align 1
+@.str.2 = private unnamed_addr constant [12 x i8] c", expected \00", align 1
+@.str.7 = private unnamed_addr constant [22 x i8] c"❌ Some tests failed\00", align 1
+@.str.11 = private unnamed_addr constant [38 x i8] c"🧮 Running Simple CURSED Math Tests\00", align 1
 define i32 @main() {
   %0 = alloca i32, align 4
   store i32 0, i32* %0, align 4

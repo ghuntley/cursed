@@ -567,8 +567,16 @@ impl GcMonitor {
     /// Main monitoring loop
     fn monitoring_loop(&self) {
         let interval = Duration::from_millis(self.config.monitoring_interval_ms);
+        let start_time = std::time::Instant::now();
+        let max_runtime = Duration::from_secs(300); // Maximum 5 minutes
         
         while self.running.load(Ordering::Relaxed) {
+            // Safety timeout to prevent infinite loops
+            if start_time.elapsed() > max_runtime {
+                println!("GC monitoring loop timed out after 5 minutes, stopping");
+                break;
+            }
+            
             // Collect metrics
             let snapshot = self.get_metrics_snapshot();
             

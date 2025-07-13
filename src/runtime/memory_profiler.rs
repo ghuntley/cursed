@@ -411,7 +411,16 @@ impl MemoryProfiler {
 
     /// Leak detection loop
     fn leak_detection_loop(&self) {
+        let start_time = std::time::Instant::now();
+        let max_runtime = Duration::from_secs(300); // Maximum 5 minutes
+        
         while self.running.load(Ordering::Relaxed) {
+            // Safety timeout to prevent infinite loops
+            if start_time.elapsed() > max_runtime {
+                println!("Leak detection loop timed out after 5 minutes, stopping");
+                break;
+            }
+            
             if let Ok(leaks) = self.analyze_leaks() {
                 if !leaks.is_empty() {
                     let mut stats = self.stats.write().unwrap();
@@ -419,7 +428,13 @@ impl MemoryProfiler {
                 }
             }
 
-            thread::sleep(Duration::from_secs(60)); // Check every minute
+            // Use shorter sleep interval and check running flag more frequently
+            for _ in 0..60 {
+                if !self.running.load(Ordering::Relaxed) {
+                    return;
+                }
+                thread::sleep(Duration::from_secs(1));
+            }
         }
     }
 
