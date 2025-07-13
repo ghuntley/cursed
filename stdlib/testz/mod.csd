@@ -18,7 +18,7 @@ slay test_start(name tea) {
 
 # Assert integer equality - avoid problematic type conversions
 slay assert_eq_int(actual normie, expected normie) {
-    if actual == expected {
+    bestie actual == expected {
         vibez.spill("PASS: int equality")
     } else {
         vibez.spill("FAIL: int equality")
@@ -28,7 +28,7 @@ slay assert_eq_int(actual normie, expected normie) {
 
 # Assert string equality - simplified to prevent String-to-Lit conversion
 slay assert_eq_string(actual tea, expected tea) {
-    if actual == expected {
+    bestie actual == expected {
         vibez.spill("PASS: string equality")
     } else {
         vibez.spill("FAIL: string equality")
@@ -38,7 +38,7 @@ slay assert_eq_string(actual tea, expected tea) {
 
 # Assert boolean true - explicit boolean type handling
 slay assert_true(condition lit) {
-    if condition == based {
+    bestie condition == based {
         vibez.spill("PASS: assert_true")
     } else {
         vibez.spill("FAIL: assert_true")
@@ -48,7 +48,7 @@ slay assert_true(condition lit) {
 
 # Assert boolean false - explicit boolean type handling
 slay assert_false(condition lit) {
-    if condition == cap {
+    bestie condition == cap {
         vibez.spill("PASS: assert_false")
     } else {
         vibez.spill("FAIL: assert_false")
@@ -58,7 +58,7 @@ slay assert_false(condition lit) {
 
 # Test end function
 slay test_end() {
-    if current_test_passed == based {
+    bestie current_test_passed == based {
         passed_tests = passed_tests + 1
         vibez.spill("PASSED")
     } else {
@@ -70,11 +70,9 @@ slay test_end() {
 # Print test summary - avoid complex string+int operations that cause type errors
 slay print_test_summary() {
     vibez.spill("=== Test Summary ===")
-    vibez.spill("Total: " + total_tests)
-    vibez.spill("Passed: " + passed_tests)
-    vibez.spill("Failed: " + failed_tests)
+    vibez.spill("Tests completed")
     
-    if failed_tests == 0 {
+    bestie failed_tests == 0 {
         vibez.spill("ALL TESTS PASSED!")
     } else {
         vibez.spill("SOME TESTS FAILED")

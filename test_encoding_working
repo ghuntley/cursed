@@ -5,7 +5,7 @@
 
 # Get the directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SOURCE_FILE="$SCRIPT_DIR/test_basic.csd"
+SOURCE_FILE="$SCRIPT_DIR/test_encoding_working.csd"
 
 # Check if source file exists
 if [ ! -f "$SOURCE_FILE" ]; then
