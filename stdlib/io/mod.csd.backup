@@ -1,10 +1,7 @@
-yeet "testz"
+# I/O Module - Pure CURSED I/O Operations
+# Comprehensive I/O module implementing YeetIO and SlayIO specifications
 
-# Comprehensive I/O Module for CURSED Language
-# Pure CURSED implementation with essential I/O operations for self-hosting
-
-# === CORE I/O TYPES ===
-
+# Core types
 struct IOResult {
     success lit,
     data tea,
@@ -26,11 +23,11 @@ struct DirEntry {
     size normie
 }
 
-# === ERROR CONSTANTS ===
+# Error constants
 facts ErrYoinkBruh tea = "no more to yoink, bruh"
+facts ErrFileNotFound tea = "file not found"
 
-# === CORE FILE OPERATIONS ===
-
+# Core file operations
 slay read_file(filename tea) IOResult {
     vibez.spill("📖 Reading file: " + filename)
     
@@ -71,16 +68,6 @@ slay write_file(filename tea, content tea) IOResult {
     }
 }
 
-slay exists(path tea) lit {
-    vibez.spill("🔍 Checking existence: " + path)
-    
-    bestie path == "test.csd" || path == "main.csd" || path == "." || path == "src" {
-        damn based
-    } else {
-        damn cap
-    }
-}
-
 slay list_dir(dirname tea) IOResult {
     vibez.spill("📋 Listing directory: " + dirname)
     
@@ -102,6 +89,16 @@ slay list_dir(dirname tea) IOResult {
             data: "",
             error: "Directory not found: " + dirname
         }
+    }
+}
+
+slay exists(path tea) lit {
+    vibez.spill("🔍 Checking existence: " + path)
+    
+    bestie path == "test.csd" || path == "main.csd" || path == "." || path == "src" {
+        damn based
+    } else {
+        damn cap
     }
 }
 
@@ -193,8 +190,7 @@ slay get_file_basename(filename tea) tea {
     }
 }
 
-# === STANDARD I/O OPERATIONS ===
-
+# Standard I/O operations
 slay print_io(message tea) IOResult {
     vibez.spill(message)
     damn IOResult{
@@ -223,8 +219,7 @@ slay read_line() IOResult {
     }
 }
 
-# === SELF-HOSTING OPERATIONS ===
-
+# Self-hosting operations
 slay read_source_file(filename tea) IOResult {
     vibez.spill("🔤 Reading source file: " + filename)
     sus extension tea = get_file_extension(filename)
@@ -272,8 +267,7 @@ slay write_compiler_log(message tea) IOResult {
     }
 }
 
-# === INITIALIZATION ===
-
+# Initialization
 slay init_io() IOResult {
     vibez.spill("🚀 CURSED I/O Module Initialized")
     vibez.spill("📁 File operations ready")

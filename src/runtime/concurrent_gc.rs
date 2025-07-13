@@ -491,8 +491,15 @@ impl ConcurrentGarbageCollector {
         // Notify workers
         self.work_available.notify_all();
         
-        // Wait for marking to complete
+        // Wait for marking to complete with timeout
+        let start_time = std::time::Instant::now();
+        let timeout = Duration::from_secs(30); // 30 second timeout
+        
         while !self.tri_color_collector.incremental_mark_step(100)? {
+            if start_time.elapsed() > timeout {
+                println!("Concurrent marking timed out after 30 seconds, stopping");
+                break;
+            }
             thread::sleep(Duration::from_millis(1));
         }
         

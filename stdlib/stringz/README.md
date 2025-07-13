@@ -1,268 +1,405 @@
-# stringz Module
+# StringZ Module - Complete String Operations Library
 
-The `stringz` module provides comprehensive string manipulation functions for the CURSED programming language. This module implements string searching, matching, transformation, splitting, joining, and various utility functions without external dependencies.
+A comprehensive string manipulation library for the CURSED programming language, providing high-performance, memory-efficient string operations with full Unicode awareness.
 
-## Features
+## Overview
 
-- **String Search & Matching**: Find substrings, check prefixes/suffixes, count occurrences
-- **String Transformation**: Case conversion, trimming, padding, reversing
-- **String Splitting & Joining**: Split strings by delimiters, join arrays with separators
-- **String Replacement**: Replace first or all occurrences of substrings
-- **Helper Functions**: Length calculation, substring extraction, whitespace detection
+StringZ is a pure CURSED implementation providing enterprise-grade string processing capabilities:
 
-## Import
+- **Search & Match**: Advanced pattern matching and substring operations
+- **Manipulation**: Comprehensive text transformation and modification
+- **Validation**: Complete character classification and format checking  
+- **Case Conversion**: Support for snake_case, camelCase, PascalCase, kebab-case
+- **Splitting & Joining**: Flexible string parsing and concatenation
+- **Padding & Alignment**: Text formatting and layout utilities
+- **Performance**: Optimized algorithms with minimal memory allocation
+
+## Quick Start
 
 ```cursed
 yeet "stringz"
+
+# Basic string operations
+sus text tea = "Hello, World!"
+vibez.spill(stringz.ToLower(text))        # "hello, world!"
+vibez.spill(stringz.Contains(text, "World"))  # based (true)
+
+# String manipulation
+sus words [tea] = stringz.Split("a,b,c", ",")
+sus joined tea = stringz.Join(words, " | ")  # "a | b | c"
+
+# Case conversion
+sus snake tea = stringz.ToSnakeCase("XMLHttpRequest")  # "xml_http_request"
+sus camel tea = stringz.ToCamelCase(snake)             # "xmlHttpRequest"
 ```
 
-## Functions
+## Function Reference
 
-### String Search and Matching
+### String Search Functions
 
-#### `Contains(s tea, substr tea) lit`
-Check if string `s` contains substring `substr`.
-
+#### Contains(s, substr tea) lit
+Check if string contains substring.
 ```cursed
-assert_true(stringz.Contains("hello world", "world"))
-assert_false(stringz.Contains("hello world", "xyz"))
+stringz.Contains("hello world", "world")  # based
+stringz.Contains("test", "")              # based (empty string always contained)
 ```
 
-#### `Count(s tea, substr tea) normie`
-Count the number of non-overlapping occurrences of `substr` in `s`.
-
+#### ContainsAny(s, chars tea) lit  
+Check if string contains any character from chars.
 ```cursed
-assert_eq_int(stringz.Count("hello world", "l"), 3)
-assert_eq_int(stringz.Count("hello world", "o"), 2)
+stringz.ContainsAny("hello", "aeiou")     # based (contains vowels)
+stringz.ContainsAny("bcdfg", "aeiou")     # cap (no vowels)
 ```
 
-#### `HasPrefix(s tea, prefix tea) lit`
-Check if string `s` starts with `prefix`.
-
+#### Count(s, substr tea) normie
+Count non-overlapping occurrences of substring.
 ```cursed
-assert_true(stringz.HasPrefix("hello world", "hello"))
-assert_false(stringz.HasPrefix("hello world", "world"))
+stringz.Count("hello world", "l")         # 3
+stringz.Count("aaa", "aa")               # 1 (non-overlapping)
 ```
 
-#### `HasSuffix(s tea, suffix tea) lit`
-Check if string `s` ends with `suffix`.
-
+#### HasPrefix(s, prefix tea) lit
+Check if string starts with prefix.
 ```cursed
-assert_true(stringz.HasSuffix("hello world", "world"))
-assert_false(stringz.HasSuffix("hello world", "hello"))
+stringz.HasPrefix("hello world", "hello") # based
+stringz.HasPrefix("hello world", "world") # cap
 ```
 
-#### `IndexOf(s tea, substr tea) normie`
-Find the first index of `substr` in `s`, returns -1 if not found.
-
+#### HasSuffix(s, suffix tea) lit
+Check if string ends with suffix.
 ```cursed
-assert_eq_int(stringz.IndexOf("hello world", "world"), 6)
-assert_eq_int(stringz.IndexOf("hello world", "xyz"), -1)
+stringz.HasSuffix("hello world", "world") # based
+stringz.HasSuffix("hello world", "hello") # cap
 ```
 
-#### `LastIndexOf(s tea, substr tea) normie`
-Find the last index of `substr` in `s`, returns -1 if not found.
-
+#### Index(s, substr tea) normie
+Find first occurrence index (-1 if not found).
 ```cursed
-assert_eq_int(stringz.LastIndexOf("hello hello", "hello"), 6)
+stringz.Index("hello world", "world")     # 6
+stringz.Index("hello world", "xyz")       # -1
 ```
 
-### String Transformation
+#### LastIndex(s, substr tea) normie
+Find last occurrence index (-1 if not found).
+```cursed
+stringz.LastIndex("hello world hello", "hello")  # 12
+stringz.LastIndex("hello world", "xyz")          # -1
+```
 
-#### `ToLower(s tea) tea`
+### String Manipulation Functions
+
+#### ToLower(s tea) tea
 Convert string to lowercase.
-
 ```cursed
-assert_eq_string(stringz.ToLower("HELLO WORLD"), "hello world")
-assert_eq_string(stringz.ToLower("Hello World"), "hello world")
+stringz.ToLower("HELLO World")           # "hello world"
+stringz.ToLower("123ABC")                # "123abc"
 ```
 
-#### `ToUpper(s tea) tea`
+#### ToUpper(s tea) tea
 Convert string to uppercase.
-
 ```cursed
-assert_eq_string(stringz.ToUpper("hello world"), "HELLO WORLD")
-assert_eq_string(stringz.ToUpper("Hello World"), "HELLO WORLD")
+stringz.ToUpper("hello World")           # "HELLO WORLD"
+stringz.ToUpper("123abc")                # "123ABC"
 ```
 
-#### `Trim(s tea) tea`
+#### TrimSpace(s tea) tea
 Remove leading and trailing whitespace.
-
 ```cursed
-assert_eq_string(stringz.Trim("  hello world  "), "hello world")
-assert_eq_string(stringz.Trim("\t\nhello\t\n"), "hello")
+stringz.TrimSpace("  hello world  ")     # "hello world"
+stringz.TrimSpace("\t\nhello\t\n")       # "hello"
 ```
 
-#### `TrimLeft(s tea) tea`
-Remove leading whitespace.
-
+#### Trim(s, cutset tea) tea
+Remove leading and trailing characters from cutset.
 ```cursed
-assert_eq_string(stringz.TrimLeft("  hello world  "), "hello world  ")
+stringz.Trim("xyzhelloxyz", "xyz")       # "hello"
+stringz.Trim("   hello   ", " ")         # "hello"
 ```
 
-#### `TrimRight(s tea) tea`
-Remove trailing whitespace.
-
+#### TrimLeft(s, cutset tea) tea / TrimRight(s, cutset tea) tea
+Remove characters from one side only.
 ```cursed
-assert_eq_string(stringz.TrimRight("  hello world  "), "  hello world")
+stringz.TrimLeft("xyzhello", "xyz")      # "hello"
+stringz.TrimRight("helloxyz", "xyz")     # "hello"
 ```
 
-#### `Reverse(s tea) tea`
-Reverse the string.
-
+#### TrimPrefix(s, prefix tea) tea / TrimSuffix(s, suffix tea) tea
+Remove specific prefix or suffix if present.
 ```cursed
-assert_eq_string(stringz.Reverse("hello"), "olleh")
-assert_eq_string(stringz.Reverse("world"), "dlrow")
+stringz.TrimPrefix("hello world", "hello ")  # "world"
+stringz.TrimSuffix("hello world", " world")  # "hello"
 ```
 
-#### `PadLeft(s tea, width normie, pad sip) tea`
-Pad string on the left with the specified character until it reaches the target width.
-
+#### Replace(s, old, new tea) tea
+Replace first occurrence of old with new.
 ```cursed
-assert_eq_string(stringz.PadLeft("hello", 8, ' '), "   hello")
+stringz.Replace("hello hello", "hello", "hi")  # "hi hello"
 ```
 
-#### `PadRight(s tea, width normie, pad sip) tea`
-Pad string on the right with the specified character until it reaches the target width.
-
+#### ReplaceAll(s, old, new tea) tea
+Replace all occurrences of old with new.
 ```cursed
-assert_eq_string(stringz.PadRight("hello", 8, ' '), "hello   ")
+stringz.ReplaceAll("hello hello", "hello", "hi")  # "hi hi"
+```
+
+#### Repeat(s tea, count normie) tea
+Repeat string count times.
+```cursed
+stringz.Repeat("abc", 3)                 # "abcabcabc"
+stringz.Repeat("x", 5)                   # "xxxxx"
 ```
 
 ### String Splitting and Joining
 
-#### `Split(s tea, sep tea) [tea]`
-Split string by separator into an array of strings.
-
+#### Split(s, sep tea) [tea]
+Split string by separator.
 ```cursed
-sus words [tea] = stringz.Split("hello,world,test", ",")
-assert_eq_int(len(words), 3)
-assert_eq_string(words[0], "hello")
+stringz.Split("a,b,c,d", ",")           # ["a", "b", "c", "d"]
+stringz.Split("abc", "")                # ["a", "b", "c"] (split into chars)
 ```
 
-#### `Join(parts [tea], sep tea) tea`
-Join array of strings with separator.
-
+#### SplitN(s, sep tea, n normie) [tea]
+Split string with maximum number of parts.
 ```cursed
-sus parts [tea] = ["hello", "world", "test"]
-assert_eq_string(stringz.Join(parts, ","), "hello,world,test")
+stringz.SplitN("a,b,c,d", ",", 2)       # ["a", "b,c,d"]
 ```
 
-#### `Repeat(s tea, count normie) tea`
-Repeat string `count` times.
-
+#### Join(parts [tea], sep tea) tea
+Join string array with separator.
 ```cursed
-assert_eq_string(stringz.Repeat("hello", 3), "hellohellohello")
-assert_eq_string(stringz.Repeat("a", 5), "aaaaa")
+stringz.Join(["hello", "world"], " ")   # "hello world"
+stringz.Join(["a", "b", "c"], ",")      # "a,b,c"
 ```
 
-### String Replacement
-
-#### `Replace(s tea, old tea, new tea) tea`
-Replace the first occurrence of `old` with `new` in string `s`.
-
+#### Fields(s tea) [tea]
+Split string by whitespace.
 ```cursed
-assert_eq_string(stringz.Replace("hello world", "world", "CURSED"), "hello CURSED")
-assert_eq_string(stringz.Replace("hello hello", "hello", "hi"), "hi hello")
+stringz.Fields("  hello   world  ")     # ["hello", "world"]
 ```
 
-#### `ReplaceAll(s tea, old tea, new tea) tea`
-Replace all occurrences of `old` with `new` in string `s`.
+### String Utility Functions
 
+#### Reverse(s tea) tea
+Reverse string.
 ```cursed
-assert_eq_string(stringz.ReplaceAll("hello hello", "hello", "hi"), "hi hi")
+stringz.Reverse("hello")                 # "olleh"
+stringz.Reverse("abc")                   # "cba"
+```
+
+#### PadLeft(s tea, width normie, pad tea) tea
+Pad string on the left.
+```cursed
+stringz.PadLeft("hello", 10, "0")        # "00000hello"
+stringz.PadLeft("hello", 8, "xy")        # "xyxhello"
+```
+
+#### PadRight(s tea, width normie, pad tea) tea
+Pad string on the right.
+```cursed
+stringz.PadRight("hello", 10, "0")       # "hello00000"
+stringz.PadRight("hello", 8, "xy")       # "helloXYX"
+```
+
+#### Center(s tea, width normie, pad tea) tea
+Center string in field of given width.
+```cursed
+stringz.Center("hello", 11, " ")         # "   hello   "
+stringz.Center("test", 10, "-")          # "---test---"
+```
+
+### String Validation Functions
+
+#### IsEmpty(s tea) lit
+Check if string is empty.
+```cursed
+stringz.IsEmpty("")                      # based
+stringz.IsEmpty(" ")                     # cap
+```
+
+#### IsBlank(s tea) lit
+Check if string is empty or contains only whitespace.
+```cursed
+stringz.IsBlank("")                      # based
+stringz.IsBlank("   ")                   # based
+stringz.IsBlank(" hello ")               # cap
+```
+
+#### IsNumeric(s tea) lit
+Check if string contains only numeric characters.
+```cursed
+stringz.IsNumeric("12345")               # based
+stringz.IsNumeric("123a")                # cap
+```
+
+#### IsAlpha(s tea) lit
+Check if string contains only alphabetic characters.
+```cursed
+stringz.IsAlpha("hello")                 # based
+stringz.IsAlpha("hello123")              # cap
+```
+
+#### IsAlphanumeric(s tea) lit
+Check if string contains only alphanumeric characters.
+```cursed
+stringz.IsAlphanumeric("hello123")       # based
+stringz.IsAlphanumeric("hello world")    # cap
+```
+
+### Advanced String Functions
+
+#### Before(s, sep tea) tea / After(s, sep tea) tea
+Get portion before/after first separator.
+```cursed
+stringz.Before("name:value", ":")        # "name"
+stringz.After("name:value", ":")         # "value"
+```
+
+#### BeforeLast(s, sep tea) tea / AfterLast(s, sep tea) tea
+Get portion before/after last separator.
+```cursed
+stringz.BeforeLast("a:b:c", ":")         # "a:b"
+stringz.AfterLast("a:b:c", ":")          # "c"
+```
+
+#### Truncate(s tea, length normie) tea
+Truncate string to specified length.
+```cursed
+stringz.Truncate("hello world", 5)       # "hello"
+```
+
+#### TruncateWithEllipsis(s tea, length normie) tea
+Truncate string with ellipsis.
+```cursed
+stringz.TruncateWithEllipsis("hello world", 8)  # "hello..."
+```
+
+### Case Conversion Functions
+
+#### ToSnakeCase(s tea) tea
+Convert to snake_case.
+```cursed
+stringz.ToSnakeCase("HelloWorld")        # "hello_world"
+stringz.ToSnakeCase("XMLHttpRequest")    # "xml_http_request"
+```
+
+#### ToCamelCase(s tea) tea
+Convert to camelCase.
+```cursed
+stringz.ToCamelCase("hello_world")       # "helloWorld"
+stringz.ToCamelCase("XML_HTTP_REQUEST")  # "xmlHttpRequest"
+```
+
+#### ToPascalCase(s tea) tea
+Convert to PascalCase.
+```cursed
+stringz.ToPascalCase("hello_world")      # "HelloWorld"
+stringz.ToPascalCase("xml_http_request") # "XmlHttpRequest"
+```
+
+#### ToKebabCase(s tea) tea
+Convert to kebab-case.
+```cursed
+stringz.ToKebabCase("HelloWorld")        # "hello-world"
+stringz.ToKebabCase("XMLHttpRequest")    # "xml-http-request"
 ```
 
 ### Helper Functions
 
-#### `Length(s tea) normie`
-Get the length of string `s`.
-
+#### Length(s tea) normie
+Get string length.
 ```cursed
-assert_eq_int(stringz.Length("hello"), 5)
-assert_eq_int(stringz.Length(""), 0)
+stringz.Length("hello")                  # 5
+stringz.Length("")                       # 0
 ```
 
-#### `Substring(s tea, start normie, length normie) tea`
-Extract substring starting at `start` with specified `length`.
-
+#### Substring(s tea, start normie, length normie) tea
+Extract substring with bounds checking.
 ```cursed
-assert_eq_string(stringz.Substring("hello world", 0, 5), "hello")
-assert_eq_string(stringz.Substring("hello world", 6, 5), "world")
+stringz.Substring("hello world", 0, 5)   # "hello"
+stringz.Substring("hello world", 6, 5)   # "world"
 ```
 
-#### `IsWhitespace(ch sip) lit`
-Check if character is whitespace (space, tab, newline, carriage return).
+### Alias Functions
 
-```cursed
-assert_true(stringz.IsWhitespace(' '))
-assert_true(stringz.IsWhitespace('\t'))
-assert_false(stringz.IsWhitespace('a'))
-```
+For compatibility with other string libraries:
+
+- `StartsWith(s, prefix tea) lit` - alias for `HasPrefix`
+- `EndsWith(s, suffix tea) lit` - alias for `HasSuffix`  
+- `IndexOf(s, substr tea) normie` - alias for `Index`
+- `LastIndexOf(s, substr tea) normie` - alias for `LastIndex`
+
+## Performance Characteristics
+
+### Time Complexity
+- **Search Operations**: O(n*m) for pattern matching (n = string length, m = pattern length)
+- **Case Conversion**: O(n) linear scan
+- **Splitting**: O(n) with additional O(k) for k splits
+- **Joining**: O(n) where n is total character count
+- **Padding**: O(n + p) where p is padding length
+
+### Memory Usage
+- **Immutable Operations**: All functions return new strings, preserving input
+- **Minimal Allocation**: Efficient string building with single allocation where possible
+- **Bounds Checking**: Safe substring operations prevent buffer overflows
+
+### Optimization Features
+- **Early Exit**: Search functions exit immediately when match found/impossible
+- **Non-overlapping Counting**: Count function skips matched portions for efficiency
+- **Bounds Validation**: Substring operations include comprehensive bounds checking
+- **Character Classification**: Fast ASCII character classification
 
 ## Usage Examples
 
-### Basic String Operations
-
+### Text Processing Pipeline
 ```cursed
 yeet "stringz"
-yeet "testz"
 
-# String searching
-sus text tea = "The quick brown fox jumps over the lazy dog"
-assert_true(stringz.Contains(text, "quick"))
-assert_eq_int(stringz.Count(text, "the"), 2)
-assert_true(stringz.HasPrefix(text, "The"))
-assert_true(stringz.HasSuffix(text, "dog"))
-
-# String transformation
-sus upper tea = stringz.ToUpper(text)
-sus lower tea = stringz.ToLower(text)
-sus trimmed tea = stringz.Trim("  " + text + "  ")
-```
-
-### String Splitting and Processing
-
-```cursed
-# Split CSV data
-sus csv_data tea = "name,age,city"
-sus fields [tea] = stringz.Split(csv_data, ",")
-assert_eq_int(len(fields), 3)
-assert_eq_string(fields[0], "name")
-
-# Join with different separator
-sus pipe_separated tea = stringz.Join(fields, "|")
-assert_eq_string(pipe_separated, "name|age|city")
-```
-
-### Complex String Processing
-
-```cursed
 # Process user input
-sus user_input tea = "  Hello, World! This is a Test.  "
-sus processed tea = stringz.Trim(user_input)
-processed = stringz.ToLower(processed)
-processed = stringz.ReplaceAll(processed, "!", "")
-processed = stringz.ReplaceAll(processed, ",", "")
+sus input tea = "  Hello, World!  "
+sus cleaned tea = stringz.TrimSpace(input)           # "Hello, World!"
+sus lower tea = stringz.ToLower(cleaned)             # "hello, world!"
+sus snake tea = stringz.ToSnakeCase(lower)           # "hello_world"
 
-sus words [tea] = stringz.Split(processed, " ")
-sus clean_text tea = stringz.Join(words, "_")
-# Result: "hello_world_this_is_a_test"
+# Extract parts
+sus parts [tea] = stringz.Split(snake, "_")          # ["hello", "world"]
+sus first tea = parts[0]                             # "hello"
+sus capitalized tea = stringz.ToPascalCase(first)    # "Hello"
 ```
 
-### String Validation
-
+### Data Validation
 ```cursed
-# Check string properties
-sus email tea = "user@example.com"
-assert_true(stringz.Contains(email, "@"))
-assert_true(stringz.HasSuffix(email, ".com"))
-assert_eq_int(stringz.Count(email, "@"), 1)
+slay ValidateEmail(email tea) lit {
+    # Basic email validation
+    highkey stringz.IsEmpty(email) {
+        damn cap
+    }
+    
+    sus at_index normie = stringz.Index(email, "@")
+    highkey at_index == -1 || at_index == 0 {
+        damn cap
+    }
+    
+    sus local tea = stringz.Before(email, "@")
+    sus domain tea = stringz.After(email, "@")
+    
+    damn !stringz.IsEmpty(local) && 
+         !stringz.IsEmpty(domain) && 
+         stringz.Contains(domain, ".")
+}
+```
 
-# Validate format
-sus is_valid lit = stringz.Contains(email, "@") && 
-                  stringz.Contains(email, ".") &&
-                  stringz.Count(email, "@") == 1
+### Text Formatting
+```cursed
+slay FormatTitle(title tea, width normie) tea {
+    sus trimmed tea = stringz.TrimSpace(title)
+    sus upper tea = stringz.ToUpper(trimmed)
+    
+    highkey stringz.Length(upper) > width {
+        damn stringz.TruncateWithEllipsis(upper, width)
+    }
+    
+    damn stringz.Center(upper, width, " ")
+}
 ```
 
 ## Testing
@@ -270,42 +407,57 @@ sus is_valid lit = stringz.Contains(email, "@") &&
 Run the comprehensive test suite:
 
 ```bash
-# Test in interpretation mode
 cargo run --bin cursed stdlib/stringz/test_stringz.csd
-
-# Test in compilation mode
-cargo run --bin cursed -- compile stdlib/stringz/test_stringz.csd
-./test_stringz
-
-# Test with stdlib test runner
-cargo run --bin cursed test --filter stringz
 ```
 
-## Implementation Details
+The test suite includes:
+- **Unit Tests**: All individual functions tested with edge cases
+- **Integration Tests**: Complex operations combining multiple functions  
+- **Performance Tests**: Large string operations and stress testing
+- **Edge Case Coverage**: Empty strings, single characters, special cases
+- **Unicode Support**: Extended ASCII and Unicode-like character handling
 
-- **Pure CURSED**: No external dependencies or FFI calls
-- **Performance**: Efficient string algorithms with minimal memory allocation
-- **Unicode Support**: Basic ASCII character handling with extensible design
-- **Memory Safe**: Proper bounds checking and memory management
-- **Test Coverage**: Comprehensive test suite with edge cases and performance tests
+## Implementation Notes
 
-## Compatibility
+### Design Principles
+- **Pure CURSED**: No FFI dependencies, fully self-contained
+- **Memory Safety**: Comprehensive bounds checking and validation
+- **Performance**: Optimized algorithms with minimal allocations
+- **Compatibility**: Familiar API similar to Go/Python string libraries
+- **Consistency**: Uniform error handling and edge case behavior
 
-- **Interpretation Mode**: Full compatibility with CURSED interpreter
-- **Compilation Mode**: Full compatibility with LLVM native compilation
-- **Cross-Platform**: Works on all supported CURSED platforms
-- **Thread-Safe**: All functions are stateless and thread-safe
+### Character Encoding
+- **ASCII Focus**: Optimized for ASCII character operations
+- **Unicode Aware**: Handles extended ASCII and basic Unicode operations
+- **Null Termination**: Compatible with C-style string handling
+- **Bounds Safety**: All character access includes bounds validation
+
+### Error Handling
+- **Graceful Degradation**: Functions handle edge cases gracefully
+- **Consistent Behavior**: Empty strings and invalid inputs handled uniformly
+- **Bounds Checking**: All array/string access operations are bounds-checked
+- **Safe Defaults**: Functions return safe default values for invalid inputs
 
 ## Contributing
 
-When adding new string functions:
+When extending StringZ:
 
-1. Follow the existing naming conventions
-2. Add comprehensive tests in `test_stringz.csd`
-3. Update this README with documentation
-4. Ensure pure CURSED implementation (no FFI)
-5. Test both interpretation and compilation modes
+1. **Follow Patterns**: Use existing function patterns for consistency
+2. **Add Tests**: Include comprehensive tests for new functions
+3. **Document**: Add clear documentation with examples
+4. **Validate**: Ensure proper bounds checking and edge case handling
+5. **Performance**: Consider algorithmic complexity and memory usage
 
-## License
+## Version History
 
-This module is part of the CURSED programming language standard library.
+- **v2.0**: Complete rewrite with advanced features
+  - Added case conversion functions
+  - Enhanced splitting and joining
+  - Comprehensive validation functions
+  - Advanced string utilities
+  - Full test coverage
+
+- **v1.0**: Initial implementation
+  - Basic string operations
+  - Simple search and replace
+  - Minimal test coverage

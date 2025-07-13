@@ -1,239 +1,138 @@
-# CURSED Error Core Module
+# Error Core Module
 
-The `error_core` module provides a comprehensive error handling hierarchy and propagation system for CURSED applications, implementing the full error handling specification with advanced features for robust error management.
+Advanced pure CURSED error handling system implementing the `yikes`, `shook`, and `fam` error handling patterns for enterprise-grade error management.
 
 ## Features
 
-### Core Error Types
-- **Base Error**: Foundation error type with message, code, details, severity, and stack trace
-- **IO Error**: File system and input/output operations
-- **Value Error**: Data validation and conversion errors
-- **Type Error**: Type system and casting errors
-- **Memory Error**: Memory allocation and management errors
-- **Network Error**: Network operations and communication errors
-- **Parse Error**: Parsing and syntax errors with position information
-- **Security Error**: Security violations and permission errors
-- **Runtime Error**: Runtime execution errors with goroutine context
+- **yikes Pattern**: Error creation with typed error categories
+- **shook Pattern**: Error wrapping and context addition  
+- **fam Pattern**: Error handling, recovery, and fallback strategies
+- **Panic System**: Critical error handling with recovery mechanisms
+- **Error Classification**: Critical vs recoverable error categorization
+- **Safe Operations**: Error-aware wrapper functions for common operations
+- **Error Statistics**: Tracking and debugging support
+
+## Error Patterns
+
+### yikes - Error Creation
+```cursed
+# Create specific error types
+sus runtime_err = yikes_runtime("Runtime failure")
+sus logic_err = yikes_logic("Invalid operation")
+sus io_err = yikes_io("File not found")
+sus memory_err = yikes_memory("Out of memory")
+sus validation_err = yikes_validation("Invalid input")
+```
+
+### shook - Error Wrapping
+```cursed
+# Wrap errors with additional context
+sus original_err = yikes_runtime("Database connection failed")
+sus wrapped_err = shook_wrap(original_err, "During user authentication")
+sus context_err = shook_context(wrapped_err, "Function: authenticate_user")
+```
+
+### fam - Error Handling
+```cursed
+# Handle errors with fallbacks
+sus result = fam_handle(potential_error, "default_value")
+sus recovered = fam_recover(error, recovery_function)
+sus ignored lit = fam_ignore(non_critical_error)
+```
+
+## Functions
+
+### Error Creation (yikes pattern)
+- `yikes_new(error_type tea, message tea, code normie)` - Create custom error
+- `yikes_runtime(message tea)` - Create runtime error
+- `yikes_logic(message tea)` - Create logic error
+- `yikes_io(message tea)` - Create I/O error
+- `yikes_memory(message tea)` - Create memory error
+- `yikes_validation(message tea)` - Create validation error
+
+### Error Wrapping (shook pattern)
+- `shook_wrap(original_error, wrap_message tea)` - Wrap error with context
+- `shook_context(error, context_info tea)` - Add context information
+
+### Error Handling (fam pattern)
+- `fam_handle(error, default_value)` - Handle with fallback value
+- `fam_recover(error, recovery_function)` - Attempt error recovery
+- `fam_ignore(error) lit` - Safely ignore non-critical errors
+
+### Error Analysis
+- `is_error(value) lit` - Check if value is an error
+- `error_type(error) tea` - Extract error type
+- `error_message(error) tea` - Extract error message
+- `error_code(error) normie` - Extract error code
+- `is_critical_error(error) lit` - Check if error is critical
+- `is_recoverable_error(error) lit` - Check if error can be recovered
 
 ### Error Propagation
-- **Error Wrapping**: Add context to errors as they propagate up the call stack
-- **Error Chaining**: Chain multiple related errors together
-- **Error Combining**: Aggregate multiple errors into a single error
-- **Automatic Propagation**: Use `shook` operator for seamless error propagation
+- `should_propagate(error) lit` - Determine if error should propagate
+- `propagate_error(error, caller_context tea)` - Propagate with context
+- `try_recovery(error, max_attempts normie) lit` - Attempt recovery
 
-### Advanced Features
-- **Circuit Breaker**: Prevent cascading failures with automatic circuit breaking
-- **Retry Mechanism**: Automatic retry with exponential backoff for temporary errors
-- **Error Statistics**: Track error patterns and metrics
-- **Error Context**: Capture execution context including goroutine, function, and file information
-- **Severity Levels**: Classify errors by severity (info, warning, error, critical, fatal)
+### Panic System
+- `panic_with(message tea)` - Trigger panic state
+- `recover_from_panic() lit` - Recover from panic
+
+### Safe Operations
+- `safe_divide(a normie, b normie)` - Division with error handling
+- `safe_access(data, index normie)` - Safe array access
+
+### Error Management
+- `error_stats() tea` - Get error statistics
+- `clear_errors()` - Clear error state
+- `get_last_error()` - Get last error
 
 ## Usage Examples
 
-### Basic Error Creation
-
+### Basic Error Handling
 ```cursed
 yeet "error_core"
 
-# Create a simple error
-sus err = new_error("Something went wrong", 1000)
-vibez.spill(err.message())  # "Something went wrong"
-vibez.spill(err.code())     # 1000
-
-# Create specific error types
-sus io_err = new_io_error("File not found", "/path/to/file.txt", "read")
-sus value_err = new_value_error("Invalid number", "abc", "normie")
-sus type_err = new_type_error("Type mismatch", "tea", "normie")
+# Create and handle errors
+sus err = yikes_validation("Invalid user input")
+sus result = fam_handle(err, "default_response")
+vibez.spill(result)  # Outputs: "default_response"
 ```
 
-### Error Propagation and Wrapping
-
+### Error Chaining
 ```cursed
-slay process_file(filename tea) yikes {
-    sus file, err = open_file(filename)
-    vibe_check err != cringe {
-        damn wrap_error(err, "Failed to open file")
-    }
-    
-    sus data, err = read_file(file)
-    vibe_check err != cringe {
-        damn wrap_error(err, "Failed to read file")
-    }
-    
-    damn cringe  # Success
-}
+# Chain errors with context
+sus db_err = yikes_io("Database connection failed")
+sus auth_err = shook_wrap(db_err, "During user authentication")
+sus final_err = shook_context(auth_err, "Login endpoint")
 
-# Usage with error handling
-sus err = process_file("nonexistent.txt")
-vibe_check err != cringe {
-    vibez.spill("Error:", format_error(err))
+# Handle the chained error
+sus fallback = fam_handle(final_err, "Please try again later")
+```
+
+### Safe Operations
+```cursed
+# Safe division with error handling
+sus division_result = safe_divide(10, 0)
+lowkey is_error(division_result) {
+    vibez.spill("Division failed: " + error_message(division_result))
+} else {
+    vibez.spill("Result: " + division_result)
 }
 ```
 
-### Error Chaining and Combining
-
+### Error Recovery
 ```cursed
-# Chain related errors
-sus base_err = yikes{message: "Database connection failed", code: 5001, details: ""}
-sus new_err = yikes{message: "User authentication failed", code: 7001, details: ""}
-sus chained = chain_error(base_err, new_err)
+# Attempt recovery with retries
+sus operation_error = yikes_io("Network timeout")
+sus recovered lit = try_recovery(operation_error, 3)
 
-# Combine multiple errors
-sus errors []yikes = []yikes{
-    yikes{message: "Error 1", code: 1000, details: ""},
-    yikes{message: "Error 2", code: 2000, details: ""},
-    yikes{message: "Error 3", code: 3000, details: ""}
-}
-sus combined = combine_errors(errors)
-```
-
-### Circuit Breaker Pattern
-
-```cursed
-sus cb = new_circuit_breaker(3, 2)  # 3 failures to open, 2 successes to close
-
-slay protected_operation() yikes {
-    damn cb.call(slay() yikes {
-        # Your risky operation here
-        damn risky_network_call()
-    })
+lowkey recovered {
+    vibez.spill("Operation recovered successfully")
+} else {
+    vibez.spill("Recovery failed after 3 attempts")
 }
 ```
-
-### Retry with Backoff
-
-```cursed
-slay resilient_operation() yikes {
-    damn retry_with_backoff(slay() yikes {
-        # Operation that might fail temporarily
-        damn network_request()
-    }, 5, 100)  # 5 max attempts, 100ms base delay
-}
-```
-
-### Error Type Detection
-
-```cursed
-sus err = some_operation()
-vibe_check err != cringe {
-    vibe_check is_temporary_error(err) {
-        vibez.spill("Temporary error, might retry")
-    } basic vibe_check is_critical_error(err) {
-        vibez.spill("Critical error, immediate attention needed")
-    }
-    
-    vibe_check is_error_type(err, "network_error") {
-        vibez.spill("Network-related error")
-    }
-}
-```
-
-### Error Formatting
-
-```cursed
-sus err = yikes{message: "Test error", code: 1000, details: "Test details"}
-
-# Standard formatting
-sus formatted = format_error(err)
-# Output: "[Error 1000] Test error | Details: Test details"
-
-# JSON formatting
-sus json_formatted = format_error_json(err)
-# Output: {"error": {"code": 1000, "message": "Test error", "details": "Test details"}}
-```
-
-### Error Statistics and Monitoring
-
-```cursed
-# Record errors for monitoring
-record_error(some_error)
-
-# Get error statistics
-sus stats = get_error_stats()
-vibez.spill("Total errors:", stats.total_errors)
-vibez.spill("Errors by type:", stats.errors_by_type)
-```
-
-## Error Code Ranges
-
-The module uses structured error codes for easy categorization:
-
-- **1000-1999**: IO Errors
-- **2000-2999**: Value Errors
-- **3000-3999**: Type Errors
-- **4000-4999**: Memory Errors
-- **5000-5999**: Network Errors
-- **6000-6999**: Parse Errors
-- **7000-7999**: Security Errors
-- **8000-8999**: Runtime Errors
-- **9000-9999**: System/Combined Errors
-
-## Error Severity Levels
-
-```cursed
-be_like error_severity smol {
-    info = 0        # Informational - no action needed
-    warning = 1     # Warning - should be noted
-    error = 2       # Error - affects operation but recoverable
-    critical = 3    # Critical - requires immediate attention
-    fatal = 4       # Fatal - may cause system instability
-}
-```
-
-## Integration with CURSED Error Handling
-
-The module integrates seamlessly with CURSED's built-in error handling syntax:
-
-### Using `yikes` for Error Creation
-```cursed
-sus err yikes = yikes("Something went wrong")
-sus detailed_err yikes = yikes{
-    message: "Complex error",
-    code: 1000,
-    details: "Additional context"
-}
-```
-
-### Using `shook` for Error Propagation
-```cursed
-slay process_data() yikes {
-    sus data = load_data() shook  # Automatic propagation
-    sus result = transform_data(data) shook
-    damn cringe
-}
-```
-
-### Using `fam` for Panic Recovery
-```cursed
-slay safe_operation() yikes {
-    fam {
-        # Risky operation that might panic
-        dangerous_operation()
-        damn cringe
-    } sus panic_value {
-        # Convert panic to error
-        damn yikes{
-            message: "Operation panicked: " + panic_value.message(),
-            code: 9999,
-            details: "Panic recovered"
-        }
-    }
-}
-```
-
-## Best Practices
-
-1. **Always Handle Errors**: Never ignore error return values
-2. **Provide Context**: Use error wrapping to add context as errors propagate
-3. **Use Appropriate Types**: Choose the right error type for the situation
-4. **Log Errors**: Use `record_error()` for monitoring and debugging
-5. **Handle Temporary Errors**: Use retry mechanisms for temporary failures
-6. **Monitor Critical Errors**: Set up alerting for critical error types
-7. **Test Error Paths**: Include error scenarios in your unit tests
 
 ## Testing
-
-Run the comprehensive test suite:
 
 ```bash
 # Test interpretation mode
@@ -244,21 +143,32 @@ cargo run --bin cursed -- compile stdlib/error_core/test_error_core.csd
 ./test_error_core
 ```
 
-## Integration with Other Modules
+## Error Types
 
-The error_core module is designed to be used throughout the CURSED standard library:
+| Type | Code Range | Description |
+|------|------------|-------------|
+| runtime | 1001+ | Runtime execution errors |
+| logic | 2001+ | Logic and algorithm errors |
+| io | 3001+ | Input/output operation errors |
+| memory | 4001+ | Memory allocation/management errors |
+| validation | 5001+ | Data validation errors |
+| context | 8888 | Context wrapper errors |
+| wrapped | 9999 | Wrapped error containers |
+| panic | 9999 | Critical panic-level errors |
 
-```cursed
-# In other stdlib modules
-yeet "error_core"
+## Implementation Notes
 
-slay some_function() yikes {
-    # Use error_core types
-    vibe_check some_condition {
-        damn new_value_error("Invalid input", input_value, "expected_type")
-    }
-    damn cringe
-}
-```
+- Pure CURSED implementation without FFI dependencies
+- Tuple-based error representation for flexibility
+- Compatible with both interpretation and compilation modes
+- Enterprise-grade error handling patterns
+- Thread-safe error state management
+- Comprehensive error categorization and recovery
 
-This module provides the foundation for robust error handling across the entire CURSED ecosystem, enabling applications to handle errors gracefully and provide meaningful feedback to users and developers.
+## Dependencies
+
+- `testz` - Testing framework (for tests only)
+
+## Status
+
+✅ **Complete** - Full implementation of CURSED error handling patterns with yikes/shook/fam keywords

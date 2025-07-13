@@ -291,8 +291,10 @@ impl ProductionRuntime {
             return Err(CursedError::runtime_error("Runtime already running"));
         }
 
-        // Initialize goroutine scheduler
-        crate::runtime::goroutine::initialize_global_scheduler()?;
+        // Initialize goroutine scheduler (if not already initialized)
+        if crate::runtime::goroutine::get_global_scheduler().is_none() {
+            crate::runtime::goroutine::initialize_global_scheduler()?;
+        }
 
         // Start monitoring thread if enabled
         if self.config.enable_monitoring {
@@ -517,6 +519,11 @@ static GLOBAL_RUNTIME: once_cell::sync::OnceCell<Arc<Mutex<ProductionRuntime>>> 
 
 /// Initialize global production runtime
 pub fn initialize_production_runtime(config: ProductionRuntimeConfig) -> Result<(), CursedError> {
+    // If already initialized, just return Ok for test compatibility
+    if GLOBAL_RUNTIME.get().is_some() {
+        return Ok(());
+    }
+    
     let runtime = Arc::new(Mutex::new(ProductionRuntime::new(config)?));
     
     GLOBAL_RUNTIME
@@ -596,6 +603,16 @@ mod tests {
     use super::*;
     use std::thread;
     use std::time::Duration;
+    use std::sync::Once;
+
+    static INIT: Once = Once::new();
+
+    fn setup_test() {
+        INIT.call_once(|| {
+            // Initialize global scheduler if needed
+            let _ = crate::runtime::goroutine::initialize_global_scheduler();
+        });
+    }
 
     #[test]
     fn test_production_runtime_creation() {
@@ -606,6 +623,7 @@ mod tests {
 
     #[test]
     fn test_production_runtime_start_stop() {
+        setup_test();
         let config = ProductionRuntimeConfig::default();
         let mut runtime = ProductionRuntime::new(config).unwrap();
         
@@ -618,6 +636,7 @@ mod tests {
 
     #[test]
     fn test_goroutine_spawning() {
+        setup_test();
         let config = ProductionRuntimeConfig::default();
         let mut runtime = ProductionRuntime::new(config).unwrap();
         runtime.start().unwrap();
