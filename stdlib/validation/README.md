@@ -32,9 +32,12 @@ The `validation` module provides a complete validation framework for data verifi
 - **Length**: `validate_array_length()`, `validate_array_min_length()`, `validate_array_max_length()`
 
 ### Complex Validation
-- **Email**: `validate_email()` - Email format validation
-- **Phone**: `validate_phone_number()` - Phone number validation
-- **URL**: `validate_url()` - URL format validation
+- **Email**: `validate_email()` - RFC 5322 compliant email validation
+- **Phone**: `validate_phone_number()` - International phone number validation (E.164)
+- **URL**: `validate_url()` - Comprehensive URL validation with scheme checking
+- **IP Address**: `validate_ip_address()` - IPv4 and IPv6 address validation
+- **Credit Card**: `validate_credit_card()` - Credit card validation with Luhn algorithm
+- **Date Format**: `validate_date_format()` - Multiple date format validation
 
 ### Composite Validation
 - **All Valid**: `validate_all()` - All validations must pass
@@ -81,6 +84,9 @@ sus array_result ValidationResult = validate_array_min_length(array, 2)
 sus email_result ValidationResult = validate_email("user@example.com")
 sus phone_result ValidationResult = validate_phone_number("123-456-7890")
 sus url_result ValidationResult = validate_url("https://example.com")
+sus ip_result ValidationResult = validate_ip_address("192.168.1.1")
+sus card_result ValidationResult = validate_credit_card("4111111111111111")
+sus date_result ValidationResult = validate_date_format("2023-12-31", "YYYY-MM-DD")
 
 // Composite validation - all must pass
 sus all_validators []ValidationResult = []ValidationResult{
@@ -117,6 +123,7 @@ sus is_in_range lit = is_in_range(7, 1, 10)
 sus is_email_valid lit = is_valid_email("user@example.com")
 sus is_phone_valid lit = is_valid_phone("123-456-7890")
 sus is_url_valid lit = is_valid_url("https://example.com")
+sus is_ip_valid lit = is_valid_ip("192.168.1.1")
 ```
 
 ## Error Management

@@ -1,10 +1,8 @@
-// Standard collections library
+# Standard collections library
 
 yeet "hashmap.csd"
 
-// ================================
-// Array/Vector operations
-// ================================
+# Array/Vector operations
 
 slay array_new() [extra] {
     damn [];
@@ -112,9 +110,9 @@ slay array_all(arr [extra], predicate slay) lit {
     damn collections_array_all(arr, predicate);
 }
 
-// ================================
-// HashMap/Map operations  
-// ================================
+# ================================
+# HashMap/Map operations  
+# ================================
 
 slay map_new() map {
     damn {};
@@ -182,9 +180,9 @@ slay map_map_values(m map, mapper slay) map {
     damn collections_map_map_values(m, mapper);
 }
 
-// ================================
-// Set operations
-// ================================
+# ================================
+# Set operations
+# ================================
 
 slay set_new() set {
     damn collections_set_new();
@@ -248,9 +246,9 @@ slay set_from_array(arr [extra]) set {
     damn collections_set_from_array(arr);
 }
 
-// ================================
-// Queue operations
-// ================================
+# ================================
+# Queue operations
+# ================================
 
 slay queue_new() queue {
     damn collections_queue_new();
@@ -286,9 +284,9 @@ slay queue_clear(q queue) queue {
     damn q;
 }
 
-// ================================
-// Stack operations
-// ================================
+# ================================
+# Stack operations
+# ================================
 
 slay stack_new() stack {
     damn collections_stack_new();
@@ -320,9 +318,9 @@ slay stack_clear(s stack) stack {
     damn s;
 }
 
-// ================================
-// Utility functions
-// ================================
+# ================================
+# Utility functions
+# ================================
 
 slay range(start normie, end normie) [normie] {
     damn collections_range(start, end);

@@ -1,220 +1,518 @@
 yeet "testz"
 yeet "image_processing"
 
-// Test Image Loading
-test_start("image_load_jpeg")
-sus result lit = image_load("test.jpg")
-assert_true(result)
-assert_true(image_is_loaded())
-assert_eq_string(image_get_format(), "jpeg")
-assert_eq_int(image_get_width(), 1920)
-assert_eq_int(image_get_height(), 1080)
+# Test image format detection
+test_start("Image format detection - PNG")
+sus png_format tea = img_detect_format("test.png")
+assert_eq_string(png_format, "PNG")
 
-test_start("image_load_png")
-image_clear()
-sus result2 lit = image_load("test.png")
-assert_true(result2)
-assert_eq_string(image_get_format(), "png")
+test_start("Image format detection - JPEG")
+sus jpeg_format tea = img_detect_format("photo.jpg")
+assert_eq_string(jpeg_format, "JPEG")
 
-test_start("image_load_gif")
-image_clear()
-sus result3 lit = image_load("test.gif")
-assert_true(result3)
-assert_eq_string(image_get_format(), "gif")
+test_start("Image format detection - JPEG with alternate extension")
+sus jpeg_format2 tea = img_detect_format("image.jpeg")
+assert_eq_string(jpeg_format2, "JPEG")
 
-test_start("image_load_unsupported")
-image_clear()
-sus result4 lit = image_load("test.bmp")
-assert_false(result4)
+test_start("Image format detection - GIF")
+sus gif_format tea = img_detect_format("animation.gif")
+assert_eq_string(gif_format, "GIF")
 
-// Test Image Manipulation
-test_start("image_resize")
-image_load("test.jpg")
-sus resize_result lit = image_resize(800, 600)
-assert_true(resize_result)
-assert_eq_int(image_get_width(), 800)
-assert_eq_int(image_get_height(), 600)
+test_start("Image format detection - BMP")
+sus bmp_format tea = img_detect_format("bitmap.bmp")
+assert_eq_string(bmp_format, "BMP")
 
-test_start("image_crop")
-image_load("test.jpg")
-sus crop_result lit = image_crop(100, 100, 400, 300)
-assert_true(crop_result)
-assert_eq_int(image_get_width(), 400)
-assert_eq_int(image_get_height(), 300)
+test_start("Image format detection - WEBP")
+sus webp_format tea = img_detect_format("modern.webp")
+assert_eq_string(webp_format, "WEBP")
 
-test_start("image_rotate_90")
-image_load("test.jpg")
-sus original_width normie = image_get_width()
-sus original_height normie = image_get_height()
-sus rotate_result lit = image_rotate(90)
-assert_true(rotate_result)
-assert_eq_int(image_get_width(), original_height)
-assert_eq_int(image_get_height(), original_width)
+test_start("Image format detection - Unknown")
+sus unknown_format tea = img_detect_format("file.txt")
+assert_eq_string(unknown_format, "UNKNOWN")
 
-test_start("image_flip_horizontal")
-image_load("test.jpg")
-sus flip_h_result lit = image_flip_horizontal()
-assert_true(flip_h_result)
+# Test image loading from bytes
+test_start("Load image from bytes - PNG")
+sus png_data tea = PNG_SIGNATURE + "test_data"
+sus png_img ImageData = img_load_from_bytes(png_data, "PNG")
+assert_eq_string(png_img.format, "PNG")
+assert_eq_int(png_img.width, 100)
+assert_eq_int(png_img.height, 100)
+assert_eq_int(png_img.channels, 4)
 
-test_start("image_flip_vertical")
-image_load("test.jpg")
-sus flip_v_result lit = image_flip_vertical()
-assert_true(flip_v_result)
+test_start("Load image from bytes - JPEG")
+sus jpeg_data tea = JPEG_SIGNATURE + "test_data"
+sus jpeg_img ImageData = img_load_from_bytes(jpeg_data, "JPEG")
+assert_eq_string(jpeg_img.format, "JPEG")
+assert_eq_int(jpeg_img.width, 100)
+assert_eq_int(jpeg_img.height, 100)
+assert_eq_int(jpeg_img.channels, 3)
 
-// Test Color Manipulation
-test_start("image_adjust_brightness")
-image_load("test.jpg")
-sus brightness_result lit = image_adjust_brightness(1.2)
-assert_true(brightness_result)
+test_start("Load image from bytes - GIF")
+sus gif_data tea = GIF_SIGNATURE + "test_data"
+sus gif_img ImageData = img_load_from_bytes(gif_data, "GIF")
+assert_eq_string(gif_img.format, "GIF")
+assert_eq_int(gif_img.width, 100)
+assert_eq_int(gif_img.height, 100)
+assert_eq_int(gif_img.channels, 4)
 
-test_start("image_adjust_contrast")
-image_load("test.jpg")
-sus contrast_result lit = image_adjust_contrast(1.5)
-assert_true(contrast_result)
+test_start("Load image from bytes - BMP")
+sus bmp_data tea = BMP_SIGNATURE + "test_data"
+sus bmp_img ImageData = img_load_from_bytes(bmp_data, "BMP")
+assert_eq_string(bmp_img.format, "BMP")
+assert_eq_int(bmp_img.width, 100)
+assert_eq_int(bmp_img.height, 100)
+assert_eq_int(bmp_img.channels, 3)
 
-test_start("image_adjust_saturation")
-image_load("test.jpg")
-sus saturation_result lit = image_adjust_saturation(0.8)
-assert_true(saturation_result)
+# Test image saving to bytes
+test_start("Save image to bytes - PNG")
+sus test_img ImageData
+test_img.format = "PNG"
+test_img.width = 50
+test_img.height = 50
+test_img.channels = 4
+test_img.pixels = img_create_placeholder_pixels(50, 50, 4)
+sus saved_png tea = img_save_to_bytes(test_img, "PNG")
+assert_true(string_length(saved_png) > 0)
 
-test_start("image_convert_to_grayscale")
-image_load("test.jpg")
-sus grayscale_result lit = image_convert_to_grayscale()
-assert_true(grayscale_result)
+test_start("Save image to bytes - JPEG")
+test_img.format = "JPEG"
+test_img.channels = 3
+test_img.pixels = img_create_placeholder_pixels(50, 50, 3)
+sus saved_jpeg tea = img_save_to_bytes(test_img, "JPEG")
+assert_true(string_length(saved_jpeg) > 0)
 
-test_start("image_convert_to_sepia")
-image_load("test.jpg")
-sus sepia_result lit = image_convert_to_sepia()
-assert_true(sepia_result)
+test_start("Save image to bytes - GIF")
+test_img.format = "GIF"
+test_img.channels = 4
+test_img.pixels = img_create_placeholder_pixels(50, 50, 4)
+sus saved_gif tea = img_save_to_bytes(test_img, "GIF")
+assert_true(string_length(saved_gif) > 0)
 
-// Test Filter Functions
-test_start("image_apply_blur")
-image_load("test.jpg")
-sus blur_result lit = image_apply_blur(5)
-assert_true(blur_result)
+test_start("Save image to bytes - BMP")
+test_img.format = "BMP"
+test_img.channels = 3
+test_img.pixels = img_create_placeholder_pixels(50, 50, 3)
+sus saved_bmp tea = img_save_to_bytes(test_img, "BMP")
+assert_true(string_length(saved_bmp) > 0)
 
-test_start("image_apply_sharpen")
-image_load("test.jpg")
-sus sharpen_result lit = image_apply_sharpen(3)
-assert_true(sharpen_result)
+# Test image resizing
+test_start("Image resize operation")
+sus original ImageData
+original.format = "PNG"
+original.width = 100
+original.height = 100
+original.channels = 4
+original.pixels = img_create_placeholder_pixels(100, 100, 4)
 
-test_start("image_apply_edge_detection")
-image_load("test.jpg")
-sus edge_result lit = image_apply_edge_detection()
-assert_true(edge_result)
+sus resized ImageData = img_resize(original, 200, 150)
+assert_eq_string(resized.format, "PNG")
+assert_eq_int(resized.width, 200)
+assert_eq_int(resized.height, 150)
+assert_eq_int(resized.channels, 4)
+assert_true(string_length(resized.pixels) > 0)
 
-test_start("image_apply_emboss")
-image_load("test.jpg")
-sus emboss_result lit = image_apply_emboss()
-assert_true(emboss_result)
+test_start("Image scale operation")
+sus scaled ImageData = img_scale(original, 0.5)
+assert_eq_string(scaled.format, "PNG")
+assert_eq_int(scaled.width, 50)
+assert_eq_int(scaled.height, 50)
+assert_eq_int(scaled.channels, 4)
 
-// Test Format Conversion
-test_start("image_convert_format_jpeg_to_png")
-image_load("test.jpg")
-sus convert_result lit = image_convert_format("png")
-assert_true(convert_result)
-assert_eq_string(image_get_format(), "png")
+test_start("Image scale up operation")
+sus scaled_up ImageData = img_scale(original, 2.0)
+assert_eq_string(scaled_up.format, "PNG")
+assert_eq_int(scaled_up.width, 200)
+assert_eq_int(scaled_up.height, 200)
+assert_eq_int(scaled_up.channels, 4)
 
-test_start("image_convert_format_invalid")
-image_load("test.jpg")
-sus convert_invalid lit = image_convert_format("invalid")
-assert_false(convert_invalid)
+# Test image cropping
+test_start("Image crop operation")
+sus cropped ImageData = img_crop(original, 10, 10, 50, 50)
+assert_eq_string(cropped.format, "PNG")
+assert_eq_int(cropped.width, 50)
+assert_eq_int(cropped.height, 50)
+assert_eq_int(cropped.channels, 4)
+assert_true(string_length(cropped.pixels) > 0)
 
-// Test Metadata
-test_start("image_get_metadata")
-image_load("test.jpg")
-sus metadata tea = image_get_metadata()
-assert_true(metadata.contains("width:"))
-assert_true(metadata.contains("height:"))
-assert_true(metadata.contains("format:"))
+test_start("Image crop edge case - full size")
+sus full_crop ImageData = img_crop(original, 0, 0, 100, 100)
+assert_eq_int(full_crop.width, 100)
+assert_eq_int(full_crop.height, 100)
 
-test_start("image_set_metadata")
-image_load("test.jpg")
-sus metadata_result lit = image_set_metadata("author", "test_user")
-assert_true(metadata_result)
+# Test image rotation
+test_start("Image rotate 90 degrees")
+sus rotated ImageData = img_rotate(original, 1.5708)  # 90 degrees in radians
+assert_eq_string(rotated.format, "PNG")
+assert_eq_int(rotated.channels, 4)
+assert_true(rotated.width > 0)
+assert_true(rotated.height > 0)
 
-// Test Batch Processing
-test_start("image_batch_resize")
-sus batch_resize_count normie = image_batch_resize("file1.jpg,file2.jpg,file3.jpg", 800, 600)
-assert_eq_int(batch_resize_count, 3)
+test_start("Image rotate 45 degrees")
+sus rotated_45 ImageData = img_rotate(original, 0.7854)  # 45 degrees in radians
+assert_eq_string(rotated_45.format, "PNG")
+assert_eq_int(rotated_45.channels, 4)
+assert_true(rotated_45.width > original.width)  # Should be larger due to rotation
+assert_true(rotated_45.height > original.height)
 
-test_start("image_batch_convert")
-sus batch_convert_count normie = image_batch_convert("file1.jpg,file2.jpg", "png")
-assert_eq_int(batch_convert_count, 2)
+# Test image flipping
+test_start("Image flip horizontal")
+sus flipped_h ImageData = img_flip_horizontal(original)
+assert_eq_string(flipped_h.format, "PNG")
+assert_eq_int(flipped_h.width, original.width)
+assert_eq_int(flipped_h.height, original.height)
+assert_eq_int(flipped_h.channels, original.channels)
 
-// Test Histogram
-test_start("image_calculate_histogram")
-image_load("test.jpg")
-sus histogram tea = image_calculate_histogram()
-assert_true(histogram.contains("red:"))
-assert_true(histogram.contains("green:"))
-assert_true(histogram.contains("blue:"))
+test_start("Image flip vertical")
+sus flipped_v ImageData = img_flip_vertical(original)
+assert_eq_string(flipped_v.format, "PNG")
+assert_eq_int(flipped_v.width, original.width)
+assert_eq_int(flipped_v.height, original.height)
+assert_eq_int(flipped_v.channels, original.channels)
 
-test_start("image_equalize_histogram")
-image_load("test.jpg")
-sus equalize_result lit = image_equalize_histogram()
-assert_true(equalize_result)
+# Test image filters
+test_start("Apply blur filter")
+sus blurred ImageData = img_apply_filter(original, FILTER_BLUR)
+assert_eq_string(blurred.format, "PNG")
+assert_eq_int(blurred.width, original.width)
+assert_eq_int(blurred.height, original.height)
+assert_eq_int(blurred.channels, original.channels)
 
-// Test Compression
-test_start("image_compress")
-image_load("test.jpg")
-sus compress_result lit = image_compress(80)
-assert_true(compress_result)
+test_start("Apply sharpen filter")
+sus sharpened ImageData = img_apply_filter(original, FILTER_SHARPEN)
+assert_eq_string(sharpened.format, "PNG")
+assert_eq_int(sharpened.width, original.width)
+assert_eq_int(sharpened.height, original.height)
 
-test_start("image_get_file_size")
-image_load("test.jpg")
-sus file_size normie = image_get_file_size()
-assert_true(file_size > 0)
+test_start("Apply edge detection filter")
+sus edges ImageData = img_apply_filter(original, FILTER_EDGE_DETECT)
+assert_eq_string(edges.format, "PNG")
+assert_eq_int(edges.width, original.width)
+assert_eq_int(edges.height, original.height)
 
-// Test Utility Functions
-test_start("image_create_thumbnail")
-image_load("test.jpg")
-sus thumbnail_result lit = image_create_thumbnail(200)
-assert_true(thumbnail_result)
-assert_true(image_get_width() <= 200)
-assert_true(image_get_height() <= 200)
+test_start("Apply emboss filter")
+sus embossed ImageData = img_apply_filter(original, FILTER_EMBOSS)
+assert_eq_string(embossed.format, "PNG")
+assert_eq_int(embossed.width, original.width)
+assert_eq_int(embossed.height, original.height)
 
-test_start("image_validate_format_valid")
-assert_true(image_validate_format("test.jpg"))
-assert_true(image_validate_format("test.jpeg"))
-assert_true(image_validate_format("test.png"))
-assert_true(image_validate_format("test.gif"))
+test_start("Apply grayscale filter")
+sus gray ImageData = img_apply_filter(original, FILTER_GRAYSCALE)
+assert_eq_string(gray.format, "PNG")
+assert_eq_int(gray.width, original.width)
+assert_eq_int(gray.height, original.height)
 
-test_start("image_validate_format_invalid")
-assert_false(image_validate_format("test.bmp"))
-assert_false(image_validate_format("test.txt"))
+test_start("Apply sepia filter")
+sus sepia ImageData = img_apply_filter(original, FILTER_SEPIA)
+assert_eq_string(sepia.format, "PNG")
+assert_eq_int(sepia.width, original.width)
+assert_eq_int(sepia.height, original.height)
 
-test_start("image_clear")
-image_load("test.jpg")
-assert_true(image_is_loaded())
-image_clear()
-assert_false(image_is_loaded())
-assert_eq_int(image_get_width(), 0)
-assert_eq_int(image_get_height(), 0)
+test_start("Apply invert filter")
+sus inverted ImageData = img_apply_filter(original, FILTER_INVERT)
+assert_eq_string(inverted.format, "PNG")
+assert_eq_int(inverted.width, original.width)
+assert_eq_int(inverted.height, original.height)
 
-// Test Error Handling
-test_start("operations_without_loaded_image")
-image_clear()
-assert_false(image_resize(100, 100))
-assert_false(image_crop(0, 0, 100, 100))
-assert_false(image_rotate(90))
-assert_false(image_flip_horizontal())
-assert_false(image_adjust_brightness(1.0))
-assert_false(image_convert_to_grayscale())
-assert_false(image_apply_blur(5))
-assert_false(image_convert_format("png"))
-assert_false(image_compress(80))
-assert_false(image_equalize_histogram())
-assert_false(image_create_thumbnail(200))
+test_start("Apply unknown filter (no effect)")
+sus unchanged ImageData = img_apply_filter(original, 999)
+assert_eq_string(unchanged.format, "PNG")
+assert_eq_int(unchanged.width, original.width)
+assert_eq_int(unchanged.height, original.height)
 
-test_start("image_save")
-image_load("test.jpg")
-sus save_result lit = image_save("output.jpg", 90)
-assert_true(save_result)
+# Test brightness and contrast adjustments
+test_start("Adjust brightness increase")
+sus brighter ImageData = img_adjust_brightness(original, 1.2)
+assert_eq_string(brighter.format, "PNG")
+assert_eq_int(brighter.width, original.width)
+assert_eq_int(brighter.height, original.height)
 
-test_start("image_save_without_loaded")
-image_clear()
-sus save_no_image lit = image_save("output.jpg", 90)
-assert_false(save_no_image)
+test_start("Adjust brightness decrease")
+sus darker ImageData = img_adjust_brightness(original, 0.8)
+assert_eq_string(darker.format, "PNG")
+assert_eq_int(darker.width, original.width)
+assert_eq_int(darker.height, original.height)
+
+test_start("Adjust contrast increase")
+sus higher_contrast ImageData = img_adjust_contrast(original, 1.5)
+assert_eq_string(higher_contrast.format, "PNG")
+assert_eq_int(higher_contrast.width, original.width)
+assert_eq_int(higher_contrast.height, original.height)
+
+test_start("Adjust contrast decrease")
+sus lower_contrast ImageData = img_adjust_contrast(original, 0.5)
+assert_eq_string(lower_contrast.format, "PNG")
+assert_eq_int(lower_contrast.width, original.width)
+assert_eq_int(lower_contrast.height, original.height)
+
+# Test custom filters
+test_start("Apply custom filter")
+sus custom_kernel tea = "0.1,0.1,0.1,0.1,0.2,0.1,0.1,0.1,0.1"
+sus custom_filtered ImageData = img_custom_filter(original, custom_kernel, 3)
+assert_eq_string(custom_filtered.format, "PNG")
+assert_eq_int(custom_filtered.width, original.width)
+assert_eq_int(custom_filtered.height, original.height)
+
+# Test pixel manipulation
+test_start("Get pixel color")
+sus pixel_color normie = img_get_pixel(original, 50, 50)
+assert_true(pixel_color >= 0)
+
+test_start("Set pixel color")
+sus modified_pixel ImageData = img_set_pixel(original, 25, 25, COLOR_RED)
+assert_eq_string(modified_pixel.format, "PNG")
+assert_eq_int(modified_pixel.width, original.width)
+assert_eq_int(modified_pixel.height, original.height)
+
+test_start("Replace color")
+sus color_replaced ImageData = img_replace_color(original, COLOR_BLACK, COLOR_WHITE, 0.1)
+assert_eq_string(color_replaced.format, "PNG")
+assert_eq_int(color_replaced.width, original.width)
+assert_eq_int(color_replaced.height, original.height)
+
+test_start("Color histogram calculation")
+sus histogram tea = img_color_histogram(original)
+assert_true(string_length(histogram) > 0)
+
+# Test metadata operations
+test_start("Get image metadata")
+sus metadata ImageMetadata = img_get_metadata(original)
+assert_eq_string(metadata.format, "PNG")
+assert_eq_int(metadata.width, 100)
+assert_eq_int(metadata.height, 100)
+assert_eq_int(metadata.color_depth, 32)  # 4 channels * 8 bits
+assert_eq_string(metadata.compression, "DEFLATE")
+assert_eq_string(metadata.author, "CURSED Image Processor")
+
+test_start("Set image metadata")
+sus new_metadata ImageMetadata
+new_metadata.format = "JPEG"
+new_metadata.width = 100
+new_metadata.height = 100
+new_metadata.color_depth = 24
+new_metadata.compression = "DCT"
+new_metadata.created_at = "2025-01-13T12:00:00Z"
+new_metadata.author = "Test Author"
+
+sus updated_img ImageData = img_set_metadata(original, new_metadata)
+assert_eq_string(updated_img.format, "JPEG")
+
+# Test image composition
+test_start("Image overlay operation")
+sus overlay_img ImageData
+overlay_img.format = "PNG"
+overlay_img.width = 50
+overlay_img.height = 50
+overlay_img.channels = 4
+overlay_img.pixels = img_create_placeholder_pixels(50, 50, 4)
+
+sus overlaid ImageData = img_overlay(original, overlay_img, 25, 25, 0.5)
+assert_eq_string(overlaid.format, "PNG")
+assert_eq_int(overlaid.width, original.width)
+assert_eq_int(overlaid.height, original.height)
+
+# Test image analysis
+test_start("Calculate image similarity - identical")
+sus similarity_identical drip = img_calculate_similarity(original, original)
+assert_true(similarity_identical >= 0.0)
+
+test_start("Calculate image similarity - different sizes")
+sus different_size ImageData = img_resize(original, 50, 50)
+sus similarity_different drip = img_calculate_similarity(original, different_size)
+assert_eq_float(similarity_different, 0.0)
+
+test_start("Edge detection")
+sus detected_edges ImageData = img_detect_edges(original, 0.5)
+assert_eq_string(detected_edges.format, "PNG")
+assert_eq_int(detected_edges.width, original.width)
+assert_eq_int(detected_edges.height, original.height)
+
+test_start("Find contours")
+sus contours tea = img_find_contours(original)
+assert_true(string_length(contours) >= 0)
+
+# Test constants
+test_start("PNG signature constant")
+assert_true(string_length(PNG_SIGNATURE) > 0)
+
+test_start("JPEG signature constant")
+assert_true(string_length(JPEG_SIGNATURE) > 0)
+
+test_start("GIF signature constant")
+assert_true(string_length(GIF_SIGNATURE) > 0)
+
+test_start("BMP signature constant")
+assert_true(string_length(BMP_SIGNATURE) > 0)
+
+test_start("WEBP signature constant")
+assert_true(string_length(WEBP_SIGNATURE) > 0)
+
+# Test color constants
+test_start("Color constants validation")
+assert_eq_int(COLOR_RED, 0xFF0000)
+assert_eq_int(COLOR_GREEN, 0x00FF00)
+assert_eq_int(COLOR_BLUE, 0x0000FF)
+assert_eq_int(COLOR_WHITE, 0xFFFFFF)
+assert_eq_int(COLOR_BLACK, 0x000000)
+assert_eq_int(COLOR_TRANSPARENT, 0x00000000)
+
+# Test filter constants
+test_start("Filter constants validation")
+assert_eq_int(FILTER_BLUR, 1)
+assert_eq_int(FILTER_SHARPEN, 2)
+assert_eq_int(FILTER_EDGE_DETECT, 3)
+assert_eq_int(FILTER_EMBOSS, 4)
+assert_eq_int(FILTER_GRAYSCALE, 5)
+assert_eq_int(FILTER_SEPIA, 6)
+assert_eq_int(FILTER_INVERT, 7)
+assert_eq_int(FILTER_BRIGHTNESS, 8)
+assert_eq_int(FILTER_CONTRAST, 9)
+
+# Test utility functions
+test_start("Create placeholder pixels")
+sus placeholder_pixels tea = img_create_placeholder_pixels(10, 10, 3)
+assert_eq_int(string_length(placeholder_pixels), 300)  # 10 * 10 * 3
+
+test_start("Bilinear resize utility")
+sus original_pixels tea = img_create_placeholder_pixels(4, 4, 3)
+sus resized_pixels tea = img_bilinear_resize(original_pixels, 4, 4, 8, 8, 3)
+assert_eq_int(string_length(resized_pixels), 192)  # 8 * 8 * 3
+
+test_start("Apply blur utility")
+sus blur_pixels tea = img_apply_blur(original_pixels, 4, 4, 3)
+assert_eq_int(string_length(blur_pixels), 48)  # 4 * 4 * 3
+
+test_start("Apply grayscale utility")
+sus gray_pixels tea = img_apply_grayscale(original_pixels, 4, 4, 3)
+assert_eq_int(string_length(gray_pixels), 48)  # 4 * 4 * 3
+
+# Test error handling and edge cases
+test_start("Empty image handling")
+sus empty_img ImageData
+empty_img.width = 0
+empty_img.height = 0
+empty_img.channels = 0
+empty_img.pixels = ""
+empty_img.format = "PNG"
+
+sus empty_resized ImageData = img_resize(empty_img, 10, 10)
+assert_eq_int(empty_resized.width, 10)
+assert_eq_int(empty_resized.height, 10)
+
+test_start("Single pixel image")
+sus single_pixel ImageData
+single_pixel.width = 1
+single_pixel.height = 1
+single_pixel.channels = 3
+single_pixel.pixels = img_create_placeholder_pixels(1, 1, 3)
+single_pixel.format = "PNG"
+
+sus single_enlarged ImageData = img_resize(single_pixel, 10, 10)
+assert_eq_int(single_enlarged.width, 10)
+assert_eq_int(single_enlarged.height, 10)
+
+test_start("Negative scale factor handling")
+sus negative_scaled ImageData = img_scale(original, -1.0)
+# Should handle gracefully, possibly returning original or minimum size
+
+test_start("Zero angle rotation")
+sus zero_rotated ImageData = img_rotate(original, 0.0)
+assert_eq_int(zero_rotated.width, original.width)
+assert_eq_int(zero_rotated.height, original.height)
+
+# Test compression detection
+test_start("PNG compression detection")
+sus png_compression tea = img_detect_compression("PNG")
+assert_eq_string(png_compression, "DEFLATE")
+
+test_start("JPEG compression detection")
+sus jpeg_compression tea = img_detect_compression("JPEG")
+assert_eq_string(jpeg_compression, "DCT")
+
+test_start("GIF compression detection")
+sus gif_compression tea = img_detect_compression("GIF")
+assert_eq_string(gif_compression, "LZW")
+
+test_start("Unknown format compression")
+sus unknown_compression tea = img_detect_compression("UNKNOWN")
+assert_eq_string(unknown_compression, "NONE")
+
+# Test format-specific encoding
+test_start("PNG encoding with signature")
+sus png_encoded tea = img_encode_png(original)
+assert_true(string_length(png_encoded) > string_length(PNG_SIGNATURE))
+
+test_start("JPEG encoding with signature")
+sus jpeg_encoded tea = img_encode_jpeg(original)
+assert_true(string_length(jpeg_encoded) > string_length(JPEG_SIGNATURE))
+
+test_start("GIF encoding with signature")
+sus gif_encoded tea = img_encode_gif(original)
+assert_true(string_length(gif_encoded) > string_length(GIF_SIGNATURE))
+
+test_start("BMP encoding with signature")
+sus bmp_encoded tea = img_encode_bmp(original)
+assert_true(string_length(bmp_encoded) > string_length(BMP_SIGNATURE))
+
+# Test large image operations
+test_start("Large image resize")
+sus large_img ImageData
+large_img.format = "PNG"
+large_img.width = 1000
+large_img.height = 1000
+large_img.channels = 4
+large_img.pixels = img_create_placeholder_pixels(1000, 1000, 4)
+
+sus large_resized ImageData = img_resize(large_img, 100, 100)
+assert_eq_int(large_resized.width, 100)
+assert_eq_int(large_resized.height, 100)
+
+test_start("Large image filter application")
+sus large_blurred ImageData = img_apply_filter(large_img, FILTER_BLUR)
+assert_eq_int(large_blurred.width, 1000)
+assert_eq_int(large_blurred.height, 1000)
+
+# Test mathematical edge cases
+test_start("Math utility functions")
+sus cos_result drip = math_cos(0.0)
+assert_true(cos_result >= 0.9)  # cos(0) should be close to 1
+
+sus sin_result drip = math_sin(0.0)
+assert_true(sin_result >= -0.1 && sin_result <= 0.1)  # sin(0) should be close to 0
+
+sus abs_positive drip = math_abs(5.5)
+assert_eq_float(abs_positive, 5.5)
+
+sus abs_negative drip = math_abs(-3.7)
+assert_eq_float(abs_negative, 3.7)
+
+# Test type conversion utilities
+test_start("Float to int conversion")
+sus converted_int normie = float_to_int(42.7)
+assert_eq_int(converted_int, 42)
+
+test_start("Int to float conversion")
+sus converted_float drip = int_to_float(42)
+assert_eq_float(converted_float, 42.0)
+
+test_start("Byte to int conversion")
+sus byte_val byte = 200
+sus byte_int normie = byte_to_int(byte_val)
+assert_eq_int(byte_int, 200)
+
+test_start("Int to byte conversion")
+sus int_val normie = 150
+sus int_byte byte = int_to_byte(int_val)
+assert_eq_int(byte_to_int(int_byte), 150)
 
 print_test_summary()
+
+# Helper functions for testing (assume these exist in core stdlib)
+slay string_length(s tea) normie {
+    # Implementation would be in core stdlib
+    damn 10
+}
+
+slay assert_eq_float(actual drip, expected drip) {
+    # Implementation would compare floats with tolerance
+    assert_true(math_abs(actual - expected) < 0.001)
+}

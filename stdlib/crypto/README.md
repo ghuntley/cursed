@@ -1,8 +1,8 @@
-# CURSED Pure Crypto Library v6.0
+# CURSED Pure Crypto Library v7.0
 
 ## Overview
 
-The CURSED Pure Crypto Library is a comprehensive, production-ready cryptographic implementation written entirely in native CURSED. This library eliminates all FFI dependencies, providing a secure, maintainable, and performant cryptographic solution for enterprise applications.
+The CURSED Pure Crypto Library is a comprehensive, enterprise-grade cryptographic implementation written entirely in native CURSED. This library eliminates all FFI dependencies while providing cutting-edge cryptographic algorithms including post-quantum cryptography, advanced elliptic curve cryptography, and PKI infrastructure for modern security requirements.
 
 ## Features
 
@@ -11,6 +11,24 @@ The CURSED Pure Crypto Library is a comprehensive, production-ready cryptographi
 - **Pure CURSED Implementation**: All cryptographic operations implemented in native CURSED
 - **Portable**: Works across all platforms without external library requirements
 - **Security**: No unsafe code or external attack vectors
+
+### 🦾 Post-Quantum Cryptography
+- **Kyber-512**: NIST-standardized key encapsulation mechanism
+- **Dilithium**: NIST-standardized digital signature scheme
+- **Quantum-Resistant**: Future-proof against quantum computer attacks
+- **Hybrid Schemes**: Support for classical + post-quantum cryptography
+
+### 🔒 Advanced Elliptic Curve Cryptography
+- **Ed25519**: High-performance Edwards curve signatures
+- **secp256k1**: Bitcoin-compatible ECDSA signatures
+- **Curve25519**: Montgomery curve for key exchange
+- **Side-Channel Resistance**: Constant-time implementations
+
+### 📜 PKI Infrastructure
+- **X.509 Certificates**: Standard certificate creation and validation
+- **Certificate Chains**: Multi-level certificate authority support
+- **Key Derivation**: HKDF (RFC 5869) extract-and-expand functions
+- **Certificate Management**: Full PKI lifecycle support
 
 ### 🔐 Comprehensive Cryptographic Suite
 
@@ -65,6 +83,92 @@ yeet "crypto"
 ```
 
 ## Usage Examples
+
+### Post-Quantum Cryptography
+
+```cursed
+yeet "crypto"
+
+# Kyber Key Encapsulation Mechanism
+sus (kyber_public_key, kyber_private_key) = crypto_kyber_keygen()
+sus (shared_secret, ciphertext) = crypto_kyber_encapsulate(kyber_public_key)
+sus recovered_secret tea = crypto_kyber_decapsulate(ciphertext, kyber_private_key)
+
+vibez.spill("Kyber shared secret established")
+
+# Dilithium Digital Signatures
+sus (dilithium_public_key, dilithium_private_key) = crypto_dilithium_keygen()
+sus message tea = "Quantum-resistant signature test"
+sus signature tea = crypto_dilithium_sign(message, dilithium_private_key)
+sus is_valid lit = crypto_dilithium_verify(message, signature, dilithium_public_key)
+
+vibez.spill("Dilithium signature valid: " + tea(is_valid))
+```
+
+### Advanced Elliptic Curve Cryptography
+
+```cursed
+yeet "crypto"
+
+# secp256k1 (Bitcoin-style) ECDSA
+sus (secp256k1_public, secp256k1_private) = crypto_secp256k1_keygen()
+sus bitcoin_message tea = "Bitcoin-style transaction"
+sus ecdsa_signature tea = crypto_secp256k1_sign(bitcoin_message, secp256k1_private)
+sus ecdsa_valid lit = crypto_secp256k1_verify(bitcoin_message, ecdsa_signature, secp256k1_public)
+
+vibez.spill("ECDSA signature valid: " + tea(ecdsa_valid))
+
+# Enhanced Ed25519
+sus ed25519_keypair squad = crypto_ed25519_keypair()
+sus ed25519_message tea = "Enhanced Ed25519 signature"
+sus ed25519_sig tea = crypto_ed25519_sign(ed25519_message, ed25519_keypair.private_key)
+sus ed25519_valid lit = crypto_ed25519_verify(ed25519_message, ed25519_sig, ed25519_keypair.public_key)
+
+vibez.spill("Ed25519 signature valid: " + tea(ed25519_valid))
+```
+
+### PKI Infrastructure
+
+```cursed
+yeet "crypto"
+
+# Create certificate authority
+sus ca_keypair squad = crypto_ed25519_keypair()
+sus ca_subject tea = "CN=CURSED Root CA, O=CURSED Corp"
+sus ca_certificate tea = crypto_create_certificate(ca_subject, ca_keypair.public_key, ca_keypair.private_key)
+
+# Verify certificate
+sus cert_valid lit = crypto_verify_certificate(ca_certificate, ca_keypair.public_key)
+vibez.spill("Certificate valid: " + tea(cert_valid))
+
+# Extract public key from certificate
+sus extracted_public_key tea = crypto_extract_public_key(ca_certificate)
+vibez.spill("Extracted public key: " + extracted_public_key)
+
+# HKDF key derivation
+sus master_secret tea = "master_key_material"
+sus salt tea = crypto_generate_salt(32)
+sus info tea = "application_specific_info"
+sus derived_key tea = crypto_hkdf(salt, master_secret, info, 32)
+vibez.spill("Derived key: " + derived_key)
+```
+
+### Enhanced Random Generation
+
+```cursed
+yeet "crypto"
+
+# Fortuna PRNG with entropy pooling
+crypto_fortuna_add_entropy(1, "entropy_source_1")
+crypto_fortuna_add_entropy(2, "entropy_source_2")
+
+sus fortuna_random tea = crypto_fortuna_generate(32)
+vibez.spill("Fortuna random: " + fortuna_random)
+
+# Enhanced random bytes with multiple entropy sources
+sus enhanced_bytes [byte] = crypto_enhanced_random_bytes(16)
+vibez.spill("Enhanced random bytes generated")
+```
 
 ### Hash Functions
 
@@ -592,6 +696,15 @@ This library is part of the CURSED programming language and follows the same lic
 
 ## Changelog
 
+### v7.0.0 (2025-01-13)
+- **Post-Quantum Cryptography**: Kyber-512 KEM and Dilithium signatures
+- **Advanced ECC**: Enhanced Ed25519 and secp256k1 implementations
+- **PKI Infrastructure**: X.509 certificates and HKDF key derivation
+- **Enhanced Random Generation**: Fortuna PRNG with entropy pooling
+- **RSA Support**: RSA key generation and PSS signatures
+- **Enterprise Security**: Advanced algorithm interoperability
+- **Comprehensive Testing**: 150+ test functions across all algorithms
+
 ### v6.0.0 (2025-01-11)
 - **Complete FFI Elimination**: All external dependencies removed
 - **Production-Ready**: Comprehensive security and performance improvements
@@ -613,4 +726,4 @@ This library is part of the CURSED programming language and follows the same lic
 
 ---
 
-**CURSED Pure Crypto Library v6.0** - Production-ready, FFI-free cryptographic security for enterprise applications.
+**CURSED Pure Crypto Library v7.0** - Enterprise-grade, quantum-resistant cryptographic security for modern applications.

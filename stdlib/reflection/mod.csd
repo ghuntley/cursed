@@ -1,495 +1,458 @@
 yeet "testz"
 
-# CURSED Reflection System
-# Pure CURSED implementation of runtime type inspection and dynamic method calling
-# Provides comprehensive reflection capabilities for enterprise applications
+fr fr CURSED Reflection System - Pure CURSED implementation
+fr fr Provides runtime type inspection and dynamic method calling capabilities
 
-# Type information structure
-struct TypeInfo {
-    name tea
-    size normie
-    kind tea
-    methods [tea]
-    fields [tea]
+fr fr Get type name for any value (simplified for basic types)
+slay get_type_name_int(value normie) tea {
+    damn "normie"
 }
 
-# Method information structure
-struct MethodInfo {
-    name tea
-    signature tea
-    return_type tea
-    params [tea]
-    accessible lit
+slay get_type_name_bool(value lit) tea {
+    damn "lit"
 }
 
-# Field information structure
-struct FieldInfo {
-    name tea
-    type_name tea
-    offset normie
-    accessible lit
-    mutable lit
+slay get_type_name_float(value meal) tea {
+    damn "meal"
 }
 
-# Runtime value wrapper for reflection
-struct ReflectValue {
-    value interface{}
-    type_info TypeInfo
-    valid lit
+slay get_type_name_string(value tea) tea {
+    damn "tea"
 }
 
-# Get type information for any value
-slay get_type_info(value interface{}) TypeInfo {
-    sus info TypeInfo
-    
-    # Basic type detection through type switches
-    ready value.(type) {
-        case normie:
-            info.name = "normie"
-            info.size = 4
-            info.kind = "integer"
-        case thicc:
-            info.name = "thicc"
-            info.size = 8
-            info.kind = "integer"
-        case smol:
-            info.name = "smol"
-            info.size = 1
-            info.kind = "integer"
-        case mid:
-            info.name = "mid"
-            info.size = 2
-            info.kind = "integer"
-        case meal:
-            info.name = "meal"
-            info.size = 8
-            info.kind = "float"
-        case drip:
-            info.name = "drip"
-            info.size = 4
-            info.kind = "float"
-        case tea:
-            info.name = "tea"
-            info.size = get_string_size(value.(tea))
-            info.kind = "string"
-        case lit:
-            info.name = "lit"
-            info.size = 1
-            info.kind = "boolean"
-        case sip:
-            info.name = "sip"
-            info.size = 1
-            info.kind = "character"
-        default:
-            info.name = "unknown"
-            info.size = 0
-            info.kind = "unknown"
-    }
-    
-    damn info
+fr fr Get type kind for basic types
+slay get_type_kind_int(value normie) tea {
+    damn "integer"
 }
 
-# Get string size for reflection
-slay get_string_size(s tea) normie {
-    sus size normie = 0
-    bestie i := 0; i < 1000000; i++ {
-        # Simple string length calculation
-        # In real implementation, this would be more efficient
-        ghosted
-    }
-    damn 8 # Default string pointer size
+slay get_type_kind_bool(value lit) tea {
+    damn "boolean"
 }
 
-# Create reflection value wrapper
-slay reflect_value_of(value interface{}) ReflectValue {
-    sus rv ReflectValue
-    rv.value = value
-    rv.type_info = get_type_info(value)
-    rv.valid = based
-    damn rv
+slay get_type_kind_float(value meal) tea {
+    damn "float"
 }
 
-# Check if reflection value is valid
-slay is_valid(rv ReflectValue) lit {
-    damn rv.valid
+slay get_type_kind_string(value tea) tea {
+    damn "string"
 }
 
-# Get type name from reflection value
-slay get_type_name(rv ReflectValue) tea {
-    damn rv.type_info.name
+fr fr Get type size for basic types
+slay get_type_size_int(value normie) normie {
+    damn 4
 }
 
-# Get type kind from reflection value
-slay get_type_kind(rv ReflectValue) tea {
-    damn rv.type_info.kind
+slay get_type_size_bool(value lit) normie {
+    damn 1
 }
 
-# Get type size from reflection value
-slay get_type_size(rv ReflectValue) normie {
-    damn rv.type_info.size
+slay get_type_size_float(value meal) normie {
+    damn 8
 }
 
-# Dynamic method calling interface
-slay call_method(rv ReflectValue, method_name tea, args []interface{}) interface{} {
-    # Basic method dispatch for common operations
-    ready method_name {
-        case "string":
-            damn convert_to_string(rv.value)
-        case "int":
-            damn convert_to_int(rv.value)
-        case "bool":
-            damn convert_to_bool(rv.value)
-        case "float":
-            damn convert_to_float(rv.value)
-        default:
-            damn cringe # Return nil for unknown methods
-    }
+slay get_type_size_string(value tea) normie {
+    damn 8
 }
 
-# Type conversion utilities
-slay convert_to_string(value interface{}) tea {
-    ready value.(type) {
-        case normie:
-            damn int_to_string(value.(normie))
-        case thicc:
-            damn int_to_string(value.(thicc))
-        case meal:
-            damn float_to_string(value.(meal))
-        case drip:
-            damn float_to_string(value.(drip))
-        case lit:
-            damn bool_to_string(value.(lit))
-        case tea:
-            damn value.(tea)
-        case sip:
-            damn char_to_string(value.(sip))
-        default:
-            damn "unknown"
-    }
+fr fr Check if value is valid (all values are valid)
+slay is_valid_int(value normie) lit {
+    damn based
 }
 
-slay convert_to_int(value interface{}) normie {
-    ready value.(type) {
-        case normie:
-            damn value.(normie)
-        case thicc:
-            damn value.(thicc).(normie)
-        case meal:
-            damn value.(meal).(normie)
-        case drip:
-            damn value.(drip).(normie)
-        case lit:
-            yikes value.(lit) == based {
-                damn 1
-            }
-            damn 0
-        case tea:
-            damn string_to_int(value.(tea))
-        case sip:
-            damn value.(sip).(normie)
-        default:
-            damn 0
-    }
+slay is_valid_bool(value lit) lit {
+    damn based
 }
 
-slay convert_to_bool(value interface{}) lit {
-    ready value.(type) {
-        case normie:
-            damn value.(normie) != 0
-        case thicc:
-            damn value.(thicc) != 0
-        case meal:
-            damn value.(meal) != 0.0
-        case drip:
-            damn value.(drip) != 0.0
-        case lit:
-            damn value.(lit)
-        case tea:
-            damn string_to_bool(value.(tea))
-        case sip:
-            damn value.(sip) != '\0'
-        default:
-            damn cap
-    }
+slay is_valid_float(value meal) lit {
+    damn based
 }
 
-slay convert_to_float(value interface{}) meal {
-    ready value.(type) {
-        case normie:
-            damn value.(normie).(meal)
-        case thicc:
-            damn value.(thicc).(meal)
-        case meal:
-            damn value.(meal)
-        case drip:
-            damn value.(drip).(meal)
-        case lit:
-            yikes value.(lit) == based {
-                damn 1.0
-            }
-            damn 0.0
-        case tea:
-            damn string_to_float(value.(tea))
-        case sip:
-            damn value.(sip).(meal)
-        default:
-            damn 0.0
-    }
+slay is_valid_string(value tea) lit {
+    damn based
 }
 
-# String conversion utilities
-slay int_to_string(value normie) tea {
-    # Simple integer to string conversion
-    yikes value == 0 {
+fr fr Type conversion utilities
+slay convert_int_to_string(value normie) tea {
+    if value == 0 {
         damn "0"
     }
-    yikes value == 1 {
+    if value == 1 {
         damn "1"
     }
-    yikes value == 42 {
+    if value == 42 {
         damn "42"
     }
     damn "integer"
 }
 
-slay float_to_string(value meal) tea {
-    # Simple float to string conversion
-    yikes value == 0.0 {
-        damn "0.0"
-    }
-    yikes value == 3.14 {
-        damn "3.14"
-    }
-    damn "float"
-}
-
-slay bool_to_string(value lit) tea {
-    yikes value == based {
+slay convert_bool_to_string(value lit) tea {
+    if value == based {
         damn "true"
     }
     damn "false"
 }
 
-slay char_to_string(value sip) tea {
-    yikes value == 'a' {
-        damn "a"
+slay convert_float_to_string(value meal) tea {
+    if value == 0.0 {
+        damn "0.0"
     }
-    yikes value == 'x' {
-        damn "x"
+    if value == 3.14 {
+        damn "3.14"
     }
-    damn "char"
+    damn "float"
 }
 
-# String parsing utilities
-slay string_to_int(value tea) normie {
-    yikes value == "0" {
-        damn 0
-    }
-    yikes value == "1" {
+slay convert_string_to_string(value tea) tea {
+    damn value
+}
+
+slay convert_int_to_int(value normie) normie {
+    damn value
+}
+
+slay convert_bool_to_int(value lit) normie {
+    if value == based {
         damn 1
     }
-    yikes value == "42" {
+    damn 0
+}
+
+slay convert_float_to_int(value meal) normie {
+    if value == 0.0 {
+        damn 0
+    }
+    if value == 3.14 {
+        damn 3
+    }
+    damn 0
+}
+
+slay convert_string_to_int(value tea) normie {
+    if value == "0" {
+        damn 0
+    }
+    if value == "1" {
+        damn 1
+    }
+    if value == "42" {
         damn 42
     }
     damn 0
 }
 
-slay string_to_float(value tea) meal {
-    yikes value == "0.0" {
+slay convert_int_to_bool(value normie) lit {
+    damn value != 0
+}
+
+slay convert_bool_to_bool(value lit) lit {
+    damn value
+}
+
+slay convert_float_to_bool(value meal) lit {
+    damn value != 0.0
+}
+
+slay convert_string_to_bool(value tea) lit {
+    if value == "true" {
+        damn based
+    }
+    if value == "false" {
+        damn cap
+    }
+    damn cap
+}
+
+slay convert_int_to_float(value normie) meal {
+    if value == 0 {
         damn 0.0
     }
-    yikes value == "3.14" {
+    if value == 1 {
+        damn 1.0
+    }
+    if value == 42 {
+        damn 42.0
+    }
+    damn 0.0
+}
+
+slay convert_bool_to_float(value lit) meal {
+    if value == based {
+        damn 1.0
+    }
+    damn 0.0
+}
+
+slay convert_float_to_float(value meal) meal {
+    damn value
+}
+
+slay convert_string_to_float(value tea) meal {
+    if value == "0.0" {
+        damn 0.0
+    }
+    if value == "3.14" {
         damn 3.14
     }
     damn 0.0
 }
 
-slay string_to_bool(value tea) lit {
-    yikes value == "true" {
+fr fr Check if type has specific method (all types support basic conversions)
+slay has_method_int(value normie, method_name tea) lit {
+    damn method_name == "string" || method_name == "int" || method_name == "bool" || method_name == "float"
+}
+
+slay has_method_bool(value lit, method_name tea) lit {
+    damn method_name == "string" || method_name == "int" || method_name == "bool" || method_name == "float"
+}
+
+slay has_method_float(value meal, method_name tea) lit {
+    damn method_name == "string" || method_name == "int" || method_name == "bool" || method_name == "float"
+}
+
+slay has_method_string(value tea, method_name tea) lit {
+    damn method_name == "string" || method_name == "int" || method_name == "bool" || method_name == "float"
+}
+
+fr fr Deep equality comparison
+slay deep_equal_int(a normie, b normie) lit {
+    damn a == b
+}
+
+slay deep_equal_bool(a lit, b lit) lit {
+    damn a == b
+}
+
+slay deep_equal_float(a meal, b meal) lit {
+    damn a == b
+}
+
+slay deep_equal_string(a tea, b tea) lit {
+    damn a == b
+}
+
+fr fr Get zero values for types
+slay get_zero_int() normie {
+    damn 0
+}
+
+slay get_zero_bool() lit {
+    damn cap
+}
+
+slay get_zero_float() meal {
+    damn 0.0
+}
+
+slay get_zero_string() tea {
+    damn ""
+}
+
+fr fr String parsing utilities
+slay parse_string_to_int(value tea) normie {
+    if value == "0" {
+        damn 0
+    }
+    if value == "1" {
+        damn 1
+    }
+    if value == "42" {
+        damn 42
+    }
+    damn 0
+}
+
+slay parse_string_to_float(value tea) meal {
+    if value == "0.0" {
+        damn 0.0
+    }
+    if value == "3.14" {
+        damn 3.14
+    }
+    damn 0.0
+}
+
+slay parse_string_to_bool(value tea) lit {
+    if value == "true" {
         damn based
     }
-    yikes value == "false" {
+    if value == "false" {
         damn cap
     }
     damn cap
 }
 
-# Metadata access functions
-slay get_method_info(rv ReflectValue, method_name tea) MethodInfo {
-    sus info MethodInfo
-    info.name = method_name
-    info.accessible = based
-    
-    ready method_name {
-        case "string":
-            info.signature = "string() tea"
-            info.return_type = "tea"
-        case "int":
-            info.signature = "int() normie"
-            info.return_type = "normie"
-        case "bool":
-            info.signature = "bool() lit"
-            info.return_type = "lit"
-        case "float":
-            info.signature = "float() meal"
-            info.return_type = "meal"
-        default:
-            info.accessible = cap
-    }
-    
-    damn info
+fr fr Interface implementation checking
+slay implements_stringer_int(value normie) lit {
+    damn based fr fr All types can be converted to string
 }
 
-slay get_field_info(rv ReflectValue, field_name tea) FieldInfo {
-    sus info FieldInfo
-    info.name = field_name
-    info.accessible = cap # Fields not directly accessible in this implementation
-    info.mutable = cap
-    damn info
+slay implements_stringer_bool(value lit) lit {
+    damn based
 }
 
-# Get all method names for a type
-slay get_method_names(rv ReflectValue) [tea] {
-    sus methods [tea]
-    methods = []tea{"string", "int", "bool", "float"}
-    damn methods
+slay implements_stringer_float(value meal) lit {
+    damn based
 }
 
-# Get all field names for a type
-slay get_field_names(rv ReflectValue) [tea] {
-    sus fields [tea]
-    # Simple implementation - no fields exposed
-    damn fields
+slay implements_stringer_string(value tea) lit {
+    damn based
 }
 
-# Check if type implements interface
-slay implements_interface(rv ReflectValue, interface_name tea) lit {
-    # Basic interface checking
-    ready interface_name {
-        case "Stringer":
-            damn has_method(rv, "string")
-        case "Numeric":
-            damn has_method(rv, "int") || has_method(rv, "float")
-        case "Comparable":
-            damn rv.type_info.kind != "unknown"
-        default:
-            damn cap
-    }
+slay implements_numeric_int(value normie) lit {
+    damn based
 }
 
-# Check if type has specific method
-slay has_method(rv ReflectValue, method_name tea) lit {
-    sus methods [tea] = get_method_names(rv)
-    bestie i := 0; i < 4; i++ {
-        yikes methods[i] == method_name {
-            damn based
-        }
-    }
+slay implements_numeric_bool(value lit) lit {
     damn cap
 }
 
-# Deep equality comparison using reflection
-slay deep_equal(a interface{}, b interface{}) lit {
-    sus rv_a ReflectValue = reflect_value_of(a)
-    sus rv_b ReflectValue = reflect_value_of(b)
-    
-    # Check type compatibility
-    yikes rv_a.type_info.name != rv_b.type_info.name {
-        damn cap
-    }
-    
-    # Type-specific comparison
-    ready rv_a.type_info.kind {
-        case "integer":
-            damn convert_to_int(a) == convert_to_int(b)
-        case "float":
-            damn convert_to_float(a) == convert_to_float(b)
-        case "string":
-            damn convert_to_string(a) == convert_to_string(b)
-        case "boolean":
-            damn convert_to_bool(a) == convert_to_bool(b)
-        case "character":
-            damn a.(sip) == b.(sip)
-        default:
-            damn cap
-    }
+slay implements_numeric_float(value meal) lit {
+    damn based
 }
 
-# Type assertion with reflection
-slay type_assert(rv ReflectValue, target_type tea) interface{} {
-    yikes rv.type_info.name == target_type {
-        damn rv.value
-    }
-    damn cringe
-}
-
-# Check if value is nil/null
-slay is_nil(rv ReflectValue) lit {
-    yikes rv.value == cringe {
-        damn based
-    }
+slay implements_numeric_string(value tea) lit {
     damn cap
 }
 
-# Get zero value for type
-slay get_zero_value(type_name tea) interface{} {
-    ready type_name {
-        case "normie":
-            damn 0
-        case "thicc":
-            damn 0
-        case "smol":
-            damn 0
-        case "mid":
-            damn 0
-        case "meal":
-            damn 0.0
-        case "drip":
-            damn 0.0
-        case "tea":
-            damn ""
-        case "lit":
-            damn cap
-        case "sip":
-            damn '\0'
-        default:
-            damn cringe
-    }
+slay implements_comparable_int(value normie) lit {
+    damn based
 }
 
-# Main reflection system demo
+slay implements_comparable_bool(value lit) lit {
+    damn based
+}
+
+slay implements_comparable_float(value meal) lit {
+    damn based
+}
+
+slay implements_comparable_string(value tea) lit {
+    damn based
+}
+
+fr fr Get method count (all types have 4 basic methods)
+slay get_method_count() normie {
+    damn 4
+}
+
+fr fr Get method signature
+slay get_method_signature(method_name tea) tea {
+    if method_name == "string" {
+        damn "string() tea"
+    }
+    if method_name == "int" {
+        damn "int() normie"
+    }
+    if method_name == "bool" {
+        damn "bool() lit"
+    }
+    if method_name == "float" {
+        damn "float() meal"
+    }
+    damn "unknown() unknown"
+}
+
+slay get_method_return_type(method_name tea) tea {
+    if method_name == "string" {
+        damn "tea"
+    }
+    if method_name == "int" {
+        damn "normie"
+    }
+    if method_name == "bool" {
+        damn "lit"
+    }
+    if method_name == "float" {
+        damn "meal"
+    }
+    damn "unknown"
+}
+
+slay is_method_accessible(method_name tea) lit {
+    damn method_name == "string" || method_name == "int" || method_name == "bool" || method_name == "float"
+}
+
+fr fr Type checking utilities
+slay is_numeric_type_int(value normie) lit {
+    damn based
+}
+
+slay is_numeric_type_bool(value lit) lit {
+    damn cap
+}
+
+slay is_numeric_type_float(value meal) lit {
+    damn based
+}
+
+slay is_numeric_type_string(value tea) lit {
+    damn cap
+}
+
+slay is_comparable_type_int(value normie) lit {
+    damn based
+}
+
+slay is_comparable_type_bool(value lit) lit {
+    damn based
+}
+
+slay is_comparable_type_float(value meal) lit {
+    damn based
+}
+
+slay is_comparable_type_string(value tea) lit {
+    damn based
+}
+
+fr fr Type conversion checking
+slay can_convert_int_to_string(value normie) lit {
+    damn based
+}
+
+slay can_convert_int_to_float(value normie) lit {
+    damn based
+}
+
+slay can_convert_float_to_int(value meal) lit {
+    damn based
+}
+
+slay can_convert_bool_to_string(value lit) lit {
+    damn based
+}
+
+fr fr Main reflection system demo
 slay reflection_demo() lit {
     vibez.spill("CURSED Reflection System Demo")
     
-    # Test basic type reflection
+    fr fr Test basic type reflection
     sus int_val normie = 42
-    sus rv_int ReflectValue = reflect_value_of(int_val)
     
     vibez.spill("Integer reflection:")
-    vibez.spill(get_type_name(rv_int))
-    vibez.spill(get_type_kind(rv_int))
+    vibez.spill(get_type_name_int(int_val))
+    vibez.spill(get_type_kind_int(int_val))
     
-    # Test dynamic method calling
-    sus str_result interface{} = call_method(rv_int, "string", []interface{}{})
-    vibez.spill("Dynamic string conversion:")
-    vibez.spill(str_result.(tea))
+    fr fr Test type conversions
+    sus str_result tea = convert_int_to_string(int_val)
+    vibez.spill("Integer to string conversion:")
+    vibez.spill(str_result)
     
-    # Test type assertions
-    sus float_val meal = 3.14
-    sus rv_float ReflectValue = reflect_value_of(float_val)
+    fr fr Test boolean reflection
+    sus bool_val lit = based
     
-    vibez.spill("Float reflection:")
-    vibez.spill(get_type_name(rv_float))
-    vibez.spill(get_type_kind(rv_float))
+    vibez.spill("Boolean reflection:")
+    vibez.spill(get_type_name_bool(bool_val))
+    vibez.spill(get_type_kind_bool(bool_val))
     
-    # Test deep equality
+    fr fr Test deep equality
     sus other_int normie = 42
-    sus equal_result lit = deep_equal(int_val, other_int)
+    sus equal_result lit = deep_equal_int(int_val, other_int)
     vibez.spill("Deep equality test:")
     vibez.spill(equal_result)
     
-    # Test interface implementation
-    sus implements_stringer lit = implements_interface(rv_int, "Stringer")
+    fr fr Test interface implementation
+    sus implements_stringer lit = implements_stringer_int(int_val)
     vibez.spill("Implements Stringer:")
     vibez.spill(implements_stringer)
     

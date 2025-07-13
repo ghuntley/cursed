@@ -144,6 +144,16 @@ slay validate_max_length(value tea, max_length normie) ValidationResult {
     damn result
 }
 
+slay validate_length(value tea, expected_length normie) ValidationResult {
+    sus result ValidationResult = create_validation_result()
+    
+    lowkey len(value) != expected_length {
+        add_error(&result, "Value must be exactly " + tea(expected_length) + " characters")
+    }
+    
+    damn result
+}
+
 slay validate_length_range(value tea, min_length normie, max_length normie) ValidationResult {
     sus result ValidationResult = create_validation_result()
     
@@ -616,6 +626,109 @@ slay validate_url(url tea) ValidationResult {
     damn result
 }
 
+// IP address validation (IPv4 and basic IPv6)
+slay validate_ip_address(ip tea) ValidationResult {
+    sus result ValidationResult = create_validation_result()
+    
+    lowkey len(ip) == 0 {
+        add_error(&result, "IP address cannot be empty")
+        damn result
+    }
+    
+    // Check if it's IPv6 (contains colon)
+    sus has_colon lit = contains_string(ip, ":")
+    
+    lowkey has_colon {
+        // Basic IPv6 validation
+        sus colon_count normie = 0
+        bestie i := 0; i < len(ip); i++ {
+            sus ch sip = get_char_at(ip, i)
+            lowkey ch == ':' {
+                colon_count++
+            } else lowkey !((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
+                add_error(&result, "IPv6 address contains invalid character: " + tea(ch))
+            }
+        }
+        
+        // IPv6 must have at least 2 colons and at most 7
+        lowkey colon_count < 2 || colon_count > 7 {
+            add_error(&result, "IPv6 address must have between 2 and 7 colons")
+        }
+        
+        // Check for double colon (only one allowed)
+        sus double_colon_count normie = 0
+        bestie i := 0; i < len(ip) - 1; i++ {
+            lowkey get_char_at(ip, i) == ':' && get_char_at(ip, i + 1) == ':' {
+                double_colon_count++
+            }
+        }
+        
+        lowkey double_colon_count > 1 {
+            add_error(&result, "IPv6 address can contain at most one double colon (::)")
+        }
+        
+        add_info(&result, "IPv6 address format detected")
+        
+    } else {
+        // IPv4 validation
+        sus dot_count normie = 0
+        sus current_octet tea = ""
+        sus octet_value normie = 0
+        
+        bestie i := 0; i <= len(ip); i++ {
+            lowkey i == len(ip) || get_char_at(ip, i) == '.' {
+                // End of octet
+                lowkey len(current_octet) == 0 {
+                    add_error(&result, "IPv4 address cannot have empty octet")
+                    ghosted
+                }
+                
+                lowkey len(current_octet) > 3 {
+                    add_error(&result, "IPv4 octet too long (maximum 3 digits)")
+                    ghosted
+                }
+                
+                // Check for leading zeros
+                lowkey len(current_octet) > 1 && get_char_at(current_octet, 0) == '0' {
+                    add_error(&result, "IPv4 octet cannot have leading zeros")
+                    ghosted
+                }
+                
+                // Convert to number and validate range
+                octet_value = string_to_int(current_octet)
+                lowkey octet_value > 255 {
+                    add_error(&result, "IPv4 octet must be between 0 and 255: " + current_octet)
+                }
+                
+                lowkey i == len(ip) {
+                    // End of string
+                    ghosted
+                } else {
+                    // Found a dot
+                    dot_count++
+                    current_octet = ""
+                }
+            } else {
+                sus ch sip = get_char_at(ip, i)
+                lowkey ch >= '0' && ch <= '9' {
+                    current_octet = current_octet + tea(ch)
+                } else {
+                    add_error(&result, "IPv4 address contains invalid character: " + tea(ch))
+                }
+            }
+        }
+        
+        // IPv4 must have exactly 3 dots (4 octets)
+        lowkey dot_count != 3 {
+            add_error(&result, "IPv4 address must have exactly 4 octets (3 dots)")
+        }
+        
+        add_info(&result, "IPv4 address format detected")
+    }
+    
+    damn result
+}
+
 // Credit card validation with Luhn algorithm
 slay validate_credit_card(card_number tea) ValidationResult {
     sus result ValidationResult = create_validation_result()
@@ -932,6 +1045,11 @@ slay is_valid_phone(phone tea) lit {
 
 slay is_valid_url(url tea) lit {
     sus result ValidationResult = validate_url(url)
+    damn result.is_valid
+}
+
+slay is_valid_ip(ip tea) lit {
+    sus result ValidationResult = validate_ip_address(ip)
     damn result.is_valid
 }
 
