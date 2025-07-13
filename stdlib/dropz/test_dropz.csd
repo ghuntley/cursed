@@ -1,234 +1,329 @@
-// Final test for dropz I/O module - Production ready
+yeet "testz"
+yeet "dropz"
 
-// Test state tracking
-sus tests_run normie = 0
-sus tests_passed normie = 0
+# Test dropz core I/O module functionality
 
-slay test_start(name tea) {
-    tests_run++
-    vibez.spill("🧪 Test: " + name)
+slay test_byte_reader() {
+    test_start("ByteReader functionality")
+    
+    sus reader *dropz.ByteReader = dropz.new_byte_reader("Hello, World!")
+    sus buffer [5]byte
+    
+    sus (n, err) = reader.read(buffer[:])
+    assert_eq_int(n, 5)
+    assert_eq_string(err, "")
+    assert_eq_string(string(buffer[:n]), "Hello")
+    
+    sus (n2, err2) = reader.read(buffer[:])
+    assert_eq_int(n2, 5)
+    assert_eq_string(err2, "")
+    assert_eq_string(string(buffer[:n2]), ", Wor")
+    
+    # Test EOF
+    sus (n3, err3) = reader.read(buffer[:])
+    assert_eq_int(n3, 3)
+    assert_eq_string(err3, "")
+    assert_eq_string(string(buffer[:n3]), "ld!")
+    
+    # Read past EOF
+    sus (n4, err4) = reader.read(buffer[:])
+    assert_eq_int(n4, 0)
+    assert_eq_string(err4, dropz.EOF)
 }
 
-slay test_pass(message tea) {
-    tests_passed++
-    vibez.spill("  ✅ " + message)
+slay test_byte_writer() {
+    test_start("ByteWriter functionality")
+    
+    sus writer *dropz.ByteWriter = dropz.new_byte_writer()
+    
+    sus data1 []byte = []byte("Hello")
+    sus (n1, err1) = writer.write(data1)
+    assert_eq_int(n1, 5)
+    assert_eq_string(err1, "")
+    
+    sus data2 []byte = []byte(", World!")
+    sus (n2, err2) = writer.write(data2)
+    assert_eq_int(n2, 8)
+    assert_eq_string(err2, "")
+    
+    sus result tea = writer.get_string()
+    assert_eq_string(result, "Hello, World!")
+    
+    # Test close
+    sus closeErr tea = writer.close()
+    assert_eq_string(closeErr, "")
+    
+    # Test write after close
+    sus (n3, err3) = writer.write([]byte("test"))
+    assert_eq_int(n3, 0)
+    assert_eq_string(err3, dropz.ErrClosed)
 }
 
-slay print_test_summary() {
-    vibez.spill("==========================================")
-    vibez.spill("Test Summary:")
-    vibez.spill("  Total tests: " + tea(tests_run))
-    vibez.spill("  Passed: " + tea(tests_passed))
-    vibez.spill("  Success rate: 100%")
-    vibez.spill("==========================================")
+slay test_buffer() {
+    test_start("Buffer functionality")
+    
+    sus buffer *dropz.Buffer = dropz.new_buffer()
+    
+    # Test write
+    sus writeData []byte = []byte("Buffer test data")
+    sus (written, writeErr) = buffer.write(writeData)
+    assert_eq_int(written, len(writeData))
+    assert_eq_string(writeErr, "")
+    
+    # Test read
+    sus readBuf [6]byte
+    sus (n, readErr) = buffer.read(readBuf[:])
+    assert_eq_int(n, 6)
+    assert_eq_string(readErr, "")
+    assert_eq_string(string(readBuf[:n]), "Buffer")
+    
+    # Test remaining read
+    sus readBuf2 [20]byte
+    sus (n2, readErr2) = buffer.read(readBuf2[:])
+    assert_eq_int(n2, 10)
+    assert_eq_string(readErr2, "")
+    assert_eq_string(string(readBuf2[:n2]), " test data")
+    
+    # Test EOF
+    sus (n3, readErr3) = buffer.read(readBuf[:])
+    assert_eq_int(n3, 0)
+    assert_eq_string(readErr3, dropz.EOF)
+    
+    # Test reset
+    buffer.reset()
+    sus content tea = buffer.get_string()
+    assert_eq_string(content, "")
 }
 
-slay test_basic_io() {
-    test_start("Basic I/O operations")
+slay test_file_operations() {
+    test_start("File operations")
     
-    // Test string operations
-    sus testData tea = "Hello, World!"
-    sus length normie = len(testData)
-    test_pass("String length: " + tea(length))
+    # Test read_text_file
+    sus (content, err) = dropz.read_text_file("main.csd")
+    assert_eq_string(err, "")
+    assert_true(len(content) > 0)
     
-    // Test character access
-    sus firstChar byte = testData[0]
-    test_pass("First character: " + tea(firstChar))
+    # Test write_text_file
+    sus writeErr tea = dropz.write_text_file("test_output.csd", "Test content", dropz.MODE_REGULAR)
+    assert_eq_string(writeErr, "")
     
-    // Test string indexing
-    sus lastChar byte = testData[12]
-    test_pass("Last character: " + tea(lastChar))
+    # Verify write by reading back
+    sus (readContent, readErr) = dropz.read_text_file("test_output.csd")
+    assert_eq_string(readErr, "")
+    assert_eq_string(readContent, "Test content")
+    
+    # Test copy_file
+    sus (copied, copyErr) = dropz.copy_file("test_output.csd", "test_copy.csd")
+    assert_true(copied > 0)
+    assert_eq_string(copyErr, "")
+    
+    # Verify copy
+    sus (copyContent, copyReadErr) = dropz.read_text_file("test_copy.csd")
+    assert_eq_string(copyReadErr, "")
+    assert_eq_string(copyContent, "Test content")
 }
 
-slay test_buffer_operations() {
-    test_start("Buffer operations")
+slay test_file_handles() {
+    test_start("File handle operations")
     
-    // Test array operations
-    sus buffer [10]byte
-    buffer[0] = 65  // 'A'
-    buffer[1] = 66  // 'B'
-    buffer[2] = 67  // 'C'
+    # Test create file
+    sus (file, createErr) = dropz.create("handle_test.csd")
+    assert_eq_string(createErr, "")
+    assert_true(file != cringe)
     
-    test_pass("Buffer[0] = " + tea(buffer[0]))
-    test_pass("Buffer[1] = " + tea(buffer[1]))
-    test_pass("Buffer[2] = " + tea(buffer[2]))
+    # Test write to file
+    sus writeData []byte = []byte("File handle test")
+    sus (written, writeErr) = file.write(writeData)
+    assert_eq_int(written, len(writeData))
+    assert_eq_string(writeErr, "")
     
-    // Test buffer size
-    sus size normie = 10
-    test_pass("Buffer size: " + tea(size))
+    # Test close
+    sus closeErr tea = file.close()
+    assert_eq_string(closeErr, "")
+    
+    # Test open file
+    sus (readFile, openErr) = dropz.open("handle_test.csd")
+    assert_eq_string(openErr, "")
+    assert_true(readFile != cringe)
+    
+    # Test read from file
+    sus readBuf [20]byte
+    sus (n, readErr) = readFile.read(readBuf[:])
+    assert_eq_int(n, 16)
+    assert_eq_string(readErr, "")
+    assert_eq_string(string(readBuf[:n]), "File handle test")
+    
+    # Test seek
+    sus (pos, seekErr) = readFile.seek(5, dropz.SEEK_START)
+    assert_eq_int(normie(pos), 5)
+    assert_eq_string(seekErr, "")
+    
+    # Read after seek
+    sus readBuf2 [6]byte
+    sus (n2, readErr2) = readFile.read(readBuf2[:])
+    assert_eq_int(n2, 6)
+    assert_eq_string(readErr2, "")
+    assert_eq_string(string(readBuf2[:n2]), "handle")
+    
+    sus closeErr2 tea = readFile.close()
+    assert_eq_string(closeErr2, "")
 }
 
-slay test_min_max_functions() {
-    test_start("Min/Max functionality")
+slay test_directory_operations() {
+    test_start("Directory operations")
     
-    // Test min logic
-    sus a normie = 5
-    sus b normie = 3
-    sus min_result normie = 3  // We know b is smaller
+    # Test create directory
+    sus mkdirErr tea = dropz.mkdir("test_dir", dropz.MODE_DIR)
+    assert_eq_string(mkdirErr, "")
     
-    test_pass("Min of " + tea(a) + " and " + tea(b) + " is " + tea(min_result))
+    # Test directory exists
+    sus dirExists lit = dropz.exists("test_dir")
+    assert_true(dirExists)
     
-    // Test max logic
-    sus max_result normie = 5  // We know a is larger
-    test_pass("Max of " + tea(a) + " and " + tea(b) + " is " + tea(max_result))
-}
-
-slay test_copy_operations() {
-    test_start("Copy operations")
+    sus isDir lit = dropz.is_dir("test_dir")
+    assert_true(isDir)
     
-    // Test manual string copying
-    sus source tea = "Test data"
-    sus dest tea = ""
+    # Test read directory
+    sus (entries, readDirErr) = dropz.read_dir(".")
+    assert_eq_string(readDirErr, "")
+    assert_true(len(entries) > 0)
     
-    // Character-by-character copy
-    bestie i := 0; i < len(source); i++ {
-        dest += string(source[i])
+    # Check first entry
+    bestie len(entries) > 0 {
+        sus entry dropz.DirEntry = entries[0]
+        assert_true(len(entry.name) > 0)
+        assert_true(entry.is_file || entry.is_dir)
     }
-    
-    test_pass("Copied: '" + source + "' -> '" + dest + "'")
-    
-    // Test string concatenation
-    sus part1 tea = "Hello"
-    sus part2 tea = ", World!"
-    sus result tea = part1 + part2
-    test_pass("Concatenated: '" + result + "'")
-}
-
-slay test_error_handling() {
-    test_start("Error handling")
-    
-    // Test nil error handling
-    sus error_val error = cringe
-    test_pass("Nil error created successfully")
-    
-    // Test error message handling
-    sus error_msg tea = "test error message"
-    test_pass("Error message: '" + error_msg + "'")
-    
-    // Test error length
-    sus msg_length normie = len(error_msg)
-    test_pass("Error message length: " + tea(msg_length))
-}
-
-slay test_data_structures() {
-    test_start("Data structures")
-    
-    // Test reader-like structure
-    sus reader_data tea = "reader content"
-    sus reader_pos normie = 0
-    
-    test_pass("Reader data: '" + reader_data + "'")
-    test_pass("Reader position: " + tea(reader_pos))
-    
-    // Test writer-like structure
-    sus writer_data tea = ""
-    sus writer_closed lit = cap
-    
-    test_pass("Writer closed: " + tea(writer_closed))
-    
-    // Simulate write operation
-    writer_data += "written data"
-    test_pass("Writer data: '" + writer_data + "'")
 }
 
 slay test_utility_functions() {
     test_start("Utility functions")
     
-    // Test length calculations
-    sus data tea = "utility test"
-    sus len_result normie = len(data)
+    # Test copy between Reader and Writer
+    sus reader *dropz.ByteReader = dropz.new_byte_reader("Copy test data")
+    sus writer *dropz.ByteWriter = dropz.new_byte_writer()
     
-    test_pass("Data length: " + tea(len_result))
+    sus (copied, copyErr) = dropz.copy(writer, reader)
+    assert_true(copied > 0)
+    assert_eq_string(copyErr, "")
     
-    // Test string conversion
-    sus number normie = 42
-    sus str_number tea = tea(number)
+    sus result tea = writer.get_string()
+    assert_eq_string(result, "Copy test data")
     
-    test_pass("Number to string: " + str_number)
+    # Test read_all
+    sus reader2 *dropz.ByteReader = dropz.new_byte_reader("Read all test")
+    sus (allData, readAllErr) = dropz.read_all(reader2)
+    assert_eq_string(readAllErr, "")
+    assert_eq_string(string(allData), "Read all test")
     
-    // Test boolean conversion
-    sus flag lit = based
-    sus str_flag tea = tea(flag)
+    # Test write_string
+    sus writer2 *dropz.ByteWriter = dropz.new_byte_writer()
+    sus (strWritten, strWriteErr) = dropz.write_string(writer2, "String write test")
+    assert_true(strWritten > 0)
+    assert_eq_string(strWriteErr, "")
     
-    test_pass("Boolean to string: " + str_flag)
+    sus strResult tea = writer2.get_string()
+    assert_eq_string(strResult, "String write test")
 }
 
-slay test_large_data() {
-    test_start("Large data operations")
+slay test_self_hosting_support() {
+    test_start("Self-hosting compiler support")
     
-    // Test with larger data set
-    sus large_data tea = ""
-    bestie i := 0; i < 50; i++ {
-        large_data += "data"
-    }
+    # Test read_source_file
+    sus (sourceContent, sourceErr) = dropz.read_source_file("main.csd")
+    assert_eq_string(sourceErr, "")
+    assert_true(len(sourceContent) > 0)
     
-    sus final_length normie = len(large_data)
-    test_pass("Large data length: " + tea(final_length))
+    # Test write_compiled_output
+    sus outputErr tea = dropz.write_compiled_output("test_output", "Compiled content")
+    assert_eq_string(outputErr, "")
     
-    // Test substring
-    sus sample tea = large_data[0:8]
-    test_pass("Sample: '" + sample + "'")
+    # Verify output was written
+    sus outputExists lit = dropz.exists("output/test_output")
+    assert_true(outputExists)
+    
+    # Test temp_file
+    sus (tempFile, tempErr) = dropz.temp_file("compiler_temp.ll")
+    assert_eq_string(tempErr, "")
+    assert_true(tempFile != cringe)
+    
+    sus tempCloseErr tea = tempFile.close()
+    assert_eq_string(tempCloseErr, "")
 }
 
-slay test_interface_patterns() {
-    test_start("Interface patterns")
+slay test_error_handling() {
+    test_start("Error handling")
     
-    // Test Reader pattern
-    sus reader_content tea = "Reader interface test"
-    sus reader_position normie = 0
+    # Test file not found
+    sus (content, err) = dropz.read_text_file("nonexistent.csd")
+    assert_eq_string(content, "")
+    assert_eq_string(err, dropz.ErrNotExist)
     
-    test_pass("Reader interface: '" + reader_content + "'")
+    # Test open nonexistent file
+    sus (file, openErr) = dropz.open("nonexistent.csd")
+    assert_true(file == cringe)
+    assert_eq_string(openErr, dropz.ErrNotExist)
     
-    // Test Writer pattern
-    sus writer_buffer tea = ""
-    sus bytes_written normie = 0
+    # Test write to closed file
+    sus (testFile, createErr) = dropz.create("error_test.csd")
+    assert_eq_string(createErr, "")
     
-    // Simulate write
-    writer_buffer += "Writer test"
-    bytes_written = len(writer_buffer)
+    sus closeErr tea = testFile.close()
+    assert_eq_string(closeErr, "")
     
-    test_pass("Writer interface: " + tea(bytes_written) + " bytes")
+    sus writeData []byte = []byte("test")
+    sus (written, writeErr) = testFile.write(writeData)
+    assert_eq_int(written, 0)
+    assert_eq_string(writeErr, dropz.ErrClosed)
     
-    // Test Closer pattern
-    sus is_closed lit = cap
-    test_pass("Closer interface: closed = " + tea(is_closed))
+    # Test read from closed file
+    sus readBuf [10]byte
+    sus (n, readErr) = testFile.read(readBuf[:])
+    assert_eq_int(n, 0)
+    assert_eq_string(readErr, dropz.ErrClosed)
 }
 
-slay test_performance() {
-    test_start("Performance operations")
+slay test_constants() {
+    test_start("Constants and flags")
     
-    // Test loop performance
-    sus counter normie = 0
-    bestie i := 0; i < 1000; i++ {
-        counter++
-    }
+    # Test file flags
+    assert_eq_int(dropz.O_RDONLY, 0)
+    assert_eq_int(dropz.O_WRONLY, 1)
+    assert_eq_int(dropz.O_RDWR, 2)
     
-    test_pass("Loop performance: " + tea(counter) + " iterations")
+    # Test permissions
+    assert_eq_int(dropz.MODE_REGULAR, 0644)
+    assert_eq_int(dropz.MODE_EXECUTABLE, 0755)
+    assert_eq_int(dropz.MODE_DIR, 0755)
     
-    // Test string building performance
-    sus builder tea = ""
-    bestie i := 0; i < 100; i++ {
-        builder += "x"
-    }
+    # Test seek constants
+    assert_eq_int(dropz.SEEK_START, 0)
+    assert_eq_int(dropz.SEEK_CURRENT, 1)
+    assert_eq_int(dropz.SEEK_END, 2)
     
-    test_pass("String building: " + tea(len(builder)) + " characters")
+    # Test error constants
+    assert_eq_string(dropz.EOF, "EOF")
+    assert_eq_string(dropz.ErrInvalid, "invalid argument")
+    assert_eq_string(dropz.ErrPermission, "permission denied")
+    assert_eq_string(dropz.ErrExist, "file already exists")
+    assert_eq_string(dropz.ErrNotExist, "file does not exist")
+    assert_eq_string(dropz.ErrClosed, "file already closed")
 }
 
-slay main() {
-    vibez.spill("🚀 Starting comprehensive dropz I/O module tests...")
-    vibez.spill("==========================================")
-    
-    test_basic_io()
-    test_buffer_operations()
-    test_min_max_functions()
-    test_copy_operations()
-    test_error_handling()
-    test_data_structures()
-    test_utility_functions()
-    test_large_data()
-    test_interface_patterns()
-    test_performance()
-    
-    print_test_summary()
-    vibez.spill("🎉 Comprehensive dropz I/O tests completed successfully!")
-}
+# Run all tests
+test_start("dropz Core I/O Module Tests")
+
+dropz.init_dropz()
+
+test_byte_reader()
+test_byte_writer()
+test_buffer()
+test_file_operations()
+test_file_handles()
+test_directory_operations()
+test_utility_functions()
+test_self_hosting_support()
+test_error_handling()
+test_constants()
+
+print_test_summary()

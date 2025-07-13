@@ -209,11 +209,12 @@ impl ParallelCompiler {
 
     pub fn stop(&mut self) -> Result<(), CursedError> {
         if let Some(shutdown_tx) = self.shutdown_tx.take() {
+            // Ignore SendError - workers may have already shut down
             let _ = shutdown_tx.send(());
         }
 
         for handle in self.worker_handles.drain(..) {
-            handle.join().map_err(|_| CursedError::RuntimeError("Worker thread panic".to_string()))?;
+            let _ = handle.join(); // Workers should shut down gracefully
         }
 
         Ok(())
@@ -248,8 +249,10 @@ impl ParallelCompiler {
         loop {
             // Check for shutdown signal
             if let Ok(rx) = shutdown_rx.lock() {
-                if rx.try_recv().is_ok() {
-                    break;
+                match rx.try_recv() {
+                    Ok(()) => break, // Shutdown requested
+                    Err(mpsc::TryRecvError::Disconnected) => break, // Channel closed
+                    Err(mpsc::TryRecvError::Empty) => {} // Continue working
                 }
             }
 
@@ -363,6 +366,13 @@ impl ParallelCompiler {
             println!("Compiling job: {} (priority: {:?})", job.id, job.priority);
         }
         Ok(())
+    }
+}
+
+impl Drop for ParallelCompiler {
+    fn drop(&mut self) {
+        // Ensure workers are properly shut down
+        let _ = self.stop();
     }
 }
 

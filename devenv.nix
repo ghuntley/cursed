@@ -91,7 +91,7 @@
 
     # BFD linker configuration is handled by .cargo/config.toml
     # Just ensure gcc and binutils are available in PATH
-    export PATH="${pkgs.gcc}/bin:${pkgs.binutils}/bin:$PATH"
+    export PATH="${pkgs.llvmPackages_17.llvm}/bin:${pkgs.gcc}/bin:${pkgs.binutils}/bin:$PATH"
   '';
 
 

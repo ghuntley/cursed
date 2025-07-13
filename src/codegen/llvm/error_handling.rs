@@ -284,6 +284,11 @@ impl ErrorHandlingCodegen {
         ir.push_str("declare i8* @cursed_get_goroutine_error_context(i64)\n");
         ir.push_str("declare void @cursed_clear_goroutine_error_context(i64)\n");
         ir.push_str("declare i8* @cursed_create_enhanced_context(i8*, i64)\n");
+        ir.push_str("declare i8* @cursed_link_error_context(i8*, i8*)\n");
+        ir.push_str("declare i8* @cursed_capture_stack_trace()\n");
+        ir.push_str("declare i64 @cursed_get_current_goroutine_id()\n");
+        ir.push_str("declare i64 @time(i64*)\n");
+        ir.push_str("declare i8* @cursed_propagate_with_context(i8*, i8*)\n");
         
         // Memory management functions - handled by main codegen deduplication
         // malloc and free are declared in main.rs to avoid duplicates

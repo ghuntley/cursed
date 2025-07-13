@@ -1,7 +1,7 @@
 //! LLVM Function Compilation Module
 //! Complete function compilation with full LLVM IR generation
 
-use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression};
+use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression, YikesStatement, FamStatement, ShookExpression};
 use crate::error::CursedError;
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use std::collections::HashMap;
@@ -395,6 +395,68 @@ impl FunctionCompiler {
                     return Err(CursedError::internal_error("Continue statement outside of loop"));
                 }
             },
+            Statement::Yikes(yikes_stmt) => {
+                ir.push_str("  ; Error handling statement (yikes)\n");
+                
+                // Generate error context
+                let error_message = format!("Error in yikes statement: {}", yikes_stmt.name);
+                let context_register = self.next_register();
+                ir.push_str(&format!("  {} = call i8* @malloc(i32 64)  ; Allocate error context\n", context_register));
+                
+                // Generate error message string constant
+                let msg_label = self.next_label();
+                let msg_len = error_message.len();
+                ir.push_str(&format!("  @error_msg_{} = private unnamed_addr constant [{} x i8] c\"{}\\00\"\n", 
+                                    msg_label, msg_len + 1, error_message));
+                
+                // Create error object
+                let error_register = self.next_register();
+                ir.push_str(&format!("  {} = call i8* @malloc(i32 32)  ; Allocate error object\n", error_register));
+                let init_register = self.next_register();
+                ir.push_str(&format!("  {} = call i8* @cursed_error_init(i8* {}, i8* getelementptr inbounds ([{} x i8], [{} x i8]* @error_msg_{}, i32 0, i32 0))\n", 
+                                    init_register, error_register, msg_len + 1, msg_len + 1, msg_label));
+                
+                // Store error variable if needed
+                if !yikes_stmt.name.is_empty() {
+                    let var_register = self.next_register();
+                    ir.push_str(&format!("  {} = alloca i8*, align 8\n", var_register));
+                    ir.push_str(&format!("  store i8* {}, i8** {}, align 8\n", error_register, var_register));
+                    self.variables.insert(yikes_stmt.name.clone(), var_register);
+                }
+            },
+            Statement::Fam(fam_stmt) => {
+                ir.push_str("  ; Error recovery statement (fam)\n");
+                
+                // Generate recovery block label
+                let recovery_label = format!("recovery_{}", self.next_label());
+                let normal_label = format!("normal_{}", self.next_label());
+                let end_label = format!("end_{}", self.next_label());
+                
+                // Set up exception handling
+                ir.push_str(&format!("  invoke void @cursed_try_begin()\n"));
+                ir.push_str(&format!("    to label %{} unwind label %{}\n", normal_label, recovery_label));
+                
+                // Normal execution block
+                ir.push_str(&format!("{}:\n", normal_label));
+                
+                // Generate recovery block code
+                for statement in &fam_stmt.body {
+                    let stmt_ir = self.compile_statement(statement)?;
+                    ir.push_str(&stmt_ir);
+                }
+                
+                ir.push_str(&format!("  call void @cursed_try_end()\n"));
+                ir.push_str(&format!("  br label %{}\n", end_label));
+                
+                // Recovery block
+                ir.push_str(&format!("{}:\n", recovery_label));
+                ir.push_str(&format!("  %panic_value = call i8* @cursed_get_panic_value()\n"));
+                ir.push_str(&format!("  ; Recovery code would go here\n"));
+                ir.push_str(&format!("  br label %{}\n", end_label));
+                
+                // End block
+                ir.push_str(&format!("{}:\n", end_label));
+            },
             _ => {
                 ir.push_str("  ; Unsupported statement\n");
             }
@@ -534,6 +596,36 @@ impl FunctionCompiler {
             },
             Expression::Literal(literal) => {
                 self.compile_literal_expression(literal)
+            },
+            Expression::Shook(shook_expr) => {
+                self.ir_code.push_str("  ; Error propagation (shook)\n");
+                
+                // Generate error context for propagation
+                let context_register = self.next_register();
+                self.ir_code.push_str(&format!("  {} = call i8* @malloc(i32 64)  ; Allocate error context\n", context_register));
+                
+                // Generate the wrapped expression
+                let wrapped_result = self.compile_expression(&shook_expr.expression)?;
+                
+                // Generate error checking code
+                let check_register = self.next_register();
+                let success_label = format!("success_{}", self.next_label());
+                let error_label = format!("error_{}", self.next_label());
+                
+                self.ir_code.push_str(&format!("  {} = call i1 @cursed_is_error(i8* {})\n", check_register, wrapped_result));
+                self.ir_code.push_str(&format!("  br i1 {}, label %{}, label %{}\n", 
+                                            check_register, error_label, success_label));
+                
+                // Error propagation block
+                self.ir_code.push_str(&format!("{}:\n", error_label));
+                self.ir_code.push_str(&format!("  call void @cursed_propagate_error(i8* {})\n", wrapped_result));
+                self.ir_code.push_str(&format!("  ret i8* {}  ; Early return with error\n", wrapped_result));
+                
+                // Success block
+                self.ir_code.push_str(&format!("{}:\n", success_label));
+                self.ir_code.push_str(&format!("  ; Continue with normal execution\n"));
+                
+                Ok(wrapped_result)
             },
             #[allow(unreachable_patterns)]
             _ => {
