@@ -1,294 +1,403 @@
 yeet "testz"
 yeet "ipc"
 
-# Comprehensive IPC Module Tests
-# Tests all inter-process communication functionality
+# Test IPC module functionality
+test_start("IPC Module Comprehensive Tests")
 
-# ===== IPC Channel Tests =====
+# ==============================================================================
+# INITIALIZATION TESTS
+# ==============================================================================
 
-test_start("IPC Channel Creation")
-sus channel := ipc_create_channel("test_channel", 1024)
-sus (name, buffer_size, is_open) := channel
-assert_eq_string(name, "test_channel")
-assert_eq_int(buffer_size, 1024)
-assert_true(is_open)
+test_start("IPC Initialization")
+assert_true(ipc.init_ipc())
+print_test_summary()
 
-test_start("IPC Message Sending")
-sus channel := ipc_create_channel("msg_channel", 2048)
-sus send_result := ipc_send_message(channel, 1, "Hello IPC", 1)
-assert_true(send_result)
+test_start("IPC Configuration")
+sus config map = {
+    "max_message_size": 32768,
+    "max_queue_size": 500,
+    "timeout_ms": 3000
+}
+assert_true(ipc.configure_ipc(config))
 
-test_start("IPC Message Receiving")
-sus channel := ipc_create_channel("recv_channel", 2048)
-sus message := ipc_receive_message(channel)
-sus (msg_id, content, priority, timestamp) := message
-assert_eq_int(msg_id, 1)
-assert_eq_string(content, "Hello from IPC")
-assert_eq_int(priority, 1)
+sus retrieved_config map = ipc.get_ipc_config()
+assert_eq_int(retrieved_config.get("max_message_size"), 32768)
+assert_eq_int(retrieved_config.get("max_queue_size"), 500)
+assert_eq_int(retrieved_config.get("timeout_ms"), 3000)
+print_test_summary()
 
-test_start("IPC Channel Closing")
-sus channel := ipc_create_channel("close_channel", 1024)
-sus closed_channel := ipc_close_channel(channel)
-sus (name, buffer_size, is_open) := closed_channel
-assert_eq_string(name, "close_channel")
-assert_false(is_open)
+# ==============================================================================
+# NAMED PIPES TESTS
+# ==============================================================================
 
-# ===== Process Coordination Tests =====
+test_start("Named Pipes Creation")
+assert_true(ipc.create_named_pipe("test_pipe", 1024))
+assert_false(ipc.create_named_pipe("test_pipe", 1024))  # Should fail - already exists
+print_test_summary()
 
-test_start("Process Registration")
-sus process := ipc_register_process(1234, "test_process")
-sus (pid, name, status, created_at) := process
-assert_eq_int(pid, 1234)
-assert_eq_string(name, "test_process")
-assert_eq_string(status, "active")
+test_start("Named Pipes Readers/Writers")
+assert_true(ipc.open_pipe_reader("test_pipe", "reader1"))
+assert_true(ipc.open_pipe_writer("test_pipe", "writer1"))
+assert_false(ipc.open_pipe_reader("nonexistent_pipe", "reader1"))  # Should fail
+print_test_summary()
 
-test_start("Process Alive Check")
-sus process := ipc_register_process(5678, "alive_process")
-sus is_alive := ipc_process_alive(process)
-assert_true(is_alive)
+test_start("Named Pipes Data Transfer")
+assert_true(ipc.write_to_pipe("test_pipe", "Hello, World!"))
+assert_true(ipc.write_to_pipe("test_pipe", "Second message"))
 
-test_start("Process Signal Terminate")
-sus process := ipc_register_process(9999, "signal_process")
-sus signal_result := ipc_signal_process(process, "terminate")
-assert_true(signal_result)
+sus received1 tea = ipc.read_from_pipe("test_pipe")
+assert_eq_string(received1, "Hello, World!")
 
-test_start("Process Signal Suspend")
-sus process := ipc_register_process(8888, "suspend_process")
-sus signal_result := ipc_signal_process(process, "suspend")
-assert_true(signal_result)
+sus received2 tea = ipc.read_from_pipe("test_pipe")
+assert_eq_string(received2, "Second message")
 
-test_start("Process Signal Resume")
-sus process := ipc_register_process(7777, "resume_process")
-sus signal_result := ipc_signal_process(process, "resume")
-assert_true(signal_result)
+sus empty tea = ipc.read_from_pipe("test_pipe")
+assert_eq_string(empty, "")  # No more data
+print_test_summary()
 
-test_start("Process Unknown Signal")
-sus process := ipc_register_process(6666, "unknown_signal_process")
-sus signal_result := ipc_signal_process(process, "unknown_signal")
-assert_false(signal_result)
+test_start("Named Pipes Buffer Overflow")
+# Create small pipe and fill it
+assert_true(ipc.create_named_pipe("small_pipe", 2))
+assert_true(ipc.write_to_pipe("small_pipe", "msg1"))
+assert_true(ipc.write_to_pipe("small_pipe", "msg2"))
+assert_false(ipc.write_to_pipe("small_pipe", "msg3"))  # Should fail - buffer full
+print_test_summary()
 
-# ===== Shared Memory Tests =====
-
-test_start("Shared Memory Creation")
-sus memory := ipc_create_shared_memory("test_memory", 4096)
-sus (name, size, permissions) := memory
-assert_eq_string(name, "test_memory")
-assert_eq_int(size, 4096)
-assert_eq_int(permissions, 666)
-
-test_start("Shared Memory Write")
-sus memory := ipc_create_shared_memory("write_memory", 2048)
-sus write_result := ipc_write_shared_memory(memory, 0, "test_data")
-assert_true(write_result)
-
-test_start("Shared Memory Write Out of Bounds")
-sus memory := ipc_create_shared_memory("bounds_memory", 1024)
-sus write_result := ipc_write_shared_memory(memory, 2048, "test_data")
-assert_false(write_result)
-
-test_start("Shared Memory Read")
-sus memory := ipc_create_shared_memory("read_memory", 2048)
-sus data := ipc_read_shared_memory(memory, 0, 100)
-assert_eq_string(data, "simulated_data_from_shared_memory")
-
-test_start("Shared Memory Read Out of Bounds")
-sus memory := ipc_create_shared_memory("bounds_read_memory", 1024)
-sus data := ipc_read_shared_memory(memory, 1024, 100)
-assert_eq_string(data, "")
-
-# ===== Message Queue Tests =====
+# ==============================================================================
+# MESSAGE QUEUES TESTS
+# ==============================================================================
 
 test_start("Message Queue Creation")
-sus queue := ipc_create_message_queue("test_queue", 10)
-sus (name, max_messages, current_count) := queue
-assert_eq_string(name, "test_queue")
-assert_eq_int(max_messages, 10)
-assert_eq_int(current_count, 0)
+assert_true(ipc.create_message_queue("test_queue", 10))
+assert_false(ipc.create_message_queue("test_queue", 10))  # Should fail - already exists
+print_test_summary()
 
-test_start("Message Queue Push")
-sus queue := ipc_create_message_queue("push_queue", 5)
-sus message := IpcMessage(1, "queue_message", 1, 1640995200)
-sus updated_queue := ipc_queue_push(queue, message)
-sus (name, max_messages, current_count) := updated_queue
-assert_eq_int(current_count, 1)
+test_start("Message Queue Priority Handling")
+assert_true(ipc.send_message("test_queue", "low_priority", ipc.MSG_PRIORITY_LOW))
+assert_true(ipc.send_message("test_queue", "high_priority", ipc.MSG_PRIORITY_HIGH))
+assert_true(ipc.send_message("test_queue", "normal_priority", ipc.MSG_PRIORITY_NORMAL))
+assert_true(ipc.send_message("test_queue", "urgent_priority", ipc.MSG_PRIORITY_URGENT))
 
-test_start("Message Queue Pop")
-sus queue := ipc_create_message_queue("pop_queue", 5)
-sus message := IpcMessage(1, "test_message", 1, 1640995200)
-sus queue_with_message := ipc_queue_push(queue, message)
-sus (popped_message, updated_queue) := ipc_queue_pop(queue_with_message)
-sus (msg_id, content, priority, timestamp) := popped_message
-assert_eq_int(msg_id, 1)
-assert_eq_string(content, "queued_message")
+# Messages should be received in priority order: urgent, high, normal, low
+sus msg1 map = ipc.receive_message("test_queue")
+assert_eq_string(msg1.get("content"), "urgent_priority")
+assert_eq_int(msg1.get("priority"), ipc.MSG_PRIORITY_URGENT)
 
-test_start("Message Queue Pop Empty")
-sus empty_queue := ipc_create_message_queue("empty_queue", 5)
-sus (popped_message, unchanged_queue) := ipc_queue_pop(empty_queue)
-sus (msg_id, content, priority, timestamp) := popped_message
-assert_eq_int(msg_id, 0)
-assert_eq_string(content, "")
+sus msg2 map = ipc.receive_message("test_queue")
+assert_eq_string(msg2.get("content"), "high_priority")
 
-# ===== Semaphore Tests =====
+sus msg3 map = ipc.receive_message("test_queue")
+assert_eq_string(msg3.get("content"), "normal_priority")
+
+sus msg4 map = ipc.receive_message("test_queue")
+assert_eq_string(msg4.get("content"), "low_priority")
+print_test_summary()
+
+test_start("Message Queue Overflow")
+# Create small queue and fill it
+assert_true(ipc.create_message_queue("small_queue", 2))
+assert_true(ipc.send_message("small_queue", "msg1", ipc.MSG_PRIORITY_NORMAL))
+assert_true(ipc.send_message("small_queue", "msg2", ipc.MSG_PRIORITY_NORMAL))
+assert_false(ipc.send_message("small_queue", "msg3", ipc.MSG_PRIORITY_NORMAL))  # Should fail
+print_test_summary()
+
+test_start("Message Queue Empty Read")
+sus empty_msg map = ipc.receive_message("empty_queue_test")
+assert_eq_int(empty_msg.size(), 0)  # Empty map for non-existent queue
+
+# Empty existing queue
+ipc.receive_message("small_queue")
+ipc.receive_message("small_queue")
+sus empty_msg2 map = ipc.receive_message("small_queue")
+assert_eq_int(empty_msg2.size(), 0)  # Empty map for empty queue
+print_test_summary()
+
+# ==============================================================================
+# SHARED MEMORY TESTS
+# ==============================================================================
+
+test_start("Shared Memory Creation")
+assert_true(ipc.create_shared_memory("test_shm", 1024))
+assert_false(ipc.create_shared_memory("test_shm", 1024))  # Should fail - already exists
+print_test_summary()
+
+test_start("Shared Memory Process Attachment")
+assert_true(ipc.attach_shared_memory("test_shm", "process1"))
+assert_true(ipc.attach_shared_memory("test_shm", "process2"))
+assert_false(ipc.attach_shared_memory("nonexistent_shm", "process1"))  # Should fail
+print_test_summary()
+
+test_start("Shared Memory Data Operations")
+assert_true(ipc.write_shared_memory("test_shm", "key1", "value1"))
+assert_true(ipc.write_shared_memory("test_shm", "key2", "value2"))
+
+sus value1 tea = ipc.read_shared_memory("test_shm", "key1")
+assert_eq_string(value1, "value1")
+
+sus value2 tea = ipc.read_shared_memory("test_shm", "key2")
+assert_eq_string(value2, "value2")
+
+# Test overwriting
+assert_true(ipc.write_shared_memory("test_shm", "key1", "new_value"))
+sus new_value tea = ipc.read_shared_memory("test_shm", "key1")
+assert_eq_string(new_value, "new_value")
+print_test_summary()
+
+test_start("Shared Memory Size Limits")
+assert_false(ipc.create_shared_memory("huge_shm", 2097152))  # Should fail - too large (2MB > 1MB limit)
+print_test_summary()
+
+# ==============================================================================
+# SEMAPHORE TESTS
+# ==============================================================================
 
 test_start("Semaphore Creation")
-sus semaphore := ipc_create_semaphore("test_semaphore", 3)
-sus (name, value, waiting_count) := semaphore
-assert_eq_string(name, "test_semaphore")
-assert_eq_int(value, 3)
-assert_eq_int(waiting_count, 0)
+assert_true(ipc.create_semaphore("test_sem", 3))
+assert_false(ipc.create_semaphore("test_sem", 3))  # Should fail - already exists
+print_test_summary()
 
-test_start("Semaphore Acquire Available")
-sus semaphore := ipc_create_semaphore("acquire_semaphore", 2)
-sus updated_semaphore := ipc_semaphore_acquire(semaphore)
-sus (name, value, waiting_count) := updated_semaphore
-assert_eq_int(value, 1)
-assert_eq_int(waiting_count, 0)
+test_start("Semaphore Wait/Signal Operations")
+# Test successful waits
+assert_true(ipc.semaphore_wait("test_sem", "process1"))  # 3 -> 2
+assert_true(ipc.semaphore_wait("test_sem", "process2"))  # 2 -> 1
+assert_true(ipc.semaphore_wait("test_sem", "process3"))  # 1 -> 0
 
-test_start("Semaphore Acquire Unavailable")
-sus semaphore := ipc_create_semaphore("unavailable_semaphore", 0)
-sus updated_semaphore := ipc_semaphore_acquire(semaphore)
-sus (name, value, waiting_count) := updated_semaphore
-assert_eq_int(value, 0)
-assert_eq_int(waiting_count, 1)
+# This should fail (semaphore at 0)
+assert_false(ipc.semaphore_wait("test_sem", "process4"))
 
-test_start("Semaphore Release")
-sus semaphore := ipc_create_semaphore("release_semaphore", 1)
-sus updated_semaphore := ipc_semaphore_release(semaphore)
-sus (name, value, waiting_count) := updated_semaphore
-assert_eq_int(value, 2)
+# Signal to release
+assert_true(ipc.semaphore_signal("test_sem"))  # 0 -> 1
 
-test_start("Semaphore Release with Waiting")
-sus semaphore := (name, 0, 2)  # Create semaphore with waiting processes
-sus updated_semaphore := ipc_semaphore_release(semaphore)
-sus (name, value, waiting_count) := updated_semaphore
-assert_eq_int(waiting_count, 1)
+# Now wait should succeed
+assert_true(ipc.semaphore_wait("test_sem", "process5"))  # 1 -> 0
+print_test_summary()
 
-# ===== Named Pipe Tests =====
+test_start("Semaphore Value Limits")
+assert_false(ipc.create_semaphore("huge_sem", 65536))  # Should fail - too large
+print_test_summary()
 
-test_start("Named Pipe Creation")
-sus pipe := ipc_create_named_pipe("/tmp/test_pipe", 644)
-sus (path, permissions, is_open) := pipe
-assert_eq_string(path, "/tmp/test_pipe")
-assert_eq_int(permissions, 644)
-assert_true(is_open)
+# ==============================================================================
+# UNIX SOCKET TESTS
+# ==============================================================================
 
-test_start("Named Pipe Open for Read")
-sus pipe := ipc_create_named_pipe("/tmp/read_pipe", 644)
-sus opened_pipe := ipc_open_pipe_read(pipe)
-sus (path, permissions, is_open) := opened_pipe
-assert_true(is_open)
+test_start("Unix Socket Creation")
+assert_true(ipc.create_unix_socket("test_socket", "stream"))
+assert_false(ipc.create_unix_socket("test_socket", "stream"))  # Should fail - already exists
+print_test_summary()
 
-test_start("Named Pipe Write")
-sus pipe := ipc_create_named_pipe("/tmp/write_pipe", 644)
-sus write_result := ipc_pipe_write(pipe, "pipe_data")
-assert_true(write_result)
+test_start("Unix Socket Listen/Connect")
+assert_true(ipc.listen_unix_socket("test_socket", "server_process"))
+assert_true(ipc.connect_unix_socket("test_socket", "client1"))
+assert_true(ipc.connect_unix_socket("test_socket", "client2"))
 
-test_start("Named Pipe Read")
-sus pipe := ipc_create_named_pipe("/tmp/read_pipe", 644)
-sus data := ipc_pipe_read(pipe)
-assert_eq_string(data, "data_from_named_pipe")
+# Try connecting to non-listening socket
+assert_true(ipc.create_unix_socket("inactive_socket", "stream"))
+assert_false(ipc.connect_unix_socket("inactive_socket", "client3"))  # Should fail
+print_test_summary()
 
-test_start("Named Pipe Write to Closed")
-sus closed_pipe := ("/tmp/closed_pipe", 644, cap)
-sus write_result := ipc_pipe_write(closed_pipe, "test_data")
-assert_false(write_result)
+# ==============================================================================
+# PROCESS MANAGEMENT TESTS
+# ==============================================================================
 
-test_start("Named Pipe Read from Closed")
-sus closed_pipe := ("/tmp/closed_pipe", 644, cap)
-sus data := ipc_pipe_read(closed_pipe)
-assert_eq_string(data, "")
+test_start("Process Registration")
+assert_true(ipc.register_process("proc1", "Test Process 1"))
+assert_true(ipc.register_process("proc2", "Test Process 2"))
 
-# ===== IPC Utility Tests =====
+sus proc_info map = ipc.get_process_info("proc1")
+assert_eq_string(proc_info.get("name"), "Test Process 1")
+assert_eq_string(proc_info.get("id"), "proc1")
+assert_true(proc_info.get("active"))
+print_test_summary()
+
+test_start("Process Unregistration")
+assert_true(ipc.unregister_process("proc1"))
+assert_false(ipc.unregister_process("nonexistent_proc"))
+
+sus updated_info map = ipc.get_process_info("proc1")
+assert_false(updated_info.get("active"))
+
+sus active_processes [tea] = ipc.list_active_processes()
+assert_eq_int(active_processes.length(), 1)  # Only proc2 should be active
+print_test_summary()
+
+# ==============================================================================
+# UTILITY AND STATISTICS TESTS
+# ==============================================================================
+
+test_start("IPC Resource Listing")
+sus resources [tea] = ipc.list_ipc_resources()
+assert_true(resources.length() > 0)  # Should have some resources from previous tests
+
+sus pipe_info map = ipc.get_ipc_resource_info("pipe_test_pipe")
+assert_eq_string(pipe_info.get("name"), "test_pipe")
+assert_eq_string(pipe_info.get("type"), ipc.IPC_TYPE_PIPE)
+print_test_summary()
 
 test_start("IPC Statistics")
-sus stats := ipc_get_stats()
-sus (active_channels, active_processes, shared_memory_segments) := stats
-assert_eq_int(active_channels, 5)
-assert_eq_int(active_processes, 3)
-assert_eq_int(shared_memory_segments, 2)
+sus stats map = ipc.get_ipc_statistics()
+assert_true(stats.get("pipes_created") > 0)
+assert_true(stats.get("queues_created") > 0)
+assert_true(stats.get("shared_segments_created") > 0)
+assert_true(stats.get("semaphores_created") > 0)
+assert_true(stats.get("sockets_created") > 0)
+assert_true(stats.get("messages_sent") > 0)
+assert_true(stats.get("messages_received") > 0)
+print_test_summary()
 
-test_start("IPC Cleanup")
-sus cleanup_result := ipc_cleanup()
-assert_true(cleanup_result)
+# ==============================================================================
+# CONNECTIVITY TESTS
+# ==============================================================================
 
-test_start("IPC Health Check")
-sus health_result := ipc_health_check()
-assert_true(health_result)
+test_start("IPC Connectivity Test")
+assert_true(ipc.test_ipc_connectivity())
+print_test_summary()
 
-# ===== Complex IPC Scenarios =====
+# ==============================================================================
+# ERROR HANDLING TESTS
+# ==============================================================================
 
-test_start("IPC Complex Channel Communication")
-sus channel := ipc_create_channel("complex_channel", 4096)
-sus send_result1 := ipc_send_message(channel, 1, "Message 1", 1)
-sus send_result2 := ipc_send_message(channel, 2, "Message 2", 2)
-assert_true(send_result1)
-assert_true(send_result2)
+test_start("Error Handling - Invalid Operations")
+# Test operations on non-existent resources
+assert_false(ipc.write_to_pipe("nonexistent_pipe", "data"))
+assert_eq_string(ipc.read_from_pipe("nonexistent_pipe"), "")
+assert_false(ipc.send_message("nonexistent_queue", "msg", ipc.MSG_PRIORITY_NORMAL))
 
-sus received_msg := ipc_receive_message(channel)
-sus (msg_id, content, priority, timestamp) := received_msg
-assert_eq_int(msg_id, 1)
+sus empty_msg map = ipc.receive_message("nonexistent_queue")
+assert_eq_int(empty_msg.size(), 0)
 
-test_start("IPC Process Coordination Flow")
-sus process1 := ipc_register_process(1001, "worker1")
-sus process2 := ipc_register_process(1002, "worker2")
+assert_false(ipc.write_shared_memory("nonexistent_shm", "key", "value"))
+assert_eq_string(ipc.read_shared_memory("nonexistent_shm", "key"), "")
+assert_false(ipc.semaphore_wait("nonexistent_sem", "process"))
+assert_false(ipc.semaphore_signal("nonexistent_sem"))
+print_test_summary()
 
-sus alive1 := ipc_process_alive(process1)
-sus alive2 := ipc_process_alive(process2)
-assert_true(alive1)
-assert_true(alive2)
+# ==============================================================================
+# CLEANUP TESTS
+# ==============================================================================
 
-sus signal_result := ipc_signal_process(process1, "suspend")
-assert_true(signal_result)
+test_start("Resource Cleanup")
+assert_true(ipc.cleanup_resource_type("pipe"))
+assert_true(ipc.cleanup_resource_type("queue"))
+assert_true(ipc.cleanup_resource_type("shm"))
+assert_true(ipc.cleanup_resource_type("sem"))
+assert_true(ipc.cleanup_resource_type("socket"))
+print_test_summary()
 
-test_start("IPC Shared Memory Operations Flow")
-sus memory := ipc_create_shared_memory("flow_memory", 8192)
-sus write1 := ipc_write_shared_memory(memory, 0, "start_data")
-sus write2 := ipc_write_shared_memory(memory, 100, "middle_data")
-sus write3 := ipc_write_shared_memory(memory, 200, "end_data")
+test_start("Full IPC Cleanup")
+assert_true(ipc.cleanup_ipc())
 
-assert_true(write1)
-assert_true(write2)
-assert_true(write3)
+# Verify resources are cleaned up
+sus resources_after [tea] = ipc.list_ipc_resources()
+assert_eq_int(resources_after.length(), 0)
+print_test_summary()
 
-sus read_data := ipc_read_shared_memory(memory, 0, 50)
-assert_eq_string(read_data, "simulated_data_from_shared_memory")
+# ==============================================================================
+# RESET AND REINITIALIZE TESTS
+# ==============================================================================
 
-test_start("IPC Message Queue Full Flow")
-sus queue := ipc_create_message_queue("full_flow_queue", 3)
-sus msg1 := IpcMessage(1, "msg1", 1, 1640995200)
-sus msg2 := IpcMessage(2, "msg2", 2, 1640995201)
-sus msg3 := IpcMessage(3, "msg3", 3, 1640995202)
+test_start("IPC System Reset")
+ipc.reset_ipc()
 
-sus queue1 := ipc_queue_push(queue, msg1)
-sus queue2 := ipc_queue_push(queue1, msg2)
-sus queue3 := ipc_queue_push(queue2, msg3)
+# Test that system works after reset
+assert_true(ipc.create_named_pipe("post_reset_pipe", 512))
+assert_true(ipc.write_to_pipe("post_reset_pipe", "reset_test"))
+sus reset_msg tea = ipc.read_from_pipe("post_reset_pipe")
+assert_eq_string(reset_msg, "reset_test")
+print_test_summary()
 
-sus (name, max_messages, current_count) := queue3
-assert_eq_int(current_count, 3)
+# ==============================================================================
+# MODULE INFO TESTS
+# ==============================================================================
 
-# Try to push to full queue
-sus msg4 := IpcMessage(4, "msg4", 4, 1640995203)
-sus queue4 := ipc_queue_push(queue3, msg4)
-sus (name_full, max_full, count_full) := queue4
-assert_eq_int(count_full, 3)  # Should remain at 3
+test_start("Module Information")
+sus module_info tea = ipc.get_module_info()
+assert_true(module_info.contains("ipc"))
+assert_true(module_info.contains("CURSED"))
+print_test_summary()
 
-test_start("IPC Semaphore Coordination")
-sus semaphore := ipc_create_semaphore("coordination_semaphore", 1)
+# ==============================================================================
+# INTEGRATION TESTS
+# ==============================================================================
 
-# Simulate process 1 acquiring
-sus sem1 := ipc_semaphore_acquire(semaphore)
-sus (name1, value1, waiting1) := sem1
-assert_eq_int(value1, 0)
+test_start("Multi-Resource Integration Test")
+# Create resources of each type and test interaction
+assert_true(ipc.create_named_pipe("integration_pipe", 1024))
+assert_true(ipc.create_message_queue("integration_queue", 20))
+assert_true(ipc.create_shared_memory("integration_shm", 2048))
+assert_true(ipc.create_semaphore("integration_sem", 5))
+assert_true(ipc.create_unix_socket("integration_socket", "stream"))
 
-# Simulate process 2 trying to acquire (should wait)
-sus sem2 := ipc_semaphore_acquire(sem1)
-sus (name2, value2, waiting2) := sem2
-assert_eq_int(value2, 0)
-assert_eq_int(waiting2, 1)
+# Register processes
+assert_true(ipc.register_process("integrator1", "Integration Process 1"))
+assert_true(ipc.register_process("integrator2", "Integration Process 2"))
 
-# Process 1 releases
-sus sem3 := ipc_semaphore_release(sem2)
-sus (name3, value3, waiting3) := sem3
-assert_eq_int(waiting3, 0)  # Process 2 should be woken up
+# Test coordination between resources
+assert_true(ipc.semaphore_wait("integration_sem", "integrator1"))
+assert_true(ipc.write_shared_memory("integration_shm", "status", "processing"))
+assert_true(ipc.send_message("integration_queue", "task_started", ipc.MSG_PRIORITY_HIGH))
+assert_true(ipc.write_to_pipe("integration_pipe", "log: task initiated"))
 
+# Verify state
+sus status tea = ipc.read_shared_memory("integration_shm", "status")
+assert_eq_string(status, "processing")
+
+sus task_msg map = ipc.receive_message("integration_queue")
+assert_eq_string(task_msg.get("content"), "task_started")
+
+sus log_msg tea = ipc.read_from_pipe("integration_pipe")
+assert_eq_string(log_msg, "log: task initiated")
+
+# Complete task
+assert_true(ipc.semaphore_signal("integration_sem"))
+assert_true(ipc.write_shared_memory("integration_shm", "status", "completed"))
+print_test_summary()
+
+# ==============================================================================
+# PERFORMANCE TESTS
+# ==============================================================================
+
+test_start("High Volume Message Processing")
+assert_true(ipc.create_message_queue("perf_queue", 1000))
+
+# Send many messages
+sus i normie = 0
+while i < 100 {
+    sus msg_content tea = "performance_test_" + core.tea(i)
+    assert_true(ipc.send_message("perf_queue", msg_content, ipc.MSG_PRIORITY_NORMAL))
+    i = i + 1
+}
+
+# Receive all messages
+sus received_count normie = 0
+while received_count < 100 {
+    sus perf_msg map = ipc.receive_message("perf_queue")
+    if perf_msg.size() > 0 {
+        received_count = received_count + 1
+    } else {
+        break  # No more messages
+    }
+}
+
+assert_eq_int(received_count, 100)
+print_test_summary()
+
+# ==============================================================================
+# DEBUGGING TESTS
+# ==============================================================================
+
+test_start("Debug State Dump")
+# This test just verifies the dump function doesn't crash
+ipc.dump_ipc_state()
+assert_true(based)  # If we get here, dump_ipc_state() succeeded
+print_test_summary()
+
+# ==============================================================================
+# FINAL CLEANUP
+# ==============================================================================
+
+test_start("Final Cleanup")
+assert_true(ipc.cleanup_ipc())
+print_test_summary()
+
+vibez.spill("=== IPC Module Test Suite Completed ===")
 print_test_summary()

@@ -1,192 +1,207 @@
-# SignalBoost Module - Pure CURSED Implementation
+# signal_boost Module
 
-## Overview
+**Pure CURSED Signal Management System**
 
-The SignalBoost module provides comprehensive OS signal handling functionality implemented entirely in pure CURSED without any FFI dependencies. This module replaces the previous Rust implementation that relied on libc signal handling calls.
+The `signal_boost` module provides comprehensive signal handling capabilities without external FFI dependencies. It implements signal registration, graceful shutdown patterns, signal throttling, multiplexing, and process management entirely in native CURSED code.
 
 ## Features
 
-### Core Signal Management
-- **Signal Registration**: Register custom handlers for OS signals
-- **Signal Unregistration**: Remove signal handlers
-- **Signal Validation**: Comprehensive validation of signal types
-- **Signal State Tracking**: Track enabled/disabled state of signal handlers
-
-### Graceful Shutdown System
-- **Shutdown Coordination**: Coordinate application shutdown across components
-- **Cleanup Management**: Automatic cleanup of resources during shutdown
-- **Status Tracking**: Track shutdown state and progress
-- **Signal Integration**: Automatic shutdown on SIGTERM/SIGINT
-
-### Signal Multiplexing
-- **Multi-Signal Handling**: Handle multiple signals through a single interface
-- **Dynamic Configuration**: Add/remove signals from multiplexer at runtime
-- **Resource Management**: Efficient management of multiplexer resources
-
-### Process Signal Management
-- **Process Signaling**: Send signals to specific processes
-- **Process Group Signaling**: Send signals to process groups
-- **PID Validation**: Comprehensive validation of process IDs
-
-### Signal Filtering and Throttling
-- **Signal Filtering**: Filter out unwanted signals
-- **Signal Throttling**: Rate-limit signal processing
-- **Dynamic Configuration**: Enable/disable filtering and throttling at runtime
-
-### GenZ-Style Signal Handling
-- **Vibe Check**: Modern signal assessment with GenZ terminology
-- **Yeet on Signal**: Responsive signal handling with attitude
-- **No Cap Config Reload**: Honest configuration reloading
+- **Signal Handler Registration**: Register custom handlers for POSIX signals
+- **Graceful Shutdown**: Coordinated shutdown with cleanup tasks
+- **Signal Throttling**: Rate limiting for signal processing
+- **Signal Multiplexing**: Multiple subscribers per signal
+- **Pure CURSED Implementation**: Zero external dependencies
 
 ## Signal Constants
 
-The module defines standard POSIX signal constants:
-
 ```cursed
-SIGTERM = 15    # Termination request
-SIGINT = 2      # Interrupt (Ctrl+C)
-SIGKILL = 9     # Kill signal
-SIGHUP = 1      # Hangup
-SIGQUIT = 3     # Quit
-SIGSTOP = 19    # Stop process
-SIGCONT = 18    # Continue process
+SIGTERM = 15    # Termination signal
+SIGINT = 2      # Interrupt signal (Ctrl+C)
 SIGUSR1 = 10    # User-defined signal 1
 SIGUSR2 = 12    # User-defined signal 2
+SIGHUP = 1      # Hangup signal
+SIGQUIT = 3     # Quit signal
+SIGPIPE = 13    # Broken pipe signal
+SIGALRM = 14    # Alarm signal
 ```
 
-## API Reference
+## Handler Types
 
-### Core Functions
+```cursed
+HANDLER_IGNORE = "ignore"     # Ignore the signal
+HANDLER_DEFAULT = "default"   # Use default behavior
+HANDLER_CUSTOM = "custom"     # Use custom action
+```
 
-#### `signal_register(signal_type normie, handler_name tea) lit`
-Register a signal handler for the specified signal type.
-- **Parameters**: signal type (1-19), handler name
-- **Returns**: `based` on success, `cap` on failure
+## Core Functions
 
-#### `signal_unregister(signal_type normie) lit`
-Unregister a signal handler.
-- **Parameters**: signal type (1-19)
-- **Returns**: `based` on success, `cap` on failure
+### Signal Handler Management
 
-#### `signal_is_enabled(signal_type normie) lit`
-Check if a signal handler is enabled.
-- **Parameters**: signal type (1-19)
-- **Returns**: `based` if enabled, `cap` if disabled
+#### `register_signal_handler(signal normie, handler_type tea, action tea) lit`
+Register a signal handler with specified type and action.
 
-#### `signal_get_handler(signal_type normie) tea`
-Get the name of the registered handler for a signal.
-- **Parameters**: signal type (1-19)
-- **Returns**: handler name or empty string
+```cursed
+# Register default SIGTERM handler
+register_signal_handler(SIGTERM, HANDLER_DEFAULT, "")
 
-### Graceful Shutdown Functions
+# Register custom SIGUSR1 handler
+register_signal_handler(SIGUSR1, HANDLER_CUSTOM, "reload_config")
+```
 
-#### `graceful_shutdown_init() lit`
-Initialize the graceful shutdown system.
-- **Returns**: `based` on success
+#### `unregister_signal_handler(signal normie) lit`
+Remove a signal handler.
 
-#### `graceful_shutdown_request() lit`
-Request a graceful shutdown.
-- **Returns**: `based` on success
+```cursed
+sus success lit = unregister_signal_handler(SIGTERM)
+```
 
-#### `graceful_shutdown_is_requested() lit`
+#### `has_signal_handler(signal normie) lit`
+Check if a signal has a registered handler.
+
+```cursed
+if has_signal_handler(SIGINT) {
+    vibez.spill("SIGINT handler is registered")
+}
+```
+
+#### `get_signal_handler(signal normie) map`
+Get handler information for a signal.
+
+```cursed
+sus handler map = get_signal_handler(SIGTERM)
+sus handler_type tea = handler.get("type")
+sus count normie = handler.get("count")
+```
+
+#### `list_signal_handlers() [normie]`
+Get list of all signals with registered handlers.
+
+```cursed
+sus signals [normie] = list_signal_handlers()
+```
+
+### Signal Processing
+
+#### `notify(signal normie) lit`
+Simulate receiving a signal and execute its handler.
+
+```cursed
+# Simulate SIGTERM
+sus result lit = notify(SIGTERM)
+```
+
+#### `get_signal_name(signal normie) tea`
+Get the name of a signal from its number.
+
+```cursed
+sus name tea = get_signal_name(SIGTERM)  # Returns "SIGTERM"
+```
+
+### Graceful Shutdown
+
+#### `initiate_graceful_shutdown()`
+Start graceful shutdown process.
+
+```cursed
+initiate_graceful_shutdown()
+```
+
+#### `add_shutdown_task(task tea) lit`
+Add a task to execute during shutdown.
+
+```cursed
+add_shutdown_task("save_user_data")
+add_shutdown_task("close_database")
+```
+
+#### `remove_shutdown_task(task tea) lit`
+Remove a shutdown task.
+
+```cursed
+remove_shutdown_task("save_user_data")
+```
+
+#### `is_shutdown_requested() lit`
 Check if shutdown has been requested.
-- **Returns**: `based` if shutdown requested, `cap` otherwise
 
-#### `graceful_shutdown_cleanup() lit`
-Perform graceful shutdown cleanup.
-- **Returns**: `based` on success
+```cursed
+if is_shutdown_requested() {
+    vibez.spill("Shutdown in progress")
+}
+```
 
-### Signal Multiplexer Functions
+#### `cancel_shutdown() lit`
+Cancel a shutdown request.
 
-#### `signal_multiplexer_start() lit`
-Start the signal multiplexer.
-- **Returns**: `based` on success
+```cursed
+sus cancelled lit = cancel_shutdown()
+```
 
-#### `signal_multiplexer_stop() lit`
-Stop the signal multiplexer.
-- **Returns**: `based` on success
+### Signal Throttling
 
-#### `signal_multiplexer_add(signal_type normie) lit`
-Add a signal to the multiplexer.
-- **Parameters**: signal type (1-19)
-- **Returns**: `based` on success, `cap` on failure
+#### `set_signal_throttle(signal normie, min_interval_ms normie) lit`
+Set minimum interval between signal processing.
 
-### Process Signal Functions
+```cursed
+# Throttle SIGTERM to once per second
+set_signal_throttle(SIGTERM, 1000)
+```
 
-#### `signal_process_send(pid normie, signal_type normie) lit`
-Send a signal to a specific process.
-- **Parameters**: process ID, signal type
-- **Returns**: `based` on success, `cap` on failure
+#### `is_signal_throttled(signal normie) lit`
+Check if a signal is currently throttled.
 
-#### `signal_process_group_send(pgid normie, signal_type normie) lit`
-Send a signal to a process group.
-- **Parameters**: process group ID, signal type
-- **Returns**: `based` on success, `cap` on failure
+```cursed
+if !is_signal_throttled(SIGUSR1) {
+    # Process the signal
+}
+```
 
-### Signal Filtering Functions
+### Signal Multiplexing
 
-#### `signal_filter_enable() lit`
-Enable signal filtering.
-- **Returns**: `based` on success
+#### `subscribe_to_signal(signal normie, subscriber_id tea) lit`
+Subscribe to signal notifications.
 
-#### `signal_filter_disable() lit`
-Disable signal filtering.
-- **Returns**: `based` on success
+```cursed
+subscribe_to_signal(SIGINT, "main_handler")
+subscribe_to_signal(SIGINT, "logger")
+```
 
-#### `signal_filter_add(signal_type normie) lit`
-Add a signal to the filter list.
-- **Parameters**: signal type (1-19)
-- **Returns**: `based` on success, `cap` on failure
+#### `unsubscribe_from_signal(signal normie, subscriber_id tea) lit`
+Unsubscribe from signal notifications.
 
-#### `signal_is_filtered(signal_type normie) lit`
-Check if a signal is filtered.
-- **Parameters**: signal type (1-19)
-- **Returns**: `based` if filtered, `cap` if not
+```cursed
+unsubscribe_from_signal(SIGINT, "logger")
+```
 
-### Signal Throttling Functions
+#### `notify_subscribers(signal normie)`
+Notify all subscribers of a signal.
 
-#### `signal_throttle_enable(interval_ms normie) lit`
-Enable signal throttling with specified interval.
-- **Parameters**: throttle interval in milliseconds
-- **Returns**: `based` on success
+```cursed
+notify_subscribers(SIGUSR1)
+```
 
-#### `signal_throttle_disable() lit`
-Disable signal throttling.
-- **Returns**: `based` on success
+### Utility Functions
 
-#### `signal_should_throttle() lit`
-Check if signals should be throttled.
-- **Returns**: `based` if should throttle, `cap` otherwise
+#### `reset()`
+Reset all signal boost state.
 
-### GenZ-Style Functions
+```cursed
+reset()  # Clear all handlers and state
+```
 
-#### `vibe_check_signal(signal_type normie) lit`
-Perform a "vibe check" on a signal.
-- **Parameters**: signal type (1-19)
-- **Returns**: `based` for good vibes, `cap` for bad vibes
+#### `init_signal_boost()`
+Initialize with default signal handlers.
 
-#### `yeet_on_signal(signal_type normie) lit`
-Handle signals with GenZ attitude.
-- **Parameters**: signal type (1-19)
-- **Returns**: `based` on success
+```cursed
+init_signal_boost()  # Sets up common signal handlers
+```
 
-#### `no_cap_reload_config() lit`
-Reload configuration honestly.
-- **Returns**: `based` on success
+#### `get_module_info() tea`
+Get module version and information.
 
-### Module Management Functions
-
-#### `signal_boost_init() lit`
-Initialize the SignalBoost module.
-- **Returns**: `based` on success
-
-#### `signal_boost_get_stats() normie`
-Get module statistics.
-- **Returns**: number of registered signal handlers
-
-#### `signal_boost_cleanup() lit`
-Cleanup the SignalBoost module.
-- **Returns**: `based` on success
+```cursed
+sus info tea = get_module_info()
+```
 
 ## Usage Examples
 
@@ -196,42 +211,36 @@ Cleanup the SignalBoost module.
 yeet "signal_boost"
 
 # Initialize the module
-signal_boost_init()
+init_signal_boost()
 
-# Register a signal handler
-signal_register(SIGTERM, "my_shutdown_handler")
+# Register custom handlers
+register_signal_handler(SIGUSR1, HANDLER_CUSTOM, "reload_config")
+register_signal_handler(SIGUSR2, HANDLER_CUSTOM, "dump_stats")
 
-# Check if signal is enabled
-if signal_is_enabled(SIGTERM) {
-    vibez.spill("SIGTERM handler is active")
-}
+# Add shutdown tasks
+add_shutdown_task("save_application_state")
+add_shutdown_task("cleanup_temp_files")
 
-# Cleanup
-signal_boost_cleanup()
+# Simulate receiving signals
+notify(SIGUSR1)  # Triggers config reload
+notify(SIGTERM)  # Triggers graceful shutdown
 ```
 
-### Graceful Shutdown
+### Signal Throttling
 
 ```cursed
 yeet "signal_boost"
 
-# Initialize graceful shutdown system
-graceful_shutdown_init()
+# Set up throttling
+set_signal_throttle(SIGUSR1, 5000)  # Max once per 5 seconds
 
-# In your main loop
-bestie !graceful_shutdown_is_requested() {
-    # Do work...
-    vibez.spill("Working...")
-    
-    # Check for shutdown request
-    if graceful_shutdown_is_requested() {
-        vibez.spill("Shutdown requested, exiting gracefully")
-        ghosted
-    }
-}
+# Register handler
+register_signal_handler(SIGUSR1, HANDLER_CUSTOM, "heavy_operation")
 
-# Cleanup
-graceful_shutdown_cleanup()
+# Multiple rapid signals - only first will be processed
+notify(SIGUSR1)  # Processed
+notify(SIGUSR1)  # Throttled
+notify(SIGUSR1)  # Throttled
 ```
 
 ### Signal Multiplexing
@@ -239,56 +248,62 @@ graceful_shutdown_cleanup()
 ```cursed
 yeet "signal_boost"
 
-# Start multiplexer
-signal_multiplexer_start()
+# Multiple subscribers for same signal
+subscribe_to_signal(SIGINT, "main_handler")
+subscribe_to_signal(SIGINT, "cleanup_handler")
+subscribe_to_signal(SIGINT, "logger")
 
-# Add signals to handle
-signal_multiplexer_add(SIGTERM)
-signal_multiplexer_add(SIGINT)
-signal_multiplexer_add(SIGHUP)
+# Register handler
+register_signal_handler(SIGINT, HANDLER_DEFAULT, "")
 
-# Stop multiplexer when done
-signal_multiplexer_stop()
+# All subscribers will be notified
+notify(SIGINT)
 ```
 
-### Signal Filtering
+### Graceful Shutdown Pattern
 
 ```cursed
 yeet "signal_boost"
 
-# Enable filtering
-signal_filter_enable()
+# Set up graceful shutdown
+init_signal_boost()
 
-# Add signals to filter out
-signal_filter_add(SIGHUP)
-signal_filter_add(SIGUSR1)
+# Add application-specific shutdown tasks
+add_shutdown_task("save_user_session")
+add_shutdown_task("close_database_connections")
+add_shutdown_task("flush_log_buffers")
+add_shutdown_task("notify_monitoring_system")
 
-# Check if signal is filtered
-if signal_is_filtered(SIGHUP) {
-    vibez.spill("SIGHUP is filtered")
+# Main application loop
+while !is_shutdown_requested() {
+    # Do application work
+    vibez.spill("Application running...")
+    
+    # Check for signals periodically
+    # In real implementation, this would be event-driven
 }
 
-# Disable filtering
-signal_filter_disable()
+vibez.spill("Application shutting down gracefully")
 ```
 
-### GenZ-Style Handling
+### Custom Signal Actions
 
 ```cursed
 yeet "signal_boost"
 
-# Vibe check signals
-if vibe_check_signal(SIGTERM) {
-    vibez.spill("Signal vibes are good")
-} else {
-    vibez.spill("Signal vibes are bad, preparing shutdown")
-}
+# Register handlers with custom actions
+register_signal_handler(SIGUSR1, HANDLER_CUSTOM, "reload_config")
+register_signal_handler(SIGUSR2, HANDLER_CUSTOM, "dump_stats")
+register_signal_handler(SIGHUP, HANDLER_CUSTOM, "rotate_logs")
 
-# Yeet on signals
-yeet_on_signal(SIGINT)
+# Simulate configuration reload
+notify(SIGUSR1)
 
-# Reload config with attitude
-no_cap_reload_config()
+# Simulate statistics dump
+notify(SIGUSR2)
+
+# Simulate log rotation
+notify(SIGHUP)
 ```
 
 ## Testing
@@ -296,81 +311,67 @@ no_cap_reload_config()
 Run the comprehensive test suite:
 
 ```bash
-# Test interpretation mode
+cargo run --bin cursed stdlib/signal_boost/test_signal_boost.csd
+```
+
+Test both interpretation and compilation modes:
+
+```bash
+# Interpretation mode
 cargo run --bin cursed stdlib/signal_boost/test_signal_boost.csd
 
-# Test compilation mode
+# Compilation mode
 cargo run --bin cursed -- compile stdlib/signal_boost/test_signal_boost.csd
 ./test_signal_boost
 ```
 
-The test suite includes:
-- 20 comprehensive test functions
-- Edge case testing
-- Error handling validation
-- Complete workflow testing
-- Cleanup verification
+## Architecture
 
-## FFI Elimination
+The `signal_boost` module implements signal handling using pure CURSED data structures:
 
-This pure CURSED implementation eliminates all FFI dependencies:
+- **Signal Handlers**: Stored in global map with signal number as key
+- **Shutdown Tasks**: Array of task names executed during shutdown
+- **Throttling**: Time-based rate limiting using timestamps
+- **Multiplexing**: Subscriber lists per signal for notifications
+- **State Management**: Global variables track module state
 
-### Removed FFI Calls
-- `libc::sigemptyset()` - Replaced with CURSED array initialization
-- `libc::pthread_sigmask()` - Replaced with CURSED state management
-- System signal registration calls - Replaced with CURSED simulation
+## Signal Processing Flow
 
-### Benefits
-- **No External Dependencies**: Pure CURSED implementation
-- **Cross-Platform Compatibility**: Works anywhere CURSED runs
-- **Simplified Deployment**: No libc version dependencies
-- **Enhanced Security**: No unsafe FFI boundary crossings
-- **Better Testing**: Deterministic behavior in test environments
+1. **Registration**: `register_signal_handler()` adds handler to global map
+2. **Notification**: `notify()` looks up handler and executes action
+3. **Action Execution**: Handler type determines processing behavior
+4. **Subscriber Notification**: All subscribers are notified of signal
+5. **Throttling Check**: Rate limiting prevents excessive signal processing
 
-## Implementation Notes
+## Default Signal Behaviors
 
-### Signal Simulation
-Since this is a pure CURSED implementation without FFI, actual OS signal handling is simulated. The module provides:
-- Complete API compatibility with signal handling systems
-- Proper state management and validation
-- Comprehensive error handling
-- Full feature coverage for application-level signal management
+- **SIGTERM/SIGINT**: Initiate graceful shutdown
+- **SIGUSR1**: Reload configuration
+- **SIGUSR2**: Dump statistics
+- **SIGHUP**: Reload configuration
+- **Other signals**: Log and continue
 
-### Memory Management
-The module uses fixed-size arrays for signal storage:
-- 20 signal handler slots (covering standard POSIX signals 1-19)
-- 10 multiplexer signal slots
-- 10 signal filter slots
+## Integration
 
-### Performance Considerations
-- O(1) signal registration and lookup
-- O(n) signal filtering (where n is number of filtered signals)
-- Minimal memory footprint with fixed allocations
-- No dynamic memory allocation during signal processing
+The `signal_boost` module integrates with other CURSED stdlib modules:
 
-## Future Enhancements
+- **core**: Type conversions and utilities
+- **vibez**: Logging and output
+- **testz**: Comprehensive testing framework
 
-Potential improvements for future versions:
-- Dynamic signal handler arrays
-- More sophisticated throttling algorithms
-- Signal chaining and composition
-- Advanced signal routing
-- Signal analytics and monitoring
-- Integration with CURSED async system
+## Production Considerations
 
-## Integration with Other Modules
+- **Error Handling**: All functions return success/failure indicators
+- **State Consistency**: Thread-safe operations through atomic updates
+- **Resource Management**: Automatic cleanup during shutdown
+- **Monitoring**: Built-in statistics and logging
+- **Extensibility**: Custom actions and handler types supported
 
-The SignalBoost module integrates well with:
-- **Process Module**: For process lifecycle management
-- **Logging Module**: For signal event logging
-- **Config Module**: For configuration reload on signals
-- **Network Module**: For graceful connection cleanup
-- **Database Module**: For transaction cleanup on shutdown
+## Version History
 
-## Security Considerations
-
-- Input validation for all signal types and process IDs
-- Bounds checking for all array operations
-- Safe state management without race conditions
-- No exposure of internal implementation details
-- Comprehensive error handling for all edge cases
+- **v1.0**: Initial pure CURSED implementation
+  - Core signal handling functionality
+  - Graceful shutdown with task management
+  - Signal throttling and multiplexing
+  - Comprehensive test coverage
+  - Zero FFI dependencies

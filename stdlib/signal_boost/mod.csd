@@ -1,372 +1,457 @@
-yeet "testz"
+# signal_boost - Pure CURSED Signal Management System
+# Comprehensive signal handling without FFI dependencies
+# Provides signal registration, graceful shutdown, and process management
 
-# Pure CURSED Signal Boost Module
-# Provides OS signal handling without FFI dependencies
-
-# Signal types (based on POSIX standards)
-sus SIGTERM normie = 15
-sus SIGINT normie = 2
-sus SIGKILL normie = 9
-sus SIGHUP normie = 1
-sus SIGQUIT normie = 3
-sus SIGSTOP normie = 19
-sus SIGCONT normie = 18
-sus SIGUSR1 normie = 10
-sus SIGUSR2 normie = 12
-
-# Signal handler state management
-sus signal_handlers [20]tea  # Array to store signal handlers
-sus signal_enabled [20]lit  # Array to track enabled signals
+# Global state for signal management
+sus signal_handlers map = {}
 sus signal_count normie = 0
 sus shutdown_requested lit = cap
+sus shutdown_tasks [tea] = []
+sus active_signals [normie] = []
 
-# Core signal handling functions
+# Signal constants (POSIX-compatible)
+sus SIGTERM normie = 15
+sus SIGINT normie = 2
+sus SIGUSR1 normie = 10
+sus SIGUSR2 normie = 12
+sus SIGHUP normie = 1
+sus SIGQUIT normie = 3
+sus SIGPIPE normie = 13
+sus SIGALRM normie = 14
 
-slay signal_register(signal_type normie, handler_name tea) lit {
-    vibez.spill("Registering signal handler for signal: ", signal_type)
-    
-    # Validate signal type
-    if signal_type < 1 || signal_type > 19 {
-        vibez.spill("Error: Invalid signal type")
-        damn cap
+# Signal handler types
+sus HANDLER_IGNORE tea = "ignore"
+sus HANDLER_DEFAULT tea = "default"
+sus HANDLER_CUSTOM tea = "custom"
+
+# ==============================================================================
+# CORE SIGNAL MANAGEMENT FUNCTIONS
+# ==============================================================================
+
+# Register a signal handler
+slay register_signal_handler(signal normie, handler_type tea, action tea) lit {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    sus handler_data map = {
+        "type": handler_type,
+        "action": action,
+        "enabled": based,
+        "count": 0
     }
     
-    # Store handler
-    signal_handlers[signal_type] = handler_name
-    signal_enabled[signal_type] = based
+    signal_handlers.set(signal_key, handler_data)
     signal_count = signal_count + 1
-    
-    vibez.spill("Signal handler registered successfully")
     damn based
 }
 
-slay signal_unregister(signal_type normie) lit {
-    vibez.spill("Unregistering signal handler for signal: ", signal_type)
-    
-    if signal_type < 1 || signal_type > 19 {
-        vibez.spill("Error: Invalid signal type")
-        damn cap
+# Unregister a signal handler
+slay unregister_signal_handler(signal normie) lit {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    if signal_handlers.has_key(signal_key) {
+        signal_handlers.remove(signal_key)
+        signal_count = signal_count - 1
+        damn based
     }
-    
-    signal_handlers[signal_type] = ""
-    signal_enabled[signal_type] = cap
-    signal_count = signal_count - 1
-    
-    vibez.spill("Signal handler unregistered successfully")
-    damn based
-}
-
-slay signal_is_enabled(signal_type normie) lit {
-    if signal_type < 1 || signal_type > 19 {
-        damn cap
-    }
-    damn signal_enabled[signal_type]
-}
-
-slay signal_get_handler(signal_type normie) tea {
-    if signal_type < 1 || signal_type > 19 {
-        damn ""
-    }
-    damn signal_handlers[signal_type]
-}
-
-# Graceful shutdown functionality
-
-slay graceful_shutdown_init() lit {
-    vibez.spill("Initializing graceful shutdown system")
-    
-    # Register standard shutdown signals
-    signal_register(SIGTERM, "graceful_shutdown_handler")
-    signal_register(SIGINT, "graceful_shutdown_handler")
-    signal_register(SIGHUP, "reload_config_handler")
-    
-    shutdown_requested = cap
-    
-    vibez.spill("Graceful shutdown system initialized")
-    damn based
-}
-
-slay graceful_shutdown_request() lit {
-    vibez.spill("Graceful shutdown requested")
-    shutdown_requested = based
-    damn based
-}
-
-slay graceful_shutdown_is_requested() lit {
-    damn shutdown_requested
-}
-
-slay graceful_shutdown_cleanup() lit {
-    vibez.spill("Performing graceful shutdown cleanup")
-    
-    # Cleanup signal handlers
-    sus i normie = 1
-    bestie i <= 19; i++ {
-        if signal_enabled[i] {
-            signal_handlers[i] = ""
-            signal_enabled[i] = cap
-        }
-    }
-    
-    signal_count = 0
-    shutdown_requested = cap
-    
-    vibez.spill("Graceful shutdown cleanup completed")
-    damn based
-}
-
-# Signal multiplexing functionality
-
-sus multiplexer_active lit = cap
-sus multiplexer_signals [10]normie  # Signals being multiplexed
-sus multiplexer_count normie = 0
-
-slay signal_multiplexer_start() lit {
-    vibez.spill("Starting signal multiplexer")
-    multiplexer_active = based
-    multiplexer_count = 0
-    damn based
-}
-
-slay signal_multiplexer_stop() lit {
-    vibez.spill("Stopping signal multiplexer")
-    multiplexer_active = cap
-    multiplexer_count = 0
-    damn based
-}
-
-slay signal_multiplexer_add(signal_type normie) lit {
-    if !multiplexer_active {
-        vibez.spill("Error: Multiplexer not active")
-        damn cap
-    }
-    
-    if multiplexer_count >= 10 {
-        vibez.spill("Error: Multiplexer full")
-        damn cap
-    }
-    
-    multiplexer_signals[multiplexer_count] = signal_type
-    multiplexer_count = multiplexer_count + 1
-    
-    vibez.spill("Signal added to multiplexer: ", signal_type)
-    damn based
-}
-
-# Process signal management
-
-slay signal_process_send(pid normie, signal_type normie) lit {
-    vibez.spill("Sending signal ", signal_type, " to process ", pid)
-    
-    # Validate inputs
-    if pid <= 0 {
-        vibez.spill("Error: Invalid process ID")
-        damn cap
-    }
-    
-    if signal_type < 1 || signal_type > 19 {
-        vibez.spill("Error: Invalid signal type")
-        damn cap
-    }
-    
-    # Pure CURSED signal simulation
-    vibez.spill("Signal sent successfully (simulated)")
-    damn based
-}
-
-slay signal_process_group_send(pgid normie, signal_type normie) lit {
-    vibez.spill("Sending signal ", signal_type, " to process group ", pgid)
-    
-    if pgid <= 0 {
-        vibez.spill("Error: Invalid process group ID")
-        damn cap
-    }
-    
-    if signal_type < 1 || signal_type > 19 {
-        vibez.spill("Error: Invalid signal type")
-        damn cap
-    }
-    
-    vibez.spill("Signal sent to process group successfully (simulated)")
-    damn based
-}
-
-# Signal filtering and throttling
-
-sus throttle_enabled lit = cap
-sus throttle_interval normie = 1000  # milliseconds
-sus last_signal_time normie = 0
-
-slay signal_throttle_enable(interval_ms normie) lit {
-    vibez.spill("Enabling signal throttling with interval: ", interval_ms, "ms")
-    throttle_enabled = based
-    throttle_interval = interval_ms
-    damn based
-}
-
-slay signal_throttle_disable() lit {
-    vibez.spill("Disabling signal throttling")
-    throttle_enabled = cap
-    damn based
-}
-
-slay signal_should_throttle() lit {
-    if !throttle_enabled {
-        damn cap
-    }
-    
-    # Simplified time check (would use actual timestamps in real implementation)
-    sus current_time normie = signal_count * 100  # Mock timestamp
-    sus time_diff normie = current_time - last_signal_time
-    
-    if time_diff < throttle_interval {
-        damn based  # Should throttle
-    }
-    
-    last_signal_time = current_time
-    damn cap  # Don't throttle
-}
-
-# Signal filtering by type
-
-sus filter_enabled lit = cap
-sus filtered_signals [10]normie
-sus filter_count normie = 0
-
-slay signal_filter_enable() lit {
-    vibez.spill("Enabling signal filtering")
-    filter_enabled = based
-    filter_count = 0
-    damn based
-}
-
-slay signal_filter_disable() lit {
-    vibez.spill("Disabling signal filtering")
-    filter_enabled = cap
-    filter_count = 0
-    damn based
-}
-
-slay signal_filter_add(signal_type normie) lit {
-    if !filter_enabled {
-        vibez.spill("Error: Signal filtering not enabled")
-        damn cap
-    }
-    
-    if filter_count >= 10 {
-        vibez.spill("Error: Filter list full")
-        damn cap
-    }
-    
-    filtered_signals[filter_count] = signal_type
-    filter_count = filter_count + 1
-    
-    vibez.spill("Signal added to filter: ", signal_type)
-    damn based
-}
-
-slay signal_is_filtered(signal_type normie) lit {
-    if !filter_enabled {
-        damn cap
-    }
-    
-    sus i normie = 0
-    bestie i < filter_count; i++ {
-        if filtered_signals[i] == signal_type {
-            damn based
-        }
-    }
-    
     damn cap
 }
 
-# GenZ-style signal handling
+# Check if signal has handler
+slay has_signal_handler(signal normie) lit {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    damn signal_handlers.has_key(signal_key)
+}
 
-slay vibe_check_signal(signal_type normie) lit {
-    vibez.spill("Vibe checking signal: ", signal_type)
+# Get signal handler info
+slay get_signal_handler(signal normie) map {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    if signal_handlers.has_key(signal_key) {
+        damn signal_handlers.get(signal_key)
+    }
+    damn {}
+}
+
+# List all registered signal handlers
+slay list_signal_handlers() [normie] {
+    sus signals [normie] = []
+    sus keys [tea] = signal_handlers.keys()
+    sus i normie = 0
     
-    if signal_type == SIGTERM || signal_type == SIGINT {
-        vibez.spill("Signal vibe: not good, shutdown requested")
-        graceful_shutdown_request()
+    while i < keys.length() {
+        sus key tea = keys[i]
+        if key.starts_with("signal_") {
+            sus signal_str tea = key.substring(7)  # Remove "signal_" prefix
+            sus signal_num normie = core.normie(signal_str)
+            signals.push(signal_num)
+        }
+        i = i + 1
+    }
+    
+    damn signals
+}
+
+# ==============================================================================
+# SIGNAL PROCESSING FUNCTIONS
+# ==============================================================================
+
+# Simulate receiving a signal
+slay notify(signal normie) lit {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    
+    if !signal_handlers.has_key(signal_key) {
+        vibez.spill("Signal " + core.tea(signal) + " received but no handler registered")
         damn cap
     }
     
-    if signal_type == SIGHUP {
-        vibez.spill("Signal vibe: reload config time")
+    sus handler map = signal_handlers.get(signal_key)
+    if !handler.get("enabled") {
+        vibez.spill("Signal " + core.tea(signal) + " received but handler disabled")
+        damn cap
+    }
+    
+    # Increment signal count
+    sus current_count normie = handler.get("count")
+    handler.set("count", current_count + 1)
+    signal_handlers.set(signal_key, handler)
+    
+    # Add to active signals
+    active_signals.push(signal)
+    
+    # Execute handler action
+    sus handler_type tea = handler.get("type")
+    sus action tea = handler.get("action")
+    
+    if handler_type == HANDLER_IGNORE {
+        vibez.spill("Signal " + core.tea(signal) + " ignored")
+    } else if handler_type == HANDLER_DEFAULT {
+        handle_default_signal(signal)
+    } else if handler_type == HANDLER_CUSTOM {
+        execute_custom_action(signal, action)
+    }
+    
+    damn based
+}
+
+# Handle default signal behavior
+slay handle_default_signal(signal normie) {
+    if signal == SIGTERM || signal == SIGINT {
+        vibez.spill("Termination signal received: " + core.tea(signal))
+        initiate_graceful_shutdown()
+    } else if signal == SIGUSR1 {
+        vibez.spill("User signal 1 received")
+        reload_configuration()
+    } else if signal == SIGUSR2 {
+        vibez.spill("User signal 2 received")
+        dump_statistics()
+    } else if signal == SIGHUP {
+        vibez.spill("Hangup signal received")
+        reload_configuration()
+    } else {
+        vibez.spill("Default handler for signal: " + core.tea(signal))
+    }
+}
+
+# Execute custom signal action
+slay execute_custom_action(signal normie, action tea) {
+    vibez.spill("Executing custom action for signal " + core.tea(signal) + ": " + action)
+    
+    # Parse and execute action (simplified)
+    if action == "log_only" {
+        log_signal_received(signal)
+    } else if action == "graceful_shutdown" {
+        initiate_graceful_shutdown()
+    } else if action == "reload_config" {
+        reload_configuration()
+    } else if action == "dump_stats" {
+        dump_statistics()
+    } else {
+        vibez.spill("Custom action executed: " + action)
+    }
+}
+
+# ==============================================================================
+# GRACEFUL SHUTDOWN MANAGEMENT
+# ==============================================================================
+
+# Initiate graceful shutdown
+slay initiate_graceful_shutdown() {
+    if shutdown_requested {
+        vibez.spill("Shutdown already in progress")
+        damn
+    }
+    
+    shutdown_requested = based
+    vibez.spill("Initiating graceful shutdown...")
+    
+    # Execute all shutdown tasks
+    sus i normie = 0
+    while i < shutdown_tasks.length() {
+        sus task tea = shutdown_tasks[i]
+        vibez.spill("Executing shutdown task: " + task)
+        execute_shutdown_task(task)
+        i = i + 1
+    }
+    
+    vibez.spill("Graceful shutdown completed")
+}
+
+# Add shutdown task
+slay add_shutdown_task(task tea) lit {
+    shutdown_tasks.push(task)
+    damn based
+}
+
+# Remove shutdown task
+slay remove_shutdown_task(task tea) lit {
+    sus new_tasks [tea] = []
+    sus i normie = 0
+    sus found lit = cap
+    
+    while i < shutdown_tasks.length() {
+        if shutdown_tasks[i] != task {
+            new_tasks.push(shutdown_tasks[i])
+        } else {
+            found = based
+        }
+        i = i + 1
+    }
+    
+    shutdown_tasks = new_tasks
+    damn found
+}
+
+# Execute shutdown task
+slay execute_shutdown_task(task tea) {
+    if task == "save_state" {
+        vibez.spill("Saving application state...")
+    } else if task == "close_connections" {
+        vibez.spill("Closing network connections...")
+    } else if task == "flush_buffers" {
+        vibez.spill("Flushing I/O buffers...")
+    } else if task == "cleanup_temp" {
+        vibez.spill("Cleaning up temporary files...")
+    } else {
+        vibez.spill("Executing custom shutdown task: " + task)
+    }
+}
+
+# Check if shutdown is requested
+slay is_shutdown_requested() lit {
+    damn shutdown_requested
+}
+
+# Cancel shutdown request
+slay cancel_shutdown() lit {
+    if shutdown_requested {
+        shutdown_requested = cap
+        vibez.spill("Shutdown request cancelled")
         damn based
     }
-    
-    vibez.spill("Signal vibe: neutral")
+    damn cap
+}
+
+# ==============================================================================
+# SIGNAL FILTERING AND THROTTLING
+# ==============================================================================
+
+# Signal throttling state
+sus throttle_settings map = {}
+sus last_signal_times map = {}
+
+# Set signal throttling
+slay set_signal_throttle(signal normie, min_interval_ms normie) lit {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    throttle_settings.set(signal_key, min_interval_ms)
     damn based
 }
 
-slay yeet_on_signal(signal_type normie) lit {
-    vibez.spill("Yeet! Handling signal: ", signal_type)
+# Check if signal is throttled
+slay is_signal_throttled(signal normie) lit {
+    sus signal_key tea = "signal_" + core.tea(signal)
     
-    # GenZ response to signals
-    if signal_type == SIGTERM {
-        vibez.spill("SIGTERM received - time to yeet out gracefully")
-        graceful_shutdown_request()
-    } elif signal_type == SIGINT {
-        vibez.spill("SIGINT received - user said yeet")
-        graceful_shutdown_request()
-    } elif signal_type == SIGUSR1 {
-        vibez.spill("SIGUSR1 - custom yeet action")
+    if !throttle_settings.has_key(signal_key) {
+        damn cap  # No throttling configured
     }
     
-    damn based
-}
-
-slay no_cap_reload_config() lit {
-    vibez.spill("No cap - reloading config for real")
-    # Configuration reload logic would go here
-    vibez.spill("Config reloaded successfully, no cap!")
-    damn based
-}
-
-# Module initialization and statistics
-
-slay signal_boost_init() lit {
-    vibez.spill("Initializing SignalBoost module (Pure CURSED)")
+    sus min_interval normie = throttle_settings.get(signal_key)
+    sus current_time normie = get_current_time_ms()
     
-    # Initialize signal arrays
+    if last_signal_times.has_key(signal_key) {
+        sus last_time normie = last_signal_times.get(signal_key)
+        sus elapsed normie = current_time - last_time
+        
+        if elapsed < min_interval {
+            damn based  # Signal is throttled
+        }
+    }
+    
+    # Update last signal time
+    last_signal_times.set(signal_key, current_time)
+    damn cap
+}
+
+# Get current time in milliseconds (simulated)
+slay get_current_time_ms() normie {
+    damn 1704067200000  # Simulated timestamp in ms
+}
+
+# ==============================================================================
+# SIGNAL MULTIPLEXING
+# ==============================================================================
+
+# Signal multiplexer state
+sus signal_subscribers map = {}
+sus multiplexer_enabled lit = based
+
+# Subscribe to signal notifications
+slay subscribe_to_signal(signal normie, subscriber_id tea) lit {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    
+    if !signal_subscribers.has_key(signal_key) {
+        signal_subscribers.set(signal_key, [])
+    }
+    
+    sus subscribers [tea] = signal_subscribers.get(signal_key)
+    subscribers.push(subscriber_id)
+    signal_subscribers.set(signal_key, subscribers)
+    
+    damn based
+}
+
+# Unsubscribe from signal notifications
+slay unsubscribe_from_signal(signal normie, subscriber_id tea) lit {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    
+    if !signal_subscribers.has_key(signal_key) {
+        damn cap
+    }
+    
+    sus subscribers [tea] = signal_subscribers.get(signal_key)
+    sus new_subscribers [tea] = []
     sus i normie = 0
-    bestie i < 20; i++ {
-        signal_handlers[i] = ""
-        signal_enabled[i] = cap
+    sus found lit = cap
+    
+    while i < subscribers.length() {
+        if subscribers[i] != subscriber_id {
+            new_subscribers.push(subscribers[i])
+        } else {
+            found = based
+        }
+        i = i + 1
     }
     
+    signal_subscribers.set(signal_key, new_subscribers)
+    damn found
+}
+
+# Notify all subscribers of signal
+slay notify_subscribers(signal normie) {
+    sus signal_key tea = "signal_" + core.tea(signal)
+    
+    if signal_subscribers.has_key(signal_key) {
+        sus subscribers [tea] = signal_subscribers.get(signal_key)
+        sus i normie = 0
+        
+        while i < subscribers.length() {
+            sus subscriber tea = subscribers[i]
+            vibez.spill("Notifying subscriber " + subscriber + " of signal " + core.tea(signal))
+            i = i + 1
+        }
+    }
+}
+
+# ==============================================================================
+# UTILITY FUNCTIONS
+# ==============================================================================
+
+# Get signal name from number
+slay get_signal_name(signal normie) tea {
+    if signal == SIGTERM {
+        damn "SIGTERM"
+    } else if signal == SIGINT {
+        damn "SIGINT"
+    } else if signal == SIGUSR1 {
+        damn "SIGUSR1"
+    } else if signal == SIGUSR2 {
+        damn "SIGUSR2"
+    } else if signal == SIGHUP {
+        damn "SIGHUP"
+    } else if signal == SIGQUIT {
+        damn "SIGQUIT"
+    } else if signal == SIGPIPE {
+        damn "SIGPIPE"
+    } else if signal == SIGALRM {
+        damn "SIGALRM"
+    } else {
+        damn "UNKNOWN"
+    }
+}
+
+# Log signal received
+slay log_signal_received(signal normie) {
+    sus signal_name tea = get_signal_name(signal)
+    sus timestamp normie = get_current_time_ms()
+    vibez.spill("[" + core.tea(timestamp) + "] Signal received: " + signal_name + " (" + core.tea(signal) + ")")
+}
+
+# Reload configuration
+slay reload_configuration() {
+    vibez.spill("Reloading configuration...")
+    # In real implementation, this would reload config files
+}
+
+# Dump statistics
+slay dump_statistics() {
+    vibez.spill("=== Signal Boost Statistics ===")
+    vibez.spill("Registered handlers: " + core.tea(signal_count))
+    vibez.spill("Active signals count: " + core.tea(active_signals.length()))
+    vibez.spill("Shutdown requested: " + core.tea(shutdown_requested))
+    vibez.spill("Shutdown tasks: " + core.tea(shutdown_tasks.length()))
+    
+    # Show signal handler details
+    sus signals [normie] = list_signal_handlers()
+    sus i normie = 0
+    
+    while i < signals.length() {
+        sus signal normie = signals[i]
+        sus handler map = get_signal_handler(signal)
+        sus signal_name tea = get_signal_name(signal)
+        sus count normie = handler.get("count")
+        vibez.spill("  " + signal_name + ": " + core.tea(count) + " times")
+        i = i + 1
+    }
+}
+
+# Reset signal boost state
+slay reset() {
+    signal_handlers = {}
     signal_count = 0
     shutdown_requested = cap
-    multiplexer_active = cap
-    throttle_enabled = cap
-    filter_enabled = cap
-    
-    vibez.spill("SignalBoost module initialized successfully")
-    damn based
+    shutdown_tasks = []
+    active_signals = []
+    throttle_settings = {}
+    last_signal_times = {}
+    signal_subscribers = {}
+    vibez.spill("Signal boost state reset")
 }
 
-slay signal_boost_get_stats() normie {
-    vibez.spill("SignalBoost Statistics:")
-    vibez.spill("  Registered handlers: ", signal_count)
-    vibez.spill("  Shutdown requested: ", shutdown_requested)
-    vibez.spill("  Multiplexer active: ", multiplexer_active)
-    vibez.spill("  Throttling enabled: ", throttle_enabled)
-    vibez.spill("  Filtering enabled: ", filter_enabled)
+# Initialize signal boost with common handlers
+slay init_signal_boost() {
+    # Register default handlers for common signals
+    register_signal_handler(SIGTERM, HANDLER_DEFAULT, "")
+    register_signal_handler(SIGINT, HANDLER_DEFAULT, "")
+    register_signal_handler(SIGUSR1, HANDLER_DEFAULT, "")
+    register_signal_handler(SIGUSR2, HANDLER_DEFAULT, "")
+    register_signal_handler(SIGHUP, HANDLER_DEFAULT, "")
     
-    damn signal_count
+    # Add common shutdown tasks
+    add_shutdown_task("save_state")
+    add_shutdown_task("close_connections")
+    add_shutdown_task("flush_buffers")
+    add_shutdown_task("cleanup_temp")
+    
+    vibez.spill("Signal boost module initialized with default handlers")
 }
 
-# Clean shutdown functionality
-
-slay signal_boost_cleanup() lit {
-    vibez.spill("Cleaning up SignalBoost module")
-    
-    graceful_shutdown_cleanup()
-    signal_multiplexer_stop()
-    signal_throttle_disable()
-    signal_filter_disable()
-    
-    vibez.spill("SignalBoost cleanup completed")
-    damn based
+# Get module information
+slay get_module_info() tea {
+    damn "signal_boost v1.0 - Pure CURSED signal management system"
 }

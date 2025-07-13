@@ -79,10 +79,10 @@ declare void @mod_cleanup()
 
 
 ; String constants
-@.str.0 = private unnamed_addr constant [26 x i8] c"=== Signal Boost Demo ===\00", align 1
+@.str.0 = private unnamed_addr constant [29 x i8] c"Testing exec_vibez module...\00", align 1
 @.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 define i32 @main() {
-  %0 = getelementptr inbounds [26 x i8], [26 x i8]* @.str.0, i64 0, i64 0
+  %0 = getelementptr inbounds [29 x i8], [29 x i8]* @.str.0, i64 0, i64 0
   ; Converting complex expression to output
   %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
   %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
