@@ -1,0 +1,158 @@
+==================
+Basic error creation
+==================
+
+vibe main
+
+slay test() {
+    yikes err := "something went wrong"
+    vibez.spill(err)
+}
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (function_declaration
+    name: (identifier)
+    (signature (parameters))
+    (block
+      (error_statement
+        variable: (identifier)
+        value: (string_literal))
+      (expression_statement
+        (call_expression
+          function: (selector_expression
+            operand: (identifier)
+            field: (identifier))
+          arguments: (argument_list
+            (expression_list (identifier))))))))
+
+==================
+Error propagation with shook
+==================
+
+vibe main
+
+slay risky() normie {
+    yolo shook dangerous_operation()
+}
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (function_declaration
+    name: (identifier)
+    (signature
+      (parameters)
+      (builtin_type))
+    (block
+      (return_statement
+        (expression_list
+          (unary_expression
+            operator: "shook"
+            operand: (call_expression
+              function: (identifier)
+              arguments: (argument_list))))))))
+
+==================
+Error recovery with fam
+==================
+
+vibe main
+
+slay test() {
+    fam err {
+        risky_operation()
+        another_risky_call()
+    } highkey {
+        vibez.spill("Recovery successful")
+    }
+}
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (function_declaration
+    name: (identifier)
+    (signature (parameters))
+    (block
+      (recovery_statement
+        error_variable: (identifier)
+        body: (block
+          (expression_statement
+            (call_expression
+              function: (identifier)
+              arguments: (argument_list)))
+          (expression_statement
+            (call_expression
+              function: (identifier)
+              arguments: (argument_list))))
+        recovery_body: (block
+          (expression_statement
+            (call_expression
+              function: (selector_expression
+                operand: (identifier)
+                field: (identifier))
+              arguments: (argument_list
+                (expression_list (string_literal))))))))))
+
+==================
+Complex error handling
+==================
+
+vibe main
+
+slay complex_error_handling() {
+    yikes primary_err := "initial error"
+    
+    fam recovery_err {
+        yikes nested_err := shook process_data()
+        vibez.spill(nested_err)
+    } highkey {
+        vibez.spill("All errors handled")
+    }
+}
+
+---
+
+(source_file
+  (package_clause
+    name: (identifier))
+  (function_declaration
+    name: (identifier)
+    (signature (parameters))
+    (block
+      (error_statement
+        variable: (identifier)
+        value: (string_literal))
+      (recovery_statement
+        error_variable: (identifier)
+        body: (block
+          (error_statement
+            variable: (identifier)
+            value: (unary_expression
+              operator: "shook"
+              operand: (call_expression
+                function: (identifier)
+                arguments: (argument_list))))
+          (expression_statement
+            (call_expression
+              function: (selector_expression
+                operand: (identifier)
+                field: (identifier))
+              arguments: (argument_list
+                (expression_list (identifier))))))
+        recovery_body: (block
+          (expression_statement
+            (call_expression
+              function: (selector_expression
+                operand: (identifier)
+                field: (identifier))
+              arguments: (argument_list
+                (expression_list (string_literal))))))))))

@@ -1,363 +1,299 @@
 # Parser Module
 
-The parser module provides comprehensive parsing utilities and AST manipulation capabilities for the CURSED language. It enables building parsers, working with Abstract Syntax Trees (ASTs), and performing code analysis and generation.
+The CURSED parser module provides comprehensive language parsing capabilities for self-hosting compilation. This module implements lexical analysis, AST construction, error handling, symbol table management, and type checking.
 
-## Features
+## Overview
 
-- **Lexical Analysis**: Tokenization and lexer functionality
-- **Parsing**: Recursive descent parser with error recovery
-- **AST Manipulation**: Create, modify, and traverse Abstract Syntax Trees
-- **Code Generation**: Generate code from AST representations
-- **Grammar Support**: Load and validate custom grammars
-- **Operator Precedence**: Configurable operator precedence and associativity
-- **Error Handling**: Comprehensive error reporting with line/column information
-- **Performance Metrics**: Parse time and memory usage tracking
-- **Pure CURSED Implementation**: No external dependencies
+The parser module is critical for self-hosting - it enables the CURSED compiler to parse CURSED source code and compile itself. The module follows a recursive descent parsing strategy with operator precedence handling.
 
-## Token Types
+## Core Components
 
+### 1. Lexical Analysis
+
+**Tokenization Functions:**
+- `tokenize(source tea) []Token` - Convert source code into tokens
+- `is_keyword(value tea) lit` - Check if string is a language keyword
+- `is_operator(ch sip) lit` - Check if character is an operator
+- `is_delimiter(ch sip) lit` - Check if character is a delimiter
+
+**Token Types:**
+- `TokenIdentifier` - Variable and function names
+- `TokenNumber` - Numeric literals (integer and float)
+- `TokenString` - String literals
+- `TokenKeyword` - Language keywords (sus, slay, damn, etc.)
+- `TokenOperator` - Operators (+, -, *, /, =, etc.)
+- `TokenDelimiter` - Delimiters (parentheses, braces, semicolons)
+- `TokenComment` - Comments (# prefixed)
+- `TokenEOF` - End of file marker
+- `TokenError` - Malformed tokens
+
+### 2. AST Construction
+
+**Core Parsing Functions:**
+- `parse_program(parser *Parser) *ASTNode` - Parse complete program
+- `parse_statement(parser *Parser) *ASTNode` - Parse statements
+- `parse_expression(parser *Parser) *ASTNode` - Parse expressions with precedence
+- `parse_variable_declaration(parser *Parser) *ASTNode` - Parse variable declarations
+- `parse_function_declaration(parser *Parser) *ASTNode` - Parse function declarations
+
+**Expression Parsing (Precedence Order):**
+1. `parse_logical_or()` - Logical OR (`||`)
+2. `parse_logical_and()` - Logical AND (`&&`)
+3. `parse_equality()` - Equality (`==`, `!=`)
+4. `parse_comparison()` - Comparison (`<`, `>`, `<=`, `>=`)
+5. `parse_term()` - Addition/Subtraction (`+`, `-`)
+6. `parse_factor()` - Multiplication/Division (`*`, `/`, `%`)
+7. `parse_unary()` - Unary operators (`!`, `-`, `+`)
+8. `parse_call()` - Function calls and member access
+9. `parse_primary()` - Literals, identifiers, parenthesized expressions
+
+**AST Node Types:**
+- `NodeProgram` - Root program node
+- `NodeStatement` - Statement nodes
+- `NodeExpression` - Expression nodes
+- `NodeDeclaration` - Declaration nodes
+- `NodeFunction` - Function definition nodes
+- `NodeVariable` - Variable declaration nodes
+- `NodeBinary` - Binary expression nodes
+- `NodeUnary` - Unary expression nodes
+- `NodeCall` - Function call nodes
+- `NodeLiteral` - Literal value nodes
+
+### 3. Error Handling
+
+**Error Management:**
+- `parse_error(parser *Parser, message tea)` - Report parse errors
+- `error_recovery(parser *Parser)` - Recover from syntax errors
+- `get_errors(parser *Parser) []tea` - Get all parse errors
+- `clear_errors(parser *Parser)` - Clear error list
+
+**Error Recovery Strategy:**
+- Synchronize to statement boundaries (semicolons, keywords)
+- Continue parsing after errors to find additional issues
+- Provide meaningful error messages with line/column information
+
+### 4. Symbol Table Management
+
+**Symbol Table Functions:**
+- `create_symbol_table() []Symbol` - Create new symbol table
+- `resolve_symbol(parser *Parser, name tea) *Symbol` - Look up symbols
+- `add_symbol(parser *Parser, symbol Symbol)` - Add symbol to table
+
+**Symbol Information:**
+- Name and type of identifier
+- Scope level for nested contexts
+- Line number where declared
+- Symbol category (variable, function, constant, type)
+
+### 5. Type Checking
+
+**Type Analysis:**
+- `check_types(node *ASTNode, parser *Parser) lit` - Validate type compatibility
+- `infer_type(node *ASTNode, parser *Parser) tea` - Infer expression types
+
+**Type Inference Rules:**
+- Literal values: `42` → `normie`, `3.14` → `meal`, `"text"` → `tea`
+- Binary expressions: Type promotion (int + float → float)
+- Function calls: Return type from function signature
+- Member access: Type of accessed member
+
+## Data Structures
+
+### Token Structure
 ```cursed
-TOKEN_IDENTIFIER = 1
-TOKEN_NUMBER = 2
-TOKEN_STRING = 3
-TOKEN_KEYWORD = 4
-TOKEN_OPERATOR = 5
-TOKEN_PUNCTUATION = 6
-TOKEN_WHITESPACE = 7
-TOKEN_COMMENT = 8
-TOKEN_EOF = 9
+be_like Token = struct {
+    token_type TokenType    # Type of token
+    value tea              # Token text
+    line normie            # Line number
+    column normie          # Column position
+}
 ```
 
-## AST Node Types
-
+### AST Node Structure
 ```cursed
-AST_EXPRESSION = 1
-AST_STATEMENT = 2
-AST_DECLARATION = 3
-AST_BLOCK = 4
-AST_FUNCTION = 5
-AST_LITERAL = 6
-AST_IDENTIFIER = 7
-AST_BINARY_OP = 8
-AST_UNARY_OP = 9
-AST_CALL = 10
+be_like ASTNode = struct {
+    node_type ASTNodeType  # Type of AST node
+    value tea              # Node value/name
+    children []*ASTNode    # Child nodes
+    line normie            # Source line
+    column normie          # Source column
+}
 ```
 
-## Parser States
-
+### Symbol Structure
 ```cursed
-PARSER_STATE_INITIAL = 0
-PARSER_STATE_PARSING = 1
-PARSER_STATE_ERROR = 2
-PARSER_STATE_COMPLETE = 3
+be_like Symbol = struct {
+    name tea               # Symbol name
+    symbol_type tea        # Symbol type
+    scope normie           # Scope level
+    declared_line normie   # Declaration line
+}
 ```
 
-## Basic Usage
+### Parser State
+```cursed
+be_like Parser = struct {
+    tokens []Token         # Token stream
+    current normie         # Current position
+    symbols []Symbol       # Symbol table
+    errors []tea           # Parse errors
+    current_scope normie   # Current scope level
+}
+```
 
-### Lexical Analysis
+## Usage Examples
 
+### Basic Tokenization
 ```cursed
 yeet "parser"
 
-# Create lexer
-sus lexer_id normie = parser_lexer_create("let x = 42")
+sus source := "sus x := 42 + 10"
+sus tokens := tokenize(source)
 
-# Get next token
-sus token_id normie = parser_lexer_next_token(lexer_id)
-
-# Get token information
-sus token_type smol = parser_token_get_type(token_id)
-sus token_value tea = parser_token_get_value(token_id)
-sus line normie = parser_token_get_line(token_id)
-sus column normie = parser_token_get_column(token_id)
+# tokens[0] = Token{TokenKeyword, "sus", 1, 1}
+# tokens[1] = Token{TokenIdentifier, "x", 1, 5}
+# tokens[2] = Token{TokenOperator, ":=", 1, 7}
+# etc.
 ```
 
-### Parser Creation
-
+### Complete Program Parsing
 ```cursed
-# Create parser
-sus parser_id normie = parser_create("let x = 42")
+yeet "parser"
 
-# Get parser state
-sus state smol = parser_get_state(parser_id)
+sus source := `
+    sus x normie := 42
+    slay double(n normie) normie {
+        damn n * 2
+    }
+    sus result := double(x)
+`
 
-# Reset parser
-parser_reset(parser_id)
-
-# Destroy parser
-parser_destroy(parser_id)
+sus ast, errors := parse_source(source)
+shook len(errors) == 0 {
+    vibez.spill("Parsing successful!")
+    print_ast(ast, 0)  # Pretty print AST
+}
 ```
 
-### AST Node Creation
-
+### Symbol Table Usage
 ```cursed
-# Create AST nodes
-sus expr_node normie = parser_ast_create_node(AST_EXPRESSION)
-sus stmt_node normie = parser_ast_create_node(AST_STATEMENT)
+yeet "parser"
 
-# Set node values
-parser_ast_set_value(expr_node, "x + 1")
-parser_ast_set_type(expr_node, AST_BINARY_OP)
+sus tokens := tokenize("sus x := 42")
+sus parser := create_parser(tokens)
+sus program := parse_program(parser)
 
-# Get node information
-sus node_value tea = parser_ast_get_value(expr_node)
-sus node_type smol = parser_ast_get_type(expr_node)
+# Check symbol table
+sus symbol := resolve_symbol(parser, "x")
+shook symbol != cringe {
+    vibez.spill("Found variable: " + symbol.name)
+    vibez.spill("Type: " + symbol.symbol_type)
+}
 ```
 
-### AST Tree Structure
-
+### Type Checking
 ```cursed
-# Add child nodes
-parser_ast_add_child(stmt_node, expr_node)
+yeet "parser"
 
-# Get child nodes
-sus child_node normie = parser_ast_get_child(stmt_node, 0)
-sus child_count normie = parser_ast_get_child_count(stmt_node)
+sus ast, _ := parse_source("1 + 2.5")
+sus expr_type := infer_type(ast.children[0], cringe)
+# expr_type = "meal" (float due to type promotion)
 ```
 
-### Expression Parsing
+## Language Support
 
-```cursed
-# Parse expressions
-sus expr_ast normie = parser_parse_expression(parser_id)
-sus binary_ast normie = parser_parse_binary_expression(parser_id, left_node, "+")
-sus unary_ast normie = parser_parse_unary_expression(parser_id, "-")
-sus primary_ast normie = parser_parse_primary_expression(parser_id)
-```
+The parser supports all CURSED language features:
 
-### Statement Parsing
+**Keywords:** `sus`, `slay`, `damn`, `shook`, `cap`, `bestie`, `yeet`, `vibez`, `based`, `cringe`, `facts`, `be_like`, `stan`, `dm`, `ready`, `yikes`, `fam`
 
-```cursed
-# Parse statements
-sus stmt_ast normie = parser_parse_statement(parser_id)
-sus decl_ast normie = parser_parse_declaration(parser_id)
-sus block_ast normie = parser_parse_block(parser_id)
-sus func_ast normie = parser_parse_function(parser_id)
-```
+**Operators:** Arithmetic (`+`, `-`, `*`, `/`, `%`), Comparison (`<`, `>`, `<=`, `>=`, `==`, `!=`), Logical (`&&`, `||`, `!`), Assignment (`:=`, `=`)
 
-### Error Handling
+**Delimiters:** Parentheses, braces, brackets, semicolons, commas, dots
 
-```cursed
-# Check for errors
-sus has_error lit = parser_has_error(parser_id)
+**Types:** `normie` (int), `meal` (float), `tea` (string), `lit` (bool), `sip` (char), arrays, pointers, structs
 
-# Get error information
-sus error_msg tea = parser_get_error(parser_id)
-sus error_line normie = parser_get_error_line(parser_id)
-sus error_col normie = parser_get_error_column(parser_id)
-```
+## Advanced Features
 
 ### AST Traversal
-
 ```cursed
-# Traverse AST
-parser_ast_traverse(root_node, "visitor_function")
+# Visit all nodes with custom function
+visit_ast(ast, node_processor)
 
-# Find nodes by type
-sus found_nodes tea = parser_ast_find_nodes(root_node, AST_EXPRESSION)
+# Count specific node types
+sus function_count := count_nodes(ast, NodeFunction)
 
-# Clone nodes
-sus cloned_node normie = parser_ast_clone_node(original_node)
-
-# Replace nodes
-parser_ast_replace_node(old_node, new_node)
+# Find nodes by value
+sus test_nodes := find_nodes_by_value(ast, "test")
 ```
 
-### Code Generation
-
-```cursed
-# Generate code from AST
-sus generated_code tea = parser_ast_to_code(root_node)
-
-# Convert AST to JSON
-sus json_ast tea = parser_ast_to_json(root_node)
-
-# Create AST from JSON
-sus ast_from_json normie = parser_ast_from_json("{\"type\": \"expression\"}")
-```
+### Error Recovery
+The parser implements panic-mode error recovery:
+- Detects syntax errors and reports location
+- Synchronizes to safe recovery points
+- Continues parsing to find additional errors
+- Maintains partial AST for error correction
 
 ### Operator Precedence
+Implements standard operator precedence:
+1. Parentheses (highest)
+2. Unary operators (`!`, `-`, `+`)
+3. Multiplicative (`*`, `/`, `%`)
+4. Additive (`+`, `-`)
+5. Comparison (`<`, `>`, `<=`, `>=`)
+6. Equality (`==`, `!=`)
+7. Logical AND (`&&`)
+8. Logical OR (`||`) (lowest)
 
-```cursed
-# Get operator precedence
-sus precedence normie = parser_get_operator_precedence("+")
-sus associativity smol = parser_get_operator_associativity("*")
+## Self-Hosting Integration
 
-# Check operator types
-sus is_binary lit = parser_is_binary_operator("+")
-sus is_unary lit = parser_is_unary_operator("-")
-```
+This parser module is designed for self-hosting compilation:
 
-### Grammar Support
+1. **Lexical Analysis:** Tokenizes CURSED source code
+2. **Syntax Analysis:** Builds Abstract Syntax Tree
+3. **Semantic Analysis:** Symbol resolution and type checking
+4. **Error Reporting:** Comprehensive error messages
+5. **Code Generation:** AST ready for LLVM IR generation
 
-```cursed
-# Load and validate grammar
-sus is_valid lit = parser_validate_grammar("grammar.bnf")
-sus grammar_id normie = parser_load_grammar("grammar.bnf")
-parser_set_grammar(parser_id, grammar_id)
-```
-
-### Utility Functions
-
-```cursed
-# Check token types
-sus is_keyword lit = parser_is_keyword("let")
-sus is_identifier lit = parser_is_identifier("variable")
-sus is_number lit = parser_is_number("42")
-sus is_string lit = parser_is_string_literal("\"hello\"")
-```
-
-### Parser Configuration
-
-```cursed
-# Set parser options
-parser_set_option(parser_id, "debug", "true")
-parser_set_option(parser_id, "strict", "false")
-
-# Get parser options
-sus debug_mode tea = parser_get_option(parser_id, "debug")
-```
-
-### Performance Metrics
-
-```cursed
-# Get performance information
-sus parse_time normie = parser_get_parse_time(parser_id)
-sus memory_usage normie = parser_get_memory_usage(parser_id)
-sus node_count normie = parser_get_node_count(parser_id)
-```
-
-## Functions
-
-### Lexer Functions
-- `parser_lexer_create(input tea) normie` - Create lexer
-- `parser_lexer_next_token(lexer_id normie) normie` - Get next token
-- `parser_token_get_type(token_id normie) smol` - Get token type
-- `parser_token_get_value(token_id normie) tea` - Get token value
-- `parser_token_get_position(token_id normie) normie` - Get token position
-- `parser_token_get_line(token_id normie) normie` - Get token line
-- `parser_token_get_column(token_id normie) normie` - Get token column
-
-### Parser Functions
-- `parser_create(input tea) normie` - Create parser
-- `parser_destroy(parser_id normie) lit` - Destroy parser
-- `parser_get_state(parser_id normie) smol` - Get parser state
-- `parser_reset(parser_id normie) lit` - Reset parser
-
-### AST Node Functions
-- `parser_ast_create_node(node_type smol) normie` - Create AST node
-- `parser_ast_set_value(node_id normie, value tea) lit` - Set node value
-- `parser_ast_get_value(node_id normie) tea` - Get node value
-- `parser_ast_set_type(node_id normie, node_type smol) lit` - Set node type
-- `parser_ast_get_type(node_id normie) smol` - Get node type
-
-### AST Tree Functions
-- `parser_ast_add_child(parent_id normie, child_id normie) lit` - Add child node
-- `parser_ast_get_child(parent_id normie, index normie) normie` - Get child node
-- `parser_ast_get_child_count(parent_id normie) normie` - Get child count
-
-### Expression Parsing Functions
-- `parser_parse_expression(parser_id normie) normie` - Parse expression
-- `parser_parse_binary_expression(parser_id normie, left_id normie, operator tea) normie` - Parse binary expression
-- `parser_parse_unary_expression(parser_id normie, operator tea) normie` - Parse unary expression
-- `parser_parse_primary_expression(parser_id normie) normie` - Parse primary expression
-
-### Statement Parsing Functions
-- `parser_parse_statement(parser_id normie) normie` - Parse statement
-- `parser_parse_declaration(parser_id normie) normie` - Parse declaration
-- `parser_parse_block(parser_id normie) normie` - Parse block
-- `parser_parse_function(parser_id normie) normie` - Parse function
-
-### Error Handling Functions
-- `parser_get_error(parser_id normie) tea` - Get error message
-- `parser_get_error_line(parser_id normie) normie` - Get error line
-- `parser_get_error_column(parser_id normie) normie` - Get error column
-- `parser_has_error(parser_id normie) lit` - Check for errors
-
-### AST Traversal Functions
-- `parser_ast_traverse(root_id normie, visitor_name tea) lit` - Traverse AST
-- `parser_ast_find_nodes(root_id normie, node_type smol) tea` - Find nodes by type
-- `parser_ast_replace_node(old_node_id normie, new_node_id normie) lit` - Replace node
-- `parser_ast_clone_node(node_id normie) normie` - Clone node
-
-### Code Generation Functions
-- `parser_ast_to_code(root_id normie) tea` - Generate code from AST
-- `parser_ast_to_json(root_id normie) tea` - Convert AST to JSON
-- `parser_ast_from_json(json_string tea) normie` - Create AST from JSON
-
-### Operator Functions
-- `parser_get_operator_precedence(operator tea) normie` - Get operator precedence
-- `parser_get_operator_associativity(operator tea) smol` - Get operator associativity
-- `parser_is_binary_operator(operator tea) lit` - Check if binary operator
-- `parser_is_unary_operator(operator tea) lit` - Check if unary operator
-
-### Grammar Functions
-- `parser_validate_grammar(grammar_file tea) lit` - Validate grammar
-- `parser_load_grammar(grammar_file tea) normie` - Load grammar
-- `parser_set_grammar(parser_id normie, grammar_id normie) lit` - Set grammar
-
-### Utility Functions
-- `parser_is_keyword(word tea) lit` - Check if keyword
-- `parser_is_identifier(word tea) lit` - Check if identifier
-- `parser_is_number(word tea) lit` - Check if number
-- `parser_is_string_literal(word tea) lit` - Check if string literal
-
-### Configuration Functions
-- `parser_set_option(parser_id normie, option_name tea, option_value tea) lit` - Set option
-- `parser_get_option(parser_id normie, option_name tea) tea` - Get option
-
-### Performance Functions
-- `parser_get_parse_time(parser_id normie) normie` - Get parse time
-- `parser_get_memory_usage(parser_id normie) normie` - Get memory usage
-- `parser_get_node_count(parser_id normie) normie` - Get node count
+The parser integrates with other compiler phases:
+- **Frontend:** Tokenization and parsing
+- **Middle-end:** Semantic analysis and optimization
+- **Backend:** Code generation from AST
 
 ## Testing
 
-Run the comprehensive test suite:
-
+Run comprehensive tests:
 ```bash
+# Test parsing module
 cargo run --bin cursed stdlib/parser/test_parser.csd
-```
 
-Test both interpretation and compilation modes:
-
-```bash
+# Test both interpretation and compilation
 cargo run --bin cursed stdlib/parser/test_parser.csd
 cargo run --bin cursed -- compile stdlib/parser/test_parser.csd
 ./test_parser
 ```
 
-## Error Handling
+## Performance Characteristics
 
-All functions return appropriate error values:
-- Boolean functions return `cap` (false) on error
-- Integer functions return -1 on error
-- String functions return empty string on error
+- **Tokenization:** Linear time O(n) in source length
+- **Parsing:** Recursive descent with linear time for most constructs
+- **Memory:** AST nodes allocated dynamically
+- **Error Recovery:** Minimal performance impact
+- **Symbol Table:** Linear search (suitable for typical program sizes)
 
-## Performance
+## Future Enhancements
 
-- Efficient tokenization with minimal memory allocation
-- Optimized AST operations with smart caching
-- Fast parsing with predictive lookahead
-- Memory-efficient tree structures
-- Optimized for both interpretation and compilation modes
-
-## Use Cases
-
-- **Language Implementation**: Build parsers for custom languages
-- **Code Analysis**: Analyze and transform source code
-- **AST Manipulation**: Modify and generate Abstract Syntax Trees
-- **Compiler Construction**: Build compilers and interpreters
-- **Code Generation**: Generate code from AST representations
-- **Syntax Validation**: Validate and format source code
+- **Incremental Parsing:** Parse only changed portions
+- **Better Error Messages:** More context and suggestions
+- **AST Optimization:** Constant folding during parsing
+- **Parallel Parsing:** Multiple files simultaneously
+- **LSP Integration:** Language server protocol support
 
 ## Dependencies
 
+- `core` - Core CURSED runtime functions
+- `stringz` - String manipulation utilities
 - `testz` - Testing framework
-- `string` - String manipulation
-- `collections` - Data structures
-- `json` - JSON handling
 
 ## License
 
-Part of the CURSED language standard library.
+This module is part of the CURSED programming language implementation and follows the same license terms.

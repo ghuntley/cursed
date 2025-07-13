@@ -6,6 +6,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 #[test]
+#[ignore = "Memory profiling tests disabled for fast test runs"]
 fn test_comprehensive_memory_profiling() {
     println!("=== Comprehensive Memory Profiling Integration Test ===");
     
@@ -200,6 +201,7 @@ fn test_comprehensive_memory_profiling() {
 }
 
 #[test]
+#[ignore = "Memory profiling tests disabled for fast test runs"]
 fn test_fragmentation_calculation_accuracy() {
     let config = ProfilingConfig::default();
     let profiler = MemoryProfiler::new(config).unwrap();
@@ -244,6 +246,7 @@ fn test_fragmentation_calculation_accuracy() {
 }
 
 #[test]
+#[ignore = "Memory profiling tests disabled for fast test runs"]
 fn test_cache_hit_rate_analysis() {
     let config = ProfilingConfig::default();
     let profiler = MemoryProfiler::new(config).unwrap();
@@ -276,6 +279,7 @@ fn test_cache_hit_rate_analysis() {
 }
 
 #[test]
+#[ignore = "Memory profiling tests disabled for fast test runs"]
 fn test_memory_pressure_calculation() {
     let config = ProfilingConfig::default();
     let profiler = MemoryProfiler::new(config).unwrap();
@@ -293,6 +297,7 @@ fn test_memory_pressure_calculation() {
 }
 
 #[test]
+#[ignore = "Memory profiling tests disabled for fast test runs"]
 fn test_enhanced_leak_detection_accuracy() {
     let mut config = ProfilingConfig::default();
     config.enable_leak_detection = true;

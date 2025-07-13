@@ -1,268 +1,216 @@
 yeet "testz"
 yeet "vibe_life"
+yeet "core"
 
-# Comprehensive tests for vibe_life OS module
+# Initialize vibe_life module for testing
+init_vibe_life()
 
-test_start("vibe_life OS module comprehensive tests")
+# ==============================================================================
+# COMMAND LINE ARGUMENT TESTS
+# ==============================================================================
 
-# Test command line arguments
-test_start("Args() function")
-args := vibe_life.Args()
-assert_true(len(args) > 0)
+test_start("get_args basic functionality")
+sus args [tea] = vibe_life.get_args()
+assert_eq_int(args.length(), 2)
 assert_eq_string(args[0], "cursed")
-vibez.spill("✅ Args() test passed")
+assert_eq_string(args[1], "program.csd")
 
-# Test environment variables
-test_start("Getenv() function")
-home := vibe_life.Getenv("HOME")
-assert_eq_string(home, "/home/user")
+test_start("get_arg_count functionality")
+sus count normie = vibe_life.get_arg_count()
+assert_eq_int(count, 2)
 
-path := vibe_life.Getenv("PATH")
-assert_eq_string(path, "/usr/bin:/bin")
+test_start("get_arg by index")
+assert_eq_string(vibe_life.get_arg(0), "cursed")
+assert_eq_string(vibe_life.get_arg(1), "program.csd")
+assert_eq_string(vibe_life.get_arg(99), "")  # Out of bounds
 
-# Test non-existent environment variable
-empty := vibe_life.Getenv("NON_EXISTENT")
-assert_eq_string(empty, "")
-vibez.spill("✅ Getenv() test passed")
+test_start("set_args functionality")
+sus new_args [tea] = ["test", "file.csd", "--debug"]
+vibe_life.set_args(new_args)
+assert_eq_int(vibe_life.get_arg_count(), 3)
+assert_eq_string(vibe_life.get_arg(2), "--debug")
 
-# Test setting environment variables
-test_start("Setenv() function")
-err := vibe_life.Setenv("TEST_VAR", "test_value")
-assert_true(err == cringe)
+# ==============================================================================
+# ENVIRONMENT VARIABLE TESTS
+# ==============================================================================
 
-# Verify the variable was set
-test_value := vibe_life.Getenv("TEST_VAR")
-assert_eq_string(test_value, "test_value")
-vibez.spill("✅ Setenv() test passed")
+test_start("get_env default variables")
+assert_eq_string(vibe_life.get_env("HOME"), "/home/user")
+assert_eq_string(vibe_life.get_env("PATH"), "/usr/bin:/bin")
+assert_eq_string(vibe_life.get_env("NONEXISTENT"), "")
 
-# Test working directory operations
-test_start("Getwd() and Chdir() functions")
-wd, err := vibe_life.Getwd()
-assert_true(err == cringe)
-assert_eq_string(wd, "/tmp")
+test_start("set_env functionality")
+assert_true(vibe_life.set_env("TEST_VAR", "test_value"))
+assert_eq_string(vibe_life.get_env("TEST_VAR"), "test_value")
 
-# Change directory
-err = vibe_life.Chdir("/home/user")
-assert_true(err == cringe)
+test_start("has_env functionality")
+assert_true(vibe_life.has_env("HOME"))
+assert_true(vibe_life.has_env("TEST_VAR"))
+assert_false(vibe_life.has_env("NONEXISTENT"))
 
-# Verify directory changed
-new_wd, err := vibe_life.Getwd()
-assert_true(err == cringe)
-assert_eq_string(new_wd, "/home/user")
-vibez.spill("✅ Working directory test passed")
+test_start("unset_env functionality")
+assert_true(vibe_life.unset_env("TEST_VAR"))
+assert_false(vibe_life.has_env("TEST_VAR"))
+assert_false(vibe_life.unset_env("NONEXISTENT"))
 
-# Test file operations
-test_start("File operations")
-file, err := vibe_life.Create("test_file.txt")
-assert_true(err == cringe)
-assert_eq_string(file.name, "test_file.txt")
-assert_true(file.is_open)
-assert_true(file.handle > 0)
+test_start("get_env_keys functionality")
+sus env_keys [tea] = vibe_life.get_env_keys()
+assert_true(env_keys.length() >= 4)  # At least default vars
 
-# Test file writing
-bytes_written, err := file.Write("Hello, World!")
-assert_true(err == cringe)
-assert_eq_int(bytes_written, 13)
+# ==============================================================================
+# PROCESS CONTROL TESTS
+# ==============================================================================
 
-# Test file closing
-err = file.Close()
-assert_true(err == cringe)
-assert_false(file.is_open)
-vibez.spill("✅ File operations test passed")
+test_start("get_pid functionality")
+sus pid normie = vibe_life.get_pid()
+assert_eq_int(pid, 1234)
 
-# Test file opening
-test_start("File opening")
-opened_file, err := vibe_life.Open("existing_file.txt")
-assert_true(err == cringe)
-assert_eq_string(opened_file.name, "existing_file.txt")
-assert_true(opened_file.is_open)
-vibez.spill("✅ File opening test passed")
+test_start("get_ppid functionality")
+sus ppid normie = vibe_life.get_ppid()
+assert_eq_int(ppid, 1000)
 
-# Test file existence checking
-test_start("File existence checking")
-exists := vibe_life.Exists("test.txt")
-assert_true(exists)
+test_start("exit code management")
+vibe_life.exit(42)
+assert_eq_int(vibe_life.get_exit_code(), 42)
 
-not_exists := vibe_life.Exists("non_existent.txt")
-assert_false(not_exists)
-vibez.spill("✅ File existence test passed")
+# ==============================================================================
+# WORKING DIRECTORY TESTS
+# ==============================================================================
 
-# Test file removal
-test_start("File removal")
-err = vibe_life.Remove("test.txt")
-assert_true(err == cringe)
+test_start("get_cwd default")
+assert_eq_string(vibe_life.get_cwd(), "/home/user")
 
-# Test removing non-existent file
-err = vibe_life.Remove("non_existent.txt")
-assert_true(err != cringe)
-vibez.spill("✅ File removal test passed")
+test_start("set_cwd functionality")
+assert_true(vibe_life.set_cwd("/tmp"))
+assert_eq_string(vibe_life.get_cwd(), "/tmp")
+assert_false(vibe_life.set_cwd(""))  # Empty path should fail
 
-# Test file info
-test_start("File info")
-info, err := vibe_life.Stat("test.txt")
-assert_true(err == cringe)
-assert_eq_string(info.name, "test.txt")
-assert_eq_int(info.size, 1024)
-assert_false(info.is_dir)
-assert_eq_int(info.mode, 0644)
-vibez.spill("✅ File info test passed")
+test_start("join_path functionality")
+assert_eq_string(vibe_life.join_path("/home", "user"), "/home/user")
+assert_eq_string(vibe_life.join_path("/home/", "user"), "/home/user")
+assert_eq_string(vibe_life.join_path("", "user"), "user")
+assert_eq_string(vibe_life.join_path("/home", ""), "/home")
 
-# Test directory operations
-test_start("Directory operations")
-err = vibe_life.Mkdir("test_dir")
-assert_true(err == cringe)
+test_start("dirname functionality")
+assert_eq_string(vibe_life.dirname("/home/user/file.txt"), "/home/user")
+assert_eq_string(vibe_life.dirname("file.txt"), ".")
+assert_eq_string(vibe_life.dirname("/root"), "")
 
-files, err := vibe_life.ReadDir("test_dir")
-assert_true(err == cringe)
-assert_true(len(files) > 0)
+test_start("basename functionality")
+assert_eq_string(vibe_life.basename("/home/user/file.txt"), "file.txt")
+assert_eq_string(vibe_life.basename("file.txt"), "file.txt")
+assert_eq_string(vibe_life.basename("/home/user/"), "")
 
-err = vibe_life.Rmdir("test_dir")
-assert_true(err == cringe)
-vibez.spill("✅ Directory operations test passed")
+# ==============================================================================
+# FILE SYSTEM OPERATION TESTS
+# ==============================================================================
 
-# Test system information
-test_start("System information")
-hostname, err := vibe_life.Hostname()
-assert_true(err == cringe)
-assert_eq_string(hostname, "cursed-host")
+test_start("file_exists default files")
+assert_true(vibe_life.file_exists("/tmp/cursed.log"))
+assert_true(vibe_life.file_exists("/home/user/.cursedrc"))
+assert_false(vibe_life.file_exists("/nonexistent"))
 
-uid := vibe_life.Getuid()
-assert_eq_int(uid, 1000)
+test_start("create_file functionality")
+assert_true(vibe_life.create_file("/tmp/test.txt", "Hello World"))
+assert_true(vibe_life.file_exists("/tmp/test.txt"))
 
-gid := vibe_life.Getgid()
-assert_eq_int(gid, 1000)
+test_start("read_file functionality")
+assert_eq_string(vibe_life.read_file("/tmp/test.txt"), "Hello World")
+assert_eq_string(vibe_life.read_file("/nonexistent"), "")
 
-pid := vibe_life.Getpid()
-assert_eq_int(pid, 12345)
+test_start("write_file functionality")
+assert_true(vibe_life.write_file("/tmp/test2.txt", "New content"))
+assert_eq_string(vibe_life.read_file("/tmp/test2.txt"), "New content")
 
-ppid := vibe_life.Getppid()
-assert_eq_int(ppid, 12344)
-vibez.spill("✅ System information test passed")
+test_start("append_file functionality")
+assert_true(vibe_life.append_file("/tmp/test.txt", " Appended"))
+assert_eq_string(vibe_life.read_file("/tmp/test.txt"), "Hello World Appended")
 
-# Test temporary file operations
-test_start("Temporary file operations")
-temp_dir := vibe_life.TempDir()
-assert_eq_string(temp_dir, "/tmp")
+test_start("get_file_size functionality")
+assert_eq_int(vibe_life.get_file_size("/tmp/test.txt"), 19)  # "Hello World Appended"
+assert_eq_int(vibe_life.get_file_size("/nonexistent"), -1)
 
-temp_file, err := vibe_life.TempFile("test_prefix")
-assert_true(err == cringe)
-assert_true(len(temp_file.name) > 0)
-vibez.spill("✅ Temporary file operations test passed")
+test_start("delete_file functionality")
+assert_true(vibe_life.delete_file("/tmp/test.txt"))
+assert_false(vibe_life.file_exists("/tmp/test.txt"))
+assert_false(vibe_life.delete_file("/nonexistent"))
 
-# Test command execution
-test_start("Command execution")
-args := []tea{"arg1", "arg2", "arg3"}
-err = vibe_life.Exec("test_command", args)
-assert_true(err == cringe)
-vibez.spill("✅ Command execution test passed")
+test_start("list_files functionality")
+sus files [tea] = vibe_life.list_files()
+assert_true(files.length() >= 2)  # At least default files
 
-# Test time functions
-test_start("Time functions")
-timestamp := vibe_life.Now()
+test_start("create_dir functionality")
+assert_true(vibe_life.create_dir("/tmp/testdir"))
+assert_true(vibe_life.is_dir("/tmp/testdir"))
+assert_false(vibe_life.is_dir("/tmp/test2.txt"))
+
+# ==============================================================================
+# UTILITY FUNCTION TESTS
+# ==============================================================================
+
+test_start("get_timestamp functionality")
+sus timestamp normie = vibe_life.get_timestamp()
 assert_true(timestamp > 0)
 
-formatted_time := vibe_life.FormatTime(timestamp)
-assert_eq_string(formatted_time, "2022-01-01 00:00:00")
-vibez.spill("✅ Time functions test passed")
+test_start("sleep functionality")
+vibe_life.sleep(1)  # Should print sleep message
 
-# Test signal handling
-test_start("Signal handling")
-vibe_life.Signal(15)  # SIGTERM
-vibez.spill("✅ Signal handling test passed")
+test_start("get_module_info functionality")
+sus info tea = vibe_life.get_module_info()
+assert_true(info.contains("vibe_life"))
+assert_true(info.contains("v1.0"))
 
-# Test sleep function
-test_start("Sleep function")
-vibe_life.Sleep(100)  # Sleep for 100ms
-vibez.spill("✅ Sleep function test passed")
+# ==============================================================================
+# INTEGRATION TESTS
+# ==============================================================================
 
-# Test exit function (non-terminating for testing)
-test_start("Exit function")
-vibe_life.Exit(0)  # Normal exit
-vibez.spill("✅ Exit function test passed")
+test_start("file and directory integration")
+# Create directory and file
+assert_true(vibe_life.create_dir("/home/projects"))
+assert_true(vibe_life.create_file("/home/projects/main.csd", "slay main() { vibez.spill(\"Hello\") }"))
+assert_true(vibe_life.file_exists("/home/projects/main.csd"))
+assert_true(vibe_life.is_dir("/home/projects"))
 
-# Test file reading
-test_start("File reading")
-read_file, err := vibe_life.Open("test_file.txt")
-assert_true(err == cringe)
+test_start("environment and path integration")
+vibe_life.set_env("PROJECT_DIR", "/home/projects")
+sus project_path tea = vibe_life.join_path(vibe_life.get_env("PROJECT_DIR"), "main.csd")
+assert_eq_string(project_path, "/home/projects/main.csd")
+assert_true(vibe_life.file_exists(project_path))
 
-buffer := make([]byte, 100)
-bytes_read, err := read_file.Read(buffer)
-assert_true(err == cringe)
-assert_true(bytes_read > 0)
+test_start("command line and working directory integration")
+vibe_life.set_args(["cursed", "--compile", "main.csd"])
+vibe_life.set_cwd("/home/projects")
+sus current_dir tea = vibe_life.get_cwd()
+sus main_file tea = vibe_life.join_path(current_dir, vibe_life.get_arg(2))
+assert_eq_string(main_file, "/home/projects/main.csd")
 
-err = read_file.Close()
-assert_true(err == cringe)
-vibez.spill("✅ File reading test passed")
+# ==============================================================================
+# EDGE CASE TESTS
+# ==============================================================================
 
-# Test error handling for closed files
-test_start("Error handling for closed files")
-closed_file, err := vibe_life.Create("closed_test.txt")
-assert_true(err == cringe)
+test_start("empty and null inputs")
+assert_eq_string(vibe_life.get_env(""), "")
+assert_false(vibe_life.set_env("", "value"))
+assert_eq_string(vibe_life.read_file(""), "")
+assert_false(vibe_life.create_file("", "content"))
 
-err = closed_file.Close()
-assert_true(err == cringe)
-
-# Try to write to closed file
-_, err = closed_file.Write("test")
-assert_true(err != cringe)
-
-# Try to read from closed file
-buffer := make([]byte, 10)
-_, err = closed_file.Read(buffer)
-assert_true(err != cringe)
-vibez.spill("✅ Error handling for closed files test passed")
-
-# Test comprehensive environment variable management
-test_start("Comprehensive environment variable management")
-# Set multiple environment variables
-vibe_life.Setenv("VAR1", "value1")
-vibe_life.Setenv("VAR2", "value2")
-vibe_life.Setenv("VAR3", "value3")
-
-# Verify all variables are set
-assert_eq_string(vibe_life.Getenv("VAR1"), "value1")
-assert_eq_string(vibe_life.Getenv("VAR2"), "value2")
-assert_eq_string(vibe_life.Getenv("VAR3"), "value3")
-
-# Override existing variable
-vibe_life.Setenv("VAR1", "new_value1")
-assert_eq_string(vibe_life.Getenv("VAR1"), "new_value1")
-vibez.spill("✅ Comprehensive environment variable management test passed")
-
-# Test multiple file operations
-test_start("Multiple file operations")
-files := []tea{"file1.txt", "file2.txt", "file3.txt"}
-
-# Create multiple files
-bestie i := 0; i < len(files); i++ {
-    file, err := vibe_life.Create(files[i])
-    assert_true(err == cringe)
-    assert_eq_string(file.name, files[i])
-    
-    # Write to each file
-    _, err = file.Write("Content for " + files[i])
-    assert_true(err == cringe)
-    
-    # Close each file
-    err = file.Close()
-    assert_true(err == cringe)
+test_start("large file content")
+sus large_content tea = ""
+sus i normie = 0
+while i < 100 {
+    large_content = large_content + "This is line " + core.tea(i) + "\n"
+    i = i + 1
 }
-vibez.spill("✅ Multiple file operations test passed")
+assert_true(vibe_life.create_file("/tmp/large.txt", large_content))
+assert_eq_int(vibe_life.get_file_size("/tmp/large.txt"), large_content.length())
 
-# Test argument parsing simulation
-test_start("Argument parsing simulation")
-args := vibe_life.Args()
-assert_true(len(args) >= 2)
+test_start("path edge cases")
+assert_eq_string(vibe_life.dirname("/"), "")
+assert_eq_string(vibe_life.basename("/"), "")
+assert_eq_string(vibe_life.join_path("/", "root"), "/root")
 
-# Simulate command line argument parsing
-program_name := args[0]
-assert_eq_string(program_name, "cursed")
-
-if len(args) > 1 {
-    script_name := args[1]
-    assert_eq_string(script_name, "program.csd")
-}
-vibez.spill("✅ Argument parsing simulation test passed")
-
+# Print comprehensive test summary
 print_test_summary()
-vibez.spill("🎉 All vibe_life OS module tests completed successfully!")
+
+vibez.spill("vibe_life module comprehensive testing complete!")
+vibez.spill("All essential OS functionality verified for self-hosting")

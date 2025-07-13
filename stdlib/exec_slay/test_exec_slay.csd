@@ -1,260 +1,196 @@
-# exec_slay Module Test Suite
-# Comprehensive testing for process execution functionality
+// Comprehensive test suite for exec_slay module
 
 yeet "testz"
 yeet "exec_slay"
 
-# Test basic command execution
+// Test basic process execution
 test_start("exec_command basic functionality")
-sus result ProcessResult = exec_command("echo hello")
-assert_eq_string(result.stdout, "Command output: echo hello")
-assert_eq_string(result.stderr, "")
-assert_eq_int(result.exit_code, 0)
+sus args []tea = []tea{"--version"}
+sus result ProcessResult = exec_slay.exec_command("llc", args)
 assert_true(result.success)
+assert_eq_int(result.exit_code, 0)
+assert_true(stringz.contains(result.stdout, "successful"))
 
-# Test command execution with arguments
-test_start("exec_command_with_args functionality")
-sus args []tea = []tea{"arg1", "arg2", "arg3"}
-sus result_args ProcessResult = exec_command_with_args("test_cmd", args)
-assert_eq_string(result_args.stdout, "Command output: test_cmd arg1 arg2 arg3")
-assert_true(result_args.success)
+// Test background process execution  
+test_start("exec_background process handling")
+sus handle ProcessHandle = exec_slay.exec_background("sleep 1")
+assert_eq_int(handle.pid, 12345)
+assert_eq_string(handle.command, "sleep 1")
+assert_eq_string(handle.status, "running")
+assert_true(exec_slay.is_process_running(handle))
 
-# Test command execution with timeout
-test_start("exec_command_timeout functionality")
-sus result_timeout ProcessResult = exec_command_timeout("long_running_cmd", 30)
-assert_eq_string(result_timeout.stdout, "Command output with timeout: long_running_cmd")
-assert_eq_int(result_timeout.exit_code, 0)
-assert_true(result_timeout.success)
+// Test pipeline creation and execution
+test_start("pipeline operations")
+sus pipeline Pipeline = exec_slay.create_pipeline()
+assert_true(exec_slay.pipe_command(&pipeline, "echo hello"))
+assert_true(exec_slay.pipe_command(&pipeline, "echo world"))
+assert_eq_int(len(pipeline.commands), 2)
 
-# Test invalid timeout
-test_start("exec_command_timeout invalid timeout")
-sus result_invalid ProcessResult = exec_command_timeout("cmd", -1)
-assert_eq_string(result_invalid.stderr, "Timeout value must be positive")
-assert_eq_int(result_invalid.exit_code, 1)
-assert_false(result_invalid.success)
+sus pipe_result ProcessResult = exec_slay.execute_pipeline(pipeline)
+assert_true(pipe_result.success)
 
-# Test background command execution
-test_start("exec_command_background functionality")
-sus pid normie = exec_command_background("background_task")
-assert_eq_int(pid, 12345)
+// Test command builder functionality
+test_start("command builder operations")
+sus builder CommandBuilder = exec_slay.build_command("clang")
+assert_true(exec_slay.add_argument(&builder, "-O2"))
+assert_true(exec_slay.add_argument(&builder, "input.c"))
+assert_true(exec_slay.set_env(&builder, "CC", "clang"))
+assert_true(exec_slay.set_cwd(&builder, "/tmp"))
 
-# Test process running check
-test_start("is_process_running functionality")
-assert_true(is_process_running(12345))
-assert_true(is_process_running(1))
-assert_false(is_process_running(0))
-assert_false(is_process_running(-1))
-assert_false(is_process_running(100000))
+assert_eq_string(builder.program, "clang")
+assert_eq_int(len(builder.args), 2)
+assert_eq_string(builder.args[0], "-O2")
+assert_eq_string(builder.args[1], "input.c")
 
-# Test process killing
-test_start("kill_process functionality")
-assert_true(kill_process(12345))
-assert_true(kill_process(1))
-assert_false(kill_process(0))
-assert_false(kill_process(-1))
+// Test process monitoring
+test_start("process monitoring")
+sus monitor_handle ProcessHandle = exec_slay.exec_background("test_process")
+sus status tea = exec_slay.process_status(monitor_handle)
+assert_eq_string(status, "running")
 
-# Test environment variable getting
-test_start("get_env_var functionality")
-sus path_value tea = get_env_var("PATH")
-assert_eq_string(path_value, "/usr/bin:/bin:/usr/sbin:/sbin")
+sus wait_result ProcessResult = exec_slay.wait_for_process(monitor_handle)
+assert_true(wait_result.success)
 
-sus home_value tea = get_env_var("HOME")
-assert_eq_string(home_value, "/home/user")
+assert_true(exec_slay.kill_process(monitor_handle))
 
-sus user_value tea = get_env_var("USER")
-assert_eq_string(user_value, "cursed_user")
+// Test compiler integration - LLVM IR compilation
+test_start("compile_file LLVM IR generation")
+sus compile_result ProcessResult = exec_slay.compile_file("test.csd", "test.ll")
+assert_true(compile_result.success)
+assert_eq_int(compile_result.exit_code, 0)
+assert_true(stringz.contains(compile_result.stdout, "successful"))
 
-sus empty_value tea = get_env_var("NONEXISTENT")
-assert_eq_string(empty_value, "")
+// Test LLVM optimization
+test_start("run_llvm_opt optimization passes")
+sus opt_result ProcessResult = exec_slay.run_llvm_opt("test.ll", "test_opt.ll", 2)
+assert_true(opt_result.success)
+assert_eq_int(opt_result.exit_code, 0)
 
-# Test environment variable setting
-test_start("set_env_var functionality")
-sus set_result lit = set_env_var("TEST_VAR", "test_value")
-assert_true(set_result)
+// Test LLVM compilation to object
+test_start("run_llvm_compile object generation")
+sus obj_result ProcessResult = exec_slay.run_llvm_compile("test.ll", "test.o")
+assert_true(obj_result.success)
+assert_eq_int(obj_result.exit_code, 0)
 
-# Test getting all environment variables
-test_start("get_all_env_vars functionality")
-sus all_env []EnvVar = get_all_env_vars()
-# In real implementation would check array contents
+// Test object linking
+test_start("link_objects executable creation")
+sus obj_files []tea = []tea{"test.o", "runtime.o"}
+sus link_result ProcessResult = exec_slay.link_objects(obj_files, "test_exe")
+assert_true(link_result.success)
+assert_eq_int(link_result.exit_code, 0)
 
-# Test shell command execution
-test_start("exec_shell functionality")
-sus shell_result ProcessResult = exec_shell("ls -la")
-assert_eq_string(shell_result.stdout, "Shell output: ls -la")
-assert_true(shell_result.success)
+// Test complete compilation pipeline
+test_start("compile_pipeline end-to-end compilation")
+sus pipeline_result ProcessResult = exec_slay.compile_pipeline("program.csd", "program", based)
+assert_true(pipeline_result.success)
+assert_eq_int(pipeline_result.exit_code, 0)
 
-# Test command execution with working directory
-test_start("exec_command_with_dir functionality")
-sus dir_result ProcessResult = exec_command_with_dir("pwd", "/tmp")
-assert_eq_string(dir_result.stdout, "Command output from /tmp: pwd")
-assert_true(dir_result.success)
+// Test compilation pipeline without optimization
+test_start("compile_pipeline no optimization")
+sus no_opt_result ProcessResult = exec_slay.compile_pipeline("simple.csd", "simple", cap)
+assert_true(no_opt_result.success)
 
-# Test command execution with environment variables
-test_start("exec_command_with_env functionality")
-sus env_vars []EnvVar = []EnvVar{}
-sus env_result ProcessResult = exec_command_with_env("env", env_vars)
-assert_eq_string(env_result.stdout, "Command output with custom env: env")
+// Test command existence checking
+test_start("command_exists utility")
+assert_true(exec_slay.command_exists("llc"))
+assert_true(exec_slay.command_exists("clang"))
+assert_false(exec_slay.command_exists("nonexistent_command"))
+
+// Test system PATH retrieval
+test_start("get_system_path utility")
+sus system_path tea = exec_slay.get_system_path()
+assert_true(stringz.contains(system_path, "/usr/bin"))
+assert_true(stringz.contains(system_path, "/bin"))
+
+// Test timeout execution
+test_start("exec_with_timeout functionality")
+sus timeout_result ProcessResult = exec_slay.exec_with_timeout("echo", []tea{"timeout test"}, 5)
+assert_true(timeout_result.success)
+
+// Test output capture to file
+test_start("exec_to_file output capture")
+sus file_result ProcessResult = exec_slay.exec_to_file("echo", []tea{"file output"}, "output.txt")
+assert_true(file_result.success)
+
+// Test error handling for invalid commands
+test_start("error handling for invalid commands")
+sus error_result ProcessResult = exec_slay.exec_command("invalid_command", []tea{})
+assert_false(error_result.success)
+assert_true(error_result.exit_code != 0)
+assert_true(stringz.contains(error_result.stderr, "Command not found"))
+
+// Test complex command builder scenario
+test_start("complex command builder scenario")
+sus complex_builder CommandBuilder = exec_slay.build_command("gcc")
+assert_true(exec_slay.add_argument(&complex_builder, "-std=c11"))
+assert_true(exec_slay.add_argument(&complex_builder, "-Wall"))
+assert_true(exec_slay.add_argument(&complex_builder, "-Wextra"))
+assert_true(exec_slay.add_argument(&complex_builder, "-O3"))
+assert_true(exec_slay.add_argument(&complex_builder, "source.c"))
+assert_true(exec_slay.add_argument(&complex_builder, "-o"))
+assert_true(exec_slay.add_argument(&complex_builder, "output"))
+
+assert_true(exec_slay.set_env(&complex_builder, "CFLAGS", "-DDEBUG"))
+assert_true(exec_slay.set_env(&complex_builder, "LDFLAGS", "-static"))
+assert_true(exec_slay.set_cwd(&complex_builder, "/build"))
+
+sus complex_result ProcessResult = exec_slay.execute_command(complex_builder)
+// Note: This would fail since gcc command doesn't exist in our simulation
+assert_false(complex_result.success)
+
+// Test multiple optimization levels
+test_start("multiple optimization levels")
+sus opt1_result ProcessResult = exec_slay.run_llvm_opt("input.ll", "opt1.ll", 1)
+sus opt2_result ProcessResult = exec_slay.run_llvm_opt("input.ll", "opt2.ll", 2)
+sus opt3_result ProcessResult = exec_slay.run_llvm_opt("input.ll", "opt3.ll", 3)
+
+assert_true(opt1_result.success)
+assert_true(opt2_result.success)
+assert_true(opt3_result.success)
+
+// Test pipeline with environment variables
+test_start("pipeline with environment variables")
+sus env_pipeline Pipeline = exec_slay.create_pipeline()
+env_pipeline.env_vars["CC"] = "clang"
+env_pipeline.env_vars["CFLAGS"] = "-O2"
+env_pipeline.working_dir = "/build"
+env_pipeline.timeout = 60
+
+assert_true(exec_slay.pipe_command(&env_pipeline, "echo $CC"))
+assert_true(exec_slay.pipe_command(&env_pipeline, "echo $CFLAGS"))
+
+sus env_result ProcessResult = exec_slay.execute_pipeline(env_pipeline)
 assert_true(env_result.success)
 
-# Test getting current directory
-test_start("get_current_dir functionality")
-sus current_dir tea = get_current_dir()
-assert_eq_string(current_dir, "/home/user/cursed")
+// Test self-hosting compilation scenario
+test_start("self-hosting compilation scenario")
+// Simulate compiling the CURSED compiler itself
+sus self_compile_result ProcessResult = exec_slay.compile_pipeline("src/main.csd", "cursed_compiler", based)
+assert_true(self_compile_result.success)
 
-# Test changing directory
-test_start("change_dir functionality")
-sus change_result lit = change_dir("/tmp")
-assert_true(change_result)
+// Test batch object linking
+test_start("batch object linking")
+sus batch_objects []tea = []tea{
+    "main.o",
+    "lexer.o", 
+    "parser.o",
+    "codegen.o",
+    "runtime.o"
+}
+sus batch_link_result ProcessResult = exec_slay.link_objects(batch_objects, "cursed_full")
+assert_true(batch_link_result.success)
 
-# Test command existence check
-test_start("command_exists functionality")
-assert_true(command_exists("ls"))
-assert_true(command_exists("cat"))
-assert_true(command_exists("echo"))
-assert_true(command_exists("grep"))
-assert_false(command_exists("nonexistent_command"))
+// Test process handle lifecycle
+test_start("process handle lifecycle")
+sus lifecycle_handle ProcessHandle = exec_slay.exec_background("long_running_process")
+assert_true(exec_slay.is_process_running(lifecycle_handle))
 
-# Test command line capturing
-test_start("exec_command_lines functionality")
-sus lines []tea = exec_command_lines("ls")
-# In real implementation would check array contents
+sus status_check tea = exec_slay.process_status(lifecycle_handle)
+assert_eq_string(status_check, "running")
 
-# Test command execution with input
-test_start("exec_command_with_input functionality")
-sus input_result ProcessResult = exec_command_with_input("cat", "test input")
-assert_eq_string(input_result.stdout, "Command output with input: cat (input: test input)")
-assert_true(input_result.success)
+assert_true(exec_slay.kill_process(lifecycle_handle))
 
-# Test process info getting
-test_start("get_process_info functionality")
-sus info_result ProcessResult = get_process_info(12345)
-assert_eq_string(info_result.stdout, "Process info for PID 12345: running")
-assert_true(info_result.success)
-
-# Test invalid process info
-test_start("get_process_info invalid PID")
-sus invalid_info ProcessResult = get_process_info(-1)
-assert_eq_string(invalid_info.stderr, "Invalid PID")
-assert_eq_int(invalid_info.exit_code, 1)
-assert_false(invalid_info.success)
-
-# Test sequential command execution
-test_start("exec_commands_sequential functionality")
-sus seq_commands []tea = []tea{"cmd1", "cmd2", "cmd3"}
-sus seq_results []ProcessResult = exec_commands_sequential(seq_commands)
-# In real implementation would check results array
-
-# Test parallel command execution
-test_start("exec_commands_parallel functionality")
-sus par_commands []tea = []tea{"cmd1", "cmd2", "cmd3"}
-sus par_results []ProcessResult = exec_commands_parallel(par_commands)
-# In real implementation would check results array
-
-# Test ProcessResult structure
-test_start("ProcessResult structure functionality")
-sus test_result ProcessResult
-test_result.stdout = "test output"
-test_result.stderr = "test error"
-test_result.exit_code = 42
-test_result.success = based
-
-assert_eq_string(test_result.stdout, "test output")
-assert_eq_string(test_result.stderr, "test error")
-assert_eq_int(test_result.exit_code, 42)
-assert_true(test_result.success)
-
-# Test EnvVar structure
-test_start("EnvVar structure functionality")
-sus test_env EnvVar
-test_env.name = "TEST_NAME"
-test_env.value = "TEST_VALUE"
-
-assert_eq_string(test_env.name, "TEST_NAME")
-assert_eq_string(test_env.value, "TEST_VALUE")
-
-# Test error handling
-test_start("error handling functionality")
-sus error_result ProcessResult = exec_command("")
-assert_eq_string(error_result.stdout, "Command output: ")
-assert_true(error_result.success)
-
-# Test edge cases
-test_start("edge case handling")
-sus edge_result ProcessResult = exec_command("command with spaces")
-assert_eq_string(edge_result.stdout, "Command output: command with spaces")
-assert_true(edge_result.success)
-
-# Test complex command
-test_start("complex command execution")
-sus complex_result ProcessResult = exec_command("grep -r 'pattern' /path/to/files")
-assert_eq_string(complex_result.stdout, "Command output: grep -r 'pattern' /path/to/files")
-assert_true(complex_result.success)
-
-# Test multiple environment variables
-test_start("multiple environment variables")
-sus multi_env []EnvVar = []EnvVar{}
-sus multi_result ProcessResult = exec_command_with_env("printenv", multi_env)
-assert_eq_string(multi_result.stdout, "Command output with custom env: printenv")
-assert_true(multi_result.success)
-
-# Test process management edge cases
-test_start("process management edge cases")
-assert_false(is_process_running(0))
-assert_false(is_process_running(100000))
-assert_false(kill_process(0))
-assert_false(kill_process(100000))
-
-# Test command with special characters
-test_start("command with special characters")
-sus special_result ProcessResult = exec_command("echo 'hello world' | grep hello")
-assert_eq_string(special_result.stdout, "Command output: echo 'hello world' | grep hello")
-assert_true(special_result.success)
-
-# Test long command execution
-test_start("long command execution")
-sus long_cmd tea = "very_long_command_name_that_exceeds_normal_length_but_should_still_work"
-sus long_result ProcessResult = exec_command(long_cmd)
-assert_eq_string(long_result.stdout, "Command output: " + long_cmd)
-assert_true(long_result.success)
-
-# Test timeout with zero value
-test_start("timeout with zero value")
-sus zero_timeout ProcessResult = exec_command_timeout("cmd", 0)
-assert_eq_string(zero_timeout.stderr, "Timeout value must be positive")
-assert_false(zero_timeout.success)
-
-# Test directory operations
-test_start("directory operations")
-sus dir_change1 lit = change_dir("/")
-assert_true(dir_change1)
-
-sus dir_change2 lit = change_dir("/home")
-assert_true(dir_change2)
-
-sus dir_change3 lit = change_dir("/tmp")
-assert_true(dir_change3)
-
-# Test environment variable edge cases
-test_start("environment variable edge cases")
-sus empty_env tea = get_env_var("")
-assert_eq_string(empty_env, "")
-
-sus space_env tea = get_env_var("VAR WITH SPACES")
-assert_eq_string(space_env, "")
-
-# Test command existence with empty string
-test_start("command existence with empty string")
-assert_false(command_exists(""))
-
-# Test process info with boundary values
-test_start("process info boundary values")
-sus boundary_info1 ProcessResult = get_process_info(1)
-assert_true(boundary_info1.success)
-
-sus boundary_info2 ProcessResult = get_process_info(99999)
-assert_true(boundary_info2.success)
-
-sus boundary_info3 ProcessResult = get_process_info(100000)
-assert_false(boundary_info3.success)
+sus final_result ProcessResult = exec_slay.wait_for_process(lifecycle_handle)
+assert_true(final_result.success)
 
 print_test_summary()
