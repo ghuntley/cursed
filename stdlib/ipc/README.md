@@ -1,310 +1,520 @@
-# IPC (Inter-Process Communication) Module
+# IPC - Inter-Process Communication Module
 
-Pure CURSED implementation of inter-process communication without FFI dependencies. Provides native messaging, coordination, and communication patterns using CURSED's language features.
+Pure CURSED implementation of comprehensive inter-process communication mechanisms without FFI dependencies.
 
 ## Overview
 
-The IPC module provides comprehensive inter-process communication mechanisms including:
+The IPC module provides a complete suite of inter-process communication primitives including:
 
-- **Channels**: Message passing between processes
-- **Process Coordination**: Process registration and signaling
-- **Shared Memory**: Memory sharing simulation
-- **Message Queues**: FIFO message queuing
-- **Semaphores**: Synchronization primitives
-- **Named Pipes**: File-based communication
-- **Utilities**: System monitoring and cleanup
+- **Named Pipes (FIFOs)** - Unidirectional data channels with buffering
+- **Message Queues** - Priority-based message passing with overflow protection
+- **Shared Memory** - Key-value shared memory segments with process attachment
+- **Semaphores** - Counting semaphores with wait/signal operations
+- **Unix Sockets** - Connection-oriented and connectionless communication
+- **Process Management** - Process registration and coordination
 
-## Core Features
+## Features
 
-### 🔄 IPC Channels
-- Create communication channels between processes
-- Send/receive messages with priority and timestamps
-- Channel lifecycle management (open/close)
+### ✅ **Pure CURSED Implementation**
+- No external FFI dependencies
+- Native CURSED data structures and algorithms
+- Integration with signal_boost module for cleanup
 
-### 👥 Process Coordination
-- Process registration and status tracking
-- Process signaling (terminate, suspend, resume)
-- Process health monitoring
+### ✅ **Enterprise-Grade Functionality**
+- Comprehensive error handling and resource management
+- Priority-based message queuing with insertion sort
+- Configurable limits and buffer sizes
+- Process coordination and lifecycle management
 
-### 💾 Shared Memory
-- Create and manage shared memory segments
-- Read/write operations with bounds checking
-- Permission-based access control
+### ✅ **Production-Ready Design**
+- Resource cleanup and leak prevention
+- Signal handling for graceful shutdown
+- Statistics and monitoring capabilities
+- Debugging and diagnostic tools
 
-### 📬 Message Queues
-- FIFO message queuing system
-- Queue capacity management
-- Message priority handling
+## Quick Start
 
-### 🔒 Semaphores
-- Synchronization primitive implementation
-- Acquire/release operations
-- Waiting process management
+```cursed
+yeet "ipc"
 
-### 📁 Named Pipes
-- File-based communication channels
-- Read/write operations
-- Permission management
+# Initialize IPC subsystem
+ipc.init_ipc()
+
+# Create and use a message queue
+ipc.create_message_queue("my_queue", 100)
+ipc.send_message("my_queue", "Hello, World!", ipc.MSG_PRIORITY_NORMAL)
+sus message map = ipc.receive_message("my_queue")
+vibez.spill("Received: " + message.get("content"))
+
+# Cleanup
+ipc.cleanup_ipc()
+```
 
 ## API Reference
 
-### IPC Channels
+### Initialization
+
+#### `init_ipc() -> lit`
+Initialize the IPC subsystem with default configuration.
 
 ```cursed
-# Create a new IPC channel
-sus channel := ipc_create_channel("my_channel", 1024)
-
-# Send message through channel
-sus success := ipc_send_message(channel, 1, "Hello", 1)
-
-# Receive message from channel
-sus message := ipc_receive_message(channel)
-
-# Close channel
-sus closed_channel := ipc_close_channel(channel)
+ipc.init_ipc()
 ```
 
-### Process Coordination
+#### `configure_ipc(config map) -> lit`
+Configure IPC settings.
 
 ```cursed
-# Register a process
-sus process := ipc_register_process(1234, "worker_process")
-
-# Check if process is alive
-sus alive := ipc_process_alive(process)
-
-# Send signal to process
-sus success := ipc_signal_process(process, "terminate")
+sus config map = {
+    "max_message_size": 32768,
+    "max_queue_size": 500,
+    "timeout_ms": 3000
+}
+ipc.configure_ipc(config)
 ```
 
-### Shared Memory
+#### `cleanup_ipc() -> lit`
+Clean up all IPC resources and shutdown the subsystem.
+
+### Named Pipes
+
+#### `create_named_pipe(name tea, buffer_size normie) -> lit`
+Create a named pipe with specified buffer size.
 
 ```cursed
-# Create shared memory segment
-sus memory := ipc_create_shared_memory("shared_data", 4096)
+ipc.create_named_pipe("my_pipe", 1024)
+```
 
-# Write to shared memory
-sus success := ipc_write_shared_memory(memory, 0, "data")
+#### `write_to_pipe(name tea, data tea) -> lit`
+Write data to a named pipe.
 
-# Read from shared memory
-sus data := ipc_read_shared_memory(memory, 0, 100)
+```cursed
+ipc.write_to_pipe("my_pipe", "Hello, Pipe!")
+```
+
+#### `read_from_pipe(name tea) -> tea`
+Read data from a named pipe (FIFO order).
+
+```cursed
+sus data tea = ipc.read_from_pipe("my_pipe")
+```
+
+#### `open_pipe_reader(name tea, reader_id tea) -> lit`
+Register a reader for a named pipe.
+
+```cursed
+ipc.open_pipe_reader("my_pipe", "reader_process_1")
+```
+
+#### `open_pipe_writer(name tea, writer_id tea) -> lit`
+Register a writer for a named pipe.
+
+```cursed
+ipc.open_pipe_writer("my_pipe", "writer_process_1")
 ```
 
 ### Message Queues
 
+#### `create_message_queue(name tea, max_size normie) -> lit`
+Create a message queue with priority support.
+
 ```cursed
-# Create message queue
-sus queue := ipc_create_message_queue("task_queue", 10)
+ipc.create_message_queue("task_queue", 100)
+```
 
-# Create and push message
-sus message := IpcMessage(1, "task_data", 1, 1640995200)
-sus updated_queue := ipc_queue_push(queue, message)
+#### `send_message(queue_name tea, message tea, priority normie) -> lit`
+Send a prioritized message to a queue.
 
-# Pop message from queue
-sus (popped_message, new_queue) := ipc_queue_pop(updated_queue)
+```cursed
+ipc.send_message("task_queue", "High priority task", ipc.MSG_PRIORITY_HIGH)
+ipc.send_message("task_queue", "Normal task", ipc.MSG_PRIORITY_NORMAL)
+ipc.send_message("task_queue", "Background task", ipc.MSG_PRIORITY_LOW)
+```
+
+#### `receive_message(queue_name tea) -> map`
+Receive the highest priority message from a queue.
+
+```cursed
+sus message map = ipc.receive_message("task_queue")
+sus content tea = message.get("content")
+sus priority normie = message.get("priority")
+sus timestamp normie = message.get("timestamp")
+```
+
+### Priority Constants
+
+```cursed
+ipc.MSG_PRIORITY_URGENT = 15    # Highest priority
+ipc.MSG_PRIORITY_HIGH = 10      # High priority  
+ipc.MSG_PRIORITY_NORMAL = 5     # Normal priority
+ipc.MSG_PRIORITY_LOW = 1        # Lowest priority
+```
+
+### Shared Memory
+
+#### `create_shared_memory(name tea, size normie) -> lit`
+Create a shared memory segment.
+
+```cursed
+ipc.create_shared_memory("shared_data", 4096)
+```
+
+#### `attach_shared_memory(name tea, process_id tea) -> lit`
+Attach a process to a shared memory segment.
+
+```cursed
+ipc.attach_shared_memory("shared_data", "worker_process_1")
+```
+
+#### `write_shared_memory(name tea, key tea, value tea) -> lit`
+Write key-value data to shared memory.
+
+```cursed
+ipc.write_shared_memory("shared_data", "counter", "42")
+ipc.write_shared_memory("shared_data", "status", "running")
+```
+
+#### `read_shared_memory(name tea, key tea) -> tea`
+Read data from shared memory by key.
+
+```cursed
+sus counter tea = ipc.read_shared_memory("shared_data", "counter")
+sus status tea = ipc.read_shared_memory("shared_data", "status")
 ```
 
 ### Semaphores
 
-```cursed
-# Create semaphore
-sus semaphore := ipc_create_semaphore("resource_lock", 1)
-
-# Acquire semaphore
-sus acquired_sem := ipc_semaphore_acquire(semaphore)
-
-# Release semaphore
-sus released_sem := ipc_semaphore_release(acquired_sem)
-```
-
-### Named Pipes
+#### `create_semaphore(name tea, initial_value normie) -> lit`
+Create a counting semaphore.
 
 ```cursed
-# Create named pipe
-sus pipe := ipc_create_named_pipe("/tmp/my_pipe", 644)
-
-# Write to pipe
-sus success := ipc_pipe_write(pipe, "pipe_data")
-
-# Read from pipe
-sus data := ipc_pipe_read(pipe)
+ipc.create_semaphore("resource_pool", 5)  # Allow 5 concurrent accesses
 ```
 
-### Utilities
+#### `semaphore_wait(name tea, process_id tea) -> lit`
+Wait on a semaphore (P operation). Returns `cap` if would block.
 
 ```cursed
-# Get IPC system statistics
-sus stats := ipc_get_stats()
-
-# Perform health check
-sus healthy := ipc_health_check()
-
-# Cleanup all IPC resources
-sus cleaned := ipc_cleanup()
+if ipc.semaphore_wait("resource_pool", "worker_1") {
+    # Got access to resource
+    vibez.spill("Acquired resource")
+} else {
+    # Would block - handle appropriately
+    vibez.spill("Resource not available")
+}
 ```
 
-## Data Structures
+#### `semaphore_signal(name tea) -> lit`
+Signal a semaphore (V operation).
 
-### IpcMessage
 ```cursed
-IpcMessage(id normie, content tea, priority normie, timestamp thicc)
+ipc.semaphore_signal("resource_pool")  # Release resource
 ```
 
-### IpcChannel
+### Unix Sockets
+
+#### `create_unix_socket(name tea, socket_type tea) -> lit`
+Create a Unix domain socket.
+
 ```cursed
-IpcChannel(name tea, buffer_size normie, is_open lit)
+ipc.create_unix_socket("app_socket", "stream")
 ```
 
-### ProcessInfo
+#### `listen_unix_socket(name tea, server_process tea) -> lit`
+Listen for connections on a socket.
+
 ```cursed
-ProcessInfo(pid normie, name tea, status tea, created_at thicc)
+ipc.listen_unix_socket("app_socket", "server_process")
 ```
+
+#### `connect_unix_socket(name tea, client_process tea) -> lit`
+Connect to a listening socket.
+
+```cursed
+ipc.connect_unix_socket("app_socket", "client_process_1")
+```
+
+### Process Management
+
+#### `register_process(process_id tea, process_name tea) -> lit`
+Register a process with the IPC subsystem.
+
+```cursed
+ipc.register_process("worker_1", "Background Worker Process")
+```
+
+#### `unregister_process(process_id tea) -> lit`
+Unregister a process from the IPC subsystem.
+
+```cursed
+ipc.unregister_process("worker_1")
+```
+
+#### `get_process_info(process_id tea) -> map`
+Get information about a registered process.
+
+```cursed
+sus process_info map = ipc.get_process_info("worker_1")
+sus name tea = process_info.get("name")
+sus active lit = process_info.get("active")
+```
+
+#### `list_active_processes() -> [tea]`
+Get a list of all active process IDs.
+
+```cursed
+sus active_processes [tea] = ipc.list_active_processes()
+```
+
+### Utilities and Diagnostics
+
+#### `get_ipc_statistics() -> map`
+Get comprehensive IPC usage statistics.
+
+```cursed
+sus stats map = ipc.get_ipc_statistics()
+vibez.spill("Pipes created: " + core.tea(stats.get("pipes_created")))
+vibez.spill("Messages sent: " + core.tea(stats.get("messages_sent")))
+```
+
+#### `list_ipc_resources() -> [tea]`
+Get a list of all IPC resource names.
+
+```cursed
+sus resources [tea] = ipc.list_ipc_resources()
+```
+
+#### `get_ipc_resource_info(resource_name tea) -> map`
+Get detailed information about a specific IPC resource.
+
+```cursed
+sus pipe_info map = ipc.get_ipc_resource_info("pipe_my_pipe")
+sus type tea = pipe_info.get("type")
+sus created_at normie = pipe_info.get("created_at")
+```
+
+#### `dump_ipc_state()`
+Print comprehensive IPC system state for debugging.
+
+```cursed
+ipc.dump_ipc_state()
+```
+
+#### `test_ipc_connectivity() -> lit`
+Run connectivity tests for all IPC mechanisms.
+
+```cursed
+if ipc.test_ipc_connectivity() {
+    vibez.spill("All IPC mechanisms working correctly")
+}
+```
+
+#### `reset_ipc()`
+Reset the entire IPC system (useful for testing).
+
+```cursed
+ipc.reset_ipc()
+```
+
+## Configuration Options
+
+The IPC module supports the following configuration parameters:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `max_message_size` | 65536 | Maximum message size in bytes (64KB) |
+| `max_queue_size` | 1000 | Maximum number of messages per queue |
+| `default_permissions` | 6 | Default permissions (rw-rw-rw-) |
+| `pipe_buffer_size` | 8192 | Default pipe buffer size (8KB) |
+| `timeout_ms` | 5000 | Default timeout for IPC operations |
+| `max_shared_memory` | 1048576 | Maximum shared memory segment size (1MB) |
+| `max_semaphore_value` | 32767 | Maximum semaphore value (POSIX SEM_VALUE_MAX) |
+
+## Usage Patterns
+
+### Producer-Consumer with Message Queue
+
+```cursed
+yeet "ipc"
+
+# Producer process
+slay producer() {
+    ipc.create_message_queue("work_queue", 100)
+    
+    sus i normie = 0
+    while i < 10 {
+        sus task tea = "Task " + core.tea(i)
+        ipc.send_message("work_queue", task, ipc.MSG_PRIORITY_NORMAL)
+        i = i + 1
+    }
+}
+
+# Consumer process
+slay consumer() {
+    while based {
+        sus message map = ipc.receive_message("work_queue")
+        if message.size() > 0 {
+            sus task tea = message.get("content")
+            vibez.spill("Processing: " + task)
+        } else {
+            break  # No more messages
+        }
+    }
+}
+```
+
+### Resource Pool with Semaphores
+
+```cursed
+# Initialize resource pool (5 concurrent workers)
+ipc.create_semaphore("worker_pool", 5)
+
+slay acquire_worker(worker_id tea) lit {
+    if ipc.semaphore_wait("worker_pool", worker_id) {
+        vibez.spill("Worker " + worker_id + " acquired resource")
+        damn based
+    } else {
+        vibez.spill("Worker " + worker_id + " waiting for resource")
+        damn cap
+    }
+}
+
+slay release_worker() {
+    ipc.semaphore_signal("worker_pool")
+    vibez.spill("Resource released")
+}
+```
+
+### Shared Configuration with Shared Memory
+
+```cursed
+# Setup shared configuration
+ipc.create_shared_memory("app_config", 4096)
+ipc.write_shared_memory("app_config", "debug_mode", "true")
+ipc.write_shared_memory("app_config", "max_connections", "100")
+ipc.write_shared_memory("app_config", "timeout", "30")
+
+# Read configuration from any process
+slay get_config(key tea) tea {
+    damn ipc.read_shared_memory("app_config", key)
+}
+
+sus debug_enabled tea = get_config("debug_mode")
+sus max_conn tea = get_config("max_connections")
+```
+
+### Logging Pipeline with Named Pipes
+
+```cursed
+# Setup logging pipeline
+ipc.create_named_pipe("app_logs", 8192)
+ipc.open_pipe_writer("app_logs", "main_app")
+ipc.open_pipe_reader("app_logs", "log_processor")
+
+# Application logging
+slay log_message(level tea, message tea) {
+    sus log_entry tea = "[" + level + "] " + message
+    ipc.write_to_pipe("app_logs", log_entry)
+}
+
+# Log processor
+slay process_logs() {
+    while based {
+        sus log_entry tea = ipc.read_from_pipe("app_logs")
+        if log_entry != "" {
+            vibez.spill("LOG: " + log_entry)
+        } else {
+            break  # No more logs
+        }
+    }
+}
+```
+
+## Error Handling
+
+The IPC module uses return values to indicate success/failure:
+
+- Functions returning `lit` use `based` for success, `cap` for failure
+- Functions returning data use empty values (`""`, `{}`, `[]`) for failure
+- Always check return values before proceeding with operations
+
+```cursed
+# Proper error handling
+if !ipc.create_message_queue("my_queue", 100) {
+    vibez.spill("Failed to create message queue")
+    damn
+}
+
+if !ipc.send_message("my_queue", "test", ipc.MSG_PRIORITY_NORMAL) {
+    vibez.spill("Failed to send message")
+    damn
+}
+
+sus message map = ipc.receive_message("my_queue")
+if message.size() == 0 {
+    vibez.spill("No messages available")
+    damn
+}
+```
+
+## Integration with Signal Boost
+
+The IPC module integrates with the signal_boost module for graceful shutdown:
+
+```cursed
+# Automatic cleanup on termination signals
+signal_boost.register_signal_handler(signal_boost.SIGTERM, 
+                                     signal_boost.HANDLER_CUSTOM, 
+                                     "cleanup_ipc")
+```
+
+When SIGTERM or SIGINT is received, the IPC subsystem automatically:
+1. Closes all named pipes
+2. Clears all message queues  
+3. Detaches all shared memory segments
+4. Releases all semaphores
+5. Closes all Unix sockets
 
 ## Testing
 
-Run the comprehensive test suite:
+Comprehensive test suite available in `test_ipc.csd`:
 
 ```bash
-# Test interpretation mode
+# Run IPC tests
 cargo run --bin cursed stdlib/ipc/test_ipc.csd
 
-# Test compilation mode
+# Compile and run natively
 cargo run --bin cursed -- compile stdlib/ipc/test_ipc.csd
 ./test_ipc
 ```
 
-### Test Coverage
+The test suite covers:
+- All IPC mechanism creation and basic operations
+- Error conditions and edge cases
+- Resource limits and overflow handling
+- Process management and coordination
+- Performance with high message volumes
+- Integration between different IPC types
+- Cleanup and resource management
 
-The test suite includes:
-- ✅ IPC Channel operations (create, send, receive, close)
-- ✅ Process coordination (register, signal, health check)
-- ✅ Shared memory operations (create, read, write, bounds checking)
-- ✅ Message queue operations (create, push, pop, capacity management)
-- ✅ Semaphore operations (create, acquire, release, waiting)
-- ✅ Named pipe operations (create, read, write, permissions)
-- ✅ Complex IPC scenarios (multi-process coordination)
-- ✅ Edge cases and error conditions
+## Performance Characteristics
 
-## Implementation Details
+- **Message Queues**: O(n) insertion with priority ordering, O(1) removal
+- **Named Pipes**: O(1) write/read operations with FIFO ordering
+- **Shared Memory**: O(1) key-value access operations
+- **Semaphores**: O(1) wait/signal operations
+- **Memory Usage**: Configurable limits prevent unbounded growth
+- **Scalability**: Tested with 1000+ messages and multiple concurrent processes
 
-### Pure CURSED Design
-- **No FFI Dependencies**: Implemented entirely in CURSED without external library calls
-- **Memory Safe**: All operations use CURSED's built-in memory management
-- **Type Safe**: Strong typing with tuple-based data structures
-- **Cross-Platform**: Works identically in interpretation and compilation modes
+## Module Information
 
-### Performance Characteristics
-- **Lightweight**: Minimal overhead with pure CURSED implementation
-- **Scalable**: Efficient tuple-based data structures
-- **Deterministic**: Predictable behavior across all platforms
-
-### Security Features
-- **Bounds Checking**: All memory operations include bounds validation
-- **Permission Management**: Access control for shared resources
-- **Process Isolation**: Secure process coordination mechanisms
-
-## Usage Examples
-
-### Simple Message Passing
 ```cursed
-# Create communication channel
-sus channel := ipc_create_channel("worker_comm", 2048)
-
-# Process A sends message
-sus success := ipc_send_message(channel, 1, "task_complete", 1)
-
-# Process B receives message  
-sus message := ipc_receive_message(channel)
-sus (id, content, priority, timestamp) := message
-vibez.spill("Received: " + content)
+sus info tea = ipc.get_module_info()
+# Returns: "ipc v1.0 - Pure CURSED inter-process communication system"
 ```
 
-### Process Coordination
-```cursed
-# Register processes
-sus worker1 := ipc_register_process(1001, "data_processor")
-sus worker2 := ipc_register_process(1002, "file_handler")
+## See Also
 
-# Coordinate processes
-sus alive1 := ipc_process_alive(worker1)
-stan alive1 {
-    sus result := ipc_signal_process(worker1, "suspend")
-}
-```
-
-### Shared Data Exchange
-```cursed
-# Setup shared memory
-sus shared_mem := ipc_create_shared_memory("data_exchange", 8192)
-
-# Process A writes data
-sus write_ok := ipc_write_shared_memory(shared_mem, 0, "shared_data")
-
-# Process B reads data
-sus data := ipc_read_shared_memory(shared_mem, 0, 100)
-```
-
-## Production Deployment
-
-### System Requirements
-- CURSED runtime environment
-- Sufficient memory for channel buffers and shared segments
-- File system access for named pipes (when applicable)
-
-### Configuration
-- Adjust buffer sizes based on message volume
-- Set appropriate permissions for shared resources
-- Configure timeouts for blocking operations
-
-### Monitoring
-- Use `ipc_get_stats()` for system monitoring
-- Implement `ipc_health_check()` in health monitoring systems
-- Regular `ipc_cleanup()` for resource management
-
-## Migration from FFI
-
-This module replaces the previous FFI-based implementation:
-
-### Replaced Components
-- ❌ `libc::signal()` calls → ✅ Pure CURSED signaling
-- ❌ POSIX shared memory → ✅ CURSED memory simulation
-- ❌ Unix domain sockets → ✅ CURSED channel system
-- ❌ System semaphores → ✅ CURSED synchronization primitives
-
-### Benefits of Pure CURSED Implementation
-- **Portability**: Works across all platforms without system dependencies
-- **Simplicity**: Easier to understand and maintain
-- **Security**: Reduced attack surface with no external dependencies
-- **Consistency**: Identical behavior in interpretation and compilation modes
-
-## Error Handling
-
-The module uses CURSED's boolean return values and empty string/zero values to indicate errors:
-
-- Channel operations return `cap` (false) on failure
-- Memory operations return empty strings on bounds errors
-- Process operations return `cap` on invalid states
-- All functions include appropriate bounds and state checking
-
-## Performance Considerations
-
-- **Channel Buffer Sizes**: Larger buffers improve throughput but increase memory usage
-- **Message Queues**: Configure appropriate queue sizes for your workload
-- **Shared Memory**: Use appropriate segment sizes for your data
-- **Cleanup**: Regular cleanup prevents resource leaks
-
-## Contributing
-
-When extending the IPC module:
-1. Maintain pure CURSED implementation (no FFI)
-2. Add comprehensive tests for new functionality
-3. Update documentation with examples
-4. Ensure both interpretation and compilation mode compatibility
-5. Follow CURSED naming conventions and patterns
-
-## Version History
-
-- **v1.0.0**: Initial pure CURSED implementation
-- Complete FFI elimination
-- Comprehensive test suite
-- Production-ready functionality
+- `signal_boost` - Signal handling and graceful shutdown
+- `core` - Core CURSED language utilities
+- `testz` - Testing framework for validation

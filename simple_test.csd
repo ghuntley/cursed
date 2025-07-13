@@ -1,1 +1,1 @@
-vibez.spill("Simple test")
+vibez.spill("Hello from CURSED!")

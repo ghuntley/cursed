@@ -1,215 +1,200 @@
 yeet "testz"
 yeet "signal_boost"
 
-# Comprehensive Signal Boost Module Tests
-# Tests all functionality without FFI dependencies
+# Test signal handler registration
+test_start("Signal handler registration")
+sus result lit = register_signal_handler(SIGTERM, HANDLER_DEFAULT, "")
+assert_true(result)
+assert_true(has_signal_handler(SIGTERM))
+sus handler map = get_signal_handler(SIGTERM)
+assert_eq_string(handler.get("type"), HANDLER_DEFAULT)
+print_test_summary()
 
-test_start("SignalBoost Module Comprehensive Tests")
+# Test signal handler unregistration
+test_start("Signal handler unregistration")
+sus unreg_result lit = unregister_signal_handler(SIGTERM)
+assert_true(unreg_result)
+assert_false(has_signal_handler(SIGTERM))
+print_test_summary()
 
-# Test 1: Module initialization
-test_start("signal_boost_init")
-assert_true(signal_boost_init())
-vibez.spill("✅ Module initialization test passed")
+# Test custom signal handler
+test_start("Custom signal handler")
+sus custom_result lit = register_signal_handler(SIGUSR1, HANDLER_CUSTOM, "log_only")
+assert_true(custom_result)
+sus custom_handler map = get_signal_handler(SIGUSR1)
+assert_eq_string(custom_handler.get("type"), HANDLER_CUSTOM)
+assert_eq_string(custom_handler.get("action"), "log_only")
+print_test_summary()
 
-# Test 2: Signal registration
-test_start("signal_register_basic")
-assert_true(signal_register(SIGTERM, "test_handler"))
-assert_true(signal_is_enabled(SIGTERM))
-assert_eq_string(signal_get_handler(SIGTERM), "test_handler")
-vibez.spill("✅ Basic signal registration test passed")
+# Test signal notification
+test_start("Signal notification")
+sus notify_result lit = notify(SIGUSR1)
+assert_true(notify_result)
+sus updated_handler map = get_signal_handler(SIGUSR1)
+sus count normie = updated_handler.get("count")
+assert_eq_int(count, 1)
+print_test_summary()
 
-# Test 3: Signal registration with invalid signal
-test_start("signal_register_invalid")
-assert_false(signal_register(99, "invalid_handler"))
-vibez.spill("✅ Invalid signal registration test passed")
+# Test signal names
+test_start("Signal name resolution")
+assert_eq_string(get_signal_name(SIGTERM), "SIGTERM")
+assert_eq_string(get_signal_name(SIGINT), "SIGINT")
+assert_eq_string(get_signal_name(SIGUSR1), "SIGUSR1")
+assert_eq_string(get_signal_name(SIGUSR2), "SIGUSR2")
+assert_eq_string(get_signal_name(SIGHUP), "SIGHUP")
+assert_eq_string(get_signal_name(999), "UNKNOWN")
+print_test_summary()
 
-# Test 4: Signal unregistration
-test_start("signal_unregister")
-assert_true(signal_register(SIGINT, "temp_handler"))
-assert_true(signal_unregister(SIGINT))
-assert_false(signal_is_enabled(SIGINT))
-assert_eq_string(signal_get_handler(SIGINT), "")
-vibez.spill("✅ Signal unregistration test passed")
+# Test shutdown task management
+test_start("Shutdown task management")
+sus task_result lit = add_shutdown_task("custom_cleanup")
+assert_true(task_result)
+sus remove_result lit = remove_shutdown_task("custom_cleanup")
+assert_true(remove_result)
+sus remove_fail lit = remove_shutdown_task("nonexistent_task")
+assert_false(remove_fail)
+print_test_summary()
 
-# Test 5: Multiple signal registration
-test_start("signal_register_multiple")
-assert_true(signal_register(SIGTERM, "term_handler"))
-assert_true(signal_register(SIGINT, "int_handler"))
-assert_true(signal_register(SIGHUP, "hup_handler"))
-assert_true(signal_is_enabled(SIGTERM))
-assert_true(signal_is_enabled(SIGINT))
-assert_true(signal_is_enabled(SIGHUP))
-vibez.spill("✅ Multiple signal registration test passed")
+# Test shutdown state
+test_start("Shutdown state management")
+assert_false(is_shutdown_requested())
+initiate_graceful_shutdown()
+assert_true(is_shutdown_requested())
+sus cancel_result lit = cancel_shutdown()
+assert_true(cancel_result)
+assert_false(is_shutdown_requested())
+print_test_summary()
 
-# Test 6: Graceful shutdown system
-test_start("graceful_shutdown_system")
-assert_true(graceful_shutdown_init())
-assert_false(graceful_shutdown_is_requested())
-assert_true(graceful_shutdown_request())
-assert_true(graceful_shutdown_is_requested())
-assert_true(graceful_shutdown_cleanup())
-assert_false(graceful_shutdown_is_requested())
-vibez.spill("✅ Graceful shutdown system test passed")
+# Test signal throttling
+test_start("Signal throttling")
+sus throttle_result lit = set_signal_throttle(SIGTERM, 1000)
+assert_true(throttle_result)
+# First signal should not be throttled
+assert_false(is_signal_throttled(SIGTERM))
+# Immediate second signal should be throttled
+assert_true(is_signal_throttled(SIGTERM))
+print_test_summary()
 
-# Test 7: Signal multiplexer
-test_start("signal_multiplexer")
-assert_true(signal_multiplexer_start())
-assert_true(signal_multiplexer_add(SIGTERM))
-assert_true(signal_multiplexer_add(SIGINT))
-assert_true(signal_multiplexer_add(SIGHUP))
-assert_true(signal_multiplexer_stop())
-vibez.spill("✅ Signal multiplexer test passed")
+# Test signal subscription
+test_start("Signal subscription")
+sus sub_result lit = subscribe_to_signal(SIGINT, "test_subscriber")
+assert_true(sub_result)
+sus unsub_result lit = unsubscribe_from_signal(SIGINT, "test_subscriber")
+assert_true(unsub_result)
+sus unsub_fail lit = unsubscribe_from_signal(SIGINT, "nonexistent_subscriber")
+assert_false(unsub_fail)
+print_test_summary()
 
-# Test 8: Signal multiplexer edge cases
-test_start("signal_multiplexer_edge_cases")
-# Test adding to inactive multiplexer
-assert_false(signal_multiplexer_add(SIGTERM))
-assert_true(signal_multiplexer_start())
-# Test adding too many signals
-sus i normie = 0
-bestie i < 12; i++ {  # Try to add more than capacity
-    signal_multiplexer_add(SIGTERM)
-}
-assert_true(signal_multiplexer_stop())
-vibez.spill("✅ Signal multiplexer edge cases test passed")
+# Test signal list functionality
+test_start("Signal list functionality")
+register_signal_handler(SIGTERM, HANDLER_DEFAULT, "")
+register_signal_handler(SIGINT, HANDLER_IGNORE, "")
+register_signal_handler(SIGUSR1, HANDLER_CUSTOM, "test_action")
+sus signals [normie] = list_signal_handlers()
+assert_true(signals.length() >= 3)
+print_test_summary()
 
-# Test 9: Process signal management
-test_start("signal_process_management")
-assert_true(signal_process_send(1234, SIGTERM))
-assert_true(signal_process_group_send(5678, SIGINT))
-assert_false(signal_process_send(-1, SIGTERM))  # Invalid PID
-assert_false(signal_process_send(1234, 99))     # Invalid signal
-vibez.spill("✅ Process signal management test passed")
+# Test ignore signal handler
+test_start("Ignore signal handler")
+register_signal_handler(SIGPIPE, HANDLER_IGNORE, "")
+sus ignore_result lit = notify(SIGPIPE)
+assert_true(ignore_result)
+sus ignore_handler map = get_signal_handler(SIGPIPE)
+sus ignore_count normie = ignore_handler.get("count")
+assert_eq_int(ignore_count, 1)
+print_test_summary()
 
-# Test 10: Signal throttling
-test_start("signal_throttling")
-assert_true(signal_throttle_enable(500))
-assert_false(signal_should_throttle())  # First call should not throttle
-# Note: Throttling behavior is simplified in this implementation
-assert_true(signal_throttle_disable())
-assert_false(signal_should_throttle())  # Should not throttle when disabled
-vibez.spill("✅ Signal throttling test passed")
+# Test multiple signal notifications
+test_start("Multiple signal notifications")
+register_signal_handler(SIGALRM, HANDLER_DEFAULT, "")
+notify(SIGALRM)
+notify(SIGALRM)
+notify(SIGALRM)
+sus multi_handler map = get_signal_handler(SIGALRM)
+sus multi_count normie = multi_handler.get("count")
+assert_eq_int(multi_count, 3)
+print_test_summary()
 
-# Test 11: Signal filtering
-test_start("signal_filtering")
-assert_true(signal_filter_enable())
-assert_true(signal_filter_add(SIGTERM))
-assert_true(signal_filter_add(SIGINT))
-assert_true(signal_is_filtered(SIGTERM))
-assert_true(signal_is_filtered(SIGINT))
-assert_false(signal_is_filtered(SIGHUP))
-assert_true(signal_filter_disable())
-assert_false(signal_is_filtered(SIGTERM))  # Should not be filtered when disabled
-vibez.spill("✅ Signal filtering test passed")
+# Test signal notification without handler
+test_start("Signal notification without handler")
+sus no_handler_result lit = notify(999)  # Non-existent signal
+assert_false(no_handler_result)
+print_test_summary()
 
-# Test 12: Signal filtering edge cases
-test_start("signal_filtering_edge_cases")
-# Test adding to disabled filter
-assert_false(signal_filter_add(SIGTERM))
-assert_true(signal_filter_enable())
-# Test filter capacity
-sus j normie = 0
-bestie j < 12; j++ {  # Try to add more than capacity
-    signal_filter_add(SIGTERM)
-}
-assert_true(signal_filter_disable())
-vibez.spill("✅ Signal filtering edge cases test passed")
+# Test initialization
+test_start("Module initialization")
+reset()  # Clear state first
+init_signal_boost()
+# Check that default handlers are registered
+assert_true(has_signal_handler(SIGTERM))
+assert_true(has_signal_handler(SIGINT))
+assert_true(has_signal_handler(SIGUSR1))
+assert_true(has_signal_handler(SIGUSR2))
+assert_true(has_signal_handler(SIGHUP))
+print_test_summary()
 
-# Test 13: GenZ-style signal handling
-test_start("genz_signal_handling")
-assert_false(vibe_check_signal(SIGTERM))  # Should return false and request shutdown
-assert_true(graceful_shutdown_is_requested())
-graceful_shutdown_cleanup()  # Reset state
-assert_true(vibe_check_signal(SIGHUP))    # Should return true for reload
-assert_true(vibe_check_signal(SIGUSR1))   # Should return true for neutral signal
-vibez.spill("✅ GenZ signal handling test passed")
+# Test module info
+test_start("Module information")
+sus info tea = get_module_info()
+assert_true(info.contains("signal_boost"))
+assert_true(info.contains("v1.0"))
+print_test_summary()
 
-# Test 14: Yeet on signal functionality
-test_start("yeet_on_signal")
-assert_true(yeet_on_signal(SIGTERM))
-assert_true(graceful_shutdown_is_requested())
-graceful_shutdown_cleanup()  # Reset state
-assert_true(yeet_on_signal(SIGINT))
-assert_true(graceful_shutdown_is_requested())
-graceful_shutdown_cleanup()  # Reset state
-assert_true(yeet_on_signal(SIGUSR1))
-vibez.spill("✅ Yeet on signal test passed")
-
-# Test 15: Config reload functionality
-test_start("config_reload")
-assert_true(no_cap_reload_config())
-vibez.spill("✅ Config reload test passed")
-
-# Test 16: Signal constants validation
-test_start("signal_constants")
+# Test signal constants
+test_start("Signal constants")
 assert_eq_int(SIGTERM, 15)
 assert_eq_int(SIGINT, 2)
-assert_eq_int(SIGKILL, 9)
-assert_eq_int(SIGHUP, 1)
-assert_eq_int(SIGQUIT, 3)
-assert_eq_int(SIGSTOP, 19)
-assert_eq_int(SIGCONT, 18)
 assert_eq_int(SIGUSR1, 10)
 assert_eq_int(SIGUSR2, 12)
-vibez.spill("✅ Signal constants validation test passed")
+assert_eq_int(SIGHUP, 1)
+assert_eq_int(SIGQUIT, 3)
+assert_eq_int(SIGPIPE, 13)
+assert_eq_int(SIGALRM, 14)
+print_test_summary()
 
-# Test 17: Module statistics
-test_start("module_statistics")
-signal_boost_init()  # Reset module state
-signal_register(SIGTERM, "test1")
-signal_register(SIGINT, "test2")
-signal_register(SIGHUP, "test3")
-sus stats normie = signal_boost_get_stats()
-assert_eq_int(stats, 3)  # Should have 3 registered handlers
-vibez.spill("✅ Module statistics test passed")
+# Test handler types
+test_start("Handler type constants")
+assert_eq_string(HANDLER_IGNORE, "ignore")
+assert_eq_string(HANDLER_DEFAULT, "default")
+assert_eq_string(HANDLER_CUSTOM, "custom")
+print_test_summary()
 
-# Test 18: Complete workflow test
-test_start("complete_workflow")
-# Initialize fresh module
-assert_true(signal_boost_init())
+# Test comprehensive signal processing
+test_start("Comprehensive signal processing")
+reset()
+init_signal_boost()
 
-# Set up graceful shutdown
-assert_true(graceful_shutdown_init())
+# Test SIGTERM default behavior
+notify(SIGTERM)
+assert_true(is_shutdown_requested())
+cancel_shutdown()
 
-# Start multiplexer and add signals
-assert_true(signal_multiplexer_start())
-assert_true(signal_multiplexer_add(SIGTERM))
-assert_true(signal_multiplexer_add(SIGINT))
+# Test SIGUSR1 default behavior (should call reload_configuration)
+notify(SIGUSR1)
 
-# Enable filtering and throttling
-assert_true(signal_filter_enable())
-assert_true(signal_filter_add(SIGHUP))
-assert_true(signal_throttle_enable(1000))
+# Test SIGUSR2 default behavior (should call dump_statistics)
+notify(SIGUSR2)
 
-# Test signal processing
-assert_true(vibe_check_signal(SIGUSR1))
-assert_true(yeet_on_signal(SIGUSR2))
-
-# Cleanup everything
-assert_true(signal_boost_cleanup())
-vibez.spill("✅ Complete workflow test passed")
-
-# Test 19: Cleanup verification
-test_start("cleanup_verification")
-# After cleanup, states should be reset
-assert_false(graceful_shutdown_is_requested())
-assert_false(signal_is_enabled(SIGTERM))
-assert_false(signal_is_enabled(SIGINT))
-assert_false(signal_is_enabled(SIGHUP))
-vibez.spill("✅ Cleanup verification test passed")
-
-# Test 20: Error handling robustness
-test_start("error_handling_robustness")
-# Test various error conditions
-assert_false(signal_register(-1, "invalid"))     # Invalid signal
-assert_false(signal_register(100, "invalid"))    # Invalid signal
-assert_false(signal_unregister(-1))              # Invalid signal
-assert_false(signal_unregister(100))             # Invalid signal
-assert_false(signal_is_enabled(-1))              # Invalid signal
-assert_false(signal_is_enabled(100))             # Invalid signal
-assert_eq_string(signal_get_handler(-1), "")     # Invalid signal
-assert_eq_string(signal_get_handler(100), "")    # Invalid signal
-vibez.spill("✅ Error handling robustness test passed")
+# Test custom action
+register_signal_handler(SIGQUIT, HANDLER_CUSTOM, "graceful_shutdown")
+notify(SIGQUIT)
+assert_true(is_shutdown_requested())
 
 print_test_summary()
-vibez.spill("🎉 All SignalBoost tests completed successfully!")
+
+# Test edge cases
+test_start("Edge cases")
+# Test removing non-existent handler
+sus remove_nonexistent lit = unregister_signal_handler(999)
+assert_false(remove_nonexistent)
+
+# Test getting handler for non-existent signal
+sus empty_handler map = get_signal_handler(999)
+assert_eq_int(empty_handler.size(), 0)
+
+# Test throttling non-configured signal
+assert_false(is_signal_throttled(999))
+
+print_test_summary()
+
+vibez.spill("All signal_boost module tests completed successfully!")
