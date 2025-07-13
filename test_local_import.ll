@@ -64,67 +64,23 @@ declare void @cursed_propagate_error_context(i64, i64)
 declare i8* @cursed_get_goroutine_error_context(i64)
 declare void @cursed_clear_goroutine_error_context(i64)
 declare i8* @cursed_create_enhanced_context(i8*, i64)
-declare i8* @cursed_link_error_context(i8*, i8*)
-declare i8* @cursed_capture_stack_trace()
-declare i64 @cursed_get_current_goroutine_id()
-declare i64 @time(i64*)
-declare i8* @cursed_propagate_with_context(i8*, i8*)
 @error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
-define i32 @test_yikes() {
-entry:
-  ; Error handling statement (yikes)
-  %0 = call i8* @malloc(i32 64)  ; Allocate error context
-  @error_msg_label0 = private unnamed_addr constant [37 x i8] c"Error in yikes statement: test_error\00"
-  %1 = call i8* @malloc(i32 32)  ; Allocate error object
-  %2 = call i8* @cursed_error_init(i8* %1, i8* getelementptr inbounds ([37 x i8], [37 x i8]* @error_msg_label0, i32 0, i32 0))
-  %3 = alloca i8*, align 8
-  store i8* %1, i8** %3, align 8
-  %4 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  ; Expression result: %4
-  %5 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  ; Expression result: %5
-  ; Expression result: 42
-  %6 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  ; Expression result: %6
-  ret i32 0
-}
 
-define i32 @test_shook() {
-entry:
-  ; Expression result: %error_result
-  %0 = add i32 0, 0 ; placeholder
-  ; Expression result: %0
-  %1 = call i32 @test_yikes()
-  ; Expression result: %1
-  %2 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  ; Expression result: %2
-  %3 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  ; Expression result: %3
-  ; Expression result: %error_result
-  %4 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  ; Expression result: %4
-  ret i32 0
-}
+; Module Declarations from Imports
+; test_module module declarations
+declare void @test_module_init()
+declare void @test_module_cleanup()
 
 
 
 ; String constants
-@.str.3 = private unnamed_addr constant [16 x i8] c"Tests completed\00", align 1
-@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
-@.str.1 = private unnamed_addr constant [22 x i8] c"Testing error context\00", align 1
-@.str.2 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@.str.0 = private unnamed_addr constant [28 x i8] c"Local import test completed\00", align 1
+@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 define i32 @main() {
-  %0 = getelementptr inbounds [22 x i8], [22 x i8]* @.str.1, i64 0, i64 0
+  %0 = call i32 @hello()
+  %1 = getelementptr inbounds [28 x i8], [28 x i8]* @.str.0, i64 0, i64 0
   ; Converting complex expression to output
-  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.2, i64 0, i64 0
-  %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
-  %3 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  %4 = call i32 @test_yikes()
-  %5 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  %6 = call i32 @test_shook()
-  %7 = getelementptr inbounds [16 x i8], [16 x i8]* @.str.3, i64 0, i64 0
-  ; Converting complex expression to output
-  %8 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.2, i64 0, i64 0
-  %9 = call i32 (i8*, ...) @printf(i8* %8, i32 %7)
+  %2 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
+  %3 = call i32 (i8*, ...) @printf(i8* %2, i32 %1)
   ret i32 0
 }

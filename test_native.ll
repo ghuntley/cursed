@@ -64,8 +64,21 @@ declare void @cursed_propagate_error_context(i64, i64)
 declare i8* @cursed_get_goroutine_error_context(i64)
 declare void @cursed_clear_goroutine_error_context(i64)
 declare i8* @cursed_create_enhanced_context(i8*, i64)
-@error_msg_default = private unnamed_addr constant [13 x i8] c"Error occurred\00"
+declare i8* @cursed_link_error_context(i8*, i8*)
+declare i8* @cursed_capture_stack_trace()
+declare i64 @cursed_get_current_goroutine_id()
+declare i64 @time(i64*)
+declare i8* @cursed_propagate_with_context(i8*, i8*)
+@error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
 
+
+; String constants
+@.str.0 = private unnamed_addr constant [25 x i8] c"Hello World from CURSED!\00", align 1
+@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 define i32 @main() {
+  %0 = getelementptr inbounds [25 x i8], [25 x i8]* @.str.0, i64 0, i64 0
+  ; Converting complex expression to output
+  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
+  %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
   ret i32 0
 }
