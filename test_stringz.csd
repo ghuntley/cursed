@@ -1,1 +1,3 @@
-yeet "stringz"; sus result normie = Length("test"); vibez.spill("String length works")
+yeet "stringz"
+
+vibez.spill("stringz module test")

@@ -1,5 +1,3 @@
-slay test_start(name tea) {
-    vibez.spill("Starting test: " + name)
-}
+yeet "mathz_simple_function"
 
-test_start("debug test")
+vibez.spill("Testing simple function")

@@ -1,19 +1,20 @@
 // mathz module - Pure CURSED mathematical functions
 // Provides comprehensive mathematical operations and constants
+// Self-contained module for core mathematical operations
 
-// Mathematical constants
-sus Pi drip = 3.14159265358979323846
-sus E drip = 2.71828182845904523536
+// Mathematical constants - using meal (f64) for better precision
+sus Pi meal = 3.14159265358979323846
+sus E meal = 2.71828182845904523536
 sus MaxFloat32 drip = 3.4028235e38
 sus MaxFloat64 meal = 1.7976931348623157e308
 sus MinFloat32 drip = 0.0 - 3.4028235e38
 sus MinFloat64 meal = 0.0 - 1.7976931348623157e308
-sus Epsilon drip = 1.19209290e-07
-sus Tau drip = 6.28318530717958647692
+sus Epsilon meal = 1.19209290e-07
+sus Tau meal = 6.28318530717958647692
 
 // Absolute value function
 slay Abs(x meal) meal {
-    bestie x < 0.0 {
+    lowkey x < 0.0 {
         damn 0.0 - x
     }
     damn x
@@ -21,7 +22,7 @@ slay Abs(x meal) meal {
 
 // Absolute value for integers
 slay AbsInt(x normie) normie {
-    bestie x < 0 {
+    lowkey x < 0 {
         damn 0 - x
     }
     damn x
@@ -29,7 +30,7 @@ slay AbsInt(x normie) normie {
 
 // Maximum of two values
 slay Max(x meal, y meal) meal {
-    bestie x > y {
+    lowkey x > y {
         damn x
     }
     damn y
@@ -37,7 +38,7 @@ slay Max(x meal, y meal) meal {
 
 // Minimum of two values
 slay Min(x meal, y meal) meal {
-    bestie x < y {
+    lowkey x < y {
         damn x
     }
     damn y
@@ -45,19 +46,24 @@ slay Min(x meal, y meal) meal {
 
 // Power function using iterative approach
 slay Pow(base meal, exp normie) meal {
-    bestie exp == 0 {
+    lowkey exp == 0 {
         damn 1.0
     }
     
     sus result meal = 1.0
-    sus absExp normie = AbsInt(exp)
-    sus i normie = 0
+    sus absExp normie = 0
     
-    bestie i < absExp; i++ {
+    lowkey exp < 0 {
+        absExp = 0 - exp
+    } lowkey {
+        absExp = exp
+    }
+    
+    bestie i := 0; i < absExp; i++ {
         result = result * base
     }
     
-    bestie exp < 0 {
+    lowkey exp < 0 {
         damn 1.0 / result
     }
     
@@ -66,20 +72,23 @@ slay Pow(base meal, exp normie) meal {
 
 // Square root using Newton's method
 slay Sqrt(x meal) meal {
-    bestie x < 0.0 {
+    lowkey x < 0.0 {
         damn 0.0  // Return 0 for negative inputs (simplified)
     }
-    bestie x == 0.0 {
+    lowkey x == 0.0 {
         damn 0.0
     }
     
     sus guess meal = x / 2.0
     sus prev meal = 0.0
-    sus iterations normie = 0
     
-    bestie iterations < 10 && Abs(guess - prev) > Epsilon; iterations++ {
+    bestie iterations := 0; iterations < 10; iterations++ {
         prev = guess
         guess = (guess + x / guess) / 2.0
+        sus diff meal = Abs(guess - prev)
+        lowkey diff <= Epsilon {
+            ghosted
+        }
     }
     
     damn guess
@@ -88,25 +97,27 @@ slay Sqrt(x meal) meal {
 // Ceiling function
 slay Ceil(x meal) meal {
     sus intPart normie = x.(normie)
-    bestie x > intPart.(meal) {
-        damn intPart.(meal) + 1.0
+    sus intPartFloat meal = intPart.(meal)
+    lowkey x > intPartFloat {
+        damn intPartFloat + 1.0
     }
-    damn intPart.(meal)
+    damn intPartFloat
 }
 
 // Floor function
 slay Floor(x meal) meal {
     sus intPart normie = x.(normie)
-    bestie x < intPart.(meal) {
-        damn intPart.(meal) - 1.0
+    sus intPartFloat meal = intPart.(meal)
+    lowkey x < intPartFloat {
+        damn intPartFloat - 1.0
     }
-    damn intPart.(meal)
+    damn intPartFloat
 }
 
 // Rounding function
 slay Round(x meal) meal {
     sus floor meal = Floor(x)
-    bestie x - floor >= 0.5 {
+    lowkey x - floor >= 0.5 {
         damn floor + 1.0
     }
     damn floor
@@ -114,10 +125,10 @@ slay Round(x meal) meal {
 
 // Sign function
 slay Sign(x meal) normie {
-    bestie x > 0.0 {
+    lowkey x > 0.0 {
         damn 1
     }
-    bestie x < 0.0 {
+    lowkey x < 0.0 {
         damn 0 - 1
     }
     damn 0
@@ -125,10 +136,10 @@ slay Sign(x meal) normie {
 
 // Clamp function
 slay Clamp(x meal, min meal, max meal) meal {
-    bestie x < min {
+    lowkey x < min {
         damn min
     }
-    bestie x > max {
+    lowkey x > max {
         damn max
     }
     damn x
@@ -151,14 +162,13 @@ slay DegToRad(deg meal) meal {
 
 // Factorial function
 slay Factorial(n normie) normie {
-    bestie n <= 1 {
+    lowkey n <= 1 {
         damn 1
     }
     
     sus result normie = 1
-    sus i normie = 2
     
-    bestie i <= n; i++ {
+    bestie i := 2; i <= n; i++ {
         result = result * i
     }
     
@@ -167,19 +177,18 @@ slay Factorial(n normie) normie {
 
 // Check if number is prime
 slay IsPrime(n normie) lit {
-    bestie n <= 1 {
+    lowkey n <= 1 {
         damn cap
     }
-    bestie n <= 3 {
+    lowkey n <= 3 {
         damn based
     }
-    bestie n % 2 == 0 || n % 3 == 0 {
+    lowkey n % 2 == 0 || n % 3 == 0 {
         damn cap
     }
     
-    sus i normie = 5
-    bestie i * i <= n; i = i + 6 {
-        bestie n % i == 0 || n % (i + 2) == 0 {
+    bestie i := 5; (i * i) <= n; i = i + 6 {
+        lowkey n % i == 0 || n % (i + 2) == 0 {
             damn cap
         }
     }

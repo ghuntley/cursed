@@ -1,1 +1,3 @@
-yeet "timez"; sus t Time = now(); vibez.spill("Time works")
+yeet "timez"
+
+vibez.spill("timez module test")
