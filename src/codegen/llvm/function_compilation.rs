@@ -4,12 +4,13 @@
 use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression, YikesStatement, FamStatement, ShookExpression, DeferStatement};
 use crate::error::CursedError;
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
+use crate::codegen::llvm::register_tracker::RegisterTracker;
 use std::collections::HashMap;
 
 /// Complete function compiler for CURSED functions to LLVM IR
 pub struct FunctionCompiler {
     pub ir_code: String,
-    pub variable_counter: usize,
+    pub local_register_counter: usize,  // Function-local register counter
     pub label_counter: usize,
     pub variables: HashMap<String, String>,  // Maps variable names to their register/pointer
     pub variable_types: HashMap<String, String>,  // Maps variable names to their LLVM types
@@ -25,7 +26,7 @@ impl FunctionCompiler {
     pub fn new() -> Self {
         Self {
             ir_code: String::new(),
-            variable_counter: 0,
+            local_register_counter: 0,  // Start function register numbering from %0 (first instruction)
             label_counter: 0,
             variables: HashMap::new(),
             variable_types: HashMap::new(),
@@ -42,6 +43,13 @@ impl FunctionCompiler {
     pub fn get_string_constants(&self) -> Vec<String> {
         self.string_manager.get_all_constants()
     }
+    
+    /// Allocate next register for this function
+    pub fn next_register(&mut self) -> String {
+        let reg = format!("%{}", self.local_register_counter);
+        self.local_register_counter += 1;
+        reg
+    }
 
     /// Generate complete LLVM function definition with full IR
     pub fn compile_function(
@@ -56,8 +64,8 @@ impl FunctionCompiler {
         self.variables.clear();
         self.variable_types.clear();
         self.function_params.clear();
-        // All functions register numbering starts at %0 according to LLVM convention
-        self.variable_counter = 0;
+        // All functions register numbering starts at %1 according to LLVM convention
+        // Register tracker will sync with global counter automatically
         self.label_counter = 0;
         self.current_function = Some(name.to_string());
         
@@ -120,10 +128,7 @@ impl FunctionCompiler {
         
         function_ir.push_str("}\n\n");
         
-        // Fix register numbering gaps
-        let fixed_ir = self.fix_register_numbering(&function_ir);
-        
-        Ok(fixed_ir)
+        Ok(function_ir)
     }
 
     /// Compile individual statements to complete LLVM IR
@@ -2068,13 +2073,7 @@ impl FunctionCompiler {
         Ok(result_reg)
     }
 
-    /// Generate next register name
-    fn next_register(&mut self) -> String {
-        let reg = format!("%{}", self.variable_counter);
-        log::debug!("Generated register: {} (counter was {})", reg, self.variable_counter);
-        self.variable_counter += 1;
-        reg
-    }
+    /// Generate next register name (replaced by method above)
     
     /// Get the LLVM type for a variable based on its name and value
     fn get_variable_type(&self, name: &str, value: &crate::ast::Expression) -> Result<String, CursedError> {
@@ -2133,47 +2132,7 @@ impl FunctionCompiler {
         self.ir_code.clear();
     }
     
-    /// Fix register numbering gaps in LLVM IR
-    fn fix_register_numbering(&self, ir: &str) -> String {
-        use std::collections::HashMap;
-        use regex::Regex;
-        
-        // Find all register references
-        let register_pattern = Regex::new(r"%(\d+)").unwrap();
-        let mut registers_used = std::collections::HashSet::new();
-        
-        for captures in register_pattern.captures_iter(ir) {
-            if let Some(num_str) = captures.get(1) {
-                if let Ok(num) = num_str.as_str().parse::<usize>() {
-                    registers_used.insert(num);
-                }
-            }
-        }
-        
-        if registers_used.is_empty() {
-            return ir.to_string();
-        }
-        
-        // Sort registers and create mapping
-        let mut sorted_registers: Vec<usize> = registers_used.into_iter().collect();
-        sorted_registers.sort();
-        
-        let mut register_mapping = HashMap::new();
-        for (i, old_reg) in sorted_registers.iter().enumerate() {
-            register_mapping.insert(*old_reg, i);
-        }
-        
-        // Replace registers in the IR
-        register_pattern.replace_all(ir, |caps: &regex::Captures| {
-            let old_num_str = &caps[1];
-            if let Ok(old_num) = old_num_str.parse::<usize>() {
-                if let Some(&new_num) = register_mapping.get(&old_num) {
-                    return format!("%{}", new_num);
-                }
-            }
-            caps[0].to_string() // fallback
-        }).to_string()
-    }
+
 
     /// Compile channel send expression
     fn compile_channel_send(&mut self, channel_send_expr: &ChannelSendExpression) -> Result<String, CursedError> {

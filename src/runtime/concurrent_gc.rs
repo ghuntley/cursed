@@ -354,15 +354,16 @@ impl ConcurrentGarbageCollector {
         }
     }
 
-    /// Start collector threads
+    /// Start collector threads (thread-safe)
     fn start_collector_threads(&self) -> Result<(), CursedError> {
-        let mut threads = self.collector_threads.write().unwrap();
+        let mut threads = self.collector_threads.write()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire collector threads lock"))?;
         
         for i in 0..self.config.collector_threads {
             let work_queue = Arc::clone(&self.work_queue);
             let work_available = Arc::clone(&self.work_available);
-            let running = Arc::new(AtomicBool::new(true));
-            let thread_running = Arc::clone(&running);
+            let running_flag = Arc::clone(&Arc::new(AtomicBool::new(true)));
+            let thread_running = Arc::clone(&running_flag);
             
             // Store running flag for later cleanup
             let thread_id = i;
@@ -370,26 +371,35 @@ impl ConcurrentGarbageCollector {
             let handle = thread::Builder::new()
                 .name(format!("gc-collector-{}", thread_id))
                 .spawn(move || {
-                    while thread_running.load(Ordering::Relaxed) {
-                        // Wait for work
+                    while thread_running.load(Ordering::Acquire) {
+                        // Wait for work with timeout to prevent infinite blocking
                         let work_item = {
-                            let mut queue = work_queue.lock().unwrap();
-                            if queue.is_empty() {
-                                // Wait for work to become available
-                                queue = work_available.wait(queue).unwrap();
+                            let queue_result = work_queue.lock();
+                            if let Ok(mut queue) = queue_result {
+                                if queue.is_empty() {
+                                    // Wait for work with timeout
+                                    let timeout = std::time::Duration::from_millis(100);
+                                    if let Ok(timed_queue) = work_available.wait_timeout(queue, timeout) {
+                                        let mut new_queue = timed_queue.0;
+                                        new_queue.pop_front()
+                                    } else {
+                                        None
+                                    }
+                                } else {
+                                    if !thread_running.load(Ordering::Acquire) {
+                                        return Ok(());
+                                    }
+                                    queue.pop_front()
+                                }
+                            } else {
+                                None
                             }
-                            
-                            if !thread_running.load(Ordering::Relaxed) {
-                                break;
-                            }
-                            
-                            queue.pop_front()
                         };
                         
                         if let Some(work_item) = work_item {
-                            // Process work item
+                            // Process work item with error handling
                             if let Err(e) = Self::process_work_item(work_item) {
-                                eprintln!("Error processing work item: {}", e);
+                                tracing::error!("Error processing work item in thread {}: {}", thread_id, e);
                             }
                         }
                     }
@@ -695,29 +705,29 @@ impl ConcurrentGarbageCollector {
     }
 }
 
-/// Global concurrent GC instance
-static mut GLOBAL_CONCURRENT_GC: Option<Arc<ConcurrentGarbageCollector>> = None;
-static CONCURRENT_GC_INIT: std::sync::Once = std::sync::Once::new();
+/// Thread-safe global concurrent GC instance
+use std::sync::OnceLock;
+static GLOBAL_CONCURRENT_GC: OnceLock<Arc<ConcurrentGarbageCollector>> = OnceLock::new();
 
-/// Initialize global concurrent GC
+/// Initialize global concurrent GC (thread-safe)
 pub fn initialize_concurrent_gc(
     config: ConcurrentGcConfig,
     base_gc: Arc<GarbageCollector>,
     tri_color_collector: Arc<TriColorCollector>,
     performance_tuner: Arc<GcPerformanceTuner>,
 ) -> Result<(), CursedError> {
-    CONCURRENT_GC_INIT.call_once(|| {
-        let concurrent_gc = ConcurrentGarbageCollector::new(config, base_gc, tri_color_collector, performance_tuner).unwrap();
-        unsafe {
-            GLOBAL_CONCURRENT_GC = Some(Arc::new(concurrent_gc));
-        }
-    });
+    let concurrent_gc = ConcurrentGarbageCollector::new(config, base_gc, tri_color_collector, performance_tuner)?;
+    let concurrent_gc_arc = Arc::new(concurrent_gc);
+    
+    GLOBAL_CONCURRENT_GC.set(concurrent_gc_arc)
+        .map_err(|_| CursedError::runtime_error("Concurrent GC already initialized"))?;
+    
     Ok(())
 }
 
-/// Get global concurrent GC
+/// Get global concurrent GC (thread-safe)
 pub fn get_concurrent_gc() -> Option<Arc<ConcurrentGarbageCollector>> {
-    unsafe { GLOBAL_CONCURRENT_GC.clone() }
+    GLOBAL_CONCURRENT_GC.get().cloned()
 }
 
 #[cfg(test)]

@@ -31,10 +31,10 @@ impl GoroutineCodegen {
             _ => return Err(CursedError::compiler_error("Invalid function expression for goroutine spawn")),
         };
         
-        // Generate LLVM IR for goroutine spawn
-        let function_ptr_reg = format!("%{}", codegen.next_variable());
-        let args_ptr_reg = format!("%{}", codegen.next_variable());
-        let result_reg = format!("%{}", codegen.next_variable());
+        // Generate LLVM IR for goroutine spawn  
+        let function_ptr_reg = codegen.next_register();
+        let args_ptr_reg = codegen.next_register();
+        let result_reg = codegen.next_register();
         
         let mut ir_code = String::new();
         

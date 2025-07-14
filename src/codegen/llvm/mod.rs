@@ -6,6 +6,9 @@
 // Main LLVM code generator
 pub mod main;
 
+// Register tracking for consistent numbering
+pub mod register_tracker;
+
 // Core LLVM code generation modules
 pub mod optimization;
 pub mod optimization_engine;

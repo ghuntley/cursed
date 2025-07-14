@@ -190,11 +190,10 @@ impl LlvmCodeGenerator {
         let msg_ptr_register = self.next_variable();
         ir.push_str(&format!("  %{} = getelementptr inbounds i8, i8* %{}, i32 0\n", 
                             msg_ptr_register, context_register));
-        let msg_cast_register = self.next_variable();
         ir.push_str(&format!("  %{} = bitcast i8* %{} to i8**\n", 
-                            msg_cast_register, msg_ptr_register));
+                            self.next_variable(), msg_ptr_register));
         ir.push_str(&format!("  store i8* getelementptr inbounds ([{} x i8], [{} x i8]* @error_msg_{}, i32 0, i32 0), i8** %{}\n", 
-                            msg_len + 1, msg_len + 1, msg_register, msg_cast_register));
+                            msg_len + 1, msg_len + 1, msg_register, self.variable_counter));
         
         // Add source location if available
         if let Some(loc) = &location {
@@ -207,21 +206,19 @@ impl LlvmCodeGenerator {
             let file_ptr_register = self.next_variable();
             ir.push_str(&format!("  %{} = getelementptr inbounds i8, i8* %{}, i32 8\n", 
                                 file_ptr_register, context_register));
-            let file_cast_register = self.next_variable();
             ir.push_str(&format!("  %{} = bitcast i8* %{} to i8**\n", 
-                                file_cast_register, file_ptr_register));
+                                self.next_variable(), file_ptr_register));
             ir.push_str(&format!("  store i8* getelementptr inbounds ([{} x i8], [{} x i8]* @error_file_{}, i32 0, i32 0), i8** %{}\n", 
-                                file_len + 1, file_len + 1, file_register, file_cast_register));
+                                file_len + 1, file_len + 1, file_register, self.variable_counter));
             
             // Set line number in context (offset 16)
             let line_ptr_register = self.next_variable();
             ir.push_str(&format!("  %{} = getelementptr inbounds i8, i8* %{}, i32 16\n", 
                                 line_ptr_register, context_register));
-            let line_cast_register = self.next_variable();
             ir.push_str(&format!("  %{} = bitcast i8* %{} to i32*\n", 
-                                line_cast_register, line_ptr_register));
+                                self.next_variable(), line_ptr_register));
             ir.push_str(&format!("  store i32 {}, i32* %{}\n", 
-                                loc.line, line_cast_register));
+                                loc.line, self.variable_counter));
             
             // Set column number in context (offset 20)
             let col_ptr_register = self.next_variable();
@@ -230,7 +227,7 @@ impl LlvmCodeGenerator {
             ir.push_str(&format!("  %{} = bitcast i8* %{} to i32*\n", 
                                 self.next_variable(), col_ptr_register));
             ir.push_str(&format!("  store i32 {}, i32* %{}\n", 
-                                loc.column, self.get_current_register_number()));
+                                loc.column, self.variable_counter));
         }
         
         // Add function name if available
@@ -247,7 +244,7 @@ impl LlvmCodeGenerator {
             ir.push_str(&format!("  %{} = bitcast i8* %{} to i8**\n", 
                                 self.next_variable(), func_ptr_register));
             ir.push_str(&format!("  store i8* getelementptr inbounds ([{} x i8], [{} x i8]* @error_func_{}, i32 0, i32 0), i8** %{}\n", 
-                                func_len + 1, func_len + 1, func_register, self.get_current_register_number()));
+                                func_len + 1, func_len + 1, func_register, self.variable_counter));
         }
         
         // Add timestamp (offset 32)
@@ -258,7 +255,7 @@ impl LlvmCodeGenerator {
                             self.next_variable(), time_ptr_register));
         ir.push_str(&format!("  %{} = call i64 @time(i64* null)\n", self.next_variable()));
         ir.push_str(&format!("  store i64 %{}, i64* %{}\n", 
-                            self.get_current_register_number(), self.register_tracker.get_current_counter() - 1));
+                            self.variable_counter, self.variable_counter - 1));
         
         // Add stack trace (offset 40)
         let stack_ptr_register = self.next_variable();
@@ -268,7 +265,7 @@ impl LlvmCodeGenerator {
         ir.push_str(&format!("  %{} = bitcast i8* %{} to i8**\n", 
                             self.next_variable(), stack_ptr_register));
         ir.push_str(&format!("  store i8* %{}, i8** %{}\n", 
-                            self.register_tracker.get_current_counter() - 1, self.get_current_register_number()));
+                            self.variable_counter - 1, self.variable_counter));
         
         // Add goroutine ID (offset 48)
         let goroutine_ptr_register = self.next_variable();
@@ -278,11 +275,11 @@ impl LlvmCodeGenerator {
                             self.next_variable(), goroutine_ptr_register));
         ir.push_str(&format!("  %{} = call i64 @cursed_get_current_goroutine_id()\n", self.next_variable()));
         ir.push_str(&format!("  store i64 %{}, i64* %{}\n", 
-                            self.get_current_register_number(), self.register_tracker.get_current_counter() - 1));
+                            self.variable_counter, self.variable_counter - 1));
         
         // Initialize error context via runtime
         ir.push_str(&format!("  %{} = call i8* @cursed_create_enhanced_context(i8* %{}, i64 %{})\n", 
-                            self.next_variable(), context_register, self.register_tracker.get_current_counter() - 1));
+                            self.next_variable(), context_register, self.variable_counter - 1));
         
         Ok(ir)
     }
@@ -449,9 +446,7 @@ impl LlvmCodeGenerator {
             self.ir_code.push_str("\ndefine i32 @main() {\n");
             
             // Main function register numbering starts at %1 according to LLVM convention
-            // Ensure counter is properly set to 1 for function start
-            RegisterTracker::set_global_counter(1);
-            self.register_tracker.sync_with_global();
+            self.variable_counter = 1;
             
             // Generate all top-level statements inside main function with error recovery
             for statement in &top_level_statements {
@@ -619,10 +614,9 @@ impl LlvmCodeGenerator {
                         } else {
                             match &let_stmt.value {
                                 Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
-                                Expression::Boolean(val) => ("i1".to_string(), if *val { "1" } else { "0" }.to_string()),
-                                Expression::Integer(val) => ("i32".to_string(), val.to_string()), // Use actual integer value
-                                Expression::Float(val) => ("double".to_string(), val.to_string()), // Use actual float value
-                                _ => ("i32".to_string(), "0".to_string()), // Default to 0 for integers
+                                Expression::Boolean(_) => ("i1".to_string(), value_reg.clone()),
+                                Expression::Integer(_) => ("i32".to_string(), value_reg.clone()),
+                                _ => ("i32".to_string(), value_reg.clone()), // Default
                             }
                         };
                         
@@ -686,11 +680,11 @@ impl LlvmCodeGenerator {
                             // Determine type based on the value expression
                             let (var_type, store_value) = match &assign_stmt.value {
                                 Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
-                                Expression::Boolean(val) => ("i1".to_string(), if *val { "1" } else { "0" }.to_string()),
-                                Expression::Integer(val) => ("i32".to_string(), val.to_string()), // Use actual integer value
-                                Expression::Float(val) => ("double".to_string(), val.to_string()), // Use actual float value
+                                Expression::Boolean(_) => ("i1".to_string(), value_reg.clone()),
+                                Expression::Integer(_) => ("i32".to_string(), value_reg.clone()),
+                                Expression::Float(_) => ("double".to_string(), value_reg.clone()),
                                 Expression::Character(_) => ("i8".to_string(), value_reg.clone()),
-                                _ => ("i32".to_string(), "0".to_string()), // Default to 0 for integers
+                                _ => ("i32".to_string(), value_reg.clone()), // Default
                             };
                             
                             // Allocate and store variable
@@ -831,11 +825,11 @@ impl LlvmCodeGenerator {
                         // Determine type based on the value expression
                         let (var_type, store_value) = match &short_decl_stmt.value {
                             Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
-                            Expression::Boolean(val) => ("i1".to_string(), if *val { "1" } else { "0" }.to_string()),
-                            Expression::Integer(val) => ("i32".to_string(), val.to_string()), // Use actual integer value, not register
-                            Expression::Float(val) => ("double".to_string(), val.to_string()),
+                            Expression::Boolean(_) => ("i1".to_string(), value_reg.clone()),
+                            Expression::Integer(_) => ("i32".to_string(), value_reg.clone()),
+                            Expression::Float(_) => ("double".to_string(), value_reg.clone()),
                             Expression::Character(_) => ("i8".to_string(), value_reg.clone()),
-                            _ => ("i32".to_string(), "0".to_string()), // Default to 0 for integers
+                            _ => ("i32".to_string(), value_reg.clone()), // Default
                         };
                         
                         // Allocate and store variable
@@ -896,8 +890,8 @@ impl LlvmCodeGenerator {
                 
                 // Link error context to error object
                 let link_register = self.next_variable();
-                let error_obj_reg = self.register_tracker.get_current_counter() - 2;
-                let context_obj_reg = self.register_tracker.get_current_counter() - 3;
+                let error_obj_reg = self.variable_counter - 2;
+                let context_obj_reg = self.variable_counter - 3;
                 self.ir_code.push_str(&format!("  %{} = call i8* @cursed_link_error_context(i8* %{}, i8* %{})\n", 
                                               link_register, error_obj_reg, context_obj_reg));
             },
@@ -1296,7 +1290,7 @@ impl LlvmCodeGenerator {
                 
                 // Propagate context along with error
                 let propagate_register = self.next_variable();
-                let context_obj_reg = self.register_tracker.get_current_counter() - 2;
+                let context_obj_reg = self.variable_counter - 2;
                 self.ir_code.push_str(&format!("  %{} = call i8* @cursed_propagate_with_context(i8* %result, i8* %{})\n", 
                                               propagate_register, context_obj_reg));
                 
@@ -1334,7 +1328,7 @@ impl LlvmCodeGenerator {
                 let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
                 
                 // Synchronize the variable counter to avoid register conflicts
-                expression_compiler.set_variable_counter(self.get_current_register_number());
+                expression_compiler.set_variable_counter(self.variable_counter);
                 
                 // Copy current variables to the expression compiler
                 for (name, reg) in &self.variables {
@@ -1345,7 +1339,7 @@ impl LlvmCodeGenerator {
                 let result_reg = expression_compiler.compile_expression(expression)?;
                 
                 // Update our variable counter to reflect what the expression compiler used
-                self.register_tracker.set_counter(expression_compiler.get_variable_counter());
+                self.variable_counter = expression_compiler.get_variable_counter();
                 
                 // Add the generated IR to our main IR code
                 let expression_ir = expression_compiler.get_ir();
@@ -1734,22 +1728,13 @@ impl LlvmCodeGenerator {
                              self.ir_code.push_str(&format!("  {} = call i32 @puts(i8* {})\n", call_reg, arg_reg));
                         },
                         _ => {
-                            // For other complex expressions, try to determine if it's a string or integer
-                            // Check if the result is a string pointer (from getelementptr) 
-                            // by looking at the LLVM IR that was generated for this expression
-                            if self.ir_code.contains(&format!("{} = getelementptr", arg_reg)) {
-                                // It's a string constant - use puts
-                                let call_reg = self.next_register();
-                                self.ir_code.push_str(&format!("  {} = call i32 @puts(i8* {})\n", call_reg, arg_reg));
-                            } else {
-                                // Assume integer and convert
-                                self.ir_code.push_str(&format!("  ; Converting complex expression to output\n"));
-                                let format_str = self.add_string_constant("%d\n");
-                                let format_reg = self.next_register();
-                                self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
-                                let call_reg = self.next_register();
-                                self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_reg, format_reg, arg_reg));
-                            }
+                            // For other complex expressions, assume integer and convert
+                            self.ir_code.push_str(&format!("  ; Converting complex expression to output\n"));
+                            let format_str = self.add_string_constant("%d\n");
+                            let format_reg = self.next_register();
+                            self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                            let call_reg = self.next_register();
+                             self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_reg, format_reg, arg_reg));
                         }
                     }
                 }
@@ -1853,10 +1838,6 @@ impl LlvmCodeGenerator {
     fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], return_type: &Option<crate::ast::Type>, body: &[Statement]) -> Result<(), CursedError> {
         // Initialize defer list for this function
         self.current_function_defers = None;
-        
-        // Reset register tracker for each function - LLVM functions have their own register numbering
-        // Functions should start register numbering from %1 (parameters are named)
-        self.register_tracker.set_counter(1);
         
         // Use the dedicated function compiler for complete IR generation
         let mut function_compiler = crate::codegen::llvm::function_compilation::FunctionCompiler::new();
@@ -2299,7 +2280,7 @@ impl LlvmCodeGenerator {
         Ok(())
     }
     
-    pub fn next_register(&mut self) -> String {
+    fn next_register(&mut self) -> String {
         self.register_tracker.allocate_register()
     }
     
@@ -3413,26 +3394,9 @@ impl LlvmCodeGenerator {
     }
     
     pub fn next_variable(&mut self) -> String {
-        // Return just the number part of the register for backward compatibility
-        let reg = self.register_tracker.allocate_register();
-        reg[1..].to_string() // Remove the '%' prefix
-    }
-    
-    /// Get the current register number without allocating a new one
-    pub fn get_current_register_number(&self) -> usize {
-        // Get the ACTUAL current register number from the tracker
-        // This should return the last allocated register number
-        self.register_tracker.get_current_counter()
-    }
-    
-    /// Check if a function has been declared
-    pub fn has_function_declaration(&self, name: &str) -> bool {
-        self.declared_functions.contains_key(name)
-    }
-    
-    /// Mark a function as declared
-    pub fn mark_function_declared(&mut self, name: &str) {
-        self.declared_functions.insert(name.to_string(), "declared".to_string());
+        let var = format!("{}", self.variable_counter);
+        self.variable_counter += 1;
+        var
     }
     
     /// Public wrapper for generate_expression for use by codegen modules
@@ -3448,13 +3412,23 @@ impl LlvmCodeGenerator {
     
     /// Get the last variable counter for accessing results
     pub fn get_last_variable_counter(&self) -> usize {
-        self.get_current_register_number().saturating_sub(1)
+        self.variable_counter.saturating_sub(1)
     }
     
     pub fn set_last_variable_counter(&mut self, counter: usize) {
-        self.register_tracker.set_counter(counter);
+        self.variable_counter = counter;
     }
     
+    /// Check if a function declaration exists in the IR code
+    pub fn has_function_declaration(&self, name: &str) -> bool {
+        self.ir_code.contains(&format!("declare")) && self.ir_code.contains(&format!("@{}", name)) ||
+        self.ir_code.contains(&format!("define")) && self.ir_code.contains(&format!("@{}", name))
+    }
+    
+    /// Mark a function as declared (no-op for now)
+    pub fn mark_function_declared(&mut self, _name: &str) {
+        // No-op implementation for now
+    }
     
     fn generate_select_statement(&mut self, select_stmt: &crate::ast::SelectStatement) -> Result<(), CursedError> {
         self.ir_code.push_str("  ; Select statement - begin\n");
@@ -3610,7 +3584,6 @@ impl LlvmCodeGenerator {
             }
         }
     }
-
 }
 
 #[cfg(test)]

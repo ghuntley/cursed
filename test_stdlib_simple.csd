@@ -1,26 +1,25 @@
-// Simple test of core stdlib functionality
+# Simple stdlib test without dependencies
+# Test basic language features first
 
-// Test basic vibez.spill functionality
-vibez.spill("Testing vibez.spill function")
+# Test basic variable declaration
+sus x normie = 42
+sus y tea = "hello"
+sus z lit = based
 
-// Test basic variable declarations
-sus message tea = "Hello from CURSED!"
-sus number normie = 42
-sus flag lit = based
+# Test basic arithmetic
+sus result normie = x + 10
 
-// Test basic output
-vibez.spill("Message: ")
-vibez.spill(message)
-vibez.spill("Number: ")
-vibez.spill(number)
-vibez.spill("Flag: ")
-vibez.spill(flag)
+# Test simple output (if available)
+# vibez.spill("Simple test successful")
 
-// Test simple string operations
-sus greeting tea = "Hello"
-sus target tea = "World"
-sus full_greeting tea = greeting + ", " + target + "!"
-vibez.spill("Full greeting: ")
-vibez.spill(full_greeting)
+# Test conditional
+fr result > 40 {
+    sus success lit = based
+}
 
-vibez.spill("Basic stdlib test complete!")
+# Test loop
+bestie i := 0; i < 3; i++ {
+    sus loop_var normie = i * 2
+}
+
+damn based

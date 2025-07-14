@@ -96,6 +96,20 @@ impl Parser {
         Ok(Ast::Program(self.parse_program()?))
     }
 
+    /// Enhanced error recovery - try to find and consume a specific token
+    fn recover_to_token(&mut self, target: TokenKind) {
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == target {
+                self.advance_token();
+                break;
+            }
+            if token.kind == TokenKind::Eof {
+                break;
+            }
+            self.advance_token();
+        }
+    }
+
     pub fn errors(&self) -> Vec<Error> {
         // Return empty errors for now
         vec![]
@@ -2445,14 +2459,56 @@ impl Parser {
         loop {
             if let Some(token) = self.current_token.as_ref() {
                 if token.kind == TokenKind::Identifier {
-                    bounds.push(token.lexeme.clone());
+                    // Parse complex type bound with potential generic parameters
+                    let mut bound = token.lexeme.clone();
                     self.advance_token();
                     
-                    // Check for '+' separator for multiple bounds
+                    // Check for generic parameters in bound (e.g., "Container[T]")
+                    if let Some(next_token) = self.current_token.as_ref() {
+                        if next_token.kind == TokenKind::LeftBracket {
+                            bound.push('[');
+                            self.advance_token(); // consume '['
+                            
+                            // Parse generic parameters within bound with proper nesting
+                            let mut depth = 1;
+                            while depth > 0 && self.current_token.is_some() {
+                                if let Some(token) = self.current_token.as_ref() {
+                                    match token.kind {
+                                        TokenKind::LeftBracket => {
+                                            depth += 1;
+                                            bound.push('[');
+                                        }
+                                        TokenKind::RightBracket => {
+                                            depth -= 1;
+                                            bound.push(']');
+                                        }
+                                        TokenKind::Identifier => {
+                                            bound.push_str(&token.lexeme);
+                                        }
+                                        TokenKind::Comma => {
+                                            bound.push(',');
+                                        }
+                                        TokenKind::Colon => {
+                                            bound.push(':');
+                                        }
+                                        _ => {
+                                            // Include other tokens as part of complex bound
+                                            bound.push_str(&token.lexeme);
+                                        }
+                                    }
+                                    self.advance_token();
+                                }
+                            }
+                        }
+                    }
+                    
+                    bounds.push(bound);
+                    
+                    // Check for '+' separator for compound bounds (e.g., "T: Clone + Display")
                     if let Some(token) = self.current_token.as_ref() {
                         if token.kind == TokenKind::Plus {
                             self.advance_token();
-                            continue;
+                            continue; // Parse next bound
                         }
                     }
                 }
@@ -2557,36 +2613,54 @@ impl Parser {
     fn parse_method_receiver(&mut self) -> Result<Option<MethodReceiver>> {
         self.consume_token(TokenKind::LeftParen)?;
         
-        // Check for pointer receiver
-        let is_pointer = if let Some(token) = self.current_token.as_ref() {
+        // Enhanced receiver parsing with better error recovery
+        let mut is_pointer = false;
+        let mut name = String::new();
+        let mut receiver_type = Type::Void;
+        
+        // Check for pointer receiver with improved handling
+        if let Some(token) = self.current_token.as_ref() {
             if token.kind == TokenKind::Star {
                 self.advance_token();
-                true
-            } else {
-                false
+                is_pointer = true;
             }
-        } else {
-            false
-        };
+        }
         
-        // Parse receiver name
-        let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Identifier => {
-                let name = token.lexeme.clone();
+        // Parse receiver name with enhanced error recovery
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Identifier {
+                name = token.lexeme.clone();
                 self.advance_token();
-                name
+            } else {
+                // Enhanced error recovery - try to continue parsing
+                self.error_count += 1;
+                return Err(Error::Parse(format!("Expected receiver name, found {:?}", token.kind)));
             }
-            _ => return Err(Error::Parse("Expected receiver name".to_string())),
-        };
-        
-        // Parse receiver type
-        let receiver_type = if let Some(type_opt) = self.parse_type()? {
-            type_opt
         } else {
-            return Err(Error::Parse("Expected receiver type".to_string()));
-        };
+            return Err(Error::Parse("Unexpected end of input while parsing receiver".to_string()));
+        }
         
-        self.consume_token(TokenKind::RightParen)?;
+        // Parse receiver type with support for complex generics
+        if let Some(parsed_type) = self.parse_type()? {
+            receiver_type = parsed_type;
+        } else {
+            // Enhanced error handling for missing receiver type
+            self.error_count += 1;
+            return Err(Error::Parse(format!("Expected receiver type after '{}'", name)));
+        }
+        
+        // Consume closing paren with error recovery
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightParen {
+                self.advance_token();
+            } else {
+                // Try to recover by finding the next ')' 
+                self.error_count += 1;
+                self.recover_to_token(TokenKind::RightParen);
+            }
+        } else {
+            return Err(Error::Parse("Expected ')' after receiver type".to_string()));
+        }
         
         Ok(Some(MethodReceiver {
             name,

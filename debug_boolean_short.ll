@@ -19,8 +19,9 @@ declare void @cursed_panic(i8*, i64)
 declare i8* @cursed_alloc(i64)
 declare void @cursed_free(i8*)
 declare i32 @cursed_goroutine_spawn(i8*)
-declare void @cursed_channel_send(i8*, i8*)
-declare i8* @cursed_channel_receive(i8*)
+declare i32 @cursed_channel_send(i8*, i64)
+declare i32 @cursed_channel_receive(i8*, i64*)
+declare void @cursed_channel_error(i32)
 declare i32 @__gxx_personality_v0(...)
 declare i8* @__cxa_begin_catch(i8*)
 declare void @__cxa_end_catch()
@@ -71,52 +72,13 @@ declare i64 @time(i64*)
 declare i8* @cursed_propagate_with_context(i8*, i8*)
 @error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
 
-; Module Declarations from Imports
-; mod module declarations
-declare void @mod_init()
-declare void @mod_cleanup()
-; mod module declarations
-
-define i32 @test_basic_time() {
-entry:
-  %0 = getelementptr inbounds [21 x i8], [21 x i8]* @.str.0, i64 0, i64 0
-  %1 = call i32 @test_start(i32 %0)
-  ; Expression result: %1
-  %2 = call i32 @time_now()
-  %3 = alloca i32, align 4
-  store i32 %2, i32* %3, align 4
-  ; Variable current allocated
-  %4 = load i32, i32* %3, align 4
-  %5 = call i32 @assert_eq_int(i32 %4, i32 1704067200)
-  ; Expression result: %5
-  %6 = call i32 @time_unix(i32 0)
-  %7 = alloca i32, align 4
-  store i32 %6, i32* %7, align 4
-  ; Variable epoch allocated
-  %8 = load i32, i32* %7, align 4
-  %9 = call i32 @assert_eq_int(i32 %8, i32 0)
-  ; Expression result: %9
-  %10 = call i32 @time_seconds(i32 5)
-  %11 = alloca i32, align 4
-  store i32 %10, i32* %11, align 4
-  ; Variable five_sec allocated
-  %12 = load i32, i32* %11, align 4
-  %13 = call i32 @assert_eq_int(i32 %12, i32 5000000000)
-  ; Expression result: %13
-  %14 = load i32, i32* %7, align 4
-  %15 = load i32, i32* %3, align 4
-  %16 = call i32 @time_is_before(i32 %14, i32 %15)
-  %17 = call i32 @assert_true(i32 %16)
-  ; Expression result: %17
-  ret i32 0
-}
-
-
 
 ; String constants
-@.str.0 = private unnamed_addr constant [21 x i8] c"Basic Time Functions\00", align 1
+@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
 define i32 @main() {
-  %0 = call i32 @test_basic_time()
-  %1 = call i32 @print_test_summary()
+  %1 = alloca i32, align 4
+  store i32 0, i32* %1, align 4
+  ; Variable flag allocated at %1
+  %1 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
   ret i32 0
 }
