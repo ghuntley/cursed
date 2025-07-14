@@ -16,6 +16,7 @@ use std::ptr;
 use std::mem;
 use std::time::{Duration, Instant};
 use std::thread::{self, JoinHandle};
+use std::borrow::BorrowMut;
 
 use inkwell::{
     context::Context,
@@ -56,10 +57,49 @@ struct LLVMVersionInfo {
     supports_legacy_pass_manager: bool,
 }
 
-thread_local! {
-    /// Thread-local LLVM context wrapper - provides thread-local LLVM context management
-    static LLVM_CONTEXT: RefCell<Option<Context>> = RefCell::new(None);
+/// Thread-safe LLVM context management using proper RAII
+#[derive(Debug)]
+pub struct ThreadSafeLLVMContext {
+    context: Arc<Mutex<Option<Context>>>,
 }
+
+impl ThreadSafeLLVMContext {
+    fn new() -> Self {
+        Self {
+            context: Arc::new(Mutex::new(None)),
+        }
+    }
+    
+    fn with_context<F, R>(&self, f: F) -> Result<R, CursedError>
+    where
+        F: FnOnce(&Context) -> Result<R, CursedError>,
+    {
+        let mut context_guard = self.context.lock()
+            .map_err(|_| CursedError::compiler_error("Failed to acquire LLVM context lock"))?;
+        
+        if context_guard.is_none() {
+            match std::panic::catch_unwind(|| Context::create()) {
+                Ok(context) => {
+                    *context_guard = Some(context);
+                    tracing::debug!("🔧 Created new LLVM context for thread {:?}", std::thread::current().id());
+                }
+                Err(e) => {
+                    tracing::error!("⚠️ LLVM context creation panicked: {:?}", e);
+                    return Err(CursedError::compiler_error("LLVM context creation failed"));
+                }
+            }
+        }
+        
+        if let Some(ref context) = *context_guard {
+            f(context)
+        } else {
+            Err(CursedError::compiler_error("LLVM context not available"))
+        }
+    }
+}
+
+unsafe impl Send for ThreadSafeLLVMContext {}
+unsafe impl Sync for ThreadSafeLLVMContext {}
 
 /// Initialize LLVM global state (call once per process)
 fn ensure_llvm_initialized() {
@@ -97,6 +137,8 @@ struct ThreadSafeCompilerState {
 pub struct CursedJitCompiler {
     /// Thread-safe state
     state: Arc<ThreadSafeCompilerState>,
+    /// Thread-safe LLVM context
+    llvm_context: Arc<ThreadSafeLLVMContext>,
 }
 
 /// Compiled JIT function with metadata
@@ -579,7 +621,10 @@ impl CursedJitCompiler {
             symbol_resolver: Arc::new(Mutex::new(SymbolResolver::new())),
         });
         
-        Ok(Self { state })
+        Ok(Self { 
+            state,
+            llvm_context: Arc::new(ThreadSafeLLVMContext::new()),
+        })
     }
     
     /// Initialize the JIT compiler
@@ -587,27 +632,8 @@ impl CursedJitCompiler {
         // Ensure LLVM is initialized globally first
         ensure_llvm_initialized();
         
-        // Initialize thread-local LLVM context with error handling
-        LLVM_CONTEXT.with(|context| -> Result<(), CursedError> {
-            let mut context_ref = context.borrow_mut();
-            if context_ref.is_none() {
-                // Try to create LLVM context, but handle potential failures gracefully
-                match std::panic::catch_unwind(|| Context::create()) {
-                    Ok(context) => {
-                        *context_ref = Some(context);
-                        tracing::debug!("🔧 Created new LLVM context for thread {:?}", std::thread::current().id());
-                        Ok(())
-                    }
-                    Err(e) => {
-                        tracing::error!("⚠️ LLVM context creation panicked: {:?}", e);
-                        Err(CursedError::compiler_error("LLVM context creation failed"))
-                    }
-                }
-            } else {
-                tracing::debug!("🔧 Using existing LLVM context for thread {:?}", std::thread::current().id());
-                Ok(())
-            }
-        })?;
+        // Initialize thread-safe LLVM context
+        self.llvm_context.with_context(|_| Ok(()))?;
         
         Ok(())
     }
@@ -727,10 +753,7 @@ impl CursedJitCompiler {
         optimization_level: OptimizationLevel,
     ) -> Result<CompiledJitFunction, CursedError> {
         // Use thread-local LLVM context for compilation
-        LLVM_CONTEXT.with(|context_cell| {
-            let mut context_opt = context_cell.borrow_mut();
-            let context = context_opt.get_or_insert_with(|| Context::create());
-            
+        self.llvm_context.with_context(|context| {
             // Create module for this compilation
             let module = context.create_module(&format!("cursed_jit_{}", name));
             

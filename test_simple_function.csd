@@ -1,8 +1,5 @@
-slay test_function() tea {
-    damn "test result"
+slay add(x normie, y normie) normie {
+    damn x + y
 }
 
-vibez.spill("Testing simple function...")
-sus result tea = test_function()
-vibez.spill("Function result: " + result)
-vibez.spill("Test completed!")
+vibez.spill(add(5, 3))

@@ -4,11 +4,12 @@
 use crate::ast::{Expression, Literal, BinaryOperator, UnaryOperator};
 use crate::error::CursedError;
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
+use crate::codegen::llvm::register_tracker::RegisterTracker;
 use std::collections::HashMap;
 
 /// Complete expression compiler for CURSED expressions to LLVM IR
 pub struct ExpressionCompiler {
-    pub variable_counter: usize,
+    pub register_tracker: RegisterTracker,
     pub string_manager: StringConstantManager,
     pub variables: HashMap<String, String>,
     pub ir_buffer: String,
@@ -17,8 +18,10 @@ pub struct ExpressionCompiler {
 
 impl ExpressionCompiler {
     pub fn new() -> Self {
+        let mut tracker = RegisterTracker::new();
+        tracker.sync_with_global();
         Self {
-            variable_counter: 0,
+            register_tracker: tracker,
             string_manager: get_global_string_manager(),
             variables: HashMap::new(),
             ir_buffer: String::new(),
@@ -28,12 +31,12 @@ impl ExpressionCompiler {
 
     /// Set the starting variable counter to synchronize with main generator
     pub fn set_variable_counter(&mut self, counter: usize) {
-        self.variable_counter = counter;
+        self.register_tracker.set_counter(counter);
     }
 
     /// Get the current variable counter value
     pub fn get_variable_counter(&self) -> usize {
-        self.variable_counter
+        self.register_tracker.get_current_counter()
     }
 
     /// Compile any expression to LLVM IR with complete register handling
@@ -336,9 +339,9 @@ impl ExpressionCompiler {
             // Logical operators
             "&&" => {
                 // Short-circuit AND
-                let true_label = format!("and_true_{}", self.variable_counter);
-                let false_label = format!("and_false_{}", self.variable_counter);
-                let end_label = format!("and_end_{}", self.variable_counter);
+                let true_label = format!("and_true_{}", self.register_tracker.get_current_counter());
+                let false_label = format!("and_false_{}", self.register_tracker.get_current_counter());
+                let end_label = format!("and_end_{}", self.register_tracker.get_current_counter());
                 
                 self.ir_buffer.push_str(&format!("  br i1 {}, label %{}, label %{}\n", left_reg, true_label, false_label));
                 self.ir_buffer.push_str(&format!("{}:\n", true_label));
@@ -351,9 +354,9 @@ impl ExpressionCompiler {
             },
             "||" => {
                 // Short-circuit OR
-                let true_label = format!("or_true_{}", self.variable_counter);
-                let false_label = format!("or_false_{}", self.variable_counter);
-                let end_label = format!("or_end_{}", self.variable_counter);
+                let true_label = format!("or_true_{}", self.register_tracker.get_current_counter());
+                let false_label = format!("or_false_{}", self.register_tracker.get_current_counter());
+                let end_label = format!("or_end_{}", self.register_tracker.get_current_counter());
                 
                 self.ir_buffer.push_str(&format!("  br i1 {}, label %{}, label %{}\n", left_reg, true_label, false_label));
                 self.ir_buffer.push_str(&format!("{}:\n", true_label));
@@ -746,8 +749,8 @@ impl ExpressionCompiler {
     /// Compile lambda expressions
     fn compile_lambda_expression(&mut self, parameters: &[String], body: &Expression) -> Result<String, CursedError> {
         // Generate a unique function name for this lambda
-        let lambda_func_name = format!("lambda_{}", self.variable_counter);
-        self.variable_counter += 1;
+        let lambda_func_name = format!("lambda_{}", self.register_tracker.get_current_counter());
+        self.register_tracker.increment_counter(1);
         
         // Save current state
         let old_variables = self.variables.clone();
@@ -920,9 +923,7 @@ impl ExpressionCompiler {
 
     /// Generate next register name
     fn next_register(&mut self) -> String {
-        let reg = format!("%{}", self.variable_counter);
-        self.variable_counter += 1;
-        reg
+        self.register_tracker.allocate_register()
     }
 
     /// Get string constants for global declaration (now managed globally)
@@ -997,8 +998,8 @@ impl ExpressionCompiler {
         };
 
         // Generate call to runtime channel creation function
-        let result_reg = format!("%var{}", self.variable_counter);
-        self.variable_counter += 1;
+        let result_reg = format!("%var{}", self.register_tracker.get_current_counter());
+        self.register_tracker.increment_counter(1);
 
         // Use centralized string manager for element type string
         let type_str_ref = self.string_manager.add_string_constant(element_type);
@@ -1173,8 +1174,8 @@ impl ExpressionCompiler {
         
         // Generate error checking code
         let error_check_reg = self.next_register();
-        let error_label = format!("error_propagation_{}", self.variable_counter);
-        let success_label = format!("error_success_{}", self.variable_counter);
+        let error_label = format!("error_propagation_{}", self.register_tracker.get_current_counter());
+        let success_label = format!("error_success_{}", self.register_tracker.get_current_counter());
         
         // Check if the result is an error
         ir.push_str(&format!("  %{} = call i1 @cursed_is_error(i8* {})\n", error_check_reg, inner_result));

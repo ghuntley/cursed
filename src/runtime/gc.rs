@@ -204,19 +204,50 @@ pub enum GcState {
     Error,
 }
 
-/// Root set for garbage collection
+/// Thread-safe root set for garbage collection
 #[derive(Debug)]
 pub struct RootSet {
-    /// Stack roots from all goroutines
-    pub stack_roots: Vec<usize>, // Store as raw addresses to avoid Send/Sync issues
-    /// Global variable roots
-    pub global_roots: Vec<usize>,
-    /// Channel roots
-    pub channel_roots: Vec<usize>,
-    /// JIT-compiled code roots
-    pub jit_roots: Vec<usize>,
-    /// Async task roots
-    pub async_roots: Vec<usize>,
+    /// Stack roots from all goroutines (thread-safe access)
+    pub stack_roots: Arc<RwLock<Vec<usize>>>,
+    /// Global variable roots (thread-safe access)
+    pub global_roots: Arc<RwLock<Vec<usize>>>,
+    /// Channel roots (thread-safe access)
+    pub channel_roots: Arc<RwLock<Vec<usize>>>,
+    /// JIT-compiled code roots (thread-safe access)
+    pub jit_roots: Arc<RwLock<Vec<usize>>>,
+    /// Async task roots (thread-safe access)
+    pub async_roots: Arc<RwLock<Vec<usize>>>,
+}
+
+impl RootSet {
+    fn new() -> Self {
+        Self {
+            stack_roots: Arc::new(RwLock::new(Vec::new())),
+            global_roots: Arc::new(RwLock::new(Vec::new())),
+            channel_roots: Arc::new(RwLock::new(Vec::new())),
+            jit_roots: Arc::new(RwLock::new(Vec::new())),
+            async_roots: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+    
+    fn clear_all(&self) -> Result<(), CursedError> {
+        self.stack_roots.write()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire stack roots lock"))?
+            .clear();
+        self.global_roots.write()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire global roots lock"))?
+            .clear();
+        self.channel_roots.write()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire channel roots lock"))?
+            .clear();
+        self.jit_roots.write()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire jit roots lock"))?
+            .clear();
+        self.async_roots.write()
+            .map_err(|_| CursedError::runtime_error("Failed to acquire async roots lock"))?
+            .clear();
+        Ok(())
+    }
 }
 
 /// Main garbage collector
@@ -369,13 +400,7 @@ impl GarbageCollector {
             regions: RwLock::new(regions),
             state: RwLock::new(GcState::Idle),
             stats: RwLock::new(GcStats::default()),
-            roots: RwLock::new(RootSet {
-                stack_roots: Vec::new(),
-                global_roots: Vec::new(),
-                channel_roots: Vec::new(),
-                jit_roots: Vec::new(),
-                async_roots: Vec::new(),
-            }),
+            roots: RwLock::new(RootSet::new()),
             trigger: Arc::new((Mutex::new(false), Condvar::new())),
             incremental_state: RwLock::new(IncrementalState {
                 mark_queue: VecDeque::new(),
@@ -622,11 +647,11 @@ impl GarbageCollector {
         let mut roots = self.roots.write().unwrap();
         
         // Clear existing roots
-        roots.stack_roots.clear();
-        roots.global_roots.clear();
-        roots.channel_roots.clear();
-        roots.jit_roots.clear();
-        roots.async_roots.clear();
+        roots.stack_roots.write().unwrap().clear();
+        roots.global_roots.write().unwrap().clear();
+        roots.channel_roots.write().unwrap().clear();
+        roots.jit_roots.write().unwrap().clear();
+        roots.async_roots.write().unwrap().clear();
         
         // Collect stack roots from all goroutines
         let all_stack_roots = self.stack_manager.get_all_gc_roots();
@@ -634,7 +659,7 @@ impl GarbageCollector {
             // Store as address to avoid Send/Sync issues
             let addr = root_ptr as usize;
             if addr != 0 {
-                roots.stack_roots.push(addr);
+                roots.stack_roots.write().unwrap().push(addr);
             }
         }
         
@@ -663,9 +688,9 @@ impl GarbageCollector {
         // This is a conservative approach - we'll mark anything that might be global
         if let Ok(stack_roots) = self.collect_stack_roots() {
             // Check for any addresses that might point to global data
-            for addr in stack_roots.stack_roots {
-                if self.is_potential_global_reference(addr) {
-                    roots.global_roots.push(addr);
+            for addr in stack_roots.stack_roots.read().unwrap().iter() {
+                if self.is_potential_global_reference(*addr) {
+                    roots.global_roots.write().unwrap().push(*addr);
                 }
             }
         }
@@ -681,7 +706,7 @@ impl GarbageCollector {
         for region in static_memory_regions {
             for addr in region.step_by(std::mem::size_of::<usize>()) {
                 if self.is_valid_heap_object(addr) {
-                    roots.global_roots.push(addr);
+                    roots.global_roots.write().unwrap().push(addr);
                 }
             }
         }
@@ -697,14 +722,14 @@ impl GarbageCollector {
         
         // Check stack for any channel references
         if let Ok(stack_roots) = self.collect_stack_roots() {
-            for addr in stack_roots.stack_roots {
-                if self.is_potential_channel_reference(addr) {
-                    roots.channel_roots.push(addr);
+            for addr in stack_roots.stack_roots.read().unwrap().iter() {
+                if self.is_potential_channel_reference(*addr) {
+                    roots.channel_roots.write().unwrap().push(*addr);
                     // Also add any objects this channel might reference
-                    if let Some(channel_data) = self.get_channel_data(addr) {
+                    if let Some(channel_data) = self.get_channel_data(*addr) {
                         for data_addr in channel_data {
                             if self.is_valid_heap_object(data_addr) {
-                                roots.channel_roots.push(data_addr);
+                                roots.channel_roots.write().unwrap().push(data_addr);
                             }
                         }
                     }
@@ -726,14 +751,14 @@ impl GarbageCollector {
         
         // Check for any JIT code references in stack
         if let Ok(stack_roots) = self.collect_stack_roots() {
-            for addr in stack_roots.stack_roots {
-                if self.is_potential_jit_reference(addr) {
-                    roots.jit_roots.push(addr);
+            for addr in stack_roots.stack_roots.read().unwrap().iter() {
+                if self.is_potential_jit_reference(*addr) {
+                    roots.jit_roots.write().unwrap().push(*addr);
                     // JIT code may have embedded constants or references
-                    if let Some(jit_constants) = self.get_jit_constants(addr) {
+                    if let Some(jit_constants) = self.get_jit_constants(*addr) {
                         for const_addr in jit_constants {
                             if self.is_valid_heap_object(const_addr) {
-                                roots.jit_roots.push(const_addr);
+                                roots.jit_roots.write().unwrap().push(const_addr);
                             }
                         }
                     }
@@ -755,14 +780,14 @@ impl GarbageCollector {
         
         // Check for async task stacks and their contents
         if let Ok(stack_roots) = self.collect_stack_roots() {
-            for addr in stack_roots.stack_roots {
-                if self.is_potential_async_reference(addr) {
-                    roots.async_roots.push(addr);
+            for addr in stack_roots.stack_roots.read().unwrap().iter() {
+                if self.is_potential_async_reference(*addr) {
+                    roots.async_roots.write().unwrap().push(*addr);
                     // Async tasks may have captured variables or task-local data
-                    if let Some(task_data) = self.get_async_task_data(addr) {
+                    if let Some(task_data) = self.get_async_task_data(*addr) {
                         for task_addr in task_data {
                             if self.is_valid_heap_object(task_addr) {
-                                roots.async_roots.push(task_addr);
+                                roots.async_roots.write().unwrap().push(task_addr);
                             }
                         }
                     }
@@ -875,37 +900,37 @@ impl GarbageCollector {
         let mut visitor = MarkVisitor::new();
         
         // Add all root objects to the marking queue
-        for &root_addr in &roots.stack_roots {
-            if root_addr != 0 {
-                let root = root_addr as *mut HeapObject;
+        for root_addr in roots.stack_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                let root = *root_addr as *mut HeapObject;
                 visitor.add_to_queue(root);
             }
         }
         
-        for &root_addr in &roots.global_roots {
-            if root_addr != 0 {
-                let root = root_addr as *mut HeapObject;
+        for root_addr in roots.global_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                let root = *root_addr as *mut HeapObject;
                 visitor.add_to_queue(root);
             }
         }
         
-        for &root_addr in &roots.channel_roots {
-            if root_addr != 0 {
-                let root = root_addr as *mut HeapObject;
+        for root_addr in roots.channel_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                let root = *root_addr as *mut HeapObject;
                 visitor.add_to_queue(root);
             }
         }
         
-        for &root_addr in &roots.jit_roots {
-            if root_addr != 0 {
-                let root = root_addr as *mut HeapObject;
+        for root_addr in roots.jit_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                let root = *root_addr as *mut HeapObject;
                 visitor.add_to_queue(root);
             }
         }
         
-        for &root_addr in &roots.async_roots {
-            if root_addr != 0 {
-                let root = root_addr as *mut HeapObject;
+        for root_addr in roots.async_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                let root = *root_addr as *mut HeapObject;
                 visitor.add_to_queue(root);
             }
         }
@@ -1197,15 +1222,15 @@ impl GarbageCollector {
         let roots = self.roots.read().unwrap();
         state.mark_queue.clear();
         
-        for &root_addr in &roots.stack_roots {
-            if root_addr != 0 {
-                state.mark_queue.push_back(root_addr);
+        for root_addr in roots.stack_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                state.mark_queue.push_back(*root_addr);
             }
         }
         
-        for &root_addr in &roots.global_roots {
-            if root_addr != 0 {
-                state.mark_queue.push_back(root_addr);
+        for root_addr in roots.global_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                state.mark_queue.push_back(*root_addr);
             }
         }
         
@@ -1638,16 +1663,16 @@ impl GarbageCollector {
         let mut visitor = MarkVisitor::new();
         
         // Mark all reachable objects
-        for &root_addr in &roots.stack_roots {
-            if root_addr != 0 {
-                let root = root_addr as *mut HeapObject;
+        for root_addr in roots.stack_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                let root = *root_addr as *mut HeapObject;
                 unsafe { self.mark_object(root, &mut visitor)?; }
             }
         }
         
-        for &root_addr in &roots.global_roots {
-            if root_addr != 0 {
-                let root = root_addr as *mut HeapObject;
+        for root_addr in roots.global_roots.read().unwrap().iter() {
+            if *root_addr != 0 {
+                let root = *root_addr as *mut HeapObject;
                 unsafe { self.mark_object(root, &mut visitor)?; }
             }
         }
@@ -1712,11 +1737,11 @@ impl GarbageCollector {
         let mut roots = self.roots.write().unwrap();
         let addr = obj as usize;
         match root_type {
-            RootType::Stack => roots.stack_roots.push(addr),
-            RootType::Global => roots.global_roots.push(addr),
-            RootType::Channel => roots.channel_roots.push(addr),
-            RootType::Jit => roots.jit_roots.push(addr),
-            RootType::Async => roots.async_roots.push(addr),
+            RootType::Stack => roots.stack_roots.write().unwrap().push(addr),
+            RootType::Global => roots.global_roots.write().unwrap().push(addr),
+            RootType::Channel => roots.channel_roots.write().unwrap().push(addr),
+            RootType::Jit => roots.jit_roots.write().unwrap().push(addr),
+            RootType::Async => roots.async_roots.write().unwrap().push(addr),
         }
     }
     
@@ -1725,11 +1750,11 @@ impl GarbageCollector {
         let mut roots = self.roots.write().unwrap();
         let addr = obj as usize;
         match root_type {
-            RootType::Stack => roots.stack_roots.retain(|&x| x != addr),
-            RootType::Global => roots.global_roots.retain(|&x| x != addr),
-            RootType::Channel => roots.channel_roots.retain(|&x| x != addr),
-            RootType::Jit => roots.jit_roots.retain(|&x| x != addr),
-            RootType::Async => roots.async_roots.retain(|&x| x != addr),
+            RootType::Stack => roots.stack_roots.write().unwrap().retain(|&x| x != addr),
+            RootType::Global => roots.global_roots.write().unwrap().retain(|&x| x != addr),
+            RootType::Channel => roots.channel_roots.write().unwrap().retain(|&x| x != addr),
+            RootType::Jit => roots.jit_roots.write().unwrap().retain(|&x| x != addr),
+            RootType::Async => roots.async_roots.write().unwrap().retain(|&x| x != addr),
         }
     }
 
@@ -1795,17 +1820,17 @@ impl GarbageCollector {
     /// Collect stack roots from runtime stack
     fn collect_stack_roots(&self) -> Result<RootSet, CursedError> {
         let mut root_set = RootSet {
-            stack_roots: Vec::new(),
-            global_roots: Vec::new(),
-            channel_roots: Vec::new(),
-            jit_roots: Vec::new(),
-            async_roots: Vec::new(),
+            stack_roots: Arc::new(RwLock::new(Vec::new())),
+            global_roots: Arc::new(RwLock::new(Vec::new())),
+            channel_roots: Arc::new(RwLock::new(Vec::new())),
+            jit_roots: Arc::new(RwLock::new(Vec::new())),
+            async_roots: Arc::new(RwLock::new(Vec::new())),
         };
 
         // Get stack roots from the runtime stack manager
         // For now, return empty stack roots - this should be implemented
         // when stack manager integration is complete
-        root_set.stack_roots = Vec::new();
+        root_set.stack_roots = Arc::new(RwLock::new(Vec::new()));
 
         Ok(root_set)
     }
