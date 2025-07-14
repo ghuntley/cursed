@@ -1,7 +1,9 @@
-// Minimal test
+// Minimal mathz module
+sus Pi meal = 3.14159
 
-yeet "testz"
+slay Add(x meal, y meal) meal {
+    damn x + y
+}
 
-sus Pi drip = 3.14
-
-vibez.spill("Hello from mathz")
+vibez.spill("Pi:", Pi)
+vibez.spill("Add(2.5, 3.5):", Add(2.5, 3.5))

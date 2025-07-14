@@ -1,3 +1,5 @@
-yeet "mathz_simple_function"
+slay TestFunc(x normie) normie {
+    damn x + 1
+}
 
-vibez.spill("Testing simple function")
+vibez.spill(TestFunc(5))
