@@ -1,317 +1,597 @@
-// htmlrizzler - Pure CURSED HTML parsing module
-// Provides DOM tree parsing, element selection, and attribute handling
+yeet "stringz"
+yeet "testz"
 
-// HTML Element structure
-struct HTMLElement {
-    tag tea,
-    content tea,
-    attributes map[tea]tea,
-    children []HTMLElement,
-    parent *HTMLElement
+# HTML Element Type
+be_like HtmlElement = {
+    tag_name: tea,
+    attributes: tea,
+    content: tea,
+    children: tea,
+    is_self_closing: lit
 }
 
-// Parse HTML string into DOM tree
-slay parse_html(html tea) HTMLElement {
-    sus element HTMLElement
-    element.tag = "root"
-    element.content = html
-    element.attributes = make_map()
-    element.children = make_array()
-    element.parent = cringe
-    
-    // Simple tag parsing - find first tag
-    sus start_pos normie = find_char(html, '<')
-    yeet start_pos >= 0 {
-        sus end_pos normie = find_char(html[start_pos:], '>')
-        yeet end_pos >= 0 {
-            sus tag_content tea = html[start_pos+1:start_pos+end_pos]
-            sus parts []tea = split_string(tag_content, ' ')
-            yeet len(parts) > 0 {
-                element.tag = trim_string(parts[0])
-            }
-        }
+# HTML Document Type
+be_like HtmlDocument = {
+    doctype: tea,
+    html_element: HtmlElement,
+    title: tea,
+    encoding: tea
+}
+
+# CSS Selector Type
+be_like CssSelector = {
+    selector: tea,
+    element_type: tea,
+    class_name: tea,
+    id_name: tea
+}
+
+# HTML Parser Type
+be_like HtmlParser = {
+    input: tea,
+    position: normie,
+    current_element: HtmlElement,
+    error_message: tea
+}
+
+# HTML Generator Type
+be_like HtmlGenerator = {
+    output: tea,
+    indent_level: normie,
+    pretty_print: lit,
+    encoding: tea
+}
+
+# HTML Entity Mappings
+facts HTML_ENTITIES = [
+    ("&lt;", "<"),
+    ("&gt;", ">"),
+    ("&amp;", "&"),
+    ("&quot;", "\""),
+    ("&apos;", "'"),
+    ("&#39;", "'"),
+    ("&nbsp;", " ")
+]
+
+# Self-closing HTML tags
+facts SELF_CLOSING_TAGS = [
+    "area", "base", "br", "col", "embed", "hr", "img", "input",
+    "link", "meta", "param", "source", "track", "wbr"
+]
+
+# Dangerous HTML tags for XSS protection
+facts DANGEROUS_TAGS = [
+    "script", "style", "iframe", "object", "embed", "applet",
+    "form", "input", "button", "textarea", "select", "option"
+]
+
+# Create new HTML element
+slay create_element(tag_name tea, content tea) HtmlElement {
+    sus element HtmlElement = {
+        tag_name: tag_name,
+        attributes: "",
+        content: content,
+        children: "",
+        is_self_closing: is_self_closing_tag(tag_name)
     }
-    
     damn element
 }
 
-// Find element by tag name
-slay find_element_by_tag(element HTMLElement, tag tea) *HTMLElement {
-    yeet element.tag == tag {
-        damn &element
+# Create HTML element with attributes
+slay create_element_with_attrs(tag_name tea, attributes tea, content tea) HtmlElement {
+    sus element HtmlElement = {
+        tag_name: tag_name,
+        attributes: attributes,
+        content: content,
+        children: "",
+        is_self_closing: is_self_closing_tag(tag_name)
     }
-    
-    bestie i := 0; i < len(element.children); i++ {
-        sus found *HTMLElement = find_element_by_tag(element.children[i], tag)
-        yeet found != cringe {
-            damn found
-        }
-    }
-    
-    damn cringe
+    damn element
 }
 
-// Get element attribute
-slay get_attribute(element HTMLElement, key tea) tea {
-    yeet has_key(element.attributes, key) {
-        damn element.attributes[key]
-    }
-    damn ""
-}
-
-// Set element attribute
-slay set_attribute(element *HTMLElement, key tea, value tea) {
-    element.attributes[key] = value
-}
-
-// Get element text content
-slay get_text_content(element HTMLElement) tea {
-    sus result tea = element.content
-    
-    // Remove HTML tags from content
-    sus clean_content tea = ""
-    sus in_tag lit = cap
-    
-    bestie i := 0; i < len(result); i++ {
-        sus ch sip = result[i]
-        yeet ch == '<' {
-            in_tag = based
-        } vibes yeet ch == '>' {
-            in_tag = cap
-        } vibes yeet !in_tag {
-            clean_content = clean_content + string(ch)
-        }
-    }
-    
-    damn clean_content
-}
-
-// Find elements by class name
-slay find_elements_by_class(element HTMLElement, class_name tea) []HTMLElement {
-    sus results []HTMLElement = make_array()
-    
-    sus class_attr tea = get_attribute(element, "class")
-    yeet contains_string(class_attr, class_name) {
-        results = append(results, element)
-    }
-    
-    bestie i := 0; i < len(element.children); i++ {
-        sus child_results []HTMLElement = find_elements_by_class(element.children[i], class_name)
-        bestie j := 0; j < len(child_results); j++ {
-            results = append(results, child_results[j])
-        }
-    }
-    
-    damn results
-}
-
-// Find element by ID
-slay find_element_by_id(element HTMLElement, id tea) *HTMLElement {
-    sus id_attr tea = get_attribute(element, "id")
-    yeet id_attr == id {
-        damn &element
-    }
-    
-    bestie i := 0; i < len(element.children); i++ {
-        sus found *HTMLElement = find_element_by_id(element.children[i], id)
-        yeet found != cringe {
-            damn found
-        }
-    }
-    
-    damn cringe
-}
-
-// Parse HTML attributes from tag string
-slay parse_attributes(tag_str tea) map[tea]tea {
-    sus attrs map[tea]tea = make_map()
-    
-    // Simple attribute parsing: key="value" or key='value'
-    sus parts []tea = split_string(tag_str, ' ')
-    bestie i := 1; i < len(parts); i++ {
-        sus part tea = trim_string(parts[i])
-        sus eq_pos normie = find_char(part, '=')
-        yeet eq_pos > 0 {
-            sus key tea = trim_string(part[:eq_pos])
-            sus value tea = trim_string(part[eq_pos+1:])
-            
-            // Remove quotes
-            yeet len(value) >= 2 {
-                yeet (value[0] == '"' && value[len(value)-1] == '"') ||
-                   (value[0] == "'" && value[len(value)-1] == "'") {
-                    value = value[1:len(value)-1]
-                }
-            }
-            
-            attrs[key] = value
-        }
-    }
-    
-    damn attrs
-}
-
-// Get all elements with specific tag
-slay get_elements_by_tag(element HTMLElement, tag tea) []HTMLElement {
-    sus results []HTMLElement = make_array()
-    
-    yeet element.tag == tag {
-        results = append(results, element)
-    }
-    
-    bestie i := 0; i < len(element.children); i++ {
-        sus child_results []HTMLElement = get_elements_by_tag(element.children[i], tag)
-        bestie j := 0; j < len(child_results); j++ {
-            results = append(results, child_results[j])
-        }
-    }
-    
-    damn results
-}
-
-// Check if element has specific attribute
-slay has_attribute(element HTMLElement, key tea) lit {
-    damn has_key(element.attributes, key)
-}
-
-// Get element's inner HTML
-slay get_inner_html(element HTMLElement) tea {
-    sus result tea = ""
-    
-    bestie i := 0; i < len(element.children); i++ {
-        result = result + element_to_string(element.children[i])
-    }
-    
-    damn result
-}
-
-// Convert element to HTML string
-slay element_to_string(element HTMLElement) tea {
-    sus result tea = "<" + element.tag
-    
-    // Add attributes
-    sus keys []tea = get_map_keys(element.attributes)
-    bestie i := 0; i < len(keys); i++ {
-        sus key tea = keys[i]
-        sus value tea = element.attributes[key]
-        result = result + " " + key + "=\"" + value + "\""
-    }
-    
-    result = result + ">"
-    
-    // Add content
-    yeet element.content != "" {
-        result = result + element.content
-    }
-    
-    // Add children
-    bestie i := 0; i < len(element.children); i++ {
-        result = result + element_to_string(element.children[i])
-    }
-    
-    result = result + "</" + element.tag + ">"
-    
-    damn result
-}
-
-// Utility functions (these would typically be in a string module)
-slay find_char(str tea, ch sip) normie {
-    bestie i := 0; i < len(str); i++ {
-        yeet str[i] == ch {
-            damn i
-        }
-    }
-    damn -1
-}
-
-slay split_string(str tea, delimiter sip) []tea {
-    sus parts []tea = make_array()
-    sus current tea = ""
-    
-    bestie i := 0; i < len(str); i++ {
-        yeet str[i] == delimiter {
-            yeet current != "" {
-                parts = append(parts, current)
-                current = ""
-            }
-        } vibes {
-            current = current + string(str[i])
-        }
-    }
-    
-    yeet current != "" {
-        parts = append(parts, current)
-    }
-    
-    damn parts
-}
-
-slay trim_string(str tea) tea {
-    sus start normie = 0
-    sus end normie = len(str) - 1
-    
-    // Trim leading spaces
-    kek start < len(str) && str[start] == ' ' {
-        start++
-    }
-    
-    // Trim trailing spaces
-    kek end >= 0 && str[end] == ' ' {
-        end--
-    }
-    
-    yeet start > end {
-        damn ""
-    }
-    
-    damn str[start:end+1]
-}
-
-slay contains_string(str tea, substr tea) lit {
-    bestie i := 0; i <= len(str) - len(substr); i++ {
-        yeet str[i:i+len(substr)] == substr {
+# Check if tag is self-closing
+slay is_self_closing_tag(tag_name tea) lit {
+    bestie i := 0; i < 14; i++ {
+        lowkey SELF_CLOSING_TAGS[i] == tag_name {
             damn based
         }
     }
     damn cap
 }
 
-slay make_map() map[tea]tea {
-    sus m map[tea]tea
-    damn m
+# Check if tag is dangerous (XSS protection)
+slay is_dangerous_tag(tag_name tea) lit {
+    bestie i := 0; i < 12; i++ {
+        lowkey DANGEROUS_TAGS[i] == tag_name {
+            damn based
+        }
+    }
+    damn cap
 }
 
-slay make_array() []HTMLElement {
-    sus arr []HTMLElement
-    damn arr
+# HTML entity encoding
+slay encode_html_entities(text tea) tea {
+    sus result tea = text
+    
+    # Replace dangerous characters
+    result = stringz.replace_all(result, "&", "&amp;")
+    result = stringz.replace_all(result, "<", "&lt;")
+    result = stringz.replace_all(result, ">", "&gt;")
+    result = stringz.replace_all(result, "\"", "&quot;")
+    result = stringz.replace_all(result, "'", "&#39;")
+    
+    damn result
 }
 
-slay has_key(m map[tea]tea, key tea) lit {
-    // This would be implemented based on the map implementation
-    damn based  // Placeholder
+# HTML entity decoding
+slay decode_html_entities(text tea) tea {
+    sus result tea = text
+    
+    # Decode HTML entities
+    bestie i := 0; i < 7; i++ {
+        sus entity_pair = HTML_ENTITIES[i]
+        result = stringz.replace_all(result, entity_pair.0, entity_pair.1)
+    }
+    
+    damn result
 }
 
-slay get_map_keys(m map[tea]tea) []tea {
-    sus keys []tea = make_string_array()
-    // This would iterate through map keys
-    damn keys
+# Generate HTML from element (no cap HTML generation)
+slay generate_html(element HtmlElement) tea {
+    lowkey element.is_self_closing {
+        lowkey element.attributes == "" {
+            damn "<" + element.tag_name + " />"
+        } cringe {
+            damn "<" + element.tag_name + " " + element.attributes + " />"
+        }
+    }
+    
+    sus html tea = "<" + element.tag_name
+    lowkey element.attributes != "" {
+        html = html + " " + element.attributes
+    }
+    html = html + ">"
+    
+    lowkey element.content != "" {
+        html = html + encode_html_entities(element.content)
+    }
+    
+    lowkey element.children != "" {
+        html = html + element.children
+    }
+    
+    html = html + "</" + element.tag_name + ">"
+    damn html
 }
 
-slay make_string_array() []tea {
-    sus arr []tea
-    damn arr
+# Generate pretty-printed HTML (that's fire fr fr)
+slay generate_pretty_html(element HtmlElement, indent_level normie) tea {
+    sus indent tea = ""
+    bestie i := 0; i < indent_level; i++ {
+        indent = indent + "  "
+    }
+    
+    lowkey element.is_self_closing {
+        lowkey element.attributes == "" {
+            damn indent + "<" + element.tag_name + " />\n"
+        } cringe {
+            damn indent + "<" + element.tag_name + " " + element.attributes + " />\n"
+        }
+    }
+    
+    sus html tea = indent + "<" + element.tag_name
+    lowkey element.attributes != "" {
+        html = html + " " + element.attributes
+    }
+    html = html + ">\n"
+    
+    lowkey element.content != "" {
+        html = html + indent + "  " + encode_html_entities(element.content) + "\n"
+    }
+    
+    lowkey element.children != "" {
+        html = html + element.children
+    }
+    
+    html = html + indent + "</" + element.tag_name + ">\n"
+    damn html
 }
 
-slay append(arr []HTMLElement, element HTMLElement) []HTMLElement {
-    // This would be implemented based on the array implementation
-    damn arr
+# Parse HTML from string (lowkey challenging but we got this)
+slay parse_html(html_string tea) HtmlElement {
+    sus parser HtmlParser = {
+        input: html_string,
+        position: 0,
+        current_element: create_element("div", ""),
+        error_message: ""
+    }
+    
+    sus element HtmlElement = parse_element(parser)
+    damn element
 }
 
-slay len(arr []HTMLElement) normie {
-    // This would return the length of the array
-    damn 0
+# Parse single HTML element
+slay parse_element(parser HtmlParser) HtmlElement {
+    # Skip whitespace
+    skip_whitespace(parser)
+    
+    # Expect opening tag
+    lowkey parser.position >= stringz.length(parser.input) {
+        damn create_element("error", "Unexpected end of input")
+    }
+    
+    lowkey stringz.char_at(parser.input, parser.position) != '<' {
+        damn create_element("error", "Expected opening tag")
+    }
+    
+    parser.position = parser.position + 1
+    
+    # Parse tag name
+    sus tag_name tea = parse_tag_name(parser)
+    
+    # Parse attributes
+    sus attributes tea = parse_attributes(parser)
+    
+    # Check for self-closing
+    lowkey stringz.char_at(parser.input, parser.position) == '/' {
+        parser.position = parser.position + 2  # Skip "/>"
+        damn create_element_with_attrs(tag_name, attributes, "")
+    }
+    
+    # Skip ">"
+    parser.position = parser.position + 1
+    
+    # Parse content
+    sus content tea = parse_content(parser, tag_name)
+    
+    damn create_element_with_attrs(tag_name, attributes, content)
 }
 
-slay string(ch sip) tea {
-    // Convert character to string
-    damn ""
+# Parse tag name from HTML
+slay parse_tag_name(parser HtmlParser) tea {
+    sus start_pos normie = parser.position
+    
+    vibez parser.position < stringz.length(parser.input) &&
+           stringz.char_at(parser.input, parser.position) != ' ' &&
+           stringz.char_at(parser.input, parser.position) != '>' &&
+           stringz.char_at(parser.input, parser.position) != '/' {
+        parser.position = parser.position + 1
+    }
+    
+    damn stringz.substring(parser.input, start_pos, parser.position)
+}
+
+# Parse attributes from HTML tag
+slay parse_attributes(parser HtmlParser) tea {
+    sus attributes tea = ""
+    
+    vibez parser.position < stringz.length(parser.input) &&
+           stringz.char_at(parser.input, parser.position) != '>' &&
+           stringz.char_at(parser.input, parser.position) != '/' {
+        
+        skip_whitespace(parser)
+        
+        lowkey parser.position >= stringz.length(parser.input) {
+            ghosted
+        }
+        
+        lowkey stringz.char_at(parser.input, parser.position) == '>' ||
+               stringz.char_at(parser.input, parser.position) == '/' {
+            ghosted
+        }
+        
+        # Parse attribute name=value
+        sus attr_start normie = parser.position
+        vibez parser.position < stringz.length(parser.input) &&
+               stringz.char_at(parser.input, parser.position) != '=' &&
+               stringz.char_at(parser.input, parser.position) != ' ' &&
+               stringz.char_at(parser.input, parser.position) != '>' {
+            parser.position = parser.position + 1
+        }
+        
+        sus attr_name tea = stringz.substring(parser.input, attr_start, parser.position)
+        
+        lowkey attributes != "" {
+            attributes = attributes + " "
+        }
+        attributes = attributes + attr_name
+        
+        # Check for value
+        skip_whitespace(parser)
+        lowkey parser.position < stringz.length(parser.input) &&
+               stringz.char_at(parser.input, parser.position) == '=' {
+            parser.position = parser.position + 1
+            skip_whitespace(parser)
+            
+            # Parse quoted value
+            lowkey stringz.char_at(parser.input, parser.position) == '"' {
+                parser.position = parser.position + 1
+                sus value_start normie = parser.position
+                vibez parser.position < stringz.length(parser.input) &&
+                       stringz.char_at(parser.input, parser.position) != '"' {
+                    parser.position = parser.position + 1
+                }
+                sus attr_value tea = stringz.substring(parser.input, value_start, parser.position)
+                parser.position = parser.position + 1  # Skip closing quote
+                attributes = attributes + "=\"" + attr_value + "\""
+            }
+        }
+    }
+    
+    damn attributes
+}
+
+# Parse content between HTML tags
+slay parse_content(parser HtmlParser, tag_name tea) tea {
+    sus content tea = ""
+    sus start_pos normie = parser.position
+    
+    # Find closing tag
+    sus closing_tag tea = "</" + tag_name + ">"
+    sus closing_pos normie = stringz.index_of(parser.input, closing_tag, parser.position)
+    
+    lowkey closing_pos == -1 {
+        damn "Missing closing tag for " + tag_name
+    }
+    
+    content = stringz.substring(parser.input, start_pos, closing_pos)
+    parser.position = closing_pos + stringz.length(closing_tag)
+    
+    damn decode_html_entities(content)
+}
+
+# Skip whitespace in parser
+slay skip_whitespace(parser HtmlParser) {
+    vibez parser.position < stringz.length(parser.input) {
+        sus ch sip = stringz.char_at(parser.input, parser.position)
+        lowkey ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
+            parser.position = parser.position + 1
+        } cringe {
+            ghosted
+        }
+    }
+}
+
+# CSS selector matching (that's so fire)
+slay matches_selector(element HtmlElement, selector tea) lit {
+    # Simple tag selector
+    lowkey selector == element.tag_name {
+        damn based
+    }
+    
+    # Class selector
+    lowkey stringz.starts_with(selector, ".") {
+        sus class_name tea = stringz.substring(selector, 1, stringz.length(selector))
+        damn has_class(element, class_name)
+    }
+    
+    # ID selector
+    lowkey stringz.starts_with(selector, "#") {
+        sus id_name tea = stringz.substring(selector, 1, stringz.length(selector))
+        damn has_id(element, id_name)
+    }
+    
+    damn cap
+}
+
+# Check if element has class
+slay has_class(element HtmlElement, class_name tea) lit {
+    damn stringz.contains(element.attributes, "class=\"" + class_name + "\"") ||
+         stringz.contains(element.attributes, "class='" + class_name + "'")
+}
+
+# Check if element has ID
+slay has_id(element HtmlElement, id_name tea) lit {
+    damn stringz.contains(element.attributes, "id=\"" + id_name + "\"") ||
+         stringz.contains(element.attributes, "id='" + id_name + "'")
+}
+
+# XSS sanitization (security is lowkey important)
+slay sanitize_html(html_string tea) tea {
+    sus safe_html tea = html_string
+    
+    # Remove dangerous tags
+    bestie i := 0; i < 12; i++ {
+        sus dangerous_tag tea = DANGEROUS_TAGS[i]
+        safe_html = remove_tag(safe_html, dangerous_tag)
+    }
+    
+    # Remove javascript: protocols
+    safe_html = stringz.replace_all(safe_html, "javascript:", "")
+    safe_html = stringz.replace_all(safe_html, "vbscript:", "")
+    safe_html = stringz.replace_all(safe_html, "onload=", "")
+    safe_html = stringz.replace_all(safe_html, "onclick=", "")
+    safe_html = stringz.replace_all(safe_html, "onerror=", "")
+    
+    damn safe_html
+}
+
+# Remove specific HTML tag
+slay remove_tag(html_string tea, tag_name tea) tea {
+    sus result tea = html_string
+    
+    # Remove opening tags
+    result = stringz.replace_all(result, "<" + tag_name + ">", "")
+    result = stringz.replace_all(result, "<" + tag_name + " ", "<removed ")
+    
+    # Remove closing tags
+    result = stringz.replace_all(result, "</" + tag_name + ">", "")
+    
+    damn result
+}
+
+# HTML validation (making sure it's valid fr)
+slay validate_html(html_string tea) lit {
+    sus tag_stack normie = 0
+    sus position normie = 0
+    
+    vibez position < stringz.length(html_string) {
+        lowkey stringz.char_at(html_string, position) == '<' {
+            position = position + 1
+            
+            # Check for closing tag
+            lowkey position < stringz.length(html_string) &&
+                   stringz.char_at(html_string, position) == '/' {
+                tag_stack = tag_stack - 1
+                lowkey tag_stack < 0 {
+                    damn cap  # Unmatched closing tag
+                }
+            } cringe {
+                # Opening tag (check if self-closing)
+                sus tag_start normie = position
+                vibez position < stringz.length(html_string) &&
+                       stringz.char_at(html_string, position) != '>' {
+                    position = position + 1
+                }
+                
+                sus tag_content tea = stringz.substring(html_string, tag_start, position)
+                lowkey !stringz.ends_with(tag_content, "/") {
+                    tag_stack = tag_stack + 1
+                }
+            }
+        }
+        position = position + 1
+    }
+    
+    damn tag_stack == 0
+}
+
+# Create complete HTML document (that's actually fire)
+slay create_html_document(title tea, body_content tea) tea {
+    sus html tea = "<!DOCTYPE html>\n"
+    html = html + "<html lang=\"en\">\n"
+    html = html + "<head>\n"
+    html = html + "  <meta charset=\"UTF-8\">\n"
+    html = html + "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+    html = html + "  <title>" + encode_html_entities(title) + "</title>\n"
+    html = html + "</head>\n"
+    html = html + "<body>\n"
+    html = html + "  " + body_content + "\n"
+    html = html + "</body>\n"
+    html = html + "</html>"
+    damn html
+}
+
+# Gen Z Enhanced APIs (these are straight fire no cap)
+
+# Create a div that's absolutely sending (popular element)
+slay create_sending_div(content tea, classes tea) HtmlElement {
+    sus element HtmlElement = create_element_with_attrs("div", "class=\"" + classes + "\"", content)
+    damn element
+}
+
+# Create a button that's no cap interactive
+slay create_fire_button(text tea, action tea) HtmlElement {
+    sus attrs tea = "type=\"button\" onclick=\"" + encode_html_entities(action) + "\""
+    sus element HtmlElement = create_element_with_attrs("button", attrs, text)
+    damn element
+}
+
+# Create an input that's lowkey necessary
+slay create_lowkey_input(input_type tea, placeholder tea, name tea) HtmlElement {
+    sus attrs tea = "type=\"" + input_type + "\" placeholder=\"" + encode_html_entities(placeholder) + "\" name=\"" + name + "\""
+    sus element HtmlElement = create_element_with_attrs("input", attrs, "")
+    damn element
+}
+
+# Create a link that's actually goated
+slay create_goated_link(url tea, text tea, target tea) HtmlElement {
+    sus safe_url tea = encode_html_entities(url)
+    sus attrs tea = "href=\"" + safe_url + "\" target=\"" + target + "\""
+    sus element HtmlElement = create_element_with_attrs("a", attrs, text)
+    damn element
+}
+
+# Create an image that's absolutely iconic
+slay create_iconic_image(src tea, alt tea, classes tea) HtmlElement {
+    sus safe_src tea = encode_html_entities(src)
+    sus safe_alt tea = encode_html_entities(alt)
+    sus attrs tea = "src=\"" + safe_src + "\" alt=\"" + safe_alt + "\" class=\"" + classes + "\""
+    sus element HtmlElement = create_element_with_attrs("img", attrs, "")
+    damn element
+}
+
+# Create a form that's actually valid
+slay create_valid_form(action tea, method tea, content tea) HtmlElement {
+    sus safe_action tea = encode_html_entities(action)
+    sus attrs tea = "action=\"" + safe_action + "\" method=\"" + method + "\""
+    sus element HtmlElement = create_element_with_attrs("form", attrs, content)
+    damn element
+}
+
+# Create table that's organized fr
+slay create_organized_table(headers tea, rows tea, classes tea) HtmlElement {
+    sus table_content tea = "<thead><tr>"
+    
+    # Add headers
+    table_content = table_content + "<th>" + headers + "</th>"
+    table_content = table_content + "</tr></thead><tbody>"
+    
+    # Add rows
+    table_content = table_content + "<tr><td>" + rows + "</td></tr>"
+    table_content = table_content + "</tbody>"
+    
+    sus attrs tea = "class=\"" + classes + "\""
+    sus element HtmlElement = create_element_with_attrs("table", attrs, table_content)
+    damn element
+}
+
+# Minify HTML (performance is key)
+slay minify_html(html_string tea) tea {
+    sus minified tea = html_string
+    
+    # Remove extra whitespace
+    minified = stringz.replace_all(minified, "\n", "")
+    minified = stringz.replace_all(minified, "\r", "")
+    minified = stringz.replace_all(minified, "\t", "")
+    
+    # Remove space between tags
+    minified = stringz.replace_all(minified, "> <", "><")
+    
+    # Remove multiple spaces
+    vibez stringz.contains(minified, "  ") {
+        minified = stringz.replace_all(minified, "  ", " ")
+    }
+    
+    damn minified
+}
+
+# Extract text content from HTML
+slay extract_text_content(html_string tea) tea {
+    sus text tea = ""
+    sus in_tag lit = cap
+    sus position normie = 0
+    
+    vibez position < stringz.length(html_string) {
+        sus ch sip = stringz.char_at(html_string, position)
+        
+        lowkey ch == '<' {
+            in_tag = based
+        } cringe lowkey ch == '>' {
+            in_tag = cap
+        } cringe lowkey !in_tag {
+            text = text + stringz.char_to_string(ch)
+        }
+        
+        position = position + 1
+    }
+    
+    damn decode_html_entities(text)
+}
+
+# Count HTML elements
+slay count_elements(html_string tea) normie {
+    sus count normie = 0
+    sus position normie = 0
+    
+    vibez position < stringz.length(html_string) {
+        lowkey stringz.char_at(html_string, position) == '<' &&
+               position + 1 < stringz.length(html_string) &&
+               stringz.char_at(html_string, position + 1) != '/' {
+            count = count + 1
+        }
+        position = position + 1
+    }
+    
+    damn count
 }

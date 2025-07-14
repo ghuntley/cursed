@@ -1,4 +1,4 @@
-yeet "testz"
+# String module - no dependencies
 
 # String search and matching functions
 slay Contains(s tea, substr tea) lit {

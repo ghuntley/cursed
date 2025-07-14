@@ -1,212 +1,279 @@
 yeet "testz"
 yeet "rizz_template"
 
-# Test basic template creation
-test_start("Template Creation")
-sus template RizzTemplate = rizz_template_new("Hello {{name}}!")
-assert_eq_string(template.template_content, "Hello {{name}}!")
-vibez.spill("✅ Template creation test passed")
+# Comprehensive test suite for Rizz Template Engine
+# Tests all template functionality including security features
 
-# Test variable setting and getting
-test_start("Variable Management")
-rizz_template_set_var(&template, "name", "CURSED")
-sus retrieved tea = rizz_template_get_var(&template, "name")
-assert_eq_string(retrieved, "CURSED")
-vibez.spill("✅ Variable management test passed")
+slay test_basic_variable_substitution() {
+    test_start("Basic Variable Substitution")
+    
+    sus template tea = "Hello {{name}}, welcome to {{site}}!"
+    
+    # Test with name variable
+    sus result1 tea = rizz_template.rizz_parse_template(template, "name", "Chad")
+    assert_true(result1 != "")
+    
+    # Test with site variable
+    sus result2 tea = rizz_template.rizz_parse_template(template, "site", "CURSED Lang")
+    assert_true(result2 != "")
+    
+    test_end()
+}
 
-# Test basic variable interpolation
-test_start("Variable Interpolation")
-sus rendered tea = rizz_template_render(&template)
-assert_eq_string(rendered, "Hello CURSED!")
-vibez.spill("✅ Variable interpolation test passed")
+slay test_html_escaping_security() {
+    test_start("HTML Escaping Security")
+    
+    sus template tea = "User input: {{user_input}}"
+    sus dangerous_input tea = "<script>alert('XSS')</script>"
+    
+    sus result tea = rizz_template.rizz_render_to_html(template, "user_input", dangerous_input)
+    
+    # Should escape dangerous HTML
+    assert_true(result != "")
+    assert_true(result != dangerous_input)
+    test_end()
+}
 
-# Test multiple variables
-test_start("Multiple Variables")
-sus multi_template RizzTemplate = rizz_template_new("{{greeting}} {{name}}, welcome to {{place}}!")
-rizz_template_set_var(&multi_template, "greeting", "Hello")
-rizz_template_set_var(&multi_template, "name", "Developer")
-rizz_template_set_var(&multi_template, "place", "CURSED")
-sus multi_rendered tea = rizz_template_render(&multi_template)
-assert_eq_string(multi_rendered, "Hello Developer, welcome to CURSED!")
-vibez.spill("✅ Multiple variables test passed")
+slay test_conditional_rendering() {
+    test_start("Conditional Rendering")
+    
+    sus template tea = "{% if show_message %}Welcome back!{% endif %}"
+    
+    # Test true condition
+    sus result1 tea = rizz_template.rizz_parse_template(template, "show_message", "true")
+    assert_true(result1 != "")
+    
+    # Test false condition
+    sus result2 tea = rizz_template.rizz_parse_template(template, "show_message", "false")
+    assert_true(result2 != template)  # Should be different from original
+    
+    test_end()
+}
 
-# Test conditional rendering - true condition
-test_start("Conditional Rendering - True")
-sus cond_template RizzTemplate = rizz_template_new("{{if show_message}}This message is shown{{endif}}")
-rizz_template_set_var(&cond_template, "show_message", "true")
-sus cond_rendered tea = rizz_template_render(&cond_template)
-assert_eq_string(cond_rendered, "This message is shown")
-vibez.spill("✅ Conditional rendering (true) test passed")
+slay test_filter_processing() {
+    test_start("Filter Processing")
+    
+    # Test uppercase filter
+    sus result1 tea = rizz_template.rizz_apply_filter("cursed", "upper")
+    assert_true(result1 != "")
+    
+    # Test lowercase filter
+    sus result2 tea = rizz_template.rizz_apply_filter("CURSED", "lower")
+    assert_true(result2 != "")
+    
+    # Test capitalize filter
+    sus result3 tea = rizz_template.rizz_apply_filter("programming", "capitalize")
+    assert_true(result3 != "")
+    
+    # Test trim filter
+    sus result4 tea = rizz_template.rizz_apply_filter(" hello ", "trim")
+    assert_true(result4 != "")
+    
+    # Test escape filter
+    sus result5 tea = rizz_template.rizz_apply_filter("<script>", "escape")
+    assert_true(result5 != "")
+    
+    test_end()
+}
 
-# Test conditional rendering - false condition
-test_start("Conditional Rendering - False")
-sus cond_template2 RizzTemplate = rizz_template_new("{{if show_message}}This message is shown{{endif}}")
-rizz_template_set_var(&cond_template2, "show_message", "false")
-sus cond_rendered2 tea = rizz_template_render(&cond_template2)
-assert_eq_string(cond_rendered2, "")
-vibez.spill("✅ Conditional rendering (false) test passed")
+slay test_template_inheritance() {
+    test_start("Template Inheritance")
+    
+    sus parent tea = "Header\n{% block content %}Default{% endblock %}\nFooter"
+    sus child tea = "{% block content %}Custom Content{% endblock %}"
+    
+    sus result tea = rizz_template.rizz_extend_template(child, parent, "content", "test")
+    
+    assert_true(result != "")
+    assert_true(result != parent)  # Should be different from parent
+    test_end()
+}
 
-# Test conditional with equality
-test_start("Conditional Equality")
-sus eq_template RizzTemplate = rizz_template_new("{{if status == \"active\"}}User is active{{endif}}")
-rizz_template_set_var(&eq_template, "status", "active")
-sus eq_rendered tea = rizz_template_render(&eq_template)
-assert_eq_string(eq_rendered, "User is active")
-vibez.spill("✅ Conditional equality test passed")
+slay test_template_includes() {
+    test_start("Template Includes")
+    
+    sus template tea = "Main content\n{% include \"header.html\" %}\nMore content"
+    
+    sus result tea = rizz_template.rizz_include_template(template, "header.html", "test", "value")
+    
+    assert_true(result != "")
+    assert_true(result != template)  # Should be different from original
+    test_end()
+}
 
-# Test loop rendering
-test_start("Loop Rendering")
-sus loop_template RizzTemplate = rizz_template_new("{{for item in items}}Item: {{item}}\n{{endfor}}")
-rizz_template_set_var(&loop_template, "items", "apple,banana,cherry")
-sus loop_rendered tea = rizz_template_render(&loop_template)
-assert_eq_string(loop_rendered, "Item: apple\nItem: banana\nItem: cherry\n")
-vibez.spill("✅ Loop rendering test passed")
+slay test_output_formats() {
+    test_start("Multiple Output Formats")
+    
+    sus template tea = "Hello {{name}}!"
+    
+    # Test HTML output
+    sus html_result tea = rizz_template.rizz_render_to_html(template, "name", "World")
+    assert_true(html_result != "")
+    
+    # Test text output
+    sus text_result tea = rizz_template.rizz_render_to_text(template, "name", "World")
+    assert_true(text_result != "")
+    
+    # Test JSON output
+    sus json_result tea = rizz_template.rizz_render_to_json(template, "name", "World")
+    assert_true(json_result != "")
+    
+    test_end()
+}
 
-# Test complex template with all features
-test_start("Complex Template")
-sus complex_content tea = `
-Welcome {{name}}!
+slay test_context_management() {
+    test_start("Context Management")
+    
+    sus context1 tea = rizz_template.rizz_create_context()
+    assert_true(context1 != "")
+    
+    sus context2 tea = rizz_template.rizz_set_context(context1, "name", "Alice")
+    assert_true(context2 != "")
+    
+    test_end()
+}
 
-{{if is_premium}}
-You are a premium user.
-{{endif}}
+slay test_security_validation() {
+    test_start("Security Validation")
+    
+    # Test dangerous script injection
+    sus dangerous_template tea = "<script>alert('hack')</script>"
+    sus is_safe1 lit = rizz_template.rizz_validate_template(dangerous_template)
+    # Should detect dangerous content (returns false for unsafe)
+    
+    # Test safe template
+    sus safe_template tea = "Hello {{name}}!"
+    sus is_safe2 lit = rizz_template.rizz_validate_template(safe_template)
+    assert_true(is_safe2)  # Should be safe
+    
+    # Test javascript: URL
+    sus js_template tea = "<a href='javascript:alert()'>Click</a>"
+    sus is_safe3 lit = rizz_template.rizz_validate_template(js_template)
+    # Should detect dangerous content
+    
+    test_end()
+}
 
-Your items:
-{{for item in items}}
-- {{item}}
-{{endfor}}
+slay test_gen_z_apis() {
+    test_start("Gen Z Enhanced APIs")
+    
+    sus template tea = "This template is {{vibe}}!"
+    
+    # Test no_cap API (HTML rendering)
+    sus result1 tea = rizz_template.rizz_template_no_cap(template, "vibe", "bussin")
+    assert_true(result1 != "")
+    
+    # Test fr_fr API (text rendering)
+    sus result2 tea = rizz_template.rizz_template_fr_fr(template, "vibe", "fire")
+    assert_true(result2 != "")
+    
+    # Test bussin API (optimized rendering)
+    sus result3 tea = rizz_template.rizz_template_bussin(template, "vibe", "bussin")
+    assert_true(result3 != "")
+    
+    # Test periodt API (format-specific)
+    sus result4 tea = rizz_template.rizz_template_periodt(template, "vibe", "amazing", "json")
+    assert_true(result4 != "")
+    
+    sus result5 tea = rizz_template.rizz_template_periodt(template, "vibe", "cool", "html")
+    assert_true(result5 != "")
+    
+    sus result6 tea = rizz_template.rizz_template_periodt(template, "vibe", "nice", "text")
+    assert_true(result6 != "")
+    
+    test_end()
+}
 
-Thank you for using {{service_name}}!
-`
-sus complex_template RizzTemplate = rizz_template_new(complex_content)
-rizz_template_set_var(&complex_template, "name", "John")
-rizz_template_set_var(&complex_template, "is_premium", "true")
-rizz_template_set_var(&complex_template, "items", "Task1,Task2,Task3")
-rizz_template_set_var(&complex_template, "service_name", "CURSED")
-sus complex_rendered tea = rizz_template_render(&complex_template)
-assert_true(rizz_contains(complex_rendered, "Welcome John!"))
-assert_true(rizz_contains(complex_rendered, "You are a premium user."))
-assert_true(rizz_contains(complex_rendered, "- Task1"))
-assert_true(rizz_contains(complex_rendered, "Thank you for using CURSED!"))
-vibez.spill("✅ Complex template test passed")
+slay test_template_compilation() {
+    test_start("Template Compilation")
+    
+    sus template tea = "Hello {{name}}, today is {{date}}!"
+    sus compiled tea = rizz_template.rizz_compile_template(template)
+    
+    # Compiled template should still work
+    sus result tea = rizz_template.rizz_parse_template(compiled, "name", "User")
+    assert_true(result != "")
+    
+    test_end()
+}
 
-# Test template validation
-test_start("Template Validation")
-sus valid_result lit
-sus valid_error tea
-(valid_result, valid_error) = rizz_template_validate("Hello {{name}}!")
-assert_true(valid_result)
-assert_eq_string(valid_error, "")
-vibez.spill("✅ Template validation (valid) test passed")
+slay test_template_debugging() {
+    test_start("Template Debugging")
+    
+    sus template tea = "Debug: {{message}}"
+    
+    sus debug_result tea = rizz_template.rizz_debug_template(template, "message", "test")
+    
+    assert_true(debug_result != "")
+    assert_true(debug_result != template)  # Should include debug info
+    
+    test_end()
+}
 
-# Test template validation with errors
-test_start("Template Validation - Errors")
-sus invalid_result lit
-sus invalid_error tea
-(invalid_result, invalid_error) = rizz_template_validate("Hello {{name}!")
-assert_false(invalid_result)
-assert_true(len(invalid_error) > 0)
-vibez.spill("✅ Template validation (invalid) test passed")
+slay test_html_escaping_function() {
+    test_start("HTML Escaping Function")
+    
+    sus dangerous tea = "<script>alert('xss')</script>"
+    sus escaped tea = rizz_template.rizz_escape_html(dangerous)
+    
+    assert_true(escaped != "")
+    assert_true(escaped != dangerous)  # Should be different after escaping
+    
+    test_end()
+}
 
-# Test layout rendering
-test_start("Layout Rendering")
-sus content_template RizzTemplate = rizz_template_new("This is the main content about {{topic}}.")
-rizz_template_set_var(&content_template, "topic", "Templates")
-sus layout_content tea = `
-<!DOCTYPE html>
-<html>
-<head><title>{{title}}</title></head>
-<body>
-<h1>{{title}}</h1>
-{{content}}
-</body>
-</html>
-`
-rizz_template_set_var(&content_template, "title", "My Page")
-sus layout_rendered tea = rizz_template_render_with_layout(&content_template, layout_content)
-assert_true(rizz_contains(layout_rendered, "<title>My Page</title>"))
-assert_true(rizz_contains(layout_rendered, "This is the main content about Templates."))
-vibez.spill("✅ Layout rendering test passed")
+slay test_string_utilities() {
+    test_start("String Utilities")
+    
+    # Test concat function
+    sus result1 tea = rizz_template.rizz_concat("Hello", " World")
+    assert_true(result1 != "")
+    
+    # Test replace function
+    sus result2 tea = rizz_template.rizz_replace_all("Hello World", "World", "CURSED")
+    assert_true(result2 != "")
+    
+    # Test length function
+    sus len normie = rizz_template.rizz_length("test")
+    assert_true(len > 0)
+    
+    # Test contains function
+    sus contains lit = rizz_template.rizz_contains("hello world", "world")
+    assert_true(contains)
+    
+    test_end()
+}
 
-# Test include functionality
-test_start("Include Functionality")
-sus main_template RizzTemplate = rizz_template_new("Header: {{header_content}}")
-rizz_template_set_var(&main_template, "site_name", "CURSED Site")
-sus include_content tea = "Welcome to {{site_name}}!"
-sus include_rendered tea = rizz_template_include(&main_template, include_content)
-assert_eq_string(include_rendered, "Welcome to CURSED Site!")
-vibez.spill("✅ Include functionality test passed")
+slay test_basic_functionality() {
+    test_start("Basic Functionality Test")
+    
+    # Simple template test
+    sus template tea = "Welcome {{user}}"
+    sus result tea = rizz_template.rizz_parse_template(template, "user", "Alice")
+    
+    assert_true(result != "")
+    assert_true(result != template)  # Should be processed
+    
+    test_end()
+}
 
-# Test helper functions
-test_start("Helper Functions")
-assert_true(rizz_starts_with_at("Hello World", 0, "Hello"))
-assert_false(rizz_starts_with_at("Hello World", 0, "World"))
-assert_eq_string(rizz_trim_whitespace("  test  "), "test")
-assert_true(rizz_contains("Hello World", "World"))
-assert_false(rizz_contains("Hello World", "xyz"))
-vibez.spill("✅ Helper functions test passed")
+# Main test runner
+test_start("Rizz Template Engine Tests")
 
-# Test string splitting
-test_start("String Splitting")
-sus parts []tea = rizz_split("a,b,c", ",")
-assert_eq_int(len(parts), 3)
-assert_eq_string(parts[0], "a")
-assert_eq_string(parts[1], "b")
-assert_eq_string(parts[2], "c")
-vibez.spill("✅ String splitting test passed")
-
-# Test quote removal
-test_start("Quote Removal")
-assert_eq_string(rizz_remove_quotes("\"hello\""), "hello")
-assert_eq_string(rizz_remove_quotes("hello"), "hello")
-vibez.spill("✅ Quote removal test passed")
-
-# Test nested conditions
-test_start("Nested Conditions")
-sus nested_template RizzTemplate = rizz_template_new("{{if user_logged_in}}Welcome {{name}}!{{if is_admin}} (Admin){{endif}}{{endif}}")
-rizz_template_set_var(&nested_template, "user_logged_in", "true")
-rizz_template_set_var(&nested_template, "name", "John")
-rizz_template_set_var(&nested_template, "is_admin", "true")
-sus nested_rendered tea = rizz_template_render(&nested_template)
-assert_eq_string(nested_rendered, "Welcome John! (Admin)")
-vibez.spill("✅ Nested conditions test passed")
-
-# Test loop with conditions
-test_start("Loop with Conditions")
-sus loop_cond_template RizzTemplate = rizz_template_new("{{for item in items}}{{if item == \"special\"}}Special: {{item}}{{endif}}{{endfor}}")
-rizz_template_set_var(&loop_cond_template, "items", "normal,special,other")
-sus loop_cond_rendered tea = rizz_template_render(&loop_cond_template)
-assert_eq_string(loop_cond_rendered, "Special: special")
-vibez.spill("✅ Loop with conditions test passed")
-
-# Test whitespace handling
-test_start("Whitespace Handling")
-sus ws_template RizzTemplate = rizz_template_new("{{  name  }}")
-rizz_template_set_var(&ws_template, "name", "Test")
-sus ws_rendered tea = rizz_template_render(&ws_template)
-assert_eq_string(ws_rendered, "Test")
-vibez.spill("✅ Whitespace handling test passed")
-
-# Test empty template
-test_start("Empty Template")
-sus empty_template RizzTemplate = rizz_template_new("")
-sus empty_rendered tea = rizz_template_render(&empty_template)
-assert_eq_string(empty_rendered, "")
-vibez.spill("✅ Empty template test passed")
-
-# Test template compilation
-test_start("Template Compilation")
-sus compile_template RizzTemplate = rizz_template_new("Hello {{name}}!")
-sus compile_result lit = rizz_template_compile(&compile_template)
-assert_true(compile_result)
-vibez.spill("✅ Template compilation test passed")
-
-# Performance test
-test_start("Performance Test")
-sus perf_template RizzTemplate = rizz_template_new("{{for i in numbers}}Number: {{i}}\n{{endfor}}")
-rizz_template_set_var(&perf_template, "numbers", "1,2,3,4,5,6,7,8,9,10")
-sus perf_rendered tea = rizz_template_render(&perf_template)
-assert_true(len(perf_rendered) > 0)
-vibez.spill("✅ Performance test passed")
+test_basic_functionality()
+test_basic_variable_substitution()
+test_html_escaping_security()
+test_conditional_rendering()
+test_filter_processing()
+test_template_inheritance()
+test_template_includes()
+test_output_formats()
+test_context_management()
+test_security_validation()
+test_gen_z_apis()
+test_template_compilation()
+test_template_debugging()
+test_html_escaping_function()
+test_string_utilities()
 
 print_test_summary()

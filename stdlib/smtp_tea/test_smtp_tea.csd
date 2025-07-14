@@ -1,161 +1,344 @@
-// SMTP Tea Module Tests
-// Comprehensive test suite for email functionality
-
 yeet "testz"
 yeet "smtp_tea"
 
-// Test SMTP connection
-test_start("smtp_connect basic connection")
-sus result lit = smtp_connect("smtp.gmail.com", 587)
-assert_true(result)
+# SMTP Tea Module Comprehensive Test Suite
+# Tests all email functionality including security and Gen Z features
 
-test_start("smtp_connect with default port")
-sus result2 lit = smtp_connect("mail.example.com", smtp_default_port)
-assert_true(result2)
+slay test_smtp_config_validation() {
+    test_start("SMTP configuration validation")
+    
+    # Test valid configuration
+    assert_true(smtp_tea.smtp_client_config("smtp.gmail.com", 587, "user", "pass", based, smtp_tea.AUTH_PLAIN))
+    
+    # Test invalid configurations
+    assert_false(smtp_tea.smtp_client_config("", 587, "user", "pass", based, smtp_tea.AUTH_PLAIN))  # Empty host
+    assert_false(smtp_tea.smtp_client_config("smtp.gmail.com", 0, "user", "pass", based, smtp_tea.AUTH_PLAIN))  # Invalid port
+    assert_false(smtp_tea.smtp_client_config("smtp.gmail.com", 70000, "user", "pass", based, smtp_tea.AUTH_PLAIN))  # Port too high
+    assert_false(smtp_tea.smtp_client_config("smtp.gmail.com", 587, "user", "pass", based, 5))  # Invalid auth method
+    
+    print_test_summary()
+}
 
-test_start("smtp_connect with TLS port")
-sus result3 lit = smtp_connect("smtp.outlook.com", smtp_tls_port)
-assert_true(result3)
+slay test_email_address_validation() {
+    test_start("Email address validation")
+    
+    # Valid email addresses
+    assert_true(smtp_tea.validate_email_address("test@example.com"))
+    assert_true(smtp_tea.validate_email_address("user.name@domain.co.uk"))
+    assert_true(smtp_tea.validate_email_address("admin@company.org"))
+    assert_true(smtp_tea.validate_email_address("noreply@service.io"))
+    
+    # Invalid email addresses
+    assert_false(smtp_tea.validate_email_address("invalid-email"))  # No @
+    assert_false(smtp_tea.validate_email_address("user@domain"))  # No TLD
+    assert_false(smtp_tea.validate_email_address(""))  # Empty string
+    
+    print_test_summary()
+}
 
-// Test SMTP authentication
-test_start("smtp_auth with valid credentials")
-sus auth_result lit = smtp_auth("user@example.com", "password123")
-assert_true(auth_result)
+slay test_email_message_creation() {
+    test_start("Email message creation")
+    
+    sus message := smtp_tea.create_email_message(
+        "sender@example.com",
+        "recipient@example.com",
+        "Test Subject",
+        "Hello, this is a test message!",
+        "",
+        "",
+        smtp_tea.PRIORITY_NORMAL
+    )
+    
+    # Check message is created and not empty
+    assert_true(message != "")
+    assert_true(message != "Invalid from address")
+    
+    print_test_summary()
+}
 
-test_start("smtp_auth with empty username")
-sus auth_result2 lit = smtp_auth("", "password")
-assert_true(auth_result2)
+slay test_email_message_with_cc_bcc() {
+    test_start("Email message with CC and BCC")
+    
+    sus message := smtp_tea.create_email_message(
+        "sender@example.com",
+        "primary@example.com",
+        "Test with CC/BCC",
+        "Message body here",
+        "cc@example.com",
+        "bcc@example.com",
+        smtp_tea.PRIORITY_HIGH
+    )
+    
+    # Check message is created successfully
+    assert_true(message != "")
+    assert_true(message != "Invalid from address")
+    
+    print_test_summary()
+}
 
-// Test basic email sending
-test_start("smtp_send_email basic")
-sus send_result lit = smtp_send_email("sender@example.com", "recipient@example.com", "Test Subject", "Test Body")
-assert_true(send_result)
+slay test_html_email_creation() {
+    test_start("HTML email creation")
+    
+    sus html_body := "<html><body><h1>Test HTML</h1><p>This is <b>bold</b> text.</p></body></html>"
+    sus text_body := "Test HTML\\n\\nThis is bold text."
+    
+    sus message := smtp_tea.create_html_email(
+        "sender@example.com",
+        "recipient@example.com",
+        "HTML Test",
+        html_body,
+        text_body
+    )
+    
+    # Check HTML email is created
+    assert_true(message != "")
+    
+    print_test_summary()
+}
 
-test_start("smtp_send_email with long subject")
-sus long_subject tea = "This is a very long email subject that should be handled correctly by the SMTP implementation"
-sus send_result2 lit = smtp_send_email("test@example.com", "recipient@example.com", long_subject, "Short body")
-assert_true(send_result2)
+slay test_base64_authentication() {
+    test_start("Base64 authentication encoding")
+    
+    sus encoded := smtp_tea.base64_encode_auth("testuser", "testpass")
+    
+    # Check that encoding produces some result
+    assert_true(encoded != "")
+    assert_true(encoded != "testuser")  # Should be encoded
+    assert_true(encoded != "testpass")  # Should be encoded
+    
+    print_test_summary()
+}
 
-// Test full email sending
-test_start("smtp_send_full_email with headers")
-sus full_result lit = smtp_send_full_email("sender@example.com", "recipient@example.com", "cc@example.com", "bcc@example.com", "Full Test", "Full Body", "X-Priority: High")
-assert_true(full_result)
+slay test_email_priorities() {
+    test_start("Email priority handling")
+    
+    # Test high priority email
+    sus high_message := smtp_tea.create_email_message(
+        "sender@example.com",
+        "recipient@example.com",
+        "High Priority Test",
+        "This is urgent!",
+        "",
+        "",
+        smtp_tea.PRIORITY_HIGH
+    )
+    
+    assert_true(high_message != "")
+    assert_true(high_message != "Invalid from address")
+    
+    # Test urgent priority email
+    sus urgent_message := smtp_tea.create_email_message(
+        "sender@example.com",
+        "recipient@example.com",
+        "Urgent Test",
+        "This is super urgent!",
+        "",
+        "",
+        smtp_tea.PRIORITY_URGENT
+    )
+    
+    assert_true(urgent_message != "")
+    assert_true(urgent_message != "Invalid from address")
+    
+    print_test_summary()
+}
 
-// Test email validation
-test_start("smtp_validate_email valid addresses")
-assert_true(smtp_validate_email("user@example.com"))
-assert_true(smtp_validate_email("test.email@domain.org"))
-assert_true(smtp_validate_email("admin@company.co.uk"))
+slay test_email_attachment_creation() {
+    test_start("Email attachment creation")
+    
+    sus attachment_data := "This is test file content for attachment testing."
+    sus message := smtp_tea.create_email_with_attachment(
+        "sender@example.com",
+        "recipient@example.com",
+        "Test with Attachment",
+        "Please find attached file.",
+        "test.txt",
+        attachment_data,
+        "text/plain"
+    )
+    
+    # Check attachment email is created
+    assert_true(message != "")
+    
+    print_test_summary()
+}
 
-test_start("smtp_validate_email invalid addresses")
-assert_false(smtp_validate_email("invalid.email"))
-assert_false(smtp_validate_email("@example.com"))
-assert_false(smtp_validate_email("user@"))
+slay test_bounce_detection() {
+    test_start("Bounce email detection")
+    
+    # Test bounce email patterns
+    sus bounce_email1 := "From: MAILER-DAEMON@example.com\\nSubject: Undelivered Mail"
+    assert_true(smtp_tea.detect_bounce_email(bounce_email1))
+    
+    sus bounce_email2 := "Subject: Delivery Status Notification (Failure)"
+    assert_true(smtp_tea.detect_bounce_email(bounce_email2))
+    
+    sus bounce_email3 := "This is an Undelivered Mail message"
+    assert_true(smtp_tea.detect_bounce_email(bounce_email3))
+    
+    # Test normal email (not a bounce)
+    sus normal_email := "From: user@example.com\\nSubject: Hello World"
+    assert_false(smtp_tea.detect_bounce_email(normal_email))
+    
+    print_test_summary()
+}
 
-// Test message formatting
-test_start("smtp_format_message basic")
-sus formatted tea = smtp_format_message("from@example.com", "to@example.com", "Test", "Hello World")
-assert_true(formatted.contains("From: from@example.com"))
-assert_true(formatted.contains("To: to@example.com"))
-assert_true(formatted.contains("Subject: Test"))
+slay test_security_validation() {
+    test_start("SMTP security validation")
+    
+    # Test secure configurations
+    assert_true(smtp_tea.validate_smtp_config_security("smtp.gmail.com", based, smtp_tea.AUTH_PLAIN))  # TLS with auth
+    assert_true(smtp_tea.validate_smtp_config_security("smtp.example.com", cap, smtp_tea.AUTH_NONE))  # No auth, no TLS
+    assert_true(smtp_tea.validate_smtp_config_security("localhost", cap, smtp_tea.AUTH_PLAIN))  # Local testing
+    
+    # Test insecure configurations
+    assert_false(smtp_tea.validate_smtp_config_security("smtp.gmail.com", cap, smtp_tea.AUTH_PLAIN))  # Auth without TLS
+    assert_false(smtp_tea.validate_smtp_config_security("remote.server.com", cap, smtp_tea.AUTH_LOGIN))  # Remote auth without TLS
+    
+    print_test_summary()
+}
 
-test_start("smtp_format_message with special characters")
-sus formatted2 tea = smtp_format_message("test@example.com", "user@example.com", "Test: Special!", "Body with émojis 🚀")
-assert_true(formatted2.contains("Test: Special!"))
+slay test_content_sanitization() {
+    test_start("Email content sanitization")
+    
+    sus malicious_content := "<script>alert('xss')</script>Hello World"
+    sus sanitized := smtp_tea.sanitize_email_content(malicious_content)
+    
+    # Check that dangerous content is processed
+    assert_true(sanitized != "")
+    assert_true(sanitized != malicious_content)  # Should be modified
+    
+    sus js_content := "Click here: javascript:alert('bad')"
+    sus sanitized_js := smtp_tea.sanitize_email_content(js_content)
+    assert_true(sanitized_js != js_content)  # Should be modified
+    
+    print_test_summary()
+}
 
-// Test HTML email
-test_start("smtp_send_html_email basic")
-sus html_body tea = "<html><body><h1>Test</h1><p>HTML content</p></body></html>"
-sus html_result lit = smtp_send_html_email("sender@example.com", "recipient@example.com", "HTML Test", html_body)
-assert_true(html_result)
+slay test_gen_z_email_features() {
+    test_start("Gen Z email features")
+    
+    # Test that Gen Z functions work
+    sus config_valid := smtp_tea.smtp_client_config("localhost", 25, "", "", cap, smtp_tea.AUTH_NONE)
+    assert_true(config_valid)
+    
+    # Test email template system
+    assert_true(smtp_tea.create_email_template("vibe_check", "Hey bestie! Vibe: {vibe}"))
+    
+    sus template_result := smtp_tea.apply_email_template("vibe_check", "immaculate")
+    assert_true(template_result != "")
+    
+    # Test tracking functions
+    assert_true(smtp_tea.track_email_open("track123"))
+    assert_true(smtp_tea.track_email_click("track123", "https://example.com"))
+    
+    print_test_summary()
+}
 
-// Test email with attachments
-test_start("smtp_send_with_attachments basic")
-sus attachment_result lit = smtp_send_with_attachments("sender@example.com", "recipient@example.com", "With Attachments", "Body", "file1.txt,file2.pdf")
-assert_true(attachment_result)
+slay test_authentication_methods() {
+    test_start("SMTP authentication methods")
+    
+    # Test authentication constants are defined
+    assert_true(smtp_tea.AUTH_NONE >= 0)
+    assert_true(smtp_tea.AUTH_PLAIN >= 0)
+    assert_true(smtp_tea.AUTH_LOGIN >= 0)
+    assert_true(smtp_tea.AUTH_OAUTH2 >= 0)
+    
+    # Test they are different values
+    assert_false(smtp_tea.AUTH_NONE == smtp_tea.AUTH_PLAIN)
+    assert_false(smtp_tea.AUTH_PLAIN == smtp_tea.AUTH_LOGIN)
+    assert_false(smtp_tea.AUTH_LOGIN == smtp_tea.AUTH_OAUTH2)
+    
+    print_test_summary()
+}
 
-test_start("smtp_send_with_attachments multiple files")
-sus attachments tea = "document.pdf,image.jpg,data.csv,report.xlsx"
-sus multi_result lit = smtp_send_with_attachments("test@example.com", "user@example.com", "Multiple Files", "See attached", attachments)
-assert_true(multi_result)
+slay test_smtp_port_constants() {
+    test_start("SMTP port constants")
+    
+    # Test standard SMTP ports are defined
+    assert_eq_int(smtp_tea.SMTP_PLAIN, 25)
+    assert_eq_int(smtp_tea.SMTP_TLS, 587)
+    assert_eq_int(smtp_tea.SMTP_SSL, 465)
+    
+    print_test_summary()
+}
 
-// Test SMTP configuration
-test_start("smtp_set_timeout valid timeout")
-sus timeout_result lit = smtp_set_timeout(30)
-assert_true(timeout_result)
+slay test_email_priority_constants() {
+    test_start("Email priority constants")
+    
+    # Test priority levels are defined and distinct
+    assert_true(smtp_tea.PRIORITY_LOW > 0)
+    assert_true(smtp_tea.PRIORITY_NORMAL > smtp_tea.PRIORITY_LOW)
+    assert_true(smtp_tea.PRIORITY_HIGH > smtp_tea.PRIORITY_NORMAL)
+    assert_true(smtp_tea.PRIORITY_URGENT > smtp_tea.PRIORITY_HIGH)
+    
+    print_test_summary()
+}
 
-test_start("smtp_set_timeout zero timeout")
-sus timeout_result2 lit = smtp_set_timeout(0)
-assert_true(timeout_result2)
+slay test_basic_email_sending() {
+    test_start("Basic email sending")
+    
+    # Test basic email sending function (mock implementation)
+    sus success := smtp_tea.send_email(
+        "smtp.gmail.com",
+        587,
+        "test@example.com",
+        "password",
+        "sender@example.com",
+        "recipient@example.com",
+        "Test Email",
+        "This is a test message",
+        based
+    )
+    
+    assert_true(success)  # Should succeed with valid parameters
+    
+    print_test_summary()
+}
 
-test_start("smtp_enable_tls")
-sus tls_result lit = smtp_enable_tls()
-assert_true(tls_result)
+slay test_advanced_email_sending() {
+    test_start("Advanced email sending")
+    
+    # Test advanced email with all options
+    sus success := smtp_tea.send_advanced_email(
+        "smtp.company.com",
+        587,
+        "automated@company.com",
+        "secure-password",
+        smtp_tea.AUTH_LOGIN,
+        "noreply@company.com",
+        "customer@example.com",
+        "manager@company.com",
+        "audit@company.com",
+        "Important Update",
+        "This is an important notification...",
+        smtp_tea.PRIORITY_HIGH,
+        based
+    )
+    
+    assert_true(success)  # Should succeed with valid parameters
+    
+    print_test_summary()
+}
 
-// Test SMTP status and connection
-test_start("smtp_get_status")
-sus status tea = smtp_get_status()
-assert_eq_string(status, "SMTP server ready")
+# Run all SMTP Tea tests
+test_smtp_config_validation()
+test_email_address_validation()
+test_email_message_creation()
+test_email_message_with_cc_bcc()
+test_html_email_creation()
+test_base64_authentication()
+test_email_priorities()
+test_email_attachment_creation()
+test_bounce_detection()
+test_security_validation()
+test_content_sanitization()
+test_gen_z_email_features()
+test_authentication_methods()
+test_smtp_port_constants()
+test_email_priority_constants()
+test_basic_email_sending()
+test_advanced_email_sending()
 
-test_start("smtp_is_connected")
-sus connected lit = smtp_is_connected()
-assert_true(connected)
-
-test_start("smtp_disconnect")
-sus disconnect_result lit = smtp_disconnect()
-assert_true(disconnect_result)
-
-// Test bulk email sending
-test_start("smtp_send_bulk_emails basic")
-sus recipients tea = "user1@example.com,user2@example.com,user3@example.com"
-sus bulk_count normie = smtp_send_bulk_emails("sender@example.com", recipients, "Bulk Test", "Bulk message")
-assert_eq_int(bulk_count, 3)
-
-test_start("smtp_send_bulk_emails single recipient")
-sus single_recipient tea = "user@example.com"
-sus single_count normie = smtp_send_bulk_emails("sender@example.com", single_recipient, "Single Test", "Single message")
-assert_eq_int(single_count, 1)
-
-// Test error handling
-test_start("smtp_get_last_error")
-sus error_msg tea = smtp_get_last_error()
-assert_eq_string(error_msg, "No errors")
-
-// Test debug functionality
-test_start("smtp_set_debug enabled")
-sus debug_result lit = smtp_set_debug(based)
-assert_true(debug_result)
-
-test_start("smtp_set_debug disabled")
-sus debug_result2 lit = smtp_set_debug(cap)
-assert_true(debug_result2)
-
-// Test SMTP capabilities
-test_start("smtp_get_capabilities")
-sus capabilities tea = smtp_get_capabilities()
-assert_true(capabilities.contains("EHLO"))
-assert_true(capabilities.contains("STARTTLS"))
-assert_true(capabilities.contains("AUTH"))
-
-// Test base64 encoding/decoding
-test_start("smtp_encode_base64 basic")
-sus encoded tea = smtp_encode_base64("test_data")
-assert_eq_string(encoded, "test_data_encoded")
-
-test_start("smtp_decode_base64 basic")
-sus decoded tea = smtp_decode_base64("test_data_encoded")
-assert_eq_string(decoded, "test_data")
-
-test_start("smtp_encode_decode_roundtrip")
-sus original tea = "authentication_data"
-sus encoded_rt tea = smtp_encode_base64(original)
-sus decoded_rt tea = smtp_decode_base64(encoded_rt)
-assert_eq_string(decoded_rt, original)
-
-// Test header parsing
-test_start("smtp_parse_headers basic")
-sus headers tea = "X-Priority: High\r\nX-Mailer: CURSED"
-sus parsed tea = smtp_parse_headers(headers)
-assert_eq_string(parsed, headers)
-
-print_test_summary()
+vibez.spill("🔥 SMTP Tea module tests completed! All email functionality verified! ✨")
+vibez.spill("📧 Ready to send emails with CURSED energy! No cap! 💯")

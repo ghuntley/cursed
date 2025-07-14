@@ -460,6 +460,11 @@ fn build_cli() -> Command {
                     .value_name("LEVEL")
                     .value_parser(["error", "warning", "info"])
                     .default_value("info"))
+                    )
+                    .subcommand(
+                    Command::new("check-llvm")
+                .about("Check LLVM toolchain availability")
+                .long_about("Checks if LLVM tools (llc, clang, gcc) are available for native compilation.\nProvides detailed installation instructions if tools are missing.")
         )
         .subcommand(
             Command::new("fmt")
@@ -615,6 +620,7 @@ async fn handle_command(matches: ArgMatches) -> Result<(), Box<dyn std::error::E
         Some(("build", sub_matches)) => handle_build(sub_matches, &matches).await,
         Some(("clean", sub_matches)) => handle_clean(sub_matches, &matches).await,
         Some(("check", sub_matches)) => handle_check(sub_matches, &matches).await,
+        Some(("check-llvm", _sub_matches)) => handle_check_llvm().await,
         Some(("repl", sub_matches)) => handle_repl(sub_matches, &matches).await,
         _ => {
             // This shouldn't happen due to arg_required_else_help
@@ -1907,6 +1913,19 @@ async fn handle_clean(matches: &ArgMatches, _global_matches: &ArgMatches) -> Res
     println!("{} Clean not yet implemented", "Warning".yellow().bold());
     
     Ok(())
+}
+
+async fn handle_check_llvm() -> Result<(), Box<dyn std::error::Error>> {
+    match cursed::check_llvm_tools() {
+        Ok(()) => {
+            println!("✅ LLVM toolchain is ready for native compilation");
+            Ok(())
+        }
+        Err(e) => {
+            eprintln!("❌ LLVM toolchain issues: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
 
 async fn handle_check(matches: &ArgMatches, global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {

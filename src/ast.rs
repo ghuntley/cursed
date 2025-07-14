@@ -616,6 +616,8 @@ pub struct StructField {
 #[derive(Debug, Clone)]
 pub struct InterfaceStatement {
     pub name: String,
+    pub type_parameters: Vec<TypeParameter>, // Generic type parameters
+    pub extends: Vec<String>, // Interface inheritance (extends other interfaces)
     pub methods: Vec<MethodSignature>,
     pub visibility: Visibility,
 }
@@ -632,8 +634,17 @@ pub struct TypeAliasStatement {
 #[derive(Debug, Clone)]
 pub struct MethodSignature {
     pub name: String,
+    pub receiver: Option<MethodReceiver>, // Method receiver for concrete implementations
     pub parameters: Vec<Parameter>,
     pub return_type: Option<Type>,
+}
+
+/// Method receiver specification
+#[derive(Debug, Clone)]
+pub struct MethodReceiver {
+    pub name: String,
+    pub receiver_type: Type,
+    pub is_pointer: bool,
 }
 
 /// Parameter definition
