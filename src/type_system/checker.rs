@@ -8,7 +8,7 @@ use crate::ast::{Expression, Statement, Program, BinaryExpression, CallExpressio
                  WhileStatement, ReturnStatement, Literal, StructStatement, InterfaceStatement,
                  ChannelStatement, GoroutineStatement, SelectStatement, PanicStatement, 
                  CatchStatement, ChannelSendExpression, ChannelReceiveExpression, 
-                 ChannelCreationExpression, TypeAliasStatement, AstVisitor};
+                 ChannelCreationExpression, TypeAliasStatement, DeferStatement, AstVisitor};
 use crate::error::CursedError;
 use crate::core::Type;
 use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext, 
@@ -54,6 +54,12 @@ pub enum TypeErrorKind {
     FieldNotFound,
     UnsupportedOperation,
     InvalidArraySize,
+    InterfaceComplianceError,
+    ParameterCountMismatch,
+    ParameterTypeMismatch,
+    ReturnTypeMismatch,
+    InterfaceCastError,
+    MethodDispatchError,
 }
 
 impl TypeCheckError {
@@ -280,6 +286,9 @@ impl TypeChecker {
             }
             Statement::TypeAlias(type_alias_stmt) => {
                 self.check_type_alias_statement(type_alias_stmt)
+            }
+            Statement::Defer(defer_stmt) => {
+                self.check_defer_statement(defer_stmt)
             }
             _ => Ok(TypeExpression::named("void")),
         }
@@ -1224,6 +1233,70 @@ impl TypeChecker {
         Ok(true)
     }
     
+    /// Check interface compliance with detailed error reporting
+    pub fn check_interface_compliance_detailed(&self, type_name: &str, interface_name: &str) -> Result<(), TypeCheckError> {
+        let interface_def = self.type_system.environment.type_definitions.get(interface_name)
+            .ok_or_else(|| TypeCheckError {
+                message: format!("Interface '{}' not found", interface_name),
+                location: None,
+                error_type: TypeErrorKind::TypeNotFound,
+            })?;
+        
+        let type_def = self.type_system.environment.type_definitions.get(type_name)
+            .ok_or_else(|| TypeCheckError {
+                message: format!("Type '{}' not found", type_name),
+                location: None,
+                error_type: TypeErrorKind::TypeNotFound,
+            })?;
+        
+        // Check each interface method
+        for interface_method in &interface_def.methods {
+            let mut found_matching_method = false;
+            let mut error_messages = Vec::new();
+            
+            for type_method in &type_def.methods {
+                if type_method.name == interface_method.name {
+                    // Check method signature compatibility with detailed error reporting
+                    match self.check_method_signature_compatibility_detailed(type_method, interface_method) {
+                        Ok(true) => {
+                            found_matching_method = true;
+                            break;
+                        },
+                        Ok(false) => {
+                            error_messages.push(format!(
+                                "Method '{}' found but signature incompatible",
+                                interface_method.name
+                            ));
+                        },
+                        Err(e) => {
+                            error_messages.push(format!(
+                                "Error checking method '{}': {}",
+                                interface_method.name, e.message
+                            ));
+                        }
+                    }
+                }
+            }
+            
+            if !found_matching_method {
+                let error_msg = if error_messages.is_empty() {
+                    format!("Type '{}' does not implement required method '{}'", type_name, interface_method.name)
+                } else {
+                    format!("Type '{}' does not properly implement method '{}': {}", 
+                            type_name, interface_method.name, error_messages.join(", "))
+                };
+                
+                return Err(TypeCheckError {
+                    message: error_msg,
+                    location: None,
+                    error_type: TypeErrorKind::InterfaceComplianceError,
+                });
+            }
+        }
+        
+        Ok(())
+    }
+    
     /// Check if two method signatures are compatible
     fn check_method_signature_compatibility(&self, impl_method: &MethodSignature, interface_method: &MethodSignature) -> Result<bool, TypeCheckError> {
         // Check parameter count
@@ -1257,11 +1330,179 @@ impl TypeChecker {
         Ok(true)
     }
     
+    /// Check method signature compatibility with detailed error reporting
+    fn check_method_signature_compatibility_detailed(&self, impl_method: &MethodSignature, interface_method: &MethodSignature) -> Result<bool, TypeCheckError> {
+        // Check parameter count
+        if impl_method.parameters.len() != interface_method.parameters.len() {
+            return Err(TypeCheckError {
+                message: format!(
+                    "Parameter count mismatch: interface requires {} parameters, implementation has {}",
+                    interface_method.parameters.len(),
+                    impl_method.parameters.len()
+                ),
+                location: None,
+                error_type: TypeErrorKind::ParameterCountMismatch,
+            });
+        }
+        
+        // Check parameter types
+        for (i, (impl_param, interface_param)) in impl_method.parameters.iter().zip(interface_method.parameters.iter()).enumerate() {
+            if !self.check_type_compatibility(impl_param, interface_param)? {
+                return Err(TypeCheckError {
+                    message: format!(
+                        "Parameter {} type mismatch: interface requires '{:?}', implementation has '{:?}'",
+                        i + 1,
+                        interface_param.name,
+                        impl_param.name
+                    ),
+                    location: None,
+                    error_type: TypeErrorKind::ParameterTypeMismatch,
+                });
+            }
+        }
+        
+        // Check return type compatibility
+        match (&impl_method.return_type, &interface_method.return_type) {
+            (Some(impl_return), Some(interface_return)) => {
+                if !self.check_type_compatibility(impl_return, interface_return)? {
+                    return Err(TypeCheckError {
+                        message: format!(
+                            "Return type mismatch: interface requires '{:?}', implementation returns '{:?}'",
+                            interface_return.name,
+                            impl_return.name
+                        ),
+                        location: None,
+                        error_type: TypeErrorKind::ReturnTypeMismatch,
+                    });
+                }
+            }
+            (None, None) => {
+                // Both have no return type, compatible
+            }
+            (Some(interface_return), None) => {
+                return Err(TypeCheckError {
+                    message: format!(
+                        "Return type mismatch: interface requires '{:?}', implementation returns nothing",
+                        interface_return.name
+                    ),
+                    location: None,
+                    error_type: TypeErrorKind::ReturnTypeMismatch,
+                });
+            }
+            (None, Some(impl_return)) => {
+                return Err(TypeCheckError {
+                    message: format!(
+                        "Return type mismatch: interface requires no return value, implementation returns '{:?}'",
+                        impl_return.name
+                    ),
+                    location: None,
+                    error_type: TypeErrorKind::ReturnTypeMismatch,
+                });
+            }
+        }
+        
+        Ok(true)
+    }
+    
     /// Check if two types are compatible
     fn check_type_compatibility(&self, type1: &TypeExpression, type2: &TypeExpression) -> Result<bool, TypeCheckError> {
         // For now, just check if they're the same type
         // In a full implementation, this would handle subtyping, coercion, etc.
         Ok(type1.name == type2.name)
+    }
+    
+    /// Check if a type can be cast to an interface
+    pub fn check_interface_cast(&self, from_type: &str, to_interface: &str) -> Result<bool, TypeCheckError> {
+        // Check if the from_type implements the to_interface
+        self.check_interface_implementation(from_type, to_interface)
+    }
+    
+    /// Validate interface cast and return detailed error if invalid
+    pub fn validate_interface_cast(&self, from_type: &str, to_interface: &str) -> Result<(), TypeCheckError> {
+        // Check if the interface exists
+        if !self.type_system.environment.type_definitions.contains_key(to_interface) {
+            return Err(TypeCheckError {
+                message: format!("Interface '{}' not found", to_interface),
+                location: None,
+                error_type: TypeErrorKind::TypeNotFound,
+            });
+        }
+        
+        // Check if the from_type exists
+        if !self.type_system.environment.type_definitions.contains_key(from_type) {
+            return Err(TypeCheckError {
+                message: format!("Type '{}' not found", from_type),
+                location: None,
+                error_type: TypeErrorKind::TypeNotFound,
+            });
+        }
+        
+        // Check if the type can be cast to the interface
+        if !self.check_interface_cast(from_type, to_interface)? {
+            // Use detailed compliance checking to provide better error messages
+            self.check_interface_compliance_detailed(from_type, to_interface)
+                .map_err(|e| TypeCheckError {
+                    message: format!("Cannot cast '{}' to interface '{}': {}", from_type, to_interface, e.message),
+                    location: e.location,
+                    error_type: TypeErrorKind::InterfaceCastError,
+                })?;
+        }
+        
+        Ok(())
+    }
+    
+    /// Check if a method dispatch is valid for an interface type
+    pub fn check_interface_method_dispatch(&self, interface_name: &str, method_name: &str, args: &[TypeExpression]) -> Result<TypeExpression, TypeCheckError> {
+        // Get the interface definition
+        let interface_def = self.type_system.environment.type_definitions.get(interface_name)
+            .ok_or_else(|| TypeCheckError {
+                message: format!("Interface '{}' not found", interface_name),
+                location: None,
+                error_type: TypeErrorKind::TypeNotFound,
+            })?;
+        
+        // Find the method in the interface
+        let method = interface_def.methods.iter()
+            .find(|m| m.name == method_name)
+            .ok_or_else(|| TypeCheckError {
+                message: format!("Method '{}' not found in interface '{}'", method_name, interface_name),
+                location: None,
+                error_type: TypeErrorKind::MethodDispatchError,
+            })?;
+        
+        // Check argument count
+        if method.parameters.len() != args.len() {
+            return Err(TypeCheckError {
+                message: format!(
+                    "Method '{}' expects {} arguments, got {}",
+                    method_name,
+                    method.parameters.len(),
+                    args.len()
+                ),
+                location: None,
+                error_type: TypeErrorKind::ArityMismatch,
+            });
+        }
+        
+        // Check argument types
+        for (i, (expected, actual)) in method.parameters.iter().zip(args.iter()).enumerate() {
+            if !self.check_type_compatibility(expected, actual)? {
+                return Err(TypeCheckError {
+                    message: format!(
+                        "Method '{}' argument {} type mismatch: expected '{:?}', got '{:?}'",
+                        method_name,
+                        i + 1,
+                        expected.name,
+                        actual.name
+                    ),
+                    location: None,
+                    error_type: TypeErrorKind::ParameterTypeMismatch,
+                });
+            }
+        }
+        
+        // Return the method's return type
+        Ok(method.return_type.clone().unwrap_or_else(|| TypeExpression::named("void")))
     }
     
     fn check_channel_statement(&mut self, _channel_stmt: &ChannelStatement) -> Result<TypeExpression, TypeCheckError> {
@@ -1326,6 +1567,29 @@ impl TypeChecker {
         // Error variable handling could be added here if needed
         
         Ok(TypeExpression::named("void"))
+    }
+    
+    fn check_defer_statement(&mut self, defer_stmt: &DeferStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Check the deferred expression
+        let expr_type = self.check_expression(&*defer_stmt.expression)?;
+        
+        // Defer statements should only contain expressions that are valid to defer
+        // Typically these are function calls or other side-effecting operations
+        match &*defer_stmt.expression {
+            Expression::Call(_) => {
+                // Function calls are always valid to defer
+                Ok(TypeExpression::named("void"))
+            }
+            Expression::MemberAccess(_) => {
+                // Member access expressions (like cleanup methods) are valid
+                Ok(TypeExpression::named("void"))
+            }
+            _ => {
+                // Other expressions might be valid but generate a warning
+                // For now, we'll allow them but this could be enhanced
+                Ok(TypeExpression::named("void"))
+            }
+        }
     }
     
     fn check_channel_send_expression(&mut self, channel_send: &ChannelSendExpression) -> Result<TypeExpression, TypeCheckError> {

@@ -116,6 +116,40 @@ impl SelectContext {
             Err(e) => Err(e), // Propagate other errors
         }
     }
+    
+    /// Execute with timeout support
+    pub fn execute_with_timeout(&mut self, has_default: bool, timeout_ms: u64) -> Result<i32, ChannelError> {
+        use std::time::{Duration, Instant};
+        
+        let start = Instant::now();
+        let timeout_duration = Duration::from_millis(timeout_ms);
+        
+        // Try to execute without blocking first
+        loop {
+            match self.select.execute() {
+                Ok(SelectResult::SendCompleted(case_index)) => return Ok(case_index as i32),
+                Ok(SelectResult::ReceiveCompleted(case_index, _value)) => return Ok(case_index as i32),
+                Ok(SelectResult::DefaultExecuted) => return Ok(-1),
+                Ok(SelectResult::Timeout) => return Ok(-2),
+                Ok(SelectResult::AllClosed) => return Ok(-3),
+                Err(ChannelError::NoSenders) | Err(ChannelError::NoReceivers) => {
+                    // Check if we've timed out
+                    if start.elapsed() >= timeout_duration {
+                        return Ok(-2); // Timeout
+                    }
+                    
+                    // If we have a default case, execute it
+                    if has_default {
+                        return Ok(-1);
+                    }
+                    
+                    // Sleep briefly and try again
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
 }
 
 /// Global select context registry
@@ -297,6 +331,47 @@ pub extern "C" fn cursed_channel_destroy(channel_ptr: *mut c_void) {
     unsafe {
         let _ = Box::from_raw(channel_ptr as *mut Channel<i64>);
     }
+}
+
+/// Execute select with timeout
+#[no_mangle]
+pub extern "C" fn cursed_select_execute_with_timeout(
+    select_ctx: *mut c_void, 
+    has_default: bool, 
+    timeout_ms: u64
+) -> i32 {
+    let select_id = select_ctx as usize;
+    
+    if let Ok(mut contexts) = SELECT_CONTEXTS.lock() {
+        if let Some(context) = contexts.get_mut(&select_id) {
+            match context.execute_with_timeout(has_default, timeout_ms) {
+                Ok(case_index) => case_index,
+                Err(_) => -1,
+            }
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+/// Create a timeout channel (for timeout patterns)
+#[no_mangle]
+pub extern "C" fn cursed_create_timeout_channel(timeout_ms: u64) -> *mut c_void {
+    use std::thread;
+    use std::time::Duration;
+    
+    let channel = Channel::<i64>::new();
+    let sender = channel.clone();
+    
+    // Start a thread that will send to the channel after timeout
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(timeout_ms));
+        let _ = sender.send(1); // Send timeout signal
+    });
+    
+    Box::into_raw(Box::new(channel)) as *mut c_void
 }
 
 #[cfg(test)]

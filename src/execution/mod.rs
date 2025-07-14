@@ -438,6 +438,9 @@ impl CursedExecutionEngine {
                 
                 parts.join(", ")
             },
+            CursedValue::Interface { interface_name, concrete_type, .. } => {
+                format!("<interface: {} implemented by {}>", interface_name, concrete_type)
+            },
         }
     }
 
@@ -1447,6 +1450,7 @@ impl CursedExecutionEngine {
             Expression::TestResultCheck(_) => {
                 Ok(CursedValue::Boolean(false))
             },
+
         }
     }
     
@@ -2575,6 +2579,7 @@ impl CursedExecutionEngine {
             CursedValue::Error { .. } => true, // Errors are truthy (they exist)
             CursedValue::StructuredError { .. } => true, // Structured errors are truthy (they exist)
             CursedValue::Complex { real, imag } => *real != 0.0 || *imag != 0.0, // Complex numbers are truthy if not zero
+            CursedValue::Interface { .. } => true, // Interface values are truthy
         }
     }
     
@@ -3103,6 +3108,12 @@ pub enum CursedValue {
         fields: Vec<(String, CursedValue)>,
     },
     Complex { real: f64, imag: f64 },  // Complex number for extra type
+    Interface { 
+        vtable_ptr: usize,
+        data_ptr: usize,
+        interface_name: String,
+        concrete_type: String,
+    },
     Nil,
 }
 
@@ -3140,6 +3151,7 @@ impl CursedValue {
             CursedValue::Error { .. } => "error",
             CursedValue::StructuredError { .. } => "structured_error",
             CursedValue::Complex { .. } => "complex",
+            CursedValue::Interface { .. } => "interface",
             CursedValue::Nil => "nil",
         }
     }
@@ -3227,6 +3239,7 @@ impl ValueManager {
                 
                 parts.join(", ")
             },
+            CursedValue::Interface { .. } => "<interface>".to_string(),
         }
     }
     
@@ -3271,8 +3284,69 @@ impl ValueManager {
     
     /// Dispatch interface method calls
     fn dispatch_interface_method(&mut self, obj_name: &str, method_name: &str, args: &[crate::ast::Expression], context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
-        // For now, return a generic error. This will be implemented when we have proper interface support.
-        Err(CursedError::RuntimeError(format!("Interface method dispatch not yet implemented: {}.{}", obj_name, method_name)))
+        // Get the interface object from the context
+        let interface_obj = context.get_variable(obj_name)
+            .ok_or_else(|| CursedError::RuntimeError(format!("Interface object '{}' not found", obj_name)))?;
+        
+        // Extract interface value from CursedValue
+        let interface_value = match interface_obj {
+            CursedValue::Interface { vtable_ptr, data_ptr, interface_name, concrete_type } => {
+                // Create interface value for dispatch
+                crate::runtime::interface_dispatch::InterfaceValue::new(
+                    // TODO: Get actual vtable from registry
+                    std::sync::Arc::new(crate::runtime::interface_dispatch::InterfaceVTable::new(
+                        interface_name.clone(),
+                        concrete_type.clone()
+                    )),
+                    data_ptr,
+                    interface_name.clone(),
+                    concrete_type.clone()
+                )
+            },
+            _ => return Err(CursedError::RuntimeError(format!(
+                "Object '{}' is not an interface value", obj_name
+            ))),
+        };
+        
+        // Evaluate arguments using a temporary execution engine
+        let mut engine = CursedExecutionEngine::new()?;
+        let mut arg_values = Vec::new();
+        for arg in args {
+            let arg_value = engine.evaluate_expression(arg, context)?;
+            // Convert CursedValue to runtime::value::Value
+            let runtime_value = match arg_value {
+                CursedValue::Integer(i) => crate::runtime::value::Value::integer(i),
+                CursedValue::String(s) => crate::runtime::value::Value::string(s),
+                CursedValue::Boolean(b) => crate::runtime::value::Value::bool(b),
+                CursedValue::Float(f) => crate::runtime::value::Value::number(f),
+                CursedValue::Nil => crate::runtime::value::Value::null(),
+                // TODO: Add more conversions as needed
+                _ => return Err(CursedError::RuntimeError(format!(
+                    "Unsupported argument type for interface method call: {:?}", arg_value
+                ))),
+            };
+            arg_values.push(runtime_value);
+        }
+        
+        // Dispatch method through global registry
+        match crate::runtime::interface_dispatch::dispatch_global_method(&interface_value, method_name, &arg_values) {
+            Ok(result) => {
+                // Convert result back to CursedValue
+                let cursed_result = match result {
+                    crate::runtime::value::Value::Integer(i) => CursedValue::Integer(i),
+                    crate::runtime::value::Value::String(s) => CursedValue::String(s),
+                    crate::runtime::value::Value::Bool(b) => CursedValue::Boolean(b),
+                    crate::runtime::value::Value::Number(f) => CursedValue::Float(f),
+                    crate::runtime::value::Value::Null => CursedValue::Nil,
+                    // TODO: Add more conversions as needed
+                    _ => return Err(CursedError::RuntimeError(format!(
+                        "Unsupported return type from interface method: {:?}", result
+                    ))),
+                };
+                Ok(cursed_result)
+            },
+            Err(e) => Err(e.into()),
+        }
     }
 
 }

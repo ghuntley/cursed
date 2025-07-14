@@ -679,6 +679,13 @@ pub fn initialize_complete_runtime(
     initialize_memory_manager(memory_config, Arc::clone(&stack_manager))
         .map_err(|e| Error::Runtime(e.to_string()))?;
     
+    // Initialize interface dispatch system
+    crate::runtime::interface_dispatch::initialize_interface_dispatch()
+        .map_err(|e| Error::Runtime(e.to_string()))?;
+    
+    // Initialize interface compliance checker
+    crate::type_system::interface_compliance::initialize_interface_compliance_checker();
+    
     // Create and start runtime
     let runtime = Arc::new(Runtime::with_config(runtime_config)?);
     

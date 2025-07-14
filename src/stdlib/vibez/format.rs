@@ -404,5 +404,6 @@ fn format_value_default(value: &Value) -> String {
         },
         Value::Binary(data) => format!("<binary: {} bytes>", data.len()),
         Value::Function { name, arity } => format!("<function {}({} args)>", name, arity),
+        Value::Interface { .. } => "<interface>".to_string(),
     }
 }

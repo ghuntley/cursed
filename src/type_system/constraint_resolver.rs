@@ -32,6 +32,113 @@ impl ConstraintResolver {
             visited_constraints: std::collections::HashSet::new(),
         }
     }
+
+    /// Enhanced constraint resolution for monomorphisation
+    pub fn resolve_for_monomorphisation(&mut self, 
+                                       type_parameters: &[String],
+                                       type_arguments: &[TypeExpression],
+                                       constraints: &[GenericConstraint],
+                                       env: &TypeEnvironment) -> Result<ConstraintSolution, ConstraintViolation> {
+        // Create substitution map from type parameters to arguments
+        let mut substitutions = HashMap::new();
+        for (param, arg) in type_parameters.iter().zip(type_arguments.iter()) {
+            substitutions.insert(param.clone(), arg.clone());
+        }
+
+        // Verify all constraints are satisfied with these substitutions
+        for constraint in constraints {
+            self.verify_constraint_with_substitutions(constraint, &substitutions, env)?;
+        }
+
+        // Build enhanced constraint solution
+        Ok(ConstraintSolution {
+            substitutions,
+            success: true,
+            is_satisfied: true,
+            violations: Vec::new(),
+        })
+    }
+
+    /// Verify a constraint is satisfied with given type substitutions
+    fn verify_constraint_with_substitutions(&self,
+                                           constraint: &GenericConstraint,
+                                           substitutions: &HashMap<String, TypeExpression>,
+                                           env: &TypeEnvironment) -> Result<(), ConstraintViolation> {
+        // For each type parameter in the constraint
+        for param in &constraint.type_parameters {
+            if let Some(concrete_type) = substitutions.get(param) {
+                // Check that concrete type satisfies all bounds
+                for bound in &constraint.bounds {
+                    if !self.type_satisfies_bound(concrete_type, bound, env)? {
+                        return Err(ConstraintViolation {
+                            reason: ViolationReason::MissingImplementation,
+                            context: format!("Type '{}' does not satisfy bound '{}' for parameter '{}'",
+                                           concrete_type.name.as_ref().unwrap_or(&"unknown".to_string()),
+                                           bound,
+                                           param),
+                        });
+                    }
+                }
+            } else {
+                return Err(ConstraintViolation {
+                    reason: ViolationReason::MissingInterface(param.clone()),
+                    context: format!("No substitution provided for type parameter '{}'", param),
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Check if a concrete type satisfies a given bound
+    fn type_satisfies_bound(&self, 
+                           concrete_type: &TypeExpression,
+                           bound: &str,
+                           env: &TypeEnvironment) -> Result<bool, ConstraintViolation> {
+        // Built-in bounds
+        match bound {
+            "any" => return Ok(true), // All types satisfy 'any'
+            "comparable" => return Ok(self.is_comparable_type(concrete_type)),
+            "numeric" => return Ok(self.is_numeric_type(concrete_type)),
+            "ordered" => return Ok(self.is_ordered_type(concrete_type)),
+            _ => {}
+        }
+
+        // Interface bounds
+        if let Some(type_name) = &concrete_type.name {
+            if let Some(concrete_type_def) = env.get_type(type_name) {
+                if let Some(bound_interface) = env.get_type(bound) {
+                    if bound_interface.kind == super::TypeKind::Interface {
+                        return Ok(self.check_interface_implementation_internal(concrete_type_def, bound_interface, env));
+                    }
+                }
+            }
+        }
+
+        // Fallback: check if type has required methods/properties
+        Ok(self.type_implements_bound(concrete_type, bound, env))
+    }
+
+    /// Check if type is comparable (supports ==, !=)
+    fn is_comparable_type(&self, type_expr: &TypeExpression) -> bool {
+        matches!(type_expr.name.as_deref(),
+                Some("normie") | Some("smol") | Some("mid") | Some("thicc") |
+                Some("drip") | Some("meal") | Some("snack") |
+                Some("lit") | Some("tea") | Some("sip"))
+    }
+
+    /// Check if type is numeric (supports +, -, *, /)
+    fn is_numeric_type(&self, type_expr: &TypeExpression) -> bool {
+        matches!(type_expr.name.as_deref(),
+                Some("normie") | Some("smol") | Some("mid") | Some("thicc") |
+                Some("drip") | Some("meal") | Some("snack"))
+    }
+
+    /// Check if type is ordered (supports <, >, <=, >=)
+    fn is_ordered_type(&self, type_expr: &TypeExpression) -> bool {
+        self.is_numeric_type(type_expr) ||
+        matches!(type_expr.name.as_deref(), Some("tea") | Some("sip"))
+    }
     
     pub fn validate_constraint(&self, constraint: &GenericConstraint, env: &TypeEnvironment) -> Result<(), ConstraintViolation> {
         // Check if constraint refers to valid types

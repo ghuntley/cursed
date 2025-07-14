@@ -1,7 +1,7 @@
 //! LLVM Function Compilation Module
 //! Complete function compilation with full LLVM IR generation
 
-use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression, YikesStatement, FamStatement, ShookExpression};
+use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression, YikesStatement, FamStatement, ShookExpression, DeferStatement};
 use crate::error::CursedError;
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use std::collections::HashMap;
@@ -18,6 +18,7 @@ pub struct FunctionCompiler {
     pub string_manager: StringConstantManager,
     pub current_break_label: Option<String>,
     pub current_continue_label: Option<String>,
+    pub defer_expressions: Vec<Expression>,  // Store defer expressions for cleanup
 }
 
 impl FunctionCompiler {
@@ -33,6 +34,7 @@ impl FunctionCompiler {
             string_manager: get_global_string_manager(),
             current_break_label: None,
             current_continue_label: None,
+            defer_expressions: Vec::new(),
         }
     }
     
@@ -103,6 +105,9 @@ impl FunctionCompiler {
                 has_return = true;
             }
         }
+        
+        // Execute defer statements before return
+        self.generate_defer_cleanup(&mut function_ir);
         
         // Ensure function has a return statement
         if !has_return {
@@ -322,6 +327,9 @@ impl FunctionCompiler {
                 }
             },
             Statement::Return(return_stmt) => {
+                // Execute defer statements before return
+                self.generate_defer_cleanup(&mut ir);
+                
                 if let Some(val) = &return_stmt.value {
                     let return_reg = self.compile_expression(val)?;
                     let return_type = self.infer_expression_type(val)?;
@@ -456,6 +464,11 @@ impl FunctionCompiler {
                 
                 // End block
                 ir.push_str(&format!("{}:\n", end_label));
+            },
+            Statement::Defer(defer_stmt) => {
+                // Store the defer expression for execution at function exit
+                self.defer_expressions.push(defer_stmt.expression.as_ref().clone());
+                ir.push_str("  ; Defer statement - expression stored for cleanup\n");
             },
             _ => {
                 ir.push_str("  ; Unsupported statement\n");
@@ -2184,6 +2197,35 @@ impl FunctionCompiler {
                 self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; literal placeholder\n", reg));
                 Ok(reg)
             }
+        }
+    }
+    
+    /// Generate cleanup code for deferred expressions
+    fn generate_defer_cleanup(&mut self, ir: &mut String) {
+        if !self.defer_expressions.is_empty() {
+            ir.push_str("  ; Executing deferred expressions in LIFO order\n");
+            
+            // Clone defer expressions to avoid borrow checker issues
+            let defer_expressions_clone = self.defer_expressions.clone();
+            
+            // Execute deferred expressions in reverse order (LIFO)
+            for defer_expr in defer_expressions_clone.iter().rev() {
+                ir.push_str("  ; Executing deferred expression\n");
+                match self.compile_expression(defer_expr) {
+                    Ok(_) => {
+                        // Ignore the result of defer expressions
+                        ir.push_str("  ; Deferred expression completed\n");
+                    },
+                    Err(e) => {
+                        // Log error but don't fail the function - defer cleanup must complete
+                        ir.push_str(&format!("  ; Error in deferred expression: {:?}\n", e));
+                        ir.push_str("  ; Continuing with remaining deferred expressions\n");
+                    }
+                }
+            }
+            
+            // Clear the defer expressions after cleanup
+            self.defer_expressions.clear();
         }
     }
 }

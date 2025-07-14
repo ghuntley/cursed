@@ -521,8 +521,8 @@ impl LlvmCodeGenerator {
         self.declare_function("cursed_alloc", "i8* @cursed_alloc(i64)");
         self.declare_function("cursed_free", "void @cursed_free(i8*)");
         self.declare_function("cursed_goroutine_spawn", "i32 @cursed_goroutine_spawn(i8*)");
-        self.declare_function("cursed_channel_send", "void @cursed_channel_send(i8*, i8*)");
-        self.declare_function("cursed_channel_receive", "i8* @cursed_channel_receive(i8*)");
+        self.declare_function("cursed_channel_send", "i32 @cursed_channel_send(i8*, i64)");
+        self.declare_function("cursed_channel_receive", "i32 @cursed_channel_receive(i8*, i64*)");
         
         // Exception handling declarations
         self.declare_function("__gxx_personality_v0", "i32 @__gxx_personality_v0(...)");
@@ -1266,21 +1266,21 @@ impl LlvmCodeGenerator {
                 let channel_codegen = crate::codegen::llvm::channels::ChannelCodegen::new();
                 let send_ir = channel_codegen.generate_channel_send(&send_expr.channel, &send_expr.value, self)?;
                 self.ir_code.push_str(&send_ir);
-                Ok("%send_result".to_string()) // Return the send result register
+                Ok(format!("%t{}", self.get_last_variable_counter())) // Return the send result register
             },
             Expression::ChannelReceive(recv_expr) => {
                 // Generate channel receive operation
                 let channel_codegen = crate::codegen::llvm::channels::ChannelCodegen::new();
                 let recv_ir = channel_codegen.generate_channel_receive(&recv_expr.channel, self)?;
                 self.ir_code.push_str(&recv_ir);
-                Ok("%recv_result".to_string()) // Return the receive result register
+                Ok(format!("%t{}", self.get_last_variable_counter())) // Return the receive result register
             },
             Expression::ChannelCreation(create_expr) => {
                 // Generate channel creation operation
                 let channel_codegen = crate::codegen::llvm::channels::ChannelCodegen::new();
                 let create_ir = channel_codegen.generate_channel_creation(&create_expr.element_type, create_expr.capacity.as_ref().map(|c| c.as_ref()), self)?;
                 self.ir_code.push_str(&create_ir);
-                Ok("%create_result".to_string()) // Return the creation result register
+                Ok(format!("%t{}", self.get_last_variable_counter())) // Return the creation result register
             },
             _ => {
                 // For complex expressions, use the expression compiler
@@ -2758,8 +2758,8 @@ impl LlvmCodeGenerator {
         enhanced_source.push_str("declare i1 @cursed_goroutine_yield()\n");
         enhanced_source.push_str("declare i32 @cursed_goroutine_join(i64)\n");
         enhanced_source.push_str("declare i8* @cursed_channel_create(i64)\n");
-        enhanced_source.push_str("declare i32 @cursed_channel_send(i8*, i8*)\n");
-        enhanced_source.push_str("declare i32 @cursed_channel_recv(i8*, i8*)\n");
+        enhanced_source.push_str("declare i32 @cursed_channel_send(i8*, i64)\n");
+        enhanced_source.push_str("declare i32 @cursed_channel_receive(i8*, i64*)\n");
         enhanced_source.push_str("declare i32 @cursed_channel_close(i8*)\n");
         enhanced_source.push_str("declare i64 @cursed_async_spawn(i8*, i8*)\n");
         enhanced_source.push_str("declare i8* @cursed_await_future(i64)\n");
@@ -3222,10 +3222,13 @@ impl LlvmCodeGenerator {
         self.ir_code.push_str(&format!("  %{} = load %interface.*.vtable*, %interface.*.vtable** %{}\n", 
             vtable_loaded_reg, vtable_reg));
         
-        // Get method from vtable (assuming method index is known)
+        // Get method index from interface registry
+        let method_index = self.get_interface_method_index(method_name)?;
+        
+        // Get method from vtable using actual method index
         let method_ptr_reg = self.next_variable();
-        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.*.vtable, %interface.*.vtable* %{}, i32 0, i32 0\n", 
-            method_ptr_reg, vtable_loaded_reg)); // This needs actual method index
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.*.vtable, %interface.*.vtable* %{}, i32 0, i32 {}\n", 
+            method_ptr_reg, vtable_loaded_reg, method_index));
         
         let method_loaded_reg = self.next_variable();
         self.ir_code.push_str(&format!("  %{} = load void (i8*)*, void (i8*)** %{}\n", 
@@ -3248,6 +3251,12 @@ impl LlvmCodeGenerator {
             result_reg, method_loaded_reg, call_args.join(", ")));
         
         Ok(format!("%{}", result_reg))
+    }
+    
+    fn get_interface_method_index(&self, method_name: &str) -> Result<usize, CursedError> {
+        // TODO: Implement actual method index lookup from interface registry
+        // For now, return 0 as a placeholder
+        Ok(0)
     }
     
     pub fn generate_interface_cast(&mut self, obj_ptr: &str, obj_type: &str, interface_name: &str) -> Result<String, CursedError> {
@@ -3300,6 +3309,10 @@ impl LlvmCodeGenerator {
     /// Get the last variable counter for accessing results
     pub fn get_last_variable_counter(&self) -> usize {
         self.variable_counter.saturating_sub(1)
+    }
+    
+    pub fn set_last_variable_counter(&mut self, counter: usize) {
+        self.variable_counter = counter;
     }
     
     /// Check if a function declaration exists in the IR code
@@ -3436,7 +3449,14 @@ impl LlvmCodeGenerator {
     
     fn parse_channel_operation(&mut self, operation: &Expression) -> Result<(String, i32, String), CursedError> {
         match operation {
-            // For complex expressions involving channel operations, try to parse as basic operation
+            // Handle assignment expressions for select statements
+            Expression::ChannelReceive(receive_expr) => {
+                // This is a channel receive operation like "<-ch"
+                let channel_reg = self.generate_expression(&receive_expr.channel)?;
+                let null_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = inttoptr i64 0 to i8*\n", null_reg));
+                Ok((channel_reg, 0, null_reg)) // 0 = receive operation
+            },
             // Channel send: channel <- value
             Expression::ChannelSend(send_expr) => {
                 let channel_reg = self.generate_expression(&send_expr.channel)?;
@@ -3449,13 +3469,7 @@ impl LlvmCodeGenerator {
                 self.ir_code.push_str(&format!("  {} = bitcast i64* {} to i8*\n", value_i8_ptr_reg, value_ptr_reg));
                 Ok((channel_reg, 1, value_i8_ptr_reg)) // 1 = send operation
             },
-            // Direct channel receive: <-channel
-            Expression::ChannelReceive(recv_expr) => {
-                let channel_reg = self.generate_expression(&recv_expr.channel)?;
-                let null_reg = self.next_register();
-                self.ir_code.push_str(&format!("  {} = inttoptr i64 0 to i8*\n", null_reg));
-                Ok((channel_reg, 0, null_reg)) // 0 = receive operation
-            },
+
             _ => {
                 // This is a fallback for parsing complex channel operations
                 // For now, treat as a basic receive operation

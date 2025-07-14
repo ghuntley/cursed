@@ -2,6 +2,9 @@
 pub mod type_inference;
 pub mod generic_instantiator;
 pub mod constraint_resolver;
+pub mod generics_bounds_checker;
+#[cfg(test)]
+pub mod generics_integration_test;
 pub mod associated_types;
 pub mod variance;
 pub mod higher_kinded_types;
@@ -10,6 +13,7 @@ pub mod generic_enhanced;
 pub mod checker;
 pub mod compilation_integration;
 pub mod test_result_simple;
+pub mod interface_compliance;
 // pub mod advanced_constraints;
 // pub mod generic_interfaces;
 
@@ -31,6 +35,15 @@ pub use type_inference::TypeInference;
 pub use checker::{TypeChecker, TypeCheckError, TypeErrorKind};
 pub use compilation_integration::{TypedCompilationPipeline, CompilationError, TypedProgram};
 pub use test_result_simple::{TestResult, TestStatus, TestSuite, TestReport, TestResultBuilder};
+pub use generic_instantiator::{GenericInstantiator, InstantiatedGeneric};
+pub use constraint_resolver::{ConstraintResolver, ConstraintSolution, ConstraintViolation};
+pub use generics_bounds_checker::TypeBoundsChecker;
+pub use interface_compliance::{
+    InterfaceComplianceChecker, InterfaceComplianceReport, InterfaceMethodRequirement,
+    ConcreteMethodImplementation, ReceiverType, IncompatibleMethod,
+    initialize_interface_compliance_checker, get_global_compliance_checker,
+    check_global_interface_compliance, generate_global_compliance_report
+};
 
 // Core type system structures
 #[derive(Debug, Clone)]
@@ -700,12 +713,10 @@ pub struct TypeParameter {
     pub bounds: Vec<GenericConstraint>,
 }
 
-// Re-exports
-pub use generic_instantiator::GenericInstantiator;
+// Additional re-exports for enhanced functionality
 pub use generic_enhanced::{GenericTypeChecker, InterfaceChecker, TypeSpecializer};
 pub use constraint_resolver::{
-    ConstraintResolver, ConstraintSolution, ConstraintViolation, ViolationReason,
-    TypeUnifier, ConstraintPropagator, ConstraintGraph, ConstraintNode
+    ViolationReason, TypeUnifier, ConstraintPropagator, ConstraintGraph, ConstraintNode
 };
 // pub use crate::type_system::advanced_constraints::{
 //     AdvancedConstraint, AdvancedConstraintChecker, ConstraintDependencyGraph, ConstraintNode as AdvancedConstraintNode
