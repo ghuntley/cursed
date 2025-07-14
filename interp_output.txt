@@ -1,1 +1,1 @@
-Running test_dropz_verification.csd
+Running stdlib/htmlrizzler/test_htmlrizzler.csd

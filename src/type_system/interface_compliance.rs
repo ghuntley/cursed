@@ -6,7 +6,7 @@
 // - Pointer vs value receiver handling
 // - Auto-dereference rules for interfaces
 
-use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type as AstType, StructStatement};
+use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type as AstType, StructStatement, TypeParameter as AstTypeParameter};
 use crate::core::Type;
 use crate::error_types::CursedError;
 use std::collections::HashMap;
@@ -18,6 +18,22 @@ pub struct InterfaceMethodRequirement {
     pub parameters: Vec<Parameter>,
     pub return_type: Option<AstType>,
     pub receiver_type: ReceiverType,
+}
+
+/// Generic interface definition
+#[derive(Debug, Clone)]
+pub struct GenericInterfaceDefinition {
+    pub name: String,
+    pub type_parameters: Vec<TypeParameter>,
+    pub extends: Vec<String>,
+    pub methods: Vec<InterfaceMethodRequirement>,
+}
+
+/// Type parameter for generics
+#[derive(Debug, Clone)]
+pub struct TypeParameter {
+    pub name: String,
+    pub bounds: Vec<String>,
 }
 
 /// Receiver type for interface methods
@@ -43,6 +59,10 @@ pub struct InterfaceComplianceChecker {
     interface_methods: HashMap<String, Vec<InterfaceMethodRequirement>>,
     /// Map from type name to method implementations
     type_implementations: HashMap<String, Vec<ConcreteMethodImplementation>>,
+    /// Map from interface name to generic interface definitions
+    generic_interfaces: HashMap<String, GenericInterfaceDefinition>,
+    /// Interface inheritance hierarchy
+    interface_hierarchy: HashMap<String, Vec<String>>,
 }
 
 impl InterfaceComplianceChecker {
@@ -51,6 +71,8 @@ impl InterfaceComplianceChecker {
         Self {
             interface_methods: HashMap::new(),
             type_implementations: HashMap::new(),
+            generic_interfaces: HashMap::new(),
+            interface_hierarchy: HashMap::new(),
         }
     }
     
@@ -72,6 +94,25 @@ impl InterfaceComplianceChecker {
             method_requirements.push(requirement);
         }
         
+        // Register interface hierarchy if it extends other interfaces
+        if !interface.extends.is_empty() {
+            self.interface_hierarchy.insert(interface.name.clone(), interface.extends.clone());
+        }
+        
+        // If interface has type parameters, register it as a generic interface
+        if !interface.type_parameters.is_empty() {
+            let generic_def = GenericInterfaceDefinition {
+                name: interface.name.clone(),
+                type_parameters: interface.type_parameters.iter().map(|tp| TypeParameter {
+                    name: tp.name.clone(),
+                    bounds: tp.bounds.clone(),
+                }).collect(),
+                extends: interface.extends.clone(),
+                methods: method_requirements.clone(),
+            };
+            self.generic_interfaces.insert(interface.name.clone(), generic_def);
+        }
+        
         self.interface_methods.insert(interface.name.clone(), method_requirements);
         Ok(())
     }
@@ -84,22 +125,60 @@ impl InterfaceComplianceChecker {
     
     /// Check if a concrete type implements an interface
     pub fn check_interface_compliance(&self, type_name: &str, interface_name: &str) -> Result<bool, CursedError> {
-        // Get interface requirements
-        let interface_methods = self.interface_methods.get(interface_name)
-            .ok_or_else(|| CursedError::Runtime(format!("Interface '{}' not found", interface_name)))?;
+        // Get all interface requirements (including inherited ones)
+        let all_requirements = self.get_all_interface_requirements(interface_name)?;
         
         // Get type implementations
         let type_methods = self.type_implementations.get(type_name)
             .ok_or_else(|| CursedError::Runtime(format!("Type '{}' not found", type_name)))?;
         
         // Check each interface method is implemented
-        for requirement in interface_methods {
+        for requirement in &all_requirements {
             if !self.is_method_implemented(requirement, type_methods)? {
                 return Ok(false);
             }
         }
         
         Ok(true)
+    }
+
+    /// Get all interface requirements including inherited ones
+    pub fn get_all_interface_requirements(&self, interface_name: &str) -> Result<Vec<InterfaceMethodRequirement>, CursedError> {
+        let mut all_requirements = Vec::new();
+        let mut visited = std::collections::HashSet::new();
+        
+        self.collect_interface_requirements(interface_name, &mut all_requirements, &mut visited)?;
+        
+        Ok(all_requirements)
+    }
+
+    /// Recursively collect interface requirements including inheritance
+    fn collect_interface_requirements(
+        &self,
+        interface_name: &str,
+        requirements: &mut Vec<InterfaceMethodRequirement>,
+        visited: &mut std::collections::HashSet<String>
+    ) -> Result<(), CursedError> {
+        if visited.contains(interface_name) {
+            return Err(CursedError::Runtime(format!("Circular interface inheritance detected: {}", interface_name)));
+        }
+        
+        visited.insert(interface_name.to_string());
+        
+        // Add this interface's methods
+        if let Some(interface_methods) = self.interface_methods.get(interface_name) {
+            requirements.extend(interface_methods.clone());
+        }
+        
+        // Add inherited interface methods
+        if let Some(extends) = self.interface_hierarchy.get(interface_name) {
+            for parent_interface in extends {
+                self.collect_interface_requirements(parent_interface, requirements, visited)?;
+            }
+        }
+        
+        visited.remove(interface_name);
+        Ok(())
     }
     
     /// Check if a specific method requirement is satisfied
@@ -468,9 +547,12 @@ mod tests {
         
         let interface = InterfaceStatement {
             name: "TestInterface".to_string(),
+            type_parameters: vec![],
+            extends: vec![],
             methods: vec![
                 MethodSignature {
                     name: "test_method".to_string(),
+                    receiver: None,
                     parameters: vec![],
                     return_type: Some(AstType::Normie),
                 }
@@ -489,9 +571,12 @@ mod tests {
         // Register interface
         let interface = InterfaceStatement {
             name: "TestInterface".to_string(),
+            type_parameters: vec![],
+            extends: vec![],
             methods: vec![
                 MethodSignature {
                     name: "test_method".to_string(),
+                    receiver: None,
                     parameters: vec![],
                     return_type: Some(AstType::Normie),
                 }

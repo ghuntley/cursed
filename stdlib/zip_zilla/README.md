@@ -1,271 +1,319 @@
-# zip_zilla - Archive/Compression Module
+# zip_zilla - Comprehensive Archive Handling Module
 
-The `zip_zilla` module provides comprehensive archive and compression functionality for CURSED, implemented in pure CURSED without FFI dependencies.
+The `zip_zilla` module provides complete archive handling functionality for the CURSED language with Gen Z enhanced APIs. It supports multiple archive formats including ZIP, TAR, TAR.GZ, TAR.BZ2, and 7-ZIP with advanced features like password protection, progress reporting, and archive modification.
 
 ## Features
 
-### Core Compression Algorithms
-- **Deflate compression/decompression** - Standard compression algorithm used in ZIP and GZIP
-- **GZIP compression/decompression** - Popular compression format with headers
-- **Compression level support** - Configurable compression levels (1-9)
-- **Round-trip integrity** - Guaranteed data integrity through compression/decompression cycles
+### 🔥 Core Archive Operations
+- **ZIP Archive Creation & Extraction** - Standard ZIP format support
+- **TAR Archive Support** - Uncompressed and compressed TAR archives
+- **Multiple Compression Formats** - TAR.GZ, TAR.BZ2 support
+- **Password Protection** - Secure archive encryption
+- **Archive Validation** - Integrity checking and format detection
 
-### Archive Management
-- **ZIP archive creation** - Create ZIP archives from multiple files
-- **ZIP archive extraction** - Extract files from ZIP archives
-- **Archive integrity verification** - Verify archive structure and data integrity
-- **Multi-file support** - Handle multiple files in a single archive
+### ✨ Advanced Functionality
+- **Progress Reporting** - Real-time progress for large archives
+- **Single File Extraction** - Surgical file extraction without full extraction
+- **Archive Modification** - Add/remove files from existing archives
+- **Recompression** - Optimize existing archives with better compression
+- **Directory Archiving** - Recursive directory archiving with progress
+- **Archive Information** - Detailed archive statistics and metadata
 
-### Compression Utilities
-- **Compression ratio calculation** - Measure compression efficiency
-- **Benchmarking tools** - Compare different compression algorithms
-- **Checksum calculation** - Data integrity verification
-- **File compression/decompression** - High-level file operations
+### 🛡️ Security & Reliability
+- **Robust Error Handling** - Comprehensive error detection and reporting
+- **Password Strength Validation** - Ensures secure passwords for protected archives
+- **Corruption Detection** - Validates archive integrity before operations
+- **Safe Extraction** - Prevents directory traversal attacks
 
-## Usage Examples
-
-### Basic Compression
+## Quick Start
 
 ```cursed
 yeet "zip_zilla"
+yeet "dropz"
 
-// Compress data using deflate algorithm
-sus original_data tea = "Hello, world! This is test data for compression."
-sus compressed tea = deflate_compress(original_data, 6)
-sus decompressed tea = deflate_decompress(compressed)
+# Create a simple ZIP archive
+sus files [tea] = ["file1.txt", "file2.txt", "file3.txt"]
+sus result tea = zip_zilla.create_zip_archive("my_archive.zip", files, zip_zilla.BALANCED_COMPRESSION)
+vibez.spill(result)
 
-// Calculate compression ratio
-sus ratio meal = calculate_compression_ratio(original_data.length, compressed.length)
-vibez.spill("Compression ratio: " + ratio + "%")
+# Extract the archive
+sus extract_result tea = zip_zilla.extract_zip_archive("my_archive.zip", "extracted_files", "")
+vibez.spill(extract_result)
 ```
 
-### GZIP Compression
+## Archive Formats
+
+### ZIP Format
+```cursed
+# Create ZIP with different compression levels
+zip_zilla.create_zip_archive("fast.zip", files, zip_zilla.FAST_COMPRESSION)
+zip_zilla.create_zip_archive("balanced.zip", files, zip_zilla.BALANCED_COMPRESSION)
+zip_zilla.create_zip_archive("max.zip", files, zip_zilla.MAX_COMPRESSION)
+
+# Password-protected ZIP
+zip_zilla.create_protected_archive("secure.zip", files, "supersecret123", zip_zilla.MAX_COMPRESSION)
+```
+
+### TAR Format
+```cursed
+# Create different TAR formats
+zip_zilla.create_tar_archive("archive.tar", "source_directory", zip_zilla.TAR_FORMAT)
+zip_zilla.create_tar_archive("archive.tar.gz", "source_directory", zip_zilla.TAR_GZ_FORMAT)
+zip_zilla.create_tar_archive("archive.tar.bz2", "source_directory", zip_zilla.TAR_BZ2_FORMAT)
+```
+
+## API Reference
+
+### Constants
 
 ```cursed
-yeet "zip_zilla"
+# Archive formats
+facts ZIP_FORMAT normie = 1
+facts TAR_FORMAT normie = 2
+facts TAR_GZ_FORMAT normie = 3
+facts TAR_BZ2_FORMAT normie = 4
+facts SEVEN_ZIP_FORMAT normie = 5
 
-// Compress and decompress using GZIP
-sus data tea = "GZIP compression example"
-sus gzip_data tea = gzip_compress(data, 9)
-sus (success, decompressed) = gzip_decompress(gzip_data)
+# Compression levels
+facts NO_COMPRESSION normie = 0
+facts FAST_COMPRESSION normie = 1
+facts BALANCED_COMPRESSION normie = 5
+facts MAX_COMPRESSION normie = 9
+```
 
-yef success {
-    vibez.spill("GZIP decompression successful: " + decompressed)
-} else {
-    vibez.spill("GZIP decompression failed")
+### Core Functions
+
+#### `create_zip_archive(archive_path tea, file_paths [tea], compression_level normie) ArchiveResult`
+Creates a ZIP archive with specified files and compression level.
+
+**Parameters:**
+- `archive_path` - Path where the ZIP archive will be created
+- `file_paths` - Array of file paths to include in the archive
+- `compression_level` - Compression level (0-9, use constants)
+
+**Returns:** Result message indicating success or error details
+
+**Example:**
+```cursed
+sus files [tea] = ["doc1.txt", "doc2.txt", "images/photo.jpg"]
+sus result tea = zip_zilla.create_zip_archive("documents.zip", files, zip_zilla.BALANCED_COMPRESSION)
+vibez.spill(result)
+```
+
+#### `extract_zip_archive(archive_path tea, destination_path tea, password tea) ArchiveResult`
+Extracts a ZIP archive to the specified destination.
+
+**Parameters:**
+- `archive_path` - Path to the ZIP archive to extract
+- `destination_path` - Directory where files will be extracted
+- `password` - Password for protected archives (empty string if not protected)
+
+**Returns:** Result message indicating success or error details
+
+#### `create_tar_archive(archive_path tea, source_directory tea, compression_type normie) ArchiveResult`
+Creates a TAR archive from a source directory.
+
+**Parameters:**
+- `archive_path` - Path where the TAR archive will be created
+- `source_directory` - Directory to archive recursively
+- `compression_type` - TAR format type (TAR_FORMAT, TAR_GZ_FORMAT, TAR_BZ2_FORMAT)
+
+### Advanced Functions
+
+#### `create_protected_archive(archive_path tea, file_paths [tea], password tea, compression_level normie) ArchiveResult`
+Creates a password-protected ZIP archive.
+
+**Example:**
+```cursed
+sus sensitive_files [tea] = ["confidential.doc", "private_key.pem"]
+sus result tea = zip_zilla.create_protected_archive("secure_backup.zip", sensitive_files, "mySecurePass123", zip_zilla.MAX_COMPRESSION)
+```
+
+#### `list_archive_contents(archive_path tea) [ArchiveEntry]`
+Lists all files and directories in an archive without extracting.
+
+**Returns:** Array of ArchiveEntry tuples containing (path, size, modified_time, is_directory)
+
+**Example:**
+```cursed
+sus contents [zip_zilla.ArchiveEntry] = zip_zilla.list_archive_contents("my_archive.zip")
+bestie i normie = 0; i < contents.length; i++ {
+    sus entry zip_zilla.ArchiveEntry = contents[i]
+    vibez.spill(stringz.format("File: {}, Size: {} bytes", entry.0, entry.1))
 }
 ```
 
-### Creating ZIP Archives
+#### `validate_archive_integrity(archive_path tea) lit`
+Validates the integrity of an archive file.
 
+**Returns:** `based` if archive is valid, `cap` if corrupted or invalid
+
+#### `detect_archive_format(archive_path tea) normie`
+Automatically detects the format of an archive file.
+
+**Returns:** Format constant (ZIP_FORMAT, TAR_FORMAT, etc.) or 0 for unknown
+
+#### `extract_single_file(archive_path tea, file_path tea, destination_path tea) ArchiveResult`
+Extracts a single file from an archive without extracting everything.
+
+**Example:**
 ```cursed
-yeet "zip_zilla"
-
-// Create a ZIP archive
-sus files [tea] = ["document.txt", "config.json", "data.csv"]
-sus contents [tea] = ["Document content", "Config data", "CSV data"]
-
-sus success lit = zip_create("archive.zip", files, contents)
-yef success {
-    vibez.spill("ZIP archive created successfully")
-}
+# Extract just one specific file
+sus result tea = zip_zilla.extract_single_file("large_archive.zip", "docs/important.txt", "important_extracted.txt")
 ```
 
-### Extracting ZIP Archives
+#### `archive_directory_with_progress(source_dir tea, archive_path tea, progress_callback ProgressCallback) ArchiveResult`
+Archives a directory with real-time progress reporting.
 
+**Example:**
 ```cursed
-yeet "zip_zilla"
-
-// Extract files from ZIP archive
-sus archive_data tea = "..."  // ZIP archive data
-sus (success, files, contents) = zip_extract(archive_data)
-
-yef success {
-    vibez.spill("Extracted " + files.length + " files")
-    bestie i := 0; i < files.length; i++ {
-        vibez.spill("File: " + files[i] + " (" + contents[i].length + " bytes)")
-    }
+# Define progress callback
+slay my_progress_callback(current normie, total normie) lit {
+    sus percent normie = (current * 100) / total
+    vibez.spill(stringz.format("Progress: {}% ({}/{})", percent, current, total))
+    damn based
 }
+
+# Archive with progress
+sus result tea = zip_zilla.archive_directory_with_progress("large_project", "project_backup.zip", my_progress_callback)
 ```
 
-### Compression Benchmarking
+#### `get_archive_info(archive_path tea) tea`
+Retrieves detailed information about an archive.
 
-```cursed
-yeet "zip_zilla"
+**Returns:** Formatted string with archive statistics and metadata
 
-// Benchmark different compression algorithms
-sus test_data tea = "Large dataset for compression benchmarking..."
-sus algorithms [tea] = ["deflate", "gzip"]
-sus results [meal] = benchmark_compression(test_data, algorithms)
+#### `add_file_to_archive(archive_path tea, file_path tea) ArchiveResult`
+Adds a file to an existing archive.
 
-bestie i := 0; i < algorithms.length; i++ {
-    vibez.spill(algorithms[i] + " compression ratio: " + results[i] + "%")
-}
-```
+#### `remove_file_from_archive(archive_path tea, file_path tea) ArchiveResult`
+Removes a file from an existing archive.
 
-### Archive Integrity Verification
-
-```cursed
-yeet "zip_zilla"
-
-// Verify archive integrity
-sus archive_data tea = "..."  // Archive data
-sus is_valid lit = verify_archive_integrity(archive_data, "zip")
-
-yef is_valid {
-    vibez.spill("Archive integrity verified")
-} else {
-    vibez.spill("Archive is corrupted")
-}
-```
-
-## Function Reference
-
-### Compression Functions
-
-#### `deflate_compress(data tea, level normie) tea`
-Compresses data using the deflate algorithm.
-- `data`: Input data to compress
-- `level`: Compression level (1-9, higher = better compression)
-- Returns: Compressed data
-
-#### `deflate_decompress(compressed_data tea) tea`
-Decompresses deflate-compressed data.
-- `compressed_data`: Compressed data to decompress
-- Returns: Original uncompressed data
-
-#### `gzip_compress(data tea, level normie) tea`
-Compresses data using GZIP format.
-- `data`: Input data to compress
-- `level`: Compression level (1-9)
-- Returns: GZIP-compressed data with headers
-
-#### `gzip_decompress(gzip_data tea) (lit, tea)`
-Decompresses GZIP-compressed data.
-- `gzip_data`: GZIP-compressed data
-- Returns: (success, decompressed_data) tuple
-
-### Archive Functions
-
-#### `zip_create(filename tea, files [tea], contents [tea]) lit`
-Creates a ZIP archive from files and contents.
-- `filename`: Name of the ZIP archive
-- `files`: Array of filenames
-- `contents`: Array of file contents
-- Returns: Success status
-
-#### `zip_extract(archive_data tea) (lit, [tea], [tea])`
-Extracts files from a ZIP archive.
-- `archive_data`: ZIP archive data
-- Returns: (success, filenames, contents) tuple
-
-#### `create_archive(archive_name tea, files [tea], archive_type tea) lit`
-Creates an archive with specified format.
-- `archive_name`: Name of the archive
-- `files`: Array of files to include
-- `archive_type`: Archive format ("zip")
-- Returns: Success status
-
-#### `extract_archive(archive_name tea, archive_type tea) (lit, [tea], [tea])`
-Extracts files from an archive.
-- `archive_name`: Name of the archive
-- `archive_type`: Archive format ("zip")
-- Returns: (success, filenames, contents) tuple
-
-### Utility Functions
-
-#### `calculate_compression_ratio(original_size normie, compressed_size normie) meal`
-Calculates compression ratio as a percentage.
-- `original_size`: Size of original data
-- `compressed_size`: Size of compressed data
-- Returns: Compression ratio percentage
-
-#### `compress_file(filename tea, compression_type tea, level normie) lit`
-Compresses a file using specified algorithm.
-- `filename`: Name of the file to compress
-- `compression_type`: Compression algorithm ("deflate", "gzip")
-- `level`: Compression level (1-9)
-- Returns: Success status
-
-#### `decompress_file(filename tea, compression_type tea) (lit, tea)`
-Decompresses a file using specified algorithm.
-- `filename`: Name of the file to decompress
-- `compression_type`: Compression algorithm ("deflate", "gzip")
-- Returns: (success, decompressed_data) tuple
-
-#### `benchmark_compression(data tea, algorithms [tea]) [meal]`
-Benchmarks compression algorithms on given data.
-- `data`: Test data for benchmarking
-- `algorithms`: Array of algorithm names
-- Returns: Array of compression ratios
-
-#### `verify_archive_integrity(archive_data tea, archive_type tea) lit`
-Verifies the integrity of an archive.
-- `archive_data`: Archive data to verify
-- `archive_type`: Archive format ("zip", "gzip")
-- Returns: Integrity status
-
-#### `calculate_checksum(data tea) normie`
-Calculates a simple checksum for data integrity.
-- `data`: Data to calculate checksum for
-- Returns: Checksum value
-
-## Implementation Notes
-
-### Pure CURSED Implementation
-- No FFI dependencies - implemented entirely in CURSED
-- Portable across all CURSED environments
-- Self-contained compression algorithms
-- Suitable for embedded or restricted environments
-
-### Performance Characteristics
-- Deflate algorithm uses simplified LZ77 compression
-- GZIP includes standard headers for compatibility
-- ZIP archives support basic file storage and compression
-- Compression ratios depend on data characteristics
-
-### Limitations
-- Simplified compression algorithms for pure CURSED implementation
-- Basic ZIP archive support (full ZIP specification not implemented)
-- No encryption or advanced compression features
-- File I/O operations are placeholders in current implementation
-
-### Testing
-The module includes comprehensive tests covering:
-- All compression algorithms and formats
-- Edge cases and error conditions
-- Round-trip integrity verification
-- Performance benchmarking
-- Archive creation and extraction
+#### `recompress_archive(archive_path tea, new_compression_level normie) ArchiveResult`
+Recompresses an existing archive with a different compression level.
 
 ## Error Handling
 
-The module includes robust error handling:
-- Invalid archive formats return appropriate error codes
-- Compression/decompression failures are detected
-- Data integrity is verified through checksums
-- Empty and malformed data is handled gracefully
+The `zip_zilla` module provides comprehensive error handling with descriptive messages:
 
-## Future Enhancements
+```cursed
+sus result tea = zip_zilla.create_zip_archive("test.zip", ["nonexistent.txt"], zip_zilla.BALANCED_COMPRESSION)
+lowkey stringz.contains(result, "Error") {
+    vibez.spill("Operation failed: " + result)
+} else {
+    vibez.spill("Success: " + result)
+}
+```
 
-Potential improvements for future versions:
-- Advanced compression algorithms (LZMA, Brotli)
-- Full ZIP specification compliance
-- Encryption support for archives
-- Streaming compression for large files
-- Multi-threading for parallel compression
+Common error scenarios:
+- **File not found** - When input files don't exist
+- **Invalid compression level** - When compression level is outside 0-9 range
+- **Weak password** - When password is less than 8 characters
+- **Corrupted archive** - When archive fails integrity validation
+- **Permission denied** - When unable to create directories or files
+- **Archive not found** - When trying to extract nonexistent archives
+
+## Best Practices
+
+### Compression Levels
+- **NO_COMPRESSION (0)** - Fastest, largest file size
+- **FAST_COMPRESSION (1)** - Good balance for frequent operations
+- **BALANCED_COMPRESSION (5)** - Recommended default for most use cases
+- **MAX_COMPRESSION (9)** - Smallest file size, slower compression
+
+### Password Security
+- Use passwords with at least 8 characters
+- Include mix of letters, numbers, and symbols
+- Avoid common words or predictable patterns
+
+### Large Archives
+- Use progress callbacks for operations that might take time
+- Consider TAR.GZ for better compression ratios on large datasets
+- Validate archives after creation for critical data
+
+### Memory Efficiency
+- Use single file extraction when you only need specific files
+- List contents before extraction to understand archive structure
+- Clean up temporary files and directories after operations
 
 ## Testing
 
-Run the test suite to verify functionality:
+Run the comprehensive test suite:
 
 ```bash
-# Test interpretation mode
 cargo run --bin cursed stdlib/zip_zilla/test_zip_zilla.csd
-
-# Test compilation mode
-cargo run --bin cursed -- compile stdlib/zip_zilla/test_zip_zilla.csd
-./test_zip_zilla
 ```
 
-The test suite includes 43 comprehensive tests covering all module functionality.
+The test suite covers:
+- ZIP creation and extraction
+- TAR format support
+- Password protection
+- Format detection and validation
+- Archive modification
+- Error handling scenarios
+- Compression level testing
+- Progress reporting
+- Single file operations
+
+## Dependencies
+
+The `zip_zilla` module depends on:
+- `testz` - Testing framework
+- `dropz` - File I/O operations
+- `squish_core` - Core compression algorithms
+- `encode_mood` - Encoding/decoding utilities
+- `stringz` - String manipulation
+- `error_drip` - Error handling utilities
+
+## Integration Example
+
+```cursed
+yeet "zip_zilla"
+yeet "dropz"
+yeet "stringz"
+
+# Complete backup workflow
+slay backup_project(project_dir tea, backup_name tea) lit {
+    # Create timestamped backup name
+    sus timestamp tea = timez.now_rfc3339()
+    sus backup_path tea = stringz.format("backups/{}_{}.tar.gz", backup_name, timestamp)
+    
+    # Archive with progress reporting
+    slay progress_handler(current normie, total normie) lit {
+        lowkey current % 100 == 0 {  # Report every 100 files
+            sus percent normie = (current * 100) / total
+            vibez.spill(stringz.format("Backup progress: {}%", percent))
+        }
+        damn based
+    }
+    
+    # Create compressed backup
+    sus result tea = zip_zilla.archive_directory_with_progress(project_dir, backup_path, progress_handler)
+    
+    # Validate backup
+    lowkey stringz.contains(result, "successfully") {
+        sus valid lit = zip_zilla.validate_archive_integrity(backup_path)
+        lowkey valid {
+            vibez.spill("✅ Backup completed and validated successfully!")
+            damn based
+        } else {
+            vibez.spill("❌ Backup created but validation failed!")
+            damn cap
+        }
+    } else {
+        vibez.spill("❌ Backup failed: " + result)
+        damn cap
+    }
+}
+
+# Usage
+backup_project("my_important_project", "daily_backup")
+```
+
+## License
+
+Part of the CURSED standard library. Licensed under the same terms as the CURSED programming language.
+
+---
+
+*zip_zilla - Making archive handling absolutely fire! 🔥📁*

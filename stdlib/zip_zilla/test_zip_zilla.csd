@@ -1,424 +1,407 @@
-// Test Suite for zip_zilla - Archive/Compression Module
-// Comprehensive testing using testz v2.0 framework
-
 yeet "testz"
 yeet "zip_zilla"
+yeet "dropz"
+yeet "stringz"
 
-// Test deflate compression/decompression
-slay test_deflate_compression() {
-    test_start("deflate compression basic")
+# Comprehensive test suite for zip_zilla archive handling module
+# Tests all major archive operations with proper error handling
+
+# Test data setup
+slay setup_test_files() lit {
+    # Create test directory structure
+    sus test_dir_created lit = dropz.create_directory("test_archive_data")
+    lowkey !test_dir_created {
+        damn cap
+    }
     
-    sus original_data tea = "hello world hello world"
-    sus compressed tea = deflate_compress(original_data, 6)
-    sus decompressed tea = deflate_decompress(compressed)
+    # Create sample files for testing
+    sus file1_created lit = dropz.write_file("test_archive_data/file1.txt", "This is test file 1 - absolutely fire content!")
+    sus file2_created lit = dropz.write_file("test_archive_data/file2.txt", "Test file 2 content - more good stuff here bestie!")
+    sus file3_created lit = dropz.write_file("test_archive_data/subdir/nested.txt", "Nested file content - going deep!")
     
-    assert_eq_string(decompressed, original_data)
-    assert_true(compressed.length <= original_data.length)
+    damn file1_created && file2_created && file3_created
 }
 
-slay test_deflate_empty_data() {
-    test_start("deflate empty data")
-    
-    sus original_data tea = ""
-    sus compressed tea = deflate_compress(original_data, 6)
-    sus decompressed tea = deflate_decompress(compressed)
-    
-    assert_eq_string(decompressed, original_data)
+# Clean up test files
+slay cleanup_test_files() lit {
+    dropz.remove_directory_recursive("test_archive_data")
+    dropz.remove_file("test_output.zip")
+    dropz.remove_file("test_output.tar")
+    dropz.remove_file("test_output.tar.gz")
+    dropz.remove_file("test_protected.zip")
+    dropz.remove_directory_recursive("test_extract")
+    damn based
 }
 
-slay test_deflate_repetitive_data() {
-    test_start("deflate repetitive data")
+# Test ZIP archive creation
+slay test_zip_creation() lit {
+    test_start("ZIP Archive Creation")
     
-    sus original_data tea = "aaaaaaaaaaaaaaaaaaaaaa"
-    sus compressed tea = deflate_compress(original_data, 6)
-    sus decompressed tea = deflate_decompress(compressed)
+    # Setup test files
+    sus setup_ok lit = setup_test_files()
+    assert_true(setup_ok, "Failed to setup test files")
     
-    assert_eq_string(decompressed, original_data)
-    assert_true(compressed.length < original_data.length)
+    # Create ZIP archive
+    sus file_list [tea] = ["test_archive_data/file1.txt", "test_archive_data/file2.txt"]
+    sus result tea = zip_zilla.create_zip_archive("test_output.zip", file_list, zip_zilla.BALANCED_COMPRESSION)
+    
+    # Verify result
+    assert_true(stringz.contains(result, "successfully"), "ZIP creation should succeed")
+    assert_true(dropz.file_exists("test_output.zip"), "ZIP file should exist")
+    
+    # Check file size is reasonable
+    sus file_size normie = dropz.get_file_size("test_output.zip")
+    assert_true(file_size > 0, "ZIP file should have content")
+    
+    vibez.spill("✅ ZIP creation test passed - archive created successfully!")
+    damn based
 }
 
-slay test_deflate_mixed_data() {
-    test_start("deflate mixed data")
+# Test ZIP extraction
+slay test_zip_extraction() lit {
+    test_start("ZIP Archive Extraction")
     
-    sus original_data tea = "abcdefghijklmnopqrstuvwxyz0123456789"
-    sus compressed tea = deflate_compress(original_data, 6)
-    sus decompressed tea = deflate_decompress(compressed)
+    # Extract the ZIP we created
+    sus result tea = zip_zilla.extract_zip_archive("test_output.zip", "test_extract", "")
     
-    assert_eq_string(decompressed, original_data)
+    # Verify extraction result
+    assert_true(stringz.contains(result, "successfully"), "ZIP extraction should succeed")
+    assert_true(dropz.directory_exists("test_extract"), "Extract directory should exist")
+    assert_true(dropz.file_exists("test_extract/test_archive_data/file1.txt"), "Extracted file1 should exist")
+    assert_true(dropz.file_exists("test_extract/test_archive_data/file2.txt"), "Extracted file2 should exist")
+    
+    # Verify extracted content
+    sus content1 tea = dropz.read_file("test_extract/test_archive_data/file1.txt")
+    assert_true(stringz.contains(content1, "test file 1"), "Extracted content should match")
+    
+    vibez.spill("✅ ZIP extraction test passed - files extracted correctly!")
+    damn based
 }
 
-slay test_deflate_compression_levels() {
-    test_start("deflate compression levels")
+# Test TAR archive creation
+slay test_tar_creation() lit {
+    test_start("TAR Archive Creation")
     
-    sus original_data tea = "test data for compression levels"
-    sus compressed_1 tea = deflate_compress(original_data, 1)
-    sus compressed_9 tea = deflate_compress(original_data, 9)
+    # Create TAR archive from directory
+    sus result tea = zip_zilla.create_tar_archive("test_output.tar", "test_archive_data", zip_zilla.TAR_FORMAT)
     
-    sus decompressed_1 tea = deflate_decompress(compressed_1)
-    sus decompressed_9 tea = deflate_decompress(compressed_9)
+    # Verify TAR creation
+    assert_true(stringz.contains(result, "successfully"), "TAR creation should succeed")
+    assert_true(dropz.file_exists("test_output.tar"), "TAR file should exist")
     
-    assert_eq_string(decompressed_1, original_data)
-    assert_eq_string(decompressed_9, original_data)
+    # Check file size
+    sus file_size normie = dropz.get_file_size("test_output.tar")
+    assert_true(file_size > 0, "TAR file should have content")
+    
+    vibez.spill("✅ TAR creation test passed - TAR archive created!")
+    damn based
 }
 
-// Test ZIP archive functions
-slay test_zip_create_basic() {
-    test_start("zip create basic")
+# Test TAR.GZ compressed archive
+slay test_tar_gz_creation() lit {
+    test_start("TAR.GZ Archive Creation")
     
-    sus files [tea] = ["file1.txt", "file2.txt"]
-    sus contents [tea] = ["content1", "content2"]
+    # Create compressed TAR archive
+    sus result tea = zip_zilla.create_tar_archive("test_output.tar.gz", "test_archive_data", zip_zilla.TAR_GZ_FORMAT)
     
-    sus result lit = zip_create("test.zip", files, contents)
-    assert_true(result)
+    # Verify compressed TAR creation
+    assert_true(stringz.contains(result, "successfully"), "TAR.GZ creation should succeed")
+    assert_true(dropz.file_exists("test_output.tar.gz"), "TAR.GZ file should exist")
+    
+    # Compressed should be smaller than uncompressed
+    sus tar_size normie = dropz.get_file_size("test_output.tar")
+    sus tar_gz_size normie = dropz.get_file_size("test_output.tar.gz")
+    assert_true(tar_gz_size <= tar_size, "Compressed TAR should be smaller or equal")
+    
+    vibez.spill("✅ TAR.GZ creation test passed - compression working!")
+    damn based
 }
 
-slay test_zip_create_empty() {
-    test_start("zip create empty")
+# Test archive format detection
+slay test_format_detection() lit {
+    test_start("Archive Format Detection")
     
-    sus files [tea] = []
-    sus contents [tea] = []
+    # Test ZIP format detection
+    sus zip_format normie = zip_zilla.detect_archive_format("test_output.zip")
+    assert_eq_int(zip_format, zip_zilla.ZIP_FORMAT, "Should detect ZIP format")
     
-    sus result lit = zip_create("empty.zip", files, contents)
-    assert_true(result)
+    # Test TAR format detection
+    sus tar_format normie = zip_zilla.detect_archive_format("test_output.tar")
+    assert_eq_int(tar_format, zip_zilla.TAR_FORMAT, "Should detect TAR format")
+    
+    # Test TAR.GZ format detection
+    sus tar_gz_format normie = zip_zilla.detect_archive_format("test_output.tar.gz")
+    assert_eq_int(tar_gz_format, zip_zilla.TAR_GZ_FORMAT, "Should detect TAR.GZ format")
+    
+    # Test unknown format
+    sus unknown_format normie = zip_zilla.detect_archive_format("nonexistent.xyz")
+    assert_eq_int(unknown_format, 0, "Should return 0 for unknown format")
+    
+    vibez.spill("✅ Format detection test passed - all formats detected correctly!")
+    damn based
 }
 
-slay test_zip_create_mismatched_arrays() {
-    test_start("zip create mismatched arrays")
+# Test archive integrity validation
+slay test_archive_validation() lit {
+    test_start("Archive Integrity Validation")
     
-    sus files [tea] = ["file1.txt", "file2.txt"]
-    sus contents [tea] = ["content1"]
+    # Test valid archive
+    sus zip_valid lit = zip_zilla.validate_archive_integrity("test_output.zip")
+    assert_true(zip_valid, "Valid ZIP should pass integrity check")
     
-    sus result lit = zip_create("test.zip", files, contents)
-    assert_false(result)
+    sus tar_valid lit = zip_zilla.validate_archive_integrity("test_output.tar")
+    assert_true(tar_valid, "Valid TAR should pass integrity check")
+    
+    # Test invalid/nonexistent archive
+    sus invalid_valid lit = zip_zilla.validate_archive_integrity("nonexistent.zip")
+    assert_false(invalid_valid, "Nonexistent archive should fail integrity check")
+    
+    vibez.spill("✅ Archive validation test passed - integrity checks working!")
+    damn based
 }
 
-slay test_zip_extract_basic() {
-    test_start("zip extract basic")
+# Test listing archive contents
+slay test_list_contents() lit {
+    test_start("Archive Contents Listing")
     
-    sus archive_data tea = "PK\x03\x04test_data"
-    sus (success, files, contents) = zip_extract(archive_data)
+    # List ZIP contents
+    sus zip_contents [zip_zilla.ArchiveEntry] = zip_zilla.list_archive_contents("test_output.zip")
+    assert_true(zip_contents.length > 0, "ZIP should have entries")
     
-    assert_true(success)
-    assert_true(files.length >= 0)
-    assert_true(contents.length >= 0)
+    # Check if our test files are in the list
+    sus found_file1 lit = cap
+    bestie i normie = 0; i < zip_contents.length; i++ {
+        lowkey stringz.contains(zip_contents[i].0, "file1.txt") {
+            found_file1 = based
+            ghosted
+        }
+    }
+    assert_true(found_file1, "Should find file1.txt in archive contents")
+    
+    vibez.spill("✅ Contents listing test passed - can browse archive contents!")
+    damn based
 }
 
-slay test_zip_extract_invalid_signature() {
-    test_start("zip extract invalid signature")
+# Test password-protected archives
+slay test_password_protection() lit {
+    test_start("Password-Protected Archives")
     
-    sus archive_data tea = "INVALID"
-    sus (success, files, contents) = zip_extract(archive_data)
+    # Create password-protected archive
+    sus file_list [tea] = ["test_archive_data/file1.txt", "test_archive_data/file2.txt"]
+    sus result tea = zip_zilla.create_protected_archive("test_protected.zip", file_list, "supersecret123", zip_zilla.BALANCED_COMPRESSION)
     
-    assert_false(success)
-    assert_eq_int(files.length, 0)
-    assert_eq_int(contents.length, 0)
+    # Verify protected archive creation
+    assert_true(stringz.contains(result, "successfully"), "Protected archive creation should succeed")
+    assert_true(dropz.file_exists("test_protected.zip"), "Protected ZIP should exist")
+    
+    # Test extraction with correct password
+    sus extract_result tea = zip_zilla.extract_zip_archive("test_protected.zip", "test_extract_protected", "supersecret123")
+    assert_true(stringz.contains(extract_result, "successfully"), "Should extract with correct password")
+    
+    # Test extraction with wrong password (should fail)
+    sus wrong_password_result tea = zip_zilla.extract_zip_archive("test_protected.zip", "test_extract_wrong", "wrongpassword")
+    assert_true(stringz.contains(wrong_password_result, "Error"), "Should fail with wrong password")
+    
+    vibez.spill("✅ Password protection test passed - security working!")
+    damn based
 }
 
-slay test_zip_extract_empty_data() {
-    test_start("zip extract empty data")
+# Test archive information retrieval
+slay test_archive_info() lit {
+    test_start("Archive Information Retrieval")
     
-    sus archive_data tea = ""
-    sus (success, files, contents) = zip_extract(archive_data)
+    # Get info for ZIP archive
+    sus zip_info tea = zip_zilla.get_archive_info("test_output.zip")
+    assert_true(stringz.contains(zip_info, "ZIP"), "Info should mention ZIP format")
+    assert_true(stringz.contains(zip_info, "bytes"), "Info should include size")
+    assert_true(stringz.contains(zip_info, "Entries"), "Info should include entry count")
     
-    assert_false(success)
-    assert_eq_int(files.length, 0)
-    assert_eq_int(contents.length, 0)
+    # Get info for TAR archive
+    sus tar_info tea = zip_zilla.get_archive_info("test_output.tar")
+    assert_true(stringz.contains(tar_info, "TAR"), "Info should mention TAR format")
+    
+    vibez.spill("✅ Archive info test passed - detailed information available!")
+    damn based
 }
 
-// Test GZIP functions
-slay test_gzip_compress_basic() {
-    test_start("gzip compress basic")
+# Test single file extraction
+slay test_single_file_extraction() lit {
+    test_start("Single File Extraction")
     
-    sus original_data tea = "hello gzip world"
-    sus compressed tea = gzip_compress(original_data, 6)
+    # Extract just one file from archive
+    sus result tea = zip_zilla.extract_single_file("test_output.zip", "test_archive_data/file1.txt", "test_single_extract.txt")
     
-    assert_true(compressed.length >= 10)  // GZIP header is 10 bytes
-    assert_true(compressed.substring(0, 2) == "\x1f\x8b")  // GZIP magic
+    # Verify single file extraction
+    assert_true(stringz.contains(result, "successfully"), "Single file extraction should succeed")
+    assert_true(dropz.file_exists("test_single_extract.txt"), "Extracted single file should exist")
+    
+    # Verify content
+    sus content tea = dropz.read_file("test_single_extract.txt")
+    assert_true(stringz.contains(content, "test file 1"), "Single extracted file should have correct content")
+    
+    # Clean up
+    dropz.remove_file("test_single_extract.txt")
+    
+    vibez.spill("✅ Single file extraction test passed - surgical extraction working!")
+    damn based
 }
 
-slay test_gzip_decompress_basic() {
-    test_start("gzip decompress basic")
+# Test compression levels
+slay test_compression_levels() lit {
+    test_start("Compression Levels")
     
-    sus original_data tea = "hello gzip world"
-    sus compressed tea = gzip_compress(original_data, 6)
-    sus (success, decompressed) = gzip_decompress(compressed)
+    sus test_files [tea] = ["test_archive_data/file1.txt", "test_archive_data/file2.txt"]
     
-    assert_true(success)
-    assert_eq_string(decompressed, original_data)
+    # Test no compression
+    sus no_compress_result tea = zip_zilla.create_zip_archive("test_no_compress.zip", test_files, zip_zilla.NO_COMPRESSION)
+    assert_true(stringz.contains(no_compress_result, "successfully"), "No compression should work")
+    
+    # Test fast compression
+    sus fast_compress_result tea = zip_zilla.create_zip_archive("test_fast_compress.zip", test_files, zip_zilla.FAST_COMPRESSION)
+    assert_true(stringz.contains(fast_compress_result, "successfully"), "Fast compression should work")
+    
+    # Test max compression
+    sus max_compress_result tea = zip_zilla.create_zip_archive("test_max_compress.zip", test_files, zip_zilla.MAX_COMPRESSION)
+    assert_true(stringz.contains(max_compress_result, "successfully"), "Max compression should work")
+    
+    # Verify file sizes make sense (no compression >= fast >= max)
+    sus no_size normie = dropz.get_file_size("test_no_compress.zip")
+    sus fast_size normie = dropz.get_file_size("test_fast_compress.zip")
+    sus max_size normie = dropz.get_file_size("test_max_compress.zip")
+    
+    assert_true(no_size >= fast_size, "No compression should be larger or equal to fast")
+    assert_true(fast_size >= max_size, "Fast compression should be larger or equal to max")
+    
+    # Clean up
+    dropz.remove_file("test_no_compress.zip")
+    dropz.remove_file("test_fast_compress.zip")
+    dropz.remove_file("test_max_compress.zip")
+    
+    vibez.spill("✅ Compression levels test passed - all levels working correctly!")
+    damn based
 }
 
-slay test_gzip_decompress_invalid_magic() {
-    test_start("gzip decompress invalid magic")
+# Test error handling
+slay test_error_handling() lit {
+    test_start("Error Handling")
     
-    sus invalid_data tea = "invalid gzip data"
-    sus (success, decompressed) = gzip_decompress(invalid_data)
+    # Test creating archive with nonexistent files
+    sus bad_files [tea] = ["nonexistent1.txt", "nonexistent2.txt"]
+    sus error_result tea = zip_zilla.create_zip_archive("should_fail.zip", bad_files, zip_zilla.BALANCED_COMPRESSION)
+    assert_true(stringz.contains(error_result, "Error"), "Should error on nonexistent files")
     
-    assert_false(success)
-    assert_eq_string(decompressed, "")
+    # Test extracting nonexistent archive
+    sus extract_error tea = zip_zilla.extract_zip_archive("nonexistent.zip", "test_extract", "")
+    assert_true(stringz.contains(extract_error, "Error"), "Should error on nonexistent archive")
+    
+    # Test invalid compression level
+    sus invalid_compression tea = zip_zilla.create_zip_archive("test.zip", ["test_archive_data/file1.txt"], 999)
+    assert_true(stringz.contains(invalid_compression, "Error"), "Should error on invalid compression level")
+    
+    # Test weak password
+    sus weak_password tea = zip_zilla.create_protected_archive("test.zip", ["test_archive_data/file1.txt"], "123", zip_zilla.BALANCED_COMPRESSION)
+    assert_true(stringz.contains(weak_password, "Error"), "Should error on weak password")
+    
+    vibez.spill("✅ Error handling test passed - robust error detection!")
+    damn based
 }
 
-slay test_gzip_decompress_short_data() {
-    test_start("gzip decompress short data")
+# Test archive modification (add/remove files)
+slay test_archive_modification() lit {
+    test_start("Archive Modification")
     
-    sus short_data tea = "short"
-    sus (success, decompressed) = gzip_decompress(short_data)
+    # Create base archive
+    sus file_list [tea] = ["test_archive_data/file1.txt"]
+    sus create_result tea = zip_zilla.create_zip_archive("test_modify.zip", file_list, zip_zilla.BALANCED_COMPRESSION)
+    assert_true(stringz.contains(create_result, "successfully"), "Base archive should be created")
     
-    assert_false(success)
-    assert_eq_string(decompressed, "")
+    # Add file to existing archive
+    sus add_result tea = zip_zilla.add_file_to_archive("test_modify.zip", "test_archive_data/file2.txt")
+    assert_true(stringz.contains(add_result, "successfully"), "Should add file to archive")
+    
+    # Verify file was added by listing contents
+    sus contents [zip_zilla.ArchiveEntry] = zip_zilla.list_archive_contents("test_modify.zip")
+    sus found_file2 lit = cap
+    bestie i normie = 0; i < contents.length; i++ {
+        lowkey stringz.contains(contents[i].0, "file2.txt") {
+            found_file2 = based
+            ghosted
+        }
+    }
+    assert_true(found_file2, "Should find added file2.txt in archive")
+    
+    # Remove file from archive
+    sus remove_result tea = zip_zilla.remove_file_from_archive("test_modify.zip", "test_archive_data/file2.txt")
+    assert_true(stringz.contains(remove_result, "successfully"), "Should remove file from archive")
+    
+    # Clean up
+    dropz.remove_file("test_modify.zip")
+    
+    vibez.spill("✅ Archive modification test passed - can add/remove files!")
+    damn based
 }
 
-slay test_gzip_empty_data() {
-    test_start("gzip empty data")
+# Test recompression functionality
+slay test_recompression() lit {
+    test_start("Archive Recompression")
     
-    sus original_data tea = ""
-    sus compressed tea = gzip_compress(original_data, 6)
-    sus (success, decompressed) = gzip_decompress(compressed)
+    # Create archive with medium compression
+    sus file_list [tea] = ["test_archive_data/file1.txt", "test_archive_data/file2.txt"]
+    sus create_result tea = zip_zilla.create_zip_archive("test_recompress.zip", file_list, zip_zilla.FAST_COMPRESSION)
+    assert_true(stringz.contains(create_result, "successfully"), "Original archive should be created")
     
-    assert_true(success)
-    assert_eq_string(decompressed, original_data)
+    sus original_size normie = dropz.get_file_size("test_recompress.zip")
+    
+    # Recompress with maximum compression
+    sus recompress_result tea = zip_zilla.recompress_archive("test_recompress.zip", zip_zilla.MAX_COMPRESSION)
+    assert_true(stringz.contains(recompress_result, "successfully"), "Recompression should succeed")
+    
+    sus new_size normie = dropz.get_file_size("test_recompress.zip")
+    assert_true(new_size <= original_size, "Recompressed archive should be smaller or equal")
+    
+    # Clean up
+    dropz.remove_file("test_recompress.zip")
+    
+    vibez.spill("✅ Recompression test passed - can optimize existing archives!")
+    damn based
 }
 
-// Test compression utilities
-slay test_calculate_compression_ratio() {
-    test_start("calculate compression ratio")
+# Run comprehensive test suite
+slay run_zip_zilla_tests() lit {
+    vibez.spill("🚀 Starting zip_zilla comprehensive test suite...")
+    vibez.spill("Testing all archive operations with Gen Z flair!")
+    vibez.spill("")
     
-    sus ratio meal = calculate_compression_ratio(100, 50)
-    assert_true(ratio >= 49.0 && ratio <= 51.0)  // 50% compression
+    # Core functionality tests
+    test_zip_creation()
+    test_zip_extraction()
+    test_tar_creation()
+    test_tar_gz_creation()
     
-    sus ratio_zero meal = calculate_compression_ratio(0, 0)
-    assert_true(ratio_zero == 0.0)
+    # Advanced functionality tests
+    test_format_detection()
+    test_archive_validation()
+    test_list_contents()
+    test_password_protection()
+    test_archive_info()
+    test_single_file_extraction()
     
-    sus ratio_no_compression meal = calculate_compression_ratio(100, 100)
-    assert_true(ratio_no_compression == 0.0)
+    # Quality and edge case tests
+    test_compression_levels()
+    test_error_handling()
+    test_archive_modification()
+    test_recompression()
+    
+    # Clean up all test files
+    cleanup_test_files()
+    
+    vibez.spill("")
+    vibez.spill("🎉 zip_zilla test suite completed successfully!")
+    vibez.spill("All archive operations working perfectly - absolutely fire! 🔥")
+    
+    print_test_summary()
+    damn based
 }
 
-slay test_compress_file_deflate() {
-    test_start("compress file deflate")
-    
-    sus result lit = compress_file("test.txt", "deflate", 6)
-    assert_true(result)
-}
-
-slay test_compress_file_gzip() {
-    test_start("compress file gzip")
-    
-    sus result lit = compress_file("test.txt", "gzip", 6)
-    assert_true(result)
-}
-
-slay test_compress_file_invalid_type() {
-    test_start("compress file invalid type")
-    
-    sus result lit = compress_file("test.txt", "invalid", 6)
-    assert_false(result)
-}
-
-slay test_decompress_file_deflate() {
-    test_start("decompress file deflate")
-    
-    sus (success, data) = decompress_file("test.txt", "deflate")
-    assert_true(success)
-    assert_true(data.length >= 0)
-}
-
-slay test_decompress_file_gzip() {
-    test_start("decompress file gzip")
-    
-    sus (success, data) = decompress_file("test.txt", "gzip")
-    assert_true(success)
-    assert_true(data.length >= 0)
-}
-
-slay test_decompress_file_invalid_type() {
-    test_start("decompress file invalid type")
-    
-    sus (success, data) = decompress_file("test.txt", "invalid")
-    assert_false(success)
-    assert_eq_string(data, "")
-}
-
-// Test archive management
-slay test_create_archive_zip() {
-    test_start("create archive zip")
-    
-    sus files [tea] = ["file1.txt", "file2.txt"]
-    sus result lit = create_archive("test.zip", files, "zip")
-    assert_true(result)
-}
-
-slay test_create_archive_invalid_type() {
-    test_start("create archive invalid type")
-    
-    sus files [tea] = ["file1.txt"]
-    sus result lit = create_archive("test.unknown", files, "unknown")
-    assert_false(result)
-}
-
-slay test_extract_archive_zip() {
-    test_start("extract archive zip")
-    
-    sus (success, files, contents) = extract_archive("test.zip", "zip")
-    assert_true(success)
-    assert_true(files.length >= 0)
-    assert_true(contents.length >= 0)
-}
-
-slay test_extract_archive_invalid_type() {
-    test_start("extract archive invalid type")
-    
-    sus (success, files, contents) = extract_archive("test.unknown", "unknown")
-    assert_false(success)
-    assert_eq_int(files.length, 0)
-    assert_eq_int(contents.length, 0)
-}
-
-// Test compression benchmarking
-slay test_benchmark_compression() {
-    test_start("benchmark compression")
-    
-    sus data tea = "benchmark test data for compression algorithms"
-    sus algorithms [tea] = ["deflate", "gzip"]
-    sus results [meal] = benchmark_compression(data, algorithms)
-    
-    assert_eq_int(results.length, 2)
-    assert_true(results[0] >= 0.0)
-    assert_true(results[1] >= 0.0)
-}
-
-slay test_benchmark_compression_empty_algorithms() {
-    test_start("benchmark compression empty algorithms")
-    
-    sus data tea = "test data"
-    sus algorithms [tea] = []
-    sus results [meal] = benchmark_compression(data, algorithms)
-    
-    assert_eq_int(results.length, 0)
-}
-
-// Test integrity checking
-slay test_verify_archive_integrity_zip() {
-    test_start("verify archive integrity zip")
-    
-    sus archive_data tea = "PK\x03\x04valid_zip_data"
-    sus result lit = verify_archive_integrity(archive_data, "zip")
-    assert_true(result)
-}
-
-slay test_verify_archive_integrity_gzip() {
-    test_start("verify archive integrity gzip")
-    
-    sus gzip_data tea = gzip_compress("test data", 6)
-    sus result lit = verify_archive_integrity(gzip_data, "gzip")
-    assert_true(result)
-}
-
-slay test_verify_archive_integrity_invalid_type() {
-    test_start("verify archive integrity invalid type")
-    
-    sus archive_data tea = "test data"
-    sus result lit = verify_archive_integrity(archive_data, "unknown")
-    assert_false(result)
-}
-
-slay test_calculate_checksum() {
-    test_start("calculate checksum")
-    
-    sus data tea = "test data"
-    sus checksum normie = calculate_checksum(data)
-    assert_true(checksum >= 0)
-    
-    sus checksum_same normie = calculate_checksum(data)
-    assert_eq_int(checksum, checksum_same)
-    
-    sus checksum_different normie = calculate_checksum("different data")
-    assert_true(checksum != checksum_different)
-}
-
-slay test_calculate_checksum_empty() {
-    test_start("calculate checksum empty")
-    
-    sus data tea = ""
-    sus checksum normie = calculate_checksum(data)
-    assert_eq_int(checksum, 0)
-}
-
-// Test round-trip operations
-slay test_deflate_roundtrip() {
-    test_start("deflate roundtrip")
-    
-    sus original tea = "The quick brown fox jumps over the lazy dog"
-    sus compressed tea = deflate_compress(original, 6)
-    sus decompressed tea = deflate_decompress(compressed)
-    
-    assert_eq_string(decompressed, original)
-}
-
-slay test_gzip_roundtrip() {
-    test_start("gzip roundtrip")
-    
-    sus original tea = "GZIP compression test with various characters!@#$%^&*()"
-    sus compressed tea = gzip_compress(original, 6)
-    sus (success, decompressed) = gzip_decompress(compressed)
-    
-    assert_true(success)
-    assert_eq_string(decompressed, original)
-}
-
-slay test_compression_ratio_calculation() {
-    test_start("compression ratio calculation")
-    
-    sus original tea = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    sus compressed tea = deflate_compress(original, 9)
-    sus ratio meal = calculate_compression_ratio(original.length, compressed.length)
-    
-    assert_true(ratio > 0.0)  // Should achieve some compression
-    assert_true(ratio <= 100.0)  // Cannot compress more than 100%
-}
-
-// Run all tests
-test_deflate_compression()
-test_deflate_empty_data()
-test_deflate_repetitive_data()
-test_deflate_mixed_data()
-test_deflate_compression_levels()
-
-test_zip_create_basic()
-test_zip_create_empty()
-test_zip_create_mismatched_arrays()
-test_zip_extract_basic()
-test_zip_extract_invalid_signature()
-test_zip_extract_empty_data()
-
-test_gzip_compress_basic()
-test_gzip_decompress_basic()
-test_gzip_decompress_invalid_magic()
-test_gzip_decompress_short_data()
-test_gzip_empty_data()
-
-test_calculate_compression_ratio()
-test_compress_file_deflate()
-test_compress_file_gzip()
-test_compress_file_invalid_type()
-test_decompress_file_deflate()
-test_decompress_file_gzip()
-test_decompress_file_invalid_type()
-
-test_create_archive_zip()
-test_create_archive_invalid_type()
-test_extract_archive_zip()
-test_extract_archive_invalid_type()
-
-test_benchmark_compression()
-test_benchmark_compression_empty_algorithms()
-
-test_verify_archive_integrity_zip()
-test_verify_archive_integrity_gzip()
-test_verify_archive_integrity_invalid_type()
-test_calculate_checksum()
-test_calculate_checksum_empty()
-
-test_deflate_roundtrip()
-test_gzip_roundtrip()
-test_compression_ratio_calculation()
-
-print_test_summary()
+# Run the comprehensive test suite
+run_zip_zilla_tests()

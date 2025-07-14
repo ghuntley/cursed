@@ -867,13 +867,21 @@ async fn compile_to_native_with_optimization(source: &str, source_file: &str, ou
 fn is_llvm_missing_error(error: &CursedError) -> bool {
     match error {
         CursedError::CompilerError(msg) => {
+            // Only treat as missing tools if it's actually a tool not found error
             msg.contains("LLVM compiler (llc) not found") || 
-            msg.contains("llc compilation failed") ||
+            (msg.contains("llc compilation failed") && (
+                msg.contains("command not found") ||
+                msg.contains("No such file or directory") ||
+                msg.contains("Permission denied")
+            )) ||
             msg.contains("No suitable linker found")
         }
         CursedError::Io(msg) => {
-            msg.contains("Failed to run llc") ||
-            msg.contains("command not found")
+            msg.contains("Failed to run llc") && (
+                msg.contains("command not found") ||
+                msg.contains("No such file or directory") ||
+                msg.contains("Permission denied")
+            )
         }
         _ => false,
     }
@@ -953,6 +961,73 @@ exec {} "$SOURCE_FILE" "$@"
     println!("   Or use devenv: direnv allow");
     
     Ok(())
+}
+
+/// Check LLVM tool availability and provide helpful feedback
+pub fn check_llvm_tools() -> crate::error::Result<()> {
+    use std::process::Command;
+    
+    println!("🔍 Checking LLVM toolchain availability...");
+    
+    // Check for llc
+    let llc_locations = vec![
+        "llc".to_string(),
+        "/nix/store/013b6qj9g2n2pmxcllnch9drrf9m0zwf-llvm-17.0.6/bin/llc".to_string(),
+        "/nix/store/s5a4igx64mngxrz3d4s2mxz6764mdv47-llvm-17.0.6/bin/llc".to_string(),
+        "/nix/store/8qpf7pp0a71psdngm5nxc64jahw0vlwl-llvm-19.1.7/bin/llc".to_string(),
+        "/nix/store/vnxd8nqfibccfbczxwd9li5hw42k5kmw-llvm-19.1.6/bin/llc".to_string(),
+        "/usr/bin/llc".to_string(),
+        "/usr/local/bin/llc".to_string(),
+    ];
+    
+    let mut llc_found = false;
+    for location in &llc_locations {
+        if let Ok(output) = Command::new(location).arg("--version").output() {
+            if output.status.success() {
+                println!("  ✅ llc found at: {}", location);
+                llc_found = true;
+                break;
+            }
+        }
+    }
+    
+    if !llc_found {
+        println!("  ❌ llc not found");
+    }
+    
+    // Check for linkers
+    let linkers = ["clang", "gcc", "ld"];
+    let mut linker_found = false;
+    
+    for linker in &linkers {
+        if let Ok(output) = Command::new(linker).arg("--version").output() {
+            if output.status.success() {
+                println!("  ✅ {} linker found", linker);
+                linker_found = true;
+                break;
+            }
+        } else {
+            println!("  ⚠️  {} not found", linker);
+        }
+    }
+    
+    // Final verdict
+    if llc_found && linker_found {
+        println!("✅ LLVM toolchain is available for native compilation");
+        Ok(())
+    } else {
+        println!("❌ LLVM toolchain incomplete");
+        if !llc_found {
+            println!("💡 To install LLVM tools:");
+            println!("   Ubuntu/Debian: sudo apt install llvm clang");
+            println!("   macOS: brew install llvm");
+            println!("   NixOS/devenv: Add llvm and clang to packages, then run 'direnv allow'");
+        }
+        if !linker_found {
+            println!("💡 No suitable linker found. Install clang, gcc, or ld.");
+        }
+        Err(CursedError::CompilerError("LLVM toolchain not available".to_string()))
+    }
 }
 
 /// Find the cursed binary path

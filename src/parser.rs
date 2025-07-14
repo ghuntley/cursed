@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, InterfaceStatement, MethodSignature, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, InterfaceStatement, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -2323,6 +2323,29 @@ impl Parser {
             _ => return Err(Error::Parse("Expected interface name".to_string())),
         };
         
+        // Parse optional generic type parameters
+        let type_parameters = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::LeftBracket {
+                self.parse_generic_type_parameters()?
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
+        
+        // Parse optional interface inheritance (extends clause)
+        let extends = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Colon {
+                self.advance_token(); // consume ':'
+                self.parse_interface_inheritance_list()?
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
+        
         // Expect '{'
         self.consume_token(TokenKind::LeftBrace)?;
         
@@ -2334,15 +2357,26 @@ impl Parser {
                 break;
             }
             
-            // Parse method signature
-            let method = self.parse_method_signature()?;
-            methods.push(method);
+            // Skip newlines and whitespace
+            if token.kind == TokenKind::Newline {
+                self.advance_token();
+                continue;
+            }
             
-            // Consume comma if present
-            if let Some(token) = self.current_token.as_ref() {
-                if token.kind == TokenKind::Comma {
-                    self.advance_token();
+            // Only parse method signatures that start with 'slay'
+            if token.kind == TokenKind::Slay {
+                let method = self.parse_interface_method_signature()?;
+                methods.push(method);
+                
+                // Consume comma if present
+                if let Some(token) = self.current_token.as_ref() {
+                    if token.kind == TokenKind::Comma {
+                        self.advance_token();
+                    }
                 }
+            } else {
+                // Unexpected token in interface body
+                return Err(Error::Parse(format!("Expected 'slay' keyword or '}}' in interface, found '{}'", token.lexeme)));
             }
         }
         
@@ -2351,12 +2385,124 @@ impl Parser {
         
         Ok(InterfaceStatement {
             name,
+            type_parameters,
+            extends,
             methods,
             visibility: Visibility::Public,
         })
     }
+
+    fn parse_generic_type_parameters(&mut self) -> Result<Vec<TypeParameter>> {
+        self.consume_token(TokenKind::LeftBracket)?;
+        let mut type_parameters = Vec::new();
+        
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBracket {
+                break;
+            }
+            
+            // Parse type parameter name
+            let name = match token {
+                token if token.kind == TokenKind::Identifier => {
+                    let name = token.lexeme.clone();
+                    self.advance_token();
+                    name
+                }
+                _ => return Err(Error::Parse("Expected type parameter name".to_string())),
+            };
+            
+            // Parse optional bounds (constraints)
+            let bounds = if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Colon {
+                    self.advance_token(); // consume ':'
+                    self.parse_type_bounds()?
+                } else {
+                    Vec::new()
+                }
+            } else {
+                Vec::new()
+            };
+            
+            type_parameters.push(TypeParameter { name, bounds });
+            
+            // Consume comma if present
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Comma {
+                    self.advance_token();
+                } else if token.kind != TokenKind::RightBracket {
+                    return Err(Error::Parse("Expected ',' or ']' in type parameter list".to_string()));
+                }
+            }
+        }
+        
+        self.consume_token(TokenKind::RightBracket)?;
+        Ok(type_parameters)
+    }
+
+    fn parse_type_bounds(&mut self) -> Result<Vec<String>> {
+        let mut bounds = Vec::new();
+        
+        loop {
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Identifier {
+                    bounds.push(token.lexeme.clone());
+                    self.advance_token();
+                    
+                    // Check for '+' separator for multiple bounds
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Plus {
+                            self.advance_token();
+                            continue;
+                        }
+                    }
+                }
+                break;
+            } else {
+                break;
+            }
+        }
+        
+        Ok(bounds)
+    }
+
+    fn parse_interface_inheritance_list(&mut self) -> Result<Vec<String>> {
+        let mut extends = Vec::new();
+        
+        loop {
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Identifier {
+                    extends.push(token.lexeme.clone());
+                    self.advance_token();
+                    
+                    // Check for ',' separator for multiple base interfaces
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Comma {
+                            self.advance_token();
+                            continue;
+                        }
+                    }
+                }
+                break;
+            } else {
+                break;
+            }
+        }
+        
+        Ok(extends)
+    }
     
     fn parse_method_signature(&mut self) -> Result<MethodSignature> {
+        // Check for receiver syntax: slay (receiver Type) method()
+        let receiver = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::LeftParen {
+                self.parse_method_receiver()?
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
         // Parse method name
         let name = match self.current_token.as_ref() {
             Some(token) if token.kind == TokenKind::Identifier => {
@@ -2402,9 +2548,51 @@ impl Parser {
         
         Ok(MethodSignature {
             name,
+            receiver,
             parameters,
             return_type,
         })
+    }
+
+    fn parse_method_receiver(&mut self) -> Result<Option<MethodReceiver>> {
+        self.consume_token(TokenKind::LeftParen)?;
+        
+        // Check for pointer receiver
+        let is_pointer = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Star {
+                self.advance_token();
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        
+        // Parse receiver name
+        let name = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.advance_token();
+                name
+            }
+            _ => return Err(Error::Parse("Expected receiver name".to_string())),
+        };
+        
+        // Parse receiver type
+        let receiver_type = if let Some(type_opt) = self.parse_type()? {
+            type_opt
+        } else {
+            return Err(Error::Parse("Expected receiver type".to_string()));
+        };
+        
+        self.consume_token(TokenKind::RightParen)?;
+        
+        Ok(Some(MethodReceiver {
+            name,
+            receiver_type,
+            is_pointer,
+        }))
     }
     
     fn parse_interface_method_signature(&mut self) -> Result<MethodSignature> {
@@ -2412,13 +2600,13 @@ impl Parser {
         if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::Slay) {
             return Err(Error::Parse("Expected 'slay' keyword for method".to_string()));
         }
-        self.next_token()?; // consume 'slay'
+        self.advance_token(); // consume 'slay'
         
         // Parse method name
         let name = match self.current_token.as_ref() {
             Some(token) if token.kind == TokenKind::Identifier => {
                 let name = token.lexeme.clone();
-                self.next_token()?;
+                self.advance_token();
                 name
             }
             _ => return Err(Error::Parse("Expected method name".to_string())),
@@ -2430,10 +2618,10 @@ impl Parser {
         // Parse return type (optional)
         let return_type = if let Some(token) = self.current_token.as_ref() {
             match token.kind {
-                TokenKind::Normie => { self.next_token()?; Some(Type::Normie) },
-                TokenKind::Tea => { self.next_token()?; Some(Type::Tea) },
-                TokenKind::Lit => { self.next_token()?; Some(Type::Lit) },
-                TokenKind::Sip => { self.next_token()?; Some(Type::Sip) },
+                TokenKind::Normie => { self.advance_token(); Some(Type::Normie) },
+                TokenKind::Tea => { self.advance_token(); Some(Type::Tea) },
+                TokenKind::Lit => { self.advance_token(); Some(Type::Lit) },
+                TokenKind::Sip => { self.advance_token(); Some(Type::Sip) },
                 _ => None
             }
         } else {
@@ -2442,6 +2630,7 @@ impl Parser {
         
         Ok(MethodSignature {
             name,
+            receiver: None, // Interface methods don't have receivers
             parameters,
             return_type,
         })
@@ -2452,7 +2641,7 @@ impl Parser {
         if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::LeftParen) {
             return Err(Error::Parse("Expected '(' for method parameters".to_string()));
         }
-        self.next_token()?; // consume '('
+        self.advance_token(); // consume '('
         
         let mut parameters = Vec::new();
         
@@ -2460,7 +2649,7 @@ impl Parser {
         while self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::RightParen) {
             // Skip newlines
             if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Newline) {
-                self.next_token()?;
+                self.advance_token();
                 continue;
             }
             
@@ -2468,7 +2657,7 @@ impl Parser {
             let name = match self.current_token.as_ref() {
                 Some(token) if token.kind == TokenKind::Identifier => {
                     let name = token.lexeme.clone();
-                    self.next_token()?;
+                    self.advance_token();
                     name
                 }
                 _ => return Err(Error::Parse("Expected parameter name".to_string())),
@@ -2484,7 +2673,7 @@ impl Parser {
             
             // Check for comma
             if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Comma) {
-                self.next_token()?; // consume ','
+                self.advance_token(); // consume ','
             } else {
                 break;
             }
@@ -2492,7 +2681,7 @@ impl Parser {
         
         // Expect ')'
         if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::RightParen) {
-            self.next_token()?; // consume ')'
+            self.advance_token(); // consume ')'
         }
         
         Ok(parameters)

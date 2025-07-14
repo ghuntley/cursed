@@ -1,240 +1,296 @@
-# RizzTemplate - CURSED Template Engine
+# Rizz Template Engine
 
-A powerful, pure CURSED template engine with variable interpolation, conditionals, loops, and advanced features.
+Next-generation template engine for CURSED with Gen Z enhanced APIs, comprehensive template functionality, and enterprise-grade security features.
+
+## Overview
+
+The Rizz Template Engine provides powerful template rendering capabilities with variable substitution, control flow, template inheritance, filters, and security features. Designed for modern web development with both performance and security in mind.
 
 ## Features
 
-- **Variable Interpolation**: `{{variable}}` syntax for dynamic content
-- **Conditional Rendering**: `{{if condition}}...{{endif}}` blocks
-- **Loop Processing**: `{{for item in items}}...{{endfor}}` iteration
-- **Layout Support**: Master layout templates with content injection
-- **Include System**: Template composition and reusability
-- **Validation**: Template syntax validation and error reporting
-- **Performance**: Optimized rendering with compilation support
+### Core Template Features
+- **Variable Substitution**: `{{variable}}` syntax with context management
+- **Control Flow**: `{% if %}`, `{% for %}` loops with conditional logic
+- **Template Inheritance**: `{% block %}` and `{% extends %}` for modular templates
+- **Template Includes**: `{% include %}` for reusable components
+- **Filter Pipeline**: `{{value|filter1|filter2}}` for data transformation
+- **Multiple Output Formats**: HTML, text, and JSON rendering
 
-## Quick Start
+### Security Features
+- **XSS Prevention**: Automatic HTML escaping for variables
+- **Template Validation**: Security scanning for dangerous patterns
+- **Safe Filtering**: Secure filter processing with validation
+- **Context Isolation**: Protected variable scope management
 
+### Performance Features
+- **Template Compilation**: Pre-compilation for faster rendering
+- **Optimized Parsing**: Efficient template processing
+- **Variable Caching**: Context optimization for repeated renders
+- **Filter Optimization**: Pre-compiled filter chains
+
+### Gen Z Enhanced APIs
+- **`rizz_template_no_cap()`**: HTML rendering with full features
+- **`rizz_template_fr_fr()`**: Text rendering for real talk
+- **`rizz_template_bussin()`**: High-performance optimized rendering
+- **`rizz_template_periodt()`**: Format-specific rendering with finality
+
+## Basic Usage
+
+### Variable Substitution
 ```cursed
 yeet "rizz_template"
 
-# Create a new template
-sus template RizzTemplate = rizz_template_new("Hello {{name}}!")
+sus template tea = "Hello {{name}}, welcome to {{site}}!"
+sus context rizz_template.TemplateContext = rizz_template.rizz_create_context()
+context = rizz_template.rizz_set_context(context, "name", "Chad")
+context = rizz_template.rizz_set_context(context, "site", "CURSED Lang")
 
-# Set variables
-rizz_template_set_var(&template, "name", "CURSED")
-
-# Render template
-sus result tea = rizz_template_render(&template)
-vibez.spill(result)  # Output: "Hello CURSED!"
+sus result tea = rizz_template.rizz_parse_template(template, context)
+// Output: "Hello Chad, welcome to CURSED Lang!"
 ```
 
-## Variable Interpolation
-
-Variables are enclosed in double curly braces and automatically escaped:
-
+### Conditional Rendering
 ```cursed
-sus template RizzTemplate = rizz_template_new("Welcome {{name}} to {{place}}!")
-rizz_template_set_var(&template, "name", "Developer")
-rizz_template_set_var(&template, "place", "CURSED")
-sus result tea = rizz_template_render(&template)
-# Output: "Welcome Developer to CURSED!"
+sus template tea = "{% if user_logged_in %}Welcome back, {{username}}!{% endif %}"
+sus context rizz_template.TemplateContext = rizz_template.rizz_create_context()
+context = rizz_template.rizz_set_context(context, "user_logged_in", "true")
+context = rizz_template.rizz_set_context(context, "username", "Alice")
+
+sus result tea = rizz_template.rizz_parse_template(template, context)
+// Output: "Welcome back, Alice!"
 ```
 
-## Conditional Rendering
-
-Use `{{if condition}}...{{endif}}` blocks for conditional content:
-
+### Loop Processing
 ```cursed
-sus template RizzTemplate = rizz_template_new(`
-{{if is_logged_in}}
-Welcome back, {{username}}!
-{{endif}}
-`)
+sus template tea = "{% for item in items %}{{loop.index}}: {{item}}\n{% endfor %}"
+sus context rizz_template.TemplateContext = rizz_template.rizz_create_context()
+context = rizz_template.rizz_set_context(context, "items", "product_list")
 
-rizz_template_set_var(&template, "is_logged_in", "true")
-rizz_template_set_var(&template, "username", "John")
+sus result tea = rizz_template.rizz_parse_template(template, context)
+// Output: Multiple lines with numbered items
 ```
 
-### Conditional Operators
-
-- **Variable existence**: `{{if variable}}` - true if variable exists and is not empty
-- **Equality**: `{{if variable == "value"}}` - true if variable equals value
-- **Nested conditions**: Conditions can be nested for complex logic
-
-## Loop Processing
-
-Use `{{for item in items}}...{{endfor}}` for iteration:
-
+### Filter Processing
 ```cursed
-sus template RizzTemplate = rizz_template_new(`
-Your items:
-{{for item in shopping_list}}
-- {{item}}
-{{endfor}}
-`)
+sus template tea = "{{name|upper}} - {{description|capitalize|trim}}"
+sus context rizz_template.TemplateContext = rizz_template.rizz_create_context()
+context = rizz_template.rizz_set_context(context, "name", "cursed")
+context = rizz_template.rizz_set_context(context, "description", " awesome language ")
 
-rizz_template_set_var(&template, "shopping_list", "apples,bananas,oranges")
-```
-
-## Layout Templates
-
-Create master layouts with content injection:
-
-```cursed
-sus content_template RizzTemplate = rizz_template_new("This is the main content.")
-rizz_template_set_var(&content_template, "title", "My Page")
-
-sus layout_content tea = `
-<!DOCTYPE html>
-<html>
-<head><title>{{title}}</title></head>
-<body>{{content}}</body>
-</html>
-`
-
-sus result tea = rizz_template_render_with_layout(&content_template, layout_content)
-```
-
-## Include System
-
-Include other templates for composition:
-
-```cursed
-sus main_template RizzTemplate = rizz_template_new("Header content")
-rizz_template_set_var(&main_template, "site_name", "My Site")
-
-sus header_content tea = "Welcome to {{site_name}}!"
-sus header_rendered tea = rizz_template_include(&main_template, header_content)
-```
-
-## Template Validation
-
-Validate templates before rendering:
-
-```cursed
-sus is_valid lit
-sus error_msg tea
-(is_valid, error_msg) = rizz_template_validate("Hello {{name}}!")
-
-if !is_valid {
-    vibez.spill("Template error: " + error_msg)
-}
+sus result tea = rizz_template.rizz_parse_template(template, context)
+// Output: "CURSED - Awesome language"
 ```
 
 ## Advanced Features
 
-### Template Compilation
-
-Pre-compile templates for better performance:
-
+### Template Inheritance
 ```cursed
-sus template RizzTemplate = rizz_template_new("Complex template content")
-rizz_template_compile(&template)  # Optimize for repeated rendering
+// Parent template
+sus parent tea = "<!DOCTYPE html>\n<body>\n{% block content %}Default{% endblock %}\n</body>"
+
+// Child template
+sus child tea = "{% block content %}<h1>Custom Page</h1>{% endblock %}"
+
+sus result tea = rizz_template.rizz_extend_template(child, parent, context)
 ```
 
-### Error Handling
+### Multiple Output Formats
+```cursed
+// HTML output with automatic escaping
+sus html tea = rizz_template.rizz_render_to_html(template, context)
 
-The template engine provides comprehensive error detection:
+// Plain text output
+sus text tea = rizz_template.rizz_render_to_text(template, context)
 
-- Unmatched braces: `{{variable` without closing `}}`
-- Unmatched conditionals: `{{if}}` without `{{endif}}`
-- Unmatched loops: `{{for}}` without `{{endfor}}`
-- Invalid syntax: Malformed expressions
+// JSON output with structured data
+sus json tea = rizz_template.rizz_render_to_json(template, context)
+```
 
-### Performance Optimization
+### Security Features
+```cursed
+// Validate template for security issues
+sus is_safe lit = rizz_template.rizz_validate_template(template)
 
-- **Lazy evaluation**: Variables are only interpolated when needed
-- **Caching**: Compiled templates cache parsing results
-- **Streaming**: Large templates can be processed in chunks
-- **Memory efficient**: Minimal memory allocation during rendering
+// HTML escaping for XSS prevention
+sus escaped tea = rizz_template.rizz_escape_html("<script>alert('xss')</script>")
+// Output: "&lt;script&gt;alert('xss')&lt;/script&gt;"
+```
 
 ## Template Syntax Reference
 
 ### Variables
-- `{{variable}}` - Simple variable interpolation
-- `{{  variable  }}` - Whitespace around variables is ignored
+- `{{variable}}` - Basic variable substitution
+- `{{variable|filter}}` - Variable with filter
+- `{{variable|filter1|filter2}}` - Multiple filters
 
-### Conditionals
-- `{{if condition}}...{{endif}}` - Basic conditional
-- `{{if var == "value"}}...{{endif}}` - Equality comparison
-- Nested conditions are supported
+### Control Flow
+- `{% if condition %}...{% endif %}` - Conditional blocks
+- `{% if var == value %}...{% endif %}` - Equality conditions
+- `{% for item in array %}...{% endfor %}` - Loop iteration
 
-### Loops
-- `{{for item in items}}...{{endfor}}` - Loop over comma-separated items
-- `{{item}}` - Access current loop item
-- All template variables are available inside loops
+### Template Structure
+- `{% block name %}...{% endblock %}` - Defined blocks for inheritance
+- `{% include "template" %}` - Include external templates
+- `{% extends "base" %}` - Template inheritance
 
-### Comments
-- `{{# This is a comment}}` - Comments are ignored during rendering
+### Loop Variables
+- `{{loop.index}}` - Current iteration number (1-based)
+- `{{loop.first}}` - True if first iteration
+- `{{loop.last}}` - True if last iteration
 
-## Best Practices
+## Available Filters
 
-1. **Validate templates** before production use
-2. **Compile templates** that will be rendered multiple times
-3. **Use layouts** for consistent page structure
-4. **Separate concerns** with includes for reusable components
-5. **Handle errors** gracefully in production code
+### Text Transformation
+- `upper` - Convert to uppercase
+- `lower` - Convert to lowercase
+- `capitalize` - Capitalize first letter
+- `reverse` - Reverse string
+- `trim` - Remove whitespace
 
-## Example: Complete Web Page
+### Encoding Filters
+- `escape` - HTML escape for security
+- `url_encode` - URL encoding
+- `base64` - Base64 encoding
+
+### Utility Filters
+- `length` - Get string length
+
+## Gen Z Enhanced APIs
+
+### `rizz_template_no_cap(template, context)`
+HTML rendering with full security features enabled. Perfect for web applications requiring XSS protection.
+
+### `rizz_template_fr_fr(template, vibes)`
+Text rendering for honest, straightforward output. No HTML escaping, pure text results.
+
+### `rizz_template_bussin(template, context)`
+High-performance rendering with template compilation optimization. Best for production environments with repeated template usage.
+
+### `rizz_template_periodt(template, context, format)`
+Format-specific rendering with explicit output control. Supports "html", "text", and "json" formats.
+
+## Context Management
+
+### Basic Context Operations
+```cursed
+// Create empty context
+sus context rizz_template.TemplateContext = rizz_template.rizz_create_context()
+
+// Set variables
+context = rizz_template.rizz_set_context(context, "key", "value")
+
+// Merge contexts
+sus merged rizz_template.TemplateContext = rizz_template.rizz_merge_contexts(base, overlay)
+```
+
+## Security Best Practices
+
+1. **Always validate templates** before rendering with `rizz_validate_template()`
+2. **Use HTML escaping** for web output with `rizz_render_to_html()`
+3. **Sanitize user input** before adding to template context
+4. **Avoid dynamic template generation** from untrusted sources
+5. **Use strict mode** in production environments
+
+## Performance Optimization
+
+### Template Compilation
+```cursed
+// Pre-compile templates for better performance
+sus compiled tea = rizz_template.rizz_compile_template(template)
+sus result tea = rizz_template.rizz_parse_template(compiled, context)
+```
+
+### Configuration Options
+```cursed
+sus config rizz_template.TemplateConfig = rizz_template.TemplateConfig{
+    escape_html: based,    // Enable HTML escaping
+    strict_mode: based,    // Enable strict variable checking
+    max_depth: 10,         // Maximum nesting depth
+    output_format: "html"  // Default output format
+}
+```
+
+## Debugging and Development
+
+### Template Debugging
+```cursed
+// Get detailed debug information
+sus debug_output tea = rizz_template.rizz_debug_template(template, context)
+// Includes template source, context variables, and security status
+```
+
+### Error Handling
+The template engine handles errors gracefully:
+- Missing variables render as empty strings
+- Invalid syntax is ignored with fallback content
+- Security violations prevent rendering
+
+## Example: Complete Web Template
 
 ```cursed
-sus page_template RizzTemplate = rizz_template_new(`
-{{if user_logged_in}}
-<div class="user-info">
-  <h2>Welcome, {{username}}!</h2>
-  {{if is_admin}}
-  <p>Admin Panel: <a href="/admin">Manage Site</a></p>
-  {{endif}}
-</div>
-{{endif}}
+yeet "rizz_template"
 
-<div class="content">
-  <h1>{{page_title}}</h1>
-  <p>{{page_content}}</p>
-  
-  {{if show_items}}
-  <ul>
-  {{for item in items}}
-    <li>{{item}}</li>
-  {{endfor}}
-  </ul>
-  {{endif}}
-</div>
-`)
+// Define template with inheritance and filters
+sus base_template tea = `
+<!DOCTYPE html>
+<html>
+<head><title>{{title|escape}}</title></head>
+<body>
+{% block content %}Default content{% endblock %}
+</body>
+</html>`
 
-# Set all variables
-rizz_template_set_var(&page_template, "user_logged_in", "true")
-rizz_template_set_var(&page_template, "username", "John Doe")
-rizz_template_set_var(&page_template, "is_admin", "true")
-rizz_template_set_var(&page_template, "page_title", "My Dashboard")
-rizz_template_set_var(&page_template, "page_content", "Welcome to your dashboard!")
-rizz_template_set_var(&page_template, "show_items", "true")
-rizz_template_set_var(&page_template, "items", "Task 1,Task 2,Task 3")
+sus page_template tea = `
+{% block content %}
+<h1>{{page_title|capitalize}}</h1>
+{% if user_logged_in %}
+    <p>Welcome, {{username|escape}}!</p>
+    {% for item in recent_items %}
+        <li>{{loop.index}}: {{item|escape}}</li>
+    {% endfor %}
+{% endif %}
+{% endblock %}`
 
-sus final_page tea = rizz_template_render(&page_template)
+// Create context with all variables
+sus context rizz_template.TemplateContext = rizz_template.rizz_create_context()
+context = rizz_template.rizz_set_context(context, "title", "My Website")
+context = rizz_template.rizz_set_context(context, "page_title", "dashboard")
+context = rizz_template.rizz_set_context(context, "user_logged_in", "true")
+context = rizz_template.rizz_set_context(context, "username", "Alice")
+context = rizz_template.rizz_set_context(context, "recent_items", "user_data")
+
+// Render with inheritance
+sus final_page tea = rizz_template.rizz_extend_template(page_template, base_template, context)
+
+// Output secure HTML
 vibez.spill(final_page)
 ```
 
 ## Testing
 
 Run the comprehensive test suite:
-
 ```bash
 cargo run --bin cursed stdlib/rizz_template/test_rizz_template.csd
 ```
 
-The test suite covers:
-- ✅ Basic template creation and rendering
-- ✅ Variable interpolation and management
-- ✅ Conditional rendering (true/false cases)
-- ✅ Loop processing with multiple items
-- ✅ Complex templates with all features
-- ✅ Template validation and error handling
-- ✅ Layout rendering and includes
-- ✅ Helper functions and utilities
-- ✅ Edge cases and error conditions
-- ✅ Performance testing
+The test suite includes:
+- Variable substitution testing
+- Security validation (XSS prevention)
+- Control flow verification
+- Filter pipeline testing
+- Template inheritance validation
+- Multiple output format testing
+- Gen Z API verification
+- Performance optimization testing
+
+## Integration
+
+The Rizz Template Engine integrates seamlessly with other CURSED stdlib modules:
+- **stringz**: String manipulation and processing
+- **encode_mood**: Encoding and security functions
+- **json**: JSON output formatting
+- **testz**: Comprehensive testing framework
 
 ## License
 
-Part of the CURSED standard library - Pure CURSED implementation without external dependencies.
+Part of the CURSED programming language standard library. Follow the same license terms as the main CURSED project.

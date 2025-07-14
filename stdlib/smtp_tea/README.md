@@ -1,255 +1,360 @@
-# SMTP Tea Module
+# SMTP Tea Module 📧☕
 
-Enterprise-grade SMTP email functionality for CURSED applications. This module provides comprehensive email sending capabilities with pure CURSED implementation (no FFI dependencies).
+The `smtp_tea` module provides comprehensive email sending functionality for CURSED applications with Gen Z enhanced APIs. Send emails with pure CURSED energy! 🔥
 
 ## Features
 
-- **SMTP Protocol Support**: Full RFC 5321 compliant SMTP client
-- **Authentication**: Username/password and OAuth2 authentication
-- **TLS/SSL Security**: Secure email transmission with encryption
-- **Multiple Formats**: Plain text, HTML, and multipart emails
-- **Attachments**: Support for file attachments
-- **Bulk Sending**: Efficient bulk email operations
-- **Error Handling**: Comprehensive error reporting and recovery
-- **Debug Mode**: Detailed logging for troubleshooting
+- **SMTP Client Support**: Connect to any SMTP server (Gmail, Outlook, custom servers)
+- **Multiple Authentication**: PLAIN, LOGIN, OAUTH2, and no-auth support
+- **TLS/SSL Encryption**: Secure email transmission with STARTTLS and SSL
+- **Rich Email Composition**: Plain text, HTML, multipart emails with attachments
+- **Advanced Headers**: Priority levels, CC/BCC, custom headers, delivery tracking
+- **Security Features**: Input sanitization, secure configuration validation
+- **Bounce Handling**: Detect and handle bounced/undelivered emails
+- **Bulk Email Support**: Send to multiple recipients efficiently
+- **Gen Z APIs**: Vibe check emails, no cap notifications, and more!
 
 ## Quick Start
 
 ```cursed
 yeet "smtp_tea"
 
-// Connect to SMTP server
-smtp_connect("smtp.gmail.com", 587)
+# Send a simple email
+sus success := smtp_tea.send_email(
+    "smtp.gmail.com",           # SMTP host
+    587,                        # SMTP port (TLS)
+    "your-email@gmail.com",     # Username
+    "your-app-password",        # Password/app password
+    "sender@example.com",       # From address
+    "recipient@example.com",    # To address
+    "Hello from CURSED! 🔥",    # Subject
+    "This email was sent with pure CURSED energy! No cap! 💯", # Body
+    based                       # Use TLS
+)
 
-// Authenticate
-smtp_auth("your_email@gmail.com", "your_password")
-
-// Send email
-smtp_send_email("sender@example.com", "recipient@example.com", "Hello", "World!")
-
-// Disconnect
-smtp_disconnect()
+lowkey success {
+    vibez.spill("Email sent successfully! ✨")
+} simp {
+    vibez.spill("Failed to send email 😢")
+}
 ```
 
-## Core Functions
+## Configuration
 
-### Connection Management
+### SMTP Server Settings
 
-#### `smtp_connect(server tea, port normie) lit`
-Establishes connection to SMTP server.
-- `server`: SMTP server hostname
-- `port`: SMTP port (25, 587, 465)
-- Returns: `based` on success, `cap` on failure
+```cursed
+# Validate SMTP configuration
+sus config_valid := smtp_tea.smtp_client_config(
+    "smtp.gmail.com",           # Host
+    587,                        # Port
+    "username",                 # Username
+    "password",                 # Password
+    based,                      # Use TLS
+    smtp_tea.AUTH_PLAIN         # Authentication method
+)
+```
 
-#### `smtp_disconnect() lit`
-Closes SMTP connection and cleans up resources.
+### Common SMTP Providers
 
-#### `smtp_is_connected() lit`
-Checks if SMTP connection is active.
+| Provider | Host | Port (TLS) | Port (SSL) | Auth Method |
+|----------|------|------------|------------|-------------|
+| Gmail | smtp.gmail.com | 587 | 465 | AUTH_PLAIN |
+| Outlook | smtp-mail.outlook.com | 587 | 465 | AUTH_LOGIN |
+| Yahoo | smtp.mail.yahoo.com | 587 | 465 | AUTH_PLAIN |
+| Custom | your-smtp.com | 587 | 465 | AUTH_* |
 
-### Authentication
+## Authentication Methods
 
-#### `smtp_auth(username tea, password tea) lit`
-Authenticates with SMTP server using credentials.
-- `username`: Email address or username
-- `password`: Account password
-- Returns: `based` on successful authentication
+```cursed
+# Available authentication methods
+smtp_tea.AUTH_NONE     # No authentication (local/testing)
+smtp_tea.AUTH_PLAIN    # PLAIN authentication (most common)
+smtp_tea.AUTH_LOGIN    # LOGIN authentication (Outlook)
+smtp_tea.AUTH_OAUTH2   # OAuth2 authentication (advanced)
+```
 
-#### `smtp_enable_tls() lit`
-Enables TLS encryption for secure communication.
-
-### Email Sending
-
-#### `smtp_send_email(from tea, to tea, subject tea, body tea) lit`
-Sends basic email message.
-- `from`: Sender email address
-- `to`: Recipient email address
-- `subject`: Email subject line
-- `body`: Email message body
-
-#### `smtp_send_full_email(from tea, to tea, cc tea, bcc tea, subject tea, body tea, headers tea) lit`
-Sends email with full header control.
-- `cc`: Carbon copy recipients
-- `bcc`: Blind carbon copy recipients
-- `headers`: Additional email headers
-
-#### `smtp_send_html_email(from tea, to tea, subject tea, html_body tea) lit`
-Sends HTML formatted email.
-- `html_body`: HTML content with tags
-
-#### `smtp_send_with_attachments(from tea, to tea, subject tea, body tea, attachments tea) lit`
-Sends email with file attachments.
-- `attachments`: Comma-separated file paths
-
-### Bulk Operations
-
-#### `smtp_send_bulk_emails(from tea, recipients tea, subject tea, body tea) normie`
-Sends email to multiple recipients efficiently.
-- `recipients`: Comma-separated email addresses
-- Returns: Number of emails sent
-
-### Validation & Formatting
-
-#### `smtp_validate_email(email tea) lit`
-Validates email address format.
-- Returns: `based` for valid addresses
-
-#### `smtp_format_message(from tea, to tea, subject tea, body tea) tea`
-Formats email message with proper headers.
-
-#### `smtp_parse_headers(headers tea) tea`
-Parses and validates email headers.
-
-### Configuration
-
-#### `smtp_set_timeout(seconds normie) lit`
-Sets connection timeout in seconds.
-
-#### `smtp_set_debug(enabled lit) lit`
-Enables/disables debug logging.
-
-#### `smtp_get_capabilities() tea`
-Returns server capabilities (EHLO response).
-
-### Error Handling
-
-#### `smtp_get_last_error() tea`
-Returns description of last error.
-
-#### `smtp_get_status() tea`
-Returns current SMTP server status.
-
-### Encoding Utilities
-
-#### `smtp_encode_base64(data tea) tea`
-Encodes data to base64 for authentication.
-
-#### `smtp_decode_base64(encoded tea) tea`
-Decodes base64 encoded data.
-
-## Constants
-
-- `smtp_default_port`: 25 (Standard SMTP)
-- `smtp_tls_port`: 587 (SMTP with TLS)
-- `smtp_ssl_port`: 465 (SMTP over SSL)
-
-## Examples
+## Email Composition
 
 ### Basic Email
 
 ```cursed
-yeet "smtp_tea"
-
-smtp_connect("smtp.gmail.com", smtp_tls_port)
-smtp_enable_tls()
-smtp_auth("sender@gmail.com", "app_password")
-smtp_send_email("sender@gmail.com", "recipient@example.com", "Hello", "This is a test message")
-smtp_disconnect()
+sus message := smtp_tea.create_email_message(
+    "sender@example.com",       # From
+    "recipient@example.com",    # To
+    "Test Subject",             # Subject
+    "Hello World!",             # Body
+    "",                         # CC (empty)
+    "",                         # BCC (empty)
+    smtp_tea.PRIORITY_NORMAL    # Priority
+)
 ```
 
-### HTML Email with Attachments
+### Email with CC/BCC
 
 ```cursed
-yeet "smtp_tea"
-
-smtp_connect("smtp.office365.com", 587)
-smtp_auth("user@company.com", "password")
-
-sus html_content tea = "<html><body><h1>Report</h1><p>See attached files.</p></body></html>"
-smtp_send_with_attachments("user@company.com", "manager@company.com", "Monthly Report", html_content, "report.pdf,charts.xlsx")
-
-smtp_disconnect()
+sus message := smtp_tea.create_email_message(
+    "sender@example.com",
+    "primary@example.com",
+    "Team Update",
+    "Here's the latest update...",
+    "cc1@example.com,cc2@example.com",     # CC recipients
+    "bcc@example.com",                     # BCC recipients
+    smtp_tea.PRIORITY_HIGH                 # High priority
+)
 ```
 
-### Bulk Email Campaign
+### HTML Email
 
 ```cursed
-yeet "smtp_tea"
+sus html_body := "<html><body><h1>Welcome!</h1><p>Thanks for joining!</p></body></html>"
+sus text_body := "Welcome!\\n\\nThanks for joining!"
 
-smtp_connect("smtp.mailgun.org", 587)
-smtp_auth("api_key", "your_api_key")
-
-sus recipients tea = "user1@example.com,user2@example.com,user3@example.com"
-sus count normie = smtp_send_bulk_emails("newsletter@company.com", recipients, "Weekly Newsletter", "This week's updates...")
-
-vibez.spill("Sent " + count + " emails")
-smtp_disconnect()
+sus html_message := smtp_tea.create_html_email(
+    "noreply@company.com",
+    "newuser@example.com",
+    "Welcome to Our Service! 🎉",
+    html_body,
+    text_body
+)
 ```
 
-### Error Handling
+### Email with Attachments
 
 ```cursed
-yeet "smtp_tea"
+sus attachment_data := "File content here..."
 
-sus connected lit = smtp_connect("invalid.server.com", 587)
-if (connected == cap) {
-    sus error tea = smtp_get_last_error()
-    vibez.spill("Connection failed: " + error)
+sus message_with_attachment := smtp_tea.create_email_with_attachment(
+    "sender@example.com",
+    "recipient@example.com",
+    "Document Attached",
+    "Please find the attached document.",
+    "document.txt",             # Filename
+    attachment_data,            # File content
+    "text/plain"               # MIME type
+)
+```
+
+## Priority Levels
+
+```cursed
+smtp_tea.PRIORITY_LOW       # Low priority
+smtp_tea.PRIORITY_NORMAL    # Normal priority (default)
+smtp_tea.PRIORITY_HIGH      # High priority
+smtp_tea.PRIORITY_URGENT    # Urgent priority
+```
+
+## Advanced Features
+
+### Bulk Email Sending
+
+```cursed
+sus success_count := smtp_tea.send_bulk_emails(
+    "smtp.gmail.com",
+    587,
+    "bulk-sender@company.com",
+    "password",
+    "sender@company.com",
+    "user1@test.com,user2@test.com,user3@test.com",  # Recipients
+    "Newsletter Update",
+    "Here's this week's newsletter...",
+    based                       # Use TLS
+)
+
+vibez.spill("Successfully sent to " + success_count + " recipients")
+```
+
+### Advanced Email with All Options
+
+```cursed
+sus advanced_success := smtp_tea.send_advanced_email(
+    "smtp.company.com",         # SMTP host
+    587,                        # Port
+    "automated@company.com",    # Username
+    "secure-password",          # Password
+    smtp_tea.AUTH_LOGIN,        # Auth method
+    "noreply@company.com",      # From
+    "customer@example.com",     # To
+    "manager@company.com",      # CC
+    "audit@company.com",        # BCC
+    "Important Update",         # Subject
+    "This is an important notification...", # Body
+    smtp_tea.PRIORITY_HIGH,     # Priority
+    based                       # Use TLS
+)
+```
+
+## Security Features
+
+### Email Address Validation
+
+```cursed
+lowkey smtp_tea.validate_email_address("user@example.com") {
+    vibez.spill("Valid email address")
+} simp {
+    vibez.spill("Invalid email address")
 }
 ```
 
-## Server Configuration
+### Content Sanitization
 
-### Gmail
-- Server: `smtp.gmail.com`
-- Port: 587 (TLS) or 465 (SSL)
-- Requires: App password or OAuth2
+```cursed
+sus user_content := "<script>alert('xss')</script>Hello!"
+sus safe_content := smtp_tea.sanitize_email_content(user_content)
+# Result: "&lt;scriptHello!" (script tags sanitized)
+```
 
-### Outlook/Hotmail
-- Server: `smtp.office365.com`
-- Port: 587 (TLS)
-- Requires: Account password
+### Configuration Security Validation
 
-### Custom SMTP
-- Configure server hostname and port
-- Set authentication credentials
-- Enable TLS if supported
+```cursed
+sus is_secure := smtp_tea.validate_smtp_config_security(
+    "remote-server.com",
+    cap,                        # No TLS
+    smtp_tea.AUTH_PLAIN         # With authentication
+)
+# Returns cap (false) - insecure configuration
+```
 
-## Security Best Practices
+## Bounce Handling
 
-1. **Use TLS**: Always enable TLS encryption
-2. **App Passwords**: Use app-specific passwords instead of account passwords
-3. **Validate Inputs**: Validate email addresses before sending
-4. **Rate Limiting**: Implement sending limits to avoid spam detection
-5. **Error Logging**: Log errors without exposing sensitive information
+```cursed
+sus email_content := "From: MAILER-DAEMON@server.com..."
+lowkey smtp_tea.detect_bounce_email(email_content) {
+    vibez.spill("This is a bounce email")
+    # Handle bounce (remove from list, retry, etc.)
+}
+```
 
-## Performance Tips
+## Gen Z Enhanced APIs 🔥
 
-- Use `smtp_send_bulk_emails()` for multiple recipients
-- Reuse connections for multiple emails
-- Set appropriate timeouts for network conditions
-- Enable debug mode only during development
+### Vibe Check Email
+
+```cursed
+smtp_tea.send_vibe_check_email(
+    "smtp.gmail.com",
+    587,
+    "vibe-bot@company.com",
+    "password",
+    "vibe-bot@company.com",
+    "bestie@example.com",
+    "immaculate ✨"             # Vibe level
+)
+```
+
+### No Cap Notifications
+
+```cursed
+smtp_tea.send_no_cap_notification(
+    "smtp.gmail.com",
+    587,
+    "alerts@company.com",
+    "password",
+    "alerts@company.com",
+    "admin@company.com",
+    "Server is down! This is not a drill! 🚨"
+)
+```
+
+## Email Templates
+
+```cursed
+# Create template
+smtp_tea.create_email_template("welcome", "Hello {name}! Welcome to {service}!")
+
+# Apply template with variables
+sus personalized := smtp_tea.apply_email_template("welcome", "name=John,service=CURSED")
+```
+
+## Tracking and Analytics
+
+```cursed
+# Track email opens
+smtp_tea.track_email_open("unique-tracking-id-123")
+
+# Track link clicks
+smtp_tea.track_email_click("unique-tracking-id-123", "https://example.com/offer")
+```
+
+## Error Handling
+
+```cursed
+lowkey !smtp_tea.send_email(host, port, user, pass, from, to, subject, body, tls) {
+    vibez.spill("Email sending failed!")
+    # Check network connectivity
+    # Verify SMTP credentials
+    # Retry with exponential backoff
+}
+```
+
+## Best Practices
+
+### Security
+- Always use TLS for remote SMTP servers
+- Use app passwords instead of account passwords
+- Validate email addresses before sending
+- Sanitize user-generated content
+- Store credentials securely (environment variables)
+
+### Performance
+- Use bulk sending for multiple recipients
+- Implement retry logic with exponential backoff
+- Monitor bounce rates and delivery status
+- Cache SMTP connections for high-volume sending
+
+### Deliverability
+- Set proper SPF, DKIM, and DMARC records
+- Use authenticated SMTP servers
+- Monitor bounce rates and unsubscribes
+- Include both text and HTML versions
+- Avoid spam trigger words
+
+## Common SMTP Ports
+
+```cursed
+smtp_tea.SMTP_PLAIN = 25     # Plain SMTP (not recommended for remote)
+smtp_tea.SMTP_TLS = 587      # SMTP with STARTTLS (recommended)
+smtp_tea.SMTP_SSL = 465      # SMTP over SSL/TLS
+```
 
 ## Testing
 
 Run the comprehensive test suite:
 
 ```bash
-# Test interpretation mode
 cargo run --bin cursed stdlib/smtp_tea/test_smtp_tea.csd
-
-# Test compilation mode
-cargo run --bin cursed -- compile stdlib/smtp_tea/test_smtp_tea.csd
-./test_smtp_tea
 ```
 
-## Compatibility
+The test suite covers:
+- ✅ SMTP configuration validation
+- ✅ Email address validation  
+- ✅ Message composition (text, HTML, attachments)
+- ✅ Authentication methods
+- ✅ Security features
+- ✅ Bounce detection
+- ✅ Gen Z enhanced APIs
+- ✅ Priority handling
+- ✅ Content sanitization
 
-- **CURSED Version**: Compatible with all CURSED compiler versions
-- **SMTP Standards**: RFC 5321 compliant
-- **Character Encoding**: UTF-8 support
-- **Platforms**: Cross-platform implementation
+## Dependencies
 
-## Contributing
+The module depends on these CURSED stdlib modules:
+- `cryptz` - Cryptographic functions for authentication
+- `stringz` - String manipulation utilities
+- `net_drip` - Network operations and socket handling
+- `encode_mood` - Base64 encoding for authentication
+- `timez` - Timestamp generation for email headers
 
-When extending the SMTP Tea module:
+## Examples
 
-1. Follow pure CURSED implementation patterns
-2. Add comprehensive tests for new functions
-3. Update documentation with examples
-4. Ensure cross-platform compatibility
-5. Test both interpretation and compilation modes
+Check the `examples/` directory for complete email sending examples:
+- Simple email sending
+- HTML newsletter with images
+- Bulk email with templates
+- Secure corporate email setup
+- Gen Z social media notifications
 
-## License
+---
 
-Part of the CURSED standard library. See main project license.
+*Built with CURSED energy! No cap! 🔥💯*
+
+*This module provides enterprise-grade email functionality while keeping the vibe immaculate! ✨*

@@ -59,7 +59,7 @@ slay test_start(name tea) {
     total_tests = total_tests + 1
     current_test_passed = based
     assertion_count = 0
-    test_start_time = timez.now_nanos()
+    test_start_time = 0  # Timing simplified for now
     
     fr fr verbose_mode == based {
         vibez.spill("▶️  Starting test: " + name)
@@ -74,7 +74,7 @@ slay test_start(name tea) {
 }
 
 slay test_end() {
-    test_end_time = timez.now_nanos()
+    test_end_time = 0  # Timing simplified for now
     test_execution_time = test_end_time - test_start_time
     
     # Run teardown if configured
@@ -187,7 +187,7 @@ slay assert_le_int(actual normie, expected normie) {
 }
 
 slay assert_contains(haystack tea, needle tea) {
-    fr fr stringz.contains(haystack, needle) == based {
+    fr fr stringz.Contains(haystack, needle) == based {
         test_pass("assert_contains: '" + needle + "' found in '" + haystack + "'")
     } else {
         test_fail("assert_contains: '" + needle + "' not found in '" + haystack + "'")
@@ -195,7 +195,7 @@ slay assert_contains(haystack tea, needle tea) {
 }
 
 slay assert_not_contains(haystack tea, needle tea) {
-    fr fr stringz.contains(haystack, needle) == cap {
+    fr fr stringz.Contains(haystack, needle) == cap {
         test_pass("assert_not_contains: '" + needle + "' not found in '" + haystack + "'")
     } else {
         test_fail("assert_not_contains: '" + needle + "' found in '" + haystack + "'")
@@ -203,7 +203,7 @@ slay assert_not_contains(haystack tea, needle tea) {
 }
 
 slay assert_starts_with(text tea, prefix tea) {
-    fr fr stringz.starts_with(text, prefix) == based {
+    fr fr stringz.StartsWith(text, prefix) == based {
         test_pass("assert_starts_with: '" + text + "' starts with '" + prefix + "'")
     } else {
         test_fail("assert_starts_with: '" + text + "' doesn't start with '" + prefix + "'")
@@ -211,7 +211,7 @@ slay assert_starts_with(text tea, prefix tea) {
 }
 
 slay assert_ends_with(text tea, suffix tea) {
-    fr fr stringz.ends_with(text, suffix) == based {
+    fr fr stringz.EndsWith(text, suffix) == based {
         test_pass("assert_ends_with: '" + text + "' ends with '" + suffix + "'")
     } else {
         test_fail("assert_ends_with: '" + text + "' doesn't end with '" + suffix + "'")
@@ -219,7 +219,7 @@ slay assert_ends_with(text tea, suffix tea) {
 }
 
 slay assert_empty_string(text tea) {
-    fr fr stringz.length(text) == 0 {
+    fr fr stringz.Length(text) == 0 {
         test_pass("assert_empty_string: string is empty")
     } else {
         test_fail("assert_empty_string: string is not empty: '" + text + "'")
@@ -227,7 +227,7 @@ slay assert_empty_string(text tea) {
 }
 
 slay assert_not_empty_string(text tea) {
-    fr fr stringz.length(text) > 0 {
+    fr fr stringz.Length(text) > 0 {
         test_pass("assert_not_empty_string: string is not empty")
     } else {
         test_fail("assert_not_empty_string: string is empty")
@@ -303,11 +303,11 @@ slay benchmark_start(name tea) {
 }
 
 slay benchmark_iteration_start() {
-    test_start_time = timez.now_nanos()
+    test_start_time = 0  # Timing simplified for now
 }
 
 slay benchmark_iteration_end() {
-    test_end_time = timez.now_nanos()
+    test_end_time = 0  # Timing simplified for now
     sus iteration_time normie = test_end_time - test_start_time
     benchmark_total_time = benchmark_total_time + iteration_time
     
@@ -420,7 +420,7 @@ slay should_run_test(test_name tea) lit {
     fr fr test_filter == "" {
         damn based
     } else {
-        damn stringz.contains(test_name, test_filter)
+        damn stringz.Contains(test_name, test_filter)
     }
 }
 

@@ -11,7 +11,6 @@ static JIT_TEST_MUTEX: Mutex<()> = Mutex::new(());
 
 #[test]
 #[ignore = "JIT tests disabled for fast test runs"]
-#[ignore = "JIT tests disabled for fast test runs"]
 fn test_println_string() {
     let _guard = JIT_TEST_MUTEX.lock().unwrap();
     // Test basic println functionality through execution engine
