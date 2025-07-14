@@ -36,6 +36,7 @@ pub mod gc_integration;
 pub mod goroutine;
 pub mod ipc;
 pub mod jit_compilation;
+pub mod jit_compilation_stabilized;
 pub mod jit_engine;
 pub mod lto_integration;
 pub mod osr;

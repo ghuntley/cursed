@@ -138,7 +138,36 @@ impl ChannelCodegen {
             received_value_reg, value_ptr_reg
         ));
         
-        // TODO: Add error checking based on recv_result_reg
+        // Add error checking based on recv_result_reg
+        let success_label = format!("recv_success_{}", channel_result_reg);
+        let error_label = format!("recv_error_{}", channel_result_reg);
+        let end_label = format!("recv_end_{}", channel_result_reg);
+        
+        ir_code.push_str(&format!(
+            "  {} = icmp eq i32 {}, 0\n",
+            format!("%recv_check_{}", channel_result_reg), recv_result_reg
+        ));
+        
+        ir_code.push_str(&format!(
+            "  br i1 %recv_check_{}, label %{}, label %{}\n",
+            channel_result_reg, success_label, error_label
+        ));
+        
+        // Error handling block
+        ir_code.push_str(&format!("{}:\n", error_label));
+        ir_code.push_str(&format!(
+            "  call void @cursed_channel_error(i32 {})\n",
+            recv_result_reg
+        ));
+        ir_code.push_str(&format!("  br label %{}\n", end_label));
+        
+        // Success block
+        ir_code.push_str(&format!("{}:\n", success_label));
+        ir_code.push_str(&format!("  ; Channel receive successful\n"));
+        ir_code.push_str(&format!("  br label %{}\n", end_label));
+        
+        // End block
+        ir_code.push_str(&format!("{}:\n", end_label));
         
         Ok(ir_code)
     }

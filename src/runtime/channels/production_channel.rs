@@ -853,7 +853,10 @@ mod tests {
         
         match receiver.receive() {
             ReceiveResult::Received(value) => assert_eq!(value, 42),
-            _ => panic!("Expected to receive value"),
+            other => {
+                eprintln!("Expected to receive value, got {:?} - test failed gracefully", other);
+                assert!(false, "Expected to receive value");
+            },
         }
     }
 
@@ -871,7 +874,10 @@ mod tests {
         // High priority should come first
         match receiver.receive() {
             ReceiveResult::Received(value) => assert_eq!(value, 2),
-            _ => panic!("Expected to receive high priority message"),
+            other => {
+                eprintln!("Expected to receive high priority message, got {:?} - test failed gracefully", other);
+                assert!(false, "Expected to receive high priority message");
+            },
         }
     }
 
@@ -886,13 +892,19 @@ mod tests {
         // Should be full now
         match sender.send(3) {
             SendResult::WouldBlock(_) => {},
-            _ => panic!("Expected send to block"),
+            other => {
+                eprintln!("Expected send to block, got {:?} - test failed gracefully", other);
+                assert!(false, "Expected send to block");
+            },
         }
         
         // Receive one message
         match receiver.receive() {
             ReceiveResult::Received(value) => assert_eq!(value, 1),
-            _ => panic!("Expected to receive value"),
+            other => {
+                eprintln!("Expected to receive value, got {:?} - test failed gracefully", other);
+                assert!(false, "Expected to receive value");
+            },
         }
         
         // Now should be able to send again
@@ -934,7 +946,10 @@ mod tests {
         // Next send should trigger backpressure
         match sender.send(5) {
             SendResult::WouldBlock(_) => {},
-            _ => panic!("Expected backpressure to trigger"),
+            other => {
+                eprintln!("Expected backpressure to trigger, got {:?} - test failed gracefully", other);
+                assert!(false, "Expected backpressure to trigger");
+            },
         }
     }
 

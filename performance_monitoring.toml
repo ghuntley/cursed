@@ -1,0 +1,294 @@
+# Performance Monitoring Configuration for CURSED Compiler
+# Production deployment configuration for comprehensive performance visibility
+
+[monitoring]
+# Enable different monitoring components
+enable_compilation_metrics = true
+enable_runtime_metrics = true
+enable_gc_metrics = true
+enable_memory_metrics = true
+enable_performance_hooks = true
+enable_regression_detection = true
+enable_alerts = true
+enable_export = true
+
+# Monitoring intervals
+monitoring_interval_ms = 5000
+metrics_retention_hours = 24
+flush_interval_ms = 1000
+
+# Performance hooks configuration
+[performance_hooks]
+enable_function_timing = true
+enable_memory_tracking = true
+enable_goroutine_monitoring = true
+enable_channel_monitoring = true
+enable_error_tracking = true
+enable_resource_monitoring = true
+enable_hot_path_detection = true
+enable_bottleneck_analysis = true
+sampling_rate = 0.1  # 10% sampling for production
+max_call_stack_depth = 100
+metrics_buffer_size = 10000
+
+# Alert thresholds
+[alerts]
+max_compilation_time_ms = 30000    # 30 seconds
+max_memory_usage_mb = 2048         # 2GB
+max_gc_pause_time_ms = 50          # 50ms
+max_runtime_degradation_percent = 20.0  # 20%
+max_regression_threshold_percent = 10.0  # 10%
+min_throughput_ops_per_sec = 1000.0
+max_error_rate_percent = 1.0       # 1%
+
+# GC monitoring configuration
+[gc_monitoring]
+real_time_monitoring = true
+monitoring_interval_ms = 1000
+alerting = true
+logging = true
+log_file = "gc_monitor.log"
+max_log_size = 104857600  # 100MB
+metrics_collection = true
+metrics_retention_hours = 24
+performance_analysis = true
+trend_analysis = true
+auto_tuning = true
+
+# GC alert thresholds
+[gc_alerts]
+max_pause_time_ms = 50
+max_gc_overhead = 0.1        # 10%
+max_heap_utilization = 0.9   # 90%
+max_allocation_rate = 1000000000.0  # 1GB/s
+max_leak_threshold = 1000
+max_fragmentation = 0.3      # 30%
+max_collection_frequency = 60.0  # 60 collections per minute
+min_concurrent_efficiency = 0.8   # 80%
+
+# Metrics export configuration
+[export]
+format = "prometheus"  # Options: prometheus, json, influxdb, csv
+export_path = "cursed_metrics.txt"
+webhook_url = ""  # Optional webhook for metrics
+alert_email = ""  # Optional email for alerts
+
+# Prometheus export settings
+[prometheus]
+enable_labels = true
+include_system_metrics = true
+include_gc_metrics = true
+include_compilation_metrics = true
+include_runtime_metrics = true
+metric_prefix = "cursed_"
+
+# InfluxDB export settings (if using InfluxDB)
+[influxdb]
+url = "http://localhost:8086"
+database = "cursed_metrics"
+username = ""
+password = ""
+retention_policy = "autogen"
+
+# Production deployment settings
+[production]
+# Enable high-performance monitoring mode
+high_performance_mode = true
+# Reduce sampling to minimize performance impact
+production_sampling_rate = 0.05  # 5% sampling
+# Enable only critical alerts
+critical_alerts_only = false
+# Enable automatic baseline updates
+auto_baseline_updates = true
+# Enable performance regression detection
+regression_detection = true
+# Enable automatic tuning recommendations
+auto_tuning_recommendations = true
+
+# Enterprise features
+[enterprise]
+# Enable advanced analytics
+advanced_analytics = true
+# Enable predictive performance modeling
+predictive_modeling = true
+# Enable automated performance optimization
+auto_optimization = false
+# Enable custom metric definitions
+custom_metrics = true
+# Enable multi-tenant monitoring
+multi_tenant = false
+# Enable compliance reporting
+compliance_reporting = true
+
+# Logging configuration
+[logging]
+# Enable performance logging
+enable_performance_logging = true
+# Log level for performance events
+performance_log_level = "info"
+# Log file for performance events
+performance_log_file = "performance.log"
+# Maximum log file size
+max_log_file_size = 104857600  # 100MB
+# Log rotation
+log_rotation = true
+# Number of log files to keep
+log_files_to_keep = 10
+
+# Security settings
+[security]
+# Enable secure metrics transmission
+secure_transmission = true
+# Enable metrics encryption
+encrypt_metrics = false
+# Enable access control
+access_control = true
+# API key for metrics access
+api_key = ""
+# Enable audit logging
+audit_logging = true
+
+# Network configuration
+[network]
+# Enable network monitoring
+enable_network_monitoring = true
+# Network interface to monitor
+network_interface = "eth0"
+# Enable bandwidth monitoring
+bandwidth_monitoring = true
+# Enable connection tracking
+connection_tracking = true
+# Enable latency monitoring
+latency_monitoring = true
+
+# Resource monitoring
+[resources]
+# Enable CPU monitoring
+cpu_monitoring = true
+# Enable memory monitoring
+memory_monitoring = true
+# Enable disk monitoring
+disk_monitoring = true
+# Enable file descriptor monitoring
+fd_monitoring = true
+# Enable process monitoring
+process_monitoring = true
+# Enable thread monitoring
+thread_monitoring = true
+
+# Database integration (optional)
+[database]
+# Enable database metrics storage
+enable_database_storage = false
+# Database connection string
+connection_string = ""
+# Database table for metrics
+metrics_table = "cursed_metrics"
+# Database retention policy
+retention_days = 30
+# Enable automatic cleanup
+auto_cleanup = true
+
+# Notification settings
+[notifications]
+# Enable Slack notifications
+slack_webhook = ""
+# Enable email notifications
+smtp_server = ""
+smtp_port = 587
+smtp_username = ""
+smtp_password = ""
+# Enable PagerDuty integration
+pagerduty_integration_key = ""
+# Enable custom webhooks
+custom_webhooks = []
+
+# Development settings (disable in production)
+[development]
+# Enable debug logging
+debug_logging = false
+# Enable verbose metrics
+verbose_metrics = false
+# Enable experimental features
+experimental_features = false
+# Enable performance profiling
+performance_profiling = false
+# Enable memory leak detection
+memory_leak_detection = true
+# Enable deadlock detection
+deadlock_detection = true
+
+# Performance tuning
+[tuning]
+# Metrics collection thread pool size
+metrics_thread_pool_size = 4
+# Export thread pool size
+export_thread_pool_size = 2
+# Alert processing thread pool size
+alert_thread_pool_size = 2
+# Metrics buffer size
+metrics_buffer_size = 10000
+# Export buffer size
+export_buffer_size = 1000
+# Alert buffer size
+alert_buffer_size = 100
+
+# Health check configuration
+[health_check]
+# Enable health check endpoint
+enable_health_check = true
+# Health check port
+health_check_port = 8080
+# Health check path
+health_check_path = "/health"
+# Health check interval
+health_check_interval_ms = 5000
+# Enable detailed health information
+detailed_health_info = true
+
+# Metrics aggregation
+[aggregation]
+# Enable metrics aggregation
+enable_aggregation = true
+# Aggregation window size
+aggregation_window_ms = 60000  # 1 minute
+# Enable statistical aggregation
+statistical_aggregation = true
+# Enable percentile calculation
+percentile_calculation = true
+# Percentiles to calculate
+percentiles = [50, 95, 99, 99.9]
+# Enable trend analysis
+trend_analysis = true
+
+# Custom metrics (examples)
+[[custom_metrics]]
+name = "cursed_compilation_errors_total"
+type = "counter"
+description = "Total number of compilation errors"
+labels = ["module", "severity"]
+
+[[custom_metrics]]
+name = "cursed_function_execution_time"
+type = "histogram"
+description = "Function execution time in milliseconds"
+labels = ["function", "module"]
+buckets = [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
+
+[[custom_metrics]]
+name = "cursed_memory_usage_bytes"
+type = "gauge"
+description = "Current memory usage in bytes"
+labels = ["type", "pool"]
+
+[[custom_metrics]]
+name = "cursed_goroutine_count"
+type = "gauge"
+description = "Current number of active goroutines"
+labels = ["state"]
+
+[[custom_metrics]]
+name = "cursed_channel_operations_total"
+type = "counter"
+description = "Total number of channel operations"
+labels = ["operation", "channel_type"]

@@ -277,7 +277,41 @@ impl<'ctx> ProcessIpcLlvmIntegration<'ctx> {
         let success = result.try_as_basic_value().left()
             .ok_or_else(|| CursedError::CodegenError("Spawn function returned void".to_string()))?;
         
-        // TODO: Add error handling based on result value
+        // Add error handling based on result value
+        let success_int = success.into_int_value();
+        let success_cond = self.builder.build_int_compare(
+            IntPredicate::EQ,
+            success_int,
+            self.i32_type.const_int(0, false),
+            "spawn_success"
+        ).map_err(|e| CursedError::CodegenError(format!("Failed to build success comparison: {}", e)))?;
+        
+        let success_block = self.context.append_basic_block(self.current_function, "spawn_success");
+        let error_block = self.context.append_basic_block(self.current_function, "spawn_error");
+        let end_block = self.context.append_basic_block(self.current_function, "spawn_end");
+        
+        self.builder.build_conditional_branch(success_cond, success_block, error_block)
+            .map_err(|e| CursedError::CodegenError(format!("Failed to build conditional branch: {}", e)))?;
+        
+        // Error handling block
+        self.builder.position_at_end(error_block);
+        let error_msg = self.builder.build_global_string_ptr("Process spawn failed", "spawn_error_msg")
+            .map_err(|e| CursedError::CodegenError(format!("Failed to build error message: {}", e)))?;
+        
+        let panic_fn = self.get_function("cursed_panic")?;
+        self.builder.build_call(panic_fn, &[error_msg.as_pointer_value().into(), self.i64_type.const_int(18, false).into()], "panic_call")
+            .map_err(|e| CursedError::CodegenError(format!("Failed to call panic function: {}", e)))?;
+        
+        self.builder.build_unconditional_branch(end_block)
+            .map_err(|e| CursedError::CodegenError(format!("Failed to build unconditional branch: {}", e)))?;
+        
+        // Success block
+        self.builder.position_at_end(success_block);
+        self.builder.build_unconditional_branch(end_block)
+            .map_err(|e| CursedError::CodegenError(format!("Failed to build unconditional branch: {}", e)))?;
+        
+        // End block
+        self.builder.position_at_end(end_block);
         
         Ok(process_handle)
     }

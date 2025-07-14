@@ -119,7 +119,7 @@ pub struct ThreadLocalBuffer {
 }
 
 /// Heap allocation statistics
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct HeapStats {
     /// Total allocations
     pub total_allocations: u64,
@@ -150,7 +150,7 @@ pub struct HeapStats {
 }
 
 /// Statistics for a size class
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SizeClassStats {
     /// Total allocations
     pub allocations: u64,

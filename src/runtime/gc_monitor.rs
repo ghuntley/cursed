@@ -160,7 +160,7 @@ pub enum EventSeverity {
 }
 
 /// GC metrics snapshot
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GcMetricsSnapshot {
     /// Timestamp
     pub timestamp: SystemTime,
@@ -171,6 +171,7 @@ pub struct GcMetricsSnapshot {
     /// Memory statistics
     pub memory_stats: Option<MemoryStats>,
     /// Profiling statistics
+    #[serde(skip)]
     pub profiling_stats: Option<ProfilingStats>,
     /// Heap statistics
     pub heap_stats: Option<HeapStats>,
@@ -179,7 +180,7 @@ pub struct GcMetricsSnapshot {
 }
 
 /// System metrics
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SystemMetrics {
     /// CPU usage percentage
     pub cpu_usage: f64,

@@ -35,6 +35,7 @@ pub mod crypto_pki_types;
 pub mod stdlib;
 pub mod linter;
 pub mod formatter;
+pub mod metrics; // Performance monitoring and metrics collection
 // pub mod security; // Temporarily disabled due to dependency issues
 
 // Test modules  

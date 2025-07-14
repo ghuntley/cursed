@@ -91,7 +91,7 @@ impl<'ctx> RealLlvmPassManager<'ctx> {
             return Ok(None);
         }
         
-        let mut inlining_pass = InliningPass::new(self.context, self.config.inline_threshold);
+        let mut inlining_pass = InliningPass::new_with_threshold(self.context, self.config.inline_threshold);
         let result = inlining_pass.run(module)?;
         Ok(Some(result))
     }

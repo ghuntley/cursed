@@ -70,9 +70,10 @@ pub trait Visitor {
 /// 
 /// These tags help the garbage collector understand object layout
 /// and provide debugging information during collection.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Tag {
     /// Regular object instance
+    #[default]
     Object,
     /// Array or vector of objects
     Array,

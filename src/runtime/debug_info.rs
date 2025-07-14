@@ -13,7 +13,7 @@
 #![allow(non_upper_case_globals)]
 
 use crate::error::{CursedError, SourceLocation};
-use crate::debug::{DebugSymbol, DebugSymbolType};
+use crate::debug::DebugSymbol;
 use std::collections::{HashMap, BTreeMap};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};

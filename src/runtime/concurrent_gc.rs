@@ -180,7 +180,7 @@ pub struct WriteBarrierEntry {
 }
 
 /// Concurrent collection statistics
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConcurrentStats {
     /// Total concurrent collections
     pub total_concurrent_collections: u64,
