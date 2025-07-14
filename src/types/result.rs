@@ -305,6 +305,16 @@ pub mod error_patterns {
             Result::Err(Error::InvalidOptimizationLevel(msg)) => ErrorPattern::InvalidOptimizationLevelError(msg),
             Result::Err(Error::Type(msg)) => ErrorPattern::TypeError(msg),
             Result::Err(Error::Lexer(msg)) => ErrorPattern::ParseError(msg),
+            Result::Err(Error::TypeParameterMismatch { context, .. }) => ErrorPattern::TypeError(context),
+            Result::Err(Error::ConstraintViolation(msg)) => ErrorPattern::TypeError(msg),
+            Result::Err(Error::ConstraintResolutionError(msg)) => ErrorPattern::TypeError(msg),
+            Result::Err(Error::BoundViolation { reason, .. }) => ErrorPattern::TypeError(reason),
+            Result::Err(Error::RecursiveGenericInstantiation(msg)) => ErrorPattern::CompileError(msg),
+            Result::Err(Error::UnknownGenericType(msg)) => ErrorPattern::TypeError(msg),
+            Result::Err(Error::UnknownGenericFunction(msg)) => ErrorPattern::CompileError(msg),
+            Result::Err(Error::UnknownGenericStruct(msg)) => ErrorPattern::TypeError(msg),
+            Result::Err(Error::UnknownVariable(msg)) => ErrorPattern::CompileError(msg),
+            Result::Err(Error::MonomorphisationError(msg)) => ErrorPattern::CompileError(msg),
         }
     }
 

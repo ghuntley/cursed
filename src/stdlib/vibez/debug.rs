@@ -407,6 +407,7 @@ fn format_value_for_debug(value: &Value, indent: usize) -> Result<String, Cursed
         },
         Value::Binary(data) => Ok(format!("<Binary: {} bytes>", data.len())),
         Value::Function { name, arity } => Ok(format!("<Function: {}({} args)>", name, arity)),
+        Value::Interface { .. } => Ok("<Interface>".to_string()),
     }
 }
 

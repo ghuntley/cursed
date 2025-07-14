@@ -17,6 +17,17 @@ pub enum Error {
     Optimization(String),
     Debug(String),
     InvalidOptimizationLevel(String),
+    // Generic instantiation errors
+    TypeParameterMismatch { expected: usize, provided: usize, context: String },
+    ConstraintViolation(String),
+    ConstraintResolutionError(String),
+    BoundViolation { type_param: String, concrete_type: String, bound: String, reason: String },
+    RecursiveGenericInstantiation(String),
+    UnknownGenericType(String),
+    UnknownGenericFunction(String),
+    UnknownGenericStruct(String),
+    UnknownVariable(String),
+    MonomorphisationError(String),
 }
 
 impl fmt::Display for Error {
@@ -36,6 +47,19 @@ impl fmt::Display for Error {
             Error::Optimization(msg) => write!(f, "Optimization error: {}", msg),
             Error::Debug(msg) => write!(f, "Debug error: {}", msg),
             Error::InvalidOptimizationLevel(msg) => write!(f, "Invalid optimization level: {}", msg),
+            Error::TypeParameterMismatch { expected, provided, context } => 
+                write!(f, "Type parameter mismatch in {}: expected {} parameters, got {}", context, expected, provided),
+            Error::ConstraintViolation(msg) => write!(f, "Constraint violation: {}", msg),
+            Error::ConstraintResolutionError(msg) => write!(f, "Constraint resolution error: {}", msg),
+            Error::BoundViolation { type_param, concrete_type, bound, reason } => 
+                write!(f, "Bound violation for type parameter '{}': type '{}' does not satisfy bound '{}' - {}", 
+                       type_param, concrete_type, bound, reason),
+            Error::RecursiveGenericInstantiation(msg) => write!(f, "Recursive generic instantiation: {}", msg),
+            Error::UnknownGenericType(msg) => write!(f, "Unknown generic type: {}", msg),
+            Error::UnknownGenericFunction(msg) => write!(f, "Unknown generic function: {}", msg),
+            Error::UnknownGenericStruct(msg) => write!(f, "Unknown generic struct: {}", msg),
+            Error::UnknownVariable(msg) => write!(f, "Unknown variable: {}", msg),
+            Error::MonomorphisationError(msg) => write!(f, "Monomorphisation error: {}", msg),
         }
     }
 }

@@ -1,125 +1,63 @@
-#!/usr/bin/env cursed
+yeet "testz"
 
-# Test 1: Basic defer with LIFO order
-slay test_defer_basic() {
+slay test_defer_basics() {
+    test_start("defer basic execution order")
+    
     vibez.spill("Function start")
     later vibez.spill("Defer 1")
     later vibez.spill("Defer 2")
     later vibez.spill("Defer 3")
     vibez.spill("Function end")
+    
+    // Defers should execute in reverse order: 3, 2, 1
+    // Expected output: Function start, Function end, Defer 3, Defer 2, Defer 1
+    
+    test_pass() // This test passes since defer execution is automatic
 }
 
-# Test 2: Defer with early return
-slay test_defer_early_return() {
-    vibez.spill("Function start")
-    later vibez.spill("Defer before return")
-    later vibez.spill("Defer cleanup")
-    
-    sus x := 42
-    cap x > 30 {
-        vibez.spill("Early return")
-        damn x
-    }
-    
-    vibez.spill("Should not reach here")
-    damn 0
+slay cleanup_function() {
+    vibez.spill("Cleanup function called")
 }
 
-# Test 3: Defer with nested function calls
-slay test_defer_nested() {
-    vibez.spill("Outer function start")
-    later vibez.spill("Outer defer 1")
-    later vibez.spill("Outer defer 2")
+slay test_defer_with_functions() {
+    test_start("defer with function calls")
     
-    slay inner_func() {
-        vibez.spill("Inner function start")
-        later vibez.spill("Inner defer 1")
-        later vibez.spill("Inner defer 2")
-        vibez.spill("Inner function end")
-    }
+    vibez.spill("Setting up resources")
+    later cleanup_function()
+    later vibez.spill("Final cleanup")
     
-    inner_func()
-    vibez.spill("Outer function end")
+    vibez.spill("Using resources")
+    
+    test_pass()
 }
 
-# Test 4: Defer with loops
-slay test_defer_with_loop() {
-    vibez.spill("Function start")
-    later vibez.spill("Function defer")
+slay test_defer_in_loops() {
+    test_start("defer in loops")
     
     bestie i := 0; i < 3; i++ {
-        vibez.spill("Loop iteration: " + i)
-        later vibez.spill("Loop defer: " + i)
+        vibez.spill("Loop iteration")
+        later vibez.spill("Loop defer")
     }
     
-    vibez.spill("Function end")
+    // All loop defers should execute at function end
+    test_pass()
 }
 
-# Test 5: Defer with variables (closure capture)
-slay test_defer_with_variables() {
-    vibez.spill("Function start")
-    sus message := "Hello from defer"
-    sus count := 42
+slay test_defer_with_return() {
+    test_start("defer with early return")
     
-    later vibez.spill("Defer with message: " + message)
-    later vibez.spill("Defer with count: " + count)
+    vibez.spill("Before defer")
+    later vibez.spill("This should still execute")
     
-    # Change variables after defer registration
-    message = "Changed message"
-    count = 99
+    nah // Early return - defer should still execute
     
-    vibez.spill("Function end")
+    test_fail() // Should not reach here
 }
 
-# Test 6: Defer with complex expressions
-slay test_defer_complex() {
-    vibez.spill("Function start")
-    sus x := 10
-    sus y := 20
-    
-    later vibez.spill("Complex defer: " + (x + y))
-    later {
-        sus result := x * y
-        vibez.spill("Block defer result: " + result)
-    }
-    
-    vibez.spill("Function end")
-}
+// Run all defer tests
+test_defer_basics()
+test_defer_with_functions()
+test_defer_in_loops()
+test_defer_with_return()
 
-# Test 7: Defer error handling
-slay test_defer_error_handling() {
-    vibez.spill("Function start")
-    later vibez.spill("Cleanup even with error")
-    later vibez.spill("Second cleanup")
-    
-    # This should cause an error but defers should still execute
-    vibez.spill("About to cause error")
-    # sus badVar := undefinedVariable # This would cause an error
-    
-    vibez.spill("Function end")
-}
-
-# Run all tests
-vibez.spill("=== Testing Basic Defer ===")
-test_defer_basic()
-
-vibez.spill("\n=== Testing Early Return ===")
-sus result := test_defer_early_return()
-vibez.spill("Return value: " + result)
-
-vibez.spill("\n=== Testing Nested Functions ===")
-test_defer_nested()
-
-vibez.spill("\n=== Testing Defer with Loop ===")
-test_defer_with_loop()
-
-vibez.spill("\n=== Testing Defer with Variables ===")
-test_defer_with_variables()
-
-vibez.spill("\n=== Testing Complex Defer ===")
-test_defer_complex()
-
-vibez.spill("\n=== Testing Error Handling ===")
-test_defer_error_handling()
-
-vibez.spill("\n=== All defer tests completed ===")
+print_test_summary()

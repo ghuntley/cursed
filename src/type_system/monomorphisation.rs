@@ -1,0 +1,778 @@
+//! Monomorphisation pipeline for CURSED generics
+//! 
+//! This module implements the complete monomorphisation system that converts
+//! generic functions and types into concrete instances for code generation.
+
+use crate::error_types::Error as CursedError;
+use crate::ast::{Expression, Statement, FunctionDeclaration, StructDeclaration, Program};
+use crate::type_system::{TypeExpression, TypeEnvironment, GenericConstraint, ConstraintBinding};
+use crate::type_system::constraint_resolver::{ConstraintResolver, ConstraintSolution};
+use std::collections::{HashMap, HashSet};
+
+/// Main monomorphisation pipeline that generates concrete AST instances
+#[derive(Debug)]
+pub struct MonomorphisationPipeline {
+    /// Resolver for generic constraints
+    constraint_resolver: ConstraintResolver,
+    /// Cache of monomorphised instances
+    instance_cache: HashMap<String, MonomorphisedInstance>,
+    /// Track instantiated generic types/functions to prevent infinite recursion
+    instantiation_stack: Vec<String>,
+    /// Global type environment
+    type_env: TypeEnvironment,
+}
+
+/// A concrete instance generated from a generic declaration
+#[derive(Debug, Clone)]
+pub struct MonomorphisedInstance {
+    /// Unique identifier for this instance
+    pub instance_id: String,
+    /// Original generic declaration name
+    pub generic_name: String,
+    /// Concrete type arguments used for instantiation
+    pub type_arguments: Vec<TypeExpression>,
+    /// Generated concrete AST for this instance
+    pub concrete_ast: ConcreteAST,
+    /// Type constraints that were satisfied for this instance
+    pub satisfied_constraints: Vec<GenericConstraint>,
+}
+
+/// Concrete AST generated from generic templates
+#[derive(Debug, Clone)]
+pub enum ConcreteAST {
+    Function(ConcreteFunctionDeclaration),
+    Struct(ConcreteStructDeclaration),
+    Method(ConcreteMethodDeclaration),
+}
+
+/// Concrete function declaration with resolved types
+#[derive(Debug, Clone)]
+pub struct ConcreteFunctionDeclaration {
+    pub name: String,
+    pub parameters: Vec<ConcreteParameter>,
+    pub return_type: Option<TypeExpression>,
+    pub body: Vec<Statement>,
+    pub type_signature: String,
+}
+
+/// Concrete struct declaration with resolved field types
+#[derive(Debug, Clone)]
+pub struct ConcreteStructDeclaration {
+    pub name: String,
+    pub fields: Vec<ConcreteField>,
+    pub methods: Vec<ConcreteMethodDeclaration>,
+    pub type_signature: String,
+}
+
+/// Concrete method declaration
+#[derive(Debug, Clone)]
+pub struct ConcreteMethodDeclaration {
+    pub name: String,
+    pub receiver: Option<ConcreteParameter>,
+    pub parameters: Vec<ConcreteParameter>,
+    pub return_type: Option<TypeExpression>,
+    pub body: Vec<Statement>,
+}
+
+/// Parameter with concrete type
+#[derive(Debug, Clone)]
+pub struct ConcreteParameter {
+    pub name: String,
+    pub type_expr: TypeExpression,
+}
+
+/// Field with concrete type
+#[derive(Debug, Clone)]
+pub struct ConcreteField {
+    pub name: String,
+    pub type_expr: TypeExpression,
+}
+
+/// Request for monomorphisation of a generic declaration
+#[derive(Debug, Clone)]
+pub struct InstantiationRequest {
+    pub generic_name: String,
+    pub type_arguments: Vec<TypeExpression>,
+    pub constraints: Vec<GenericConstraint>,
+    pub call_site: Option<String>,
+}
+
+impl MonomorphisationPipeline {
+    pub fn new(type_env: TypeEnvironment) -> Self {
+        Self {
+            constraint_resolver: ConstraintResolver::new(),
+            instance_cache: HashMap::new(),
+            instantiation_stack: Vec::new(),
+            type_env,
+        }
+    }
+
+    /// Main entry point: generate concrete instances for all generic usage
+    pub fn monomorphise_program(&mut self, program: &Program) -> Result<MonomorphisedProgram, CursedError> {
+        let mut instantiation_requests = Vec::new();
+        
+        // Collect all generic instantiation requests from the program
+        self.collect_instantiation_requests(program, &mut instantiation_requests)?;
+        
+        // Process each request to generate concrete instances
+        let mut concrete_instances = Vec::new();
+        for request in instantiation_requests {
+            if let Some(instance) = self.instantiate_generic(&request)? {
+                concrete_instances.push(instance);
+            }
+        }
+        
+        Ok(MonomorphisedProgram {
+            original_program: program.clone(),
+            concrete_instances,
+            instantiation_map: self.build_instantiation_map(),
+        })
+    }
+
+    /// Collect all generic instantiation requests from AST nodes
+    fn collect_instantiation_requests(&self, program: &Program, requests: &mut Vec<InstantiationRequest>) -> Result<(), CursedError> {
+        // Traverse AST to find generic function calls and type instantiations
+        for statement in &program.statements {
+            self.collect_from_statement(statement, requests)?;
+        }
+        
+        for function in &program.functions {
+            self.collect_from_function(function, requests)?;
+        }
+        
+        Ok(())
+    }
+
+    /// Collect instantiation requests from statements
+    fn collect_from_statement(&self, statement: &Statement, requests: &mut Vec<InstantiationRequest>) -> Result<(), CursedError> {
+        match statement {
+            Statement::Expression(expr) => {
+                self.collect_from_expression(expr, requests)?;
+            }
+            Statement::VariableDeclaration(var_decl) => {
+                if let Some(type_expr) = &var_decl.type_annotation {
+                    if self.is_generic_instantiation(type_expr) {
+                        requests.push(InstantiationRequest {
+                            generic_name: type_expr.name.clone().unwrap_or_default(),
+                            type_arguments: type_expr.parameters.clone(),
+                            constraints: Vec::new(),
+                            call_site: Some(format!("variable:{}", var_decl.name)),
+                        });
+                    }
+                }
+                
+                if let Some(initializer) = &var_decl.initializer {
+                    self.collect_from_expression(initializer, requests)?;
+                }
+            }
+            Statement::Return(return_stmt) => {
+                if let Some(value) = &return_stmt.value {
+                    self.collect_from_expression(value, requests)?;
+                }
+            }
+            Statement::If(if_stmt) => {
+                self.collect_from_expression(&if_stmt.condition, requests)?;
+                for stmt in &if_stmt.then_body {
+                    self.collect_from_statement(stmt, requests)?;
+                }
+                if let Some(else_body) = &if_stmt.else_body {
+                    for stmt in else_body {
+                        self.collect_from_statement(stmt, requests)?;
+                    }
+                }
+            }
+            Statement::For(for_stmt) => {
+                if let Some(init) = &for_stmt.init {
+                    self.collect_from_statement(init, requests)?;
+                }
+                if let Some(condition) = &for_stmt.condition {
+                    self.collect_from_expression(condition, requests)?;
+                }
+                if let Some(update) = &for_stmt.update {
+                    self.collect_from_statement(update, requests)?;
+                }
+                for stmt in &for_stmt.body {
+                    self.collect_from_statement(stmt, requests)?;
+                }
+            }
+            _ => {} // Handle other statement types as needed
+        }
+        
+        Ok(())
+    }
+
+    /// Collect instantiation requests from expressions
+    fn collect_from_expression(&self, expression: &Expression, requests: &mut Vec<InstantiationRequest>) -> Result<(), CursedError> {
+        match expression {
+            Expression::Call(call_expr) => {
+                // Check if this is a generic function call
+                if let Expression::Identifier(func_name) = &*call_expr.function {
+                    if self.is_generic_function(func_name) {
+                        // Extract type arguments from call context
+                        let type_args = self.infer_type_arguments_from_call(call_expr)?;
+                        requests.push(InstantiationRequest {
+                            generic_name: func_name.clone(),
+                            type_arguments: type_args,
+                            constraints: self.get_function_constraints(func_name),
+                            call_site: Some(format!("call:{}", func_name)),
+                        });
+                    }
+                }
+                
+                // Recursively check arguments
+                for arg in &call_expr.arguments {
+                    self.collect_from_expression(arg, requests)?;
+                }
+            }
+            Expression::StructLiteral(struct_literal) => {
+                // Check if this is a generic struct instantiation
+                if self.is_generic_struct(&struct_literal.struct_name) {
+                    let type_args = self.infer_type_arguments_from_struct_literal(struct_literal)?;
+                    requests.push(InstantiationRequest {
+                        generic_name: struct_literal.struct_name.clone(),
+                        type_arguments: type_args,
+                        constraints: self.get_struct_constraints(&struct_literal.struct_name),
+                        call_site: Some(format!("struct:{}", struct_literal.struct_name)),
+                    });
+                }
+                
+                // Recursively check field values
+                for field in &struct_literal.fields {
+                    self.collect_from_expression(&field.value, requests)?;
+                }
+            }
+            Expression::Binary(binary_expr) => {
+                self.collect_from_expression(&binary_expr.left, requests)?;
+                self.collect_from_expression(&binary_expr.right, requests)?;
+            }
+            Expression::Unary(unary_expr) => {
+                self.collect_from_expression(&unary_expr.operand, requests)?;
+            }
+            Expression::MemberAccess(member_access) => {
+                self.collect_from_expression(&member_access.object, requests)?;
+            }
+            Expression::Index(index_expr) => {
+                self.collect_from_expression(&index_expr.object, requests)?;
+                self.collect_from_expression(&index_expr.index, requests)?;
+            }
+            _ => {} // Handle other expression types as needed
+        }
+        
+        Ok(())
+    }
+
+    /// Collect instantiation requests from function bodies
+    fn collect_from_function(&self, function: &FunctionDeclaration, requests: &mut Vec<InstantiationRequest>) -> Result<(), CursedError> {
+        for statement in &function.body {
+            self.collect_from_statement(statement, requests)?;
+        }
+        Ok(())
+    }
+
+    /// Generate a concrete instance for a generic instantiation request
+    pub fn instantiate_generic(&mut self, request: &InstantiationRequest) -> Result<Option<MonomorphisedInstance>, CursedError> {
+        let instance_key = self.generate_instance_key(request);
+        
+        // Check cache first
+        if let Some(cached_instance) = self.instance_cache.get(&instance_key) {
+            return Ok(Some(cached_instance.clone()));
+        }
+        
+        // Check for infinite recursion
+        if self.instantiation_stack.contains(&instance_key) {
+            return Err(CursedError::RecursiveGenericInstantiation(instance_key));
+        }
+        
+        self.instantiation_stack.push(instance_key.clone());
+        
+        // Resolve constraints before instantiation
+        let constraint_solution = self.resolve_constraints_for_request(request)?;
+        if !constraint_solution.is_satisfied {
+            return Err(CursedError::ConstraintViolation(
+                format!("Constraints not satisfied for {}: {:?}", 
+                       request.generic_name, constraint_solution.violations)
+            ));
+        }
+        
+        // Generate concrete instance
+        let instance = self.generate_concrete_instance(request, &constraint_solution)?;
+        
+        // Cache the result
+        self.instance_cache.insert(instance_key.clone(), instance.clone());
+        
+        // Remove from stack
+        self.instantiation_stack.pop();
+        
+        Ok(Some(instance))
+    }
+
+    /// Resolve constraints for an instantiation request
+    fn resolve_constraints_for_request(&self, request: &InstantiationRequest) -> Result<ConstraintSolution, CursedError> {
+        // Create constraint context for this instantiation
+        let mut constraint_bindings = Vec::new();
+        
+        for (i, constraint) in request.constraints.iter().enumerate() {
+            let binding = ConstraintBinding {
+                constraint: constraint.clone(),
+                bound_types: if i < request.type_arguments.len() {
+                    vec![request.type_arguments[i].name.clone().unwrap_or_default()]
+                } else {
+                    vec![]
+                },
+                satisfaction_status: crate::type_system::ConstraintStatus::Pending,
+            };
+            constraint_bindings.push(binding);
+        }
+        
+        let constraint_context = crate::type_system::ConstraintContext {
+            active_constraints: constraint_bindings,
+        };
+        
+        self.constraint_resolver.resolve_constraints(&constraint_context, &self.type_env)
+            .map_err(|e| CursedError::ConstraintResolutionError(format!("{:?}", e)))
+    }
+
+    /// Generate concrete AST instance from generic template
+    fn generate_concrete_instance(&self, request: &InstantiationRequest, solution: &ConstraintSolution) -> Result<MonomorphisedInstance, CursedError> {
+        let concrete_ast = if self.is_generic_function(&request.generic_name) {
+            self.instantiate_generic_function(request, solution)?
+        } else if self.is_generic_struct(&request.generic_name) {
+            self.instantiate_generic_struct(request, solution)?
+        } else {
+            return Err(CursedError::UnknownGenericType(request.generic_name.clone()));
+        };
+        
+        Ok(MonomorphisedInstance {
+            instance_id: self.generate_instance_key(request),
+            generic_name: request.generic_name.clone(),
+            type_arguments: request.type_arguments.clone(),
+            concrete_ast,
+            satisfied_constraints: request.constraints.clone(),
+        })
+    }
+
+    /// Instantiate a generic function with concrete types
+    fn instantiate_generic_function(&self, request: &InstantiationRequest, solution: &ConstraintSolution) -> Result<ConcreteAST, CursedError> {
+        // Get the generic function declaration
+        let generic_func = self.get_generic_function(&request.generic_name)
+            .ok_or_else(|| CursedError::UnknownGenericFunction(request.generic_name.clone()))?;
+        
+        // Apply type substitutions to create concrete function
+        let mut concrete_func = ConcreteFunctionDeclaration {
+            name: format!("{}_{}", request.generic_name, self.generate_type_suffix(&request.type_arguments)),
+            parameters: Vec::new(),
+            return_type: None,
+            body: generic_func.body.clone(),
+            type_signature: self.generate_function_signature(&request.generic_name, &request.type_arguments),
+        };
+        
+        // Substitute type parameters in function signature
+        for param in &generic_func.parameters {
+            concrete_func.parameters.push(ConcreteParameter {
+                name: param.name.clone(),
+                type_expr: self.substitute_type_parameters(&param.type_annotation, solution)?,
+            });
+        }
+        
+        if let Some(return_type) = &generic_func.return_type {
+            concrete_func.return_type = Some(self.substitute_type_parameters(return_type, solution)?);
+        }
+        
+        // Substitute type parameters in function body
+        concrete_func.body = self.substitute_types_in_statements(&generic_func.body, solution)?;
+        
+        Ok(ConcreteAST::Function(concrete_func))
+    }
+
+    /// Instantiate a generic struct with concrete types
+    fn instantiate_generic_struct(&self, request: &InstantiationRequest, solution: &ConstraintSolution) -> Result<ConcreteAST, CursedError> {
+        // Get the generic struct declaration
+        let generic_struct = self.get_generic_struct(&request.generic_name)
+            .ok_or_else(|| CursedError::UnknownGenericStruct(request.generic_name.clone()))?;
+        
+        // Apply type substitutions to create concrete struct
+        let mut concrete_struct = ConcreteStructDeclaration {
+            name: format!("{}_{}", request.generic_name, self.generate_type_suffix(&request.type_arguments)),
+            fields: Vec::new(),
+            methods: Vec::new(),
+            type_signature: self.generate_struct_signature(&request.generic_name, &request.type_arguments),
+        };
+        
+        // Substitute type parameters in struct fields
+        for field in &generic_struct.fields {
+            concrete_struct.fields.push(ConcreteField {
+                name: field.name.clone(),
+                type_expr: self.substitute_type_parameters(&field.field_type, solution)?,
+            });
+        }
+        
+        // Substitute type parameters in struct methods
+        for method in &generic_struct.methods {
+            let concrete_method = self.instantiate_generic_method(method, solution)?;
+            concrete_struct.methods.push(concrete_method);
+        }
+        
+        Ok(ConcreteAST::Struct(concrete_struct))
+    }
+
+    /// Instantiate a generic method with concrete types
+    fn instantiate_generic_method(&self, generic_method: &crate::ast::MethodDeclaration, solution: &ConstraintSolution) -> Result<ConcreteMethodDeclaration, CursedError> {
+        let mut concrete_method = ConcreteMethodDeclaration {
+            name: generic_method.name.clone(),
+            receiver: None,
+            parameters: Vec::new(),
+            return_type: None,
+            body: generic_method.body.clone(),
+        };
+        
+        // Substitute receiver type
+        if let Some(receiver) = &generic_method.receiver {
+            concrete_method.receiver = Some(ConcreteParameter {
+                name: receiver.name.clone(),
+                type_expr: self.substitute_type_parameters(&receiver.type_annotation, solution)?,
+            });
+        }
+        
+        // Substitute parameter types
+        for param in &generic_method.parameters {
+            concrete_method.parameters.push(ConcreteParameter {
+                name: param.name.clone(),
+                type_expr: self.substitute_type_parameters(&param.type_annotation, solution)?,
+            });
+        }
+        
+        // Substitute return type
+        if let Some(return_type) = &generic_method.return_type {
+            concrete_method.return_type = Some(self.substitute_type_parameters(return_type, solution)?);
+        }
+        
+        // Substitute types in method body
+        concrete_method.body = self.substitute_types_in_statements(&generic_method.body, solution)?;
+        
+        Ok(concrete_method)
+    }
+
+    /// Substitute type parameters with concrete types
+    fn substitute_type_parameters(&self, type_expr: &TypeExpression, solution: &ConstraintSolution) -> Result<TypeExpression, CursedError> {
+        if let Some(type_name) = &type_expr.name {
+            // Check if this is a type parameter that needs substitution
+            if let Some(substitution) = solution.substitutions.get(type_name) {
+                return Ok(substitution.clone());
+            }
+        }
+        
+        // Recursively substitute in type parameters
+        let mut substituted_params = Vec::new();
+        for param in &type_expr.parameters {
+            substituted_params.push(self.substitute_type_parameters(param, solution)?);
+        }
+        
+        Ok(TypeExpression {
+            name: type_expr.name.clone(),
+            parameters: substituted_params,
+            return_type: if let Some(return_type) = &type_expr.return_type {
+                Some(Box::new(self.substitute_type_parameters(return_type, solution)?))
+            } else {
+                None
+            },
+        })
+    }
+
+    /// Substitute types in statement list
+    fn substitute_types_in_statements(&self, statements: &[Statement], solution: &ConstraintSolution) -> Result<Vec<Statement>, CursedError> {
+        let mut substituted_statements = Vec::new();
+        
+        for statement in statements {
+            substituted_statements.push(self.substitute_types_in_statement(statement, solution)?);
+        }
+        
+        Ok(substituted_statements)
+    }
+
+    /// Substitute types in a single statement
+    fn substitute_types_in_statement(&self, statement: &Statement, solution: &ConstraintSolution) -> Result<Statement, CursedError> {
+        match statement {
+            Statement::VariableDeclaration(var_decl) => {
+                let mut new_var_decl = var_decl.clone();
+                if let Some(type_annotation) = &var_decl.type_annotation {
+                    new_var_decl.type_annotation = Some(self.substitute_type_parameters(type_annotation, solution)?);
+                }
+                if let Some(initializer) = &var_decl.initializer {
+                    new_var_decl.initializer = Some(self.substitute_types_in_expression(initializer, solution)?);
+                }
+                Ok(Statement::VariableDeclaration(new_var_decl))
+            }
+            Statement::Expression(expr) => {
+                Ok(Statement::Expression(self.substitute_types_in_expression(expr, solution)?))
+            }
+            Statement::Return(return_stmt) => {
+                let mut new_return = return_stmt.clone();
+                if let Some(value) = &return_stmt.value {
+                    new_return.value = Some(self.substitute_types_in_expression(value, solution)?);
+                }
+                Ok(Statement::Return(new_return))
+            }
+            // Add more statement types as needed
+            _ => Ok(statement.clone()),
+        }
+    }
+
+    /// Substitute types in an expression
+    fn substitute_types_in_expression(&self, expression: &Expression, solution: &ConstraintSolution) -> Result<Expression, CursedError> {
+        match expression {
+            Expression::Call(call_expr) => {
+                let mut new_call = call_expr.clone();
+                new_call.function = Box::new(self.substitute_types_in_expression(&call_expr.function, solution)?);
+                
+                let mut new_args = Vec::new();
+                for arg in &call_expr.arguments {
+                    new_args.push(self.substitute_types_in_expression(arg, solution)?);
+                }
+                new_call.arguments = new_args;
+                
+                Ok(Expression::Call(new_call))
+            }
+            Expression::Binary(binary_expr) => {
+                Ok(Expression::Binary(crate::ast::BinaryExpression {
+                    left: Box::new(self.substitute_types_in_expression(&binary_expr.left, solution)?),
+                    operator: binary_expr.operator.clone(),
+                    right: Box::new(self.substitute_types_in_expression(&binary_expr.right, solution)?),
+                }))
+            }
+            // Add more expression types as needed
+            _ => Ok(expression.clone()),
+        }
+    }
+
+    // Helper methods for type checking and inference
+
+    fn is_generic_instantiation(&self, type_expr: &TypeExpression) -> bool {
+        // Check if type has parameters (indicates generic instantiation)
+        !type_expr.parameters.is_empty() && self.is_generic_type(&type_expr.name.as_ref().unwrap_or(&String::new()))
+    }
+
+    fn is_generic_function(&self, name: &str) -> bool {
+        // Check if function is registered as generic in type environment
+        self.type_env.get_generic_function(name).is_some()
+    }
+
+    fn is_generic_struct(&self, name: &str) -> bool {
+        // Check if struct is registered as generic in type environment  
+        self.type_env.get_generic_struct(name).is_some()
+    }
+
+    fn is_generic_type(&self, name: &str) -> bool {
+        self.is_generic_function(name) || self.is_generic_struct(name)
+    }
+
+    fn get_generic_function(&self, name: &str) -> Option<&FunctionDeclaration> {
+        self.type_env.get_generic_function(name)
+    }
+
+    fn get_generic_struct(&self, name: &str) -> Option<&StructDeclaration> {
+        self.type_env.get_generic_struct(name)
+    }
+
+    fn get_function_constraints(&self, name: &str) -> Vec<GenericConstraint> {
+        self.type_env.get_function_constraints(name).unwrap_or_default()
+    }
+
+    fn get_struct_constraints(&self, name: &str) -> Vec<GenericConstraint> {
+        self.type_env.get_struct_constraints(name).unwrap_or_default()
+    }
+
+    fn infer_type_arguments_from_call(&self, call_expr: &crate::ast::CallExpression) -> Result<Vec<TypeExpression>, CursedError> {
+        // Simple type inference from argument types
+        let mut type_args = Vec::new();
+        
+        for arg in &call_expr.arguments {
+            let inferred_type = self.infer_expression_type(arg)?;
+            type_args.push(inferred_type);
+        }
+        
+        Ok(type_args)
+    }
+
+    fn infer_type_arguments_from_struct_literal(&self, struct_literal: &crate::ast::StructLiteral) -> Result<Vec<TypeExpression>, CursedError> {
+        // Infer from field value types
+        let mut type_args = Vec::new();
+        
+        for field in &struct_literal.fields {
+            let inferred_type = self.infer_expression_type(&field.value)?;
+            type_args.push(inferred_type);
+        }
+        
+        Ok(type_args)
+    }
+
+    fn infer_expression_type(&self, expression: &Expression) -> Result<TypeExpression, CursedError> {
+        match expression {
+            Expression::Integer(_) => Ok(TypeExpression::named("normie")),
+            Expression::String(_) => Ok(TypeExpression::named("tea")),
+            Expression::Boolean(_) => Ok(TypeExpression::named("lit")),
+            Expression::Identifier(name) => {
+                // Look up variable type in environment
+                self.type_env.get_variable_type(name)
+                    .ok_or_else(|| CursedError::UnknownVariable(name.clone()))
+            }
+            _ => Ok(TypeExpression::named("unknown")),
+        }
+    }
+
+    fn generate_instance_key(&self, request: &InstantiationRequest) -> String {
+        format!("{}_{}", request.generic_name, self.generate_type_suffix(&request.type_arguments))
+    }
+
+    fn generate_type_suffix(&self, type_args: &[TypeExpression]) -> String {
+        type_args.iter()
+            .map(|t| t.name.as_deref().unwrap_or("unknown"))
+            .collect::<Vec<_>>()
+            .join("_")
+    }
+
+    fn generate_function_signature(&self, name: &str, type_args: &[TypeExpression]) -> String {
+        format!("{}[{}]", name, type_args.iter()
+            .map(|t| t.name.as_deref().unwrap_or("unknown"))
+            .collect::<Vec<_>>()
+            .join(", "))
+    }
+
+    fn generate_struct_signature(&self, name: &str, type_args: &[TypeExpression]) -> String {
+        format!("{}[{}]", name, type_args.iter()
+            .map(|t| t.name.as_deref().unwrap_or("unknown"))
+            .collect::<Vec<_>>()
+            .join(", "))
+    }
+
+    fn build_instantiation_map(&self) -> HashMap<String, String> {
+        self.instance_cache.iter()
+            .map(|(key, instance)| (instance.generic_name.clone(), key.clone()))
+            .collect()
+    }
+}
+
+/// Result of the monomorphisation process
+#[derive(Debug)]
+pub struct MonomorphisedProgram {
+    /// Original program AST
+    pub original_program: Program,
+    /// Generated concrete instances
+    pub concrete_instances: Vec<MonomorphisedInstance>,
+    /// Mapping from generic names to concrete instance IDs
+    pub instantiation_map: HashMap<String, String>,
+}
+
+impl MonomorphisedProgram {
+    /// Get all concrete functions generated from generics
+    pub fn get_concrete_functions(&self) -> Vec<&ConcreteFunctionDeclaration> {
+        self.concrete_instances.iter()
+            .filter_map(|instance| {
+                match &instance.concrete_ast {
+                    ConcreteAST::Function(func) => Some(func),
+                    _ => None,
+                }
+            })
+            .collect()
+    }
+
+    /// Get all concrete structs generated from generics
+    pub fn get_concrete_structs(&self) -> Vec<&ConcreteStructDeclaration> {
+        self.concrete_instances.iter()
+            .filter_map(|instance| {
+                match &instance.concrete_ast {
+                    ConcreteAST::Struct(struct_decl) => Some(struct_decl),
+                    _ => None,
+                }
+            })
+            .collect()
+    }
+
+    /// Get concrete instance by generic name and type arguments
+    pub fn get_instance(&self, generic_name: &str, type_args: &[TypeExpression]) -> Option<&MonomorphisedInstance> {
+        let type_suffix = type_args.iter()
+            .map(|t| t.name.as_deref().unwrap_or("unknown"))
+            .collect::<Vec<_>>()
+            .join("_");
+        let instance_key = format!("{}_{}", generic_name, type_suffix);
+        
+        self.concrete_instances.iter()
+            .find(|instance| instance.instance_id == instance_key)
+    }
+}
+
+// Extend TypeEnvironment with generic support
+impl TypeEnvironment {
+    pub fn get_generic_function(&self, _name: &str) -> Option<&FunctionDeclaration> {
+        // Implementation will depend on how generic functions are stored
+        None // Placeholder
+    }
+
+    pub fn get_generic_struct(&self, _name: &str) -> Option<&StructDeclaration> {
+        // Implementation will depend on how generic structs are stored
+        None // Placeholder
+    }
+
+    pub fn get_function_constraints(&self, _name: &str) -> Option<Vec<GenericConstraint>> {
+        // Implementation will depend on how constraints are stored
+        None // Placeholder
+    }
+
+    pub fn get_struct_constraints(&self, _name: &str) -> Option<Vec<GenericConstraint>> {
+        // Implementation will depend on how constraints are stored
+        None // Placeholder
+    }
+
+    pub fn get_variable_type(&self, _name: &str) -> Option<TypeExpression> {
+        // Implementation will depend on how variable types are stored
+        None // Placeholder
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_monomorphisation() {
+        let type_env = TypeEnvironment::new();
+        let mut pipeline = MonomorphisationPipeline::new(type_env);
+        
+        let request = InstantiationRequest {
+            generic_name: "identity".to_string(),
+            type_arguments: vec![TypeExpression::named("normie")],
+            constraints: Vec::new(),
+            call_site: Some("test".to_string()),
+        };
+        
+        let instance_key = pipeline.generate_instance_key(&request);
+        assert_eq!(instance_key, "identity_normie");
+    }
+
+    #[test]
+    fn test_type_suffix_generation() {
+        let type_env = TypeEnvironment::new();
+        let pipeline = MonomorphisationPipeline::new(type_env);
+        
+        let type_args = vec![
+            TypeExpression::named("normie"),
+            TypeExpression::named("tea"),
+        ];
+        
+        let suffix = pipeline.generate_type_suffix(&type_args);
+        assert_eq!(suffix, "normie_tea");
+    }
+
+    #[test]
+    fn test_function_signature_generation() {
+        let type_env = TypeEnvironment::new();
+        let pipeline = MonomorphisationPipeline::new(type_env);
+        
+        let type_args = vec![
+            TypeExpression::named("normie"),
+            TypeExpression::named("tea"),
+        ];
+        
+        let signature = pipeline.generate_function_signature("map", &type_args);
+        assert_eq!(signature, "map[normie, tea]");
+    }
+}

@@ -25,6 +25,7 @@ pub mod runtime_value;
 pub mod debug_output;
 pub mod unicode_char;
 pub mod jit_runtime;
+pub mod interface_dispatch;
 
 // Test modules
 #[cfg(test)]
@@ -88,6 +89,11 @@ pub use debug_manager::{DebugManager, DebugManagerConfig, DebugManagerStats, Fun
 pub use debug_runtime::{PerformanceMonitor, RuntimeDebugger, VariableInspection, RuntimeStackFrame, Breakpoint};
 pub use debug_info::{
     StackTraceCapture, EnhancedStackTraceConfig, SymbolInfo, SymbolResolver
+};
+pub use interface_dispatch::{
+    InterfaceDispatchRegistry, InterfaceVTable, InterfaceValue, InterfaceMethod, VTableEntry,
+    initialize_interface_dispatch, get_global_dispatch_registry, register_global_interface,
+    register_global_implementation, create_global_interface_value, dispatch_global_method
 };
 
 // Complete runtime system initialization

@@ -71,14 +71,17 @@ declare i64 @time(i64*)
 declare i8* @cursed_propagate_with_context(i8*, i8*)
 @error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
 
+; Module Declarations from Imports
+; mod module declarations
+declare void @mod_init()
+declare void @mod_cleanup()
+
+
 
 ; String constants
-@.str.0 = private unnamed_addr constant [23 x i8] c"Hello CURSED compiler!\00", align 1
-@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@.str.0 = private unnamed_addr constant [34 x i8] c"comprehensive error handling test\00", align 1
 define i32 @main() {
-  %0 = getelementptr inbounds [23 x i8], [23 x i8]* @.str.0, i64 0, i64 0
-  ; Converting complex expression to output
-  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
-  %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
+  %0 = getelementptr inbounds [34 x i8], [34 x i8]* @.str.0, i64 0, i64 0
+  %1 = call i32 @test_start(i32 %0)
   ret i32 0
 }

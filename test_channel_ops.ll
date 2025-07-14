@@ -73,12 +73,25 @@ declare i8* @cursed_propagate_with_context(i8*, i8*)
 
 
 ; String constants
-@.str.0 = private unnamed_addr constant [23 x i8] c"Hello CURSED compiler!\00", align 1
+@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
 @.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 define i32 @main() {
-  %0 = getelementptr inbounds [23 x i8], [23 x i8]* @.str.0, i64 0, i64 0
-  ; Converting complex expression to output
-  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
-  %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
+  %0 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
+  %1 = alloca i32, align 4
+  store i32 %0, i32* %1, align 4
+  ; Variable ch allocated at %1
+  %2 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
+  %3 = load i32, i32* %1, align 4
+%9  %t5 = call i32 @cursed_channel_send(i8* %t6, i64 %t6)
+  %4 = load i32, i32* %1, align 4
+%4  %t7 = alloca i64
+  %t9 = call i32 @cursed_channel_receive(i8* %t11, i64* %t7)
+  %t10 = load i64, i64* %t7
+  %5 = alloca i32, align 4
+  store i32 %t11, i32* %5, align 4
+  ; Variable value allocated at %5
+  %6 = load i32, i32* %5, align 4
+  %7 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
+  %8 = call i32 (i8*, ...) @printf(i8* %7, i32 %6)
   ret i32 0
 }

@@ -71,14 +71,40 @@ declare i64 @time(i64*)
 declare i8* @cursed_propagate_with_context(i8*, i8*)
 @error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
 
+; Module Declarations from Imports
+; mod module declarations
+declare void @mod_init()
+declare void @mod_cleanup()
 
-; String constants
-@.str.0 = private unnamed_addr constant [23 x i8] c"Hello CURSED compiler!\00", align 1
-@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-define i32 @main() {
-  %0 = getelementptr inbounds [23 x i8], [23 x i8]* @.str.0, i64 0, i64 0
-  ; Converting complex expression to output
-  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
-  %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
+define i32 @cleanup() {
+entry:
+  %0 = getelementptr inbounds [17 x i8], [17 x i8]* @.str.0, i64 0, i64 0
+  %1 = call i32 @puts(i8* %0)
+  %2 = add i32 0, 0
+  ; Expression result: %2
   ret i32 0
 }
+
+
+; String constants
+@.str.0 = private unnamed_addr constant [17 x i8] c"cleanup executed\00", align 1
+@.str.1 = private unnamed_addr constant [13 x i8] c"main started\00", align 1
+@.str.2 = private unnamed_addr constant [12 x i8] c"main ending\00", align 1
+define i32 @main() {
+entry:
+  %0 = getelementptr inbounds [13 x i8], [13 x i8]* @.str.1, i64 0, i64 0
+  %1 = call i32 @puts(i8* %0)
+  %2 = add i32 0, 0
+  ; Expression result: %2
+  ; Defer statement - expression stored for cleanup
+  %3 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.2, i64 0, i64 0
+  %4 = call i32 @puts(i8* %3)
+  %5 = add i32 0, 0
+  ; Expression result: %5
+  ; Executing deferred expressions in LIFO order
+  ; Executing deferred expression
+  ; Deferred expression completed
+  ret i32 0
+}
+
+  %6 = call i32 @cleanup()

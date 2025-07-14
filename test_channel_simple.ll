@@ -19,8 +19,8 @@ declare void @cursed_panic(i8*, i64)
 declare i8* @cursed_alloc(i64)
 declare void @cursed_free(i8*)
 declare i32 @cursed_goroutine_spawn(i8*)
-declare i32 @cursed_channel_send(i8*, i64)
-declare i32 @cursed_channel_receive(i8*, i64*)
+declare void @cursed_channel_send(i8*, i8*)
+declare i8* @cursed_channel_receive(i8*)
 declare i32 @__gxx_personality_v0(...)
 declare i8* @__cxa_begin_catch(i8*)
 declare void @__cxa_end_catch()
@@ -73,12 +73,12 @@ declare i8* @cursed_propagate_with_context(i8*, i8*)
 
 
 ; String constants
-@.str.0 = private unnamed_addr constant [23 x i8] c"Hello CURSED compiler!\00", align 1
-@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
 define i32 @main() {
-  %0 = getelementptr inbounds [23 x i8], [23 x i8]* @.str.0, i64 0, i64 0
-  ; Converting complex expression to output
-  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
-  %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
+  %0 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
+  %1 = alloca i32, align 4
+  store i32 %0, i32* %1, align 4
+  ; Variable ch allocated at %1
+  %2 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
   ret i32 0
 }

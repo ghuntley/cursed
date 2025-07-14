@@ -33,6 +33,13 @@ pub enum Value {
         name: String,
         arity: usize,
     },
+    /// Interface value (fat pointer with vtable)
+    Interface {
+        vtable_ptr: usize,
+        data_ptr: usize,
+        interface_name: String,
+        concrete_type: String,
+    },
 }
 
 impl Value {
@@ -80,6 +87,11 @@ impl Value {
     pub fn function(name: String, arity: usize) -> Self {
         Value::Function { name, arity }
     }
+    
+    /// Create an interface value
+    pub fn interface(vtable_ptr: usize, data_ptr: usize, interface_name: String, concrete_type: String) -> Self {
+        Value::Interface { vtable_ptr, data_ptr, interface_name, concrete_type }
+    }
 
     /// Check if value is null
     pub fn is_null(&self) -> bool {
@@ -98,6 +110,7 @@ impl Value {
             Value::Object(o) => !o.is_empty(),
             Value::Binary(b) => !b.is_empty(),
             Value::Function { .. } => true,
+            Value::Interface { .. } => true,
         }
     }
 
@@ -113,6 +126,7 @@ impl Value {
             Value::Object(_) => "object",
             Value::Binary(_) => "binary",
             Value::Function { .. } => "function",
+            Value::Interface { interface_name, .. } => "interface",
         }
     }
 
@@ -137,6 +151,9 @@ impl Value {
             }
             Value::Binary(data) => format!("<binary: {} bytes>", data.len()),
             Value::Function { name, arity } => format!("<function: {}({} args)>", name, arity),
+            Value::Interface { interface_name, concrete_type, .. } => {
+                format!("<interface: {} implemented by {}>", interface_name, concrete_type)
+            },
         }
     }
 

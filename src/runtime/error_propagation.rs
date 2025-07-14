@@ -352,6 +352,16 @@ impl ErrorRecoverySystem {
             Error::InvalidOptimizationLevel(_) => "InvalidOptimizationLevel",
             Error::Type(_) => "Type",
             Error::Lexer(_) => "Lexer",
+            Error::TypeParameterMismatch { .. } => "TypeParameterMismatch",
+            Error::ConstraintViolation(_) => "ConstraintViolation",
+            Error::ConstraintResolutionError(_) => "ConstraintResolutionError",
+            Error::BoundViolation { .. } => "BoundViolation",
+            Error::RecursiveGenericInstantiation(_) => "RecursiveGenericInstantiation",
+            Error::UnknownGenericType(_) => "UnknownGenericType",
+            Error::UnknownGenericFunction(_) => "UnknownGenericFunction",
+            Error::UnknownGenericStruct(_) => "UnknownGenericStruct",
+            Error::UnknownVariable(_) => "UnknownVariable",
+            Error::MonomorphisationError(_) => "MonomorphisationError",
         };
 
         let strategies = self.strategies.lock().unwrap();

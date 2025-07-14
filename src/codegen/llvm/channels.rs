@@ -73,7 +73,7 @@ impl ChannelCodegen {
         
         // Declare runtime function if not already declared
         if !codegen.has_function_declaration("cursed_channel_send") {
-            ir_code.push_str("declare i32 @cursed_channel_send(i8*, i8*)\n");
+            ir_code.push_str("declare i32 @cursed_channel_send(i8*, i64)\n");
             codegen.mark_function_declared("cursed_channel_send");
         }
         
@@ -87,26 +87,10 @@ impl ChannelCodegen {
         ir_code.push_str(&value_code);
         let value_result_reg = format!("%t{}", codegen.get_last_variable_counter());
         
-        // Allocate space for the value and store it
+        // Call runtime send function directly with the value
         ir_code.push_str(&format!(
-            "  {} = alloca i64\n",
-            value_ptr_reg
-        ));
-        ir_code.push_str(&format!(
-            "  store i64 {}, i64* {}\n",
-            value_result_reg, value_ptr_reg
-        ));
-        
-        // Cast value pointer to i8*
-        ir_code.push_str(&format!(
-            "  {} = bitcast i64* {} to i8*\n",
-            value_i8_ptr_reg, value_ptr_reg
-        ));
-        
-        // Call runtime send function
-        ir_code.push_str(&format!(
-            "  {} = call i32 @cursed_channel_send(i8* {}, i8* {})\n",
-            result_reg, channel_result_reg, value_i8_ptr_reg
+            "  {} = call i32 @cursed_channel_send(i8* {}, i64 {})\n",
+            result_reg, channel_result_reg, value_result_reg
         ));
         
         Ok(ir_code)
@@ -126,9 +110,9 @@ impl ChannelCodegen {
         let mut ir_code = String::new();
         
         // Declare runtime function if not already declared
-        if !codegen.has_function_declaration("cursed_channel_recv") {
-            ir_code.push_str("declare i32 @cursed_channel_recv(i8*, i8*)\n");
-            codegen.mark_function_declared("cursed_channel_recv");
+        if !codegen.has_function_declaration("cursed_channel_receive") {
+            ir_code.push_str("declare i32 @cursed_channel_receive(i8*, i64*)\n");
+            codegen.mark_function_declared("cursed_channel_receive");
         }
         
         // Generate code for the channel
@@ -142,16 +126,10 @@ impl ChannelCodegen {
             value_ptr_reg
         ));
         
-        // Cast to i8*
-        ir_code.push_str(&format!(
-            "  {} = bitcast i64* {} to i8*\n",
-            value_i8_ptr_reg, value_ptr_reg
-        ));
-        
         // Call runtime receive function
         ir_code.push_str(&format!(
-            "  {} = call i32 @cursed_channel_recv(i8* {}, i8* {})\n",
-            recv_result_reg, channel_result_reg, value_i8_ptr_reg
+            "  {} = call i32 @cursed_channel_receive(i8* {}, i64* {})\n",
+            recv_result_reg, channel_result_reg, value_ptr_reg
         ));
         
         // Load the received value
@@ -349,6 +327,6 @@ mod tests {
         assert!(result.is_ok());
         
         let ir_code = result.unwrap();
-        assert!(ir_code.contains("cursed_channel_recv"));
+        assert!(ir_code.contains("cursed_channel_receive"));
     }
 }
