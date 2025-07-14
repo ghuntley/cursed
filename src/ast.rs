@@ -98,6 +98,7 @@ pub enum Statement {
     For(ForStatement),
     ForIn(ForInStatement),
     Switch(SwitchStatement),
+    PatternSwitch(PatternSwitchStatement),
     Goroutine(GoroutineStatement),
     Channel(ChannelStatement),
     Select(SelectStatement),
@@ -161,6 +162,10 @@ pub enum Expression {
     // TestResult expressions
     TestResult(TestResultExpression),
     TestResultCheck(TestResultCheckExpression),
+    // Range-for expression for flex iterations
+    RangeFor {
+        iterable: Box<Expression>,
+    },
 }
 
 /// Binary expression
@@ -533,6 +538,67 @@ pub struct SwitchStatement {
 pub struct SwitchCase {
     pub pattern: Expression,
     pub body: Vec<Statement>,
+}
+
+/// Enhanced switch statement with advanced pattern matching
+#[derive(Debug, Clone)]
+pub struct PatternSwitchStatement {
+    pub init: Option<Box<Statement>>,
+    pub expression: Expression,
+    pub cases: Vec<PatternSwitchCase>,
+    pub default_case: Option<Vec<Statement>>,
+}
+
+/// Enhanced switch case with pattern and optional guard
+#[derive(Debug, Clone)]
+pub struct PatternSwitchCase {
+    pub pattern: PatternExpression,
+    pub guard: Option<Expression>, // Optional guard condition (when clause)
+    pub body: Vec<Statement>,
+}
+
+/// Pattern expression for advanced pattern matching
+#[derive(Debug, Clone)]
+pub enum PatternExpression {
+    /// Wildcard pattern (_)
+    Wildcard,
+    /// Variable binding pattern (x)
+    Variable(String),
+    /// Literal pattern (42, "hello", based)
+    Literal(Expression),
+    /// Range pattern (1..10, 'a'..'z')
+    Range {
+        start: Expression,
+        end: Expression,
+        inclusive: bool,
+    },
+    /// Tuple destructuring pattern ((x, y, z))
+    Tuple(Vec<PatternExpression>),
+    /// Array destructuring pattern ([head, ...tail])
+    Array {
+        patterns: Vec<PatternExpression>,
+        rest: Option<String>, // For ...rest patterns
+    },
+    /// Struct destructuring pattern (Person { name, age })
+    Struct {
+        type_name: String,
+        fields: Vec<FieldPattern>,
+        rest: bool, // For { field1, .. } patterns
+    },
+    /// Or pattern (x | y | z)
+    Or(Vec<PatternExpression>),
+    /// Type pattern for type switches
+    Type {
+        target_type: Type,
+        variable: Option<String>, // Variable to bind casted value
+    },
+}
+
+/// Field pattern in struct destructuring
+#[derive(Debug, Clone)]
+pub struct FieldPattern {
+    pub field_name: String,
+    pub pattern: Option<PatternExpression>, // None means shorthand (field same as variable)
 }
 
 /// Goroutine statement

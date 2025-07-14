@@ -17,6 +17,7 @@ pub mod core; // Re-enabled for type system integration
 pub mod codegen; // Re-enabled for type system integration
 pub mod memory;
 pub mod runtime;
+pub mod pattern_matching;
 
 #[cfg(test)]
 mod test_channel_fixes;

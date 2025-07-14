@@ -177,6 +177,10 @@ impl ExpressionCompiler {
              &crate::ast::Expression::TestResultCheck(_) => {
                  Ok("%testresult_check_placeholder".to_string())
              },
+             &crate::ast::Expression::RangeFor { .. } => {
+                 // RangeFor expressions not yet implemented in LLVM codegen
+                 Err(CursedError::compiler_error("RangeFor expressions not yet implemented in LLVM codegen"))
+             },
 
          }
     }

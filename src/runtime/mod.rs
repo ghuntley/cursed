@@ -43,6 +43,9 @@ pub mod concurrent_gc;   // Concurrent garbage collection
 pub mod heap_optimizer;  // Heap allocation optimization
 pub mod gc_monitor;      // GC monitoring and alerting
 pub mod performance_hooks;  // Runtime performance monitoring hooks
+pub mod gc_write_barrier_safe; // Thread-safe write barriers
+pub mod heap_optimizer_safe;   // Thread-safe heap optimizer
+pub mod gc_race_detector;      // Race condition detection
 
 // Async and channels
 pub mod r#async;
