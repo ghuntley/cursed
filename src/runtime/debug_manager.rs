@@ -10,7 +10,7 @@
 //! - Source file tracking
 
 use crate::error::{CursedError, SourceLocation};
-use crate::debug::{DebugConfig, DebugInfo, DebugSymbol, DebugSymbolType};
+use crate::debug::{DebugConfig, DebugInfo, DebugSymbol};
 use std::collections::{HashMap, BTreeMap};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -530,8 +530,9 @@ impl DebugManager {
         }
 
         self.symbols.values().find(|symbol| {
-            let symbol_end = symbol.address + symbol.size as u64;
-            address >= symbol.address && address < symbol_end
+            let symbol_addr = symbol.memory_address.unwrap_or(0);
+            let symbol_end = symbol_addr + symbol.size.unwrap_or(0);
+            address >= symbol_addr && address < symbol_end
         })
     }
 
@@ -648,7 +649,7 @@ impl DebugManager {
             None
         } else {
             // Return the address of the first symbol as a starting point
-            self.symbols.values().next().map(|symbol| symbol.address)
+            self.symbols.values().next().and_then(|symbol| symbol.memory_address)
         }
     }
 
@@ -670,9 +671,9 @@ impl DebugManager {
         let mut found_current = false;
         for symbol in self.symbols.values() {
             if found_current {
-                return Some(symbol.address);
+                return symbol.memory_address;
             }
-            if symbol.address == current_frame {
+            if symbol.memory_address == Some(current_frame) {
                 found_current = true;
             }
         }

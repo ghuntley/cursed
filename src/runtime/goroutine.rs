@@ -79,6 +79,49 @@ pub struct GoroutineErrorContext {
     pub error_chain: Vec<String>,
 }
 
+/// Panic propagation configuration
+#[derive(Clone)]
+pub struct PanicPropagationConfig {
+    /// Whether to propagate panics to parent goroutine
+    pub propagate_to_parent: bool,
+    /// Whether to propagate panics to child goroutines
+    pub propagate_to_children: bool,
+    /// Whether to propagate panics to sibling goroutines
+    pub propagate_to_siblings: bool,
+    /// Maximum propagation depth
+    pub max_propagation_depth: u32,
+    /// Panic propagation timeout
+    pub propagation_timeout: Duration,
+    /// Custom panic handler
+    pub panic_handler: Option<Arc<dyn Fn(&str, GoroutineId) + Send + Sync>>,
+}
+
+impl std::fmt::Debug for PanicPropagationConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PanicPropagationConfig")
+            .field("propagate_to_parent", &self.propagate_to_parent)
+            .field("propagate_to_children", &self.propagate_to_children)
+            .field("propagate_to_siblings", &self.propagate_to_siblings)
+            .field("max_propagation_depth", &self.max_propagation_depth)
+            .field("propagation_timeout", &self.propagation_timeout)
+            .field("panic_handler", &self.panic_handler.as_ref().map(|_| "<function>"))
+            .finish()
+    }
+}
+
+impl Default for PanicPropagationConfig {
+    fn default() -> Self {
+        Self {
+            propagate_to_parent: false,
+            propagate_to_children: false,
+            propagate_to_siblings: false,
+            max_propagation_depth: 3,
+            propagation_timeout: Duration::from_secs(5),
+            panic_handler: None,
+        }
+    }
+}
+
 /// Join handle for goroutine error propagation
 #[derive(Debug)]
 pub struct GoroutineJoinHandle {
@@ -126,6 +169,8 @@ pub struct Goroutine {
     pub error_context: Option<GoroutineErrorContext>,
     /// Join handle for error propagation
     pub join_handle: Option<GoroutineJoinHandle>,
+    /// Panic propagation configuration
+    pub panic_propagation: PanicPropagationConfig,
 }
 
 impl Goroutine {
@@ -148,6 +193,7 @@ impl Goroutine {
             channels: Vec::new(),
             error_context: None,
             join_handle: None,
+            panic_propagation: PanicPropagationConfig::default(),
         }
     }
 
@@ -693,6 +739,9 @@ impl GoroutineScheduler {
                             // Error is not isolated - panic propagates
                             goroutine_guard.set_state(GoroutineState::Panicked);
                             log::error!("Worker {} - goroutine {} panicked: {}", worker_id, goroutine_id, panic_msg);
+                            
+                            // Handle panic propagation
+                            Self::handle_panic_propagation(&goroutine_guard, &panic_msg);
                         }
                     },
                 }
@@ -710,8 +759,208 @@ impl GoroutineScheduler {
     }
 
     fn try_steal_work(worker: &Arc<Worker>, stats: &mut WorkerStats) -> bool {
-        stats.work_stolen += 1;
-        false // Simplified - would implement actual work stealing
+        // Get global scheduler reference
+        let scheduler = if let Some(scheduler) = get_global_scheduler() {
+            scheduler
+        } else {
+            return false;
+        };
+        
+        // Try to steal from global queue first
+        if let Ok(mut global_queue) = scheduler.global_queue.lock() {
+            if let Some(stolen_goroutine) = global_queue.pop_front() {
+                if let Ok(mut local_queue) = worker.queue.lock() {
+                    local_queue.push_back(stolen_goroutine);
+                    stats.work_stolen += 1;
+                    return true;
+                }
+            }
+        }
+        
+        // Try to steal from other workers
+        let worker_count = scheduler.workers.len();
+        let start_index = (worker.id + 1) % worker_count;
+        
+        for i in 0..worker_count {
+            let target_index = (start_index + i) % worker_count;
+            if target_index == worker.id {
+                continue; // Skip self
+            }
+            
+            let target_worker = &scheduler.workers[target_index];
+            
+            // Try to steal from target worker
+            if let Ok(mut target_queue) = target_worker.queue.lock() {
+                if target_queue.len() > 1 {
+                    // Only steal if target has more than 1 task
+                    if let Some(stolen_goroutine) = target_queue.pop_back() {
+                        if let Ok(mut local_queue) = worker.queue.lock() {
+                            local_queue.push_back(stolen_goroutine);
+                            stats.work_stolen += 1;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        false
+    }
+    
+    /// Handle panic propagation according to configuration
+    fn handle_panic_propagation(goroutine: &Goroutine, panic_msg: &str) {
+        let config = &goroutine.panic_propagation;
+        
+        // Call custom panic handler if configured
+        if let Some(ref handler) = config.panic_handler {
+            handler(panic_msg, goroutine.id);
+        }
+        
+        // Don't propagate if no propagation is configured
+        if !config.propagate_to_parent && !config.propagate_to_children && !config.propagate_to_siblings {
+            return;
+        }
+        
+        // Get scheduler for propagation
+        let scheduler = if let Some(scheduler) = get_global_scheduler() {
+            scheduler
+        } else {
+            return;
+        };
+        
+        // Propagate to parent
+        if config.propagate_to_parent {
+            if let Some(parent_id) = goroutine.parent_id {
+                Self::propagate_panic_to_goroutine(&scheduler, parent_id, panic_msg, 1, config);
+            }
+        }
+        
+        // Propagate to children
+        if config.propagate_to_children {
+            for &child_id in &goroutine.children {
+                Self::propagate_panic_to_goroutine(&scheduler, child_id, panic_msg, 1, config);
+            }
+        }
+        
+        // Propagate to siblings (through parent)
+        if config.propagate_to_siblings {
+            if let Some(parent_id) = goroutine.parent_id {
+                Self::propagate_panic_to_siblings(&scheduler, parent_id, goroutine.id, panic_msg, config);
+            }
+        }
+    }
+    
+    /// Propagate panic to a specific goroutine
+    fn propagate_panic_to_goroutine(
+        scheduler: &GoroutineScheduler,
+        target_id: GoroutineId,
+        panic_msg: &str,
+        depth: u32,
+        config: &PanicPropagationConfig,
+    ) {
+        if depth > config.max_propagation_depth {
+            return;
+        }
+        
+        // Search for the target goroutine in all workers
+        for worker in &scheduler.workers {
+            // Check current goroutine
+            if let Ok(current_guard) = worker.current.lock() {
+                if let Some(ref goroutine_arc) = *current_guard {
+                    if let Ok(mut goroutine) = goroutine_arc.lock() {
+                        if goroutine.id == target_id {
+                            // Trigger panic in target goroutine
+                            goroutine.set_state(GoroutineState::Panicked);
+                            
+                            // Update error context
+                            if let Some(ref mut error_context) = goroutine.error_context {
+                                error_context.panic_info = Some(format!("Propagated panic: {}", panic_msg));
+                                error_context.error_timestamp = Some(Instant::now());
+                                error_context.error_chain.push(format!("Propagated from depth {}", depth));
+                            }
+                            
+                            log::warn!("Propagated panic to goroutine {}: {}", target_id, panic_msg);
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            // Check queued goroutines
+            if let Ok(queue) = worker.queue.lock() {
+                for goroutine_arc in queue.iter() {
+                    if let Ok(mut goroutine) = goroutine_arc.lock() {
+                        if goroutine.id == target_id {
+                            // Trigger panic in target goroutine
+                            goroutine.set_state(GoroutineState::Panicked);
+                            
+                            // Update error context
+                            if let Some(ref mut error_context) = goroutine.error_context {
+                                error_context.panic_info = Some(format!("Propagated panic: {}", panic_msg));
+                                error_context.error_timestamp = Some(Instant::now());
+                                error_context.error_chain.push(format!("Propagated from depth {}", depth));
+                            }
+                            
+                            log::warn!("Propagated panic to queued goroutine {}: {}", target_id, panic_msg);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Propagate panic to sibling goroutines
+    fn propagate_panic_to_siblings(
+        scheduler: &GoroutineScheduler,
+        parent_id: GoroutineId,
+        source_id: GoroutineId,
+        panic_msg: &str,
+        config: &PanicPropagationConfig,
+    ) {
+        // Find parent goroutine and get its children
+        let siblings = Self::get_goroutine_children(scheduler, parent_id);
+        
+        // Propagate to all siblings except the source
+        for &sibling_id in &siblings {
+            if sibling_id != source_id {
+                Self::propagate_panic_to_goroutine(scheduler, sibling_id, panic_msg, 1, config);
+            }
+        }
+    }
+    
+    /// Get children of a goroutine
+    fn get_goroutine_children(scheduler: &GoroutineScheduler, parent_id: GoroutineId) -> Vec<GoroutineId> {
+        let mut children = Vec::new();
+        
+        // Search for the parent goroutine in all workers
+        for worker in &scheduler.workers {
+            // Check current goroutine
+            if let Ok(current_guard) = worker.current.lock() {
+                if let Some(ref goroutine_arc) = *current_guard {
+                    if let Ok(goroutine) = goroutine_arc.lock() {
+                        if goroutine.id == parent_id {
+                            children.extend_from_slice(&goroutine.children);
+                            return children;
+                        }
+                    }
+                }
+            }
+            
+            // Check queued goroutines
+            if let Ok(queue) = worker.queue.lock() {
+                for goroutine_arc in queue.iter() {
+                    if let Ok(goroutine) = goroutine_arc.lock() {
+                        if goroutine.id == parent_id {
+                            children.extend_from_slice(&goroutine.children);
+                            return children;
+                        }
+                    }
+                }
+            }
+        }
+        
+        children
     }
     
     /// Capture stack trace for error isolation

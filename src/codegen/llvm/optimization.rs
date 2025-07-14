@@ -240,6 +240,35 @@ impl<'ctx> OptimizationManager<'ctx> {
         Ok(())
     }
     
+    /// Run function inlining optimization
+    pub fn run_inlining(&mut self, module: &Module<'ctx>) -> Result<()> {
+        if !self.config.inline_functions {
+            return Ok(());
+        }
+        
+        use crate::codegen::llvm::passes::inlining::{InliningPass, InliningConfig};
+        
+        let opt_level = match self.config.level {
+            OptimizationLevel::O0 => 0,
+            OptimizationLevel::O1 => 1,
+            OptimizationLevel::O2 | OptimizationLevel::Default => 2,
+            OptimizationLevel::O3 => 3,
+            OptimizationLevel::Os | OptimizationLevel::Oz => 2,
+        };
+        
+        let mut inlining_pass = InliningPass::for_optimization_level(self.context, opt_level);
+        let result = inlining_pass.run(module)?;
+        
+        // Update statistics
+        self.stats.functions_optimized += result.functions_inlined as usize;
+        self.stats.passes_run += 1;
+        
+        eprintln!("Inlining pass completed: {} functions inlined, {} calls inlined, {} functions removed", 
+                 result.functions_inlined, result.total_calls_inlined, result.functions_removed);
+        
+        Ok(())
+    }
+    
     /// Get optimization statistics
     pub fn get_stats(&self) -> &OptimizationStats {
         &self.stats

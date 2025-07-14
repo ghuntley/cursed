@@ -35,6 +35,12 @@ pub mod enhanced_select_simple;
 // Production-grade channel implementation
 pub mod production_channel;
 
+// Channel direction enforcement
+pub mod channel_direction;
+
+// Enhanced select with timeout patterns
+pub mod select_timeout;
+
 // Re-export the simple implementation as the main interface
 pub use simple_channel::{
     SimpleChannel,
@@ -168,6 +174,10 @@ impl<T> SendResult<T> {
     
     pub fn is_ok(&self) -> bool {
         matches!(self, SendResult::Sent)
+    }
+    
+    pub fn is_err(&self) -> bool {
+        matches!(self, SendResult::Closed(_) | SendResult::WouldBlock(_))
     }
 }
 

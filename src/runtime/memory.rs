@@ -46,7 +46,7 @@ impl Default for MemoryConfig {
 }
 
 /// Memory allocation statistics
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct MemoryStats {
     /// Total heap allocations
     pub heap_allocations: u64,
@@ -69,6 +69,7 @@ pub struct MemoryStats {
     /// Memory pressure indicator (0.0-1.0)
     pub pressure_level: f64,
     /// Last pressure check time
+    #[serde(skip)]
     pub last_pressure_check: Option<Instant>,
 }
 

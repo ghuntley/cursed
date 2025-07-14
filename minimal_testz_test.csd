@@ -1,8 +1,8 @@
 yeet "testz"
 
-test_start("simple test")
-assert_eq_int(2 + 2, 4)
+test_start("minimal test")
 assert_true(based)
+assert_false(cap)
 test_end()
 
 print_test_summary()

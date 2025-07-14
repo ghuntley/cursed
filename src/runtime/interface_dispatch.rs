@@ -112,9 +112,13 @@ pub struct InterfaceDispatchRegistry {
     /// Map from (interface_name, concrete_type) to vtable
     vtables: HashMap<(String, String), Arc<InterfaceVTable>>,
     /// Map from interface_name to list of methods
-    interface_methods: HashMap<String, Vec<InterfaceMethod>>,
+    pub interface_methods: HashMap<String, Vec<InterfaceMethod>>,
     /// Map from (concrete_type, interface_name) to implementation status
     implementations: HashMap<(String, String), bool>,
+    /// Runtime dispatch table for optimized method resolution
+    dispatch_table: HashMap<String, HashMap<String, usize>>, // interface_name -> method_name -> method_index
+    /// Global method registry for fast lookup
+    global_methods: HashMap<String, HashMap<String, usize>>, // interface_name -> method_name -> function_ptr
 }
 
 impl InterfaceDispatchRegistry {
@@ -124,6 +128,8 @@ impl InterfaceDispatchRegistry {
             vtables: HashMap::new(),
             interface_methods: HashMap::new(),
             implementations: HashMap::new(),
+            dispatch_table: HashMap::new(),
+            global_methods: HashMap::new(),
         }
     }
     
@@ -138,7 +144,19 @@ impl InterfaceDispatchRegistry {
             }
         }
         
+        // Create dispatch table for this interface
+        let mut dispatch_map = HashMap::new();
+        let mut global_method_map = HashMap::new();
+        
+        for method in &methods {
+            dispatch_map.insert(method.name.clone(), method.method_index);
+            global_method_map.insert(method.name.clone(), 0); // Will be updated during implementation registration
+        }
+        
+        self.dispatch_table.insert(interface_name.clone(), dispatch_map);
+        self.global_methods.insert(interface_name.clone(), global_method_map);
         self.interface_methods.insert(interface_name, methods);
+        
         Ok(())
     }
     
@@ -194,6 +212,46 @@ impl InterfaceDispatchRegistry {
     pub fn implements_interface(&self, concrete_type: &str, interface_name: &str) -> bool {
         let key = (concrete_type.to_string(), interface_name.to_string());
         self.implementations.get(&key).copied().unwrap_or(false)
+    }
+    
+    /// Get method index for interface method (optimized lookup)
+    pub fn get_method_index(&self, interface_name: &str, method_name: &str) -> Option<usize> {
+        self.dispatch_table.get(interface_name)
+            .and_then(|methods| methods.get(method_name))
+            .copied()
+    }
+    
+    /// Get function pointer for interface method implementation
+    pub fn get_method_function_ptr(&self, interface_name: &str, method_name: &str) -> Option<usize> {
+        self.global_methods.get(interface_name)
+            .and_then(|methods| methods.get(method_name))
+            .copied()
+    }
+    
+    /// Validate interface compliance for a concrete type
+    pub fn validate_interface_compliance(&self, interface_name: &str, concrete_type: &str) -> Result<(), CursedError> {
+        let interface_methods = self.interface_methods.get(interface_name)
+            .ok_or_else(|| CursedError::Runtime(format!(
+                "Interface '{}' not found", interface_name
+            )))?;
+        
+        let vtable = self.get_vtable(interface_name, concrete_type)
+            .ok_or_else(|| CursedError::Runtime(format!(
+                "No implementation found for interface '{}' on type '{}'", 
+                interface_name, concrete_type
+            )))?;
+        
+        // Check that all interface methods are implemented
+        for method in interface_methods {
+            if vtable.get_method(&method.name).is_none() {
+                return Err(CursedError::Runtime(format!(
+                    "Method '{}' from interface '{}' not implemented by type '{}'",
+                    method.name, interface_name, concrete_type
+                )));
+            }
+        }
+        
+        Ok(())
     }
     
     /// Create interface value from concrete object

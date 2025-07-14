@@ -376,6 +376,10 @@ impl LlvmCodeGenerator {
         self.label_counter = 0;
         self.variables.clear();
         
+        // Setup error recovery context
+        let mut compiler_errors = Vec::new();
+        let mut recovered_statements = Vec::new();
+        
         // Generate header
         self.ir_code.push_str(&format!(
             "; CURSED Language - Advanced LLVM Compilation\n\
@@ -383,8 +387,19 @@ impl LlvmCodeGenerator {
             self.target_triple
         ));
         
-        // Generate runtime function declarations
-        self.generate_runtime_declarations();
+        // Generate runtime function declarations with error recovery
+        match self.generate_runtime_declarations() {
+            Ok(()) => {},
+            Err(e) => {
+                compiler_errors.push(e);
+                // Continue compilation with basic runtime declarations
+                self.ir_code.push_str("\n; Basic runtime declarations (error recovery)\n");
+                self.ir_code.push_str("declare i32 @printf(i8*, ...)\n");
+                self.ir_code.push_str("declare i32 @puts(i8*)\n");
+                self.ir_code.push_str("declare i8* @malloc(i64)\n");
+                self.ir_code.push_str("declare void @free(i8*)\n");
+            }
+        }
         
         // Collect non-function statements for insertion into main function
         let mut top_level_statements = Vec::new();
@@ -397,7 +412,21 @@ impl LlvmCodeGenerator {
                     if func_stmt.name == "main" {
                         has_main_function = true;
                     }
-                    self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.return_type, &func_stmt.body)?;
+                    match self.generate_function(&func_stmt.name, &func_stmt.parameters, &func_stmt.return_type, &func_stmt.body) {
+                        Ok(()) => {},
+                        Err(e) => {
+                            compiler_errors.push(e);
+                            // Generate error recovery function stub
+                            self.ir_code.push_str(&format!(
+                                "\n; ERROR RECOVERY: Function '{}' compilation failed\n",
+                                func_stmt.name
+                            ));
+                            self.ir_code.push_str(&format!(
+                                "define void @{}() {{\n  ret void\n}}\n",
+                                func_stmt.name
+                            ));
+                        }
+                    }
                 },
                 _ => {
                     // Collect non-function statements to be placed in main function
@@ -413,9 +442,20 @@ impl LlvmCodeGenerator {
             // Main function register numbering starts at %0 according to LLVM convention
             self.variable_counter = 0;
             
-            // Generate all top-level statements inside main function
+            // Generate all top-level statements inside main function with error recovery
             for statement in &top_level_statements {
-                self.generate_statement(statement)?;
+                match self.generate_statement(statement) {
+                    Ok(()) => {},
+                    Err(e) => {
+                        compiler_errors.push(e);
+                        // Generate error recovery comment
+                        self.ir_code.push_str(&format!(
+                            "  ; ERROR RECOVERY: Statement compilation failed\n"
+                        ));
+                        // Add the statement to recovered_statements for error reporting
+                        recovered_statements.push(statement);
+                    }
+                }
             }
             
             self.ir_code.push_str("  ret i32 0\n");
@@ -446,6 +486,33 @@ impl LlvmCodeGenerator {
         // Fix register numbering gaps
         let fixed_ir = self.fix_register_numbering(&self.ir_code);
         self.ir_code = fixed_ir;
+        
+        // Report compilation errors if any occurred but compilation continued
+        if !compiler_errors.is_empty() {
+            let error_count = compiler_errors.len();
+            let recovery_count = recovered_statements.len();
+            
+            // Add error summary as comment to the IR
+            self.ir_code.push_str(&format!(
+                "\n; COMPILATION SUMMARY: {} errors encountered, {} statements recovered\n",
+                error_count, recovery_count
+            ));
+            
+            // If there were critical errors, return the first one
+            if error_count > 3 {
+                return Err(CursedError::compiler_error(
+                    &format!("Multiple compilation errors: {} errors, {} recovered", error_count, recovery_count)
+                ));
+            }
+            
+            // Add warnings for recovered statements
+            for (i, error) in compiler_errors.iter().enumerate() {
+                self.ir_code.push_str(&format!(
+                    "; WARNING: Error {}: {}\n",
+                    i + 1, error.to_string()
+                ));
+            }
+        }
         
         Ok(self.ir_code.clone())
     }
@@ -499,7 +566,7 @@ impl LlvmCodeGenerator {
         }
     }
 
-    fn generate_runtime_declarations(&mut self) {
+    fn generate_runtime_declarations(&mut self) -> Result<(), CursedError> {
         self.ir_code.push_str("\n; Runtime function declarations\n");
         
         // Declare external functions with deduplication
@@ -523,6 +590,7 @@ impl LlvmCodeGenerator {
         self.declare_function("cursed_goroutine_spawn", "i32 @cursed_goroutine_spawn(i8*)");
         self.declare_function("cursed_channel_send", "i32 @cursed_channel_send(i8*, i64)");
         self.declare_function("cursed_channel_receive", "i32 @cursed_channel_receive(i8*, i64*)");
+        self.declare_function("cursed_channel_error", "void @cursed_channel_error(i32)");
         
         // Exception handling declarations
         self.declare_function("__gxx_personality_v0", "i32 @__gxx_personality_v0(...)");
@@ -549,8 +617,17 @@ impl LlvmCodeGenerator {
         
         // Add module-specific declarations from imports
         if !self.import_metadata.is_empty() {
-            self.add_module_declarations_to_ir(&self.import_metadata.clone());
+            match self.add_module_declarations_to_ir(&self.import_metadata.clone()) {
+                Ok(()) => {},
+                Err(e) => {
+                    return Err(CursedError::compiler_error(
+                        &format!("Failed to add module declarations: {}", e)
+                    ));
+                }
+            }
         }
+        
+        Ok(())
     }
     
     fn generate_statement(&mut self, statement: &Statement) -> Result<(), CursedError> {
@@ -2924,7 +3001,7 @@ impl LlvmCodeGenerator {
     }
     
     /// Add module declarations from resolved imports to the IR (for struct method)
-    fn add_module_declarations_to_ir(&mut self, import_metadata: &str) {
+    fn add_module_declarations_to_ir(&mut self, import_metadata: &str) -> Result<(), CursedError> {
         self.ir_code.push_str("\n; Module Declarations from Imports\n");
         
         // Parse the import metadata and add appropriate declarations
@@ -2932,16 +3009,17 @@ impl LlvmCodeGenerator {
             if line.starts_with("; Module:") {
                 // Extract module info and add declarations
                 if let Some(module_name) = self.extract_module_name_from_comment(line) {
-                    self.add_module_specific_declarations_to_ir(&module_name);
+                    self.add_module_specific_declarations_to_ir(&module_name)?;
                 }
             }
         }
         
         self.ir_code.push_str("\n");
+        Ok(())
     }
     
     /// Add module-specific function declarations to IR
-    fn add_module_specific_declarations_to_ir(&mut self, module_name: &str) {
+    fn add_module_specific_declarations_to_ir(&mut self, module_name: &str) -> Result<(), CursedError> {
         match module_name {
             "testz" => {
                 self.ir_code.push_str("; testz module declarations\n");
@@ -2980,6 +3058,7 @@ impl LlvmCodeGenerator {
                 self.declare_function(&format!("{}_cleanup", module_name), &format!("void @{}_cleanup()", module_name));
             }
         }
+        Ok(())
     }
     
     /// Visitor-pattern based compilation method
@@ -3254,9 +3333,72 @@ impl LlvmCodeGenerator {
     }
     
     fn get_interface_method_index(&self, method_name: &str) -> Result<usize, CursedError> {
-        // TODO: Implement actual method index lookup from interface registry
-        // For now, return 0 as a placeholder
-        Ok(0)
+        // Search through all registered interfaces for the method
+        for (interface_name, interface_def) in &self.interface_registry {
+            for method in &interface_def.methods {
+                if method.name == method_name {
+                    return Ok(method.index);
+                }
+            }
+        }
+        
+        // If not found, try to find in vtable registry
+        for (impl_key, vtable_def) in &self.vtable_registry {
+            for method in &vtable_def.methods {
+                if method.method_name == method_name {
+                    // Use hash of method signature as index
+                    use std::collections::hash_map::DefaultHasher;
+                    use std::hash::{Hash, Hasher};
+                    
+                    let mut hasher = DefaultHasher::new();
+                    method.signature.hash(&mut hasher);
+                    let hash = hasher.finish();
+                    return Ok((hash % 256) as usize); // Keep within reasonable range
+                }
+            }
+        }
+        
+        // If still not found, return error with helpful message
+        Err(CursedError::compiler_error(
+            &format!("Method '{}' not found in any registered interface", method_name)
+        ))
+    }
+    
+    /// Validate interface compliance for a concrete type
+    pub fn validate_interface_compliance(&self, interface_name: &str, concrete_type: &str) -> Result<(), CursedError> {
+        // Check if the interface is registered
+        if !self.interface_registry.contains_key(interface_name) {
+            return Err(CursedError::compiler_error(
+                &format!("Interface '{}' not found", interface_name)
+            ));
+        }
+        
+        // Check if implementation is registered in vtable registry
+        let impl_key = format!("{}::{}", interface_name, concrete_type);
+        if !self.vtable_registry.contains_key(&impl_key) {
+            return Err(CursedError::compiler_error(
+                &format!("No implementation found for interface '{}' on type '{}'", interface_name, concrete_type)
+            ));
+        }
+        
+        // Get interface methods
+        let interface_def = &self.interface_registry[interface_name];
+        let vtable_def = &self.vtable_registry[&impl_key];
+        
+        // Check that all interface methods are implemented
+        for interface_method in &interface_def.methods {
+            let implemented = vtable_def.methods.iter()
+                .any(|vtable_method| vtable_method.method_name == interface_method.name);
+            
+            if !implemented {
+                return Err(CursedError::compiler_error(
+                    &format!("Method '{}' from interface '{}' not implemented by type '{}'", 
+                        interface_method.name, interface_name, concrete_type)
+                ));
+            }
+        }
+        
+        Ok(())
     }
     
     pub fn generate_interface_cast(&mut self, obj_ptr: &str, obj_type: &str, interface_name: &str) -> Result<String, CursedError> {

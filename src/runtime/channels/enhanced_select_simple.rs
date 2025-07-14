@@ -371,7 +371,10 @@ mod tests {
         assert!(result.is_ok());
         match result.unwrap() {
             SelectResult::ReceiveCompleted(1, 42) => {},
-            other => panic!("Expected ReceiveCompleted(1, 42), got {:?}", other),
+            other => {
+                eprintln!("Expected ReceiveCompleted(1, 42), got {:?} - test failed gracefully", other);
+                assert!(false, "Expected ReceiveCompleted(1, 42)");
+            },
         }
     }
     
@@ -386,7 +389,10 @@ mod tests {
         assert!(result.is_ok());
         match result.unwrap() {
             SelectResult::SendCompleted(1) => {},
-            other => panic!("Expected SendCompleted(1), got {:?}", other),
+            other => {
+                eprintln!("Expected SendCompleted(1), got {:?} - test failed gracefully", other);
+                assert!(false, "Expected SendCompleted(1)");
+            },
         }
     }
     
@@ -413,7 +419,10 @@ mod tests {
             SelectResult::SendCompleted(1) => {
                 // Also valid - send to channel with capacity
             },
-            other => panic!("Expected either ReceiveCompleted(2, 100) or SendCompleted(1), got {:?}", other),
+            other => {
+                eprintln!("Expected either ReceiveCompleted(2, 100) or SendCompleted(1), got {:?} - test failed gracefully", other);
+                assert!(false, "Expected either ReceiveCompleted(2, 100) or SendCompleted(1)");
+            },
         }
     }
     
@@ -427,7 +436,10 @@ mod tests {
         assert!(result.is_ok());
         match result.unwrap() {
             SelectResult::Timeout => {},
-            other => panic!("Expected Timeout, got {:?}", other),
+            other => {
+                eprintln!("Expected Timeout, got {:?} - test failed gracefully", other);
+                assert!(false, "Expected Timeout");
+            },
         }
     }
     
@@ -443,7 +455,10 @@ mod tests {
         assert!(result.is_ok());
         match result.unwrap() {
             SelectResult::DefaultExecuted => {},
-            other => panic!("Expected DefaultExecuted, got {:?}", other),
+            other => {
+                eprintln!("Expected DefaultExecuted, got {:?} - test failed gracefully", other);
+                assert!(false, "Expected DefaultExecuted");
+            },
         }
     }
 }

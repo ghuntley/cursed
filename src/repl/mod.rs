@@ -1,6 +1,7 @@
 // Minimal module - heavy features disabled
 
 pub mod cursed_repl;
+pub mod jit_repl;
 pub mod session_manager;
 pub mod types;
 

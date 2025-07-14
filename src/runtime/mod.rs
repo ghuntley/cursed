@@ -20,6 +20,7 @@ pub mod stack_trace;
 pub mod stack_walker;
 pub mod runtime_error;
 pub mod error_context;
+pub mod production_error;  // Production runtime error handling
 pub mod process;
 pub mod runtime_value;
 pub mod debug_output;
@@ -41,6 +42,7 @@ pub mod memory_profiler; // Memory profiling and leak detection
 pub mod concurrent_gc;   // Concurrent garbage collection
 pub mod heap_optimizer;  // Heap allocation optimization
 pub mod gc_monitor;      // GC monitoring and alerting
+pub mod performance_hooks;  // Runtime performance monitoring hooks
 
 // Async and channels
 pub mod r#async;

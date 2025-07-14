@@ -227,6 +227,32 @@ fn build_cli() -> Command {
                     .long("pass-pipeline")
                     .value_name("PIPELINE")
                     .value_parser(["default", "pgo", "size", "production"]))
+                // Function inlining optimization flags
+                .arg(Arg::new("enable-inlining")
+                    .help("Enable function inlining optimization")
+                    .long("enable-inlining")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("inline-threshold")
+                    .help("Set function inlining threshold")
+                    .long("inline-threshold")
+                    .value_name("SIZE")
+                    .value_parser(value_parser!(u32))
+                    .requires("enable-inlining"))
+                .arg(Arg::new("aggressive-inline")
+                    .help("Enable aggressive function inlining")
+                    .long("aggressive-inline")
+                    .action(clap::ArgAction::SetTrue)
+                    .requires("enable-inlining"))
+                .arg(Arg::new("inline-generics")
+                    .help("Enable inlining of generic functions")
+                    .long("inline-generics")
+                    .action(clap::ArgAction::SetTrue)
+                    .requires("enable-inlining"))
+                .arg(Arg::new("inline-interfaces")
+                    .help("Enable inlining of interface methods")
+                    .long("inline-interfaces")
+                    .action(clap::ArgAction::SetTrue)
+                    .requires("enable-inlining"))
                 .arg(Arg::new("benchmark")
                     .help("Generate optimization benchmark report")
                     .long("benchmark")
@@ -864,6 +890,31 @@ fn create_advanced_optimization_config(matches: &ArgMatches, global_matches: &Ar
         if let Some(bolt_profile) = matches.get_one::<String>("bolt-profile") {
             config.bolt_profile_path = Some(std::path::PathBuf::from(bolt_profile));
         }
+    }
+
+    // Configure function inlining optimization
+    if matches.get_flag("enable-inlining") {
+        // TODO: Add function inlining support to OptimizationConfig
+        // config.base_config.enable_function_inlining = true;
+        
+        if let Some(threshold) = matches.get_one::<u32>("inline-threshold") {
+            config.base_config.inline_threshold = *threshold;
+        }
+        
+        // TODO: Add aggressive inlining support
+        // if matches.get_flag("aggressive-inline") {
+        //     config.base_config.aggressive_inlining = true;
+        // }
+        
+        // TODO: Add generics inlining support
+        // if matches.get_flag("inline-generics") {
+        //     config.base_config.enable_generics_inlining = true;
+        // }
+        
+        // TODO: Add interface inlining support
+        // if matches.get_flag("inline-interfaces") {
+        //     config.base_config.enable_interface_inlining = true;
+        // }
     }
 
     Ok(config)

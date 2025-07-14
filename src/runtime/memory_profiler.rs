@@ -50,19 +50,22 @@ impl Default for ProfilingConfig {
 }
 
 /// Allocation information for profiling
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct AllocationInfo {
     /// Object address
     pub address: usize,
     /// Object size
     pub size: usize,
     /// Allocation timestamp
+    #[serde(skip)]
     pub timestamp: Instant,
     /// Stack trace at allocation
     pub stack_trace: Option<Vec<String>>,
     /// Object tag/type
+    #[serde(skip)]
     pub object_tag: crate::memory::Tag,
     /// Thread ID that allocated
+    #[serde(skip)]
     pub thread_id: Option<thread::ThreadId>,
     /// Stack ID (for goroutine allocations)
     pub stack_id: Option<StackId>,
@@ -70,8 +73,23 @@ pub struct AllocationInfo {
     pub is_alive: bool,
 }
 
+impl Default for AllocationInfo {
+    fn default() -> Self {
+        Self {
+            address: 0,
+            size: 0,
+            timestamp: Instant::now(),
+            stack_trace: None,
+            object_tag: crate::memory::Tag::Object,
+            thread_id: None,
+            stack_id: None,
+            is_alive: false,
+        }
+    }
+}
+
 /// Memory leak information
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct LeakInfo {
     /// Allocation information
     pub allocation: AllocationInfo,
@@ -86,7 +104,7 @@ pub struct LeakInfo {
 }
 
 /// Types of memory leaks
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub enum LeakType {
     /// Long-lived object that should have been collected
     LongLived,
@@ -103,7 +121,7 @@ pub enum LeakType {
 }
 
 /// Memory profiling statistics
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ProfilingStats {
     /// Total allocations tracked
     pub total_allocations: u64,

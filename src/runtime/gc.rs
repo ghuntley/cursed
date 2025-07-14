@@ -159,7 +159,7 @@ unsafe impl Send for HeapRegion {}
 unsafe impl Sync for HeapRegion {}
 
 /// Garbage collection statistics
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct GcStats {
     /// Total collections performed
     pub total_collections: u64,

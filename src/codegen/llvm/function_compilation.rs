@@ -223,14 +223,29 @@ impl FunctionCompiler {
                 if let crate::ast::AssignmentTarget::Single(name) = &assign_stmt.target {
                     // Look up existing variable
                     if let Some(var_reg) = self.variables.get(name).cloned() {
-                        // Store new value to existing variable
-                        // TODO: Use proper type tracking
-                        if name.contains("name") || name.contains("text") || name.contains("str") {
-                            ir.push_str(&format!("  store i8* {}, i8** {}, align 8\n", value_reg, var_reg));
-                        } else if name.contains("flag") || name.contains("bool") || name.contains("is_") || name.contains("active") || name.contains("enabled") {
-                            ir.push_str(&format!("  store i1 {}, i1* {}, align 1\n", value_reg, var_reg));
-                        } else {
-                            ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", value_reg, var_reg));
+                        // Store new value to existing variable with proper type tracking
+                        let var_type = self.get_variable_type(name, &assign_stmt.value)?;
+                        match var_type.as_str() {
+                            "i8*" => {
+                                ir.push_str(&format!("  store i8* {}, i8** {}, align 8\n", value_reg, var_reg));
+                            }
+                            "i1" => {
+                                ir.push_str(&format!("  store i1 {}, i1* {}, align 1\n", value_reg, var_reg));
+                            }
+                            "i32" => {
+                                ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", value_reg, var_reg));
+                            }
+                            "i64" => {
+                                ir.push_str(&format!("  store i64 {}, i64* {}, align 8\n", value_reg, var_reg));
+                            }
+                            "double" => {
+                                ir.push_str(&format!("  store double {}, double* {}, align 8\n", value_reg, var_reg));
+                            }
+                            _ => {
+                                // Default to i32 with error comment
+                                ir.push_str(&format!("  ; WARNING: Unknown type for variable {}, defaulting to i32\n", name));
+                                ir.push_str(&format!("  store i32 {}, i32* {}, align 4\n", value_reg, var_reg));
+                            }
                         }
                         ir.push_str(&format!("  ; Assignment to {} = {}\n", name, value_reg));
                     } else {
@@ -2059,6 +2074,46 @@ impl FunctionCompiler {
         log::debug!("Generated register: {} (counter was {})", reg, self.variable_counter);
         self.variable_counter += 1;
         reg
+    }
+    
+    /// Get the LLVM type for a variable based on its name and value
+    fn get_variable_type(&self, name: &str, value: &crate::ast::Expression) -> Result<String, CursedError> {
+        // First, check the expression type
+        match value {
+            crate::ast::Expression::String(_) => Ok("i8*".to_string()),
+            crate::ast::Expression::Boolean(_) => Ok("i1".to_string()),
+            crate::ast::Expression::Integer(_) => Ok("i32".to_string()),
+            crate::ast::Expression::Float(_) => Ok("double".to_string()),
+            crate::ast::Expression::Character(_) => Ok("i8".to_string()),
+            crate::ast::Expression::Literal(lit) => {
+                match lit {
+                    crate::ast::Literal::String(_) => Ok("i8*".to_string()),
+                    crate::ast::Literal::Boolean(_) => Ok("i1".to_string()),
+                    crate::ast::Literal::Integer(_) => Ok("i32".to_string()),
+                    crate::ast::Literal::Float(_) => Ok("double".to_string()),
+
+                    crate::ast::Literal::Null => Ok("i8*".to_string()),
+                    crate::ast::Literal::Nil => Ok("i8*".to_string()),
+                }
+            }
+            _ => {
+                // Fall back to name-based heuristics
+                if name.contains("name") || name.contains("text") || name.contains("str") || name.contains("tea") {
+                    Ok("i8*".to_string())
+                } else if name.contains("flag") || name.contains("bool") || name.contains("is_") || name.contains("active") || name.contains("enabled") || name.contains("lit") {
+                    Ok("i1".to_string())
+                } else if name.contains("float") || name.contains("double") || name.contains("meal") || name.contains("snack") {
+                    Ok("double".to_string())
+                } else if name.contains("long") || name.contains("thicc") || name.contains("size") {
+                    Ok("i64".to_string())
+                } else if name.contains("char") || name.contains("sip") || name.contains("byte") {
+                    Ok("i8".to_string())
+                } else {
+                    // Default to i32 for most variables
+                    Ok("i32".to_string())
+                }
+            }
+        }
     }
 
     /// Generate next label name
