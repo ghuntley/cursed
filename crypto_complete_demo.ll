@@ -21,6 +21,7 @@ declare void @cursed_free(i8*)
 declare i32 @cursed_goroutine_spawn(i8*)
 declare i32 @cursed_channel_send(i8*, i64)
 declare i32 @cursed_channel_receive(i8*, i64*)
+declare void @cursed_channel_error(i32)
 declare i32 @__gxx_personality_v0(...)
 declare i8* @__cxa_begin_catch(i8*)
 declare void @__cxa_end_catch()
@@ -71,12 +72,18 @@ declare i64 @time(i64*)
 declare i8* @cursed_propagate_with_context(i8*, i8*)
 @error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
 
+; Module Declarations from Imports
+; mod module declarations
+declare void @mod_init()
+declare void @mod_cleanup()
+
+
 
 ; String constants
-@.str.0 = private unnamed_addr constant [23 x i8] c"Hello CURSED compiler!\00", align 1
 @.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@.str.0 = private unnamed_addr constant [47 x i8] c"=== CURSED Comprehensive Cryptography Demo ===\00", align 1
 define i32 @main() {
-  %0 = getelementptr inbounds [23 x i8], [23 x i8]* @.str.0, i64 0, i64 0
+  %0 = getelementptr inbounds [47 x i8], [47 x i8]* @.str.0, i64 0, i64 0
   ; Converting complex expression to output
   %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
   %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)

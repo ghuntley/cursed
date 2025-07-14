@@ -1,2 +1,2 @@
-sus result=x+y*z
-sus compare=a==b&&c!=d
+yeet "error_drip"
+vibez.spill("error_drip loaded successfully")

@@ -1,3 +1,3 @@
-bestie i := 0; i < 3; i++ {
-    vibez.spill(i);
+bestie i := 0; i < 5; i++ {
+    vibez.spill("test")
 }

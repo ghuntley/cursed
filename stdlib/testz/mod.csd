@@ -1,7 +1,6 @@
 yeet "vibez"
 yeet "timez"
 yeet "stringz"
-yeet "mathz"
 
 # Core testing state
 sus current_test_name tea = ""
@@ -42,6 +41,9 @@ sus test_filter tea = ""
 sus assertion_count normie = 0
 sus assertion_failures normie = 0
 sus last_assertion_message tea = ""
+
+# Simple random number generator state
+sus random_state normie = 1
 
 # Test result statistics
 sus test_execution_time normie = 0
@@ -367,17 +369,32 @@ slay property_test_end() {
     }
 }
 
+# Simple inline random number generator (LCG)
+slay next_random() normie {
+    random_state = (random_state * 1103515245 + 12345) % 2147483647
+    damn random_state
+}
+
 # Property generators
 slay random_int(min_val normie, max_val normie) normie {
-    damn mathz.random_int(min_val, max_val)
+    sus range normie = max_val - min_val + 1
+    sus rand_val normie = next_random() % range
+    damn min_val + rand_val
 }
 
 slay random_string(length normie) tea {
-    damn stringz.random_string(length)
+    sus result tea = ""
+    sus i normie = 0
+    bestie i = 0; i < length; i = i + 1 {
+        sus char_code normie = random_int(65, 90) # A-Z range
+        sus char_str tea = tea(char_code) # Simple char conversion
+        result = result + char_str
+    }
+    damn result
 }
 
 slay random_boolean() lit {
-    damn mathz.random_int(0, 1) == 1
+    damn random_int(0, 1) == 1
 }
 
 # ===============================
