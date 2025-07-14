@@ -359,9 +359,9 @@ testing = []
 
 [dev-dependencies]
 criterion = "0.5"  # For benchmarking
+proptest = "1.4"   # Property-based testing for stress tests
 tempfile = "3.8"   # For temporary directories in tests
 pretty_assertions = "1.4"  # For nicer test output
-proptest = "1.3"  # For property-based testing
 rand = "0.8.5"  # For randomization in tests
 # tempfile = "3.8"  # For temporary files in tests (already included above)
 clap = { version = "4.4", features = ["derive"] }  # For command-line argument parsing

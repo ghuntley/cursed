@@ -1268,6 +1268,10 @@ impl CursedExecutionEngine {
                 context.set_type_alias(type_alias.name.clone(), type_alias.target_type.clone());
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
+            Statement::PatternSwitch(_) => {
+                // Pattern switch statements not yet implemented in execution engine
+                Err(CursedError::runtime_error("Pattern switch statements not yet implemented in execution engine"))
+            },
         }
     }
     
@@ -1449,6 +1453,10 @@ impl CursedExecutionEngine {
             },
             Expression::TestResultCheck(_) => {
                 Ok(CursedValue::Boolean(false))
+            },
+            Expression::RangeFor { .. } => {
+                // RangeFor expressions not yet implemented in execution engine
+                Err(CursedError::runtime_error("RangeFor expressions not yet implemented in execution engine"))
             },
 
         }

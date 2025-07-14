@@ -7,7 +7,7 @@
 //! - Debug information generation
 //! - Profile-guided optimization
 
-use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator, AstVisitor, InterfaceStatement, MethodSignature};
+use crate::ast::{Program, Statement, Expression, Literal, BinaryOperator, AstVisitor, InterfaceStatement, MethodSignature, PatternSwitchStatement, PatternSwitchCase, PatternExpression};
 use crate::error::{CursedError, SourceLocation};
 use crate::package_manager::PackageManager;
 use crate::codegen::llvm::package_integration::LlvmPackageConfig;
@@ -653,9 +653,14 @@ impl LlvmCodeGenerator {
                                 field_value, field_ptr
                             ));
                             
-                            // Store the variable mapping
-                            self.variables.insert(var_name.clone(), field_value.clone());
-                            self.ir_code.push_str(&format!("  ; Extracted {} = {} from tuple\n", var_name, field_value));
+                            // Allocate memory for the variable (same pattern as regular assignments)
+                            let var_reg = self.next_register();
+                            self.ir_code.push_str(&format!("  {} = alloca i32, align 4\n", var_reg));
+                            self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", field_value, var_reg));
+                            
+                            // Store the variable mapping (use the alloca register, not the loaded value)
+                            self.variables.insert(var_name.clone(), var_reg.clone());
+                            self.ir_code.push_str(&format!("  ; Extracted {} = {} from tuple (allocated at {})\n", var_name, field_value, var_reg));
                         }
                     }
                 }
@@ -721,9 +726,14 @@ impl LlvmCodeGenerator {
                                 field_value, field_ptr
                             ));
                             
-                            // Store the variable mapping
-                            self.variables.insert(var_name.clone(), field_value.clone());
-                            self.ir_code.push_str(&format!("  ; Extracted {} = {} from tuple\n", var_name, field_value));
+                            // Allocate memory for the variable (same pattern as regular assignments)
+                            let var_reg = self.next_register();
+                            self.ir_code.push_str(&format!("  {} = alloca i32, align 4\n", var_reg));
+                            self.ir_code.push_str(&format!("  store i32 {}, i32* {}, align 4\n", field_value, var_reg));
+                            
+                            // Store the variable mapping (use the alloca register, not the loaded value)
+                            self.variables.insert(var_name.clone(), var_reg.clone());
+                            self.ir_code.push_str(&format!("  ; Extracted {} = {} from tuple (allocated at {})\n", var_name, field_value, var_reg));
                         }
                     }
                 }
@@ -755,6 +765,9 @@ impl LlvmCodeGenerator {
             },
             Statement::Switch(switch_stmt) => {
                 self.generate_switch_statement_with_init(switch_stmt)?;
+            },
+            Statement::PatternSwitch(pattern_switch) => {
+                self.generate_pattern_switch_statement(pattern_switch)?;
             },
             Statement::Goroutine(goroutine_stmt) => {
                 self.ir_code.push_str("  ; Goroutine spawn\n");
@@ -3609,6 +3622,269 @@ impl LlvmCodeGenerator {
                 Ok((channel_reg, 0, null_reg)) // Default to receive operation
             }
         }
+    }
+
+    /// Generate LLVM IR for pattern switch statement
+    fn generate_pattern_switch_statement(&mut self, pattern_switch: &PatternSwitchStatement) -> Result<(), CursedError> {
+        // Generate optional init statement first
+        if let Some(init_stmt) = &pattern_switch.init {
+            self.generate_statement(init_stmt)?;
+        }
+        
+        // Generate switch expression
+        let switch_value_reg = self.generate_expression(&pattern_switch.expression)?;
+        
+        // Generate labels
+        let end_label = self.next_label();
+        let mut case_labels = Vec::new();
+        for _ in &pattern_switch.cases {
+            case_labels.push(self.next_label());
+        }
+        let default_label = if pattern_switch.default_case.is_some() {
+            Some(self.next_label())
+        } else {
+            None
+        };
+        
+        // Generate pattern matching logic
+        for (i, case) in pattern_switch.cases.iter().enumerate() {
+            let case_success_label = case_labels[i].clone();
+            let case_fail_label = if i + 1 < case_labels.len() {
+                case_labels[i + 1].clone()
+            } else if let Some(ref default) = default_label {
+                default.clone()
+            } else {
+                end_label.clone()
+            };
+            
+            // Generate pattern matching for this case
+            self.generate_pattern_match(&switch_value_reg, &case.pattern, &case_success_label, &case_fail_label)?;
+            
+            // Generate case body
+            self.ir_code.push_str(&format!("{}:\n", case_success_label));
+            
+            // Check guard condition if present
+            if let Some(guard) = &case.guard {
+                let guard_reg = self.generate_expression(guard)?;
+                let guard_success_label = self.next_label();
+                
+                self.ir_code.push_str(&format!(
+                    "  br i1 {}, label %{}, label %{}\n",
+                    guard_reg, guard_success_label, case_fail_label
+                ));
+                
+                self.ir_code.push_str(&format!("{}:\n", guard_success_label));
+            }
+            
+            // Generate case body statements
+            for stmt in &case.body {
+                self.generate_statement(stmt)?;
+            }
+            
+            // Jump to end
+            self.ir_code.push_str(&format!("  br label %{}\n", end_label));
+        }
+        
+        // Generate default case if present
+        if let Some(default_body) = &pattern_switch.default_case {
+            if let Some(default_label) = default_label {
+                self.ir_code.push_str(&format!("{}:\n", default_label));
+                for stmt in default_body {
+                    self.generate_statement(stmt)?;
+                }
+                self.ir_code.push_str(&format!("  br label %{}\n", end_label));
+            }
+        }
+        
+        // End label
+        self.ir_code.push_str(&format!("{}:\n", end_label));
+        
+        Ok(())
+    }
+
+    /// Generate LLVM IR for pattern matching
+    fn generate_pattern_match(
+        &mut self,
+        value_reg: &str,
+        pattern: &PatternExpression,
+        success_label: &str,
+        fail_label: &str,
+    ) -> Result<(), CursedError> {
+        match pattern {
+            PatternExpression::Wildcard => {
+                // Wildcard always matches
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            }
+            
+            PatternExpression::Variable(var_name) => {
+                // Variable pattern always matches and binds the value
+                // Store value in local variable
+                let var_ptr = self.next_register();
+                self.ir_code.push_str(&format!("  {} = alloca i32\n", var_ptr));
+                self.ir_code.push_str(&format!("  store i32 {}, i32* {}\n", value_reg, var_ptr));
+                
+                // Store variable binding for later use
+                self.variables.insert(var_name.clone(), var_ptr);
+                
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            }
+            
+            PatternExpression::Literal(expr) => {
+                match expr {
+                    Expression::Integer(val) => {
+                        let cmp_reg = self.next_register();
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i32 {}, {}\n",
+                            cmp_reg, value_reg, val
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
+                    }
+                    Expression::Boolean(val) => {
+                        let cmp_reg = self.next_register();
+                        let bool_val = if *val { 1 } else { 0 };
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i1 {}, {}\n",
+                            cmp_reg, value_reg, bool_val
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
+                    }
+                    Expression::Character(val) => {
+                        let cmp_reg = self.next_register();
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i8 {}, {}\n",
+                            cmp_reg, value_reg, *val as u8
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
+                    }
+                    _ => {
+                        return Err(CursedError::compiler_error(
+                            "Unsupported literal pattern type"
+                        ));
+                    }
+                }
+            }
+            
+            PatternExpression::Range { start, end, inclusive } => {
+                // Generate range check: value >= start && value <= end (or < end+1)
+                let start_reg = self.generate_expression(start)?;
+                let end_reg = self.generate_expression(end)?;
+                
+                let ge_reg = self.next_register();
+                let le_reg = self.next_register();
+                let and_reg = self.next_register();
+                
+                // value >= start
+                self.ir_code.push_str(&format!(
+                    "  {} = icmp sge i32 {}, {}\n",
+                    ge_reg, value_reg, start_reg
+                ));
+                
+                // value <= end (or < end+1 for exclusive)
+                if *inclusive {
+                    self.ir_code.push_str(&format!(
+                        "  {} = icmp sle i32 {}, {}\n",
+                        le_reg, value_reg, end_reg
+                    ));
+                } else {
+                    self.ir_code.push_str(&format!(
+                        "  {} = icmp slt i32 {}, {}\n",
+                        le_reg, value_reg, end_reg
+                    ));
+                }
+                
+                // Combine conditions
+                self.ir_code.push_str(&format!(
+                    "  {} = and i1 {}, {}\n",
+                    and_reg, ge_reg, le_reg
+                ));
+                self.ir_code.push_str(&format!(
+                    "  br i1 {}, label %{}, label %{}\n",
+                    and_reg, success_label, fail_label
+                ));
+            }
+            
+            PatternExpression::Tuple(patterns) => {
+                // Generate tuple destructuring
+                let mut check_labels = Vec::new();
+                for i in 0..patterns.len() {
+                    check_labels.push(self.next_label());
+                }
+                
+                // Start with first element
+                if !patterns.is_empty() {
+                    self.ir_code.push_str(&format!("  br label %{}\n", check_labels[0]));
+                } else {
+                    self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+                    return Ok(());
+                }
+                
+                // Generate checks for each tuple element
+                for (i, pattern) in patterns.iter().enumerate() {
+                    self.ir_code.push_str(&format!("{}:\n", check_labels[i]));
+                    
+                    // Extract tuple element (simplified - assumes specific tuple type)
+                    let element_reg = self.next_register();
+                    self.ir_code.push_str(&format!(
+                        "  {} = extractvalue {{i32, i32, i32}} {}, {}\n",
+                        element_reg, value_reg, i
+                    ));
+                    
+                    let next_label = if i + 1 < check_labels.len() {
+                        &check_labels[i + 1]
+                    } else {
+                        success_label
+                    };
+                    
+                    self.generate_pattern_match(&element_reg, pattern, next_label, fail_label)?;
+                }
+            }
+            
+            PatternExpression::Or(patterns) => {
+                // Generate OR pattern - any pattern can match
+                let mut alt_labels = Vec::new();
+                for i in 0..patterns.len() {
+                    alt_labels.push(self.next_label());
+                }
+                
+                // Start with first alternative
+                if !patterns.is_empty() {
+                    self.ir_code.push_str(&format!("  br label %{}\n", alt_labels[0]));
+                } else {
+                    self.ir_code.push_str(&format!("  br label %{}\n", fail_label));
+                    return Ok(());
+                }
+                
+                // Generate checks for each alternative
+                for (i, pattern) in patterns.iter().enumerate() {
+                    self.ir_code.push_str(&format!("{}:\n", alt_labels[i]));
+                    
+                    let next_alt = if i + 1 < alt_labels.len() {
+                        &alt_labels[i + 1]
+                    } else {
+                        fail_label
+                    };
+                    
+                    self.generate_pattern_match(value_reg, pattern, success_label, next_alt)?;
+                }
+            }
+            
+            _ => {
+                return Err(CursedError::compiler_error(
+                    "Pattern type not yet implemented in LLVM codegen"
+                ));
+            }
+        }
+        
+        Ok(())
     }
 
 }
