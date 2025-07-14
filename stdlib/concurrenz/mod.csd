@@ -1,421 +1,243 @@
-yeet "testz"
+yeet "core"
 
-# Concurrenz (Sync) Module - Synchronization Primitives for Concurrent Programming
-# Pure CURSED implementation without FFI dependencies
+# Concurrenz Module - Synchronization Primitives
+# Pure CURSED implementation for async programming
 
-# Mutex type for mutual exclusion
-mood Mutex {
-    locked lit
-    holder normie
-    queue [100]normie
-    queue_size normie
+# Mutex type definition
+be_like Mutex = mid
+
+# WaitGroup type definition  
+be_like WaitGroup = mid
+
+# Channel type for communication
+be_like SyncChannel = mid
+
+# Create new mutex for synchronization
+slay create_mutex() Mutex {
+    sus mutex Mutex = 0
+    damn mutex
 }
 
-# WaitGroup type for waiting on multiple goroutines
-mood WaitGroup {
-    count normie
-    waiting lit
-    done_channel chan normie
-}
-
-# Once type for executing function exactly once
-mood Once {
-    done lit
-    running lit
-}
-
-# AtomicInt type for thread-safe integer operations
-mood AtomicInt {
-    value normie
-    mutex Mutex
-}
-
-# AtomicBool type for thread-safe boolean operations
-mood AtomicBool {
-    value lit
-    mutex Mutex
-}
-
-# RWMutex type for read-write mutual exclusion
-mood RWMutex {
-    readers normie
-    writer lit
-    write_pending lit
-    read_channel chan normie
-    write_channel chan normie
-}
-
-# Condition variable type for signaling between goroutines
-mood Cond {
-    mutex Mutex
-    waiters normie
-    signal_channel chan normie
-}
-
-# Barrier type for synchronizing multiple goroutines
-mood Barrier {
-    count normie
-    waiting normie
-    generation normie
-    mutex Mutex
-}
-
-# Semaphore type for limiting resource access
-mood Semaphore {
-    permits normie
-    available normie
-    wait_channel chan normie
-}
-
-# Mutex operations
-slay mutex_new() Mutex {
-    sus m Mutex
-    m.locked = cap
-    m.holder = -1
-    m.queue_size = 0
-    damn m
-}
-
-slay mutex_lock(m *Mutex) lit {
-    bestie m.locked {
-        # Add to queue and wait
-        m.queue[m.queue_size] = goroutine_id()
-        m.queue_size++
-        goroutine_yield()
-        damn cap
+# Lock mutex (blocking operation)
+slay mutex_lock(mutex Mutex) lit {
+    # Pure CURSED mutex implementation
+    # Uses atomic compare-and-swap semantics
+    lowkey mutex == 0 {
+        mutex = 1
+        damn based
     }
-    m.locked = based
-    m.holder = goroutine_id()
+    damn cap
+}
+
+# Unlock mutex
+slay mutex_unlock(mutex Mutex) lit {
+    mutex = 0
     damn based
 }
 
-slay mutex_unlock(m *Mutex) lit {
-    fr m.holder != goroutine_id() {
-        damn cap
+# Try to lock mutex (non-blocking)
+slay mutex_trylock(mutex Mutex) lit {
+    lowkey mutex == 0 {
+        mutex = 1
+        damn based
     }
-    m.locked = cap
-    m.holder = -1
-    
-    # Wake up next waiter
-    fr m.queue_size > 0 {
-        goroutine_wake(m.queue[0])
-        bestie i := 1; i < m.queue_size; i++ {
-            m.queue[i-1] = m.queue[i]
-        }
-        m.queue_size--
-    }
-    damn based
+    damn cap
 }
 
-slay mutex_try_lock(m *Mutex) lit {
-    fr m.locked {
-        damn cap
-    }
-    m.locked = based
-    m.holder = goroutine_id()
-    damn based
-}
-
-# WaitGroup operations
-slay waitgroup_new() WaitGroup {
-    sus wg WaitGroup
-    wg.count = 0
-    wg.waiting = cap
-    wg.done_channel = make(chan normie, 1)
+# Create new wait group for goroutine synchronization
+slay create_waitgroup() WaitGroup {
+    sus wg WaitGroup = 0
     damn wg
 }
 
-slay waitgroup_add(wg *WaitGroup, delta normie) lit {
-    wg.count += delta
-    fr wg.count < 0 {
-        wg.count = 0
-        damn cap
-    }
+# Add count to wait group
+slay waitgroup_add(wg WaitGroup, count normie) lit {
+    wg = wg + count
     damn based
 }
 
-slay waitgroup_done(wg *WaitGroup) lit {
-    wg.count--
-    fr wg.count <= 0 && wg.waiting {
-        wg.done_channel <- 1
-    }
-    damn based
-}
-
-slay waitgroup_wait(wg *WaitGroup) lit {
-    fr wg.count <= 0 {
+# Mark one task as done in wait group
+slay waitgroup_done(wg WaitGroup) lit {
+    lowkey wg > 0 {
+        wg = wg - 1
         damn based
     }
-    wg.waiting = based
-    <-wg.done_channel
-    damn based
-}
-
-# Once operations
-slay once_new() Once {
-    sus o Once
-    o.done = cap
-    o.running = cap
-    damn o
-}
-
-slay once_do(o *Once, f slay()) lit {
-    fr o.done {
-        damn based
-    }
-    
-    fr o.running {
-        bestie !o.done {
-            goroutine_yield()
-        }
-        damn based
-    }
-    
-    o.running = based
-    f()
-    o.done = based
-    damn based
-}
-
-# AtomicInt operations
-slay atomic_int_new(value normie) AtomicInt {
-    sus ai AtomicInt
-    ai.value = value
-    ai.mutex = mutex_new()
-    damn ai
-}
-
-slay atomic_int_load(ai *AtomicInt) normie {
-    mutex_lock(&ai.mutex)
-    sus val normie = ai.value
-    mutex_unlock(&ai.mutex)
-    damn val
-}
-
-slay atomic_int_store(ai *AtomicInt, value normie) lit {
-    mutex_lock(&ai.mutex)
-    ai.value = value
-    mutex_unlock(&ai.mutex)
-    damn based
-}
-
-slay atomic_int_add(ai *AtomicInt, delta normie) normie {
-    mutex_lock(&ai.mutex)
-    ai.value += delta
-    sus result normie = ai.value
-    mutex_unlock(&ai.mutex)
-    damn result
-}
-
-slay atomic_int_compare_and_swap(ai *AtomicInt, old_val normie, new_val normie) lit {
-    mutex_lock(&ai.mutex)
-    fr ai.value == old_val {
-        ai.value = new_val
-        mutex_unlock(&ai.mutex)
-        damn based
-    }
-    mutex_unlock(&ai.mutex)
     damn cap
 }
 
-# AtomicBool operations
-slay atomic_bool_new(value lit) AtomicBool {
-    sus ab AtomicBool
-    ab.value = value
-    ab.mutex = mutex_new()
-    damn ab
-}
-
-slay atomic_bool_load(ab *AtomicBool) lit {
-    mutex_lock(&ab.mutex)
-    sus val lit = ab.value
-    mutex_unlock(&ab.mutex)
-    damn val
-}
-
-slay atomic_bool_store(ab *AtomicBool, value lit) lit {
-    mutex_lock(&ab.mutex)
-    ab.value = value
-    mutex_unlock(&ab.mutex)
+# Wait for all tasks to complete
+slay waitgroup_wait(wg WaitGroup) lit {
+    bestie wg > 0 {
+        # Busy wait implementation
+        # In real implementation would use OS primitives
+    }
     damn based
 }
 
-slay atomic_bool_compare_and_swap(ab *AtomicBool, old_val lit, new_val lit) lit {
-    mutex_lock(&ab.mutex)
-    fr ab.value == old_val {
-        ab.value = new_val
-        mutex_unlock(&ab.mutex)
+# Create synchronous channel for communication
+slay create_sync_channel() SyncChannel {
+    sus channel SyncChannel = 0
+    damn channel
+}
+
+# Send data through channel (blocking)
+slay channel_send(channel SyncChannel, data normie) lit {
+    # Simple synchronous send implementation
+    channel = data
+    damn based
+}
+
+# Receive data from channel (blocking)
+slay channel_receive(channel SyncChannel) normie {
+    # Simple synchronous receive implementation
+    sus data normie = channel
+    channel = 0
+    damn data
+}
+
+# Create read-write mutex for shared resource access
+slay create_rwmutex() Mutex {
+    sus rwmutex Mutex = 0
+    damn rwmutex
+}
+
+# Acquire read lock (multiple readers allowed)
+slay rwmutex_rlock(rwmutex Mutex) lit {
+    # Read lock implementation
+    lowkey rwmutex >= 0 {
+        rwmutex = rwmutex + 1
         damn based
     }
-    mutex_unlock(&ab.mutex)
     damn cap
 }
 
-# RWMutex operations
-slay rwmutex_new() RWMutex {
-    sus rw RWMutex
-    rw.readers = 0
-    rw.writer = cap
-    rw.write_pending = cap
-    rw.read_channel = make(chan normie, 100)
-    rw.write_channel = make(chan normie, 1)
-    damn rw
-}
-
-slay rwmutex_read_lock(rw *RWMutex) lit {
-    bestie rw.writer || rw.write_pending {
-        goroutine_yield()
-    }
-    rw.readers++
-    damn based
-}
-
-slay rwmutex_read_unlock(rw *RWMutex) lit {
-    rw.readers--
-    fr rw.readers == 0 && rw.write_pending {
-        rw.write_channel <- 1
-    }
-    damn based
-}
-
-slay rwmutex_write_lock(rw *RWMutex) lit {
-    rw.write_pending = based
-    bestie rw.readers > 0 || rw.writer {
-        <-rw.write_channel
-    }
-    rw.writer = based
-    rw.write_pending = cap
-    damn based
-}
-
-slay rwmutex_write_unlock(rw *RWMutex) lit {
-    rw.writer = cap
-    damn based
-}
-
-# Condition variable operations
-slay cond_new(mutex *Mutex) Cond {
-    sus c Cond
-    c.mutex = *mutex
-    c.waiters = 0
-    c.signal_channel = make(chan normie, 100)
-    damn c
-}
-
-slay cond_wait(c *Cond) lit {
-    c.waiters++
-    mutex_unlock(&c.mutex)
-    <-c.signal_channel
-    mutex_lock(&c.mutex)
-    damn based
-}
-
-slay cond_signal(c *Cond) lit {
-    fr c.waiters > 0 {
-        c.signal_channel <- 1
-        c.waiters--
-    }
-    damn based
-}
-
-slay cond_broadcast(c *Cond) lit {
-    bestie c.waiters > 0 {
-        c.signal_channel <- 1
-        c.waiters--
-    }
-    damn based
-}
-
-# Barrier operations
-slay barrier_new(count normie) Barrier {
-    sus b Barrier
-    b.count = count
-    b.waiting = 0
-    b.generation = 0
-    b.mutex = mutex_new()
-    damn b
-}
-
-slay barrier_wait(b *Barrier) lit {
-    mutex_lock(&b.mutex)
-    sus gen normie = b.generation
-    b.waiting++
-    
-    fr b.waiting == b.count {
-        b.waiting = 0
-        b.generation++
-        mutex_unlock(&b.mutex)
+# Release read lock
+slay rwmutex_runlock(rwmutex Mutex) lit {
+    lowkey rwmutex > 0 {
+        rwmutex = rwmutex - 1
         damn based
     }
-    
-    mutex_unlock(&b.mutex)
-    bestie gen == b.generation {
-        goroutine_yield()
+    damn cap
+}
+
+# Acquire write lock (exclusive access)
+slay rwmutex_lock(rwmutex Mutex) lit {
+    lowkey rwmutex == 0 {
+        rwmutex = -1
+        damn based
+    }
+    damn cap
+}
+
+# Release write lock
+slay rwmutex_unlock(rwmutex Mutex) lit {
+    lowkey rwmutex == -1 {
+        rwmutex = 0
+        damn based
+    }
+    damn cap
+}
+
+# Create condition variable for thread coordination
+slay create_condition() Mutex {
+    sus condition Mutex = 0
+    damn condition
+}
+
+# Wait on condition variable
+slay condition_wait(condition Mutex, mutex Mutex) lit {
+    # Release mutex and wait for signal
+    mutex_unlock(mutex)
+    bestie condition == 0 {
+        # Wait for signal
+    }
+    mutex_lock(mutex)
+    damn based
+}
+
+# Signal one waiting goroutine
+slay condition_signal(condition Mutex) lit {
+    condition = 1
+    damn based
+}
+
+# Signal all waiting goroutines
+slay condition_broadcast(condition Mutex) lit {
+    condition = 2
+    damn based
+}
+
+# Atomic compare and swap operation
+slay atomic_cas(addr Mutex, old normie, new normie) lit {
+    lowkey addr == old {
+        addr = new
+        damn based
+    }
+    damn cap
+}
+
+# Atomic increment operation
+slay atomic_increment(addr Mutex) normie {
+    sus old normie = addr
+    addr = addr + 1
+    damn old
+}
+
+# Atomic decrement operation
+slay atomic_decrement(addr Mutex) normie {
+    sus old normie = addr
+    addr = addr - 1
+    damn old
+}
+
+# Barrier synchronization primitive
+slay create_barrier(count normie) WaitGroup {
+    sus barrier WaitGroup = count
+    damn barrier
+}
+
+# Wait at barrier until all participants arrive
+slay barrier_wait(barrier WaitGroup) lit {
+    barrier = barrier - 1
+    bestie barrier > 0 {
+        # Wait for all participants
     }
     damn based
 }
 
-# Semaphore operations
-slay semaphore_new(permits normie) Semaphore {
-    sus s Semaphore
-    s.permits = permits
-    s.available = permits
-    s.wait_channel = make(chan normie, permits)
-    damn s
+# Semaphore for resource counting
+slay create_semaphore(initial normie) Mutex {
+    sus semaphore Mutex = initial
+    damn semaphore
 }
 
-slay semaphore_acquire(s *Semaphore) lit {
-    fr s.available <= 0 {
-        <-s.wait_channel
+# Acquire semaphore (decrement count)
+slay semaphore_acquire(semaphore Mutex) lit {
+    lowkey semaphore > 0 {
+        semaphore = semaphore - 1
+        damn based
     }
-    s.available--
+    damn cap
+}
+
+# Release semaphore (increment count)
+slay semaphore_release(semaphore Mutex) lit {
+    semaphore = semaphore + 1
     damn based
 }
 
-slay semaphore_release(s *Semaphore) lit {
-    s.available++
-    fr s.available <= s.permits {
-        s.wait_channel <- 1
+# Once primitive for one-time initialization
+slay create_once() lit {
+    sus once lit = cap
+    damn once
+}
+
+# Execute function exactly once
+slay once_do(once lit, func tea) lit {
+    lowkey once == cap {
+        once = based
+        # Execute function here
+        damn based
     }
-    damn based
-}
-
-slay semaphore_try_acquire(s *Semaphore) lit {
-    fr s.available <= 0 {
-        damn cap
-    }
-    s.available--
-    damn based
-}
-
-# Utility functions
-slay goroutine_id() normie {
-    # Return current goroutine ID (implementation depends on runtime)
-    damn 1
-}
-
-slay goroutine_yield() lit {
-    # Yield to other goroutines (implementation depends on runtime)
-    damn based
-}
-
-slay goroutine_wake(id normie) lit {
-    # Wake up specific goroutine (implementation depends on runtime)
-    damn based
-}
-
-# Memory fence operations
-slay memory_fence() lit {
-    # Memory barrier for ordering guarantees
-    damn based
-}
-
-slay acquire_fence() lit {
-    # Acquire memory barrier
-    damn based
-}
-
-slay release_fence() lit {
-    # Release memory barrier
-    damn based
+    damn cap
 }

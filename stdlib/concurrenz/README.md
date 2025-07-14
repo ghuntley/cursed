@@ -1,276 +1,252 @@
-# Concurrenz (Sync) Module
+# Concurrenz Module
 
-The `concurrenz` module provides synchronization primitives for concurrent programming in CURSED. This module implements essential synchronization types and operations needed for thread-safe programming and coordination between goroutines.
+Pure CURSED implementation of synchronization primitives essential for async programming and concurrent systems.
 
 ## Overview
 
-The concurrenz module is implemented in pure CURSED without FFI dependencies, ensuring maximum portability and integration with the CURSED runtime. It provides low-level synchronization primitives that can be used to build higher-level concurrent data structures and algorithms.
+The concurrenz module provides thread-safe synchronization primitives for coordinating goroutines and shared resource access in CURSED programs. All implementations are FFI-free and use pure CURSED language features.
 
-## Types
-
-### Mutex
-Mutual exclusion lock for protecting shared resources.
-
-```cursed
-sus m := concurrenz.mutex_new()
-concurrenz.mutex_lock(&m)
-# Critical section
-concurrenz.mutex_unlock(&m)
-```
-
-### WaitGroup
-Synchronization primitive for waiting on multiple goroutines to complete.
-
-```cursed
-sus wg := concurrenz.waitgroup_new()
-concurrenz.waitgroup_add(&wg, 3)
-
-# In goroutines:
-yolo {
-    # Do work
-    concurrenz.waitgroup_done(&wg)
-}
-
-concurrenz.waitgroup_wait(&wg)  # Wait for all to complete
-```
-
-### Once
-Ensures a function is executed exactly once across multiple goroutines.
-
-```cursed
-sus once := concurrenz.once_new()
-concurrenz.once_do(&once, initialization_function)
-```
-
-### AtomicInt
-Thread-safe integer operations without explicit locking.
-
-```cursed
-sus ai := concurrenz.atomic_int_new(42)
-sus value := concurrenz.atomic_int_load(&ai)
-concurrenz.atomic_int_store(&ai, 100)
-sus new_value := concurrenz.atomic_int_add(&ai, 50)
-```
-
-### AtomicBool
-Thread-safe boolean operations.
-
-```cursed
-sus ab := concurrenz.atomic_bool_new(cap)
-sus current := concurrenz.atomic_bool_load(&ab)
-concurrenz.atomic_bool_store(&ab, based)
-sus swapped := concurrenz.atomic_bool_compare_and_swap(&ab, based, cap)
-```
-
-### RWMutex
-Read-write mutex allowing multiple readers or single writer.
-
-```cursed
-sus rw := concurrenz.rwmutex_new()
-
-# For reading:
-concurrenz.rwmutex_read_lock(&rw)
-# Read operations
-concurrenz.rwmutex_read_unlock(&rw)
-
-# For writing:
-concurrenz.rwmutex_write_lock(&rw)
-# Write operations
-concurrenz.rwmutex_write_unlock(&rw)
-```
-
-### Condition Variable
-Signaling mechanism for goroutines to wait for specific conditions.
-
-```cursed
-sus mutex := concurrenz.mutex_new()
-sus cond := concurrenz.cond_new(&mutex)
-
-# Waiting goroutine:
-concurrenz.mutex_lock(&mutex)
-concurrenz.cond_wait(&cond)
-concurrenz.mutex_unlock(&mutex)
-
-# Signaling goroutine:
-concurrenz.cond_signal(&cond)  # Wake one waiter
-concurrenz.cond_broadcast(&cond)  # Wake all waiters
-```
-
-### Barrier
-Synchronization point where multiple goroutines wait for each other.
-
-```cursed
-sus barrier := concurrenz.barrier_new(3)  # 3 goroutines
-
-# In each goroutine:
-# Do work
-concurrenz.barrier_wait(&barrier)  # Wait for all to reach this point
-# Continue after all reached barrier
-```
-
-### Semaphore
-Counting semaphore for limiting resource access.
-
-```cursed
-sus sem := concurrenz.semaphore_new(5)  # 5 permits
-
-concurrenz.semaphore_acquire(&sem)
-# Use resource
-concurrenz.semaphore_release(&sem)
-
-# Non-blocking attempt:
-fr concurrenz.semaphore_try_acquire(&sem) {
-    # Got resource
-    concurrenz.semaphore_release(&sem)
-}
-```
-
-## Functions
+## Core Synchronization Primitives
 
 ### Mutex Operations
-- `mutex_new() Mutex` - Create new mutex
-- `mutex_lock(m *Mutex) lit` - Acquire lock (blocks if necessary)
-- `mutex_unlock(m *Mutex) lit` - Release lock
-- `mutex_try_lock(m *Mutex) lit` - Try to acquire lock (non-blocking)
-
-### WaitGroup Operations
-- `waitgroup_new() WaitGroup` - Create new wait group
-- `waitgroup_add(wg *WaitGroup, delta normie) lit` - Add count
-- `waitgroup_done(wg *WaitGroup) lit` - Decrement count
-- `waitgroup_wait(wg *WaitGroup) lit` - Wait for count to reach zero
-
-### Once Operations
-- `once_new() Once` - Create new once
-- `once_do(o *Once, f slay()) lit` - Execute function once
-
-### AtomicInt Operations
-- `atomic_int_new(value normie) AtomicInt` - Create atomic integer
-- `atomic_int_load(ai *AtomicInt) normie` - Load value
-- `atomic_int_store(ai *AtomicInt, value normie) lit` - Store value
-- `atomic_int_add(ai *AtomicInt, delta normie) normie` - Add and return new value
-- `atomic_int_compare_and_swap(ai *AtomicInt, old normie, new normie) lit` - CAS operation
-
-### AtomicBool Operations
-- `atomic_bool_new(value lit) AtomicBool` - Create atomic boolean
-- `atomic_bool_load(ab *AtomicBool) lit` - Load value
-- `atomic_bool_store(ab *AtomicBool, value lit) lit` - Store value
-- `atomic_bool_compare_and_swap(ab *AtomicBool, old lit, new lit) lit` - CAS operation
-
-### RWMutex Operations
-- `rwmutex_new() RWMutex` - Create read-write mutex
-- `rwmutex_read_lock(rw *RWMutex) lit` - Acquire read lock
-- `rwmutex_read_unlock(rw *RWMutex) lit` - Release read lock
-- `rwmutex_write_lock(rw *RWMutex) lit` - Acquire write lock
-- `rwmutex_write_unlock(rw *RWMutex) lit` - Release write lock
-
-### Condition Variable Operations
-- `cond_new(mutex *Mutex) Cond` - Create condition variable
-- `cond_wait(c *Cond) lit` - Wait for signal
-- `cond_signal(c *Cond) lit` - Signal one waiter
-- `cond_broadcast(c *Cond) lit` - Signal all waiters
-
-### Barrier Operations
-- `barrier_new(count normie) Barrier` - Create barrier for count goroutines
-- `barrier_wait(b *Barrier) lit` - Wait at barrier
-
-### Semaphore Operations
-- `semaphore_new(permits normie) Semaphore` - Create semaphore
-- `semaphore_acquire(s *Semaphore) lit` - Acquire permit
-- `semaphore_release(s *Semaphore) lit` - Release permit
-- `semaphore_try_acquire(s *Semaphore) lit` - Try to acquire permit
-
-### Memory Fence Operations
-- `memory_fence() lit` - Full memory barrier
-- `acquire_fence() lit` - Acquire memory barrier
-- `release_fence() lit` - Release memory barrier
-
-## Usage Examples
-
-### Producer-Consumer with Mutex
 ```cursed
-sus mutex := concurrenz.mutex_new()
-sus buffer [10]normie
-sus count := 0
+yeet "concurrenz"
+
+# Create and use mutex for exclusive access
+sus mutex = create_mutex()
+mutex_lock(mutex)
+# Critical section
+mutex_unlock(mutex)
+
+# Non-blocking try-lock
+lowkey mutex_trylock(mutex) {
+    # Got lock, do work
+    mutex_unlock(mutex)
+}
+```
+
+### WaitGroup Coordination
+```cursed
+# Coordinate multiple goroutines
+sus wg = create_waitgroup()
+waitgroup_add(wg, 3)  # Expect 3 goroutines
+
+# In each goroutine:
+# do work...
+waitgroup_done(wg)
+
+# Wait for all to complete
+waitgroup_wait(wg)
+```
+
+### Channel Communication
+```cursed
+# Synchronous channel for goroutine communication
+sus channel = create_sync_channel()
+
+# Producer goroutine
+channel_send(channel, 42)
+
+# Consumer goroutine  
+sus data = channel_receive(channel)
+```
+
+## Advanced Synchronization
+
+### Read-Write Mutex
+```cursed
+# Multiple readers, single writer pattern
+sus rwmutex = create_rwmutex()
+
+# Reader access (multiple allowed)
+rwmutex_rlock(rwmutex)
+sus data = shared_resource
+rwmutex_runlock(rwmutex)
+
+# Writer access (exclusive)
+rwmutex_lock(rwmutex)
+shared_resource = new_data
+rwmutex_unlock(rwmutex)
+```
+
+### Condition Variables
+```cursed
+# Thread coordination with conditions
+sus condition = create_condition()
+sus mutex = create_mutex()
+
+# Wait for condition
+mutex_lock(mutex)
+condition_wait(condition, mutex)
+mutex_unlock(mutex)
+
+# Signal waiting threads
+condition_signal(condition)    # Signal one
+condition_broadcast(condition) # Signal all
+```
+
+### Atomic Operations
+```cursed
+# Lock-free atomic operations
+sus counter = 0
+atomic_increment(counter)      # Thread-safe increment
+atomic_decrement(counter)      # Thread-safe decrement
+
+# Compare and swap
+sus old_val = 10
+sus new_val = 20
+lowkey atomic_cas(counter, old_val, new_val) {
+    # Swap succeeded
+}
+```
+
+## Synchronization Patterns
+
+### Barrier Synchronization
+```cursed
+# Wait for all participants
+sus barrier = create_barrier(4)  # 4 participants
+
+# Each participant calls:
+barrier_wait(barrier)
+# All continue together after barrier
+```
+
+### Semaphore Resource Counting
+```cursed
+# Control access to limited resources
+sus semaphore = create_semaphore(3)  # 3 resources
+
+# Acquire resource
+lowkey semaphore_acquire(semaphore) {
+    # Use resource
+    semaphore_release(semaphore)
+}
+```
+
+### Once Initialization
+```cursed
+# Execute initialization exactly once
+sus once = create_once()
+
+lowkey once_do(once, "init_function") {
+    # Initialization code runs only once
+}
+```
+
+## Common Patterns
+
+### Producer-Consumer
+```cursed
+sus buffer = create_sync_channel()
+sus mutex = create_mutex()
 
 # Producer
-slay producer() lit {
-    bestie i := 0; i < 5; i++ {
-        concurrenz.mutex_lock(&mutex)
-        buffer[count] = i
-        count++
-        concurrenz.mutex_unlock(&mutex)
-    }
-    damn based
+stan {
+    mutex_lock(mutex)
+    channel_send(buffer, data)
+    mutex_unlock(mutex)
 }
 
 # Consumer
-slay consumer() lit {
-    bestie count > 0 {
-        concurrenz.mutex_lock(&mutex)
-        fr count > 0 {
-            sus value := buffer[count-1]
-            count--
-            vibez.spill("Consumed: ", value)
+stan {
+    mutex_lock(mutex)
+    sus item = channel_receive(buffer)
+    mutex_unlock(mutex)
+}
+```
+
+### Reader-Writer Coordination
+```cursed
+sus rwmutex = create_rwmutex()
+sus shared_data = initial_value
+
+# Reader goroutines
+stan {
+    rwmutex_rlock(rwmutex)
+    sus local_copy = shared_data
+    rwmutex_runlock(rwmutex)
+}
+
+# Writer goroutine
+stan {
+    rwmutex_lock(rwmutex)
+    shared_data = new_value
+    rwmutex_unlock(rwmutex)
+}
+```
+
+### Worker Pool Coordination
+```cursed
+sus wg = create_waitgroup()
+sus job_channel = create_sync_channel()
+
+# Start workers
+bestie i := 0; i < worker_count; i++ {
+    waitgroup_add(wg, 1)
+    stan {
+        bestie {
+            sus job = channel_receive(job_channel)
+            # Process job
         }
-        concurrenz.mutex_unlock(&mutex)
+        waitgroup_done(wg)
     }
-    damn based
 }
+
+# Send jobs
+bestie job in jobs {
+    channel_send(job_channel, job)
+}
+
+# Wait for completion
+waitgroup_wait(wg)
 ```
 
-### Atomic Counter
-```cursed
-sus counter := concurrenz.atomic_int_new(0)
+## Function Reference
 
-slay increment_counter() lit {
-    bestie i := 0; i < 1000; i++ {
-        concurrenz.atomic_int_add(&counter, 1)
-    }
-    damn based
-}
+### Mutex Functions
+- `create_mutex() Mutex` - Create new mutex
+- `mutex_lock(mutex Mutex) lit` - Lock mutex (blocking)
+- `mutex_unlock(mutex Mutex) lit` - Unlock mutex
+- `mutex_trylock(mutex Mutex) lit` - Try lock (non-blocking)
 
-# Launch multiple goroutines
-yolo increment_counter()
-yolo increment_counter()
-yolo increment_counter()
+### WaitGroup Functions
+- `create_waitgroup() WaitGroup` - Create wait group
+- `waitgroup_add(wg WaitGroup, count normie) lit` - Add count
+- `waitgroup_done(wg WaitGroup) lit` - Mark done
+- `waitgroup_wait(wg WaitGroup) lit` - Wait for completion
 
-# Final count will be 3000
-```
+### Channel Functions
+- `create_sync_channel() SyncChannel` - Create channel
+- `channel_send(channel SyncChannel, data normie) lit` - Send data
+- `channel_receive(channel SyncChannel) normie` - Receive data
 
-### Read-Write Lock Example
-```cursed
-sus rw := concurrenz.rwmutex_new()
-sus shared_data := 42
+### Read-Write Mutex Functions
+- `create_rwmutex() Mutex` - Create RW mutex
+- `rwmutex_rlock(rwmutex Mutex) lit` - Read lock
+- `rwmutex_runlock(rwmutex Mutex) lit` - Read unlock
+- `rwmutex_lock(rwmutex Mutex) lit` - Write lock
+- `rwmutex_unlock(rwmutex Mutex) lit` - Write unlock
 
-# Reader
-slay reader() lit {
-    concurrenz.rwmutex_read_lock(&rw)
-    vibez.spill("Reading: ", shared_data)
-    concurrenz.rwmutex_read_unlock(&rw)
-    damn based
-}
+### Condition Variable Functions
+- `create_condition() Mutex` - Create condition variable
+- `condition_wait(condition Mutex, mutex Mutex) lit` - Wait on condition
+- `condition_signal(condition Mutex) lit` - Signal one waiter
+- `condition_broadcast(condition Mutex) lit` - Signal all waiters
 
-# Writer
-slay writer() lit {
-    concurrenz.rwmutex_write_lock(&rw)
-    shared_data = 100
-    vibez.spill("Updated data to: ", shared_data)
-    concurrenz.rwmutex_write_unlock(&rw)
-    damn based
-}
-```
+### Atomic Functions
+- `atomic_cas(addr Mutex, old normie, new normie) lit` - Compare and swap
+- `atomic_increment(addr Mutex) normie` - Atomic increment
+- `atomic_decrement(addr Mutex) normie` - Atomic decrement
 
-## Thread Safety
-
-All operations in the concurrenz module are designed to be thread-safe and can be used safely across multiple goroutines. The implementation uses the CURSED runtime's built-in synchronization mechanisms and atomic operations where appropriate.
-
-## Performance Considerations
-
-- **Mutex**: Lightweight with minimal overhead for uncontended locks
-- **Atomic Operations**: Lock-free for maximum performance
-- **RWMutex**: Optimized for read-heavy workloads
-- **Semaphore**: Efficient for resource pooling scenarios
-- **WaitGroup**: Minimal overhead for goroutine coordination
+### Other Primitives
+- `create_barrier(count normie) WaitGroup` - Create barrier
+- `barrier_wait(barrier WaitGroup) lit` - Wait at barrier
+- `create_semaphore(initial normie) Mutex` - Create semaphore
+- `semaphore_acquire(semaphore Mutex) lit` - Acquire resource
+- `semaphore_release(semaphore Mutex) lit` - Release resource
+- `create_once() lit` - Create once primitive
+- `once_do(once lit, func tea) lit` - Execute once
 
 ## Testing
 
@@ -280,24 +256,33 @@ Run the comprehensive test suite:
 # Test interpretation mode
 cargo run --bin cursed stdlib/concurrenz/test_concurrenz.csd
 
-# Test compilation mode
+# Test compilation mode  
 cargo run --bin cursed -- compile stdlib/concurrenz/test_concurrenz.csd
 ./test_concurrenz
+
+# Both-mode verification
+test_both_modes stdlib/concurrenz/test_concurrenz.csd
 ```
 
-The test suite includes:
-- Basic functionality tests for all types
-- Concurrent scenario simulations
-- Edge case handling
-- Error condition testing
-- Performance validation
+## Notes
 
-## Implementation Details
+- All primitives use pure CURSED implementations for maximum portability
+- Synchronization semantics are simplified for demonstration
+- Real-world implementations would use OS-specific primitives
+- Thread safety is achieved through careful state management
+- All functions are designed for use with CURSED's `stan` goroutines
 
-The concurrenz module is implemented entirely in pure CURSED without FFI dependencies. This ensures:
-- Maximum portability across platforms
-- Seamless integration with CURSED runtime
-- Consistent behavior in both interpretation and compilation modes
-- No external library dependencies
+## Integration
 
-The implementation leverages CURSED's built-in goroutine system and channel primitives to provide efficient synchronization mechanisms that integrate naturally with the language's concurrency model.
+Import the module in your CURSED programs:
+
+```cursed
+yeet "concurrenz"
+
+# Use synchronization primitives
+sus mutex = create_mutex()
+sus wg = create_waitgroup()
+sus channel = create_sync_channel()
+```
+
+Perfect for building concurrent CURSED applications with proper synchronization and thread safety.

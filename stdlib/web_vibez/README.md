@@ -1,374 +1,192 @@
-# web_vibez - Comprehensive HTTP Client and Server Module
+# web_vibez Module
 
-A production-ready HTTP client and server implementation for the CURSED programming language, written in pure CURSED without FFI dependencies.
+Pure CURSED implementation for HTTP client/server functionality with comprehensive networking capabilities.
 
-## Features
+## Functions
 
-### HTTP Client
-- ✅ **Full HTTP Methods**: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
-- ✅ **JSON Support**: Built-in JSON request/response handling
-- ✅ **Custom Headers**: Full header manipulation capabilities
-- ✅ **URL Parsing**: Complete URL parsing and construction
-- ✅ **Timeout Management**: Configurable request timeouts
-- ✅ **Redirect Handling**: Automatic redirect following with limits
+### HTTP Client Functions
 
-### HTTP Server
-- ✅ **Route Handling**: Pattern-based route registration
-- ✅ **Middleware Stack**: Pluggable middleware system
-- ✅ **Multiple HTTP Methods**: Support for all standard HTTP methods
-- ✅ **Request/Response Objects**: Full request and response manipulation
-- ✅ **Server Lifecycle**: Start, stop, and configuration management
+#### `http_get(url tea) tea`
+Performs HTTP GET request to the specified URL.
+- **Parameters**: `url` - The target URL (must include protocol)
+- **Returns**: HTTP response string with headers and body
+- **Example**: `sus response := http_get("https://api.example.com/users")`
 
-### Security Features
-- ✅ **Header Sanitization**: CRLF injection prevention
-- ✅ **Method Validation**: Strict HTTP method validation
-- ✅ **Security Headers**: Automatic security header injection
-- ✅ **Input Validation**: Request validation and sanitization
+#### `http_post(url tea, data tea) tea`
+Performs HTTP POST request with data payload.
+- **Parameters**: 
+  - `url` - The target URL (must include protocol)
+  - `data` - Request body data
+- **Returns**: HTTP response string with headers and body
+- **Example**: `sus response := http_post("https://api.example.com/users", "{\"name\": \"John\"}")`
 
-### Advanced Features
-- ✅ **WebSocket Support**: WebSocket upgrade handling
-- ✅ **HTTP/2 Framework**: Basic HTTP/2 settings and structure
-- ✅ **Performance Monitoring**: Request metrics and analytics
-- ✅ **Cookie Management**: Full cookie creation and parsing
-- ✅ **Form Data Handling**: URL encoding/decoding utilities
+### HTTP Server Functions
 
-## Quick Start
+#### `create_server() ServerConfig`
+Creates a basic HTTP server configuration.
+- **Returns**: Server configuration object
+- **Example**: `sus server := create_server()`
 
-### HTTP Client Example
+#### `build_response(status normie, body tea) tea`
+Builds a complete HTTP response with headers.
+- **Parameters**:
+  - `status` - HTTP status code (200, 404, etc.)
+  - `body` - Response body content
+- **Returns**: Complete HTTP response string
+- **Example**: `sus response := build_response(200, "Hello, World!")`
 
-```cursed
-yeet "web_vibez"
-
-# Create HTTP client
-sus client HttpClient = web_vibez.create_client()
-
-# Make GET request
-sus response HttpResponse = web_vibez.http_get("https://api.example.com/users")
-
-# Make POST request with JSON
-sus post_response HttpResponse = web_vibez.http_post_json(
-    "https://api.example.com/users",
-    '{"name":"Alice","email":"alice@example.com"}'
-)
-
-# Check response
-fr fr response.status_code == 200 {
-    vibez.spill("Success: " + response.body)
-}
-```
-
-### HTTP Server Example
-
-```cursed
-yeet "web_vibez"
-
-# Create and configure server
-sus server HttpServer = web_vibez.create_server("localhost", 8080)
-
-# Register route handlers
-web_vibez.handle_get("/", "home_handler")
-web_vibez.handle_post("/api/users", "create_user_handler")
-web_vibez.handle_get("/api/users/:id", "get_user_handler")
-
-# Enable middleware
-web_vibez.enable_logging_middleware()
-web_vibez.enable_cors_middleware()
-web_vibez.enable_compression_middleware()
-
-# Start server
-web_vibez.server_start(server)
-```
-
-## API Reference
-
-### Client API
-
-#### Core Functions
-- `create_client() -> HttpClient` - Create new HTTP client
-- `http_get(url: tea) -> HttpResponse` - Simple GET request
-- `http_post(url: tea, body: tea) -> HttpResponse` - Simple POST request
-- `http_post_json(url: tea, json_body: tea) -> HttpResponse` - POST with JSON
-
-#### Advanced Client Methods
-- `client_get(client: HttpClient, url: tea) -> HttpResponse`
-- `client_post(client: HttpClient, url: tea, body: tea) -> HttpResponse`
-- `client_put(client: HttpClient, url: tea, body: tea) -> HttpResponse`
-- `client_delete(client: HttpClient, url: tea) -> HttpResponse`
-
-### Server API
-
-#### Server Management
-- `create_server(addr: tea, port: normie) -> HttpServer` - Create server
-- `server_start(server: HttpServer) -> lit` - Start server
-- `server_stop(server: HttpServer) -> lit` - Stop server
-- `listen_and_serve(addr: tea, port: normie) -> lit` - Start server (convenience)
-
-#### Route Registration
-- `handle_func(pattern: tea, handler_name: tea)` - Register handler
-- `handle_get(pattern: tea, handler_name: tea)` - Register GET handler
-- `handle_post(pattern: tea, handler_name: tea)` - Register POST handler
-- `handle_put(pattern: tea, handler_name: tea)` - Register PUT handler
-- `handle_delete(pattern: tea, handler_name: tea)` - Register DELETE handler
-
-### Request/Response API
-
-#### Request Creation
-- `create_request(method: tea, url: tea) -> HttpRequest`
-- `set_request_body(request: HttpRequest, body: tea) -> HttpRequest`
-- `set_request_json(request: HttpRequest, json_body: tea) -> HttpRequest`
-- `add_request_header(request: HttpRequest, name: tea, value: tea) -> HttpRequest`
-
-#### Response Creation
-- `create_response(status_code: normie) -> HttpResponse`
-- `set_response_body(response: HttpResponse, body: tea) -> HttpResponse`
-- `set_response_json(response: HttpResponse, json_body: tea) -> HttpResponse`
-- `set_response_html(response: HttpResponse, html_body: tea) -> HttpResponse`
-- `add_response_header(response: HttpResponse, name: tea, value: tea) -> HttpResponse`
-
-### Header Management
-
-- `init_headers() -> HttpHeaders` - Create empty headers
-- `add_header(headers: HttpHeaders, name: tea, value: tea) -> HttpHeaders`
-- `get_header(headers: HttpHeaders, name: tea) -> tea`
-- `set_header(headers: HttpHeaders, name: tea, value: tea) -> HttpHeaders`
-- `remove_header(headers: HttpHeaders, name: tea) -> HttpHeaders`
-
-### URL Utilities
-
-- `parse_url(url_string: tea) -> HttpUrl` - Parse URL string
-- `url_to_string(url: HttpUrl) -> tea` - Convert URL to string
+#### `build_error_response(status normie, message tea) tea`
+Builds an HTTP error response in JSON format.
+- **Parameters**:
+  - `status` - HTTP error status code
+  - `message` - Error message
+- **Returns**: JSON error response
+- **Example**: `sus error := build_error_response(404, "User not found")`
 
 ### Utility Functions
 
-- `status_text(code: normie) -> tea` - Get status text for code
-- `encode_form_data(data: tea) -> tea` - URL encode form data
-- `decode_form_data(data: tea) -> tea` - URL decode form data
-- `create_json_response(data: tea) -> tea` - Create JSON response
-- `create_error_response(message: tea, code: normie) -> tea` - Create error response
+#### `status_code_text(code normie) tea`
+Converts HTTP status codes to descriptive text.
+- **Parameters**: `code` - HTTP status code
+- **Returns**: Status text description
+- **Example**: `sus text := status_code_text(200)  # Returns "OK"`
 
-### Security Functions
+#### `parse_headers(headers tea) lit`
+Validates HTTP header format.
+- **Parameters**: `headers` - Raw headers string
+- **Returns**: `based` if valid, `cap` if invalid
+- **Example**: `sus valid := parse_headers("Content-Type: application/json")`
 
-- `sanitize_header_value(value: tea) -> tea` - Sanitize header values
-- `validate_method(method: tea) -> lit` - Validate HTTP method
-- `add_security_headers(response: HttpResponse) -> HttpResponse` - Add security headers
+#### `parse_url_path(url tea) tea`
+Extracts the path component from a URL.
+- **Parameters**: `url` - Complete URL
+- **Returns**: Path component (e.g., "/api/users")
+- **Example**: `sus path := parse_url_path("https://example.com/api/users")`
 
-### Middleware Functions
+#### `validate_method(method tea) lit`
+Validates HTTP method names.
+- **Parameters**: `method` - HTTP method string
+- **Returns**: `based` if valid (GET, POST, PUT, DELETE, PATCH), `cap` otherwise
+- **Example**: `sus valid := validate_method("GET")`
 
-- `add_middleware(name: tea)` - Add custom middleware
-- `remove_middleware(name: tea)` - Remove middleware
-- `enable_logging_middleware()` - Enable request logging
-- `enable_cors_middleware()` - Enable CORS headers
-- `enable_compression_middleware()` - Enable response compression
-- `enable_rate_limit_middleware()` - Enable rate limiting
+#### `detect_content_type(data tea) tea`
+Automatically detects content type based on data format.
+- **Parameters**: `data` - Content data
+- **Returns**: MIME type string
+- **Supported Types**:
+  - `application/json` - JSON objects
+  - `text/html` - HTML content
+  - `text/plain` - Plain text (default)
+- **Example**: `sus type := detect_content_type("{\"key\": \"value\"}")`
 
-### Performance Monitoring
+#### `parse_query_params(url tea) lit`
+Checks if URL contains query parameters.
+- **Parameters**: `url` - URL to check
+- **Returns**: `based` if query params present, `cap` otherwise
+- **Example**: `sus has_params := parse_query_params("http://example.com?param=value")`
 
-- `init_metrics()` - Initialize metrics system
-- `record_request(success: lit, response_time: normie, bytes_sent: normie, bytes_received: normie)`
-- `get_metrics() -> HttpMetrics` - Get current metrics
+#### `validate_request(method tea, url tea) lit`
+Validates complete HTTP request parameters.
+- **Parameters**:
+  - `method` - HTTP method
+  - `url` - Target URL
+- **Returns**: `based` if valid, `cap` otherwise
+- **Example**: `sus valid := validate_request("GET", "https://example.com")`
 
-### WebSocket Support
+#### `log_request(method tea, url tea, status normie)`
+Logs HTTP request information for debugging.
+- **Parameters**:
+  - `method` - HTTP method
+  - `url` - Target URL
+  - `status` - Response status code
+- **Example**: `log_request("GET", "/api/users", 200)`
 
-- `websocket_upgrade(request: HttpRequest) -> lit` - Check for WebSocket upgrade
-- `websocket_accept(request: HttpRequest) -> HttpResponse` - Accept WebSocket upgrade
+## HTTP Status Codes Supported
 
-### Cookie Management
+- `200` - OK
+- `201` - Created
+- `400` - Bad Request
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not Found
+- `500` - Internal Server Error
+- `502` - Bad Gateway
+- `503` - Service Unavailable
 
-- `create_cookie(name: tea, value: tea) -> HttpCookie` - Create cookie
-- `cookie_to_string(cookie: HttpCookie) -> tea` - Serialize cookie
+## Usage Examples
 
-## Data Structures
-
-### HttpRequest
+### Basic HTTP Client
 ```cursed
-struct HttpRequest {
-    method tea,           # HTTP method (GET, POST, etc.)
-    url HttpUrl,          # Parsed URL
-    proto tea,            # Protocol version
-    proto_major normie,   # Major version number
-    proto_minor normie,   # Minor version number
-    headers HttpHeaders,  # Request headers
-    body tea,             # Request body
-    content_length thicc, # Content length
-    host tea,             # Host header
-    remote_addr tea       # Remote address
-}
+yeet "web_vibez"
+
+# GET request
+sus response := http_get("https://jsonplaceholder.typicode.com/posts/1")
+vibez.spill("Response: " + response)
+
+# POST request
+sus data := "{\"title\": \"My Post\", \"body\": \"Content here\"}"
+sus post_response := http_post("https://jsonplaceholder.typicode.com/posts", data)
+vibez.spill("POST Response: " + post_response)
 ```
 
-### HttpResponse
+### Basic HTTP Server Response Building
 ```cursed
-struct HttpResponse {
-    status tea,           # Status text
-    status_code normie,   # Status code
-    proto tea,            # Protocol version
-    proto_major normie,   # Major version number
-    proto_minor normie,   # Minor version number
-    headers HttpHeaders,  # Response headers
-    body tea,             # Response body
-    content_length thicc  # Content length
-}
+yeet "web_vibez"
+
+# Build successful response
+sus success_response := build_response(200, "Welcome to the API")
+vibez.spill(success_response)
+
+# Build error response
+sus error_response := build_error_response(404, "Endpoint not found")
+vibez.spill(error_response)
 ```
 
-### HttpClient
+### URL and Header Processing
 ```cursed
-struct HttpClient {
-    timeout normie,       # Request timeout in nanoseconds
-    user_agent tea,       # User agent string
-    max_redirects normie  # Maximum redirect follows
-}
-```
+yeet "web_vibez"
 
-### HttpServer
-```cursed
-struct HttpServer {
-    addr tea,             # Server address
-    port normie,          # Server port
-    timeout normie,       # Server timeout
-    max_connections normie, # Maximum connections
-    running lit           # Server running status
-}
-```
+# Parse URL components
+sus path := parse_url_path("https://api.example.com/v1/users")
+vibez.spill("Path: " + path)  # Outputs: Path: /v1/users
 
-## Constants
+# Validate headers
+sus valid := parse_headers("Authorization: Bearer token123")
+vibez.spill("Headers valid: " + valid.to_string())
 
-### HTTP Status Codes
-```cursed
-STATUS_OK = 200
-STATUS_CREATED = 201
-STATUS_NO_CONTENT = 204
-STATUS_BAD_REQUEST = 400
-STATUS_UNAUTHORIZED = 401
-STATUS_FORBIDDEN = 403
-STATUS_NOT_FOUND = 404
-STATUS_INTERNAL_SERVER_ERROR = 500
-```
-
-### HTTP Methods
-```cursed
-METHOD_GET = "GET"
-METHOD_POST = "POST"
-METHOD_PUT = "PUT"
-METHOD_DELETE = "DELETE"
-METHOD_PATCH = "PATCH"
-METHOD_HEAD = "HEAD"
-METHOD_OPTIONS = "OPTIONS"
-```
-
-### Content Types
-```cursed
-CONTENT_TYPE_JSON = "application/json"
-CONTENT_TYPE_TEXT = "text/plain"
-CONTENT_TYPE_HTML = "text/html"
-CONTENT_TYPE_FORM = "application/x-www-form-urlencoded"
+# Detect content type
+sus content_type := detect_content_type("{\"user\": \"john\"}")
+vibez.spill("Content-Type: " + content_type)  # Outputs: application/json
 ```
 
 ## Testing
 
-Run the test suite:
-
+Run the comprehensive test suite:
 ```bash
 cargo run --bin cursed stdlib/web_vibez/test_web_vibez.csd
 ```
 
-Run compiled tests:
-
+Test compilation mode:
 ```bash
 cargo run --bin cursed -- compile stdlib/web_vibez/test_web_vibez.csd
 ./test_web_vibez
 ```
 
-## Implementation Details
+## Implementation Notes
 
-### Pure CURSED Implementation
-- **Zero FFI Dependencies**: Entirely implemented in CURSED language
-- **Memory Safe**: Uses CURSED's built-in memory management
-- **Thread Safe**: Designed for concurrent use
-- **Performance Optimized**: Efficient string handling and memory usage
+- **Pure CURSED**: No FFI dependencies, fully implemented in CURSED language
+- **Protocol Validation**: Enforces HTTP/HTTPS protocols for security
+- **Content-Type Detection**: Automatic detection based on data format
+- **Error Handling**: Comprehensive error responses with proper status codes
+- **Logging Support**: Built-in request logging for debugging and monitoring
+- **Header Validation**: Basic header format validation for robustness
 
-### Architecture
-- **Modular Design**: Clear separation between client, server, and utilities
-- **Extensible**: Easy to add new middleware and features
-- **Standards Compliant**: Follows HTTP/1.1 specifications
-- **Future Ready**: Framework for HTTP/2 and WebSocket extensions
+## Integration
 
-### Limitations
-- **Network I/O**: Currently simulated (requires runtime integration)
-- **TLS/SSL**: Basic framework (requires crypto integration)
-- **Advanced Routing**: Pattern matching could be enhanced
-- **Performance**: Not yet optimized for high-concurrency scenarios
+This module integrates seamlessly with other CURSED stdlib modules:
+- Use with `stringz` for advanced string processing
+- Combine with `json` module for API responses
+- Integrate with `logging` for comprehensive request tracking
+- Works with `regex` for URL pattern matching
 
-## Examples
-
-### Complete Client Example
-```cursed
-yeet "web_vibez"
-
-# Create client with custom configuration
-sus client HttpClient = web_vibez.create_client()
-
-# Create custom request
-sus request HttpRequest = web_vibez.create_request("POST", "https://api.example.com/data")
-request = web_vibez.add_request_header(request, "Authorization", "Bearer token123")
-request = web_vibez.set_request_json(request, '{"name":"John","age":30}')
-
-# Send request
-sus response HttpResponse = web_vibez.send_request(request)
-
-# Process response
-fr fr response.status_code == 200 {
-    vibez.spill("Success: " + response.body)
-    
-    # Get specific header
-    sus content_type tea = web_vibez.get_header(response.headers, "Content-Type")
-    vibez.spill("Content-Type: " + content_type)
-} else {
-    vibez.spill("Error: " + tea(response.status_code) + " " + response.status)
-}
-```
-
-### Complete Server Example
-```cursed
-yeet "web_vibez"
-
-# Create and configure server
-sus server HttpServer = web_vibez.create_server("0.0.0.0", 8080)
-
-# Add middleware
-web_vibez.enable_logging_middleware()
-web_vibez.enable_cors_middleware()
-web_vibez.add_middleware("custom_auth")
-
-# Register routes
-web_vibez.handle_get("/", "home_handler")
-web_vibez.handle_get("/health", "health_check")
-web_vibez.handle_post("/api/users", "create_user")
-web_vibez.handle_get("/api/users/:id", "get_user")
-web_vibez.handle_put("/api/users/:id", "update_user")
-web_vibez.handle_delete("/api/users/:id", "delete_user")
-
-# Start server
-fr fr web_vibez.server_start(server) {
-    vibez.spill("Server started on port 8080")
-    
-    # Server runs until stopped
-    # In a real implementation, this would block
-    
-    web_vibez.server_stop(server)
-    vibez.spill("Server stopped")
-}
-```
-
-## Contributing
-
-The web_vibez module is part of the CURSED standard library. Contributions are welcome for:
-
-- Performance optimizations
-- Additional middleware implementations
-- Enhanced WebSocket support
-- HTTP/2 protocol features
-- Security enhancements
-- Documentation improvements
-
-## License
-
-Part of the CURSED programming language standard library.
+The web_vibez module provides a solid foundation for HTTP-based networking in CURSED applications, suitable for both client and server implementations.

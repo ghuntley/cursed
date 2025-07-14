@@ -1050,27 +1050,27 @@ impl Parser {
                                     
                                     // Parse arguments
                                     if let Some(token) = self.current_token.as_ref() {
-                                        if token.kind != TokenKind::RightParen {
-                                            loop {
-                                                arguments.push(self.parse_primary_expression()?);
-                                                
-                                                if let Some(token) = self.current_token.as_ref() {
-                                                    match token.kind {
-                                                        TokenKind::Comma => {
-                                                            self.next_token()?; // consume ','
-                                                        }
-                                                        TokenKind::RightParen => {
-                                                            break;
-                                                        }
-                                                        _ => {
-                                                            return Err(Error::Parse("Expected ',' or ')' in function call".to_string()));
-                                                        }
-                                                    }
-                                                } else {
-                                                    return Err(Error::Parse("Unexpected end of input in function call".to_string()));
-                                                }
-                                            }
-                                        }
+                                    if token.kind != TokenKind::RightParen {
+                                    loop {
+                                    arguments.push(self.parse_expression()?);
+                                    
+                                    if let Some(token) = self.current_token.as_ref() {
+                                    match token.kind {
+                                    TokenKind::Comma => {
+                                    self.next_token()?; // consume ','
+                                    }
+                                    TokenKind::RightParen => {
+                                    break;
+                                    }
+                                    _ => {
+                                    return Err(Error::Parse("Expected ',' or ')' in function call".to_string()));
+                                    }
+                                    }
+                                    } else {
+                                    return Err(Error::Parse("Unexpected end of input in function call".to_string()));
+                                    }
+                                    }
+                                    }
                                     }
                                     
                                     // Consume ')'
