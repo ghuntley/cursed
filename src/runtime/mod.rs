@@ -28,12 +28,15 @@ pub mod debug_output;
 pub mod unicode_char;
 pub mod jit_runtime;
 pub mod interface_dispatch;
+pub mod type_assertion;
 
 // Test modules
 #[cfg(test)]
 pub mod debug_output_tests;
 #[cfg(test)]
 pub mod production_gc_test;
+#[cfg(test)]
+pub mod panic_recover_tests;
 
 // Memory management system
 pub mod gc;          // Comprehensive garbage collection system
@@ -84,7 +87,7 @@ pub use gc_monitor::{GcMonitor, GcMonitorConfig, GcEvent, GcEventType, EventSeve
 // Additional exports needed by other modules - ADVANCED FEATURES ENABLED
 pub use goroutine::{GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};
 pub use panic::PanicRuntime;
-pub use panic_recover::{PanicRecoverRuntime, cursed_panic, cursed_recover, is_in_panic, with_panic_recovery};
+pub use panic_recover::{PanicRecoverRuntime, cursed_panic, cursed_recover, is_in_panic, with_panic_recovery, reset_panic_state};
 pub use error_handling::ErrorRuntime;
 pub use simple_enhanced_error_handling::{
     SimpleCursedErrorType, SimpleEnhancedErrorRuntime,
@@ -101,6 +104,9 @@ pub use interface_dispatch::{
     InterfaceDispatchRegistry, InterfaceVTable, InterfaceValue, InterfaceMethod, VTableEntry,
     initialize_interface_dispatch, get_global_dispatch_registry, register_global_interface,
     register_global_implementation, create_global_interface_value, dispatch_global_method
+};
+pub use type_assertion::{
+    CursedTypeId, CursedTypeInfo, initialize_type_assertion_runtime, cleanup_type_assertion_runtime
 };
 
 // Complete runtime system initialization

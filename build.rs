@@ -336,4 +336,12 @@ fn link_system_libraries() {
     println!("cargo:rerun-if-env-changed=LIBRARY_PATH");
     println!("cargo:rerun-if-env-changed=PKG_CONFIG_PATH");
     println!("cargo:rerun-if-env-changed=PATH");
+    
+    // Link minimal C shims for self-hosting
+    println!("cargo:rustc-link-lib=static=cursed_minimal_shims");
+    println!("cargo:rustc-link-search=native=runtime");
+    
+    // Link interface runtime for self-hosting
+    println!("cargo:rustc-link-lib=static=cursed_interface_runtime");
+    println!("cargo:rustc-link-lib=static=cursed_type_assertion_runtime");
 }

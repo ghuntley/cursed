@@ -538,7 +538,7 @@ impl Parser {
         
         // Parse variable name
         let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Truth => {
+            Some(token) if token.kind == TokenKind::Identifier => {
                 let name = token.lexeme.clone();
                 self.next_token()?;
                 name

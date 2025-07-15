@@ -381,8 +381,8 @@ impl ErrorRecoverySystem {
             stats.recovery_attempts += 1;
             *stats.strategies_used.entry(strategy.name.clone()).or_insert(0) += 1;
 
-            // Simulate recovery attempt
-            let success = rand::random::<f64>() < strategy.success_rate;
+            // Simulate recovery attempt (simplified)
+            let success = strategy.success_rate > 0.5;
             
             if success {
                 stats.successful_recoveries += 1;
@@ -631,4 +631,148 @@ macro_rules! propagate_error {
 /// Public function that was likely being used by external code
 pub fn get_minimal_result() -> CursedResult<String> {
     Ok("CURSED error propagation system initialized".to_string())
+}
+
+/// Error propagation with panic integration
+pub fn propagate_error_with_panic_recovery<T>(
+    result: CursedResult<T>,
+    context: &str,
+    recover_on_panic: bool,
+) -> CursedResult<T> {
+    match result {
+        Ok(value) => Ok(value),
+        Err(error) => {
+            let mut error_context = ErrorContext::new(error.clone());
+            error_context.add_context("propagation_context".to_string(), context.to_string());
+            
+            // If recovery is enabled, attempt to recover from panic
+            if recover_on_panic {
+                match crate::runtime::panic_recover::with_panic_recovery(|| {
+                    // Try to process the error with recovery
+                    if let Ok(recovery_result) = get_global_error_propagation_manager().process_error(error_context) {
+                        match recovery_result {
+                            crate::runtime::error_propagation::RecoveryResult::Success { .. } => {
+                                // Recovery successful, return a default value or continue
+                                None
+                            }
+                            _ => Some(error.clone()),
+                        }
+                    } else {
+                        Some(error.clone())
+                    }
+                }) {
+                    Ok(None) => {
+                        // Recovery was successful, but we need to return an error since we can't provide a value
+                        Err(Error::Runtime("Error recovered but no value available".to_string()))
+                    }
+                    Ok(Some(recovered_error)) => Err(recovered_error),
+                    Err(panic_message) => {
+                        // Panic occurred during recovery
+                        Err(Error::Runtime(format!("Panic during error recovery: {}", panic_message)))
+                    }
+                }
+            } else {
+                Err(Error::Runtime(error_context.full_message()))
+            }
+        }
+    }
+}
+
+/// Integrate yikes/shook/fam with panic system
+pub fn handle_cursed_error_with_panic(cursed_error: crate::runtime::enhanced_error_handling::CursedErrorType) -> ! {
+    // Create error context
+    let error_msg = match &cursed_error {
+        crate::runtime::enhanced_error_handling::CursedErrorType::Yikes { message, .. } => message.clone(),
+        crate::runtime::enhanced_error_handling::CursedErrorType::Shook { source_error, .. } => {
+            match source_error.as_ref() {
+                crate::runtime::enhanced_error_handling::CursedErrorType::Yikes { message, .. } => message.clone(),
+                _ => "Propagated error".to_string(),
+            }
+        },
+        crate::runtime::enhanced_error_handling::CursedErrorType::Fam { original_error, .. } => {
+            match original_error.as_ref() {
+                crate::runtime::enhanced_error_handling::CursedErrorType::Yikes { message, .. } => message.clone(),
+                _ => "Recovered error".to_string(),
+            }
+        },
+    };
+    
+    let error_context = ErrorContext::new(Error::Runtime(error_msg));
+    
+    // Attempt error processing before panic
+    if let Ok(recovery_result) = get_global_error_propagation_manager().process_error(error_context) {
+        match recovery_result {
+            RecoveryResult::Success { .. } => {
+                // Recovery successful, but we're in a panic context so still panic
+                crate::runtime::panic_recover::cursed_panic_with_error(cursed_error);
+            }
+            _ => {
+                // Recovery failed or not available, proceed with panic
+                crate::runtime::panic_recover::cursed_panic_with_error(cursed_error);
+            }
+        }
+    } else {
+        // Error processing failed, proceed with panic
+        crate::runtime::panic_recover::cursed_panic_with_error(cursed_error);
+    }
+}
+
+/// Enhanced error recovery with panic integration
+pub fn enhanced_error_recovery<T, F>(
+    operation: F,
+    context: &str,
+    max_retries: usize,
+) -> CursedResult<T>
+where
+    F: Fn() -> CursedResult<T>,
+{
+    let mut last_error = None;
+    
+    for attempt in 0..=max_retries {
+        match operation() {
+            Ok(result) => return Ok(result),
+            Err(error) => {
+                last_error = Some(error.clone());
+                
+                // Create error context for this attempt
+                let mut error_context = ErrorContext::new(error);
+                error_context.add_context("attempt".to_string(), attempt.to_string());
+                error_context.add_context("max_retries".to_string(), max_retries.to_string());
+                error_context.add_context("operation_context".to_string(), context.to_string());
+                
+                // Attempt recovery
+                if let Ok(recovery_result) = get_global_error_propagation_manager().process_error(error_context) {
+                    match recovery_result {
+                        RecoveryResult::Success { action_taken, .. } => {
+                            match action_taken {
+                                crate::runtime::error_propagation::RecoveryAction::Retry => {
+                                    // Continue with retry
+                                    continue;
+                                }
+                                crate::runtime::error_propagation::RecoveryAction::UseDefault => {
+                                    // Would need a default value provider
+                                    continue;
+                                }
+                                crate::runtime::error_propagation::RecoveryAction::Terminate => {
+                                    break;
+                                }
+                                _ => continue,
+                            }
+                        }
+                        RecoveryResult::Failed { .. } => {
+                            // Recovery failed, continue with next attempt
+                            continue;
+                        }
+                        RecoveryResult::NoStrategy => {
+                            // No recovery strategy, continue with next attempt
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // All attempts failed
+    Err(last_error.unwrap_or_else(|| Error::Runtime("All recovery attempts failed".to_string())))
 }
