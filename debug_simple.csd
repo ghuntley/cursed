@@ -1,5 +1,3 @@
-vibez.spill("Hello")
-vibez.spill("World")
-sus x tea = "test"
+sus x normie = 5
+sus y normie = 10
 vibez.spill(x)
-vibez.spill("Done")

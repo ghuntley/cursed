@@ -25,7 +25,7 @@ pub struct Runtime {
     /// Current runtime statistics
     stats: Arc<RwLock<RuntimeStats>>,
     /// Goroutine scheduler reference
-    scheduler: Arc<Mutex<Option<Box<dyn GoroutineScheduler>>>>,
+    scheduler: Arc<Mutex<Option<Box<dyn GoroutineSchedulerTrait>>>>,
     /// Memory manager reference  
     memory_manager: Arc<Mutex<Option<Box<dyn MemoryManager>>>>,
     /// Runtime state
@@ -83,6 +83,8 @@ pub struct RuntimeStats {
     pub memory_usage: usize,
     /// Peak memory usage in bytes
     pub peak_memory_usage: usize,
+    /// Peak active goroutines
+    pub peak_active_goroutines: usize,
     /// Total memory allocations
     pub total_allocations: usize,
     /// Total memory deallocations
@@ -194,13 +196,30 @@ enum RuntimePhase {
 }
 
 /// Trait for goroutine schedulers
-pub trait GoroutineScheduler: Send + Sync {
+pub trait GoroutineSchedulerTrait: Send + Sync {
     /// Spawn a new goroutine
     fn spawn(&mut self, task: Box<dyn FnOnce() + Send>) -> Result<usize>;
     /// Get number of active goroutines
     fn active_count(&self) -> usize;
     /// Shutdown scheduler and wait for all goroutines
     fn shutdown(&mut self) -> Result<()>;
+    /// Start the scheduler
+    fn start(&mut self) -> Result<()>;
+    /// Check if scheduler is running
+    fn is_running(&self) -> bool;
+    /// Get scheduler statistics
+    fn get_stats(&self) -> Result<SchedulerStatistics>;
+}
+
+/// Scheduler statistics for runtime integration
+#[derive(Debug, Clone)]
+pub struct SchedulerStatistics {
+    pub total_spawned: u64,
+    pub total_completed: u64,
+    pub current_active: usize,
+    pub peak_active: usize,
+    pub total_panicked: u64,
+    pub uptime: Duration,
 }
 
 /// Trait for memory managers
@@ -270,8 +289,12 @@ impl Runtime {
         }
 
         // Initialize scheduler if not set  
-        if self.scheduler.lock().unwrap().is_none() {
-            // Would initialize with actual scheduler
+        if let Ok(mut scheduler_guard) = self.scheduler.lock() {
+            if let Some(ref mut scheduler) = *scheduler_guard {
+                scheduler.start().map_err(|e| {
+                    RuntimeError::new(RuntimeErrorType::SchedulingError, format!("Failed to start scheduler: {}", e))
+                })?;
+            }
         }
 
         state.running = true;
@@ -327,6 +350,21 @@ impl Runtime {
         let mut stats_copy = stats.clone();
         stats_copy.uptime = self.start_time.elapsed();
         
+        // Update scheduler statistics if available
+        if let Ok(scheduler_guard) = self.scheduler.lock() {
+            if let Some(ref scheduler) = *scheduler_guard {
+                if let Ok(scheduler_stats) = scheduler.get_stats() {
+                    stats_copy.active_goroutines = scheduler_stats.current_active;
+                    stats_copy.total_goroutines_created = scheduler_stats.total_spawned as usize;
+                    stats_copy.total_goroutines_completed = scheduler_stats.total_completed as usize;
+                    stats_copy.peak_active_goroutines = std::cmp::max(
+                        stats_copy.peak_active_goroutines, 
+                        scheduler_stats.peak_active
+                    );
+                }
+            }
+        }
+        
         Ok(stats_copy)
     }
 
@@ -349,7 +387,14 @@ impl Runtime {
     }
 
     /// Set goroutine scheduler
-    pub fn set_scheduler(&self, scheduler: Box<dyn GoroutineScheduler>) -> Result<()> {
+    pub fn set_scheduler(&self, mut scheduler: Box<dyn GoroutineSchedulerTrait>) -> Result<()> {
+        // Start the scheduler if runtime is running
+        if self.is_running() {
+            scheduler.start().map_err(|e| {
+                RuntimeError::new(RuntimeErrorType::SchedulingError, format!("Failed to start scheduler: {}", e))
+            })?;
+        }
+        
         let mut scheduler_guard = self.scheduler.lock().map_err(|_| {
             RuntimeError::new(RuntimeErrorType::InternalError, "Failed to acquire scheduler lock")
         })?;
@@ -411,6 +456,27 @@ impl Runtime {
         })?;
 
         Ok(collected)
+    }
+
+    /// Get scheduler handle for direct access
+    pub fn get_scheduler(&self) -> Option<Box<dyn GoroutineSchedulerTrait>> {
+        // Note: This would need to be implemented differently for real use
+        // as we can't clone trait objects. For now, return None
+        None
+    }
+
+    /// Propagate scheduler errors to runtime error handling
+    pub fn handle_scheduler_error(&self, error: RuntimeError) -> Result<()> {
+        // Update error statistics
+        self.update_stats(|stats| {
+            stats.total_errors += 1;
+        })?;
+
+        // Log the error
+        log::error!("Scheduler error: {}", error);
+
+        // For now, just return the error
+        Err(error.into())
     }
 
     /// Get value manager
@@ -475,6 +541,7 @@ impl RuntimeStats {
             total_goroutines_completed: 0,
             memory_usage: 0,
             peak_memory_usage: 0,
+            peak_active_goroutines: 0,
             total_allocations: 0,
             total_deallocations: 0,
             gc_stats: GcStats::new(),
@@ -712,6 +779,41 @@ pub fn shutdown_complete_runtime() -> Result<()> {
     Ok(())
 }
 
+/// Create a runtime with integrated scheduler
+pub fn create_runtime_with_scheduler(
+    runtime_config: RuntimeConfig,
+    scheduler_config: crate::runtime::goroutine::SchedulerConfig,
+) -> Result<Arc<Runtime>> {
+    let runtime = Arc::new(Runtime::with_config(runtime_config)?);
+    
+    // Create scheduler wrapper
+    let scheduler = Box::new(crate::runtime::goroutine::GoroutineSchedulerWrapper::new_with_config(scheduler_config));
+    
+    // Set the scheduler
+    runtime.set_scheduler(scheduler)?;
+    
+    // Start the runtime
+    runtime.start()?;
+    
+    Ok(runtime)
+}
+
+/// Create a runtime with default scheduler
+pub fn create_runtime_with_default_scheduler() -> Result<Arc<Runtime>> {
+    let runtime_config = RuntimeConfig::default();
+    let scheduler_config = crate::runtime::goroutine::SchedulerConfig::default();
+    
+    create_runtime_with_scheduler(runtime_config, scheduler_config)
+}
+
+/// Initialize complete runtime with scheduler integration
+pub fn initialize_runtime_with_scheduler(
+    runtime_config: RuntimeConfig,
+    scheduler_config: crate::runtime::goroutine::SchedulerConfig,
+) -> Result<Arc<Runtime>> {
+    create_runtime_with_scheduler(runtime_config, scheduler_config)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -763,5 +865,39 @@ mod tests {
         vm.set_global("test".to_string(), Value::integer(42));
         assert_eq!(vm.get_global("test"), Some(&Value::integer(42)));
         assert!(vm.get_global("nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_runtime_with_scheduler() {
+        let result = create_runtime_with_default_scheduler();
+        assert!(result.is_ok());
+        let runtime = result.unwrap();
+        assert!(runtime.is_running());
+        
+        // Test spawning a goroutine
+        let result = runtime.spawn_goroutine(|| {
+            // Simple test goroutine
+        });
+        assert!(result.is_ok());
+        
+        // Test getting stats
+        let stats = runtime.get_stats();
+        assert!(stats.is_ok());
+        
+        // Shutdown
+        assert!(runtime.shutdown().is_ok());
+    }
+
+    #[test]
+    fn test_scheduler_error_handling() {
+        let runtime = Runtime::new().unwrap();
+        let error = RuntimeError::new(RuntimeErrorType::SchedulingError, "Test error");
+        
+        let result = runtime.handle_scheduler_error(error);
+        assert!(result.is_err());
+        
+        // Check that error count was incremented
+        let stats = runtime.get_stats().unwrap();
+        assert_eq!(stats.total_errors, 1);
     }
 }

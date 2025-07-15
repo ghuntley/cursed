@@ -150,7 +150,29 @@ impl InterfaceComplianceChecker {
         
         self.collect_interface_requirements(interface_name, &mut all_requirements, &mut visited)?;
         
+        // Remove duplicate methods (derived interface methods override base interface methods)
+        self.deduplicate_methods(&mut all_requirements);
+        
         Ok(all_requirements)
+    }
+    
+    /// Remove duplicate methods, keeping derived interface methods over base interface methods
+    fn deduplicate_methods(&self, requirements: &mut Vec<InterfaceMethodRequirement>) {
+        let mut seen_methods = std::collections::HashMap::new();
+        let mut to_remove = Vec::new();
+        
+        for (i, req) in requirements.iter().enumerate() {
+            if seen_methods.contains_key(&req.name) {
+                to_remove.push(i);
+            } else {
+                seen_methods.insert(req.name.clone(), i);
+            }
+        }
+        
+        // Remove duplicates in reverse order to preserve indices
+        for &i in to_remove.iter().rev() {
+            requirements.remove(i);
+        }
     }
 
     /// Recursively collect interface requirements including inheritance
@@ -403,6 +425,68 @@ impl InterfaceComplianceChecker {
         self.type_implementations.get(type_name)
     }
     
+    /// Check if one interface extends another (inheritance check)
+    pub fn interface_extends(&self, derived_interface: &str, base_interface: &str) -> bool {
+        if derived_interface == base_interface {
+            return true;
+        }
+        
+        // Check direct inheritance
+        if let Some(parents) = self.interface_hierarchy.get(derived_interface) {
+            if parents.contains(&base_interface.to_string()) {
+                return true;
+            }
+            
+            // Check transitive inheritance
+            for parent in parents {
+                if self.interface_extends(parent, base_interface) {
+                    return true;
+                }
+            }
+        }
+        
+        false
+    }
+    
+    /// Get all parent interfaces (including transitive)
+    pub fn get_all_parent_interfaces(&self, interface_name: &str) -> Result<Vec<String>, CursedError> {
+        let mut all_parents = Vec::new();
+        let mut visited = std::collections::HashSet::new();
+        
+        self.collect_parent_interfaces(interface_name, &mut all_parents, &mut visited)?;
+        
+        Ok(all_parents)
+    }
+    
+    /// Recursively collect parent interfaces
+    fn collect_parent_interfaces(
+        &self,
+        interface_name: &str,
+        parents: &mut Vec<String>,
+        visited: &mut std::collections::HashSet<String>
+    ) -> Result<(), CursedError> {
+        if visited.contains(interface_name) {
+            return Err(CursedError::Runtime(format!("Circular interface inheritance detected: {}", interface_name)));
+        }
+        
+        visited.insert(interface_name.to_string());
+        
+        // Add direct parents
+        if let Some(direct_parents) = self.interface_hierarchy.get(interface_name) {
+            for parent in direct_parents {
+                if !parents.contains(parent) {
+                    parents.push(parent.clone());
+                }
+                
+                // Recursively collect transitive parents
+                self.collect_parent_interfaces(parent, parents, visited)?;
+            }
+        }
+        
+        visited.remove(interface_name);
+        Ok(())
+    }
+    
     /// Generate interface compliance report
     pub fn generate_compliance_report(&self, type_name: &str, interface_name: &str) -> Result<InterfaceComplianceReport, CursedError> {
         let interface_methods = self.interface_methods.get(interface_name)
@@ -599,5 +683,82 @@ mod tests {
         
         // Check compliance
         assert!(checker.check_interface_compliance("TestType", "TestInterface").unwrap());
+    }
+    
+    #[test]
+    fn test_interface_inheritance() {
+        let mut checker = InterfaceComplianceChecker::new();
+        
+        // Register base interface
+        let base_interface = InterfaceStatement {
+            name: "BaseInterface".to_string(),
+            type_parameters: vec![],
+            extends: vec![],
+            methods: vec![
+                MethodSignature {
+                    name: "base_method".to_string(),
+                    receiver: None,
+                    parameters: vec![],
+                    return_type: Some(AstType::Normie),
+                }
+            ],
+            visibility: Visibility::Public,
+        };
+        
+        assert!(checker.register_interface(&base_interface).is_ok());
+        
+        // Register derived interface
+        let derived_interface = InterfaceStatement {
+            name: "DerivedInterface".to_string(),
+            type_parameters: vec![],
+            extends: vec!["BaseInterface".to_string()],
+            methods: vec![
+                MethodSignature {
+                    name: "derived_method".to_string(),
+                    receiver: None,
+                    parameters: vec![],
+                    return_type: Some(AstType::Normie),
+                }
+            ],
+            visibility: Visibility::Public,
+        };
+        
+        assert!(checker.register_interface(&derived_interface).is_ok());
+        
+        // Register type with implementations
+        let implementations = vec![
+            ConcreteMethodImplementation {
+                name: "base_method".to_string(),
+                parameters: vec![],
+                return_type: Some(AstType::Normie),
+                receiver_type: ReceiverType::Value,
+            },
+            ConcreteMethodImplementation {
+                name: "derived_method".to_string(),
+                parameters: vec![],
+                return_type: Some(AstType::Normie),
+                receiver_type: ReceiverType::Value,
+            }
+        ];
+        
+        assert!(checker.register_type_methods("TestType", implementations).is_ok());
+        
+        // Check compliance with base interface
+        assert!(checker.check_interface_compliance("TestType", "BaseInterface").unwrap());
+        
+        // Check compliance with derived interface (should require both methods)
+        assert!(checker.check_interface_compliance("TestType", "DerivedInterface").unwrap());
+        
+        // Test interface inheritance check
+        assert!(checker.interface_extends("DerivedInterface", "BaseInterface"));
+        assert!(!checker.interface_extends("BaseInterface", "DerivedInterface"));
+        
+        // Test getting all requirements for derived interface
+        let all_requirements = checker.get_all_interface_requirements("DerivedInterface").unwrap();
+        assert_eq!(all_requirements.len(), 2); // base_method + derived_method
+        
+        let method_names: Vec<&str> = all_requirements.iter().map(|r| r.name.as_str()).collect();
+        assert!(method_names.contains(&"base_method"));
+        assert!(method_names.contains(&"derived_method"));
     }
 }

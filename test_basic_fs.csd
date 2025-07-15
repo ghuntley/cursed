@@ -1,0 +1,1 @@
+yeet "fs"; vibez.spill("Basic filesystem test"); sus result lit = write_file("test.txt", "content"); vibez.spill("Write result: " + tea(result)); sus content tea = read_file("test.txt"); vibez.spill("Read result: " + content)

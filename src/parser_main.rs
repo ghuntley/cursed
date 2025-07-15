@@ -1258,6 +1258,109 @@ impl Parser {
                     let char_value = value.chars().next().unwrap_or('\0');
                     return Ok(Expression::Character(char_value));
                 }
+                TokenKind::Identifier => {
+                    // Parse identifier, possibly with postfix operations
+                    let name = token.lexeme.clone();
+                    log::debug!("🔍 Parser: Parsing identifier: {}", name);
+                    self.next_token()?;
+                    
+                    // Handle postfix operations in a loop to allow chaining
+                    let mut expr = Expression::Identifier(name);
+                    
+                    loop {
+                        if let Some(token) = self.current_token.as_ref() {
+                            log::debug!("🔍 Parser: Checking postfix token: {:?}", token.kind);
+                            match token.kind {
+                                TokenKind::Dot => {
+                                log::debug!("🔍 Parser: Found dot, parsing member access");
+                                    // Handle both tuple access (e.g., tuple.0, tuple.1) and member access (e.g., vibez.spill)
+                                    self.next_token()?;
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        match token.kind {
+                                            TokenKind::Number => {
+                                                // Tuple access with numeric index
+                                                let index: usize = token.lexeme.parse().unwrap_or(0);
+                                                self.next_token()?;
+                                                expr = Expression::TupleAccess(TupleAccessExpression {
+                                                    tuple: Box::new(expr),
+                                                    index,
+                                                });
+                                            }
+                                            TokenKind::Identifier | TokenKind::Spill => {
+                                                // Member access with identifier or spill keyword
+                                                let property_name = token.lexeme.clone();
+                                                self.next_token()?;
+                                                expr = Expression::MemberAccess(MemberAccessExpression {
+                                                    object: Box::new(expr),
+                                                    property: property_name,
+                                                });
+                                            }
+                                            _ => {
+                                                return Err(Error::Parse("Expected number or identifier after '.' for member access".to_string()));
+                                            }
+                                        }
+                                    } else {
+                                        return Err(Error::Parse("Expected number or identifier after '.' for member access".to_string()));
+                                    }
+                                }
+                                TokenKind::LeftParen => {
+                                    // Function call - parse arguments
+                                    self.next_token()?; // consume '('
+                                    let mut arguments = Vec::new();
+                                    
+                                    // Parse arguments
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        if token.kind != TokenKind::RightParen {
+                                            loop {
+                                                arguments.push(self.parse_expression()?);
+                                                
+                                                if let Some(token) = self.current_token.as_ref() {
+                                                    match token.kind {
+                                                        TokenKind::Comma => {
+                                                            self.next_token()?; // consume ','
+                                                        }
+                                                        TokenKind::RightParen => {
+                                                            break;
+                                                        }
+                                                        _ => {
+                                                            return Err(Error::Parse("Expected ',' or ')' in function call".to_string()));
+                                                        }
+                                                    }
+                                                } else {
+                                                    return Err(Error::Parse("Unexpected end of input in function call".to_string()));
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Consume ')'
+                                    if let Some(token) = self.current_token.as_ref() {
+                                        if token.kind == TokenKind::RightParen {
+                                            self.next_token()?;
+                                        } else {
+                                            return Err(Error::Parse("Expected ')' to close function call".to_string()));
+                                        }
+                                    } else {
+                                        return Err(Error::Parse("Expected ')' to close function call".to_string()));
+                                    }
+                                    
+                                    expr = Expression::Call(CallExpression {
+                                        function: Box::new(expr),
+                                        arguments,
+                                    });
+                                }
+                                _ => {
+                                    // No more postfix operations
+                                    break;
+                                }
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    return Ok(expr);
+                }
                 TokenKind::Truth | TokenKind::Based => {
                     // Parse boolean literal
                     self.next_token()?;
@@ -1471,16 +1574,22 @@ impl Parser {
         }
         
         // Check if it's a while-style for loop (no semicolons)
+        // Look ahead to see if there are semicolons before the opening brace
         let mut semicolon_count = 0;
-        let mut pos = 0;
-        while let Some(token) = self.peek_token() {
+        let mut lexer_clone = self.lexer.clone();
+        let mut peek_token = lexer_clone.next_token();
+        
+        while let Ok(token) = peek_token {
             if token.kind == TokenKind::LeftBrace {
                 break;
             }
             if token.kind == TokenKind::Semicolon {
                 semicolon_count += 1;
             }
-            pos += 1;
+            if token.kind == TokenKind::Eof {
+                break;
+            }
+            peek_token = lexer_clone.next_token();
         }
         
         if semicolon_count == 0 {

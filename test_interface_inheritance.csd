@@ -1,28 +1,34 @@
-# Test interface inheritance hierarchies
-
-# Base interface
-collab Shape {
-    slay area() meal
-    slay perimeter() meal
+// Test interface inheritance
+collab BaseInterface {
+    slay base_method()
 }
 
-# Interface extending Shape
-collab Drawable : Shape {
-    slay draw()
-    slay set_color(color tea)
+collab DerivedInterface extends BaseInterface {
+    slay derived_method()
 }
 
-# Interface extending multiple interfaces
-collab Interactive : Drawable, Clickable {
-    slay handle_click(x normie, y normie)
-    slay is_clickable() lit
+struct ConcreteType {
+    value normie
 }
 
-# Generic interface with inheritance
-collab Collection[T] : Iterable[T] {
-    slay add(item T)
-    slay remove(item T) lit
-    slay contains(item T) lit
+impl ConcreteType for BaseInterface {
+    slay base_method() {
+        vibez.spill("Base method called")
+    }
 }
 
-vibez.spill("Interface inheritance test complete!")
+impl ConcreteType for DerivedInterface {
+    slay derived_method() {
+        vibez.spill("Derived method called")
+    }
+}
+
+slay main() {
+    sus obj ConcreteType = ConcreteType { value: 42 }
+    sus base_iface BaseInterface = obj
+    sus derived_iface DerivedInterface = obj
+    
+    base_iface.base_method()
+    derived_iface.base_method()  // Should work via inheritance
+    derived_iface.derived_method()
+}

@@ -11,6 +11,7 @@
 use crate::error::CursedError;
 use crate::runtime::channels::{ChannelSender, ChannelReceiver};
 use crate::runtime::stack::{RuntimeStack, StackId, StackFrame};
+// use crate::runtime::preemptive_scheduler::PreemptiveScheduler;
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, RwLock, Condvar};
@@ -21,6 +22,9 @@ use std::panic::{self, AssertUnwindSafe};
 
 /// Global scheduler instance
 static GLOBAL_SCHEDULER: once_cell::sync::OnceCell<Arc<GoroutineScheduler>> = once_cell::sync::OnceCell::new();
+
+/// Global preemptive scheduler instance
+// static GLOBAL_PREEMPTIVE_SCHEDULER: once_cell::sync::OnceCell<Arc<PreemptiveScheduler>> = once_cell::sync::OnceCell::new();
 
 /// Goroutine identifier type
 pub type GoroutineId = u64;
@@ -241,6 +245,12 @@ pub struct SchedulerConfig {
     pub preemptive_scheduling: bool,
     /// Scheduling quantum (time slice) in milliseconds
     pub quantum_ms: u64,
+    /// Enable M:N threading model improvements
+    pub enable_mn_threading: bool,
+    /// Enable network poller integration
+    pub enable_network_poller: bool,
+    /// Enable GC integration
+    pub enable_gc_integration: bool,
     /// Enable debugging and statistics
     pub enable_debugging: bool,
 }
@@ -257,6 +267,9 @@ impl Default for SchedulerConfig {
             default_stack_size: 2 * 1024 * 1024, // 2MB
             preemptive_scheduling: false, // Cooperative by default
             quantum_ms: 10,
+            enable_mn_threading: true,
+            enable_network_poller: true,
+            enable_gc_integration: true,
             enable_debugging: false,
         }
     }
@@ -405,6 +418,11 @@ impl GoroutineScheduler {
         std::thread::sleep(Duration::from_millis(100));
 
         Ok(())
+    }
+
+    /// Shutdown alias for runtime integration
+    pub fn shutdown(&mut self) -> Result<(), CursedError> {
+        self.stop()
     }
 
     /// Spawn a new goroutine (implements "stan" keyword)
@@ -982,6 +1000,69 @@ impl GoroutineScheduler {
     }
 }
 
+/// Wrapper for GoroutineScheduler that implements the runtime trait
+pub struct GoroutineSchedulerWrapper {
+    scheduler: Arc<GoroutineScheduler>,
+}
+
+impl GoroutineSchedulerWrapper {
+    /// Create a new scheduler wrapper
+    pub fn new(scheduler: Arc<GoroutineScheduler>) -> Self {
+        Self { scheduler }
+    }
+    
+    /// Create a new scheduler wrapper with default configuration
+    pub fn new_default() -> Self {
+        Self::new(Arc::new(GoroutineScheduler::new()))
+    }
+    
+    /// Create a new scheduler wrapper with custom configuration
+    pub fn new_with_config(config: SchedulerConfig) -> Self {
+        Self::new(Arc::new(GoroutineScheduler::with_config(config)))
+    }
+}
+
+impl crate::runtime::runtime::GoroutineSchedulerTrait for GoroutineSchedulerWrapper {
+    fn spawn(&mut self, task: Box<dyn FnOnce() + Send>) -> crate::error_types::Result<usize> {
+        self.scheduler.spawn(task)
+            .map(|id| id as usize)
+            .map_err(|e| crate::error_types::Error::Runtime(e.to_string()))
+    }
+    
+    fn active_count(&self) -> usize {
+        self.scheduler.active_goroutine_count()
+    }
+    
+    fn shutdown(&mut self) -> crate::error_types::Result<()> {
+        // Can't get mutable reference to scheduler in Arc, so we use stop instead
+        self.scheduler.stop()
+            .map_err(|e| crate::error_types::Error::Runtime(e.to_string()))
+    }
+    
+    fn start(&mut self) -> crate::error_types::Result<()> {
+        self.scheduler.start()
+            .map_err(|e| crate::error_types::Error::Runtime(e.to_string()))
+    }
+    
+    fn is_running(&self) -> bool {
+        self.scheduler.is_running()
+    }
+    
+    fn get_stats(&self) -> crate::error_types::Result<crate::runtime::runtime::SchedulerStatistics> {
+        let stats = self.scheduler.get_stats()
+            .map_err(|e| crate::error_types::Error::Runtime(e.to_string()))?;
+        
+        Ok(crate::runtime::runtime::SchedulerStatistics {
+            total_spawned: stats.total_goroutines_spawned,
+            total_completed: stats.total_goroutines_completed,
+            current_active: stats.current_active_goroutines,
+            peak_active: stats.peak_active_goroutines,
+            total_panicked: stats.total_goroutines_panicked,
+            uptime: stats.scheduler_uptime,
+        })
+    }
+}
+
 // Global scheduler management functions
 
 /// Initialize the global goroutine scheduler
@@ -1003,6 +1084,29 @@ pub fn initialize_global_scheduler_with_config(config: SchedulerConfig) -> Resul
 /// Get the global goroutine scheduler
 pub fn get_global_scheduler() -> Option<Arc<GoroutineScheduler>> {
     GLOBAL_SCHEDULER.get().cloned()
+}
+
+/// Get the global preemptive scheduler instance
+// pub fn get_global_preemptive_scheduler() -> Option<Arc<PreemptiveScheduler>> {
+//     GLOBAL_PREEMPTIVE_SCHEDULER.get().cloned()
+// }
+
+/// Initialize the global preemptive scheduler
+pub fn initialize_global_preemptive_scheduler() -> Result<(), CursedError> {
+    let config = SchedulerConfig {
+        preemptive_scheduling: true,
+        enable_mn_threading: true,
+        enable_network_poller: true,
+        enable_gc_integration: true,
+        ..Default::default()
+    };
+    
+    initialize_global_scheduler_with_config(config)
+}
+
+/// Initialize the global preemptive scheduler with custom config
+pub fn initialize_global_preemptive_scheduler_with_config(config: SchedulerConfig) -> Result<(), CursedError> {
+    initialize_global_scheduler_with_config(config)
 }
 
 /// Shutdown the global goroutine scheduler

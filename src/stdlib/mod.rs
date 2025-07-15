@@ -34,7 +34,7 @@ pub mod packrat;
 // TODO: Enable these modules once they are implemented
 // pub mod prelude;
 pub mod collections;
-pub mod io;
+// pub mod io;  // Migrated to pure CURSED implementation in stdlib/io/
 pub mod errors;
 
 // Conditional modules based on features

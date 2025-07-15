@@ -17,6 +17,7 @@ pub mod generic_constraints;
 pub mod monomorphisation;
 pub mod test_result_simple;
 pub mod interface_compliance;
+pub mod generics_core;
 // pub mod advanced_constraints;
 // pub mod generic_interfaces;
 
@@ -553,13 +554,56 @@ pub struct TypeDefinition {
     pub is_builtin: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub enum TypeKind {
     Struct,
     Enum,
     Interface,
     Function,
     Primitive,
+    Generic(GenericInfo),
+    Named(String),
+}
+
+impl Eq for TypeKind {}
+
+impl std::hash::Hash for TypeKind {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            TypeKind::Struct => 0.hash(state),
+            TypeKind::Enum => 1.hash(state),
+            TypeKind::Interface => 2.hash(state),
+            TypeKind::Function => 3.hash(state),
+            TypeKind::Primitive => 4.hash(state),
+            TypeKind::Generic(_) => 5.hash(state), // Simple hash for generics
+            TypeKind::Named(name) => {
+                6.hash(state);
+                name.hash(state);
+            }
+        }
+    }
+}
+
+impl PartialEq for TypeKind {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (TypeKind::Struct, TypeKind::Struct) => true,
+            (TypeKind::Enum, TypeKind::Enum) => true,
+            (TypeKind::Interface, TypeKind::Interface) => true,
+            (TypeKind::Function, TypeKind::Function) => true,
+            (TypeKind::Primitive, TypeKind::Primitive) => true,
+            (TypeKind::Named(a), TypeKind::Named(b)) => a == b,
+            (TypeKind::Generic(_), TypeKind::Generic(_)) => false, // Don't compare generic info
+            _ => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct GenericInfo {
+    pub function_declaration: Option<crate::ast::FunctionDeclaration>,
+    pub struct_declaration: Option<crate::ast::StructDeclaration>,
+    pub constraints: Vec<GenericConstraint>,
 }
 
 #[derive(Debug, Clone)]
@@ -696,6 +740,100 @@ impl TypeEnvironment {
     pub fn get_type(&self, name: &str) -> Option<&TypeDefinition> {
         self.type_definitions.get(name)
     }
+    
+    // Generic storage and retrieval functions
+    pub fn get_generic_function(&self, name: &str) -> Option<&crate::ast::FunctionDeclaration> {
+        if let Some(type_def) = self.type_definitions.get(name) {
+            if let TypeKind::Generic(ref generic_info) = type_def.kind {
+                if let Some(ref function_decl) = generic_info.function_declaration {
+                    return Some(function_decl);
+                }
+            }
+        }
+        None
+    }
+
+    pub fn get_generic_struct(&self, name: &str) -> Option<&crate::ast::StructDeclaration> {
+        if let Some(type_def) = self.type_definitions.get(name) {
+            if let TypeKind::Generic(ref generic_info) = type_def.kind {
+                if let Some(ref struct_decl) = generic_info.struct_declaration {
+                    return Some(struct_decl);
+                }
+            }
+        }
+        None
+    }
+
+    pub fn get_function_constraints(&self, name: &str) -> Option<Vec<GenericConstraint>> {
+        if let Some(type_def) = self.type_definitions.get(name) {
+            if let TypeKind::Generic(ref generic_info) = type_def.kind {
+                return Some(generic_info.constraints.clone());
+            }
+        }
+        None
+    }
+
+    pub fn get_struct_constraints(&self, name: &str) -> Option<Vec<GenericConstraint>> {
+        if let Some(type_def) = self.type_definitions.get(name) {
+            if let TypeKind::Generic(ref generic_info) = type_def.kind {
+                return Some(generic_info.constraints.clone());
+            }
+        }
+        None
+    }
+
+    pub fn get_variable_type(&self, name: &str) -> Option<TypeExpression> {
+        if let Some(type_def) = self.type_definitions.get(name) {
+            Some(TypeExpression {
+                kind: TypeKind::Named(name.to_string()),
+                name: Some(name.to_string()),
+                parameters: Vec::new(),
+                return_type: None,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn store_generic_function(&mut self, name: &str, function_decl: crate::ast::FunctionDeclaration, constraints: Vec<GenericConstraint>) {
+        let generic_info = GenericInfo {
+            function_declaration: Some(function_decl),
+            struct_declaration: None,
+            constraints,
+        };
+        
+        let type_def = TypeDefinition {
+            name: name.to_string(),
+            kind: TypeKind::Generic(generic_info),
+            type_parameters: Vec::new(),
+            constraints: Vec::new(),
+            methods: Vec::new(),
+            fields: Vec::new(),
+            is_builtin: false,
+        };
+        
+        self.type_definitions.insert(name.to_string(), type_def);
+    }
+
+    pub fn store_generic_struct(&mut self, name: &str, struct_decl: crate::ast::StructDeclaration, constraints: Vec<GenericConstraint>) {
+        let generic_info = GenericInfo {
+            function_declaration: None,
+            struct_declaration: Some(struct_decl),
+            constraints,
+        };
+        
+        let type_def = TypeDefinition {
+            name: name.to_string(),
+            kind: TypeKind::Generic(generic_info),
+            type_parameters: Vec::new(),
+            constraints: Vec::new(),
+            methods: Vec::new(),
+            fields: Vec::new(),
+            is_builtin: false,
+        };
+        
+        self.type_definitions.insert(name.to_string(), type_def);
+    }
 }
 
 impl Default for TypeEnvironment {
@@ -741,3 +879,4 @@ pub use crate::type_system::monomorphizer::{
 pub use crate::type_system::generic_constraints::{
     GenericConstraintChecker, ConstraintResult, TypeConstraint, WhereClause
 };
+pub use crate::type_system::generics_core::GenericsCore;

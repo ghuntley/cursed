@@ -378,6 +378,10 @@ pub fn create_web_server_gc_config() -> GcConfig {
     let tuning_params = GcTuningParams::default();
     
     GcConfig {
+        auto_collect: true,
+        memory_threshold: 128 * 1024 * 1024, // 128MB
+        time_threshold: Duration::from_millis(tuning_params.max_pause_time_ms),
+        object_threshold: 10000,
         initial_heap_size: 128 * 1024 * 1024, // 128MB initial heap
         max_heap_size: Some(2 * 1024 * 1024 * 1024), // 2GB max heap
         young_generation_ratio: 0.4, // 40% for young generation
@@ -403,6 +407,10 @@ pub fn create_low_latency_gc_config() -> GcConfig {
     };
     
     GcConfig {
+        auto_collect: true,
+        memory_threshold: 256 * 1024 * 1024, // 256MB
+        time_threshold: Duration::from_millis(tuning_params.max_pause_time_ms),
+        object_threshold: 5000,
         initial_heap_size: 256 * 1024 * 1024, // 256MB initial heap
         max_heap_size: Some(4 * 1024 * 1024 * 1024), // 4GB max heap
         young_generation_ratio: 0.5, // 50% for young generation

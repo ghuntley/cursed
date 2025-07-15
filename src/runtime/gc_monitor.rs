@@ -456,7 +456,9 @@ impl GcMonitor {
 
     /// Get current metrics snapshot
     pub fn get_metrics_snapshot(&self) -> GcMetricsSnapshot {
-        let gc_stats = self.gc_ref.as_ref().map(|gc| gc.get_stats()).unwrap_or_default();
+        let gc_stats = self.gc_ref.as_ref()
+            .and_then(|gc| gc.get_stats().ok())
+            .unwrap_or_default();
         let concurrent_stats = self.concurrent_gc_ref.as_ref().map(|cgc| cgc.get_stats());
         let memory_stats = self.memory_manager_ref.as_ref().map(|mm| mm.get_stats());
         let profiling_stats = self.profiler_ref.as_ref().map(|p| p.get_stats());
@@ -464,7 +466,20 @@ impl GcMonitor {
 
         GcMetricsSnapshot {
             timestamp: SystemTime::now(),
-            gc_stats,
+            gc_stats: crate::memory::gc::GcStats {
+                total_collections: gc_stats.total_collections,
+                total_time_ms: gc_stats.average_collection_time.as_millis() as u64,
+                objects_collected: gc_stats.objects_swept,
+                bytes_collected: 0,
+                last_collection_time_ms: gc_stats.average_collection_time.as_millis() as u64,
+                last_objects_collected: gc_stats.objects_swept as usize,
+                avg_pause_time: gc_stats.average_collection_time,
+                max_pause_time: gc_stats.average_collection_time,
+                gc_overhead: 0.0,
+                heap_utilization: 0.0,
+                allocation_rate: 0.0,
+                total_gc_time: gc_stats.average_collection_time,
+            },
             concurrent_stats,
             memory_stats,
             profiling_stats,
