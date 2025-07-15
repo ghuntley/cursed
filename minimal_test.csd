@@ -1,1 +1,1 @@
-42
+vibez.spill("Test")

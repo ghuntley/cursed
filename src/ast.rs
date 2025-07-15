@@ -159,6 +159,9 @@ pub enum Expression {
         details: Option<Box<Expression>>,
         fields: Vec<(String, Expression)>,
     },
+    // Panic/recover expressions
+    Panic(PanicExpression),
+    Recover(RecoverExpression),
     // TestResult expressions
     TestResult(TestResultExpression),
     TestResultCheck(TestResultCheckExpression),
@@ -196,6 +199,9 @@ pub struct StructLiteralExpression {
     pub struct_name: String,
     pub fields: Vec<StructFieldAssignment>,
 }
+
+/// Struct literal (alias for StructLiteralExpression for compatibility)
+pub type StructLiteral = StructLiteralExpression;
 
 /// Struct field assignment in a struct literal
 #[derive(Debug, Clone)]
@@ -267,6 +273,18 @@ pub struct FamStatement {
 #[derive(Debug, Clone)]
 pub struct ShookExpression {
     pub expression: Box<Expression>,
+}
+
+/// Panic expression
+#[derive(Debug, Clone)]
+pub struct PanicExpression {
+    pub message: Box<Expression>,
+}
+
+/// Recover expression
+#[derive(Debug, Clone)]
+pub struct RecoverExpression {
+    // Recover has no arguments
 }
 
 /// Error value expression
@@ -341,6 +359,18 @@ impl FamStatement {
 impl ShookExpression {
     pub fn new(expression: Box<Expression>) -> Self {
         Self { expression }
+    }
+}
+
+impl PanicExpression {
+    pub fn new(message: Box<Expression>) -> Self {
+        Self { message }
+    }
+}
+
+impl RecoverExpression {
+    pub fn new() -> Self {
+        Self { }
     }
 }
 
@@ -670,6 +700,9 @@ pub struct StructStatement {
     pub visibility: Visibility,
 }
 
+/// Struct declaration (alias for StructStatement for compatibility)
+pub type StructDeclaration = StructStatement;
+
 /// Struct field definition
 #[derive(Debug, Clone)]
 pub struct StructField {
@@ -703,6 +736,18 @@ pub struct MethodSignature {
     pub receiver: Option<MethodReceiver>, // Method receiver for concrete implementations
     pub parameters: Vec<Parameter>,
     pub return_type: Option<Type>,
+}
+
+/// Method declaration (full method implementation)
+#[derive(Debug, Clone)]
+pub struct MethodDeclaration {
+    pub name: String,
+    pub receiver: Option<MethodReceiver>,
+    pub type_parameters: Vec<TypeParameter>,
+    pub parameters: Vec<Parameter>,
+    pub return_type: Option<Type>,
+    pub body: Vec<Statement>,
+    pub visibility: Visibility,
 }
 
 /// Method receiver specification

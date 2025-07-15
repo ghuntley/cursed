@@ -58,6 +58,7 @@ pub enum TokenKind {
     Ghosted,     // break
     Simp,        // continue
     Squad,       // struct
+    Struct,      // struct (alternative)
     Collab,      // interface
     Impl,        // implementation
     Extends,     // interface inheritance
@@ -99,8 +100,10 @@ pub enum TokenKind {
     
     // Error handling tokens
     Yikes,       // error type declarations
-    Shook,       // error propagation operator
+    Shook,       // error propagation operator / panic function
     Fam,         // panic recovery blocks
+    Panic,       // panic function
+    Recover,     // recover function
     
     // Visibility modifiers
     Spill,       // pub (public)
@@ -128,6 +131,7 @@ pub enum TokenKind {
     Pipe,           // |
     
     // Assignment operators
+    Assign,         // = (for assignment context)
     PlusEqual,      // +=
     MinusEqual,     // -=
     StarEqual,      // *=
@@ -156,6 +160,10 @@ pub enum TokenKind {
     At,             // @ (for pointer types)
     Newline,
     Eof,
+    
+    // Comments
+    LineComment,    // fr fr line comment
+    BlockComment,   // no cap ... on god block comment
 }
 
 impl Lexer {
@@ -265,6 +273,7 @@ impl Lexer {
                 if self.match_char('=') {
                     Ok(self.make_token(TokenKind::EqualEqual, "==".to_string(), start_column))
                 } else {
+                    // Use Equal for single = by default (parser will determine context)
                     Ok(self.make_token(TokenKind::Equal, "=".to_string(), start_column))
                 }
             },
@@ -441,6 +450,76 @@ impl Lexer {
         }
         
         Err(CursedError::syntax_error("Unterminated block comment (missing '*/')"))
+    }
+    
+    fn handle_line_comment(&mut self, start_column: usize) -> Result<Token, CursedError> {
+        let mut comment_content = String::new();
+        
+        // Skip any remaining whitespace after "fr fr"
+        while !self.is_at_end() && self.peek().is_whitespace() && self.peek() != '\n' {
+            self.advance();
+        }
+        
+        // Collect the comment content
+        while !self.is_at_end() && self.peek() != '\n' {
+            comment_content.push(self.advance());
+        }
+        
+        // For now, skip comments and return the next token
+        // TODO: Add option to preserve comments for documentation
+        self.next_token()
+    }
+    
+    fn handle_block_comment(&mut self, start_column: usize) -> Result<Token, CursedError> {
+        let mut comment_content = String::new();
+        let mut nesting_level = 1;
+        
+        // Skip any remaining whitespace after "no cap"
+        while !self.is_at_end() && self.peek().is_whitespace() && self.peek() != '\n' {
+            self.advance();
+        }
+        
+        // Collect the comment content with nesting support
+        while !self.is_at_end() && nesting_level > 0 {
+            if self.peek() == 'o' && self.peek_ahead("on god") {
+                // Found end of block comment
+                nesting_level -= 1;
+                if nesting_level == 0 {
+                    self.advance(); // consume 'o'
+                    self.advance(); // consume 'n'
+                    self.advance(); // consume ' '
+                    self.advance(); // consume 'g'
+                    self.advance(); // consume 'o'
+                    self.advance(); // consume 'd'
+                    break;
+                }
+            } else if self.peek() == 'n' && self.peek_ahead("no cap") {
+                // Found nested block comment
+                nesting_level += 1;
+                self.advance(); // consume 'n'
+                self.advance(); // consume 'o'
+                self.advance(); // consume ' '
+                self.advance(); // consume 'c'
+                self.advance(); // consume 'a'
+                self.advance(); // consume 'p'
+                comment_content.push_str("no cap");
+                continue;
+            }
+            
+            if self.peek() == '\n' {
+                self.line += 1;
+                self.column = 1;
+            }
+            comment_content.push(self.advance());
+        }
+        
+        if nesting_level > 0 {
+            return Err(CursedError::syntax_error("Unterminated block comment (missing 'on god')"));
+        }
+        
+        // For now, skip comments and return the next token
+        // TODO: Add option to preserve comments for documentation
+        self.next_token()
     }
     
     fn match_keyword_sequence(&mut self, keyword: &str) -> bool {
@@ -674,6 +753,7 @@ impl Lexer {
             "ghosted" => TokenKind::Ghosted,
             "simp" => TokenKind::Simp,
             "squad" => TokenKind::Squad,
+            "struct" => TokenKind::Struct,
             "collab" => TokenKind::Collab,
             "impl" => TokenKind::Impl,
             "extends" => TokenKind::Extends,
@@ -712,6 +792,8 @@ impl Lexer {
             "yikes" => TokenKind::Yikes,
             "shook" => TokenKind::Shook,
             "fam" => TokenKind::Fam,
+            "panic" => TokenKind::Panic,
+            "recover" => TokenKind::Recover,
             
             // Visibility modifiers
             "spill" => TokenKind::Spill,
@@ -730,7 +812,6 @@ impl Lexer {
                 // Check if this is "fr fr" (line comment)
                 if self.match_whitespace_and_keyword("fr") {
                     self.skip_line_comment();
-                    // Return next token after comment
                     return self.next_token();
                 } else {
                     TokenKind::Identifier
@@ -739,8 +820,7 @@ impl Lexer {
             "no" => {
                 // Check if this is "no cap" (block comment start)
                 if self.match_whitespace_and_keyword("cap") {
-                    self.skip_block_comment()?;
-                    // Return next token after comment
+                    self.skip_block_comment().map_err(|e| e)?;
                     return self.next_token();
                 } else {
                     TokenKind::Identifier
@@ -775,6 +855,20 @@ impl Lexer {
 
     fn peek_next(&self) -> char {
         self.chars.get(self.position + 1).copied().unwrap_or('\0')
+    }
+    
+    fn peek_ahead(&self, text: &str) -> bool {
+        let start_pos = self.position;
+        for (i, expected_char) in text.chars().enumerate() {
+            if let Some(actual_char) = self.chars.get(start_pos + i) {
+                if *actual_char != expected_char {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        true
     }
 
     fn match_char(&mut self, expected: char) -> bool {

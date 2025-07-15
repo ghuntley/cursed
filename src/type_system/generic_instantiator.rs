@@ -98,6 +98,14 @@ impl GenericInstantiator {
         }
 
         // 4. Create instantiated generic with resolved constraints
+        let mut type_bindings = std::collections::HashMap::new();
+        for (param, arg) in type_parameters.iter().zip(type_arguments.iter()) {
+            type_bindings.insert(param.clone(), arg.clone());
+        }
+        
+        let type_signature = format!("{}<{}>", generic_name, 
+            type_arguments.iter().map(|t| format!("{:?}", t)).collect::<Vec<_>>().join(", "));
+        
         let instance = InstantiatedGeneric {
             generic_name: generic_name.to_string(),
             type_parameters: type_parameters.to_vec(),
@@ -105,6 +113,8 @@ impl GenericInstantiator {
             constraints: constraints.to_vec(),
             constraint_solution,
             instance_id: self.generate_instance_id(generic_name, type_arguments),
+            type_bindings,
+            type_signature,
         };
 
         // 5. Optional: Enhanced checking if enabled
@@ -158,6 +168,8 @@ pub struct InstantiatedGeneric {
     pub constraints: Vec<GenericConstraint>,
     pub constraint_solution: ConstraintSolution,
     pub instance_id: String,
+    pub type_bindings: std::collections::HashMap<String, TypeExpression>,
+    pub type_signature: String,
 }
 
 

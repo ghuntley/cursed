@@ -1,223 +1,342 @@
 # Unicode Module
 
-Pure CURSED implementation of Unicode and UTF-8 validation, encoding, and character classification.
+A comprehensive Unicode text processing module for the CURSED programming language. This module provides full Unicode support including normalization, character classification, case conversion, string comparison, encoding/decoding, grapheme cluster handling, and text segmentation.
 
 ## Features
 
-- **UTF-8 Validation**: Complete UTF-8 byte sequence validation
-- **Unicode Character Classification**: Comprehensive character type detection
-- **Case Conversion**: Unicode-aware case conversion
-- **Encoding/Decoding**: UTF-8 to Unicode codepoint conversion
-- **Character Counting**: String length in characters vs bytes
-- **Block Detection**: Unicode block identification
+### 1. Unicode Normalization
+- **NFC (Canonical Decomposition + Canonical Composition)**: Standard normalization form
+- **NFD (Canonical Decomposition)**: Decomposed form for analysis
+- **NFKC (Compatibility Decomposition + Canonical Composition)**: Compatibility normalization
+- **NFKD (Compatibility Decomposition)**: Full compatibility decomposition
 
-## Core Functions
+### 2. Character Classification
+- **General Categories**: Lu, Ll, Nd, Zs, Po, Lo, Cn, etc.
+- **Letters**: Support for Latin, Greek, Cyrillic, Hebrew, Arabic, Devanagari, CJK, Hangul
+- **Digits**: ASCII, Arabic-Indic, Devanagari, Bengali, and more
+- **Whitespace**: Space, Tab, Line separators, Ideographic space
+- **Punctuation**: ASCII and Unicode punctuation marks
+- **Symbols**: Mathematical, currency, arrows, geometric shapes
+- **Marks**: Combining diacritical marks, accents
 
-### UTF-8 Validation
+### 3. Case Conversion
+- **Uppercase**: Convert to uppercase with Unicode awareness
+- **Lowercase**: Convert to lowercase with Unicode awareness
+- **Title Case**: Convert to title case for proper nouns
+- **String Conversion**: Full string case conversion functions
 
-```cursed
-# Check if byte is valid UTF-8 start byte
-is_utf8_start_byte(byte normie) lit
+### 4. String Comparison
+- **Case-insensitive**: Compare strings ignoring case differences
+- **Normalized**: Compare with Unicode normalization
+- **Collation**: Unicode-aware string collation
 
-# Check if byte is UTF-8 continuation byte
-is_utf8_continuation_byte(byte normie) lit
+### 5. Encoding/Decoding
+- **UTF-8**: Validation, encoding, decoding
+- **UTF-16**: Encoding/decoding with surrogate pair support
+- **UTF-32**: Fixed-width encoding/decoding
+- **Validation**: Comprehensive UTF-8 sequence validation
 
-# Get expected byte count for UTF-8 sequence
-utf8_sequence_length(first_byte normie) normie
+### 6. Grapheme Cluster Handling
+- **Boundary Detection**: Identify grapheme cluster boundaries
+- **Cluster Counting**: Count user-perceived characters
+- **Cluster Extraction**: Extract individual grapheme clusters
+- **Script Detection**: Identify character scripts
 
-# Validate UTF-8 byte sequence
-validate_utf8_sequence(bytes []normie, start_pos normie) lit
-
-# Validate entire UTF-8 string
-validate_utf8_string(text tea) lit
-```
-
-### Unicode Conversion
-
-```cursed
-# Convert UTF-8 bytes to Unicode code point
-utf8_to_codepoint(bytes []normie, start_pos normie) normie
-
-# Convert Unicode code point to UTF-8 bytes
-codepoint_to_utf8(codepoint normie) []normie
-```
-
-### Character Counting
-
-```cursed
-# Count UTF-8 characters in string (not bytes)
-utf8_char_count(text tea) normie
-
-# Get byte length of UTF-8 string
-utf8_byte_count(text tea) normie
-```
-
-### Character Classification
-
-```cursed
-# Basic Unicode ranges
-is_ascii(codepoint normie) lit
-is_latin1(codepoint normie) lit
-is_bmp(codepoint normie) lit
-is_valid_unicode(codepoint normie) lit
-
-# Character types
-is_unicode_digit(codepoint normie) lit
-is_unicode_letter(codepoint normie) lit
-is_unicode_whitespace(codepoint normie) lit
-```
-
-### Case Conversion
-
-```cursed
-# Convert individual codepoints
-to_unicode_upper(codepoint normie) normie
-to_unicode_lower(codepoint normie) normie
-
-# Convert entire strings
-string_to_unicode_upper(text tea) tea
-string_to_unicode_lower(text tea) tea
-```
-
-### Unicode Information
-
-```cursed
-# Get Unicode codepoint at character position
-get_codepoint_at(text tea, char_pos normie) normie
-
-# Get Unicode block name for codepoint
-get_unicode_block(codepoint normie) tea
-
-# Check if string contains only ASCII
-is_ascii_string(text tea) lit
-```
+### 7. Text Segmentation
+- **Word Segmentation**: Split text into words
+- **Sentence Segmentation**: Split text into sentences
+- **Line Breaking**: Break text into lines with width limits
 
 ## Usage Examples
 
-### Basic UTF-8 Validation
+### Basic Usage
 
 ```cursed
 yeet "unicode"
 
-# Validate UTF-8 string
-bestie validate_utf8_string("Hello, 世界! 🌍") {
-    vibez.spill("Valid UTF-8 string")
-} nah {
-    vibez.spill("Invalid UTF-8 string")
+# Normalize text
+sus normalized tea = normalize_nfc("café")
+vibez.spill(normalized)
+
+# Character classification
+sus is_letter lit = is_unicode_letter(0x0041)  # 'A'
+sus is_digit lit = is_unicode_digit(0x0030)    # '0'
+sus is_space lit = is_unicode_whitespace(0x0020)  # ' '
+
+# Case conversion
+sus upper_text tea = string_to_unicode_upper("hello world")
+sus lower_text tea = string_to_unicode_lower("HELLO WORLD")
+sus title_text tea = string_to_unicode_title("hello world")
+
+# String comparison
+sus are_equal lit = unicode_equal_ignore_case("Hello", "HELLO")
+sus are_normalized lit = unicode_equal_normalized("café", "café")
+```
+
+### Advanced Usage
+
+```cursed
+# Grapheme cluster handling
+sus cluster_count normie = count_grapheme_clusters("café")
+sus first_cluster tea = get_grapheme_cluster_at("café", 0)
+
+# Text segmentation
+sus words []tea = segment_words("Hello world, how are you?")
+sus sentences []tea = segment_sentences("Hello world. How are you? I am fine!")
+sus lines []tea = segment_lines("This is a long line that needs breaking", 20)
+
+# Encoding/decoding
+sus utf16_bytes []normie = encode_utf16("Hello")
+sus utf16_text tea = decode_utf16(utf16_bytes)
+sus utf32_bytes []normie = encode_utf32("Hello")
+sus utf32_text tea = decode_utf32(utf32_bytes)
+
+# Character properties
+sus script tea = get_script(0x0041)  # "Latin"
+sus block tea = get_unicode_block(0x0041)  # "Basic Latin"
+sus category tea = get_general_category(0x0041)  # "Lu"
+```
+
+### Normalization Examples
+
+```cursed
+# Different normalization forms
+sus text tea = "café"
+sus nfc tea = normalize_nfc(text)    # Composed form
+sus nfd tea = normalize_nfd(text)    # Decomposed form
+sus nfkc tea = normalize_nfkc(text)  # Compatibility composed
+sus nfkd tea = normalize_nfkd(text)  # Compatibility decomposed
+
+# Manual decomposition/composition
+sus decomposed tea = canonical_decompose("café")
+sus composed tea = canonical_compose(decomposed)
+```
+
+### Character Classification Examples
+
+```cursed
+# Test various character types
+sus codepoint normie = 0x0041  # 'A'
+
+bestie is_unicode_letter(codepoint) {
+    vibez.spill("Character is a letter")
 }
 
-# Count characters vs bytes
+bestie is_unicode_digit(codepoint) {
+    vibez.spill("Character is a digit")
+}
+
+bestie is_unicode_whitespace(codepoint) {
+    vibez.spill("Character is whitespace")
+}
+
+bestie is_unicode_punctuation(codepoint) {
+    vibez.spill("Character is punctuation")
+}
+
+bestie is_unicode_symbol(codepoint) {
+    vibez.spill("Character is a symbol")
+}
+
+bestie is_unicode_mark(codepoint) {
+    vibez.spill("Character is a combining mark")
+}
+```
+
+### Case Conversion Examples
+
+```cursed
+# Codepoint case conversion
+sus upper_a normie = to_unicode_upper(0x0061)  # 'a' -> 'A'
+sus lower_a normie = to_unicode_lower(0x0041)  # 'A' -> 'a'
+sus title_a normie = to_unicode_title(0x0061)  # 'a' -> 'A'
+
+# String case conversion
+sus text tea = "Hello World"
+sus upper tea = string_to_unicode_upper(text)   # "HELLO WORLD"
+sus lower tea = string_to_unicode_lower(text)   # "hello world"
+sus title tea = string_to_unicode_title(text)   # "Hello World"
+
+# Unicode case conversion
+sus unicode_text tea = "café résumé"
+sus upper_unicode tea = string_to_unicode_upper(unicode_text)  # "CAFÉ RÉSUMÉ"
+sus lower_unicode tea = string_to_unicode_lower(unicode_text)  # "café résumé"
+```
+
+### Encoding/Decoding Examples
+
+```cursed
+# UTF-8 validation
+sus valid_utf8 lit = validate_utf8_string("Hello, 世界!")
+bestie valid_utf8 {
+    vibez.spill("Valid UTF-8 string")
+}
+
+# UTF-16 encoding/decoding
 sus text tea = "Hello, 世界!"
-sus char_count normie = utf8_char_count(text)
+sus utf16_encoded []normie = encode_utf16(text)
+sus utf16_decoded tea = decode_utf16(utf16_encoded)
+
+# UTF-32 encoding/decoding
+sus utf32_encoded []normie = encode_utf32(text)
+sus utf32_decoded tea = decode_utf32(utf32_encoded)
+
+# Character counting
 sus byte_count normie = utf8_byte_count(text)
-vibez.spill("Characters: ", char_count, ", Bytes: ", byte_count)
+sus char_count normie = utf8_char_count(text)
+sus cluster_count normie = count_grapheme_clusters(text)
 ```
 
-### Character Classification
+### Text Segmentation Examples
 
 ```cursed
-yeet "unicode"
+# Word segmentation
+sus text tea = "Hello, world! How are you today?"
+sus words []tea = segment_words(text)
+sus i normie = 0
+bestie i < len(words) {
+    vibez.spill("Word: " + words[i])
+    i++
+}
 
-# Classify characters
-sus codepoint normie = 0x4E16  # 世
-vibez.spill("Is letter: ", is_unicode_letter(codepoint))
-vibez.spill("Unicode block: ", get_unicode_block(codepoint))
+# Sentence segmentation
+sus paragraph tea = "Hello world. How are you? I am fine! Thanks for asking."
+sus sentences []tea = segment_sentences(paragraph)
+sus j normie = 0
+bestie j < len(sentences) {
+    vibez.spill("Sentence: " + sentences[j])
+    j++
+}
 
-# Check character types
-sus digit normie = 0x0966  # Devanagari ०
-vibez.spill("Is digit: ", is_unicode_digit(digit))
-
-sus space normie = 0x3000  # Ideographic space
-vibez.spill("Is whitespace: ", is_unicode_whitespace(space))
+# Line breaking
+sus long_text tea = "This is a very long line that needs to be broken into multiple lines for better readability"
+sus lines []tea = segment_lines(long_text, 30)
+sus k normie = 0
+bestie k < len(lines) {
+    vibez.spill("Line: " + lines[k])
+    k++
+}
 ```
 
-### Case Conversion
+## Function Reference
 
-```cursed
-yeet "unicode"
+### Normalization Functions
 
-# Convert case
-sus text tea = "Hello, Wörld!"
-sus upper tea = string_to_unicode_upper(text)
-sus lower tea = string_to_unicode_lower(text)
-vibez.spill("Original: ", text)
-vibez.spill("Upper: ", upper)
-vibez.spill("Lower: ", lower)
-```
+- `normalize_nfc(text tea) tea` - NFC normalization
+- `normalize_nfd(text tea) tea` - NFD normalization
+- `normalize_nfkc(text tea) tea` - NFKC normalization
+- `normalize_nfkd(text tea) tea` - NFKD normalization
+- `canonical_decompose(text tea) tea` - Canonical decomposition
+- `compatibility_decompose(text tea) tea` - Compatibility decomposition
+- `canonical_compose(text tea) tea` - Canonical composition
 
-### UTF-8 Encoding/Decoding
+### Character Classification Functions
 
-```cursed
-yeet "unicode"
+- `get_general_category(codepoint normie) tea` - Get Unicode general category
+- `is_unicode_letter(codepoint normie) lit` - Check if character is a letter
+- `is_unicode_digit(codepoint normie) lit` - Check if character is a digit
+- `is_unicode_whitespace(codepoint normie) lit` - Check if character is whitespace
+- `is_unicode_punctuation(codepoint normie) lit` - Check if character is punctuation
+- `is_unicode_symbol(codepoint normie) lit` - Check if character is a symbol
+- `is_unicode_mark(codepoint normie) lit` - Check if character is a combining mark
 
-# Convert codepoint to UTF-8
-sus codepoint normie = 0x4E16  # 世
-sus utf8_bytes []normie = codepoint_to_utf8(codepoint)
-vibez.spill("UTF-8 bytes: ", utf8_bytes)
+### Case Conversion Functions
 
-# Convert UTF-8 to codepoint
-sus decoded normie = utf8_to_codepoint(utf8_bytes, 0)
-vibez.spill("Decoded codepoint: ", decoded)
-```
+- `to_unicode_upper(codepoint normie) normie` - Convert codepoint to uppercase
+- `to_unicode_lower(codepoint normie) normie` - Convert codepoint to lowercase
+- `to_unicode_title(codepoint normie) normie` - Convert codepoint to title case
+- `string_to_unicode_upper(text tea) tea` - Convert string to uppercase
+- `string_to_unicode_lower(text tea) tea` - Convert string to lowercase
+- `string_to_unicode_title(text tea) tea` - Convert string to title case
 
-## Unicode Standards Compliance
+### String Comparison Functions
 
-- **UTF-8**: RFC 3629 compliant encoding/decoding
-- **Unicode**: Unicode Standard 15.0 character classification
-- **Character Ranges**: Comprehensive Unicode block detection
-- **Case Conversion**: Unicode case mapping (basic implementation)
-- **Validation**: Strict UTF-8 validation with error detection
+- `unicode_compare_ignore_case(text1 tea, text2 tea) normie` - Case-insensitive comparison
+- `unicode_collate_compare(text1 tea, text2 tea) normie` - Collation comparison
+- `unicode_equal_ignore_case(text1 tea, text2 tea) lit` - Case-insensitive equality
+- `unicode_equal_normalized(text1 tea, text2 tea) lit` - Normalized equality
 
-## Supported Unicode Blocks
+### Encoding/Decoding Functions
 
-The module supports detection of 100+ Unicode blocks including:
+- `validate_utf8_string(text tea) lit` - Validate UTF-8 string
+- `encode_utf16(text tea) []normie` - Encode to UTF-16
+- `decode_utf16(bytes []normie) tea` - Decode from UTF-16
+- `encode_utf32(text tea) []normie` - Encode to UTF-32
+- `decode_utf32(bytes []normie) tea` - Decode from UTF-32
+- `utf8_char_count(text tea) normie` - Count UTF-8 characters
+- `utf8_sequence_length(first_byte normie) normie` - Get UTF-8 sequence length
+- `utf8_to_codepoint(bytes []normie, start_pos normie) normie` - Convert UTF-8 to codepoint
+- `codepoint_to_utf8(codepoint normie) []normie` - Convert codepoint to UTF-8
 
-- Basic Latin and Latin Extensions
-- Greek, Cyrillic, Hebrew, Arabic
-- Devanagari, Bengali, and other Indic scripts
-- CJK (Chinese, Japanese, Korean) characters
-- Mathematical symbols and operators
-- Emoji and pictographic symbols
-- Private Use Areas
-- And many more...
+### Grapheme Cluster Functions
 
-## Performance Characteristics
+- `is_grapheme_boundary(prev_codepoint normie, curr_codepoint normie) lit` - Check boundary
+- `get_script(codepoint normie) tea` - Get character script
+- `count_grapheme_clusters(text tea) normie` - Count grapheme clusters
+- `get_grapheme_cluster_at(text tea, cluster_pos normie) tea` - Get cluster at position
 
-- **Pure CURSED**: No external dependencies or unsafe operations
-- **Memory Safe**: All operations use safe array bounds checking
-- **Efficient**: Optimized for common ASCII and Latin-1 cases
-- **Comprehensive**: Full Unicode range support up to U+10FFFF
+### Text Segmentation Functions
 
-## Integration
+- `segment_words(text tea) []tea` - Segment text into words
+- `segment_sentences(text tea) []tea` - Segment text into sentences
+- `segment_lines(text tea, max_width normie) []tea` - Break text into lines
 
-This module is designed to integrate with:
+### Advanced Functions
 
-- **String Module**: Enhanced string processing with Unicode awareness
-- **Regex Module**: Unicode-aware pattern matching
-- **JSON Module**: Proper Unicode handling in JSON parsing
-- **Text Processing**: Any module requiring Unicode support
+- `get_unicode_block(codepoint normie) tea` - Get Unicode block name
+- `get_canonical_decomposition(codepoint normie) []normie` - Get canonical decomposition
+- `get_compatibility_decomposition(codepoint normie) []normie` - Get compatibility decomposition
+- `get_canonical_composition(base normie, combining normie) normie` - Get canonical composition
 
 ## Testing
 
-Run comprehensive tests:
+The module includes comprehensive tests covering all functionality:
 
 ```bash
+# Run Unicode module tests
 cargo run --bin cursed stdlib/unicode/test_unicode.csd
+
+# Test both interpretation and compilation modes
+cargo run --bin cursed stdlib/unicode/test_unicode.csd
+cargo run --bin cursed -- compile stdlib/unicode/test_unicode.csd
+./test_unicode
 ```
 
-The test suite includes:
+## Performance Considerations
 
-- UTF-8 validation with various byte sequences
-- Character classification across multiple languages
-- Case conversion with edge cases
-- Unicode block detection
-- Boundary condition testing
-- Multi-language character support
+- **Normalization**: NFC is recommended for most text processing
+- **Character Classification**: Functions are optimized for common Unicode ranges
+- **Case Conversion**: Supports ASCII, Latin-1, and major Unicode scripts
+- **Encoding**: UTF-8 is the primary encoding with UTF-16/32 support
+- **Grapheme Clusters**: Simplified implementation for common use cases
+- **Text Segmentation**: Basic algorithms suitable for most languages
 
-## Future Enhancements
+## Unicode Standards Compliance
 
-- Full Unicode normalization (NFD, NFKC, NFKD)
-- Extended case conversion with special mappings
-- Grapheme cluster boundary detection
-- Bidirectional text support
-- Unicode collation support
+This implementation follows these Unicode standards:
+- **Unicode 15.0**: Character properties and classification
+- **UAX #15**: Unicode Normalization Forms
+- **UAX #29**: Unicode Text Segmentation
+- **RFC 3629**: UTF-8 encoding
+- **RFC 2781**: UTF-16 encoding
+
+## Limitations
+
+- **Normalization**: Basic implementation of canonical and compatibility forms
+- **Character Classification**: Limited to common Unicode ranges
+- **Case Conversion**: ASCII, Latin-1, and major scripts only
+- **Grapheme Clusters**: Simplified boundary detection
+- **Text Segmentation**: Basic algorithms without locale-specific rules
+
+## Contributing
+
+To extend the Unicode module:
+
+1. Add new functions to `stdlib/unicode/mod.csd`
+2. Add comprehensive tests to `stdlib/unicode/test_unicode.csd`
+3. Update documentation in `stdlib/unicode/README.md`
+4. Ensure all tests pass in both interpretation and compilation modes
+
+## License
+
+This module is part of the CURSED programming language and follows the same license terms.

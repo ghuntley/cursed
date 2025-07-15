@@ -1458,6 +1458,19 @@ impl CursedExecutionEngine {
                 // RangeFor expressions not yet implemented in execution engine
                 Err(CursedError::runtime_error("RangeFor expressions not yet implemented in execution engine"))
             },
+            Expression::Panic(panic_expr) => {
+                // Evaluate panic expression and trigger runtime panic
+                let message_value = self.evaluate_expression(&panic_expr.message, context)?;
+                let message_str = match message_value {
+                    CursedValue::String(s) => s,
+                    _ => format!("{:?}", message_value),
+                };
+                Err(CursedError::PanicError(message_str))
+            },
+            Expression::Recover(recover_expr) => {
+                // Recover expression - for now, returns nil (TODO: implement proper panic recovery)
+                Ok(CursedValue::Nil)
+            },
 
         }
     }

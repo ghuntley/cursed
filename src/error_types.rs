@@ -19,6 +19,9 @@ pub enum Error {
     InvalidOptimizationLevel(String),
     // Generic instantiation errors
     TypeParameterMismatch { expected: usize, provided: usize, context: String },
+    GenericNotFound(String),
+    UnboundTypeParameter(String),
+    InterfaceNotFound(String),
     ConstraintViolation(String),
     ConstraintResolutionError(String),
     BoundViolation { type_param: String, concrete_type: String, bound: String, reason: String },
@@ -60,6 +63,9 @@ impl fmt::Display for Error {
             Error::UnknownGenericStruct(msg) => write!(f, "Unknown generic struct: {}", msg),
             Error::UnknownVariable(msg) => write!(f, "Unknown variable: {}", msg),
             Error::MonomorphisationError(msg) => write!(f, "Monomorphisation error: {}", msg),
+            Error::GenericNotFound(name) => write!(f, "Generic not found: {}", name),
+            Error::UnboundTypeParameter(name) => write!(f, "Unbound type parameter: {}", name),
+            Error::InterfaceNotFound(name) => write!(f, "Interface not found: {}", name),
         }
     }
 }

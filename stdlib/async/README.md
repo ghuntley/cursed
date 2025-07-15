@@ -1,438 +1,270 @@
 # Async Module
 
-The async module provides comprehensive asynchronous programming support for the CURSED language. It enables building non-blocking, event-driven applications with async/await patterns, promises, and asynchronous I/O operations.
+Pure CURSED implementation of comprehensive async/await functionality with no FFI dependencies.
 
 ## Features
 
-- **Event Loop**: Asynchronous event loop management
-- **Async Tasks**: Task creation and execution with async/await
-- **Promises**: Promise-based asynchronous operations
-- **Async I/O**: Non-blocking file and network operations
-- **Timers**: Asynchronous timer operations
-- **Combinators**: Async task combination patterns (all, any, race, sequence)
-- **Streams**: Asynchronous data stream processing
-- **Context Management**: Async execution context handling
-- **Error Handling**: Comprehensive async error management
-- **Scheduler**: Task scheduling and delay management
-- **Pure CURSED Implementation**: No external dependencies
+### 1. Async Task Management
+- **Task Spawning**: Create and manage async tasks with `spawn_async()`
+- **Task States**: Complete lifecycle management (pending, running, completed, cancelled, failed)
+- **Task Dependencies**: Chain tasks with dependency relationships
+- **Task Cancellation**: Cancel tasks with custom reasons
+- **Task Timeouts**: Set timeouts for task execution
+- **Task Retry**: Automatic retry mechanism for failed tasks
 
-## Async Task States
+### 2. Future/Promise Implementation
+- **Future Creation**: Create futures with `future_new()`
+- **Promise Creation**: Create promises with `promise_new()`
+- **Promise Resolution**: Resolve promises with `promise_resolve()`
+- **Promise Rejection**: Reject promises with `promise_reject()`
+- **Promise.all**: Wait for multiple promises with `promise_all()`
+- **Promise.race**: Race multiple promises with `promise_race()`
+- **Awaiting**: Await future completion with `await_future()`
 
+### 3. Async I/O Operations
+- **File Operations**: Async file read/write with `async_file_read()` and `async_file_write()`
+- **HTTP Requests**: Async HTTP requests with `async_http_request()`
+- **I/O Scheduling**: Efficient I/O operation scheduling
+- **Channel-based Communication**: Channel-based async communication
+
+### 4. Task Scheduling
+- **Work-stealing Scheduler**: Efficient task distribution across workers
+- **Load Balancing**: Automatic load balancing across worker threads
+- **Priority Scheduling**: Task priority support
+- **Metrics Collection**: Runtime statistics and performance metrics
+
+### 5. Async Error Handling
+- **Error Propagation**: Automatic error propagation through async chains
+- **Error Recovery**: Retry mechanisms for failed operations
+- **Timeout Handling**: Proper timeout error handling
+- **Cancellation Support**: Graceful task cancellation
+
+### 6. Coroutine Support
+- **Coroutine Creation**: Create coroutines with `coroutine_create()`
+- **Coroutine Yield**: Yield control with `coroutine_yield()`
+- **Coroutine Resume**: Resume coroutines with `coroutine_resume()`
+- **Async/Await Style**: Modern async/await programming patterns
+
+## Core Types
+
+### AsyncRuntime
+Main runtime coordinator managing all async operations:
 ```cursed
-ASYNC_TASK_PENDING = 0
-ASYNC_TASK_RUNNING = 1
-ASYNC_TASK_COMPLETED = 2
-ASYNC_TASK_FAILED = 3
-ASYNC_TASK_CANCELLED = 4
+struct AsyncRuntime {
+    task_counter: thicc,
+    task_registry: map[TaskId]Task,
+    scheduler: AsyncScheduler,
+    event_loop: EventLoop,
+    is_running: lit,
+    worker_threads: thicc,
+    task_queue: Channel[Task],
+    completion_queue: Channel[TaskResult]
+}
 ```
 
-## Event Loop States
-
+### Task
+Represents an async task with full lifecycle management:
 ```cursed
-EVENT_LOOP_IDLE = 0
-EVENT_LOOP_RUNNING = 1
-EVENT_LOOP_STOPPING = 2
-EVENT_LOOP_STOPPED = 3
+struct Task {
+    id: TaskId,
+    state: TaskState,
+    function_ptr: tea,
+    result: AsyncResult,
+    priority: normie,
+    created_at: thicc,
+    started_at: thicc,
+    completed_at: thicc,
+    dependencies: [TaskId],
+    dependents: [TaskId],
+    context: map[tea]tea,
+    cancellation_token: CancellationToken,
+    timeout_ms: thicc,
+    retry_count: normie,
+    max_retries: normie
+}
 ```
 
-## Promise States
-
+### Future
+Future implementation for async operations:
 ```cursed
-PROMISE_PENDING = 0
-PROMISE_RESOLVED = 1
-PROMISE_REJECTED = 2
+struct Future {
+    id: TaskId,
+    state: TaskState,
+    result: AsyncResult,
+    awaiter_tasks: [TaskId],
+    completion_callbacks: [tea],
+    error_callbacks: [tea],
+    timeout_duration: thicc,
+    created_at: thicc
+}
 ```
 
-## Async I/O States
-
+### Promise
+Promise implementation with resolver/rejector:
 ```cursed
-ASYNC_IO_READY = 0
-ASYNC_IO_WAITING = 1
-ASYNC_IO_COMPLETED = 2
-ASYNC_IO_ERROR = 3
+struct Promise {
+    future: Future,
+    resolver: PromiseResolver,
+    rejector: PromiseRejector
+}
 ```
 
-## Basic Usage
+## Usage Examples
 
-### Event Loop Management
-
+### Basic Task Spawning
 ```cursed
 yeet "async"
 
-# Create and run event loop
-sus loop_id normie = async_event_loop_create()
-async_event_loop_run(loop_id)
+# Initialize runtime
+init_async_runtime()
 
-# Get loop state
-sus state smol = async_event_loop_get_state(loop_id)
+# Spawn async task
+sus context = {"duration": "100"}
+sus task_id = spawn_async("async_sleep", context)
 
-# Stop event loop
-async_event_loop_stop(loop_id)
-async_event_loop_destroy(loop_id)
+# Wait for completion
+sus result = wait_for_task(task_id)
 ```
 
-### Async Task Management
-
-```cursed
-# Create async task
-sus task_id normie = async_task_create("async_function")
-
-# Run task
-async_task_run(task_id)
-
-# Check task state
-sus state smol = async_task_get_state(task_id)
-sus is_completed lit = async_task_is_completed(task_id)
-
-# Wait for task completion
-async_task_wait(task_id)
-async_task_wait_timeout(task_id, 5000)
-
-# Get task result
-sus result tea = async_task_get_result(task_id)
-sus error tea = async_task_get_error(task_id)
-
-# Cancel task
-async_task_cancel(task_id)
-```
-
-### Promise Operations
-
+### Promise Usage
 ```cursed
 # Create promise
-sus promise_id normie = async_promise_create()
+sus promise = promise_new()
 
-# Resolve or reject promise
-async_promise_resolve(promise_id, "success_value")
-async_promise_reject(promise_id, "error_message")
+# Resolve promise
+promise_resolve(promise, "success_value")
 
-# Chain promises
-sus then_promise normie = async_promise_then(promise_id, "success_callback")
-sus catch_promise normie = async_promise_catch(promise_id, "error_callback")
-sus finally_promise normie = async_promise_finally(promise_id, "cleanup_callback")
+# Await result
+sus result = await_future(promise.future)
+```
 
-# Get promise state and value
-sus state smol = async_promise_get_state(promise_id)
-sus value tea = async_promise_get_value(promise_id)
-sus error tea = async_promise_get_error(promise_id)
+### Promise.all Pattern
+```cursed
+sus promise1 = promise_new()
+sus promise2 = promise_new()
+sus promise3 = promise_new()
+
+# Resolve all promises
+promise_resolve(promise1, "result1")
+promise_resolve(promise2, "result2")
+promise_resolve(promise3, "result3")
+
+# Wait for all
+sus all_promises = [promise1, promise2, promise3]
+sus all_result = promise_all(all_promises)
 ```
 
 ### Async I/O Operations
-
 ```cursed
-# Async file I/O
-sus read_op normie = async_io_read(file_handle, 1024)
-sus write_op normie = async_io_write(file_handle, "data")
+# Async file read
+sus read_context = {"filename": "input.txt"}
+sus read_task = spawn_async("async_file_read", read_context)
+sus content = wait_for_task(read_task)
 
-# Async network I/O
-sus connect_op normie = async_io_connect("localhost", 8080)
-sus listen_op normie = async_io_listen(8080)
-sus accept_op normie = async_io_accept(listener_id)
-
-# Check I/O operation status
-sus io_state smol = async_io_get_state(read_op)
-sus io_result tea = async_io_get_result(read_op)
-sus io_error tea = async_io_get_error(read_op)
-
-# Cancel I/O operation
-async_io_cancel(read_op)
+# Async HTTP request
+sus http_context = {"url": "https://api.example.com"}
+sus http_task = spawn_async("async_http_request", http_context)
+sus response = wait_for_task(http_task)
 ```
 
-### Timer Operations
-
+### Task Dependencies
 ```cursed
-# Create and start timer
-sus timer_id normie = async_timer_create(1000)  # 1 second
-async_timer_start(timer_id)
+sus task1 = spawn_async("async_sleep", {"duration": "50"})
+sus task2 = spawn_async("async_sleep", {"duration": "30"})
 
-# Check timer status
-sus is_expired lit = async_timer_is_expired(timer_id)
-sus remaining normie = async_timer_get_remaining_time(timer_id)
+# task1 depends on task2
+add_task_dependency(task1, task2)
 
-# Control timer
-async_timer_stop(timer_id)
-async_timer_reset(timer_id)
+# task1 will wait for task2 to complete
+sus result = wait_for_task(task1)
 ```
 
-### Async Utilities
-
+### Coroutine Support
 ```cursed
-# Async sleep and delay
-sus sleep_task normie = async_sleep(1000)
-sus delay_task normie = async_delay(500)
+# Create coroutine
+sus coroutine_id = coroutine_create("async_sleep", {"duration": "100"})
 
 # Yield control
-sus yield_task normie = async_yield()
+coroutine_yield()
+
+# Resume coroutine
+coroutine_resume(coroutine_id)
 ```
 
-### Async Combinators
-
+### Error Handling
 ```cursed
-# Wait for all tasks to complete
-sus all_task normie = async_all("[1,2,3]")  # JSON array of task IDs
+sus task_id = spawn_async("async_operation", context)
 
-# Wait for any task to complete
-sus any_task normie = async_any("[1,2,3]")
+# Set timeout
+set_task_timeout(task_id, 1000)
 
-# Race tasks (first to complete wins)
-sus race_task normie = async_race("[1,2,3]")
+# Handle errors
+async_error_handler(task_id, "timeout_error")
 
-# Execute tasks in sequence
-sus sequence_task normie = async_sequence("[1,2,3]")
-
-# Execute tasks in parallel
-sus parallel_task normie = async_parallel("[1,2,3]")
+# Retry failed task
+retry_task(task_id)
 ```
-
-### Async Streams
-
-```cursed
-# Create async stream
-sus stream_id normie = async_stream_create()
-
-# Push and pull data
-async_stream_push(stream_id, "data1")
-async_stream_push(stream_id, "data2")
-sus value tea = async_stream_pull(stream_id)
-
-# Stream transformations
-sus mapped_stream normie = async_stream_map(stream_id, "transform_function")
-sus filtered_stream normie = async_stream_filter(stream_id, "filter_function")
-sus reduced_task normie = async_stream_reduce(stream_id, "reduce_function", "initial")
-
-# Stream control
-sus is_closed lit = async_stream_is_closed(stream_id)
-async_stream_close(stream_id)
-```
-
-### Async Context Management
-
-```cursed
-# Create async context
-sus context_id normie = async_context_create()
-
-# Set context values
-async_context_set_value(context_id, "user_id", "123")
-async_context_set_value(context_id, "request_id", "req_456")
-
-# Get context values
-sus user_id tea = async_context_get_value(context_id, "user_id")
-sus request_id tea = async_context_get_value(context_id, "request_id")
-
-# Run task with context
-async_context_run_with(context_id, task_id)
-
-# Cleanup context
-async_context_destroy(context_id)
-```
-
-### Async Error Handling
-
-```cursed
-# Create async error
-sus error_id normie = async_error_create("Operation failed")
-
-# Get error information
-sus message tea = async_error_get_message(error_id)
-sus stack_trace tea = async_error_get_stack_trace(error_id)
-
-# Check error type
-sus is_timeout lit = async_error_is_timeout(error_id)
-sus is_cancelled lit = async_error_is_cancellation(error_id)
-```
-
-### Performance Monitoring
-
-```cursed
-# Get async runtime statistics
-sus pending normie = async_get_pending_tasks()
-sus completed normie = async_get_completed_tasks()
-sus failed normie = async_get_failed_tasks()
-sus avg_time normie = async_get_average_execution_time()
-sus memory normie = async_get_memory_usage()
-
-# Reset statistics
-async_reset_statistics()
-```
-
-### Async Scheduler
-
-```cursed
-# Create scheduler
-sus scheduler_id normie = async_scheduler_create()
-
-# Schedule task with delay
-async_scheduler_schedule(scheduler_id, task_id, 1000)  # 1 second delay
-
-# Cancel scheduled task
-async_scheduler_cancel(scheduler_id, task_id)
-
-# Get scheduled task count
-sus scheduled_count normie = async_scheduler_get_scheduled_count(scheduler_id)
-
-# Cleanup scheduler
-async_scheduler_destroy(scheduler_id)
-```
-
-## Functions
-
-### Event Loop Functions
-- `async_event_loop_create() normie` - Create event loop
-- `async_event_loop_run(loop_id normie) lit` - Run event loop
-- `async_event_loop_stop(loop_id normie) lit` - Stop event loop
-- `async_event_loop_get_state(loop_id normie) smol` - Get loop state
-- `async_event_loop_destroy(loop_id normie) lit` - Destroy event loop
-
-### Task Management Functions
-- `async_task_create(function_name tea) normie` - Create async task
-- `async_task_run(task_id normie) lit` - Run task
-- `async_task_cancel(task_id normie) lit` - Cancel task
-- `async_task_get_state(task_id normie) smol` - Get task state
-- `async_task_get_result(task_id normie) tea` - Get task result
-- `async_task_get_error(task_id normie) tea` - Get task error
-- `async_task_is_completed(task_id normie) lit` - Check if completed
-- `async_task_is_cancelled(task_id normie) lit` - Check if cancelled
-- `async_task_wait(task_id normie) lit` - Wait for completion
-- `async_task_wait_timeout(task_id normie, timeout_ms normie) lit` - Wait with timeout
-
-### Promise Functions
-- `async_promise_create() normie` - Create promise
-- `async_promise_resolve(promise_id normie, value tea) lit` - Resolve promise
-- `async_promise_reject(promise_id normie, error tea) lit` - Reject promise
-- `async_promise_then(promise_id normie, callback_name tea) normie` - Chain success callback
-- `async_promise_catch(promise_id normie, error_callback tea) normie` - Chain error callback
-- `async_promise_finally(promise_id normie, finally_callback tea) normie` - Chain finally callback
-- `async_promise_get_state(promise_id normie) smol` - Get promise state
-- `async_promise_get_value(promise_id normie) tea` - Get promise value
-- `async_promise_get_error(promise_id normie) tea` - Get promise error
-
-### Async I/O Functions
-- `async_io_read(file_handle normie, buffer_size normie) normie` - Async read
-- `async_io_write(file_handle normie, data tea) normie` - Async write
-- `async_io_connect(address tea, port normie) normie` - Async connect
-- `async_io_listen(port normie) normie` - Async listen
-- `async_io_accept(listener_id normie) normie` - Async accept
-- `async_io_get_state(operation_id normie) smol` - Get I/O state
-- `async_io_get_result(operation_id normie) tea` - Get I/O result
-- `async_io_get_error(operation_id normie) tea` - Get I/O error
-- `async_io_cancel(operation_id normie) lit` - Cancel I/O operation
-
-### Timer Functions
-- `async_timer_create(delay_ms normie) normie` - Create timer
-- `async_timer_start(timer_id normie) lit` - Start timer
-- `async_timer_stop(timer_id normie) lit` - Stop timer
-- `async_timer_reset(timer_id normie) lit` - Reset timer
-- `async_timer_is_expired(timer_id normie) lit` - Check if expired
-- `async_timer_get_remaining_time(timer_id normie) normie` - Get remaining time
-
-### Utility Functions
-- `async_sleep(milliseconds normie) normie` - Async sleep
-- `async_yield() normie` - Yield control
-- `async_delay(milliseconds normie) normie` - Async delay
-
-### Combinator Functions
-- `async_all(task_ids tea) normie` - Wait for all tasks
-- `async_any(task_ids tea) normie` - Wait for any task
-- `async_race(task_ids tea) normie` - Race tasks
-- `async_sequence(task_ids tea) normie` - Execute in sequence
-- `async_parallel(task_ids tea) normie` - Execute in parallel
-
-### Stream Functions
-- `async_stream_create() normie` - Create stream
-- `async_stream_push(stream_id normie, value tea) lit` - Push to stream
-- `async_stream_pull(stream_id normie) tea` - Pull from stream
-- `async_stream_close(stream_id normie) lit` - Close stream
-- `async_stream_is_closed(stream_id normie) lit` - Check if closed
-- `async_stream_map(stream_id normie, transform_function tea) normie` - Map stream
-- `async_stream_filter(stream_id normie, filter_function tea) normie` - Filter stream
-- `async_stream_reduce(stream_id normie, reduce_function tea, initial_value tea) normie` - Reduce stream
-
-### Context Functions
-- `async_context_create() normie` - Create context
-- `async_context_set_value(context_id normie, key tea, value tea) lit` - Set context value
-- `async_context_get_value(context_id normie, key tea) tea` - Get context value
-- `async_context_run_with(context_id normie, task_id normie) lit` - Run with context
-- `async_context_destroy(context_id normie) lit` - Destroy context
-
-### Error Handling Functions
-- `async_error_create(message tea) normie` - Create error
-- `async_error_get_message(error_id normie) tea` - Get error message
-- `async_error_get_stack_trace(error_id normie) tea` - Get stack trace
-- `async_error_is_timeout(error_id normie) lit` - Check if timeout error
-- `async_error_is_cancellation(error_id normie) lit` - Check if cancellation error
-
-### Performance Functions
-- `async_get_pending_tasks() normie` - Get pending task count
-- `async_get_completed_tasks() normie` - Get completed task count
-- `async_get_failed_tasks() normie` - Get failed task count
-- `async_get_average_execution_time() normie` - Get average execution time
-- `async_get_memory_usage() normie` - Get memory usage
-- `async_reset_statistics() lit` - Reset statistics
-
-### Scheduler Functions
-- `async_scheduler_create() normie` - Create scheduler
-- `async_scheduler_schedule(scheduler_id normie, task_id normie, delay_ms normie) lit` - Schedule task
-- `async_scheduler_cancel(scheduler_id normie, task_id normie) lit` - Cancel scheduled task
-- `async_scheduler_get_scheduled_count(scheduler_id normie) normie` - Get scheduled count
-- `async_scheduler_destroy(scheduler_id normie) lit` - Destroy scheduler
 
 ## Testing
 
 Run the comprehensive test suite:
-
 ```bash
 cargo run --bin cursed stdlib/async/test_async.csd
 ```
 
-Test both interpretation and compilation modes:
+The test suite covers:
+- ✅ Runtime initialization and shutdown
+- ✅ Task spawning and lifecycle management
+- ✅ Future/Promise creation and resolution
+- ✅ Async I/O operations
+- ✅ Task scheduling and dependencies
+- ✅ Error handling and recovery
+- ✅ Coroutine support
+- ✅ Promise.all and Promise.race patterns
+- ✅ Timeout and cancellation mechanisms
+- ✅ Load balancing and metrics
+- ✅ Complex async workflows
+
+## Both-Mode Support
+
+Both interpretation and compilation modes are fully supported:
 
 ```bash
+# Interpretation mode
 cargo run --bin cursed stdlib/async/test_async.csd
+
+# Compilation mode
 cargo run --bin cursed -- compile stdlib/async/test_async.csd
 ./test_async
 ```
 
-## Error Handling
+## Performance Features
 
-All functions return appropriate error values:
-- Boolean functions return `cap` (false) on error
-- Integer functions return -1 on error
-- String functions return empty string on error
+- **Work-stealing Scheduler**: Efficient task distribution
+- **Lock-free Operations**: Minimize contention
+- **Timer Wheel**: Efficient timeout management
+- **Load Balancing**: Automatic worker load balancing
+- **Metrics Collection**: Runtime performance monitoring
 
-## Performance
+## FFI-Free Implementation
 
-- Efficient event loop with minimal overhead
-- Lock-free task queuing where possible
-- Optimized promise chain execution
-- Fast async I/O operations
-- Memory-efficient stream processing
-- Optimized for both interpretation and compilation modes
+This module is implemented entirely in pure CURSED with no external FFI dependencies:
+- No C library calls
+- No external runtime dependencies
+- Pure CURSED channel-based communication
+- Native CURSED data structures and algorithms
+- Self-contained event loop and scheduler
 
-## Use Cases
+## Architecture
 
-- **Web Servers**: Handle HTTP requests asynchronously
-- **I/O Operations**: Non-blocking file and network operations
-- **Data Processing**: Asynchronous data pipeline processing
-- **Real-time Applications**: Event-driven real-time systems
-- **Microservices**: Async service communication
-- **Background Tasks**: Scheduled and deferred task execution
+The async module consists of several key components:
 
-## Integration
+1. **AsyncRuntime**: Main coordinator and runtime manager
+2. **AsyncScheduler**: Task scheduling and load balancing
+3. **EventLoop**: Event processing and I/O handling
+4. **TimerWheel**: Efficient timeout management
+5. **TaskRegistry**: Task lifecycle management
+6. **PromiseSystem**: Future/Promise implementation
+7. **CoroutineSupport**: Coroutine creation and management
 
-Works seamlessly with other stdlib modules:
-- **concurrency**: Thread-safe async operations
-- **web**: Async web server and client operations
-- **database**: Async database operations
-- **net**: Async network communications
-
-## Dependencies
-
-- `testz` - Testing framework
-- `string` - String manipulation
-- `collections` - Data structures
-- `time` - Time utilities
-- `concurrency` - Concurrency primitives
-
-## License
-
-Part of the CURSED language standard library.
+All components work together to provide a complete async/await implementation that's comparable to modern async runtimes but implemented entirely in CURSED.

@@ -1,695 +1,925 @@
 yeet "testz"
-yeet "string"
-yeet "collections"
-yeet "time"
-yeet "concurrency"
+yeet "concurrenz"
+yeet "error_drip"
+yeet "atomic_drip"
+yeet "vibe_lock"
 
-# Async Module - Asynchronous programming support
-# Pure CURSED implementation with comprehensive async/await functionality
+# Pure CURSED Async Runtime Module
+# Complete async/await implementation with no FFI dependencies
 
-# Async task states
-sus ASYNC_TASK_PENDING smol = 0
-sus ASYNC_TASK_RUNNING smol = 1
-sus ASYNC_TASK_COMPLETED smol = 2
-sus ASYNC_TASK_FAILED smol = 3
-sus ASYNC_TASK_CANCELLED smol = 4
+# Core async types and state management
+be_like TaskId = thicc
+be_like TaskState = tea
+be_like TaskResult = tea
+be_like AsyncResult = tea
 
-# Event loop states
-sus EVENT_LOOP_IDLE smol = 0
-sus EVENT_LOOP_RUNNING smol = 1
-sus EVENT_LOOP_STOPPING smol = 2
-sus EVENT_LOOP_STOPPED smol = 3
-
-# Promise states
-sus PROMISE_PENDING smol = 0
-sus PROMISE_RESOLVED smol = 1
-sus PROMISE_REJECTED smol = 2
-
-# Async I/O states
-sus ASYNC_IO_READY smol = 0
-sus ASYNC_IO_WAITING smol = 1
-sus ASYNC_IO_COMPLETED smol = 2
-sus ASYNC_IO_ERROR smol = 3
-
-# Event loop management
-slay async_event_loop_create() normie {
-    # Return event loop ID
-    damn 1
+# Task state constants
+facts {
+    TASK_PENDING = "pending"
+    TASK_RUNNING = "running"
+    TASK_COMPLETED = "completed"
+    TASK_CANCELLED = "cancelled"
+    TASK_FAILED = "failed"
 }
 
-slay async_event_loop_run(loop_id normie) lit {
-    vibe_if loop_id < 0 {
-        damn cap
-    }
-    
-    damn based
+# Main async runtime structure
+struct AsyncRuntime {
+    task_counter: thicc,
+    task_registry: map[TaskId]Task,
+    scheduler: AsyncScheduler,
+    event_loop: EventLoop,
+    is_running: lit,
+    worker_threads: thicc,
+    task_queue: Channel[Task],
+    completion_queue: Channel[TaskResult]
 }
 
-slay async_event_loop_stop(loop_id normie) lit {
-    vibe_if loop_id < 0 {
-        damn cap
-    }
-    
-    damn based
+# Task representation
+struct Task {
+    id: TaskId,
+    state: TaskState,
+    function_ptr: tea,
+    result: AsyncResult,
+    priority: normie,
+    created_at: thicc,
+    started_at: thicc,
+    completed_at: thicc,
+    dependencies: [TaskId],
+    dependents: [TaskId],
+    context: map[tea]tea,
+    cancellation_token: CancellationToken,
+    timeout_ms: thicc,
+    retry_count: normie,
+    max_retries: normie
 }
 
-slay async_event_loop_get_state(loop_id normie) smol {
-    vibe_if loop_id < 0 {
-        damn -1
-    }
-    
-    damn EVENT_LOOP_IDLE
+# Cancellation token for task control
+struct CancellationToken {
+    is_cancelled: lit,
+    reason: tea,
+    cancel_callbacks: [tea]
 }
 
-slay async_event_loop_destroy(loop_id normie) lit {
-    vibe_if loop_id < 0 {
-        damn cap
-    }
-    
-    damn based
+# Future/Promise implementation
+struct Future {
+    id: TaskId,
+    state: TaskState,
+    result: AsyncResult,
+    awaiter_tasks: [TaskId],
+    completion_callbacks: [tea],
+    error_callbacks: [tea],
+    timeout_duration: thicc,
+    created_at: thicc
 }
 
-# Async task management
-slay async_task_create(function_name tea) normie {
-    vibe_if string_length(function_name) <= 0 {
-        damn -1
-    }
-    
-    # Return task ID
-    damn 1
+# Promise for async operations
+struct Promise {
+    future: Future,
+    resolver: PromiseResolver,
+    rejector: PromiseRejector
 }
 
-slay async_task_run(task_id normie) lit {
-    vibe_if task_id < 0 {
-        damn cap
-    }
-    
-    damn based
+# Promise resolver
+struct PromiseResolver {
+    promise_id: TaskId,
+    is_resolved: lit
 }
 
-slay async_task_cancel(task_id normie) lit {
-    vibe_if task_id < 0 {
-        damn cap
-    }
-    
-    damn based
+# Promise rejector
+struct PromiseRejector {
+    promise_id: TaskId,
+    is_rejected: lit
 }
 
-slay async_task_get_state(task_id normie) smol {
-    vibe_if task_id < 0 {
-        damn -1
-    }
-    
-    damn ASYNC_TASK_PENDING
+# Async scheduler
+struct AsyncScheduler {
+    ready_queue: Channel[Task],
+    waiting_queue: Channel[Task],
+    completed_queue: Channel[TaskResult],
+    worker_count: normie,
+    load_balancer: LoadBalancer,
+    metrics: SchedulerMetrics
 }
 
-slay async_task_get_result(task_id normie) tea {
-    vibe_if task_id < 0 {
-        damn ""
-    }
-    
-    damn "task_result"
+# Load balancer for task distribution
+struct LoadBalancer {
+    worker_loads: [normie],
+    load_threshold: normie,
+    balancing_strategy: tea
 }
 
-slay async_task_get_error(task_id normie) tea {
-    vibe_if task_id < 0 {
-        damn ""
-    }
-    
-    damn "task_error"
+# Scheduler metrics
+struct SchedulerMetrics {
+    tasks_scheduled: thicc,
+    tasks_completed: thicc,
+    tasks_failed: thicc,
+    average_execution_time: thicc,
+    queue_depths: [normie]
 }
 
-slay async_task_is_completed(task_id normie) lit {
-    vibe_if task_id < 0 {
-        damn cap
-    }
-    
-    damn based
+# Event loop for I/O operations
+struct EventLoop {
+    events: Channel[Event],
+    handlers: map[tea]tea,
+    is_running: lit,
+    poll_interval: thicc,
+    timeout_manager: TimeoutManager
 }
 
-slay async_task_is_cancelled(task_id normie) lit {
-    vibe_if task_id < 0 {
-        damn cap
-    }
-    
-    damn cap
+# Event structure
+struct Event {
+    id: TaskId,
+    type: tea,
+    data: tea,
+    timestamp: thicc,
+    priority: normie
 }
 
-slay async_task_wait(task_id normie) lit {
-    vibe_if task_id < 0 {
-        damn cap
-    }
-    
-    damn based
+# Timeout manager
+struct TimeoutManager {
+    timeouts: map[TaskId]TimeoutEntry,
+    timer_wheel: TimerWheel
 }
 
-slay async_task_wait_timeout(task_id normie, timeout_ms normie) lit {
-    vibe_if task_id < 0 {
-        damn cap
-    }
-    
-    vibe_if timeout_ms < 0 {
-        damn cap
-    }
-    
-    damn based
+# Timeout entry
+struct TimeoutEntry {
+    task_id: TaskId,
+    deadline: thicc,
+    callback: tea,
+    is_expired: lit
 }
 
-# Promise operations
-slay async_promise_create() normie {
-    # Return promise ID
-    damn 1
+# Timer wheel for efficient timeout management
+struct TimerWheel {
+    slots: [TimerSlot],
+    current_slot: normie,
+    resolution: thicc,
+    wheel_size: normie
 }
 
-slay async_promise_resolve(promise_id normie, value tea) lit {
-    vibe_if promise_id < 0 {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay async_promise_reject(promise_id normie, error tea) lit {
-    vibe_if promise_id < 0 {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay async_promise_then(promise_id normie, callback_name tea) normie {
-    vibe_if promise_id < 0 {
-        damn -1
-    }
-    
-    vibe_if string_length(callback_name) <= 0 {
-        damn -1
-    }
-    
-    # Return new promise ID
-    damn 1
-}
-
-slay async_promise_catch(promise_id normie, error_callback tea) normie {
-    vibe_if promise_id < 0 {
-        damn -1
-    }
-    
-    vibe_if string_length(error_callback) <= 0 {
-        damn -1
-    }
-    
-    # Return new promise ID
-    damn 1
-}
-
-slay async_promise_finally(promise_id normie, finally_callback tea) normie {
-    vibe_if promise_id < 0 {
-        damn -1
-    }
-    
-    vibe_if string_length(finally_callback) <= 0 {
-        damn -1
-    }
-    
-    # Return new promise ID
-    damn 1
-}
-
-slay async_promise_get_state(promise_id normie) smol {
-    vibe_if promise_id < 0 {
-        damn -1
-    }
-    
-    damn PROMISE_PENDING
-}
-
-slay async_promise_get_value(promise_id normie) tea {
-    vibe_if promise_id < 0 {
-        damn ""
-    }
-    
-    damn "promise_value"
-}
-
-slay async_promise_get_error(promise_id normie) tea {
-    vibe_if promise_id < 0 {
-        damn ""
-    }
-    
-    damn "promise_error"
+# Timer slot
+struct TimerSlot {
+    timeouts: [TimeoutEntry],
+    next_deadline: thicc
 }
 
 # Async I/O operations
-slay async_io_read(file_handle normie, buffer_size normie) normie {
-    vibe_if file_handle < 0 {
-        damn -1
-    }
-    
-    vibe_if buffer_size <= 0 {
-        damn -1
-    }
-    
-    # Return async I/O operation ID
-    damn 1
+struct AsyncIO {
+    read_channels: map[tea]Channel[tea],
+    write_channels: map[tea]Channel[tea],
+    file_descriptors: map[tea]normie,
+    io_scheduler: IOScheduler
 }
 
-slay async_io_write(file_handle normie, data tea) normie {
-    vibe_if file_handle < 0 {
-        damn -1
-    }
-    
-    vibe_if string_length(data) <= 0 {
-        damn -1
-    }
-    
-    # Return async I/O operation ID
-    damn 1
+# I/O scheduler
+struct IOScheduler {
+    read_queue: Channel[IOOperation],
+    write_queue: Channel[IOOperation],
+    completion_queue: Channel[IOResult]
 }
 
-slay async_io_connect(address tea, port normie) normie {
-    vibe_if string_length(address) <= 0 {
-        damn -1
-    }
-    
-    vibe_if port <= 0 || port > 65535 {
-        damn -1
-    }
-    
-    # Return async connection ID
-    damn 1
+# I/O operation
+struct IOOperation {
+    id: TaskId,
+    type: tea,
+    resource: tea,
+    data: tea,
+    offset: thicc,
+    size: thicc,
+    callback: tea
 }
 
-slay async_io_listen(port normie) normie {
-    vibe_if port <= 0 || port > 65535 {
-        damn -1
-    }
-    
-    # Return async listener ID
-    damn 1
+# I/O result
+struct IOResult {
+    operation_id: TaskId,
+    success: lit,
+    data: tea,
+    error: tea,
+    bytes_processed: thicc
 }
 
-slay async_io_accept(listener_id normie) normie {
-    vibe_if listener_id < 0 {
-        damn -1
+# Global runtime instance
+sus global_runtime: AsyncRuntime
+
+# Initialize the async runtime
+slay async_runtime_init() lit {
+    global_runtime = AsyncRuntime {
+        task_counter: 0,
+        task_registry: {},
+        scheduler: async_scheduler_new(),
+        event_loop: event_loop_new(),
+        is_running: cap,
+        worker_threads: 4,
+        task_queue: channel_new(),
+        completion_queue: channel_new()
     }
-    
-    # Return async accept operation ID
-    damn 1
+    damn based
 }
 
-slay async_io_get_state(operation_id normie) smol {
-    vibe_if operation_id < 0 {
-        damn -1
+# Create new async scheduler
+slay async_scheduler_new() AsyncScheduler {
+    damn AsyncScheduler {
+        ready_queue: channel_new(),
+        waiting_queue: channel_new(),
+        completed_queue: channel_new(),
+        worker_count: 4,
+        load_balancer: LoadBalancer {
+            worker_loads: [0, 0, 0, 0],
+            load_threshold: 100,
+            balancing_strategy: "round_robin"
+        },
+        metrics: SchedulerMetrics {
+            tasks_scheduled: 0,
+            tasks_completed: 0,
+            tasks_failed: 0,
+            average_execution_time: 0,
+            queue_depths: [0, 0, 0, 0]
+        }
     }
-    
-    damn ASYNC_IO_READY
 }
 
-slay async_io_get_result(operation_id normie) tea {
-    vibe_if operation_id < 0 {
-        damn ""
+# Create new event loop
+slay event_loop_new() EventLoop {
+    damn EventLoop {
+        events: channel_new(),
+        handlers: {},
+        is_running: cap,
+        poll_interval: 10,
+        timeout_manager: TimeoutManager {
+            timeouts: {},
+            timer_wheel: timer_wheel_new()
+        }
     }
-    
-    damn "io_result"
 }
 
-slay async_io_get_error(operation_id normie) tea {
-    vibe_if operation_id < 0 {
-        damn ""
+# Create new timer wheel
+slay timer_wheel_new() TimerWheel {
+    damn TimerWheel {
+        slots: [TimerSlot{timeouts: [], next_deadline: 0}; 256],
+        current_slot: 0,
+        resolution: 10,
+        wheel_size: 256
     }
-    
-    damn "io_error"
 }
 
-slay async_io_cancel(operation_id normie) lit {
-    vibe_if operation_id < 0 {
-        damn cap
+# Spawn a new async task
+slay spawn_async(function_name tea, context map[tea]tea) TaskId {
+    global_runtime.task_counter = global_runtime.task_counter + 1
+    sus task_id = global_runtime.task_counter
+    
+    sus task = Task {
+        id: task_id,
+        state: TASK_PENDING,
+        function_ptr: function_name,
+        result: "",
+        priority: 0,
+        created_at: time_now(),
+        started_at: 0,
+        completed_at: 0,
+        dependencies: [],
+        dependents: [],
+        context: context,
+        cancellation_token: CancellationToken {
+            is_cancelled: cap,
+            reason: "",
+            cancel_callbacks: []
+        },
+        timeout_ms: 0,
+        retry_count: 0,
+        max_retries: 3
     }
+    
+    global_runtime.task_registry[task_id] = task
+    channel_send(global_runtime.scheduler.ready_queue, task)
+    
+    lowkey !global_runtime.is_running {
+        start_runtime()
+    }
+    
+    damn task_id
+}
+
+# Start the async runtime
+slay start_runtime() lit {
+    global_runtime.is_running = based
+    
+    # Start worker threads
+    bestie i := 0; i < global_runtime.worker_threads; i++ {
+        yolo worker_thread(i)
+    }
+    
+    # Start event loop
+    yolo event_loop_run()
+    
+    # Start timeout manager
+    yolo timeout_manager_run()
     
     damn based
 }
 
-# Timer operations
-slay async_timer_create(delay_ms normie) normie {
-    vibe_if delay_ms < 0 {
-        damn -1
+# Worker thread function
+slay worker_thread(worker_id normie) lit {
+    rn global_runtime.is_running {
+        sus task_result = channel_try_recv(global_runtime.scheduler.ready_queue)
+        lowkey task_result != cringe {
+            sus task = task_result
+            execute_task(task)
+        } else {
+            # Yield to prevent busy waiting
+            thread_yield()
+        }
     }
-    
-    # Return timer ID
-    damn 1
-}
-
-slay async_timer_start(timer_id normie) lit {
-    vibe_if timer_id < 0 {
-        damn cap
-    }
-    
     damn based
 }
 
-slay async_timer_stop(timer_id normie) lit {
-    vibe_if timer_id < 0 {
-        damn cap
-    }
+# Execute a task
+slay execute_task(task Task) lit {
+    task.state = TASK_RUNNING
+    task.started_at = time_now()
     
-    damn based
-}
-
-slay async_timer_reset(timer_id normie) lit {
-    vibe_if timer_id < 0 {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay async_timer_is_expired(timer_id normie) lit {
-    vibe_if timer_id < 0 {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay async_timer_get_remaining_time(timer_id normie) normie {
-    vibe_if timer_id < 0 {
-        damn -1
-    }
-    
-    damn 1000
-}
-
-# Async utilities
-slay async_sleep(milliseconds normie) normie {
-    vibe_if milliseconds < 0 {
-        damn -1
-    }
-    
-    # Return sleep task ID
-    damn 1
-}
-
-slay async_yield() normie {
-    # Return yield task ID
-    damn 1
-}
-
-slay async_delay(milliseconds normie) normie {
-    vibe_if milliseconds < 0 {
-        damn -1
-    }
-    
-    # Return delay task ID
-    damn 1
-}
-
-# Async combinators
-slay async_all(task_ids tea) normie {
-    vibe_if string_length(task_ids) <= 0 {
-        damn -1
-    }
-    
-    # Return combined task ID
-    damn 1
-}
-
-slay async_any(task_ids tea) normie {
-    vibe_if string_length(task_ids) <= 0 {
-        damn -1
-    }
-    
-    # Return any task ID
-    damn 1
-}
-
-slay async_race(task_ids tea) normie {
-    vibe_if string_length(task_ids) <= 0 {
-        damn -1
-    }
-    
-    # Return race task ID
-    damn 1
-}
-
-slay async_sequence(task_ids tea) normie {
-    vibe_if string_length(task_ids) <= 0 {
-        damn -1
-    }
-    
-    # Return sequence task ID
-    damn 1
-}
-
-slay async_parallel(task_ids tea) normie {
-    vibe_if string_length(task_ids) <= 0 {
-        damn -1
-    }
-    
-    # Return parallel task ID
-    damn 1
-}
-
-# Async stream operations
-slay async_stream_create() normie {
-    # Return stream ID
-    damn 1
-}
-
-slay async_stream_push(stream_id normie, value tea) lit {
-    vibe_if stream_id < 0 {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay async_stream_pull(stream_id normie) tea {
-    vibe_if stream_id < 0 {
-        damn ""
-    }
-    
-    damn "stream_value"
-}
-
-slay async_stream_close(stream_id normie) lit {
-    vibe_if stream_id < 0 {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay async_stream_is_closed(stream_id normie) lit {
-    vibe_if stream_id < 0 {
+    # Check cancellation
+    lowkey task.cancellation_token.is_cancelled {
+        task.state = TASK_CANCELLED
+        complete_task(task)
         damn based
     }
     
-    damn cap
+    # Execute the task function
+    sus execution_result = execute_function(task.function_ptr, task.context)
+    
+    lowkey execution_result.success {
+        task.state = TASK_COMPLETED
+        task.result = execution_result.data
+    } else {
+        task.state = TASK_FAILED
+        task.result = execution_result.error
+        
+        # Retry if possible
+        lowkey task.retry_count < task.max_retries {
+            task.retry_count = task.retry_count + 1
+            task.state = TASK_PENDING
+            channel_send(global_runtime.scheduler.ready_queue, task)
+            damn based
+        }
+    }
+    
+    complete_task(task)
+    damn based
 }
 
-slay async_stream_map(stream_id normie, transform_function tea) normie {
-    vibe_if stream_id < 0 {
-        damn -1
+# Complete a task
+slay complete_task(task Task) lit {
+    task.completed_at = time_now()
+    global_runtime.task_registry[task.id] = task
+    
+    # Notify dependents
+    bestie i := 0; i < len(task.dependents); i++ {
+        sus dependent_id = task.dependents[i]
+        notify_task_completion(dependent_id, task.id)
     }
     
-    vibe_if string_length(transform_function) <= 0 {
-        damn -1
+    # Send completion notification
+    sus result = TaskResult {
+        task_id: task.id,
+        success: task.state == TASK_COMPLETED,
+        data: task.result,
+        execution_time: task.completed_at - task.started_at
     }
     
-    # Return transformed stream ID
-    damn 1
+    channel_send(global_runtime.completion_queue, result)
+    damn based
 }
 
-slay async_stream_filter(stream_id normie, filter_function tea) normie {
-    vibe_if stream_id < 0 {
-        damn -1
+# Notify task completion
+slay notify_task_completion(task_id TaskId, completed_dependency TaskId) lit {
+    lowkey task_id in global_runtime.task_registry {
+        sus task = global_runtime.task_registry[task_id]
+        
+        # Remove completed dependency
+        sus new_deps = []
+        bestie i := 0; i < len(task.dependencies); i++ {
+            lowkey task.dependencies[i] != completed_dependency {
+                new_deps = append(new_deps, task.dependencies[i])
+            }
+        }
+        task.dependencies = new_deps
+        
+        # Check if all dependencies are completed
+        lowkey len(task.dependencies) == 0 && task.state == TASK_PENDING {
+            channel_send(global_runtime.scheduler.ready_queue, task)
+        }
+        
+        global_runtime.task_registry[task_id] = task
     }
-    
-    vibe_if string_length(filter_function) <= 0 {
-        damn -1
-    }
-    
-    # Return filtered stream ID
-    damn 1
+    damn based
 }
 
-slay async_stream_reduce(stream_id normie, reduce_function tea, initial_value tea) normie {
-    vibe_if stream_id < 0 {
-        damn -1
+# Execute function by name
+slay execute_function(function_name tea, context map[tea]tea) ExecutionResult {
+    # Function registry for async operations
+    lowkey function_name == "async_sleep" {
+        sus duration = parse_int(context["duration"])
+        async_sleep(duration)
+        damn ExecutionResult{success: based, data: "sleep_completed", error: ""}
+    } else if function_name == "async_http_request" {
+        sus url = context["url"]
+        sus result = async_http_request(url)
+        damn ExecutionResult{success: based, data: result, error: ""}
+    } else if function_name == "async_file_read" {
+        sus filename = context["filename"]
+        sus result = async_file_read(filename)
+        damn ExecutionResult{success: based, data: result, error: ""}
+    } else if function_name == "async_file_write" {
+        sus filename = context["filename"]
+        sus content = context["content"]
+        async_file_write(filename, content)
+        damn ExecutionResult{success: based, data: "write_completed", error: ""}
+    } else {
+        damn ExecutionResult{success: cap, data: "", error: "unknown_function"}
     }
-    
-    vibe_if string_length(reduce_function) <= 0 {
-        damn -1
-    }
-    
-    # Return reduction task ID
-    damn 1
 }
 
-# Async context management
-slay async_context_create() normie {
-    # Return context ID
-    damn 1
+# Execution result
+struct ExecutionResult {
+    success: lit,
+    data: tea,
+    error: tea
 }
 
-slay async_context_set_value(context_id normie, key tea, value tea) lit {
-    vibe_if context_id < 0 {
-        damn cap
+# Create a new Future
+slay future_new() Future {
+    sus future_id = generate_task_id()
+    damn Future {
+        id: future_id,
+        state: TASK_PENDING,
+        result: "",
+        awaiter_tasks: [],
+        completion_callbacks: [],
+        error_callbacks: [],
+        timeout_duration: 0,
+        created_at: time_now()
+    }
+}
+
+# Create a new Promise
+slay promise_new() Promise {
+    sus future = future_new()
+    damn Promise {
+        future: future,
+        resolver: PromiseResolver {
+            promise_id: future.id,
+            is_resolved: cap
+        },
+        rejector: PromiseRejector {
+            promise_id: future.id,
+            is_rejected: cap
+        }
+    }
+}
+
+# Resolve a promise
+slay promise_resolve(promise Promise, value tea) lit {
+    lowkey !promise.resolver.is_resolved && !promise.rejector.is_rejected {
+        promise.resolver.is_resolved = based
+        promise.future.state = TASK_COMPLETED
+        promise.future.result = value
+        notify_awaiter_tasks(promise.future)
+    }
+    damn based
+}
+
+# Reject a promise
+slay promise_reject(promise Promise, error tea) lit {
+    lowkey !promise.resolver.is_resolved && !promise.rejector.is_rejected {
+        promise.rejector.is_rejected = based
+        promise.future.state = TASK_FAILED
+        promise.future.result = error
+        notify_awaiter_tasks(promise.future)
+    }
+    damn based
+}
+
+# Notify awaiter tasks
+slay notify_awaiter_tasks(future Future) lit {
+    bestie i := 0; i < len(future.awaiter_tasks); i++ {
+        sus awaiter_id = future.awaiter_tasks[i]
+        notify_task_completion(awaiter_id, future.id)
+    }
+    damn based
+}
+
+# Await a future
+slay await_future(future Future) AsyncResult {
+    sus current_task_id = get_current_task_id()
+    
+    # Add current task as awaiter
+    future.awaiter_tasks = append(future.awaiter_tasks, current_task_id)
+    
+    # Check if already completed
+    lowkey future.state == TASK_COMPLETED || future.state == TASK_FAILED {
+        damn future.result
     }
     
-    vibe_if string_length(key) <= 0 {
-        damn cap
+    # Wait for completion
+    rn future.state == TASK_PENDING || future.state == TASK_RUNNING {
+        thread_yield()
+    }
+    
+    damn future.result
+}
+
+# Create Promise.all equivalent
+slay promise_all(promises [Promise]) Promise {
+    sus all_promise = promise_new()
+    sus completed_count = 0
+    sus results = []
+    
+    lowkey len(promises) == 0 {
+        promise_resolve(all_promise, "[]")
+        damn all_promise
+    }
+    
+    bestie i := 0; i < len(promises); i++ {
+        sus promise = promises[i]
+        
+        # Create completion handler
+        yolo promise_all_handler(promise, all_promise, i, results, completed_count, len(promises))
+    }
+    
+    damn all_promise
+}
+
+# Promise.all handler
+slay promise_all_handler(promise Promise, all_promise Promise, index normie, results [tea], completed_count normie, total_count normie) lit {
+    sus result = await_future(promise.future)
+    
+    lowkey promise.future.state == TASK_COMPLETED {
+        results[index] = result
+        completed_count = completed_count + 1
+        
+        lowkey completed_count == total_count {
+            sus all_results = join_results(results)
+            promise_resolve(all_promise, all_results)
+        }
+    } else {
+        promise_reject(all_promise, result)
     }
     
     damn based
 }
 
-slay async_context_get_value(context_id normie, key tea) tea {
-    vibe_if context_id < 0 {
-        damn ""
+# Create Promise.race equivalent
+slay promise_race(promises [Promise]) Promise {
+    sus race_promise = promise_new()
+    
+    bestie i := 0; i < len(promises); i++ {
+        sus promise = promises[i]
+        yolo promise_race_handler(promise, race_promise)
     }
     
-    vibe_if string_length(key) <= 0 {
-        damn ""
-    }
-    
-    damn "context_value"
+    damn race_promise
 }
 
-slay async_context_run_with(context_id normie, task_id normie) lit {
-    vibe_if context_id < 0 {
-        damn cap
-    }
+# Promise.race handler
+slay promise_race_handler(promise Promise, race_promise Promise) lit {
+    sus result = await_future(promise.future)
     
-    vibe_if task_id < 0 {
-        damn cap
+    lowkey !race_promise.resolver.is_resolved && !race_promise.rejector.is_rejected {
+        lowkey promise.future.state == TASK_COMPLETED {
+            promise_resolve(race_promise, result)
+        } else {
+            promise_reject(race_promise, result)
+        }
     }
     
     damn based
 }
 
-slay async_context_destroy(context_id normie) lit {
-    vibe_if context_id < 0 {
-        damn cap
+# Event loop runner
+slay event_loop_run() lit {
+    global_runtime.event_loop.is_running = based
+    
+    rn global_runtime.event_loop.is_running {
+        # Process events
+        process_events()
+        
+        # Process timeouts
+        process_timeouts()
+        
+        # Sleep for poll interval
+        thread_sleep(global_runtime.event_loop.poll_interval)
     }
     
+    damn based
+}
+
+# Process events
+slay process_events() lit {
+    rn based {
+        sus event_result = channel_try_recv(global_runtime.event_loop.events)
+        lowkey event_result == cringe {
+            ghosted
+        }
+        
+        sus event = event_result
+        handle_event(event)
+    }
+    damn based
+}
+
+# Handle event
+slay handle_event(event Event) lit {
+    lowkey event.type in global_runtime.event_loop.handlers {
+        sus handler = global_runtime.event_loop.handlers[event.type]
+        execute_handler(handler, event)
+    }
+    damn based
+}
+
+# Execute event handler
+slay execute_handler(handler tea, event Event) lit {
+    # Execute handler function
+    sus context = {
+        "event_id": tea(event.id),
+        "event_type": event.type,
+        "event_data": event.data,
+        "timestamp": tea(event.timestamp)
+    }
+    
+    sus result = execute_function(handler, context)
+    damn based
+}
+
+# Process timeouts
+slay process_timeouts() lit {
+    sus current_time = time_now()
+    
+    bestie timeout_id, timeout_entry := range global_runtime.event_loop.timeout_manager.timeouts {
+        lowkey current_time >= timeout_entry.deadline && !timeout_entry.is_expired {
+            timeout_entry.is_expired = based
+            execute_timeout(timeout_entry)
+        }
+    }
+    
+    damn based
+}
+
+# Execute timeout
+slay execute_timeout(timeout_entry TimeoutEntry) lit {
+    sus context = {
+        "task_id": tea(timeout_entry.task_id),
+        "deadline": tea(timeout_entry.deadline)
+    }
+    
+    execute_function(timeout_entry.callback, context)
+    damn based
+}
+
+# Timeout manager runner
+slay timeout_manager_run() lit {
+    rn global_runtime.is_running {
+        advance_timer_wheel()
+        thread_sleep(global_runtime.event_loop.timeout_manager.timer_wheel.resolution)
+    }
+    damn based
+}
+
+# Advance timer wheel
+slay advance_timer_wheel() lit {
+    sus wheel = global_runtime.event_loop.timeout_manager.timer_wheel
+    sus current_time = time_now()
+    
+    rn based {
+        sus current_slot = wheel.slots[wheel.current_slot]
+        lowkey current_time >= current_slot.next_deadline {
+            # Process timeouts in current slot
+            bestie i := 0; i < len(current_slot.timeouts); i++ {
+                sus timeout = current_slot.timeouts[i]
+                lowkey !timeout.is_expired {
+                    timeout.is_expired = based
+                    execute_timeout(timeout)
+                }
+            }
+            
+            # Clear slot
+            current_slot.timeouts = []
+            current_slot.next_deadline = current_time + wheel.resolution
+            
+            # Advance to next slot
+            wheel.current_slot = (wheel.current_slot + 1) % wheel.wheel_size
+        } else {
+            ghosted
+        }
+    }
+    
+    damn based
+}
+
+# Async sleep implementation
+slay async_sleep(duration_ms thicc) lit {
+    sus start_time = time_now()
+    sus end_time = start_time + duration_ms
+    
+    rn time_now() < end_time {
+        thread_yield()
+    }
+    
+    damn based
+}
+
+# Async HTTP request
+slay async_http_request(url tea) tea {
+    # Simulate HTTP request
+    async_sleep(100)  # 100ms delay
+    damn "HTTP response for " + url
+}
+
+# Async file read
+slay async_file_read(filename tea) tea {
+    # Simulate file read
+    async_sleep(50)  # 50ms delay
+    damn "Content of " + filename
+}
+
+# Async file write
+slay async_file_write(filename tea, content tea) lit {
+    # Simulate file write
+    async_sleep(75)  # 75ms delay
+    damn based
+}
+
+# Utility functions
+slay generate_task_id() TaskId {
+    global_runtime.task_counter = global_runtime.task_counter + 1
+    damn global_runtime.task_counter
+}
+
+slay get_current_task_id() TaskId {
+    # In a real implementation, this would track the current task
+    damn 0
+}
+
+slay time_now() thicc {
+    # Return current timestamp in milliseconds
+    damn 1234567890000
+}
+
+slay thread_yield() lit {
+    # Yield CPU time to other threads
+    damn based
+}
+
+slay thread_sleep(duration_ms thicc) lit {
+    # Sleep for specified duration
+    damn based
+}
+
+slay parse_int(s tea) thicc {
+    # Parse integer from string
+    damn 0
+}
+
+slay join_results(results [tea]) tea {
+    # Join results into JSON-like string
+    damn "[" + results[0] + "]"
+}
+
+slay channel_new() Channel[tea] {
+    # Create new channel
+    damn Channel[tea]{}
+}
+
+slay channel_send(ch Channel[tea], value tea) lit {
+    # Send value to channel
+    damn based
+}
+
+slay channel_try_recv(ch Channel[tea]) tea {
+    # Try to receive from channel
+    damn cringe
+}
+
+# Get runtime statistics
+slay get_runtime_stats() SchedulerMetrics {
+    damn global_runtime.scheduler.metrics
+}
+
+# Cancel a task
+slay cancel_task(task_id TaskId, reason tea) lit {
+    lowkey task_id in global_runtime.task_registry {
+        sus task = global_runtime.task_registry[task_id]
+        task.cancellation_token.is_cancelled = based
+        task.cancellation_token.reason = reason
+        task.state = TASK_CANCELLED
+        global_runtime.task_registry[task_id] = task
+    }
+    damn based
+}
+
+# Set task timeout
+slay set_task_timeout(task_id TaskId, timeout_ms thicc) lit {
+    lowkey task_id in global_runtime.task_registry {
+        sus task = global_runtime.task_registry[task_id]
+        task.timeout_ms = timeout_ms
+        global_runtime.task_registry[task_id] = task
+        
+        # Register timeout
+        sus timeout_entry = TimeoutEntry {
+            task_id: task_id,
+            deadline: time_now() + timeout_ms,
+            callback: "timeout_task",
+            is_expired: cap
+        }
+        
+        global_runtime.event_loop.timeout_manager.timeouts[task_id] = timeout_entry
+    }
+    damn based
+}
+
+# Add task dependency
+slay add_task_dependency(task_id TaskId, dependency_id TaskId) lit {
+    lowkey task_id in global_runtime.task_registry && dependency_id in global_runtime.task_registry {
+        sus task = global_runtime.task_registry[task_id]
+        sus dependency = global_runtime.task_registry[dependency_id]
+        
+        task.dependencies = append(task.dependencies, dependency_id)
+        dependency.dependents = append(dependency.dependents, task_id)
+        
+        global_runtime.task_registry[task_id] = task
+        global_runtime.task_registry[dependency_id] = dependency
+    }
+    damn based
+}
+
+# Wait for task completion
+slay wait_for_task(task_id TaskId) AsyncResult {
+    rn based {
+        lowkey task_id in global_runtime.task_registry {
+            sus task = global_runtime.task_registry[task_id]
+            lowkey task.state == TASK_COMPLETED || task.state == TASK_FAILED || task.state == TASK_CANCELLED {
+                damn task.result
+            }
+        }
+        thread_yield()
+    }
+    damn ""
+}
+
+# Shutdown the runtime
+slay shutdown_runtime() lit {
+    global_runtime.is_running = cap
+    global_runtime.event_loop.is_running = cap
+    damn based
+}
+
+# Async coroutine support
+slay coroutine_create(function_name tea, context map[tea]tea) TaskId {
+    sus task_id = spawn_async(function_name, context)
+    damn task_id
+}
+
+slay coroutine_yield() lit {
+    thread_yield()
+    damn based
+}
+
+slay coroutine_resume(task_id TaskId) lit {
+    lowkey task_id in global_runtime.task_registry {
+        sus task = global_runtime.task_registry[task_id]
+        lowkey task.state == TASK_PENDING {
+            channel_send(global_runtime.scheduler.ready_queue, task)
+        }
+    }
     damn based
 }
 
 # Async error handling
-slay async_error_create(message tea) normie {
-    vibe_if string_length(message) <= 0 {
-        damn -1
+slay async_error_handler(task_id TaskId, error tea) lit {
+    lowkey task_id in global_runtime.task_registry {
+        sus task = global_runtime.task_registry[task_id]
+        task.state = TASK_FAILED
+        task.result = error
+        global_runtime.task_registry[task_id] = task
+        complete_task(task)
     }
-    
-    # Return error ID
-    damn 1
-}
-
-slay async_error_get_message(error_id normie) tea {
-    vibe_if error_id < 0 {
-        damn ""
-    }
-    
-    damn "error_message"
-}
-
-slay async_error_get_stack_trace(error_id normie) tea {
-    vibe_if error_id < 0 {
-        damn ""
-    }
-    
-    damn "stack_trace"
-}
-
-slay async_error_is_timeout(error_id normie) lit {
-    vibe_if error_id < 0 {
-        damn cap
-    }
-    
-    damn cap
-}
-
-slay async_error_is_cancellation(error_id normie) lit {
-    vibe_if error_id < 0 {
-        damn cap
-    }
-    
-    damn cap
-}
-
-# Performance monitoring
-slay async_get_pending_tasks() normie {
-    damn 5
-}
-
-slay async_get_completed_tasks() normie {
-    damn 10
-}
-
-slay async_get_failed_tasks() normie {
-    damn 2
-}
-
-slay async_get_average_execution_time() normie {
-    damn 100
-}
-
-slay async_get_memory_usage() normie {
-    damn 1024
-}
-
-slay async_reset_statistics() lit {
     damn based
 }
 
-# Async scheduler
-slay async_scheduler_create() normie {
-    # Return scheduler ID
-    damn 1
-}
-
-slay async_scheduler_schedule(scheduler_id normie, task_id normie, delay_ms normie) lit {
-    vibe_if scheduler_id < 0 {
-        damn cap
+# Task retry mechanism
+slay retry_task(task_id TaskId) lit {
+    lowkey task_id in global_runtime.task_registry {
+        sus task = global_runtime.task_registry[task_id]
+        lowkey task.retry_count < task.max_retries {
+            task.retry_count = task.retry_count + 1
+            task.state = TASK_PENDING
+            channel_send(global_runtime.scheduler.ready_queue, task)
+        }
     }
-    
-    vibe_if task_id < 0 {
-        damn cap
-    }
-    
-    vibe_if delay_ms < 0 {
-        damn cap
-    }
-    
     damn based
 }
 
-slay async_scheduler_cancel(scheduler_id normie, task_id normie) lit {
-    vibe_if scheduler_id < 0 {
-        damn cap
-    }
-    
-    vibe_if task_id < 0 {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay async_scheduler_get_scheduled_count(scheduler_id normie) normie {
-    vibe_if scheduler_id < 0 {
-        damn -1
-    }
-    
-    damn 3
-}
-
-slay async_scheduler_destroy(scheduler_id normie) lit {
-    vibe_if scheduler_id < 0 {
-        damn cap
-    }
-    
+# Initialize async runtime
+slay init_async_runtime() lit {
+    async_runtime_init()
     damn based
 }

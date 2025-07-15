@@ -1,7 +1,6 @@
 yeet "testz"
 
-vibez.spill("Starting test")
-test_start("simple test")
-assert_true(based)
+test_start("Simple Test")
+assert_true(true)
+assert_false(false)
 print_test_summary()
-vibez.spill("Test completed")

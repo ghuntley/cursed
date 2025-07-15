@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 static mut GLOBAL_REGISTER_COUNTER: usize = 1;
 static GLOBAL_REGISTER_MUTEX: Mutex<()> = Mutex::new(());
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct RegisterTracker {
     allocated: HashSet<usize>,
     next_expected: usize,
@@ -42,6 +42,11 @@ impl RegisterTracker {
         unsafe {
             format!("%{}", GLOBAL_REGISTER_COUNTER)
         }
+    }
+    
+    /// Allocate and return the next register
+    pub fn next_register(&mut self) -> String {
+        self.allocate_register()
     }
     
     /// Synchronize this tracker with global counter

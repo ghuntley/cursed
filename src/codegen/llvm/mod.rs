@@ -17,6 +17,8 @@ pub mod optimization_passes;
 pub mod optimization_pipeline;
 pub mod performance_monitor;
 pub mod types;
+pub mod interface_dispatch;
+pub mod interface_type_checking;
 
 // Existing modules
 pub mod async_await;
@@ -65,6 +67,7 @@ pub mod type_switch;
 pub mod type_system;
 pub mod variable_management;
 pub mod web_vibez_integration;
+pub mod generic_optimization;
 
 // New inkwell-based modules for migration from string-based IR (temporarily disabled for compilation)
 // pub mod inkwell_expression_compiler;
@@ -104,6 +107,16 @@ pub use types::{
 };
 pub use package_integration::{
     LlvmPackageConfig
+};
+
+// Re-export interface dispatch types
+pub use interface_dispatch::{
+    InterfaceDispatchCodegen, InterfaceDispatchOptimizer, InterfaceOptimizationPasses,
+    InterfaceDefinition, InterfaceMethodSignature, VTableDefinition, VTableMethodEntry,
+    MethodResolution, InterfaceType
+};
+pub use interface_type_checking::{
+    InterfaceTypeChecker
 };
 
 // Re-export new inkwell-based types (temporarily disabled)

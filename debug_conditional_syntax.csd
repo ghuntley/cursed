@@ -1,7 +1,5 @@
-sus x meal = -5.0
+sus x normie = 5
 
-if x < 0.0 {
-    vibez.spill("x is negative")
-} else {
-    vibez.spill("x is positive")
+lowkey x == 5 {
+    vibez.spill("x is 5")
 }

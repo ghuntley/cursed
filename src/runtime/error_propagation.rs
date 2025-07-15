@@ -362,6 +362,9 @@ impl ErrorRecoverySystem {
             Error::UnknownGenericStruct(_) => "UnknownGenericStruct",
             Error::UnknownVariable(_) => "UnknownVariable",
             Error::MonomorphisationError(_) => "MonomorphisationError",
+            Error::GenericNotFound(_) => "GenericNotFound",
+            Error::UnboundTypeParameter(_) => "UnboundTypeParameter",
+            Error::InterfaceNotFound(_) => "InterfaceNotFound",
         };
 
         let strategies = self.strategies.lock().unwrap();

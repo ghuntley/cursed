@@ -181,6 +181,20 @@ impl ExpressionCompiler {
                  // RangeFor expressions not yet implemented in LLVM codegen
                  Err(CursedError::compiler_error("RangeFor expressions not yet implemented in LLVM codegen"))
              },
+             Expression::Panic(panic_expr) => {
+                 // Compile panic expression - generates runtime panic with message
+                 let message_reg = self.compile_expression(&panic_expr.message)?;
+                 let panic_reg = self.next_register();
+                 self.ir_buffer.push_str(&format!("  {} = call i8* @cursed_panic(i8* {})\n", panic_reg, message_reg));
+                 self.ir_buffer.push_str("  unreachable\n");
+                 Ok(panic_reg)
+             },
+             Expression::Recover(recover_expr) => {
+                 // Compile recover expression - attempts to recover from panic
+                 let recover_reg = self.next_register();
+                 self.ir_buffer.push_str(&format!("  {} = call i8* @cursed_recover()\n", recover_reg));
+                 Ok(recover_reg)
+             },
 
          }
     }
