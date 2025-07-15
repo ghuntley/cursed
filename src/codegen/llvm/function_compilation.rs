@@ -1,7 +1,7 @@
 //! LLVM Function Compilation Module
 //! Complete function compilation with full LLVM IR generation
 
-use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression, YikesStatement, FamStatement, ShookExpression, DeferStatement};
+use crate::ast::{Statement, Expression, FunctionStatement, Literal, ChannelSendExpression, ChannelReceiveExpression, ChannelCreationExpression, StructLiteralExpression, LambdaExpression, TypeAssertionExpression, IncrementExpression, DecrementExpression, YikesStatement, FamStatement, ShookExpression, DeferStatement, Type};
 use crate::error::CursedError;
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use crate::codegen::llvm::register_tracker::RegisterTracker;
@@ -2176,10 +2176,97 @@ impl FunctionCompiler {
 
     /// Compile type assertion expression
     fn compile_type_assertion(&mut self, type_assertion: &TypeAssertionExpression) -> Result<String, CursedError> {
-        // Compile the inner expression and perform type conversion
+        // Compile the inner expression first
         let value_reg = self.compile_expression(&type_assertion.value)?;
-        // For now, return the value as-is (type assertion is a no-op in LLVM)
-        Ok(value_reg)
+        
+        // Get type IDs for runtime checking
+        let source_type_id = self.get_simple_type_id(&type_assertion.value);
+        let target_type_id = self.get_simple_type_id_from_type(&type_assertion.target_type);
+        
+        if type_assertion.is_safe {
+            // Safe type assertion - return default value on failure
+            self.compile_safe_type_assertion(&value_reg, source_type_id, target_type_id)
+        } else {
+            // Unsafe type assertion - panic on failure
+            self.compile_unsafe_type_assertion(&value_reg, source_type_id, target_type_id)
+        }
+    }
+    
+    /// Compile safe type assertion
+    fn compile_safe_type_assertion(&mut self, value_reg: &str, source_type_id: u32, target_type_id: u32) -> Result<String, CursedError> {
+        let check_reg = self.next_register();
+        let result_reg = self.next_register();
+        let cast_reg = self.next_register();
+        let default_reg = self.next_register();
+        
+        // Generate type check
+        self.ir_code.push_str(&format!("  {} = call i1 @cursed_check_type_compatibility(i8* {}, i32 {}, i32 {})\n", 
+                                       check_reg, value_reg, source_type_id, target_type_id));
+        
+        // Generate cast or default value
+        self.ir_code.push_str(&format!("  {} = call i8* @cursed_cast_type(i8* {}, i32 {}, i32 {})\n", 
+                                       cast_reg, value_reg, source_type_id, target_type_id));
+        
+        self.ir_code.push_str(&format!("  {} = call i8* @cursed_null_value()\n", default_reg));
+        
+        // Select result based on type check
+        self.ir_code.push_str(&format!("  {} = select i1 {}, i8* {}, i8* {}\n", 
+                                       result_reg, check_reg, cast_reg, default_reg));
+        
+        Ok(result_reg)
+    }
+    
+    /// Compile unsafe type assertion
+    fn compile_unsafe_type_assertion(&mut self, value_reg: &str, source_type_id: u32, target_type_id: u32) -> Result<String, CursedError> {
+        let check_reg = self.next_register();
+        let result_reg = self.next_register();
+        let panic_block = format!("type_assert_panic_{}", self.local_register_counter);
+        let success_block = format!("type_assert_success_{}", self.local_register_counter);
+        
+        // Generate type check
+        self.ir_code.push_str(&format!("  {} = call i1 @cursed_check_type_compatibility(i8* {}, i32 {}, i32 {})\n", 
+                                       check_reg, value_reg, source_type_id, target_type_id));
+        
+        // Branch on type check result
+        self.ir_code.push_str(&format!("  br i1 {}, label %{}, label %{}\n", 
+                                       check_reg, success_block, panic_block));
+        
+        // Panic block
+        self.ir_code.push_str(&format!("{}:\n", panic_block));
+        self.ir_code.push_str(&format!("  call void @cursed_panic_type_assertion(i32 {}, i32 {})\n", 
+                                       source_type_id, target_type_id));
+        self.ir_code.push_str("  unreachable\n");
+        
+        // Success block
+        self.ir_code.push_str(&format!("{}:\n", success_block));
+        self.ir_code.push_str(&format!("  {} = call i8* @cursed_cast_type(i8* {}, i32 {}, i32 {})\n", 
+                                       result_reg, value_reg, source_type_id, target_type_id));
+        
+        Ok(result_reg)
+    }
+    
+    /// Get simple type ID from expression
+    fn get_simple_type_id(&self, expr: &Expression) -> u32 {
+        match expr {
+            Expression::Integer(_) => 1,   // Integer
+            Expression::Float(_) => 2,     // Float
+            Expression::String(_) => 3,    // String
+            Expression::Boolean(_) => 4,   // Boolean
+            _ => 999,                      // Unknown
+        }
+    }
+    
+    /// Get simple type ID from Type enum
+    fn get_simple_type_id_from_type(&self, type_: &Type) -> u32 {
+        match type_ {
+            Type::Integer | Type::Normie => 1,
+            Type::Float | Type::Snack | Type::Meal => 2,
+            Type::String | Type::Tea => 3,
+            Type::Boolean | Type::Lit => 4,
+            Type::Byte => 5,
+            Type::Sip => 6,
+            _ => 999,
+        }
     }
 
     /// Compile increment expression

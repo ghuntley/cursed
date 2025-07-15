@@ -22,14 +22,18 @@ ImportSpec       = [ identifier | "." ] ImportPath .
 ImportPath       = string_lit .
 ```
 
-Example:
+Examples:
 
 ```
 vibe main
 
+yeet "vibez"
+yeet "math"
+
 yeet (
-    "fmt"
-    tea "strings"
+    "vibez"
+    "math"
+    "string"
 )
 ```
 
@@ -163,11 +167,11 @@ Example:
 ```
 vibe_check day {
     mood "Monday", "Tuesday":
-        print("Start of week")
+        vibez.spill("Start of week")
     mood "Friday":
-        print("End of week")
+        vibez.spill("End of week")
     basic:
-        print("Mid-week")
+        vibez.spill("Mid-week")
 }
 ```
 
@@ -184,7 +188,7 @@ Examples:
 
 ```
 bestie i := 0; i < 10; i++ {
-    print(i)
+    vibez.spill(i)
 }
 
 bestie x < 100 {
@@ -223,10 +227,14 @@ periodt x > 0 {
 ReturnStmt       = "yolo" [ ExpressionList ] .
 ```
 
-Example:
+The `yolo` keyword is used to return values from functions. The `damn` keyword is an alias for `yolo`.
+
+Examples:
 
 ```
 yolo x + y
+damn "Hello World"
+yolo  # return with no value
 ```
 
 ### Break and Continue Statements
@@ -294,11 +302,12 @@ Arguments        = "(" [ ( ExpressionList [ "," ] ) | Type [ "," ExpressionList 
 ExpressionList   = Expression { "," Expression } .
 ```
 
-Example:
+Examples:
 
 ```
-fmt.Println("Hello, world!")
+vibez.spill("Hello, world!")
 add(1, 2)
+math.pow(2, 3)
 ```
 
 ## Goroutines and Channels
@@ -351,18 +360,54 @@ SelectCase       = "mood" ( SendStmt | ReceiveStmt ) ":" StatementList |
 ReceiveStmt      = [ ExpressionList "=" | IdentifierList ":=" ] ReceiveExpr .
 ```
 
-Example:
+The `ready` keyword is used for select statements that allow non-blocking operation on multiple channels.
+
+Examples:
 
 ```
-ready {
-    mood ch1 <- value:
-        // Send succeeded
-    mood result := <-ch2:
-        // Receive succeeded
-    mood <-timeout:
-        // Timeout occurred
-    basic:
-        // No operations ready
+slay select_basic_example() lit {
+    # Basic select with default case
+    ready {
+        basic:
+            vibez.spill("Default case executed")
+    }
+    damn based
+}
+
+slay select_with_channels() lit {
+    sus ch1 dm<normie>
+    sus ch2 dm<tea>
+    sus timeout dm<lit>
+    
+    ready {
+        mood ch1 <- 42:
+            vibez.spill("Send to ch1 succeeded")
+        mood result := <-ch2:
+            vibez.spill("Received from ch2: " + result)
+        mood <-timeout:
+            vibez.spill("Timeout occurred")
+        basic:
+            vibez.spill("No operations ready")
+    }
+    damn based
+}
+
+slay select_multiple_operations() lit {
+    sus input_ch dm<tea>
+    sus output_ch dm<normie>
+    sus done_ch dm<lit>
+    
+    ready {
+        mood msg := <-input_ch:
+            vibez.spill("Processing: " + msg)
+        mood output_ch <- 100:
+            vibez.spill("Sent result")
+        mood <-done_ch:
+            vibez.spill("Done signal received")
+        basic:
+            vibez.spill("No channel operations ready")
+    }
+    damn based
 }
 ```
 
@@ -387,10 +432,40 @@ stan {
 DeferStmt        = "later" Expression .
 ```
 
-Example:
+The `later` keyword is used to defer execution of an expression until the function returns.
+
+Examples:
 
 ```
-later file.Close()
+slay cleanup_example() lit {
+    vibez.spill("Function start")
+    
+    # Basic defer statement
+    later vibez.spill("This executes at function end")
+    
+    # Resource cleanup pattern
+    sus file := open("data.txt")
+    later file.close()
+    
+    # Multiple defers execute in LIFO order
+    later vibez.spill("Third defer")
+    later vibez.spill("Second defer")
+    later vibez.spill("First defer")
+    
+    vibez.spill("Function body")
+    damn based
+}
+
+slay defer_with_early_return() lit {
+    later vibez.spill("Cleanup happens even with early return")
+    
+    lowkey some_condition() {
+        damn based  # defer still executes
+    }
+    
+    vibez.spill("Normal path")
+    damn based
+}
 ```
 
 ## Error Handling

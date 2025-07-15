@@ -589,6 +589,17 @@ impl LlvmCodeGenerator {
         self.declare_function("cursed_channel_receive", "i32 @cursed_channel_receive(i8*, i64*)");
         self.declare_function("cursed_channel_error", "void @cursed_channel_error(i32)");
         
+        // Type assertion runtime functions
+        self.declare_function("cursed_check_type_compatibility", "i1 @cursed_check_type_compatibility(i8*, i32, i32)");
+        self.declare_function("cursed_check_interface_type", "i1 @cursed_check_interface_type(i8*)");
+        self.declare_function("cursed_check_generic_type", "i1 @cursed_check_generic_type(i8*)");
+        self.declare_function("cursed_check_array_type", "i1 @cursed_check_array_type(i8*)");
+        self.declare_function("cursed_check_function_type", "i1 @cursed_check_function_type(i8*)");
+        self.declare_function("cursed_cast_type", "i8* @cursed_cast_type(i8*, i32, i32)");
+        self.declare_function("cursed_empty_string", "i8* @cursed_empty_string()");
+        self.declare_function("cursed_null_value", "i8* @cursed_null_value()");
+        self.declare_function("cursed_panic_type_assertion", "void @cursed_panic_type_assertion(i32, i32)");
+        
         // Exception handling declarations
         self.declare_function("__gxx_personality_v0", "i32 @__gxx_personality_v0(...)");
         self.declare_function("__cxa_begin_catch", "i8* @__cxa_begin_catch(i8*)");
