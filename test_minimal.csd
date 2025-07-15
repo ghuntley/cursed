@@ -1,1 +1,1 @@
-vibez.spill("Hello, world!")
+vibez.spill("Test minimal")

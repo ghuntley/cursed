@@ -12,6 +12,7 @@ pub mod imports;
 pub mod ast;
 pub mod lexer;
 pub mod preprocessor;
+pub mod parser_main;
 pub mod parser;
 pub mod core; // Re-enabled for type system integration
 pub mod codegen; // Re-enabled for type system integration
@@ -49,7 +50,7 @@ use crate::error::CursedError;
 
 // CRITICAL: Re-export core components for tests and external access
 pub use lexer::{Lexer, Token, TokenKind};
-pub use parser::{Parser, new_parser};
+pub use parser_main::{Parser, new_parser};
 pub use codegen::LlvmCodeGenerator as LlvmCodeGeneratorReal;
 pub use package_manager::*;
 

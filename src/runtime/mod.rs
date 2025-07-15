@@ -8,6 +8,7 @@ pub mod runtime;
 pub mod debug_info;
 pub mod dwarf_parser;  // RE-ENABLED - Advanced debug information
 pub mod panic;
+pub mod panic_recover;
 pub mod goroutine;
 pub mod error_handling;
 pub mod enhanced_error_handling;
@@ -83,6 +84,7 @@ pub use gc_monitor::{GcMonitor, GcMonitorConfig, GcEvent, GcEventType, EventSeve
 // Additional exports needed by other modules - ADVANCED FEATURES ENABLED
 pub use goroutine::{GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};
 pub use panic::PanicRuntime;
+pub use panic_recover::{PanicRecoverRuntime, cursed_panic, cursed_recover, is_in_panic, with_panic_recovery};
 pub use error_handling::ErrorRuntime;
 pub use simple_enhanced_error_handling::{
     SimpleCursedErrorType, SimpleEnhancedErrorRuntime,

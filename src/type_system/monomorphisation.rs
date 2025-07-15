@@ -136,9 +136,8 @@ impl MonomorphisationPipeline {
             self.collect_from_statement(statement, requests)?;
         }
         
-        for function in &program.functions {
-            self.collect_from_function(function, requests)?;
-        }
+        // Functions are part of statements, not a separate field
+        // They are collected through Statement::Function variant
         
         Ok(())
     }
@@ -149,21 +148,20 @@ impl MonomorphisationPipeline {
             Statement::Expression(expr) => {
                 self.collect_from_expression(expr, requests)?;
             }
-            Statement::VariableDeclaration(var_decl) => {
-                if let Some(type_expr) = &var_decl.type_annotation {
-                    if self.is_generic_instantiation(type_expr) {
+            Statement::Let(let_stmt) => {
+                if let Some(ast_type) = &let_stmt.var_type {
+                    let type_expr = self.convert_ast_type_to_expression(ast_type);
+                    if self.is_generic_instantiation(&type_expr) {
                         requests.push(InstantiationRequest {
                             generic_name: type_expr.name.clone().unwrap_or_default(),
                             type_arguments: type_expr.parameters.clone(),
                             constraints: Vec::new(),
-                            call_site: Some(format!("variable:{}", var_decl.name)),
+                            call_site: Some(format!("variable:{}", let_stmt.target.primary_name())),
                         });
                     }
                 }
                 
-                if let Some(initializer) = &var_decl.initializer {
-                    self.collect_from_expression(initializer, requests)?;
-                }
+                self.collect_from_expression(&let_stmt.value, requests)?;
             }
             Statement::Return(return_stmt) => {
                 if let Some(value) = &return_stmt.value {
@@ -172,11 +170,11 @@ impl MonomorphisationPipeline {
             }
             Statement::If(if_stmt) => {
                 self.collect_from_expression(&if_stmt.condition, requests)?;
-                for stmt in &if_stmt.then_body {
+                for stmt in &if_stmt.then_branch {
                     self.collect_from_statement(stmt, requests)?;
                 }
-                if let Some(else_body) = &if_stmt.else_body {
-                    for stmt in else_body {
+                if let Some(else_branch) = &if_stmt.else_branch {
+                    for stmt in else_branch {
                         self.collect_from_statement(stmt, requests)?;
                     }
                 }
@@ -189,7 +187,7 @@ impl MonomorphisationPipeline {
                     self.collect_from_expression(condition, requests)?;
                 }
                 if let Some(update) = &for_stmt.update {
-                    self.collect_from_statement(update, requests)?;
+                    self.collect_from_expression(update, requests)?;
                 }
                 for stmt in &for_stmt.body {
                     self.collect_from_statement(stmt, requests)?;
@@ -251,9 +249,9 @@ impl MonomorphisationPipeline {
             Expression::MemberAccess(member_access) => {
                 self.collect_from_expression(&member_access.object, requests)?;
             }
-            Expression::Index(index_expr) => {
-                self.collect_from_expression(&index_expr.object, requests)?;
-                self.collect_from_expression(&index_expr.index, requests)?;
+            Expression::ArrayAccess(array_access) => {
+                self.collect_from_expression(&array_access.array, requests)?;
+                self.collect_from_expression(&array_access.index, requests)?;
             }
             _ => {} // Handle other expression types as needed
         }
@@ -326,6 +324,8 @@ impl MonomorphisationPipeline {
         
         let constraint_context = crate::type_system::ConstraintContext {
             active_constraints: constraint_bindings,
+            scope_id: "monomorphisation".to_string(),
+            type_bindings: HashMap::new(),
         };
         
         self.constraint_resolver.resolve_constraints(&constraint_context, &self.type_env)
@@ -368,14 +368,16 @@ impl MonomorphisationPipeline {
         
         // Substitute type parameters in function signature
         for param in &generic_func.parameters {
-            concrete_func.parameters.push(ConcreteParameter {
-                name: param.name.clone(),
-                type_expr: self.substitute_type_parameters(&param.type_annotation, solution)?,
-            });
+            if let Some(param_type) = &param.param_type {
+                concrete_func.parameters.push(ConcreteParameter {
+                    name: param.name.clone(),
+                    type_expr: self.substitute_type_parameters(&self.convert_ast_type_to_expression(param_type), solution)?,
+                });
+            }
         }
         
         if let Some(return_type) = &generic_func.return_type {
-            concrete_func.return_type = Some(self.substitute_type_parameters(return_type, solution)?);
+            concrete_func.return_type = Some(self.substitute_type_parameters(&self.convert_ast_type_to_expression(return_type), solution)?);
         }
         
         // Substitute type parameters in function body
@@ -400,17 +402,20 @@ impl MonomorphisationPipeline {
         
         // Substitute type parameters in struct fields
         for field in &generic_struct.fields {
-            concrete_struct.fields.push(ConcreteField {
-                name: field.name.clone(),
-                type_expr: self.substitute_type_parameters(&field.field_type, solution)?,
-            });
+            if let Some(field_type) = &field.field_type {
+                concrete_struct.fields.push(ConcreteField {
+                    name: field.name.clone(),
+                    type_expr: self.substitute_type_parameters(&self.convert_ast_type_to_expression(field_type), solution)?,
+                });
+            }
         }
         
         // Substitute type parameters in struct methods
-        for method in &generic_struct.methods {
-            let concrete_method = self.instantiate_generic_method(method, solution)?;
-            concrete_struct.methods.push(concrete_method);
-        }
+        // Note: StructStatement doesn't have methods field, this would need to be handled differently
+        // for method in &generic_struct.methods {
+        //     let concrete_method = self.instantiate_generic_method(method, solution)?;
+        //     concrete_struct.methods.push(concrete_method);
+        // }
         
         Ok(ConcreteAST::Struct(concrete_struct))
     }
@@ -429,21 +434,23 @@ impl MonomorphisationPipeline {
         if let Some(receiver) = &generic_method.receiver {
             concrete_method.receiver = Some(ConcreteParameter {
                 name: receiver.name.clone(),
-                type_expr: self.substitute_type_parameters(&receiver.type_annotation, solution)?,
+                type_expr: self.substitute_type_parameters(&self.convert_ast_type_to_expression(&receiver.receiver_type), solution)?,
             });
         }
         
         // Substitute parameter types
         for param in &generic_method.parameters {
-            concrete_method.parameters.push(ConcreteParameter {
-                name: param.name.clone(),
-                type_expr: self.substitute_type_parameters(&param.type_annotation, solution)?,
-            });
+            if let Some(param_type) = &param.param_type {
+                concrete_method.parameters.push(ConcreteParameter {
+                    name: param.name.clone(),
+                    type_expr: self.substitute_type_parameters(&self.convert_ast_type_to_expression(param_type), solution)?,
+                });
+            }
         }
         
         // Substitute return type
         if let Some(return_type) = &generic_method.return_type {
-            concrete_method.return_type = Some(self.substitute_type_parameters(return_type, solution)?);
+            concrete_method.return_type = Some(self.substitute_type_parameters(&self.convert_ast_type_to_expression(return_type), solution)?);
         }
         
         // Substitute types in method body
@@ -468,6 +475,7 @@ impl MonomorphisationPipeline {
         }
         
         Ok(TypeExpression {
+            kind: type_expr.kind.clone(),
             name: type_expr.name.clone(),
             parameters: substituted_params,
             return_type: if let Some(return_type) = &type_expr.return_type {
@@ -492,15 +500,15 @@ impl MonomorphisationPipeline {
     /// Substitute types in a single statement
     fn substitute_types_in_statement(&self, statement: &Statement, solution: &ConstraintSolution) -> Result<Statement, CursedError> {
         match statement {
-            Statement::VariableDeclaration(var_decl) => {
-                let mut new_var_decl = var_decl.clone();
-                if let Some(type_annotation) = &var_decl.type_annotation {
-                    new_var_decl.type_annotation = Some(self.substitute_type_parameters(type_annotation, solution)?);
+            Statement::Let(let_stmt) => {
+                let mut new_let_stmt = let_stmt.clone();
+                if let Some(var_type) = &let_stmt.var_type {
+                    let type_expr = self.convert_ast_type_to_expression(var_type);
+                    let substituted_type_expr = self.substitute_type_parameters(&type_expr, solution)?;
+                    new_let_stmt.var_type = Some(self.convert_type_expression_to_ast(&substituted_type_expr));
                 }
-                if let Some(initializer) = &var_decl.initializer {
-                    new_var_decl.initializer = Some(self.substitute_types_in_expression(initializer, solution)?);
-                }
-                Ok(Statement::VariableDeclaration(new_var_decl))
+                new_let_stmt.value = self.substitute_types_in_expression(&let_stmt.value, solution)?;
+                Ok(Statement::Let(new_let_stmt))
             }
             Statement::Expression(expr) => {
                 Ok(Statement::Expression(self.substitute_types_in_expression(expr, solution)?))
@@ -648,6 +656,76 @@ impl MonomorphisationPipeline {
         self.instance_cache.iter()
             .map(|(key, instance)| (instance.generic_name.clone(), key.clone()))
             .collect()
+    }
+
+    /// Convert AST Type to TypeExpression for monomorphization
+    fn convert_ast_type_to_expression(&self, ast_type: &crate::ast::Type) -> TypeExpression {
+        use crate::ast::Type;
+        
+        match ast_type {
+            Type::Normie => TypeExpression::named("normie"),
+            Type::Tea => TypeExpression::named("tea"),
+            Type::Lit => TypeExpression::named("lit"),
+            Type::Sip => TypeExpression::named("sip"),
+            Type::Smol => TypeExpression::named("smol"),
+            Type::Mid => TypeExpression::named("mid"),
+            Type::Thicc => TypeExpression::named("thicc"),
+            Type::Snack => TypeExpression::named("snack"),
+            Type::Meal => TypeExpression::named("meal"),
+
+            Type::Integer => TypeExpression::named("normie"),
+            Type::Float => TypeExpression::named("meal"),
+            Type::String => TypeExpression::named("tea"),
+            Type::Boolean => TypeExpression::named("lit"),
+            Type::Void => TypeExpression::named("void"),
+            Type::Custom(name) => TypeExpression::named(name),
+            Type::Array(element_type, _) => {
+                TypeExpression::array(self.convert_ast_type_to_expression(element_type))
+            }
+            Type::Slice(element_type) => {
+                TypeExpression::generic("slice", vec![self.convert_ast_type_to_expression(element_type)])
+            }
+            Type::Function(params, return_type) => {
+                let param_types: Vec<TypeExpression> = params.iter()
+                    .map(|p| self.convert_ast_type_to_expression(p))
+                    .collect();
+                TypeExpression::function(param_types, self.convert_ast_type_to_expression(return_type))
+            }
+            _ => TypeExpression::named("unknown"),
+        }
+    }
+
+    /// Convert TypeExpression back to AST Type
+    fn convert_type_expression_to_ast(&self, type_expr: &TypeExpression) -> crate::ast::Type {
+        use crate::ast::Type;
+        
+        if let Some(name) = &type_expr.name {
+            match name.as_str() {
+                "normie" => Type::Normie,
+                "tea" => Type::Tea,
+                "lit" => Type::Lit,
+                "sip" => Type::Sip,
+                "smol" => Type::Smol,
+                "mid" => Type::Mid,
+                "thicc" => Type::Thicc,
+                "snack" => Type::Snack,
+                "meal" => Type::Meal,
+
+                "void" => Type::Void,
+                "Array" if type_expr.parameters.len() == 1 => {
+                    Type::Array(
+                        Box::new(self.convert_type_expression_to_ast(&type_expr.parameters[0])),
+                        None
+                    )
+                }
+                "slice" if type_expr.parameters.len() == 1 => {
+                    Type::Slice(Box::new(self.convert_type_expression_to_ast(&type_expr.parameters[0])))
+                }
+                _ => Type::Custom(name.clone()),
+            }
+        } else {
+            Type::Custom("unknown".to_string())
+        }
     }
 }
 

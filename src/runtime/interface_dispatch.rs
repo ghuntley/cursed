@@ -289,12 +289,145 @@ impl InterfaceDispatchRegistry {
                 method_name, interface_value.interface_name, interface_value.concrete_type
             )))?;
         
-        // TODO: Implement actual method dispatch via function pointer
-        // For now, return a placeholder error
-        Err(CursedError::Runtime(format!(
-            "Method dispatch not yet implemented for {}.{} (function_ptr: {})",
-            interface_value.interface_name, method_name, method.function_ptr
-        )))
+        // Implement actual method dispatch via function pointer
+        unsafe {
+            // Convert function pointer to callable function
+            let func_ptr = method.function_ptr as *const ();
+            
+            // Create arguments array for C call
+            let mut c_args: Vec<*const std::ffi::c_void> = Vec::new();
+            
+            // Add data pointer as first argument (receiver)
+            c_args.push(interface_value.data_ptr as *const std::ffi::c_void);
+            
+            // Add method arguments
+            for arg in args {
+                c_args.push(self.value_to_c_ptr(arg)? as *const std::ffi::c_void);
+            }
+            
+            // Call the function based on parameter count and return type
+            match (method.param_types.len(), &method.return_type) {
+                (0, None) => {
+                    // void method()
+                    let func: extern "C" fn(*const std::ffi::c_void) = std::mem::transmute(func_ptr);
+                    func(c_args[0]);
+                    Ok(Value::null())
+                },
+                (0, Some(return_type)) => {
+                    // return_type method()
+                    match return_type.as_str() {
+                        "i32" | "normie" => {
+                            let func: extern "C" fn(*const std::ffi::c_void) -> i32 = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0]);
+                            Ok(Value::integer(result as i64))
+                        },
+                        "i64" | "thicc" => {
+                            let func: extern "C" fn(*const std::ffi::c_void) -> i64 = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0]);
+                            Ok(Value::integer(result)) // Convert to i32 for Value
+                        },
+                        "f64" | "meal" => {
+                            let func: extern "C" fn(*const std::ffi::c_void) -> f64 = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0]);
+                            Ok(Value::number(result))
+                        },
+                        "i8*" | "tea" => {
+                            let func: extern "C" fn(*const std::ffi::c_void) -> *const i8 = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0]);
+                            let c_str = std::ffi::CStr::from_ptr(result);
+                            Ok(Value::String(c_str.to_string_lossy().to_string()))
+                        },
+                        "i1" | "lit" => {
+                            let func: extern "C" fn(*const std::ffi::c_void) -> bool = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0]);
+                            Ok(Value::bool(result))
+                        },
+                        _ => {
+                            // Generic pointer return
+                            let func: extern "C" fn(*const std::ffi::c_void) -> *const std::ffi::c_void = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0]);
+                            Ok(Value::integer((result as usize) as i64))
+                        }
+                    }
+                },
+                (1, None) => {
+                    // void method(arg)
+                    let func: extern "C" fn(*const std::ffi::c_void, *const std::ffi::c_void) = std::mem::transmute(func_ptr);
+                    func(c_args[0], c_args[1]);
+                    Ok(Value::null())
+                },
+                (1, Some(return_type)) => {
+                    // return_type method(arg)
+                    match return_type.as_str() {
+                        "i32" | "normie" => {
+                            let func: extern "C" fn(*const std::ffi::c_void, *const std::ffi::c_void) -> i32 = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0], c_args[1]);
+                            Ok(Value::integer(result as i64))
+                        },
+                        "f64" | "meal" => {
+                            let func: extern "C" fn(*const std::ffi::c_void, *const std::ffi::c_void) -> f64 = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0], c_args[1]);
+                            Ok(Value::number(result))
+                        },
+                        "i8*" | "tea" => {
+                            let func: extern "C" fn(*const std::ffi::c_void, *const std::ffi::c_void) -> *const i8 = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0], c_args[1]);
+                            let c_str = std::ffi::CStr::from_ptr(result);
+                            Ok(Value::String(c_str.to_string_lossy().to_string()))
+                        },
+                        "i1" | "lit" => {
+                            let func: extern "C" fn(*const std::ffi::c_void, *const std::ffi::c_void) -> bool = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0], c_args[1]);
+                            Ok(Value::bool(result))
+                        },
+                        _ => {
+                            // Generic pointer return
+                            let func: extern "C" fn(*const std::ffi::c_void, *const std::ffi::c_void) -> *const std::ffi::c_void = std::mem::transmute(func_ptr);
+                            let result = func(c_args[0], c_args[1]);
+                            Ok(Value::integer((result as usize) as i64))
+                        }
+                    }
+                },
+                // Add more cases for multiple parameters as needed
+                _ => {
+                    // Generic variadic call - this is a simplified implementation
+                    let func: extern "C" fn(*const std::ffi::c_void, ...) -> *const std::ffi::c_void = std::mem::transmute(func_ptr);
+                    
+                    // Call with all arguments - this is unsafe but demonstrates the concept
+                    let result = match c_args.len() {
+                        1 => func(c_args[0]),
+                        2 => func(c_args[0], c_args[1]),
+                        3 => func(c_args[0], c_args[1], c_args[2]),
+                        4 => func(c_args[0], c_args[1], c_args[2], c_args[3]),
+                        5 => func(c_args[0], c_args[1], c_args[2], c_args[3], c_args[4]),
+                        _ => return Err(CursedError::Runtime(format!(
+                            "Too many arguments for method dispatch: {}", c_args.len()
+                        ))),
+                    };
+                    
+                    Ok(Value::integer((result as usize) as i64))
+                }
+            }
+        }
+    }
+    
+    /// Convert Value to C pointer for method dispatch
+    fn value_to_c_ptr(&self, value: &Value) -> Result<*const std::ffi::c_void, CursedError> {
+        match value {
+            Value::Integer(i) => Ok(i as *const i64 as *const std::ffi::c_void),
+            Value::Number(f) => Ok(f as *const f64 as *const std::ffi::c_void),
+            Value::String(s) => {
+                let c_string = std::ffi::CString::new(s.clone())
+                    .map_err(|e| CursedError::Runtime(format!("Failed to create C string: {}", e)))?;
+                Ok(c_string.as_ptr() as *const std::ffi::c_void)
+            },
+            Value::Bool(b) => Ok(b as *const bool as *const std::ffi::c_void),
+            Value::Interface { data_ptr, .. } => Ok(*data_ptr as *const std::ffi::c_void),
+            Value::Null => Ok(std::ptr::null()),
+            _ => Err(CursedError::Runtime(format!(
+                "Cannot convert value to C pointer: {:?}", value
+            ))),
+        }
     }
 }
 

@@ -15,6 +15,8 @@ use crate::codegen::llvm::optimization::{OptimizationConfig, OptimizationLevel};
 use crate::codegen::llvm::string_constants::{StringConstantManager, get_global_string_manager};
 use crate::codegen::llvm::error_handling::{ErrorHandlingCodegen, generate_error_runtime_support};
 use crate::codegen::llvm::register_tracker::RegisterTracker;
+use crate::codegen::llvm::interface_dispatch::{InterfaceDispatchCodegen, InterfaceDispatchOptimizer, InterfaceOptimizationPasses};
+use crate::codegen::llvm::interface_type_checking::InterfaceTypeChecker;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
@@ -81,6 +83,14 @@ impl MockString {
 pub struct MockFunction;
 
 /// Main LLVM code generator for CURSED
+/// Loop context for tracking break/continue labels
+#[derive(Debug, Clone)]
+pub struct LoopContext {
+    pub loop_name: Option<String>,
+    pub break_label: String,
+    pub continue_label: String,
+}
+
 pub struct LlvmCodeGenerator {
     pub optimization_level: u8,
     pub target_triple: String,
@@ -102,6 +112,10 @@ pub struct LlvmCodeGenerator {
     current_source_location: Option<SourceLocation>,
     current_function_name: Option<String>,
     import_metadata: String, // Store resolved import metadata for module declarations
+    loop_stack: Vec<LoopContext>, // Stack of loop contexts for break/continue
+    interface_dispatch_codegen: InterfaceDispatchCodegen,
+    interface_type_checker: InterfaceTypeChecker,
+    interface_optimization_passes: InterfaceOptimizationPasses,
 }
 
 impl LlvmCodeGenerator {
@@ -118,6 +132,7 @@ impl LlvmCodeGenerator {
             string_manager: get_global_string_manager(),
             variables: HashMap::new(),
             declared_functions: HashMap::new(),
+            loop_stack: Vec::new(),
             package_manager: None,
             package_config: None,
             optimization_config: OptimizationConfig::default(),
@@ -130,6 +145,9 @@ impl LlvmCodeGenerator {
             current_source_location: None,
             current_function_name: None,
             import_metadata: String::new(),
+            interface_dispatch_codegen: InterfaceDispatchCodegen::new(),
+            interface_type_checker: InterfaceTypeChecker::new(),
+            interface_optimization_passes: InterfaceOptimizationPasses::default(),
         })
     }
 
@@ -389,6 +407,11 @@ impl LlvmCodeGenerator {
         let mut compiler_errors = Vec::new();
         let mut recovered_statements = Vec::new();
         
+        // Process interface definitions and type checking
+        if let Err(e) = self.interface_type_checker.process_interfaces(&program.statements) {
+            compiler_errors.push(e);
+        }
+        
         // Generate header
         self.ir_code.push_str(&format!(
             "; CURSED Language - Advanced LLVM Compilation\n\
@@ -408,6 +431,11 @@ impl LlvmCodeGenerator {
                 self.ir_code.push_str("declare i8* @malloc(i64)\n");
                 self.ir_code.push_str("declare void @free(i8*)\n");
             }
+        }
+        
+        // Generate interface system
+        if let Err(e) = self.generate_interface_system(program) {
+            compiler_errors.push(e);
         }
         
         // Collect non-function statements for insertion into main function
@@ -822,11 +850,11 @@ impl LlvmCodeGenerator {
             Statement::ForIn(for_in_stmt) => {
                 self.generate_for_in_statement(for_in_stmt)?;
             },
-            Statement::Break(_) => {
-                self.ir_code.push_str("  ; Break statement - handled by function compiler\n");
+            Statement::Break(break_stmt) => {
+                self.generate_break_statement(break_stmt)?;
             },
-            Statement::Continue(_) => {
-                self.ir_code.push_str("  ; Continue statement - handled by function compiler\n");
+            Statement::Continue(continue_stmt) => {
+                self.generate_continue_statement(continue_stmt)?;
             },
             Statement::Increment(increment_stmt) => {
                 self.generate_increment_statement(increment_stmt)?;
@@ -1342,6 +1370,15 @@ impl LlvmCodeGenerator {
                 self.ir_code.push_str(&create_ir);
                 Ok(format!("%t{}", self.get_last_variable_counter())) // Return the creation result register
             },
+            Expression::TypeAssertion(type_assertion) => {
+                // Generate type assertion (interface -> concrete type)
+                let value_reg = self.generate_expression(&type_assertion.value)?;
+                let target_type = self.convert_cursed_type_to_llvm(&type_assertion.target_type)?;
+                
+                // For now, assume this is an interface type assertion
+                let result_reg = self.generate_interface_type_assertion(&value_reg, &target_type)?;
+                Ok(result_reg)
+            },
             _ => {
                 // For complex expressions, use the expression compiler
                 let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
@@ -1828,6 +1865,24 @@ impl LlvmCodeGenerator {
                     let full_function_name = format!("math_{}_impl", member_expr.property);
                     return self.generate_stdlib_call(&full_function_name, arguments);
                 }
+            } else {
+                // This could be an interface method call
+                // TODO: Add proper type checking to determine if this is an interface type
+                // For now, we'll assume it's a regular method call
+                let obj_reg = self.generate_expression(&*member_expr.object)?;
+                let method_name = &member_expr.property;
+                
+                // Generate arguments
+                let mut arg_regs = Vec::new();
+                for arg in arguments {
+                    let arg_reg = self.generate_expression(arg)?;
+                    arg_regs.push(arg_reg);
+                }
+                
+                // Try to generate interface method call
+                // This would need proper type information to determine the return type
+                let result_reg = self.generate_interface_method_call(&obj_reg, method_name, &arg_regs, None)?;
+                return Ok(result_reg);
             }
         }
         
@@ -1987,6 +2042,14 @@ impl LlvmCodeGenerator {
         let body_label = self.next_label();
         let end_label = self.next_label();
         
+        // Push loop context to stack
+        let loop_context = LoopContext {
+            loop_name: None,
+            break_label: end_label.clone(),
+            continue_label: loop_label.clone(),
+        };
+        self.loop_stack.push(loop_context);
+        
         self.ir_code.push_str(&format!("  br label %{}\n", loop_label));
         
         // Loop condition
@@ -2000,6 +2063,9 @@ impl LlvmCodeGenerator {
             self.generate_statement(stmt)?;
         }
         self.ir_code.push_str(&format!("  br label %{}\n", loop_label));
+        
+        // Pop loop context
+        self.loop_stack.pop();
         
         // End
         self.ir_code.push_str(&format!("{}:\n", end_label));
@@ -2016,6 +2082,14 @@ impl LlvmCodeGenerator {
         let body_label = self.next_label();
         let update_label = self.next_label();
         let end_label = self.next_label();
+        
+        // Push loop context to stack
+        let loop_context = LoopContext {
+            loop_name: None,
+            break_label: end_label.clone(),
+            continue_label: update_label.clone(),
+        };
+        self.loop_stack.push(loop_context);
         
         self.ir_code.push_str(&format!("  br label %{}\n", loop_label));
         
@@ -2041,6 +2115,9 @@ impl LlvmCodeGenerator {
             self.generate_expression(update)?;
         }
         self.ir_code.push_str(&format!("  br label %{}\n", loop_label));
+        
+        // Pop loop context
+        self.loop_stack.pop();
         
         // End
         self.ir_code.push_str(&format!("{}:\n", end_label));
@@ -2076,6 +2153,14 @@ impl LlvmCodeGenerator {
         let loop_start = self.next_label();
         let loop_body = self.next_label();
         let loop_end = self.next_label();
+        
+        // Push loop context to stack
+        let loop_context = LoopContext {
+            loop_name: None,
+            break_label: loop_end.clone(),
+            continue_label: loop_start.clone(),
+        };
+        self.loop_stack.push(loop_context);
         
         // Jump to loop start
         self.ir_code.push_str(&format!("  br label %{}\n", loop_start));
@@ -2126,9 +2211,64 @@ impl LlvmCodeGenerator {
         // Jump back to loop start
         self.ir_code.push_str(&format!("  br label %{}\n", loop_start));
         
+        // Pop loop context
+        self.loop_stack.pop();
+        
         // Loop end
         self.ir_code.push_str(&format!("{}:\n", loop_end));
         
+        Ok(())
+    }
+    
+    fn generate_break_statement(&mut self, break_stmt: &crate::ast::BreakStatement) -> Result<(), CursedError> {
+        if let Some(label) = &break_stmt.label {
+            // Handle labeled break: find the labeled loop in the stack
+            for loop_ctx in self.loop_stack.iter().rev() {
+                if let Some(loop_label) = &loop_ctx.loop_name {
+                    if loop_label == label {
+                        self.ir_code.push_str(&format!("  br label %{}\n", loop_ctx.break_label));
+                        self.ir_code.push_str("  ; Break to labeled loop\n");
+                        return Ok(());
+                    }
+                }
+            }
+            // Label not found
+            return Err(CursedError::CompilerError(format!("Label '{}' not found for break statement", label)));
+        } else {
+            // Handle unlabeled break: break from innermost loop
+            if let Some(loop_ctx) = self.loop_stack.last() {
+                self.ir_code.push_str(&format!("  br label %{}\n", loop_ctx.break_label));
+                self.ir_code.push_str("  ; Break from innermost loop\n");
+            } else {
+                return Err(CursedError::CompilerError("Break statement outside of loop".to_string()));
+            }
+        }
+        Ok(())
+    }
+    
+    fn generate_continue_statement(&mut self, continue_stmt: &crate::ast::ContinueStatement) -> Result<(), CursedError> {
+        if let Some(label) = &continue_stmt.label {
+            // Handle labeled continue: find the labeled loop in the stack
+            for loop_ctx in self.loop_stack.iter().rev() {
+                if let Some(loop_label) = &loop_ctx.loop_name {
+                    if loop_label == label {
+                        self.ir_code.push_str(&format!("  br label %{}\n", loop_ctx.continue_label));
+                        self.ir_code.push_str("  ; Continue to labeled loop\n");
+                        return Ok(());
+                    }
+                }
+            }
+            // Label not found
+            return Err(CursedError::CompilerError(format!("Label '{}' not found for continue statement", label)));
+        } else {
+            // Handle unlabeled continue: continue from innermost loop
+            if let Some(loop_ctx) = self.loop_stack.last() {
+                self.ir_code.push_str(&format!("  br label %{}\n", loop_ctx.continue_label));
+                self.ir_code.push_str("  ; Continue from innermost loop\n");
+            } else {
+                return Err(CursedError::CompilerError("Continue statement outside of loop".to_string()));
+            }
+        }
         Ok(())
     }
     
@@ -2687,8 +2827,14 @@ impl LlvmCodeGenerator {
             }
         }
         
-        // General member access for user-defined types
+        // Check if this is an interface method call
         let obj_reg = self.generate_expression(object)?;
+        
+        // TODO: Add type checking to determine if this is an interface type
+        // For now, assume any member access could be an interface method
+        // This would need proper type information from the type checker
+        
+        // General member access for user-defined types
         let prop_reg = self.next_register();
         
         // Generate struct member access
@@ -3283,7 +3429,60 @@ impl LlvmCodeGenerator {
         Ok(())
     }
     
-    pub fn generate_interface_method_call(&mut self, interface_obj: &str, method_name: &str, args: &[String]) -> Result<String, CursedError> {
+    pub fn generate_interface_conversion(&mut self, obj_value: &str, obj_type: &str, interface_name: &str) -> Result<String, CursedError> {
+        let result_reg = self.next_variable();
+        
+        // Allocate interface object
+        let interface_obj_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = alloca %interface.{}\n", interface_obj_reg, interface_name));
+        
+        // Cast object to i8*
+        let data_ptr_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = bitcast {}* {} to i8*\n", data_ptr_reg, obj_type, obj_value));
+        
+        // Get vtable for this implementation
+        let vtable_name = format!("{}.{}.vtable", obj_type, interface_name);
+        let vtable_ptr_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.{}.vtable, %interface.{}.vtable* @{}, i32 0\n", 
+            vtable_ptr_reg, interface_name, interface_name, vtable_name));
+        
+        // Store data pointer in interface object
+        let data_field_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.{}, %interface.{}* %{}, i32 0, i32 0\n", 
+            data_field_reg, interface_name, interface_name, interface_obj_reg));
+        self.ir_code.push_str(&format!("  store i8* %{}, i8** %{}\n", data_ptr_reg, data_field_reg));
+        
+        // Store vtable pointer in interface object
+        let vtable_field_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.{}, %interface.{}* %{}, i32 0, i32 1\n", 
+            vtable_field_reg, interface_name, interface_name, interface_obj_reg));
+        self.ir_code.push_str(&format!("  store %interface.{}.vtable* %{}, %interface.{}.vtable** %{}\n", 
+            interface_name, vtable_ptr_reg, interface_name, vtable_field_reg));
+        
+        Ok(format!("%{}", interface_obj_reg))
+    }
+    
+    pub fn generate_interface_type_assertion(&mut self, interface_obj: &str, target_type: &str) -> Result<String, CursedError> {
+        let result_reg = self.next_variable();
+        
+        // Extract data pointer from interface object
+        let data_ptr_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = getelementptr inbounds %interface.*, %interface.** {}, i32 0, i32 0\n", 
+            data_ptr_reg, interface_obj));
+        
+        let data_loaded_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = load i8*, i8** %{}\n", 
+            data_loaded_reg, data_ptr_reg));
+        
+        // Cast back to target type
+        let cast_reg = self.next_variable();
+        self.ir_code.push_str(&format!("  %{} = bitcast i8* %{} to {}*\n", 
+            cast_reg, data_loaded_reg, target_type));
+        
+        Ok(format!("%{}", cast_reg))
+    }
+    
+    pub fn generate_interface_method_call(&mut self, interface_obj: &str, method_name: &str, args: &[String], return_type: Option<&str>) -> Result<String, CursedError> {
         let result_reg = self.next_variable();
         
         // Extract vtable from interface object
@@ -3304,8 +3503,9 @@ impl LlvmCodeGenerator {
             method_ptr_reg, vtable_loaded_reg, method_index));
         
         let method_loaded_reg = self.next_variable();
-        self.ir_code.push_str(&format!("  %{} = load void (i8*)*, void (i8*)** %{}\n", 
-            method_loaded_reg, method_ptr_reg));
+        let return_llvm_type = return_type.unwrap_or("void");
+        self.ir_code.push_str(&format!("  %{} = load {} (i8*)*, {} (i8*)** %{}\n", 
+            method_loaded_reg, return_llvm_type, return_llvm_type, method_ptr_reg));
         
         // Extract data pointer from interface object
         let data_ptr_reg = self.next_variable();
@@ -3320,8 +3520,13 @@ impl LlvmCodeGenerator {
         let mut call_args = vec![format!("%{}", data_loaded_reg)];
         call_args.extend(args.iter().cloned());
         
-        self.ir_code.push_str(&format!("  %{} = call void %{}({})\n", 
-            result_reg, method_loaded_reg, call_args.join(", ")));
+        if return_type.is_some() {
+            self.ir_code.push_str(&format!("  %{} = call {} %{}({})\n", 
+                result_reg, return_llvm_type, method_loaded_reg, call_args.join(", ")));
+        } else {
+            self.ir_code.push_str(&format!("  call {} %{}({})\n", 
+                return_llvm_type, method_loaded_reg, call_args.join(", ")));
+        }
         
         Ok(format!("%{}", result_reg))
     }
@@ -3885,6 +4090,65 @@ impl LlvmCodeGenerator {
         }
         
         Ok(())
+    }
+
+    /// Generate interface system for program
+    fn generate_interface_system(&mut self, program: &Program) -> Result<(), CursedError> {
+        // Generate interface dispatch code
+        let interface_ir = self.interface_dispatch_codegen.generate_interface_system(program)?;
+        self.ir_code.push_str(&interface_ir);
+        
+        // Generate interface type checking code
+        for statement in &program.statements {
+            if let Statement::Interface(interface) = statement {
+                // Generate type checking for each interface
+                if let Some(interfaces) = self.interface_type_checker.get_interfaces_for_type(&interface.name) {
+                    for interface_name in interfaces {
+                        let type_check_ir = self.interface_type_checker.generate_type_checking_ir(&interface.name, interface_name)?;
+                        self.ir_code.push_str(&type_check_ir);
+                    }
+                }
+            }
+        }
+        
+        // Generate vtable lookup functions
+        let vtable_lookup_ir = self.interface_type_checker.generate_vtable_lookup_functions()?;
+        self.ir_code.push_str(&vtable_lookup_ir);
+        
+        Ok(())
+    }
+
+    /// Generate interface method call (dispatch)
+    pub fn generate_interface_method_call_dispatch(&mut self, interface_value: &str, method_name: &str, args: &[String]) -> Result<String, CursedError> {
+        // Generate optimized method call using interface dispatch codegen
+        self.interface_dispatch_codegen.generate_optimized_method_call(interface_value, method_name, args)
+    }
+
+    /// Generate interface cast (dispatch)
+    pub fn generate_interface_cast_dispatch(&mut self, from_type: &str, to_interface: &str) -> Result<String, CursedError> {
+        // Generate interface cast using interface dispatch codegen
+        self.interface_dispatch_codegen.generate_interface_cast(from_type, to_interface)
+    }
+
+    /// Check interface implementation at compile time
+    pub fn check_interface_implementation(&self, type_name: &str, interface_name: &str) -> Result<bool, CursedError> {
+        self.interface_type_checker.check_interface_implementation(type_name, interface_name)
+    }
+
+    /// Add type-interface association
+    pub fn add_type_interface_association(&mut self, type_name: String, interface_name: String) {
+        self.interface_type_checker.add_type_interface_association(type_name, interface_name);
+    }
+
+    /// Enable interface optimization passes
+    pub fn enable_interface_optimization(&mut self, passes: InterfaceOptimizationPasses) {
+        self.interface_optimization_passes = passes;
+    }
+
+    /// Optimize interface dispatch for program
+    pub fn optimize_interface_dispatch(&mut self, program: &Program) -> Result<String, CursedError> {
+        let mut optimizer = InterfaceDispatchOptimizer::new(self.interface_optimization_passes.clone());
+        optimizer.optimize_program(program)
     }
 
 }

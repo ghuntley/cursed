@@ -44,6 +44,7 @@ pub enum CursedError {
     RandomGenerationFailed(String),
     InternalError(String),
     MemoryError(String),
+    PanicError(String),
     // New error variants for stdlib integration
     CollectionsError(String),
     StringError(String),
@@ -100,6 +101,7 @@ impl std::fmt::Display for CursedError {
             CursedError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
             CursedError::FamRecovery(msg) => write!(f, "Fam recovery: {}", msg),
             CursedError::MemoryError(msg) => write!(f, "Memory error: {}", msg),
+            CursedError::PanicError(msg) => write!(f, "Panic error: {}", msg),
         }
     }
 }

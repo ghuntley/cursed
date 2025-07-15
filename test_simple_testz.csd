@@ -1,41 +1,67 @@
-# Simple test without testz framework to check basic functionality
-sus test_passed lit = based
-sus test_count normie = 0
+yeet "testz"
 
-# Test 1: Basic integer equality
-sus result1 normie = 42
-if result1 == 42 {
-    vibez.spill("✅ Test 1 passed: integer equality")
-    test_count = test_count + 1
-} else {
-    vibez.spill("❌ Test 1 failed: integer equality")
-    test_passed = cap
+slay test_basic_functionality() {
+    test_start("Basic TestZ Framework Test")
+    
+    # Test basic assertions
+    assert_true(based)
+    assert_false(cap)
+    assert_eq_int(42, 42)
+    assert_eq_string("hello", "hello")
+    
+    # Test range assertions  
+    assert_range_int(50, 1, 100)
+    
+    # Test string operations
+    assert_contains("hello world", "world")
+    assert_starts_with("hello world", "hello")
+    assert_ends_with("hello world", "world")
+    
+    test_end()
 }
 
-# Test 2: String operations
-sus result2 tea = "hello"
-if result2 == "hello" {
-    vibez.spill("✅ Test 2 passed: string equality")
-    test_count = test_count + 1
-} else {
-    vibez.spill("❌ Test 2 failed: string equality")
-    test_passed = cap
+slay test_random_generators() {
+    test_start("Random Generator Test")
+    
+    # Test random number generation
+    sus rand_num normie = random_int(1, 10)
+    assert_range_int(rand_num, 1, 10)
+    
+    # Test random string generation
+    sus rand_str tea = random_string(5)
+    assert_eq_int(stringz.Length(rand_str), 5)
+    
+    test_end()
 }
 
-# Test 3: Boolean logic
-if test_passed == based {
-    vibez.spill("✅ Test 3 passed: boolean logic")
-    test_count = test_count + 1
-} else {
-    vibez.spill("❌ Test 3 failed: boolean logic")
+slay simple_testz_demo() {
+    vibez.spill("🧪 Simple TestZ Framework Demo")
+    vibez.spill("=" * 40)
+    
+    # Initialize test environment
+    before_all_tests()
+    set_verbose_mode(based)
+    set_test_suite("Simple TestZ Demo")
+    
+    # Run basic tests
+    test_basic_functionality()
+    test_random_generators()
+    
+    # Generate summary
+    after_all_tests()
+    
+    vibez.spill("")
+    vibez.spill("🎯 TestZ Framework Demo Complete")
+    vibez.spill("✅ Advanced assertion functions work")
+    vibez.spill("✅ Random data generation works")
+    vibez.spill("✅ Test reporting works")
+    
+    highkey all_tests_passed() {
+        vibez.spill("🎉 ALL TESTS PASSED!")
+    } else {
+        vibez.spill("❌ SOME TESTS FAILED")
+    }
 }
 
-vibez.spill("═══════════════════════════")
-vibez.spill("Test Summary")
-vibez.spill("Total tests: " + test_count)
-if test_passed == based {
-    vibez.spill("🎉 ALL TESTS PASSED!")
-} else {
-    vibez.spill("⚠️ SOME TESTS FAILED")
-}
-vibez.spill("═══════════════════════════")
+# Run the demo
+simple_testz_demo()

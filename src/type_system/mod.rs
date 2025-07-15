@@ -12,6 +12,9 @@ pub mod generic_optimization;
 pub mod generic_enhanced;
 pub mod checker;
 pub mod compilation_integration;
+pub mod monomorphizer;
+pub mod generic_constraints;
+pub mod monomorphisation;
 pub mod test_result_simple;
 pub mod interface_compliance;
 // pub mod advanced_constraints;
@@ -729,4 +732,12 @@ pub use constraint_resolver::{
 pub use crate::type_system::higher_kinded_types::{
     Kind, TypeConstructor, KindedTypeParameter, HigherKindedConstraint,
     HigherKindedTypeSystem, TypeConstructorInstance
+};
+
+// New generics modules
+pub use crate::type_system::monomorphizer::{
+    Monomorphizer, MonomorphizedInstance, ConcreteAST, InstantiationRequest
+};
+pub use crate::type_system::generic_constraints::{
+    GenericConstraintChecker, ConstraintResult, TypeConstraint, WhereClause
 };

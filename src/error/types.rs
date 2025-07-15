@@ -47,6 +47,7 @@ impl From<CursedError> for StructuredError {
             CursedError::SerializationError(msg) => StructuredError::new(ErrorCode::E0309, msg),
             CursedError::FamRecovery(msg) => StructuredError::new(ErrorCode::E0500, msg),
             CursedError::MemoryError(msg) => StructuredError::new(ErrorCode::E0500, msg),
+            CursedError::PanicError(msg) => StructuredError::new(ErrorCode::E0500, msg),
         }
     }
 }

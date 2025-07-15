@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, InterfaceStatement, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -252,6 +252,18 @@ impl Parser {
             TokenKind::Ready => {
                 // Parse ready select statement
                 return Ok(Some(Statement::Select(self.parse_ready_statement()?)));
+            }
+            TokenKind::Yolo => {
+                // Parse return statement
+                return Ok(Some(Statement::Return(self.parse_yolo_statement()?)));
+            }
+            TokenKind::Ghosted => {
+                // Parse break statement
+                return Ok(Some(Statement::Break(self.parse_ghosted_statement()?)));
+            }
+            TokenKind::Simp => {
+                // Parse continue statement
+                return Ok(Some(Statement::Continue(self.parse_simp_statement()?)));
             }
 
             TokenKind::LeftParen => {
@@ -1261,6 +1273,16 @@ impl Parser {
                     self.next_token()?;
                     return Ok(self.parse_yikes_expression()?);
                 }
+                TokenKind::Panic => {
+                    // Parse panic expression
+                    self.next_token()?;
+                    return Ok(self.parse_panic_expression()?);
+                }
+                TokenKind::Recover => {
+                    // Parse recover expression
+                    self.next_token()?;
+                    return Ok(self.parse_recover_expression()?);
+                }
                 TokenKind::LeftParen => {
                     // Parse tuple literal
                     self.next_token()?;
@@ -1938,6 +1960,71 @@ impl Parser {
         Ok(statements)
     }
     
+    fn parse_yolo_statement(&mut self) -> Result<ReturnStatement> {
+        // Consume 'yolo' keyword
+        self.next_token()?;
+        
+        // Check if there's a return value
+        let value = if let Some(token) = self.current_token.as_ref() {
+            // Check if this is the end of the statement (newline, semicolon, or EOF)
+            if token.kind == TokenKind::Newline || 
+               token.kind == TokenKind::Semicolon || 
+               token.kind == TokenKind::Eof ||
+               token.kind == TokenKind::RightBrace {
+                None
+            } else {
+                // Parse the return expression
+                Some(self.parse_expression()?)
+            }
+        } else {
+            None
+        };
+        
+        Ok(ReturnStatement { value })
+    }
+    
+    fn parse_ghosted_statement(&mut self) -> Result<BreakStatement> {
+        // Consume 'ghosted' keyword
+        self.next_token()?;
+        
+        // Check if there's a label
+        let label = if let Some(token) = self.current_token.as_ref() {
+            // Check if this is an identifier (label)
+            if token.kind == TokenKind::Identifier || token.kind == TokenKind::Truth {
+                let label_name = token.lexeme.clone();
+                self.next_token()?;
+                Some(label_name)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        Ok(BreakStatement { label })
+    }
+    
+    fn parse_simp_statement(&mut self) -> Result<ContinueStatement> {
+        // Consume 'simp' keyword
+        self.next_token()?;
+        
+        // Check if there's a label
+        let label = if let Some(token) = self.current_token.as_ref() {
+            // Check if this is an identifier (label)
+            if token.kind == TokenKind::Identifier || token.kind == TokenKind::Truth {
+                let label_name = token.lexeme.clone();
+                self.next_token()?;
+                Some(label_name)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        
+        Ok(ContinueStatement { label })
+    }
+    
     fn is_tuple_destructuring_assignment(&self) -> bool {
         // Simple heuristic: for now, assume any LeftParen at statement level 
         // is likely a tuple destructuring assignment
@@ -2388,6 +2475,82 @@ impl Parser {
         }
     }
 
+    fn parse_panic_expression(&mut self) -> Result<Expression> {
+        // Parse panic expression: panic("message")
+        if let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::LeftParen => {
+                    // Parse panic("message")
+                    self.next_token()?;
+                    
+                    let message = if let Some(token) = self.current_token.as_ref() {
+                        if token.kind != TokenKind::RightParen {
+                            Box::new(self.parse_expression()?)
+                        } else {
+                            Box::new(Expression::Literal(Literal::String("panic".to_string())))
+                        }
+                    } else {
+                        return Err(Error::Parse("Expected expression or ')' after 'panic('".to_string()));
+                    };
+                    
+                    // Consume ')'
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::RightParen {
+                            self.next_token()?;
+                        } else {
+                            return Err(Error::Parse("Expected ')' after panic expression".to_string()));
+                        }
+                    } else {
+                        return Err(Error::Parse("Expected ')' after panic expression".to_string()));
+                    }
+                    
+                    Ok(Expression::Panic(PanicExpression::new(message)))
+                }
+                _ => {
+                    // Default panic with no message
+                    Ok(Expression::Panic(PanicExpression::new(
+                        Box::new(Expression::Literal(Literal::String("panic".to_string())))
+                    )))
+                }
+            }
+        } else {
+            Ok(Expression::Panic(PanicExpression::new(
+                Box::new(Expression::Literal(Literal::String("panic".to_string())))
+            )))
+        }
+    }
+
+    fn parse_recover_expression(&mut self) -> Result<Expression> {
+        // Parse recover expression: recover()
+        if let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::LeftParen => {
+                    // Parse recover()
+                    self.next_token()?;
+                    
+                    // Consume ')'
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::RightParen {
+                            self.next_token()?;
+                        } else {
+                            return Err(Error::Parse("Expected ')' after recover expression".to_string()));
+                        }
+                    } else {
+                        return Err(Error::Parse("Expected ')' after recover expression".to_string()));
+                    }
+                    
+                    Ok(Expression::Recover(RecoverExpression::new()))
+                }
+                _ => {
+                    // Default recover with no parentheses
+                    Ok(Expression::Recover(RecoverExpression::new()))
+                }
+            }
+        } else {
+            Ok(Expression::Recover(RecoverExpression::new()))
+        }
+    }
+
     // Parse struct statement
     pub fn parse_struct_statement(&mut self) -> Result<StructStatement> {
         // Consume 'squad' token
@@ -2472,7 +2635,7 @@ impl Parser {
         
         // Parse interface name
         let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Truth => {
+            Some(token) if token.kind == TokenKind::Identifier => {
                 let name = token.lexeme.clone();
                 self.advance_token();
                 name
@@ -2821,7 +2984,7 @@ impl Parser {
         
         // Parse method name
         let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Truth => {
+            Some(token) if token.kind == TokenKind::Identifier => {
                 let name = token.lexeme.clone();
                 self.advance_token();
                 name

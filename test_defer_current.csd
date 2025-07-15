@@ -1,50 +1,48 @@
-slay test_defer_basic() {
-    vibez.spill("Function start")
+slay test_defer_basic() lit {
+    vibez.spill("Starting function")
+    
     later vibez.spill("Deferred 1")
     later vibez.spill("Deferred 2")
-    vibez.spill("Function middle")
     later vibez.spill("Deferred 3")
-    vibez.spill("Function end")
+    
+    vibez.spill("Function body")
+    damn based
 }
 
-slay test_defer_nested() {
-    vibez.spill("Outer function start")
-    later vibez.spill("Outer deferred")
+slay test_defer_with_return() lit {
+    vibez.spill("Starting function with return")
     
-    slay inner_func() {
-        vibez.spill("Inner function start")
-        later vibez.spill("Inner deferred")
-        vibez.spill("Inner function end")
+    later vibez.spill("Cleanup before return")
+    
+    lowkey based {
+        vibez.spill("Returning early")
+        damn based
     }
     
-    inner_func()
-    vibez.spill("Outer function end")
+    vibez.spill("This should not be reached")
+    damn cap
 }
 
-slay test_defer_with_return() {
-    vibez.spill("Function start")
-    later vibez.spill("Deferred before return")
+slay test_defer_with_resources() lit {
+    vibez.spill("Opening resource")
     
-    bestie i := 0; i < 5; i++ {
-        sus x := i
-        later vibez.spill("Deferred in loop")
-        
-        cap i == 3 {
-            vibez.spill("Returning early")
-            damn normie(42)
-        }
-    }
+    later vibez.spill("Closing resource")
+    later vibez.spill("Cleaning up")
     
-    vibez.spill("Function end")
-    damn normie(0)
+    vibez.spill("Using resource")
+    damn based
 }
 
-# Test basic defer
-test_defer_basic()
-
-# Test nested defer
-test_defer_nested()
-
-# Test defer with return
-sus result := test_defer_with_return()
-vibez.spill("Result: " + result)
+slay main() lit {
+    vibez.spill("=== Testing Basic Defer ===")
+    test_defer_basic()
+    
+    vibez.spill("=== Testing Defer with Return ===")
+    test_defer_with_return()
+    
+    vibez.spill("=== Testing Defer with Resources ===")
+    test_defer_with_resources()
+    
+    vibez.spill("=== All defer tests completed ===")
+    damn based
+}

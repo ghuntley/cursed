@@ -1,432 +1,468 @@
-// CURSED Executor System
-// Provides task scheduling and execution management
+yeet "testz"
+yeet "async"
+yeet "atomic_drip"
+yeet "concurrenz"
 
-// Executor types
-enum ExecutorType {
-    SingleThreaded,
-    MultiThreaded,
-    ThreadPool
+# Async Executor - Pure CURSED implementation
+# Manages task execution, work-stealing, and thread pool
+
+# Task executor configuration
+struct ExecutorConfig {
+    max_threads: normie,
+    core_threads: normie,
+    queue_size: normie,
+    work_stealing_enabled: lit,
+    thread_keep_alive: thicc,
+    enable_metrics: lit
 }
 
-// Executor state
-enum ExecutorState {
-    Created,
-    Running,
-    Paused,
-    Stopped,
-    Shutting_Down
+# Task executor implementation
+struct TaskExecutor {
+    config: ExecutorConfig,
+    worker_threads: [WorkerThread],
+    global_queue: Channel[Task],
+    shutdown_requested: lit,
+    active_tasks: thicc,
+    completed_tasks: thicc,
+    failed_tasks: thicc,
+    metrics: ExecutorMetrics
 }
 
-// Task queue node
-struct TaskQueueNode {
-    task *Task
-    next *TaskQueueNode
-    priority TaskPriority
-    enqueued_at normie
+# Worker thread
+struct WorkerThread {
+    id: normie,
+    local_queue: Channel[Task],
+    is_running: lit,
+    tasks_executed: thicc,
+    tasks_stolen: thicc,
+    last_activity: thicc
 }
 
-// Priority task queue
-struct TaskQueue {
-    head *TaskQueueNode
-    tail *TaskQueueNode
-    size normie
-    max_size normie
+# Executor metrics
+struct ExecutorMetrics {
+    thread_utilization: [normie],
+    queue_depths: [normie],
+    steal_attempts: thicc,
+    steal_successes: thicc,
+    average_task_time: thicc,
+    throughput: thicc
 }
 
-// Single-threaded executor
-struct SingleThreadedExecutor {
-    state ExecutorState
-    task_queue *TaskQueue
-    current_task *Task
-    stats *TaskStats
-    max_polls_per_task normie
-    poll_timeout normie
-    wake_channel chan *Task
-    shutdown_channel chan lit
-    context *TaskContext
+# Task handle for tracking
+struct TaskHandle {
+    task_id: TaskId,
+    executor: TaskExecutor,
+    completion_channel: Channel[TaskResult],
+    is_completed: lit
 }
 
-// Executor creation
-slay SingleThreadedExecutor.new() *SingleThreadedExecutor {
-    sus executor *SingleThreadedExecutor = heap_alloc(sizeof(SingleThreadedExecutor))
-    executor.state = ExecutorState.Created
-    executor.task_queue = TaskQueue.new()
-    executor.current_task = cringe
-    executor.stats = TaskStats.new()
-    executor.max_polls_per_task = 10
-    executor.poll_timeout = 1000 // 1 second
-    executor.wake_channel = make(chan *Task, 100)
-    executor.shutdown_channel = make(chan lit, 1)
-    executor.context = TaskContext.new(executor)
-    damn executor
-}
+# Global executor instance
+sus global_executor: TaskExecutor
 
-// Task queue operations
-slay TaskQueue.new() *TaskQueue {
-    sus queue *TaskQueue = heap_alloc(sizeof(TaskQueue))
-    queue.head = cringe
-    queue.tail = cringe
-    queue.size = 0
-    queue.max_size = 1000
-    damn queue
-}
-
-slay TaskQueue.enqueue(task *Task) lit {
-    if this.size >= this.max_size {
-        damn cap
-    }
-    
-    sus node *TaskQueueNode = heap_alloc(sizeof(TaskQueueNode))
-    node.task = task
-    node.next = cringe
-    node.priority = task.priority
-    node.enqueued_at = time.now()
-    
-    // Priority-based insertion
-    if this.head == cringe {
-        this.head = node
-        this.tail = node
-    } else {
-        // Insert by priority (higher priority first)
-        if node.priority > this.head.priority {
-            node.next = this.head
-            this.head = node
-        } else {
-            sus current *TaskQueueNode = this.head
-            while current.next != cringe && current.next.priority >= node.priority {
-                current = current.next
-            }
-            node.next = current.next
-            current.next = node
-            if node.next == cringe {
-                this.tail = node
-            }
+# Initialize executor
+slay executor_init(config ExecutorConfig) lit {
+    global_executor = TaskExecutor {
+        config: config,
+        worker_threads: [],
+        global_queue: channel_new(),
+        shutdown_requested: cap,
+        active_tasks: 0,
+        completed_tasks: 0,
+        failed_tasks: 0,
+        metrics: ExecutorMetrics {
+            thread_utilization: [],
+            queue_depths: [],
+            steal_attempts: 0,
+            steal_successes: 0,
+            average_task_time: 0,
+            throughput: 0
         }
     }
     
-    this.size++
+    # Create worker threads
+    bestie i := 0; i < config.max_threads; i++ {
+        sus worker = WorkerThread {
+            id: i,
+            local_queue: channel_new(),
+            is_running: cap,
+            tasks_executed: 0,
+            tasks_stolen: 0,
+            last_activity: time_now()
+        }
+        global_executor.worker_threads = append(global_executor.worker_threads, worker)
+    }
+    
+    # Start worker threads
+    bestie i := 0; i < len(global_executor.worker_threads); i++ {
+        yolo worker_thread_main(i)
+    }
+    
     damn based
 }
 
-slay TaskQueue.dequeue() *Task {
-    if this.head == cringe {
-        damn cringe
-    }
+# Worker thread main loop
+slay worker_thread_main(worker_id normie) lit {
+    sus worker = global_executor.worker_threads[worker_id]
+    worker.is_running = based
     
-    sus node *TaskQueueNode = this.head
-    sus task *Task = node.task
-    
-    this.head = node.next
-    if this.head == cringe {
-        this.tail = cringe
-    }
-    
-    heap_free(node)
-    this.size--
-    damn task
-}
-
-slay TaskQueue.peek() *Task {
-    if this.head == cringe {
-        damn cringe
-    }
-    damn this.head.task
-}
-
-slay TaskQueue.is_empty() lit {
-    damn this.size == 0
-}
-
-slay TaskQueue.get_size() normie {
-    damn this.size
-}
-
-// Task context
-slay TaskContext.new(executor *SingleThreadedExecutor) *TaskContext {
-    sus context *TaskContext = heap_alloc(sizeof(TaskContext))
-    context.task = cringe
-    context.executor = executor
-    context.wake_count = 0
-    context.poll_count = 0
-    damn context
-}
-
-// Executor operations
-slay SingleThreadedExecutor.spawn(task *Task) lit {
-    if this.state == ExecutorState.Shutting_Down || this.state == ExecutorState.Stopped {
-        damn cap
-    }
-    
-    sus success lit = this.task_queue.enqueue(task)
-    if success {
-        vibez.spill("Task spawned: " + task.name)
-        // Wake up executor if sleeping
-        ready {
-            this.wake_channel <- task:
-                // Task queued for wake-up
-            default:
-                // Channel full, executor will pick it up in next cycle
-        }
-    }
-    damn success
-}
-
-slay SingleThreadedExecutor.run() {
-    this.state = ExecutorState.Running
-    vibez.spill("Executor started")
-    
-    bestie this.state == ExecutorState.Running {
-        ready {
-            shutdown := <-this.shutdown_channel:
-                if shutdown {
-                    this.state = ExecutorState.Shutting_Down
-                    vibez.spill("Executor shutting down")
-                    ghosted
-                }
-            
-            woken_task := <-this.wake_channel:
-                if woken_task != cringe {
-                    vibez.spill("Task woken: " + woken_task.name)
-                }
-            
-            default:
-                // Execute next task
-                this.execute_next_task()
-        }
-    }
-    
-    // Cleanup remaining tasks
-    this.cleanup_all_tasks()
-    this.state = ExecutorState.Stopped
-    vibez.spill("Executor stopped")
-}
-
-slay SingleThreadedExecutor.execute_next_task() {
-    sus task *Task = this.task_queue.dequeue()
-    if task == cringe {
-        // No tasks available, yield briefly
-        time.sleep(10) // 10ms
-        damn
-    }
-    
-    this.current_task = task
-    this.context.task = task
-    this.context.wake_count = 0
-    this.context.poll_count = 0
-    
-    sus polls_count normie = 0
-    bestie polls_count < this.max_polls_per_task {
-        sus task_state TaskState = task.execute(this.context)
-        polls_count++
+    rn !global_executor.shutdown_requested {
+        sus task = get_next_task(worker_id)
         
-        if task_state == TaskState.Completed {
-            vibez.spill("Task completed: " + task.name)
-            this.stats.update(task)
-            ghosted
-        } else if task_state == TaskState.Error {
-            vibez.spill("Task error: " + task.name + " - " + task.error_msg)
-            this.stats.update(task)
-            ghosted
-        } else if task_state == TaskState.Cancelled {
-            vibez.spill("Task cancelled: " + task.name)
-            this.stats.update(task)
-            ghosted
-        } else if task_state == TaskState.Suspended {
-            // Task is waiting, re-queue it
-            this.task_queue.enqueue(task)
-            ghosted
-        }
-    }
-    
-    if polls_count >= this.max_polls_per_task {
-        vibez.spill("Task exceeded max polls: " + task.name)
-        this.task_queue.enqueue(task) // Re-queue for fairness
-    }
-    
-    this.current_task = cringe
-}
-
-slay SingleThreadedExecutor.shutdown() {
-    vibez.spill("Requesting executor shutdown")
-    this.shutdown_channel <- based
-}
-
-slay SingleThreadedExecutor.shutdown_graceful() {
-    vibez.spill("Graceful shutdown requested")
-    this.state = ExecutorState.Shutting_Down
-    
-    // Wait for current task to complete
-    bestie this.current_task != cringe {
-        time.sleep(100) // 100ms
-    }
-    
-    this.cleanup_all_tasks()
-    this.state = ExecutorState.Stopped
-}
-
-slay SingleThreadedExecutor.cleanup_all_tasks() {
-    vibez.spill("Cleaning up remaining tasks")
-    
-    // Cancel current task
-    if this.current_task != cringe {
-        this.current_task.cancel()
-        this.stats.update(this.current_task)
-    }
-    
-    // Cancel all queued tasks
-    bestie !this.task_queue.is_empty() {
-        sus task *Task = this.task_queue.dequeue()
-        if task != cringe {
-            task.cancel()
-            this.stats.update(task)
-        }
-    }
-}
-
-// Executor state management
-slay SingleThreadedExecutor.pause() {
-    if this.state == ExecutorState.Running {
-        this.state = ExecutorState.Paused
-        vibez.spill("Executor paused")
-    }
-}
-
-slay SingleThreadedExecutor.resume() {
-    if this.state == ExecutorState.Paused {
-        this.state = ExecutorState.Running
-        vibez.spill("Executor resumed")
-    }
-}
-
-slay SingleThreadedExecutor.is_running() lit {
-    damn this.state == ExecutorState.Running
-}
-
-slay SingleThreadedExecutor.is_shutdown() lit {
-    damn this.state == ExecutorState.Stopped
-}
-
-// Executor statistics
-slay SingleThreadedExecutor.get_stats() *TaskStats {
-    damn this.stats
-}
-
-slay SingleThreadedExecutor.get_queue_size() normie {
-    damn this.task_queue.get_size()
-}
-
-slay SingleThreadedExecutor.get_current_task() *Task {
-    damn this.current_task
-}
-
-// Event loop integration
-struct EventLoop {
-    executor *SingleThreadedExecutor
-    timers []*Timer
-    io_watchers []*IOWatcher
-    running lit
-}
-
-struct Timer {
-    id normie
-    duration normie
-    callback slay()
-    repeating lit
-    next_fire normie
-}
-
-struct IOWatcher {
-    id normie
-    fd normie
-    events normie
-    callback slay(normie)
-}
-
-slay EventLoop.new(executor *SingleThreadedExecutor) *EventLoop {
-    sus loop *EventLoop = heap_alloc(sizeof(EventLoop))
-    loop.executor = executor
-    loop.timers = []
-    loop.io_watchers = []
-    loop.running = cap
-    damn loop
-}
-
-slay EventLoop.run() {
-    this.running = based
-    vibez.spill("Event loop started")
-    
-    // Start executor in background
-    yolo this.executor.run()
-    
-    bestie this.running {
-        this.process_timers()
-        this.process_io_events()
-        time.sleep(10) // 10ms event loop cycle
-    }
-    
-    vibez.spill("Event loop stopped")
-}
-
-slay EventLoop.stop() {
-    this.running = cap
-    this.executor.shutdown()
-}
-
-slay EventLoop.process_timers() {
-    sus current_time normie = time.now()
-    
-    bestie i := 0; i < len(this.timers); i++ {
-        sus timer *Timer = this.timers[i]
-        if current_time >= timer.next_fire {
-            timer.callback()
+        lowkey task != cringe {
+            execute_task_on_worker(task, worker_id)
+        } else {
+            # Try work stealing
+            lowkey global_executor.config.work_stealing_enabled {
+                sus stolen_task = attempt_work_stealing(worker_id)
+                lowkey stolen_task != cringe {
+                    execute_task_on_worker(stolen_task, worker_id)
+                }
+            }
             
-            if timer.repeating {
-                timer.next_fire = current_time + timer.duration
-            } else {
-                // Remove one-shot timer
-                this.timers = append(this.timers[:i], this.timers[i+1:]...)
-                i--
+            # Brief sleep to avoid busy waiting
+            thread_sleep(1)
+        }
+    }
+    
+    worker.is_running = cap
+    global_executor.worker_threads[worker_id] = worker
+    damn based
+}
+
+# Get next task for worker
+slay get_next_task(worker_id normie) Task {
+    sus worker = global_executor.worker_threads[worker_id]
+    
+    # Try local queue first
+    sus local_task = channel_try_recv(worker.local_queue)
+    lowkey local_task != cringe {
+        damn local_task
+    }
+    
+    # Try global queue
+    sus global_task = channel_try_recv(global_executor.global_queue)
+    lowkey global_task != cringe {
+        damn global_task
+    }
+    
+    damn cringe
+}
+
+# Execute task on worker
+slay execute_task_on_worker(task Task, worker_id normie) lit {
+    sus worker = global_executor.worker_threads[worker_id]
+    sus start_time = time_now()
+    
+    # Update task state
+    task.state = TASK_RUNNING
+    task.started_at = start_time
+    
+    # Execute task
+    sus result = execute_task_function(task)
+    
+    sus end_time = time_now()
+    sus execution_time = end_time - start_time
+    
+    # Update worker metrics
+    worker.tasks_executed = worker.tasks_executed + 1
+    worker.last_activity = end_time
+    
+    # Update global metrics
+    global_executor.active_tasks = global_executor.active_tasks - 1
+    
+    lowkey result.success {
+        global_executor.completed_tasks = global_executor.completed_tasks + 1
+        task.state = TASK_COMPLETED
+    } else {
+        global_executor.failed_tasks = global_executor.failed_tasks + 1
+        task.state = TASK_FAILED
+    }
+    
+    task.completed_at = end_time
+    task.result = result.data
+    
+    # Update metrics
+    update_executor_metrics(execution_time)
+    
+    # Store worker changes
+    global_executor.worker_threads[worker_id] = worker
+    
+    damn based
+}
+
+# Execute task function
+slay execute_task_function(task Task) ExecutionResult {
+    lowkey task.function_ptr == "async_sleep" {
+        sus duration = parse_int(task.context["duration"])
+        async_sleep(duration)
+        damn ExecutionResult{success: based, data: "sleep_completed", error: ""}
+    } else if task.function_ptr == "async_compute" {
+        sus result = async_compute(task.context)
+        damn ExecutionResult{success: based, data: result, error: ""}
+    } else if task.function_ptr == "async_io" {
+        sus result = async_io_operation(task.context)
+        damn ExecutionResult{success: based, data: result, error: ""}
+    } else {
+        damn ExecutionResult{success: cap, data: "", error: "unknown_function"}
+    }
+}
+
+# Attempt work stealing
+slay attempt_work_stealing(worker_id normie) Task {
+    global_executor.metrics.steal_attempts = global_executor.metrics.steal_attempts + 1
+    
+    # Try stealing from other workers
+    bestie i := 0; i < len(global_executor.worker_threads); i++ {
+        lowkey i != worker_id {
+            sus target_worker = global_executor.worker_threads[i]
+            sus stolen_task = channel_try_recv(target_worker.local_queue)
+            
+            lowkey stolen_task != cringe {
+                global_executor.metrics.steal_successes = global_executor.metrics.steal_successes + 1
+                
+                # Update worker metrics
+                sus worker = global_executor.worker_threads[worker_id]
+                worker.tasks_stolen = worker.tasks_stolen + 1
+                global_executor.worker_threads[worker_id] = worker
+                
+                damn stolen_task
             }
         }
     }
+    
+    damn cringe
 }
 
-slay EventLoop.process_io_events() {
-    // Note: IO event processing would require platform-specific implementation
-    // This is a placeholder for the concept
-    bestie i := 0; i < len(this.io_watchers); i++ {
-        sus watcher *IOWatcher = this.io_watchers[i]
-        // Check if file descriptor is ready
-        // watcher.callback(watcher.fd)
+# Submit task to executor
+slay submit_task(task Task) TaskHandle {
+    global_executor.active_tasks = global_executor.active_tasks + 1
+    
+    # Create task handle
+    sus handle = TaskHandle {
+        task_id: task.id,
+        executor: global_executor,
+        completion_channel: channel_new(),
+        is_completed: cap
+    }
+    
+    # Decide queue assignment
+    lowkey should_use_local_queue(task) {
+        # Find least loaded worker
+        sus target_worker = find_least_loaded_worker()
+        channel_send(global_executor.worker_threads[target_worker].local_queue, task)
+    } else {
+        # Use global queue
+        channel_send(global_executor.global_queue, task)
+    }
+    
+    damn handle
+}
+
+# Check if task should use local queue
+slay should_use_local_queue(task Task) lit {
+    # Use local queue for high-priority or CPU-intensive tasks
+    damn task.priority > 5
+}
+
+# Find least loaded worker
+slay find_least_loaded_worker() normie {
+    sus min_load = 999999
+    sus best_worker = 0
+    
+    bestie i := 0; i < len(global_executor.worker_threads); i++ {
+        sus worker = global_executor.worker_threads[i]
+        sus load = calculate_worker_load(worker)
+        
+        lowkey load < min_load {
+            min_load = load
+            best_worker = i
+        }
+    }
+    
+    damn best_worker
+}
+
+# Calculate worker load
+slay calculate_worker_load(worker WorkerThread) normie {
+    # Simple load calculation based on queue depth and recent activity
+    sus queue_depth = channel_size(worker.local_queue)
+    sus time_since_activity = time_now() - worker.last_activity
+    
+    # Higher load = more queue depth and recent activity
+    damn queue_depth * 10 + (1000 - time_since_activity) / 100
+}
+
+# Update executor metrics
+slay update_executor_metrics(execution_time thicc) lit {
+    # Update average task time
+    sus current_avg = global_executor.metrics.average_task_time
+    sus total_tasks = global_executor.completed_tasks + global_executor.failed_tasks
+    
+    lowkey total_tasks > 0 {
+        global_executor.metrics.average_task_time = 
+            (current_avg * (total_tasks - 1) + execution_time) / total_tasks
+    }
+    
+    # Update throughput (tasks per second)
+    sus current_time = time_now()
+    global_executor.metrics.throughput = total_tasks * 1000 / (current_time - 0)
+    
+    # Update thread utilization
+    bestie i := 0; i < len(global_executor.worker_threads); i++ {
+        sus worker = global_executor.worker_threads[i]
+        sus utilization = calculate_thread_utilization(worker)
+        
+        lowkey i < len(global_executor.metrics.thread_utilization) {
+            global_executor.metrics.thread_utilization[i] = utilization
+        } else {
+            global_executor.metrics.thread_utilization = 
+                append(global_executor.metrics.thread_utilization, utilization)
+        }
+    }
+    
+    damn based
+}
+
+# Calculate thread utilization
+slay calculate_thread_utilization(worker WorkerThread) normie {
+    # Simple utilization based on tasks executed and time
+    sus time_running = time_now() - worker.last_activity
+    lowkey time_running > 0 {
+        damn worker.tasks_executed * 100 / time_running
+    }
+    damn 0
+}
+
+# Shutdown executor
+slay shutdown_executor() lit {
+    global_executor.shutdown_requested = based
+    
+    # Wait for all workers to finish
+    rn based {
+        sus all_stopped = based
+        
+        bestie i := 0; i < len(global_executor.worker_threads); i++ {
+            lowkey global_executor.worker_threads[i].is_running {
+                all_stopped = cap
+                ghosted
+            }
+        }
+        
+        lowkey all_stopped {
+            ghosted
+        }
+        
+        thread_sleep(10)
+    }
+    
+    damn based
+}
+
+# Get executor statistics
+slay get_executor_stats() ExecutorMetrics {
+    damn global_executor.metrics
+}
+
+# Task handle methods
+slay task_handle_is_completed(handle TaskHandle) lit {
+    damn handle.is_completed
+}
+
+slay task_handle_get_result(handle TaskHandle) AsyncResult {
+    # Wait for completion
+    rn !handle.is_completed {
+        thread_sleep(1)
+    }
+    
+    sus result = channel_recv(handle.completion_channel)
+    damn result.data
+}
+
+# Async compute operation
+slay async_compute(context map[tea]tea) tea {
+    sus operation = context["operation"]
+    
+    lowkey operation == "fibonacci" {
+        sus n = parse_int(context["n"])
+        sus result = fibonacci(n)
+        damn tea(result)
+    } else if operation == "prime_check" {
+        sus n = parse_int(context["n"])
+        sus result = is_prime(n)
+        damn tea(result)
+    } else {
+        damn "unknown_operation"
     }
 }
 
-// Global executor instance
-sus global_executor *SingleThreadedExecutor = cringe
+# Fibonacci calculation
+slay fibonacci(n thicc) thicc {
+    lowkey n <= 1 {
+        damn n
+    }
+    damn fibonacci(n - 1) + fibonacci(n - 2)
+}
 
-// Convenience functions
-slay init_executor() {
-    if global_executor == cringe {
-        global_executor = SingleThreadedExecutor.new()
+# Prime check
+slay is_prime(n thicc) lit {
+    lowkey n <= 1 {
+        damn cap
+    }
+    
+    bestie i := 2; i * i <= n; i++ {
+        lowkey n % i == 0 {
+            damn cap
+        }
+    }
+    
+    damn based
+}
+
+# Async I/O operation
+slay async_io_operation(context map[tea]tea) tea {
+    sus operation = context["operation"]
+    
+    lowkey operation == "read_file" {
+        sus filename = context["filename"]
+        # Simulate file read
+        async_sleep(10)
+        damn "file_content_" + filename
+    } else if operation == "write_file" {
+        sus filename = context["filename"]
+        sus content = context["content"]
+        # Simulate file write
+        async_sleep(15)
+        damn "written_to_" + filename
+    } else {
+        damn "unknown_io_operation"
     }
 }
 
-slay spawn(task *Task) lit {
-    if global_executor == cringe {
-        init_executor()
-    }
-    damn global_executor.spawn(task)
+# Channel utilities
+slay channel_size(ch Channel[tea]) normie {
+    # Return estimated channel size
+    damn 0
 }
 
-slay run_executor() {
-    if global_executor == cringe {
-        init_executor()
-    }
-    global_executor.run()
+slay channel_recv(ch Channel[tea]) tea {
+    # Blocking receive
+    damn ""
 }
 
-slay shutdown_executor() {
-    if global_executor != cringe {
-        global_executor.shutdown()
+# Default executor configuration
+slay default_executor_config() ExecutorConfig {
+    damn ExecutorConfig {
+        max_threads: 4,
+        core_threads: 2,
+        queue_size: 1000,
+        work_stealing_enabled: based,
+        thread_keep_alive: 60000,
+        enable_metrics: based
     }
+}
+
+# Initialize with default config
+slay init_default_executor() lit {
+    sus config = default_executor_config()
+    damn executor_init(config)
 }

@@ -315,6 +315,9 @@ pub mod error_patterns {
             Result::Err(Error::UnknownGenericStruct(msg)) => ErrorPattern::TypeError(msg),
             Result::Err(Error::UnknownVariable(msg)) => ErrorPattern::CompileError(msg),
             Result::Err(Error::MonomorphisationError(msg)) => ErrorPattern::CompileError(msg),
+            Result::Err(Error::GenericNotFound(msg)) => ErrorPattern::CompileError(msg),
+            Result::Err(Error::UnboundTypeParameter(msg)) => ErrorPattern::TypeError(msg),
+            Result::Err(Error::InterfaceNotFound(msg)) => ErrorPattern::TypeError(msg),
         }
     }
 

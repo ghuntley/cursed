@@ -54,6 +54,7 @@ pub struct ConcreteMethodImplementation {
 }
 
 /// Interface compliance checker
+#[derive(Debug, Clone)]
 pub struct InterfaceComplianceChecker {
     /// Map from interface name to method requirements
     interface_methods: HashMap<String, Vec<InterfaceMethodRequirement>>,
