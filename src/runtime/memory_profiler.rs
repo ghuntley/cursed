@@ -348,7 +348,24 @@ impl MemoryProfiler {
         // Update heap fragmentation if GC is available
         if let Some(gc) = &self.gc_ref {
             let gc_stats = gc.get_stats();
-            stats.heap_fragmentation = self.calculate_heap_fragmentation(&gc_stats);
+            if let Ok(gc_stats) = gc_stats {
+                // Convert GCStats to GcStats for fragmentation calculation
+                let converted_stats = crate::memory::gc::GcStats {
+                    total_collections: gc_stats.total_collections,
+                    total_time_ms: gc_stats.average_collection_time.as_millis() as u64,
+                    objects_collected: gc_stats.objects_swept,
+                    bytes_collected: 0,
+                    last_collection_time_ms: gc_stats.average_collection_time.as_millis() as u64,
+                    last_objects_collected: gc_stats.objects_swept as usize,
+                    avg_pause_time: gc_stats.average_collection_time,
+                    max_pause_time: gc_stats.average_collection_time,
+                    gc_overhead: 0.0,
+                    heap_utilization: 0.0,
+                    allocation_rate: 0.0,
+                    total_gc_time: gc_stats.average_collection_time,
+                };
+                stats.heap_fragmentation = self.calculate_heap_fragmentation(&converted_stats);
+            }
         }
 
         stats

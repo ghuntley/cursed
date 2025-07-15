@@ -8,7 +8,7 @@ use crate::error_types::Error;
 use crate::lexer::{Token, TokenKind};
 use crate::ast::{
     TypeParameter, Type, FunctionDeclaration, StructDeclaration, InterfaceStatement,
-    Expression, Statement, Parameter, Visibility
+    Expression, Statement, Parameter, Visibility, ReturnStatement, CallExpression, MemberAccessExpression
 };
 use crate::type_system::generic_constraints::{
     TypeConstraint, WhereClause, InterfaceDefinition, InterfaceMethod, AssociatedType
@@ -37,7 +37,7 @@ impl<'a> GenericParser<'a> {
         let name = self.parse_identifier()?;
         
         // Parse generic type parameters
-        let type_parameters = if self.current_token_is(&TokenKind::Less) {
+        let type_parameters = if self.current_token_is(&TokenKind::Less) || self.current_token_is(&TokenKind::LeftAngle) {
             self.parse_generic_parameters()?
         } else {
             Vec::new()
@@ -90,7 +90,7 @@ impl<'a> GenericParser<'a> {
         let name = self.parse_identifier()?;
         
         // Parse generic type parameters
-        let type_parameters = if self.current_token_is(&TokenKind::Less) {
+        let type_parameters = if self.current_token_is(&TokenKind::Less) || self.current_token_is(&TokenKind::LeftAngle) {
             self.parse_generic_parameters()?
         } else {
             Vec::new()
@@ -128,7 +128,7 @@ impl<'a> GenericParser<'a> {
         let name = self.parse_identifier()?;
         
         // Parse generic type parameters
-        let type_parameters = if self.current_token_is(&TokenKind::Less) {
+        let type_parameters = if self.current_token_is(&TokenKind::Less) || self.current_token_is(&TokenKind::LeftAngle) {
             self.parse_generic_parameters()?
         } else {
             Vec::new()
@@ -170,21 +170,33 @@ impl<'a> GenericParser<'a> {
     /// Parse generic type parameters
     /// Syntax: <T, U: Display + Clone, V = String>
     fn parse_generic_parameters(&mut self) -> Result<Vec<EnhancedTypeParameter>, CursedError> {
-        self.expect_token(TokenKind::Less)?;
+        // Accept either < or LeftAngle token
+        if self.current_token_is(&TokenKind::Less) {
+            self.expect_token(TokenKind::Less)?;
+        } else {
+            self.expect_token(TokenKind::LeftAngle)?;
+        }
+        
         let mut parameters = Vec::new();
         
-        while !self.current_token_is(&TokenKind::Greater) && !self.is_at_end() {
+        while !self.current_token_is(&TokenKind::Greater) && !self.current_token_is(&TokenKind::RightAngle) && !self.is_at_end() {
             let param = self.parse_single_type_parameter()?;
             parameters.push(param);
             
             if self.current_token_is(&TokenKind::Comma) {
                 self.advance(); // consume ','
-            } else if !self.current_token_is(&TokenKind::Greater) {
+            } else if !self.current_token_is(&TokenKind::Greater) && !self.current_token_is(&TokenKind::RightAngle) {
                 return Err(CursedError::Parse("Expected ',' or '>' in type parameter list".to_string()));
             }
         }
         
-        self.expect_token(TokenKind::Greater)?;
+        // Accept either > or RightAngle token
+        if self.current_token_is(&TokenKind::Greater) {
+            self.expect_token(TokenKind::Greater)?;
+        } else {
+            self.expect_token(TokenKind::RightAngle)?;
+        }
+        
         Ok(parameters)
     }
 
@@ -296,8 +308,19 @@ impl<'a> GenericParser<'a> {
 
     /// Parse a generic parameter
     fn parse_generic_parameter(&mut self) -> Result<GenericParameter, CursedError> {
+        println!("parse_generic_parameter: current token: {:?}", self.current_token());
         let name = self.parse_identifier()?;
-        let param_type = self.parse_type()?;
+        println!("parse_generic_parameter: parsed name: {}, current token: {:?}", name, self.current_token());
+        
+        // Handle special case for 'self' parameter
+        let param_type = if name == "self" {
+            // 'self' parameter doesn't need an explicit type
+            Type::Custom("Self".to_string())
+        } else {
+            self.parse_type()?
+        };
+        
+        println!("parse_generic_parameter: parsed type: {:?}", param_type);
         
         Ok(GenericParameter {
             name,
@@ -359,7 +382,7 @@ impl<'a> GenericParser<'a> {
         let name = self.parse_identifier()?;
         
         // Parse generic parameters for the method
-        let type_parameters = if self.current_token_is(&TokenKind::Less) {
+        let type_parameters = if self.current_token_is(&TokenKind::Less) || self.current_token_is(&TokenKind::LeftAngle) {
             self.parse_generic_parameters()?
         } else {
             Vec::new()
@@ -510,12 +533,21 @@ impl<'a> GenericParser<'a> {
 
     fn parse_identifier(&mut self) -> Result<String, CursedError> {
         if let Some(token) = self.current_token() {
-            if token.kind == TokenKind::Identifier {
-                let name = token.lexeme.clone();
-                self.advance();
-                Ok(name)
-            } else {
-                Err(CursedError::Parse("Expected identifier".to_string()))
+            match token.kind {
+                TokenKind::Identifier => {
+                    let name = token.lexeme.clone();
+                    self.advance();
+                    Ok(name)
+                },
+                // Handle CURSED type keywords as identifiers in type context
+                TokenKind::Tea | TokenKind::Normie | TokenKind::Lit | TokenKind::Sip | 
+                TokenKind::Smol | TokenKind::Mid | TokenKind::Thicc | TokenKind::Snack | 
+                TokenKind::Meal | TokenKind::Byte | TokenKind::Rune | TokenKind::Extra => {
+                    let name = token.lexeme.clone();
+                    self.advance();
+                    Ok(name)
+                },
+                _ => Err(CursedError::Parse("Expected identifier".to_string()))
             }
         } else {
             Err(CursedError::Parse("Unexpected end of input".to_string()))
@@ -527,22 +559,28 @@ impl<'a> GenericParser<'a> {
         let type_name = self.parse_identifier()?;
         
         // Check for generic type arguments
-        if self.current_token_is(&TokenKind::Less) {
-            self.advance(); // consume '<'
+        if self.current_token_is(&TokenKind::Less) || self.current_token_is(&TokenKind::LeftAngle) {
+            self.advance(); // consume '<' or 'LeftAngle'
             let mut args = Vec::new();
             
-            while !self.current_token_is(&TokenKind::Greater) && !self.is_at_end() {
+            while !self.current_token_is(&TokenKind::Greater) && !self.current_token_is(&TokenKind::RightAngle) && !self.is_at_end() {
                 let arg = self.parse_type()?;
                 args.push(arg);
                 
                 if self.current_token_is(&TokenKind::Comma) {
                     self.advance(); // consume ','
-                } else if !self.current_token_is(&TokenKind::Greater) {
+                } else if !self.current_token_is(&TokenKind::Greater) && !self.current_token_is(&TokenKind::RightAngle) {
                     return Err(CursedError::Parse("Expected ',' or '>' in type argument list".to_string()));
                 }
             }
             
-            self.expect_token(TokenKind::Greater)?;
+            // Accept either > or RightAngle token
+            if self.current_token_is(&TokenKind::Greater) {
+                self.expect_token(TokenKind::Greater)?;
+            } else {
+                self.expect_token(TokenKind::RightAngle)?;
+            }
+            
             Ok(Type::Generic(type_name, args))
         } else {
             Ok(Type::Custom(type_name))
@@ -568,15 +606,116 @@ impl<'a> GenericParser<'a> {
     }
 
     fn parse_statement(&mut self) -> Result<Statement, CursedError> {
-        // Simplified statement parsing
-        let expr = self.parse_expression()?;
-        Ok(Statement::Expression(expr))
+        // Handle different statement types
+        match self.current_token() {
+            Some(token) => match token.kind {
+                TokenKind::Yolo => {
+                    // Return statement: damn expression
+                    self.advance(); // consume 'damn'
+                    let value = if self.current_token_is(&TokenKind::RightBrace) {
+                        None
+                    } else {
+                        Some(self.parse_expression()?)
+                    };
+                    Ok(Statement::Return(ReturnStatement { value }))
+                },
+                _ => {
+                    // Default to expression statement
+                    let expr = self.parse_expression()?;
+                    Ok(Statement::Expression(expr))
+                }
+            },
+            None => Err(CursedError::Parse("Unexpected end of input".to_string()))
+        }
     }
 
     fn parse_expression(&mut self) -> Result<Expression, CursedError> {
-        // Simplified expression parsing
-        let name = self.parse_identifier()?;
-        Ok(Expression::Identifier(name))
+        let mut expr = self.parse_primary_expression()?;
+        
+        // Handle postfix operations like method calls
+        while let Some(token) = self.current_token() {
+            match token.kind {
+                TokenKind::Dot => {
+                    self.advance(); // consume '.'
+                    let method_name = self.parse_identifier()?;
+                    
+                    // Check if this is a method call (has parentheses)
+                    if self.current_token_is(&TokenKind::LeftParen) {
+                        self.advance(); // consume '('
+                        let mut args = Vec::new();
+                        
+                        // Parse arguments
+                        while !self.current_token_is(&TokenKind::RightParen) && !self.is_at_end() {
+                            let arg = self.parse_expression()?;
+                            args.push(arg);
+                            
+                            if self.current_token_is(&TokenKind::Comma) {
+                                self.advance(); // consume ','
+                            } else if !self.current_token_is(&TokenKind::RightParen) {
+                                return Err(CursedError::Parse("Expected ',' or ')' in argument list".to_string()));
+                            }
+                        }
+                        
+                        if self.current_token_is(&TokenKind::RightParen) {
+                            self.advance(); // consume ')'
+                        }
+                        
+                        expr = Expression::Call(CallExpression {
+                            function: Box::new(Expression::MemberAccess(MemberAccessExpression {
+                                object: Box::new(expr),
+                                property: method_name,
+                            })),
+                            arguments: args,
+                        });
+                    } else {
+                        // Field access
+                        expr = Expression::MemberAccess(MemberAccessExpression {
+                            object: Box::new(expr),
+                            property: method_name,
+                        });
+                    }
+                },
+                _ => break,
+            }
+        }
+        
+        Ok(expr)
+    }
+    
+    fn parse_primary_expression(&mut self) -> Result<Expression, CursedError> {
+        // Handle different expression types
+        match self.current_token() {
+            Some(token) => match token.kind {
+                TokenKind::Identifier => {
+                    let name = self.parse_identifier()?;
+                    Ok(Expression::Identifier(name))
+                },
+                TokenKind::Integer(ref value) => {
+                    let val = value.parse::<i64>().unwrap_or(0);
+                    self.advance();
+                    Ok(Expression::Integer(val))
+                },
+                TokenKind::StringLiteral(ref value) => {
+                    let val = value.clone();
+                    self.advance();
+                    Ok(Expression::String(val))
+                },
+                TokenKind::Truth | TokenKind::Based => {
+                    self.advance();
+                    Ok(Expression::Boolean(true))
+                },
+                TokenKind::Lies => {
+                    self.advance();
+                    Ok(Expression::Boolean(false))
+                },
+                _ => {
+                    // Try to parse as identifier anyway
+                    let name = self.parse_identifier()?;
+                    Ok(Expression::Identifier(name))
+                }
+            },
+            None => Err(CursedError::Parse("Unexpected end of input".to_string()))
+        }
     }
 
     fn skip_associated_type_declaration(&mut self) -> Result<(), CursedError> {
@@ -690,9 +829,16 @@ mod tests {
         let source = "slay max<T>(a T, b T) -> T { damn a }";
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
+        
+        // Debug: Print tokens
+        println!("Tokens: {:?}", tokens);
+        
         let mut parser = GenericParser::new(&tokens);
         
         let result = parser.parse_generic_function();
+        if let Err(e) = &result {
+            println!("Parse error: {:?}", e);
+        }
         assert!(result.is_ok());
         
         let func = result.unwrap();
@@ -707,9 +853,16 @@ mod tests {
         let source = "slay display<T: Display>(value T) -> tea { damn value.display() }";
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
+        
+        // Debug: Print tokens
+        println!("Constraint tokens: {:?}", tokens);
+        
         let mut parser = GenericParser::new(&tokens);
         
         let result = parser.parse_generic_function();
+        if let Err(e) = &result {
+            println!("Constraint parse error: {:?}", e);
+        }
         assert!(result.is_ok());
         
         let func = result.unwrap();
@@ -742,9 +895,16 @@ mod tests {
         let source = "collab Display<T> { show(self) -> tea }";
         let mut lexer = Lexer::new(source.to_string());
         let tokens = lexer.tokenize().unwrap();
+        
+        // Debug: Print tokens
+        println!("Interface tokens: {:?}", tokens);
+        
         let mut parser = GenericParser::new(&tokens);
         
         let result = parser.parse_generic_interface();
+        if let Err(e) = &result {
+            println!("Interface parse error: {:?}", e);
+        }
         assert!(result.is_ok());
         
         let interface = result.unwrap();

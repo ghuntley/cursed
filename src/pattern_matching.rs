@@ -307,6 +307,23 @@ impl<'a> PatternCompiler<'a> {
             label_counter,
         }
     }
+    
+    /// Generate runtime function declarations for pattern matching
+    pub fn generate_runtime_declarations(&mut self) -> Result<(), CursedError> {
+        // Array pattern runtime functions
+        self.ir_code.push_str("declare i32 @get_array_length(i8*)\n");
+        self.ir_code.push_str("declare i8* @get_array_element(i8*, i32)\n");
+        self.ir_code.push_str("declare i8* @get_array_rest(i8*, i32)\n");
+        
+        // Struct pattern runtime functions
+        self.ir_code.push_str("declare i1 @check_struct_type(i8*, i8*)\n");
+        self.ir_code.push_str("declare i8* @get_struct_field(i8*, i8*)\n");
+        
+        // Guard pattern runtime functions
+        self.ir_code.push_str("declare i1 @evaluate_guard_expression()\n");
+        
+        Ok(())
+    }
 
     /// Generate LLVM IR for pattern matching
     pub fn compile_pattern_match(
@@ -526,32 +543,180 @@ impl<'a> PatternCompiler<'a> {
 
     fn compile_array_pattern(
         &mut self,
-        _value_reg: &str,
-        _array_pat: &ArrayPattern,
-        _success_label: &str,
-        _fail_label: &str,
-        _bindings: &mut HashMap<String, String>,
+        value_reg: &str,
+        array_pat: &ArrayPattern,
+        success_label: &str,
+        fail_label: &str,
+        bindings: &mut HashMap<String, String>,
     ) -> Result<(), CursedError> {
-        // Array pattern compilation would require runtime length checks
-        // and element extraction - simplified for now
-        Err(CursedError::compiler_error(
-            "Array patterns not yet implemented in LLVM codegen"
-        ))
+        // Array pattern compilation with runtime length and element checks
+        
+        // First, get the array length
+        let len_reg = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  {} = call i32 @get_array_length(i8* {})\n",
+            len_reg, value_reg
+        ));
+        
+        // Check if array has enough elements for the pattern
+        let pattern_len = array_pat.patterns.len();
+        
+        // If there's a rest pattern, we need at least pattern_len elements
+        // If no rest pattern, we need exactly pattern_len elements
+        let len_check_reg = self.next_register();
+        if array_pat.rest.is_some() {
+            // At least pattern_len elements required
+            self.ir_code.push_str(&format!(
+                "  {} = icmp sge i32 {}, {}\n",
+                len_check_reg, len_reg, pattern_len
+            ));
+        } else {
+            // Exactly pattern_len elements required
+            self.ir_code.push_str(&format!(
+                "  {} = icmp eq i32 {}, {}\n",
+                len_check_reg, len_reg, pattern_len
+            ));
+        }
+        
+        // Branch on length check
+        let element_check_label = self.next_label();
+        self.ir_code.push_str(&format!(
+            "  br i1 {}, label %{}, label %{}\n",
+            len_check_reg, element_check_label, fail_label
+        ));
+        
+        // Generate element checks
+        self.ir_code.push_str(&format!("{}:\n", element_check_label));
+        
+        let mut check_labels = Vec::new();
+        for i in 0..pattern_len {
+            check_labels.push(self.next_label());
+        }
+        
+        // Handle rest pattern binding if present
+        if let Some(rest_var) = &array_pat.rest {
+            let rest_reg = self.next_register();
+            self.ir_code.push_str(&format!(
+                "  {} = call i8* @get_array_rest(i8* {}, i32 {})\n",
+                rest_reg, value_reg, pattern_len
+            ));
+            bindings.insert(rest_var.clone(), rest_reg);
+        }
+        
+        // Start element checks
+        if !check_labels.is_empty() {
+            self.ir_code.push_str(&format!("  br label %{}\n", check_labels[0]));
+        } else {
+            self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            return Ok(());
+        }
+        
+        // Generate checks for each array element
+        for (i, pattern) in array_pat.patterns.iter().enumerate() {
+            self.ir_code.push_str(&format!("{}:\n", check_labels[i]));
+            
+            // Extract array element
+            let element_reg = self.next_register();
+            self.ir_code.push_str(&format!(
+                "  {} = call i8* @get_array_element(i8* {}, i32 {})\n",
+                element_reg, value_reg, i
+            ));
+            
+            let next_label = if i + 1 < check_labels.len() {
+                &check_labels[i + 1]
+            } else {
+                success_label
+            };
+            
+            self.compile_pattern_recursive(&element_reg, pattern, next_label, fail_label, bindings)?;
+        }
+        
+        Ok(())
     }
 
     fn compile_struct_pattern(
         &mut self,
-        _value_reg: &str,
-        _struct_pat: &StructPattern,
-        _success_label: &str,
-        _fail_label: &str,
-        _bindings: &mut HashMap<String, String>,
+        value_reg: &str,
+        struct_pat: &StructPattern,
+        success_label: &str,
+        fail_label: &str,
+        bindings: &mut HashMap<String, String>,
     ) -> Result<(), CursedError> {
-        // Struct pattern compilation would require field extraction
-        // and type checking - simplified for now
-        Err(CursedError::compiler_error(
-            "Struct patterns not yet implemented in LLVM codegen"
-        ))
+        // Struct pattern compilation with type checking and field extraction
+        
+        // First, verify the struct type matches
+        let type_check_reg = self.next_register();
+        self.ir_code.push_str(&format!(
+            "  {} = call i1 @check_struct_type(i8* {}, i8* getelementptr inbounds ([{} x i8], [{}x i8]* @struct_type_{}, i32 0, i32 0))\n",
+            type_check_reg, value_reg, 
+            struct_pat.type_name.len() + 1, 
+            struct_pat.type_name.len() + 1,
+            struct_pat.type_name
+        ));
+        
+        let field_check_label = self.next_label();
+        self.ir_code.push_str(&format!(
+            "  br i1 {}, label %{}, label %{}\n",
+            type_check_reg, field_check_label, fail_label
+        ));
+        
+        // Generate field checks
+        self.ir_code.push_str(&format!("{}:\n", field_check_label));
+        
+        let mut check_labels = Vec::new();
+        for i in 0..struct_pat.fields.len() {
+            check_labels.push(self.next_label());
+        }
+        
+        // Start field checks
+        if !check_labels.is_empty() {
+            self.ir_code.push_str(&format!("  br label %{}\n", check_labels[0]));
+        } else {
+            self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            return Ok(());
+        }
+        
+        // Generate checks for each struct field
+        for (i, field_pattern) in struct_pat.fields.iter().enumerate() {
+            self.ir_code.push_str(&format!("{}:\n", check_labels[i]));
+            
+            // Extract struct field
+            let field_reg = self.next_register();
+            self.ir_code.push_str(&format!(
+                "  {} = call i8* @get_struct_field(i8* {}, i8* getelementptr inbounds ([{} x i8], [{}x i8]* @field_name_{}, i32 0, i32 0))\n",
+                field_reg, value_reg,
+                field_pattern.field_name.len() + 1,
+                field_pattern.field_name.len() + 1,
+                field_pattern.field_name
+            ));
+            
+            let next_label = if i + 1 < check_labels.len() {
+                &check_labels[i + 1]
+            } else {
+                success_label
+            };
+            
+            // Handle field pattern
+            match &field_pattern.pattern {
+                Some(pattern) => {
+                    // Field has a specific pattern
+                    self.compile_pattern_recursive(&field_reg, pattern, next_label, fail_label, bindings)?;
+                }
+                None => {
+                    // Shorthand: field name is the variable name
+                    bindings.insert(field_pattern.field_name.clone(), field_reg);
+                    self.ir_code.push_str(&format!("  br label %{}\n", next_label));
+                }
+            }
+        }
+        
+        // Handle rest pattern if present
+        if struct_pat.rest {
+            // Rest pattern means we don't care about other fields
+            // Just continue to success - all specified fields matched
+        }
+        
+        Ok(())
     }
 
     fn compile_guard_pattern(

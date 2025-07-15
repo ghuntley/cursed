@@ -31,6 +31,30 @@ pub struct GcConfig {
     pub time_threshold: Duration,
     /// Minimum objects before collection
     pub object_threshold: usize,
+    /// Initial heap size
+    pub initial_heap_size: usize,
+    /// Maximum heap size
+    pub max_heap_size: Option<usize>,
+    /// Young generation ratio
+    pub young_generation_ratio: f64,
+    /// Young collection threshold
+    pub young_collection_threshold: usize,
+    /// Old collection threshold
+    pub old_collection_threshold: usize,
+    /// Enable incremental collection
+    pub incremental_collection: bool,
+    /// Incremental time budget
+    pub incremental_time_budget: u64,
+    /// Enable concurrent collection
+    pub concurrent_collection: bool,
+    /// Concurrent threads
+    pub concurrent_threads: usize,
+    /// Trigger mode
+    pub trigger_mode: crate::runtime::gc::GcTriggerMode,
+    /// Enable compaction
+    pub enable_compaction: bool,
+    /// Compaction threshold
+    pub compaction_threshold: f64,
 }
 
 impl Default for GcConfig {
@@ -40,12 +64,24 @@ impl Default for GcConfig {
             memory_threshold: 64 * 1024 * 1024, // 64MB
             time_threshold: Duration::from_secs(30),
             object_threshold: 1000,
+            initial_heap_size: 32 * 1024 * 1024, // 32MB
+            max_heap_size: Some(1024 * 1024 * 1024), // 1GB
+            young_generation_ratio: 0.3,
+            young_collection_threshold: 16 * 1024 * 1024, // 16MB
+            old_collection_threshold: 128 * 1024 * 1024, // 128MB
+            incremental_collection: false,
+            incremental_time_budget: 50, // 50ms
+            concurrent_collection: false,
+            concurrent_threads: 1,
+            trigger_mode: crate::runtime::gc::GcTriggerMode::Threshold,
+            enable_compaction: false,
+            compaction_threshold: 0.5,
         }
     }
 }
 
 /// Garbage collection statistics
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct GcStats {
     pub total_collections: u64,
     pub total_time_ms: u64,
@@ -53,6 +89,12 @@ pub struct GcStats {
     pub bytes_collected: u64,
     pub last_collection_time_ms: u64,
     pub last_objects_collected: usize,
+    pub avg_pause_time: std::time::Duration,
+    pub max_pause_time: std::time::Duration,
+    pub gc_overhead: f64,
+    pub heap_utilization: f64,
+    pub allocation_rate: f64,
+    pub total_gc_time: std::time::Duration,
 }
 
 impl GarbageCollector {

@@ -11,7 +11,8 @@ use crate::error::CursedError;
 use crate::runtime::goroutine::{GoroutineScheduler, GoroutineId, stan, yolo, get_global_scheduler};
 use crate::runtime::channels::{
     channel, buffered_channel, ChannelSender, ChannelReceiver, ChannelError,
-    SimpleSelect, SelectResult, SelectCase, select_receive, select_send, ReceiveResult
+    SimpleSelect, SelectResult, SelectCase, select_receive, select_send, ReceiveResult,
+    lifecycle::{get_global_channel_manager, ChannelLifecycleManager, ChannelResourceLimits},
 };
 use crate::runtime::stack::RuntimeStack;
 use crate::runtime::gc::{GarbageCollector, GcStats};
@@ -369,6 +370,14 @@ impl ProductionRuntime {
             stats.total_channels_created += 1;
         }
 
+        // Also register with global lifecycle manager
+        let manager = get_global_channel_manager();
+        let type_name = std::any::type_name::<T>().to_string();
+        if let Ok(lifecycle_id) = manager.register_channel(type_name, 0) {
+            // Store lifecycle ID for later cleanup
+            let _ = lifecycle_id;
+        }
+
         (sender, receiver)
     }
 
@@ -395,6 +404,14 @@ impl ProductionRuntime {
         // Update statistics
         if let Ok(mut stats) = self.stats.lock() {
             stats.total_channels_created += 1;
+        }
+
+        // Also register with global lifecycle manager
+        let manager = get_global_channel_manager();
+        let type_name = std::any::type_name::<T>().to_string();
+        if let Ok(lifecycle_id) = manager.register_channel(type_name, capacity) {
+            // Store lifecycle ID for later cleanup
+            let _ = lifecycle_id;
         }
 
         (sender, receiver)

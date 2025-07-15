@@ -115,6 +115,8 @@ pub struct InterfaceDispatchRegistry {
     pub interface_methods: HashMap<String, Vec<InterfaceMethod>>,
     /// Map from (concrete_type, interface_name) to implementation status
     implementations: HashMap<(String, String), bool>,
+    /// Interface inheritance hierarchy (interface_name -> parent_interfaces)
+    interface_hierarchy: HashMap<String, Vec<String>>,
     /// Runtime dispatch table for optimized method resolution
     dispatch_table: HashMap<String, HashMap<String, usize>>, // interface_name -> method_name -> method_index
     /// Global method registry for fast lookup
@@ -128,6 +130,7 @@ impl InterfaceDispatchRegistry {
             vtables: HashMap::new(),
             interface_methods: HashMap::new(),
             implementations: HashMap::new(),
+            interface_hierarchy: HashMap::new(),
             dispatch_table: HashMap::new(),
             global_methods: HashMap::new(),
         }
@@ -158,6 +161,70 @@ impl InterfaceDispatchRegistry {
         self.interface_methods.insert(interface_name, methods);
         
         Ok(())
+    }
+    
+    /// Register interface inheritance relationship
+    pub fn register_interface_inheritance(&mut self, interface_name: String, parent_interfaces: Vec<String>) -> Result<(), CursedError> {
+        // Validate parent interfaces exist
+        for parent in &parent_interfaces {
+            if !self.interface_methods.contains_key(parent) {
+                return Err(CursedError::Runtime(format!(
+                    "Parent interface '{}' not found for interface '{}'", parent, interface_name
+                )));
+            }
+        }
+        
+        // Check for circular inheritance
+        if self.has_circular_inheritance(&interface_name, &parent_interfaces)? {
+            return Err(CursedError::Runtime(format!(
+                "Circular interface inheritance detected for interface '{}'", interface_name
+            )));
+        }
+        
+        self.interface_hierarchy.insert(interface_name, parent_interfaces);
+        Ok(())
+    }
+    
+    /// Check for circular inheritance
+    fn has_circular_inheritance(&self, interface_name: &str, parent_interfaces: &[String]) -> Result<bool, CursedError> {
+        let mut visited = std::collections::HashSet::new();
+        
+        for parent in parent_interfaces {
+            if self.check_circular_inheritance(interface_name, parent, &mut visited)? {
+                return Ok(true);
+            }
+        }
+        
+        Ok(false)
+    }
+    
+    /// Recursively check for circular inheritance
+    fn check_circular_inheritance(
+        &self,
+        original_interface: &str,
+        current_interface: &str,
+        visited: &mut std::collections::HashSet<String>
+    ) -> Result<bool, CursedError> {
+        if current_interface == original_interface {
+            return Ok(true);
+        }
+        
+        if visited.contains(current_interface) {
+            return Ok(false);
+        }
+        
+        visited.insert(current_interface.to_string());
+        
+        if let Some(parents) = self.interface_hierarchy.get(current_interface) {
+            for parent in parents {
+                if self.check_circular_inheritance(original_interface, parent, visited)? {
+                    return Ok(true);
+                }
+            }
+        }
+        
+        visited.remove(current_interface);
+        Ok(false)
     }
     
     /// Register a concrete type implementation of an interface
@@ -212,6 +279,68 @@ impl InterfaceDispatchRegistry {
     pub fn implements_interface(&self, concrete_type: &str, interface_name: &str) -> bool {
         let key = (concrete_type.to_string(), interface_name.to_string());
         self.implementations.get(&key).copied().unwrap_or(false)
+    }
+    
+    /// Get all interface methods including inherited ones
+    pub fn get_all_interface_methods(&self, interface_name: &str) -> Result<Vec<InterfaceMethod>, CursedError> {
+        let mut all_methods = Vec::new();
+        let mut visited = std::collections::HashSet::new();
+        
+        self.collect_interface_methods(interface_name, &mut all_methods, &mut visited)?;
+        
+        // Remove duplicate methods (derived interface methods override base interface methods)
+        self.deduplicate_interface_methods(&mut all_methods);
+        
+        Ok(all_methods)
+    }
+    
+    /// Recursively collect interface methods including inheritance
+    fn collect_interface_methods(
+        &self,
+        interface_name: &str,
+        methods: &mut Vec<InterfaceMethod>,
+        visited: &mut std::collections::HashSet<String>
+    ) -> Result<(), CursedError> {
+        if visited.contains(interface_name) {
+            return Err(CursedError::Runtime(format!("Circular interface inheritance detected: {}", interface_name)));
+        }
+        
+        visited.insert(interface_name.to_string());
+        
+        // Add parent interface methods first (so they can be overridden)
+        if let Some(parents) = self.interface_hierarchy.get(interface_name) {
+            for parent in parents {
+                self.collect_interface_methods(parent, methods, visited)?;
+            }
+        }
+        
+        // Add this interface's methods
+        if let Some(interface_methods) = self.interface_methods.get(interface_name) {
+            methods.extend(interface_methods.clone());
+        }
+        
+        visited.remove(interface_name);
+        Ok(())
+    }
+    
+    /// Remove duplicate methods, keeping derived interface methods over base interface methods
+    fn deduplicate_interface_methods(&self, methods: &mut Vec<InterfaceMethod>) {
+        let mut seen_methods = std::collections::HashMap::new();
+        
+        // Process methods in reverse order to keep the last occurrence (most derived)
+        methods.reverse();
+        
+        methods.retain(|method| {
+            if seen_methods.contains_key(&method.name) {
+                false // Remove duplicate
+            } else {
+                seen_methods.insert(method.name.clone(), true);
+                true // Keep method
+            }
+        });
+        
+        // Restore original order
+        methods.reverse();
     }
     
     /// Get method index for interface method (optimized lookup)

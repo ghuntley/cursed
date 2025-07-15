@@ -464,6 +464,8 @@ impl MonomorphisationPipeline {
         if let Some(type_name) = &type_expr.name {
             // Check if this is a type parameter that needs substitution
             if let Some(substitution) = solution.substitutions.get(type_name) {
+                // Validate that substitution is valid
+                self.validate_type_substitution(type_name, substitution)?;
                 return Ok(substitution.clone());
             }
         }
@@ -471,19 +473,111 @@ impl MonomorphisationPipeline {
         // Recursively substitute in type parameters
         let mut substituted_params = Vec::new();
         for param in &type_expr.parameters {
-            substituted_params.push(self.substitute_type_parameters(param, solution)?);
+            match self.substitute_type_parameters(param, solution) {
+                Ok(substituted_param) => substituted_params.push(substituted_param),
+                Err(e) => return Err(CursedError::Type(format!("Failed to substitute type parameter in {}: {}", 
+                                     type_expr.name.as_ref().unwrap_or(&"unknown".to_string()), 
+                                     e))),
+            }
         }
+        
+        let substituted_return_type = if let Some(return_type) = &type_expr.return_type {
+            match self.substitute_type_parameters(return_type, solution) {
+                Ok(substituted_rt) => Some(Box::new(substituted_rt)),
+                Err(e) => return Err(CursedError::Type(format!("Failed to substitute return type in {}: {}", 
+                                     type_expr.name.as_ref().unwrap_or(&"unknown".to_string()), 
+                                     e))),
+            }
+        } else {
+            None
+        };
         
         Ok(TypeExpression {
             kind: type_expr.kind.clone(),
             name: type_expr.name.clone(),
             parameters: substituted_params,
-            return_type: if let Some(return_type) = &type_expr.return_type {
-                Some(Box::new(self.substitute_type_parameters(return_type, solution)?))
-            } else {
-                None
-            },
+            return_type: substituted_return_type,
         })
+    }
+
+    /// Validate that a type substitution is valid
+    fn validate_type_substitution(&self, type_param: &str, substitution: &TypeExpression) -> Result<(), CursedError> {
+        // Check if substitution creates circular dependencies
+        if self.has_circular_type_dependency(type_param, substitution) {
+            return Err(CursedError::Type(format!("Circular type dependency detected: {} -> {}", type_param, 
+                                 substitution.name.as_ref().unwrap_or(&"unknown".to_string()))));
+        }
+        
+        // Check if substitution is a valid type
+        if !self.is_valid_type_expression(substitution) {
+            return Err(CursedError::Type(format!("Invalid type substitution: {} cannot be substituted with {}", 
+                                 type_param, 
+                                 substitution.name.as_ref().unwrap_or(&"unknown".to_string()))));
+        }
+        
+        Ok(())
+    }
+
+    /// Check if a type substitution creates circular dependencies
+    fn has_circular_type_dependency(&self, type_param: &str, substitution: &TypeExpression) -> bool {
+        if let Some(subst_name) = &substitution.name {
+            if subst_name == type_param {
+                return true;
+            }
+            
+            // Check parameters recursively
+            for param in &substitution.parameters {
+                if self.has_circular_type_dependency(type_param, param) {
+                    return true;
+                }
+            }
+            
+            // Check return type recursively
+            if let Some(return_type) = &substitution.return_type {
+                if self.has_circular_type_dependency(type_param, return_type) {
+                    return true;
+                }
+            }
+        }
+        
+        false
+    }
+
+    /// Check if a type expression is valid
+    fn is_valid_type_expression(&self, type_expr: &TypeExpression) -> bool {
+        // Check if type name is valid
+        if let Some(type_name) = &type_expr.name {
+            // Check if it's a built-in type
+            if self.is_builtin_type(type_name) {
+                return true;
+            }
+            
+            // Check if it's a defined type in the type environment
+            if self.type_env.get_type(type_name).is_some() {
+                return true;
+            }
+        }
+        
+        // Check parameters recursively
+        for param in &type_expr.parameters {
+            if !self.is_valid_type_expression(param) {
+                return false;
+            }
+        }
+        
+        // Check return type recursively
+        if let Some(return_type) = &type_expr.return_type {
+            if !self.is_valid_type_expression(return_type) {
+                return false;
+            }
+        }
+        
+        true
+    }
+
+    /// Check if a type is a built-in type
+    fn is_builtin_type(&self, type_name: &str) -> bool {
+        matches!(type_name, "normie" | "tea" | "lit" | "sip" | "smol" | "mid" | "thicc" | "snack" | "meal" | "void")
     }
 
     /// Substitute types in statement list
@@ -520,8 +614,96 @@ impl MonomorphisationPipeline {
                 }
                 Ok(Statement::Return(new_return))
             }
-            // Add more statement types as needed
-            _ => Ok(statement.clone()),
+            Statement::If(if_stmt) => {
+                let mut new_if_stmt = if_stmt.clone();
+                new_if_stmt.condition = self.substitute_types_in_expression(&if_stmt.condition, solution)?;
+                new_if_stmt.then_branch = self.substitute_types_in_statements(&if_stmt.then_branch, solution)?;
+                if let Some(else_body) = &if_stmt.else_branch {
+                    new_if_stmt.else_branch = Some(self.substitute_types_in_statements(else_body, solution)?);
+                }
+                Ok(Statement::If(new_if_stmt))
+            }
+            Statement::While(while_stmt) => {
+                let mut new_while_stmt = while_stmt.clone();
+                new_while_stmt.condition = self.substitute_types_in_expression(&while_stmt.condition, solution)?;
+                new_while_stmt.body = self.substitute_types_in_statements(&while_stmt.body, solution)?;
+                Ok(Statement::While(new_while_stmt))
+            }
+            Statement::For(for_stmt) => {
+                let mut new_for_stmt = for_stmt.clone();
+                if let Some(init) = &for_stmt.init {
+                    new_for_stmt.init = Some(Box::new(self.substitute_types_in_statement(init, solution)?));
+                }
+                if let Some(condition) = &for_stmt.condition {
+                    new_for_stmt.condition = Some(self.substitute_types_in_expression(condition, solution)?);
+                }
+                if let Some(update) = &for_stmt.update {
+                    new_for_stmt.update = Some(self.substitute_types_in_expression(update, solution)?);
+                }
+                new_for_stmt.body = self.substitute_types_in_statements(&for_stmt.body, solution)?;
+                Ok(Statement::For(new_for_stmt))
+            }
+            Statement::Break(_) | Statement::Continue(_) => {
+                // Break and continue don't have types to substitute
+                Ok(statement.clone())
+            }
+            // Block statement not currently in AST enum - remove or handle differently
+            Statement::Assignment(assign_stmt) => {
+                let mut new_assign_stmt = assign_stmt.clone();
+                // target is AssignmentTarget, not Expression, so we don't substitute it
+                new_assign_stmt.value = self.substitute_types_in_expression(&assign_stmt.value, solution)?;
+                Ok(Statement::Assignment(new_assign_stmt))
+            }
+            Statement::Function(func_stmt) => {
+                let mut new_func_stmt = func_stmt.clone();
+                // Substitute parameter types
+                for param in &mut new_func_stmt.parameters {
+                    if let Some(param_type) = &param.param_type {
+                        let type_expr = self.convert_ast_type_to_expression(param_type);
+                        let substituted_type_expr = self.substitute_type_parameters(&type_expr, solution)?;
+                        param.param_type = Some(self.convert_type_expression_to_ast(&substituted_type_expr));
+                    }
+                }
+                // Substitute return type
+                if let Some(return_type) = &func_stmt.return_type {
+                    let type_expr = self.convert_ast_type_to_expression(return_type);
+                    let substituted_type_expr = self.substitute_type_parameters(&type_expr, solution)?;
+                    new_func_stmt.return_type = Some(self.convert_type_expression_to_ast(&substituted_type_expr));
+                }
+                // Substitute function body
+                new_func_stmt.body = self.substitute_types_in_statements(&func_stmt.body, solution)?;
+                Ok(Statement::Function(new_func_stmt))
+            }
+            Statement::Struct(struct_stmt) => {
+                let mut new_struct_stmt = struct_stmt.clone();
+                // Substitute field types
+                for field in &mut new_struct_stmt.fields {
+                    if let Some(field_type) = &field.field_type {
+                        let type_expr = self.convert_ast_type_to_expression(field_type);
+                        let substituted_type_expr = self.substitute_type_parameters(&type_expr, solution)?;
+                        field.field_type = Some(self.convert_type_expression_to_ast(&substituted_type_expr));
+                    }
+                }
+                Ok(Statement::Struct(new_struct_stmt))
+            }
+            Statement::Defer(defer_stmt) => {
+                let mut new_defer_stmt = defer_stmt.clone();
+                new_defer_stmt.expression = Box::new(self.substitute_types_in_expression(&defer_stmt.expression, solution)?);
+                Ok(Statement::Defer(new_defer_stmt))
+            }
+            Statement::PatternSwitch(pattern_switch) => {
+                let mut new_pattern_switch = pattern_switch.clone();
+                new_pattern_switch.expression = self.substitute_types_in_expression(&pattern_switch.expression, solution)?;
+                // Substitute pattern cases
+                for case in &mut new_pattern_switch.cases {
+                    case.body = self.substitute_types_in_statements(&case.body, solution)?;
+                }
+                Ok(Statement::PatternSwitch(new_pattern_switch))
+            }
+            _ => {
+                // For any other statement types, return error to ensure completeness
+                Err(CursedError::Type(format!("Type substitution not implemented for statement type: {:?}", statement)))
+            }
         }
     }
 
@@ -547,8 +729,72 @@ impl MonomorphisationPipeline {
                     right: Box::new(self.substitute_types_in_expression(&binary_expr.right, solution)?),
                 }))
             }
-            // Add more expression types as needed
-            _ => Ok(expression.clone()),
+            Expression::Unary(unary_expr) => {
+                Ok(Expression::Unary(crate::ast::UnaryExpression {
+                    operator: unary_expr.operator.clone(),
+                    operand: Box::new(self.substitute_types_in_expression(&unary_expr.operand, solution)?),
+                }))
+            }
+            Expression::MemberAccess(member_expr) => {
+                let mut new_member_expr = member_expr.clone();
+                new_member_expr.object = Box::new(self.substitute_types_in_expression(&member_expr.object, solution)?);
+                Ok(Expression::MemberAccess(new_member_expr))
+            }
+            Expression::ArrayAccess(array_expr) => {
+                let mut new_array_expr = array_expr.clone();
+                new_array_expr.array = Box::new(self.substitute_types_in_expression(&array_expr.array, solution)?);
+                new_array_expr.index = Box::new(self.substitute_types_in_expression(&array_expr.index, solution)?);
+                Ok(Expression::ArrayAccess(new_array_expr))
+            }
+            Expression::Tuple(tuple_expr) => {
+                let mut new_elements = Vec::new();
+                for element in &tuple_expr.elements {
+                    new_elements.push(self.substitute_types_in_expression(element, solution)?);
+                }
+                Ok(Expression::Tuple(crate::ast::TupleExpression {
+                    elements: new_elements,
+                }))
+            }
+            Expression::Array(array_expr) => {
+                let mut new_elements = Vec::new();
+                for element in array_expr {
+                    new_elements.push(self.substitute_types_in_expression(element, solution)?);
+                }
+                Ok(Expression::Array(new_elements))
+            }
+            Expression::StructLiteral(struct_expr) => {
+                let mut new_struct_expr = struct_expr.clone();
+                // Handle struct literal field substitution
+                for field in &mut new_struct_expr.fields {
+                    field.value = self.substitute_types_in_expression(&field.value, solution)?;
+                }
+                Ok(Expression::StructLiteral(new_struct_expr))
+            }
+            Expression::TypeAssertion(type_assert_expr) => {
+                let mut new_type_assert = type_assert_expr.clone();
+                new_type_assert.value = Box::new(self.substitute_types_in_expression(&type_assert_expr.value, solution)?);
+                // Substitute the asserted type
+                let type_expr = self.convert_ast_type_to_expression(&type_assert_expr.target_type);
+                let substituted_type_expr = self.substitute_type_parameters(&type_expr, solution)?;
+                new_type_assert.target_type = self.convert_type_expression_to_ast(&substituted_type_expr);
+                Ok(Expression::TypeAssertion(new_type_assert))
+            }
+            // Cast expression not in current AST - remove or handle differently
+            Expression::Lambda(lambda_expr) => {
+                let mut new_lambda = lambda_expr.clone();
+                // Lambda parameters are just strings, no type substitution needed
+                // Substitute lambda body
+                new_lambda.body = Box::new(self.substitute_types_in_expression(&lambda_expr.body, solution)?);
+                Ok(Expression::Lambda(new_lambda))
+            }
+            // Literals and identifiers don't need type substitution
+            Expression::Literal(_) | Expression::Identifier(_) => {
+                Ok(expression.clone())
+            }
+            _ => {
+                // For any other expression types, return error to ensure completeness
+                Err(CursedError::Type(format!("Type substitution not implemented for expression type: {:?}", expression)))
+            }
         }
     }
 
@@ -778,33 +1024,7 @@ impl MonomorphisedProgram {
     }
 }
 
-// Extend TypeEnvironment with generic support
-impl TypeEnvironment {
-    pub fn get_generic_function(&self, _name: &str) -> Option<&FunctionDeclaration> {
-        // Implementation will depend on how generic functions are stored
-        None // Placeholder
-    }
-
-    pub fn get_generic_struct(&self, _name: &str) -> Option<&StructDeclaration> {
-        // Implementation will depend on how generic structs are stored
-        None // Placeholder
-    }
-
-    pub fn get_function_constraints(&self, _name: &str) -> Option<Vec<GenericConstraint>> {
-        // Implementation will depend on how constraints are stored
-        None // Placeholder
-    }
-
-    pub fn get_struct_constraints(&self, _name: &str) -> Option<Vec<GenericConstraint>> {
-        // Implementation will depend on how constraints are stored
-        None // Placeholder
-    }
-
-    pub fn get_variable_type(&self, _name: &str) -> Option<TypeExpression> {
-        // Implementation will depend on how variable types are stored
-        None // Placeholder
-    }
-}
+// TypeEnvironment extensions are now implemented in mod.rs
 
 #[cfg(test)]
 mod tests {

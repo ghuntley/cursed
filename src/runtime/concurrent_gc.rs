@@ -741,12 +741,12 @@ mod tests {
     fn test_concurrent_gc_creation() {
         let stack_manager = Arc::new(RuntimeStack::new());
         let gc_config = crate::runtime::gc::GcConfig::default();
-        let base_gc = GarbageCollector::new(gc_config, stack_manager).unwrap();
+        let base_gc = GarbageCollector::new();
         let tri_color_collector = Arc::new(TriColorCollector::new());
         let performance_tuner = Arc::new(GcPerformanceTuner::new(GcTuningParams::default()));
         
         let config = ConcurrentGcConfig::default();
-        let concurrent_gc = ConcurrentGarbageCollector::new(config, base_gc, tri_color_collector, performance_tuner).unwrap();
+        let concurrent_gc = ConcurrentGarbageCollector::new(config, Arc::new(base_gc), tri_color_collector, performance_tuner).unwrap();
         
         assert_eq!(concurrent_gc.get_state(), ConcurrentState::Idle);
     }

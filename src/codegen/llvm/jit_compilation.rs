@@ -1664,8 +1664,8 @@ extern "C" fn cursed_await_future(future_id: u64) -> *mut std::ffi::c_void {
 extern "C" fn cursed_gc_alloc(size: usize) -> *mut std::ffi::c_void {
     use crate::memory::Tag;
     if let Some(gc) = unsafe { get_global_gc() } {
-        match gc.allocate(size, Tag::Object) {
-            Ok(non_null_ptr) => non_null_ptr.as_ptr() as *mut std::ffi::c_void,
+        match gc.allocate(size, crate::memory::Tag::Object) {
+            Ok(ptr) => ptr.as_ptr() as *mut std::ffi::c_void,
             Err(_) => std::ptr::null_mut(),
         }
     } else {

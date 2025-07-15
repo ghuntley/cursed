@@ -41,6 +41,13 @@ pub mod channel_direction;
 // Enhanced select with timeout patterns
 pub mod select_timeout;
 
+// Channel lifecycle management
+pub mod lifecycle;
+
+// Channel lifecycle tests
+#[cfg(test)]
+pub mod lifecycle_test;
+
 // Re-export the simple implementation as the main interface
 pub use simple_channel::{
     SimpleChannel,
@@ -75,15 +82,62 @@ pub use production_channel::{
     production_channel_unbounded,
 };
 
-// Main channel API using simple implementation
+// Re-export lifecycle management
+pub use lifecycle::{
+    ChannelLifecycleManager,
+    ChannelLifecycleStats,
+    ChannelResourceLimits,
+    ChannelEvent,
+    ChannelInfo,
+    get_global_channel_manager,
+    init_global_channel_manager,
+};
+
+// Main channel API using simple implementation with lifecycle management
 pub type Channel<T> = SimpleChannel<T>;
 pub type ChannelSender<T> = SimpleChannelSender<T>;
 pub type ChannelReceiver<T> = SimpleChannelReceiver<T>;
+
 pub fn channel<T>() -> (ChannelSender<T>, ChannelReceiver<T>) {
-    simple_channel()
+    let (sender, receiver) = simple_channel();
+    
+    // Register with lifecycle manager
+    let manager = lifecycle::get_global_channel_manager();
+    let type_name = std::any::type_name::<T>().to_string();
+    
+    if let Ok(id) = manager.register_channel(type_name, 0) {
+        // Store channel ID for later cleanup (would need to modify SimpleChannel)
+        // For now, we'll just track the creation
+        let _ = id;
+    }
+    
+    (sender, receiver)
 }
+
 pub fn buffered_channel<T>(capacity: usize) -> (ChannelSender<T>, ChannelReceiver<T>) {
-    simple_buffered_channel(capacity)
+    let (sender, receiver) = simple_buffered_channel(capacity);
+    
+    // Register with lifecycle manager
+    let manager = lifecycle::get_global_channel_manager();
+    let type_name = std::any::type_name::<T>().to_string();
+    
+    if let Ok(id) = manager.register_channel(type_name, capacity) {
+        // Store channel ID for later cleanup (would need to modify SimpleChannel)
+        // For now, we'll just track the creation
+        let _ = id;
+    }
+    
+    (sender, receiver)
+}
+
+/// Create a channel with lifecycle management
+pub fn managed_channel<T>() -> (ChannelSender<T>, ChannelReceiver<T>) {
+    channel()
+}
+
+/// Create a buffered channel with lifecycle management
+pub fn managed_buffered_channel<T>(capacity: usize) -> (ChannelSender<T>, ChannelReceiver<T>) {
+    buffered_channel(capacity)
 }
 
 // CURSED syntax support
@@ -114,6 +168,8 @@ pub enum ChannelError {
     NoReceivers,
     /// Operation timeout
     Timeout,
+    /// Channel not found
+    ChannelNotFound,
     /// Invalid buffer size
     InvalidBufferSize(usize),
     /// Memory allocation error
@@ -129,6 +185,7 @@ impl fmt::Display for ChannelError {
             ChannelError::NoSenders => write!(f, "No senders available"),
             ChannelError::NoReceivers => write!(f, "No receivers available"),
             ChannelError::Timeout => write!(f, "Operation timed out"),
+            ChannelError::ChannelNotFound => write!(f, "Channel not found"),
             ChannelError::InvalidBufferSize(size) => write!(f, "Invalid buffer size: {}", size),
             ChannelError::AllocationError(msg) => write!(f, "Memory allocation error: {}", msg),
         }

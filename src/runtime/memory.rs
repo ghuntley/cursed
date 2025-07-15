@@ -228,11 +228,11 @@ impl std::fmt::Debug for PressureState {
 impl MemoryManager {
     /// Create new memory manager
     pub fn new(config: MemoryConfig, stack_manager: Arc<RuntimeStack>) -> Result<Self, MemoryError> {
-        let gc = GarbageCollector::new(config.gc_config.clone(), Arc::clone(&stack_manager))?;
+        let gc = GarbageCollector::new_with_config(config.gc_config.clone(), Arc::clone(&stack_manager))?;
         
         Ok(Self {
             config,
-            gc,
+            gc: Arc::new(gc),
             stack_manager,
             stats: RwLock::new(MemoryStats::default()),
             tracked_objects: RwLock::new(HashMap::new()),
@@ -338,7 +338,7 @@ impl MemoryManager {
     /// Add root object
     pub fn add_root(&self, name: String, handle: &ObjectHandle) -> MemoryResult<()> {
         // Add to GC roots
-        self.gc.add_root(handle.ptr.as_ptr(), RootType::Global);
+        self.gc.add_root(handle.ptr.as_ptr() as *mut u8)?;
         
         // Add to registry
         {
@@ -353,15 +353,32 @@ impl MemoryManager {
     pub fn remove_root(&self, name: &str) -> MemoryResult<()> {
         let mut registry = self.root_registry.write().unwrap();
         if let Some(obj_ptr) = registry.remove(name) {
-            self.gc.remove_root(obj_ptr, RootType::Global);
+            self.gc.remove_root(obj_ptr as *mut u8)?;
         }
         
         Ok(())
     }
     
     /// Force garbage collection
-    pub fn collect_garbage(&self) -> MemoryResult<GcStats> {
-        let stats = self.gc.collect()?;
+    pub fn collect_garbage(&self) -> MemoryResult<crate::memory::gc::GcStats> {
+        self.gc.collect()?;
+        let gc_stats = self.gc.get_stats()?;
+        
+        // Convert GCStats to GcStats
+        let stats = crate::memory::gc::GcStats {
+            total_collections: gc_stats.total_collections,
+            total_time_ms: gc_stats.average_collection_time.as_millis() as u64,
+            objects_collected: gc_stats.objects_swept,
+            bytes_collected: 0, // Not tracked in GCStats
+            last_collection_time_ms: gc_stats.average_collection_time.as_millis() as u64,
+            last_objects_collected: gc_stats.objects_swept as usize,
+            avg_pause_time: gc_stats.average_collection_time,
+            max_pause_time: gc_stats.average_collection_time,
+            gc_overhead: 0.0, // Not tracked in GCStats
+            heap_utilization: 0.0, // Not tracked in GCStats
+            allocation_rate: 0.0, // Not tracked in GCStats
+            total_gc_time: gc_stats.average_collection_time,
+        };
         
         // Update memory statistics
         {
@@ -492,7 +509,23 @@ impl MemoryManager {
     /// Get memory statistics
     pub fn get_stats(&self) -> MemoryStats {
         let mut stats = self.stats.read().unwrap().clone();
-        stats.gc_stats = self.gc.get_stats();
+        if let Ok(gc_stats) = self.gc.get_stats() {
+            // Convert GCStats to GcStats
+            stats.gc_stats = crate::memory::gc::GcStats {
+                total_collections: gc_stats.total_collections,
+                total_time_ms: gc_stats.average_collection_time.as_millis() as u64,
+                objects_collected: gc_stats.objects_swept,
+                bytes_collected: 0, // Not tracked in GCStats
+                last_collection_time_ms: gc_stats.average_collection_time.as_millis() as u64,
+                last_objects_collected: gc_stats.objects_swept as usize,
+                avg_pause_time: gc_stats.average_collection_time,
+                max_pause_time: gc_stats.average_collection_time,
+                gc_overhead: 0.0, // Not tracked in GCStats
+                heap_utilization: 0.0, // Not tracked in GCStats  
+                allocation_rate: 0.0, // Not tracked in GCStats
+                total_gc_time: gc_stats.average_collection_time,
+            };
+        }
         stats
     }
     

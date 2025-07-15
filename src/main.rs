@@ -17,6 +17,32 @@ use cursed::{self, optimization::{OptimizationConfig, OptimizationLevel as OptOp
 use cursed::package_manager::{PackageManagerConfig, PackageManager};
 use cursed::tools::{CursedTools, Profiler};
 use cursed::repl::CursedRepl;
+use cursed::execution::pure_cursed_bridge::PureCursedBridge;
+
+// Dropz integration helpers to replace std::fs calls
+struct DropzFilesystem {
+    bridge: PureCursedBridge,
+}
+
+impl DropzFilesystem {
+    fn new() -> Self {
+        Self {
+            bridge: PureCursedBridge::new(),
+        }
+    }
+    
+    fn read_to_string(&self, path: &str) -> Result<String, String> {
+        self.bridge.io_read_text_file(path)
+    }
+    
+    fn write(&self, path: &str, content: &str) -> Result<(), String> {
+        self.bridge.io_write_text_file(path, content, 0o644)
+    }
+    
+    fn create_dir_all(&self, path: &str) -> Result<(), String> {
+        self.bridge.io_mkdir_all(path, 0o755)
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -672,8 +698,9 @@ fn handle_jit_execution(input: &str, global_matches: &ArgMatches) -> Result<(), 
     let mut jit_executor = JitExecutor::with_config(config)
         .map_err(|e| format!("Failed to create JIT executor: {}", e))?;
     
-    // Read source file
-    let source = std::fs::read_to_string(input)
+    // Read source file using dropz
+    let dropz_fs = DropzFilesystem::new();
+    let source = dropz_fs.read_to_string(input)
         .map_err(|e| format!("Failed to read source file: {}", e))?;
     
     // Execute with JIT compilation
@@ -794,19 +821,26 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
     }
     
     if matches.get_flag("emit-ir") {
+        let dropz_fs = DropzFilesystem::new();
+        let source = dropz_fs.read_to_string(input)
+            .map_err(|e| format!("Failed to read file: {}", e))?;
         let ir = cursed::compile_to_ir_with_advanced_optimization(
-            &fs::read_to_string(input)?,
+            &source,
             &advanced_config
         ).await?;
-        fs::write(format!("{}.ll", output), ir)?;
+        dropz_fs.write(&format!("{}.ll", output), &ir)
+            .map_err(|e| format!("Failed to write IR: {}", e))?;
         println!("{} LLVM IR to {}.ll", "Generated".green().bold(), output);
         if let Some(level) = optimization_level {
             println!("{} optimization level {} applied", "Optimization".green().bold(), level);
         }
     } else if matches.get_flag("emit-asm") {
-        let source = fs::read_to_string(input)?;
+        let dropz_fs = DropzFilesystem::new();
+        let source = dropz_fs.read_to_string(input)
+            .map_err(|e| format!("Failed to read file: {}", e))?;
         let assembly = cursed::compile_to_assembly_with_advanced_optimization(&source, &advanced_config).await?;
-        fs::write(format!("{}.s", output), assembly)?;
+        dropz_fs.write(&format!("{}.s", output), &assembly)
+            .map_err(|e| format!("Failed to write assembly: {}", e))?;
         println!("{} Assembly to {}.s", "Generated".green().bold(), output);
     } else {
         // Handle native-only flag
@@ -1386,10 +1420,14 @@ async fn handle_pkg(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resul
             let name = sub_matches.get_one::<String>("name").unwrap();
             println!("{} new package: {}", "Initializing".blue().bold(), name);
             
-            // Create package directory structure
-            std::fs::create_dir_all(name)?;
-            std::fs::create_dir_all(&format!("{}/src", name))?;
-            std::fs::create_dir_all(&format!("{}/tests", name))?;
+            // Create package directory structure using dropz
+            let dropz_fs = DropzFilesystem::new();
+            dropz_fs.create_dir_all(name)
+                .map_err(|e| format!("Failed to create directory: {}", e))?;
+            dropz_fs.create_dir_all(&format!("{}/src", name))
+                .map_err(|e| format!("Failed to create src directory: {}", e))?;
+            dropz_fs.create_dir_all(&format!("{}/tests", name))
+                .map_err(|e| format!("Failed to create tests directory: {}", e))?;
             
             // Create package.toml
             let package_toml = format!(
@@ -1417,7 +1455,8 @@ target = "native"
 default = []
 "#, name);
             
-            std::fs::write(&format!("{}/package.toml", name), package_toml)?;
+            dropz_fs.write(&format!("{}/package.toml", name), &package_toml)
+                .map_err(|e| format!("Failed to write package.toml: {}", e))?;
             
             // Create main.csd
             let main_csd = format!(
@@ -1431,7 +1470,8 @@ func main() {{
 }}
 "#, name, name);
             
-            std::fs::write(&format!("{}/src/main.csd", name), main_csd)?;
+            dropz_fs.write(&format!("{}/src/main.csd", name), &main_csd)
+                .map_err(|e| format!("Failed to write main.csd: {}", e))?;
             
             // Create lib.csd
             let lib_csd = format!(
@@ -1460,7 +1500,8 @@ impl Greeter for SimpleGreeter {{
 }}
 "#, name);
             
-            std::fs::write(&format!("{}/src/lib.csd", name), lib_csd)?;
+            dropz_fs.write(&format!("{}/src/lib.csd", name), &lib_csd)
+                .map_err(|e| format!("Failed to write lib.csd: {}", e))?;
             
             // Create example test
             let test_csd = format!(
@@ -1494,7 +1535,8 @@ func main() {{
 }}
 "#, name, name, name);
             
-            std::fs::write(&format!("{}/tests/lib_test.csd", name), test_csd)?;
+            dropz_fs.write(&format!("{}/tests/lib_test.csd", name), &test_csd)
+                .map_err(|e| format!("Failed to write test file: {}", e))?;
             
             // Create README.md
             let readme_md = format!(
@@ -1558,7 +1600,8 @@ cursed pkg publish
 MIT License
 "#, name, name, name);
             
-            std::fs::write(&format!("{}/README.md", name), readme_md)?;
+            dropz_fs.write(&format!("{}/README.md", name), &readme_md)
+                .map_err(|e| format!("Failed to write README.md: {}", e))?;
             
             // Create .gitignore
             let gitignore = r#"# CURSED build artifacts
@@ -1583,7 +1626,8 @@ Thumbs.db
 *.temp
 "#;
             
-            std::fs::write(&format!("{}/.gitignore", name), gitignore)?;
+            dropz_fs.write(&format!("{}/.gitignore", name), gitignore)
+                .map_err(|e| format!("Failed to write .gitignore: {}", e))?;
             
             println!("{} Successfully initialized package '{}'", "✅".green().bold(), name);
             println!();

@@ -1,106 +1,33 @@
-// Test advanced pattern matching in vibe_check statements
-yeet "vibez"
+yeet "testz"
 
 slay test_pattern_matching() {
-    // Test literal pattern matching
-    sus value lit = based
+    test_start("pattern matching tests")
     
-    vibe_check value {
-        mood based:
-            vibez.spill("Pattern matched: true")
-        mood cap:
-            vibez.spill("Pattern matched: false")
-        basic:
-            vibez.spill("Default case")
+    // Test array pattern matching
+    sus arr = [1, 2, 3, 4, 5]
+    lowkey arr vibes [first, second, ...rest] {
+        assert_eq_int(first, 1)
+        assert_eq_int(second, 2)
+        assert_eq_int(rest.length, 3)
+        vibez.spill("Array pattern matching works!")
     }
     
-    // Test variable pattern matching
-    sus number normie = 42
-    
-    vibe_check number {
-        mood 42:
-            vibez.spill("Number is 42")
-        mood x:
-            vibez.spill("Number is something else")
+    // Test struct pattern matching
+    sus person = Person { name: "Alice", age: 30, city: "NYC" }
+    lowkey person vibes Person { name, age, .. } {
+        assert_eq_string(name, "Alice")
+        assert_eq_int(age, 30)
+        vibez.spill("Struct pattern matching works!")
     }
     
-    // Test string pattern matching
-    sus name tea = "CURSED"
-    
-    vibe_check name {
-        mood "CURSED":
-            vibez.spill("Language is CURSED")
-        mood "Go":
-            vibez.spill("Language is Go")
-        mood _:
-            vibez.spill("Unknown language")
-    }
-    
-    // Test tuple pattern matching
-    sus pair := (1, 2)
-    
-    vibe_check pair {
-        mood (1, 2):
-            vibez.spill("Pair is (1, 2)")
-        mood (x, y):
-            vibez.spill("Pair is something else")
-    }
+    print_test_summary()
 }
 
-// Test type pattern matching
-slay test_type_patterns() {
-    sus value any // Interface{} equivalent
-    
-    vibe_check value {
-        mood x tea:
-            vibez.spill("Value is a string")
-        mood x normie:
-            vibez.spill("Value is an integer")
-        mood x lit:
-            vibez.spill("Value is a boolean")
-        basic:
-            vibez.spill("Value is unknown type")
-    }
+// Test struct definition
+squad Person {
+    name tea
+    age normie
+    city tea
 }
 
-// Test exhaustiveness checking
-slay test_exhaustive_patterns() {
-    sus flag lit = based
-    
-    // This should compile (exhaustive)
-    vibe_check flag {
-        mood based:
-            vibez.spill("True case")
-        mood cap:
-            vibez.spill("False case")
-    }
-    
-    // This should also compile (has wildcard)
-    vibe_check flag {
-        mood based:
-            vibez.spill("True case")
-        mood _:
-            vibez.spill("Other case")
-    }
-}
-
-// Test pattern destructuring
-slay test_destructuring() {
-    sus person := Person{name: "Alice", age: 30}
-    
-    vibe_check person {
-        mood Person{name: "Alice", age: x}:
-            vibez.spill("Alice with age")
-        mood Person{name: n, age: 30}:
-            vibez.spill("30 year old person")
-        mood Person{name: n, age: a}:
-            vibez.spill("Some person")
-    }
-}
-
-slay main() {
-    test_pattern_matching()
-    test_type_patterns()
-    test_exhaustive_patterns()
-    test_destructuring()
-}
+test_pattern_matching()

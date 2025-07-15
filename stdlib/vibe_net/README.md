@@ -1,333 +1,512 @@
 # vibe_net - Comprehensive Networking Stack Module
 
-A complete networking implementation for CURSED providing TCP/UDP sockets, WebSocket support, DNS resolution, and HTTP client functionality.
+A complete, production-ready networking implementation for CURSED following the vibe_net specification. This module provides TCP/UDP sockets, WebSocket support, DNS resolution, HTTP client functionality, and advanced networking features including connection pooling, circuit breakers, and rate limiting.
 
 ## Features
 
-### TCP Socket Support
-- Socket creation and management
-- Server listening and client connections
-- Data transmission and reception
-- Connection handling and cleanup
+### Core Networking
+- **TCP/UDP Sockets**: Full socket API with connection management
+- **WebSocket Support**: WebSocket and secure WebSocket (wss://) protocols
+- **DNS Resolution**: Comprehensive DNS queries (A, AAAA, MX, NS, TXT, SRV records)
+- **HTTP Client**: RESTful HTTP client with GET, POST, PUT, DELETE methods
+- **IPv6 Support**: Complete IPv6 implementation with dual-stack operation
 
-### UDP Socket Support
-- Datagram socket creation
-- Packet sending and receiving
-- Address binding and management
-- Connectionless communication
+### Advanced Features
+- **Connection Pooling**: Efficient connection reuse for high-performance applications
+- **Circuit Breaker**: Fault tolerance with automatic failure recovery
+- **Rate Limiting**: Traffic control with configurable rate limits
+- **Network Interfaces**: System network interface discovery and management
+- **Protocol Adapters**: WebSocket, HTTP/2, and MQTT protocol support
 
-### WebSocket Implementation
-- WebSocket connection establishment
-- Text and binary message support
-- Protocol compliance (ws:// and wss://)
-- Proper connection lifecycle management
+### Production-Ready
+- **Pure CURSED Implementation**: No FFI dependencies for maximum portability
+- **Type Safety**: Uses CURSED native types (tea, normie, lit)
+- **Error Handling**: Comprehensive validation and error reporting
+- **Cross-Platform**: Works in both interpretation and compilation modes
+- **Specification Compliant**: Follows vibe_net specification exactly
+
+## Core Types
+
+### IP Address Management
+
+```cursed
+# IP address representation
+be_like IPVibe squad {
+    address tea
+    version normie
+    zone tea
+}
+
+# Create IP address from string
+sus ip IPVibe = ParseIP("192.168.1.1")
+
+# Create IPv4 address from octets
+sus ipv4 IPVibe = IPv4(192, 168, 1, 1)
+
+# IP address methods
+vibez.spill(ip.String())         # "192.168.1.1"
+vibez.spill(ip.IsIPv4())         # true
+vibez.spill(ip.IsIPv6())         # false
+vibez.spill(ip.IsLoopback())     # false
+vibez.spill(ip.IsPrivate())      # true
+vibez.spill(ip.IsMulticast())    # false
+```
+
+### Address Resolution
+
+```cursed
+# TCP address resolution
+sus tcp_addr TCPAddrVibe = ResolveTCPAddr("tcp", "localhost:8080")
+vibez.spill(tcp_addr.Network())  # "tcp"
+vibez.spill(tcp_addr.String())   # "localhost:8080"
+vibez.spill(tcp_addr.Port())     # 8080
+
+# UDP address resolution
+sus udp_addr UDPAddrVibe = ResolveUDPAddr("udp", "localhost:8081")
+vibez.spill(udp_addr.Network())  # "udp"
+vibez.spill(udp_addr.String())   # "localhost:8081"
+```
+
+### Connection Management
+
+```cursed
+# Connection interface
+be_like ConnVibe squad {
+    id normie
+    network tea
+    local_addr tea
+    remote_addr tea
+    state normie
+    read_timeout normie
+    write_timeout normie
+    keep_alive lit
+}
+
+# Connection methods
+sus data tea = conn.Read(1024)
+sus bytes_written normie = conn.Write("Hello")
+sus close_success lit = conn.Close()
+vibez.spill(conn.LocalAddr())
+vibez.spill(conn.RemoteAddr())
+```
+
+## API Reference
+
+### High-Level Functions
+
+```cursed
+# Connect to remote address
+sus conn ConnVibe = Dial("tcp", "localhost:8080")
+
+# Connect with timeout
+sus conn ConnVibe = DialTimeout("tcp", "localhost:8080", 5000)
+
+# Listen for connections
+sus listener TCPListenerVibe = Listen("tcp", "0.0.0.0:8080")
+
+# Accept connections
+sus client_conn ConnVibe = listener.Accept()
+```
+
+### TCP Operations
+
+```cursed
+# TCP connection
+sus local_addr TCPAddrVibe = ResolveTCPAddr("tcp", "0.0.0.0:0")
+sus remote_addr TCPAddrVibe = ResolveTCPAddr("tcp", "localhost:8080")
+sus tcp_conn TCPConnVibe = DialTCP("tcp", local_addr, remote_addr)
+
+# TCP connection configuration
+tcp_conn.SetKeepAlive(based)
+tcp_conn.SetNoDelay(based)
+tcp_conn.SetReadBuffer(16384)
+tcp_conn.SetWriteBuffer(16384)
+tcp_conn.SetKeepAlivePeriod(30000)
+tcp_conn.SetLinger(10)
+
+# TCP listener
+sus listen_addr TCPAddrVibe = ResolveTCPAddr("tcp", "0.0.0.0:9090")
+sus listener TCPListenerVibe = ListenTCP("tcp", listen_addr)
+sus accepted_conn ConnVibe = listener.Accept()
+sus accepted_tcp TCPConnVibe = listener.AcceptTCP()
+```
+
+### UDP Operations
+
+```cursed
+# UDP connection
+sus local_addr UDPAddrVibe = ResolveUDPAddr("udp", "0.0.0.0:0")
+sus remote_addr UDPAddrVibe = ResolveUDPAddr("udp", "localhost:8081")
+sus udp_conn UDPConnVibe = DialUDP("udp", local_addr, remote_addr)
+
+# UDP packet operations
+sus n normie
+sus from_addr UDPAddrVibe  
+sus err tea
+n, from_addr, err = udp_conn.ReadFromUDP(1024)
+
+sus target_addr UDPAddrVibe = ResolveUDPAddr("udp", "127.0.0.1:8082")
+sus bytes_sent normie = udp_conn.WriteToUDP("UDP data", target_addr)
+```
 
 ### DNS Resolution
-- Hostname to IP address resolution
-- Reverse DNS lookup functionality
-- Local and remote address handling
-- Error handling for resolution failures
-
-### HTTP Client
-- GET, POST, PUT, DELETE methods
-- Content-Type header support
-- Response parsing and handling
-- RESTful API communication
-
-### Network Utilities
-- Local IP address discovery
-- Network interface enumeration
-- Ping functionality with timeout
-- Port scanning capabilities
-- Network statistics collection
-
-## Function Reference
-
-### TCP Functions
 
 ```cursed
-slay tcp_create_socket() normie
-# Creates a new TCP socket, returns socket descriptor
+# DNS resolver
+sus resolver DNSResolverVibe = NewDNSResolver()
 
-slay tcp_connect(address tea, port normie) tea
-# Connects to a TCP server at the specified address and port
+# Host resolution
+sus addrs []tea = resolver.LookupHost("google.com")
+sus ips []IPVibe = resolver.LookupIP("google.com")
+sus hostnames []tea = resolver.LookupAddr("8.8.8.8")
 
-slay tcp_listen(port normie, backlog normie) tea
-# Starts a TCP server listening on the specified port
+# DNS records
+sus mx_records []MXVibe = resolver.LookupMX("gmail.com")
+sus ns_records []NSVibe = resolver.LookupNS("example.com")
+sus txt_records []tea = resolver.LookupTXT("google.com")
 
-slay tcp_accept(server_socket normie) tea
-# Accepts an incoming connection on a listening socket
+# SRV records
+sus cname tea
+sus srv_records []SRVVibe
+cname, srv_records = resolver.LookupSRV("http", "tcp", "example.com")
 
-slay tcp_send(socket normie, data tea) lit
-# Sends data over a TCP connection
-
-slay tcp_receive(socket normie, buffer_size normie) tea
-# Receives data from a TCP connection
-
-slay tcp_close(socket normie) lit
-# Closes a TCP socket
+# Global DNS functions
+sus global_addrs []tea = LookupHost("localhost")
+sus global_ips []IPVibe = LookupIP("localhost")
+sus global_mx []MXVibe = LookupMX("gmail.com")
 ```
 
-### UDP Functions
+### WebSocket Support
 
 ```cursed
-slay udp_create_socket() normie
-# Creates a new UDP socket
+# WebSocket connection
+sus base_conn ConnVibe = Dial("tcp", "localhost:8080")
+sus ws_conn WebSocketConnVibe = NewWebSocketConn(base_conn, "ws")
 
-slay udp_bind(socket normie, address tea, port normie) lit
-# Binds a UDP socket to an address and port
+# WebSocket operations
+sus msg_type normie
+sus msg_data tea
+msg_type, msg_data = ws_conn.ReadMessage()
 
-slay udp_send(socket normie, data tea, address tea, port normie) lit
-# Sends a UDP packet to the specified address and port
-
-slay udp_receive(socket normie, buffer_size normie) tea
-# Receives a UDP packet
-
-slay udp_close(socket normie) lit
-# Closes a UDP socket
+sus write_success lit = ws_conn.WriteMessage(1, "Hello WebSocket")
+ws_conn.Close()
 ```
 
-### DNS Functions
+### HTTP/2 Support
 
 ```cursed
-slay dns_resolve(hostname tea) tea
-# Resolves a hostname to an IP address
+# HTTP/2 connection
+sus base_conn ConnVibe = Dial("tcp", "localhost:8080")
+sus h2_conn HTTP2ConnVibe = NewHTTP2Conn(base_conn)
 
-slay dns_reverse_lookup(ip_address tea) tea
-# Performs reverse DNS lookup (IP to hostname)
+# HTTP/2 streams
+sus stream HTTP2StreamVibe = h2_conn.CreateStream()
+vibez.spill(stream.id)     # Stream ID
+vibez.spill(stream.state)  # Stream state
+
+h2_conn.Close()
 ```
 
-### WebSocket Functions
+### Connection Pooling
 
 ```cursed
-slay websocket_create() normie
-# Creates a new WebSocket connection
+# Connection pool
+sus pool ConnPoolVibe = NewConnPool("tcp", "localhost:8080", 10)
 
-slay websocket_connect(ws_id normie, url tea) lit
-# Connects WebSocket to the specified URL
+# Get connection from pool
+sus conn ConnVibe = pool.Get()
 
-slay websocket_send_text(ws_id normie, message tea) lit
-# Sends a text message over WebSocket
+# Use connection
+sus data tea = conn.Read(1024)
+conn.Write("Hello")
 
-slay websocket_send_binary(ws_id normie, data tea) lit
-# Sends binary data over WebSocket
+# Return connection to pool
+pool.Put(conn)
 
-slay websocket_receive(ws_id normie) tea
-# Receives a message from WebSocket
+# Pool statistics
+sus stats ConnPoolStats = pool.Stats()
+vibez.spill(stats.ActiveConns)
+vibez.spill(stats.IdleConns)
+vibez.spill(stats.TotalAcquired)
 
-slay websocket_close(ws_id normie, code normie, reason tea) lit
-# Closes WebSocket connection with status code and reason
+# Close pool
+pool.Close()
 ```
 
-### HTTP Client Functions
+### Circuit Breaker
 
 ```cursed
-slay http_get(url tea) tea
-# Performs HTTP GET request
+# Circuit breaker for fault tolerance
+sus cb CircuitBreakerVibe = NewCircuitBreaker(3, 60000)
 
-slay http_post(url tea, data tea, content_type tea) tea
-# Performs HTTP POST request with data and content type
+# Execute operations through circuit breaker
+sus result tea = cb.Execute("operation_name")
 
-slay http_put(url tea, data tea, content_type tea) tea
-# Performs HTTP PUT request
-
-slay http_delete(url tea) tea
-# Performs HTTP DELETE request
+# Circuit breaker control
+cb.Reset()  # Manual reset
 ```
 
-### Utility Functions
+### Rate Limiting
 
 ```cursed
-slay get_local_ip() tea
-# Returns the local machine's IP address
+# Rate limiter
+sus rl RateLimiterVibe = NewRateLimiter(10, 1000)  # 10 requests per second
 
-slay get_network_interfaces() tea
-# Returns a list of available network interfaces
-
-slay ping(address tea, timeout normie) lit
-# Pings an address with specified timeout
-
-slay port_scan(address tea, port normie) lit
-# Checks if a port is open on the specified address
-
-slay is_valid_ip(ip_address tea) lit
-# Validates IP address format
-
-slay is_valid_port(port normie) lit
-# Validates port number range (1-65535)
-
-slay network_error_message(error_code normie) tea
-# Returns human-readable error message for error codes
+# Check if operation is allowed
+sus allowed lit = rl.Allow()
+bestie allowed {
+    # Perform operation
+    vibez.spill("Operation allowed")
+} norly {
+    vibez.spill("Rate limit exceeded")
+}
 ```
 
-### Configuration Functions
+### Network Interfaces
 
 ```cursed
-slay set_socket_timeout(socket normie, timeout_ms normie) lit
-# Sets socket timeout in milliseconds
+# Get all network interfaces
+sus interfaces []InterfaceVibe = Interfaces()
 
-slay set_socket_buffer_size(socket normie, buffer_size normie) lit
-# Sets socket buffer size
-
-slay enable_socket_reuse(socket normie) lit
-# Enables socket address reuse
-
-slay create_server_pool(max_connections normie) normie
-# Creates a connection pool for server applications
-
-slay load_balance_request(pool_id normie, request tea) tea
-# Load balances requests across connection pool
-
-slay network_stats() tea
-# Returns network statistics (bytes sent/received, connections)
-```
-
-## Usage Examples
-
-### TCP Server Example
-```cursed
-yeet "vibe_net"
-
-# Create and start TCP server
-sus server_socket normie = tcp_create_socket()
-sus listen_result tea = tcp_listen(8080, 10)
-vibez.spill("Server listening: " + listen_result)
-
-# Accept client connection
-sus client tea = tcp_accept(server_socket)
-vibez.spill("Client connected: " + client)
-
-# Send response to client
-sus send_success lit = tcp_send(server_socket, "Hello Client!")
-bestie send_success {
-    vibez.spill("Message sent successfully")
+bestie i := 0; i < interfaces.length(); i++ {
+    sus intf InterfaceVibe = interfaces[i]
+    vibez.spill("Interface: " + intf.Name)
+    vibez.spill("  Index: " + intf.Index.(tea))
+    vibez.spill("  MTU: " + intf.MTU.(tea))
+    vibez.spill("  Hardware: " + intf.HardwareAddr)
+    
+    # Get interface addresses
+    sus addrs []tea = intf.Addrs()
+    bestie j := 0; j < addrs.length(); j++ {
+        vibez.spill("  Address: " + addrs[j])
+    }
 }
 
-# Close server socket
-tcp_close(server_socket)
+# Get specific interface
+sus eth0 InterfaceVibe = InterfaceByName("eth0")
 ```
 
-### TCP Client Example
+### IPv6 Support
+
+```cursed
+# IPv6 functions
+sus ipv6_enabled lit = IsIPv6Enabled()
+sus prefer_ipv6 lit = PreferIPv6()
+SetPreferIPv6(based)
+
+# IPv6 addresses
+sus ipv6_addrs []IPVibe = IPv6InterfaceAddrs()
+bestie i := 0; i < ipv6_addrs.length(); i++ {
+    vibez.spill("IPv6 Address: " + ipv6_addrs[i].String())
+}
+```
+
+## Advanced Usage Examples
+
+### TCP Server with Connection Pool
+
 ```cursed
 yeet "vibe_net"
 
-# Connect to server
-sus connection tea = tcp_connect("localhost", 8080)
-vibez.spill("Connection status: " + connection)
+# Create connection pool for handling multiple clients
+sus pool ConnPoolVibe = NewConnPool("tcp", "client_backend:8080", 50)
 
-# Send data to server
-sus client_socket normie = tcp_create_socket()
-sus send_success lit = tcp_send(client_socket, "Hello Server!")
+# Create TCP server
+sus listener TCPListenerVibe = Listen("tcp", "0.0.0.0:8080")
+vibez.spill("Server listening on " + listener.Addr())
 
-# Receive response
-sus response tea = tcp_receive(client_socket, 1024)
-vibez.spill("Server response: " + response)
+# Handle client connections
+slay handle_client(client_conn ConnVibe) {
+    # Read client request
+    sus request tea = client_conn.Read(1024)
+    vibez.spill("Client request: " + request)
+    
+    # Get backend connection from pool
+    sus backend_conn ConnVibe = pool.Get()
+    
+    # Forward request to backend
+    backend_conn.Write(request)
+    sus response tea = backend_conn.Read(1024)
+    
+    # Send response to client
+    client_conn.Write(response)
+    
+    # Return connections
+    pool.Put(backend_conn)
+    client_conn.Close()
+}
 
-# Close connection
-tcp_close(client_socket)
+# Accept client connections
+bestie based {
+    sus client_conn ConnVibe = listener.Accept()
+    yolo handle_client(client_conn)  # Handle in goroutine
+}
 ```
 
-### UDP Communication Example
+### HTTP Client with Circuit Breaker
+
 ```cursed
 yeet "vibe_net"
 
-# Create UDP socket
-sus udp_socket normie = udp_create_socket()
+# Create circuit breaker for API calls
+sus cb CircuitBreakerVibe = NewCircuitBreaker(5, 30000)
 
-# Bind to address
-sus bind_success lit = udp_bind(udp_socket, "0.0.0.0", 9999)
+slay make_api_request(endpoint tea) tea {
+    # Execute API call through circuit breaker
+    sus result tea = cb.Execute(endpoint)
+    
+    bestie result.contains("success") {
+        # Make actual HTTP request
+        sus response tea = http_get("https://api.example.com/" + endpoint)
+        damn response
+    }
+    
+    damn "Circuit breaker open - request failed"
+}
 
-# Send UDP packet
-sus send_success lit = udp_send(udp_socket, "UDP Message", "127.0.0.1", 9999)
-
-# Receive UDP packet
-sus received tea = udp_receive(udp_socket, 512)
-vibez.spill("Received: " + received)
-
-# Close socket
-udp_close(udp_socket)
+# Use API with fault tolerance
+sus user_data tea = make_api_request("users/123")
+vibez.spill("User data: " + user_data)
 ```
 
-### WebSocket Client Example
+### WebSocket Client with Rate Limiting
+
 ```cursed
 yeet "vibe_net"
 
-# Create WebSocket connection
-sus ws_id normie = websocket_create()
+# Create rate limiter for WebSocket messages
+sus rl RateLimiterVibe = NewRateLimiter(10, 1000)
 
 # Connect to WebSocket server
-sus connect_success lit = websocket_connect(ws_id, "ws://localhost:8080/websocket")
-bestie connect_success {
-    vibez.spill("WebSocket connected")
-    
-    # Send text message
-    websocket_send_text(ws_id, "Hello WebSocket Server")
-    
-    # Receive message
-    sus message tea = websocket_receive(ws_id)
-    vibez.spill("Received: " + message)
-    
-    # Close connection
-    websocket_close(ws_id, 1000, "Normal closure")
+sus conn ConnVibe = Dial("tcp", "localhost:8080")
+sus ws_conn WebSocketConnVibe = NewWebSocketConn(conn, "ws")
+
+# Send messages with rate limiting
+slay send_message(message tea) lit {
+    bestie rl.Allow() {
+        damn ws_conn.WriteMessage(1, message)
+    }
+    vibez.spill("Rate limit exceeded - message dropped")
+    damn cap
 }
+
+# Example usage
+send_message("Hello WebSocket")
+send_message("Another message")
 ```
 
-### DNS Resolution Example
+### DNS Resolution with Caching
+
 ```cursed
 yeet "vibe_net"
 
-# Resolve hostname to IP
+# DNS resolver with custom configuration
+sus resolver DNSResolverVibe = NewDNSResolver()
+
+# Resolve multiple record types
+slay resolve_domain(domain tea) {
+    vibez.spill("Resolving " + domain + ":")
+    
+    # A records
+    sus ips []IPVibe = resolver.LookupIP(domain)
+    bestie i := 0; i < ips.length(); i++ {
+        vibez.spill("  A: " + ips[i].String())
+    }
+    
+    # MX records
+    sus mx_records []MXVibe = resolver.LookupMX(domain)
+    bestie i := 0; i < mx_records.length(); i++ {
+        vibez.spill("  MX: " + mx_records[i].Host + " (priority: " + mx_records[i].Pref.(tea) + ")")
+    }
+    
+    # NS records
+    sus ns_records []NSVibe = resolver.LookupNS(domain)
+    bestie i := 0; i < ns_records.length(); i++ {
+        vibez.spill("  NS: " + ns_records[i].Host)
+    }
+    
+    # TXT records
+    sus txt_records []tea = resolver.LookupTXT(domain)
+    bestie i := 0; i < txt_records.length(); i++ {
+        vibez.spill("  TXT: " + txt_records[i])
+    }
+}
+
+# Resolve domains
+resolve_domain("google.com")
+resolve_domain("github.com")
+```
+
+## Legacy Compatibility
+
+The module provides full backward compatibility with the existing vibe_net API:
+
+```cursed
+# Legacy TCP functions
+sus socket normie = tcp_create_socket()
+sus connection tea = tcp_connect("localhost", 8080)
+sus listen_result tea = tcp_listen(9090, 10)
+sus client tea = tcp_accept(socket)
+sus send_success lit = tcp_send(socket, "Hello")
+sus received tea = tcp_receive(socket, 1024)
+tcp_close(socket)
+
+# Legacy UDP functions
+sus udp_socket normie = udp_create_socket()
+udp_bind(udp_socket, "0.0.0.0", 8888)
+udp_send(udp_socket, "Hello UDP", "127.0.0.1", 8888)
+sus udp_data tea = udp_receive(udp_socket, 512)
+udp_close(udp_socket)
+
+# Legacy DNS functions
 sus ip tea = dns_resolve("google.com")
-vibez.spill("Google IP: " + ip)
-
-# Reverse lookup
 sus hostname tea = dns_reverse_lookup("8.8.8.8")
-vibez.spill("8.8.8.8 resolves to: " + hostname)
-```
 
-### HTTP Client Example
-```cursed
-yeet "vibe_net"
+# Legacy WebSocket functions
+sus ws_id normie = websocket_create()
+websocket_connect(ws_id, "ws://localhost:8080")
+websocket_send_text(ws_id, "Hello")
+sus message tea = websocket_receive(ws_id)
+websocket_close(ws_id, 1000, "Normal closure")
 
-# GET request
-sus get_response tea = http_get("http://api.example.com/users")
-vibez.spill("GET Response: " + get_response)
+# Legacy HTTP functions
+sus get_response tea = http_get("http://api.example.com")
+sus post_response tea = http_post("http://api.example.com", "{\"data\":\"test\"}", "application/json")
+sus put_response tea = http_put("http://api.example.com/1", "{\"data\":\"updated\"}", "application/json")
+sus delete_response tea = http_delete("http://api.example.com/1")
 
-# POST request
-sus post_data tea = "{\"name\":\"John\",\"email\":\"john@example.com\"}"
-sus post_response tea = http_post("http://api.example.com/users", post_data, "application/json")
-vibez.spill("POST Response: " + post_response)
-
-# PUT request
-sus put_data tea = "{\"name\":\"John Updated\"}"
-sus put_response tea = http_put("http://api.example.com/users/1", put_data, "application/json")
-vibez.spill("PUT Response: " + put_response)
-
-# DELETE request
-sus delete_response tea = http_delete("http://api.example.com/users/1")
-vibez.spill("DELETE Response: " + delete_response)
+# Legacy utility functions
+sus local_ip tea = get_local_ip()
+sus interfaces tea = get_network_interfaces()
+sus ping_result lit = ping("8.8.8.8", 5000)
+sus port_open lit = port_scan("127.0.0.1", 80)
 ```
 
 ## Error Handling
 
-The module provides comprehensive error handling through error codes and validation functions:
+Comprehensive error handling with validation functions:
 
 ```cursed
-# Validate IP address
-sus valid lit = is_valid_ip("192.168.1.1")
-bestie !valid {
+# IP address validation
+sus valid_ip lit = is_valid_ip("192.168.1.1")
+bestie !valid_ip {
     vibez.spill("Invalid IP address")
 }
 
-# Validate port number
-sus port_valid lit = is_valid_port(8080)
-bestie !port_valid {
+# Port validation
+sus valid_port lit = is_valid_port(8080)
+bestie !valid_port {
     vibez.spill("Invalid port number")
 }
 
-# Handle network errors
-sus error_msg tea = network_error_message(1)
-vibez.spill("Error: " + error_msg)
+# Network error messages
+sus error_msg tea = network_error_message(1)  # "Connection refused"
+vibez.spill("Network error: " + error_msg)
+
+# Socket configuration
+sus timeout_set lit = set_socket_timeout(socket, 5000)
+sus buffer_set lit = set_socket_buffer_size(socket, 16384)
+sus reuse_enabled lit = enable_socket_reuse(socket)
 ```
 
 ## Testing
@@ -343,31 +522,41 @@ cargo run --bin cursed -- compile stdlib/vibe_net/test_vibe_net.csd
 ./test_vibe_net
 
 # Both-mode verification
-test_both_modes stdlib/vibe_net/test_vibe_net.csd
+test_both_modes() {
+    local program=$1
+    cargo run --bin cursed "$program" > interp_output.txt
+    cargo run --bin cursed -- compile "$program"
+    ./"$(basename "$program" .csd)" > comp_output.txt
+    diff interp_output.txt comp_output.txt
+}
+test_both_modes "stdlib/vibe_net/test_vibe_net.csd"
 ```
-
-## Implementation Notes
-
-- **Pure CURSED Implementation**: No FFI dependencies for maximum portability
-- **Type Safety**: Uses CURSED native types (tea, normie, lit)
-- **Error Handling**: Comprehensive validation and error reporting
-- **Cross-Platform**: Works in both interpretation and compilation modes
-- **Production Ready**: Suitable for enterprise networking applications
 
 ## Performance Considerations
 
-- Socket reuse is enabled for better performance
-- Buffer sizes can be configured for optimal throughput
-- Connection pooling available for server applications
-- Timeout settings prevent hanging connections
-- Network statistics available for monitoring
+- **Connection Pooling**: Use connection pools for high-concurrency applications
+- **Circuit Breakers**: Implement fault tolerance to prevent cascade failures
+- **Rate Limiting**: Control traffic to prevent resource exhaustion
+- **Socket Configuration**: Tune buffer sizes and timeouts for your workload
+- **IPv6**: Enable IPv6 for modern network stack performance
+- **Keep-Alive**: Use TCP keep-alive for long-lived connections
 
 ## Security Features
 
-- Input validation for all network parameters
-- Port range validation (1-65535)
-- IP address format validation
-- WebSocket protocol validation (ws:// and wss://)
-- Error handling prevents information leakage
+- **Input Validation**: All network parameters are validated
+- **Port Range Validation**: Ports restricted to valid range (1-65535)
+- **IP Address Validation**: Proper IP address format checking
+- **Protocol Validation**: WebSocket and HTTP protocol validation
+- **Error Handling**: Prevents information leakage through errors
+- **Secure Defaults**: Safe default configurations for all components
 
-This module provides a complete networking foundation for CURSED applications, from simple socket communication to advanced WebSocket and HTTP client functionality.
+## Implementation Notes
+
+- **Pure CURSED**: No FFI dependencies for maximum portability
+- **Specification Compliant**: Follows vibe_net specification exactly
+- **Type Safety**: Uses CURSED native types throughout
+- **Memory Safe**: Proper resource management and cleanup
+- **Cross-Platform**: Consistent behavior across all platforms
+- **Production Ready**: Suitable for enterprise networking applications
+
+This module provides a complete, production-ready networking foundation for CURSED applications, from simple socket communication to advanced distributed system patterns with fault tolerance and performance optimization.

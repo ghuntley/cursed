@@ -503,23 +503,55 @@ impl<'ctx> InkwellStatementGenerator<'ctx> {
     }
 
     /// Compile break statement
-    fn compile_break_statement(&mut self, _break_stmt: &crate::ast::BreakStatement) -> Result<(), CursedError> {
-        let loop_context = self.loop_stack.last()
-            .ok_or_else(|| CursedError::CompilerError("Break statement outside of loop".to_string()))?;
+    fn compile_break_statement(&mut self, break_stmt: &crate::ast::BreakStatement) -> Result<(), CursedError> {
+        if let Some(label) = &break_stmt.label {
+            // Handle labeled break: find the labeled loop in the stack
+            for loop_ctx in self.loop_stack.iter().rev() {
+                if let Some(loop_label) = &loop_ctx.label {
+                    if loop_label == label {
+                        self.builder.build_unconditional_branch(loop_ctx.break_block)
+                            .map_err(|e| CursedError::CompilerError(format!("Failed to build labeled break branch: {:?}", e)))?;
+                        return Ok(());
+                    }
+                }
+            }
+            // Label not found
+            return Err(CursedError::CompilerError(format!("Label '{}' not found for break statement", label)));
+        } else {
+            // Handle unlabeled break: break from innermost loop
+            let loop_context = self.loop_stack.last()
+                .ok_or_else(|| CursedError::CompilerError("Break statement outside of loop".to_string()))?;
 
-        self.builder.build_unconditional_branch(loop_context.break_block)
-            .map_err(|e| CursedError::CompilerError(format!("Failed to build break branch: {:?}", e)))?;
+            self.builder.build_unconditional_branch(loop_context.break_block)
+                .map_err(|e| CursedError::CompilerError(format!("Failed to build break branch: {:?}", e)))?;
+        }
 
         Ok(())
     }
 
     /// Compile continue statement
-    fn compile_continue_statement(&mut self, _continue_stmt: &crate::ast::ContinueStatement) -> Result<(), CursedError> {
-        let loop_context = self.loop_stack.last()
-            .ok_or_else(|| CursedError::CompilerError("Continue statement outside of loop".to_string()))?;
+    fn compile_continue_statement(&mut self, continue_stmt: &crate::ast::ContinueStatement) -> Result<(), CursedError> {
+        if let Some(label) = &continue_stmt.label {
+            // Handle labeled continue: find the labeled loop in the stack
+            for loop_ctx in self.loop_stack.iter().rev() {
+                if let Some(loop_label) = &loop_ctx.label {
+                    if loop_label == label {
+                        self.builder.build_unconditional_branch(loop_ctx.continue_block)
+                            .map_err(|e| CursedError::CompilerError(format!("Failed to build labeled continue branch: {:?}", e)))?;
+                        return Ok(());
+                    }
+                }
+            }
+            // Label not found
+            return Err(CursedError::CompilerError(format!("Label '{}' not found for continue statement", label)));
+        } else {
+            // Handle unlabeled continue: continue from innermost loop
+            let loop_context = self.loop_stack.last()
+                .ok_or_else(|| CursedError::CompilerError("Continue statement outside of loop".to_string()))?;
 
-        self.builder.build_unconditional_branch(loop_context.continue_block)
-            .map_err(|e| CursedError::CompilerError(format!("Failed to build continue branch: {:?}", e)))?;
+            self.builder.build_unconditional_branch(loop_context.continue_block)
+                .map_err(|e| CursedError::CompilerError(format!("Failed to build continue branch: {:?}", e)))?;
+        }
 
         Ok(())
     }

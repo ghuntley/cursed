@@ -10,6 +10,7 @@ pub mod dwarf_parser;  // RE-ENABLED - Advanced debug information
 pub mod panic;
 pub mod panic_recover;
 pub mod goroutine;
+// pub mod preemptive_scheduler;
 pub mod error_handling;
 pub mod enhanced_error_handling;
 pub mod simple_enhanced_error_handling;
@@ -58,7 +59,10 @@ pub mod channels;
 // Basic exports for minimal build
 pub use stack::RuntimeStack;
 pub use value::{ValueManager, CursedValue, Value};
-pub use runtime::{Runtime, RuntimeConfig, RuntimeStats, RuntimeError, RuntimeErrorType};
+pub use runtime::{Runtime, RuntimeConfig, RuntimeStats, RuntimeError, RuntimeErrorType, 
+                  GoroutineSchedulerTrait, SchedulerStatistics,
+                  create_runtime_with_scheduler, create_runtime_with_default_scheduler, 
+                  initialize_runtime_with_scheduler};
 
 // Production runtime exports
 pub mod production_runtime;
@@ -85,7 +89,7 @@ pub use gc_monitor::{GcMonitor, GcMonitorConfig, GcEvent, GcEventType, EventSeve
                     TuningRecommendation, RecommendationType};
 
 // Additional exports needed by other modules - ADVANCED FEATURES ENABLED
-pub use goroutine::{GoroutineScheduler, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};
+pub use goroutine::{GoroutineScheduler, GoroutineSchedulerWrapper, SchedulerConfig, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};
 pub use panic::PanicRuntime;
 pub use panic_recover::{PanicRecoverRuntime, cursed_panic, cursed_recover, is_in_panic, with_panic_recovery, reset_panic_state};
 pub use error_handling::ErrorRuntime;

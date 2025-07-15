@@ -22,6 +22,7 @@ pub mod execution_context;
 pub mod jit_executor;
 pub mod runtime_functions;
 pub mod value_manager;
+pub mod pure_cursed_bridge;
 // Temporarily disabled for JIT testing
 // pub mod cursed_bridge;
 
@@ -2550,11 +2551,20 @@ impl CursedExecutionEngine {
     }
     
     fn evaluate_member_access(&mut self, member_expr: &crate::ast::MemberAccessExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
-        // Handle special object method calls
+        // Handle special built-in objects like vibez, math, etc.
         if let crate::ast::Expression::Identifier(obj_name) = &*member_expr.object {
-            if obj_name == "math" {
-                // This is a math method call, it should be handled by function call evaluation
-                return Err(CursedError::RuntimeError(format!("Unknown method: math.{}", member_expr.property)));
+            match (obj_name.as_str(), member_expr.property.as_str()) {
+                ("vibez", "spill") => {
+                    // This is a vibez.spill call, which should be handled by function call evaluation
+                    return Err(CursedError::RuntimeError("vibez.spill should be called as a function".to_string()));
+                },
+                ("math", _) => {
+                    // This is a math method call, it should be handled by function call evaluation
+                    return Err(CursedError::RuntimeError(format!("Unknown method: math.{}", member_expr.property)));
+                },
+                _ => {
+                    // Try to evaluate as a regular variable
+                }
             }
         }
         

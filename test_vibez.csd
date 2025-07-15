@@ -1,3 +1,1 @@
-yeet "vibez"
-
-vibez.spill("vibez module test")
+vibez.spill("hello")

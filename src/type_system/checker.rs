@@ -1126,6 +1126,28 @@ impl TypeChecker {
     }
     
     fn check_interface_statement(&mut self, interface_stmt: &InterfaceStatement) -> Result<TypeExpression, TypeCheckError> {
+        // Validate parent interfaces exist
+        for parent_name in &interface_stmt.extends {
+            if !self.is_type_defined(parent_name) {
+                return Err(TypeCheckError {
+                    message: format!("Parent interface '{}' not found", parent_name),
+                    location: None,
+                    error_type: TypeErrorKind::TypeNotFound,
+                });
+            }
+            
+            // Check that parent is actually an interface
+            if let Some(parent_def) = self.type_system.environment.type_definitions.get(parent_name) {
+                if parent_def.kind != TypeKind::Interface {
+                    return Err(TypeCheckError {
+                        message: format!("'{}' is not an interface", parent_name),
+                        location: None,
+                        error_type: TypeErrorKind::TypeMismatch,
+                    });
+                }
+            }
+        }
+        
         // Validate method signatures
         let mut validated_methods = Vec::new();
         for method in &interface_stmt.methods {
@@ -1187,8 +1209,50 @@ impl TypeChecker {
             interface_definition
         );
         
-        log::debug!("Registered interface type '{}' with {} methods", 
-                   interface_stmt.name, interface_stmt.methods.len());
+        // Register interface with compliance checker
+        if let Ok(compliance_checker) = crate::type_system::interface_compliance::get_global_compliance_checker() {
+            if let Err(e) = compliance_checker.register_interface(interface_stmt) {
+                log::warn!("Failed to register interface '{}' with compliance checker: {:?}", 
+                          interface_stmt.name, e);
+            }
+        }
+        
+        // Register interface with dispatch system
+        if let Ok(dispatch_registry) = crate::runtime::interface_dispatch::get_global_dispatch_registry() {
+            if let Ok(mut registry) = dispatch_registry.lock() {
+                // Convert interface methods to dispatch format
+                let dispatch_methods: Vec<crate::runtime::interface_dispatch::InterfaceMethod> = 
+                    interface_stmt.methods.iter().enumerate().map(|(i, method)| {
+                        crate::runtime::interface_dispatch::InterfaceMethod {
+                            name: method.name.clone(),
+                            param_types: method.parameters.iter().map(|p| 
+                                p.param_type.as_ref().map(|t| t.to_string()).unwrap_or_else(|| "unknown".to_string())
+                            ).collect(),
+                            return_type: method.return_type.as_ref().map(|t| t.to_string()),
+                            method_index: i,
+                        }
+                    }).collect();
+                
+                if let Err(e) = registry.register_interface(interface_stmt.name.clone(), dispatch_methods) {
+                    log::warn!("Failed to register interface '{}' with dispatch registry: {:?}", 
+                              interface_stmt.name, e);
+                }
+                
+                // Register inheritance if present
+                if !interface_stmt.extends.is_empty() {
+                    if let Err(e) = registry.register_interface_inheritance(
+                        interface_stmt.name.clone(), 
+                        interface_stmt.extends.clone()
+                    ) {
+                        log::warn!("Failed to register interface inheritance for '{}': {:?}", 
+                                  interface_stmt.name, e);
+                    }
+                }
+            }
+        }
+        
+        log::debug!("Registered interface type '{}' with {} methods and {} parents", 
+                   interface_stmt.name, interface_stmt.methods.len(), interface_stmt.extends.len());
         
         Ok(TypeExpression::named(&interface_stmt.name))
     }
