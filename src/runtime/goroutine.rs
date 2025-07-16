@@ -554,9 +554,9 @@ impl GoroutineScheduler {
     }
 
     /// Get parent goroutine ID
-    pub fn get_parent_goroutine_id(&self, _goroutine_id: GoroutineId) -> Option<GoroutineId> {
-        // For now, return None - would need to store parent relationships
-        // TODO: Implement parent goroutine tracking
+    pub fn get_parent_goroutine_id(&self, goroutine_id: GoroutineId) -> Option<GoroutineId> {
+        // In a real implementation, we'd maintain parent-child relationships
+        // For now, return None since we don't have a goroutines map in the scheduler
         None
     }
 

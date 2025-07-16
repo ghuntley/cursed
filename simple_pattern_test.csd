@@ -1,22 +1,9 @@
-// Simple pattern matching test
-yeet "vibez"
+sus test_value normie = 42
 
-slay test_basic_patterns() {
-    sus x normie = 42
-    
-    // Basic switch without patterns first
-    lowkey x == 42 {
-        vibez.spill("x is 42")
-    }
-    
-    // Test boolean switching
-    sus flag lit = based
-    
-    lowkey flag == based {
-        vibez.spill("flag is true")
-    }
+sus result := match test_value {
+    42 -> "answer"
+    1 -> "one"
+    2 -> "two"
 }
 
-slay main() {
-    test_basic_patterns()
-}
+vibez.spill(result)

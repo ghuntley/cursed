@@ -1,4 +1,4 @@
-yeet "testz_simple"
+yeet "testz"
 
 # Comprehensive example demonstrating all advanced testing features
 # This shows how to use the enhanced testz framework for real-world testing

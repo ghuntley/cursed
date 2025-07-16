@@ -2,7 +2,7 @@ fr fr CURSED TestResult Type System Tests
 fr fr Comprehensive test suite for TestResult functionality
 fr fr Author: CURSED Compiler Team
 
-yeet "testz/mod"
+yeet "testz"
 yeet "test_result/mod"
 
 fr fr ================================

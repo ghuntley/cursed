@@ -169,6 +169,8 @@ pub enum Expression {
     RangeFor {
         iterable: Box<Expression>,
     },
+    // Pattern matching expression
+    Match(MatchExpression),
 }
 
 /// Binary expression
@@ -291,6 +293,42 @@ pub struct RecoverExpression {
 #[derive(Debug, Clone)]
 pub struct ErrorValueExpression {
     pub message: String,
+}
+
+/// Match expression for pattern matching
+#[derive(Debug, Clone)]
+pub struct MatchExpression {
+    pub value: Box<Expression>,
+    pub arms: Vec<MatchArm>,
+}
+
+/// Match arm in a match expression
+#[derive(Debug, Clone)]
+pub struct MatchArm {
+    pub pattern: MatchPattern,
+    pub guard: Option<Expression>,
+    pub body: Expression,
+}
+
+/// Pattern in match expression
+#[derive(Debug, Clone)]
+pub enum MatchPattern {
+    /// Literal pattern (1, "hello", based)
+    Literal(Expression),
+    /// Variable pattern (x)
+    Variable(String),
+    /// Wildcard pattern (_)
+    Wildcard,
+    /// Range pattern (1..10)
+    Range {
+        start: Expression,
+        end: Expression,
+        inclusive: bool,
+    },
+    /// Tuple pattern ((x, y))
+    Tuple(Vec<MatchPattern>),
+    /// Or pattern (x | y | z)
+    Or(Vec<MatchPattern>),
 }
 
 /// TestResult construction expression (e.g., TestResult.pass(...))
@@ -717,8 +755,22 @@ pub struct InterfaceStatement {
     pub name: String,
     pub type_parameters: Vec<TypeParameter>, // Generic type parameters
     pub extends: Vec<String>, // Interface inheritance (extends other interfaces)
+    pub compositions: Vec<InterfaceComposition>, // Interface composition (with other interfaces)
     pub methods: Vec<MethodSignature>,
     pub visibility: Visibility,
+}
+
+/// Interface composition definition
+#[derive(Debug, Clone)]
+pub struct InterfaceComposition {
+    /// The interface being composed into this interface
+    pub composed_interface: String,
+    /// Optional alias for the composed interface
+    pub alias: Option<String>,
+    /// Whether to exclude specific methods from composition
+    pub excluded_methods: Vec<String>,
+    /// Whether to rename methods from the composed interface
+    pub method_renames: std::collections::HashMap<String, String>,
 }
 
 /// Type alias statement (be_like keyword)

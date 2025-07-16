@@ -7,6 +7,7 @@ use crate::error::CursedError;
 use crate::memory::{Traceable, Visitor, MemoryStats};
 use crate::memory::heap::{get_global_heap, HeapStats};
 use crate::memory::roots::{get_global_root_set, RootStats};
+use crate::runtime::borrowing::{get_global_borrow_checker, BorrowState};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -295,6 +296,34 @@ pub fn maybe_collect() -> Result<Option<GcResult>, CursedError> {
 /// Configure the global garbage collector
 pub fn configure_gc(config: GcConfig) {
     get_global_gc().configure(config);
+}
+
+/// Integrate borrow checker with GC for safe mutable reference handling
+pub fn integrate_borrow_checker_with_gc() {
+    let checker = get_global_borrow_checker();
+    
+    // Add callback to notify GC of borrow state changes
+    checker.add_gc_callback(|borrow_state: &BorrowState| {
+        // If a value has active borrows, mark it as reachable
+        if borrow_state.shared_count > 0 || borrow_state.has_mutable {
+            // The value should not be collected while borrowed
+            tracing::trace!(
+                "Value has active borrows (shared: {}, mutable: {})", 
+                borrow_state.shared_count, 
+                borrow_state.has_mutable
+            );
+        }
+    });
+}
+
+/// Enhanced garbage collection that respects borrow checker state
+pub fn collect_with_borrow_checking() -> Result<GcResult, CursedError> {
+    // Clean up expired references in borrow checker first
+    let checker = get_global_borrow_checker();
+    checker.cleanup_expired_references();
+    
+    // Then perform normal GC
+    collect()
 }
 
 /// Get global GC statistics

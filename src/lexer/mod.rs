@@ -62,6 +62,10 @@ pub enum TokenKind {
     Collab,      // interface
     Impl,        // implementation
     Extends,     // interface inheritance
+    With,        // interface composition
+    As,          // alias in composition
+    Except,      // exclusion in composition
+    Rename,      // method renaming in composition
     ForImpl,     // for (used in impl for)
     Vibe,        // package
     Yeet,        // import
@@ -69,6 +73,7 @@ pub enum TokenKind {
     VibeCheck,   // switch statement
     Mood,        // case
     Basic,       // default case
+    Match,       // match expression
     YeetError,   // throw error
     Catch,       // catch error
     Where,       // where clause for generics
@@ -757,12 +762,17 @@ impl Lexer {
             "collab" => TokenKind::Collab,
             "impl" => TokenKind::Impl,
             "extends" => TokenKind::Extends,
+            "with" => TokenKind::With,
+            "as" => TokenKind::As,
+            "except" => TokenKind::Except,
+            "rename" => TokenKind::Rename,
             "vibe" => TokenKind::Vibe,
             "yeet" => TokenKind::Yeet,
             "be_like" => TokenKind::BeLike,
             "vibe_check" => TokenKind::VibeCheck,
             "mood" => TokenKind::Mood,
             "basic" => TokenKind::Basic,
+            "match" => TokenKind::Match,
             "yeet_error" => TokenKind::YeetError,
             "catch" => TokenKind::Catch,
             "where" => TokenKind::Where,

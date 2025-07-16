@@ -17,6 +17,7 @@ pub mod generic_constraints;
 pub mod monomorphisation;
 pub mod test_result_simple;
 pub mod interface_compliance;
+pub mod interface_inheritance;
 pub mod generics_core;
 // pub mod advanced_constraints;
 // pub mod generic_interfaces;
@@ -47,6 +48,11 @@ pub use interface_compliance::{
     ConcreteMethodImplementation, ReceiverType, IncompatibleMethod,
     initialize_interface_compliance_checker, get_global_compliance_checker,
     check_global_interface_compliance, generate_global_compliance_report
+};
+pub use interface_inheritance::{
+    InterfaceInheritanceChecker, InterfaceInheritanceTree, InterfaceCompositionOptions,
+    InterfaceHierarchyInfo, InterfaceHierarchyValidationError, MethodConflict,
+    initialize_interface_inheritance_checker, get_global_inheritance_checker
 };
 
 // Core type system structures

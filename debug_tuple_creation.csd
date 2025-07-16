@@ -1,6 +1,0 @@
-vibez.spill("Step 1: Before tuple creation")
-sus t := (1, 2, 3)
-vibez.spill("Step 2: After tuple creation")
-vibez.spill("Tuple t:", t)
-vibez.spill("Step 3: Before accessing element")
-vibez.spill("Element 0:", t.0)

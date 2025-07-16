@@ -6,6 +6,7 @@
 
 use crate::error_types::{Error, Result as CursedResult};
 use crate::runtime::value::Value;
+use crate::runtime::borrowing::{BorrowChecker, BorrowMode, ValueId, MutableRef, SharedRef, get_global_borrow_checker};
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex};
@@ -55,6 +56,10 @@ pub struct ValueMetadata {
     pub created_at: Option<std::time::Instant>,
     /// Tags for debugging/profiling
     pub tags: Vec<String>,
+    /// Borrow checker value ID
+    pub borrow_id: Option<ValueId>,
+    /// Current borrow state for tracking
+    pub borrow_location: Option<String>,
 }
 
 impl RuntimeValue {
@@ -105,6 +110,17 @@ impl RuntimeValue {
 
     /// Get the underlying value
     pub fn get_value(&self) -> &Value {
+        // Check with borrow checker if registered
+        if let Some(borrow_id) = self.metadata.borrow_id {
+            let checker = get_global_borrow_checker();
+            if !checker.can_access(borrow_id, BorrowMode::Shared) {
+                // Log warning but allow access for backwards compatibility
+                tracing::warn!(
+                    "Shared access to value with conflicting borrows at {}",
+                    self.metadata.borrow_location.as_deref().unwrap_or("unknown")
+                );
+            }
+        }
         &self.value
     }
 
@@ -115,6 +131,18 @@ impl RuntimeValue {
                 "Cannot mutably access immutable or frozen value".to_string()
             ));
         }
+
+        // Check with borrow checker if registered
+        if let Some(borrow_id) = self.metadata.borrow_id {
+            let checker = get_global_borrow_checker();
+            if !checker.can_access(borrow_id, BorrowMode::Mutable) {
+                return Err(Error::Runtime(format!(
+                    "Cannot get mutable reference: value has conflicting borrows at {}",
+                    self.metadata.borrow_location.as_deref().unwrap_or("unknown")
+                )));
+            }
+        }
+
         Ok(&mut self.value)
     }
 
@@ -156,6 +184,47 @@ impl RuntimeValue {
     pub fn freeze(&mut self) {
         self.metadata.is_frozen = true;
         self.type_info.is_mutable = false;
+    }
+
+    /// Register this value with the borrow checker
+    pub fn register_for_borrowing(&mut self, location: String) -> ValueId {
+        let checker = get_global_borrow_checker();
+        let id = checker.new_value_id();
+        self.metadata.borrow_id = Some(id);
+        self.metadata.borrow_location = Some(location);
+        id
+    }
+
+    /// Create a mutable reference wrapper that integrates with borrow checker
+    pub fn create_mutable_ref(value: Value, location: String) -> CursedResult<MutableRef<RuntimeValue>> {
+        let runtime_value = RuntimeValue::new(value);
+        MutableRef::new(runtime_value, location)
+    }
+
+    /// Create a shared reference wrapper that integrates with borrow checker
+    pub fn create_shared_ref(value: Value, location: String) -> CursedResult<SharedRef<RuntimeValue>> {
+        let runtime_value = RuntimeValue::new(value);
+        SharedRef::new(runtime_value, location)
+    }
+
+    /// Try to create a mutable borrow of this value
+    pub fn try_borrow_mutable(&self, location: String) -> CursedResult<()> {
+        if let Some(borrow_id) = self.metadata.borrow_id {
+            let checker = get_global_borrow_checker();
+            let _guard = checker.try_borrow_mutable(borrow_id, location)?;
+            // Guard is dropped immediately, but the check validates the operation
+        }
+        Ok(())
+    }
+
+    /// Try to create a shared borrow of this value
+    pub fn try_borrow_shared(&self, location: String) -> CursedResult<()> {
+        if let Some(borrow_id) = self.metadata.borrow_id {
+            let checker = get_global_borrow_checker();
+            let _guard = checker.try_borrow_shared(borrow_id, location)?;
+            // Guard is dropped immediately, but the check validates the operation
+        }
+        Ok(())
     }
 
     /// Check if value is frozen

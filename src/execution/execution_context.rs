@@ -246,15 +246,19 @@ impl ExecutionContext {
     pub fn load_module(&mut self, module_path: &str) -> Result<(), CursedError> {
         // Check if module is already loaded
         if self.loaded_modules.contains_key(module_path) {
+            tracing::info!("📦 Module already loaded: {}", module_path);
             return Ok(());
         }
         
         // Try to find the module file
         let module_file = self.find_module_file(module_path)?;
+        tracing::info!("📦 Found module file: {}", module_file.display());
         
         // Parse the module
         let module_source = std::fs::read_to_string(&module_file)
             .map_err(|e| CursedError::RuntimeError(format!("Failed to read module {}: {}", module_path, e)))?;
+        
+        tracing::info!("📦 Module source length: {} characters", module_source.len());
         
         let mut lexer = crate::lexer::Lexer::new(module_source);
         let mut parser = crate::parser::Parser::new(lexer)
@@ -262,6 +266,8 @@ impl ExecutionContext {
         
         let module_program = parser.parse_program()
             .map_err(|e| CursedError::RuntimeError(format!("Failed to parse module {}: {}", module_path, e)))?;
+        
+        tracing::info!("📦 Parsed module with {} statements", module_program.statements.len());
         
         // Store the loaded module
         self.loaded_modules.insert(module_path.to_string(), module_program.clone());
@@ -292,6 +298,8 @@ impl ExecutionContext {
     
     /// Import functions from a loaded module
     fn import_module_functions(&mut self, program: &crate::ast::Program) -> Result<(), CursedError> {
+        tracing::info!("📦 Starting module import with {} statements", program.statements.len());
+        
         // First, process any imports this module depends on
         for import in &program.imports {
             if !self.is_module_loaded(&import.path) {
@@ -300,7 +308,16 @@ impl ExecutionContext {
         }
         
         // Import functions and initialize basic variables from the module
-        for statement in &program.statements {
+        for (i, statement) in program.statements.iter().enumerate() {
+            tracing::info!("📦 Processing statement {}: {:?}", i, 
+                match statement {
+                    crate::ast::Statement::Function(func) => format!("Function({})", func.name),
+                    crate::ast::Statement::Let(let_stmt) => format!("Let({:?})", let_stmt.target),
+                    crate::ast::Statement::Expression(_) => "Expression".to_string(),
+                    _ => "Other".to_string()
+                }
+            );
+            
             match statement {
                 crate::ast::Statement::Let(let_stmt) => {
                     // Initialize global variables from the module with basic values
@@ -331,11 +348,15 @@ impl ExecutionContext {
                     tracing::info!("📦 Importing function: {} from module", func.name);
                     self.functions.insert(func.name.clone(), func.clone());
                 },
-                _ => {} // Skip other statement types
+                _ => {
+                    tracing::info!("📦 Skipping statement type: {:?}", statement);
+                }
             }
         }
         
-        tracing::info!("📦 Module import complete");
+        tracing::info!("📦 Module import complete - imported {} functions", 
+            program.statements.iter().filter(|s| matches!(s, crate::ast::Statement::Function(_))).count()
+        );
         Ok(())
     }
     
@@ -371,6 +392,26 @@ impl ExecutionContext {
                 }
             }
             _ => ty.clone()
+        }
+    }
+
+    /// Create a nested scope for pattern matching
+    pub fn create_nested_scope(&self) -> Self {
+        Self {
+            variables: self.variables.clone(),
+            functions: self.functions.clone(),
+            defer_stack: Vec::new(), // New defer stack for the nested scope
+            defer_scopes: Vec::new(),
+            error_contexts: self.error_contexts.clone(),
+            error_propagation: self.error_propagation.clone(),
+            call_stack: self.call_stack.clone(),
+            current_location: self.current_location.clone(),
+            struct_definitions: self.struct_definitions.clone(),
+            interface_definitions: self.interface_definitions.clone(),
+            fam_context_stack: self.fam_context_stack.clone(),
+            loaded_modules: self.loaded_modules.clone(),
+            module_search_paths: self.module_search_paths.clone(),
+            type_aliases: self.type_aliases.clone(),
         }
     }
 

@@ -1,3 +1,0 @@
-collab Test {
-    
-}

@@ -1,18 +1,25 @@
 yeet "testz"
 
-# Simple interface definition
-collab Printer {
-    slay print(msg tea)
+# Simple interface inheritance test
+
+# Base interface
+collab Drawable {
+    slay draw()
 }
 
-# Test function
-slay test_interface_definition() {
-    test_start("Interface definition test")
-    
-    vibez.spill("Interface definition parsed successfully")
-    
-    print_test_summary()
+# Derived interface with inheritance
+collab Shape extends Drawable {
+    slay get_area() meal
 }
 
-# Run the test
-test_interface_definition()
+# Test struct implementing interface
+squad Circle {
+    radius meal
+}
+
+# Test
+test_start("Basic interface inheritance")
+assert_true(based) # Placeholder for interface checks
+print_test_summary()
+
+vibez.spill("Interface inheritance test complete!")

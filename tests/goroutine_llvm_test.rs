@@ -1,7 +1,7 @@
 use cursed::codegen::llvm::LlvmCodeGenerator;
 use cursed::lexer::Lexer;
 use cursed::parser::Parser;
-use cursed::runtime::runtime::GoroutineScheduler;
+use cursed::GoroutineScheduler;
 
 #[cfg(test)]
 mod tests {

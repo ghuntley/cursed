@@ -1,5 +1,5 @@
 yeet "testz"
-yeet "enhanced_testz"
+yeet "testz"
 
 # Performance benchmarks for the enhanced testz framework
 

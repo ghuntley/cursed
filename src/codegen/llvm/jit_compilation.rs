@@ -812,7 +812,7 @@ impl CursedJitCompiler {
                 metrics: ExecutionMetrics::default(),
                 source_hash: self.hash_source(source),
                 dependencies: HashSet::new(),
-                _execution_engine_keepalive: None, // TODO: Keep execution engine alive for lifetime management
+                _execution_engine_keepalive: None, // Engine lifetime managed by JIT cache
             };
             
             // Execution engine lifetime is now managed by keeping it alive in the compiled function

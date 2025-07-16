@@ -150,6 +150,60 @@ impl ExhaustivenessChecker {
         }
     }
 
+    /// Generate exhaustiveness report
+    pub fn generate_exhaustiveness_report(&self) -> Result<String, CursedError> {
+        let mut report = String::new();
+        
+        report.push_str(&format!("Exhaustiveness check for type: {:?}\n", self.switch_type));
+        report.push_str(&format!("Number of patterns: {}\n", self.patterns.len()));
+        
+        for (i, pattern) in self.patterns.iter().enumerate() {
+            report.push_str(&format!("Pattern {}: {:?}\n", i + 1, pattern));
+        }
+        
+        let is_exhaustive = self.check_exhaustiveness()?;
+        report.push_str(&format!("Exhaustive: {}\n", is_exhaustive));
+        
+        if !is_exhaustive {
+            report.push_str("Missing patterns:\n");
+            report.push_str(&self.find_missing_patterns()?);
+        }
+        
+        Ok(report)
+    }
+    
+    /// Find missing patterns for better error reporting
+    fn find_missing_patterns(&self) -> Result<String, CursedError> {
+        match &self.switch_type {
+            Type::Lit => {
+                let mut missing = Vec::new();
+                let mut has_true = false;
+                let mut has_false = false;
+                let mut has_wildcard = false;
+                
+                for pattern in &self.patterns {
+                    match pattern {
+                        Pattern::Literal(lit) => {
+                            if let Expression::Boolean(val) = &lit.value {
+                                if *val { has_true = true; } else { has_false = true; }
+                            }
+                        }
+                        Pattern::Wildcard | Pattern::Variable(_) => has_wildcard = true,
+                        _ => {}
+                    }
+                }
+                
+                if !has_wildcard {
+                    if !has_true { missing.push("based (true)".to_string()); }
+                    if !has_false { missing.push("cap (false)".to_string()); }
+                }
+                
+                Ok(missing.join(", "))
+            }
+            _ => Ok("Use wildcard pattern (_) to handle all remaining cases".to_string()),
+        }
+    }
+
     fn check_boolean_exhaustiveness(&self) -> Result<bool, CursedError> {
         let mut has_true = false;
         let mut has_false = false;

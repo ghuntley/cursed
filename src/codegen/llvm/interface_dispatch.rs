@@ -142,6 +142,34 @@ impl InterfaceDispatchCodegen {
         Ok(())
     }
 
+    /// Generate type constraint checking for generic interfaces
+    pub fn generate_interface_constraints(
+        &mut self,
+        interface_name: &str,
+        type_parameters: &[crate::ast::TypeParameter],
+    ) -> Result<(), CursedError> {
+        // For each type parameter, generate constraint checking functions
+        for type_param in type_parameters {
+            let constraint_func_name = format!("{}_{}_constraint_check", interface_name, type_param.name);
+            
+            // Generate LLVM IR for constraint checking function
+            self.ir_code.push_str(&format!(
+                r#"
+define i1 @{}() {{
+entry:
+    ; Constraint checking for type parameter {}
+    ; For now, return true (constraints checked at compile time)
+    ret i1 true
+}}
+
+"#,
+                constraint_func_name, type_param.name
+            ));
+        }
+        
+        Ok(())
+    }
+
     /// Generate LLVM IR for interface type definition
     fn generate_interface_type_definition(&mut self, interface: &InterfaceStatement) -> Result<(), CursedError> {
         let interface_name = &interface.name;
@@ -153,26 +181,57 @@ impl InterfaceDispatchCodegen {
             methods.push(method_sig);
         }
         
+        // Handle generic interfaces with type parameters
+        let interface_full_name = if interface.type_parameters.is_empty() {
+            interface_name.clone()
+        } else {
+            let type_params: Vec<String> = interface.type_parameters.iter()
+                .map(|tp| tp.name.clone()).collect();
+            format!("{}<{}>", interface_name, type_params.join(", "))
+        };
+        
         // Generate LLVM type for interface
         let interface_llvm_type = format!("%interface.{}", interface_name);
         let vtable_type = format!("%vtable.{}", interface_name);
         
-        // Generate interface structure: { vtable_ptr, data_ptr }
-        self.ir_code.push_str(&format!(
-            "{} = type {{ {}*, i8* }}\n",
-            interface_llvm_type, vtable_type
-        ));
+        // Generate interface structure: { vtable_ptr, data_ptr, type_info }
+        // For generic interfaces, include type information
+        if interface.type_parameters.is_empty() {
+            self.ir_code.push_str(&format!(
+                "{} = type {{ {}*, i8* }}\n",
+                interface_llvm_type, vtable_type
+            ));
+        } else {
+            self.ir_code.push_str(&format!(
+                "{} = type {{ {}*, i8*, i8* }}\n",
+                interface_llvm_type, vtable_type
+            ));
+        }
         
-        // Generate vtable structure type
+        // Generate vtable structure type with generic support
         let vtable_methods: Vec<String> = methods.iter()
             .map(|m| self.get_llvm_function_type(&m.parameters, &m.return_type))
             .collect();
         
-        self.ir_code.push_str(&format!(
-            "{} = type {{ {} }}\n",
-            vtable_type,
-            vtable_methods.join(", ")
-        ));
+        // Add type parameter information to vtable for generic interfaces
+        if interface.type_parameters.is_empty() {
+            self.ir_code.push_str(&format!(
+                "{} = type {{ {} }}\n",
+                vtable_type,
+                vtable_methods.join(", ")
+            ));
+        } else {
+            self.ir_code.push_str(&format!(
+                "{} = type {{ i8*, {} }}\n",
+                vtable_type,
+                vtable_methods.join(", ")
+            ));
+        }
+        
+        // Generate type constraint checking functions for generic interfaces
+        if !interface.type_parameters.is_empty() {
+            self.generate_generic_interface_constraints(interface_name, &interface.type_parameters)?;
+        }
         
         // Store interface definition
         let interface_def = InterfaceDefinition {
@@ -678,6 +737,226 @@ entry:
         format!("{} ({})*", return_type_str, param_types.join(", "))
     }
 
+    /// Generate type constraint checking for generic interfaces
+    fn generate_generic_interface_constraints(&mut self, interface_name: &str, type_parameters: &[crate::ast::TypeParameter]) -> Result<(), CursedError> {
+        // Generate constraint checking function for each type parameter
+        for type_param in type_parameters {
+            let constraint_func_name = format!("check_constraint_{}_{}", interface_name, type_param.name);
+            
+            self.ir_code.push_str(&format!(
+                r#"
+; Type constraint checking for generic interface {} type parameter {}
+define i1 @{}(i8* %type_info) {{
+entry:
+"#,
+                interface_name, type_param.name, constraint_func_name
+            ));
+            
+            // Generate constraint checks for each bound
+            for (i, bound) in type_param.bounds.iter().enumerate() {
+                let check_label = format!("check_{}", i);
+                let success_label = format!("success_{}", i);
+                let fail_label = if i + 1 < type_param.bounds.len() {
+                    format!("check_{}", i + 1)
+                } else {
+                    "fail".to_string()
+                };
+                
+                self.ir_code.push_str(&format!(
+                    r#"    br label %{}
+
+{}:
+    %bound_check_{} = call i1 @check_type_implements_trait(i8* %type_info, i8* getelementptr inbounds ([{} x i8], [{} x i8]* @str.{}, i32 0, i32 0))
+    br i1 %bound_check_{}, label %{}, label %{}
+
+"#,
+                    check_label,
+                    check_label, i,
+                    bound.len() + 1, bound.len() + 1, bound,
+                    i, success_label, fail_label
+                ));
+                
+                if i + 1 == type_param.bounds.len() {
+                    self.ir_code.push_str(&format!(
+                        r#"{}:
+    ret i1 true
+
+"#,
+                        success_label
+                    ));
+                } else {
+                    self.ir_code.push_str(&format!(
+                        r#"{}:
+    br label %check_{}
+
+"#,
+                        success_label, i + 1
+                    ));
+                }
+            }
+            
+            if type_param.bounds.is_empty() {
+                self.ir_code.push_str("    ret i1 true\n");
+            } else {
+                self.ir_code.push_str(&format!(
+                    r#"fail:
+    ret i1 false
+"#
+                ));
+            }
+            
+            self.ir_code.push_str("}\n\n");
+        }
+        
+        // Generate generic interface instantiation function
+        self.generate_generic_interface_instantiation(interface_name, type_parameters)?;
+        
+        Ok(())
+    }
+
+    /// Generate generic interface instantiation function
+    fn generate_generic_interface_instantiation(&mut self, interface_name: &str, type_parameters: &[crate::ast::TypeParameter]) -> Result<(), CursedError> {
+        let instantiation_func_name = format!("instantiate_generic_interface_{}", interface_name);
+        
+        // Generate parameter list for type arguments
+        let type_param_args: Vec<String> = type_parameters.iter()
+            .enumerate()
+            .map(|(i, _)| format!("i8* %type_arg_{}", i))
+            .collect();
+        
+        self.ir_code.push_str(&format!(
+            r#"
+; Generic interface instantiation for {}
+define i8* @{}({}) {{
+entry:
+"#,
+            interface_name, instantiation_func_name, type_param_args.join(", ")
+        ));
+        
+        // Validate each type argument against constraints
+        for (i, type_param) in type_parameters.iter().enumerate() {
+            if !type_param.bounds.is_empty() {
+                let constraint_func_name = format!("check_constraint_{}_{}", interface_name, type_param.name);
+                self.ir_code.push_str(&format!(
+                    r#"    %constraint_check_{} = call i1 @{}(i8* %type_arg_{})
+    br i1 %constraint_check_{}, label %constraint_ok_{}, label %constraint_fail
+
+constraint_ok_{}:
+"#,
+                    i, constraint_func_name, i, i, i, i
+                ));
+            }
+        }
+        
+        // Create generic interface instance
+        self.ir_code.push_str(&format!(
+            r#"    ; Create generic interface instance
+    %interface_instance = call i8* @malloc(i64 {})
+    %interface_typed = bitcast i8* %interface_instance to %interface.{}*
+    
+    ; Initialize vtable pointer (will be set by implementation)
+    %vtable_ptr_ptr = getelementptr %interface.{}, %interface.{}* %interface_typed, i32 0, i32 0
+    store %vtable.{}* null, %vtable.{}** %vtable_ptr_ptr
+    
+    ; Initialize data pointer (will be set by implementation)
+    %data_ptr_ptr = getelementptr %interface.{}, %interface.{}* %interface_typed, i32 0, i32 1
+    store i8* null, i8** %data_ptr_ptr
+"#,
+            if type_parameters.is_empty() { 16 } else { 24 }, // size depends on whether we have type info
+            interface_name,
+            interface_name, interface_name,
+            interface_name, interface_name,
+            interface_name, interface_name
+        ));
+        
+        // For generic interfaces, store type information
+        if !type_parameters.is_empty() {
+            self.ir_code.push_str(&format!(
+                r#"    ; Store type information for generic interface
+    %type_info_ptr = getelementptr %interface.{}, %interface.{}* %interface_typed, i32 0, i32 2
+"#,
+                interface_name, interface_name
+            ));
+            
+            // Create type info array
+            self.ir_code.push_str(&format!(
+                r#"    %type_info_array = call i8* @malloc(i64 {})
+    store i8* %type_info_array, i8** %type_info_ptr
+"#,
+                type_parameters.len() * 8 // pointer size
+            ));
+            
+            // Store each type argument
+            for i in 0..type_parameters.len() {
+                self.ir_code.push_str(&format!(
+                    r#"    %type_slot_{} = getelementptr i8, i8* %type_info_array, i64 {}
+    %type_slot_ptr_{} = bitcast i8* %type_slot_{} to i8**
+    store i8* %type_arg_{}, i8** %type_slot_ptr_{}
+"#,
+                    i, i * 8, i, i, i, i
+                ));
+            }
+        }
+        
+        self.ir_code.push_str(&format!(
+            r#"    ret i8* %interface_instance
+
+constraint_fail:
+    ret i8* null
+}}
+
+"#
+        ));
+        
+        Ok(())
+    }
+
+    /// Generate monomorphized interface implementations
+    pub fn generate_monomorphized_interface(&mut self, interface_name: &str, concrete_types: &[String]) -> Result<String, CursedError> {
+        let monomorphized_name = if concrete_types.is_empty() {
+            interface_name.to_string()
+        } else {
+            format!("{}_{}", interface_name, concrete_types.join("_"))
+        };
+        
+        // Generate specialized interface type
+        let interface_llvm_type = format!("%interface.{}", monomorphized_name);
+        let vtable_type = format!("%vtable.{}", monomorphized_name);
+        
+        // Get base interface definition
+        if let Some(base_interface) = self.interfaces.get(interface_name) {
+            // Generate monomorphized interface structure
+            self.ir_code.push_str(&format!(
+                "{} = type {{ {}*, i8* }}\n",
+                interface_llvm_type, vtable_type
+            ));
+            
+            // Generate monomorphized vtable type
+            let vtable_methods: Vec<String> = base_interface.methods.iter()
+                .map(|m| {
+                    // Substitute concrete types in method signatures
+                    let specialized_sig = self.specialize_method_signature(m, concrete_types)?;
+                    Ok(self.get_llvm_function_type(&specialized_sig.parameters, &specialized_sig.return_type))
+                })
+                .collect::<Result<Vec<_>, CursedError>>()?;
+            
+            self.ir_code.push_str(&format!(
+                "{} = type {{ {} }}\n",
+                vtable_type,
+                vtable_methods.join(", ")
+            ));
+        }
+        
+        Ok(monomorphized_name)
+    }
+
+    /// Specialize method signature with concrete types
+    fn specialize_method_signature(&self, method: &InterfaceMethodSignature, concrete_types: &[String]) -> Result<InterfaceMethodSignature, CursedError> {
+        // This would substitute type parameters with concrete types
+        // For now, return the original signature
+        Ok(method.clone())
+    }
+
     /// Get generated LLVM IR code
     pub fn get_ir_code(&self) -> &str {
         &self.ir_code
@@ -795,6 +1074,7 @@ mod tests {
             name: "TestInterface".to_string(),
             type_parameters: vec![],
             extends: vec![],
+            compositions: vec![],
             methods: vec![
                 MethodSignature {
                     name: "test_method".to_string(),

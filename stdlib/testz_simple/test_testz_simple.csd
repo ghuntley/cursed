@@ -1,4 +1,4 @@
-yeet "testz_simple"
+yeet "testz"
 
 # Test the simplified testz module
 testz_simple.set_verbose_mode(based)

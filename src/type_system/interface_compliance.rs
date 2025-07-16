@@ -634,6 +634,7 @@ mod tests {
             name: "TestInterface".to_string(),
             type_parameters: vec![],
             extends: vec![],
+            compositions: vec![],
             methods: vec![
                 MethodSignature {
                     name: "test_method".to_string(),
@@ -658,6 +659,7 @@ mod tests {
             name: "TestInterface".to_string(),
             type_parameters: vec![],
             extends: vec![],
+            compositions: vec![],
             methods: vec![
                 MethodSignature {
                     name: "test_method".to_string(),
@@ -694,6 +696,7 @@ mod tests {
             name: "BaseInterface".to_string(),
             type_parameters: vec![],
             extends: vec![],
+            compositions: vec![],
             methods: vec![
                 MethodSignature {
                     name: "base_method".to_string(),
@@ -712,6 +715,7 @@ mod tests {
             name: "DerivedInterface".to_string(),
             type_parameters: vec![],
             extends: vec!["BaseInterface".to_string()],
+            compositions: vec![],
             methods: vec![
                 MethodSignature {
                     name: "derived_method".to_string(),

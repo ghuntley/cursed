@@ -1,7 +1,7 @@
 # CURSED Testing Framework v6.0 - Enhanced Production Tests
 # Comprehensive test suite that demonstrates ALL the new features
 
-yeet "testz/mod_enhanced_production"
+yeet "testz"
 
 # ================================
 # Test Suite: Framework Initialization and Configuration

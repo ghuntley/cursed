@@ -195,8 +195,16 @@ impl ExpressionCompiler {
                  self.ir_buffer.push_str(&format!("  {} = call i8* @cursed_recover()\n", recover_reg));
                  Ok(recover_reg)
              },
+              Expression::Match(match_expr) => {
+                     // TODO: Implement match expression compilation
+                  let match_reg = self.next_register();
+                  self.ir_buffer.push_str(&format!("  {} = alloca i32\n", match_reg));
+                  return Err(CursedError::TypeError(
+                      "Match expressions not yet implemented in LLVM codegen".to_string()
+                  ));
+              }
 
-         }
+          }
     }
 
     /// Compile increment expression (++variable or variable++)
