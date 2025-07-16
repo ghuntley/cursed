@@ -171,6 +171,8 @@ pub enum Expression {
     },
     // Pattern matching expression
     Match(MatchExpression),
+    // Type switch expression
+    TypeSwitch(TypeSwitchExpression),
 }
 
 /// Binary expression
@@ -329,6 +331,32 @@ pub enum MatchPattern {
     Tuple(Vec<MatchPattern>),
     /// Or pattern (x | y | z)
     Or(Vec<MatchPattern>),
+}
+
+/// Type switch expression for runtime type checking with variable binding
+#[derive(Debug, Clone)]
+pub struct TypeSwitchExpression {
+    pub variable: Box<Expression>,
+    pub arms: Vec<TypeSwitchArm>,
+}
+
+/// Type switch arm in a type switch expression
+#[derive(Debug, Clone)]
+pub struct TypeSwitchArm {
+    pub type_pattern: TypePattern,
+    pub bound_variable: Option<String>, // Variable binding for matched value
+    pub body: Expression,
+}
+
+/// Type pattern in type switch expression
+#[derive(Debug, Clone)]
+pub enum TypePattern {
+    /// Specific type (normie, tea, lit, etc.)
+    Type(Type),
+    /// Interface type
+    Interface(String),
+    /// Wildcard pattern (_) for default case
+    Wildcard,
 }
 
 /// TestResult construction expression (e.g., TestResult.pass(...))

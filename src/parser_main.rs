@@ -1,14 +1,23 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement, MatchExpression, MatchArm, MatchPattern};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement, MatchExpression, MatchArm, MatchPattern, TypeSwitchExpression, TypeSwitchArm, TypePattern};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
+use crate::error_recovery::{ErrorRecoveryManager, SourceLocation, ErrorContext, RecoveryStrategy, ParserState, ParserErrorRecovery};
 
 pub struct Parser {
     lexer: Lexer,
-    current_token: Option<Token>,
-    tokens: Vec<Token>,
-    token_index: usize,
+    pub current_token: Option<Token>,
+    pub tokens: Vec<Token>,
+    pub token_index: usize,
     error_count: usize,
+    pub error_recovery: ErrorRecoveryManager,
+    pub source_text: String,
+    pub filename: Option<String>,
+    pub current_line: usize,
+    pub current_column: usize,
+    pub scope_depth: usize,
+    pub in_function: bool,
+    pub in_loop: bool,
 }
 
 impl Parser {
@@ -23,6 +32,14 @@ impl Parser {
             tokens: Vec::new(),
             token_index: 0,
             error_count: 0,
+            error_recovery: ErrorRecoveryManager::new(),
+            source_text: String::new(),
+            filename: None,
+            current_line: 1,
+            current_column: 1,
+            scope_depth: 0,
+            in_function: false,
+            in_loop: false,
         })
     }
 
@@ -36,6 +53,14 @@ impl Parser {
             tokens: tokens,
             token_index: 0,
             error_count: 0,
+            error_recovery: ErrorRecoveryManager::new(),
+            source_text: String::new(),
+            filename: None,
+            current_line: 1,
+            current_column: 1,
+            scope_depth: 0,
+            in_function: false,
+            in_loop: false,
         }
     }
 
@@ -115,7 +140,7 @@ impl Parser {
         vec![]
     }
 
-    fn next_token(&mut self) -> Result<()> {
+    pub fn next_token(&mut self) -> Result<()> {
         if !self.tokens.is_empty() {
             // Using tokens list (for testing)
             self.token_index += 1;
@@ -147,7 +172,7 @@ impl Parser {
         }
     }
     
-    fn advance_token(&mut self) {
+    pub fn advance_token(&mut self) {
         let _ = self.next_token();
     }
 
@@ -155,7 +180,7 @@ impl Parser {
         self.current_token.as_ref()
     }
     
-    fn parse_statement(&mut self) -> Result<Option<Statement>> {
+    pub fn parse_statement(&mut self) -> Result<Option<Statement>> {
         let token = match self.current_token.as_ref() {
             Some(token) => token,
             None => return Ok(None),
@@ -995,6 +1020,10 @@ impl Parser {
                 TokenKind::Match => {
                     // Parse match expression
                     return self.parse_match_expression();
+                }
+                TokenKind::TypeCheck => {
+                    // Parse type switch expression
+                    return self.parse_type_switch_expression();
                 }
                 TokenKind::Truth | TokenKind::Based => {
                     // Parse boolean literal
@@ -4154,6 +4183,154 @@ impl Parser {
                 }
             }
             None => Err(Error::Parse("Unexpected end of input in simple match pattern".to_string())),
+        }
+    }
+
+    /// Parse type switch expression (typecheck variable is { type -> expression, ... })
+    fn parse_type_switch_expression(&mut self) -> Result<Expression> {
+        // Consume 'typecheck' keyword
+        self.next_token()?;
+        
+        // Parse variable to check type of
+        let variable = Box::new(self.parse_expression()?);
+        
+        // Expect 'is' keyword
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier && token.lexeme == "is" => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected 'is' after typecheck variable".to_string())),
+        }
+        
+        // Expect '{'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::LeftBrace => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '{' after 'typecheck variable is'".to_string())),
+        }
+        
+        let mut arms = Vec::new();
+        
+        // Parse type switch arms
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                self.next_token()?;
+                break;
+            }
+            
+            // Skip newlines
+            if token.kind == TokenKind::Newline {
+                self.next_token()?;
+                continue;
+            }
+            
+            // Parse type pattern
+            let type_pattern = self.parse_type_pattern()?;
+            
+            // Optional variable binding (variable_name)
+            let bound_variable = if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Identifier {
+                    let var_name = token.lexeme.clone();
+                    self.next_token()?;
+                    Some(var_name)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            
+            // Expect '->'
+            match self.current_token.as_ref() {
+                Some(token) if token.kind == TokenKind::Arrow => {
+                    self.next_token()?;
+                }
+                _ => return Err(Error::Parse("Expected '->' after type pattern".to_string())),
+            }
+            
+            // Parse arm body (expression)
+            let body = self.parse_expression()?;
+            
+            arms.push(TypeSwitchArm {
+                type_pattern,
+                bound_variable,
+                body,
+            });
+            
+            // Optional comma
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Comma {
+                    self.next_token()?;
+                }
+            }
+        }
+        
+        Ok(Expression::TypeSwitch(TypeSwitchExpression { variable, arms }))
+    }
+
+    /// Parse type pattern for type switch
+    fn parse_type_pattern(&mut self) -> Result<TypePattern> {
+        match self.current_token.as_ref() {
+            Some(token) => {
+                match &token.kind {
+                    TokenKind::Identifier => {
+                        let name = token.lexeme.clone();
+                        self.next_token()?;
+                        
+                        if name == "_" {
+                            Ok(TypePattern::Wildcard)
+                        } else {
+                            // Check if it's an interface name (starts with uppercase)
+                            if name.chars().next().unwrap_or('a').is_uppercase() {
+                                Ok(TypePattern::Interface(name))
+                            } else {
+                                // It's a type name, create a Type::Custom
+                                Ok(TypePattern::Type(Type::Custom(name)))
+                            }
+                        }
+                    }
+                    // CURSED type keywords
+                    TokenKind::Normie => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Normie))
+                    }
+                    TokenKind::Tea => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Tea))
+                    }
+                    TokenKind::Lit => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Lit))
+                    }
+                    TokenKind::Sip => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Sip))
+                    }
+                    TokenKind::Smol => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Smol))
+                    }
+                    TokenKind::Mid => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Mid))
+                    }
+                    TokenKind::Thicc => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Thicc))
+                    }
+                    TokenKind::Snack => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Snack))
+                    }
+                    TokenKind::Meal => {
+                        self.next_token()?;
+                        Ok(TypePattern::Type(Type::Meal))
+                    }
+                    _ => Err(Error::Parse("Invalid type pattern".to_string())),
+                }
+            }
+            None => Err(Error::Parse("Unexpected end of input in type pattern".to_string())),
         }
     }
 }

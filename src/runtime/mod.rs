@@ -31,6 +31,7 @@ pub mod jit_runtime;
 pub mod borrowing;
 pub mod interface_dispatch;
 pub mod type_assertion;
+pub mod type_switch;
 
 // Test modules
 #[cfg(test)]

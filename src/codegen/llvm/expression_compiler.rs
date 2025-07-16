@@ -200,9 +200,15 @@ impl ExpressionCompiler {
                   let match_reg = self.next_register();
                   self.ir_buffer.push_str(&format!("  {} = alloca i32\n", match_reg));
                   return Err(CursedError::TypeError(
-                      "Match expressions not yet implemented in LLVM codegen".to_string()
+                  "Match expressions not yet implemented in LLVM codegen".to_string()
                   ));
-              }
+                  }
+               &crate::ast::Expression::TypeSwitch(_) => {
+                           // Type switch expressions are handled by the main code generator
+                   return Err(CursedError::TypeError(
+                       "Type switch expressions should be handled by main code generator".to_string()
+                   ));
+               }
 
           }
     }

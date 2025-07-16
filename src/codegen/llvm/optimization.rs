@@ -175,10 +175,16 @@ impl<'ctx> OptimizationManager<'ctx> {
     pub fn optimize_module(&mut self, module: &Module<'ctx>) -> Result<()> {
         let start_time = Instant::now();
         
-        // Create function pass manager
-        let fpm = PassManager::create(module);
+        // Phase 1: Interface optimization (before general inlining)
+        if self.config.enable_cursed_specific && self.config.level != OptimizationLevel::O0 {
+            self.run_interface_optimization(module)?;
+        }
         
-        // Add optimization passes based on configuration
+        // Phase 2: Function inlining
+        self.run_inlining(module)?;
+        
+        // Phase 3: Traditional LLVM passes
+        let fpm = PassManager::create(module);
         self.add_optimization_passes(&fpm)?;
         
         // Initialize pass manager
@@ -265,6 +271,34 @@ impl<'ctx> OptimizationManager<'ctx> {
         
         eprintln!("Inlining pass completed: {} functions inlined, {} calls inlined, {} functions removed", 
                  result.functions_inlined, result.total_calls_inlined, result.functions_removed);
+        
+        Ok(())
+    }
+
+    /// Run interface optimization pass
+    pub fn run_interface_optimization(&mut self, module: &Module<'ctx>) -> Result<()> {
+        use crate::codegen::llvm::interface_optimization::{InterfaceOptimizationPass, InterfaceOptimizationConfig};
+        
+        let opt_level = match self.config.level {
+            OptimizationLevel::O0 => 0,
+            OptimizationLevel::O1 => 1,
+            OptimizationLevel::O2 | OptimizationLevel::Default => 2,
+            OptimizationLevel::O3 => 3,
+            OptimizationLevel::Os | OptimizationLevel::Oz => 2,
+        };
+        
+        let interface_config = InterfaceOptimizationConfig::for_level(opt_level);
+        let mut interface_pass = InterfaceOptimizationPass::new(self.context, interface_config);
+        
+        // Run interface optimization
+        let result = interface_pass.run(module)?;
+        
+        // Update statistics
+        self.stats.functions_optimized += result.methods_inlined as usize;
+        self.stats.passes_run += 1;
+        
+        eprintln!("Interface optimization completed: {} calls analyzed, {} methods inlined, {} calls devirtualized, {:.2}% performance improvement", 
+                 result.calls_analyzed, result.methods_inlined, result.devirtualized_calls, result.performance_improvement);
         
         Ok(())
     }

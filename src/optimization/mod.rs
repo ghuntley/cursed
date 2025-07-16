@@ -35,6 +35,9 @@ pub mod enhanced_performance_monitor;
 pub mod comprehensive_benchmarking;
 pub mod advanced_llvm_passes;
 
+// Complete optimization system modules (remaining 15%)
+pub mod llvm_optimization_complete;
+
 // Re-export key types
 pub use config::{OptimizationConfig, OptimizationLevel, OptimizationProfile};
 pub use real_llvm_passes::RealLlvmPassManager;
@@ -74,6 +77,12 @@ pub use optimization_levels::{
 pub use advanced_llvm_passes::{
     AdvancedLlvmPassManager, AdvancedOptimizationConfig, PgoManager, OptimizationResult as AdvancedOptimizationResult,
     OptimizationStats as AdvancedOptimizationStats, BenchmarkReport, LtoLevel, SizeOptLevel, PassPipeline
+};
+
+// Complete optimization system exports
+pub use llvm_optimization_complete::{
+    CompleteLlvmOptimizer, CompleteOptimizationResult, CompleteOptimizationStats,
+    MemoryPressure, InliningConfiguration, RecommendationType
 };
 
 // Stub types that examples are trying to import
