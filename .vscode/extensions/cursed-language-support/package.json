@@ -1,0 +1,213 @@
+{
+  "name": "cursed-language-support",
+  "displayName": "CURSED Language Support",
+  "description": "Language support for CURSED programming language with LSP integration",
+  "version": "1.0.0",
+  "publisher": "cursed-lang",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Syntax Highlighters",
+    "Linters",
+    "Debuggers"
+  ],
+  "keywords": [
+    "cursed",
+    "language server",
+    "syntax highlighting",
+    "lsp"
+  ],
+  "activationEvents": [
+    "onLanguage:cursed"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "cursed",
+        "aliases": [
+          "CURSED",
+          "cursed"
+        ],
+        "extensions": [
+          ".csd"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/cursed-light.svg",
+          "dark": "./icons/cursed-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cursed",
+        "scopeName": "source.cursed",
+        "path": "./syntaxes/cursed.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "CURSED Language Server",
+      "properties": {
+        "cursed.languageServer.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable CURSED language server"
+        },
+        "cursed.languageServer.path": {
+          "type": "string",
+          "default": "cursed",
+          "description": "Path to CURSED language server executable"
+        },
+        "cursed.languageServer.arguments": {
+          "type": "array",
+          "default": ["lsp"],
+          "description": "Arguments to pass to CURSED language server"
+        },
+        "cursed.diagnostics.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CURSED diagnostics"
+        },
+        "cursed.completion.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CURSED code completion"
+        },
+        "cursed.highlighting.semantic": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable semantic highlighting for CURSED"
+        },
+        "cursed.formatting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CURSED code formatting"
+        },
+        "cursed.vibe.mode": {
+          "type": "string",
+          "enum": ["standard", "extra", "maximum"],
+          "default": "standard",
+          "description": "CURSED vibe intensity level"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "cursed.compile",
+        "title": "Compile CURSED File",
+        "category": "CURSED"
+      },
+      {
+        "command": "cursed.run",
+        "title": "Run CURSED File",
+        "category": "CURSED"
+      },
+      {
+        "command": "cursed.format",
+        "title": "Format CURSED File",
+        "category": "CURSED"
+      },
+      {
+        "command": "cursed.showAST",
+        "title": "Show AST",
+        "category": "CURSED"
+      },
+      {
+        "command": "cursed.toggleVibe",
+        "title": "Toggle Vibe Mode",
+        "category": "CURSED"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "cursed.compile",
+        "key": "ctrl+shift+c",
+        "when": "editorTextFocus && resourceExtname == .csd"
+      },
+      {
+        "command": "cursed.run",
+        "key": "ctrl+shift+r",
+        "when": "editorTextFocus && resourceExtname == .csd"
+      },
+      {
+        "command": "cursed.format",
+        "key": "shift+alt+f",
+        "when": "editorTextFocus && resourceExtname == .csd"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.compile",
+          "group": "cursed@1"
+        },
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.run",
+          "group": "cursed@2"
+        },
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.format",
+          "group": "cursed@3"
+        },
+        {
+          "when": "resourceExtname == .csd",
+          "command": "cursed.showAST",
+          "group": "cursed@4"
+        }
+      ]
+    },
+    "problemMatchers": [
+      {
+        "name": "cursed",
+        "owner": "cursed",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "cursed",
+        "required": [
+          "task"
+        ],
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "The CURSED task to execute"
+          },
+          "file": {
+            "type": "string",
+            "description": "The CURSED file to process"
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "^16.x",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0"
+  }
+}

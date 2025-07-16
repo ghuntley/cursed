@@ -1,7 +1,7 @@
 # CURSED Testing Framework v3.0 - Enhanced Simple Tests
 # Comprehensive test suite for the enhanced simple testing framework
 
-yeet "testz/mod_enhanced_simple"
+yeet "testz"
 
 # ================================
 # Test Suite: Basic Functionality

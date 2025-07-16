@@ -1,6 +1,10 @@
 yeet "testz"
+yeet "concurrenz"
+yeet "memory"
+yeet "time"
 
-fr fr SusContainers - data structures with specialized access patterns
+fr fr SusContainers - Production-ready container data structures
+fr fr Complete collection of thread-safe and high-performance data structures
 
 collab SusHeapInterface {
     Len() normie

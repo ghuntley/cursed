@@ -1,5 +1,7 @@
-slay add(x normie, y normie) normie {
-    damn x + y
+sus test_value normie = 42
+
+slay simple_function() tea {
+    damn "working"
 }
 
-vibez.spill(add(5, 3))
+vibez.spill(simple_function())

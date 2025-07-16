@@ -1,7 +1,7 @@
 //! Enhanced interface parsing for CURSED language
 //! Supports generic interfaces, constraints, and method definitions
 
-use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type, Visibility};
+use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type, Visibility, InterfaceComposition};
 use crate::lexer::{Token, TokenKind};
 use crate::error_types::{Error, Result};
 use crate::parser::Parser;
@@ -53,10 +53,14 @@ impl Parser {
             }
         }
         
-        // Parse interface inheritance (extends keyword)
+        // Parse interface inheritance and composition
         let mut extends = Vec::new();
-        if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Extends) {
-            self.next_token()?; // consume 'extends'
+        let mut compositions = Vec::new();
+        
+        // Parse extends clause
+        if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Extends) ||
+           self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Colon) {
+            self.next_token()?; // consume 'extends' or ':'
             
             // Parse first parent interface
             if let Some(token) = self.current_token.as_ref() {
@@ -66,7 +70,7 @@ impl Parser {
                 }
             }
             
-            // Parse additional parent interfaces
+            // Parse additional parent interfaces (comma-separated)
             while self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Comma) {
                 self.next_token()?; // consume ','
                 if let Some(token) = self.current_token.as_ref() {
@@ -74,6 +78,23 @@ impl Parser {
                         extends.push(token.lexeme.clone());
                         self.next_token()?;
                     }
+                }
+            }
+        }
+        
+        // Parse composition clause (with keyword)
+        if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::With) {
+            self.next_token()?; // consume 'with'
+            
+            // Parse composition list
+            loop {
+                let composition = self.parse_interface_composition()?;
+                compositions.push(composition);
+                
+                if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Comma) {
+                    self.next_token()?; // consume ','
+                } else {
+                    break;
                 }
             }
         }
@@ -104,6 +125,9 @@ impl Parser {
         
         Ok(InterfaceStatement {
             name,
+            type_parameters,
+            extends,
+            compositions,
             methods,
             visibility: Visibility::Public,
         })
@@ -223,6 +247,98 @@ impl Parser {
         Ok(parameters)
     }
     
+    /// Parse interface composition
+    fn parse_interface_composition(&mut self) -> Result<InterfaceComposition> {
+        // Parse composed interface name
+        let composed_interface = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.next_token()?;
+                name
+            }
+            _ => return Err(Error::ParseError("Expected interface name in composition".to_string())),
+        };
+        
+        let mut alias = None;
+        let mut excluded_methods = Vec::new();
+        let mut method_renames = std::collections::HashMap::new();
+        
+        // Parse composition modifiers
+        while self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::Comma) &&
+              self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::LeftBrace) {
+            
+            match self.current_token.as_ref().map(|t| &t.kind) {
+                Some(TokenKind::As) => {
+                    // Parse alias: "with SomeInterface as Alias"
+                    self.next_token()?; // consume 'as'
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Identifier {
+                            alias = Some(token.lexeme.clone());
+                            self.next_token()?;
+                        }
+                    }
+                },
+                Some(TokenKind::Except) => {
+                    // Parse exclusions: "with SomeInterface except method1, method2"
+                    self.next_token()?; // consume 'except'
+                    loop {
+                        if let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Identifier {
+                                excluded_methods.push(token.lexeme.clone());
+                                self.next_token()?;
+                            }
+                        }
+                        
+                        if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Comma) {
+                            self.next_token()?; // consume ','
+                        } else {
+                            break;
+                        }
+                    }
+                },
+                Some(TokenKind::Rename) => {
+                    // Parse renames: "with SomeInterface rename oldMethod -> newMethod"
+                    self.next_token()?; // consume 'rename'
+                    loop {
+                        let old_name = match self.current_token.as_ref() {
+                            Some(token) if token.kind == TokenKind::Identifier => {
+                                let name = token.lexeme.clone();
+                                self.next_token()?;
+                                name
+                            }
+                            _ => break,
+                        };
+                        
+                        if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Arrow) {
+                            self.next_token()?; // consume '->'
+                            if let Some(token) = self.current_token.as_ref() {
+                                if token.kind == TokenKind::Identifier {
+                                    let new_name = token.lexeme.clone();
+                                    self.next_token()?;
+                                    method_renames.insert(old_name, new_name);
+                                }
+                            }
+                        }
+                        
+                        if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::Comma) {
+                            self.next_token()?; // consume ','
+                        } else {
+                            break;
+                        }
+                    }
+                },
+                _ => break,
+            }
+        }
+        
+        Ok(InterfaceComposition {
+            composed_interface,
+            alias,
+            excluded_methods,
+            method_renames,
+        })
+    }
+
     /// Skip a block (for default implementations)
     fn skip_block(&mut self) -> Result<()> {
         if self.current_token.as_ref().map(|t| &t.kind) == Some(&TokenKind::LeftBrace) {

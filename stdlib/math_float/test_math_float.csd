@@ -1,5 +1,5 @@
 // Comprehensive Tests for Pure CURSED Math Float Module
-yeet "../testz/mod"
+yeet "testz"
 yeet "mod"
 
 // ================================

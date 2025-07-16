@@ -1,5 +1,5 @@
 yeet "testz"
-yeet "enhanced_testz"
+yeet "testz"
 
 # Build system integration for the enhanced testz framework
 

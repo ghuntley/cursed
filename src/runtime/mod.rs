@@ -28,6 +28,7 @@ pub mod runtime_value;
 pub mod debug_output;
 pub mod unicode_char;
 pub mod jit_runtime;
+pub mod borrowing;
 pub mod interface_dispatch;
 pub mod type_assertion;
 

@@ -1269,9 +1269,8 @@ impl CursedExecutionEngine {
                 context.set_type_alias(type_alias.name.clone(), type_alias.target_type.clone());
                 Ok(ExecutionFlow::Continue(CursedValue::Nil))
             },
-            Statement::PatternSwitch(_) => {
-                // Pattern switch statements not yet implemented in execution engine
-                Err(CursedError::runtime_error("Pattern switch statements not yet implemented in execution engine"))
+            Statement::PatternSwitch(pattern_switch) => {
+                self.execute_pattern_switch(pattern_switch, context)
             },
         }
     }
@@ -1472,10 +1471,168 @@ impl CursedExecutionEngine {
                 // Recover expression - for now, returns nil (TODO: implement proper panic recovery)
                 Ok(CursedValue::Nil)
             },
+            Expression::Match(match_expr) => {
+                // Evaluate match expression
+                self.evaluate_match_expression(match_expr, context)
+            },
 
         }
     }
     
+    /// Evaluate match expression with pattern matching
+    fn evaluate_match_expression(&mut self, match_expr: &crate::ast::MatchExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        // Evaluate the value to match against
+        let match_value = self.evaluate_expression(&match_expr.value, context)?;
+        
+        // Try each match arm in order
+        for arm in &match_expr.arms {
+            // Check if the pattern matches
+            if let Some(bindings) = self.pattern_matches(&match_value, &arm.pattern, context)? {
+                // Apply variable bindings from the pattern
+                let mut arm_context = context.create_nested_scope();
+                for (var_name, var_value) in bindings {
+                    arm_context.set_variable(var_name, var_value);
+                }
+                
+                // Check guard condition if present
+                if let Some(guard) = &arm.guard {
+                    let guard_result = self.evaluate_expression(guard, &mut arm_context)?;
+                    match guard_result {
+                        CursedValue::Boolean(true) => {
+                            // Guard passed, execute arm body
+                            return self.evaluate_expression(&arm.body, &mut arm_context);
+                        },
+                        CursedValue::Boolean(false) => {
+                            // Guard failed, continue to next arm
+                            continue;
+                        },
+                        _ => {
+                            return Err(CursedError::runtime_error("Guard condition must evaluate to boolean"));
+                        }
+                    }
+                } else {
+                    // No guard, execute arm body
+                    return self.evaluate_expression(&arm.body, &mut arm_context);
+                }
+            }
+        }
+        
+        // No patterns matched - this should trigger exhaustiveness error
+        Err(CursedError::runtime_error("Non-exhaustive pattern match"))
+    }
+    
+    /// Check if a pattern matches a value, returning variable bindings if it matches
+    fn pattern_matches(
+        &mut self,
+        value: &CursedValue,
+        pattern: &crate::ast::MatchPattern,
+        context: &mut ExecutionContext
+    ) -> Result<Option<HashMap<String, CursedValue>>, CursedError> {
+        let mut bindings = HashMap::new();
+        
+        let matches = match pattern {
+            crate::ast::MatchPattern::Wildcard => {
+                // Wildcard always matches
+                true
+            },
+            
+            crate::ast::MatchPattern::Variable(var_name) => {
+                // Variable pattern always matches and binds the value
+                bindings.insert(var_name.clone(), value.clone());
+                true
+            },
+            
+            crate::ast::MatchPattern::Literal(expr) => {
+                // Evaluate the literal pattern and compare
+                let pattern_value = self.evaluate_expression(expr, context)?;
+                self.values_equal(value, &pattern_value)
+            },
+            
+            crate::ast::MatchPattern::Range { start, end, inclusive } => {
+                // Evaluate range bounds
+                let start_value = self.evaluate_expression(start, context)?;
+                let end_value = self.evaluate_expression(end, context)?;
+                
+                match (value, &start_value, &end_value) {
+                    (CursedValue::Integer(v), CursedValue::Integer(s), CursedValue::Integer(e)) => {
+                        if *inclusive {
+                            *v >= *s && *v <= *e
+                        } else {
+                            *v >= *s && *v < *e
+                        }
+                    },
+                    (CursedValue::Float(v), CursedValue::Float(s), CursedValue::Float(e)) => {
+                        if *inclusive {
+                            *v >= *s && *v <= *e
+                        } else {
+                            *v >= *s && *v < *e
+                        }
+                    },
+                    _ => false, // Type mismatch
+                }
+            },
+            
+            crate::ast::MatchPattern::Tuple(patterns) => {
+                // Match tuple elements
+                if let CursedValue::Tuple(elements) = value {
+                    if patterns.len() != elements.len() {
+                        false
+                    } else {
+                        let mut all_match = true;
+                        for (pattern, element) in patterns.iter().zip(elements.iter()) {
+                            if let Some(element_bindings) = self.pattern_matches(element, pattern, context)? {
+                                bindings.extend(element_bindings);
+                            } else {
+                                all_match = false;
+                                break;
+                            }
+                        }
+                        all_match
+                    }
+                } else {
+                    false
+                }
+            },
+            
+            crate::ast::MatchPattern::Or(patterns) => {
+                // Try each alternative pattern
+                for pattern in patterns {
+                    if let Some(pattern_bindings) = self.pattern_matches(value, pattern, context)? {
+                        bindings.extend(pattern_bindings);
+                        return Ok(Some(bindings));
+                    }
+                }
+                false
+            },
+        };
+        
+        if matches {
+            Ok(Some(bindings))
+        } else {
+            Ok(None)
+        }
+    }
+    
+    /// Check if two values are equal
+    fn values_equal(&self, a: &CursedValue, b: &CursedValue) -> bool {
+        match (a, b) {
+            (CursedValue::Integer(a), CursedValue::Integer(b)) => a == b,
+            (CursedValue::Float(a), CursedValue::Float(b)) => (a - b).abs() < f64::EPSILON,
+            (CursedValue::String(a), CursedValue::String(b)) => a == b,
+            (CursedValue::Boolean(a), CursedValue::Boolean(b)) => a == b,
+            (CursedValue::Character(a), CursedValue::Character(b)) => a == b,
+            (CursedValue::Nil, CursedValue::Nil) => true,
+            (CursedValue::Struct(a), CursedValue::Struct(b)) => {
+                // Compare struct fields recursively
+                a.len() == b.len() && a.iter().all(|(k, v)| b.get(k).map_or(false, |v2| self.values_equal(v, v2)))
+            },
+            // Allow integer-float comparison
+            (CursedValue::Integer(a), CursedValue::Float(b)) => *a as f64 == *b,
+            (CursedValue::Float(a), CursedValue::Integer(b)) => *a == *b as f64,
+            _ => false,
+        }
+    }
+
     /// Evaluate increment expression (++variable or variable++)
     fn evaluate_increment_expression(&mut self, inc_expr: &crate::ast::IncrementExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
         let current_value = context.get_variable(&inc_expr.variable)
@@ -2614,23 +2771,7 @@ impl CursedExecutionEngine {
         }
     }
     
-    fn values_equal(&self, left: &CursedValue, right: &CursedValue) -> bool {
-        match (left, right) {
-            (CursedValue::Integer(a), CursedValue::Integer(b)) => a == b,
-            (CursedValue::Float(a), CursedValue::Float(b)) => a == b,
-            (CursedValue::String(a), CursedValue::String(b)) => a == b,
-            (CursedValue::Boolean(a), CursedValue::Boolean(b)) => a == b,
-            (CursedValue::Nil, CursedValue::Nil) => true,
-            (CursedValue::Struct(a), CursedValue::Struct(b)) => {
-                // Compare struct fields
-                a.len() == b.len() && a.iter().all(|(k, v)| b.get(k).map_or(false, |v2| self.values_equal(v, v2)))
-            },
-            // Allow integer-float comparison
-            (CursedValue::Integer(a), CursedValue::Float(b)) => *a as f64 == *b,
-            (CursedValue::Float(a), CursedValue::Integer(b)) => *a == *b as f64,
-            _ => false,
-        }
-    }
+
 
     /// Evaluate struct literal expression
     fn evaluate_struct_literal(&mut self, struct_literal: &crate::ast::StructLiteralExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
@@ -3115,6 +3256,205 @@ impl CursedExecutionEngine {
         // we'll return nil to avoid hanging
         log::info!("📺 Select: no default case, returning nil for now");
         Ok(ExecutionFlow::Continue(CursedValue::Nil))
+    }
+
+    fn execute_pattern_switch(&mut self, pattern_switch: &crate::ast::PatternSwitchStatement, context: &mut ExecutionContext) -> Result<ExecutionFlow, CursedError> {
+        use crate::ast::{PatternExpression, PatternSwitchCase};
+        
+        log::debug!("🔍 Executing pattern switch statement");
+        
+        // Execute initialization statement if present
+        if let Some(init) = &pattern_switch.init {
+            match self.execute_statement(init, context)? {
+                ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                ExecutionFlow::Continue(label) => return Ok(ExecutionFlow::Continue(label)),
+                ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                ExecutionFlow::Error(value) => return Ok(ExecutionFlow::Error(value)),
+            }
+        }
+        
+        // Evaluate the expression to match against
+        let match_value = self.evaluate_expression(&pattern_switch.expression, context)?;
+        log::debug!("🔍 Match value: {:?}", match_value);
+        
+        // Try each pattern case
+        for case in &pattern_switch.cases {
+            if self.match_pattern(&case.pattern, &match_value, context)? {
+                log::debug!("🔍 Pattern matched, checking guard");
+                
+                // Check guard condition if present
+                if let Some(guard) = &case.guard {
+                    let guard_result = self.evaluate_expression(guard, context)?;
+                    if !self.is_truthy(&guard_result) {
+                        log::debug!("🔍 Guard failed, trying next pattern");
+                        continue;
+                    }
+                }
+                
+                log::debug!("🔍 Executing pattern case body");
+                // Execute the case body
+                for statement in &case.body {
+                    match self.execute_statement(statement, context)? {
+                        ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                        ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                        ExecutionFlow::Continue(label) => return Ok(ExecutionFlow::Continue(label)),
+                        ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                        ExecutionFlow::Error(value) => return Ok(ExecutionFlow::Error(value)),
+                    }
+                }
+                
+                // Pattern matched and executed, return
+                return Ok(ExecutionFlow::Continue(CursedValue::Nil));
+            }
+        }
+        
+        // No pattern matched, execute default case if present
+        if let Some(default_body) = &pattern_switch.default_case {
+            log::debug!("🔍 No pattern matched, executing default case");
+            for statement in default_body {
+                match self.execute_statement(statement, context)? {
+                    ExecutionFlow::Return(value) => return Ok(ExecutionFlow::Return(value)),
+                    ExecutionFlow::Break(label) => return Ok(ExecutionFlow::Break(label)),
+                    ExecutionFlow::Continue(label) => return Ok(ExecutionFlow::Continue(label)),
+                    ExecutionFlow::NextIteration(label) => return Ok(ExecutionFlow::NextIteration(label)),
+                    ExecutionFlow::Error(value) => return Ok(ExecutionFlow::Error(value)),
+                }
+            }
+        }
+        
+        Ok(ExecutionFlow::Continue(CursedValue::Nil))
+    }
+    
+    fn match_pattern(&mut self, pattern: &crate::ast::PatternExpression, value: &CursedValue, context: &mut ExecutionContext) -> Result<bool, CursedError> {
+        use crate::ast::PatternExpression;
+        
+        log::debug!("🔍 Matching pattern {:?} against value {:?}", pattern, value);
+        
+        match pattern {
+            PatternExpression::Wildcard => {
+                log::debug!("🔍 Wildcard pattern always matches");
+                Ok(true)
+            },
+            
+            PatternExpression::Variable(name) => {
+                log::debug!("🔍 Variable pattern '{}' binds to value", name);
+                context.set_variable(name.clone(), value.clone());
+                Ok(true)
+            },
+            
+            PatternExpression::Literal(expr) => {
+                let pattern_value = self.evaluate_expression(expr, context)?;
+                let matches = self.values_equal(&pattern_value, value);
+                log::debug!("🔍 Literal pattern matches: {}", matches);
+                Ok(matches)
+            },
+            
+            PatternExpression::Range { start, end, inclusive } => {
+                let start_val = self.evaluate_expression(start, context)?;
+                let end_val = self.evaluate_expression(end, context)?;
+                
+                match (value, &start_val, &end_val) {
+                    (CursedValue::Integer(v), CursedValue::Integer(s), CursedValue::Integer(e)) => {
+                        let in_range = if *inclusive {
+                            v >= s && v <= e
+                        } else {
+                            v >= s && v < e
+                        };
+                        log::debug!("🔍 Integer range pattern matches: {}", in_range);
+                        Ok(in_range)
+                    },
+                    (CursedValue::Float(v), CursedValue::Float(s), CursedValue::Float(e)) => {
+                        let in_range = if *inclusive {
+                            v >= s && v <= e
+                        } else {
+                            v >= s && v < e
+                        };
+                        log::debug!("🔍 Float range pattern matches: {}", in_range);
+                        Ok(in_range)
+                    },
+                    (CursedValue::Character(v), CursedValue::Character(s), CursedValue::Character(e)) => {
+                        let in_range = if *inclusive {
+                            v >= s && v <= e
+                        } else {
+                            v >= s && v < e
+                        };
+                        log::debug!("🔍 Character range pattern matches: {}", in_range);
+                        Ok(in_range)
+                    },
+                    _ => {
+                        log::debug!("🔍 Range pattern type mismatch");
+                        Ok(false)
+                    }
+                }
+            },
+            
+            PatternExpression::Tuple(patterns) => {
+                match value {
+                    CursedValue::Tuple(values) => {
+                        if patterns.len() != values.len() {
+                            log::debug!("🔍 Tuple pattern length mismatch");
+                            return Ok(false);
+                        }
+                        
+                        for (pattern, value) in patterns.iter().zip(values.iter()) {
+                            if !self.match_pattern(pattern, value, context)? {
+                                log::debug!("🔍 Tuple sub-pattern failed to match");
+                                return Ok(false);
+                            }
+                        }
+                        
+                        log::debug!("🔍 Tuple pattern matches");
+                        Ok(true)
+                    },
+                    _ => {
+                        log::debug!("🔍 Tuple pattern against non-tuple value");
+                        Ok(false)
+                    }
+                }
+            },
+            
+            PatternExpression::Array { patterns, rest: _ } => {
+                match value {
+                    CursedValue::Array(values) => {
+                        if patterns.len() > values.len() {
+                            log::debug!("🔍 Array pattern too many elements");
+                            return Ok(false);
+                        }
+                        
+                        for (i, pattern) in patterns.iter().enumerate() {
+                            if !self.match_pattern(pattern, &values[i], context)? {
+                                log::debug!("🔍 Array sub-pattern failed to match at index {}", i);
+                                return Ok(false);
+                            }
+                        }
+                        
+                        log::debug!("🔍 Array pattern matches");
+                        Ok(true)
+                    },
+                    _ => {
+                        log::debug!("🔍 Array pattern against non-array value");
+                        Ok(false)
+                    }
+                }
+            },
+            
+            PatternExpression::Or(patterns) => {
+                for pattern in patterns {
+                    if self.match_pattern(pattern, value, context)? {
+                        log::debug!("🔍 Or pattern matched variant");
+                        return Ok(true);
+                    }
+                }
+                log::debug!("🔍 Or pattern no variants matched");
+                Ok(false)
+            },
+            
+            _ => {
+                log::warn!("🔍 Unimplemented pattern type: {:?}", pattern);
+                Err(CursedError::runtime_error(&format!("Unimplemented pattern type: {:?}", pattern)))
+            }
+        }
     }
 }
 

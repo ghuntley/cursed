@@ -1,7 +1,7 @@
 fr fr Test TestResult Type System Implementation
 fr fr Comprehensive testing of the new TestResult functionality
 
-yeet "testz/mod_enhanced"
+yeet "testz"
 
 fr fr ================================
 fr fr Test TestResult Basic Functionality

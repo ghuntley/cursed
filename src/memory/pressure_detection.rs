@@ -433,12 +433,30 @@ impl PressureDetector {
             timestamp: Instant::now(),
             usage: current_usage,
             allocation_rate: self.calculate_allocation_rate(),
-            gc_frequency: 0.0, // TODO: Get actual GC frequency
-            system_load: 0.5,  // TODO: Get actual system load
+            gc_frequency: self.calculate_gc_frequency(),
+            system_load: self.get_system_load(),
             pressure_level,
         };
 
         self.predictor.update_with_data_point(data_point);
+    }
+
+    /// Calculate GC frequency based on recent collections
+    fn calculate_gc_frequency(&self) -> f64 {
+        let stats = self.stats.read().unwrap();
+        // Use responses triggered as a proxy for GC frequency
+        stats.responses_triggered as f64 / 60.0 // Approximate frequency per minute
+    }
+
+    /// Get current system load (simplified implementation)
+    fn get_system_load(&self) -> f64 {
+        let stats = self.stats.read().unwrap();
+        // Calculate load based on memory usage
+        if stats.total_available > 0 {
+            stats.current_usage as f64 / stats.total_available as f64
+        } else {
+            0.5 // Default moderate load
+        }
     }
 
     /// Handle pressure level changes

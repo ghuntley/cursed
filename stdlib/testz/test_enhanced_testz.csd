@@ -1,5 +1,5 @@
 yeet "testz"
-yeet "enhanced_testz"
+yeet "testz"
 
 # Comprehensive test suite for the enhanced testz framework
 

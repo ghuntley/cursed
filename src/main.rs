@@ -600,6 +600,35 @@ fn build_cli() -> Command {
                     .long("startup")
                     .value_name("FILE"))
         )
+        .subcommand(
+            Command::new("lsp")
+                .about("Start Language Server Protocol server")
+                .long_about("Starts the CURSED Language Server Protocol server for IDE integration.\nProvides features like completion, hover, goto definition, and diagnostics.")
+                .arg(Arg::new("stdio")
+                    .help("Use stdio for communication (default)")
+                    .long("stdio")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("tcp")
+                    .help("Use TCP for communication")
+                    .long("tcp")
+                    .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("port")
+                    .help("TCP port to listen on")
+                    .long("port")
+                    .value_name("PORT")
+                    .value_parser(value_parser!(u16))
+                    .default_value("9257"))
+                .arg(Arg::new("log-level")
+                    .help("Logging level")
+                    .long("log-level")
+                    .value_name("LEVEL")
+                    .value_parser(["error", "warn", "info", "debug", "trace"])
+                    .default_value("info"))
+                .arg(Arg::new("log-file")
+                    .help("Log to file")
+                    .long("log-file")
+                    .value_name("FILE"))
+        )
 }
 
 async fn handle_command(matches: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
@@ -648,6 +677,7 @@ async fn handle_command(matches: ArgMatches) -> Result<(), Box<dyn std::error::E
         Some(("check", sub_matches)) => handle_check(sub_matches, &matches).await,
         Some(("check-llvm", _sub_matches)) => handle_check_llvm().await,
         Some(("repl", sub_matches)) => handle_repl(sub_matches, &matches).await,
+        Some(("lsp", sub_matches)) => handle_doc(sub_matches, &matches).await,
         _ => {
             // This shouldn't happen due to arg_required_else_help
             eprintln!("No subcommand provided. Use --help for usage information.");
@@ -2056,6 +2086,56 @@ async fn handle_repl(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resu
     repl.run_repl_loop(no_history)?;
     
     Ok(())
+}
+
+async fn handle_lsp(matches: &ArgMatches, _global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    // use cursed::lsp::start_lsp_server;
+    
+    println!("{} CURSED Language Server", "Starting".blue().bold());
+    
+    // Set up logging
+    let log_level = matches.get_one::<String>("log-level").unwrap();
+    let log_filter = match log_level.as_str() {
+        "error" => "error",
+        "warn" => "warn", 
+        "info" => "info",
+        "debug" => "debug",
+        "trace" => "trace",
+        _ => "info",
+    };
+    
+    // Configure logging
+    if let Some(log_file) = matches.get_one::<String>("log-file") {
+        // Log to file
+        std::env::set_var("RUST_LOG", format!("cursed={}", log_filter));
+        env_logger::builder()
+            .target(env_logger::Target::Pipe(
+                Box::new(std::fs::File::create(log_file)?)
+            ))
+            .init();
+        println!("Logging to file: {}", log_file);
+    } else {
+        // Log to stderr
+        std::env::set_var("RUST_LOG", format!("cursed={}", log_filter));
+        env_logger::init();
+    }
+    
+    // Determine communication method
+    let use_tcp = matches.get_flag("tcp");
+    
+    if use_tcp {
+        let port = *matches.get_one::<u16>("port").unwrap();
+        println!("Starting LSP server on TCP port {}", port);
+        eprintln!("TCP mode not yet implemented. Please use stdio mode.");
+        std::process::exit(1);
+    } else {
+        println!("Starting LSP server with stdio communication");
+        eprintln!("CURSED Language Server ready");
+        
+        // Start the LSP server
+        println!("LSP server not implemented yet");
+        Ok(())
+    }
 }
 
 fn get_optimization_config(matches: &ArgMatches) -> Result<OptimizationConfig, Box<dyn std::error::Error>> {

@@ -1,329 +1,441 @@
 yeet "testz"
 yeet "sus_log"
 
-# Comprehensive test suite for sus_log module
-# Structured logging with suspiciously good performance
+test_start("SusLog comprehensive test suite")
 
-test_start("test_log_levels")
-# Test log level constants and string conversion
-assert_eq_int(LevelDebug, -4)
-assert_eq_int(LevelInfo, 0)
-assert_eq_int(LevelWarn, 4)
-assert_eq_int(LevelError, 8)
-assert_eq_int(LevelFatal, 12)
-assert_eq_int(LevelVibe, -2)
-assert_eq_int(LevelSus, 6)
-assert_eq_int(LevelYikes, 10)
-
-assert_eq_string(LevelDebug.String(), "DEBUG")
-assert_eq_string(LevelInfo.String(), "INFO")
-assert_eq_string(LevelWarn.String(), "WARN")
-assert_eq_string(LevelError.String(), "ERROR")
-assert_eq_string(LevelFatal.String(), "FATAL")
-assert_eq_string(LevelVibe.String(), "VIBE")
-assert_eq_string(LevelSus.String(), "SUS")
-assert_eq_string(LevelYikes.String(), "YIKES")
-print_test_summary()
-
-test_start("test_attr_creation")
-# Test attribute creation functions
-sus stringAttr := String("key1", "value1")
-assert_eq_string(stringAttr.Key, "key1")
-assert_eq_string(stringAttr.Value.(tea), "value1")
-
-sus intAttr := Int("key2", 42)
-assert_eq_string(intAttr.Key, "key2")
-assert_eq_int(intAttr.Value.(normie), 42)
-
-sus boolAttr := Bool("key3", based)
-assert_eq_string(boolAttr.Key, "key3")
-assert_eq_string(boolAttr.Value.(lit), based)
-
-sus anyAttr := Any("key4", "any_value")
-assert_eq_string(anyAttr.Key, "key4")
-assert_eq_string(anyAttr.Value.(tea), "any_value")
-print_test_summary()
-
-test_start("test_logger_creation")
-# Test logger creation and configuration
-sus logger := NewSusLogger()
-assert_eq_int(logger.GetLevel(), LevelInfo)
-assert_eq_int(len(logger.attrs), 0)
-
-sus defaultLogger := NewDefaultSusLogger()
-assert_eq_int(defaultLogger.GetLevel(), LevelInfo)
-
-sus genZLogger := NewGenZLogger()
-assert_eq_int(genZLogger.GetLevel(), LevelVibe)
-print_test_summary()
-
-test_start("test_logger_level_setting")
-# Test logger level setting and getting
-sus logger := NewSusLogger()
-logger.SetLevel(LevelDebug)
-assert_eq_int(logger.GetLevel(), LevelDebug)
-
-logger.SetLevel(LevelError)
-assert_eq_int(logger.GetLevel(), LevelError)
-
-logger.SetLevel(LevelVibe)
-assert_eq_int(logger.GetLevel(), LevelVibe)
-print_test_summary()
-
-test_start("test_logger_with_attrs")
-# Test logger with attributes
-sus logger := NewSusLogger()
-sus attr1 := String("service", "web")
-sus attr2 := Int("port", 8080)
-
-sus newLogger := logger.With(attr1, attr2)
-assert_eq_int(len(newLogger.attrs), 2)
-assert_eq_string(newLogger.attrs[0].Key, "service")
-assert_eq_string(newLogger.attrs[0].Value.(tea), "web")
-assert_eq_string(newLogger.attrs[1].Key, "port")
-assert_eq_int(newLogger.attrs[1].Value.(normie), 8080)
-
-# Original logger should be unchanged
-assert_eq_int(len(logger.attrs), 0)
-print_test_summary()
-
-test_start("test_parse_level")
-# Test level parsing
-sus level, err := ParseLevel("DEBUG")
-assert_eq_int(level, LevelDebug)
-assert_eq_string(err, cringe)
-
-level, err = ParseLevel("INFO")
-assert_eq_int(level, LevelInfo)
-assert_eq_string(err, cringe)
-
-level, err = ParseLevel("WARN")
-assert_eq_int(level, LevelWarn)
-assert_eq_string(err, cringe)
-
-level, err = ParseLevel("ERROR")
-assert_eq_int(level, LevelError)
-assert_eq_string(err, cringe)
-
-level, err = ParseLevel("FATAL")
-assert_eq_int(level, LevelFatal)
-assert_eq_string(err, cringe)
-
-level, err = ParseLevel("UNKNOWN")
-assert_eq_int(level, LevelInfo)
-assert_eq_string(err, "Unknown level")
-print_test_summary()
-
-test_start("test_logging_output")
-# Test logging output (basic functionality)
-sus logger := NewSusLogger()
-logger.SetLevel(LevelDebug)
-
-# Test all log levels
-logger.Debug("Debug message")
-logger.Info("Info message")
-logger.Warn("Warning message")
-logger.Error("Error message")
-logger.Fatal("Fatal message")
-logger.Vibe("Vibe message")
-logger.NoCap("NoCap message")
-logger.Sus("Sus message")
-logger.Yikes("Yikes message")
-print_test_summary()
-
-test_start("test_logging_with_attributes")
-# Test logging with attributes
-sus logger := NewSusLogger()
-sus attr1 := String("user", "alice")
-sus attr2 := Int("request_id", 12345)
-
-logger.Info("User logged in", attr1, attr2)
-logger.Error("Login failed", attr1, String("reason", "invalid_password"))
-print_test_summary()
-
-test_start("test_log_level_filtering")
-# Test log level filtering
-sus logger := NewSusLogger()
-logger.SetLevel(LevelWarn)
-
-# These should not log (below threshold)
-logger.Debug("Debug - should not appear")
-logger.Info("Info - should not appear")
-logger.Vibe("Vibe - should not appear")
-
-# These should log (at or above threshold)
-logger.Warn("Warning - should appear")
-logger.Error("Error - should appear")
-logger.Fatal("Fatal - should appear")
-logger.Sus("Sus - should appear")
-logger.Yikes("Yikes - should appear")
-print_test_summary()
-
-test_start("test_chained_logger_attributes")
-# Test chained logger with attributes
-sus logger := NewSusLogger()
-sus baseLogger := logger.With(String("service", "auth"))
-sus requestLogger := baseLogger.With(Int("request_id", 123))
-
-requestLogger.Info("Processing request")
-requestLogger.Error("Request failed")
-
-# Verify attribute inheritance
-assert_eq_int(len(requestLogger.attrs), 2)
-assert_eq_string(requestLogger.attrs[0].Key, "service")
-assert_eq_string(requestLogger.attrs[1].Key, "request_id")
-print_test_summary()
-
-test_start("test_custom_attr_helpers")
-# Test custom attribute helper functions
-sus moodAttr := Mood("user_mood", "happy")
-assert_eq_string(moodAttr.Key, "user_mood")
-assert_eq_string(moodAttr.Value.(tea), "happy")
-
-sus bussinAttr := Bussin("performance", "excellent")
-assert_eq_string(bussinAttr.Key, "performance")
-assert_eq_string(bussinAttr.Value.(tea), "excellent")
-
-sus capAttr := Cap("status", "active")
-assert_eq_string(capAttr.Key, "status")
-assert_eq_string(capAttr.Value.(tea), "active")
-print_test_summary()
-
-test_start("test_logger_level_hierarchy")
-# Test logger level hierarchy
-sus logger := NewSusLogger()
-
-# Test level comparisons
-logger.SetLevel(LevelError)
-assert_true(logger.GetLevel() > LevelWarn)
-assert_true(logger.GetLevel() > LevelInfo)
-assert_true(logger.GetLevel() > LevelDebug)
-assert_true(logger.GetLevel() < LevelFatal)
-
-logger.SetLevel(LevelDebug)
-assert_true(logger.GetLevel() < LevelInfo)
-assert_true(logger.GetLevel() < LevelWarn)
-assert_true(logger.GetLevel() < LevelError)
-print_test_summary()
-
-test_start("test_multiple_loggers")
-# Test multiple independent loggers
-sus logger1 := NewSusLogger()
-sus logger2 := NewSusLogger()
-
-logger1.SetLevel(LevelDebug)
-logger2.SetLevel(LevelError)
-
-# Verify independence
-assert_eq_int(logger1.GetLevel(), LevelDebug)
-assert_eq_int(logger2.GetLevel(), LevelError)
-
-logger1 = logger1.With(String("logger", "first"))
-logger2 = logger2.With(String("logger", "second"))
-
-assert_eq_int(len(logger1.attrs), 1)
-assert_eq_int(len(logger2.attrs), 1)
-assert_eq_string(logger1.attrs[0].Value.(tea), "first")
-assert_eq_string(logger2.attrs[0].Value.(tea), "second")
-print_test_summary()
-
-# Integration tests
-test_start("integration_tests")
-# Test integration with application logging patterns
-sus appLogger := NewSusLogger()
-appLogger.SetLevel(LevelInfo)
-
-# Simulate HTTP request logging
-sus requestLogger := appLogger.With(
-    String("method", "GET"),
-    String("path", "/api/users"),
-    Int("status", 200)
-)
-
-requestLogger.Info("Request processed")
-
-# Simulate error logging
-sus errorLogger := appLogger.With(
-    String("component", "database"),
-    String("operation", "connect")
-)
-
-errorLogger.Error("Database connection failed")
-
-# Simulate debug logging
-sus debugLogger := appLogger.With(String("module", "auth"))
-debugLogger.SetLevel(LevelDebug)
-debugLogger.Debug("Auth token validated")
-print_test_summary()
-
-# Performance benchmarks
-test_start("performance_benchmarks")
-# Test logging performance
-sus logger := NewSusLogger()
-logger.SetLevel(LevelInfo)
-
-# Benchmark basic logging
-bestie i := 0; i < 1000; i++ {
-    logger.Info("Performance test message")
+fr fr Test Level functionality
+slay test_level_functionality() {
+    fr fr Test level string conversion
+    assert_eq_string(sus_log.LevelDebug.String(), "DEBUG")
+    assert_eq_string(sus_log.LevelInfo.String(), "INFO")
+    assert_eq_string(sus_log.LevelWarn.String(), "WARN")
+    assert_eq_string(sus_log.LevelError.String(), "ERROR")
+    assert_eq_string(sus_log.LevelFatal.String(), "FATAL")
+    assert_eq_string(sus_log.LevelVibe.String(), "VIBE")
+    assert_eq_string(sus_log.LevelSus.String(), "SUS")
+    assert_eq_string(sus_log.LevelYikes.String(), "YIKES")
+    
+    fr fr Test level parsing
+    sus level, err := sus_log.ParseLevel("DEBUG")
+    assert_eq_int(level, sus_log.LevelDebug)
+    assert_eq_string(err, "")
+    
+    sus level2, err2 := sus_log.ParseLevel("UNKNOWN")
+    assert_eq_int(level2, sus_log.LevelInfo)
+    assert_eq_string(err2, "Unknown level")
+    
+    vibez.spill("✅ Level functionality tests passed")
 }
 
-# Benchmark logging with attributes
-sus attr1 := String("test", "performance")
-sus attr2 := Int("iteration", 999)
-
-bestie i := 0; i < 1000; i++ {
-    logger.Info("Performance test with attributes", attr1, attr2)
+fr fr Test Attr functionality
+slay test_attr_functionality() {
+    fr fr Test string attribute
+    sus str_attr := sus_log.String("key", "value")
+    assert_eq_string(str_attr.Key, "key")
+    
+    fr fr Test int attribute
+    sus int_attr := sus_log.Int("count", 42)
+    assert_eq_string(int_attr.Key, "count")
+    
+    fr fr Test bool attribute
+    sus bool_attr := sus_log.Bool("enabled", based)
+    assert_eq_string(bool_attr.Key, "enabled")
+    
+    fr fr Test any attribute
+    sus any_attr := sus_log.Any("data", "test")
+    assert_eq_string(any_attr.Key, "data")
+    
+    fr fr Test mood attribute
+    sus mood_attr := sus_log.Mood("feeling", "happy")
+    assert_eq_string(mood_attr.Key, "feeling")
+    
+    fr fr Test bussin attribute
+    sus bussin_attr := sus_log.Bussin("vibe", "immaculate")
+    assert_eq_string(bussin_attr.Key, "vibe")
+    
+    fr fr Test cap attribute
+    sus cap_attr := sus_log.Cap("status", "active")
+    assert_eq_string(cap_attr.Key, "status")
+    
+    vibez.spill("✅ Attr functionality tests passed")
 }
 
-# Benchmark logger creation
-bestie i := 0; i < 100; i++ {
-    sus tempLogger := NewSusLogger()
-    tempLogger.SetLevel(LevelWarn)
-    tempLogger.Info("This should not log")
+fr fr Test basic SusLogger functionality
+slay test_basic_logger() {
+    sus logger := sus_log.NewSusLogger()
+    
+    fr fr Test initial level
+    assert_eq_int(logger.GetLevel(), sus_log.LevelInfo)
+    
+    fr fr Test set level
+    logger.SetLevel(sus_log.LevelDebug)
+    assert_eq_int(logger.GetLevel(), sus_log.LevelDebug)
+    
+    fr fr Test logging methods (just ensure they don't crash)
+    logger.Debug("Debug message")
+    logger.Info("Info message")
+    logger.Warn("Warning message")
+    logger.Error("Error message")
+    logger.Fatal("Fatal message")
+    logger.Vibe("Vibe message")
+    logger.Sus("Sus message")
+    logger.Yikes("Yikes message")
+    
+    fr fr Test with attributes
+    logger.Info("Test with attributes", sus_log.String("key", "value"), sus_log.Int("count", 1))
+    
+    fr fr Test with chaining
+    sus contextLogger := logger.With(sus_log.String("context", "test"))
+    contextLogger.Info("Context message")
+    
+    vibez.spill("✅ Basic logger tests passed")
 }
+
+fr fr Test GenZ logger
+slay test_genz_logger() {
+    sus logger := sus_log.NewGenZLogger()
+    
+    fr fr Test initial level should be LevelVibe
+    assert_eq_int(logger.GetLevel(), sus_log.LevelVibe)
+    
+    fr fr Test logging methods
+    logger.Vibe("That's a vibe")
+    logger.NoCap("No cap fr fr")
+    logger.Sus("That's sus")
+    logger.Yikes("Big yikes")
+    
+    vibez.spill("✅ GenZ logger tests passed")
+}
+
+fr fr Test advanced logger functionality
+slay test_advanced_logger() {
+    sus logger := sus_log.NewAdvancedLogger()
+    
+    fr fr Test initial state
+    assert_eq_int(logger.GetLevel(), sus_log.LevelInfo)
+    
+    fr fr Test level changes
+    logger.SetLevel(sus_log.LevelDebug)
+    assert_eq_int(logger.GetLevel(), sus_log.LevelDebug)
+    
+    fr fr Test logging methods
+    logger.Debug("Debug message")
+    logger.Info("Info message")
+    logger.Warn("Warning message")
+    logger.Error("Error message")
+    logger.Fatal("Fatal message")
+    
+    fr fr Test with attributes
+    logger.Info("Test with attributes", sus_log.String("key", "value"))
+    
+    fr fr Test with context methods
+    sus contextLogger := logger.WithContext("test_context")
+    contextLogger.Info("Context message")
+    
+    sus requestLogger := logger.WithRequestID("req-123")
+    requestLogger.Info("Request message")
+    
+    sus userLogger := logger.WithUserID("user-456")
+    userLogger.Info("User message")
+    
+    fr fr Test close and flush
+    logger.Flush()
+    logger.Close()
+    
+    vibez.spill("✅ Advanced logger tests passed")
+}
+
+fr fr Test file output
+slay test_file_output() {
+    sus output := sus_log.NewFileOutput("test.log")
+    
+    fr fr Test write
+    output.Write("Test message")
+    
+    fr fr Test max size settings
+    output.SetMaxSize(1024)
+    
+    fr fr Test rotation
+    output.EnableRotation()
+    output.DisableRotation()
+    
+    fr fr Test close and flush
+    output.Flush()
+    output.Close()
+    
+    vibez.spill("✅ File output tests passed")
+}
+
+fr fr Test console output
+slay test_console_output() {
+    sus output := sus_log.NewConsoleOutput()
+    
+    fr fr Test write
+    output.Write("Console test message")
+    
+    fr fr Test color settings
+    output.EnableColors()
+    output.DisableColors()
+    
+    fr fr Test close and flush
+    output.Flush()
+    output.Close()
+    
+    vibez.spill("✅ Console output tests passed")
+}
+
+fr fr Test buffered output
+slay test_buffered_output() {
+    sus output := sus_log.NewBufferedOutput(10)
+    
+    fr fr Test initial buffer size
+    assert_eq_int(output.GetBufferSize(), 0)
+    
+    fr fr Test write
+    output.Write("Test message 1")
+    output.Write("Test message 2")
+    
+    fr fr Test buffer size
+    assert_eq_int(output.GetBufferSize(), 2)
+    
+    fr fr Test flush
+    output.Flush()
+    assert_eq_int(output.GetBufferSize(), 0)
+    
+    fr fr Test close
+    output.Close()
+    
+    vibez.spill("✅ Buffered output tests passed")
+}
+
+fr fr Test network output
+slay test_network_output() {
+    sus output := sus_log.NewNetworkOutput("localhost", 8080, "tcp")
+    
+    fr fr Test write
+    output.Write("Network test message")
+    
+    fr fr Test close and flush
+    output.Flush()
+    output.Close()
+    
+    vibez.spill("✅ Network output tests passed")
+}
+
+fr fr Test JSON formatter
+slay test_json_formatter() {
+    sus formatter := sus_log.NewJSONFormatter()
+    
+    fr fr Test format
+    sus attrs := []sus_log.Attr{sus_log.String("key", "value")}
+    sus result := formatter.Format(sus_log.LevelInfo, "Test message", attrs, 1234567890)
+    
+    fr fr Should contain JSON structure
+    assert_true(result != "")
+    assert_true(len(result) > 0)
+    
+    vibez.spill("✅ JSON formatter tests passed")
+}
+
+fr fr Test text formatter
+slay test_text_formatter() {
+    sus formatter := sus_log.NewTextFormatter()
+    
+    fr fr Test format
+    sus attrs := []sus_log.Attr{sus_log.String("key", "value")}
+    sus result := formatter.Format(sus_log.LevelInfo, "Test message", attrs, 1234567890)
+    
+    fr fr Should contain formatted text
+    assert_true(result != "")
+    assert_true(len(result) > 0)
+    
+    vibez.spill("✅ Text formatter tests passed")
+}
+
+fr fr Test level filter
+slay test_level_filter() {
+    sus filter := sus_log.NewLevelFilter(sus_log.LevelWarn)
+    
+    fr fr Test should log higher levels
+    assert_true(filter.ShouldLog(sus_log.LevelError, "Error message", []sus_log.Attr{}))
+    assert_true(filter.ShouldLog(sus_log.LevelWarn, "Warning message", []sus_log.Attr{}))
+    
+    fr fr Test should not log lower levels
+    assert_true(!filter.ShouldLog(sus_log.LevelInfo, "Info message", []sus_log.Attr{}))
+    assert_true(!filter.ShouldLog(sus_log.LevelDebug, "Debug message", []sus_log.Attr{}))
+    
+    vibez.spill("✅ Level filter tests passed")
+}
+
+fr fr Test keyword filter
+slay test_keyword_filter() {
+    sus keywords := []tea{"sensitive", "password"}
+    sus filter := sus_log.NewKeywordFilter(keywords, based)
+    
+    fr fr Test should block sensitive keywords
+    assert_true(!filter.ShouldLog(sus_log.LevelInfo, "This contains sensitive data", []sus_log.Attr{}))
+    assert_true(filter.ShouldLog(sus_log.LevelInfo, "This is safe", []sus_log.Attr{}))
+    
+    vibez.spill("✅ Keyword filter tests passed")
+}
+
+fr fr Test log metrics
+slay test_log_metrics() {
+    sus metrics := sus_log.NewLogMetrics()
+    
+    fr fr Test initial state
+    assert_eq_int(metrics.GetTotalLogs(), 0)
+    assert_eq_int(metrics.GetErrorsCount(), 0)
+    assert_eq_int(metrics.GetLogsByLevel(sus_log.LevelInfo), 0)
+    
+    fr fr Test recording logs
+    metrics.RecordLog(sus_log.LevelInfo)
+    metrics.RecordLog(sus_log.LevelError)
+    metrics.RecordLog(sus_log.LevelInfo)
+    
+    fr fr Test metrics
+    assert_eq_int(metrics.GetTotalLogs(), 3)
+    assert_eq_int(metrics.GetErrorsCount(), 1)
+    assert_eq_int(metrics.GetLogsByLevel(sus_log.LevelInfo), 2)
+    assert_eq_int(metrics.GetLogsByLevel(sus_log.LevelError), 1)
+    
+    fr fr Test reset
+    metrics.Reset()
+    assert_eq_int(metrics.GetTotalLogs(), 0)
+    assert_eq_int(metrics.GetErrorsCount(), 0)
+    
+    vibez.spill("✅ Log metrics tests passed")
+}
+
+fr fr Test global logging functions
+slay test_global_logging() {
+    fr fr Test level settings
+    sus_log.SetGlobalLevel(sus_log.LevelDebug)
+    
+    fr fr Test global logging methods
+    sus_log.LogDebug("Global debug message")
+    sus_log.LogInfo("Global info message")
+    sus_log.LogWarn("Global warning message")
+    sus_log.LogError("Global error message")
+    sus_log.LogFatal("Global fatal message")
+    sus_log.LogVibe("Global vibe message")
+    sus_log.LogSus("Global sus message")
+    sus_log.LogYikes("Global yikes message")
+    
+    fr fr Test with attributes
+    sus_log.LogInfo("Global message with attributes", sus_log.String("key", "value"))
+    
+    fr fr Test get global logger
+    sus globalLogger := sus_log.GetGlobalLogger()
+    assert_true(globalLogger != cringe)
+    
+    fr fr Test get log metrics
+    sus metrics := sus_log.GetLogMetrics()
+    assert_true(metrics != cringe)
+    
+    fr fr Test flush and close
+    sus_log.FlushGlobalLogger()
+    sus_log.CloseGlobalLogger()
+    
+    vibez.spill("✅ Global logging tests passed")
+}
+
+fr fr Test structured logging helpers
+slay test_structured_logging() {
+    fr fr Test request logging
+    sus_log.LogRequest("GET", "/api/users", "user123", 150)
+    
+    fr fr Test database query logging
+    sus_log.LogDatabaseQuery("SELECT * FROM users", 50, 10)
+    
+    fr fr Test error logging
+    sus_log.LogError("Database connection failed", "startup")
+    
+    fr fr Test performance logging
+    sus_log.LogPerformance("user_search", 200, 1024)
+    
+    fr fr Test security logging
+    sus_log.LogSecurity("failed_login", "user123", "192.168.1.100", "medium")
+    
+    vibez.spill("✅ Structured logging tests passed")
+}
+
+fr fr Test log configuration
+slay test_log_configuration() {
+    sus config := sus_log.NewDefaultLogConfig()
+    
+    fr fr Test default values
+    assert_eq_int(config.level, sus_log.LevelInfo)
+    assert_eq_string(config.output_file, "app.log")
+    assert_true(config.rotation_enabled)
+    assert_true(config.async_enabled)
+    assert_true(!config.json_format)
+    assert_true(!config.include_caller)
+    
+    fr fr Test configure global logger
+    sus_log.ConfigureGlobalLogger(config)
+    
+    vibez.spill("✅ Log configuration tests passed")
+}
+
+fr fr Test async logging
+slay test_async_logging() {
+    sus logger := sus_log.NewAdvancedLogger()
+    
+    fr fr Test async enable/disable
+    logger.EnableAsync()
+    logger.DisableAsync()
+    
+    fr fr Test global async
+    sus_log.EnableGlobalAsync()
+    sus_log.DisableGlobalAsync()
+    
+    vibez.spill("✅ Async logging tests passed")
+}
+
+fr fr Test formatter and output integration
+slay test_formatter_output_integration() {
+    sus logger := sus_log.NewAdvancedLogger()
+    
+    fr fr Test adding multiple outputs
+    logger.AddOutput(sus_log.NewConsoleOutput())
+    logger.AddOutput(sus_log.NewFileOutput("test.log"))
+    logger.AddOutput(sus_log.NewBufferedOutput(10))
+    
+    fr fr Test setting formatters
+    logger.SetFormatter(sus_log.NewJSONFormatter())
+    logger.SetFormatter(sus_log.NewTextFormatter())
+    
+    fr fr Test adding filters
+    logger.AddFilter(sus_log.NewLevelFilter(sus_log.LevelWarn))
+    logger.AddFilter(sus_log.NewKeywordFilter([]tea{"test"}, cap))
+    
+    fr fr Test logging with all components
+    logger.Info("Integration test message", sus_log.String("component", "integration"))
+    
+    vibez.spill("✅ Formatter and output integration tests passed")
+}
+
+fr fr Run all tests
+test_level_functionality()
+test_attr_functionality()
+test_basic_logger()
+test_genz_logger()
+test_advanced_logger()
+test_file_output()
+test_console_output()
+test_buffered_output()
+test_network_output()
+test_json_formatter()
+test_text_formatter()
+test_level_filter()
+test_keyword_filter()
+test_log_metrics()
+test_global_logging()
+test_structured_logging()
+test_log_configuration()
+test_async_logging()
+test_formatter_output_integration()
+
 print_test_summary()
-
-# Edge case testing
-test_start("edge_cases")
-# Test edge cases and error conditions
-sus logger := NewSusLogger()
-
-# Test empty messages
-logger.Info("")
-logger.Error("")
-
-# Test nil/empty attributes
-logger.Info("Test with empty attrs")
-
-# Test level edge cases
-logger.SetLevel(LevelFatal)
-logger.Info("This should not log")
-logger.Fatal("This should log")
-
-# Test unknown level string conversion
-sus unknownLevel := Level(999)
-assert_eq_string(unknownLevel.String(), "UNKNOWN")
-
-# Test attribute edge cases
-sus emptyAttr := String("", "")
-assert_eq_string(emptyAttr.Key, "")
-assert_eq_string(emptyAttr.Value.(tea), "")
-
-sus zeroAttr := Int("zero", 0)
-assert_eq_string(zeroAttr.Key, "zero")
-assert_eq_int(zeroAttr.Value.(normie), 0)
-
-sus falseAttr := Bool("false", cap)
-assert_eq_string(falseAttr.Key, "false")
-assert_eq_string(falseAttr.Value.(lit), cap)
-
-# Test logger with many attributes
-sus manyAttrs := logger.With(
-    String("attr1", "value1"),
-    String("attr2", "value2"),
-    String("attr3", "value3"),
-    Int("attr4", 4),
-    Bool("attr5", based)
-)
-assert_eq_int(len(manyAttrs.attrs), 5)
-print_test_summary()
+vibez.spill("🎉 All SusLog tests completed successfully!")

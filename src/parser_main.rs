@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement, MatchExpression, MatchArm, MatchPattern};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 
@@ -222,8 +222,8 @@ impl Parser {
                 return Ok(Some(Statement::Select(self.parse_select_statement()?)));
             }
             TokenKind::VibeCheck => {
-                // Parse CURSED-style select statement
-                return Ok(Some(Statement::Select(self.parse_vibe_check_statement()?)));
+                // Always try pattern switch parsing for now since that's what we're implementing
+                return Ok(Some(Statement::PatternSwitch(self.parse_pattern_switch_vibe_check()?)));
             }
             TokenKind::Yikes => {
                 // Parse error handling statement
@@ -292,6 +292,7 @@ impl Parser {
                     return Ok(Some(stmt));
                 }
                 // Skip unknown tokens
+
                 self.next_token()?;
                 return Ok(None);
             }
@@ -304,7 +305,7 @@ impl Parser {
         
         // Parse function name
         let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Truth => {
+            Some(token) if token.kind == TokenKind::Identifier => {
                 let name = token.lexeme.clone();
                 self.next_token()?;
                 name
@@ -991,7 +992,21 @@ impl Parser {
                     
                     return Ok(Expression::Array(elements));
                 }
-                TokenKind::Truth => {
+                TokenKind::Match => {
+                    // Parse match expression
+                    return self.parse_match_expression();
+                }
+                TokenKind::Truth | TokenKind::Based => {
+                    // Parse boolean literal
+                    self.next_token()?;
+                    return Ok(Expression::Literal(Literal::Boolean(true)));
+                }
+                TokenKind::Lies => {
+                    // Parse boolean literal for false (cap)
+                    self.next_token()?;
+                    return Ok(Expression::Literal(Literal::Boolean(false)));
+                }
+                TokenKind::Identifier => {
                     // Parse identifier, possibly with postfix operations
                     let name = token.lexeme.clone();
                     self.next_token()?;
@@ -1360,16 +1375,6 @@ impl Parser {
                     }
                     
                     return Ok(expr);
-                }
-                TokenKind::Truth | TokenKind::Based => {
-                    // Parse boolean literal
-                    self.next_token()?;
-                    return Ok(Expression::Literal(Literal::Boolean(true)));
-                }
-                TokenKind::Lies => {
-                    // Parse boolean literal for false (cap)
-                    self.next_token()?;
-                    return Ok(Expression::Literal(Literal::Boolean(false)));
                 }
                 TokenKind::Yikes => {
                     // Parse error value expression
@@ -2754,7 +2759,9 @@ impl Parser {
         
         // Parse optional generic type parameters
         let type_parameters = if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::LeftBracket {
+            if token.kind == TokenKind::Less || token.kind == TokenKind::LeftAngle {
+                self.parse_generic_type_parameters_angle_brackets()?
+            } else if token.kind == TokenKind::LeftBracket {
                 self.parse_generic_type_parameters()?
             } else {
                 Vec::new()
@@ -2816,6 +2823,7 @@ impl Parser {
             name,
             type_parameters,
             extends,
+            compositions: Vec::new(), // TODO: Parse compositions
             methods,
             visibility: Visibility::Public,
         })
@@ -2928,6 +2936,132 @@ impl Parser {
                     }
                 }
                 break;
+            } else {
+                break;
+            }
+        }
+        
+        Ok(bounds)
+    }
+
+    /// Parse generic type parameters with angle brackets <T, U>
+    fn parse_generic_type_parameters_angle_brackets(&mut self) -> Result<Vec<TypeParameter>> {
+        // Accept either < or LeftAngle token
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Less {
+                self.consume_token(TokenKind::Less)?;
+            } else {
+                self.consume_token(TokenKind::LeftAngle)?;
+            }
+        }
+        
+        let mut type_parameters = Vec::new();
+        
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Greater || token.kind == TokenKind::RightAngle {
+                break;
+            }
+            
+            // Parse type parameter name
+            let name = match token.kind {
+                TokenKind::Identifier => {
+                    let name = token.lexeme.clone();
+                    self.advance_token();
+                    name
+                }
+                _ => return Err(Error::Parse("Expected type parameter name".to_string())),
+            };
+            
+            // Parse optional bounds (constraints)
+            let bounds = if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Colon {
+                    self.advance_token(); // consume ':'
+                    self.parse_type_bounds_angle_brackets()?
+                } else {
+                    Vec::new()
+                }
+            } else {
+                Vec::new()
+            };
+            
+            type_parameters.push(TypeParameter { name, bounds });
+            
+            // Consume comma if present
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Comma {
+                    self.advance_token();
+                } else if token.kind != TokenKind::Greater && token.kind != TokenKind::RightAngle {
+                    return Err(Error::Parse("Expected ',' or '>' in type parameter list".to_string()));
+                }
+            }
+        }
+        
+        // Accept either > or RightAngle token
+        if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::Greater {
+                self.consume_token(TokenKind::Greater)?;
+            } else {
+                self.consume_token(TokenKind::RightAngle)?;
+            }
+        }
+        
+        Ok(type_parameters)
+    }
+
+    /// Parse type bounds with angle bracket support
+    fn parse_type_bounds_angle_brackets(&mut self) -> Result<Vec<String>> {
+        let mut bounds = Vec::new();
+        
+        loop {
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Identifier {
+                    let mut bound = token.lexeme.clone();
+                    self.advance_token();
+                    
+                    // Check for generic parameters in bound (e.g., "Container<T>")
+                    if let Some(next_token) = self.current_token.as_ref() {
+                        if next_token.kind == TokenKind::Less || next_token.kind == TokenKind::LeftAngle {
+                            bound.push('<');
+                            self.advance_token(); // consume '<'
+                            
+                            // Parse generic parameters within bound with proper nesting
+                            let mut depth = 1;
+                            while depth > 0 && self.current_token.is_some() {
+                                if let Some(token) = self.current_token.as_ref() {
+                                    match token.kind {
+                                        TokenKind::Less | TokenKind::LeftAngle => {
+                                            depth += 1;
+                                            bound.push('<');
+                                        }
+                                        TokenKind::Greater | TokenKind::RightAngle => {
+                                            depth -= 1;
+                                            bound.push('>');
+                                        }
+                                        _ => {
+                                            bound.push_str(&token.lexeme);
+                                        }
+                                    }
+                                    self.advance_token();
+                                }
+                            }
+                        }
+                    }
+                    
+                    bounds.push(bound);
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+            
+            // Check for '+' to continue parsing more bounds
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Plus {
+                    self.advance_token(); // consume '+'
+                } else {
+                    break;
+                }
             } else {
                 break;
             }
@@ -3402,12 +3536,162 @@ impl Parser {
         })
     }
 
+    /// Parse pattern switch using vibe_check syntax with mood patterns
+    fn parse_pattern_switch_vibe_check(&mut self) -> Result<PatternSwitchStatement> {
+        // Consume 'vibe_check' keyword
+        self.next_token()?;
+        
+        // Parse switch expression
+        let expression = self.parse_expression()?;
+        
+        // Expect '{'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::LeftBrace => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '{' after vibe_check expression".to_string())),
+        }
+        
+        let mut cases = Vec::new();
+        let mut default_case = None;
+        
+        // Parse pattern cases
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                self.next_token()?;
+                break;
+            }
+            
+            match &token.kind {
+                TokenKind::Mood => {
+                    // Parse mood case
+                    self.next_token()?;
+                    
+                    // Parse pattern(s) - can be multiple patterns separated by commas
+                    let mut patterns = Vec::new();
+                    
+                    loop {
+                        let pattern = self.parse_pattern_expression()?;
+                        patterns.push(pattern);
+                        
+                        if let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Comma {
+                                self.next_token()?; // consume comma
+                                continue;
+                            }
+                        }
+                        break;
+                    }
+                    
+                    // Expect ':'
+                    match self.current_token.as_ref() {
+                        Some(token) if token.kind == TokenKind::Colon => {
+                            self.next_token()?;
+                        }
+                        _ => return Err(Error::Parse("Expected ':' after mood pattern".to_string())),
+                    }
+                    
+                    // Parse case body (statements until next mood/basic or })
+                    let mut body = Vec::new();
+                    while let Some(token) = self.current_token.as_ref() {
+                        if matches!(token.kind, TokenKind::Mood | TokenKind::Basic | TokenKind::RightBrace) {
+                            break;
+                        }
+                        if let Some(statement) = self.parse_statement()? {
+                            body.push(statement);
+                        }
+                    }
+                    
+                    // For multiple patterns, create separate cases
+                    for pattern in patterns {
+                        cases.push(PatternSwitchCase {
+                            pattern,
+                            guard: None, // No guard for now in vibe_check syntax
+                            body: body.clone(),
+                        });
+                    }
+                }
+                TokenKind::Basic => {
+                    // Parse default case
+                    self.next_token()?;
+                    
+                    // Expect ':'
+                    match self.current_token.as_ref() {
+                        Some(token) if token.kind == TokenKind::Colon => {
+                            self.next_token()?;
+                        }
+                        _ => return Err(Error::Parse("Expected ':' after 'basic'".to_string())),
+                    }
+                    
+                    // Parse default body
+                    let mut body = Vec::new();
+                    while let Some(token) = self.current_token.as_ref() {
+                        if matches!(token.kind, TokenKind::Mood | TokenKind::Basic | TokenKind::RightBrace) {
+                            break;
+                        }
+                        if let Some(statement) = self.parse_statement()? {
+                            body.push(statement);
+                        }
+                    }
+                    
+                    default_case = Some(body);
+                }
+                _ => {
+                    return Err(Error::Parse("Expected 'mood' or 'basic' in vibe_check statement".to_string()));
+                }
+            }
+        }
+        
+        Ok(PatternSwitchStatement {
+            init: None,
+            expression,
+            cases,
+            default_case,
+        })
+    }
+    
+    /// Parse a pattern expression for pattern matching
+    fn parse_pattern_expression(&mut self) -> Result<PatternExpression> {
+        // For now, implement simple literal patterns
+        match self.current_token.as_ref() {
+            Some(token) => {
+                match &token.kind {
+                    TokenKind::Integer(_) | TokenKind::String | TokenKind::Boolean | TokenKind::Character => {
+                        let expr = self.parse_primary_expression()?;
+                        Ok(PatternExpression::Literal(expr))
+                    }
+                    TokenKind::Identifier => {
+                        // Check if this is a wildcard (_) or a variable binding
+                        if let Some(Token { kind: TokenKind::Identifier, lexeme, .. }) = self.current_token.as_ref() {
+                            if lexeme == "_" {
+                                self.next_token()?;
+                                Ok(PatternExpression::Wildcard)
+                            } else {
+                                let name = lexeme.clone();
+                                self.next_token()?;
+                                Ok(PatternExpression::Variable(name))
+                            }
+                        } else {
+                            return Err(Error::Parse("Expected identifier value in pattern".to_string()));
+                        }
+                    }
+                    _ => {
+                        // Try to parse as literal expression
+                        let expr = self.parse_primary_expression()?;
+                        Ok(PatternExpression::Literal(expr))
+                    }
+                }
+            }
+            None => Err(Error::Parse("Expected pattern expression".to_string()))
+        }
+    }
+
     /// Parse pattern expressions
     fn parse_pattern(&mut self) -> Result<PatternExpression> {
         match self.current_token.as_ref() {
             Some(token) => {
                 match &token.kind {
-                    TokenKind::Truth => {
+                    TokenKind::Identifier => {
                         let name = token.lexeme.clone();
                         self.next_token()?;
                         
@@ -3545,7 +3829,7 @@ impl Parser {
         match self.current_token.as_ref() {
             Some(token) => {
                 match &token.kind {
-                    TokenKind::Truth => {
+                    TokenKind::Identifier => {
                         let name = token.lexeme.clone();
                         self.next_token()?;
                         
@@ -3612,6 +3896,265 @@ impl Parser {
         }
         
         Ok(statements)
+    }
+
+    /// Parse match expression (match value { pattern -> expression, ... })
+    fn parse_match_expression(&mut self) -> Result<Expression> {
+        // Consume 'match' keyword
+        self.next_token()?;
+        
+        // Parse value to match against
+        let value = Box::new(self.parse_expression()?);
+        
+        // Expect '{'
+        match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::LeftBrace => {
+                self.next_token()?;
+            }
+            _ => return Err(Error::Parse("Expected '{' after match value".to_string())),
+        }
+        
+        let mut arms = Vec::new();
+        
+        // Parse match arms
+        while let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::RightBrace {
+                self.next_token()?;
+                break;
+            }
+            
+            // Skip newlines
+            if token.kind == TokenKind::Newline {
+                self.next_token()?;
+                continue;
+            }
+            
+            // Parse pattern
+            let pattern = self.parse_match_pattern()?;
+            
+            // Optional guard (when keyword)
+            let guard = if let Some(token) = self.current_token.as_ref() {
+                if matches!(token.kind, TokenKind::Identifier) && token.lexeme == "when" {
+                    self.next_token()?; // consume 'when'
+                    Some(self.parse_expression()?)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            
+            // Expect '->'
+            match self.current_token.as_ref() {
+                Some(token) if token.kind == TokenKind::Arrow => {
+                    self.next_token()?;
+                }
+                _ => return Err(Error::Parse("Expected '->' after match pattern".to_string())),
+            }
+            
+            // Parse arm body (expression)
+            let body = self.parse_expression()?;
+            
+            arms.push(MatchArm {
+                pattern,
+                guard,
+                body,
+            });
+            
+            // Optional comma
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Comma {
+                    self.next_token()?;
+                }
+            }
+        }
+        
+        Ok(Expression::Match(MatchExpression { value, arms }))
+    }
+    
+    /// Parse match pattern
+    fn parse_match_pattern(&mut self) -> Result<MatchPattern> {
+        match self.current_token.as_ref() {
+            Some(token) => {
+                match &token.kind {
+                    TokenKind::Identifier => {
+                        let name = token.lexeme.clone();
+                        self.next_token()?;
+                        
+                        if name == "_" {
+                            Ok(MatchPattern::Wildcard)
+                        } else {
+                            // Check if this is a range pattern (x..y)
+                            if let Some(next_token) = self.current_token.as_ref() {
+                                if next_token.kind == TokenKind::DotDot {
+                                    self.next_token()?; // consume '..'
+                                    let end = self.parse_expression()?;
+                                    Ok(MatchPattern::Range {
+                                        start: Expression::Identifier(name),
+                                        end,
+                                        inclusive: true,
+                                    })
+                                } else {
+                                    Ok(MatchPattern::Variable(name))
+                                }
+                            } else {
+                                Ok(MatchPattern::Variable(name))
+                            }
+                        }
+                    }
+                    TokenKind::Integer(_) => {
+                        let value = token.lexeme.parse::<i64>().map_err(|_| {
+                            Error::Parse("Invalid integer literal".to_string())
+                        })?;
+                        self.next_token()?;
+                        
+                        // Check for range pattern
+                        if let Some(next_token) = self.current_token.as_ref() {
+                            if next_token.kind == TokenKind::DotDot {
+                                self.next_token()?; // consume '..'
+                                let end = self.parse_expression()?;
+                                Ok(MatchPattern::Range {
+                                    start: Expression::Integer(value),
+                                    end,
+                                    inclusive: true,
+                                })
+                            } else {
+                                Ok(MatchPattern::Literal(Expression::Integer(value)))
+                            }
+                        } else {
+                            Ok(MatchPattern::Literal(Expression::Integer(value)))
+                        }
+                    }
+                    TokenKind::String => {
+                        let value = token.lexeme.clone();
+                        self.next_token()?;
+                        Ok(MatchPattern::Literal(Expression::String(value)))
+                    }
+                    TokenKind::Truth | TokenKind::Based => {
+                        self.next_token()?;
+                        Ok(MatchPattern::Literal(Expression::Boolean(true)))
+                    }
+                    TokenKind::Lies => {
+                        self.next_token()?;
+                        Ok(MatchPattern::Literal(Expression::Boolean(false)))
+                    }
+                    TokenKind::Character => {
+                        let value = token.lexeme.chars().next().unwrap_or('\0');
+                        self.next_token()?;
+                        
+                        // Check for character range pattern 'a'..'z'
+                        if let Some(next_token) = self.current_token.as_ref() {
+                            if next_token.kind == TokenKind::DotDot {
+                                self.next_token()?; // consume '..'
+                                let end = self.parse_expression()?;
+                                Ok(MatchPattern::Range {
+                                    start: Expression::Character(value),
+                                    end,
+                                    inclusive: true,
+                                })
+                            } else {
+                                Ok(MatchPattern::Literal(Expression::Character(value)))
+                            }
+                        } else {
+                            Ok(MatchPattern::Literal(Expression::Character(value)))
+                        }
+                    }
+                    TokenKind::LeftParen => {
+                        // Tuple pattern
+                        self.next_token()?; // consume '('
+                        let mut patterns = Vec::new();
+                        
+                        while let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::RightParen {
+                                self.next_token()?;
+                                break;
+                            }
+                            
+                            patterns.push(self.parse_match_pattern()?);
+                            
+                            // Check for comma
+                            if let Some(token) = self.current_token.as_ref() {
+                                if token.kind == TokenKind::Comma {
+                                    self.next_token()?;
+                                } else if token.kind != TokenKind::RightParen {
+                                    return Err(Error::Parse("Expected ',' or ')' in tuple pattern".to_string()));
+                                }
+                            }
+                        }
+                        
+                        Ok(MatchPattern::Tuple(patterns))
+                    }
+                    _ => {
+                        // Try to parse as or pattern (pattern | pattern | ...)
+                        let first_pattern = self.parse_simple_match_pattern()?;
+                        let mut patterns = vec![first_pattern];
+                        
+                        while let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Pipe {
+                                self.next_token()?; // consume '|'
+                                patterns.push(self.parse_simple_match_pattern()?);
+                            } else {
+                                break;
+                            }
+                        }
+                        
+                        if patterns.len() == 1 {
+                            Ok(patterns.into_iter().next().unwrap())
+                        } else {
+                            Ok(MatchPattern::Or(patterns))
+                        }
+                    }
+                }
+            }
+            None => Err(Error::Parse("Unexpected end of input in match pattern".to_string())),
+        }
+    }
+    
+    /// Parse simple match pattern (helper for or patterns)
+    fn parse_simple_match_pattern(&mut self) -> Result<MatchPattern> {
+        match self.current_token.as_ref() {
+            Some(token) => {
+                match &token.kind {
+                    TokenKind::Identifier => {
+                        let name = token.lexeme.clone();
+                        self.next_token()?;
+                        
+                        if name == "_" {
+                            Ok(MatchPattern::Wildcard)
+                        } else {
+                            Ok(MatchPattern::Variable(name))
+                        }
+                    }
+                    TokenKind::Integer(_) => {
+                        let value = token.lexeme.parse::<i64>().map_err(|_| {
+                            Error::Parse("Invalid integer literal".to_string())
+                        })?;
+                        self.next_token()?;
+                        Ok(MatchPattern::Literal(Expression::Integer(value)))
+                    }
+                    TokenKind::String => {
+                        let value = token.lexeme.clone();
+                        self.next_token()?;
+                        Ok(MatchPattern::Literal(Expression::String(value)))
+                    }
+                    TokenKind::Truth | TokenKind::Based => {
+                        self.next_token()?;
+                        Ok(MatchPattern::Literal(Expression::Boolean(true)))
+                    }
+                    TokenKind::Lies => {
+                        self.next_token()?;
+                        Ok(MatchPattern::Literal(Expression::Boolean(false)))
+                    }
+                    TokenKind::Character => {
+                        let value = token.lexeme.chars().next().unwrap_or('\0');
+                        self.next_token()?;
+                        Ok(MatchPattern::Literal(Expression::Character(value)))
+                    }
+                    _ => Err(Error::Parse("Invalid match pattern".to_string())),
+                }
+            }
+            None => Err(Error::Parse("Unexpected end of input in simple match pattern".to_string())),
+        }
     }
 }
 

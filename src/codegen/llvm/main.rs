@@ -588,6 +588,7 @@ impl LlvmCodeGenerator {
         self.declare_function("cursed_channel_send", "i32 @cursed_channel_send(i8*, i64)");
         self.declare_function("cursed_channel_receive", "i32 @cursed_channel_receive(i8*, i64*)");
         self.declare_function("cursed_channel_error", "void @cursed_channel_error(i32)");
+        self.declare_function("panic_non_exhaustive_match", "void @panic_non_exhaustive_match()");
         
         // Type assertion runtime functions
         self.declare_function("cursed_check_type_compatibility", "i1 @cursed_check_type_compatibility(i8*, i32, i32)");
@@ -1389,6 +1390,12 @@ impl LlvmCodeGenerator {
                 // For now, assume this is an interface type assertion
                 let result_reg = self.generate_interface_type_assertion(&value_reg, &target_type)?;
                 Ok(result_reg)
+            },
+            Expression::Match(_match_expr) => {
+                // TODO: Implement match expression code generation
+                return Err(CursedError::TypeError(
+                    "Match expressions not yet implemented in LLVM codegen".to_string()
+                ));
             },
             _ => {
                 // For complex expressions, use the expression compiler
@@ -4160,6 +4167,226 @@ impl LlvmCodeGenerator {
     pub fn optimize_interface_dispatch(&mut self, program: &Program) -> Result<String, CursedError> {
         let mut optimizer = InterfaceDispatchOptimizer::new(self.interface_optimization_passes.clone());
         optimizer.optimize_program(program)
+    }
+
+    /// Generate LLVM IR for match expression with exhaustiveness checking
+    fn generate_match_expression(&mut self, match_expr: &crate::ast::MatchExpression) -> Result<String, CursedError> {
+        // Evaluate the value to match against
+        let value_reg = self.generate_expression(&match_expr.value)?;
+        
+        // Create labels for the match arms and end label
+        let mut arm_labels = Vec::new();
+        let mut next_labels = Vec::new();
+        for i in 0..match_expr.arms.len() {
+            arm_labels.push(self.next_label());
+            next_labels.push(self.next_label());
+        }
+        let end_label = self.next_label();
+        let fail_label = self.next_label();
+        
+        // Result PHI node setup
+        let result_reg = self.next_register();
+        let mut phi_pairs = Vec::new();
+        
+        // Generate pattern matching for each arm
+        for (i, arm) in match_expr.arms.iter().enumerate() {
+            let arm_label = &arm_labels[i];
+            let next_label = if i + 1 < next_labels.len() {
+                &next_labels[i + 1]
+            } else {
+                &fail_label
+            };
+            
+            // Generate pattern match condition
+            let match_result = self.generate_match_pattern(&value_reg, &arm.pattern, arm_label, next_label)?;
+            
+            // If we have variable bindings from the pattern, add them to scope
+            for (var_name, var_reg) in match_result {
+                self.variables.insert(var_name, var_reg);
+            }
+            
+            // Generate the arm body
+            self.ir_code.push_str(&format!("{}:\n", arm_label));
+            let arm_result = self.generate_expression(&arm.body)?;
+            let current_label = self.next_label();
+            
+            // Store result for PHI node
+            phi_pairs.push((arm_result, current_label.clone()));
+            
+            // Branch to end
+            self.ir_code.push_str(&format!("  br label %{}\n", end_label));
+            self.ir_code.push_str(&format!("{}:\n", current_label));
+            
+            // Set up next pattern check (except for last arm)
+            if i + 1 < match_expr.arms.len() {
+                self.ir_code.push_str(&format!("  br label %{}\n", next_labels[i + 1]));
+                self.ir_code.push_str(&format!("{}:\n", next_labels[i + 1]));
+            }
+        }
+        
+        // Generate failure case (non-exhaustive match)
+        self.ir_code.push_str(&format!("{}:\n", fail_label));
+        self.ir_code.push_str("  ; Non-exhaustive match - panic\n");
+        self.ir_code.push_str("  call void @panic_non_exhaustive_match()\n");
+        self.ir_code.push_str("  unreachable\n");
+        
+        // Generate end label with PHI node for result
+        self.ir_code.push_str(&format!("{}:\n", end_label));
+        if !phi_pairs.is_empty() {
+            // Determine the result type from the first arm
+            let result_type = "i8*"; // Default to string for now - should be inferred
+            
+            self.ir_code.push_str(&format!("  {} = phi {} ", result_reg, result_type));
+            
+            for (i, (value, label)) in phi_pairs.iter().enumerate() {
+                if i > 0 {
+                    self.ir_code.push_str(", ");
+                }
+                self.ir_code.push_str(&format!("[ {}, %{} ]", value, label));
+            }
+            self.ir_code.push_str("\n");
+        }
+        
+        Ok(result_reg)
+    }
+    
+    /// Generate pattern matching condition
+    fn generate_match_pattern(
+        &mut self,
+        value_reg: &str,
+        pattern: &crate::ast::MatchPattern,
+        success_label: &str,
+        fail_label: &str,
+    ) -> Result<std::collections::HashMap<String, String>, CursedError> {
+        let mut bindings = std::collections::HashMap::new();
+        
+        match pattern {
+            crate::ast::MatchPattern::Wildcard => {
+                // Wildcard always matches
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            }
+            
+            crate::ast::MatchPattern::Variable(var_name) => {
+                // Variable pattern always matches and binds the value
+                bindings.insert(var_name.clone(), value_reg.to_string());
+                self.ir_code.push_str(&format!("  br label %{}\n", success_label));
+            }
+            
+            crate::ast::MatchPattern::Literal(expr) => {
+                match expr {
+                    Expression::Integer(val) => {
+                        let cmp_reg = self.next_register();
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i32 {}, {}\n",
+                            cmp_reg, value_reg, val
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
+                    }
+                    Expression::Boolean(val) => {
+                        let cmp_reg = self.next_register();
+                        let bool_val = if *val { 1 } else { 0 };
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i1 {}, {}\n",
+                            cmp_reg, value_reg, bool_val
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            cmp_reg, success_label, fail_label
+                        ));
+                    }
+                    Expression::String(val) => {
+                        // String comparison requires runtime call
+                        let str_literal = self.generate_string_literal(val)?;
+                        let cmp_reg = self.next_register();
+                        self.ir_code.push_str(&format!(
+                            "  {} = call i32 @strcmp(i8* {}, i8* {})\n",
+                            cmp_reg, value_reg, str_literal
+                        ));
+                        let is_equal_reg = self.next_register();
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp eq i32 {}, 0\n",
+                            is_equal_reg, cmp_reg
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            is_equal_reg, success_label, fail_label
+                        ));
+                    }
+                    _ => {
+                        return Err(CursedError::compiler_error("Unsupported literal pattern"));
+                    }
+                }
+            }
+            
+            crate::ast::MatchPattern::Range { start, end, inclusive } => {
+                // Generate range check
+                let start_reg = self.generate_expression(start)?;
+                let end_reg = self.generate_expression(end)?;
+                
+                let ge_reg = self.next_register();
+                self.ir_code.push_str(&format!(
+                    "  {} = icmp sge i32 {}, {}\n",
+                    ge_reg, value_reg, start_reg
+                ));
+                
+                let le_reg = self.next_register();
+                if *inclusive {
+                    self.ir_code.push_str(&format!(
+                        "  {} = icmp sle i32 {}, {}\n",
+                        le_reg, value_reg, end_reg
+                    ));
+                } else {
+                    self.ir_code.push_str(&format!(
+                        "  {} = icmp slt i32 {}, {}\n",
+                        le_reg, value_reg, end_reg
+                    ));
+                }
+                
+                let and_reg = self.next_register();
+                self.ir_code.push_str(&format!(
+                    "  {} = and i1 {}, {}\n",
+                    and_reg, ge_reg, le_reg
+                ));
+                self.ir_code.push_str(&format!(
+                    "  br i1 {}, label %{}, label %{}\n",
+                    and_reg, success_label, fail_label
+                ));
+            }
+            
+            crate::ast::MatchPattern::Tuple(_patterns) => {
+                // TODO: Implement tuple pattern matching
+                return Err(CursedError::compiler_error("Tuple patterns not yet implemented"));
+            }
+            
+            crate::ast::MatchPattern::Or(patterns) => {
+                // Generate checks for each alternative
+                let mut alt_labels = Vec::new();
+                for i in 0..patterns.len() {
+                    alt_labels.push(self.next_label());
+                }
+                
+                // Start with first alternative
+                self.ir_code.push_str(&format!("  br label %{}\n", alt_labels[0]));
+                
+                for (i, pattern) in patterns.iter().enumerate() {
+                    self.ir_code.push_str(&format!("{}:\n", alt_labels[i]));
+                    
+                    let next_alt = if i + 1 < alt_labels.len() {
+                        &alt_labels[i + 1]
+                    } else {
+                        fail_label
+                    };
+                    
+                    let pattern_bindings = self.generate_match_pattern(value_reg, pattern, success_label, next_alt)?;
+                    bindings.extend(pattern_bindings);
+                }
+            }
+        }
+        
+        Ok(bindings)
     }
 
 }

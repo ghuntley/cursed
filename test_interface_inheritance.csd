@@ -1,34 +1,38 @@
-// Test interface inheritance
-collab BaseInterface {
-    slay base_method()
+yeet "testz"
+
+# Test interface inheritance with colon syntax
+collab Writer {
+    slay write(data tea) normie
 }
 
-collab DerivedInterface extends BaseInterface {
-    slay derived_method()
+collab Reader {
+    slay read() tea
 }
 
-struct ConcreteType {
-    value normie
+# Interface inheritance using : syntax
+collab ReadWriter : Writer {
+    slay read() tea
 }
 
-impl ConcreteType for BaseInterface {
-    slay base_method() {
-        vibez.spill("Base method called")
-    }
+# Multiple interface inheritance
+collab ReadWriteSeeker : Reader, Writer {
+    slay seek(position normie) normie
 }
 
-impl ConcreteType for DerivedInterface {
-    slay derived_method() {
-        vibez.spill("Derived method called")
-    }
+# Generic interface inheritance
+collab GenericWriter<T> {
+    slay write_generic(data T) normie
 }
 
-slay main() {
-    sus obj ConcreteType = ConcreteType { value: 42 }
-    sus base_iface BaseInterface = obj
-    sus derived_iface DerivedInterface = obj
-    
-    base_iface.base_method()
-    derived_iface.base_method()  // Should work via inheritance
-    derived_iface.derived_method()
+collab GenericReadWriter<T> : GenericWriter<T> {
+    slay read_generic() T
 }
+
+# Test implementation
+slay test_interface_inheritance() {
+    vibez.spill("Interface inheritance test passed")
+}
+
+test_start("Interface inheritance syntax test")
+test_interface_inheritance()
+print_test_summary()

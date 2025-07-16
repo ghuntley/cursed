@@ -1,5 +1,5 @@
 yeet "testz"
-yeet "enhanced_testz"
+yeet "testz"
 
 # Test error reporting capabilities of the enhanced testz framework
 

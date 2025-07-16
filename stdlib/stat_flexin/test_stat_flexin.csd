@@ -1,279 +1,387 @@
 yeet "testz"
 yeet "stat_flexin"
 
-# Comprehensive test suite for stat_flexin module
-# Statistics module with runtime variable tracking
+test_start("StatFlexin comprehensive test suite")
 
-test_start("test_FlexInt_basic_operations")
-# Test FlexInt creation and basic operations
-sus counter := NewFlexInt("test_counter")
-assert_eq_int(counter.Get(), 0)
-assert_eq_int(counter.Add(5), 5)
-assert_eq_int(counter.Set(10), 10)
-assert_eq_int(counter.Get(), 10)
-assert_eq_int(counter.Add(-3), 7)
-print_test_summary()
-
-test_start("test_FlexFloat_basic_operations")
-# Test FlexFloat creation and basic operations
-sus value := NewFlexFloat("test_value")
-assert_eq_string(value.String(), "0.0")
-assert_eq_string(value.Value().(meal), 0.0)
-value.Add(3.14)
-assert_eq_string(value.Set(2.71), 2.71)
-assert_eq_string(value.Get(), 2.71)
-print_test_summary()
-
-test_start("test_FlexString_operations")
-# Test FlexString creation and operations
-sus text := NewFlexString("test_text")
-assert_eq_string(text.Get(), "")
-assert_eq_string(text.Set("hello"), "hello")
-assert_eq_string(text.String(), "hello")
-assert_eq_string(text.Value().(tea), "hello")
-text.Set("world")
-assert_eq_string(text.Get(), "world")
-print_test_summary()
-
-test_start("test_FlexCounter_operations")
-# Test FlexCounter creation and operations
-sus counter := NewFlexCounter("test_counter")
-assert_eq_int(counter.Get(), 0)
-assert_eq_int(counter.Inc(), 1)
-assert_eq_int(counter.Inc(), 2)
-assert_eq_int(counter.Add(5), 7)
-assert_eq_int(counter.Reset(), 7)
-assert_eq_int(counter.Get(), 0)
-print_test_summary()
-
-test_start("test_Registry_operations")
-# Test Registry creation and operations
-sus registry := NewRegistry()
-assert_eq_string(registry.String(), "Registry")
-
-sus intVar := NewFlexInt("reg_int")
-intVar.Set(42)
-registry.Set("int_key", intVar)
-
-sus retrieved := registry.Get("int_key")
-assert_true(retrieved != cringe)
-assert_eq_int(retrieved.Value().(normie), 42)
-
-registry.Delete("int_key")
-sus deleted := registry.Get("int_key")
-assert_true(deleted == cringe)
-
-registry.Clear()
-print_test_summary()
-
-test_start("test_global_registry")
-# Test global registry functions
-sus intVar := NewFlexInt("global_int")
-intVar.Set(100)
-Register("global_key", intVar)
-
-sus retrieved := Get("global_key")
-assert_true(retrieved != cringe)
-assert_eq_int(retrieved.Value().(normie), 100)
-
-Delete("global_key")
-sus deleted := Get("global_key")
-assert_true(deleted == cringe)
-
-Clear()
-print_test_summary()
-
-test_start("test_FlexVar_interface")
-# Test FlexVar interface implementation
-sus intVar := NewFlexInt("interface_test")
-intVar.Set(123)
-
-# Test interface methods
-assert_eq_int(intVar.Value().(normie), 123)
-assert_eq_string(intVar.String(), "123")
-
-sus floatVar := NewFlexFloat("float_interface")
-floatVar.Set(3.14)
-assert_eq_string(floatVar.Value().(meal), 3.14)
-assert_eq_string(floatVar.String(), "0.0")
-print_test_summary()
-
-test_start("test_multiple_counters")
-# Test multiple counter operations
-sus counter1 := NewFlexCounter("counter1")
-sus counter2 := NewFlexCounter("counter2")
-
-counter1.Inc()
-counter1.Inc()
-counter2.Add(5)
-
-assert_eq_int(counter1.Get(), 2)
-assert_eq_int(counter2.Get(), 5)
-
-Register("c1", counter1)
-Register("c2", counter2)
-
-sus retrieved1 := Get("c1")
-sus retrieved2 := Get("c2")
-assert_eq_int(retrieved1.Value().(normie), 2)
-assert_eq_int(retrieved2.Value().(normie), 5)
-
-Clear()
-print_test_summary()
-
-test_start("test_string_numeric_conversion")
-# Test string numeric conversion in FlexInt
-sus intVar := NewFlexInt("conversion_test")
-intVar.Set(9)
-assert_eq_string(intVar.String(), "9")
-
-intVar.Set(0)
-assert_eq_string(intVar.String(), "0")
-
-intVar.Set(5)
-assert_eq_string(intVar.String(), "5")
-print_test_summary()
-
-test_start("test_registry_overwrite")
-# Test registry value overwriting
-sus registry := NewRegistry()
-sus var1 := NewFlexInt("var1")
-sus var2 := NewFlexString("var2")
-
-var1.Set(10)
-var2.Set("first")
-
-registry.Set("key", var1)
-assert_eq_int(registry.Get("key").Value().(normie), 10)
-
-registry.Set("key", var2)
-assert_eq_string(registry.Get("key").Value().(tea), "first")
-print_test_summary()
-
-test_start("test_counter_negative_values")
-# Test counter with negative values
-sus counter := NewFlexCounter("negative_test")
-counter.Add(-5)
-assert_eq_int(counter.Get(), -5)
-
-counter.Inc()
-assert_eq_int(counter.Get(), -4)
-
-counter.Add(10)
-assert_eq_int(counter.Get(), 6)
-
-sus resetValue := counter.Reset()
-assert_eq_int(resetValue, 6)
-assert_eq_int(counter.Get(), 0)
-print_test_summary()
-
-test_start("test_float_precision")
-# Test float precision operations
-sus floatVar := NewFlexFloat("precision_test")
-floatVar.Set(1.234567)
-assert_eq_string(floatVar.Get(), 1.234567)
-
-floatVar.Add(0.000001)
-sus result := floatVar.Get()
-assert_true(result > 1.234567)
-
-floatVar.Set(0.0)
-assert_eq_string(floatVar.Get(), 0.0)
-print_test_summary()
-
-# Integration tests
-test_start("integration_tests")
-# Test module integration with metrics collection
-sus metrics := NewRegistry()
-
-# Create various metric types
-sus requestCount := NewFlexCounter("http_requests")
-sus responseTime := NewFlexFloat("response_time_ms")
-sus serverStatus := NewFlexString("server_status")
-
-# Register metrics
-metrics.Set("requests", requestCount)
-metrics.Set("response_time", responseTime)
-metrics.Set("status", serverStatus)
-
-# Update metrics
-requestCount.Inc()
-requestCount.Inc()
-responseTime.Set(23.45)
-serverStatus.Set("healthy")
-
-# Verify metrics
-assert_eq_int(metrics.Get("requests").Value().(normie), 2)
-assert_eq_string(metrics.Get("response_time").Value().(meal), 23.45)
-assert_eq_string(metrics.Get("status").Value().(tea), "healthy")
-
-# Simulate metric updates
-requestCount.Add(10)
-responseTime.Add(5.0)
-serverStatus.Set("warning")
-
-assert_eq_int(metrics.Get("requests").Value().(normie), 12)
-assert_eq_string(metrics.Get("response_time").Value().(meal), 28.45)
-assert_eq_string(metrics.Get("status").Value().(tea), "warning")
-
-print_test_summary()
-
-# Performance benchmarks
-test_start("performance_benchmarks")
-# Test performance of operations
-sus counter := NewFlexCounter("perf_counter")
-sus registry := NewRegistry()
-
-# Benchmark counter operations
-bestie i := 0; i < 1000; i++ {
+fr fr Test FlexCounter functionality
+slay test_flex_counter() {
+    sus counter := stat_flexin.NewFlexCounter("test_counter")
+    
+    fr fr Test initial state
+    assert_eq_int(counter.Get(), 0)
+    assert_eq_string(counter.String(), "0")
+    
+    fr fr Test increment
     counter.Inc()
+    assert_eq_int(counter.Get(), 1)
+    
+    fr fr Test add value
+    counter.Add(5)
+    assert_eq_int(counter.Get(), 6)
+    
+    fr fr Test reset
+    counter.Reset()
+    assert_eq_int(counter.Get(), 0)
+    
+    vibez.spill("✅ FlexCounter tests passed")
 }
-assert_eq_int(counter.Get(), 1000)
 
-# Benchmark registry operations
-bestie i := 0; i < 100; i++ {
-    sus key := "key_" + tea([]byte{byte(48 + i % 10)})
-    sus value := NewFlexInt(key)
-    value.Set(i)
-    registry.Set(key, value)
+fr fr Test FlexFloat functionality
+slay test_flex_float() {
+    sus float_val := stat_flexin.NewFlexFloat("test_float")
+    
+    fr fr Test initial state
+    assert_eq_string(float_val.String(), "0.0")
+    
+    fr fr Test set value
+    float_val.Set(3.14)
+    assert_eq_float(float_val.Get(), 3.14)
+    
+    fr fr Test add value
+    float_val.Add(1.86)
+    assert_eq_float(float_val.Get(), 5.0)
+    
+    vibez.spill("✅ FlexFloat tests passed")
 }
 
-# Verify some values
-sus retrieved := registry.Get("key_5")
-assert_true(retrieved != cringe)
+fr fr Test FlexString functionality
+slay test_flex_string() {
+    sus str_val := stat_flexin.NewFlexString("test_string")
+    
+    fr fr Test initial state
+    assert_eq_string(str_val.Get(), "")
+    assert_eq_string(str_val.String(), "")
+    
+    fr fr Test set value
+    str_val.Set("hello")
+    assert_eq_string(str_val.Get(), "hello")
+    assert_eq_string(str_val.String(), "hello")
+    
+    vibez.spill("✅ FlexString tests passed")
+}
+
+fr fr Test Registry functionality
+slay test_registry() {
+    sus registry := stat_flexin.NewRegistry()
+    
+    fr fr Test empty registry
+    assert_eq_string(registry.String(), "Registry")
+    
+    fr fr Test adding variables
+    sus counter := stat_flexin.NewFlexCounter("test_counter")
+    registry.Set("counter", counter)
+    
+    sus retrieved := registry.Get("counter")
+    assert_true(retrieved != cringe)
+    
+    fr fr Test deletion
+    registry.Delete("counter")
+    sus deleted := registry.Get("counter")
+    assert_true(deleted == cringe)
+    
+    fr fr Test clear
+    registry.Set("counter", counter)
+    registry.Clear()
+    sus cleared := registry.Get("counter")
+    assert_true(cleared == cringe)
+    
+    vibez.spill("✅ Registry tests passed")
+}
+
+fr fr Test global registry functions
+slay test_global_registry() {
+    fr fr Clear global registry first
+    stat_flexin.Clear()
+    
+    fr fr Test global registration
+    sus counter := stat_flexin.NewFlexCounter("global_counter")
+    stat_flexin.Register("global_counter", counter)
+    
+    sus retrieved := stat_flexin.Get("global_counter")
+    assert_true(retrieved != cringe)
+    
+    fr fr Test global deletion
+    stat_flexin.Delete("global_counter")
+    sus deleted := stat_flexin.Get("global_counter")
+    assert_true(deleted == cringe)
+    
+    vibez.spill("✅ Global registry tests passed")
+}
+
+fr fr Test performance monitoring
+slay test_performance_monitor() {
+    sus monitor := stat_flexin.NewPerformanceMonitor()
+    
+    fr fr Test initial state
+    assert_true(monitor.IsEnabled())
+    
+    fr fr Test counter operations
+    monitor.IncrementCounter("test_counter")
+    monitor.AddCounterValue("test_counter", 5)
+    assert_eq_int(monitor.GetCounterValue("test_counter"), 6)
+    
+    fr fr Test gauge operations
+    monitor.SetGauge("test_gauge", 10.5)
+    assert_eq_float(monitor.GetGaugeValue("test_gauge"), 10.5)
+    
+    fr fr Test timer operations
+    monitor.RecordTimer("test_timer", 100)
+    monitor.RecordTimer("test_timer", 200)
+    sus total, count, min, max := monitor.GetTimerStats("test_timer")
+    assert_eq_int(total, 300)
+    assert_eq_int(count, 2)
+    assert_eq_int(min, 100)
+    assert_eq_int(max, 200)
+    
+    fr fr Test histogram operations
+    monitor.RecordHistogram("test_histogram", 15.0)
+    monitor.RecordHistogram("test_histogram", 25.0)
+    
+    fr fr Test get all metrics
+    sus metrics := monitor.GetAllMetrics()
+    assert_true(len(metrics) > 0)
+    
+    fr fr Test reset
+    monitor.Reset()
+    assert_eq_int(monitor.GetCounterValue("test_counter"), 0)
+    
+    vibez.spill("✅ Performance monitor tests passed")
+}
+
+fr fr Test timer functionality
+slay test_flex_timer() {
+    sus timer := stat_flexin.NewFlexTimer("test_timer")
+    
+    fr fr Test initial state
+    assert_eq_int(timer.count, 0)
+    assert_eq_float(timer.GetAverage(), 0.0)
+    
+    fr fr Test recording times
+    timer.Record(100)
+    timer.Record(200)
+    timer.Record(300)
+    
+    assert_eq_int(timer.count, 3)
+    assert_eq_int(timer.total_time, 600)
+    assert_eq_int(timer.min_time, 100)
+    assert_eq_int(timer.max_time, 300)
+    assert_eq_float(timer.GetAverage(), 200.0)
+    
+    fr fr Test reset
+    timer.Reset()
+    assert_eq_int(timer.count, 0)
+    assert_eq_int(timer.total_time, 0)
+    
+    vibez.spill("✅ FlexTimer tests passed")
+}
+
+fr fr Test gauge functionality
+slay test_flex_gauge() {
+    sus gauge := stat_flexin.NewFlexGauge("test_gauge", 0.0)
+    
+    fr fr Test initial state
+    assert_eq_float(gauge.Get(), 0.0)
+    assert_eq_float(gauge.GetMin(), 0.0)
+    assert_eq_float(gauge.GetMax(), 0.0)
+    
+    fr fr Test setting values
+    gauge.Set(10.5)
+    assert_eq_float(gauge.Get(), 10.5)
+    assert_eq_float(gauge.GetMax(), 10.5)
+    
+    gauge.Set(5.0)
+    assert_eq_float(gauge.Get(), 5.0)
+    assert_eq_float(gauge.GetMin(), 0.0)
+    assert_eq_float(gauge.GetMax(), 10.5)
+    
+    fr fr Test increment/decrement
+    gauge.Inc()
+    assert_eq_float(gauge.Get(), 6.0)
+    
+    gauge.Dec()
+    assert_eq_float(gauge.Get(), 5.0)
+    
+    fr fr Test add/subtract
+    gauge.Add(2.5)
+    assert_eq_float(gauge.Get(), 7.5)
+    
+    gauge.Sub(1.5)
+    assert_eq_float(gauge.Get(), 6.0)
+    
+    vibez.spill("✅ FlexGauge tests passed")
+}
+
+fr fr Test histogram functionality
+slay test_flex_histogram() {
+    sus histogram := stat_flexin.NewFlexHistogram("test_histogram")
+    
+    fr fr Test initial state
+    assert_eq_int(histogram.total_count, 0)
+    assert_eq_float(histogram.sum_value, 0.0)
+    assert_eq_float(histogram.GetAverage(), 0.0)
+    
+    fr fr Test recording values
+    histogram.Record(15.0)
+    histogram.Record(25.0)
+    histogram.Record(35.0)
+    
+    assert_eq_int(histogram.total_count, 3)
+    assert_eq_float(histogram.sum_value, 75.0)
+    assert_eq_float(histogram.GetAverage(), 25.0)
+    
+    fr fr Test buckets
+    sus buckets := histogram.GetBuckets()
+    assert_true(len(buckets) > 0)
+    
+    fr fr Test reset
+    histogram.Reset()
+    assert_eq_int(histogram.total_count, 0)
+    assert_eq_float(histogram.sum_value, 0.0)
+    
+    vibez.spill("✅ FlexHistogram tests passed")
+}
+
+fr fr Test health check system
+slay test_health_checks() {
+    fr fr Register a health check
+    stat_flexin.RegisterHealthCheck("test_check", slay() (lit, tea) {
+        damn based, ""
+    }, 1000)
+    
+    fr fr Run health check
+    sus result, error := stat_flexin.RunHealthCheck("test_check")
+    assert_true(result)
+    assert_eq_string(error, "")
+    
+    fr fr Test health check status
+    sus status, status_error, last_check := stat_flexin.GetHealthCheckStatus("test_check")
+    assert_true(status)
+    assert_eq_string(status_error, "")
+    assert_true(last_check > 0)
+    
+    fr fr Test running all health checks
+    sus all_results := stat_flexin.RunAllHealthChecks()
+    assert_true(len(all_results) > 0)
+    assert_true(all_results["test_check"])
+    
+    vibez.spill("✅ Health check tests passed")
+}
+
+fr fr Test global monitoring functions
+slay test_global_monitoring() {
+    fr fr Reset metrics first
+    stat_flexin.ResetAllMetrics()
+    
+    fr fr Test global counter operations
+    stat_flexin.IncrementCounter("global_counter")
+    stat_flexin.AddCounterValue("global_counter", 5)
+    
+    fr fr Test global gauge operations
+    stat_flexin.SetGauge("global_gauge", 42.0)
+    
+    fr fr Test global timer operations
+    stat_flexin.RecordTimer("global_timer", 150)
+    
+    fr fr Test global histogram operations
+    stat_flexin.RecordHistogram("global_histogram", 30.0)
+    
+    fr fr Test get all metrics
+    sus metrics := stat_flexin.GetAllMetrics()
+    assert_true(len(metrics) > 0)
+    
+    fr fr Test monitoring enable/disable
+    stat_flexin.DisableMonitoring()
+    assert_true(!stat_flexin.IsMonitoringEnabled())
+    
+    stat_flexin.EnableMonitoring()
+    assert_true(stat_flexin.IsMonitoringEnabled())
+    
+    vibez.spill("✅ Global monitoring tests passed")
+}
+
+fr fr Test metric export formats
+slay test_metric_export() {
+    fr fr Reset and add some metrics
+    stat_flexin.ResetAllMetrics()
+    stat_flexin.IncrementCounter("export_counter")
+    stat_flexin.SetGauge("export_gauge", 100.0)
+    
+    fr fr Test JSON export
+    sus json_export := stat_flexin.ExportMetricsAsJSON()
+    assert_true(len(json_export) > 0)
+    assert_true(json_export != "")
+    
+    fr fr Test Prometheus export
+    sus prometheus_export := stat_flexin.ExportMetricsAsPrometheus()
+    assert_true(len(prometheus_export) > 0)
+    assert_true(prometheus_export != "")
+    
+    vibez.spill("✅ Metric export tests passed")
+}
+
+fr fr Test benchmark utilities
+slay test_benchmark_utilities() {
+    fr fr Test benchmark function
+    stat_flexin.BenchmarkFunction("test_benchmark", 10, slay() {
+        fr fr Simple operation to benchmark
+        sus x := 1 + 1
+    })
+    
+    fr fr Test profile function
+    stat_flexin.ProfileFunction("test_profile", slay() {
+        fr fr Simple operation to profile
+        sus y := 2 * 2
+    })
+    
+    fr fr Test memory profiling
+    stat_flexin.RecordMemoryUsage("memory_test")
+    
+    sus start_memory := stat_flexin.StartMemoryProfiling("memory_profile")
+    fr fr Do some work
+    sus z := 3 * 3
+    stat_flexin.EndMemoryProfiling("memory_profile", start_memory)
+    
+    vibez.spill("✅ Benchmark utilities tests passed")
+}
+
+fr fr Test alert system
+slay test_alert_system() {
+    fr fr Register an alert
+    stat_flexin.RegisterAlert("high_counter", "counter_alert_test", slay(value interface{}) lit {
+        damn based  fr fr Always trigger for testing
+    }, 5, slay(name tea, value interface{}) {
+        vibez.spill("Alert triggered: " + name)
+    })
+    
+    fr fr Set up metric to trigger alert
+    stat_flexin.IncrementCounter("alert_test")
+    
+    fr fr Test alert enable/disable
+    stat_flexin.EnableAlert("high_counter")
+    stat_flexin.DisableAlert("high_counter")
+    stat_flexin.EnableAlert("high_counter")
+    
+    fr fr Check alerts
+    stat_flexin.CheckAlerts()
+    
+    vibez.spill("✅ Alert system tests passed")
+}
+
+fr fr Run all tests
+test_flex_counter()
+test_flex_float()
+test_flex_string()
+test_registry()
+test_global_registry()
+test_performance_monitor()
+test_flex_timer()
+test_flex_gauge()
+test_flex_histogram()
+test_health_checks()
+test_global_monitoring()
+test_metric_export()
+test_benchmark_utilities()
+test_alert_system()
+
 print_test_summary()
-
-# Edge case testing
-test_start("edge_cases")
-# Test edge cases and error conditions
-sus registry := NewRegistry()
-
-# Test nil/empty operations
-sus nilVar := registry.Get("nonexistent")
-assert_true(nilVar == cringe)
-
-# Test counter with zero
-sus zeroCounter := NewFlexCounter("zero")
-assert_eq_int(zeroCounter.Get(), 0)
-assert_eq_int(zeroCounter.Inc(), 1)
-assert_eq_int(zeroCounter.Reset(), 1)
-assert_eq_int(zeroCounter.Get(), 0)
-
-# Test string with empty values
-sus emptyString := NewFlexString("empty")
-assert_eq_string(emptyString.Get(), "")
-assert_eq_string(emptyString.Set(""), "")
-assert_eq_string(emptyString.String(), "")
-
-# Test float with zero
-sus zeroFloat := NewFlexFloat("zero_float")
-assert_eq_string(zeroFloat.Get(), 0.0)
-assert_eq_string(zeroFloat.String(), "0.0")
-
-# Test registry clear
-registry.Set("test", NewFlexInt("test"))
-assert_true(registry.Get("test") != cringe)
-registry.Clear()
-assert_true(registry.Get("test") == cringe)
-
-print_test_summary()
+vibez.spill("🎉 All StatFlexin tests completed successfully!")

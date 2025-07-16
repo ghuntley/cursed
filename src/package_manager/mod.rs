@@ -19,6 +19,7 @@ pub mod archive;
 pub mod config;
 pub mod workspace;
 pub mod lock_file;
+pub mod mutable_state;
 
 #[cfg(test)]
 mod tests;

@@ -638,7 +638,7 @@ impl DebugOutputSystem {
                     state,
                     parent_id: scheduler.get_parent_goroutine_id(current_id),
                     created_at: Instant::now(),
-                    creation_stack: Vec::new(), // TODO: Get from scheduler
+                    creation_stack: self.get_goroutine_creation_stack(current_id),
                     current_stack: self.capture_stack_trace()?.frames,
                     metadata: HashMap::new(),
                 };
@@ -781,6 +781,22 @@ impl DebugOutputSystem {
         // Simplified memory usage calculation
         let buffer = self.message_buffer.read().unwrap();
         buffer.len() * std::mem::size_of::<DebugMessage>()
+    }
+
+    /// Get goroutine creation stack trace
+    pub fn get_goroutine_creation_stack(&self, _goroutine_id: GoroutineId) -> Vec<StackFrame> {
+        // In a real implementation, we'd store creation stack traces when goroutines are created
+        // For now, return a simplified stack trace
+        vec![StackFrame {
+            function_name: "goroutine_spawn".to_string(),
+            file: Some("runtime/goroutine.rs".to_string()),
+            line: Some(0),
+            column: Some(0),
+            arguments: vec![],
+            locals: std::collections::HashMap::new(),
+            frame_type: crate::runtime::stack_trace::FrameType::Function,
+            frame_address: None,
+        }]
     }
 }
 
@@ -1106,6 +1122,7 @@ pub mod utils {
 
         Ok(())
     }
+
 }
 
 /// Public function that was likely being used by external code
