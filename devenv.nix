@@ -18,8 +18,6 @@
     # C compiler and build tools for cc-rs
     pkgs.gcc
     pkgs.binutils
-    pkgs.glibc
-    pkgs.glibc.dev
     pkgs.libffi
     pkgs.libffi.dev
     pkgs.libxml2
@@ -39,6 +37,8 @@
   ] ++ lib.optionals pkgs.stdenv.isLinux [
     # Linux-specific packages
     pkgs.libbfd
+    pkgs.glibc
+    pkgs.glibc.dev
   ] ++ lib.optionals pkgs.stdenv.isDarwin [
     # macOS-specific packages
     pkgs.darwin.apple_sdk.frameworks.CoreFoundation

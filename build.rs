@@ -158,7 +158,23 @@ fn get_next_socket_id() -> i32 {
     
     // Copy the built library to a location where the linker can find it
     let lib_name = "libcursed_runtime.a";
-    let target_triple = env::var("TARGET").unwrap_or_else(|_| "x86_64-unknown-linux-gnu".to_string());
+    let target_triple = env::var("TARGET").unwrap_or_else(|_| {
+        // Default to the current platform's target triple
+        if cfg!(target_arch = "aarch64") && cfg!(target_os = "macos") {
+            "aarch64-apple-darwin".to_string()
+        } else if cfg!(target_arch = "aarch64") && cfg!(target_os = "linux") {
+            "aarch64-unknown-linux-gnu".to_string()
+        } else if cfg!(target_arch = "x86_64") && cfg!(target_os = "macos") {
+            "x86_64-apple-darwin".to_string()
+        } else if cfg!(target_arch = "x86_64") && cfg!(target_os = "linux") {
+            "x86_64-unknown-linux-gnu".to_string()
+        } else {
+            format!("{}-unknown-{}", 
+                env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_else(|_| "unknown".to_string()),
+                env::var("CARGO_CFG_TARGET_OS").unwrap_or_else(|_| "unknown".to_string())
+            )
+        }
+    });
     let src_lib_path_release = runtime_dir.join("target").join(&target_triple).join("release").join(lib_name);
     let src_lib_path_debug = runtime_dir.join("target").join(&target_triple).join("debug").join(lib_name);
     let dest_lib_path = Path::new(&out_dir).join(lib_name);
@@ -231,7 +247,83 @@ fn fix_line(line: &str) -> String {
     fixed_line
 }
 
+fn build_runtime_libraries() {
+    use std::process::Command;
+    
+    println!("cargo:warning=Building runtime libraries for current architecture...");
+    
+    // Check if runtime libraries need to be rebuilt
+    let runtime_dir = Path::new("runtime");
+    let build_script = runtime_dir.join("build_runtime.sh");
+    
+    if !build_script.exists() {
+        println!("cargo:warning=Runtime build script not found, skipping runtime library build");
+        return;
+    }
+    
+    // Check if libraries exist and are recent
+    let libs = [
+        "libcursed_minimal_shims.a",
+        "libcursed_interface_runtime.a", 
+        "libcursed_type_assertion_runtime.a"
+    ];
+    
+    let mut needs_rebuild = false;
+    for lib in &libs {
+        let lib_path = runtime_dir.join(lib);
+        if !lib_path.exists() {
+            needs_rebuild = true;
+            break;
+        }
+    }
+    
+    if needs_rebuild {
+        println!("cargo:warning=Rebuilding runtime libraries...");
+        let output = Command::new("bash")
+            .arg(&build_script)
+            .current_dir(runtime_dir)
+            .output();
+            
+        match output {
+            Ok(result) => {
+                if !result.status.success() {
+                    let stderr = String::from_utf8_lossy(&result.stderr);
+                    println!("cargo:warning=Runtime library build failed: {}", stderr);
+                } else {
+                    println!("cargo:warning=Runtime libraries built successfully");
+                }
+            }
+            Err(e) => {
+                println!("cargo:warning=Failed to run runtime build script: {}", e);
+            }
+        }
+    } else {
+        println!("cargo:warning=Runtime libraries are up to date");
+    }
+}
+
 fn link_system_libraries() {
+    // Detect target architecture for dynamic library paths
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_else(|_| {
+        if cfg!(target_arch = "aarch64") {
+            "aarch64".to_string()
+        } else if cfg!(target_arch = "x86_64") {
+            "x86_64".to_string()
+        } else {
+            "unknown".to_string()
+        }
+    });
+    
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_else(|_| {
+        if cfg!(target_os = "macos") {
+            "macos".to_string()
+        } else if cfg!(target_os = "linux") {
+            "linux".to_string()
+        } else {
+            "unknown".to_string()
+        }
+    });
+
     // Link with SQLite3 library
     println!("cargo:rustc-link-lib=sqlite3");
     
@@ -253,29 +345,65 @@ fn link_system_libraries() {
         }
     }
     
-    // Add libffi library search paths for Nix environment
-    let possible_libffi_paths = vec![
+    // Build architecture-specific library search paths
+    let mut possible_libffi_paths = vec![
         "/nix/store/09b5m303v4d52wjry30xsabj65vnhkni-libffi-3.4.7/lib",
         "/nix/store/6pak77li0iw9x0b3yhmbjvp846w3p6bx-libffi-3.4.6/lib",
         "/nix/store/n0lzbpbc5dwq03s1vjr885b28cjbp2gs-libffi-3.4.7/lib",
         "/nix/store/paqdsvmj4fwhc2w6rr884c3kymxl69k0-libffi-3.4.8/lib",
-        "/usr/lib/x86_64-linux-gnu",
         "/usr/local/lib",
     ];
     
-    // Add ncurses/tinfo library search paths for Nix environment
-    let possible_ncurses_paths = vec![
+    let mut possible_ncurses_paths = vec![
         "/nix/store/k3a7dzrqphj9ksbb43i24vy6inz8ys51-ncurses-6.4.20221231/lib",
-        "/usr/lib/x86_64-linux-gnu",
         "/usr/local/lib",
     ];
     
-    // Add libxml2 library search paths for Nix environment
-    let possible_xml2_paths = vec![
+    let mut possible_xml2_paths = vec![
         "/nix/store/0z4hrksbdrwv9xb8ycjk3rq9ppmw0350-libxml2-2.13.5/lib",
-        "/usr/lib/x86_64-linux-gnu",
         "/usr/local/lib",
     ];
+
+    // Add architecture-specific paths
+    match (target_arch.as_str(), target_os.as_str()) {
+        ("aarch64", "macos") => {
+            // macOS arm64 (M1/M2/M3) - Homebrew installs to /opt/homebrew
+            possible_libffi_paths.push("/opt/homebrew/lib");
+            possible_ncurses_paths.push("/opt/homebrew/lib");
+            possible_xml2_paths.push("/opt/homebrew/lib");
+            println!("cargo:rustc-link-search=native=/opt/homebrew/lib");
+            println!("cargo:rustc-link-search=native=/System/Library/Frameworks");
+            println!("cargo:rustc-link-search=framework=/System/Library/Frameworks");
+            // Add essential macOS system library paths
+            println!("cargo:rustc-link-search=native=/usr/lib");
+            println!("cargo:rustc-link-search=native=/usr/local/lib");
+        },
+        ("aarch64", "linux") => {
+            // Linux arm64 (aarch64)
+            possible_libffi_paths.push("/usr/lib/aarch64-linux-gnu");
+            possible_ncurses_paths.push("/usr/lib/aarch64-linux-gnu");
+            possible_xml2_paths.push("/usr/lib/aarch64-linux-gnu");
+            println!("cargo:rustc-link-search=native=/usr/lib/aarch64-linux-gnu");
+        },
+        ("x86_64", "macos") => {
+            // macOS x86_64 - Homebrew installs to /usr/local
+            possible_libffi_paths.push("/usr/local/lib");
+            possible_ncurses_paths.push("/usr/local/lib");
+            possible_xml2_paths.push("/usr/local/lib");
+        },
+        ("x86_64", "linux") => {
+            // Linux x86_64
+            possible_libffi_paths.push("/usr/lib/x86_64-linux-gnu");
+            possible_ncurses_paths.push("/usr/lib/x86_64-linux-gnu");
+            possible_xml2_paths.push("/usr/lib/x86_64-linux-gnu");
+        },
+        _ => {
+            // Default fallback paths
+            possible_libffi_paths.push("/usr/lib");
+            possible_ncurses_paths.push("/usr/lib");
+            possible_xml2_paths.push("/usr/lib");
+        }
+    }
     
     for path in possible_libffi_paths {
         if std::path::Path::new(path).exists() {
@@ -304,14 +432,15 @@ fn link_system_libraries() {
         }
     }
     
-    // macOS-specific configuration for dylib loading
-    if cfg!(target_os = "macos") {
-        println!("cargo:rustc-link-search=native=/usr/local/lib");
-        println!("cargo:rustc-link-search=native=/opt/homebrew/lib");
+    // macOS-specific configuration for dylib loading (already handled above by architecture)
+    // Additional common macOS paths
+    if target_os == "macos" {
+        println!("cargo:rustc-link-search=native=/System/Library/Frameworks");
+        println!("cargo:rustc-link-search=native=/Library/Frameworks");
     }
     
     // Add LLVM bin paths to environment for compilation
-    let possible_llvm_bin_paths = vec![
+    let mut possible_llvm_bin_paths = vec![
         "/nix/store/013b6qj9g2n2pmxcllnch9drrf9m0zwf-llvm-17.0.6/bin",
         "/nix/store/s5a4igx64mngxrz3d4s2mxz6764mdv47-llvm-17.0.6/bin",
         "/nix/store/8qpf7pp0a71psdngm5nxc64jahw0vlwl-llvm-19.1.7/bin",
@@ -319,6 +448,12 @@ fn link_system_libraries() {
         "/usr/bin",
         "/usr/local/bin",
     ];
+
+    // Add architecture-specific LLVM paths
+    if target_arch == "aarch64" && target_os == "macos" {
+        possible_llvm_bin_paths.push("/opt/homebrew/bin");
+        possible_llvm_bin_paths.push("/opt/homebrew/opt/llvm/bin");
+    }
     
     for path in possible_llvm_bin_paths {
         if std::path::Path::new(path).exists() {
@@ -336,6 +471,9 @@ fn link_system_libraries() {
     println!("cargo:rerun-if-env-changed=LIBRARY_PATH");
     println!("cargo:rerun-if-env-changed=PKG_CONFIG_PATH");
     println!("cargo:rerun-if-env-changed=PATH");
+    
+    // Ensure runtime libraries are built for current architecture
+    build_runtime_libraries();
     
     // Link minimal C shims for self-hosting
     println!("cargo:rustc-link-lib=static=cursed_minimal_shims");

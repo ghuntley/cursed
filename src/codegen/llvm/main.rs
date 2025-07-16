@@ -119,13 +119,47 @@ pub struct LlvmCodeGenerator {
 }
 
 impl LlvmCodeGenerator {
+    /// Detect the target triple for the current platform
+    fn detect_target_triple() -> String {
+        // Try to get from environment first
+        if let Ok(target) = std::env::var("TARGET") {
+            return target;
+        }
+        
+        // Detect current platform with proper target triples for arm64 and x86_64
+        cfg_if::cfg_if! {
+            if #[cfg(all(target_arch = "aarch64", target_os = "macos"))] {
+                "aarch64-apple-darwin".to_string()
+            } else if #[cfg(all(target_arch = "aarch64", target_os = "linux"))] {
+                "aarch64-unknown-linux-gnu".to_string()
+            } else if #[cfg(all(target_arch = "x86_64", target_os = "macos"))] {
+                "x86_64-apple-darwin".to_string()
+            } else if #[cfg(all(target_arch = "x86_64", target_os = "linux"))] {
+                "x86_64-unknown-linux-gnu".to_string()
+            } else if #[cfg(all(target_arch = "x86_64", target_os = "windows"))] {
+                "x86_64-pc-windows-msvc".to_string()
+            } else if #[cfg(all(target_arch = "aarch64", target_os = "windows"))] {
+                "aarch64-pc-windows-msvc".to_string()
+            } else {
+                // Generic fallback for other architectures
+                format!("{}-unknown-{}", 
+                    std::env::consts::ARCH, 
+                    std::env::consts::OS
+                )
+            }
+        }
+    }
+    
     pub fn new() -> Result<Self, CursedError> {
         // Reset global register counter for new compilation
-        RegisterTracker::set_global_counter(1);
+        RegisterTracker::set_global_counter(0);
+        
+        // Detect current platform target triple
+        let target_triple = Self::detect_target_triple();
         
         Ok(Self {
             optimization_level: 2,
-            target_triple: "x86_64-unknown-linux-gnu".to_string(),
+            target_triple,
             ir_code: String::new(),
             register_tracker: RegisterTracker::new(),
             label_counter: 0,
@@ -398,7 +432,7 @@ impl LlvmCodeGenerator {
     pub fn generate_ir(&mut self, program: &Program) -> Result<String, CursedError> {
         self.ir_code.clear();
         // Reset and sync with global register counter
-        RegisterTracker::set_global_counter(1);
+        RegisterTracker::set_global_counter(0);
         self.register_tracker.sync_with_global();
         self.label_counter = 0;
         self.variables.clear();
@@ -474,11 +508,14 @@ impl LlvmCodeGenerator {
         
         // Generate main function if not present or if there are top-level statements
         if !has_main_function && !top_level_statements.is_empty() {
-            self.ir_code.push_str("\ndefine i32 @main() {\n");
+            // Generate proper main function with entry point
+            self.ir_code.push_str("\n; Main function entry point\n");
+            self.ir_code.push_str("define i32 @main() {\n");
+            self.ir_code.push_str("entry:\n");
             
-            // Main function register numbering starts at %1 according to LLVM convention
-            // Ensure counter is properly set to 1 for function start
-            RegisterTracker::set_global_counter(1);
+            // Main function register numbering starts at %0 according to LLVM convention  
+            // Reset register tracker for main function
+            RegisterTracker::set_global_counter(0);
             self.register_tracker.sync_with_global();
             
             // Generate all top-level statements inside main function with error recovery
@@ -486,22 +523,25 @@ impl LlvmCodeGenerator {
                 match self.generate_statement(statement) {
                     Ok(()) => {},
                     Err(e) => {
-                        compiler_errors.push(e);
                         // Generate error recovery comment
                         self.ir_code.push_str(&format!(
-                            "  ; ERROR RECOVERY: Statement compilation failed\n"
+                            "  ; ERROR RECOVERY: Statement compilation failed: {}\n", e
                         ));
+                        compiler_errors.push(e);
                         // Add the statement to recovered_statements for error reporting
                         recovered_statements.push(statement);
                     }
                 }
             }
             
+            // Ensure proper main function return
             self.ir_code.push_str("  ret i32 0\n");
             self.ir_code.push_str("}\n");
         } else if !has_main_function {
-            // Add empty main function if no main was defined and no top-level statements
-            self.ir_code.push_str("\ndefine i32 @main() {\n");
+            // Add proper empty main function if no main was defined and no top-level statements
+            self.ir_code.push_str("\n; Empty main function\n");
+            self.ir_code.push_str("define i32 @main() {\n");
+            self.ir_code.push_str("entry:\n");
             self.ir_code.push_str("  ret i32 0\n");
             self.ir_code.push_str("}\n");
         }
@@ -569,6 +609,7 @@ impl LlvmCodeGenerator {
         // Declare external functions with deduplication
         self.declare_function("printf", "i32 @printf(i8*, ...)");
         self.declare_function("puts", "i32 @puts(i8*)");
+        self.declare_function("print", "i32 @print(i8*)");
         self.declare_function("malloc", "i8* @malloc(i64)");
         self.declare_function("free", "void @free(i8*)");
         self.declare_function("strlen", "i64 @strlen(i8*)");
@@ -1405,7 +1446,7 @@ impl LlvmCodeGenerator {
                 let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
                 
                 // Synchronize the variable counter to avoid register conflicts
-                expression_compiler.set_variable_counter(self.get_current_register_number());
+                expression_compiler.set_variable_counter(self.get_current_register_number() as usize);
                 
                 // Copy current variables to the expression compiler
                 for (name, reg) in &self.variables {
@@ -1832,16 +1873,28 @@ impl LlvmCodeGenerator {
                 if !arguments.is_empty() {
                     let format_arg = self.generate_expression(&arguments[0])?;
                     let mut printf_args = vec![format_arg];
+                    let mut arg_types = Vec::new();
                     
                     for arg in &arguments[1..] {
                         let arg_reg = self.generate_expression(arg)?;
                         printf_args.push(arg_reg);
+                        
+                        // Determine the type of each argument
+                        let arg_type = match arg {
+                            Expression::String(_) => "i8*",
+                            Expression::Float(_) => "double",
+                            Expression::Boolean(_) => "i32", // Convert bool to i32
+                            Expression::Integer(_) => "i32",
+                            _ => "i32", // Default to i32
+                        };
+                        arg_types.push(arg_type);
                     }
                     
                     let call_reg = self.next_register();
                     self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}", call_reg, printf_args[0]));
-                    for arg in &printf_args[1..] {
-                        self.ir_code.push_str(&format!(", i32 {}", arg));
+                    for (i, arg) in printf_args[1..].iter().enumerate() {
+                        let arg_type = arg_types[i];
+                        self.ir_code.push_str(&format!(", {} {}", arg_type, arg));
                     }
                     self.ir_code.push_str(")\n");
                 }
@@ -1925,11 +1978,18 @@ impl LlvmCodeGenerator {
             let result_reg = self.next_register();
             
             self.ir_code.push_str(&format!("  {} = call i32 @{}(", result_reg, function_name));
-            for (i, arg_reg) in arg_regs.iter().enumerate() {
+            for (i, (arg_reg, arg_expr)) in arg_regs.iter().zip(arguments.iter()).enumerate() {
                 if i > 0 {
                     self.ir_code.push_str(", ");
                 }
-                self.ir_code.push_str(&format!("i32 {}", arg_reg));
+                // Determine argument type based on expression
+                let arg_type = match arg_expr {
+                    Expression::String(_) => "i8*",
+                    Expression::Float(_) => "double", 
+                    Expression::Boolean(_) => "i1",
+                    _ => "i32", // Default for integers and other types
+                };
+                self.ir_code.push_str(&format!("{} {}", arg_type, arg_reg));
             }
             self.ir_code.push_str(")\n");
             
@@ -1942,42 +2002,78 @@ impl LlvmCodeGenerator {
     fn generate_function(&mut self, name: &str, params: &[crate::ast::Parameter], return_type: &Option<crate::ast::Type>, body: &[Statement]) -> Result<(), CursedError> {
         // Initialize defer list for this function
         self.current_function_defers = None;
+        self.current_function_name = Some(name.to_string());
         
         // Reset register tracker for each function - LLVM functions have their own register numbering
-        // Functions should start register numbering from %1 (parameters are named)
-        self.register_tracker.set_counter(1);
+        // Functions should start register numbering from %0 for proper LLVM IR
+        self.register_tracker.set_counter(0);
         
-        // Use the dedicated function compiler for complete IR generation
-        let mut function_compiler = crate::codegen::llvm::function_compilation::FunctionCompiler::new();
+        // Generate function signature
+        self.ir_code.push_str(&format!("\n; Function: {}\n", name));
         
-        // Compile the complete function with all statements and expressions
-        let param_names: Vec<String> = params.iter().map(|p| p.name.clone()).collect();
-        let param_types: Vec<String> = params.iter().map(|p| {
-            if let Some(param_type) = &p.param_type {
-                param_type.to_string()
+        // Determine return type
+        let ret_type = match return_type {
+            Some(t) => self.map_type_to_llvm(t),
+            None => "void".to_string(),
+        };
+        
+        // Generate parameter list and collect parameter info
+        let mut param_list = Vec::new();
+        let mut param_info = Vec::new();
+        for (i, param) in params.iter().enumerate() {
+            let param_type = if let Some(param_type) = &param.param_type {
+                self.map_type_to_llvm(param_type)
             } else {
-                "UNTYPED".to_string()
-            }
-        }).collect();
-        let return_type_str = return_type.as_ref().map(|t| t.to_string());
-        let function_ir = function_compiler.compile_function(
-            name,
-            &param_names,
-            Some(&param_types), // param types from AST (with "UNTYPED" for inference)
-            return_type_str.as_deref(), // return type from AST
-            body
-        )?;
-        
-        // Add the generated IR to our main IR code
-        self.ir_code.push_str(&function_ir);
-        
-        // Merge any IR generated during expression compilation
-        let expression_ir = function_compiler.get_ir();
-        if !expression_ir.is_empty() {
-            self.ir_code.push_str(expression_ir);
+                "i32".to_string() // Default type
+            };
+            param_list.push(format!("{} %arg_{}", param_type, i));
+            param_info.push((param.name.clone(), param_type, i));
         }
         
-        // String constants are now automatically managed globally, no need to merge manually
+        // Generate function definition with proper entry point
+        self.ir_code.push_str(&format!(
+            "define {} @{}({}) {{\n",
+            ret_type,
+            name,
+            param_list.join(", ")
+        ));
+        self.ir_code.push_str("entry:\n");
+        
+        // Allocate local variables for parameters after function definition
+        for (param_name, param_type, i) in param_info {
+            let param_var = self.next_register();
+            self.ir_code.push_str(&format!("  {} = alloca {}, align 4\n", param_var, param_type));
+            self.ir_code.push_str(&format!("  store {} %arg_{}, {}* {}, align 4\n", param_type, i, param_type, param_var));
+            self.variables.insert(param_name, param_var);
+        }
+        
+        // Generate function body
+        let mut has_return = false;
+        for statement in body {
+            if let Statement::Return(_) = statement {
+                has_return = true;
+            }
+            self.generate_statement(statement)?;
+        }
+        
+        // Add return statement if none was present
+        if !has_return {
+            if ret_type == "void" {
+                self.ir_code.push_str("  ret void\n");
+            } else if ret_type == "i32" {
+                self.ir_code.push_str("  ret i32 0\n");
+            } else {
+                self.ir_code.push_str(&format!("  ret {} null\n", ret_type));
+            }
+        }
+        
+        // Generate defer cleanup before return
+        self.generate_defer_cleanup()?;
+        
+        self.ir_code.push_str("}\n");
+        
+        // Clear function-specific state
+        self.current_function_name = None;
         
         Ok(())
     }
@@ -2477,10 +2573,39 @@ impl LlvmCodeGenerator {
         self.register_tracker.allocate_register()
     }
     
+    pub fn next_variable(&mut self) -> String {
+        self.register_tracker.allocate_register().trim_start_matches('%').to_string()
+    }
+    
+    pub fn get_current_register_number(&self) -> i32 {
+        (self.register_tracker.get_current_counter().saturating_sub(1)) as i32
+    }
+    
+
     fn next_label(&mut self) -> String {
         let label = format!("label{}", self.label_counter);
         self.label_counter += 1;
         label
+    }
+    
+    /// Map CURSED types to LLVM types
+    fn map_type_to_llvm(&self, cursed_type: &crate::ast::Type) -> String {
+        match cursed_type {
+            crate::ast::Type::Normie | crate::ast::Type::Integer => "i32".to_string(),
+            crate::ast::Type::Smol => "i8".to_string(),
+            crate::ast::Type::Mid => "i16".to_string(),
+            crate::ast::Type::Thicc => "i64".to_string(),
+            crate::ast::Type::Snack | crate::ast::Type::Float => "float".to_string(),
+            crate::ast::Type::Meal => "double".to_string(),
+            crate::ast::Type::Lit | crate::ast::Type::Boolean => "i1".to_string(),
+            crate::ast::Type::Tea | crate::ast::Type::String => "i8*".to_string(),
+            crate::ast::Type::Sip => "i8".to_string(),
+            crate::ast::Type::Void => "void".to_string(),
+            crate::ast::Type::Array(_, _) => "i8*".to_string(), // Arrays as pointers
+            crate::ast::Type::Slice(_) => "i8*".to_string(),
+            crate::ast::Type::Custom(_) => "i8*".to_string(), // Custom types as pointers
+            _ => "i32".to_string(), // Default fallback
+        }
     }
     
     // Additional methods for advanced features
@@ -3767,18 +3892,7 @@ impl LlvmCodeGenerator {
         Ok(format!("%{}", interface_obj_reg))
     }
     
-    pub fn next_variable(&mut self) -> String {
-        // Return just the number part of the register for backward compatibility
-        let reg = self.register_tracker.allocate_register();
-        reg[1..].to_string() // Remove the '%' prefix
-    }
-    
-    /// Get the current register number without allocating a new one
-    pub fn get_current_register_number(&self) -> usize {
-        // Get the ACTUAL current register number from the tracker
-        // This should return the last allocated register number
-        self.register_tracker.get_current_counter()
-    }
+
     
     /// Check if a function has been declared
     pub fn has_function_declaration(&self, name: &str) -> bool {
@@ -3803,7 +3917,7 @@ impl LlvmCodeGenerator {
     
     /// Get the last variable counter for accessing results
     pub fn get_last_variable_counter(&self) -> usize {
-        self.get_current_register_number().saturating_sub(1)
+        (self.get_current_register_number().saturating_sub(1)) as usize
     }
     
     pub fn set_last_variable_counter(&mut self, counter: usize) {

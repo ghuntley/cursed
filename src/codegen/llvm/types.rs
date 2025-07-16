@@ -10,9 +10,39 @@ pub struct LlvmContext {
 }
 
 impl LlvmContext {
+    fn detect_target_triple() -> String {
+        // Check for environment variable first
+        if let Ok(target) = std::env::var("TARGET") {
+            return target;
+        }
+        
+        // Detect current platform with proper target triples for arm64 and x86_64
+        cfg_if::cfg_if! {
+            if #[cfg(all(target_arch = "aarch64", target_os = "macos"))] {
+                "aarch64-apple-darwin".to_string()
+            } else if #[cfg(all(target_arch = "aarch64", target_os = "linux"))] {
+                "aarch64-unknown-linux-gnu".to_string()
+            } else if #[cfg(all(target_arch = "x86_64", target_os = "macos"))] {
+                "x86_64-apple-darwin".to_string()
+            } else if #[cfg(all(target_arch = "x86_64", target_os = "linux"))] {
+                "x86_64-unknown-linux-gnu".to_string()
+            } else if #[cfg(all(target_arch = "x86_64", target_os = "windows"))] {
+                "x86_64-pc-windows-msvc".to_string()
+            } else if #[cfg(all(target_arch = "aarch64", target_os = "windows"))] {
+                "aarch64-pc-windows-msvc".to_string()
+            } else {
+                // Generic fallback for other architectures
+                format!("{}-unknown-{}", 
+                    std::env::consts::ARCH, 
+                    std::env::consts::OS
+                )
+            }
+        }
+    }
+
     pub fn new() -> Self {
         Self {
-            target_triple: "x86_64-unknown-linux-gnu".to_string(),
+            target_triple: Self::detect_target_triple(),
             modules: Vec::new(),
         }
     }
@@ -184,6 +214,55 @@ impl LlvmType {
             LlvmType::TestStatus => 4,  // enum as i32
             LlvmType::TestSuite => 120, // estimated size for TestSuite struct
             LlvmType::TestReport => 160, // estimated size for TestReport struct
+        }
+    }
+}
+
+#[cfg(test)]
+mod target_triple_tests {
+    use super::*;
+    
+    #[test]
+    fn test_target_triple_detection() {
+        let context = LlvmContext::new();
+        let target_triple = &context.target_triple;
+        
+        // Verify we get a valid target triple
+        assert!(!target_triple.is_empty(), "Target triple should not be empty");
+        
+        // Check for expected arm64 target triples
+        if cfg!(all(target_arch = "aarch64", target_os = "macos")) {
+            assert_eq!(target_triple, "aarch64-apple-darwin", 
+                "Expected aarch64-apple-darwin for arm64 macOS");
+        } else if cfg!(all(target_arch = "aarch64", target_os = "linux")) {
+            assert_eq!(target_triple, "aarch64-unknown-linux-gnu", 
+                "Expected aarch64-unknown-linux-gnu for arm64 Linux");
+        }
+        
+        // Ensure target triple contains architecture info
+        assert!(target_triple.contains("aarch64") || target_triple.contains("x86_64"),
+            "Target triple should contain architecture info");
+            
+        println!("Detected target triple: {}", target_triple);
+    }
+    
+    #[test] 
+    fn test_arm64_macos_detection() {
+        // This test specifically validates arm64 macOS detection
+        #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+        {
+            let context = LlvmContext::new();
+            assert_eq!(context.target_triple, "aarch64-apple-darwin");
+        }
+    }
+    
+    #[test]
+    fn test_arm64_linux_detection() {
+        // This test validates arm64 Linux detection
+        #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+        {
+            let context = LlvmContext::new();
+            assert_eq!(context.target_triple, "aarch64-unknown-linux-gnu");
         }
     }
 }

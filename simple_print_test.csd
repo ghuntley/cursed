@@ -1,1 +1,2 @@
-vibez.spill("Hello, World!")
+sus message tea = "Hello World"
+vibez.spill(message)

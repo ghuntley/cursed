@@ -1526,19 +1526,45 @@ fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::e
                .arg("runtime/libcursed_type_assertion_runtime.a")
                .arg("runtime/libcursed_minimal_shims.a");
             
+            // Add arm64-specific library search paths for macOS
+            if cfg!(target_os = "macos") && cfg!(target_arch = "aarch64") {
+                cmd.arg("-L/opt/homebrew/lib")         // Homebrew arm64 libs
+                   .arg("-L/usr/local/lib")            // Local libs
+                   .arg("-L/System/Library/Frameworks"); // System frameworks
+            }
+            
             cmd.arg("-lc")  // Link with C standard library
                .arg("-lm")  // Link with math library
-               .arg("-lpthread") // Link with pthread for goroutines
-               .arg("-lstdc++") // Link with C++ standard library for exception handling
-               .arg("-lgcc_s"); // Link with GCC support library for unwind functions
+               .arg("-lpthread"); // Link with pthread for goroutines
+            
+            // Platform-specific runtime libraries
+            if cfg!(target_os = "macos") {
+                // macOS uses libc++ instead of libstdc++
+                cmd.arg("-lc++")   // Link with C++ standard library
+                   .arg("-framework").arg("CoreFoundation") // Core Foundation for system calls
+                   .arg("-framework").arg("Security");      // Security framework for crypto
+            } else {
+                cmd.arg("-lstdc++") // Link with C++ standard library for exception handling
+                   .arg("-lgcc_s");  // Link with GCC support library for unwind functions
+            }
         }
         "ld" => {
             cmd.arg("-o")
                .arg(output_file)
                .arg(obj_file)
-               .arg("-lc")
-               .arg("-dynamic-linker")
-               .arg("/lib64/ld-linux-x86-64.so.2"); // Linux dynamic linker
+               .arg("-lc");
+            
+            // Architecture-specific dynamic linker paths
+            #[cfg(target_os = "linux")]
+            {
+                if cfg!(target_arch = "aarch64") {
+                    cmd.arg("-dynamic-linker")
+                       .arg("/lib/ld-linux-aarch64.so.1"); // Linux arm64 dynamic linker
+                } else if cfg!(target_arch = "x86_64") {
+                    cmd.arg("-dynamic-linker")
+                       .arg("/lib64/ld-linux-x86-64.so.2"); // Linux x86_64 dynamic linker
+                }
+            }
         }
         _ => {
             return Err(CursedError::CompilerError(format!("Unsupported linker: {}", linker)));

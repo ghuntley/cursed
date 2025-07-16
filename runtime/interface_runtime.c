@@ -328,3 +328,14 @@ bool cursed_has_method(void* vtable_ptr, const char* method_name) {
     
     return false;
 }
+
+/**
+ * Simple print function for CURSED programs
+ * Prints a string using puts
+ */
+int print(const char* str) {
+    if (str == NULL) {
+        return puts("(null)");
+    }
+    return puts(str);
+}

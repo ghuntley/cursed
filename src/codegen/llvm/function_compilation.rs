@@ -62,8 +62,9 @@ impl FunctionCompiler {
         self.variables.clear();
         self.variable_types.clear();
         self.function_params.clear();
-        // All functions register numbering starts at %1 according to LLVM convention
+        // All functions register numbering starts at %0 for proper LLVM IR
         // Register tracker will sync with global counter automatically
+        self.register_tracker.set_counter(0);
         self.label_counter = 0;
         self.current_function = Some(name.to_string());
         
@@ -897,6 +898,14 @@ impl FunctionCompiler {
                 if func_name == "tea" {
                     return self.compile_tea_call(arguments);
                 }
+                
+                // Debug print for print function
+                if func_name == "print" {
+                    eprintln!("DEBUG: Compiling print function with {} arguments", arguments.len());
+                    for (i, arg) in arguments.iter().enumerate() {
+                        eprintln!("DEBUG: Argument {}: {:?}", i, arg);
+                    }
+                }
                 // First compile all arguments to generate their intermediate IR
                 let mut arg_regs = Vec::new();
                 let mut arg_types = Vec::new();
@@ -904,14 +913,26 @@ impl FunctionCompiler {
                     let arg_reg = self.compile_expression(arg)?;
                     arg_regs.push(arg_reg);
                     
-                    // Infer argument type from the expression
+                    // Infer argument type from the expression - all string expressions should be i8*
                     let arg_type = match arg {
-                        Expression::String(_) => "i8*".to_string(),
+                        Expression::String(_) => {
+                            eprintln!("DEBUG: String literal detected, using i8*");
+                            "i8*".to_string()
+                        },
                         Expression::Identifier(name) if name.contains("name") || name.contains("text") || name.contains("str") => "i8*".to_string(),
-                        Expression::Boolean(_) => "i1".to_string(),
-                        Expression::Binary(bin_expr) if bin_expr.operator == "+" => "i8*".to_string(), // String concatenation
-                        _ => "i32".to_string(),
-                    };
+                    Expression::Boolean(_) => "i1".to_string(),
+                    Expression::Binary(bin_expr) if bin_expr.operator == "+" => "i8*".to_string(), // String concatenation
+                    _ => {
+                    // For print function specifically, if arg register starts with %, check if it contains string data
+                    if func_name == "print" {
+                        eprintln!("DEBUG: Default case for print function, using i8*");
+                            "i8*".to_string() // print function always expects i8* (string pointer)
+                            } else {
+                                 eprintln!("DEBUG: Default case for non-print function, using i32");
+                                 "i32".to_string()
+                             }
+                         },
+                     };
                     arg_types.push(arg_type);
                 }
                 
