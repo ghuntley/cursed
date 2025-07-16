@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 /// Global register counter to ensure consistent numbering across all LLVM codegen modules
-static mut GLOBAL_REGISTER_COUNTER: usize = 1;
+static mut GLOBAL_REGISTER_COUNTER: usize = 0;
 static GLOBAL_REGISTER_MUTEX: Mutex<()> = Mutex::new(());
 
 #[derive(Debug, Default, Clone)]
@@ -22,12 +22,7 @@ impl RegisterTracker {
     pub fn allocate_register(&mut self) -> String {
         let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
         unsafe {
-            // LLVM expects registers to start from %1, not %0
-            // Ensure we skip %0 by starting from 1
-            if GLOBAL_REGISTER_COUNTER == 0 {
-                GLOBAL_REGISTER_COUNTER = 1;
-            }
-            
+            // LLVM expects registers to start from %0
             let reg = GLOBAL_REGISTER_COUNTER;
             self.allocated.insert(reg);
             self.next_expected = reg + 1;
@@ -92,7 +87,7 @@ impl RegisterTracker {
     }
     
     pub fn validate(&self) -> Result<(), String> {
-        for i in 1..self.next_expected {
+        for i in 0..self.next_expected {
             if !self.allocated.contains(&i) {
                 return Err(format!("Missing register %{}", i));
             }

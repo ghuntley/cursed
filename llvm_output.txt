@@ -149,9 +149,10 @@ warning: creating a mutable reference to mutable static is discouraged
     = note: mutable references to mutable statics are dangerous; it's undefined behavior if any other pointer to the static is used or if any other reference is created for the static while the mutable reference lives
 
 warning: `cursed` (lib) generated 15 warnings
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.16s
-     Running `target/debug/cursed arm64_hello_test.csd`
-Running arm64_hello_test.csd
-[2025-07-16T13:48:51Z INFO  cursed::execution] 🚀 Executing CURSED code with advanced features
-[2025-07-16T13:48:51Z INFO  cursed::execution] 🔄 Interpreted execution
-Hello, ARM64 World!
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running `target/debug/cursed compile --emit-ir arm64_hello_test.csd`
+[2025-07-16T13:48:51Z INFO  cursed] Compiling CURSED source to LLVM IR with advanced optimization
+[2025-07-16T13:48:51Z INFO  cursed] Applied advanced optimization level: 2
+[2025-07-16T13:48:51Z INFO  cursed] Generating real LLVM IR for advanced optimization...
+Generated LLVM IR to arm64_hello_test.ll
+Optimization optimization level 2 applied

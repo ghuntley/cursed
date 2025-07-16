@@ -1,5 +1,3 @@
-vibe main
-
 yeet "vibez"
 
 slay main() {

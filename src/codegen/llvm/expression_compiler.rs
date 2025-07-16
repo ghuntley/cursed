@@ -914,16 +914,29 @@ impl ExpressionCompiler {
                 if !arguments.is_empty() {
                     // First compile all arguments to generate their intermediate IR
                     let mut arg_regs = Vec::new();
+                    let mut arg_types = Vec::new();
+                    
                     for arg in arguments {
                         let arg_reg = self.compile_expression(arg)?;
-                        arg_regs.push(arg_reg);
+                        arg_regs.push(arg_reg.clone());
+                        
+                        // Determine the type of each argument
+                        let arg_type = match arg {
+                            Expression::String(_) => "i8*",
+                            Expression::Float(_) => "double",
+                            Expression::Boolean(_) => "i32", // Convert bool to i32
+                            Expression::Integer(_) => "i32",
+                            _ => "i32", // Default to i32
+                        };
+                        arg_types.push(arg_type);
                     }
                     
-                    // Now generate the printf call with compiled arguments
+                    // Now generate the printf call with compiled arguments and correct types
                     self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}", arg_regs[0]));
                     
-                    for arg_reg in &arg_regs[1..] {
-                        self.ir_buffer.push_str(&format!(", i32 {}", arg_reg));
+                    for (i, arg_reg) in arg_regs[1..].iter().enumerate() {
+                        let arg_type = arg_types[i + 1]; // +1 because we skip the first format string
+                        self.ir_buffer.push_str(&format!(", {} {}", arg_type, arg_reg));
                     }
                     
                     self.ir_buffer.push_str(")\n");
