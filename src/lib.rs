@@ -7,6 +7,11 @@
 // Core modules
 pub mod error;
 pub mod error_types;
+pub mod error_recovery;
+pub mod error_recovery_simple;
+// pub mod parser_error_recovery;
+// pub mod semantic_error_recovery;
+// pub mod codegen_error_recovery;
 pub mod package_manager;
 pub mod imports;
 pub mod ast;

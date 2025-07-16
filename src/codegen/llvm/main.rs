@@ -1397,6 +1397,9 @@ impl LlvmCodeGenerator {
                     "Match expressions not yet implemented in LLVM codegen".to_string()
                 ));
             },
+            Expression::TypeSwitch(type_switch) => {
+                self.generate_type_switch_expression(type_switch)
+            },
             _ => {
                 // For complex expressions, use the expression compiler
                 let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
@@ -3498,6 +3501,122 @@ impl LlvmCodeGenerator {
             cast_reg, data_loaded_reg, target_type));
         
         Ok(format!("%{}", cast_reg))
+    }
+
+    fn generate_type_switch_expression(&mut self, type_switch: &crate::ast::TypeSwitchExpression) -> Result<String, CursedError> {
+        // Generate the variable to check type of
+        let var_reg = self.generate_expression(&type_switch.variable)?;
+        
+        // Create runtime type information storage
+        let type_info_reg = self.next_register();
+        self.ir_code.push_str(&format!("  {} = call i8* @cursed_get_runtime_type_info(i8* {})\n", 
+                                       type_info_reg, var_reg));
+        
+        // Create labels for each arm and the exit
+        let mut arm_labels = Vec::new();
+        let exit_label = format!("typeswitch_exit_{}", self.label_counter);
+        self.label_counter += 1;
+        
+        for i in 0..type_switch.arms.len() {
+            arm_labels.push(format!("typeswitch_arm_{}_{}", i, self.label_counter));
+        }
+        let default_label = format!("typeswitch_default_{}", self.label_counter);
+        self.label_counter += 1;
+        
+        // Generate type checks and branching
+        for (i, arm) in type_switch.arms.iter().enumerate() {
+            let check_reg = self.next_register();
+            
+            match &arm.type_pattern {
+                crate::ast::TypePattern::Type(type_expr) => {
+                    let type_name = match type_expr {
+                        crate::ast::Type::Custom(name) => name.clone(),
+                        crate::ast::Type::Normie => "normie".to_string(),
+                        crate::ast::Type::Tea => "tea".to_string(),
+                        crate::ast::Type::Lit => "lit".to_string(),
+                        crate::ast::Type::Sip => "sip".to_string(),
+                        crate::ast::Type::Smol => "smol".to_string(),
+                        crate::ast::Type::Mid => "mid".to_string(),
+                        crate::ast::Type::Thicc => "thicc".to_string(),
+                        crate::ast::Type::Snack => "snack".to_string(),
+                        crate::ast::Type::Meal => "meal".to_string(),
+                        _ => "unknown".to_string(),
+                    };
+                    
+                    // Generate type check
+                    let string_constant = self.get_or_create_string_constant(&type_name);
+                    self.ir_code.push_str(&format!("  {} = call i1 @cursed_check_type(i8* {}, i8* getelementptr ([{} x i8], [{} x i8]* @str_{}, i32 0, i32 0))\n", 
+                                                   check_reg, type_info_reg, type_name.len() + 1, type_name.len() + 1, string_constant));
+                }
+                crate::ast::TypePattern::Interface(interface_name) => {
+                    // Generate interface type check
+                    let string_constant = self.get_or_create_string_constant(interface_name);
+                    self.ir_code.push_str(&format!("  {} = call i1 @cursed_check_interface(i8* {}, i8* getelementptr ([{} x i8], [{} x i8]* @str_{}, i32 0, i32 0))\n", 
+                                                   check_reg, type_info_reg, interface_name.len() + 1, interface_name.len() + 1, string_constant));
+                }
+                crate::ast::TypePattern::Wildcard => {
+                    // Wildcard always matches
+                    self.ir_code.push_str(&format!("  {} = i1 1\n", check_reg));
+                }
+            }
+            
+            // Branch to arm or next check
+            let next_label = if i + 1 < arm_labels.len() {
+                format!("typeswitch_check_{}", i + 1)
+            } else {
+                default_label.clone()
+            };
+            
+            self.ir_code.push_str(&format!("  br i1 {}, label %{}, label %{}\n", 
+                                           check_reg, arm_labels[i], next_label));
+            
+            // Generate arm body
+            self.ir_code.push_str(&format!("{}:\n", arm_labels[i]));
+            
+            // If there's a bound variable, create it
+            if let Some(bound_var) = &arm.bound_variable {
+                let cast_reg = self.next_register();
+                self.ir_code.push_str(&format!("  {} = bitcast i8* {} to i8*\n", cast_reg, var_reg));
+                self.variables.insert(bound_var.clone(), cast_reg);
+            }
+            
+            // Generate arm body expression
+            let arm_result = self.generate_expression(&arm.body)?;
+            
+            // Store result for phi node
+            let result_reg = self.next_register();
+            self.ir_code.push_str(&format!("  {} = bitcast i8* {} to i8*\n", result_reg, arm_result));
+            
+            // Branch to exit
+            self.ir_code.push_str(&format!("  br label %{}\n", exit_label));
+        }
+        
+        // Generate default case (should not happen with wildcard)
+        self.ir_code.push_str(&format!("{}:\n", default_label));
+        self.ir_code.push_str("  ; Default case - should not reach here with proper wildcard\n");
+        self.ir_code.push_str("  call void @cursed_panic(i8* getelementptr ([25 x i8], [25 x i8]* @str_typeswitch_panic, i32 0, i32 0))\n");
+        self.ir_code.push_str("  unreachable\n");
+        
+        // Generate exit label with phi node
+        self.ir_code.push_str(&format!("{}:\n", exit_label));
+        let final_result = self.next_register();
+        
+        // Create phi node to collect results from all arms
+        self.ir_code.push_str(&format!("  {} = phi i8* ", final_result));
+        for (i, _) in type_switch.arms.iter().enumerate() {
+            if i > 0 {
+                self.ir_code.push_str(", ");
+            }
+            self.ir_code.push_str(&format!("[ %{}, %{} ]", self.register_tracker.get_current_counter() - 1, arm_labels[i]));
+        }
+        self.ir_code.push_str("\n");
+        
+        Ok(final_result)
+    }
+    
+    fn get_or_create_string_constant(&mut self, s: &str) -> String {
+        // Use the existing string constant manager
+        self.string_manager.add_string_constant(s)
     }
     
     pub fn generate_interface_method_call(&mut self, interface_obj: &str, method_name: &str, args: &[String], return_type: Option<&str>) -> Result<String, CursedError> {

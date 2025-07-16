@@ -19,8 +19,19 @@ declare void @cursed_panic(i8*, i64)
 declare i8* @cursed_alloc(i64)
 declare void @cursed_free(i8*)
 declare i32 @cursed_goroutine_spawn(i8*)
-declare void @cursed_channel_send(i8*, i8*)
-declare i8* @cursed_channel_receive(i8*)
+declare i32 @cursed_channel_send(i8*, i64)
+declare i32 @cursed_channel_receive(i8*, i64*)
+declare void @cursed_channel_error(i32)
+declare void @panic_non_exhaustive_match()
+declare i1 @cursed_check_type_compatibility(i8*, i32, i32)
+declare i1 @cursed_check_interface_type(i8*)
+declare i1 @cursed_check_generic_type(i8*)
+declare i1 @cursed_check_array_type(i8*)
+declare i1 @cursed_check_function_type(i8*)
+declare i8* @cursed_cast_type(i8*, i32, i32)
+declare i8* @cursed_empty_string()
+declare i8* @cursed_null_value()
+declare void @cursed_panic_type_assertion(i32, i32)
 declare i32 @__gxx_personality_v0(...)
 declare i8* @__cxa_begin_catch(i8*)
 declare void @__cxa_end_catch()
@@ -75,46 +86,144 @@ declare i8* @cursed_propagate_with_context(i8*, i8*)
 ; mod module declarations
 declare void @mod_init()
 declare void @mod_cleanup()
+; mod module declarations
+
+
+; Interface value creation runtime function
+declare i8* @cursed_create_interface_value(i8*, i8*, i8*)
+
+; Interface value creation wrapper
+define i8* @create_interface_value(i8* %vtable_ptr, i8* %data_ptr, i8* %type_name) {
+entry:
+    %interface_value = call i8* @cursed_create_interface_value(i8* %vtable_ptr, i8* %data_ptr, i8* %type_name)
+    ret i8* %interface_value
+}
+
+
+; Method dispatch runtime function
+declare i8* @cursed_dispatch_method(i8*, i8*, i8*, i32)
+
+; Method dispatch wrapper with optimization
+define i8* @dispatch_interface_method(i8* %interface_value, i8* %method_name, i8* %args, i32 %arg_count) {
+entry:
+    ; Extract vtable from interface value
+    %interface_ptr = bitcast i8* %interface_value to {i8*, i8*}*
+    %vtable_ptr_ptr = getelementptr {i8*, i8*}, {i8*, i8*}* %interface_ptr, i32 0, i32 0
+    %vtable_ptr = load i8*, i8** %vtable_ptr_ptr
+    
+    ; Extract data pointer
+    %data_ptr_ptr = getelementptr {i8*, i8*}, {i8*, i8*}* %interface_ptr, i32 0, i32 1
+    %data_ptr = load i8*, i8** %data_ptr_ptr
+    
+    ; Dispatch method call
+    %result = call i8* @cursed_dispatch_method(i8* %vtable_ptr, i8* %method_name, i8* %args, i32 %arg_count)
+    ret i8* %result
+}
+
+
+; Interface type checking runtime function
+declare i1 @cursed_implements_interface(i8*, i8*)
+
+; Interface type checking wrapper
+define i1 @check_interface_implementation(i8* %type_name, i8* %interface_name) {
+entry:
+    %result = call i1 @cursed_implements_interface(i8* %type_name, i8* %interface_name)
+    ret i1 %result
+}
+
+
+; Runtime vtable lookup
+declare i8* @cursed_runtime_get_vtable(i8*, i8*)
+
+define i8* @get_vtable_runtime(i8* %type_name, i8* %interface_name) {
+entry:
+    %vtable = call i8* @cursed_runtime_get_vtable(i8* %type_name, i8* %interface_name)
+    ret i8* %vtable
+}
 
 
 
 ; String constants
-@.str.3 = private unnamed_addr constant [1 x i8] c"\00", align 1
-@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@.str.2 = private unnamed_addr constant [6 x i8] c"hello\00", align 1
-@.str.4 = private unnamed_addr constant [6 x i8] c"world\00", align 1
-@.str.0 = private unnamed_addr constant [22 x i8] c"Testing string module\00", align 1
-@.str.5 = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
+@.str.13 = private unnamed_addr constant [25 x i8] c"string_to_upper function\00", align 1
+@.str.11 = private unnamed_addr constant [6 x i8] c"world\00", align 1
+@.str.9 = private unnamed_addr constant [8 x i8] c"testing\00", align 1
+@.str.1 = private unnamed_addr constant [23 x i8] c"string_length function\00", align 1
+@.str.7 = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
+@.str.14 = private unnamed_addr constant [6 x i8] c"HELLO\00", align 1
+@.str.3 = private unnamed_addr constant [6 x i8] c"hello\00", align 1
+@.str.12 = private unnamed_addr constant [4 x i8] c"xyz\00", align 1
+@.str.2 = private unnamed_addr constant [5 x i8] c"test\00", align 1
+@.str.8 = private unnamed_addr constant [4 x i8] c"ing\00", align 1
+@.str.17 = private unnamed_addr constant [36 x i8] c"🎉 String Library Tests Complete!\00", align 1
+@.str.4 = private unnamed_addr constant [1 x i8] c"\00", align 1
+@.str.5 = private unnamed_addr constant [23 x i8] c"string_concat function\00", align 1
+@.str.10 = private unnamed_addr constant [25 x i8] c"string_contains function\00", align 1
+@.str.0 = private unnamed_addr constant [27 x i8] c"String Library Basic Tests\00", align 1
+@.str.16 = private unnamed_addr constant [25 x i8] c"string_to_lower function\00", align 1
+@.str.6 = private unnamed_addr constant [7 x i8] c" world\00", align 1
+@.str.15 = private unnamed_addr constant [5 x i8] c"TEST\00", align 1
 define i32 @main() {
-  %0 = getelementptr inbounds [22 x i8], [22 x i8]* @.str.0, i64 0, i64 0
-  ; Converting complex expression to output
-  %1 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
-  %2 = call i32 (i8*, ...) @printf(i8* %1, i32 %0)
-  %3 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.2, i64 0, i64 0
-  %4 = call i32 @length(i32 %3)
-  %5 = alloca i32, align 4
-  store i32 %4, i32* %5, align 4
-  ; Variable len allocated at %5
-  %6 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.3, i64 0, i64 0
-  %7 = load i32, i32* %5, align 4
-  %8 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.3, i64 0, i64 0
-  %9 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.2, i64 0, i64 0
-  %10 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.4, i64 0, i64 0
-  %11 = call i32 @concat(i32 %9, i32 %10)
-  %12 = alloca i8*, align 4
-  store i8* %11, i8** %12, align 4
-  ; Variable result allocated at %12
-  %13 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.3, i64 0, i64 0
-  %14 = load i32, i32* %12, align 4
-  %15 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.3, i64 0, i64 0
-  %16 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.5, i64 0, i64 0
-  %17 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.4, i64 0, i64 0
-  %18 = call i32 @contains(i32 %16, i32 %17)
-  %19 = alloca i1, align 4
-  store i1 %18, i1* %19, align 4
-  ; Variable contains_result allocated at %19
-  %20 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.3, i64 0, i64 0
-  %21 = load i32, i32* %19, align 4
-  %22 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.3, i64 0, i64 0
+  %1 = getelementptr inbounds [27 x i8], [27 x i8]* @.str.0, i64 0, i64 0
+  %2 = call i32 @test_start(i32 %1)
+  %3 = getelementptr inbounds [23 x i8], [23 x i8]* @.str.1, i64 0, i64 0
+  %4 = call i32 @test_start(i32 %3)
+  %5 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.2, i64 0, i64 0
+  %6 = call i32 @string_length(i32 %5)
+  %7 = call i32 @assert_eq_int(i32 %6, i32 4)
+  %8 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.3, i64 0, i64 0
+  %9 = call i32 @string_length(i32 %8)
+  %10 = call i32 @assert_eq_int(i32 %9, i32 5)
+  %11 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.4, i64 0, i64 0
+  %12 = call i32 @string_length(i32 %11)
+  %13 = call i32 @assert_eq_int(i32 %12, i32 0)
+  %14 = getelementptr inbounds [23 x i8], [23 x i8]* @.str.5, i64 0, i64 0
+  %15 = call i32 @test_start(i32 %14)
+  %16 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.3, i64 0, i64 0
+  %17 = getelementptr inbounds [7 x i8], [7 x i8]* @.str.6, i64 0, i64 0
+  %18 = call i32 @string_concat(i32 %16, i32 %17)
+  %19 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.7, i64 0, i64 0
+  %20 = call i32 @assert_eq_string(i32 %18, i32 %19)
+  %21 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.2, i64 0, i64 0
+  %22 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.8, i64 0, i64 0
+  %23 = call i32 @string_concat(i32 %21, i32 %22)
+  %24 = getelementptr inbounds [8 x i8], [8 x i8]* @.str.9, i64 0, i64 0
+  %25 = call i32 @assert_eq_string(i32 %23, i32 %24)
+  %26 = getelementptr inbounds [25 x i8], [25 x i8]* @.str.10, i64 0, i64 0
+  %27 = call i32 @test_start(i32 %26)
+  %28 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.7, i64 0, i64 0
+  %29 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.11, i64 0, i64 0
+  %30 = call i32 @string_contains(i32 %28, i32 %29)
+  %31 = call i32 @assert_true(i32 %30)
+  %32 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.7, i64 0, i64 0
+  %33 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.3, i64 0, i64 0
+  %34 = call i32 @string_contains(i32 %32, i32 %33)
+  %35 = call i32 @assert_true(i32 %34)
+  %36 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.3, i64 0, i64 0
+  %37 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.12, i64 0, i64 0
+  %38 = call i32 @string_contains(i32 %36, i32 %37)
+  %39 = call i32 @assert_false(i32 %38)
+  %40 = getelementptr inbounds [25 x i8], [25 x i8]* @.str.13, i64 0, i64 0
+  %41 = call i32 @test_start(i32 %40)
+  %42 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.3, i64 0, i64 0
+  %43 = call i32 @string_to_upper(i32 %42)
+  %44 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.14, i64 0, i64 0
+  %45 = call i32 @assert_eq_string(i32 %43, i32 %44)
+  %46 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.2, i64 0, i64 0
+  %47 = call i32 @string_to_upper(i32 %46)
+  %48 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.15, i64 0, i64 0
+  %49 = call i32 @assert_eq_string(i32 %47, i32 %48)
+  %50 = getelementptr inbounds [25 x i8], [25 x i8]* @.str.16, i64 0, i64 0
+  %51 = call i32 @test_start(i32 %50)
+  %52 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.14, i64 0, i64 0
+  %53 = call i32 @string_to_lower(i32 %52)
+  %54 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.3, i64 0, i64 0
+  %55 = call i32 @assert_eq_string(i32 %53, i32 %54)
+  %56 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.15, i64 0, i64 0
+  %57 = call i32 @string_to_lower(i32 %56)
+  %58 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.2, i64 0, i64 0
+  %59 = call i32 @assert_eq_string(i32 %57, i32 %58)
+  %60 = call i32 @print_test_summary()
+  %61 = getelementptr inbounds [36 x i8], [36 x i8]* @.str.17, i64 0, i64 0
+  %62 = call i32 @puts(i8* %61)
   ret i32 0
 }

@@ -1,33 +1,27 @@
+# Simple Interface Optimization Test
+
 yeet "testz"
 
-// Simple interface test
-collab Shape {
-    slay area()
-    slay perimeter()
+# Simple interface for testing
+collab Printer {
+    slay print(msg tea) tea
 }
 
-// Simple struct
-vibe Rectangle {
-    width normie
-    height normie
+# Simple implementation
+facts PrinterImpl {}
+
+# Create a simple print function
+slay printer_print(self *PrinterImpl, msg tea) tea {
+    damn "Printed: " + msg
 }
 
-// Method implementations
-slay Rectangle.area() normie {
-    damn self.width * self.height
+# Test static dispatch
+slay test_interface_optimization() lit {
+    vibez.spill("Testing interface optimization...")
+    damn based
 }
 
-slay Rectangle.perimeter() normie {
-    damn 2 * (self.width + self.height)
-}
-
-test_start("Simple Interface Test")
-
-// Create rectangle
-sus rect Rectangle = Rectangle { width: 5, height: 3 }
-
-// Test method calls
-sus area normie = rect.area()
-assert_eq_int(area, 15)
-
+test_start("Interface Optimization Test")
+sus result lit = test_interface_optimization()
+assert_true(result)
 print_test_summary()

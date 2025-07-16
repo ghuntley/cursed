@@ -1475,6 +1475,10 @@ impl CursedExecutionEngine {
                 // Evaluate match expression
                 self.evaluate_match_expression(match_expr, context)
             },
+            Expression::TypeSwitch(type_switch) => {
+                // Evaluate type switch expression
+                self.evaluate_type_switch_expression(type_switch, context)
+            },
 
         }
     }
@@ -1610,6 +1614,66 @@ impl CursedExecutionEngine {
             Ok(Some(bindings))
         } else {
             Ok(None)
+        }
+    }
+
+    /// Evaluate type switch expression
+    fn evaluate_type_switch_expression(&mut self, type_switch: &crate::ast::TypeSwitchExpression, context: &mut ExecutionContext) -> Result<CursedValue, CursedError> {
+        // Evaluate the variable to check type of
+        let variable_value = self.evaluate_expression(&type_switch.variable, context)?;
+        
+        // Try each arm until one matches
+        for arm in &type_switch.arms {
+            let matches = match &arm.type_pattern {
+                crate::ast::TypePattern::Type(type_expr) => {
+                    self.value_matches_type(&variable_value, type_expr)
+                }
+                crate::ast::TypePattern::Interface(interface_name) => {
+                    // For interface matching, we'd need to check if the value implements the interface
+                    // For now, just check type name matching
+                    variable_value.type_name() == *interface_name
+                }
+                crate::ast::TypePattern::Wildcard => {
+                    true // Wildcard always matches
+                }
+            };
+            
+            if matches {
+                // Create a new context for this arm
+                let mut arm_context = context.clone();
+                
+                // If there's a bound variable, add it to the context
+                if let Some(bound_var) = &arm.bound_variable {
+                    arm_context.set_variable(bound_var.clone(), variable_value.clone());
+                }
+                
+                // Evaluate and return the arm body
+                return self.evaluate_expression(&arm.body, &mut arm_context);
+            }
+        }
+        
+        // No arm matched - this should not happen with a proper wildcard
+        Err(CursedError::RuntimeError("No type switch arm matched".to_string()))
+    }
+    
+    /// Check if a value matches a specific type pattern
+    fn value_matches_type(&self, value: &CursedValue, type_expr: &crate::ast::Type) -> bool {
+        match type_expr {
+            crate::ast::Type::Normie => matches!(value, CursedValue::Integer(_)),
+            crate::ast::Type::Tea => matches!(value, CursedValue::String(_)),
+            crate::ast::Type::Lit => matches!(value, CursedValue::Boolean(_)),
+            crate::ast::Type::Sip => matches!(value, CursedValue::Character(_)),
+            crate::ast::Type::Smol | crate::ast::Type::Mid | crate::ast::Type::Thicc => {
+                matches!(value, CursedValue::Integer(_))
+            }
+            crate::ast::Type::Snack | crate::ast::Type::Meal => {
+                matches!(value, CursedValue::Float(_))
+            }
+            crate::ast::Type::Custom(type_name) => {
+                // For custom types, check against the value's type name
+                value.type_name() == *type_name
+            }
+            _ => false, // Other types not yet implemented
         }
     }
     

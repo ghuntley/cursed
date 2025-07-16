@@ -24,6 +24,24 @@ pub struct TypeChecker {
     pub errors: Vec<TypeCheckError>,
     pub type_aliases: HashMap<String, TypeExpression>,
     pub type_alias_resolution_stack: Vec<String>, // For circular reference detection
+    pub borrow_states: HashMap<String, BorrowState>, // Track variable borrow states
+    pub active_borrows: Vec<BorrowInfo>, // Active borrows in current scope
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum BorrowState {
+    Owned,
+    BorrowedMutable(usize), // borrow_id
+    BorrowedImmutable(Vec<usize>), // list of borrow_ids
+    Moved,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct BorrowInfo {
+    pub id: usize,
+    pub variable: String,
+    pub is_mutable: bool,
+    pub scope_depth: usize,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -60,6 +78,12 @@ pub enum TypeErrorKind {
     ReturnTypeMismatch,
     InterfaceCastError,
     MethodDispatchError,
+    MutableBorrowError,
+    ImmutableBorrowError,
+    BorrowConflictError,
+    UseAfterFreeError,
+    InvalidDereferenceError,
+    MutabilityViolationError,
 }
 
 impl TypeCheckError {
@@ -86,6 +110,8 @@ impl TypeChecker {
             errors: Vec::new(),
             type_aliases: HashMap::new(),
             type_alias_resolution_stack: Vec::new(),
+            borrow_states: HashMap::new(),
+            active_borrows: Vec::new(),
         };
         
         // Initialize built-in types and functions
@@ -2219,6 +2245,218 @@ impl TypeChecker {
     /// Get all registered type aliases (for debugging/inspection)
     pub fn get_type_aliases(&self) -> &HashMap<String, TypeExpression> {
         &self.type_aliases
+    }
+    
+    // === MUTABLE REFERENCE AND BORROW CHECKING METHODS ===
+    
+    /// Check if a variable can be borrowed mutably
+    pub fn check_mutable_borrow(&mut self, variable: &str) -> Result<usize, TypeCheckError> {
+        let current_state = self.borrow_states.get(variable).cloned().unwrap_or(BorrowState::Owned);
+        
+        match current_state {
+            BorrowState::Owned => {
+                // Can borrow mutably from owned value
+                let borrow_id = self.active_borrows.len();
+                let borrow_info = BorrowInfo {
+                    id: borrow_id,
+                    variable: variable.to_string(),
+                    is_mutable: true,
+                    scope_depth: self.scopes.len(),
+                };
+                self.active_borrows.push(borrow_info);
+                self.borrow_states.insert(variable.to_string(), BorrowState::BorrowedMutable(borrow_id));
+                Ok(borrow_id)
+            }
+            BorrowState::BorrowedMutable(_) => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::MutableBorrowError,
+                    format!("Cannot borrow `{}` as mutable: already borrowed as mutable", variable)
+                ))
+            }
+            BorrowState::BorrowedImmutable(_) => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::BorrowConflictError,
+                    format!("Cannot borrow `{}` as mutable: already borrowed as immutable", variable)
+                ))
+            }
+            BorrowState::Moved => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::UseAfterFreeError,
+                    format!("Cannot borrow `{}`: value has been moved", variable)
+                ))
+            }
+        }
+    }
+    
+    /// Check if a variable can be borrowed immutably
+    pub fn check_immutable_borrow(&mut self, variable: &str) -> Result<usize, TypeCheckError> {
+        let current_state = self.borrow_states.get(variable).cloned().unwrap_or(BorrowState::Owned);
+        
+        match current_state {
+            BorrowState::Owned => {
+                // Can borrow immutably from owned value
+                let borrow_id = self.active_borrows.len();
+                let borrow_info = BorrowInfo {
+                    id: borrow_id,
+                    variable: variable.to_string(),
+                    is_mutable: false,
+                    scope_depth: self.scopes.len(),
+                };
+                self.active_borrows.push(borrow_info);
+                self.borrow_states.insert(variable.to_string(), BorrowState::BorrowedImmutable(vec![borrow_id]));
+                Ok(borrow_id)
+            }
+            BorrowState::BorrowedMutable(_) => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::BorrowConflictError,
+                    format!("Cannot borrow `{}` as immutable: already borrowed as mutable", variable)
+                ))
+            }
+            BorrowState::BorrowedImmutable(ref borrows) => {
+                // Can add more immutable borrows
+                let borrow_id = self.active_borrows.len();
+                let borrow_info = BorrowInfo {
+                    id: borrow_id,
+                    variable: variable.to_string(),
+                    is_mutable: false,
+                    scope_depth: self.scopes.len(),
+                };
+                self.active_borrows.push(borrow_info);
+                let mut new_borrows = borrows.clone();
+                new_borrows.push(borrow_id);
+                self.borrow_states.insert(variable.to_string(), BorrowState::BorrowedImmutable(new_borrows));
+                Ok(borrow_id)
+            }
+            BorrowState::Moved => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::UseAfterFreeError,
+                    format!("Cannot borrow `{}`: value has been moved", variable)
+                ))
+            }
+        }
+    }
+    
+    /// Check if a dereference is valid
+    pub fn check_dereference(&self, reference_type: &TypeExpression) -> Result<TypeExpression, TypeCheckError> {
+        match &reference_type.kind {
+            TypeKind::Reference(pointee_type, _is_mutable) => {
+                Ok((**pointee_type).clone())
+            }
+            TypeKind::Pointer(pointee_type, _is_mutable) => {
+                Ok((**pointee_type).clone())
+            }
+            _ => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::InvalidDereferenceError,
+                    format!("Cannot dereference non-reference type: {:?}", reference_type)
+                ))
+            }
+        }
+    }
+    
+    /// Check if an assignment through a mutable reference is valid
+    pub fn check_mutable_assignment(&self, reference_type: &TypeExpression, value_type: &TypeExpression) -> Result<(), TypeCheckError> {
+        match &reference_type.kind {
+            TypeKind::Reference(pointee_type, is_mutable) => {
+                if !is_mutable {
+                    return Err(TypeCheckError::new(
+                        TypeErrorKind::MutabilityViolationError,
+                        "Cannot assign through immutable reference".to_string()
+                    ));
+                }
+                
+                // Check type compatibility
+                if !self.types_compatible(value_type, pointee_type) {
+                    return Err(TypeCheckError::new(
+                        TypeErrorKind::TypeMismatch,
+                        format!("Type mismatch in assignment: expected {:?}, got {:?}", pointee_type, value_type)
+                    ));
+                }
+                
+                Ok(())
+            }
+            TypeKind::Pointer(pointee_type, is_mutable) => {
+                if !is_mutable {
+                    return Err(TypeCheckError::new(
+                        TypeErrorKind::MutabilityViolationError,
+                        "Cannot assign through immutable pointer".to_string()
+                    ));
+                }
+                
+                // Check type compatibility  
+                if !self.types_compatible(value_type, pointee_type) {
+                    return Err(TypeCheckError::new(
+                        TypeErrorKind::TypeMismatch,
+                        format!("Type mismatch in assignment: expected {:?}, got {:?}", pointee_type, value_type)
+                    ));
+                }
+                
+                Ok(())
+            }
+            _ => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::InvalidDereferenceError,
+                    format!("Cannot assign through non-reference type: {:?}", reference_type)
+                ))
+            }
+        }
+    }
+    
+    /// Release borrows when leaving a scope
+    pub fn release_scope_borrows(&mut self, scope_depth: usize) {
+        // Remove active borrows from this scope level
+        self.active_borrows.retain(|borrow| borrow.scope_depth < scope_depth);
+        
+        // Update borrow states for released borrows
+        let remaining_borrow_ids: std::collections::HashSet<usize> = 
+            self.active_borrows.iter().map(|b| b.id).collect();
+        
+        for (variable, state) in self.borrow_states.iter_mut() {
+            match state {
+                BorrowState::BorrowedMutable(borrow_id) => {
+                    if !remaining_borrow_ids.contains(borrow_id) {
+                        *state = BorrowState::Owned;
+                    }
+                }
+                BorrowState::BorrowedImmutable(ref mut borrows) => {
+                    borrows.retain(|id| remaining_borrow_ids.contains(id));
+                    if borrows.is_empty() {
+                        *state = BorrowState::Owned;
+                    }
+                }
+                _ => {} // No change for Owned or Moved
+            }
+        }
+    }
+    
+    /// Check if a variable can be moved
+    pub fn check_move(&mut self, variable: &str) -> Result<(), TypeCheckError> {
+        let current_state = self.borrow_states.get(variable).cloned().unwrap_or(BorrowState::Owned);
+        
+        match current_state {
+            BorrowState::Owned => {
+                self.borrow_states.insert(variable.to_string(), BorrowState::Moved);
+                Ok(())
+            }
+            BorrowState::BorrowedMutable(_) => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::BorrowConflictError,
+                    format!("Cannot move `{}`: currently borrowed as mutable", variable)
+                ))
+            }
+            BorrowState::BorrowedImmutable(_) => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::BorrowConflictError,
+                    format!("Cannot move `{}`: currently borrowed as immutable", variable)
+                ))
+            }
+            BorrowState::Moved => {
+                Err(TypeCheckError::new(
+                    TypeErrorKind::UseAfterFreeError,
+                    format!("Cannot move `{}`: value has already been moved", variable)
+                ))
+            }
+        }
     }
 }
 

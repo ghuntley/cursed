@@ -1,7 +1,7 @@
 // Comprehensive CURSED Async System Demo
 // Demonstrates all features of the native async/future system
 
-yeet "./mod"
+yeet "async"
 
 slay main() {
     vibez.spill("=== CURSED Native Async System Demo ===")

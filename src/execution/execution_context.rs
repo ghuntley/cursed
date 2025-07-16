@@ -14,6 +14,7 @@ pub struct LocationInfo {
 }
 
 /// Execution context for CURSED programs
+#[derive(Clone)]
 pub struct ExecutionContext {
     variables: HashMap<String, CursedValue>,
     functions: HashMap<String, crate::ast::FunctionStatement>,

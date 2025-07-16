@@ -19,6 +19,7 @@ pub mod performance_monitor;
 pub mod types;
 pub mod interface_dispatch;
 pub mod interface_type_checking;
+pub mod interface_optimization;
 
 // Existing modules
 pub mod async_await;
@@ -117,6 +118,10 @@ pub use interface_dispatch::{
 };
 pub use interface_type_checking::{
     InterfaceTypeChecker
+};
+pub use interface_optimization::{
+    InterfaceOptimizationPass, InterfaceOptimizationConfig, InterfaceOptimizationStats,
+    InterfaceCallSite, InterfaceMethodImpl, benchmark_interface_optimization
 };
 
 // Re-export new inkwell-based types (temporarily disabled)

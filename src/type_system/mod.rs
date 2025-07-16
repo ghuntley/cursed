@@ -29,6 +29,9 @@ mod tests;
 pub mod integration_tests;
 
 #[cfg(test)]
+pub mod mutable_reference_tests;
+
+#[cfg(test)]
 
 
 // Import base types from core and AST
@@ -149,6 +152,9 @@ impl TypeSystem {
             Expression::Unary(unary_expr) => {
                 let operand_type = self.check_expression(&unary_expr.operand)?;
                 self.check_unary_operation(&unary_expr.operator, &operand_type)
+            }
+            Expression::TypeSwitch(type_switch) => {
+                self.check_type_switch_expression(type_switch)
             }
             _ => Ok(TypeExpression::named("unknown")),
         }
@@ -389,6 +395,74 @@ impl TypeSystem {
             }
         }
     }
+
+    fn check_type_switch_expression(&mut self, type_switch: &crate::ast::TypeSwitchExpression) -> Result<TypeExpression, String> {
+        // Check the variable being type-switched on
+        let variable_type = self.check_expression(&type_switch.variable)?;
+        
+        // Type check all arms and ensure they return compatible types
+        let mut arm_types = Vec::new();
+        
+        for arm in &type_switch.arms {
+            // Check the type pattern
+            match &arm.type_pattern {
+                crate::ast::TypePattern::Type(type_expr) => {
+                    // Validate that the type exists
+                    self.validate_type_exists(type_expr)?;
+                }
+                crate::ast::TypePattern::Interface(interface_name) => {
+                    // Check that the interface exists
+                    if !self.environment.type_definitions.contains_key(interface_name) {
+                        return Err(format!("Unknown interface: {}", interface_name));
+                    }
+                }
+                crate::ast::TypePattern::Wildcard => {
+                    // Wildcard is always valid
+                }
+            }
+            
+            // TODO: If there's a bound variable, add it to the type environment
+            // for the scope of this arm body
+            
+            // Type check the arm body
+            let body_type = self.check_expression(&arm.body)?;
+            arm_types.push(body_type);
+        }
+        
+        // All arms should return the same type
+        if !arm_types.is_empty() {
+            let first_type = &arm_types[0];
+            for arm_type in &arm_types[1..] {
+                if !self.types_compatible(first_type, arm_type) {
+                    return Err(format!(
+                        "Type switch arms have incompatible return types: {:?} vs {:?}",
+                        first_type, arm_type
+                    ));
+                }
+            }
+            Ok(first_type.clone())
+        } else {
+            Ok(TypeExpression::named("unknown"))
+        }
+    }
+
+    fn validate_type_exists(&self, type_expr: &crate::ast::Type) -> Result<(), String> {
+        match type_expr {
+            crate::ast::Type::Custom(name) => {
+                // Check if it's a user-defined type
+                if self.environment.type_definitions.contains_key(name) {
+                    Ok(())
+                } else {
+                    Err(format!("Unknown type: {}", name))
+                }
+            }
+            // Built-in CURSED types are always valid
+            crate::ast::Type::Normie | crate::ast::Type::Tea | crate::ast::Type::Lit |
+            crate::ast::Type::Sip | crate::ast::Type::Smol | crate::ast::Type::Mid |
+            crate::ast::Type::Thicc | crate::ast::Type::Snack | crate::ast::Type::Meal => Ok(()),
+            _ => Ok(()), // Other type variants are assumed to be valid for now
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -547,6 +621,42 @@ impl TypeExpression {
             return_type: None,
         }
     }
+    
+    pub fn mutable_reference(pointee_type: TypeExpression) -> Self {
+        Self {
+            kind: TypeKind::Reference(Box::new(pointee_type), true),
+            name: Some("&mut".to_string()),
+            parameters: Vec::new(),
+            return_type: None,
+        }
+    }
+    
+    pub fn immutable_reference(pointee_type: TypeExpression) -> Self {
+        Self {
+            kind: TypeKind::Reference(Box::new(pointee_type), false),
+            name: Some("&".to_string()),
+            parameters: Vec::new(),
+            return_type: None,
+        }
+    }
+    
+    pub fn mutable_pointer(pointee_type: TypeExpression) -> Self {
+        Self {
+            kind: TypeKind::Pointer(Box::new(pointee_type), true),
+            name: Some("*mut".to_string()),
+            parameters: Vec::new(),
+            return_type: None,
+        }
+    }
+    
+    pub fn immutable_pointer(pointee_type: TypeExpression) -> Self {
+        Self {
+            kind: TypeKind::Pointer(Box::new(pointee_type), false),
+            name: Some("*".to_string()),
+            parameters: Vec::new(),
+            return_type: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -569,6 +679,8 @@ pub enum TypeKind {
     Primitive,
     Generic(GenericInfo),
     Named(String),
+    Reference(Box<TypeExpression>, bool), // (pointee_type, is_mutable)
+    Pointer(Box<TypeExpression>, bool),   // (pointee_type, is_mutable)
 }
 
 impl Eq for TypeKind {}
@@ -586,6 +698,16 @@ impl std::hash::Hash for TypeKind {
                 6.hash(state);
                 name.hash(state);
             }
+            TypeKind::Reference(pointee, is_mutable) => {
+                7.hash(state);
+                pointee.hash(state);
+                is_mutable.hash(state);
+            }
+            TypeKind::Pointer(pointee, is_mutable) => {
+                8.hash(state);
+                pointee.hash(state);
+                is_mutable.hash(state);
+            }
         }
     }
 }
@@ -600,6 +722,12 @@ impl PartialEq for TypeKind {
             (TypeKind::Primitive, TypeKind::Primitive) => true,
             (TypeKind::Named(a), TypeKind::Named(b)) => a == b,
             (TypeKind::Generic(_), TypeKind::Generic(_)) => false, // Don't compare generic info
+            (TypeKind::Reference(a_pointee, a_mut), TypeKind::Reference(b_pointee, b_mut)) => {
+                a_pointee == b_pointee && a_mut == b_mut
+            }
+            (TypeKind::Pointer(a_pointee, a_mut), TypeKind::Pointer(b_pointee, b_mut)) => {
+                a_pointee == b_pointee && a_mut == b_mut
+            }
             _ => false,
         }
     }

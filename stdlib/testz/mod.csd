@@ -10,7 +10,43 @@ slay test_start(name tea) {
 }
 
 slay assert_true(condition lit) {
-    vibez.spill("Assert: " + tea(condition))
+    vibes condition {
+        passed_tests = passed_tests + 1
+        vibez.spill("✅ PASS")
+    } nah {
+        failed_tests = failed_tests + 1
+        vibez.spill("❌ FAIL")
+    }
+}
+
+slay assert_false(condition lit) {
+    vibes condition {
+        failed_tests = failed_tests + 1
+        vibez.spill("❌ FAIL")
+    } nah {
+        passed_tests = passed_tests + 1
+        vibez.spill("✅ PASS")
+    }
+}
+
+slay assert_eq_int(actual normie, expected normie) {
+    vibes actual == expected {
+        passed_tests = passed_tests + 1
+        vibez.spill("✅ PASS: " + tea(actual) + " == " + tea(expected))
+    } nah {
+        failed_tests = failed_tests + 1
+        vibez.spill("❌ FAIL: " + tea(actual) + " != " + tea(expected))
+    }
+}
+
+slay assert_eq_string(actual tea, expected tea) {
+    vibes actual == expected {
+        passed_tests = passed_tests + 1
+        vibez.spill("✅ PASS: \"" + actual + "\" == \"" + expected + "\"")
+    } nah {
+        failed_tests = failed_tests + 1
+        vibez.spill("❌ FAIL: \"" + actual + "\" != \"" + expected + "\"")
+    }
 }
 
 slay print_test_summary() {

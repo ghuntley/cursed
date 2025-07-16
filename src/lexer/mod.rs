@@ -74,6 +74,7 @@ pub enum TokenKind {
     Mood,        // case
     Basic,       // default case
     Match,       // match expression
+    TypeCheck,   // type switch expression (match variable is)
     YeetError,   // throw error
     Catch,       // catch error
     Where,       // where clause for generics
@@ -778,6 +779,7 @@ impl Lexer {
             "mood" => TokenKind::Mood,
             "basic" => TokenKind::Basic,
             "match" => TokenKind::Match,
+            "typecheck" => TokenKind::TypeCheck,
             "yeet_error" => TokenKind::YeetError,
             "catch" => TokenKind::Catch,
             "where" => TokenKind::Where,

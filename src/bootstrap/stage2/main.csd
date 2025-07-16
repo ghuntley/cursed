@@ -141,13 +141,13 @@ slay print_help() {
 }
 
 // Parse command line arguments  
-slay parse_args(args: tea[]) -> CompilerConfig? {
+slay parse_args(args tea[]) CompilerConfig {
     sus config = CompilerConfig {
         input_file: "",
         output_file: "",
         optimization_level: 0,
-        debug_mode: facts,
-        verbose: facts,
+        debug_mode: cap,
+        verbose: cap,
     };
     
     sus i = 1; // Skip program name
@@ -205,7 +205,7 @@ slay parse_args(args: tea[]) -> CompilerConfig? {
             }
             
             mood "--debug" {
-                config.debug_mode = truth;
+                config.debug_mode = based;
                 i = i + 1;
             }
             
@@ -304,7 +304,7 @@ squad CompilationResult {
 }
 
 // Main compilation pipeline
-slay compile_program(source: tea, config: CompilerConfig) -> CompilationResult? {
+slay compile_program(source tea, config CompilerConfig) CompilationResult {
     sus result = CompilationResult {
         success: facts,
         errors: tea[],
