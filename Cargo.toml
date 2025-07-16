@@ -484,4 +484,16 @@ name = "heap_stress_benchmark"
 harness = false
 path = "benchmarks/heap_stress_benchmark.rs"
 
+[[bin]]
+name = "cursed-coverage"
+path = "src/bin/cursed_coverage.rs"
+
+[[bin]]
+name = "cursed_bench"
+path = "src/bin/cursed_bench.rs"
+
+[[bin]]
+name = "cursed_bench_simple"
+path = "src/bin/cursed_bench_simple.rs"
+
 

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "CURSED",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#booleans"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.cursed",
+          "match": "\\b(sus|damn|slay|vibez|yeet|bestie|stan|dm|ready|vibe|yikes|shook|fam|facts|lowkey|ghosted|simp)\\b"
+        },
+        {
+          "name": "keyword.operator.cursed",
+          "match": "\\b(and|or|not)\\b"
+        },
+        {
+          "name": "storage.modifier.cursed",
+          "match": "\\b(defer|goroutine|channel|select|interface|struct)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.cursed",
+          "match": "\\b(lit|tea|drip|normie|smol|mid|thicc|snack|meal|byte|rune|extra|sip)\\b"
+        }
+      ]
+    },
+    "booleans": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.cursed",
+          "match": "\\b(based|cap|cringe)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.cursed",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.cursed",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.cursed",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.cursed",
+          "match": "\\b\\d+(\\.\\d+)?\\b"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.cursed"
+}

@@ -145,7 +145,7 @@ pub mod cli;
 pub mod repl;
 
 // Language Server Protocol
-// pub mod lsp; // Temporarily disabled due to compilation errors
+pub mod lsp; // Language Server Protocol implementation
 
 // Development tools (already declared above)
 
@@ -778,6 +778,151 @@ async fn compile_to_native_with_advanced_optimization(
         warnings: vec![],
         errors: vec![],
     })
+}
+
+/// Compile CURSED source to WebAssembly module
+pub async fn compile_to_wasm(
+    input_file: &str,
+    output_file: &str,
+    config: &optimization::AdvancedOptimizationConfig,
+) -> crate::error::Result<()> {
+    tracing::info!("Compiling {} to WebAssembly module {}", input_file, output_file);
+    
+    // Read source file
+    let source = std::fs::read_to_string(input_file)
+        .map_err(|e| CursedError::Io(format!("Failed to read source file: {}", e)))?;
+    
+    compile_source_to_wasm(&source, output_file, config).await
+}
+
+/// Compile CURSED source string to WebAssembly module
+async fn compile_source_to_wasm(
+    source: &str,
+    output_file: &str,
+    config: &optimization::AdvancedOptimizationConfig,
+) -> crate::error::Result<()> {
+    // Generate LLVM IR with WebAssembly target
+    let wasm_ir = compile_to_wasm_ir(source, config).await?;
+    
+    // Compile LLVM IR to WebAssembly
+    compile_ir_to_wasm(&wasm_ir, output_file).await
+}
+
+/// Compile CURSED source to WebAssembly LLVM IR (public API)
+pub async fn compile_source_to_wasm_ir(
+    source: &str,
+    config: &optimization::AdvancedOptimizationConfig,
+) -> crate::error::Result<String> {
+    compile_to_wasm_ir(source, config).await
+}
+
+/// Compile CURSED source to WebAssembly LLVM IR
+async fn compile_to_wasm_ir(
+    source: &str,
+    config: &optimization::AdvancedOptimizationConfig,
+) -> crate::error::Result<String> {
+    // Use the existing string-based LLVM IR generation but with WASM target
+    let mut ir = compile_to_ir_with_advanced_optimization(source, config).await?;
+    
+    // Modify the target triple for WebAssembly
+    ir = ir.replace("x86_64-unknown-linux-gnu", "wasm32-unknown-unknown");
+    
+    // Parse IR and reconstruct with proper WebAssembly headers
+    let mut lines: Vec<&str> = ir.lines().collect();
+    let mut wasm_ir = Vec::new();
+    
+    // Add WebAssembly target information at the top
+    wasm_ir.push("; WebAssembly target module");
+    wasm_ir.push("target triple = \"wasm32-unknown-unknown\"");
+    wasm_ir.push("target datalayout = \"e-m:e-p:32:32-i64:64-n32:64-S128\"");
+    wasm_ir.push("");
+    
+    // Add WebAssembly runtime function declarations
+    wasm_ir.push("; WebAssembly runtime functions");
+    wasm_ir.push("declare void @cursed_print(i8*)");
+    wasm_ir.push("declare void @cursed_print_int(i32)");
+    wasm_ir.push("declare void @cursed_print_float(float)");
+    wasm_ir.push("declare i8* @__wasm_malloc(i32)");
+    wasm_ir.push("declare void @__wasm_free(i8*)");
+    wasm_ir.push("");
+    
+    // Filter out duplicate target information and add the rest
+    for line in lines {
+        let trimmed = line.trim();
+        if trimmed.starts_with("target triple") || 
+           trimmed.starts_with("target datalayout") ||
+           trimmed.is_empty() && wasm_ir.last() == Some(&"") {
+            continue; // Skip duplicate target info and consecutive empty lines
+        }
+        wasm_ir.push(line);
+    }
+    
+    ir = wasm_ir.join("\n");
+    
+    Ok(ir)
+}
+
+/// Compile LLVM IR to WebAssembly binary
+async fn compile_ir_to_wasm(ir: &str, output_file: &str) -> crate::error::Result<()> {
+    use std::process::Command;
+    use std::fs;
+    
+    // Write IR to temporary file
+    let temp_ir_file = format!("{}.ll", output_file);
+    fs::write(&temp_ir_file, ir)
+        .map_err(|e| CursedError::Io(format!("Failed to write IR file: {}", e)))?;
+    
+    // Try to use llc to compile to WebAssembly
+    let llc_result = Command::new("llc")
+        .arg("-march=wasm32")
+        .arg("-filetype=obj")
+        .arg(&temp_ir_file)
+        .arg("-o")
+        .arg(&format!("{}.o", output_file))
+        .output();
+    
+    match llc_result {
+        Ok(output) if output.status.success() => {
+            // Link object file to WebAssembly module
+            let link_result = Command::new("wasm-ld")
+                .arg(&format!("{}.o", output_file))
+                .arg("-o")
+                .arg(output_file)
+                .arg("--no-entry")
+                .arg("--export-all")
+                .output();
+            
+            match link_result {
+                Ok(link_output) if link_output.status.success() => {
+                    // Clean up temporary files
+                    let _ = fs::remove_file(&temp_ir_file);
+                    let _ = fs::remove_file(&format!("{}.o", output_file));
+                    
+                    tracing::info!("Successfully compiled to WebAssembly: {}", output_file);
+                    Ok(())
+                }
+                Ok(link_output) => {
+                    let error = String::from_utf8_lossy(&link_output.stderr);
+                    Err(CursedError::CompilerError(format!("WebAssembly linking failed: {}", error)))
+                }
+                Err(e) => {
+                    tracing::warn!("wasm-ld not found, falling back to object file: {}", e);
+                    // Rename .o file to .wasm as fallback
+                    fs::rename(&format!("{}.o", output_file), output_file)
+                        .map_err(|e| CursedError::Io(format!("Failed to rename object file: {}", e)))?;
+                    let _ = fs::remove_file(&temp_ir_file);
+                    Ok(())
+                }
+            }
+        }
+        Ok(output) => {
+            let error = String::from_utf8_lossy(&output.stderr);
+            Err(CursedError::CompilerError(format!("LLVM compilation to WebAssembly failed: {}", error)))
+        }
+        Err(e) => {
+            Err(CursedError::CompilerError(format!("Failed to run llc: {}", e)))
+        }
+    }
 }
 
 async fn compile_optimized_ir_to_native(ir: &str, output_file: &str) -> crate::error::Result<()> {

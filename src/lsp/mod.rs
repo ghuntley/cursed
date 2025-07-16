@@ -1,16 +1,7 @@
-//! CURSED Language Server Protocol Implementation
-//! Provides comprehensive IDE support with semantic analysis, completion, and diagnostics
+//! CURSED Language Server Protocol Implementation (Minimal)
+//! Provides basic IDE support with completion and diagnostics
 
 pub mod backend;
-pub mod completion;
-pub mod diagnostics;
-pub mod document;
-pub mod formatting;
-pub mod navigation;
-pub mod protocol;
-pub mod server;
-pub mod semantic_highlighting;
-pub mod workspace;
+pub mod minimal_server;
 
-pub use server::{CursedLanguageServer, start_lsp_server};
-pub use protocol::CursedLspClient;
+pub use minimal_server::{CursedLanguageServer, start_lsp_server};

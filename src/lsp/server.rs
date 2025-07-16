@@ -11,17 +11,19 @@ use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use tower_lsp::{LspService, Server};
+use tower_lsp::{LspService, Server, LanguageServer, Client};
 use tower_lsp::jsonrpc::Result as LspResult;
 use tower_lsp::lsp_types::*;
+use tokio::sync::RwLock;
 
 /// CURSED Language Server
 pub struct CursedLanguageServer {
-    documents: Arc<Mutex<HashMap<Url, DocumentData>>>,
-    workspace_root: Arc<Mutex<Option<PathBuf>>>,
-    semantic_analyzer: Arc<Mutex<TypeChecker>>,
-    diagnostics: Arc<Mutex<HashMap<Url, Vec<Diagnostic>>>>,
-    symbols: Arc<Mutex<HashMap<Url, Vec<SymbolInformation>>>>,
+    client: Client,
+    documents: Arc<RwLock<HashMap<Url, DocumentData>>>,
+    workspace_root: Arc<RwLock<Option<PathBuf>>>,
+    semantic_analyzer: Arc<RwLock<TypeChecker>>,
+    diagnostics: Arc<RwLock<HashMap<Url, Vec<Diagnostic>>>>,
+    symbols: Arc<RwLock<HashMap<Url, Vec<SymbolInformation>>>>,
 }
 
 /// Document data with parsed AST and metadata
@@ -47,13 +49,14 @@ pub struct SymbolLocation {
 }
 
 impl CursedLanguageServer {
-    pub fn new() -> Self {
+    pub fn new(client: Client) -> Self {
         Self {
-            documents: Arc::new(Mutex::new(HashMap::new())),
-            workspace_root: Arc::new(Mutex::new(None)),
-            semantic_analyzer: Arc::new(Mutex::new(TypeChecker::new())),
-            diagnostics: Arc::new(Mutex::new(HashMap::new())),
-            symbols: Arc::new(Mutex::new(HashMap::new())),
+            client,
+            documents: Arc::new(RwLock::new(HashMap::new())),
+            workspace_root: Arc::new(RwLock::new(None)),
+            semantic_analyzer: Arc::new(RwLock::new(TypeChecker::new())),
+            diagnostics: Arc::new(RwLock::new(HashMap::new())),
+            symbols: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
