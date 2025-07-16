@@ -4,9 +4,10 @@
 //! generic functions and types into concrete instances for code generation.
 
 use crate::error_types::Error as CursedError;
-use crate::ast::{Expression, Statement, FunctionDeclaration, StructDeclaration, Program};
+use crate::ast::{Expression, Statement, FunctionDeclaration, StructDeclaration, Program, InterfaceStatement};
 use crate::type_system::{TypeExpression, TypeEnvironment, GenericConstraint, ConstraintBinding};
 use crate::type_system::constraint_resolver::{ConstraintResolver, ConstraintSolution};
+use crate::type_system::generic_interfaces::{GenericInterface, GenericInterfaceChecker, InterfaceImplementation};
 use std::collections::{HashMap, HashSet};
 
 /// Main monomorphisation pipeline that generates concrete AST instances
@@ -20,6 +21,8 @@ pub struct MonomorphisationPipeline {
     instantiation_stack: Vec<String>,
     /// Global type environment
     type_env: TypeEnvironment,
+    /// Generic interface checker for interface monomorphization
+    interface_checker: GenericInterfaceChecker,
 }
 
 /// A concrete instance generated from a generic declaration
@@ -43,6 +46,15 @@ pub enum ConcreteAST {
     Function(ConcreteFunctionDeclaration),
     Struct(ConcreteStructDeclaration),
     Method(ConcreteMethodDeclaration),
+    Interface(ConcreteInterfaceDeclaration),
+}
+
+/// Concrete interface declaration with resolved types
+#[derive(Debug, Clone)]
+pub struct ConcreteInterfaceDeclaration {
+    pub name: String,
+    pub methods: Vec<ConcreteMethodDeclaration>,
+    pub type_signature: String,
 }
 
 /// Concrete function declaration with resolved types
@@ -99,11 +111,13 @@ pub struct InstantiationRequest {
 
 impl MonomorphisationPipeline {
     pub fn new(type_env: TypeEnvironment) -> Self {
+        let interface_checker = GenericInterfaceChecker::new(type_env.clone());
         Self {
             constraint_resolver: ConstraintResolver::new(),
             instance_cache: HashMap::new(),
             instantiation_stack: Vec::new(),
             type_env,
+            interface_checker,
         }
     }
 

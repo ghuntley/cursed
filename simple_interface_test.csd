@@ -1,25 +1,33 @@
 yeet "testz"
 
-# Simple interface inheritance test
-
-# Base interface
-collab Drawable {
-    slay draw()
+// Simple interface test
+collab Shape {
+    slay area()
+    slay perimeter()
 }
 
-# Derived interface with inheritance
-collab Shape extends Drawable {
-    slay get_area() meal
+// Simple struct
+vibe Rectangle {
+    width normie
+    height normie
 }
 
-# Test struct implementing interface
-squad Circle {
-    radius meal
+// Method implementations
+slay Rectangle.area() normie {
+    damn self.width * self.height
 }
 
-# Test
-test_start("Basic interface inheritance")
-assert_true(based) # Placeholder for interface checks
+slay Rectangle.perimeter() normie {
+    damn 2 * (self.width + self.height)
+}
+
+test_start("Simple Interface Test")
+
+// Create rectangle
+sus rect Rectangle = Rectangle { width: 5, height: 3 }
+
+// Test method calls
+sus area normie = rect.area()
+assert_eq_int(area, 15)
+
 print_test_summary()
-
-vibez.spill("Interface inheritance test complete!")
