@@ -26,7 +26,7 @@ use crate::runtime::error_propagation::{ErrorContext, ErrorPropagationManager};
 // Defer runtime will be implemented later
 // use crate::runtime::defer_runtime::DeferRuntime;
 
-/// Thread-local storage for panic state
+// Thread-local storage for panic state
 thread_local! {
     static PANIC_STATE: RefCell<PanicState> = RefCell::new(PanicState::new());
 }

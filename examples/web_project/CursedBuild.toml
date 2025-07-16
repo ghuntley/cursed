@@ -1,0 +1,49 @@
+# CURSED Web Application Configuration
+# Example for a full-stack web application
+
+[project]
+name = "cursed_web_app"
+version = "1.0.0"
+authors = ["Web Team"]
+description = "Full-stack web application in CURSED"
+
+[build]
+targets = ["server", "client"]
+source_dirs = ["src", "shared"]
+output_dir = "build"
+optimization_level = "2"
+parallel_builds = true
+
+[dependencies]
+web_vibez = "1.0.0"
+json_tea = "1.0.0"
+vibe_net = "1.0.0"
+stringz = "1.0.0"
+testz = "1.0.0"
+
+[targets]
+# Server-side application
+[targets.server]
+main = "src/server/main.csd"
+build_mode = "native"
+optimization_level = "3"
+
+# Client-side application (WebAssembly)
+[targets.client]
+main = "src/client/main.csd"
+build_mode = "wasm"
+output_dir = "web/static"
+
+[testing]
+test_patterns = ["test_*.csd", "*_test.csd", "tests/*.csd"]
+parallel_tests = true
+
+[scripts]
+dev_server = "cargo run --bin cursed build/server --dev"
+watch_client = "cargo run --bin cursed_build watch --target=client"
+deploy = "echo 'Deploying to production...'"
+
+[env]
+SERVER_PORT = "8080"
+CLIENT_URL = "http://localhost:8080"
+DEBUG_MODE = "1"

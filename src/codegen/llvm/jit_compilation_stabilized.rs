@@ -97,7 +97,7 @@ impl From<JitError> for CursedError {
     }
 }
 
-/// Thread-local LLVM context with proper lifetime management
+// Thread-local LLVM context with proper lifetime management
 thread_local! {
     static LLVM_CONTEXT: RefCell<Option<LlvmContextWrapper>> = RefCell::new(None);
 }

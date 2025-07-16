@@ -1,0 +1,18 @@
+# Simple CURSED Project Configuration
+# Basic example for a minimal CURSED application
+
+[project]
+name = "hello_cursed"
+version = "1.0.0"
+authors = ["Your Name"]
+description = "A simple Hello World in CURSED"
+
+[build]
+targets = ["main"]
+source_dirs = ["src"]
+output_dir = "build"
+optimization_level = "2"
+build_mode = "native"
+
+[dependencies]
+# No external dependencies for this simple example

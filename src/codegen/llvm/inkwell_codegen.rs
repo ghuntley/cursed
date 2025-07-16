@@ -399,6 +399,51 @@ impl<'ctx> InkwellCodeGenerator<'ctx> {
     pub fn get_ir_string(&self) -> String {
         self.module.print_to_string().to_string()
     }
+    
+    /// Set target triple for compilation
+    pub fn set_target_triple(&mut self, triple: &str) {
+        self.target_triple = triple.to_string();
+        self.module.set_triple(&TargetTriple::create(triple));
+    }
+    
+    /// Enable WebAssembly-specific optimizations
+    pub fn enable_wasm_optimizations(&mut self) {
+        // WebAssembly-specific optimizations will be applied during LLVM passes
+        // This method serves as a marker for WASM-specific configuration
+    }
+    
+    /// Compile AST to WebAssembly-optimized LLVM IR
+    pub fn compile_to_wasm_ir(&mut self, program: &Program) -> Result<String, CursedError> {
+        // Configure for WebAssembly target
+        self.set_target_triple("wasm32-unknown-unknown");
+        
+        // Add WebAssembly-specific function exports
+        self.add_wasm_exports();
+        
+        // Compile the program
+        self.compile(program)?;
+        
+        // Return the generated IR
+        Ok(self.get_ir_string())
+    }
+    
+    /// Add WebAssembly-specific function exports
+    fn add_wasm_exports(&mut self) {
+        // Add export directives for WebAssembly
+        // This will make functions visible from the WASM module
+        
+        // Memory management exports for WASM
+        let i32_type = self.context.i32_type();
+        let void_type = self.context.void_type();
+        
+        // Export memory allocation function
+        let malloc_type = i32_type.fn_type(&[i32_type.into()], false);
+        self.module.add_function("__wasm_malloc", malloc_type, Some(Linkage::External));
+        
+        // Export memory deallocation function
+        let free_type = void_type.fn_type(&[i32_type.into()], false);
+        self.module.add_function("__wasm_free", free_type, Some(Linkage::External));
+    }
 
     /// Compile to object file
     pub fn compile_to_object_file(&self, output_path: &Path) -> Result<(), CursedError> {

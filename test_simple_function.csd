@@ -1,7 +1,6 @@
-sus test_value normie = 42
-
-slay simple_function() tea {
-    damn "working"
+slay simple_test() lit {
+    vibez.spill("Simple test")
+    damn based
 }
 
-vibez.spill(simple_function())
+simple_test()

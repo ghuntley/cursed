@@ -38,6 +38,8 @@ pub struct AdvancedOptimizationConfig {
     pub bolt_profile_path: Option<PathBuf>,
     pub custom_passes: Vec<String>,
     pub pass_pipeline: PassPipeline,
+    pub target_platform: Option<String>,
+    pub enable_wasm_optimizations: bool,
 }
 
 /// Link-Time Optimization levels
@@ -132,6 +134,8 @@ impl Default for AdvancedOptimizationConfig {
             bolt_profile_path: None,
             custom_passes: Vec::new(),
             pass_pipeline: PassPipeline::Default,
+            target_platform: None,
+            enable_wasm_optimizations: false,
         }
     }
 }

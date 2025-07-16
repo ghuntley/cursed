@@ -123,6 +123,8 @@ fn build_cli() -> Command {
             .help("Target architecture")
             .long("target")
             .value_name("TARGET")
+            .value_parser(["native", "wasm", "wasm32", "wasm64"])
+            .default_value("native")
             .global(true))
         .arg(Arg::new("profile")
             .help("Build profile")
@@ -829,8 +831,21 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         global_matches.get_one::<String>("optimization").map(|s| s.as_str())
     };
 
+    // Get target architecture
+    let target = global_matches.get_one::<String>("target")
+        .map(|s| s.as_str())
+        .unwrap_or("native");
+
     // Create advanced optimization configuration
-    let advanced_config = create_advanced_optimization_config(matches, global_matches)?;
+    let mut advanced_config = create_advanced_optimization_config(matches, global_matches)?;
+    
+    // Configure for WebAssembly target
+    if target.starts_with("wasm") {
+        advanced_config.target_platform = Some("wasm".to_string());
+        advanced_config.enable_wasm_optimizations = true;
+        advanced_config.enable_size_optimization = true; // WASM benefits from smaller binaries
+        advanced_config.size_optimization_level = cursed::optimization::SizeOptLevel::Size;
+    }
     
     if matches.get_flag("verbose") || global_matches.get_flag("verbose") {
         println!("{} {} to {}", "Compiling".green().bold(), input, output);
@@ -848,16 +863,26 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
         if advanced_config.enable_size_optimization {
             println!("{} Size optimization enabled ({:?})", "Advanced".cyan().bold(), advanced_config.size_optimization_level);
         }
+        if target.starts_with("wasm") {
+            println!("{} WebAssembly target: {}", "Target".magenta().bold(), target);
+        }
     }
     
     if matches.get_flag("emit-ir") {
         let dropz_fs = DropzFilesystem::new();
         let source = dropz_fs.read_to_string(input)
             .map_err(|e| format!("Failed to read file: {}", e))?;
-        let ir = cursed::compile_to_ir_with_advanced_optimization(
-            &source,
-            &advanced_config
-        ).await?;
+        
+        let ir = if target.starts_with("wasm") {
+            // Use WebAssembly-specific IR generation
+            cursed::compile_source_to_wasm_ir(&source, &advanced_config).await?
+        } else {
+            cursed::compile_to_ir_with_advanced_optimization(
+                &source,
+                &advanced_config
+            ).await?
+        };
+        
         dropz_fs.write(&format!("{}.ll", output), &ir)
             .map_err(|e| format!("Failed to write IR: {}", e))?;
         println!("{} LLVM IR to {}.ll", "Generated".green().bold(), output);
@@ -873,8 +898,18 @@ async fn handle_compile(matches: &ArgMatches, global_matches: &ArgMatches) -> Re
             .map_err(|e| format!("Failed to write assembly: {}", e))?;
         println!("{} Assembly to {}.s", "Generated".green().bold(), output);
     } else {
+        // Handle WebAssembly compilation
+        if target.starts_with("wasm") {
+            let wasm_output = if output.ends_with(".wasm") { 
+                output.to_string() 
+            } else { 
+                format!("{}.wasm", output) 
+            };
+            cursed::compile_to_wasm(input, &wasm_output, &advanced_config).await?;
+            println!("{} WebAssembly module: {}", "Generated".green().bold(), wasm_output);
+        }
         // Handle native-only flag
-        if matches.get_flag("native-only") {
+        else if matches.get_flag("native-only") {
             cursed::compile_native_only_with_advanced_optimization(input, output, &advanced_config).await?;
             println!("{} native executable: {}", "Generated".green().bold(), output);
         } else {

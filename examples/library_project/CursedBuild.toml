@@ -1,0 +1,27 @@
+# CURSED Library Project Configuration
+# Example for a reusable library
+
+[project]
+name = "math_utils"
+version = "2.1.0"
+authors = ["Math Team"]
+description = "Mathematical utilities for CURSED"
+type = "library"
+
+[build]
+targets = ["lib"]
+source_dirs = ["src", "utils"]
+output_dir = "build"
+optimization_level = "2"
+build_mode = "native"
+
+[dependencies]
+testz = "1.0.0"
+
+[testing]
+test_patterns = ["test_*.csd", "*_test.csd"]
+parallel_tests = true
+
+[package]
+keywords = ["math", "utilities", "library"]
+categories = ["mathematics", "algorithms"]

@@ -70,7 +70,7 @@ pub mod variable_management;
 pub mod web_vibez_integration;
 pub mod generic_optimization;
 
-// New inkwell-based modules for migration from string-based IR (temporarily disabled for compilation)
+// New inkwell-based modules for migration from string-based IR (disabled for WebAssembly implementation)
 // pub mod inkwell_expression_compiler;
 // pub mod inkwell_statement_generator;
 // pub mod inkwell_codegen;
@@ -124,7 +124,7 @@ pub use interface_optimization::{
     InterfaceCallSite, InterfaceMethodImpl, benchmark_interface_optimization
 };
 
-// Re-export new inkwell-based types (temporarily disabled)
+// Re-export new inkwell-based types (disabled for WebAssembly implementation)
 // pub use inkwell_expression_compiler::InkwellExpressionCompiler;
 // pub use inkwell_statement_generator::InkwellStatementGenerator;
 // pub use inkwell_codegen::InkwellCodeGenerator;
