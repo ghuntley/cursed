@@ -346,6 +346,11 @@ impl Lexer {
                 self.column = 1;
                 Ok(self.make_token(TokenKind::Newline, "\n".to_string(), start_column))
             },
+            '#' => {
+                // Hash comment - skip to end of line
+                self.skip_line_comment();
+                return self.next_token();
+            },
             '"' => self.string_literal(start_column),
             '\'' => self.character_literal(start_column),
             '`' => self.raw_string_literal(start_column),

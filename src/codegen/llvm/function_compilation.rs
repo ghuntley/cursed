@@ -10,7 +10,7 @@ use std::collections::HashMap;
 /// Complete function compiler for CURSED functions to LLVM IR
 pub struct FunctionCompiler {
     pub ir_code: String,
-    pub local_register_counter: usize,  // Function-local register counter
+    pub register_tracker: RegisterTracker,  // Use RegisterTracker instead of local counter
     pub label_counter: usize,
     pub variables: HashMap<String, String>,  // Maps variable names to their register/pointer
     pub variable_types: HashMap<String, String>,  // Maps variable names to their LLVM types
@@ -26,7 +26,7 @@ impl FunctionCompiler {
     pub fn new() -> Self {
         Self {
             ir_code: String::new(),
-            local_register_counter: 0,  // Start function register numbering from %0 (first instruction)
+            register_tracker: RegisterTracker::new(),  // Use RegisterTracker instead of local counter
             label_counter: 0,
             variables: HashMap::new(),
             variable_types: HashMap::new(),
@@ -46,9 +46,7 @@ impl FunctionCompiler {
     
     /// Allocate next register for this function
     pub fn next_register(&mut self) -> String {
-        let reg = format!("%{}", self.local_register_counter);
-        self.local_register_counter += 1;
-        reg
+        self.register_tracker.allocate_register()
     }
 
     /// Generate complete LLVM function definition with full IR
@@ -2220,8 +2218,8 @@ impl FunctionCompiler {
     fn compile_unsafe_type_assertion(&mut self, value_reg: &str, source_type_id: u32, target_type_id: u32) -> Result<String, CursedError> {
         let check_reg = self.next_register();
         let result_reg = self.next_register();
-        let panic_block = format!("type_assert_panic_{}", self.local_register_counter);
-        let success_block = format!("type_assert_success_{}", self.local_register_counter);
+        let panic_block = format!("type_assert_panic_{}", self.register_tracker.get_current_counter());
+        let success_block = format!("type_assert_success_{}", self.register_tracker.get_current_counter());
         
         // Generate type check
         self.ir_code.push_str(&format!("  {} = call i1 @cursed_check_type_compatibility(i8* {}, i32 {}, i32 {})\n", 

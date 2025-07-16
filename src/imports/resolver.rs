@@ -127,10 +127,41 @@ impl ImportResolver {
         })
     }
 
-    /// Resolve all imports for a program
+    /// Resolve all imports for a program with enhanced circular dependency detection
     pub async fn resolve_imports(&mut self, imports: &[ImportStatement]) -> Result<Vec<ResolvedImport>> {
         let mut resolved = Vec::new();
+        let mut dependency_graph: HashMap<String, HashSet<String>> = HashMap::new();
         
+        // First pass: build dependency graph to detect circular dependencies
+        for import in imports {
+            let import_paths = if import.path.is_empty() && !import.items.is_empty() {
+                // Grouped import
+                import.items.clone()
+            } else {
+                // Single import
+                vec![import.path.clone()]
+            };
+            
+            for path in &import_paths {
+                let normalized_path = self.normalize_import_path(path)?;
+                dependency_graph.entry(normalized_path.clone()).or_insert_with(HashSet::new);
+                
+                // Extract dependencies from this module
+                if let Ok(module_dependencies) = self.get_module_dependencies(&normalized_path).await {
+                    for dep in module_dependencies {
+                        let normalized_dep = self.normalize_import_path(&dep)?;
+                        dependency_graph.entry(normalized_path.clone())
+                            .or_insert_with(HashSet::new)
+                            .insert(normalized_dep);
+                    }
+                }
+            }
+        }
+        
+        // Check for circular dependencies
+        self.detect_circular_dependencies(&dependency_graph)?;
+        
+        // Second pass: resolve imports in dependency order
         for import in imports {
             // Handle grouped imports (paths stored in items field, empty path indicates grouped import)
             if import.path.is_empty() && !import.items.is_empty() {
@@ -313,38 +344,60 @@ impl ImportResolver {
 
     /// Check if a module name is a standard library module
     fn is_stdlib_module(&self, name: &str) -> bool {
-        // Check if it's a direct module name that exists in stdlib
+        // Comprehensive list of stdlib modules with standardized names
         let stdlib_modules = [
-            "asn1_mood", "async", "atomic_drip", "big_mood", "binary_drip", "bytefit", 
-            "chadlogging", "chaos_mode", "collections", "compression", "concurrenz", 
-            "config", "core", "crypto", "csv", "debug_tea", "error_drip", "exec_slay", 
-            "fs", "glowup_http", "grammar_drip", "hash_drip", "heap_slay", "htmlrizzler", 
-            "io", "json", "logging", "main_character", "math", "memory", "net", "network", 
-            "no_cap", "pathing", "pem_drip", "process", "regex", "rpc_vibes", 
+            // Core modules
+            "async", "collections", "core", "crypto", "error_drip", "fs", "io", "json", 
+            "math", "memory", "net", "process", "string", "testz", "time", "vibez",
+            
+            // Extended modules  
+            "asn1_mood", "atomic_drip", "big_mood", "binary_drip", "bytefit", 
+            "chadlogging", "chaos_mode", "compression", "concurrenz", "config", 
+            "csv", "debug_tea", "exec_slay", "glowup_http", "grammar_drip", 
+            "hash_drip", "heap_slay", "htmlrizzler", "logging", "main_character", 
+            "network", "no_cap", "pathing", "pem_drip", "regex", "rpc_vibes", 
             "serialization", "smtp_tea", "sort_slay", "spill_facts", "sql_slay", 
-            "string", "string_pure", "testz", "time", "tls_vibe", "validation", 
-            "vibe_life", "vibe_lock", "vibez", "x509_certs_tea", "zip_zilla"
+            "string_pure", "tls_vibe", "validation", "vibe_life", "vibe_lock", 
+            "x509_certs_tea", "zip_zilla",
+            
+            // Legacy mappings for backward compatibility
+            "mathz", "stringz", "ioz", "dropz", "timez", "encode_mood", "tab_aesthetic",
+            
+            // New modules that may have been added
+            "mime_vibe", "unicode", "database", "web", "select_core", "signal_boost",
+            "cryptz", "plugin_system", "stat_flexin", "jit_vibes", "text_aesthetic",
+            "error_handling", "fmt", "macro_slay", "user_check", "option", "reflect",
+            "vibe_net", "smtp_tea", "parser", "image_processing", "error_management",
+            "sus_containers", "mood_map", "tag_core", "plug_vibes", "token_vibe",
+            "command_line", "elliptic_curve_tea", "database_complete", "runtime_core",
+            "panic_system", "vibe_context", "lookin_glass", "database_drivers"
         ];
         
-        // Check for direct module name
-        if stdlib_modules.contains(&name) {
-            return true;
-        }
+        // Normalize the name for comparison
+        let normalized_name = name.to_lowercase();
         
-        // Check for legacy module names (for backward compatibility)
-        if matches!(name, "mathz" | "stringz" | "ioz") {
+        // Check for direct module name
+        if stdlib_modules.iter().any(|&module| module.to_lowercase() == normalized_name) {
             return true;
         }
         
         // Check if it's a stdlib path (starts with "stdlib/")
         if name.starts_with("stdlib/") {
             let module_name = name.strip_prefix("stdlib/").unwrap_or(name);
-            return stdlib_modules.contains(&module_name);
+            if stdlib_modules.iter().any(|&module| module.to_lowercase() == module_name.to_lowercase()) {
+                return true;
+            }
         }
         
         // Check if the module exists in the stdlib directory
-        let module_path = self.config.stdlib_path.join(name);
-        module_path.exists() || module_path.join("mod.csd").exists()
+        let module_path = self.config.stdlib_path.join(&normalized_name);
+        if module_path.exists() || module_path.join("mod.csd").exists() {
+            return true;
+        }
+        
+        // Check with original case
+        let original_module_path = self.config.stdlib_path.join(name);
+        original_module_path.exists() || original_module_path.join("mod.csd").exists()
     }
 
     /// Get the stdlib path mapping for a module name
@@ -731,6 +784,160 @@ impl ImportResolver {
         self.cache.resolution_cache.contains_key(import_path)
     }
 
+    /// Normalize import path for consistent comparison
+    pub fn normalize_import_path(&self, path: &str) -> Result<String> {
+        // Remove redundant path separators and resolve relative paths
+        let normalized = if path.starts_with("./") {
+            path.strip_prefix("./").unwrap_or(path).to_string()
+        } else if path.starts_with("../") {
+            // For relative imports, keep them as-is for now
+            path.to_string()
+        } else {
+            path.to_string()
+        };
+        
+        // Convert to lowercase for case-insensitive comparison
+        Ok(normalized.to_lowercase())
+    }
+    
+    /// Get module dependencies without fully resolving the module
+    pub async fn get_module_dependencies(&self, module_path: &str) -> Result<Vec<String>> {
+        // Classify the import to find the actual file path
+        let import_source = self.classify_import(module_path)?;
+        
+        let file_path = match &import_source {
+            ImportSource::Local(path) => self.resolve_local_import(path)?,
+            ImportSource::Package(name, version) => {
+                // For packages, we can't easily get dependencies without resolving
+                return Ok(Vec::new());
+            }
+            ImportSource::Stdlib(name) => self.resolve_stdlib_import(name)?,
+        };
+        
+        // Read the file and extract dependencies
+        let source = match fs::read_to_string(&file_path) {
+            Ok(content) => content,
+            Err(_) => return Ok(Vec::new()), // If we can't read the file, assume no dependencies
+        };
+        
+        Ok(self.extract_dependencies_from_source(&source))
+    }
+    
+    /// Detect circular dependencies in the dependency graph
+    pub fn detect_circular_dependencies(&self, graph: &HashMap<String, HashSet<String>>) -> Result<()> {
+        let mut visited = HashSet::new();
+        let mut rec_stack = HashSet::new();
+        let mut path = Vec::new();
+        
+        for node in graph.keys() {
+            if !visited.contains(node) {
+                if self.has_cycle_dfs(node, graph, &mut visited, &mut rec_stack, &mut path)? {
+                    return Err(CursedError::ImportError(format!(
+                        "Circular dependency detected in chain: {}", 
+                        path.join(" -> ")
+                    )));
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// DFS-based cycle detection
+    fn has_cycle_dfs(
+        &self,
+        node: &str,
+        graph: &HashMap<String, HashSet<String>>,
+        visited: &mut HashSet<String>,
+        rec_stack: &mut HashSet<String>,
+        path: &mut Vec<String>,
+    ) -> Result<bool> {
+        visited.insert(node.to_string());
+        rec_stack.insert(node.to_string());
+        path.push(node.to_string());
+        
+        if let Some(neighbors) = graph.get(node) {
+            for neighbor in neighbors {
+                if !visited.contains(neighbor) {
+                    if self.has_cycle_dfs(neighbor, graph, visited, rec_stack, path)? {
+                        return Ok(true);
+                    }
+                } else if rec_stack.contains(neighbor) {
+                    // Found a cycle - add the neighbor to complete the cycle path
+                    path.push(neighbor.to_string());
+                    return Ok(true);
+                }
+            }
+        }
+        
+        rec_stack.remove(node);
+        path.pop();
+        Ok(false)
+    }
+    
+    /// Enhanced module existence check with better error reporting
+    pub fn check_module_exists(&self, import_path: &str) -> Result<bool> {
+        let import_source = self.classify_import(import_path)?;
+        
+        match &import_source {
+            ImportSource::Local(path) => {
+                Ok(self.resolve_local_import(path).is_ok())
+            }
+            ImportSource::Package(name, _version) => {
+                let package_path = self.config.package_cache_dir.join(name);
+                Ok(package_path.exists())
+            }
+            ImportSource::Stdlib(name) => {
+                Ok(self.resolve_stdlib_import(name).is_ok())
+            }
+        }
+    }
+    
+    /// Get detailed import resolution information for debugging
+    pub fn get_import_info(&self, import_path: &str) -> ImportResolutionInfo {
+        let classification_result = self.classify_import(import_path);
+        
+        match classification_result {
+            Ok(import_source) => {
+                let path_result = match &import_source {
+                    ImportSource::Local(path) => self.resolve_local_import(path),
+                    ImportSource::Package(name, version) => {
+                        let package_path = self.config.package_cache_dir.join(name);
+                        if package_path.exists() {
+                            Ok(package_path)
+                        } else {
+                            Err(CursedError::ImportError(format!("Package not found: {}", name)))
+                        }
+                    }
+                    ImportSource::Stdlib(name) => self.resolve_stdlib_import(name),
+                };
+                
+                let is_ok = path_result.is_ok();
+                let resolved_path = path_result.as_ref().ok().map(|p| p.clone());
+                let error = path_result.err().map(|e| e.to_string());
+                
+                ImportResolutionInfo {
+                    import_path: import_path.to_string(),
+                    classification: Some(import_source),
+                    resolved_path,
+                    exists: is_ok,
+                    error,
+                    is_cached: self.cache.resolution_cache.contains_key(import_path),
+                }
+            }
+            Err(err) => {
+                ImportResolutionInfo {
+                    import_path: import_path.to_string(),
+                    classification: None,
+                    resolved_path: None,
+                    exists: false,
+                    error: Some(err.to_string()),
+                    is_cached: false,
+                }
+            }
+        }
+    }
+
     /// Get import statistics
     pub fn get_stats(&self) -> ImportStats {
         ImportStats {
@@ -749,6 +956,17 @@ pub struct ImportStats {
     pub cached_resolutions: usize,
     pub failed_imports: usize,
     pub compilation_depth: usize,
+}
+
+/// Detailed import resolution information for debugging
+#[derive(Debug, Clone)]
+pub struct ImportResolutionInfo {
+    pub import_path: String,
+    pub classification: Option<ImportSource>,
+    pub resolved_path: Option<PathBuf>,
+    pub exists: bool,
+    pub error: Option<String>,
+    pub is_cached: bool,
 }
 
 // Error conversion implementations
