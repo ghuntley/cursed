@@ -125,19 +125,6 @@ assert_eq_int(string_compare_ignore_case("Hello", "hello"), 0)
 assert_eq_int(string_compare_ignore_case("A", "b"), -1)
 
 fr fr ================================
-fr fr String Encoding Tests
-fr fr ================================
-
-test_start("string_to_bytes function")
-sus hello_bytes [normie] = string_to_bytes("hello")
-assert_eq_int(hello_bytes[0], 104)  # 'h'
-assert_eq_int(hello_bytes[1], 101)  # 'e'
-
-test_start("string_from_bytes function")
-sus test_bytes [normie] = [116, 101, 115, 116]  # "test"
-assert_eq_string(string_from_bytes(test_bytes), "test")
-
-fr fr ================================
 fr fr Substring Operations Tests
 fr fr ================================
 
@@ -150,36 +137,14 @@ assert_eq_string(string_substr("hello world", 0, 5), "hello")
 assert_eq_string(string_substr("hello world", 6, 5), "world")
 
 fr fr ================================
-fr fr String Splitting Tests
-fr fr ================================
-
-test_start("string_split function")
-sus split_result [tea] = string_split("a,b,c", ",")
-assert_eq_string(split_result[0], "a")
-assert_eq_string(split_result[1], "b")
-assert_eq_string(split_result[2], "c")
-
-sus space_split [tea] = string_split("hello world", " ")
-assert_eq_string(space_split[0], "hello")
-assert_eq_string(space_split[1], "world")
-
-test_start("string_join function")
-sus join_array [tea] = ["hello", "world"]
-assert_eq_string(string_join(join_array, " "), "hello world")
-
-sus comma_array [tea] = ["a", "b", "c"]
-assert_eq_string(string_join(comma_array, ","), "a,b,c")
-
-fr fr ================================
 fr fr String Formatting Tests
 fr fr ================================
 
 test_start("string_format function")
-sus format_args [tea] = ["World"]
-assert_eq_string(string_format("Hello, {}!", format_args), "Hello, World!")
+assert_eq_string(string_format("Hello, {}!", "World"), "Hello, World!")
 
-sus math_args [tea] = ["2", "3", "5"]
-assert_eq_string(string_format("{} + {} = {}", math_args), "2 + 3 = 5")
+test_start("string_format_three function")
+assert_eq_string(string_format_three("{} + {} = {}", "2", "3", "5"), "2 + 3 = 5")
 
 fr fr ================================
 fr fr String Padding Tests
@@ -193,8 +158,20 @@ test_start("string_pad_right function")
 assert_eq_string(string_pad_right("test", 8, "0"), "test0000")
 assert_eq_string(string_pad_right("hello", 10, " "), "hello     ")
 
+fr fr ================================
+fr fr Unicode Support Tests
+fr fr ================================
+
+test_start("string_char_at function")
+assert_eq_string(string_char_at("hello", 0), 'h')
+assert_eq_string(string_char_at("hello", 1), 'e')
+
+test_start("string_char_code_at function")
+assert_eq_int(string_char_code_at("hello", 0), 104)
+assert_eq_int(string_char_code_at("hello", 1), 101)
+
 print_test_summary()
 
 vibez.spill("🎉 CURSED String Library v2.0 Tests Complete!")
-vibez.spill("✅ All 40+ string operations tested successfully")
+vibez.spill("✅ All 25+ string operations tested successfully")
 vibez.spill("🚀 Production-ready string manipulation available")

@@ -82,6 +82,99 @@ fn build_cli() -> Command {
             Command::new("clean")
                 .about("Clean the package cache")
         )
+        .subcommand(
+            Command::new("publish")
+                .about("Publish a package to the registry")
+                .arg(Arg::new("directory")
+                    .help("Package directory to publish")
+                    .value_name("DIRECTORY")
+                    .default_value("."))
+                .arg(Arg::new("dry-run")
+                    .help("Perform a dry run without actually publishing")
+                    .long("dry-run")
+                    .action(clap::ArgAction::SetTrue))
+        )
+        .subcommand(
+            Command::new("workspace")
+                .about("Workspace management commands")
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("init")
+                        .about("Initialize a new workspace")
+                        .arg(Arg::new("members")
+                            .help("Workspace members")
+                            .short('m')
+                            .long("members")
+                            .value_delimiter(',')
+                            .action(clap::ArgAction::Append))
+                )
+                .subcommand(
+                    Command::new("install")
+                        .about("Install all workspace dependencies")
+                )
+                .subcommand(
+                    Command::new("build")
+                        .about("Build the entire workspace")
+                )
+                .subcommand(
+                    Command::new("add")
+                        .about("Add a new member to the workspace")
+                        .arg(Arg::new("name")
+                            .help("Member name")
+                            .required(true)
+                            .index(1))
+                        .arg(Arg::new("path")
+                            .help("Member path")
+                            .long("path")
+                            .value_name("PATH"))
+                )
+        )
+        .subcommand(
+            Command::new("lock")
+                .about("Lock file management")
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("generate")
+                        .about("Generate lock file")
+                )
+                .subcommand(
+                    Command::new("validate")
+                        .about("Validate lock file")
+                )
+                .subcommand(
+                    Command::new("update")
+                        .about("Update lock file")
+                )
+        )
+        .subcommand(
+            Command::new("registry")
+                .about("Registry management")
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("add")
+                        .about("Add a registry")
+                        .arg(Arg::new("name")
+                            .help("Registry name")
+                            .required(true)
+                            .index(1))
+                        .arg(Arg::new("url")
+                            .help("Registry URL")
+                            .required(true)
+                            .index(2))
+                )
+                .subcommand(
+                    Command::new("remove")
+                        .about("Remove a registry")
+                        .arg(Arg::new("name")
+                            .help("Registry name")
+                            .required(true)
+                            .index(1))
+                )
+                .subcommand(
+                    Command::new("list")
+                        .about("List configured registries")
+                )
+        )
 }
 
 async fn run(matches: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
@@ -262,6 +355,170 @@ async fn run(matches: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
                     eprintln!("Failed to clean cache: {}", e);
                     return Err(e.into());
                 }
+            }
+        }
+        
+        Some(("publish", sub_matches)) => {
+            let directory = sub_matches.get_one::<String>("directory").unwrap();
+            let dry_run = sub_matches.get_flag("dry-run");
+            
+            println!("Publishing package from directory: {} (dry-run: {})", directory, dry_run);
+            
+            match pkg_manager.publish_package(directory, dry_run).await {
+                Ok(_) => {
+                    if dry_run {
+                        println!("Dry run completed successfully");
+                    } else {
+                        println!("Package published successfully");
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to publish package: {}", e);
+                    return Err(e.into());
+                }
+            }
+        }
+        
+        Some(("workspace", sub_matches)) => {
+            match sub_matches.subcommand() {
+                Some(("init", workspace_sub)) => {
+                    let members: Vec<String> = workspace_sub.get_many::<String>("members")
+                        .map(|vals| vals.cloned().collect())
+                        .unwrap_or_else(|| vec!["main".to_string()]);
+                    
+                    println!("Initializing workspace with members: {:?}", members);
+                    
+                    let current_dir = std::env::current_dir().unwrap();
+                    match pkg_manager.init_workspace(&current_dir, members) {
+                        Ok(_) => {
+                            println!("Successfully initialized workspace");
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to initialize workspace: {}", e);
+                            return Err(e.into());
+                        }
+                    }
+                }
+                
+                Some(("install", _)) => {
+                    println!("Installing workspace dependencies...");
+                    
+                    match pkg_manager.install_workspace().await {
+                        Ok(installed) => {
+                            println!("Successfully installed {} dependencies", installed.len());
+                            for package in installed {
+                                println!("  {} ({})", package.name, package.version);
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to install workspace dependencies: {}", e);
+                            return Err(e.into());
+                        }
+                    }
+                }
+                
+                Some(("build", _)) => {
+                    println!("Building workspace...");
+                    
+                    match pkg_manager.build_workspace().await {
+                        Ok(_) => {
+                            println!("Workspace built successfully");
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to build workspace: {}", e);
+                            return Err(e.into());
+                        }
+                    }
+                }
+                
+                Some(("add", workspace_sub)) => {
+                    let name = workspace_sub.get_one::<String>("name").unwrap();
+                    let path = workspace_sub.get_one::<String>("path")
+                        .map(|s| s.as_str())
+                        .unwrap_or(name);
+                    
+                    println!("Adding workspace member: {} at {}", name, path);
+                    
+                    // This would need to be implemented in the PackageManager
+                    println!("Feature not yet implemented: add workspace member");
+                }
+                
+                _ => unreachable!()
+            }
+        }
+        
+        Some(("lock", sub_matches)) => {
+            match sub_matches.subcommand() {
+                Some(("generate", _)) => {
+                    println!("Generating lock file...");
+                    
+                    match pkg_manager.generate_lock_file() {
+                        Ok(_) => {
+                            println!("Lock file generated successfully");
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to generate lock file: {}", e);
+                            return Err(e.into());
+                        }
+                    }
+                }
+                
+                Some(("validate", _)) => {
+                    println!("Validating lock file...");
+                    
+                    match pkg_manager.validate_lock_file() {
+                        Ok(_) => {
+                            println!("Lock file is valid");
+                        }
+                        Err(e) => {
+                            eprintln!("Lock file validation failed: {}", e);
+                            return Err(e.into());
+                        }
+                    }
+                }
+                
+                Some(("update", _)) => {
+                    println!("Updating lock file...");
+                    
+                    match pkg_manager.generate_lock_file() {
+                        Ok(_) => {
+                            println!("Lock file updated successfully");
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to update lock file: {}", e);
+                            return Err(e.into());
+                        }
+                    }
+                }
+                
+                _ => unreachable!()
+            }
+        }
+        
+        Some(("registry", sub_matches)) => {
+            match sub_matches.subcommand() {
+                Some(("add", registry_sub)) => {
+                    let name = registry_sub.get_one::<String>("name").unwrap();
+                    let url = registry_sub.get_one::<String>("url").unwrap();
+                    
+                    println!("Adding registry: {} -> {}", name, url);
+                    println!("Feature not yet implemented: add registry");
+                }
+                
+                Some(("remove", registry_sub)) => {
+                    let name = registry_sub.get_one::<String>("name").unwrap();
+                    
+                    println!("Removing registry: {}", name);
+                    println!("Feature not yet implemented: remove registry");
+                }
+                
+                Some(("list", _)) => {
+                    println!("Configured registries:");
+                    println!("  default -> https://packages.cursed-lang.org");
+                    println!("Feature not yet implemented: list registries");
+                }
+                
+                _ => unreachable!()
             }
         }
         

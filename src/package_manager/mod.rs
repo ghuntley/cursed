@@ -33,6 +33,12 @@ mod test_search_publish;
 #[cfg(test)]
 mod version_tests;
 
+#[cfg(test)]
+mod comprehensive_tests;
+
+#[cfg(test)]
+mod simple_tests;
+
 // Import and re-export main types
 pub use registry::{PackageRegistry, PackageInfo, RegistryConfig, PackageMetadata};
 pub use resolver::{PackageResolver, ResolvedPackage, ResolutionResult, ResolutionConfig};

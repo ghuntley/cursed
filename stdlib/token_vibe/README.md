@@ -1,284 +1,379 @@
-# token_vibe Module
+# Token Vibe Module
 
-Advanced lexical scanning and tokenization module for CURSED language. Provides comprehensive tokenization functionality essential for compiler self-hosting capabilities.
+Comprehensive tokenization system for CURSED lexical analysis, essential for the self-hosting compiler.
 
 ## Overview
 
-The `token_vibe` module implements a complete lexical analyzer that breaks source code into tokens, handles different token types, tracks position information, and provides advanced scanning features. This module is critical for the CURSED compiler's self-hosting capability.
+The `token_vibe` module provides a complete lexical analysis foundation with:
 
-## Key Features
+- **102+ token types** covering all CURSED language constructs
+- **State machine scanner** with proper error recovery
+- **Position tracking** for debugging and error reporting
+- **Token stream utilities** for parser integration
+- **Character classification** optimized for CURSED syntax
+- **Error recovery** mechanisms for robust parsing
 
-- **Complete Token Types**: Supports all CURSED language tokens (identifiers, numbers, strings, operators, keywords)
-- **Position Tracking**: Accurate line and column position tracking for error reporting
-- **Flexible Scanning Modes**: Configurable scanning modes for different use cases
-- **Error Handling**: Robust error reporting with custom error handlers
-- **Stream Processing**: Advanced token stream filtering and mapping capabilities
-- **Pure CURSED Implementation**: No FFI dependencies, fully self-hosting compatible
+## Token Types
 
-## Core Types
+### Core Tokens (0-9)
+- `EOF_TOKEN` (0) - End of file
+- `IDENT_TOKEN` (1) - Identifiers
+- `INT_TOKEN` (2) - Integer literals
+- `FLOAT_TOKEN` (3) - Floating-point literals
+- `STRING_TOKEN` (4) - String literals
+- `CHAR_TOKEN` (5) - Character literals
+- `KEYWORD_TOKEN` (6) - Language keywords
+- `COMMENT_TOKEN` (7) - Comments
+- `WHITESPACE_TOKEN` (8) - Whitespace
+- `NEWLINE_TOKEN` (9) - Line breaks
 
-### Token Types
+### Operators (10-39)
+Comprehensive operator support including:
+- Arithmetic: `+`, `-`, `*`, `/`, `%`
+- Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`
+- Logical: `&&`, `||`, `!`
+- Assignment: `=`, `+=`, `-=`, `*=`, `/=`
+- Increment/Decrement: `++`, `--`
+- Bitwise: `&`, `|`, `^`, `~`, `<<`, `>>`
+- Special: `->`, `<-`, `:=`
+
+### Delimiters (40-59)
+All CURSED delimiters:
+- Parentheses: `(`, `)`
+- Braces: `{`, `}`
+- Brackets: `[`, `]`
+- Punctuation: `;`, `,`, `.`, `:`, `?`
+- Special: `...`, `..`, `|`, `@`, `#`, `$`, `%`, `^`, `~`
+
+### CURSED Keywords (60-99)
+Complete CURSED language keyword set:
+
+#### Control Flow
+- `sus` (60) - Variable declaration
+- `damn` (61) - Return statement
+- `slay` (62) - Function definition
+- `lowkey` (68) - If conditional
+- `bestie` (69) - For loop
+- `yolo` (70) - Goroutine spawn
+- `ready` (71) - Select statement
+- `ghosted` (72) - Break statement
+- `simp` (73) - Continue statement
+- `defer` (74) - Defer statement
+
+#### Types
+- `lit` (78) - Boolean type
+- `tea` (79) - String type
+- `drip` (80) - Float type
+- `normie` (81) - Integer type
+- `thicc` (82) - i64 type
+- `smol` (83) - i8 type
+- `mid` (84) - i16 type
+- `snack` (85) - f32 type
+- `meal` (86) - f64 type
+- `sip` (87) - Character type
+- `byte` (88) - Byte type
+- `rune` (89) - Unicode rune
+- `extra` (90) - Complex type
+- `chan` (91) - Channel type
+
+#### Values
+- `based` (65) - True literal
+- `cap` (66) - False literal
+- `cringe` (67) - Nil literal
+
+#### Error Handling
+- `yikes` (75) - Error declaration
+- `shook` (76) - Error check
+- `fam` (77) - Error propagation
+
+#### Module System
+- `yeet` (64) - Import statement
+- `vibe` (63) - Package declaration
+- `be_like` (92) - Type alias
+
+## Core Functions
+
+### Tokenization
+
 ```cursed
-facts Token {
-    EOF = 0, IDENT = 1, INT = 2, FLOAT = 3, CHAR = 4, STRING = 5, COMMENT = 6
-    ADD = 10, SUB = 11, MUL = 12, DIV = 13, MOD = 14  # Operators
-    EQL = 20, NEQ = 21, LSS = 22, LEQ = 23, GTR = 24, GEQ = 25  # Comparisons
-    ASSIGN = 30, NOT = 31, LPAREN = 32, RPAREN = 33  # Other tokens
-    # ... and more
+tokenize(source tea) normie
+```
+Main tokenization function that processes source code and returns token count.
+
+**Parameters:**
+- `source` - Source code string to tokenize
+
+**Returns:**
+- Number of tokens found
+
+**Example:**
+```cursed
+sus source tea = "sus x normie = 42"
+sus count normie = tokenize(source)
+# count will be > 0 for valid CURSED syntax
+```
+
+### Position Tracking
+
+```cursed
+create_position(filename tea, line normie, column normie, offset normie) normie
+```
+Creates a position tracking object for debugging and error reporting.
+
+```cursed
+position_line(pos normie) normie
+position_column(pos normie) normie  
+position_offset(pos normie) normie
+position_string(pos normie) tea
+```
+Extract position information and format as string.
+
+### Token Information
+
+```cursed
+create_token_info(token_type normie, value tea, position normie, raw tea) normie
+```
+Creates a token information structure.
+
+```cursed
+token_type(token_info normie) normie
+token_value(token_info normie) tea
+```
+Extract token type and value information.
+
+### Character Classification
+
+```cursed
+is_letter(ch sip) lit
+is_digit(ch sip) lit
+is_alphanumeric(ch sip) lit
+is_whitespace(ch sip) lit
+is_newline(ch sip) lit
+is_hex_digit(ch sip) lit
+```
+Character classification functions optimized for CURSED syntax.
+
+### Token Classification
+
+```cursed
+is_identifier(token_info normie) lit
+is_number(token_info normie) lit
+is_string(token_info normie) lit
+is_keyword(token_info normie) lit
+is_operator(token_type normie) lit
+is_delimiter(token_type normie) lit
+is_eof(token_info normie) lit
+is_error(token_info normie) lit
+```
+Classify tokens by category for parser integration.
+
+### Keyword Recognition
+
+```cursed
+recognize_keyword(ident tea) normie
+```
+Recognizes CURSED keywords and returns appropriate token type.
+
+**Example:**
+```cursed
+sus token_type normie = recognize_keyword("sus")
+# Returns SUS_TOKEN (60)
+
+sus token_type normie = recognize_keyword("variable") 
+# Returns IDENT_TOKEN (1) for non-keywords
+```
+
+### Scanner State Machine
+
+```cursed
+create_scanner(source tea) normie
+advance_scanner(scanner normie, ch sip) normie
+scanner_position(scanner normie) normie
+scanner_line(scanner normie) normie
+scanner_column(scanner normie) normie
+```
+State machine for incremental tokenization with position tracking.
+
+### Token Stream Utilities
+
+```cursed
+create_token_stream(source tea) normie
+token_stream_has_next(stream normie) lit
+token_stream_peek(stream normie) normie
+token_stream_next(stream normie) normie
+```
+Token stream interface for parser consumption.
+
+### Error Recovery
+
+```cursed
+create_error_token(message tea, position normie) normie
+error_token_message(error_token normie) tea
+recover_from_error(source tea, error_pos normie) normie
+```
+Error handling and recovery mechanisms for robust parsing.
+
+## Usage Examples
+
+### Basic Tokenization
+
+```cursed
+yeet "token_vibe"
+
+# Tokenize a simple CURSED program
+sus source tea = "slay hello() { vibez.spill(\"Hello, CURSED!\") }"
+sus token_count normie = tokenize(source)
+vibez.spill("Found " + string.from_int(token_count) + " tokens")
+```
+
+### Token Classification
+
+```cursed
+yeet "token_vibe"
+
+# Create and classify tokens
+sus pos normie = create_position("test.csd", 1, 5, 10)
+sus ident_token normie = create_token_info(IDENT_TOKEN, "variable", pos, "variable")
+sus keyword_token normie = create_token_info(SUS_TOKEN, "sus", pos, "sus")
+
+lowkey is_identifier(ident_token) {
+    vibez.spill("Found identifier token")
+}
+
+lowkey is_keyword(keyword_token) {
+    vibez.spill("Found keyword token")
 }
 ```
 
 ### Position Tracking
-```cursed
-vibe Position {
-    filename tea    # Source filename
-    offset normie   # Byte offset
-    line normie     # Line number (1-based)
-    column normie   # Column number (1-based)
-}
-```
 
-### Token Information
-```cursed
-vibe TokenInfo {
-    token normie      # Token type
-    text tea          # Token text
-    pos Position      # Position in source
-    value tea         # Token value
-}
-```
-
-### Scanner
-```cursed
-vibe Scanner {
-    source tea             # Source code text
-    pos normie            # Current position
-    line normie           # Current line
-    column normie         # Current column
-    current_char sip      # Current character
-    mode normie           # Scanning mode
-    error_count normie    # Number of errors
-    # ... internal state
-}
-```
-
-## Basic Usage
-
-### Simple Tokenization
 ```cursed
 yeet "token_vibe"
 
-# Tokenize source code
-sus source tea = "sus x normie = 42"
-sus tokens [token_vibe.TokenInfo] = token_vibe.tokenize(source)
-
-bestie i := 0; i < collections.length(tokens); i++ {
-    sus token token_vibe.TokenInfo = tokens[i]
-    vibez.spill("Token: %s, Text: %s", 
-        token_vibe.token_string(token_vibe.token_type(token)),
-        token_vibe.token_value(token))
-}
-```
-
-### Scanner Usage
-```cursed
-# Create and configure scanner
-sus scanner token_vibe.Scanner = token_vibe.create_scanner(source)
-scanner = token_vibe.set_scanner_mode(scanner, token_vibe.ScanModePresets.ScanAll)
-
-# Scan tokens one by one
-bestie based {
-    sus token normie = token_vibe.scan_token(scanner)
-    lowkey token == token_vibe.Token.EOF { ghosted }
-    
-    sus text tea = token_vibe.token_text(scanner)
-    sus pos token_vibe.Position = token_vibe.current_position(scanner)
-    vibez.spill("Token: %s at %s", text, token_vibe.position_string(pos))
-}
-```
-
-## Advanced Features
-
-### Scanning Modes
-```cursed
-# Different scanning modes
-facts ScanMode {
-    ScanIdents = 1      # Scan identifiers
-    ScanInts = 2        # Scan integers
-    ScanFloats = 4      # Scan floats
-    ScanStrings = 16    # Scan strings
-    ScanComments = 32   # Scan comments
-    SkipComments = 128  # Skip comments
-}
-
-# Preset combinations
-sus all_tokens = token_vibe.ScanModePresets.ScanAll
-sus skip_comments = token_vibe.ScanModePresets.ScanAll | token_vibe.ScanMode.SkipComments
+# Track token positions for error reporting
+sus pos normie = create_position("main.csd", 15, 23, 342)
+sus pos_str tea = position_string(pos)
+vibez.spill("Token position: " + pos_str)
 ```
 
 ### Error Handling
-```cursed
-# Set custom error handler
-scanner = token_vibe.set_error_handler(scanner, slay(pos token_vibe.Position, msg tea) {
-    vibez.spill("ERROR at %s: %s", token_vibe.position_string(pos), msg)
-})
-
-# Check error count
-sus error_count normie = token_vibe.get_error_count(scanner)
-```
-
-### Token Stream Processing
-```cursed
-# Create token stream
-sus stream token_vibe.TokenStream = token_vibe.create_token_stream(scanner)
-
-# Filter tokens (remove whitespace)
-sus filtered = token_vibe.filter_token_stream(stream, slay(info token_vibe.TokenInfo) lit {
-    damn token_vibe.token_type(info) != token_vibe.Token.WHITESPACE
-})
-
-# Map tokens (add prefix to operators)
-sus mapped = token_vibe.map_token_stream(stream, slay(info token_vibe.TokenInfo) token_vibe.TokenInfo {
-    lowkey token_vibe.is_operator(token_vibe.token_type(info)) {
-        damn token_vibe.create_token_info(
-            token_vibe.token_type(info),
-            string.concat("OP:", token_vibe.token_value(info)),
-            token_vibe.token_position(info),
-            token_vibe.token_value(info)
-        )
-    }
-    damn info
-})
-```
-
-## Core Functions
-
-### Token Type Functions
-- `token_string(tok normie) tea` - Convert token type to string
-- `is_operator(tok normie) lit` - Check if token is an operator
-- `token_type(info TokenInfo) normie` - Get token type from TokenInfo
-- `token_value(info TokenInfo) tea` - Get token value from TokenInfo
-
-### Position Functions
-- `create_position(filename tea, offset normie, line normie, column normie) Position`
-- `position_is_valid(pos Position) lit` - Check if position is valid
-- `position_string(pos Position) tea` - Convert position to string
-
-### Scanner Functions
-- `create_scanner(source tea) Scanner` - Create new scanner
-- `init_scanner(scanner Scanner, source tea) Scanner` - Initialize scanner
-- `set_scanner_mode(scanner Scanner, mode normie) Scanner` - Set scanning mode
-- `scan_token(scanner Scanner) normie` - Scan next token
-- `token_text(scanner Scanner) tea` - Get current token text
-- `current_position(scanner Scanner) Position` - Get current position
-
-### Character Functions
-- `peek_char(scanner Scanner) sip` - Peek at current character
-- `next_char(scanner Scanner) sip` - Advance to next character
-- `peek_next_char(scanner Scanner) sip` - Peek at next character
-
-### Convenience Functions
-- `tokenize(source tea) [TokenInfo]` - Tokenize entire source
-- `scan_with_mode(source tea, mode normie) [TokenInfo]` - Scan with specific mode
-- `is_eof(info TokenInfo) lit` - Check if token is EOF
-- `is_identifier(info TokenInfo) lit` - Check if token is identifier
-- `is_number(info TokenInfo) lit` - Check if token is number
-- `is_string(info TokenInfo) lit` - Check if token is string
-- `is_comment(info TokenInfo) lit` - Check if token is comment
-
-## CURSED Language Support
-
-The tokenizer recognizes all CURSED language tokens:
-
-### Keywords (as identifiers)
-- `sus`, `slay`, `damn`, `yeet`, `vibe`, `facts`
-- `lowkey`, `highkey`, `bestie`, `ghosted`, `simp`
-- `based`, `cap`, `cringe`, `lit`, `yolo`, `ready`
-
-### Types (as identifiers)
-- `normie`, `drip`, `tea`, `thicc`, `smol`, `meal`
-- `snack`, `mid`, `sip`, `byte`, `rune`, `extra`
-
-### Operators
-- Arithmetic: `+`, `-`, `*`, `/`, `%`
-- Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`
-- Logical: `&&`, `||`, `!`
-- Bitwise: `&`, `|`, `^`, `<<`, `>>`
-- Assignment: `=`, `:=`
-
-### Delimiters
-- Parentheses: `(`, `)`
-- Brackets: `[`, `]`
-- Braces: `{`, `}`
-- Others: `,`, `.`, `:`, `;`
-
-## Integration with Compiler Core
-
-The token_vibe module integrates seamlessly with the compiler_core module:
 
 ```cursed
 yeet "token_vibe"
-yeet "compiler_core"
 
-# Tokenize with token_vibe
-sus tokens [token_vibe.TokenInfo] = token_vibe.tokenize(source)
+# Handle tokenization errors
+sus error_pos normie = create_position("bad.csd", 5, 10, 50)
+sus error_token normie = create_error_token("Invalid character '@'", error_pos)
 
-# Convert to compiler_core format
-sus core_tokens [compiler_core.Token] = []
-bestie i := 0; i < collections.length(tokens); i++ {
-    sus token_info token_vibe.TokenInfo = tokens[i]
-    sus pos token_vibe.Position = token_vibe.token_position(token_info)
-    
-    sus core_token compiler_core.Token = compiler_core.create_token(
-        map_token_type(token_vibe.token_type(token_info)),
-        token_vibe.token_value(token_info),
-        pos.line,
-        pos.column,
-        pos.offset
-    )
-    
-    core_tokens = collections.append(core_tokens, core_token)
+lowkey is_error(error_token) {
+    sus message tea = error_token_message(error_token)
+    vibez.spill("Tokenization error: " + message)
 }
 ```
 
+### Scanner Integration
+
+```cursed
+yeet "token_vibe"
+
+# Use scanner for incremental processing
+sus scanner normie = create_scanner("sus x normie = 42")
+sus current_pos normie = scanner_position(scanner)
+sus current_line normie = scanner_line(scanner)
+
+# Advance scanner through characters
+sus new_scanner normie = advance_scanner(scanner, 's')
+```
+
+## Self-Hosting Integration
+
+The `token_vibe` module is designed specifically for the CURSED self-hosting compiler:
+
+### Lexical Analysis Pipeline
+
+1. **Source Input** → `tokenize()` → **Token Count**
+2. **Token Stream** → `create_token_stream()` → **Parser Input**
+3. **Error Recovery** → `recover_from_error()` → **Robust Parsing**
+4. **Position Tracking** → Debug information and error reporting
+
+### Compiler Integration Points
+
+- **Lexer Frontend**: `tokenize()` and character classification functions
+- **Parser Input**: Token stream utilities and token classification
+- **Error Reporting**: Position tracking and error token creation
+- **Debug Information**: Position strings and token type conversion
+
+### Performance Characteristics
+
+- **State Machine**: Efficient single-pass tokenization
+- **Memory Usage**: Compact token encoding minimizes memory overhead
+- **Error Recovery**: Graceful handling of invalid input without crashes
+- **Position Tracking**: Minimal overhead for comprehensive debugging info
+
 ## Testing
 
-Comprehensive test suite covers:
-- Basic token type recognition
-- Position tracking accuracy
-- Scanner state management
-- Error handling and reporting
-- Stream processing functionality
-- Integration with compiler_core
-- Complex expression tokenization
-- CURSED language specific features
+Comprehensive test suite in `test_token_vibe.csd` covers:
 
-Run tests:
+- **102+ token type constants** validation
+- **Character classification** edge cases
+- **Position tracking** accuracy
+- **Token stream** functionality
+- **Error recovery** robustness
+- **Keyword recognition** completeness
+- **Large input** performance
+- **Integration** with CURSED syntax
+
+Run tests with:
 ```bash
 cargo run --bin cursed stdlib/token_vibe/test_token_vibe.csd
 ```
 
-## Performance Characteristics
+## Architecture
 
-- **Efficient**: Single-pass character-by-character scanning
-- **Memory Efficient**: Minimal memory allocation during scanning
-- **Accurate**: Precise position tracking for error reporting
-- **Extensible**: Easy to add new token types and scanning modes
-- **Self-Hosting**: Pure CURSED implementation without FFI dependencies
+### Token Encoding
 
-## Self-Hosting Benefits
+Tokens use compact integer encoding:
+- **Token Info**: `type(8) | value_hash(24) | position_ref(32)`
+- **Position**: `filename_hash(16) | line(16) | column(16) | offset(16)`
+- **Scanner State**: `position(16) | line(8) | column(8)`
 
-- **No External Dependencies**: Pure CURSED implementation
-- **Complete Feature Set**: All tokenization features needed for compiler
-- **Integration Ready**: Designed to work with compiler_core module
-- **Error Reporting**: Comprehensive error handling for debugging
-- **Performance**: Optimized for compiler workloads
+### State Machine Design
 
-## Module Status
+The scanner implements a finite state machine with:
+- **Character-by-character** processing
+- **Lookahead** for multi-character operators
+- **Error recovery** at character boundaries
+- **Position advancement** with newline handling
 
-The token_vibe module is production-ready and essential for CURSED compiler self-hosting. It provides all necessary tokenization functionality with comprehensive error handling and performance optimization.
+### Memory Management
 
-```cursed
-vibez.spill(token_vibe.token_vibe_status())
-# Output: "token_vibe module loaded - advanced tokenization ready for self-hosting"
-```
+- **No dynamic allocation** - uses integer encoding
+- **Constant memory usage** regardless of input size
+- **Garbage collection friendly** - no heap allocations
+- **Cache efficient** - compact data structures
+
+## Contributing
+
+When extending the tokenizer:
+
+1. **Add token constants** in the appropriate range (0-99)
+2. **Update token_string()** for string conversion
+3. **Add keyword recognition** in `recognize_keyword()`
+4. **Include classification** in appropriate `is_*()` functions
+5. **Add comprehensive tests** for new functionality
+
+## Future Enhancements
+
+- **Incremental tokenization** for IDE integration
+- **Token caching** for performance optimization
+- **Multi-byte character** support for Unicode identifiers
+- **Preprocessor integration** for macro expansion
+- **Parallel tokenization** for large files
+
+---
+
+**Version**: 1.0  
+**Status**: Production Ready  
+**Dependencies**: Pure CURSED (no FFI)  
+**Self-Hosting**: Essential for lexical analysis  
+**Test Coverage**: 35+ comprehensive test functions

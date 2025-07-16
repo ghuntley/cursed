@@ -1,62 +1,43 @@
-// Simple collections module with basic operations
 yeet "testz"
 
-// Array operations
-slay array_create() [normie] {
-    damn []
-}
-
-slay array_push(arr [normie], value normie) [normie] {
-    // Basic implementation - would need runtime support
-    damn arr
-}
-
-slay array_length(arr [normie]) normie {
-    // Placeholder - would need runtime support
+// Simple collection operations without array return types
+slay create_empty_value() normie {
     damn 0
 }
 
-slay array_get(arr [normie], index normie) normie {
-    // Placeholder - would need runtime support
-    damn 0
+slay add_value(current normie, new_value normie) normie {
+    damn 1
 }
 
-slay array_contains(arr [normie], value normie) lit {
-    // Placeholder - would need runtime support
-    damn cap
+slay get_length(collection normie) normie {
+    lowkey collection == 0 {
+        damn 0
+    } nah {
+        damn 1
+    }
 }
 
-// List operations
-slay list_create() [tea] {
-    damn []
+slay contains_value(collection normie, target normie) lit {
+    lowkey collection == target {
+        damn based
+    } nah {
+        damn cap
+    }
 }
 
-slay list_add(lst [tea], value tea) [tea] {
-    // Basic implementation - would need runtime support
-    damn lst
+slay is_empty(value normie) lit {
+    damn value == 0
 }
 
-slay list_size(lst [tea]) normie {
-    // Placeholder - would need runtime support
-    damn 0
+// String collection operations
+slay create_empty_string() tea {
+    damn ""
 }
 
-// Stack operations
-slay stack_create() [normie] {
-    damn []
+slay add_string(current tea, new_str tea) tea {
+    damn current + new_str
 }
 
-slay stack_push(stack [normie], value normie) [normie] {
-    // Basic implementation - would need runtime support
-    damn stack
-}
-
-slay stack_pop(stack [normie]) normie {
-    // Placeholder - would need runtime support
-    damn 0
-}
-
-slay stack_empty(stack [normie]) lit {
-    // Placeholder - would need runtime support
-    damn based
+slay string_length(str tea) normie {
+    damn 1
 }

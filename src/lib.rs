@@ -577,6 +577,137 @@ pub async fn compile(source_file: &str, output_file: &str) -> crate::error::Resu
     compile_with_optimization(source_file, output_file, None).await
 }
 
+/// Compile CURSED source file with debug information
+pub async fn compile_with_debug(source_file: &str, output_file: &str, debug_sections: std::collections::HashMap<String, Vec<u8>>) -> crate::error::Result<()> {
+    // use crate::debug::DwarfDebugGenerator; // Temporarily disabled
+    
+    tracing::info!("Compiling CURSED source file {} to executable {} with debug information", source_file, output_file);
+    
+    // Read the source file
+    let source = std::fs::read_to_string(source_file)
+        .map_err(|e| CursedError::Io(e.to_string()))?;
+
+    // Parse the source to AST
+    let mut lexer = Lexer::new(source.clone());
+    let tokens = lexer.tokenize().map_err(|e| CursedError::Parse(format!("Lexing failed: {:?}", e)))?;
+    
+    let mut parser = new_parser(&source)?;
+    let ast = parser.parse()
+        .map_err(|e| CursedError::Parse(format!("Parsing failed: {:?}", e)))?;
+
+    // Generate LLVM IR with debug information
+    let mut codegen = LlvmCodeGeneratorReal::new()?;
+    codegen.enable_debug_info()?;
+    
+    // Convert Ast to Program for codegen
+    let program = match ast {
+        crate::ast::Ast::Program(p) => p,
+        _ => return Err(CursedError::General("Expected Program AST node".to_string())),
+    };
+    let llvm_ir = codegen.generate_ir(&program)
+        .map_err(|e| CursedError::General(format!("Code generation failed: {:?}", e)))?;
+
+    // Write LLVM IR to temporary file
+    let ir_file = format!("{}.ll", output_file);
+    std::fs::write(&ir_file, &llvm_ir)
+        .map_err(|e| CursedError::Io(format!("Failed to write IR file: {}", e)))?;
+
+    // Add debug sections to assembly
+    let debug_assembly = generate_debug_assembly(&debug_sections)?;
+    
+    // Compile with debug information
+    compile_ir_with_debug(&ir_file, output_file, &debug_assembly)?;
+    
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&ir_file);
+    
+    tracing::info!("Successfully compiled {} to {} with debug information", source_file, output_file);
+    Ok(())
+}
+
+/// Compile IR file with debug information
+fn compile_ir_with_debug(ir_file: &str, output_file: &str, debug_assembly: &str) -> crate::error::Result<()> {
+    use std::process::Command;
+    
+    // Write debug assembly to temporary file
+    let debug_file = format!("{}_debug.s", output_file);
+    std::fs::write(&debug_file, debug_assembly)
+        .map_err(|e| CursedError::Io(format!("Failed to write debug assembly: {}", e)))?;
+    
+    // Compile LLVM IR to object file
+    let obj_file = format!("{}.o", output_file);
+    let llc_output = Command::new("llc")
+        .arg("-filetype=obj")
+        .arg("-o")
+        .arg(&obj_file)
+        .arg(ir_file)
+        .output()
+        .map_err(|e| CursedError::Io(format!("Failed to run llc: {}", e)))?;
+
+    if !llc_output.status.success() {
+        return Err(CursedError::General(format!("llc failed: {}", String::from_utf8_lossy(&llc_output.stderr))));
+    }
+
+    // Assemble debug information
+    let debug_obj = format!("{}_debug.o", output_file);
+    let as_output = Command::new("as")
+        .arg("-64")
+        .arg("-o")
+        .arg(&debug_obj)
+        .arg(&debug_file)
+        .output()
+        .map_err(|e| CursedError::Io(format!("Failed to run assembler: {}", e)))?;
+
+    if !as_output.status.success() {
+        return Err(CursedError::General(format!("Assembler failed: {}", String::from_utf8_lossy(&as_output.stderr))));
+    }
+
+    // Link with runtime library and debug information
+    let link_output = Command::new("gcc")
+        .arg("-o")
+        .arg(output_file)
+        .arg(&obj_file)
+        .arg(&debug_obj)
+        .arg("runtime/libcursed_runtime.a")
+        .arg("-ldl")
+        .arg("-lpthread")
+        .arg("-lm")
+        .arg("-g") // Include debug information
+        .output()
+        .map_err(|e| CursedError::Io(format!("Failed to run linker: {}", e)))?;
+
+    if !link_output.status.success() {
+        return Err(CursedError::General(format!("Linking failed: {}", String::from_utf8_lossy(&link_output.stderr))));
+    }
+
+    // Clean up temporary files
+    let _ = std::fs::remove_file(&obj_file);
+    let _ = std::fs::remove_file(&debug_obj);
+    let _ = std::fs::remove_file(&debug_file);
+
+    Ok(())
+}
+
+/// Generate debug assembly from debug sections
+fn generate_debug_assembly(debug_sections: &std::collections::HashMap<String, Vec<u8>>) -> crate::error::Result<String> {
+    let mut assembly = String::new();
+    
+    for (section_name, data) in debug_sections {
+        assembly.push_str(&format!(".section {}\n", section_name));
+        
+        // Convert binary data to assembly directives
+        for chunk in data.chunks(16) {
+            assembly.push_str(".byte ");
+            let hex_values: Vec<String> = chunk.iter().map(|b| format!("0x{:02x}", b)).collect();
+            assembly.push_str(&hex_values.join(", "));
+            assembly.push_str("\n");
+        }
+        assembly.push_str("\n");
+    }
+    
+    Ok(assembly)
+}
+
 #[derive(Debug, Clone)]
 pub struct AdvancedCompilationResult {
     pub success: bool,

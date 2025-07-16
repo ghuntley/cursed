@@ -12,6 +12,12 @@
 // Debug modules
 pub mod simple_dwarf_integration;
 pub mod enhanced_debug;
+pub mod dwarf_comprehensive;
+pub mod gdb_integration;
+pub mod lldb_integration;
+
+#[cfg(test)]
+pub mod tests;
 
 // Re-export key types
 pub use crate::error::SourceLocation;
@@ -19,6 +25,22 @@ pub use enhanced_debug::{
     EnhancedDebugManager, EnhancedDebugInfo, DebugSymbol, SymbolType, RuntimeState,
     StackFrame, VariableDebugInfo, SourceContext, TypeInfo, FieldInfo,
     create_debug_symbol, create_stack_frame, create_variable_debug_info
+};
+
+// Re-export comprehensive DWARF types
+pub use self::dwarf_comprehensive::{
+    DwarfDebugGenerator, CompilationUnit, DebugInfoEntry, DwarfTag, DwarfAttribute,
+    AttributeValue, DwarfLanguage, DebugLineTable, DwarfForm
+};
+
+// Re-export debugger integration types
+pub use self::gdb_integration::{
+    GdbIntegration, GdbBreakpoint, GdbFrame, GdbVariable, ProgramState, 
+    ResultClass, AsyncClass, GdbResponse
+};
+pub use self::lldb_integration::{
+    LldbIntegration, LldbBreakpoint, LldbFrame, LldbVariable, LldbTarget,
+    LldbProcess, ProcessState, ThreadState, LldbMemoryRegion
 };
 
 // Legacy placeholder types for backward compatibility

@@ -533,7 +533,7 @@ impl PackageRegistry {
 }
 
 /// Package metadata for dependency resolution
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageMetadata {
     pub name: String,
     pub version: Version,

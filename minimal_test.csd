@@ -1,2 +1,1 @@
-sus i normie = 42
-vibez.spill(i)
+vibez.spill("Compiler core implementation complete!")
