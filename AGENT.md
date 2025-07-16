@@ -81,6 +81,39 @@
 - **Build System**: Robust build validation and CI integration
 - **Testing Framework**: Enterprise-grade testz v3.0 system
 
+**✅ LATEST SESSION LEARNINGS (2025-07-16)**
+
+**Building Multiple CLI Tools**
+- **Binary Targets**: Add new tools to `Cargo.toml` under `[[bin]]` sections
+- **LSP Server**: `cursed-lsp` binary provides Language Server Protocol support
+- **Build Commands**: `cargo build --bin tool_name` for specific tools
+- **Tool Pattern**: Each tool has dedicated main function in `src/bin/tool_name.rs`
+
+**Implementing Stdlib Modules**
+- **Complete Pattern**: `specs/module.md` (spec) → `stdlib/module/mod.csd` (impl) → `stdlib/module/test_module.csd` (tests) → `stdlib/module/README.md` (docs)
+- **Spec-Driven Development**: Always start with formal specification in `specs/` directory
+- **Pure CURSED Implementation**: All modules use zero FFI for maximum portability
+- **Testing Integration**: Use `yeet "testz"` import with comprehensive test coverage
+
+**Working LSP Integration**
+- **Server Implementation**: `src/bin/cursed-lsp.rs` provides full LSP server functionality
+- **Editor Integration**: Works with VS Code, Neovim, and other LSP-compatible editors
+- **Language Features**: Syntax highlighting, completion, diagnostics, hover information
+- **Start Command**: `cargo run --bin cursed-lsp` launches LSP server on stdin/stdout
+
+**Build System Patterns**
+- **Self-Hosting Build**: `src/build_system/` implements complete build system in CURSED
+- **Native Builds**: `cargo run --bin cursed -- build project.csd` for CURSED projects
+- **Package Management**: CursedBuild.toml, CursedPackage.toml for project configuration
+- **Workspace Support**: CursedWorkspace.toml for multi-project builds
+
+**Development Workflow Optimization**
+- **Fast Iteration**: `./run_fast_tests_final.sh` (4s) → `cargo check` (0.5s) → targeted tests
+- **Both-Mode Testing**: Always verify interpretation and compilation produce identical output
+- **Module Development**: Use template pattern for consistent stdlib module creation
+- **LSP Workflow**: Real-time feedback during development with editor integration
+- **Build Validation**: `cargo build --bin cursed-lsp && cargo run --bin cursed test` for complete validation
+
 
 ```bash
 # Test pure CURSED stdlib modules

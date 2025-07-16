@@ -506,3 +506,5 @@ pub fn create_variable_debug_info(name: &str, var_type: &str, value: Option<Stri
         scope_level: 0,
     }
 }
+
+

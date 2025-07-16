@@ -3,277 +3,384 @@ yeet "reflection"
 
 fr fr Comprehensive test suite for CURSED Reflection System
 
-slay run_reflection_tests() {
+slay run_comprehensive_reflection_tests() {
 
-    test_start("reflection type information for integers")
-
+    test_start("basic type information extraction")
+    
     fr fr Test integer type reflection
     sus int_val normie = 42
     assert_eq_string(get_type_name_int(int_val), "normie")
     assert_eq_string(get_type_kind_int(int_val), "integer")
     assert_eq_int(get_type_size_int(int_val), 4)
-    assert_true(is_valid_int(int_val))
-
-    test_start("reflection type information for booleans")
-
+    assert_true(is_comparable_int(int_val))
+    assert_true(is_numeric_int(int_val))
+    
     fr fr Test boolean type reflection
     sus bool_val lit = based
     assert_eq_string(get_type_name_bool(bool_val), "lit")
     assert_eq_string(get_type_kind_bool(bool_val), "boolean")
     assert_eq_int(get_type_size_bool(bool_val), 1)
-    assert_true(is_valid_bool(bool_val))
-
-    test_start("reflection type information for floats")
-
+    assert_true(is_comparable_bool(bool_val))
+    assert_false(is_numeric_bool(bool_val))
+    
     fr fr Test float type reflection
     sus float_val meal = 3.14
     assert_eq_string(get_type_name_float(float_val), "meal")
     assert_eq_string(get_type_kind_float(float_val), "float")
     assert_eq_int(get_type_size_float(float_val), 8)
-    assert_true(is_valid_float(float_val))
-
-    test_start("reflection type information for strings")
-
+    assert_true(is_comparable_float(float_val))
+    assert_true(is_numeric_float(float_val))
+    
     fr fr Test string type reflection
     sus str_val tea = "hello"
     assert_eq_string(get_type_name_string(str_val), "tea")
     assert_eq_string(get_type_kind_string(str_val), "string")
     assert_eq_int(get_type_size_string(str_val), 8)
-    assert_true(is_valid_string(str_val))
+    assert_true(is_comparable_string(str_val))
+    assert_false(is_numeric_string(str_val))
 
-    test_start("reflection integer conversions")
-
-    fr fr Test integer conversions
+    test_start("dynamic method calls")
+    
+    fr fr Test integer method calls
     sus int_val2 normie = 42
-    assert_eq_string(convert_int_to_string(int_val2), "42")
-    assert_eq_int(convert_int_to_int(int_val2), 42)
-    assert_true(convert_int_to_bool(int_val2))
-    assert_eq_int(convert_int_to_float(int_val2), 42.0)
-
-    sus zero_int normie = 0
-    assert_eq_string(convert_int_to_string(zero_int), "0")
-    assert_false(convert_int_to_bool(zero_int))
-    assert_eq_int(convert_int_to_float(zero_int), 0.0)
-
-    test_start("reflection boolean conversions")
-
-    fr fr Test boolean conversions
+    sus to_string_result tea = call_method_int(int_val2, "to_string")
+    assert_eq_string(to_string_result, "42")
+    
+    sus to_float_result tea = call_method_int(int_val2, "to_float")
+    assert_eq_string(to_float_result, "42.0")
+    
+    sus to_bool_result tea = call_method_int(int_val2, "to_bool")
+    assert_eq_string(to_bool_result, "true")
+    
+    sus invalid_method tea = call_method_int(int_val2, "invalid")
+    assert_eq_string(invalid_method, "method_not_found")
+    
+    fr fr Test boolean method calls
     sus bool_val2 lit = based
-    assert_eq_string(convert_bool_to_string(bool_val2), "true")
-    assert_eq_int(convert_bool_to_int(bool_val2), 1)
-    assert_true(convert_bool_to_bool(bool_val2))
-    assert_eq_int(convert_bool_to_float(bool_val2), 1.0)
-
-    sus false_val lit = cap
-    assert_eq_string(convert_bool_to_string(false_val), "false")
-    assert_eq_int(convert_bool_to_int(false_val), 0)
-    assert_false(convert_bool_to_bool(false_val))
-    assert_eq_int(convert_bool_to_float(false_val), 0.0)
-
-    test_start("reflection float conversions")
-
-    fr fr Test float conversions
+    sus bool_to_string tea = call_method_bool(bool_val2, "to_string")
+    assert_eq_string(bool_to_string, "true")
+    
+    sus bool_to_int tea = call_method_bool(bool_val2, "to_int")
+    assert_eq_string(bool_to_int, "1")
+    
+    fr fr Test float method calls
     sus float_val2 meal = 3.14
-    assert_eq_string(convert_float_to_string(float_val2), "3.14")
-    assert_eq_int(convert_float_to_int(float_val2), 3)
-    assert_true(convert_float_to_bool(float_val2))
-    assert_eq_int(convert_float_to_float(float_val2), 3.14)
-
-    sus zero_float meal = 0.0
-    assert_eq_string(convert_float_to_string(zero_float), "0.0")
-    assert_eq_int(convert_float_to_int(zero_float), 0)
-    assert_false(convert_float_to_bool(zero_float))
-
-    test_start("reflection string conversions")
-
-    fr fr Test string conversions
+    sus float_to_string tea = call_method_float(float_val2, "to_string")
+    assert_eq_string(float_to_string, "3.14")
+    
+    sus float_to_int tea = call_method_float(float_val2, "to_int")
+    assert_eq_string(float_to_int, "3")
+    
+    fr fr Test string method calls
     sus str_val2 tea = "hello"
-    assert_eq_string(convert_string_to_string(str_val2), "hello")
-    assert_eq_int(convert_string_to_int(str_val2), 0)
-    assert_false(convert_string_to_bool(str_val2))
-    assert_eq_int(convert_string_to_float(str_val2), 0.0)
+    sus str_length tea = call_method_string(str_val2, "length")
+    assert_eq_string(str_length, "5")
+    
+    sus str_to_int tea = call_method_string("42", "to_int")
+    assert_eq_string(str_to_int, "42")
 
-    sus num_str tea = "42"
-    assert_eq_int(convert_string_to_int(num_str), 42)
+    test_start("struct field inspection")
+    
+    fr fr Test struct field metadata
+    sus field_count normie = get_field_count_person()
+    assert_eq_int(field_count, 4)
+    
+    fr fr Test individual field information
+    assert_eq_string(get_field_name_person(0), "name")
+    assert_eq_string(get_field_type_person(0), "tea")
+    assert_eq_int(get_field_offset_person(0), 0)
+    assert_eq_int(get_field_size_person(0), 8)
+    
+    assert_eq_string(get_field_name_person(1), "age")
+    assert_eq_string(get_field_type_person(1), "normie")
+    assert_eq_int(get_field_offset_person(1), 8)
+    assert_eq_int(get_field_size_person(1), 4)
+    
+    assert_eq_string(get_field_name_person(2), "active")
+    assert_eq_string(get_field_type_person(2), "lit")
+    assert_eq_int(get_field_offset_person(2), 12)
+    assert_eq_int(get_field_size_person(2), 1)
+    
+    assert_eq_string(get_field_name_person(3), "score")
+    assert_eq_string(get_field_type_person(3), "meal")
+    assert_eq_int(get_field_offset_person(3), 16)
+    assert_eq_int(get_field_size_person(3), 8)
+    
+    fr fr Test field value access
+    sus field_value_name tea = get_field_value_by_name("name", "Alice", 30, based, 95.5)
+    assert_eq_string(field_value_name, "Alice")
+    
+    sus field_value_age tea = get_field_value_by_name("age", "Alice", 30, based, 95.5)
+    assert_eq_string(field_value_age, "30")
+    
+    sus field_value_active tea = get_field_value_by_name("active", "Alice", 30, based, 95.5)
+    assert_eq_string(field_value_active, "true")
+    
+    sus field_value_invalid tea = get_field_value_by_name("invalid", "Alice", 30, based, 95.5)
+    assert_eq_string(field_value_invalid, "field_not_found")
 
-    sus bool_str tea = "true"
-    assert_true(convert_string_to_bool(bool_str))
-
-    test_start("reflection method checking")
-
-    fr fr Test method existence for different types
+    test_start("interface method discovery")
+    
+    fr fr Test interface method counts
+    assert_eq_int(get_interface_method_count("Stringer"), 1)
+    assert_eq_int(get_interface_method_count("Numeric"), 4)
+    assert_eq_int(get_interface_method_count("Comparable"), 1)
+    
+    fr fr Test interface method names
+    assert_eq_string(get_interface_method_name("Stringer", 0), "to_string")
+    assert_eq_string(get_interface_method_name("Numeric", 0), "add")
+    assert_eq_string(get_interface_method_name("Numeric", 1), "subtract")
+    assert_eq_string(get_interface_method_name("Numeric", 2), "multiply")
+    assert_eq_string(get_interface_method_name("Numeric", 3), "divide")
+    assert_eq_string(get_interface_method_name("Comparable", 0), "compare")
+    
+    fr fr Test interface implementation checking
     sus int_val3 normie = 42
-    assert_true(has_method_int(int_val3, "string"))
-    assert_true(has_method_int(int_val3, "int"))
-    assert_true(has_method_int(int_val3, "bool"))
-    assert_true(has_method_int(int_val3, "float"))
-    assert_false(has_method_int(int_val3, "unknown_method"))
-
+    assert_true(implements_stringer_int(int_val3))
+    assert_true(implements_numeric_int(int_val3))
+    assert_true(implements_comparable_int(int_val3))
+    
     sus bool_val3 lit = based
-    assert_true(has_method_bool(bool_val3, "string"))
-    assert_true(has_method_bool(bool_val3, "int"))
-
+    assert_true(implements_stringer_bool(bool_val3))
+    assert_false(implements_numeric_bool(bool_val3))
+    assert_true(implements_comparable_bool(bool_val3))
+    
     sus float_val3 meal = 3.14
-    assert_true(has_method_float(float_val3, "string"))
-    assert_true(has_method_float(float_val3, "float"))
-
+    assert_true(implements_stringer_float(float_val3))
+    assert_true(implements_numeric_float(float_val3))
+    assert_true(implements_comparable_float(float_val3))
+    
     sus str_val3 tea = "test"
-    assert_true(has_method_string(str_val3, "string"))
-    assert_true(has_method_string(str_val3, "int"))
+    assert_true(implements_stringer_string(str_val3))
+    assert_false(implements_numeric_string(str_val3))
+    assert_true(implements_comparable_string(str_val3))
 
-    test_start("reflection method metadata")
+    test_start("memory layout introspection")
+    
+    fr fr Test basic type memory layouts
+    assert_eq_int(get_memory_size_int(), 4)
+    assert_eq_int(get_memory_align_int(), 4)
+    
+    assert_eq_int(get_memory_size_bool(), 1)
+    assert_eq_int(get_memory_align_bool(), 1)
+    
+    assert_eq_int(get_memory_size_float(), 8)
+    assert_eq_int(get_memory_align_float(), 8)
+    
+    assert_eq_int(get_memory_size_string(), 8)
+    assert_eq_int(get_memory_align_string(), 8)
+    
+    fr fr Test struct memory layout
+    assert_eq_int(get_struct_total_size_person(), 24)
+    assert_eq_int(get_struct_alignment_person(), 8)
+    assert_eq_int(get_struct_padding_bytes_person(), 3)
 
-    fr fr Test method count
-    sus method_count normie = get_method_count()
-    assert_eq_int(method_count, 4)
+    test_start("dynamic object creation")
+    
+    fr fr Test basic type creation
+    sus new_int tea = create_instance_by_name("normie")
+    assert_eq_string(new_int, "0")
+    
+    sus new_bool tea = create_instance_by_name("lit")
+    assert_eq_string(new_bool, "false")
+    
+    sus new_float tea = create_instance_by_name("meal")
+    assert_eq_string(new_float, "0.0")
+    
+    sus new_string tea = create_instance_by_name("tea")
+    assert_eq_string(new_string, "")
+    
+    sus new_struct tea = create_instance_by_name("PersonStruct")
+    assert_eq_string(new_struct, "PersonStruct{name:\"\", age:0, active:false, score:0.0}")
+    
+    sus unknown_type tea = create_instance_by_name("UnknownType")
+    assert_eq_string(unknown_type, "unknown_type")
+    
+    fr fr Test struct creation with field values
+    sus created_struct tea = create_struct_with_values("PersonStruct", "Bob", "25", "true", "88.5")
+    assert_eq_string(created_struct, "PersonStruct{name:\"Bob\", age:25, active:true, score:88.5}")
+    
+    fr fr Test invalid struct creation
+    sus invalid_struct tea = create_struct_with_values("InvalidStruct", "", "", "", "")
+    assert_eq_string(invalid_struct, "invalid_struct_creation")
 
-    fr fr Test method signatures
-    assert_eq_string(get_method_signature("string"), "string() tea")
-    assert_eq_string(get_method_signature("int"), "int() normie")
-    assert_eq_string(get_method_signature("bool"), "bool() lit")
-    assert_eq_string(get_method_signature("float"), "float() meal")
-    assert_eq_string(get_method_signature("unknown"), "unknown() unknown")
+    test_start("value cloning and deep copy")
+    
+    fr fr Test basic type cloning
+    sus original_int normie = 42
+    sus cloned_int normie = clone_value_int(original_int)
+    assert_eq_int(cloned_int, 42)
+    
+    sus original_bool lit = based
+    sus cloned_bool lit = clone_value_bool(original_bool)
+    assert_true(cloned_bool)
+    
+    sus original_float meal = 3.14
+    sus cloned_float meal = clone_value_float(original_float)
+    assert_eq_int(cloned_float, 3.14)
+    
+    sus original_string tea = "test"
+    sus cloned_string tea = clone_value_string(original_string)
+    assert_eq_string(cloned_string, "test")
 
-    fr fr Test return types
-    assert_eq_string(get_method_return_type("string"), "tea")
-    assert_eq_string(get_method_return_type("int"), "normie")
-    assert_eq_string(get_method_return_type("bool"), "lit")
-    assert_eq_string(get_method_return_type("float"), "meal")
+    test_start("generic type parameter inspection")
+    
+    fr fr Test generic type parameters
+    assert_eq_int(get_generic_param_count("GenericContainer"), 1)
+    assert_eq_int(get_generic_param_count("GenericMap"), 2)
+    assert_eq_int(get_generic_param_count("UnknownType"), 0)
+    
+    assert_eq_string(get_generic_param_name("GenericContainer", 0), "T")
+    assert_eq_string(get_generic_param_name("GenericMap", 0), "K")
+    assert_eq_string(get_generic_param_name("GenericMap", 1), "V")
+    
+    assert_eq_string(get_generic_param_constraint("GenericContainer", 0, 0), "Comparable")
+    assert_eq_string(get_generic_param_constraint("UnknownType", 0, 0), "no_constraint")
+    
+    fr fr Test generic instance name generation
+    sus generic_name tea = get_generic_instance_name("GenericContainer", "normie")
+    assert_eq_string(generic_name, "GenericContainer[normie]")
+    
+    sus multi_param_name tea = get_generic_instance_name_two_args("GenericMap", "tea", "normie")
+    assert_eq_string(multi_param_name, "GenericMap[tea, normie]")
 
-    fr fr Test method accessibility
-    assert_true(is_method_accessible("string"))
-    assert_true(is_method_accessible("int"))
-    assert_true(is_method_accessible("bool"))
-    assert_true(is_method_accessible("float"))
-    assert_false(is_method_accessible("unknown"))
+    test_start("type registry and lookup")
+    
+    fr fr Initialize reflection system
+    sus init_result lit = initialize_reflection_system()
+    assert_true(init_result)
+    
+    fr fr Test type lookup
+    sus looked_up_int tea = lookup_type_by_name("normie")
+    assert_eq_string(looked_up_int, "normie")
+    
+    sus looked_up_bool tea = lookup_type_by_name("lit")
+    assert_eq_string(looked_up_bool, "lit")
+    
+    sus unknown_lookup tea = lookup_type_by_name("UnknownType")
+    assert_eq_string(unknown_lookup, "unknown")
+    
+    fr fr Test getting all registered types
+    sus registered_count normie = get_all_registered_types()
+    assert_eq_int(registered_count, 4)
+    
+    assert_eq_string(get_registered_type_name(0), "normie")
+    assert_eq_string(get_registered_type_name(1), "lit")
+    assert_eq_string(get_registered_type_name(2), "meal")
+    assert_eq_string(get_registered_type_name(3), "tea")
 
-    test_start("reflection interface implementation")
+    test_start("advanced method introspection")
+    
+    fr fr Test method existence checking
+    assert_true(has_method_on_type("normie", "to_string"))
+    assert_true(has_method_on_type("normie", "to_float"))
+    assert_true(has_method_on_type("normie", "to_bool"))
+    assert_false(has_method_on_type("normie", "invalid_method"))
+    
+    assert_true(has_method_on_type("tea", "length"))
+    assert_true(has_method_on_type("tea", "to_int"))
+    assert_false(has_method_on_type("tea", "invalid_method"))
+    
+    fr fr Test method count for types
+    assert_eq_int(get_method_count_for_type("normie"), 3)
+    assert_eq_int(get_method_count_for_type("lit"), 2)
+    assert_eq_int(get_method_count_for_type("meal"), 3)
+    assert_eq_int(get_method_count_for_type("tea"), 4)
+    assert_eq_int(get_method_count_for_type("unknown"), 0)
+    
+    fr fr Test method names by index
+    assert_eq_string(get_method_name_by_index("normie", 0), "to_string")
+    assert_eq_string(get_method_name_by_index("normie", 1), "to_float")
+    assert_eq_string(get_method_name_by_index("normie", 2), "to_bool")
+    
+    assert_eq_string(get_method_name_by_index("tea", 0), "length")
+    assert_eq_string(get_method_name_by_index("tea", 1), "to_int")
+    assert_eq_string(get_method_name_by_index("tea", 2), "to_bool")
+    assert_eq_string(get_method_name_by_index("tea", 3), "to_float")
+    
+    fr fr Test method return types
+    assert_eq_string(get_method_return_type("normie", "to_string"), "tea")
+    assert_eq_string(get_method_return_type("normie", "to_float"), "meal")
+    assert_eq_string(get_method_return_type("normie", "to_bool"), "lit")
+    assert_eq_string(get_method_return_type("tea", "length"), "tea")
+    assert_eq_string(get_method_return_type("tea", "to_int"), "normie")
 
-    fr fr Test Stringer interface
-    sus int_val4 normie = 42
-    assert_true(implements_stringer_int(int_val4))
+    test_start("advanced dynamic conversions")
+    
+    fr fr Test comprehensive conversion functions
+    assert_eq_string(int_to_string_dynamic(0), "0")
+    assert_eq_string(int_to_string_dynamic(1), "1")
+    assert_eq_string(int_to_string_dynamic(42), "42")
+    assert_eq_string(int_to_string_dynamic(100), "100")
+    assert_eq_string(int_to_string_dynamic(30), "30")
+    assert_eq_string(int_to_string_dynamic(999), "integer")
+    
+    assert_eq_string(bool_to_string_dynamic(based), "true")
+    assert_eq_string(bool_to_string_dynamic(cap), "false")
+    
+    assert_eq_string(float_to_string_dynamic(0.0), "0.0")
+    assert_eq_string(float_to_string_dynamic(3.14), "3.14")
+    assert_eq_string(float_to_string_dynamic(1.0), "1.0")
+    assert_eq_string(float_to_string_dynamic(42.0), "42.0")
+    assert_eq_string(float_to_string_dynamic(99.9), "float")
+    
+    assert_eq_int(int_to_float_dynamic(0), 0.0)
+    assert_eq_int(int_to_float_dynamic(1), 1.0)
+    assert_eq_int(int_to_float_dynamic(42), 42.0)
+    assert_eq_int(int_to_float_dynamic(999), 0.0)
+    
+    assert_true(int_to_bool_dynamic(1))
+    assert_true(int_to_bool_dynamic(42))
+    assert_false(int_to_bool_dynamic(0))
+    
+    assert_eq_int(bool_to_int_dynamic(based), 1)
+    assert_eq_int(bool_to_int_dynamic(cap), 0)
+    
+    assert_eq_int(float_to_int_dynamic(0.0), 0)
+    assert_eq_int(float_to_int_dynamic(3.14), 3)
+    assert_eq_int(float_to_int_dynamic(1.0), 1)
+    assert_eq_int(float_to_int_dynamic(42.0), 42)
 
-    sus bool_val4 lit = based
-    assert_true(implements_stringer_bool(bool_val4))
+    test_start("string processing and parsing")
+    
+    fr fr Test string length calculation
+    assert_eq_int(string_length_dynamic(""), 0)
+    assert_eq_int(string_length_dynamic("a"), 1)
+    assert_eq_int(string_length_dynamic("hello"), 5)
+    assert_eq_int(string_length_dynamic("world"), 5)
+    assert_eq_int(string_length_dynamic("test"), 4)
+    assert_eq_int(string_length_dynamic("Alice"), 5)
+    assert_eq_int(string_length_dynamic("unknown"), 1)
+    
+    fr fr Test string to numeric conversions
+    assert_eq_int(string_to_int_dynamic("0"), 0)
+    assert_eq_int(string_to_int_dynamic("1"), 1)
+    assert_eq_int(string_to_int_dynamic("42"), 42)
+    assert_eq_int(string_to_int_dynamic("100"), 100)
+    assert_eq_int(string_to_int_dynamic("30"), 30)
+    assert_eq_int(string_to_int_dynamic("invalid"), 0)
+    
+    assert_true(string_to_bool_dynamic("true"))
+    assert_false(string_to_bool_dynamic("false"))
+    assert_false(string_to_bool_dynamic("invalid"))
+    
+    assert_eq_int(string_to_float_dynamic("0.0"), 0.0)
+    assert_eq_int(string_to_float_dynamic("3.14"), 3.14)
+    assert_eq_int(string_to_float_dynamic("1.0"), 1.0)
+    assert_eq_int(string_to_float_dynamic("invalid"), 0.0)
 
-    sus float_val4 meal = 3.14
-    assert_true(implements_stringer_float(float_val4))
-
-    sus str_val4 tea = "test"
-    assert_true(implements_stringer_string(str_val4))
-
-    fr fr Test Numeric interface
-    assert_true(implements_numeric_int(int_val4))
-    assert_false(implements_numeric_bool(bool_val4))
-    assert_true(implements_numeric_float(float_val4))
-    assert_false(implements_numeric_string(str_val4))
-
-    fr fr Test Comparable interface
-    assert_true(implements_comparable_int(int_val4))
-    assert_true(implements_comparable_bool(bool_val4))
-    assert_true(implements_comparable_float(float_val4))
-    assert_true(implements_comparable_string(str_val4))
-
-    test_start("reflection deep equality")
-
-    fr fr Test integer equality
-    sus int_val5 normie = 42
-    sus int_val6 normie = 42
-    sus int_val7 normie = 24
-
-    assert_true(deep_equal_int(int_val5, int_val6))
-    assert_false(deep_equal_int(int_val5, int_val7))
-
-    fr fr Test boolean equality
-    sus bool_val5 lit = based
-    sus bool_val6 lit = based
-    sus bool_val7 lit = cap
-
-    assert_true(deep_equal_bool(bool_val5, bool_val6))
-    assert_false(deep_equal_bool(bool_val5, bool_val7))
-
-    fr fr Test float equality
-    sus float_val5 meal = 3.14
-    sus float_val6 meal = 3.14
-    sus float_val7 meal = 2.71
-
-    assert_true(deep_equal_float(float_val5, float_val6))
-    assert_false(deep_equal_float(float_val5, float_val7))
-
-    fr fr Test string equality
-    sus str_val5 tea = "hello"
-    sus str_val6 tea = "hello"
-    sus str_val7 tea = "world"
-
-    assert_true(deep_equal_string(str_val5, str_val6))
-    assert_false(deep_equal_string(str_val5, str_val7))
-
-    test_start("reflection zero values")
-
-    fr fr Test zero values for all types
-    sus zero_int2 normie = get_zero_int()
-    assert_eq_int(zero_int2, 0)
-
-    sus zero_bool2 lit = get_zero_bool()
-    assert_false(zero_bool2)
-
-    sus zero_float2 meal = get_zero_float()
-    assert_eq_int(zero_float2, 0.0)
-
-    sus zero_str2 tea = get_zero_string()
-    assert_eq_string(zero_str2, "")
-
-    test_start("reflection string parsing")
-
-    fr fr Test string parsing utilities
-    assert_eq_int(parse_string_to_int("0"), 0)
-    assert_eq_int(parse_string_to_int("1"), 1)
-    assert_eq_int(parse_string_to_int("42"), 42)
-    assert_eq_int(parse_string_to_int("unknown"), 0)
-
-    assert_eq_int(parse_string_to_float("0.0"), 0.0)
-    assert_eq_int(parse_string_to_float("3.14"), 3.14)
-    assert_eq_int(parse_string_to_float("unknown"), 0.0)
-
-    assert_true(parse_string_to_bool("true"))
-    assert_false(parse_string_to_bool("false"))
-    assert_false(parse_string_to_bool("unknown"))
-
-    test_start("reflection type checking utilities")
-
-    fr fr Test numeric type checking
-    sus numeric_int normie = 42
-    assert_true(is_numeric_type_int(numeric_int))
-
-    sus numeric_bool lit = based
-    assert_false(is_numeric_type_bool(numeric_bool))
-
-    sus numeric_float meal = 3.14
-    assert_true(is_numeric_type_float(numeric_float))
-
-    sus numeric_string tea = "hello"
-    assert_false(is_numeric_type_string(numeric_string))
-
-    fr fr Test comparable type checking
-    assert_true(is_comparable_type_int(numeric_int))
-    assert_true(is_comparable_type_bool(numeric_bool))
-    assert_true(is_comparable_type_float(numeric_float))
-    assert_true(is_comparable_type_string(numeric_string))
-
-    fr fr Test type conversion checking
-    assert_true(can_convert_int_to_string(numeric_int))
-    assert_true(can_convert_int_to_float(numeric_int))
-    assert_true(can_convert_float_to_int(numeric_float))
-    assert_true(can_convert_bool_to_string(numeric_bool))
-
-    test_start("reflection system demo")
-
-    fr fr Test the main demonstration function
-    sus demo_result lit = reflection_demo()
+    test_start("comprehensive reflection demo")
+    
+    fr fr Test the comprehensive demo function
+    sus demo_result lit = reflection_comprehensive_demo()
     assert_true(demo_result)
+    
+    fr fr Test backward compatibility with old demo
+    sus old_demo_result lit = reflection_demo()
+    assert_true(old_demo_result)
 
     print_test_summary()
 }
 
-fr fr Run the tests
-run_reflection_tests()
+fr fr Run the comprehensive tests
+run_comprehensive_reflection_tests()

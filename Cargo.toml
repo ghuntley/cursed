@@ -390,7 +390,7 @@ name = "cursed-pkg"
 path = "src/bin/cursed_pkg.rs"
 
 [[bin]]
-name = "cursed-pkg-simple"
+name = "cursed-pkg-manager"
 path = "src/bin/cursed_pkg_simple.rs"
 
 [[bin]]
@@ -404,6 +404,10 @@ path = "src/bin/cursed_repl.rs"
 [[bin]]
 name = "cursed-test"
 path = "src/bin/cursed_test.rs"
+
+[[bin]]
+name = "cursed-debug"
+path = "src/bin/cursed_debug.rs"
 
 
 
@@ -437,10 +441,7 @@ harness = true
 # name = "dynamic_worker_sizing_test"
 # path = "tests/async_constraint_checker/dynamic_worker_sizing_test.rs"
 
-[[bin]]
-name = "cursed-debug"
-path = "src/bin/cursed_debug.rs"
-harness = true
+
 
 [[bin]]
 name = "cursed-lsp"

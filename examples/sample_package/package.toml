@@ -1,0 +1,23 @@
+[package]
+name = "sample-math-utils"
+version = "1.0.0"
+description = "Sample mathematical utilities for CURSED"
+authors = ["CURSED Team <team@cursed-lang.org>"]
+license = "MIT"
+homepage = "https://github.com/cursed-lang/sample-math-utils"
+repository = "https://github.com/cursed-lang/sample-math-utils"
+keywords = ["math", "utilities", "algorithms", "sample"]
+categories = ["algorithms", "mathematics"]
+
+[dependencies]
+testz = "3.0.0"
+
+[dev-dependencies]
+# No dev dependencies for this sample
+
+[features]
+default = ["basic"]
+basic = []
+advanced = ["statistics", "trigonometry"]
+statistics = []
+trigonometry = []

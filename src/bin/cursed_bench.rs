@@ -401,7 +401,11 @@ fn main() {
                     match runner.load_previous_results(results_file) {
                         Ok(results) => {
                             runner.results = results;
-                            let html_file = output_file.clone().unwrap_or_else(|| "report.html".to_string());
+                            let html_file = if output_file.is_empty() {
+                                "report.html".to_string()
+                            } else {
+                                output_file.clone()
+                            };
                             if let Err(e) = runner.generate_html_report(&html_file) {
                                 eprintln!("Failed to generate HTML report: {}", e);
                                 exit(1);
