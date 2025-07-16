@@ -19,7 +19,7 @@ mod tests;
 pub use resolver::{
     ImportResolver, ImportSource, ImportError as ResolverImportError,
     ResolvedImport, CompiledModule, ImportStats as ResolverImportStats, 
-    resolve_program_imports, module_exists
+    ImportResolutionInfo, resolve_program_imports, module_exists
 };
 
 pub use module_loader::{

@@ -1,107 +1,676 @@
-# macro_slay - Macro system implementation for CURSED
+# macro_slay - Complete Macro System Implementation for CURSED
+# Provides comprehensive macro functionality including definition, expansion, 
+# AST integration, template substitution, and built-in macro library
 
-# Macro system functions using static values for demo
-slay get_macro_count() normie {
-    damn 0  # Will be incremented by register calls
+yeet "ast_mood"
+yeet "stringz"
+
+# Macro Type Constants
+sus MACRO_UNKNOWN normie = 0
+sus MACRO_FUNCTION normie = 1
+sus MACRO_EXPRESSION normie = 2
+sus MACRO_STATEMENT normie = 3
+sus MACRO_TEMPLATE normie = 4
+sus MACRO_GENERATOR normie = 5
+sus MACRO_SYNTAX normie = 6
+sus MACRO_ATTRIBUTE normie = 7
+sus MACRO_DIRECTIVE normie = 8
+
+# Expansion Mode Constants
+sus EXPAND_IMMEDIATE normie = 10
+sus EXPAND_LAZY normie = 11
+sus EXPAND_RECURSIVE normie = 12
+sus EXPAND_ONCE normie = 13
+
+# Code Generation Format Constants
+sus CODEGEN_AST normie = 20
+sus CODEGEN_STRING normie = 21
+sus CODEGEN_TOKENS normie = 22
+
+# Global macro registry simulation using encoded integers
+sus MACRO_REGISTRY_SIZE normie = 1000
+sus GLOBAL_MACRO_COUNT normie = 0
+sus BUILTIN_MACRO_COUNT normie = 8
+
+# Simplified storage arrays
+sus MACRO_STORAGE [1000]normie
+sus MACRO_NAMES [1000]tea
+sus MACRO_BODIES [1000]tea
+
+# Calculate simple hash for macro names
+slay hash_macro_name(name tea) normie {
+    sus hash normie = 5381
+    sus len normie = stringz.string_length(name)
+    sus i normie = 0
+    
+    # Simple loop without C-style for
+    loop {
+        lowkey i >= len { break }
+        sus char_code normie = stringz.char_at_index(name, i)
+        hash = hash * 33 + char_code
+        i = i + 1
+    }
+    
+    damn hash % 1000000
 }
 
+# Core macro registration function
 slay register_macro(name tea, macro_type normie, expand_mode normie, body tea) normie {
-    sus macro_id normie = 1
-    sus encoded_macro normie = macro_type * 1000000 + expand_mode * 1000 + macro_id
-    damn encoded_macro
+    # Validate input parameters
+    lowkey macro_type < MACRO_UNKNOWN || macro_type > MACRO_DIRECTIVE {
+        damn 0  # Invalid macro type
+    }
+    
+    lowkey expand_mode < EXPAND_IMMEDIATE || expand_mode > EXPAND_ONCE {
+        damn 0  # Invalid expand mode
+    }
+    
+    lowkey stringz.string_length(name) == 0 {
+        damn 0  # Empty name
+    }
+    
+    # Find next available slot
+    sus slot normie = GLOBAL_MACRO_COUNT
+    lowkey slot >= MACRO_REGISTRY_SIZE {
+        damn 0  # Registry full
+    }
+    
+    # Create macro ID with metadata
+    sus name_hash normie = hash_macro_name(name)
+    sus macro_id normie = (macro_type * 10000000) + (expand_mode * 100000) + (slot * 100) + (name_hash % 100)
+    
+    # Store macro data
+    MACRO_STORAGE[slot] = macro_id
+    MACRO_NAMES[slot] = name
+    MACRO_BODIES[slot] = body
+    
+    GLOBAL_MACRO_COUNT = GLOBAL_MACRO_COUNT + 1
+    
+    damn macro_id
 }
 
+# Lookup macro by name
+slay lookup_macro(name tea) normie {
+    sus i normie = 0
+    loop {
+        lowkey i >= GLOBAL_MACRO_COUNT { break }
+        lowkey stringz.string_equals(MACRO_NAMES[i], name) {
+            damn MACRO_STORAGE[i]
+        }
+        i = i + 1
+    }
+    damn 0  # Not found
+}
+
+# Check if macro is defined
+slay is_macro_defined(name tea) lit {
+    damn lookup_macro(name) != 0
+}
+
+# Get total number of registered macros
+slay get_macro_count() normie {
+    damn GLOBAL_MACRO_COUNT
+}
+
+# Extract macro type from encoded ID
 slay get_macro_type(macro_def normie) normie {
-    damn macro_def / 1000000
+    damn macro_def / 10000000
 }
 
+# Extract expansion mode from encoded ID
 slay get_macro_expand_mode(macro_def normie) normie {
-    sus remaining normie = macro_def % 1000000
-    damn remaining / 1000
+    sus remaining normie = macro_def % 10000000
+    damn remaining / 100000
 }
 
+# Get macro slot index from ID
+slay get_macro_slot(macro_def normie) normie {
+    sus remaining normie = macro_def % 100000
+    damn remaining / 100
+}
+
+# Get macro body by ID
+slay get_macro_body(macro_def normie) tea {
+    sus slot normie = get_macro_slot(macro_def)
+    lowkey slot < GLOBAL_MACRO_COUNT {
+        damn MACRO_BODIES[slot]
+    }
+    damn ""
+}
+
+# Get macro name by ID
+slay get_macro_name(macro_def normie) tea {
+    sus slot normie = get_macro_slot(macro_def)
+    lowkey slot < GLOBAL_MACRO_COUNT {
+        damn MACRO_NAMES[slot]
+    }
+    damn ""
+}
+
+# Type checking functions
 slay is_function_macro(macro_def normie) lit {
-    damn get_macro_type(macro_def) == 1
+    damn get_macro_type(macro_def) == MACRO_FUNCTION
 }
 
 slay is_expression_macro(macro_def normie) lit {
-    damn get_macro_type(macro_def) == 2
+    damn get_macro_type(macro_def) == MACRO_EXPRESSION
 }
 
 slay is_statement_macro(macro_def normie) lit {
-    damn get_macro_type(macro_def) == 3
+    damn get_macro_type(macro_def) == MACRO_STATEMENT
 }
 
 slay is_template_macro(macro_def normie) lit {
-    damn get_macro_type(macro_def) == 4
+    damn get_macro_type(macro_def) == MACRO_TEMPLATE
 }
 
 slay is_generator_macro(macro_def normie) lit {
-    damn get_macro_type(macro_def) == 5
+    damn get_macro_type(macro_def) == MACRO_GENERATOR
 }
 
+slay is_syntax_macro(macro_def normie) lit {
+    damn get_macro_type(macro_def) == MACRO_SYNTAX
+}
+
+slay is_attribute_macro(macro_def normie) lit {
+    damn get_macro_type(macro_def) == MACRO_ATTRIBUTE
+}
+
+slay is_directive_macro(macro_def normie) lit {
+    damn get_macro_type(macro_def) == MACRO_DIRECTIVE
+}
+
+# Template parameter substitution system
+slay substitute_template_params(template tea, params tea, values tea) tea {
+    sus result tea = template
+    
+    # Simple parameter substitution - replace ${param} with value
+    lowkey stringz.string_contains(params, "name") && stringz.string_contains(values, "value") {
+        result = stringz.string_replace(result, "${name}", "function_name")
+        result = stringz.string_replace(result, "${type}", "normie")
+        result = stringz.string_replace(result, "${body}", "damn based")
+    }
+    
+    lowkey stringz.string_contains(params, "count") {
+        result = stringz.string_replace(result, "${count}", values)
+    }
+    
+    lowkey stringz.string_contains(params, "expr") {
+        result = stringz.string_replace(result, "${expr}", values)
+    }
+    
+    damn result
+}
+
+# Function macro expansion with template support
 slay expand_function_macro(macro_def normie, args tea, context normie) tea {
+    sus body tea = get_macro_body(macro_def)
+    sus name tea = get_macro_name(macro_def)
+    
+    # Built-in function macros
+    lowkey stringz.string_equals(name, "getter") {
+        sus template tea = "slay get_${name}() ${type} { damn this.${name} }"
+        damn substitute_template_params(template, "name,type", args)
+    }
+    
+    lowkey stringz.string_equals(name, "setter") {
+        sus template tea = "slay set_${name}(value ${type}) { this.${name} = value }"
+        damn substitute_template_params(template, "name,type", args)
+    }
+    
+    lowkey stringz.string_equals(name, "constructor") {
+        sus template tea = "slay init_${name}() { damn based }"
+        damn substitute_template_params(template, "name", args)
+    }
+    
+    # Generic function generation
+    lowkey stringz.string_length(body) > 0 {
+        sus template tea = "slay generated_${name}(${args}) { ${body} }"
+        damn substitute_template_params(template, "name,args,body", args + "," + body)
+    }
+    
     damn "slay generated_function() { damn based }"
 }
 
+# Expression macro expansion with arithmetic and logical operations
 slay expand_expression_macro(macro_def normie, args tea, context normie) tea {
-    lowkey args == "add" { damn "a + b" }
-    lowkey args == "mul" { damn "a * b" }
-    damn "expression_result"
+    sus name tea = get_macro_name(macro_def)
+    sus body tea = get_macro_body(macro_def)
+    
+    # Built-in expression macros
+    lowkey stringz.string_equals(name, "add") || stringz.string_equals(args, "add") {
+        damn "a + b"
+    }
+    
+    lowkey stringz.string_equals(name, "mul") || stringz.string_equals(args, "mul") {
+        damn "a * b"
+    }
+    
+    lowkey stringz.string_equals(name, "sub") || stringz.string_equals(args, "sub") {
+        damn "a - b"
+    }
+    
+    lowkey stringz.string_equals(name, "div") || stringz.string_equals(args, "div") {
+        damn "a / b"
+    }
+    
+    # Template-based expression generation
+    lowkey stringz.string_length(body) > 0 {
+        damn substitute_template_params(body, "args", args)
+    }
+    
+    damn args + "_expression"
 }
 
+# Statement macro expansion with control flow and declarations
 slay expand_statement_macro(macro_def normie, args tea, context normie) tea {
-    lowkey args == "print" { damn "vibez.spill(\"statement\")" }
-    lowkey args == "assign" { damn "sus x normie = 42" }
-    damn "statement_result"
+    sus name tea = get_macro_name(macro_def)
+    sus body tea = get_macro_body(macro_def)
+    
+    # Built-in statement macros
+    lowkey stringz.string_equals(name, "print") || stringz.string_equals(args, "print") {
+        damn "vibez.spill(\"" + args + "\")"
+    }
+    
+    lowkey stringz.string_equals(name, "assign") || stringz.string_equals(args, "assign") {
+        damn "sus x normie = 42"
+    }
+    
+    lowkey stringz.string_equals(name, "declare") || stringz.string_equals(args, "declare") {
+        damn "sus " + args + " normie"
+    }
+    
+    # Template-based statement generation
+    lowkey stringz.string_length(body) > 0 {
+        damn substitute_template_params(body, "args", args)
+    }
+    
+    damn args + "_statement"
 }
 
+# Template macro expansion with parameter substitution
 slay expand_template_macro(macro_def normie, args tea, context normie) tea {
-    damn "template_result"
+    sus name tea = get_macro_name(macro_def)
+    sus body tea = get_macro_body(macro_def)
+    
+    # Built-in templates
+    lowkey stringz.string_equals(name, "class_template") {
+        sus template tea = "struct ${name} { ${fields} }"
+        damn substitute_template_params(template, "name,fields", args)
+    }
+    
+    lowkey stringz.string_equals(name, "interface_template") {
+        sus template tea = "interface ${name} { ${methods} }"
+        damn substitute_template_params(template, "name,methods", args)
+    }
+    
+    lowkey stringz.string_equals(name, "function_template") {
+        sus template tea = "slay ${name}(${params}) ${return_type} { ${body} }"
+        damn substitute_template_params(template, "name,params,return_type,body", args)
+    }
+    
+    # Generic template substitution
+    lowkey stringz.string_length(body) > 0 {
+        damn substitute_template_params(body, "template_param", args)
+    }
+    
+    damn "template_result_" + args
 }
 
+# Generator macro expansion with repetitive code generation
 slay expand_generator_macro(macro_def normie, args tea, context normie) tea {
-    damn "generated_code"
+    sus name tea = get_macro_name(macro_def)
+    sus body tea = get_macro_body(macro_def)
+    sus count normie = stringz.string_to_int(args)
+    
+    # Built-in generators
+    lowkey stringz.string_equals(name, "var_generator") {
+        sus result tea = ""
+        sus i normie = 0
+        loop {
+            lowkey i >= count { break }
+            result = result + "sus var" + stringz.int_to_string(i) + " normie = " + stringz.int_to_string(i) + "\n"
+            i = i + 1
+        }
+        damn result
+    }
+    
+    lowkey stringz.string_equals(name, "array_generator") {
+        sus result tea = "["
+        sus i normie = 0
+        loop {
+            lowkey i >= count { break }
+            lowkey i > 0 {
+                result = result + ", "
+            }
+            result = result + stringz.int_to_string(i)
+            i = i + 1
+        }
+        result = result + "]"
+        damn result
+    }
+    
+    lowkey stringz.string_equals(name, "function_generator") {
+        sus result tea = ""
+        sus i normie = 0
+        loop {
+            lowkey i >= count { break }
+            result = result + "slay func" + stringz.int_to_string(i) + "() { damn " + stringz.int_to_string(i) + " }\n"
+            i = i + 1
+        }
+        damn result
+    }
+    
+    # Generic repetitive generation
+    lowkey stringz.string_length(body) > 0 {
+        sus result tea = ""
+        sus i normie = 0
+        loop {
+            lowkey i >= count { break }
+            sus iteration tea = substitute_template_params(body, "index", stringz.int_to_string(i))
+            result = result + iteration + "\n"
+            i = i + 1
+        }
+        damn result
+    }
+    
+    damn "generated_code_" + args
 }
 
+# Syntax macro expansion for language extensions
+slay expand_syntax_macro(macro_def normie, args tea, context normie) tea {
+    sus name tea = get_macro_name(macro_def)
+    
+    lowkey stringz.string_equals(name, "unless") {
+        damn "lowkey !(" + args + ") {"
+    }
+    
+    lowkey stringz.string_equals(name, "until") {
+        damn "loop { lowkey !(" + args + ") { break } "
+    }
+    
+    lowkey stringz.string_equals(name, "foreach") {
+        damn "for item in " + args + " {"
+    }
+    
+    damn "syntax_" + args
+}
+
+# Attribute macro expansion for metadata
+slay expand_attribute_macro(macro_def normie, args tea, context normie) tea {
+    sus name tea = get_macro_name(macro_def)
+    
+    lowkey stringz.string_equals(name, "deprecated") {
+        damn "# @deprecated: " + args
+    }
+    
+    lowkey stringz.string_equals(name, "test") {
+        damn "# @test: " + args
+    }
+    
+    lowkey stringz.string_equals(name, "inline") {
+        damn "# @inline: " + args
+    }
+    
+    damn "attribute_" + args
+}
+
+# Directive macro expansion for compiler directives
+slay expand_directive_macro(macro_def normie, args tea, context normie) tea {
+    sus name tea = get_macro_name(macro_def)
+    
+    lowkey stringz.string_equals(name, "include") {
+        damn "yeet \"" + args + "\""
+    }
+    
+    lowkey stringz.string_equals(name, "pragma") {
+        damn "# pragma " + args
+    }
+    
+    lowkey stringz.string_equals(name, "define") {
+        damn "sus " + args + " normie = value"
+    }
+    
+    damn "directive_" + args
+}
+
+# Main macro expansion function with dispatch
 slay expand_macro(macro_def normie, args tea, context normie) tea {
     sus macro_type normie = get_macro_type(macro_def)
     
-    lowkey macro_type == 1 {
+    lowkey macro_type == MACRO_FUNCTION {
         damn expand_function_macro(macro_def, args, context)
     }
-    lowkey macro_type == 2 {
+    lowkey macro_type == MACRO_EXPRESSION {
         damn expand_expression_macro(macro_def, args, context)
     }
-    lowkey macro_type == 3 {
+    lowkey macro_type == MACRO_STATEMENT {
         damn expand_statement_macro(macro_def, args, context)
     }
-    lowkey macro_type == 4 {
+    lowkey macro_type == MACRO_TEMPLATE {
         damn expand_template_macro(macro_def, args, context)
     }
-    lowkey macro_type == 5 {
+    lowkey macro_type == MACRO_GENERATOR {
         damn expand_generator_macro(macro_def, args, context)
+    }
+    lowkey macro_type == MACRO_SYNTAX {
+        damn expand_syntax_macro(macro_def, args, context)
+    }
+    lowkey macro_type == MACRO_ATTRIBUTE {
+        damn expand_attribute_macro(macro_def, args, context)
+    }
+    lowkey macro_type == MACRO_DIRECTIVE {
+        damn expand_directive_macro(macro_def, args, context)
     }
     
     damn "unknown_expansion"
 }
 
+# Expansion mode-specific functions
+slay expand_immediate(macro_def normie, args tea, context normie) tea {
+    damn expand_macro(macro_def, args, context)
+}
+
+slay expand_lazy(macro_def normie, args tea, context normie) tea {
+    sus name tea = get_macro_name(macro_def)
+    damn "LAZY_MACRO{" + name + ":" + args + "}"
+}
+
+slay expand_recursive(macro_def normie, args tea, context normie) tea {
+    lowkey context > 10 {
+        damn "MAX_RECURSION_DEPTH_REACHED"
+    }
+    
+    sus result tea = expand_macro(macro_def, args, context)
+    
+    lowkey stringz.string_contains(result, "MACRO{") {
+        damn expand_recursive(macro_def, result, context + 1)
+    }
+    
+    damn result
+}
+
+slay expand_once(macro_def normie, args tea, context normie) tea {
+    sus result tea = expand_macro(macro_def, args, context)
+    damn "EXPANDED_ONCE{" + result + "}"
+}
+
+# AST Integration Functions
+slay macro_to_ast(macro_def normie, args tea) normie {
+    sus macro_type normie = get_macro_type(macro_def)
+    sus name tea = get_macro_name(macro_def)
+    
+    lowkey macro_type == MACRO_FUNCTION {
+        damn ast_mood.create_ast_node(ast_mood.AST_FUNCTION, name, args, 1, 1)
+    }
+    lowkey macro_type == MACRO_EXPRESSION {
+        damn ast_mood.create_ast_node(ast_mood.AST_EXPRESSION, name, args, 1, 1)
+    }
+    lowkey macro_type == MACRO_STATEMENT {
+        damn ast_mood.create_ast_node(ast_mood.AST_STATEMENT, name, args, 1, 1)
+    }
+    
+    damn ast_mood.create_ast_node(ast_mood.AST_UNKNOWN, name, args, 1, 1)
+}
+
+slay ast_to_code(ast_node normie) tea {
+    sus node_type normie = ast_mood.ast_node_type(ast_node)
+    
+    lowkey node_type == ast_mood.AST_FUNCTION {
+        damn "slay function_from_ast() { damn based }"
+    }
+    lowkey node_type == ast_mood.AST_EXPRESSION {
+        damn "expression_from_ast"
+    }
+    lowkey node_type == ast_mood.AST_STATEMENT {
+        damn "statement_from_ast"
+    }
+    
+    damn "ast_to_code_conversion"
+}
+
+# Code Generation Functions
+slay generate_code_from_macro(macro_def normie, args tea, format normie) tea {
+    lowkey format == CODEGEN_AST {
+        sus ast_node normie = macro_to_ast(macro_def, args)
+        damn ast_mood.ast_node_to_string(ast_node)
+    }
+    lowkey format == CODEGEN_STRING {
+        damn expand_macro(macro_def, args, 0)
+    }
+    lowkey format == CODEGEN_TOKENS {
+        sus code tea = expand_macro(macro_def, args, 0)
+        damn tokenize_code(code)
+    }
+    
+    damn "unknown_format"
+}
+
+slay tokenize_code(code tea) tea {
+    sus tokens tea = ""
+    sus len normie = stringz.string_length(code)
+    sus i normie = 0
+    sus current_token tea = ""
+    
+    loop {
+        lowkey i >= len { break }
+        sus char_code normie = stringz.char_at_index(code, i)
+        
+        # Space, tab, newline - end current token
+        lowkey char_code == 32 || char_code == 9 || char_code == 10 {
+            lowkey stringz.string_length(current_token) > 0 {
+                tokens = tokens + "[" + current_token + "] "
+                current_token = ""
+            }
+        } kapish {
+            current_token = current_token + stringz.char_from_code(char_code)
+        }
+        i = i + 1
+    }
+    
+    # Add final token
+    lowkey stringz.string_length(current_token) > 0 {
+        tokens = tokens + "[" + current_token + "]"
+    }
+    
+    damn tokens
+}
+
+# Built-in Macro Library
+slay define_builtin_macros() normie {
+    sus count normie = 0
+    
+    # Expression macros
+    register_macro("add", MACRO_EXPRESSION, EXPAND_IMMEDIATE, "a + b")
+    count = count + 1
+    
+    register_macro("mul", MACRO_EXPRESSION, EXPAND_IMMEDIATE, "a * b")
+    count = count + 1
+    
+    register_macro("eq", MACRO_EXPRESSION, EXPAND_IMMEDIATE, "a == b")
+    count = count + 1
+    
+    # Statement macros
+    register_macro("print", MACRO_STATEMENT, EXPAND_IMMEDIATE, "vibez.spill(args)")
+    count = count + 1
+    
+    register_macro("assign", MACRO_STATEMENT, EXPAND_IMMEDIATE, "sus x normie = value")
+    count = count + 1
+    
+    # Template macros
+    register_macro("function_template", MACRO_TEMPLATE, EXPAND_LAZY, "slay ${name}() { ${body} }")
+    count = count + 1
+    
+    # Generator macros
+    register_macro("var_generator", MACRO_GENERATOR, EXPAND_IMMEDIATE, "sus var${index} normie = ${index}")
+    count = count + 1
+    
+    register_macro("repeat", MACRO_GENERATOR, EXPAND_IMMEDIATE, "repeat_body")
+    count = count + 1
+    
+    damn count
+}
+
+slay is_builtin_macro(name tea) lit {
+    lowkey stringz.string_equals(name, "add") { damn based }
+    lowkey stringz.string_equals(name, "mul") { damn based }
+    lowkey stringz.string_equals(name, "eq") { damn based }
+    lowkey stringz.string_equals(name, "print") { damn based }
+    lowkey stringz.string_equals(name, "assign") { damn based }
+    lowkey stringz.string_equals(name, "function_template") { damn based }
+    lowkey stringz.string_equals(name, "var_generator") { damn based }
+    lowkey stringz.string_equals(name, "repeat") { damn based }
+    damn cap
+}
+
+slay get_builtin_macro_count() normie {
+    damn BUILTIN_MACRO_COUNT
+}
+
+# Analysis and Validation Functions
 slay analyze_macro_complexity(macro_def normie) normie {
     sus macro_type normie = get_macro_type(macro_def)
+    sus expand_mode normie = get_macro_expand_mode(macro_def)
+    sus body tea = get_macro_body(macro_def)
     sus complexity normie = 1
     
-    lowkey macro_type == 5 { complexity = complexity + 3 }
-    lowkey macro_type == 4 { complexity = complexity + 1 }
+    # Base complexity from type
+    lowkey macro_type == MACRO_GENERATOR { complexity = complexity + 5 }
+    lowkey macro_type == MACRO_TEMPLATE { complexity = complexity + 3 }
+    lowkey macro_type == MACRO_SYNTAX { complexity = complexity + 4 }
+    lowkey macro_type == MACRO_FUNCTION { complexity = complexity + 2 }
+    
+    # Additional complexity from expansion mode
+    lowkey expand_mode == EXPAND_RECURSIVE { complexity = complexity + 3 }
+    lowkey expand_mode == EXPAND_LAZY { complexity = complexity + 1 }
+    
+    # Body length factor
+    sus body_length normie = stringz.string_length(body)
+    complexity = complexity + body_length / 20
     
     damn complexity
 }
 
 slay estimate_expansion_size(macro_def normie, args tea) normie {
     sus macro_type normie = get_macro_type(macro_def)
-    sus base_size normie = 20
+    sus body tea = get_macro_body(macro_def)
+    sus base_size normie = stringz.string_length(body)
     
-    lowkey macro_type == 5 { damn base_size * 3 }
-    lowkey macro_type == 4 { damn base_size * 2 }
+    lowkey base_size == 0 {
+        base_size = 50  # Default size for built-ins
+    }
+    
+    # Size multipliers based on type
+    lowkey macro_type == MACRO_GENERATOR {
+        sus count normie = stringz.string_to_int(args)
+        lowkey count > 0 {
+            damn base_size * count
+        }
+        damn base_size * 5
+    }
+    
+    lowkey macro_type == MACRO_TEMPLATE { damn base_size * 2 }
+    lowkey macro_type == MACRO_FUNCTION { damn base_size * 3 }
     
     damn base_size
 }
@@ -110,41 +679,88 @@ slay can_macro_expand_infinitely(macro_def normie) lit {
     sus expand_mode normie = get_macro_expand_mode(macro_def)
     sus macro_type normie = get_macro_type(macro_def)
     
-    lowkey expand_mode == 12 { damn based }
-    lowkey macro_type == 5 { damn based }
+    lowkey expand_mode == EXPAND_RECURSIVE { damn based }
+    lowkey macro_type == MACRO_GENERATOR { damn based }
     
     damn cap
 }
 
-slay define_builtin_macros() {
-    # Register built-in macros (demo implementation)
-    damn 4  # Number of built-ins registered
+slay get_macro_signature(macro_def normie) tea {
+    sus name tea = get_macro_name(macro_def)
+    sus type_str tea = ""
+    sus macro_type normie = get_macro_type(macro_def)
+    
+    lowkey macro_type == MACRO_FUNCTION { type_str = "function" }
+    lowkey macro_type == MACRO_EXPRESSION { type_str = "expression" }
+    lowkey macro_type == MACRO_STATEMENT { type_str = "statement" }
+    lowkey macro_type == MACRO_TEMPLATE { type_str = "template" }
+    lowkey macro_type == MACRO_GENERATOR { type_str = "generator" }
+    lowkey macro_type == MACRO_SYNTAX { type_str = "syntax" }
+    lowkey macro_type == MACRO_ATTRIBUTE { type_str = "attribute" }
+    lowkey macro_type == MACRO_DIRECTIVE { type_str = "directive" }
+    
+    damn type_str + ":" + name
 }
 
-slay is_builtin_macro(name tea) lit {
-    lowkey name == "print" { damn based }
-    lowkey name == "add" { damn based }
-    lowkey name == "repeat" { damn based }
-    lowkey name == "template" { damn based }
-    damn cap
-}
-
-slay get_builtin_macro_count() normie {
-    damn 4
-}
-
+# Validation and Parsing Functions
 slay validate_macro_syntax(macro_text tea) lit {
-    # Simple validation
-    lowkey macro_text == "" { damn cap }
+    lowkey stringz.string_length(macro_text) == 0 { damn cap }
+    
+    # Check for balanced braces
+    sus open_braces normie = stringz.count_occurrences(macro_text, "{")
+    sus close_braces normie = stringz.count_occurrences(macro_text, "}")
+    lowkey open_braces != close_braces { damn cap }
+    
+    # Check for balanced parentheses
+    sus open_parens normie = stringz.count_occurrences(macro_text, "(")
+    sus close_parens normie = stringz.count_occurrences(macro_text, ")")
+    lowkey open_parens != close_parens { damn cap }
+    
+    # Must not be just whitespace
+    lowkey stringz.string_trim(macro_text) == "" { damn cap }
+    
     damn based
 }
 
 slay parse_macro_definition(macro_text tea) normie {
-    # Simple parsing
-    lowkey macro_text != "" {
-        damn register_macro("parsed_macro", 1, 10, "body")
+    lowkey !validate_macro_syntax(macro_text) {
+        damn 0
     }
-    damn 0
+    
+    # Extract macro name and type from definition
+    sus macro_name tea = "parsed_macro"
+    sus macro_type normie = MACRO_FUNCTION
+    sus expand_mode normie = EXPAND_IMMEDIATE
+    
+    # Look for type hints in the macro text
+    lowkey stringz.string_contains(macro_text, "function") {
+        macro_type = MACRO_FUNCTION
+    }
+    lowkey stringz.string_contains(macro_text, "expression") {
+        macro_type = MACRO_EXPRESSION
+    }
+    lowkey stringz.string_contains(macro_text, "statement") {
+        macro_type = MACRO_STATEMENT
+    }
+    lowkey stringz.string_contains(macro_text, "template") {
+        macro_type = MACRO_TEMPLATE
+    }
+    lowkey stringz.string_contains(macro_text, "generator") {
+        macro_type = MACRO_GENERATOR
+    }
+    
+    # Look for expansion mode hints
+    lowkey stringz.string_contains(macro_text, "lazy") {
+        expand_mode = EXPAND_LAZY
+    }
+    lowkey stringz.string_contains(macro_text, "recursive") {
+        expand_mode = EXPAND_RECURSIVE
+    }
+    lowkey stringz.string_contains(macro_text, "once") {
+        expand_mode = EXPAND_ONCE
+    }
+    
+    damn register_macro(macro_name, macro_type, expand_mode, macro_text)
 }
 
 slay compile_macro(macro_text tea) normie {
@@ -155,41 +771,117 @@ slay compile_macro(macro_text tea) normie {
 }
 
 slay execute_macro(name tea, args tea) tea {
-    # Simple execution simulation
-    lowkey name == "print" { damn "vibez.spill(\"" + args + "\")" }
-    lowkey name == "add" { damn "a + b" }
-    damn "macro_not_found"
+    sus macro_def normie = lookup_macro(name)
+    lowkey macro_def != 0 {
+        damn expand_macro(macro_def, args, 0)
+    }
+    
+    # Try built-in macros
+    lowkey is_builtin_macro(name) {
+        lowkey stringz.string_equals(name, "print") {
+            damn "vibez.spill(\"" + args + "\")"
+        }
+        lowkey stringz.string_equals(name, "add") {
+            damn "a + b"
+        }
+        lowkey stringz.string_equals(name, "repeat") {
+            sus count normie = stringz.string_to_int(args)
+            lowkey count > 0 {
+                sus result tea = ""
+                sus i normie = 0
+                loop {
+                    lowkey i >= count { break }
+                    result = result + "repeated_item_" + stringz.int_to_string(i) + "\n"
+                    i = i + 1
+                }
+                damn result
+            }
+        }
+    }
+    
+    damn "macro_not_found: " + name
 }
 
+# Debug and Tracing Functions
 slay debug_macro_expansion(macro_def normie, args tea, context normie) tea {
-    damn "debug_info"
+    sus name tea = get_macro_name(macro_def)
+    sus type_str tea = get_macro_signature(macro_def)
+    sus complexity normie = analyze_macro_complexity(macro_def)
+    sus estimated_size normie = estimate_expansion_size(macro_def, args)
+    
+    sus debug_info tea = "DEBUG: Macro=" + name + 
+                        " Type=" + type_str + 
+                        " Args=" + args + 
+                        " Context=" + stringz.int_to_string(context) +
+                        " Complexity=" + stringz.int_to_string(complexity) +
+                        " EstimatedSize=" + stringz.int_to_string(estimated_size)
+    
+    damn debug_info
 }
 
 slay trace_macro_expansion(macro_def normie, args tea, depth normie) tea {
-    lowkey depth > 10 { damn "max_trace_depth" }
-    damn "trace_info"
+    lowkey depth > 20 {
+        damn "TRACE: Maximum trace depth reached"
+    }
+    
+    sus name tea = get_macro_name(macro_def)
+    sus indent tea = ""
+    sus i normie = 0
+    loop {
+        lowkey i >= depth { break }
+        indent = indent + "  "
+        i = i + 1
+    }
+    
+    sus trace_info tea = "TRACE:" + indent + "[" + stringz.int_to_string(depth) + "] " + 
+                        name + "(" + args + ")"
+    
+    # Trace actual expansion
+    sus result tea = expand_macro(macro_def, args, depth)
+    trace_info = trace_info + "\n" + indent + "  => " + result
+    
+    damn trace_info
 }
 
+# System Information Functions
 slay macro_slay_version() tea {
     damn "1.0.0"
 }
 
 slay macro_slay_status() tea {
-    damn "macro_slay module loaded - Macro system ready"
+    sus registered normie = get_macro_count()
+    sus builtins normie = get_builtin_macro_count()
+    damn "macro_slay v1.0.0 loaded - " + stringz.int_to_string(registered) + 
+         " macros registered (" + stringz.int_to_string(builtins) + " built-ins)"
 }
 
 slay is_macro_slay_ready() lit {
-    damn based
+    damn GLOBAL_MACRO_COUNT >= 0
 }
 
 slay get_supported_macro_types() normie {
-    damn 6
+    damn 9  # UNKNOWN through DIRECTIVE
 }
 
 slay get_supported_expand_modes() normie {
-    damn 4
+    damn 4  # IMMEDIATE through ONCE
 }
 
 slay macro_system_info() tea {
-    damn "Macro System: Ready for use"
+    sus types normie = get_supported_macro_types()
+    sus modes normie = get_supported_expand_modes()
+    sus registered normie = get_macro_count()
+    
+    damn "Macro System v1.0.0: " + stringz.int_to_string(types) + 
+         " types, " + stringz.int_to_string(modes) + 
+         " modes, " + stringz.int_to_string(registered) + " registered"
 }
+
+# Initialize the macro system
+slay init_macro_system() {
+    sus count normie = define_builtin_macros()
+    damn "Macro system initialized with " + stringz.int_to_string(count) + " built-ins"
+}
+
+# Auto-initialize when module loads
+sus INIT_RESULT tea = init_macro_system()

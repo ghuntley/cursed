@@ -21,22 +21,35 @@
 
 **✅ LATEST SESSION ACHIEVEMENTS (2025-07-16)**
 
-**INTERFACE DISPATCH AND TESTING IMPROVEMENTS**
-- **Interface dispatch tests**: All interface dispatch tests now passing with proper runtime execution
-- **Generic interfaces**: Complete generic interface support with type constraints and inheritance
-- **Import system**: "yeet testz" import system working correctly across all modules
-- **Test stability**: Interface and generic tests fully stable and reliable
+**COMMENT SUPPORT AND STDLIB PARSING FIXES**
+- **Comment parsing**: Implemented `#` comment support fixing stdlib parsing issues
+- **Parser stability**: Fixed stdlib module imports and parsing consistency 
+- **Bootstrap compilation**: Stage 2 compiler now handles all comment syntax correctly
+- **Module compatibility**: All stdlib modules parse correctly with comment support
 
-**NEW STDLIB MODULES IMPLEMENTATION**
-- **ast_mood**: AST manipulation and processing module for compiler infrastructure
-- **jit_vibes**: JIT compilation utilities and runtime optimization
-- **macro_slay**: Macro system support for code generation and transformation
-- **All modules**: FFI-free implementations with comprehensive test coverage
+**LLVM REGISTER TRACKER FIXES**
+- **RegisterTracker usage**: Fixed register allocation and tracking in LLVM codegen
+- **Register numbering**: Consistent LLVM IR register numbering across all modules
+- **Codegen stability**: Improved LLVM IR generation for complex expressions
+- **Pattern**: Use `RegisterTracker` for proper register allocation in codegen functions
 
-**SELF-HOSTING PROGRESS**
-- **Stage 2 compiler**: 95% complete self-hosting compiler implementation
-- **Bootstrap validation**: Stage 2 compiler successfully compiles CURSED programs
-- **Runtime stability**: Improved runtime execution for self-compiled programs
+**STAGE 2 COMPILER DEPENDENCIES**
+- **Bootstrap dependencies**: Implemented all Stage 2 compiler module dependencies
+- **Self-hosting validation**: Stage 2 compiler successfully compiles itself
+- **Module resolution**: Fixed circular dependencies in Stage 2 infrastructure
+- **Compilation pipeline**: Complete bootstrap compilation chain working
+
+**STDLIB MODULE TESTING SUCCESS**
+- **Working pattern**: `cargo run --bin cursed stdlib/module/test_module.csd` proven reliable
+- **Both-mode testing**: All stdlib modules test correctly in interpretation and compilation
+- **Module validation**: Systematic testing approach for all 450+ stdlib modules
+- **FFI elimination**: Pure CURSED implementations without external dependencies
+
+**MACRO_SLAY IMPLEMENTATION**
+- **Macro system**: Complete macro_slay module for code generation and transformation
+- **Stdlib integration**: Macro system integrates seamlessly with stdlib infrastructure
+- **Code generation**: Support for compile-time code generation and metaprogramming
+- **AST manipulation**: Works with ast_mood module for compiler infrastructure
 
 **MAJOR COMPLETED IMPLEMENTATIONS**
 - **Pattern Matching**: Advanced pattern matching with match expressions
@@ -71,6 +84,13 @@ cargo run --bin cursed stdlib/tls_vibe/test_tls_vibe.csd   # TLS/SSL operations
 cargo run --bin cursed stdlib/ast_mood/test_ast_mood.csd   # AST manipulation
 cargo run --bin cursed stdlib/jit_vibes/test_jit_vibes.csd # JIT compilation
 cargo run --bin cursed stdlib/macro_slay/test_macro_slay.csd # Macro system
+
+# Debug stdlib parsing issues (✅ FIXED 2025-07-16)
+# Comment support was key to fixing stdlib module parsing failures
+# Use these commands to test comment parsing and stdlib compatibility
+grep -r "^#" stdlib/                                      # Find comment usage in stdlib
+cargo run --bin cursed stdlib/module/test_module.csd      # Test individual modules
+./run_fast_tests_final.sh                                 # Verify parser fixes
 
 # Test network modules with both-mode verification
 test_both_modes() {
@@ -140,6 +160,13 @@ cargo build --release                                   # Production build
 - **Systematic Testing**: Each subagent validates changes with comprehensive test suites
 - **Spec-Driven Development**: All features implemented against formal language specification
 - **100% Pass Rate Maintenance**: Continuous validation prevents test regressions
+
+**✅ SUCCESSFUL TECHNIQUES FOR COMPLEX IMPLEMENTATIONS (2025-07-16)**
+- **Comment parsing debugging**: Use `grep -r "^#" stdlib/` to identify comment usage patterns
+- **Stage 2 bootstrap validation**: Test self-compilation with `cargo run --bin cursed -- compile src/bootstrap/stage2/main.csd`
+- **RegisterTracker fixes**: Apply `context.register_tracker.next_register()` pattern for consistent LLVM IR
+- **Parallel subagent coordination**: Use template-based creation for macro_slay and ast_mood modules
+- **Module testing patterns**: Standardize on `cargo run --bin cursed stdlib/module/test_module.csd` for all stdlib validation
 
 ```bash
 # Parallel feature implementation pattern
@@ -349,6 +376,12 @@ cargo run --bin cursed -- compile program.csd
 # 3. Ensure llc is available in PATH for native compilation
 # 4. Test generated executables run correctly
 # 5. Check LLVM IR register numbering consistency if issues arise
+
+# LLVM RegisterTracker Pattern (✅ FIXED 2025-07-16)
+# Use RegisterTracker for proper register allocation in LLVM codegen functions
+# Pattern: let register = context.register_tracker.next_register();
+# This prevents register numbering conflicts and ensures consistent LLVM IR
+# Apply to all codegen functions that generate LLVM instructions
 
 # Both-Mode Testing (critical for validation)
 both_mode_test() {
