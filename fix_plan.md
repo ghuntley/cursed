@@ -29,6 +29,7 @@ This document outlines the prioritized plan to achieve a fully self-hosting CURS
 
 ### P2 - Critical Runtime Support (HIGH)
 - [x] **Interface dispatch** - Complete vtable and method dispatch system
+- [x] **Interface runtime linking** - ✅ COMPLETED - Interface runtime functions are now properly linked during compilation
 - [x] **Panic/recover system** - ✅ COMPLETED - Implemented comprehensive panic/recover system with goroutine isolation, error propagation, and runtime recovery mechanisms. Enhanced error handling with yikes/shook/fam keywords.
 - [x] **Goroutine scheduler** - ✅ COMPLETED - Production-ready work-stealing scheduler with proper goroutine lifecycle management, runtime integration, and async coordination
 - [x] **Channel lifecycle** - ✅ COMPLETED - Comprehensive channel lifecycle management with proper creation/destruction, memory management, and GC integration
@@ -74,7 +75,11 @@ This document outlines the prioritized plan to achieve a fully self-hosting CURS
 - [x] **Generic interfaces** - ✅ COMPLETED - Support for generic interface definitions (full implementation)
 - [x] **Interface optimization** - ✅ COMPLETED - Inline interface method calls implemented
 
-### P0.2 - Self-Hosting Infrastructure ✅ COMPLETED
+### P0.2 - Remaining Runtime/Codegen Issues (ACTIVE)
+- [ ] **Tuple runtime/codegen** - NEEDS ATTENTION - Tuple operations need improved runtime support and LLVM codegen
+- [ ] **Parser warnings** - NEEDS ATTENTION - Address remaining parser warning messages for clean compilation
+
+### P0.3 - Self-Hosting Infrastructure ✅ COMPLETED
 - [x] **Stage 2 compiler stdlib dependencies** - ✅ COMPLETED - Stage 2 compiler stdlib dependencies complete (collections, string, io, ast_mood, token_vibe, compiler_core modules)
 - [x] **Stage 2 compiler final integration** - ✅ COMPLETED - Complete CURSED compiler that can compile itself successfully demonstrated
 - [x] **Bootstrap validation** - ✅ COMPLETED - Comprehensive validation framework with self-hosting verification
@@ -209,6 +214,7 @@ This document outlines the prioritized plan to achieve a fully self-hosting CURS
 - [x] No runtime dependencies on Rust
 - [x] Performance meets or exceeds current implementation
 - [x] Full language specification implemented
+- [x] **Native compilation works for simple cases** - ✅ SUCCESS - Interface runtime linking fixed, basic programs compile and run correctly
 
 ---
 
