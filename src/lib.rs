@@ -1245,6 +1245,11 @@ fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::e
                 tracing::warn!("CURSED runtime library not found, some functions may not be available");
             }
             
+            // Link with interface runtime libraries for dynamic dispatch
+            cmd.arg("runtime/libcursed_interface_runtime.a")
+               .arg("runtime/libcursed_type_assertion_runtime.a")
+               .arg("runtime/libcursed_minimal_shims.a");
+            
             cmd.arg("-lc")  // Link with C standard library
                .arg("-lm")  // Link with math library
                .arg("-lpthread") // Link with pthread for goroutines
