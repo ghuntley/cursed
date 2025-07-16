@@ -339,6 +339,17 @@ impl GenericConstraintChecker {
         }
     }
 
+    /// Check where clause constraint - public wrapper for interface validation
+    pub fn check_where_clause_public(
+        &mut self,
+        where_clause: &WhereClause,
+        _type_env: &TypeEnvironment,
+    ) -> Result<bool, CursedError> {
+        // Simplified public version
+        let result = self.check_constraints(&where_clause.type_expr, &where_clause.constraints)?;
+        Ok(result.is_satisfied)
+    }
+
     /// Check where clause constraint
     fn check_where_clause(
         &mut self,

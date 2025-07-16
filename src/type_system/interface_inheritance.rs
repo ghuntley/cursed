@@ -15,6 +15,7 @@ use crate::type_system::interface_compliance::{
     ReceiverType,
     GenericInterfaceDefinition
 };
+use crate::type_system::generic_interfaces::{GenericInterface};
 use crate::ast::InterfaceComposition;
 use std::collections::{HashMap, HashSet, BTreeMap};
 

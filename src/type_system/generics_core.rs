@@ -12,6 +12,7 @@ use crate::type_system::{TypeExpression, TypeEnvironment, GenericConstraint, Gen
 use std::collections::HashMap;
 
 /// Core monomorphization infrastructure
+#[derive(Debug)]
 pub struct GenericsCore {
     pub type_env: TypeEnvironment,
 }

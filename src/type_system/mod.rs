@@ -20,7 +20,7 @@ pub mod interface_compliance;
 pub mod interface_inheritance;
 pub mod generics_core;
 // pub mod advanced_constraints;
-// pub mod generic_interfaces;
+pub mod generic_interfaces;
 
 #[cfg(test)]
 mod tests;
@@ -868,11 +868,11 @@ pub use constraint_resolver::{
 // pub use crate::type_system::advanced_constraints::{
 //     AdvancedConstraint, AdvancedConstraintChecker, ConstraintDependencyGraph, ConstraintNode as AdvancedConstraintNode
 // };
-// pub use crate::type_system::generic_interfaces::{
-//     GenericInterface, GenericTypeParameter, AssociatedType, InterfaceMethod, 
-//     WhereClause, Variance, InterfaceImplementation, GenericInterfaceChecker,
-//     InterfaceHierarchy
-// };
+pub use crate::type_system::generic_interfaces::{
+    GenericInterface, GenericTypeParameter, AssociatedType, InterfaceMethod, 
+    Variance, InterfaceImplementation, GenericInterfaceChecker,
+    InterfaceHierarchy
+};
 pub use crate::type_system::higher_kinded_types::{
     Kind, TypeConstructor, KindedTypeParameter, HigherKindedConstraint,
     HigherKindedTypeSystem, TypeConstructorInstance
