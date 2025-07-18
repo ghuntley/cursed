@@ -83,6 +83,12 @@ declare i64 @time(i64*)
 declare i8* @cursed_propagate_with_context(i8*, i8*)
 @error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
 
+; Module Declarations from Imports
+; mod module declarations
+declare void @mod_init()
+declare void @mod_cleanup()
+
+
 ; Interface value creation runtime function
 declare i8* @cursed_create_interface_value(i8*, i8*, i8*)
 
@@ -136,25 +142,21 @@ entry:
 }
 
 
-; Function: main
-define void @main() {
-entry:
-  %0 = alloca i32, align 4
-  store i32 42, i32* %0, align 4
-  ; Variable value allocated at %0
-  %0 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  %0 = load i32, i32* %0, align 4
-  %1 = alloca { i32 }, align 8
-  %2 = getelementptr inbounds { i32 }, { i32 }* %1, i32 0, i32 0
-  store i32 %0, i32* %2, align 4
-
-; ERROR RECOVERY: Function 'main' compilation failed
-define void @main() {
-  ret void
-}
+; Main function entry point
 
 ; String constants
-@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
-
-; COMPILATION SUMMARY: 1 errors encountered, 0 statements recovered
-; WARNING: Error 1: Compiler error: Unsupported literal pattern type
+@.str.0 = private unnamed_addr constant [25 x i8] c"Basic functionality test\00", align 1
+@.str.1 = private unnamed_addr constant [6 x i8] c"hello\00", align 1
+define i32 @main() {
+entry:
+  %0 = getelementptr inbounds [25 x i8], [25 x i8]* @.str.0, i64 0, i64 0
+  %1 = call i32 @test_start(i32 %0)
+  %2 = call i32 @assert_true(i32 1)
+  %3 = call i32 @assert_false(i32 0)
+  %2 = call i32 @assert_eq_int(i32 42, i32 42)
+  %2 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.1, i64 0, i64 0
+  %2 = getelementptr inbounds [6 x i8], [6 x i8]* @.str.1, i64 0, i64 0
+  %3 = call i32 @assert_eq_string(i32 %2, i32 %2)
+  %4 = call i32 @print_test_summary()
+  ret i32 0
+}

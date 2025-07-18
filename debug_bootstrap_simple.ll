@@ -137,24 +137,35 @@ entry:
 
 
 ; Function: main
-define void @main() {
-entry:
-  %0 = alloca i32, align 4
-  store i32 42, i32* %0, align 4
-  ; Variable value allocated at %0
-  %0 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  %0 = load i32, i32* %0, align 4
-  %1 = alloca { i32 }, align 8
-  %2 = getelementptr inbounds { i32 }, { i32 }* %1, i32 0, i32 0
-  store i32 %0, i32* %2, align 4
-
-; ERROR RECOVERY: Function 'main' compilation failed
-define void @main() {
-  ret void
-}
 
 ; String constants
-@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
-
-; COMPILATION SUMMARY: 1 errors encountered, 0 statements recovered
-; WARNING: Error 1: Compiler error: Unsupported literal pattern type
+@.str.1 = private unnamed_addr constant [34 x i8] c"Bootstrap compilation successful!\00", align 1
+@.str.0 = private unnamed_addr constant [47 x i8] c"CURSED Stage 2 Compiler - Self-Hosting Edition\00", align 1
+@.str.2 = private unnamed_addr constant [30 x i8] c"Bootstrap compilation failed!\00", align 1
+define i32 @main() {
+entry:
+  %0 = getelementptr inbounds [47 x i8], [47 x i8]* @.str.0, i64 0, i64 0
+  %1 = call i32 @puts(i8* %0)
+  %2 = alloca i1, align 4
+  store i1 1, i1* %2, align 4
+  ; Variable test_result allocated at %2
+  ; DEBUG: generate_if_statement_with_init called
+  ; DEBUG: about to process condition
+  %2 = load i1, i1* %2, align 4
+  %3 = alloca { i32 }, align 8
+  %4 = getelementptr inbounds { i32 }, { i32 }* %3, i32 0, i32 0
+  store i32 %2, i32* %4, align 4
+  br i1 %3, label %label0, label %label1
+label0:
+  %4 = getelementptr inbounds [34 x i8], [34 x i8]* @.str.1, i64 0, i64 0
+  %5 = call i32 @puts(i8* %4)
+  ret i32 0
+  br label %label2
+label1:
+  %4 = getelementptr inbounds [30 x i8], [30 x i8]* @.str.2, i64 0, i64 0
+  %5 = call i32 @puts(i8* %4)
+  ret i32 1
+  br label %label2
+label2:
+  ret i32 0
+}

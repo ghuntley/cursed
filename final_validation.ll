@@ -136,25 +136,30 @@ entry:
 }
 
 
-; Function: main
-define void @main() {
-entry:
-  %0 = alloca i32, align 4
-  store i32 42, i32* %0, align 4
-  ; Variable value allocated at %0
-  %0 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  %0 = load i32, i32* %0, align 4
-  %1 = alloca { i32 }, align 8
-  %2 = getelementptr inbounds { i32 }, { i32 }* %1, i32 0, i32 0
-  store i32 %0, i32* %2, align 4
-
-; ERROR RECOVERY: Function 'main' compilation failed
-define void @main() {
-  ret void
-}
+; Main function entry point
 
 ; String constants
-@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
-
-; COMPILATION SUMMARY: 1 errors encountered, 0 statements recovered
-; WARNING: Error 1: Compiler error: Unsupported literal pattern type
+@.str.2 = private unnamed_addr constant [11 x i8] c"Compiler: \00", align 1
+@.str.1 = private unnamed_addr constant [8 x i8] c"v37.0.0\00", align 1
+@.str.0 = private unnamed_addr constant [7 x i8] c"CURSED\00", align 1
+@.str.3 = private unnamed_addr constant [2 x i8] c" \00", align 1
+define i32 @main() {
+entry:
+  %0 = getelementptr inbounds [7 x i8], [7 x i8]* @.str.0, i64 0, i64 0
+  %1 = alloca i8*, align 4
+  store i8* %0, i8** %1, align 4
+  ; Variable name allocated at %1
+  %1 = getelementptr inbounds [8 x i8], [8 x i8]* @.str.1, i64 0, i64 0
+  %2 = alloca i8*, align 4
+  store i8* %1, i8** %2, align 4
+  ; Variable version allocated at %2
+  %2 = getelementptr inbounds [11 x i8], [11 x i8]* @.str.2, i64 0, i64 0
+  %3 = load i8*, i8** %1, align 8
+  %4 = add i32 %2, %3
+  %5 = getelementptr inbounds [2 x i8], [2 x i8]* @.str.3, i64 0, i64 0
+  %6 = add i32 %4, %5
+  %7 = load i8*, i8** %2, align 8
+  %8 = add i32 %6, %7
+  %9 = call i32 @puts(i8* %8)
+  ret i32 0
+}

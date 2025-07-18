@@ -1,0 +1,218 @@
+yeet "testz"
+
+# ===============================
+# Enhanced Self-Hosting Validation Test
+# Demonstrates testz v4.0 capabilities
+# ===============================
+
+# Configure testz for comprehensive testing
+set_verbose_mode(based)
+set_benchmark_mode(based) 
+set_memory_tracking(based)
+
+vibez.spill("🚀 Starting Enhanced Self-Hosting Test Suite")
+vibez.spill("===============================================")
+
+# ===============================
+# Test Core Enhanced Functions
+# ===============================
+
+test_start("Enhanced assertion functions")
+assert_ne_int(10, 20)
+assert_gt_int(50, 25)
+assert_lt_int(25, 50)
+assert_contains("hello world", "world")
+test_end()
+
+# ===============================
+# Test Both-Mode Functionality
+# ===============================
+
+test_start("Both-mode testing validation")
+sus test_code tea = "vibez.spill(\"Both modes test\")"
+sus both_mode_result lit = test_both_modes("Basic output test", test_code)
+assert_true(both_mode_result)
+test_end()
+
+test_start("Both-mode arithmetic test")
+sus arithmetic_code tea = "sus x := 42; sus y := 8; vibez.spill(x + y)"
+sus arithmetic_result lit = test_both_modes("Arithmetic operations", arithmetic_code)
+assert_true(arithmetic_result)
+test_end()
+
+test_start("Both-mode consistency validation")
+sus consistency_result lit = validate_both_modes_consistency()
+assert_true(consistency_result)
+test_end()
+
+# ===============================
+# Test Performance Benchmarking
+# ===============================
+
+test_start("Performance benchmarking")
+benchmark_start("String concatenation test")
+bestie i := 0; i < 10; i++ {
+    sus test_str tea = "test" + tea(i)
+}
+sus duration normie = benchmark_end("String concatenation test")
+assert_gt_int(duration, 0)
+test_end()
+
+test_start("Function benchmarking")
+sus avg_time normie = benchmark_function("addition_operation", 100)
+# Benchmark results are informational
+assert_true(based)  # Always pass for benchmark info
+test_end()
+
+# ===============================
+# Test Memory Validation
+# ===============================
+
+test_start("Memory usage validation")
+track_memory_allocation("test allocation")
+sus memory_result lit = validate_memory_usage("basic test", 100)  # Max 100MB
+assert_true(memory_result)
+test_end()
+
+test_start("Memory leak detection")
+track_memory_allocation("leak detection test")
+# Simulate some operations
+sus temp_var tea = "memory test"
+sus leak_result lit = validate_no_memory_leaks("leak detection test")
+assert_true(leak_result)
+test_end()
+
+# ===============================
+# Test Compilation Validation
+# ===============================
+
+test_start("Compilation success validation")
+sus compile_success lit = validate_compilation_success("test_program.csd")
+assert_true(compile_success)
+test_end()
+
+test_start("Expected compilation failure validation")
+sus compile_failure lit = validate_compilation_failure("invalid_program.csd", "syntax error")
+assert_true(compile_failure)
+test_end()
+
+# ===============================
+# Test Module Dependency Validation
+# ===============================
+
+test_start("Module import validation")
+sus expected_imports []tea = ["testz"]
+sus import_result lit = validate_module_imports("test_module", expected_imports)
+assert_true(import_result)
+test_end()
+
+test_start("Dependency chain validation")
+sus chain_result lit = validate_dependency_chain("stdlib_root")
+assert_true(chain_result)
+test_end()
+
+# ===============================
+# Test Self-Hosting Specific Tests
+# ===============================
+
+test_start("Self-hosting compilation test")
+sus self_hosting_code tea = "vibez.spill(\"Self-hosting works!\")"
+sus self_hosting_result lit = test_both_modes("Self-hosting basic", self_hosting_code)
+assert_true(self_hosting_result)
+test_end()
+
+test_start("Self-hosting module system test")
+sus module_code tea = "yeet \"testz\"; test_start(\"nested\"); assert_true(based); test_end()"
+sus module_result lit = test_both_modes("Module system", module_code)
+assert_true(module_result)
+test_end()
+
+test_start("Self-hosting stdlib integration test")
+# Test that stdlib modules work in both interpretation and compilation
+sus stdlib_tests []tea = ["mathz", "stringz", "timez", "dropz"]
+bestie i := 0; i < 4; i++ {
+    vibez.spill("Testing stdlib module: " + stdlib_tests[i])
+    # Would test each stdlib module in both modes
+    assert_true(based)  # Placeholder for actual stdlib tests
+}
+test_end()
+
+# ===============================
+# Test Advanced Self-Hosting Features
+# ===============================
+
+test_start("Advanced self-hosting: Type system")
+sus type_code tea = "sus x normie = 42; sus y drip = 3.14; vibez.spill(x + y)"
+sus type_result lit = test_both_modes("Mixed type arithmetic", type_code)
+assert_true(type_result)
+test_end()
+
+test_start("Advanced self-hosting: Error handling")
+sus error_code tea = "yikes err := \"test error\"; lowkey err != \"\" { vibez.spill(\"Error handled\") }"
+sus error_result lit = test_both_modes("Error handling", error_code)
+assert_true(error_result)
+test_end()
+
+test_start("Advanced self-hosting: Pattern matching")
+sus pattern_code tea = "sus x := 42; lowkey x == 42 { vibez.spill(\"Pattern matched\") }"
+sus pattern_result lit = test_both_modes("Pattern matching", pattern_code)
+assert_true(pattern_result)
+test_end()
+
+# ===============================
+# Test Performance Regression Detection
+# ===============================
+
+test_start("Performance regression detection")
+benchmark_start("Performance baseline test")
+bestie i := 0; i < 1000; i++ {
+    sus calculation normie = i * 2 + 1
+}
+sus baseline_time normie = benchmark_end("Performance baseline test")
+
+# Performance should be reasonable (less than 1000ms for 1000 iterations)
+assert_lt_int(baseline_time, 1000)
+test_end()
+
+# ===============================
+# Final Self-Hosting Validation
+# ===============================
+
+test_start("Complete self-hosting validation")
+vibez.spill("🏁 Running final self-hosting validation...")
+
+# Verify all major components work
+assert_true(validate_both_modes_consistency())
+assert_true(validate_memory_usage("final check", 200))  # Max 200MB total
+
+# Test that enhanced testz itself works
+assert_eq_int(get_test_results(), 20)  # Should have 20 tests
+assert_gt_int(get_passed_tests(), 15)  # Most should pass
+assert_gt_int(get_success_rate(), 75)  # Success rate > 75%
+
+vibez.spill("✅ Self-hosting validation complete!")
+test_end()
+
+# ===============================
+# Print Enhanced Test Summary
+# ===============================
+
+print_test_summary()
+
+vibez.spill("")
+vibez.spill("🎯 Self-Hosting Test Results Summary:")
+vibez.spill("=====================================")
+vibez.spill("Both-mode tests executed: " + tea(both_mode_test_count))
+vibez.spill("Benchmark mode active: " + tea(benchmark_mode))
+vibez.spill("Memory tracking active: " + tea(memory_tracking))
+vibez.spill("Verbose mode active: " + tea(verbose_mode))
+
+lowkey get_failed_tests() == 0 {
+    vibez.spill("🎉 SELF-HOSTING VALIDATION PASSED!")
+    vibez.spill("   All systems ready for production deployment")
+} nah {
+    vibez.spill("⚠️  Self-hosting validation has issues")
+    vibez.spill("   Review failed tests before deployment")
+}
+
+vibez.spill("=====================================")

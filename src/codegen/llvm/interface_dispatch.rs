@@ -499,8 +499,7 @@ entry:
     %method_ptr = load {}*, {}** %method_ptr_ptr
     
     ; Call method with data pointer and arguments
-    {} call {} %method_ptr(i8* %data_ptr{})
-}}
+    %result = call {} %method_ptr(i8* %data_ptr{})
 
 "#,
             interface_name, method.name,
@@ -509,7 +508,6 @@ entry:
             interface_name, interface_name, method.index,
             self.get_llvm_function_type(&method.parameters, &method.return_type),
             self.get_llvm_function_type(&method.parameters, &method.return_type),
-            if return_type == "void" { "" } else { "%result = " },
             self.get_llvm_function_type(&method.parameters, &method.return_type),
             method_args
         ));

@@ -139,14 +139,14 @@ entry:
 ; Function: main
 
 ; String constants
+@.str.0 = private unnamed_addr constant [47 x i8] c"CURSED Stage 2 Compiler - Self-Hosting Edition\00", align 1
 @.str.3 = private unnamed_addr constant [32 x i8] c"Running compilation pipeline...\00", align 1
 @.str.4 = private unnamed_addr constant [17 x i8] c"Tokenization: OK\00", align 1
+@.str.7 = private unnamed_addr constant [20 x i8] c"Code generation: OK\00", align 1
+@.str.1 = private unnamed_addr constant [34 x i8] c"Bootstrap compilation successful!\00", align 1
 @.str.2 = private unnamed_addr constant [30 x i8] c"Bootstrap compilation failed!\00", align 1
 @.str.5 = private unnamed_addr constant [12 x i8] c"Parsing: OK\00", align 1
-@.str.1 = private unnamed_addr constant [34 x i8] c"Bootstrap compilation successful!\00", align 1
-@.str.0 = private unnamed_addr constant [47 x i8] c"CURSED Stage 2 Compiler - Self-Hosting Edition\00", align 1
 @.str.6 = private unnamed_addr constant [18 x i8] c"Type checking: OK\00", align 1
-@.str.7 = private unnamed_addr constant [20 x i8] c"Code generation: OK\00", align 1
 define i32 @main() {
 entry:
   %0 = getelementptr inbounds [47 x i8], [47 x i8]* @.str.0, i64 0, i64 0
@@ -157,19 +157,19 @@ entry:
   ; Variable test_result allocated at %3
   ; DEBUG: generate_if_statement_with_init called
   ; DEBUG: about to process condition
-  %3 = load i1, i1* %3, align 4
-  %4 = alloca { i32 }, align 8
-  %5 = getelementptr inbounds { i32 }, { i32 }* %4, i32 0, i32 0
-  store i32 %3, i32* %5, align 4
-  br i1 %4, label %label0, label %label1
+  %4 = load i1, i1* %3, align 4
+  %5 = alloca { i32 }, align 8
+  %6 = getelementptr inbounds { i32 }, { i32 }* %5, i32 0, i32 0
+  store i32 %4, i32* %6, align 4
+  br i1 %5, label %label0, label %label1
 label0:
-  %5 = getelementptr inbounds [34 x i8], [34 x i8]* @.str.1, i64 0, i64 0
-  %6 = call i32 @puts(i8* %5)
+  %7 = getelementptr inbounds [34 x i8], [34 x i8]* @.str.1, i64 0, i64 0
+  %8 = call i32 @puts(i8* %7)
   ret i32 0
   br label %label2
 label1:
-  %5 = getelementptr inbounds [30 x i8], [30 x i8]* @.str.2, i64 0, i64 0
-  %6 = call i32 @puts(i8* %5)
+  %9 = getelementptr inbounds [30 x i8], [30 x i8]* @.str.2, i64 0, i64 0
+  %10 = call i32 @puts(i8* %9)
   ret i32 1
   br label %label2
 label2:
@@ -181,13 +181,13 @@ define i1 @compile_simple() {
 entry:
   %0 = getelementptr inbounds [32 x i8], [32 x i8]* @.str.3, i64 0, i64 0
   %1 = call i32 @puts(i8* %0)
-  %1 = getelementptr inbounds [17 x i8], [17 x i8]* @.str.4, i64 0, i64 0
-  %2 = call i32 @puts(i8* %1)
-  %2 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.5, i64 0, i64 0
+  %2 = getelementptr inbounds [17 x i8], [17 x i8]* @.str.4, i64 0, i64 0
   %3 = call i32 @puts(i8* %2)
-  %3 = getelementptr inbounds [18 x i8], [18 x i8]* @.str.6, i64 0, i64 0
-  %4 = call i32 @puts(i8* %3)
-  %4 = getelementptr inbounds [20 x i8], [20 x i8]* @.str.7, i64 0, i64 0
+  %4 = getelementptr inbounds [12 x i8], [12 x i8]* @.str.5, i64 0, i64 0
   %5 = call i32 @puts(i8* %4)
+  %6 = getelementptr inbounds [18 x i8], [18 x i8]* @.str.6, i64 0, i64 0
+  %7 = call i32 @puts(i8* %6)
+  %8 = getelementptr inbounds [20 x i8], [20 x i8]* @.str.7, i64 0, i64 0
+  %9 = call i32 @puts(i8* %8)
   ret i1 1
 }
