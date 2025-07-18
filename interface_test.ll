@@ -149,8 +149,7 @@ entry:
     %method_ptr = load i32 ()**, i32 ()*** %method_ptr_ptr
     
     ; Call method with data pointer and arguments
-    %result =  call i32 ()* %method_ptr(i8* %data_ptr)
-}
+    %result = call i32 ()* %method_ptr(i8* %data_ptr)
 
     ret i32 %result
 }
@@ -188,12 +187,14 @@ entry:
 
 
 ; Function: main
-
-; String constants
-@.str.0 = private unnamed_addr constant [15 x i8] c"Interface test\00", align 1
-define i32 @main() {
+define void @main() {
 entry:
   %0 = getelementptr inbounds [15 x i8], [15 x i8]* @.str.0, i64 0, i64 0
   %1 = call i32 @puts(i8* %0)
+  %1 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.1, i64 0, i64 0
   ret i32 0
 }
+
+; String constants
+@.str.1 = private unnamed_addr constant [1 x i8] c"\00", align 1
+@.str.0 = private unnamed_addr constant [15 x i8] c"Interface test\00", align 1

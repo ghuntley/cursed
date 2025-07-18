@@ -904,7 +904,8 @@ impl ExpressionCompiler {
                     let arg_reg = self.compile_expression(arg)?;
                     match arg {
                         Expression::String(_) => {
-                            self.ir_buffer.push_str(&format!("  call i32 @puts(i8* {})\n", arg_reg));
+                            let puts_reg = self.next_register();
+                            self.ir_buffer.push_str(&format!("  {} = call i32 @puts(i8* {})\n", puts_reg, arg_reg));
                         },
                         Expression::Float(_) => {
                             let format_str = self.string_manager.add_string_constant("%f\\n");
@@ -920,6 +921,21 @@ impl ExpressionCompiler {
                             let conv_reg = self.next_register();
                             self.ir_buffer.push_str(&format!("  {} = zext i1 {} to i32\n", conv_reg, arg_reg));
                             self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_reg, conv_reg));
+                        },
+                        Expression::Identifier(var_name) => {
+                            // Check the variable's actual type
+                            let var_type = self.get_variable_llvm_type(var_name);
+                            if var_type == "i8*" {
+                                // It's a string variable - use puts
+                                let puts_reg = self.next_register();
+                                self.ir_buffer.push_str(&format!("  {} = call i32 @puts(i8* {})\n", puts_reg, arg_reg));
+                            } else {
+                                // It's a numeric variable - use printf with %d
+                                let format_str = self.string_manager.add_string_constant("%d\\n");
+                                let format_reg = self.next_register();
+                                self.ir_buffer.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                                self.ir_buffer.push_str(&format!("  call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", format_reg, arg_reg));
+                            }
                         },
                         _ => {
                             let format_str = self.string_manager.add_string_constant("%d\\n");

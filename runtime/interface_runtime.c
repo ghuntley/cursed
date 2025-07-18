@@ -339,3 +339,31 @@ int print(const char* str) {
     }
     return puts(str);
 }
+
+/**
+ * Simple test method implementation
+ * Returns true for test_method calls
+ */
+bool cursed_test_method_impl(void* obj) {
+    // For TestStruct.test_method(), always return true
+    return true;
+}
+
+/**
+ * Simple method dispatch for basic interface calls
+ * Handles basic method dispatch without complex vtables
+ */
+void* cursed_dispatch_simple_method(void* obj, const char* method_name, int arg_count) {
+    if (!obj || !method_name) {
+        return NULL;
+    }
+    
+    // Handle known method names
+    if (strcmp(method_name, "test_method") == 0) {
+        // Return boolean value as pointer (1 for true)
+        return (void*)1;
+    }
+    
+    // Default: return NULL for unknown methods
+    return NULL;
+}

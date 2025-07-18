@@ -142,19 +142,14 @@ entry:
   %0 = alloca i32, align 4
   store i32 42, i32* %0, align 4
   ; Variable value allocated at %0
-  %0 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  %0 = load i32, i32* %0, align 4
-  %1 = alloca { i32 }, align 8
-  %2 = getelementptr inbounds { i32 }, { i32 }* %1, i32 0, i32 0
-  store i32 %0, i32* %2, align 4
-
-; ERROR RECOVERY: Function 'main' compilation failed
-define void @main() {
-  ret void
+  %0 = getelementptr inbounds [25 x i8], [25 x i8]* @.str.0, i64 0, i64 0
+  %1 = call i32 @puts(i8* %0)
+  %2 = load i32, i32* %0, align 4
+  %3 = getelementptr inbounds [4 x i8], [4 x i8]* @.str.1, i64 0, i64 0
+  %4 = call i32 (i8*, ...) @printf(i8* %3, i32 %2)
+  ret i32 0
 }
 
 ; String constants
-@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
-
-; COMPILATION SUMMARY: 1 errors encountered, 0 statements recovered
-; WARNING: Error 1: Compiler error: Unsupported literal pattern type
+@.str.1 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
+@.str.0 = private unnamed_addr constant [25 x i8] c"Pattern test with value:\00", align 1

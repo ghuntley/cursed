@@ -1,19 +1,23 @@
 yeet "testz"
 
-# Test the enhanced testz module itself
-testz.set_verbose_mode(based)
-testz.set_test_suite("Enhanced Testz Framework Tests")
+# Test the enhanced testz module itself (testz v4.0)
+set_verbose_mode(based)
+set_benchmark_mode(based)
+set_memory_tracking(based)
+
+vibez.spill("🧪 Testing Enhanced Testz Framework v4.0")
+vibez.spill("===========================================")
 
 # ===============================
 # Test Core Functionality
 # ===============================
 
-testz.test_start("Basic test functionality")
-testz.assert_true(based)
-testz.assert_false(cap)
-testz.assert_eq_int(42, 42)
-testz.assert_eq_string("hello", "hello")
-testz.test_end()
+test_start("Basic test functionality")
+assert_true(based)
+assert_false(cap)
+assert_eq_int(42, 42)
+assert_eq_string("hello", "hello")
+test_end()
 
 testz.test_start("Enhanced assertions")
 testz.assert_ne_int(10, 20)

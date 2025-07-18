@@ -136,25 +136,27 @@ entry:
 }
 
 
-; Function: main
-define void @main() {
-entry:
-  %0 = alloca i32, align 4
-  store i32 42, i32* %0, align 4
-  ; Variable value allocated at %0
-  %0 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.0, i64 0, i64 0
-  %0 = load i32, i32* %0, align 4
-  %1 = alloca { i32 }, align 8
-  %2 = getelementptr inbounds { i32 }, { i32 }* %1, i32 0, i32 0
-  store i32 %0, i32* %2, align 4
-
-; ERROR RECOVERY: Function 'main' compilation failed
-define void @main() {
-  ret void
-}
+; Main function entry point
 
 ; String constants
-@.str.0 = private unnamed_addr constant [1 x i8] c"\00", align 1
-
-; COMPILATION SUMMARY: 1 errors encountered, 0 statements recovered
-; WARNING: Error 1: Compiler error: Unsupported literal pattern type
+@.str.0 = private unnamed_addr constant [14 x i8] c"Direct string\00", align 1
+@.str.1 = private unnamed_addr constant [16 x i8] c"Variable string\00", align 1
+@.str.2 = private unnamed_addr constant [17 x i8] c"Another variable\00", align 1
+define i32 @main() {
+entry:
+  %0 = getelementptr inbounds [14 x i8], [14 x i8]* @.str.0, i64 0, i64 0
+  %1 = call i32 @puts(i8* %0)
+  %1 = getelementptr inbounds [16 x i8], [16 x i8]* @.str.1, i64 0, i64 0
+  %2 = alloca i8*, align 4
+  store i8* %1, i8** %2, align 4
+  ; Variable msg allocated at %2
+  %3 = load i8*, i8** %2, align 4
+  %4 = call i32 @puts(i8* %3)
+  %4 = getelementptr inbounds [17 x i8], [17 x i8]* @.str.2, i64 0, i64 0
+  %5 = alloca i8*, align 4
+  store i8* %4, i8** %5, align 4
+  ; Variable another allocated at %5
+  %6 = load i8*, i8** %5, align 4
+  %7 = call i32 @puts(i8* %6)
+  ret i32 0
+}

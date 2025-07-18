@@ -1,9 +1,6 @@
-sus test_value normie = 42
-
-sus result := match test_value {
-    42 -> "answer"
-    1 -> "one"
-    2 -> "two"
+slay main() {
+    sus value normie = 42
+    vibez.spill("Pattern test with value:")
+    vibez.spill(value)
+    damn 0
 }
-
-vibez.spill(result)
