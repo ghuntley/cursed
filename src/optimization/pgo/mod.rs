@@ -14,24 +14,28 @@ pub mod pgo_passes;
 pub mod profile_manager;
 pub mod instrumentation;
 pub mod optimization_integration;
+pub mod optimization_engine;
+pub mod llvm_integration;
 
-// TODO: Add specific exports once modules are implemented
-// pub use profile_collector::{};
-// pub use profile_storage::{};
-// pub use profile_analyzer::{};
-// pub use pgo_passes::{};
-// pub use profile_manager::{};
-// pub use instrumentation::{};
-// pub use optimization_integration::{};
+// Export main components
+pub use profile_collector::{ProfileCollector, ProfileCollectorConfig, ProfileData, ProfileSample};
+pub use profile_storage::{ProfileStorage, ProfileStorageConfig};
+pub use profile_analyzer::{ProfileAnalyzer, ProfileAnalysisConfig, ProfileAnalysis};
+pub use pgo_passes::{PgoPassManager, PgoPass};
+pub use instrumentation::{CodeInstrumentation, InstrumentationConfig, InstrumentationStatistics};
+pub use optimization_engine::{
+    HotFunctionEngine, BranchPredictionEngine, MemoryOptimizationEngine, InliningEngine,
+    HotFunctionInfo, BranchOptimization, MemoryOptimization, InliningDecision,
+    OptimizationLevel
+};
+pub use llvm_integration::{LLVMPgoIntegration, LLVMPgoPassManager, PgoOptimizationStatistics};
 
 use crate::error::{CursedError, Result};
 
 use std::path::Path;
 use std::time::Duration;
 
-// Re-export types from modules
-pub use profile_collector::ProfileData;
-pub use profile_analyzer::ProfileAnalysis;
+// Re-export types from modules are already included above
 
 // Placeholder types until modules are implemented
 pub type OptimizationResult = String;

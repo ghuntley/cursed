@@ -1,1 +1,1 @@
-vibez.spill("Hello compilation test")
+slay test_func() { vibez.spill("test") }

@@ -1,17 +1,10 @@
-# oglogging Module
+# CURSED Standard Library: `oglogging` Package
 
-Enterprise-grade logging facility for CURSED applications with timestamps, prefixes, and configurable formatting options. Inspired by Go's `log` package but enhanced for modern development needs.
+The `oglogging` package provides an advanced logging facility for CURSED applications with support for multiple log levels and structured output.
 
-## Features
+## Overview
 
-- **Standard Logger**: Pre-configured logger for immediate use
-- **Custom Loggers**: Create loggers with specific outputs, prefixes, and flags
-- **Flexible Formatting**: Configurable timestamp, file info, and prefix formats
-- **Structured Logging**: Log with structured fields and different levels
-- **Log Rotation**: Automatic log file rotation based on size limits
-- **Multi-Writer Support**: Log to multiple destinations simultaneously
-- **Performance Monitoring**: Built-in performance logging and metrics
-- **Thread Safety**: Safe for concurrent use across goroutines
+The `oglogging` package implements a powerful logging system that provides both simple logging for basic use cases and advanced features for production applications. It offers multiple log levels, constants for log level management, and clean, formatted output.
 
 ## Quick Start
 
@@ -20,155 +13,248 @@ yeet "oglogging"
 
 slay main() {
     # Basic logging
-    oglogging.spill("Hello, world!")
-    oglogging.spillf("User %s logged in", "alice")
+    Spill("Application started")
     
-    # Set custom prefix
-    oglogging.setPrefix("APP: ")
-    oglogging.spill("Application started")
-    
-    # Configure output format
-    oglogging.setFlags(oglogging.Ldate | oglogging.Ltime | oglogging.Lshortfile)
-    oglogging.spill("Formatted log message")
+    # Level-based logging
+    Debug("Debug information")
+    Info("General information")
+    Warn("Warning message")
+    Error("Error occurred")
+    Fatal("Critical failure")
 }
 ```
 
-## Logger Configuration
+## Features
 
-### Output Flags
+### ✅ Multiple Log Levels
+- **DEBUG**: Detailed diagnostic information
+- **INFO**: General information messages
+- **WARN**: Warning messages for potentially harmful situations
+- **ERROR**: Error messages for serious problems
+- **FATAL**: Critical errors (note: does not terminate program in this implementation)
 
-- `Ldate`: Include date (2025/04/13)
-- `Ltime`: Include time (15:04:05)
-- `Lmicroseconds`: Include microseconds (15:04:05.123456)
-- `Llongfile`: Include full file path and line
-- `Lshortfile`: Include just filename and line
-- `LUTC`: Use UTC time instead of local time
-- `Lmsgprefix`: Move prefix before message instead of line start
-- `LstdFlags`: Default flags (Ldate | Ltime)
+### ✅ Clean Output Formatting
+- **Prefixed output**: Each log level has its own prefix
+- **Consistent formatting**: All messages follow the same format
+- **Unicode support**: Full support for international characters and emojis
 
-### Custom Logger
+### ✅ Constants and Configuration
+- **Log level constants**: DEBUG=0, INFO=1, WARN=2, ERROR=3, FATAL=4
+- **Easy integration**: Simple function calls for all log levels
+- **Thread safe**: Safe for use in concurrent CURSED programs
 
-```cursed
-yeet "oglogging"
-yeet "dropz"
+## Basic Usage
 
-slay main() {
-    # Create custom logger
-    sus file, err := dropz.Create("app.log")
-    if err != "" {
-        shook("Failed to create log file")
-    }
-    defer file.Close()
-    
-    sus logger := oglogging.new(file, "DEBUG: ", oglogging.LstdFlags)
-    
-    logger.spill("Custom log message")
-    logger.spillf("User %s performed action %s", "bob", "login")
-}
-```
-
-## Structured Logging
+### Simple Logging
 
 ```cursed
 yeet "oglogging"
 
 slay main() {
-    sus logger := oglogging.new(dropz.stdout, "", oglogging.LstdFlags)
-    sus structured := oglogging.NewStructuredLogger(logger)
+    # Basic message logging
+    Spill("This is a basic log message")
     
-    # Set log level
-    structured.SetLevel(oglogging.INFO)
-    
-    # Log with different levels
-    structured.Debug("This won't appear")
-    structured.Info("Application started")
-    structured.Warn("Configuration file not found, using defaults")
-    structured.Error("Database connection failed")
-    
-    # Log with fields
-    sus userLogger := structured.WithField("user", "alice").WithField("session", "abc123")
-    userLogger.Info("User logged in successfully")
-    
-    # Log with multiple fields
-    sus fields := make(map[tea]interface{})
-    fields["action"] = "purchase"
-    fields["amount"] = "99.99"
-    fields["currency"] = "USD"
-    
-    structured.WithFields(fields).Info("Transaction completed")
+    # Level-specific logging
+    Debug("Debugging application flow")
+    Info("User logged in successfully")
+    Warn("Configuration file not found, using defaults")
+    Error("Database connection failed")
+    Fatal("Unable to start critical service")
 }
 ```
 
-## Log Rotation
+Output:
+```
+LOG: This is a basic log message
+[DEBUG] Debugging application flow
+[INFO] User logged in successfully
+[WARN] Configuration file not found, using defaults
+[ERROR] Database connection failed
+[FATAL] Unable to start critical service
+```
+
+### Using Log Level Constants
 
 ```cursed
 yeet "oglogging"
 
 slay main() {
-    # Create rotating logger (max 10MB per file, keep 5 files)
-    sus rotatingLogger := oglogging.NewRotatingLogger("app.log", 10485760, 5)
+    # Access log level constants
+    vibez.spill("DEBUG level: " + DEBUG)    # Outputs: DEBUG level: 0
+    vibez.spill("INFO level: " + INFO)      # Outputs: INFO level: 1
+    vibez.spill("WARN level: " + WARN)      # Outputs: WARN level: 2
+    vibez.spill("ERROR level: " + ERROR)    # Outputs: ERROR level: 3
+    vibez.spill("FATAL level: " + FATAL)    # Outputs: FATAL level: 4
     
-    # Log messages that will automatically rotate when size limit is reached
-    for i := 0; i < 1000; i++ {
-        rotatingLogger.Log("This is log message number " + intToString(i))
+    # Use constants for conditional logging
+    sus currentLevel := INFO
+    lowkey currentLevel <= DEBUG {
+        Debug("This debug message will be shown")
     }
 }
 ```
 
-## Multi-Writer Logging
+## API Reference
+
+### Logging Functions
+
+- `Spill(message tea)` - Basic logging with "LOG:" prefix
+- `Debug(message tea)` - Debug level logging with "[DEBUG]" prefix
+- `Info(message tea)` - Info level logging with "[INFO]" prefix
+- `Warn(message tea)` - Warning level logging with "[WARN]" prefix
+- `Error(message tea)` - Error level logging with "[ERROR]" prefix
+- `Fatal(message tea)` - Fatal level logging with "[FATAL]" prefix
+
+### Log Level Constants
+
+- `DEBUG normie = 0` - Debug level constant
+- `INFO normie = 1` - Info level constant
+- `WARN normie = 2` - Warning level constant
+- `ERROR normie = 3` - Error level constant
+- `FATAL normie = 4` - Fatal level constant
+
+## Examples
+
+### Application Startup Logging
 
 ```cursed
 yeet "oglogging"
-yeet "dropz"
 
-slay main() {
-    # Log to both console and file
-    sus file, _ := dropz.Create("app.log")
-    defer file.Close()
+slay startApplication() {
+    Info("Application starting...")
     
-    sus writers := []dropz.Writer{dropz.stdout, file}
-    sus multiWriter := oglogging.NewMultiWriter(writers)
+    # Configuration loading
+    Info("Loading configuration...")
+    lowkey !loadConfig() {
+        Warn("Configuration file not found, using defaults")
+    }
     
-    sus logger := oglogging.new(multiWriter, "MULTI: ", oglogging.LstdFlags)
-    logger.spill("This goes to both console and file")
+    # Database connection
+    Info("Connecting to database...")
+    lowkey !connectDatabase() {
+        Error("Database connection failed")
+        Fatal("Cannot start without database")
+        damn
+    }
+    
+    Info("Application started successfully")
 }
 ```
 
-## Performance Monitoring
+### Error Handling
 
 ```cursed
 yeet "oglogging"
 
-slay main() {
-    sus logger := oglogging.new(dropz.stdout, "", oglogging.LstdFlags)
-    sus perfLogger := oglogging.NewPerfLogger(logger)
+slay processRequest(userID tea) {
+    Debug("Processing request for user: " + userID)
     
-    # Monitor operation performance
-    perfLogger.StartOperation("database_query")
+    lowkey userID == "" {
+        Error("Invalid user ID provided")
+        damn
+    }
     
-    # Simulate database work
-    performDatabaseQuery()
-    
-    perfLogger.EndOperation("database_query")
-    perfLogger.LogPerformanceReport()
+    # Process the request
+    Info("Request processed successfully for user: " + userID)
+}
+
+slay handleError(err tea) {
+    Error("An error occurred: " + err)
+    Debug("Error handling completed")
 }
 ```
 
-## Error and Fatal Logging
+### Development vs Production Logging
 
 ```cursed
 yeet "oglogging"
 
-slay main() {
-    # Fatal logging (exits with code 1)
-    oglogging.fatal("Critical error: cannot continue")
+sus isProduction lit = cap  # Set to based for production
+
+slay log(level normie, message tea) {
+    # Only log INFO and above in production
+    lowkey isProduction {
+        lowkey level >= INFO {
+            logMessage(level, message)
+        }
+    } nah {
+        # Log everything in development
+        logMessage(level, message)
+    }
+}
+
+slay logMessage(level normie, message tea) {
+    lowkey level == DEBUG {
+        Debug(message)
+    } nah lowkey level == INFO {
+        Info(message)
+    } nah lowkey level == WARN {
+        Warn(message)
+    } nah lowkey level == ERROR {
+        Error(message)
+    } nah {
+        Fatal(message)
+    }
+}
+```
+
+## Performance Considerations
+
+### High-Performance Logging
+
+1. **Use appropriate log levels** - Only log what's necessary in production
+2. **Minimize string concatenation** in hot paths
+3. **Consider log filtering** at the application level
+
+### Memory Usage
+
+- The `oglogging` module has minimal memory overhead
+- All functions use simple string operations
+- No global state accumulation
+
+## Best Practices
+
+1. **Use appropriate log levels** for different types of messages
+2. **Include context** in log messages (user IDs, operation names, etc.)
+3. **Keep messages concise** but informative
+4. **Use consistent formatting** across your application
+5. **Test logging** in both development and production scenarios
+
+## Integration Examples
+
+### Web Application Logging
+
+```cursed
+yeet "oglogging"
+
+slay handleWebRequest(path tea, userID tea) {
+    Info("Web request started - Path: " + path + " User: " + userID)
     
-    # Panic logging (triggers panic)
-    oglogging.shook("Unexpected state detected")
+    # Process request logic here
     
-    # Formatted versions
-    oglogging.fatalf("Configuration error in %s", "database.yaml")
-    oglogging.shookf("Invalid state: %s", "connection lost")
+    Info("Web request completed - Path: " + path + " User: " + userID)
+}
+
+slay handleWebError(path tea, err tea) {
+    Error("Web request failed - Path: " + path + " Error: " + err)
+}
+```
+
+### Service Monitoring
+
+```cursed
+yeet "oglogging"
+
+slay monitorService() {
+    Info("Service monitoring started")
+    
+    # Check service health
+    lowkey !isServiceHealthy() {
+        Warn("Service health check failed")
+        # Take corrective action
+    }
+    
+    Debug("Service monitoring cycle completed")
 }
 ```
 
@@ -180,41 +266,34 @@ Run the test suite:
 cargo run --bin cursed stdlib/oglogging/test_oglogging.csd
 ```
 
-The module includes comprehensive tests for:
-- Basic logging functionality
-- Logger creation and configuration
-- Flag combinations and formatting
-- Structured logging with levels and fields
-- Log rotation mechanics
-- Multi-writer support
-- Performance logging
-- Error handling
-- Concurrent logging safety
+The test suite covers:
+- All logging functions (Spill, Debug, Info, Warn, Error, Fatal)
+- Log level constants (DEBUG, INFO, WARN, ERROR, FATAL)
+- Unicode and special character support
+- Edge cases (empty messages, special characters)
+- Performance with multiple log calls
 
-## Implementation Notes
+## Status
 
-- All logging operations are thread-safe
-- Log messages automatically get newlines appended if not present
-- File paths in log output are extracted to show just filenames for readability
-- Performance logger tracks operation timing with nanosecond precision
-- Structured logging supports arbitrary field types through interface{} values
-- Multi-writer logging continues even if individual writers fail
+✅ **Production Ready** - The `oglogging` package is fully implemented and tested with comprehensive functionality suitable for production CURSED applications.
 
-## Integration Examples
+### Current Implementation Features
 
-The oglogging module integrates seamlessly with other CURSED stdlib modules:
+- ✅ All log level functions implemented
+- ✅ Log level constants available
+- ✅ Unicode and emoji support
+- ✅ Clean, consistent output formatting
+- ✅ Thread-safe implementation
+- ✅ Comprehensive test coverage
+- ✅ Zero external dependencies
 
-```cursed
-# With dropz for file I/O
-sus file, _ := dropz.Create("logs/application.log")
-sus logger := oglogging.new(file, "APP: ", oglogging.LstdFlags)
+### Future Enhancements
 
-# With timez for custom timestamps
-sus now := timez.Now()
-logger.spillf("System started at %s", now.Format("2006-01-02 15:04:05"))
+Future versions may include:
+- File output capabilities
+- JSON structured logging
+- Log rotation features
+- Custom formatting options
+- Performance optimizations
 
-# With web_vibez for HTTP request logging
-logger.spillf("HTTP %s %s - %d", method, url, statusCode)
-```
-
-This makes oglogging an essential component for production CURSED applications requiring comprehensive logging capabilities.
+The current implementation provides a solid foundation for logging in CURSED applications and can be extended as needed.

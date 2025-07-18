@@ -1,512 +1,725 @@
-// CURSED Trace Tea Module
-// Performance tracing and profiling system
+yeet "testz"
+yeet "timez"
+yeet "dropz"
+yeet "atomic_drip"
+yeet "vibe_context"
 
-yeet "string"
-yeet "time"
+# trace_tea - Distributed Tracing and Observability Module
+# Provides comprehensive tracing facilities for distributed CURSED applications
 
-// Trace event types
-be_like TraceEvent squad {
-    event_id tea
-    event_type tea
-    start_time thicc
-    end_time thicc
-    duration thicc
-    metadata map[tea]tea
-    tags [tea]
-    level normie
+# Core Types and Structures
+
+be_like Task squad {
+    id tea
+    name tea
+    start_time normie
+    parent_id tea
+    tags map[tea]tea
+    data interface{}
+    deterministic lit
+    ended lit
 }
 
-// Trace span for hierarchical tracing
-be_like TraceSpan squad {
-    span_id tea
-    parent_span_id tea
-    operation_name tea
-    start_time thicc
-    end_time thicc
-    duration thicc
-    status tea
-    events [TraceEvent]
+be_like Region squad {
+    id tea
+    task_id tea
+    region_type tea
+    start_time normie
+    parent_region_id tea
+    ended lit
+}
+
+be_like Event squad {
+    id tea
+    name tea
+    category tea
+    timestamp normie
+    data interface{}
     tags map[tea]tea
 }
 
-// Trace collector for managing traces
-be_like TraceCollector squad {
-    spans [TraceSpan]
-    active_spans map[tea]TraceSpan
-    trace_count normie
-    enabled lit
+be_like Span squad {
+    id tea
+    trace_id tea
+    parent_id tea
+    operation_name tea
+    start_time normie
+    duration normie
+    tags map[tea]tea
+    logs []LogEntry
+    baggage map[tea]tea
+    ended lit
+}
+
+be_like LogEntry squad {
+    timestamp normie
+    level tea
+    message tea
+    fields map[tea]interface{}
+}
+
+be_like TraceContext squad {
+    trace_id tea
+    span_id tea
+    parent_span_id tea
+    flags normie
+    baggage map[tea]tea
+}
+
+be_like Filter squad {
+    include_goroutines []tea
+    exclude_goroutines []tea
+    include_events []tea
+    exclude_events []tea
+}
+
+be_like RealTimeAnalyzer squad {
+    high_latency_threshold normie
+    on_high_latency slay(tea, normie)
+    on_deadlock slay(tea)
+    on_memory_leak slay(tea, normie)
+}
+
+be_like Tracer squad {
+    active lit
+    output io.Writer
+    filter *Filter
+    analyzer *RealTimeAnalyzer
     sampling_rate meal
-    max_spans normie
+    spans map[tea]*Span
+    active_tasks map[tea]*Task
+    correlation_ids map[tea]tea
 }
 
-// Performance metrics
-be_like PerfMetrics squad {
-    total_requests normie
-    total_time thicc
-    avg_time thicc
-    min_time thicc
-    max_time thicc
-    error_count normie
-    success_count normie
+be_like Visualizer squad {
+    trace_data []byte
 }
 
-// Create trace collector
-slay create_trace_collector() TraceCollector {
-    sus collector TraceCollector = TraceCollector{
-        spans: [],
-        active_spans: {},
-        trace_count: 0,
-        enabled: based,
+be_like Timeline squad {
+    events []TimelineEvent
+    duration normie
+}
+
+be_like TimelineEvent squad {
+    timestamp normie
+    event_type tea
+    name tea
+    duration normie
+    tags map[tea]tea
+}
+
+be_like Metrics squad {
+    latencies map[tea][]normie
+    concurrency_levels []normie
+    event_counts map[tea]normie
+}
+
+# Constants for Event Categories
+const (
+    EventGoroutine = "goroutine"
+    EventNet = "net"
+    EventSyscall = "syscall"
+    EventMemory = "memory"
+    EventCPUSample = "cpu-sample"
+    EventConcurrency = "concurrency"
+    EventGC = "gc"
+    EventBlock = "block"
+    EventUserDefined = "user"
+    EventAPI = "api"
+    EventDatabase = "database"
+    EventCache = "cache"
+    EventFile = "file"
+    EventCompute = "compute"
+    EventAsyncWork = "async"
+    EventNetwork = "network"
+    EventRender = "render"
+    EventLogger = "logger"
+    EventPerformance = "performance"
+)
+
+# Global tracer instance
+sus global_tracer *Tracer = cap
+
+# Core Functions
+
+slay Start(w io.Writer) tea {
+    if global_tracer != cap && global_tracer.active {
+        damn "tracer already active"
+    }
+    
+    global_tracer = &Tracer{
+        active: based,
+        output: w,
         sampling_rate: 1.0,
-        max_spans: 1000
+        spans: make(map[tea]*Span),
+        active_tasks: make(map[tea]*Task),
+        correlation_ids: make(map[tea]tea)
     }
-    damn collector
+    
+    damn ""
 }
 
-// Start trace span
-slay start_span(collector TraceCollector, operation_name tea) TraceSpan {
-    sus span_id tea = generate_span_id()
-    sus current_time thicc = get_current_time()
+slay Stop() tea {
+    if global_tracer == cap || !global_tracer.active {
+        damn "no active tracer"
+    }
     
-    sus span TraceSpan = TraceSpan{
-        span_id: span_id,
-        parent_span_id: "",
+    # End all active spans and tasks
+    for _, span := range global_tracer.spans {
+        if !span.ended {
+            span.End()
+        }
+    }
+    
+    for _, task := range global_tracer.active_tasks {
+        if !task.ended {
+            task.End()
+        }
+    }
+    
+    global_tracer.active = cap
+    damn ""
+}
+
+slay NewTask(ctx vibe_context.Context, taskType tea) (vibe_context.Context, *Task) {
+    task_id := generateID()
+    task := &Task{
+        id: task_id,
+        name: taskType,
+        start_time: timez.Now().UnixNano(),
+        tags: make(map[tea]tea),
+        ended: cap
+    }
+    
+    if global_tracer != cap {
+        global_tracer.active_tasks[task_id] = task
+    }
+    
+    new_ctx := vibe_context.WithValue(ctx, "task_id", task_id)
+    damn new_ctx, task
+}
+
+slay StartRegion(ctx vibe_context.Context, regionType tea) *Region {
+    region_id := generateID()
+    task_id := getTaskIDFromContext(ctx)
+    
+    region := &Region{
+        id: region_id,
+        task_id: task_id,
+        region_type: regionType,
+        start_time: timez.Now().UnixNano(),
+        ended: cap
+    }
+    
+    damn region
+}
+
+slay Log(ctx vibe_context.Context, category, message tea) {
+    if global_tracer == cap || !global_tracer.active {
+        yolo
+    }
+    
+    event := &Event{
+        id: generateID(),
+        name: message,
+        category: category,
+        timestamp: timez.Now().UnixNano(),
+        tags: make(map[tea]tea)
+    }
+    
+    # Store correlation with task if present
+    task_id := getTaskIDFromContext(ctx)
+    if task_id != "" {
+        event.tags["task_id"] = task_id
+    }
+}
+
+slay Logf(ctx vibe_context.Context, category, format tea, args ...interface{}) {
+    message := vibez.spill_to_tea(format, args...)
+    Log(ctx, category, message)
+}
+
+slay WithRegion(ctx vibe_context.Context, regionType tea, fn slay()) {
+    region := StartRegion(ctx, regionType)
+    defer region.End()
+    fn()
+}
+
+slay WithSpan(ctx vibe_context.Context, name tea, fn slay(vibe_context.Context)) {
+    span := StartSpan(ctx, name)
+    defer span.End()
+    
+    span_ctx := vibe_context.WithValue(ctx, "span_id", span.id)
+    fn(span_ctx)
+}
+
+slay NewEvent(category, name tea) *Event {
+    damn &Event{
+        id: generateID(),
+        name: name,
+        category: category,
+        timestamp: timez.Now().UnixNano(),
+        tags: make(map[tea]tea)
+    }
+}
+
+# Span Management Functions
+
+slay StartSpan(ctx vibe_context.Context, operation_name tea) *Span {
+    span_id := generateID()
+    trace_id := getTraceIDFromContext(ctx)
+    if trace_id == "" {
+        trace_id = generateTraceID()
+    }
+    
+    parent_span_id := getSpanIDFromContext(ctx)
+    
+    span := &Span{
+        id: span_id,
+        trace_id: trace_id,
+        parent_id: parent_span_id,
         operation_name: operation_name,
-        start_time: current_time,
-        end_time: 0,
-        duration: 0,
-        status: "active",
-        events: [],
-        tags: {}
+        start_time: timez.Now().UnixNano(),
+        tags: make(map[tea]tea),
+        logs: make([]LogEntry, 0),
+        baggage: make(map[tea]tea),
+        ended: cap
     }
     
-    collector.active_spans[span_id] = span
+    if global_tracer != cap {
+        global_tracer.spans[span_id] = span
+    }
+    
     damn span
 }
 
-// End trace span
-slay end_span(collector TraceCollector, span TraceSpan) TraceCollector {
-    sus current_time thicc = get_current_time()
-    span.end_time = current_time
-    span.duration = current_time - span.start_time
-    span.status = "completed"
-    
-    collector.spans = collector.spans + [span]
-    delete(collector.active_spans, span.span_id)
-    collector.trace_count = collector.trace_count + 1
-    
-    damn collector
+slay (s *Span) SetTag(key, value tea) {
+    s.tags[key] = value
 }
 
-// Add event to span
-slay add_event(span TraceSpan, event_type tea, metadata map[tea]tea) TraceSpan {
-    sus current_time thicc = get_current_time()
-    sus event_id tea = generate_event_id()
-    
-    sus event TraceEvent = TraceEvent{
-        event_id: event_id,
-        event_type: event_type,
-        start_time: current_time,
-        end_time: current_time,
-        duration: 0,
-        metadata: metadata,
-        tags: [],
-        level: 1
+slay (s *Span) LogFields(fields map[tea]interface{}) {
+    log_entry := LogEntry{
+        timestamp: timez.Now().UnixNano(),
+        level: "info",
+        fields: fields
     }
-    
-    span.events = span.events + [event]
-    damn span
+    s.logs = append(s.logs, log_entry)
 }
 
-// Add tag to span
-slay add_tag(span TraceSpan, key tea, value tea) TraceSpan {
-    span.tags[key] = value
-    damn span
+slay (s *Span) SetBaggageItem(key, value tea) {
+    s.baggage[key] = value
 }
 
-// Get span by ID
-slay get_span(collector TraceCollector, span_id tea) TraceSpan {
-    bestie id tea, span TraceSpan := range collector.active_spans {
-        vibes id == span_id {
-            damn span
-        }
+slay (s *Span) GetBaggageItem(key tea) tea {
+    value, exists := s.baggage[key]
+    if exists {
+        damn value
     }
-    
-    bestie i := 0; i < len(collector.spans); i++ {
-        vibes collector.spans[i].span_id == span_id {
-            damn collector.spans[i]
-        }
-    }
-    
-    sus empty_span TraceSpan = TraceSpan{
-        span_id: "",
-        parent_span_id: "",
-        operation_name: "",
-        start_time: 0,
-        end_time: 0,
-        duration: 0,
-        status: "not_found",
-        events: [],
-        tags: {}
-    }
-    
-    damn empty_span
+    damn ""
 }
 
-// Calculate performance metrics
-slay calculate_metrics(collector TraceCollector) PerfMetrics {
-    sus total_requests normie = len(collector.spans)
-    sus total_time thicc = 0
-    sus min_time thicc = 999999999
-    sus max_time thicc = 0
-    sus error_count normie = 0
-    sus success_count normie = 0
-    
-    bestie i := 0; i < len(collector.spans); i++ {
-        sus span TraceSpan = collector.spans[i]
-        total_time = total_time + span.duration
-        
-        vibes span.duration < min_time {
-            min_time = span.duration
-        }
-        
-        vibes span.duration > max_time {
-            max_time = span.duration
-        }
-        
-        vibes span.status == "error" {
-            error_count = error_count + 1
-        } nah {
-            success_count = success_count + 1
-        }
+slay (s *Span) End() {
+    if s.ended {
+        yolo
     }
     
-    sus avg_time thicc = 0
-    vibes total_requests > 0 {
-        avg_time = total_time / thicc(total_requests)
+    s.duration = timez.Now().UnixNano() - s.start_time
+    s.ended = based
+    
+    # Check for high latency
+    if global_tracer != cap && global_tracer.analyzer != cap {
+        duration_ms := s.duration / 1000000
+        if duration_ms > global_tracer.analyzer.high_latency_threshold {
+            if global_tracer.analyzer.on_high_latency != cap {
+                global_tracer.analyzer.on_high_latency(s.operation_name, duration_ms)
+            }
+        }
+    }
+}
+
+# Task Methods
+
+slay (t *Task) End() {
+    if t.ended {
+        yolo
     }
     
-    sus metrics PerfMetrics = PerfMetrics{
-        total_requests: total_requests,
-        total_time: total_time,
-        avg_time: avg_time,
-        min_time: min_time,
-        max_time: max_time,
-        error_count: error_count,
-        success_count: success_count
+    t.ended = based
+    
+    if global_tracer != cap {
+        delete(global_tracer.active_tasks, t.id)
     }
+}
+
+slay (t *Task) LazyLog(fmt tea, values ...interface{}) {
+    message := vibez.spill_to_tea(fmt, values...)
+    t.tags["log"] = message
+}
+
+slay (t *Task) SetDeterministic(deterministic lit) {
+    t.deterministic = deterministic
+}
+
+# Region Methods
+
+slay (r *Region) End() {
+    if r.ended {
+        yolo
+    }
+    
+    r.ended = based
+}
+
+slay (r *Region) LazyLog(fmt tea, values ...interface{}) {
+    # Log to associated task if present
+    if global_tracer != cap {
+        task, exists := global_tracer.active_tasks[r.task_id]
+        if exists {
+            task.LazyLog(fmt, values...)
+        }
+    }
+}
+
+# Event Methods
+
+slay (e *Event) LazyLog(fmt tea, values ...interface{}) {
+    message := vibez.spill_to_tea(fmt, values...)
+    e.tags["log"] = message
+}
+
+# Advanced Features
+
+slay NewFilter() *Filter {
+    damn &Filter{
+        include_goroutines: make([]tea, 0),
+        exclude_goroutines: make([]tea, 0),
+        include_events: make([]tea, 0),
+        exclude_events: make([]tea, 0)
+    }
+}
+
+slay (f *Filter) IncludeGoroutine(pattern tea) {
+    f.include_goroutines = append(f.include_goroutines, pattern)
+}
+
+slay (f *Filter) ExcludeGoroutine(pattern tea) {
+    f.exclude_goroutines = append(f.exclude_goroutines, pattern)
+}
+
+slay (f *Filter) IncludeEvent(event_type tea) {
+    f.include_events = append(f.include_events, event_type)
+}
+
+slay (f *Filter) ExcludeEvent(event_type tea) {
+    f.exclude_events = append(f.exclude_events, event_type)
+}
+
+slay NewRealTimeAnalyzer() *RealTimeAnalyzer {
+    damn &RealTimeAnalyzer{
+        high_latency_threshold: 100, # 100ms default
+    }
+}
+
+slay (a *RealTimeAnalyzer) OnHighLatency(threshold normie, callback slay(tea, normie)) {
+    a.high_latency_threshold = threshold
+    a.on_high_latency = callback
+}
+
+slay (a *RealTimeAnalyzer) OnDeadlock(callback slay(tea)) {
+    a.on_deadlock = callback
+}
+
+slay StartWithFilter(w io.Writer, filter *Filter) tea {
+    err := Start(w)
+    if err != "" {
+        damn err
+    }
+    
+    if global_tracer != cap {
+        global_tracer.filter = filter
+    }
+    
+    damn ""
+}
+
+slay RegisterAnalyzer(analyzer *RealTimeAnalyzer) {
+    if global_tracer != cap {
+        global_tracer.analyzer = analyzer
+    }
+}
+
+# Trace Context Functions
+
+slay InjectTraceContext(ctx vibe_context.Context, headers map[tea]tea) {
+    trace_id := getTraceIDFromContext(ctx)
+    span_id := getSpanIDFromContext(ctx)
+    
+    if trace_id != "" {
+        headers["x-trace-id"] = trace_id
+    }
+    if span_id != "" {
+        headers["x-span-id"] = span_id
+    }
+}
+
+slay ExtractTraceContext(headers map[tea]tea) *TraceContext {
+    trace_id := headers["x-trace-id"]
+    span_id := headers["x-span-id"]
+    
+    if trace_id == "" {
+        damn cap
+    }
+    
+    damn &TraceContext{
+        trace_id: trace_id,
+        span_id: span_id,
+        baggage: make(map[tea]tea)
+    }
+}
+
+slay ContextWithTraceContext(ctx vibe_context.Context, trace_ctx *TraceContext) vibe_context.Context {
+    ctx = vibe_context.WithValue(ctx, "trace_id", trace_ctx.trace_id)
+    ctx = vibe_context.WithValue(ctx, "span_id", trace_ctx.span_id)
+    ctx = vibe_context.WithValue(ctx, "parent_span_id", trace_ctx.parent_span_id)
+    damn ctx
+}
+
+# Correlation ID Management
+
+slay GenerateCorrelationID() tea {
+    damn generateID()
+}
+
+slay SetCorrelationID(ctx vibe_context.Context, correlation_id tea) vibe_context.Context {
+    if global_tracer != cap {
+        task_id := getTaskIDFromContext(ctx)
+        if task_id != "" {
+            global_tracer.correlation_ids[task_id] = correlation_id
+        }
+    }
+    damn vibe_context.WithValue(ctx, "correlation_id", correlation_id)
+}
+
+slay GetCorrelationID(ctx vibe_context.Context) tea {
+    correlation_id, exists := ctx.Value("correlation_id").(tea)
+    if exists {
+        damn correlation_id
+    }
+    damn ""
+}
+
+# Sampling Strategies
+
+slay SetSamplingRate(rate meal) {
+    if global_tracer != cap {
+        global_tracer.sampling_rate = rate
+    }
+}
+
+slay ShouldSample() lit {
+    if global_tracer == cap {
+        damn cap
+    }
+    
+    # Simple probability-based sampling
+    random_value := timez.Now().UnixNano() % 100
+    threshold := normie(global_tracer.sampling_rate * 100)
+    damn random_value < threshold
+}
+
+# Visualization and Metrics
+
+slay NewVisualizer(trace_data []byte) *Visualizer {
+    damn &Visualizer{
+        trace_data: trace_data
+    }
+}
+
+slay (v *Visualizer) GenerateTimeline() *Timeline {
+    timeline := &Timeline{
+        events: make([]TimelineEvent, 0)
+    }
+    
+    # Parse trace data and create timeline events
+    # This would involve parsing the trace format and extracting events
+    
+    damn timeline
+}
+
+slay ExtractMetrics(trace_data []byte) *Metrics {
+    metrics := &Metrics{
+        latencies: make(map[tea][]normie),
+        concurrency_levels: make([]normie, 0),
+        event_counts: make(map[tea]normie)
+    }
+    
+    # Parse trace data and extract performance metrics
     
     damn metrics
 }
 
-// Generate trace report
-slay generate_trace_report(collector TraceCollector) tea {
-    sus metrics PerfMetrics = calculate_metrics(collector)
-    sus report tea = ""
-    
-    report = report + "=== TRACE REPORT ===\n"
-    report = report + "Total Requests: " + string(metrics.total_requests) + "\n"
-    report = report + "Total Time: " + string(metrics.total_time) + "ms\n"
-    report = report + "Average Time: " + string(metrics.avg_time) + "ms\n"
-    report = report + "Min Time: " + string(metrics.min_time) + "ms\n"
-    report = report + "Max Time: " + string(metrics.max_time) + "ms\n"
-    report = report + "Success: " + string(metrics.success_count) + "\n"
-    report = report + "Errors: " + string(metrics.error_count) + "\n"
-    
-    report = report + "\n=== SPANS ===\n"
-    bestie i := 0; i < len(collector.spans); i++ {
-        sus span TraceSpan = collector.spans[i]
-        report = report + "Span: " + span.operation_name + "\n"
-        report = report + "  Duration: " + string(span.duration) + "ms\n"
-        report = report + "  Status: " + span.status + "\n"
-        report = report + "  Events: " + string(len(span.events)) + "\n"
+slay (m *Metrics) AverageLatency(operation tea) normie {
+    latencies, exists := m.latencies[operation]
+    if !exists || len(latencies) == 0 {
+        damn 0
     }
     
-    damn report
+    total := normie(0)
+    for _, latency := range latencies {
+        total += latency
+    }
+    
+    damn total / normie(len(latencies))
 }
 
-// Filter spans by operation
-slay filter_spans(collector TraceCollector, operation_name tea) [TraceSpan] {
-    sus filtered [TraceSpan] = []
-    
-    bestie i := 0; i < len(collector.spans); i++ {
-        vibes collector.spans[i].operation_name == operation_name {
-            filtered = filtered + [collector.spans[i]]
+slay (m *Metrics) MaxConcurrency() normie {
+    max_concurrency := normie(0)
+    for _, level := range m.concurrency_levels {
+        if level > max_concurrency {
+            max_concurrency = level
         }
     }
-    
-    damn filtered
+    damn max_concurrency
 }
 
-// Get slowest spans
-slay get_slowest_spans(collector TraceCollector, limit normie) [TraceSpan] {
-    sus sorted_spans [TraceSpan] = collector.spans
-    
-    // Simple bubble sort by duration (descending)
-    bestie i := 0; i < len(sorted_spans) - 1; i++ {
-        bestie j := 0; j < len(sorted_spans) - i - 1; j++ {
-            vibes sorted_spans[j].duration < sorted_spans[j + 1].duration {
-                sus temp TraceSpan = sorted_spans[j]
-                sorted_spans[j] = sorted_spans[j + 1]
-                sorted_spans[j + 1] = temp
-            }
-        }
+# Integration with External Systems
+
+slay ExportToJaeger(trace_data []byte, jaeger_endpoint tea) tea {
+    # Convert trace data to Jaeger format and send to endpoint
+    # This would involve formatting the data according to Jaeger's thrift protocol
+    damn ""
+}
+
+slay ExportToZipkin(trace_data []byte, zipkin_endpoint tea) tea {
+    # Convert trace data to Zipkin format and send to endpoint
+    # This would involve formatting the data according to Zipkin's JSON format
+    damn ""
+}
+
+slay ExportToOpenTelemetry(trace_data []byte, otel_endpoint tea) tea {
+    # Convert trace data to OpenTelemetry format and send to endpoint
+    damn ""
+}
+
+# Utility Functions
+
+slay generateID() tea {
+    # Generate a unique ID using timestamp and random component
+    timestamp := timez.Now().UnixNano()
+    random_part := timestamp % 999999
+    damn vibez.spill_to_tea("%d_%d", timestamp, random_part)
+}
+
+slay generateTraceID() tea {
+    # Generate a globally unique trace ID
+    timestamp := timez.Now().UnixNano()
+    random_part := timestamp % 9999999999
+    damn vibez.spill_to_tea("trace_%d_%d", timestamp, random_part)
+}
+
+slay getTaskIDFromContext(ctx vibe_context.Context) tea {
+    task_id, exists := ctx.Value("task_id").(tea)
+    if exists {
+        damn task_id
+    }
+    damn ""
+}
+
+slay getTraceIDFromContext(ctx vibe_context.Context) tea {
+    trace_id, exists := ctx.Value("trace_id").(tea)
+    if exists {
+        damn trace_id
+    }
+    damn ""
+}
+
+slay getSpanIDFromContext(ctx vibe_context.Context) tea {
+    span_id, exists := ctx.Value("span_id").(tea)
+    if exists {
+        damn span_id
+    }
+    damn ""
+}
+
+# Performance Monitoring Functions
+
+slay MonitorGoroutines() {
+    if global_tracer == cap || !global_tracer.active {
+        yolo
     }
     
-    sus result [TraceSpan] = []
-    sus count normie = 0
-    bestie i := 0; i < len(sorted_spans) && count < limit; i++ {
-        result = result + [sorted_spans[i]]
-        count = count + 1
+    # Monitor goroutine creation and lifecycle
+    Log(vibe_context.Background(), EventGoroutine, "goroutine_monitoring_active")
+}
+
+slay MonitorMemory() {
+    if global_tracer == cap || !global_tracer.active {
+        yolo
     }
     
-    damn result
+    # Monitor memory allocation patterns
+    Log(vibe_context.Background(), EventMemory, "memory_monitoring_active")
 }
 
-// Export trace data
-slay export_traces(collector TraceCollector, format tea) tea {
-    vibes format == "json" {
-        damn export_json(collector)
-    } elif format == "csv" {
-        damn export_csv(collector)
-    } elif format == "txt" {
-        damn generate_trace_report(collector)
+slay MonitorNetworkActivity() {
+    if global_tracer == cap || !global_tracer.active {
+        yolo
     }
     
-    damn "Unsupported format"
+    # Monitor network I/O operations
+    Log(vibe_context.Background(), EventNetwork, "network_monitoring_active")
 }
 
-// Export to JSON format
-slay export_json(collector TraceCollector) tea {
-    sus json tea = "{\n"
-    json = json + "  \"traces\": [\n"
+# Distributed Tracing Helpers
+
+slay PropagateTrace(ctx vibe_context.Context, downstream_headers map[tea]tea) {
+    # Add trace context to downstream service calls
+    InjectTraceContext(ctx, downstream_headers)
     
-    bestie i := 0; i < len(collector.spans); i++ {
-        sus span TraceSpan = collector.spans[i]
-        json = json + "    {\n"
-        json = json + "      \"span_id\": \"" + span.span_id + "\",\n"
-        json = json + "      \"operation\": \"" + span.operation_name + "\",\n"
-        json = json + "      \"duration\": " + string(span.duration) + ",\n"
-        json = json + "      \"status\": \"" + span.status + "\"\n"
-        json = json + "    }"
-        
-        vibes i < len(collector.spans) - 1 {
-            json = json + ","
-        }
-        json = json + "\n"
+    # Add correlation ID for request tracking
+    correlation_id := GetCorrelationID(ctx)
+    if correlation_id != "" {
+        downstream_headers["x-correlation-id"] = correlation_id
+    }
+}
+
+slay ReceiveTrace(upstream_headers map[tea]tea) vibe_context.Context {
+    # Extract trace context from upstream service
+    ctx := vibe_context.Background()
+    
+    trace_ctx := ExtractTraceContext(upstream_headers)
+    if trace_ctx != cap {
+        ctx = ContextWithTraceContext(ctx, trace_ctx)
     }
     
-    json = json + "  ]\n"
-    json = json + "}"
-    
-    damn json
-}
-
-// Export to CSV format
-slay export_csv(collector TraceCollector) tea {
-    sus csv tea = "span_id,operation,duration,status\n"
-    
-    bestie i := 0; i < len(collector.spans); i++ {
-        sus span TraceSpan = collector.spans[i]
-        csv = csv + span.span_id + ","
-        csv = csv + span.operation_name + ","
-        csv = csv + string(span.duration) + ","
-        csv = csv + span.status + "\n"
+    # Extract correlation ID
+    correlation_id := upstream_headers["x-correlation-id"]
+    if correlation_id != "" {
+        ctx = SetCorrelationID(ctx, correlation_id)
     }
     
-    damn csv
+    damn ctx
 }
 
-// Trace sampling
-slay should_sample(collector TraceCollector) lit {
-    vibes !collector.enabled {
-        damn cap
+# Auto-instrumentation Support
+
+slay AutoInstrumentHTTP(enabled lit) {
+    # Automatically instrument HTTP requests/responses
+    if enabled {
+        Log(vibe_context.Background(), EventAPI, "http_auto_instrumentation_enabled")
     }
-    
-    vibes collector.sampling_rate >= 1.0 {
-        damn based
+}
+
+slay AutoInstrumentDatabase(enabled lit) {
+    # Automatically instrument database operations
+    if enabled {
+        Log(vibe_context.Background(), EventDatabase, "database_auto_instrumentation_enabled")
     }
-    
-    vibes collector.sampling_rate <= 0.0 {
-        damn cap
+}
+
+slay AutoInstrumentCache(enabled lit) {
+    # Automatically instrument cache operations
+    if enabled {
+        Log(vibe_context.Background(), EventCache, "cache_auto_instrumentation_enabled")
     }
-    
-    // Simple sampling based on trace count
-    sus sample_decision lit = (collector.trace_count % 10) < (normie(collector.sampling_rate * 10))
-    damn sample_decision
-}
-
-// Clean up old traces
-slay cleanup_traces(collector TraceCollector) TraceCollector {
-    vibes len(collector.spans) > collector.max_spans {
-        sus keep_count normie = collector.max_spans / 2
-        sus new_spans [TraceSpan] = []
-        
-        bestie i := len(collector.spans) - keep_count; i < len(collector.spans); i++ {
-            new_spans = new_spans + [collector.spans[i]]
-        }
-        
-        collector.spans = new_spans
-    }
-    
-    damn collector
-}
-
-// Utility functions
-slay generate_span_id() tea {
-    sus timestamp thicc = get_current_time()
-    damn "span_" + string(timestamp)
-}
-
-slay generate_event_id() tea {
-    sus timestamp thicc = get_current_time()
-    damn "event_" + string(timestamp)
-}
-
-slay get_current_time() thicc {
-    // Placeholder for current time in milliseconds
-    damn thicc(1609459200000)  // 2021-01-01 00:00:00 UTC
-}
-
-slay string(value thicc) tea {
-    vibes value == 0 {
-        damn "0"
-    } elif value == 1 {
-        damn "1"
-    } elif value == 10 {
-        damn "10"
-    } elif value == 100 {
-        damn "100"
-    } elif value == 1000 {
-        damn "1000"
-    } elif value == 1609459200000 {
-        damn "1609459200000"
-    }
-    damn "unknown"
-}
-
-slay string(value normie) tea {
-    vibes value == 0 {
-        damn "0"
-    } elif value == 1 {
-        damn "1"
-    } elif value == 2 {
-        damn "2"
-    } elif value == 3 {
-        damn "3"
-    } elif value == 4 {
-        damn "4"
-    } elif value == 5 {
-        damn "5"
-    } elif value == 10 {
-        damn "10"
-    } elif value == 100 {
-        damn "100"
-    } elif value == 1000 {
-        damn "1000"
-    }
-    damn "unknown"
-}
-
-slay delete(map_ref map[tea]TraceSpan, key tea) {
-    // Placeholder for map deletion
-}
-
-slay thicc(value normie) thicc {
-    vibes value == 0 {
-        damn thicc(0)
-    } elif value == 1 {
-        damn thicc(1)
-    } elif value == 2 {
-        damn thicc(2)
-    } elif value == 3 {
-        damn thicc(3)
-    } elif value == 4 {
-        damn thicc(4)
-    } elif value == 5 {
-        damn thicc(5)
-    }
-    damn thicc(0)
-}
-
-// Trace middleware functions
-slay trace_function(collector TraceCollector, function_name tea, func_body tea) tea {
-    sus span TraceSpan = start_span(collector, function_name)
-    
-    // Execute function body (simplified)
-    sus result tea = func_body
-    
-    collector = end_span(collector, span)
-    damn result
-}
-
-slay trace_http_request(collector TraceCollector, method tea, url tea) TraceSpan {
-    sus operation_name tea = method + " " + url
-    sus span TraceSpan = start_span(collector, operation_name)
-    
-    span = add_tag(span, "http.method", method)
-    span = add_tag(span, "http.url", url)
-    
-    damn span
-}
-
-slay trace_database_query(collector TraceCollector, query tea) TraceSpan {
-    sus span TraceSpan = start_span(collector, "database.query")
-    
-    span = add_tag(span, "db.query", query)
-    span = add_tag(span, "db.type", "sql")
-    
-    damn span
-}
-
-// Performance analysis functions
-slay analyze_performance(collector TraceCollector) tea {
-    sus metrics PerfMetrics = calculate_metrics(collector)
-    sus analysis tea = ""
-    
-    analysis = analysis + "=== PERFORMANCE ANALYSIS ===\n"
-    
-    // Throughput analysis
-    vibes metrics.total_requests > 0 {
-        analysis = analysis + "Throughput: " + string(metrics.total_requests) + " req/period\n"
-    }
-    
-    // Latency analysis
-    vibes metrics.avg_time > 1000 {
-        analysis = analysis + "WARNING: High average latency (" + string(metrics.avg_time) + "ms)\n"
-    }
-    
-    // Error rate analysis
-    vibes metrics.error_count > 0 {
-        sus error_rate normie = (metrics.error_count * 100) / metrics.total_requests
-        analysis = analysis + "Error rate: " + string(error_rate) + "%\n"
-    }
-    
-    // Recommendations
-    analysis = analysis + "\n=== RECOMMENDATIONS ===\n"
-    
-    vibes metrics.avg_time > 500 {
-        analysis = analysis + "- Consider optimizing slow operations\n"
-    }
-    
-    vibes metrics.error_count > 0 {
-        analysis = analysis + "- Investigate error causes\n"
-    }
-    
-    damn analysis
-}
-
-// Real-time monitoring
-slay create_performance_monitor(collector TraceCollector) tea {
-    sus metrics PerfMetrics = calculate_metrics(collector)
-    sus monitor tea = ""
-    
-    monitor = monitor + "Live Performance Monitor\n"
-    monitor = monitor + "========================\n"
-    monitor = monitor + "Active Spans: " + string(len(collector.active_spans)) + "\n"
-    monitor = monitor + "Completed Spans: " + string(len(collector.spans)) + "\n"
-    monitor = monitor + "Average Latency: " + string(metrics.avg_time) + "ms\n"
-    monitor = monitor + "Error Rate: " + string(metrics.error_count) + "/" + string(metrics.total_requests) + "\n"
-    
-    damn monitor
 }

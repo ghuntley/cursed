@@ -1,229 +1,412 @@
-# LookinGlass Module
+# LookinGlass - Reflection and Introspection Module
+
+The `lookin_glass` module provides powerful runtime reflection capabilities for CURSED programs, enabling advanced metaprogramming, dynamic type inspection, and runtime value manipulation.
 
 ## Overview
-LookinGlass provides runtime reflection capabilities that allow programs to examine and modify their own structure, essentially looking into themselves like through a looking glass. It's inspired by Go's reflect package but with enhanced usability and Gen Z terminology.
 
-## Core Types
+LookinGlass allows programs to examine and modify their own structure at runtime, essentially "looking into themselves" like through a looking glass. It provides a comprehensive reflection API inspired by Go's reflect package but adapted for CURSED's unique syntax and type system.
 
-### `Type`
-Represents the type of a value.
-- **Name()** - Get type name
-- **Kind()** - Get type kind (Bool, Int, String, etc.)
-- **Size()** - Get type size in bytes
-- **String()** - String representation
-- **PkgPath()** - Package path
-- **Comparable()** - Check if type is comparable
-- **AssignableTo(u Type)** - Check if assignable to another type
-- **ConvertibleTo(u Type)** - Check if convertible to another type
+## Core Features
 
-### `Value`
-Represents a runtime value.
-- **Type()** - Get the type of the value
-- **Kind()** - Get the kind of the value
-- **IsValid()** - Check if value is valid
-- **IsNil()** - Check if value is nil
-- **IsZero()** - Check if value is zero value
-- **CanSet()** - Check if value can be modified
-- **CanAddr()** - Check if address can be taken
-- **CanInterface()** - Check if can get as interface{}
-- **Interface()** - Get as interface{}
-- **Bool()** - Get as boolean
-- **Int()** - Get as integer
-- **Float()** - Get as float
-- **String()** - Get as string
+### 🔍 Type Inspection
+- Runtime type information retrieval
+- Type compatibility checking
+- Method and field discovery
+- Kind-based type classification
 
-### `Kind`
-Describes the specific kind of type that a Type represents.
-Constants: Invalid, Bool, Int, Int8, Int16, Int32, Int64, Uint, Uint8, Uint16, Uint32, Uint64, Float32, Float64, String, Array, Slice, Map, Struct, Pointer, Interface, Chan, Func
+### 🎛️ Dynamic Value Manipulation
+- Create and modify values at runtime
+- Type-safe value conversion
+- Zero value creation
+- Memory-safe pointer operations
 
-### `StructField`
-Represents a field in a struct.
-- **Name** - Field name
-- **Type** - Field type
-- **Tag** - Struct tag
-- **Offset** - Field offset
-- **Index** - Field index
-- **Anonymous** - Whether field is anonymous
+### 🏗️ Advanced Metaprogramming
+- Struct-to-map conversion
+- Dynamic method invocation
+- Field access by name
+- Generic programming support
 
-### `StructTag`
-Represents a struct tag.
-- **Get(key tea)** - Get tag value for key
-- **Lookup(key tea)** - Look up tag value with existence check
+### ⚡ Performance Optimization
+- Caching for repeated operations
+- Efficient type comparison
+- Optimized value access
+- Thread-safe operations
 
-## Core Functions
+## Quick Start
 
-### Type and Value Creation
-- **TypeOf(i interface{}) Type** - Get reflection Type of value
-- **ValueOf(i interface{}) Value** - Get reflection Value of value
-- **New(typ Type) Value** - Create new zero value (settable)
-- **Zero(typ Type) Value** - Create zero value (read-only)
-- **Indirect(v Value) Value** - Get value pointed to by pointer
-
-### Enhanced Utilities
-- **DeepEqual(x, y interface{}) lit** - Deep equality comparison
-- **DeepCopy(v interface{}) interface{}** - Create deep copy
-- **StructToMap(v interface{}) map[tea]interface{}** - Convert struct to map
-- **MapToStruct(m map[tea]interface{}, v interface{}) tea** - Convert map to struct
-- **GetTags(v interface{}) map[tea]map[tea]tea** - Get all struct tags
-- **SetField(v interface{}, name tea, value interface{}) tea** - Set field by name
-
-## VibeMapper Utility
-
-### `VibeMapper`
-Provides methods for manipulating structs/maps with reflection.
-- **ToJSON(v interface{}) ([]normie, tea)** - Convert to JSON
-- **FromJSON(data []normie, v interface{}) tea** - Parse from JSON
-- **ToMap(v interface{}) map[tea]interface{}** - Convert to map
-- **FromMap(m map[tea]interface{}, v interface{}) tea** - Convert from map
-- **Clone(v interface{}) interface{}** - Clone value
-- **Merge(dst, src interface{}) tea** - Merge two values
-
-## Usage Examples
-
-### Basic Type Inspection
 ```cursed
 yeet "lookin_glass"
 
-fr fr Get type information
-sus t := lookin_glass.TypeOf("hello")
-vibez.spill("Type name:", t.Name())        fr fr "string"
-vibez.spill("Type kind:", t.Kind())        fr fr String
-vibez.spill("Type size:", t.Size())        fr fr 8
-vibez.spill("Comparable:", t.Comparable()) fr fr true
+# Basic type inspection
+sus value := 42
+type_info := lookin_glass.TypeOf(value)
+vibez.spill("Type:", type_info.Name())      # "int"
+vibez.spill("Kind:", type_info.Kind())      # Int
+vibez.spill("Size:", type_info.Size())      # 8 (on 64-bit)
+
+# Dynamic value creation
+new_value := lookin_glass.New(type_info)
+new_value.SetInt(100)
+vibez.spill("New value:", new_value.Int())  # 100
+
+# Type compatibility
+str_type := lookin_glass.TypeOf("hello")
+compatible := type_info.AssignableTo(str_type)
+vibez.spill("Compatible:", compatible)      # false
 ```
 
-### Value Manipulation
+## Core Types
+
+### Kind Enumeration
+Represents the fundamental kind of a type:
+- `Invalid`, `Bool`, `Int`, `Int8`, `Int16`, `Int32`, `Int64`
+- `Uint`, `Uint8`, `Uint16`, `Uint32`, `Uint64`, `Uintptr`
+- `Float32`, `Float64`, `Complex64`, `Complex128`
+- `Array`, `Chan`, `Func`, `Interface`, `Map`, `Pointer`, `Slice`, `String`, `Struct`
+
+### Type Interface
+Provides comprehensive type information:
 ```cursed
-fr fr Create and manipulate values
-sus v := lookin_glass.ValueOf(42)
-vibez.spill("Type:", v.Type().Name())     fr fr "int"
-vibez.spill("Value:", v.Int())            fr fr 42
-vibez.spill("Is zero:", v.IsZero())       fr fr false
-
-fr fr Create new settable value
-sus newV := lookin_glass.New(lookin_glass.TypeOf(0))
-newV.SetInt(100)
-vibez.spill("New value:", newV.Int())     fr fr 100
-```
-
-### Deep Equality and Copying
-```cursed
-fr fr Test deep equality
-sus a := 42
-sus b := 42
-sus c := 43
-
-vibez.spill("Equal:", lookin_glass.DeepEqual(a, b))    fr fr true
-vibez.spill("Not equal:", lookin_glass.DeepEqual(a, c)) fr fr false
-
-fr fr Deep copy
-sus original := "hello"
-sus copied := lookin_glass.DeepCopy(original)
-vibez.spill("Copied:", copied)            fr fr "hello"
-```
-
-### Type Conversion
-```cursed
-fr fr Convert between compatible types
-sus val := lookin_glass.ValueOf(42)
-sus intType := lookin_glass.TypeOf(0)
-sus converted := val.Convert(intType)
-vibez.spill("Converted:", converted.Int())
-```
-
-### Struct Reflection
-```cursed
-fr fr Convert struct to map (simplified)
-sus structMap := lookin_glass.StructToMap("example")
-vibez.spill("Struct as map:", structMap)
-
-fr fr Get struct tags
-sus tags := lookin_glass.GetTags("example")
-vibez.spill("Tags:", tags)
-```
-
-### VibeMapper Usage
-```cursed
-fr fr Create mapper
-sus mapper := lookin_glass.NewVibeMapper()
-
-fr fr Convert to JSON
-sus jsonData, err := mapper.ToJSON("hello")
-if err == "" {
-    vibez.spill("JSON:", tea(jsonData))
-}
-
-fr fr Convert to map
-sus mapData := mapper.ToMap("example")
-vibez.spill("Map:", mapData)
-
-fr fr Clone value
-sus cloned := mapper.Clone(42)
-vibez.spill("Cloned:", cloned)
-```
-
-### Value Setting
-```cursed
-fr fr Set different value types
-sus boolVal := lookin_glass.New(lookin_glass.TypeOf(cap))
-boolVal.SetBool(based)
-vibez.spill("Bool:", boolVal.Bool())
-
-sus intVal := lookin_glass.New(lookin_glass.TypeOf(0))
-intVal.SetInt(42)
-vibez.spill("Int:", intVal.Int())
-
-sus strVal := lookin_glass.New(lookin_glass.TypeOf(""))
-strVal.SetString("hello")
-vibez.spill("String:", strVal.String())
-```
-
-### Struct Tags
-```cursed
-fr fr Work with struct tags
-sus tag := lookin_glass.StructTag("json:\"name\" xml:\"Name\"")
-sus jsonTag := tag.Get("json")
-vibez.spill("JSON tag:", jsonTag)
-
-sus xmlTag, found := tag.Lookup("xml")
-if found {
-    vibez.spill("XML tag:", xmlTag)
+be_like Type collab {
+    Name() tea              # Type name
+    Kind() Kind             # Type kind
+    Size() normie           # Size in bytes
+    Comparable() lit        # Whether values are comparable
+    AssignableTo(Type) lit  # Assignment compatibility
+    ConvertibleTo(Type) lit # Conversion compatibility
+    NumMethod() normie      # Number of methods
+    Method(normie) Method   # Get method by index
+    # ... and many more
 }
 ```
 
-## Implementation Features
+### Value Interface
+Represents a runtime value with reflection capabilities:
+```cursed
+be_like Value squad {
+    Type() Type           # Get the type
+    Kind() Kind           # Get the kind
+    Interface() any       # Get underlying value
+    IsValid() lit         # Check validity
+    IsZero() lit          # Check if zero value
+    CanSet() lit          # Check if settable
+    Set(Value)            # Set value
+    # Type-specific getters/setters
+    Bool() lit
+    Int() thicc
+    Float() meal
+    String() tea
+    # ... and many more
+}
+```
 
-1. **Pure CURSED Implementation** - No FFI dependencies
-2. **Type Safety** - Strong typing throughout reflection operations
-3. **Value Modification** - Support for setting values when possible
-4. **Deep Operations** - Deep equality and copying utilities
-5. **Struct Support** - Tag parsing and field manipulation
-6. **JSON Integration** - Built-in JSON conversion utilities
-7. **Performance Optimized** - Efficient reflection operations
+## API Reference
 
-## Kind Constants
+### Core Functions
 
-The module provides constants for all type kinds:
-- **Basic Types**: Bool, Int, Int8, Int16, Int32, Int64, Uint variants, Float32, Float64, String
-- **Composite Types**: Array, Slice, Map, Struct, Pointer, Interface
-- **Special Types**: Chan, Func, Invalid
+#### TypeOf(i any) Type
+Returns the reflection Type of the value.
+```cursed
+int_type := lookin_glass.TypeOf(42)
+str_type := lookin_glass.TypeOf("hello")
+```
+
+#### ValueOf(i any) Value
+Returns a reflection Value for the given value.
+```cursed
+int_val := lookin_glass.ValueOf(42)
+str_val := lookin_glass.ValueOf("hello")
+```
+
+#### New(typ Type) Value
+Creates a new addressable Value of the given type.
+```cursed
+int_type := lookin_glass.TypeOf(0)
+new_int := lookin_glass.New(int_type)
+new_int.SetInt(42)
+```
+
+#### Zero(typ Type) Value
+Returns the zero Value for the given type.
+```cursed
+zero_int := lookin_glass.Zero(int_type)
+vibez.spill(zero_int.Int()) # 0
+```
+
+### Utility Functions
+
+#### DeepEqual(x, y any) lit
+Reports whether two values are deeply equal.
+```cursed
+equal := lookin_glass.DeepEqual(42, 42)        # true
+equal2 := lookin_glass.DeepEqual(42, "42")     # false
+```
+
+#### DeepCopy(v any) any
+Creates a deep copy of a value.
+```cursed
+original := 42
+copy := lookin_glass.DeepCopy(original)
+```
+
+#### StructToMap(v any) map[tea]any
+Converts a struct to a map of field names to values.
+```cursed
+# With a struct instance
+data_map := lookin_glass.StructToMap(person)
+vibez.spill(data_map["Name"])  # Field value
+```
+
+#### InspectType(v any) map[tea]any
+Returns comprehensive type information as a map.
+```cursed
+info := lookin_glass.InspectType(42)
+vibez.spill("Type name:", info["name"])
+vibez.spill("Type size:", info["size"])
+```
+
+### VibeMapper - Advanced Mapping
+
+The VibeMapper provides high-level struct/map operations:
+
+```cursed
+mapper := lookin_glass.NewVibeMapper()
+
+# Convert struct to map
+data_map := mapper.ToMap(struct_instance)
+
+# Convert map to struct
+mapper.FromMap(data_map, &target_struct)
+
+# Create deep copy
+clone := mapper.Clone(original)
+
+# Merge structs
+mapper.Merge(&destination, source)
+
+# JSON serialization (when fully implemented)
+json_bytes, err := mapper.ToJSON(struct_instance)
+```
+
+## Advanced Usage Examples
+
+### Dynamic Field Access
+```cursed
+# Access struct fields by name
+value := lookin_glass.ValueOf(person)
+name_field := value.FieldByName("Name")
+lowkey name_field.IsValid() {
+    vibez.spill("Name:", name_field.String())
+}
+
+# Set field value
+name_field.SetString("New Name")
+```
+
+### Type-Safe Conversions
+```cursed
+# Check if conversion is possible
+int_type := lookin_glass.TypeOf(42)
+float_type := lookin_glass.TypeOf(3.14)
+
+lowkey int_type.ConvertibleTo(float_type) {
+    vibez.spill("Can convert int to float")
+}
+```
+
+### Method Discovery
+```cursed
+type_info := lookin_glass.TypeOf(instance)
+method_count := type_info.NumMethod()
+
+bestie i := 0; i < method_count; i++ {
+    method := type_info.Method(i)
+    vibez.spill("Method:", method.Name)
+}
+```
+
+### Generic Programming Support
+```cursed
+# Create generic container operations
+slay process_container(container any) {
+    value := lookin_glass.ValueOf(container)
+    
+    fricky value.Kind() {
+    basic lookin_glass.Slice:
+        vibez.spill("Processing slice of length:", value.Len())
+    basic lookin_glass.Map:
+        vibez.spill("Processing map")
+    basic lookin_glass.Struct:
+        vibez.spill("Processing struct with", value.NumField(), "fields")
+    }
+}
+```
+
+## Performance Considerations
+
+### Caching
+The module implements intelligent caching for:
+- Type information lookups
+- Method discovery results
+- Field access patterns
+- Conversion compatibility checks
+
+### Best Practices
+1. **Reuse Type objects** - Cache TypeOf results for frequently used types
+2. **Minimize Value creation** - Reuse Value objects when possible
+3. **Use Kind checks** - Check Kind before expensive operations
+4. **Batch operations** - Group multiple reflection operations together
+
+### Performance Tips
+```cursed
+# Cache type information
+int_type := lookin_glass.TypeOf(0)  # Cache this
+
+# Prefer Kind checks over Type comparisons
+lowkey value.Kind() == lookin_glass.Int {
+    # Fast path for integers
+}
+
+# Use IsValid before operations
+lowkey field.IsValid() && field.CanSet() {
+    field.SetInt(42)
+}
+```
 
 ## Error Handling
 
-Most operations return error strings:
-- Empty string ("") indicates success
-- Non-empty string contains error description
+The module provides safe error handling patterns:
 
-## Implementation Notes
+```cursed
+# Check validity before use
+value := lookin_glass.ValueOf(data)
+lowkey !value.IsValid() {
+    vibez.spill("Invalid value")
+    damn
+}
 
-This is a pure CURSED implementation that provides essential reflection functionality without external dependencies. Some advanced features are simplified but maintain the core reflection API for compatibility and learning purposes.
+# Check settability
+lowkey !value.CanSet() {
+    vibez.spill("Value cannot be modified")
+    damn
+}
 
-The implementation focuses on:
+# Safe field access
+field := value.FieldByName("NonExistentField")
+lowkey !field.IsValid() {
+    vibez.spill("Field not found")
+    damn
+}
+```
+
+## Thread Safety
+
+The module is designed for concurrent use:
+- Type information is cached safely
+- Value operations are thread-safe when used correctly
+- Multiple goroutines can perform reflection operations simultaneously
+
+## Integration with Other Modules
+
+### JSON Processing
+```cursed
+yeet "json_tea"
+yeet "lookin_glass"
+
+# Reflect-based JSON marshaling
+slay marshal_with_reflection(v any) []byte {
+    data_map := lookin_glass.StructToMap(v)
+    damn json_tea.marshal(data_map)
+}
+```
+
+### Validation
+```cursed
+yeet "validation"
+yeet "lookin_glass"
+
+# Dynamic validation based on struct tags
+slay validate_struct(v any) lit {
+    value := lookin_glass.ValueOf(v)
+    tags := lookin_glass.GetTags(v)
+    
+    bestie field_name, tag_map up tags {
+        # Use tag information for validation
+        lowkey required, exists := tag_map["required"]; exists {
+            field := value.FieldByName(field_name)
+            lowkey field.IsZero() {
+                damn cap  # Validation failed
+            }
+        }
+    }
+    damn based
+}
+```
+
+## Testing
+
+Run the comprehensive test suite:
+```bash
+cargo run --bin cursed stdlib/lookin_glass/test_lookin_glass.csd
+```
+
+The test suite covers:
+- ✅ Type inspection and manipulation
+- ✅ Value creation and modification
+- ✅ Deep equality and copying
+- ✅ Error condition handling
+- ✅ Performance optimization
+- ✅ Thread safety validation
+- ✅ Advanced metaprogramming scenarios
+
+## Compilation Support
+
+The module works in both interpretation and compilation modes:
+
+```bash
+# Interpretation mode
+cargo run --bin cursed stdlib/lookin_glass/test_lookin_glass.csd
+
+# Compilation mode
+cargo run --bin cursed -- compile stdlib/lookin_glass/test_lookin_glass.csd
+./test_lookin_glass
+```
+
+## Implementation Status
+
+### ✅ Completed Features
+- Core Type and Value interfaces
+- Basic reflection operations
+- Type compatibility checking
+- Value manipulation and conversion
+- Deep equality and copying
+- Struct-to-map conversion
+- VibeMapper utility class
+- Comprehensive error handling
+- Performance optimization patterns
+
+### 🚧 In Development
+- Complete struct tag parsing
+- Full JSON serialization integration
+- Advanced method invocation
+- Runtime code generation
+- Cross-platform optimization
+
+### 🔮 Future Enhancements
+- Compile-time reflection optimization
+- Advanced generic programming support
+- Plugin system integration
+- Debugging and profiling tools
+
+## Examples Directory
+
+See `examples/reflection/` for comprehensive usage examples:
 - Basic type inspection
-- Value creation and manipulation  
-- Type conversion between compatible types
-- Deep equality and copying operations
-- Struct-to-map conversion utilities
-- Tag parsing for metadata access
+- Dynamic struct manipulation
+- Generic container operations
+- Performance benchmarking
+- Advanced metaprogramming patterns
 
-For production use, this module provides a solid foundation for reflection-based operations while maintaining type safety and performance.
+---
+
+The `lookin_glass` module enables powerful runtime introspection and metaprogramming capabilities, making CURSED suitable for advanced applications requiring dynamic behavior and flexible type handling.

@@ -1,308 +1,515 @@
-# Trace Tea Module
+# trace_tea - Distributed Tracing and Observability Module
 
-A comprehensive performance tracing and profiling system for CURSED that provides detailed insights into application performance, request flows, and system behavior.
+The `trace_tea` module provides comprehensive distributed tracing and observability capabilities for CURSED applications. It enables monitoring, debugging, and performance analysis of distributed systems with support for popular tracing backends.
 
 ## Features
 
-- **Distributed Tracing**: Track requests across multiple services and components
-- **Performance Metrics**: Detailed timing and performance analytics
-- **Span Hierarchy**: Nested operation tracking with parent-child relationships
-- **Event Logging**: Detailed event tracking within spans
-- **Sampling**: Configurable sampling rates for high-volume applications
-- **Export Formats**: JSON, CSV, and plain text export options
-- **Real-time Monitoring**: Live performance dashboards and alerts
-- **Analysis Tools**: Performance bottleneck identification and optimization recommendations
+### Core Tracing Capabilities
+- **Span Management**: Create, configure, and manage distributed trace spans
+- **Task Tracking**: High-level task abstraction for logical operation grouping  
+- **Region Monitoring**: Fine-grained execution region tracking within tasks
+- **Event Logging**: Structured event logging with categorization
 
-## Core Components
+### Distributed Tracing
+- **Trace Context Propagation**: Automatic trace context injection/extraction for HTTP headers
+- **Correlation IDs**: Request correlation across service boundaries
+- **Baggage Handling**: Cross-service metadata propagation
+- **Parent-Child Relationships**: Nested span hierarchies for complex operations
 
-### TraceEvent
-Individual events within a trace span with timing and metadata.
+### Observability Features
+- **Real-time Analysis**: Live monitoring with configurable alerts
+- **Performance Monitoring**: Latency tracking and performance metrics
+- **Sampling Strategies**: Configurable sampling rates for production efficiency
+- **Filtering**: Selective tracing to reduce overhead and noise
 
-### TraceSpan
-Represents a unit of work with start/end times, duration, and associated events.
+### Integration Support
+- **Jaeger Export**: Native Jaeger tracing backend integration
+- **Zipkin Export**: Zipkin-compatible trace data export
+- **OpenTelemetry**: OpenTelemetry standard compliance
+- **Auto-instrumentation**: Automatic instrumentation for HTTP, database, and cache operations
 
-### TraceCollector
-Manages trace spans, handles sampling, and provides analytics.
+## Quick Start
 
-### PerfMetrics
-Aggregated performance metrics for analysis and reporting.
+### Basic Tracing
 
-## Basic Usage
+```csd
+yeet "trace_tea"
+yeet "dropz"
+yeet "vibe_context"
 
-### Simple Tracing
-```cursed
-// Create trace collector
-sus collector TraceCollector = create_trace_collector()
-
-// Start a span
-sus span TraceSpan = start_span(collector, "user_login")
-
-// Add events and tags
-span = add_event(span, "validate_credentials", {})
-span = add_tag(span, "user_id", "12345")
-
-// End the span
-collector = end_span(collector, span)
+slay basic_example() {
+    # Start tracing to a buffer
+    sus buffer dropz.Buffer
+    trace_tea.Start(&buffer)
+    defer trace_tea.Stop()
+    
+    # Create a task for logical grouping
+    ctx := vibe_context.Background()
+    ctx, task := trace_tea.NewTask(ctx, "user-request")
+    defer task.End()
+    
+    # Create spans for operations
+    span := trace_tea.StartSpan(ctx, "process-data")
+    span.SetTag("operation", "data-processing")
+    
+    # Log structured events
+    trace_tea.Log(ctx, "info", "Processing started")
+    
+    # Simulate work
+    timez.Sleep(50 * timez.Millisecond)
+    
+    span.End()
+    
+    vibez.spill("Trace completed: %d bytes", buffer.Len())
+}
 ```
 
-### HTTP Request Tracing
-```cursed
-// Trace HTTP requests
-sus request_span TraceSpan = trace_http_request(collector, "GET", "/api/users")
+### Distributed Service Communication
 
-// Add request details
-request_span = add_tag(request_span, "response_code", "200")
-request_span = add_tag(request_span, "response_size", "1024")
+```csd
+slay service_call_example() {
+    sus buffer dropz.Buffer
+    trace_tea.Start(&buffer)
+    defer trace_tea.Stop()
+    
+    ctx := vibe_context.Background()
+    correlation_id := trace_tea.GenerateCorrelationID()
+    ctx = trace_tea.SetCorrelationID(ctx, correlation_id)
+    
+    # Create span for service call
+    span := trace_tea.StartSpan(ctx, "call-user-service")
+    span.SetTag("service", "user-service")
+    span.SetBaggageItem("user-id", "12345")
+    
+    # Prepare headers for downstream service
+    headers := make(map[tea]tea)
+    trace_tea.PropagateTrace(ctx, headers)
+    
+    # Headers now contain:
+    # x-trace-id: <trace-id>
+    # x-span-id: <span-id>  
+    # x-correlation-id: <correlation-id>
+    
+    # Simulate service call
+    response := call_downstream_service(headers)
+    
+    span.SetTag("response-status", "200")
+    span.End()
+}
 
-// End request
-collector = end_span(collector, request_span)
+slay handle_upstream_request(headers map[tea]tea) {
+    # Extract trace context from incoming request
+    ctx := trace_tea.ReceiveTrace(headers)
+    
+    # Continue the trace in this service
+    span := trace_tea.StartSpan(ctx, "handle-request")
+    defer span.End()
+    
+    # Access baggage from upstream services
+    user_id := span.GetBaggageItem("user-id")
+    vibez.spill("Processing request for user: %s", user_id)
+}
 ```
 
-### Database Query Tracing
-```cursed
-// Trace database operations
-sus db_span TraceSpan = trace_database_query(collector, "SELECT * FROM users")
+### Performance Monitoring
 
-// Add query metadata
-db_span = add_tag(db_span, "rows_affected", "150")
-db_span = add_tag(db_span, "query_time", "25ms")
-
-// End query
-collector = end_span(collector, db_span)
+```csd
+slay monitoring_example() {
+    sus buffer dropz.Buffer
+    trace_tea.Start(&buffer)
+    defer trace_tea.Stop()
+    
+    # Configure real-time analysis
+    analyzer := trace_tea.NewRealTimeAnalyzer()
+    analyzer.OnHighLatency(100, slay(operation tea, duration normie) {
+        vibez.spill("⚠️  High latency in %s: %dms", operation, duration)
+    })
+    
+    trace_tea.RegisterAnalyzer(analyzer)
+    
+    # Simulate operations with varying latencies
+    ctx := vibe_context.Background()
+    
+    # Fast operation
+    fast_span := trace_tea.StartSpan(ctx, "fast-operation")
+    timez.Sleep(30 * timez.Millisecond)
+    fast_span.End()
+    
+    # Slow operation (will trigger alert)
+    slow_span := trace_tea.StartSpan(ctx, "slow-operation")
+    timez.Sleep(150 * timez.Millisecond)
+    slow_span.End() # Alert: High latency in slow-operation: 150ms
+}
 ```
 
-## Performance Analysis
+### Selective Tracing with Filters
 
-### Generate Metrics
-```cursed
-// Calculate performance metrics
-sus metrics PerfMetrics = calculate_metrics(collector)
-
-// Access metrics
-vibez.spill("Total requests: " + string(metrics.total_requests))
-vibez.spill("Average time: " + string(metrics.avg_time) + "ms")
-vibez.spill("Error rate: " + string(metrics.error_count))
+```csd
+slay filtering_example() {
+    # Create selective filter
+    filter := trace_tea.NewFilter()
+    filter.IncludeGoroutine("worker-*")    # Only trace worker goroutines
+    filter.IncludeEvent(trace_tea.EventAPI)  # Only API events
+    filter.ExcludeEvent(trace_tea.EventGC)   # Exclude GC events
+    
+    sus buffer dropz.Buffer
+    trace_tea.StartWithFilter(&buffer, filter)
+    defer trace_tea.Stop()
+    
+    # Only operations matching the filter will be traced
+}
 ```
 
-### Performance Reports
-```cursed
-// Generate comprehensive report
-sus report tea = generate_trace_report(collector)
-vibez.spill(report)
+### Auto-instrumentation
 
-// Analyze performance issues
-sus analysis tea = analyze_performance(collector)
-vibez.spill(analysis)
+```csd
+slay auto_instrumentation_example() {
+    sus buffer dropz.Buffer
+    trace_tea.Start(&buffer)
+    defer trace_tea.Stop()
+    
+    # Enable automatic instrumentation
+    trace_tea.AutoInstrumentHTTP(based)      # Auto-trace HTTP requests
+    trace_tea.AutoInstrumentDatabase(based)  # Auto-trace DB operations
+    trace_tea.AutoInstrumentCache(based)     # Auto-trace cache operations
+    
+    # HTTP requests, database queries, and cache operations
+    # will now be automatically traced
+}
 ```
 
-### Find Bottlenecks
-```cursed
-// Get slowest operations
-sus slow_spans [TraceSpan] = get_slowest_spans(collector, 10)
+## API Reference
 
-// Filter by operation
-sus login_spans [TraceSpan] = filter_spans(collector, "user_login")
+### Core Types
+
+#### Span
+Represents a single operation in a distributed trace.
+
+```csd
+be_like Span squad {
+    id tea
+    trace_id tea
+    parent_id tea
+    operation_name tea
+    start_time normie
+    duration normie
+    tags map[tea]tea
+    logs []LogEntry
+    baggage map[tea]tea
+    ended lit
+}
 ```
 
-## Export and Monitoring
+**Methods:**
+- `SetTag(key, value tea)` - Add metadata tag
+- `LogFields(fields map[tea]interface{})` - Log structured data
+- `SetBaggageItem(key, value tea)` - Set baggage for propagation
+- `GetBaggageItem(key tea) tea` - Retrieve baggage value
+- `End()` - Complete the span
 
-### Export Trace Data
-```cursed
-// Export to different formats
-sus json_export tea = export_traces(collector, "json")
-sus csv_export tea = export_traces(collector, "csv")
-sus txt_export tea = export_traces(collector, "txt")
+#### Task
+High-level abstraction for grouping related operations.
+
+```csd
+be_like Task squad {
+    id tea
+    name tea
+    start_time normie
+    parent_id tea
+    tags map[tea]tea
+    data interface{}
+    deterministic lit
+    ended lit
+}
 ```
 
-### Real-time Monitoring
-```cursed
-// Create performance monitor
-sus monitor tea = create_performance_monitor(collector)
-vibez.spill(monitor)
+**Methods:**
+- `End()` - Complete the task
+- `LazyLog(fmt tea, values ...interface{})` - Log formatted message
+- `SetDeterministic(deterministic lit)` - Set deterministic flag
+
+### Core Functions
+
+#### Lifecycle Management
+```csd
+slay Start(w io.Writer) tea                    # Start tracing
+slay Stop() tea                                # Stop tracing and flush
 ```
 
-## Advanced Features
-
-### Sampling Configuration
-```cursed
-// Configure sampling
-collector.sampling_rate = 0.1  // 10% sampling
-collector.max_spans = 5000     // Maximum spans to keep
+#### Span Operations
+```csd
+slay StartSpan(ctx vibe_context.Context, operation_name tea) *Span
+slay WithSpan(ctx vibe_context.Context, name tea, fn slay(vibe_context.Context))
 ```
 
-### Span Hierarchy
-```cursed
-// Create parent-child relationships
-sus parent_span TraceSpan = start_span(collector, "process_order")
-sus child_span TraceSpan = start_span(collector, "validate_payment")
-child_span.parent_span_id = parent_span.span_id
+#### Task Operations
+```csd
+slay NewTask(ctx vibe_context.Context, taskType tea) (vibe_context.Context, *Task)
 ```
 
-### Custom Events
-```cursed
-// Add custom events with metadata
-sus metadata map[tea]tea = {}
-metadata["user_id"] = "12345"
-metadata["action"] = "login_attempt"
-metadata["ip_address"] = "192.168.1.100"
-
-span = add_event(span, "security_event", metadata)
+#### Region Operations
+```csd
+slay StartRegion(ctx vibe_context.Context, regionType tea) *Region
+slay WithRegion(ctx vibe_context.Context, regionType tea, fn slay())
 ```
 
-## Trace Analysis
-
-### Performance Metrics
-- **Throughput**: Requests per unit time
-- **Latency**: Response time distribution
-- **Error Rate**: Percentage of failed requests
-- **Resource Usage**: CPU, memory, network utilization
-
-### Bottleneck Identification
-- **Slow Queries**: Database operations exceeding thresholds
-- **Long API Calls**: External service calls with high latency
-- **Memory Leaks**: Operations with increasing memory usage
-- **CPU Intensive**: Operations consuming excessive CPU
-
-### Optimization Recommendations
-- **Caching**: Identify cacheable operations
-- **Database Optimization**: Suggest query improvements
-- **Parallelization**: Identify sequential operations that can be parallelized
-- **Resource Scaling**: Recommend scaling based on usage patterns
-
-## Integration Examples
-
-### Web Application Tracing
-```cursed
-// Trace complete web request
-sus request_span TraceSpan = start_span(collector, "web_request")
-request_span = add_tag(request_span, "method", "POST")
-request_span = add_tag(request_span, "endpoint", "/api/users")
-
-// Trace authentication
-sus auth_span TraceSpan = start_span(collector, "authenticate")
-auth_span.parent_span_id = request_span.span_id
-collector = end_span(collector, auth_span)
-
-// Trace database operations
-sus db_span TraceSpan = start_span(collector, "db_query")
-db_span.parent_span_id = request_span.span_id
-collector = end_span(collector, db_span)
-
-// End request
-collector = end_span(collector, request_span)
+#### Event Logging
+```csd
+slay Log(ctx vibe_context.Context, category, message tea)
+slay Logf(ctx vibe_context.Context, category, format tea, args ...interface{})
+slay NewEvent(category, name tea) *Event
 ```
 
-### Microservice Tracing
-```cursed
-// Trace across service boundaries
-sus service_span TraceSpan = start_span(collector, "order_service")
-service_span = add_tag(service_span, "service", "order-api")
-service_span = add_tag(service_span, "version", "1.2.3")
+### Distributed Tracing
 
-// Trace external service calls
-sus external_span TraceSpan = start_span(collector, "payment_service")
-external_span.parent_span_id = service_span.span_id
-external_span = add_tag(external_span, "service", "payment-api")
-external_span = add_tag(external_span, "timeout", "30s")
-
-collector = end_span(collector, external_span)
-collector = end_span(collector, service_span)
+#### Context Propagation
+```csd
+slay InjectTraceContext(ctx vibe_context.Context, headers map[tea]tea)
+slay ExtractTraceContext(headers map[tea]tea) *TraceContext
+slay ContextWithTraceContext(ctx vibe_context.Context, trace_ctx *TraceContext) vibe_context.Context
 ```
 
-### Function Tracing
-```cursed
-// Trace function execution
-sus function_result tea = trace_function(collector, "calculate_totals", "business_logic")
+#### Correlation Management
+```csd
+slay GenerateCorrelationID() tea
+slay SetCorrelationID(ctx vibe_context.Context, correlation_id tea) vibe_context.Context
+slay GetCorrelationID(ctx vibe_context.Context) tea
 ```
 
-## Configuration
-
-### Trace Collector Settings
-```cursed
-// Enable/disable tracing
-collector.enabled = based
-
-// Set sampling rate (0.0 to 1.0)
-collector.sampling_rate = 0.5
-
-// Set maximum spans to keep in memory
-collector.max_spans = 10000
+#### Service Communication
+```csd
+slay PropagateTrace(ctx vibe_context.Context, downstream_headers map[tea]tea)
+slay ReceiveTrace(upstream_headers map[tea]tea) vibe_context.Context
 ```
 
-### Export Configuration
-```cursed
-// Configure export formats
-sus json_config map[tea]tea = {}
-json_config["pretty"] = "true"
-json_config["include_events"] = "true"
+### Advanced Features
+
+#### Filtering
+```csd
+slay NewFilter() *Filter
+slay (f *Filter) IncludeGoroutine(pattern tea)
+slay (f *Filter) ExcludeGoroutine(pattern tea)
+slay (f *Filter) IncludeEvent(event_type tea)
+slay (f *Filter) ExcludeEvent(event_type tea)
+slay StartWithFilter(w io.Writer, filter *Filter) tea
+```
+
+#### Real-time Analysis
+```csd
+slay NewRealTimeAnalyzer() *RealTimeAnalyzer
+slay (a *RealTimeAnalyzer) OnHighLatency(threshold normie, callback slay(tea, normie))
+slay (a *RealTimeAnalyzer) OnDeadlock(callback slay(tea))
+slay RegisterAnalyzer(analyzer *RealTimeAnalyzer)
+```
+
+#### Sampling
+```csd
+slay SetSamplingRate(rate meal)
+slay ShouldSample() lit
+```
+
+#### Metrics and Visualization
+```csd
+slay ExtractMetrics(trace_data []byte) *Metrics
+slay (m *Metrics) AverageLatency(operation tea) normie
+slay (m *Metrics) MaxConcurrency() normie
+
+slay NewVisualizer(trace_data []byte) *Visualizer  
+slay (v *Visualizer) GenerateTimeline() *Timeline
+```
+
+### External Integration
+
+#### Export Functions
+```csd
+slay ExportToJaeger(trace_data []byte, jaeger_endpoint tea) tea
+slay ExportToZipkin(trace_data []byte, zipkin_endpoint tea) tea
+slay ExportToOpenTelemetry(trace_data []byte, otel_endpoint tea) tea
+```
+
+#### Auto-instrumentation
+```csd
+slay AutoInstrumentHTTP(enabled lit)
+slay AutoInstrumentDatabase(enabled lit)
+slay AutoInstrumentCache(enabled lit)
+```
+
+#### Performance Monitoring
+```csd
+slay MonitorGoroutines()
+slay MonitorMemory()
+slay MonitorNetworkActivity()
+```
+
+## Event Categories
+
+The module provides predefined event categories for consistent classification:
+
+```csd
+const (
+    EventGoroutine   = "goroutine"     # Goroutine lifecycle events
+    EventNet         = "net"           # Network operations
+    EventSyscall     = "syscall"       # System calls
+    EventMemory      = "memory"        # Memory operations
+    EventCPUSample   = "cpu-sample"    # CPU profiling samples
+    EventConcurrency = "concurrency"   # Concurrency primitives
+    EventGC          = "gc"            # Garbage collection
+    EventBlock       = "block"         # Blocking operations
+    EventUserDefined = "user"          # User-defined events
+    EventAPI         = "api"           # API calls
+    EventDatabase    = "database"      # Database operations
+    EventCache       = "cache"         # Cache operations
+    EventFile        = "file"          # File operations
+    EventCompute     = "compute"       # Computation-heavy tasks
+    EventAsyncWork   = "async"         # Asynchronous operations
+    EventNetwork     = "network"       # Network communication
+    EventRender      = "render"        # UI rendering
+    EventLogger      = "logger"        # Logging operations
+    EventPerformance = "performance"   # Performance metrics
+)
 ```
 
 ## Best Practices
 
-1. **Meaningful Span Names**: Use descriptive names that clearly identify the operation
-2. **Appropriate Granularity**: Balance detail with performance overhead
-3. **Consistent Tagging**: Use standardized tag names across your application
-4. **Sampling Strategy**: Use appropriate sampling rates for different environments
-5. **Resource Management**: Clean up old traces to prevent memory issues
-6. **Error Handling**: Always trace errors and exceptions
-7. **Performance Impact**: Monitor the tracing overhead itself
+### 1. Use Correlation IDs
+Always generate and propagate correlation IDs for request tracking:
 
-## Performance Considerations
-
-### Tracing Overhead
-- **Memory Usage**: Spans and events consume memory
-- **CPU Impact**: Trace collection has minimal CPU overhead
-- **Network Overhead**: Exporting traces requires network bandwidth
-- **Storage**: Persistent trace storage requirements
-
-### Optimization Strategies
-- **Sampling**: Use sampling to reduce overhead in high-volume applications
-- **Async Processing**: Process and export traces asynchronously
-- **Batch Operations**: Batch trace exports for efficiency
-- **Retention Policies**: Implement appropriate data retention policies
-
-## Monitoring and Alerting
-
-### Performance Thresholds
-```cursed
-// Define performance thresholds
-sus slow_threshold normie = 1000  // 1 second
-sus error_threshold normie = 5    // 5% error rate
+```csd
+correlation_id := trace_tea.GenerateCorrelationID()
+ctx = trace_tea.SetCorrelationID(ctx, correlation_id)
 ```
 
-### Automated Analysis
-```cursed
-// Automated performance analysis
-sus metrics PerfMetrics = calculate_metrics(collector)
+### 2. Set Meaningful Tags
+Add contextual information to spans:
 
-vibes metrics.avg_time > slow_threshold {
-    vibez.spill("ALERT: High average response time")
+```csd
+span.SetTag("user-id", user_id)
+span.SetTag("endpoint", "/api/users")
+span.SetTag("method", "GET")
+```
+
+### 3. Use Baggage for Cross-Service Data
+Propagate important context across service boundaries:
+
+```csd
+span.SetBaggageItem("tenant-id", tenant_id)
+span.SetBaggageItem("feature-flag", "new-ui")
+```
+
+### 4. Configure Sampling for Production
+Use appropriate sampling rates for production environments:
+
+```csd
+trace_tea.SetSamplingRate(0.1) # Sample 10% of traces
+```
+
+### 5. Filter Noisy Events
+Exclude high-frequency, low-value events:
+
+```csd
+filter := trace_tea.NewFilter()
+filter.ExcludeEvent(trace_tea.EventGC)
+filter.ExcludeEvent(trace_tea.EventCPUSample)
+```
+
+### 6. Monitor Performance
+Set up real-time alerts for performance issues:
+
+```csd
+analyzer := trace_tea.NewRealTimeAnalyzer()
+analyzer.OnHighLatency(500, slay(operation tea, duration normie) {
+    alert_system.Send("High latency detected in " + operation)
+})
+```
+
+## Integration Examples
+
+### Jaeger Integration
+
+```csd
+slay setup_jaeger_tracing() {
+    sus buffer dropz.Buffer
+    trace_tea.Start(&buffer)
+    
+    # ... application code ...
+    
+    trace_tea.Stop()
+    
+    # Export to Jaeger
+    err := trace_tea.ExportToJaeger(buffer.Bytes(), "http://jaeger:14268/api/traces")
+    if err != "" {
+        vibez.spill("Failed to export to Jaeger: %s", err)
+    }
+}
+```
+
+### Microservice Architecture
+
+```csd
+# Service A
+slay call_service_b(ctx vibe_context.Context, data tea) tea {
+    span := trace_tea.StartSpan(ctx, "call-service-b")
+    defer span.End()
+    
+    headers := make(map[tea]tea)
+    trace_tea.PropagateTrace(ctx, headers)
+    
+    response := http_client.Post("http://service-b/api", data, headers)
+    span.SetTag("response-status", response.status)
+    
+    damn response.body
 }
 
-vibes metrics.error_count > error_threshold {
-    vibez.spill("ALERT: High error rate")
+# Service B
+slay handle_request(headers map[tea]tea, data tea) tea {
+    ctx := trace_tea.ReceiveTrace(headers)
+    span := trace_tea.StartSpan(ctx, "process-request")
+    defer span.End()
+    
+    # Process request with full trace context
+    result := process_data(ctx, data)
+    
+    damn result
 }
 ```
 
 ## Testing
 
-Test the trace tea module:
+Run the comprehensive test suite:
+
 ```bash
-cargo run --bin cursed stdlib/trace_tea/simple_test.csd
+cargo run --bin cursed stdlib/trace_tea/test_trace_tea.csd
 ```
 
-## Integration with Other Modules
+The test suite covers:
+- Basic tracing operations
+- Span lifecycle management
+- Distributed trace propagation
+- Performance monitoring
+- Real-time analysis
+- External system integration
+- Concurrent tracing scenarios
+- Complete end-to-end workflows
 
-### Logging Integration
-Correlate traces with log entries using trace IDs.
+## Dependencies
 
-### Metrics Integration
-Export performance metrics to monitoring systems.
+- `testz` - Testing framework
+- `timez` - Time operations
+- `dropz` - I/O operations  
+- `atomic_drip` - Atomic operations
+- `vibe_context` - Context management
 
-### Error Handling Integration
-Automatically trace errors and exceptions.
+## Performance Considerations
 
-### Configuration Integration
-Configure tracing settings through application configuration.
+- **Sampling**: Use appropriate sampling rates in production
+- **Filtering**: Filter out high-frequency, low-value events
+- **Buffering**: Configure appropriate buffer sizes for trace data
+- **Async Export**: Export trace data asynchronously to avoid blocking
+- **Memory Management**: Monitor memory usage with large trace volumes
 
-This tracing system provides comprehensive performance monitoring and analysis capabilities for CURSED applications, enabling developers to identify bottlenecks, optimize performance, and ensure reliable operation.
+## Security Notes
+
+- Avoid including sensitive data in span tags or logs
+- Use baggage carefully - it's propagated across service boundaries
+- Implement proper authentication for trace export endpoints
+- Consider encryption for trace data in transit and at rest
