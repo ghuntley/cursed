@@ -1,10 +1,9 @@
 # Simple type switch test
-
-sus value normie = 42
-
-sus result tea = typecheck value is {
-    normie -> "It's an integer"
-    _ -> "Unknown type"
+sus x normie = 42
+sus result tea = typecheck x is {
+    normie -> "integer"
+    tea -> "string"
+    _ -> "other"
 }
 
 vibez.spill(result)

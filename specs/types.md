@@ -29,7 +29,7 @@ CURSED provides several ways to construct types from existing types:
 |---------------|--------|-------------|
 | Array       | `[n]T`   | Array of n elements of type T |
 | Slice       | `[]T`    | Dynamic array of elements of type T |
-| Map         | `tea[K]V` | Map from keys of type K to values of type V |
+| Map         | `vibes[K]V` | Map from keys of type K to values of type V |
 | Struct      | `squad`  | Collection of fields |
 | Interface   | `collab` | Set of method signatures |
 | Pointer     | `@T`     | Pointer to a value of type T |
@@ -98,14 +98,14 @@ Each type has a zero value that variables of that type are initialized to when n
 
 | Type | Zero Value |
 |------|------------|
-| lit  | `cap` (false) |
+| lit  | `cringe` (false) |
 | numeric types | `0` |
 | tea  | `""` (empty string) |
 | sip  | `\0` (null character) |
-| pointers | `cringe` (nil) |
-| slices | `cringe` (nil) |
-| maps | `cringe` (nil) |
-| channels | `cringe` (nil) |
+| pointers | `nah` (nil) |
+| slices | `nah` (nil) |
+| maps | `nah` (nil) |
+| channels | `nah` (nil) |
 | structs | Each field has its zero value |
 | arrays | Each element has its zero value |
 
@@ -117,7 +117,7 @@ CURSED supports type inference in variable declarations with the `:=` operator:
 x := 10        fr fr x is a normie (int32)
 y := "hello"   fr fr y is a tea (string)
 z := based     fr fr z is a lit (bool)
-w := cap       fr fr w is a lit (bool)
+w := cringe    fr fr w is a lit (bool)
 c := 'a'       fr fr c is a sip (char)
 ```
 

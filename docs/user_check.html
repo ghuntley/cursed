@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>user_check Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>user_check Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>Current</h3>
+        <p></p>
+        <p><code>slay Current() (*User, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>Lookup</h3>
+        <p></p>
+        <p><code>slay Lookup(username tea) (*User, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>LookupId</h3>
+        <p></p>
+        <p><code>slay LookupId(uid tea) (*User, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>LookupGroup</h3>
+        <p></p>
+        <p><code>slay LookupGroup(name tea) (*Group, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>LookupGroupId</h3>
+        <p></p>
+        <p><code>slay LookupGroupId(gid tea) (*Group, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetAllUsers</h3>
+        <p></p>
+        <p><code>slay GetAllUsers() ([]*User, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetAllGroups</h3>
+        <p></p>
+        <p><code>slay GetAllGroups() ([]*Group, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>UserExists</h3>
+        <p></p>
+        <p><code>slay UserExists(username tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>GroupExists</h3>
+        <p></p>
+        <p><code>slay GroupExists(groupName tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>CurrentUserGroups</h3>
+        <p></p>
+        <p><code>slay CurrentUserGroups() ([]*Group, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsCurrentUserInGroup</h3>
+        <p></p>
+        <p><code>slay IsCurrentUserInGroup(groupName tea) (lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetEffectiveUid</h3>
+        <p></p>
+        <p><code>slay GetEffectiveUid() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetEffectiveGid</h3>
+        <p></p>
+        <p><code>slay GetEffectiveGid() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsCurrentUserRoot</h3>
+        <p></p>
+        <p><code>slay IsCurrentUserRoot() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsCurrentUserSystem</h3>
+        <p></p>
+        <p><code>slay IsCurrentUserSystem() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetUserHomeDir</h3>
+        <p></p>
+        <p><code>slay GetUserHomeDir(username tea) (tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetCurrentUserHomeDir</h3>
+        <p></p>
+        <p><code>slay GetCurrentUserHomeDir() (tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>CreateUser</h3>
+        <p></p>
+        <p><code>slay CreateUser(username, fullName, homeDir tea) (*User, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>CreateGroup</h3>
+        <p></p>
+        <p><code>slay CreateGroup(groupName tea) (*Group, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>DeleteUser</h3>
+        <p></p>
+        <p><code>slay DeleteUser(username tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>DeleteGroup</h3>
+        <p></p>
+        <p><code>slay DeleteGroup(groupName tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>AddUserToGroup</h3>
+        <p></p>
+        <p><code>slay AddUserToGroup(username, groupName tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>RemoveUserFromGroup</h3>
+        <p></p>
+        <p><code>slay RemoveUserFromGroup(username, groupName tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SearchUsers</h3>
+        <p></p>
+        <p><code>slay SearchUsers(pattern tea) ([]*User, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>SearchGroups</h3>
+        <p></p>
+        <p><code>slay SearchGroups(pattern tea) ([]*Group, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>ValidateUsername</h3>
+        <p></p>
+        <p><code>slay ValidateUsername(username tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ValidateGroupName</h3>
+        <p></p>
+        <p><code>slay ValidateGroupName(groupName tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>initializeCache</h3>
+        <p></p>
+        <p><code>slay initializeCache() *UserCache {</code></p>
+    </div>
+    <div class="function">
+        <h3>ClearCache</h3>
+        <p></p>
+        <p><code>slay ClearCache() {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetCacheStats</h3>
+        <p></p>
+        <p><code>slay GetCacheStats() (normie, normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsValidUid</h3>
+        <p></p>
+        <p><code>slay IsValidUid(uid tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsValidGid</h3>
+        <p></p>
+        <p><code>slay IsValidGid(gid tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetSystemInfo</h3>
+        <p></p>
+        <p><code>slay GetSystemInfo() map[tea]tea {</code></p>
+    </div>
+</body>
+</html>

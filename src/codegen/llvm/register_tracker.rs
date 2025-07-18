@@ -18,6 +18,14 @@ impl RegisterTracker {
         Self::default()
     }
     
+    /// Create a new function-scoped register tracker (for WASM)
+    pub fn new_function_scoped() -> Self {
+        Self {
+            allocated: HashSet::new(),
+            next_expected: 0,
+        }
+    }
+    
     /// Allocate next register with global synchronization
     pub fn allocate_register(&mut self) -> String {
         let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
@@ -29,6 +37,14 @@ impl RegisterTracker {
             GLOBAL_REGISTER_COUNTER += 1;
             format!("%{}", reg)
         }
+    }
+    
+    /// Allocate next register with function scope (for WASM)
+    pub fn allocate_function_register(&mut self) -> String {
+        let reg = self.next_expected;
+        self.allocated.insert(reg);
+        self.next_expected += 1;
+        format!("%{}", reg)
     }
     
     /// Get next register number without allocation
@@ -56,6 +72,11 @@ impl RegisterTracker {
     pub fn get_current_counter(&self) -> usize {
         let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
         unsafe { GLOBAL_REGISTER_COUNTER }
+    }
+    
+    /// Get current function-scoped counter value
+    pub fn get_function_counter(&self) -> usize {
+        self.next_expected
     }
     
     /// Set current counter value

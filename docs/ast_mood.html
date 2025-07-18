@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ast_mood Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>ast_mood Module</h1>
+    <p>Advanced AST Manipulation Module for CURSED Compiler Infrastructure Pure CURSED implementation for compiler passes and code analysis tools</p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>create_ast_node</h3>
+        <p></p>
+        <p><code>slay create_ast_node(node_type normie, name tea, value tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_program_node</h3>
+        <p></p>
+        <p><code>slay create_program_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_function_node</h3>
+        <p></p>
+        <p><code>slay create_function_node(name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_variable_node</h3>
+        <p></p>
+        <p><code>slay create_variable_node(name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_identifier_node</h3>
+        <p></p>
+        <p><code>slay create_identifier_node(name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_literal_node</h3>
+        <p></p>
+        <p><code>slay create_literal_node(value tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_binary_op_node</h3>
+        <p></p>
+        <p><code>slay create_binary_op_node(operator tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_unary_op_node</h3>
+        <p></p>
+        <p><code>slay create_unary_op_node(operator tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_call_node</h3>
+        <p></p>
+        <p><code>slay create_call_node(function_name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_block_node</h3>
+        <p></p>
+        <p><code>slay create_block_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_if_node</h3>
+        <p></p>
+        <p><code>slay create_if_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_for_node</h3>
+        <p></p>
+        <p><code>slay create_for_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_while_node</h3>
+        <p></p>
+        <p><code>slay create_while_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_return_node</h3>
+        <p></p>
+        <p><code>slay create_return_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_assign_node</h3>
+        <p></p>
+        <p><code>slay create_assign_node(variable_name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_member_access_node</h3>
+        <p></p>
+        <p><code>slay create_member_access_node(member_name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_tuple_node</h3>
+        <p></p>
+        <p><code>slay create_tuple_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_array_node</h3>
+        <p></p>
+        <p><code>slay create_array_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_struct_node</h3>
+        <p></p>
+        <p><code>slay create_struct_node(struct_name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_interface_node</h3>
+        <p></p>
+        <p><code>slay create_interface_node(interface_name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_match_node</h3>
+        <p></p>
+        <p><code>slay create_match_node(line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_pattern_node</h3>
+        <p></p>
+        <p><code>slay create_pattern_node(pattern tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_type_node</h3>
+        <p></p>
+        <p><code>slay create_type_node(type_name tea, line normie, column normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_node_type</h3>
+        <p></p>
+        <p><code>slay ast_node_type(node normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_node_line</h3>
+        <p></p>
+        <p><code>slay ast_node_line(node normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_node_column</h3>
+        <p></p>
+        <p><code>slay ast_node_column(node normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_node_id</h3>
+        <p></p>
+        <p><code>slay ast_node_id(node normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_program_node</h3>
+        <p></p>
+        <p><code>slay is_program_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_function_node</h3>
+        <p></p>
+        <p><code>slay is_function_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_variable_node</h3>
+        <p></p>
+        <p><code>slay is_variable_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_identifier_node</h3>
+        <p></p>
+        <p><code>slay is_identifier_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_literal_node</h3>
+        <p></p>
+        <p><code>slay is_literal_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_binary_op_node</h3>
+        <p></p>
+        <p><code>slay is_binary_op_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_unary_op_node</h3>
+        <p></p>
+        <p><code>slay is_unary_op_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_call_node</h3>
+        <p></p>
+        <p><code>slay is_call_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_block_node</h3>
+        <p></p>
+        <p><code>slay is_block_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_expression_node</h3>
+        <p></p>
+        <p><code>slay is_expression_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_statement_node</h3>
+        <p></p>
+        <p><code>slay is_statement_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>traverse_ast_preorder</h3>
+        <p></p>
+        <p><code>slay traverse_ast_preorder(node normie, depth normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>traverse_ast_postorder</h3>
+        <p></p>
+        <p><code>slay traverse_ast_postorder(node normie, depth normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>count_ast_nodes</h3>
+        <p></p>
+        <p><code>slay count_ast_nodes(root normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_ast_depth</h3>
+        <p></p>
+        <p><code>slay get_ast_depth(node normie, current_depth normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>find_nodes_by_type</h3>
+        <p></p>
+        <p><code>slay find_nodes_by_type(root normie, target_type normie, found_count normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>has_function_nodes</h3>
+        <p></p>
+        <p><code>slay has_function_nodes(root normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>has_variable_nodes</h3>
+        <p></p>
+        <p><code>slay has_variable_nodes(root normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>has_expression_nodes</h3>
+        <p></p>
+        <p><code>slay has_expression_nodes(root normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_function_count</h3>
+        <p></p>
+        <p><code>slay get_function_count(root normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_variable_count</h3>
+        <p></p>
+        <p><code>slay get_variable_count(root normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_expression_count</h3>
+        <p></p>
+        <p><code>slay get_expression_count(root normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>match_function_pattern</h3>
+        <p></p>
+        <p><code>slay match_function_pattern(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>match_variable_pattern</h3>
+        <p></p>
+        <p><code>slay match_variable_pattern(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>match_literal_pattern</h3>
+        <p></p>
+        <p><code>slay match_literal_pattern(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>match_ast_pattern</h3>
+        <p></p>
+        <p><code>slay match_ast_pattern(node normie, pattern_type normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>transform_ast_node</h3>
+        <p></p>
+        <p><code>slay transform_ast_node(node normie, new_type normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>clone_ast_node</h3>
+        <p></p>
+        <p><code>slay clone_ast_node(node normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>replace_node_type</h3>
+        <p></p>
+        <p><code>slay replace_node_type(node normie, old_type normie, new_type normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_node_type_string</h3>
+        <p></p>
+        <p><code>slay ast_node_type_string(node_type normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_node_to_string</h3>
+        <p></p>
+        <p><code>slay ast_node_to_string(node normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>print_ast_summary</h3>
+        <p></p>
+        <p><code>slay print_ast_summary(root normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>print_node_details</h3>
+        <p></p>
+        <p><code>slay print_node_details(node normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_ast_node</h3>
+        <p></p>
+        <p><code>slay validate_ast_node(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_ast_tree</h3>
+        <p></p>
+        <p><code>slay validate_ast_tree(root normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>check_node_consistency</h3>
+        <p></p>
+        <p><code>slay check_node_consistency(node normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_simple_program</h3>
+        <p></p>
+        <p><code>slay build_simple_program() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_function_with_return</h3>
+        <p></p>
+        <p><code>slay build_function_with_return(function_name tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_variable_assignment</h3>
+        <p></p>
+        <p><code>slay build_variable_assignment(var_name tea, value tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_binary_expression</h3>
+        <p></p>
+        <p><code>slay build_binary_expression(left_operand tea, operator tea, right_operand tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_function_call</h3>
+        <p></p>
+        <p><code>slay build_function_call(func_name tea, arg_count normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>serialize_ast_node</h3>
+        <p></p>
+        <p><code>slay serialize_ast_node(node normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>deserialize_ast_node</h3>
+        <p></p>
+        <p><code>slay deserialize_ast_node(serialized tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>export_ast_to_json</h3>
+        <p></p>
+        <p><code>slay export_ast_to_json(root normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>import_ast_from_json</h3>
+        <p></p>
+        <p><code>slay import_ast_from_json(json_str tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_mood_version</h3>
+        <p></p>
+        <p><code>slay ast_mood_version() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_mood_status</h3>
+        <p></p>
+        <p><code>slay ast_mood_status() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_supported_node_types</h3>
+        <p></p>
+        <p><code>slay get_supported_node_types() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_ast_mood_ready</h3>
+        <p></p>
+        <p><code>slay is_ast_mood_ready() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>print_ast_mood_info</h3>
+        <p></p>
+        <p><code>slay print_ast_mood_info() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>optimize_ast_structure</h3>
+        <p></p>
+        <p><code>slay optimize_ast_structure(root normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>compress_ast_representation</h3>
+        <p></p>
+        <p><code>slay compress_ast_representation(root normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ast_metrics_analysis</h3>
+        <p></p>
+        <p><code>slay ast_metrics_analysis(root normie) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>AST_UNKNOWN</h3>
+        <p>AST Node Type Constants</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_PROGRAM</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_FUNCTION</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_VARIABLE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_EXPRESSION</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_STATEMENT</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_IDENTIFIER</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_LITERAL</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_BINARY_OP</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_UNARY_OP</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_CALL</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_BLOCK</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_IF</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_FOR</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_WHILE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_RETURN</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_ASSIGN</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_MEMBER_ACCESS</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_INDEX_ACCESS</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_TUPLE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_ARRAY</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_STRUCT</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_INTERFACE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_MATCH</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_PATTERN</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>AST_TYPE</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>global_node_counter</h3>
+        <p>Global node counter for unique IDs</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>encoded_info</h3>
+        <p>Format: type(8 bits) + line(12 bits) + column(12 bits) + id</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>remainder</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>remainder</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p>Simulate tree traversal by counting nodes at depth</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p>If this is a complex node, simulate children</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p>Process children first in postorder</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>max_child_depth</h3>
+        <p>Recursive case - internal nodes</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>child_depth</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>child_depth</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p>Recursively check children (simulated)</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>expr_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>literal_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>expr_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>literal_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>binary_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>column</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>column</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>type_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>column</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>depth</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>func_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>var_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>type_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>column</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>column</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p>Validate tree structure</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>program</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>func_node</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>assign_node</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>binary_node</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>call_node</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>node_type</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>column</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>id</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>type_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>column</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>optimized</h3>
+        <p>Apply basic optimizations to AST structure</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>nodes</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>depth</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>functions</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>variables</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>expressions</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

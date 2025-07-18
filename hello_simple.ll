@@ -1,5 +1,5 @@
 ; CURSED Language - Advanced LLVM Compilation
-target triple = "aarch64-apple-darwin"
+target triple = "x86_64-unknown-linux-gnu"
 
 
 ; Runtime function declarations
@@ -140,7 +140,7 @@ entry:
 define void @main() {
 entry:
   %0 = getelementptr inbounds [14 x i8], [14 x i8]* @.str.0, i64 0, i64 0
-  %1 = call i32 @print(i8* %0)
+  %1 = call i32 @print(i32 %0)
   ret void
 }
 

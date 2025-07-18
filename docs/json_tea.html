@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>json_tea Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>json_tea Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>Marshal</h3>
+        <p>Core JSON Marshal function</p>
+        <p><code>slay Marshal(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Unmarshal</h3>
+        <p>Core JSON Unmarshal function</p>
+        <p><code>slay Unmarshal(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>MarshalIndent</h3>
+        <p>Advanced Marshal functions</p>
+        <p><code>slay MarshalIndent(data tea, prefix tea, indent tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>MarshalCompact</h3>
+        <p></p>
+        <p><code>slay MarshalCompact(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>marshal_number</h3>
+        <p>Type-specific marshal functions</p>
+        <p><code>slay marshal_number(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>marshal_string</h3>
+        <p></p>
+        <p><code>slay marshal_string(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>marshal_boolean</h3>
+        <p></p>
+        <p><code>slay marshal_boolean(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>UnmarshalToMap</h3>
+        <p>Type-specific unmarshal functions</p>
+        <p><code>slay UnmarshalToMap(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>UnmarshalToSlice</h3>
+        <p></p>
+        <p><code>slay UnmarshalToSlice(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>json_escape_string</h3>
+        <p>JSON String helper functions</p>
+        <p><code>slay json_escape_string(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>json_unescape_string</h3>
+        <p></p>
+        <p><code>slay json_unescape_string(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsValidJSON</h3>
+        <p>JSON validation functions</p>
+        <p><code>slay IsValidJSON(json_string tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ValidateSchema</h3>
+        <p></p>
+        <p><code>slay ValidateSchema(json_string tea, schema tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_json_type</h3>
+        <p>JSON type detection functions</p>
+        <p><code>slay get_json_type(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_object</h3>
+        <p></p>
+        <p><code>slay is_object(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_array</h3>
+        <p></p>
+        <p><code>slay is_array(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_string_literal</h3>
+        <p></p>
+        <p><code>slay is_string_literal(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_boolean</h3>
+        <p></p>
+        <p><code>slay is_boolean(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_numeric</h3>
+        <p>Number validation functions</p>
+        <p><code>slay is_numeric(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_numeric_simple</h3>
+        <p></p>
+        <p><code>slay is_numeric_simple(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_json_number</h3>
+        <p></p>
+        <p><code>slay is_valid_json_number(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>starts_and_ends_with_quotes</h3>
+        <p>String utility functions</p>
+        <p><code>slay starts_and_ends_with_quotes(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_string_content</h3>
+        <p></p>
+        <p><code>slay extract_string_content(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_trim_whitespace</h3>
+        <p></p>
+        <p><code>slay string_trim_whitespace(value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>compact_json</h3>
+        <p>Formatting functions</p>
+        <p><code>slay compact_json(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>format_json_with_indent</h3>
+        <p></p>
+        <p><code>slay format_json_with_indent(json_string tea, prefix tea, indent tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_contains</h3>
+        <p>String utility functions that the tests expect</p>
+        <p><code>slay string_contains(haystack tea, needle tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_starts_with</h3>
+        <p></p>
+        <p><code>slay string_starts_with(haystack tea, prefix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_ends_with</h3>
+        <p></p>
+        <p><code>slay string_ends_with(haystack tea, suffix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_replace_all</h3>
+        <p></p>
+        <p><code>slay string_replace_all(input tea, old tea, new tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>marshal</h3>
+        <p>Legacy compatibility functions</p>
+        <p><code>slay marshal(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unmarshal</h3>
+        <p></p>
+        <p><code>slay unmarshal(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse</h3>
+        <p></p>
+        <p><code>slay parse(json_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>stringify</h3>
+        <p></p>
+        <p><code>slay stringify(data tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_json</h3>
+        <p></p>
+        <p><code>slay parse_json(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_length</h3>
+        <p>Core string operations used throughout</p>
+        <p><code>slay string_length(s tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_substring</h3>
+        <p></p>
+        <p><code>slay string_substring(s tea, start normie, length normie) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>json_type</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>first_char</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>last_char</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>first_char</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>last_char</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>first_char</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>last_char</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p>Simple whitespace trimming implementation</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>extracted</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>start_pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>extracted</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

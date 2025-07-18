@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>process Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>process Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>init_process_manager</h3>
+        <p>Module Initialization</p>
+        <p><code>slay init_process_manager() {</code></p>
+    </div>
+    <div class="function">
+        <h3>spawn_process</h3>
+        <p>Process Spawning Functions</p>
+        <p><code>slay spawn_process(command tea, args []tea) ProcessHandle {</code></p>
+    </div>
+    <div class="function">
+        <h3>spawn_with_env</h3>
+        <p></p>
+        <p><code>slay spawn_with_env(command tea, args []tea, env map[tea]tea) ProcessHandle {</code></p>
+    </div>
+    <div class="function">
+        <h3>spawn_async</h3>
+        <p></p>
+        <p><code>slay spawn_async(command tea, args []tea) ProcessHandle {</code></p>
+    </div>
+    <div class="function">
+        <h3>wait_for_process</h3>
+        <p>Process Management Functions</p>
+        <p><code>slay wait_for_process(handle ProcessHandle) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>kill_process</h3>
+        <p></p>
+        <p><code>slay kill_process(pid normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>send_signal</h3>
+        <p></p>
+        <p><code>slay send_signal(pid normie, signal normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>terminate_process</h3>
+        <p></p>
+        <p><code>slay terminate_process(pid normie, exit_code normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_process_info</h3>
+        <p>Process Information Functions</p>
+        <p><code>slay get_process_info(pid normie) ProcessInfo {</code></p>
+    </div>
+    <div class="function">
+        <h3>list_processes</h3>
+        <p></p>
+        <p><code>slay list_processes() []ProcessInfo {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_current_pid</h3>
+        <p></p>
+        <p><code>slay get_current_pid() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_parent_pid</h3>
+        <p></p>
+        <p><code>slay get_parent_pid() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>process_exists</h3>
+        <p></p>
+        <p><code>slay process_exists(pid normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_process_state</h3>
+        <p></p>
+        <p><code>slay get_process_state(pid normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>register_signal_handler</h3>
+        <p>Signal Handling Functions</p>
+        <p><code>slay register_signal_handler(signal normie, handler slay()) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>unregister_signal_handler</h3>
+        <p></p>
+        <p><code>slay unregister_signal_handler(signal normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>enable_signal_handler</h3>
+        <p></p>
+        <p><code>slay enable_signal_handler(signal normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>disable_signal_handler</h3>
+        <p></p>
+        <p><code>slay disable_signal_handler(signal normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>default_term_handler</h3>
+        <p>Default Signal Handlers</p>
+        <p><code>slay default_term_handler() {</code></p>
+    </div>
+    <div class="function">
+        <h3>default_int_handler</h3>
+        <p></p>
+        <p><code>slay default_int_handler() {</code></p>
+    </div>
+    <div class="function">
+        <h3>default_hup_handler</h3>
+        <p></p>
+        <p><code>slay default_hup_handler() {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_env</h3>
+        <p>Environment Variable Management</p>
+        <p><code>slay get_env(key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_env</h3>
+        <p></p>
+        <p><code>slay set_env(key tea, value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>unset_env</h3>
+        <p></p>
+        <p><code>slay unset_env(key tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_all_env</h3>
+        <p></p>
+        <p><code>slay get_all_env() map[tea]tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>clear_env</h3>
+        <p></p>
+        <p><code>slay clear_env() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_cwd</h3>
+        <p>Working Directory Management</p>
+        <p><code>slay get_cwd() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_cwd</h3>
+        <p></p>
+        <p><code>slay set_cwd(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>change_dir</h3>
+        <p></p>
+        <p><code>slay change_dir(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>send_ipc_message</h3>
+        <p>Process Communication (IPC)</p>
+        <p><code>slay send_ipc_message(receiver_pid normie, message_type tea, data tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>receive_ipc_message</h3>
+        <p></p>
+        <p><code>slay receive_ipc_message(sender_pid normie) IpcMessage {</code></p>
+    </div>
+    <div class="function">
+        <h3>has_ipc_message</h3>
+        <p></p>
+        <p><code>slay has_ipc_message(sender_pid normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>clear_ipc_messages</h3>
+        <p></p>
+        <p><code>slay clear_ipc_messages() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_process_memory</h3>
+        <p>Process Monitoring Functions</p>
+        <p><code>slay get_process_memory(pid normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_process_cpu</h3>
+        <p></p>
+        <p><code>slay get_process_cpu(pid normie) drip {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_process_uptime</h3>
+        <p></p>
+        <p><code>slay get_process_uptime(pid normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>monitor_process</h3>
+        <p></p>
+        <p><code>slay monitor_process(pid normie) ProcessInfo {</code></p>
+    </div>
+    <div class="function">
+        <h3>exit</h3>
+        <p>Exit Code Handling</p>
+        <p><code>slay exit() {</code></p>
+    </div>
+    <div class="function">
+        <h3>exit_with_code</h3>
+        <p></p>
+        <p><code>slay exit_with_code(code normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_exit_code</h3>
+        <p></p>
+        <p><code>slay get_exit_code(pid normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>copy_environment</h3>
+        <p>Helper Functions</p>
+        <p><code>slay copy_environment() map[tea]tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_current_time</h3>
+        <p></p>
+        <p><code>slay get_current_time() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>execute_process</h3>
+        <p></p>
+        <p><code>slay execute_process(handle ProcessHandle, command tea, args []tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_system_info</h3>
+        <p>System Information Functions</p>
+        <p><code>slay get_system_info() map[tea]tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>debug_process_manager</h3>
+        <p>Debug and Utility Functions</p>
+        <p><code>slay debug_process_manager() {</code></p>
+    </div>
+    <div class="function">
+        <h3>cleanup_process_manager</h3>
+        <p>Process cleanup on shutdown</p>
+        <p><code>slay cleanup_process_manager() {</code></p>
+    </div>
+</body>
+</html>

@@ -48,20 +48,35 @@ pub fn register_type(type_info: RuntimeTypeInfo) {
 /// Get runtime type information for a value
 #[no_mangle]
 pub extern "C" fn cursed_get_runtime_type_info(value: *const c_void) -> *const RuntimeTypeInfo {
-    // In a real implementation, this would examine the value's metadata
-    // For now, we'll use a simplified approach based on pointer analysis
-    
     if value.is_null() {
         return std::ptr::null();
     }
     
-    // TODO: Implement actual runtime type detection
-    // This would typically involve:
-    // 1. Reading type metadata from the object header
-    // 2. Looking up the type in the registry
-    // 3. Returning the type info
-    
-    std::ptr::null()
+    unsafe {
+        // For now, we'll use a simplified approach based on memory patterns
+        // In a real implementation, this would examine the value's metadata
+        
+        // Read the first few bytes to determine type
+        let value_ptr = value as *const u8;
+        let first_byte = *value_ptr;
+        
+        // Simple heuristic based on value patterns
+        // This is a simplified implementation for demonstration
+        let type_id = match first_byte {
+            0x00..=0x01 => get_type_id_by_name("lit"),    // Boolean values
+            0x02..=0x7F => get_type_id_by_name("normie"), // Small integers
+            0x80..=0xFF => get_type_id_by_name("tea"),    // String pointers
+        };
+        
+        // Look up in registry
+        if let Some(ref registry) = TYPE_REGISTRY {
+            if let Some(type_info) = registry.get(&type_id) {
+                return type_info as *const RuntimeTypeInfo;
+            }
+        }
+        
+        std::ptr::null()
+    }
 }
 
 /// Check if a value is of a specific type
@@ -97,9 +112,21 @@ pub extern "C" fn cursed_check_interface(type_info: *const RuntimeTypeInfo, inte
             return actual_interface_str == interface_name_str;
         }
         
-        // TODO: Check if the type implements the interface
-        // This would involve checking the type's method table against
-        // the interface requirements
+        // Check if the type implements the interface by checking method table
+        if type_info_ref.interface_method_count > 0 && !type_info_ref.interface_methods.is_null() {
+            let methods = std::slice::from_raw_parts(type_info_ref.interface_methods, type_info_ref.interface_method_count);
+            
+            // For now, we'll check if the interface name matches any method's declaring interface
+            // In a real implementation, this would be more sophisticated
+            for method in methods {
+                if !method.method_name.is_null() {
+                    let method_name = CStr::from_ptr(method.method_name).to_str().unwrap_or("");
+                    if method_name.starts_with(interface_name_str) {
+                        return true;
+                    }
+                }
+            }
+        }
         
         false
     }
@@ -116,14 +143,49 @@ pub extern "C" fn cursed_type_cast(value: *const c_void, from_type: *const Runti
         let from_type_ref = &*from_type;
         let to_type_ref = &*to_type;
         
-        // Simple cast - in a real implementation, this would handle
-        // interface unwrapping, pointer adjustments, etc.
+        // Direct type match - no casting needed
         if from_type_ref.type_id == to_type_ref.type_id {
-            value
-        } else {
-            // For now, just return the value as-is
-            // TODO: Implement proper type casting
-            value
+            return value;
+        }
+        
+        // Handle interface unwrapping
+        if from_type_ref.is_interface && !to_type_ref.is_interface {
+            // Extract the underlying value from the interface wrapper
+            // Interface objects in CURSED have a vtable pointer followed by the actual value
+            let interface_ptr = value as *const *const c_void;
+            let actual_value = *interface_ptr.offset(1); // Skip vtable pointer
+            return actual_value;
+        }
+        
+        // Handle interface wrapping
+        if !from_type_ref.is_interface && to_type_ref.is_interface {
+            // Create an interface wrapper
+            // This would typically allocate memory for the interface object
+            // For now, we'll return the value as-is
+            return value;
+        }
+        
+        // Handle numeric conversions
+        let from_name = CStr::from_ptr(from_type_ref.type_name).to_str().unwrap_or("");
+        let to_name = CStr::from_ptr(to_type_ref.type_name).to_str().unwrap_or("");
+        
+        match (from_name, to_name) {
+            ("normie", "thicc") | ("smol", "normie") | ("mid", "normie") => {
+                // Integer widening - return as-is for now
+                value
+            }
+            ("thicc", "normie") | ("normie", "smol") | ("normie", "mid") => {
+                // Integer narrowing - return as-is for now
+                value
+            }
+            ("normie", "meal") | ("snack", "meal") => {
+                // Integer/float to double - return as-is for now
+                value
+            }
+            _ => {
+                // Default case - return the value as-is
+                value
+            }
         }
     }
 }
@@ -159,6 +221,11 @@ pub fn create_primitive_type_info(type_name: &str) -> RuntimeTypeInfo {
     }
 }
 
+/// Get type ID by name using the same hash function as create_primitive_type_info
+pub fn get_type_id_by_name(type_name: &str) -> u64 {
+    type_name.bytes().fold(0u64, |acc, b| acc.wrapping_mul(31).wrapping_add(b as u64))
+}
+
 /// Initialize runtime type system with CURSED primitive types
 pub fn initialize_cursed_runtime_types() {
     initialize_type_registry();
@@ -171,5 +238,27 @@ pub fn initialize_cursed_runtime_types() {
     for type_name in &primitive_types {
         let type_info = create_primitive_type_info(type_name);
         register_type(type_info);
+    }
+}
+
+/// Enhanced type checking with value inspection
+#[no_mangle]
+pub extern "C" fn cursed_check_value_type(value: *const c_void, type_name: *const c_char) -> bool {
+    if value.is_null() || type_name.is_null() {
+        return false;
+    }
+    
+    unsafe {
+        let type_name_str = CStr::from_ptr(type_name).to_str().unwrap_or("");
+        let type_info = cursed_get_runtime_type_info(value);
+        
+        if type_info.is_null() {
+            return false;
+        }
+        
+        let type_info_ref = &*type_info;
+        let actual_type_str = CStr::from_ptr(type_info_ref.type_name).to_str().unwrap_or("");
+        
+        actual_type_str == type_name_str
     }
 }

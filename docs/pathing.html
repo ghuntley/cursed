@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pathing Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>pathing Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>is_windows</h3>
+        <p></p>
+        <p><code>slay is_windows() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_path_separator</h3>
+        <p></p>
+        <p><code>slay get_path_separator() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_join</h3>
+        <p></p>
+        <p><code>slay path_join(parts [tea]) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_split</h3>
+        <p></p>
+        <p><code>slay path_split(path tea) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_basename</h3>
+        <p></p>
+        <p><code>slay path_basename(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_dirname</h3>
+        <p></p>
+        <p><code>slay path_dirname(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_ext</h3>
+        <p></p>
+        <p><code>slay path_ext(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_clean</h3>
+        <p></p>
+        <p><code>slay path_clean(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_is_abs</h3>
+        <p></p>
+        <p><code>slay path_is_abs(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_abs</h3>
+        <p></p>
+        <p><code>slay path_abs(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_rel</h3>
+        <p></p>
+        <p><code>slay path_rel(base tea, target tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_match</h3>
+        <p></p>
+        <p><code>slay path_match(pattern tea, path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_from_slash</h3>
+        <p></p>
+        <p><code>slay path_from_slash(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_to_slash</h3>
+        <p></p>
+        <p><code>slay path_to_slash(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_split</h3>
+        <p></p>
+        <p><code>slay string_split(str tea, sep tea) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_last_index</h3>
+        <p></p>
+        <p><code>slay string_last_index(str tea, substr tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_starts_with</h3>
+        <p></p>
+        <p><code>slay string_starts_with(str tea, prefix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_ends_with</h3>
+        <p></p>
+        <p><code>slay string_ends_with(str tea, suffix tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_contains</h3>
+        <p></p>
+        <p><code>slay string_contains(str tea, substr tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_index</h3>
+        <p></p>
+        <p><code>slay string_index(str tea, substr tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_replace_all</h3>
+        <p></p>
+        <p><code>slay string_replace_all(str tea, old tea, new tea) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>PATH_SEPARATOR</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>PATH_SEPARATOR_WIN</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>PATH_LIST_SEPARATOR</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>PATH_LIST_SEPARATOR_WIN</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>separator</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>separator</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>separator</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>last_sep</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>separator</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>last_sep</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>basename</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>last_dot</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>separator</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>part</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>separator</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cwd</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>base_abs</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>target_abs</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>common_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>separator</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>separator</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>substr_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>prefix_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>suffix_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>str_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>str_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>substr_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>old_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>new_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>pos</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>before</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>after</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

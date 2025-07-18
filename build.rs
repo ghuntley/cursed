@@ -291,6 +291,26 @@ fn build_runtime_libraries() {
                     println!("cargo:warning=Runtime library build failed: {}", stderr);
                 } else {
                     println!("cargo:warning=Runtime libraries built successfully");
+                    // Run ranlib on all archives to ensure proper indexing
+                    for lib in &libs {
+                        let lib_path = runtime_dir.join(lib);
+                        if lib_path.exists() {
+                            let ranlib_result = Command::new("ranlib")
+                                .arg(&lib_path)
+                                .output();
+                            match ranlib_result {
+                                Ok(ranlib_output) => {
+                                    if !ranlib_output.status.success() {
+                                        println!("cargo:warning=Failed to run ranlib on {}: {}", 
+                                                lib, String::from_utf8_lossy(&ranlib_output.stderr));
+                                    }
+                                }
+                                Err(e) => {
+                                    println!("cargo:warning=Failed to run ranlib on {}: {}", lib, e);
+                                }
+                            }
+                        }
+                    }
                 }
             }
             Err(e) => {
@@ -299,6 +319,26 @@ fn build_runtime_libraries() {
         }
     } else {
         println!("cargo:warning=Runtime libraries are up to date");
+        // Even if up to date, ensure proper indexing
+        for lib in &libs {
+            let lib_path = runtime_dir.join(lib);
+            if lib_path.exists() {
+                let ranlib_result = Command::new("ranlib")
+                    .arg(&lib_path)
+                    .output();
+                match ranlib_result {
+                    Ok(ranlib_output) => {
+                        if !ranlib_output.status.success() {
+                            println!("cargo:warning=Failed to run ranlib on {}: {}", 
+                                    lib, String::from_utf8_lossy(&ranlib_output.stderr));
+                        }
+                    }
+                    Err(e) => {
+                        println!("cargo:warning=Failed to run ranlib on {}: {}", lib, e);
+                    }
+                }
+            }
+        }
     }
 }
 

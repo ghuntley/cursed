@@ -4052,7 +4052,7 @@ impl Parser {
                             Ok(MatchPattern::Variable(name))
                         }
                     }
-                    TokenKind::Integer(_) => {
+                    TokenKind::Number => {
                         let value = token.lexeme.parse::<i64>().map_err(|_| {
                             Error::Parse("Invalid integer literal".to_string())
                         })?;

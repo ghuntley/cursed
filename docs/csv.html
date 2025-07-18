@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>csv Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>csv Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>detect_delimiter</h3>
+        <p>Auto-detect CSV delimiter</p>
+        <p><code>slay detect_delimiter(csv_string tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>count_rows</h3>
+        <p>Count number of rows</p>
+        <p><code>slay count_rows(csv_string tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>count_columns</h3>
+        <p>Count number of columns in first row</p>
+        <p><code>slay count_columns(csv_string tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_row</h3>
+        <p>Parse single CSV row with specified delimiter</p>
+        <p><code>slay parse_row(row_string tea, delimiter tea) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse</h3>
+        <p>Core CSV parsing function - parse CSV string to array of arrays</p>
+        <p><code>slay parse(csv_string tea) [[tea]] {</code></p>
+    </div>
+    <div class="function">
+        <h3>escape_field</h3>
+        <p>Escape field for CSV output</p>
+        <p><code>slay escape_field(field tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unescape_field</h3>
+        <p>Unescape CSV field</p>
+        <p><code>slay unescape_field(field tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>stringify</h3>
+        <p>Convert array of arrays to CSV string</p>
+        <p><code>slay stringify(data [[tea]]) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate</h3>
+        <p>Validate CSV syntax</p>
+        <p><code>slay validate(csv_string tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_headers</h3>
+        <p>Extract headers from first row</p>
+        <p><code>slay get_headers(csv_string tea) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>stringify_with_headers</h3>
+        <p>Convert array with headers to CSV string</p>
+        <p><code>slay stringify_with_headers(data [[tea]], headers [tea]) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_with_headers</h3>
+        <p>Parse CSV with first row as headers, return simple array structure</p>
+        <p><code>slay parse_with_headers(csv_string tea) [[tea]] {</code></p>
+    </div>
+    <div class="function">
+        <h3>filter_rows</h3>
+        <p>Filter rows by column value</p>
+        <p><code>slay filter_rows(data [[tea]], column_index normie, value tea) [[tea]] {</code></p>
+    </div>
+    <div class="function">
+        <h3>sort_by_column</h3>
+        <p>Sort rows by column (simple bubble sort)</p>
+        <p><code>slay sort_by_column(data [[tea]], column_index normie) [[tea]] {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_column</h3>
+        <p>Extract specific column</p>
+        <p><code>slay get_column(data [[tea]], column_index normie) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>remove_column</h3>
+        <p>Remove column from data</p>
+        <p><code>slay remove_column(data [[tea]], column_index normie) [[tea]] {</code></p>
+    </div>
+    <div class="function">
+        <h3>transpose</h3>
+        <p>Transpose rows and columns</p>
+        <p><code>slay transpose(data [[tea]]) [[tea]] {</code></p>
+    </div>
+    <div class="function">
+        <h3>add_headers</h3>
+        <p>Add headers to data</p>
+        <p><code>slay add_headers(data [[tea]], headers [tea]) [[tea]] {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>first_line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>comma_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>semicolon_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>tab_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>delimiter</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_field</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>in_quotes</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>delimiter</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>needs_quotes</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>escaped</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>trimmed</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>content</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>row_string</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>field</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>expected_columns</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>delimiter</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>key</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>value</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>pair</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>n</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>col_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

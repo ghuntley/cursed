@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>path Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>path Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>init_path_manager</h3>
+        <p>Module Initialization</p>
+        <p><code>slay init_path_manager() {</code></p>
+    </div>
+    <div class="function">
+        <h3>detect_platform</h3>
+        <p>Platform Detection</p>
+        <p><code>slay detect_platform() {</code></p>
+    </div>
+    <div class="function">
+        <h3>join</h3>
+        <p>Core Path Functions</p>
+        <p><code>slay join(components []tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>split</h3>
+        <p></p>
+        <p><code>slay split(path tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>basename</h3>
+        <p></p>
+        <p><code>slay basename(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>dirname</h3>
+        <p></p>
+        <p><code>slay dirname(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ext</h3>
+        <p></p>
+        <p><code>slay ext(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>stem</h3>
+        <p></p>
+        <p><code>slay stem(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_absolute</h3>
+        <p>Path State Functions</p>
+        <p><code>slay is_absolute(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_relative</h3>
+        <p></p>
+        <p><code>slay is_relative(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_root</h3>
+        <p></p>
+        <p><code>slay is_root(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_current_dir</h3>
+        <p></p>
+        <p><code>slay is_current_dir(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_parent_dir</h3>
+        <p></p>
+        <p><code>slay is_parent_dir(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>abs</h3>
+        <p>Path Transformation Functions</p>
+        <p><code>slay abs(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>rel</h3>
+        <p></p>
+        <p><code>slay rel(base tea, target tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>clean</h3>
+        <p></p>
+        <p><code>slay clean(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_home</h3>
+        <p>Path Expansion Functions</p>
+        <p><code>slay expand_home(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_env</h3>
+        <p></p>
+        <p><code>slay expand_env(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>expand_all</h3>
+        <p></p>
+        <p><code>slay expand_all(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate</h3>
+        <p>Path Validation Functions</p>
+        <p><code>slay validate(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_filename</h3>
+        <p></p>
+        <p><code>slay is_valid_filename(filename tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>match</h3>
+        <p>Path Matching Functions</p>
+        <p><code>slay match(pattern tea, path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>has_extension</h3>
+        <p></p>
+        <p><code>slay has_extension(path tea, extensions []tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>info</h3>
+        <p>Path Information Functions</p>
+        <p><code>slay info(path tea) PathInfo {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_likely_directory</h3>
+        <p></p>
+        <p><code>slay is_likely_directory(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>path_exists</h3>
+        <p></p>
+        <p><code>slay path_exists(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_permissions</h3>
+        <p></p>
+        <p><code>slay get_permissions(path tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_current_dir</h3>
+        <p>Directory Management Functions</p>
+        <p><code>slay get_current_dir() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_current_dir</h3>
+        <p></p>
+        <p><code>slay set_current_dir(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_home_dir</h3>
+        <p></p>
+        <p><code>slay get_home_dir() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_home_dir</h3>
+        <p></p>
+        <p><code>slay set_home_dir(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_temp_dir</h3>
+        <p></p>
+        <p><code>slay get_temp_dir() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_temp_dir</h3>
+        <p></p>
+        <p><code>slay set_temp_dir(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>to_slash</h3>
+        <p>Path Conversion Functions</p>
+        <p><code>slay to_slash(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>from_slash</h3>
+        <p></p>
+        <p><code>slay from_slash(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>to_native</h3>
+        <p></p>
+        <p><code>slay to_native(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>split_list</h3>
+        <p>Path List Functions</p>
+        <p><code>slay split_list(path_list tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>join_list</h3>
+        <p></p>
+        <p><code>slay join_list(paths []tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>debug_path_manager</h3>
+        <p>Debug Functions</p>
+        <p><code>slay debug_path_manager() {</code></p>
+    </div>
+    <div class="function">
+        <h3>cleanup_path_manager</h3>
+        <p>Module cleanup</p>
+        <p><code>slay cleanup_path_manager() {</code></p>
+    </div>
+</body>
+</html>

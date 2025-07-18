@@ -8,6 +8,9 @@ use std::collections::HashMap;
 use glob::glob;
 use colored::*;
 use serde_json::json;
+use cursed::documentation::{DocumentationGenerator, DocConfig, GeneralConfig, InputConfig, OutputConfig, HtmlConfig, MarkdownConfig, ProcessingConfig, ValidationConfig, ExamplesConfig, ApiConfig};
+use cursed::documentation::api_extractor::ApiExtractor;
+use cursed::error::CursedError;
 
 fn main() {
     env_logger::init();
@@ -154,24 +157,239 @@ fn run(matches: ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
 fn generate_docs(input: &str, output: &str, format: &str, title: &str) -> Result<(), Box<dyn std::error::Error>> {
     println!("Scanning for source files...");
     
-    let doc_index = scan_for_docs(input)?;
+    // Use the enhanced documentation generator
+    let config = create_doc_config(input, output, format, title)?;
+    let mut generator = DocumentationGenerator::new(Some(".cursed-doc.toml"))?;
     
-    println!("Found {} documented items in {} files", 
-        doc_index.items.len(), 
-        doc_index.files.len()
-    );
-    
-    // Create output directory
-    fs::create_dir_all(output)?;
-    
-    match format {
-        "html" => generate_html_docs(&doc_index, output, title)?,
-        "markdown" => generate_markdown_docs(&doc_index, output, title)?,
-        "json" => generate_json_docs(&doc_index, output)?,
-        _ => return Err("Unsupported format".into()),
-    }
+    // Generate documentation
+    generator.generate()?;
     
     println!("{} Documentation generated successfully in {}", "✓".green(), output);
+    
+    // Generate documentation for stdlib specifically
+    if Path::new("stdlib").exists() {
+        println!("Generating stdlib documentation...");
+        generate_stdlib_docs(output)?;
+    }
+    
+    Ok(())
+}
+
+fn create_doc_config(input: &str, output: &str, format: &str, title: &str) -> Result<DocConfig, Box<dyn std::error::Error>> {
+    let mut config = DocConfig {
+        general: GeneralConfig {
+            project_name: title.to_string(),
+            project_version: "1.0.0".to_string(),
+            project_description: "CURSED language documentation".to_string(),
+            project_url: "https://github.com/ghuntley/cursed".to_string(),
+            authors: vec!["CURSED Team".to_string()],
+            license: "MIT".to_string(),
+            repository: "https://github.com/ghuntley/cursed".to_string(),
+        },
+        input: InputConfig {
+            source_dirs: vec![input.to_string()],
+            include_patterns: vec!["*.csd".to_string()],
+            exclude_patterns: vec![],
+            max_file_size: 1024 * 1024, // 1MB
+        },
+        output: OutputConfig {
+            output_dir: output.to_string(),
+            formats: vec![format.to_string()],
+            clean_output: true,
+            base_url: "".to_string(),
+        },
+        html: HtmlConfig {
+            theme: "default".to_string(),
+            syntax_highlighting: true,
+            search_enabled: true,
+            table_of_contents: true,
+            responsive_design: true,
+            custom_css: vec![],
+            custom_js: vec![],
+            offline_mode: false,
+        },
+        markdown: MarkdownConfig {
+            flavor: "github".to_string(),
+            table_of_contents: true,
+            code_block_style: "fenced".to_string(),
+            link_style: "inline".to_string(),
+        },
+        processing: ProcessingConfig {
+            extract_comments: true,
+            extract_examples: true,
+            generate_cross_references: true,
+            analyze_dependencies: true,
+            process_cursed_files: true,
+            process_rust_files: false,
+            process_markdown_files: false,
+            cursed_comment_patterns: vec!["# ".to_string()],
+        },
+        validation: ValidationConfig {
+            check_links: true,
+            check_examples: true,
+            validate_syntax: true,
+            require_descriptions: false,
+            treat_warnings_as_errors: false,
+        },
+        examples: ExamplesConfig {
+            extract_examples: true,
+            validate_examples: true,
+            run_examples: true,
+            categorize_by_directory: true,
+            generate_example_index: true,
+        },
+        api: ApiConfig {
+            generate_api_docs: true,
+            include_private: false,
+            include_internal: false,
+            show_source_links: true,
+            require_doc_comments: false,
+            coverage_threshold: 0.8,
+        },
+    };
+    
+    // Update configuration based on parameters
+    config.general.project_name = title.to_string();
+    config.input.source_dirs = vec![input.to_string()];
+    config.output.output_dir = output.to_string();
+    config.output.formats = vec![format.to_string()];
+    
+    // Enable all features for comprehensive documentation
+    config.html.search_enabled = true;
+    config.html.syntax_highlighting = true;
+    config.html.table_of_contents = true;
+    config.processing.extract_comments = true;
+    config.processing.extract_examples = true;
+    config.processing.generate_cross_references = true;
+    config.api.generate_api_docs = true;
+    config.examples.generate_example_index = true;
+    
+    // Write configuration file
+    let config_content = toml::to_string_pretty(&config)?;
+    fs::write(".cursed-doc.toml", config_content)?;
+    
+    Ok(config)
+}
+
+fn generate_stdlib_docs(output: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let stdlib_dir = Path::new("stdlib");
+    if !stdlib_dir.exists() {
+        return Ok(());
+    }
+    
+    let mut api_extractor = ApiExtractor::new()?;
+    let mut stdlib_modules = Vec::new();
+    
+    // Process each stdlib module
+    for entry in fs::read_dir(stdlib_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        
+        if path.is_dir() {
+            // Look for mod.csd file
+            let mod_file = path.join("mod.csd");
+            if mod_file.exists() {
+                let source = fs::read_to_string(&mod_file)?;
+                match api_extractor.extract_api(&source, &mod_file.to_string_lossy()) {
+                    Ok(module) => {
+                        stdlib_modules.push(module);
+                        println!("  ✓ Processed module: {}", path.file_name().unwrap().to_string_lossy());
+                    }
+                    Err(e) => {
+                        eprintln!("  ⚠ Failed to process module {}: {}", 
+                            path.file_name().unwrap().to_string_lossy(), e);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Generate stdlib index
+    generate_stdlib_index(&stdlib_modules, output)?;
+    
+    println!("Generated documentation for {} stdlib modules", stdlib_modules.len());
+    Ok(())
+}
+
+fn generate_stdlib_index(modules: &[cursed::documentation::DocumentedModule], output: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let mut html = String::new();
+    
+    html.push_str("<!DOCTYPE html>\n");
+    html.push_str("<html lang=\"en\">\n");
+    html.push_str("<head>\n");
+    html.push_str("    <meta charset=\"UTF-8\">\n");
+    html.push_str("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
+    html.push_str("    <title>CURSED Standard Library Documentation</title>\n");
+    html.push_str("    <link rel=\"stylesheet\" href=\"assets/style.css\">\n");
+    html.push_str("    <link rel=\"stylesheet\" href=\"assets/syntax.css\">\n");
+    html.push_str("    <script src=\"assets/script.js\"></script>\n");
+    html.push_str("</head>\n");
+    html.push_str("<body>\n");
+    html.push_str("    <div class=\"progress-bar\"></div>\n");
+    html.push_str("    <header class=\"header\">\n");
+    html.push_str("        <div class=\"container\">\n");
+    html.push_str("            <h1 class=\"logo\">CURSED Standard Library</h1>\n");
+    html.push_str("            <nav class=\"nav\">\n");
+    html.push_str("                <a href=\"index.html\">Home</a>\n");
+    html.push_str("                <a href=\"#modules\">Modules</a>\n");
+    html.push_str("                <a href=\"api.html\">API Reference</a>\n");
+    html.push_str("            </nav>\n");
+    html.push_str("        </div>\n");
+    html.push_str("    </header>\n");
+    html.push_str("    \n");
+    html.push_str("    <main class=\"main\">\n");
+    html.push_str("        <div class=\"container\">\n");
+    html.push_str("            <section class=\"hero\">\n");
+    html.push_str("                <h2>CURSED Standard Library</h2>\n");
+    html.push_str("                <p>Complete documentation for all standard library modules</p>\n");
+    html.push_str("                <div class=\"search-container\">\n");
+    html.push_str("                    <input type=\"text\" class=\"search-input\" placeholder=\"Search stdlib modules (Ctrl+K)\">\n");
+    html.push_str("                    <div class=\"search-results\"></div>\n");
+    html.push_str("                </div>\n");
+    html.push_str("            </section>\n");
+    html.push_str("            \n");
+    html.push_str("            <section id=\"modules\" class=\"modules\">\n");
+    html.push_str("                <h2>Standard Library Modules</h2>\n");
+    html.push_str("                <div class=\"module-grid\">\n");
+    
+    for module in modules {
+        html.push_str(&format!(r#"
+                    <div class="module-card">
+                        <h3><a href="stdlib/{}.html">{}</a></h3>
+                        <p>{}</p>
+                        <div class="module-stats">
+                            <span>{} functions</span>
+                            <span>{} variables</span>
+                            <span>{} types</span>
+                        </div>
+                    </div>
+"#, 
+            module.name, 
+            module.name, 
+            module.description,
+            module.functions.len(),
+            module.variables.len(),
+            module.types.len()
+        ));
+    }
+    
+    html.push_str(r#"
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 CURSED Standard Library Documentation. Generated by cursed-doc.</p>
+        </div>
+    </footer>
+</body>
+</html>"#);
+    
+    let stdlib_index = Path::new(output).join("stdlib.html");
+    fs::write(stdlib_index, html)?;
+    
     Ok(())
 }
 

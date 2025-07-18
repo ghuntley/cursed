@@ -469,6 +469,14 @@ name = "cursed-doc"
 path = "src/bin/cursed_doc.rs"
 
 [[bin]]
+name = "cursed-doc-simple"
+path = "src/bin/cursed_doc_simple.rs"
+
+[[bin]]
+name = "cursed-doc-basic"
+path = "src/bin/cursed_doc_basic.rs"
+
+[[bin]]
 name = "cursed-compile-fast"
 path = "src/bin/cursed_compile_fast.rs"
 

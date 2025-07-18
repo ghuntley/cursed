@@ -23,15 +23,15 @@ Whitespace characters (spaces, tabs, newlines) separate tokens but are otherwise
 CURSED supports two types of comments:
 
 - Line comments start with `fr fr` and continue until the end of the line
-- Block comments start with `no cap` and end with `on god`
+- Block comments start with `/* cap` and end with `cap */`
 
 ```
 fr fr This is a line comment
 
-no cap
+/* cap
 This is a block comment
 that spans multiple lines
-on god
+cap */
 ```
 
 ## Identifiers
@@ -53,7 +53,7 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | package    | vibe          |
 | import     | yeet          |
 | func       | slay          |
-| return     | yolo          |
+| return     | yolo / damn   |
 | var        | sus           |
 | const      | facts         |
 | if         | lowkey        |
@@ -68,14 +68,15 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | type       | be_like       |
 | struct     | squad         |
 | interface  | collab        |
-| map        | tea           |
+| map        | vibes         |
 | chan       | dm            |
-| go         | stan          |
+| go         | stan / yolo   |
 | range      | flex          |
 | defer      | later         |
+| select     | ready         |
 | true       | based         |
-| false      | cap           |
-| nil        | cringe        |
+| false      | cringe        |
+| nil        | nah           |
 
 ## Operators and Punctuation
 
@@ -148,8 +149,8 @@ Escape sequences in quoted strings:
 ### Boolean Literals
 
 - `based` (true)
-- `cap` (false)
+- `cringe` (false)
 
 ### Nil Literal
 
-- `cringe` (nil)
+- `nah` (nil)

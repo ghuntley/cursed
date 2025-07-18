@@ -233,3 +233,9 @@ char* cursed_crypto_random_bytes(int length) {
     
     return buffer;
 }
+
+// Match expression runtime support
+void panic_non_exhaustive_match(void) {
+    fprintf(stderr, "Error: Non-exhaustive match expression\n");
+    exit(1);
+}

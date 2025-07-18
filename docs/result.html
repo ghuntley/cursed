@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>result Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>result Module</h1>
+    <p>Result type module - Error handling with Ok/Err values Critical for self-hosting and robust error handling</p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>ok_int</h3>
+        <p></p>
+        <p><code>slay ok_int(value normie) (lit, normie, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>ok_string</h3>
+        <p></p>
+        <p><code>slay ok_string(value tea) (lit, tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>ok_bool</h3>
+        <p></p>
+        <p><code>slay ok_bool(value lit) (lit, lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>err_int</h3>
+        <p></p>
+        <p><code>slay err_int(error tea) (lit, normie, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>err_string</h3>
+        <p></p>
+        <p><code>slay err_string(error tea) (lit, tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>err_bool</h3>
+        <p></p>
+        <p><code>slay err_bool(error tea) (lit, lit, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_ok_int</h3>
+        <p>Result utility functions</p>
+        <p><code>slay is_ok_int(result (lit, normie, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_err_int</h3>
+        <p></p>
+        <p><code>slay is_err_int(result (lit, normie, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_ok_string</h3>
+        <p></p>
+        <p><code>slay is_ok_string(result (lit, tea, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_err_string</h3>
+        <p></p>
+        <p><code>slay is_err_string(result (lit, tea, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_ok_bool</h3>
+        <p></p>
+        <p><code>slay is_ok_bool(result (lit, lit, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_err_bool</h3>
+        <p></p>
+        <p><code>slay is_err_bool(result (lit, lit, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_int</h3>
+        <p>Unwrapping functions (with panic on Err)</p>
+        <p><code>slay unwrap_int(result (lit, normie, tea)) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_string</h3>
+        <p></p>
+        <p><code>slay unwrap_string(result (lit, tea, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_bool</h3>
+        <p></p>
+        <p><code>slay unwrap_bool(result (lit, lit, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_err_int</h3>
+        <p>Unwrap error values (with panic on Ok)</p>
+        <p><code>slay unwrap_err_int(result (lit, normie, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_err_string</h3>
+        <p></p>
+        <p><code>slay unwrap_err_string(result (lit, tea, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_err_bool</h3>
+        <p></p>
+        <p><code>slay unwrap_err_bool(result (lit, lit, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_int</h3>
+        <p>Unwrap with default values</p>
+        <p><code>slay unwrap_or_int(result (lit, normie, tea), default normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_string</h3>
+        <p></p>
+        <p><code>slay unwrap_or_string(result (lit, tea, tea), default tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_bool</h3>
+        <p></p>
+        <p><code>slay unwrap_or_bool(result (lit, lit, tea), default lit) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_else_int</h3>
+        <p>Unwrap with error handling function</p>
+        <p><code>slay unwrap_or_else_int(result (lit, normie, tea), f func(tea) normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_else_string</h3>
+        <p></p>
+        <p><code>slay unwrap_or_else_string(result (lit, tea, tea), f func(tea) tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>unwrap_or_else_bool</h3>
+        <p></p>
+        <p><code>slay unwrap_or_else_bool(result (lit, lit, tea), f func(tea) lit) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>map_int_to_string</h3>
+        <p>Map function for transforming Ok values</p>
+        <p><code>slay map_int_to_string(result (lit, normie, tea)) (lit, tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>map_string_to_int_len</h3>
+        <p></p>
+        <p><code>slay map_string_to_int_len(result (lit, tea, tea)) (lit, normie, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>map_err_int</h3>
+        <p>Map error function for transforming Err values</p>
+        <p><code>slay map_err_int(result (lit, normie, tea), f func(tea) tea) (lit, normie, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>map_err_string</h3>
+        <p></p>
+        <p><code>slay map_err_string(result (lit, tea, tea), f func(tea) tea) (lit, tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>and_then_int</h3>
+        <p>And/Or operations for Result chaining</p>
+        <p><code>slay and_then_int(result (lit, normie, tea), f func(normie) (lit, normie, tea)) (lit, normie, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>and_then_string</h3>
+        <p></p>
+        <p><code>slay and_then_string(result (lit, tea, tea), f func(tea) (lit, tea, tea)) (lit, tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>or_else_int</h3>
+        <p></p>
+        <p><code>slay or_else_int(result (lit, normie, tea), f func(tea) (lit, normie, tea)) (lit, normie, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>or_else_string</h3>
+        <p></p>
+        <p><code>slay or_else_string(result (lit, tea, tea), f func(tea) (lit, tea, tea)) (lit, tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>result_equals_int</h3>
+        <p>Utility functions for working with Result types</p>
+        <p><code>slay result_equals_int(res1 (lit, normie, tea), res2 (lit, normie, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>result_equals_string</h3>
+        <p></p>
+        <p><code>slay result_equals_string(res1 (lit, tea, tea), res2 (lit, tea, tea)) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>result_to_string_int</h3>
+        <p>Convert Result to string for debugging</p>
+        <p><code>slay result_to_string_int(result (lit, normie, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>result_to_string_string</h3>
+        <p></p>
+        <p><code>slay result_to_string_string(result (lit, tea, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>result_to_string_bool</h3>
+        <p></p>
+        <p><code>slay result_to_string_bool(result (lit, lit, tea)) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>safe_divide</h3>
+        <p>Common error handling patterns</p>
+        <p><code>slay safe_divide(a normie, b normie) (lit, normie, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>safe_string_index</h3>
+        <p></p>
+        <p><code>slay safe_string_index(s tea, index normie) (lit, tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>safe_int_parse</h3>
+        <p></p>
+        <p><code>slay safe_int_parse(s tea) (lit, normie, tea) {</code></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>coverage_analysis Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>coverage_analysis Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>coverage_init</h3>
+        <p>Initialize coverage system</p>
+        <p><code>slay coverage_init(config CoverageConfig) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>instrument_code</h3>
+        <p>Instrument code for coverage tracking</p>
+        <p><code>slay instrument_code(file_path tea, source_code tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_function_name</h3>
+        <p>Extract function name from function definition line</p>
+        <p><code>slay extract_function_name(line tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>coverage_track_line</h3>
+        <p>Track line coverage</p>
+        <p><code>slay coverage_track_line(file_path tea, line_number normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>coverage_track_function</h3>
+        <p>Track function coverage</p>
+        <p><code>slay coverage_track_function(file_path tea, line_number normie, function_name tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>coverage_track_branch</h3>
+        <p>Track branch coverage</p>
+        <p><code>slay coverage_track_branch(file_path tea, line_number normie, branch_taken lit) {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_coverage_report</h3>
+        <p>Generate coverage report</p>
+        <p><code>slay generate_coverage_report() CoverageReport {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_html_report</h3>
+        <p>Generate HTML coverage report</p>
+        <p><code>slay generate_html_report(report CoverageReport, output_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_html_template</h3>
+        <p>Generate HTML template</p>
+        <p><code>slay generate_html_template(report CoverageReport) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_metric_div</h3>
+        <p>Generate metric div with color coding</p>
+        <p><code>slay generate_metric_div(label tea, percentage meal) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_file_html_reports</h3>
+        <p>Generate file-specific HTML reports</p>
+        <p><code>slay generate_file_html_reports(output_path tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_single_file_html_report</h3>
+        <p>Generate single file HTML report</p>
+        <p><code>slay generate_single_file_html_report(file_path tea, points [CoveragePoint], output_path tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_json_report</h3>
+        <p>Generate JSON coverage report</p>
+        <p><code>slay generate_json_report(report CoverageReport, output_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>coverage_report_to_json</h3>
+        <p>Convert coverage report to JSON</p>
+        <p><code>slay coverage_report_to_json(report CoverageReport) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_console_report</h3>
+        <p>Generate console coverage report</p>
+        <p><code>slay generate_console_report(report CoverageReport) {</code></p>
+    </div>
+    <div class="function">
+        <h3>check_coverage_thresholds</h3>
+        <p>Check coverage against configured thresholds</p>
+        <p><code>slay check_coverage_thresholds(report CoverageReport) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>run_coverage_analysis</h3>
+        <p>Run coverage analysis on a project</p>
+        <p><code>slay run_coverage_analysis(project_path tea, config CoverageConfig) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>find_cursed_files</h3>
+        <p>Find all CURSED files in project</p>
+        <p><code>slay find_cursed_files(path tea) [tea] {</code></p>
+    </div>
+    <div class="function">
+        <h3>should_include_file</h3>
+        <p>Check if file should be included in coverage</p>
+        <p><code>slay should_include_file(file_path tea, config CoverageConfig) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>instrument_and_execute_file</h3>
+        <p>Instrument and execute a file for coverage</p>
+        <p><code>slay instrument_and_execute_file(file_path tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>execute_instrumented_file</h3>
+        <p>Execute instrumented file</p>
+        <p><code>slay execute_instrumented_file(file_path tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_directory</h3>
+        <p>Utility functions</p>
+        <p><code>slay create_directory(path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>write_file</h3>
+        <p></p>
+        <p><code>slay write_file(path tea, content tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>read_file</h3>
+        <p></p>
+        <p><code>slay read_file(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>delete_file</h3>
+        <p></p>
+        <p><code>slay delete_file(path tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>extract_filename</h3>
+        <p></p>
+        <p><code>slay extract_filename(path tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>generate_file_html_content</h3>
+        <p></p>
+        <p><code>slay generate_file_html_content(file_path tea, points [CoveragePoint]) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>toString</h3>
+        <p></p>
+        <p><code>slay toString(value normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>toString</h3>
+        <p></p>
+        <p><code>slay toString(value meal) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>toString</h3>
+        <p></p>
+        <p><code>slay toString(value lit) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>testz_coverage_wrapper</h3>
+        <p>Integration with testz framework</p>
+        <p><code>slay testz_coverage_wrapper(test_function tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>clear_coverage_data</h3>
+        <p>Clear coverage data</p>
+        <p><code>slay clear_coverage_data() {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_coverage_stats</h3>
+        <p>Get coverage statistics</p>
+        <p><code>slay get_coverage_stats() CoverageReport {</code></p>
+    </div>
+    <div class="function">
+        <h3>export_coverage_data</h3>
+        <p>Export coverage data</p>
+        <p><code>slay export_coverage_data(format tea, output_path tea) lit {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>instrumentation_enabled</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>instrumented_code</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line_number</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>function_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>func_part</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>paren_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>point</h3>
+        <p></p>
+        <p>Type: <code>CoveragePoint</code></p>
+    </div>
+    <div class="variable">
+        <h3>point</h3>
+        <p></p>
+        <p>Type: <code>CoveragePoint</code></p>
+    </div>
+    <div class="variable">
+        <h3>point</h3>
+        <p></p>
+        <p>Type: <code>CoveragePoint</code></p>
+    </div>
+    <div class="variable">
+        <h3>report</h3>
+        <p></p>
+        <p>Type: <code>CoverageReport</code></p>
+    </div>
+    <div class="variable">
+        <h3>point</h3>
+        <p></p>
+        <p>Type: <code>CoveragePoint</code></p>
+    </div>
+    <div class="variable">
+        <h3>point</h3>
+        <p></p>
+        <p>Type: <code>CoveragePoint</code></p>
+    </div>
+    <div class="variable">
+        <h3>html_content</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>html</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>class_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>point</h3>
+        <p></p>
+        <p>Type: <code>CoveragePoint</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>html_file</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>html</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>json_content</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>json</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>point</h3>
+        <p></p>
+        <p>Type: <code>CoveragePoint</code></p>
+    </div>
+    <div class="variable">
+        <h3>all_thresholds_met</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>file_path</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>report</h3>
+        <p>Generate reports</p>
+        <p>Type: <code>CoverageReport</code></p>
+    </div>
+    <div class="variable">
+        <h3>included</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>source_code</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>instrumented_code</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>temp_file</h3>
+        <p>Write instrumented file</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>report</h3>
+        <p></p>
+        <p>Type: <code>CoverageReport</code></p>
+    </div>
+</body>
+</html>

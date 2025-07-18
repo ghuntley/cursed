@@ -8,11 +8,13 @@ use std::path::{Path, PathBuf};
 use std::fs;
 use std::io::{self, Write};
 use serde::{Deserialize, Serialize};
-use crate::lexer::Position;
+// use crate::lexer::Position;
 
-pub mod collector;
+// pub mod collector;
+// pub mod simple_collector;
+pub mod basic_coverage;
 pub mod reporter;
-pub mod instrumentation;
+// pub mod instrumentation;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoverageData {
@@ -79,7 +81,7 @@ pub struct CoverageSummary {
 /// Main coverage analyzer that orchestrates coverage collection and reporting
 pub struct CoverageAnalyzer {
     config: CoverageConfig,
-    collector: collector::CoverageCollector,
+    collector: basic_coverage::BasicCoverageCollector,
     reporter: reporter::CoverageReporter,
 }
 
@@ -131,7 +133,7 @@ impl CoverageAnalyzer {
         // Create output directory
         fs::create_dir_all(&config.output_dir)?;
         
-        let collector = collector::CoverageCollector::new(config.clone())?;
+        let collector = basic_coverage::BasicCoverageCollector::new(config.clone())?;
         let reporter = reporter::CoverageReporter::new(config.clone())?;
         
         Ok(Self {
@@ -144,23 +146,27 @@ impl CoverageAnalyzer {
     /// Start coverage collection for a test run
     pub async fn start_coverage(&mut self, test_run_id: &str) -> io::Result<()> {
         println!("🎯 Starting coverage collection for test run: {}", test_run_id);
-        self.collector.start_collection(test_run_id).await
+        // Basic coverage collector doesn't need start/stop, just analyze
+        Ok(())
     }
 
     /// Stop coverage collection and generate reports
     pub async fn stop_coverage(&mut self) -> io::Result<CoverageData> {
         println!("📊 Stopping coverage collection and generating reports...");
-        let coverage_data = self.collector.stop_collection().await?;
+        
+        // Analyze coverage
+        self.collector.analyze_coverage()?;
+        let coverage_data = self.collector.get_coverage_data();
         
         // Generate reports in all configured formats
         for format in &self.config.formats {
-            self.reporter.generate_report(&coverage_data, format).await?;
+            self.reporter.generate_report(coverage_data, format).await?;
         }
         
         // Check coverage thresholds
-        self.check_coverage_thresholds(&coverage_data)?;
+        self.check_coverage_thresholds(coverage_data)?;
         
-        Ok(coverage_data)
+        Ok(coverage_data.clone())
     }
 
     /// Instrument source files for coverage collection
@@ -170,7 +176,8 @@ impl CoverageAnalyzer {
         }
         
         println!("🔧 Instrumenting source files for coverage...");
-        instrumentation::instrument_cursed_files(&self.config.source_dirs, &self.config.output_dir)?;
+        // instrumentation::instrument_cursed_files(&self.config.source_dirs, &self.config.output_dir)?;
+        println!("⚠️  Instrumentation not yet implemented in basic coverage");
         Ok(())
     }
 

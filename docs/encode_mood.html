@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>encode_mood Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>encode_mood Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>base64_encode</h3>
+        <p>Base64 encode function</p>
+        <p><code>slay base64_encode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>base64_decode</h3>
+        <p>Base64 decode function</p>
+        <p><code>slay base64_decode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>base64_char_to_value</h3>
+        <p>Helper function to convert Base64 character to value</p>
+        <p><code>slay base64_char_to_value(ch sip) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>hex_encode</h3>
+        <p>Hex encode function</p>
+        <p><code>slay hex_encode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>hex_decode</h3>
+        <p>Hex decode function</p>
+        <p><code>slay hex_decode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>hex_char_to_value</h3>
+        <p>Helper function to convert hex character to value</p>
+        <p><code>slay hex_char_to_value(ch sip) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>binary_encode</h3>
+        <p>Binary encode function</p>
+        <p><code>slay binary_encode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>binary_decode</h3>
+        <p>Binary decode function</p>
+        <p><code>slay binary_decode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>base64_url_encode</h3>
+        <p>URL-safe Base64 encode</p>
+        <p><code>slay base64_url_encode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>base64_url_decode</h3>
+        <p>URL-safe Base64 decode</p>
+        <p><code>slay base64_url_decode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>percent_encode</h3>
+        <p>Percent encoding (URL encoding)</p>
+        <p><code>slay percent_encode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>percent_decode</h3>
+        <p>Percent decoding (URL decoding)</p>
+        <p><code>slay percent_decode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_url_safe_char</h3>
+        <p>Helper function to check if character is URL-safe</p>
+        <p><code>slay is_url_safe_char(ch sip) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>base64_mime_encode</h3>
+        <p>MIME Base64 encoding (with line breaks)</p>
+        <p><code>slay base64_mime_encode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>quoted_printable_encode</h3>
+        <p>Quote-printable encoding</p>
+        <p><code>slay quoted_printable_encode(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_base64</h3>
+        <p>Encoding validation functions</p>
+        <p><code>slay is_valid_base64(input tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_hex</h3>
+        <p></p>
+        <p><code>slay is_valid_hex(input tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_valid_binary</h3>
+        <p></p>
+        <p><code>slay is_valid_binary(input tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_base64_char</h3>
+        <p>Helper validation functions</p>
+        <p><code>slay is_base64_char(ch sip) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_hex_char</h3>
+        <p></p>
+        <p><code>slay is_hex_char(ch sip) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_length</h3>
+        <p>Utility string functions (assume these exist in core stdlib)</p>
+        <p><code>slay string_length(s tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_get_char</h3>
+        <p></p>
+        <p><code>slay string_get_char(s tea, index normie) sip {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_get_byte</h3>
+        <p></p>
+        <p><code>slay string_get_byte(s tea, index normie) byte {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_concat</h3>
+        <p></p>
+        <p><code>slay string_concat(s1 tea, s2 tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>char_to_string</h3>
+        <p></p>
+        <p><code>slay char_to_string(ch sip) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>byte_to_char</h3>
+        <p></p>
+        <p><code>slay byte_to_char(b byte) sip {</code></p>
+    </div>
+    <div class="function">
+        <h3>char_to_byte</h3>
+        <p></p>
+        <p><code>slay char_to_byte(ch sip) byte {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_substring</h3>
+        <p></p>
+        <p><code>slay string_substring(s tea, start normie, length normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_replace</h3>
+        <p></p>
+        <p><code>slay string_replace(s tea, old tea, new tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>string_trim_right</h3>
+        <p></p>
+        <p><code>slay string_trim_right(s tea, chars tea) tea {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte1</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte2</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte3</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>combined</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char1</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char2</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char3</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char4</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char1</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char2</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char3</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>char4</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>val1</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>val2</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>val3</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>val4</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>combined</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte1</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte2</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte3</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_val</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>high_nibble</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>low_nibble</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>high_char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>low_char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>high_char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>low_char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>high_val</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>low_val</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_val</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_val</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>j</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>bit</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>bit_char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_val</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>j</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>bit_char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>bit_val</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>standard_b64</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>padded_input</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>padding</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>standard_b64</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_val</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>hex_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>hex_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>decoded_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>encoded</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>line_length</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>line_length</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>max_line_length</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>needs_encoding</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>byte_val</h3>
+        <p></p>
+        <p>Type: <code>byte</code></p>
+    </div>
+    <div class="variable">
+        <h3>hex_str</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>encoded</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>input_len</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>ch</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+</body>
+</html>

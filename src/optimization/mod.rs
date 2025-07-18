@@ -37,6 +37,7 @@ pub mod advanced_llvm_passes;
 
 // Complete optimization system modules (remaining 15%)
 pub mod llvm_optimization_complete;
+pub mod link_time_optimization;
 
 // Re-export key types
 pub use config::{OptimizationConfig, OptimizationLevel, OptimizationProfile};
@@ -83,6 +84,10 @@ pub use advanced_llvm_passes::{
 pub use llvm_optimization_complete::{
     CompleteLlvmOptimizer, CompleteOptimizationResult, CompleteOptimizationStats,
     MemoryPressure, InliningConfiguration, RecommendationType
+};
+pub use link_time_optimization::{
+    LinkTimeOptimizer, LTOConfig, LTOManager, LTOAnalysis, LTOStats,
+    ModuleInfo, FunctionInfo, GlobalInfo, CallGraph, OptimizationOpportunity
 };
 
 // Stub types that examples are trying to import

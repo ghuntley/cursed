@@ -74,6 +74,9 @@ impl<'a> HtmlGenerator<'a> {
         // Copy custom assets
         self.copy_custom_assets(&assets_dir)?;
 
+        // Generate syntax highlighting CSS
+        self.generate_syntax_css(&assets_dir)?;
+
         Ok(())
     }
 
@@ -101,6 +104,108 @@ impl<'a> HtmlGenerator<'a> {
 
         file.write_all(js_content.as_bytes())
             .map_err(|e| CursedError::IoError(format!("Failed to write JS file: {}", e)))?;
+
+        Ok(())
+    }
+
+    /// Generate syntax highlighting CSS
+    fn generate_syntax_css(&self, assets_dir: &Path) -> Result<(), CursedError> {
+        let syntax_css = r#"
+/* Syntax highlighting for CURSED language */
+.highlight {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.highlight .keyword {
+    color: #d73a49;
+    font-weight: bold;
+}
+
+.highlight .string {
+    color: #032f62;
+}
+
+.highlight .comment {
+    color: #6a737d;
+    font-style: italic;
+}
+
+.highlight .number {
+    color: #005cc5;
+}
+
+.highlight .function {
+    color: #6f42c1;
+}
+
+.highlight .variable {
+    color: #e36209;
+}
+
+.highlight .constant {
+    color: #005cc5;
+    font-weight: bold;
+}
+
+.highlight .operator {
+    color: #d73a49;
+}
+
+.highlight .punctuation {
+    color: #24292e;
+}
+
+/* Dark theme syntax highlighting */
+@media (prefers-color-scheme: dark) {
+    .highlight {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .highlight .keyword {
+        color: #f56565;
+    }
+    
+    .highlight .string {
+        color: #68d391;
+    }
+    
+    .highlight .comment {
+        color: #a0aec0;
+    }
+    
+    .highlight .number {
+        color: #63b3ed;
+    }
+    
+    .highlight .function {
+        color: #d6bcfa;
+    }
+    
+    .highlight .variable {
+        color: #f6ad55;
+    }
+    
+    .highlight .constant {
+        color: #63b3ed;
+    }
+}
+"#;
+
+        let css_file = assets_dir.join("syntax.css");
+        let mut file = File::create(&css_file)
+            .map_err(|e| CursedError::IoError(format!("Failed to create syntax CSS file: {}", e)))?;
+
+        file.write_all(syntax_css.as_bytes())
+            .map_err(|e| CursedError::IoError(format!("Failed to write syntax CSS file: {}", e)))?;
 
         Ok(())
     }
@@ -152,16 +257,21 @@ impl<'a> HtmlGenerator<'a> {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{} Documentation</title>
     <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/syntax.css">
     <script src="assets/script.js"></script>
+    <meta name="description" content="{}">
+    <meta name="keywords" content="CURSED, programming language, documentation">
 </head>
 <body>
+    <div class="progress-bar"></div>
     <header class="header">
         <div class="container">
             <h1 class="logo">{}</h1>
             <nav class="nav">
                 <a href="#modules">Modules</a>
                 <a href="#examples">Examples</a>
-                <a href="#api">API Reference</a>
+                <a href="api.html">API Reference</a>
+                <button class="theme-toggle" title="Toggle dark mode">🌙</button>
             </nav>
         </div>
     </header>
@@ -171,6 +281,7 @@ impl<'a> HtmlGenerator<'a> {
             <section class="hero">
                 <h2>{}</h2>
                 <p>{}</p>
+                {}
                 <div class="stats">
                     <div class="stat">
                         <span class="stat-number">{}</span>
@@ -192,9 +303,18 @@ impl<'a> HtmlGenerator<'a> {
                 <div class="module-grid">
 "##, 
             documentation.project_info.project_name,
+            documentation.project_info.project_description,
             documentation.project_info.project_name,
             documentation.project_info.project_name,
             documentation.project_info.project_description,
+            if self.config.html.search_enabled {
+                r#"<div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search documentation... (Ctrl+K)">
+                    <div class="search-results"></div>
+                </div>"#
+            } else {
+                ""
+            },
             documentation.modules.len(),
             documentation.coverage_stats.total_functions,
             documentation.coverage_stats.coverage_percentage

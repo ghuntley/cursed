@@ -1629,9 +1629,8 @@ impl CursedExecutionEngine {
                     self.value_matches_type(&variable_value, type_expr)
                 }
                 crate::ast::TypePattern::Interface(interface_name) => {
-                    // For interface matching, we'd need to check if the value implements the interface
-                    // For now, just check type name matching
-                    variable_value.type_name() == *interface_name
+                    // For interface matching, check if the value implements the interface
+                    self.value_implements_interface(&variable_value, interface_name)
                 }
                 crate::ast::TypePattern::Wildcard => {
                     true // Wildcard always matches
@@ -1642,9 +1641,10 @@ impl CursedExecutionEngine {
                 // Create a new context for this arm
                 let mut arm_context = context.clone();
                 
-                // If there's a bound variable, add it to the context
+                // If there's a bound variable, add it to the context with proper type casting
                 if let Some(bound_var) = &arm.bound_variable {
-                    arm_context.set_variable(bound_var.clone(), variable_value.clone());
+                    let cast_value = self.cast_value_to_pattern(&variable_value, &arm.type_pattern)?;
+                    arm_context.set_variable(bound_var.clone(), cast_value);
                 }
                 
                 // Evaluate and return the arm body
@@ -1673,7 +1673,90 @@ impl CursedExecutionEngine {
                 // For custom types, check against the value's type name
                 value.type_name() == *type_name
             }
+            crate::ast::Type::Array(inner_type, _) => {
+                // Array type matching
+                matches!(value, CursedValue::Array(_))
+            }
+            crate::ast::Type::Tuple(types) => {
+                // Tuple type matching
+                if let CursedValue::Tuple(tuple_values) = value {
+                    tuple_values.len() == types.len()
+                } else {
+                    false
+                }
+            }
             _ => false, // Other types not yet implemented
+        }
+    }
+
+    /// Check if a value implements a specific interface
+    fn value_implements_interface(&self, value: &CursedValue, interface_name: &str) -> bool {
+        // For now, we'll check if the value's type name matches the interface name
+        // In a real implementation, this would check the type's method table
+        match value {
+            CursedValue::Interface { interface_name: if_name, .. } => {
+                if_name == interface_name
+            }
+            _ => {
+                // Check if the concrete type implements the interface
+                // This is a simplified check - in practice, you'd check method tables
+                value.type_name() == interface_name
+            }
+        }
+    }
+
+    /// Cast a value to match a type pattern
+    fn cast_value_to_pattern(&self, value: &CursedValue, pattern: &crate::ast::TypePattern) -> Result<CursedValue, CursedError> {
+        match pattern {
+            crate::ast::TypePattern::Type(type_expr) => {
+                // For concrete types, perform type casting if needed
+                self.cast_value_to_type(value, type_expr)
+            }
+            crate::ast::TypePattern::Interface(interface_name) => {
+                // For interface patterns, wrap the value in an interface instance
+                Ok(CursedValue::Interface {
+                    vtable_ptr: 0,
+                    data_ptr: 0,
+                    interface_name: interface_name.clone(),
+                    concrete_type: value.type_name().to_string(),
+                })
+            }
+            crate::ast::TypePattern::Wildcard => {
+                // Wildcard pattern doesn't require casting
+                Ok(value.clone())
+            }
+        }
+    }
+
+    /// Cast a value to a specific type
+    fn cast_value_to_type(&self, value: &CursedValue, target_type: &crate::ast::Type) -> Result<CursedValue, CursedError> {
+        match (value, target_type) {
+            // Same type - no casting needed
+            (CursedValue::Integer(i), crate::ast::Type::Normie) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::String(s), crate::ast::Type::Tea) => Ok(CursedValue::String(s.clone())),
+            (CursedValue::Boolean(b), crate::ast::Type::Lit) => Ok(CursedValue::Boolean(*b)),
+            (CursedValue::Character(c), crate::ast::Type::Sip) => Ok(CursedValue::Character(*c)),
+            (CursedValue::Float(f), crate::ast::Type::Meal) => Ok(CursedValue::Float(*f)),
+            
+            // Integer type casting
+            (CursedValue::Integer(i), crate::ast::Type::Smol) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::Integer(i), crate::ast::Type::Mid) => Ok(CursedValue::Integer(*i)),
+            (CursedValue::Integer(i), crate::ast::Type::Thicc) => Ok(CursedValue::Integer(*i)),
+            
+            // Float type casting
+            (CursedValue::Float(f), crate::ast::Type::Snack) => Ok(CursedValue::Float(*f)),
+            (CursedValue::Integer(i), crate::ast::Type::Meal) => Ok(CursedValue::Float(*i as f64)),
+            (CursedValue::Integer(i), crate::ast::Type::Snack) => Ok(CursedValue::Float(*i as f64)),
+            
+            // Interface unwrapping
+            (CursedValue::Interface { concrete_type, .. }, _) => {
+                // For now, we'll return the value as-is since we don't have the actual data
+                // In a real implementation, we'd extract the data from the interface
+                Ok(value.clone())
+            }
+            
+            // Default case - return as-is
+            _ => Ok(value.clone()),
         }
     }
     

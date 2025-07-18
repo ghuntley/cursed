@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>select_core Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>select_core Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>select_prepare</h3>
+        <p></p>
+        <p><code>slay select_prepare(num_cases normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>select_add_case</h3>
+        <p></p>
+        <p><code>slay select_add_case(select_id normie, channel_id normie, operation_type normie, value tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>select_execute</h3>
+        <p></p>
+        <p><code>slay select_execute(select_id normie, has_default lit) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>select_execute_with_timeout</h3>
+        <p></p>
+        <p><code>slay select_execute_with_timeout(select_id normie, has_default lit, timeout_ms normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>select_cleanup</h3>
+        <p></p>
+        <p><code>slay select_cleanup(select_id normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>select_get_receive_value</h3>
+        <p></p>
+        <p><code>slay select_get_receive_value(select_id normie, case_index normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_create</h3>
+        <p></p>
+        <p><code>slay channel_create(buffer_size normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_send</h3>
+        <p></p>
+        <p><code>slay channel_send(channel_id normie, value tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_recv</h3>
+        <p></p>
+        <p><code>slay channel_recv(channel_id normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_try_recv</h3>
+        <p></p>
+        <p><code>slay channel_try_recv(channel_id normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_close</h3>
+        <p></p>
+        <p><code>slay channel_close(channel_id normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_destroy</h3>
+        <p></p>
+        <p><code>slay channel_destroy(channel_id normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_has_data</h3>
+        <p></p>
+        <p><code>slay channel_has_data(channel_id normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>channel_can_send</h3>
+        <p></p>
+        <p><code>slay channel_can_send(channel_id normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_timeout_channel</h3>
+        <p></p>
+        <p><code>slay create_timeout_channel(timeout_ms normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_current_time_ms</h3>
+        <p></p>
+        <p><code>slay get_current_time_ms() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>simulate_delay</h3>
+        <p></p>
+        <p><code>slay simulate_delay(delay_ms normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>yield_execution</h3>
+        <p></p>
+        <p><code>slay yield_execution() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_select_preparation</h3>
+        <p></p>
+        <p><code>slay test_select_preparation() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_channel_creation</h3>
+        <p></p>
+        <p><code>slay test_channel_creation() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_channel_send_receive</h3>
+        <p></p>
+        <p><code>slay test_channel_send_receive() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_channel_buffering</h3>
+        <p></p>
+        <p><code>slay test_channel_buffering() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_channel_closing</h3>
+        <p></p>
+        <p><code>slay test_channel_closing() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_select_operations</h3>
+        <p></p>
+        <p><code>slay test_select_operations() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_select_with_default</h3>
+        <p></p>
+        <p><code>slay test_select_with_default() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_select_send_operations</h3>
+        <p></p>
+        <p><code>slay test_select_send_operations() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_timeout_channel</h3>
+        <p></p>
+        <p><code>slay test_timeout_channel() {</code></p>
+    </div>
+    <div class="function">
+        <h3>test_select_timeout</h3>
+        <p></p>
+        <p><code>slay test_select_timeout() {</code></p>
+    </div>
+    <div class="function">
+        <h3>select_core_main</h3>
+        <p></p>
+        <p><code>slay select_core_main() {</code></p>
+    </div>
+</body>
+</html>
