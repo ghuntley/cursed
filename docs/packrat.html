@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>packrat Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>packrat Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>NewRatPack</h3>
+        <p></p>
+        <p><code>slay NewRatPack(data []normie) *RatPack {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewRatStash</h3>
+        <p></p>
+        <p><code>slay NewRatStash() *RatStash {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewHoardPack</h3>
+        <p></p>
+        <p><code>slay NewHoardPack(data []normie, size normie) (*HoardPack, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewHoardStash</h3>
+        <p></p>
+        <p><code>slay NewHoardStash() *HoardStash {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsZip</h3>
+        <p></p>
+        <p><code>slay IsZip(data []normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>IsTar</h3>
+        <p></p>
+        <p><code>slay IsTar(data []normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>Compress</h3>
+        <p></p>
+        <p><code>slay Compress(src tea, dst tea, format tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>Decompress</h3>
+        <p></p>
+        <p><code>slay Decompress(src tea, dst tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>serializeHeader</h3>
+        <p></p>
+        <p><code>slay serializeHeader(hdr *RatHeader) []normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>serializeZipHeader</h3>
+        <p></p>
+        <p><code>slay serializeZipHeader(hdr *HoardFileHeader) []normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>compressTar</h3>
+        <p></p>
+        <p><code>slay compressTar(src tea, dst tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>compressZip</h3>
+        <p></p>
+        <p><code>slay compressZip(src tea, dst tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>FileInfoHeader</h3>
+        <p></p>
+        <p><code>slay FileInfoHeader(name tea, size normie) (*RatHeader, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>ZipFileInfoHeader</h3>
+        <p></p>
+        <p><code>slay ZipFileInfoHeader(name tea, size normie) (*HoardFileHeader, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>getCurrentTime</h3>
+        <p></p>
+        <p><code>slay getCurrentTime() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>ValidateArchive</h3>
+        <p></p>
+        <p><code>slay ValidateArchive(data []normie) (tea, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetArchiveInfo</h3>
+        <p></p>
+        <p><code>slay GetArchiveInfo(data []normie) (ArchiveInfo, tea) {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>FormatUnknown</h3>
+        <p></p>
+        <p>Type: <code>Format</code></p>
+    </div>
+    <div class="variable">
+        <h3>FormatLegacy</h3>
+        <p></p>
+        <p>Type: <code>Format</code></p>
+    </div>
+    <div class="variable">
+        <h3>FormatPOSIX</h3>
+        <p></p>
+        <p>Type: <code>Format</code></p>
+    </div>
+    <div class="variable">
+        <h3>FormatGNU</h3>
+        <p></p>
+        <p>Type: <code>Format</code></p>
+    </div>
+    <div class="variable">
+        <h3>FormatOldVibe</h3>
+        <p></p>
+        <p>Type: <code>Format</code></p>
+    </div>
+    <div class="variable">
+        <h3>currentTime</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

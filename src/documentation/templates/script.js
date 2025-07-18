@@ -1,371 +1,443 @@
 // CURSED Documentation Generator JavaScript
-// Provides interactive functionality for the documentation
+// Provides search functionality, syntax highlighting, and interactive features
 
-(function() {
-    'use strict';
-
-    // Initialize when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        initializeSearch();
-        initializeNavigation();
-        initializeSyntaxHighlighting();
-        initializeCodeExamples();
-        initializeTooltips();
-        initializeThemeToggle();
-    });
-
+class CursedDocumentation {
+    constructor() {
+        this.searchIndex = [];
+        this.searchResults = [];
+        this.currentSearchQuery = '';
+        this.searchTimeout = null;
+        
+        this.init();
+    }
+    
+    init() {
+        this.setupSearch();
+        this.setupSyntaxHighlighting();
+        this.setupNavigation();
+        this.setupTooltips();
+        this.setupKeyboardShortcuts();
+        this.loadSearchIndex();
+    }
+    
     // Search functionality
-    function initializeSearch() {
-        const searchContainer = document.querySelector('.search-container');
-        if (!searchContainer) return;
-
+    setupSearch() {
         const searchInput = document.querySelector('.search-input');
         const searchResults = document.querySelector('.search-results');
         
-        if (!searchInput || !searchResults) return;
-
-        let searchData = [];
-        
-        // Load search index
-        fetch('search.json')
-            .then(response => response.json())
-            .then(data => {
-                searchData = data;
-            })
-            .catch(error => {
-                console.error('Failed to load search index:', error);
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.handleSearch(e.target.value);
             });
-
-        // Handle search input
-        searchInput.addEventListener('input', function() {
-            const query = this.value.trim().toLowerCase();
             
-            if (query.length < 2) {
-                searchResults.style.display = 'none';
-                return;
-            }
-
-            const results = searchData.filter(item => 
-                item.title.toLowerCase().includes(query) ||
-                item.content.toLowerCase().includes(query)
-            ).slice(0, 10);
-
-            displaySearchResults(results, searchResults);
-        });
-
-        // Handle search result clicks
-        searchResults.addEventListener('click', function(e) {
-            const resultElement = e.target.closest('.search-result');
-            if (resultElement) {
-                const url = resultElement.dataset.url;
-                if (url) {
-                    window.location.href = url;
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.clearSearch();
                 }
-            }
-        });
-
-        // Hide search results when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!searchContainer.contains(e.target)) {
-                searchResults.style.display = 'none';
-            }
-        });
-    }
-
-    function displaySearchResults(results, container) {
-        if (results.length === 0) {
-            container.innerHTML = '<div class="search-result">No results found</div>';
-        } else {
-            container.innerHTML = results.map(result => `
-                <div class="search-result" data-url="${result.url}">
-                    <div class="search-result-title">${escapeHtml(result.title)}</div>
-                    <div class="search-result-type">${escapeHtml(result.type)}</div>
-                </div>
-            `).join('');
+            });
         }
         
-        container.style.display = 'block';
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                this.clearSearch();
+            }
+        });
     }
-
-    // Navigation functionality
-    function initializeNavigation() {
+    
+    handleSearch(query) {
+        clearTimeout(this.searchTimeout);
+        
+        this.searchTimeout = setTimeout(() => {
+            this.performSearch(query);
+        }, 300);
+    }
+    
+    performSearch(query) {
+        if (query.length < 2) {
+            this.clearSearch();
+            return;
+        }
+        
+        this.currentSearchQuery = query.toLowerCase();
+        const results = this.searchIndex.filter(item => 
+            item.title.toLowerCase().includes(this.currentSearchQuery) ||
+            item.content.toLowerCase().includes(this.currentSearchQuery)
+        );
+        
+        this.displaySearchResults(results);
+    }
+    
+    displaySearchResults(results) {
+        const searchResultsContainer = document.querySelector('.search-results');
+        if (!searchResultsContainer) return;
+        
+        if (results.length === 0) {
+            searchResultsContainer.innerHTML = '<div class="search-result">No results found</div>';
+            searchResultsContainer.style.display = 'block';
+            return;
+        }
+        
+        const html = results.slice(0, 10).map(result => `
+            <div class="search-result" onclick="window.location.href='${result.url}'">
+                <div class="search-result-title">${this.highlightMatch(result.title)}</div>
+                <div class="search-result-type">${result.type}</div>
+                <div class="search-result-description">${this.highlightMatch(result.content.substring(0, 100))}...</div>
+            </div>
+        `).join('');
+        
+        searchResultsContainer.innerHTML = html;
+        searchResultsContainer.style.display = 'block';
+    }
+    
+    highlightMatch(text) {
+        if (!this.currentSearchQuery) return text;
+        
+        const regex = new RegExp(`(${this.currentSearchQuery})`, 'gi');
+        return text.replace(regex, '<mark>$1</mark>');
+    }
+    
+    clearSearch() {
+        const searchResults = document.querySelector('.search-results');
+        if (searchResults) {
+            searchResults.style.display = 'none';
+        }
+    }
+    
+    // Load search index from JSON
+    async loadSearchIndex() {
+        try {
+            const response = await fetch('search.json');
+            if (response.ok) {
+                this.searchIndex = await response.json();
+            }
+        } catch (error) {
+            console.warn('Search index not available:', error);
+        }
+    }
+    
+    // Syntax highlighting
+    setupSyntaxHighlighting() {
+        const codeBlocks = document.querySelectorAll('pre code');
+        codeBlocks.forEach(block => {
+            this.highlightCode(block);
+        });
+    }
+    
+    highlightCode(element) {
+        let code = element.textContent;
+        
+        // CURSED language syntax highlighting
+        const patterns = [
+            { pattern: /\b(slay|sus|damn|yeet|facts|bestie|yolo|ready|lowkey|based|cap|cringe|fr|vibe|lit|tea|normie|drip|thicc|smol|mid|meal|snack|byte|rune|extra|sip)\b/g, className: 'keyword' },
+            { pattern: /"([^"\\]|\\.)*"/g, className: 'string' },
+            { pattern: /'([^'\\]|\\.)*'/g, className: 'string' },
+            { pattern: /\/\/.*$/gm, className: 'comment' },
+            { pattern: /\/\*[\s\S]*?\*\//g, className: 'comment' },
+            { pattern: /\b\d+(\.\d+)?\b/g, className: 'number' },
+            { pattern: /\b[a-zA-Z_][a-zA-Z0-9_]*\s*\(/g, className: 'function' },
+            { pattern: /\b[A-Z_][A-Z0-9_]*\b/g, className: 'constant' },
+        ];
+        
+        patterns.forEach(({ pattern, className }) => {
+            code = code.replace(pattern, (match) => `<span class="${className}">${match}</span>`);
+        });
+        
+        element.innerHTML = code;
+    }
+    
+    // Navigation
+    setupNavigation() {
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
+            anchor.addEventListener('click', (e) => {
                 e.preventDefault();
-                const targetId = this.getAttribute('href').substring(1);
-                const targetElement = document.getElementById(targetId);
-                
-                if (targetElement) {
-                    targetElement.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                    
-                    // Update URL
-                    history.pushState(null, null, `#${targetId}`);
+                const target = document.querySelector(anchor.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
                 }
             });
         });
-
-        // Highlight current navigation item
-        highlightCurrentNav();
         
-        // Update navigation on scroll
-        window.addEventListener('scroll', highlightCurrentNav);
+        // Highlight current section in navigation
+        this.setupScrollSpy();
     }
-
-    function highlightCurrentNav() {
-        const sections = document.querySelectorAll('section[id]');
+    
+    setupScrollSpy() {
         const navLinks = document.querySelectorAll('.module-nav a');
+        const sections = document.querySelectorAll('section[id]');
         
-        let current = '';
-        const scrollPos = window.pageYOffset + 150;
+        if (navLinks.length === 0 || sections.length === 0) return;
         
-        sections.forEach(section => {
-            const top = section.offsetTop;
-            const height = section.offsetHeight;
-            
-            if (scrollPos >= top && scrollPos < top + height) {
-                current = section.id;
-            }
-        });
-        
-        navLinks.forEach(link => {
-            link.classList.remove('current');
-            if (link.getAttribute('href') === `#${current}`) {
-                link.classList.add('current');
-            }
-        });
-    }
-
-    // Syntax highlighting
-    function initializeSyntaxHighlighting() {
-        // Simple syntax highlighting for CURSED code
-        document.querySelectorAll('pre code').forEach(block => {
-            if (block.classList.contains('cursed')) {
-                highlightCursedSyntax(block);
-            }
-        });
-    }
-
-    function highlightCursedSyntax(block) {
-        let code = block.textContent;
-        
-        // CURSED keywords
-        const keywords = [
-            'slay', 'damn', 'sus', 'lowkey', 'highkey', 'yeet', 'vibes',
-            'based', 'cap', 'cringe', 'fr', 'bestie', 'yolo', 'ready',
-            'ghosted', 'simp', 'yikes', 'shook', 'fam', 'defer'
-        ];
-        
-        // CURSED types
-        const types = [
-            'normie', 'smol', 'mid', 'thicc', 'drip', 'snack', 'meal',
-            'byte', 'rune', 'extra', 'tea', 'lit', 'sip'
-        ];
-        
-        // Apply syntax highlighting
-        keywords.forEach(keyword => {
-            const regex = new RegExp(`\\b${keyword}\\b`, 'g');
-            code = code.replace(regex, `<span class="hljs-keyword">${keyword}</span>`);
-        });
-        
-        types.forEach(type => {
-            const regex = new RegExp(`\\b${type}\\b`, 'g');
-            code = code.replace(regex, `<span class="hljs-type">${type}</span>`);
-        });
-        
-        // Strings
-        code = code.replace(/"([^"\\]*(\\.[^"\\]*)*)"/g, '<span class="hljs-string">"$1"</span>');
-        code = code.replace(/'([^'\\]*(\\.[^'\\]*)*)'/g, '<span class="hljs-string">\'$1\'</span>');
-        
-        // Comments
-        code = code.replace(/fr fr (.*?)$/gm, '<span class="hljs-comment">fr fr $1</span>');
-        code = code.replace(/\/\*(.*?)\*\//gs, '<span class="hljs-comment">/*$1*/</span>');
-        
-        // Numbers
-        code = code.replace(/\b\d+\.?\d*\b/g, '<span class="hljs-number">$&</span>');
-        
-        block.innerHTML = code;
-    }
-
-    // Code examples functionality
-    function initializeCodeExamples() {
-        document.querySelectorAll('.example').forEach(example => {
-            // Add copy button
-            const copyButton = document.createElement('button');
-            copyButton.textContent = 'Copy';
-            copyButton.className = 'copy-button';
-            copyButton.addEventListener('click', function() {
-                const code = example.querySelector('code').textContent;
-                navigator.clipboard.writeText(code).then(function() {
-                    copyButton.textContent = 'Copied!';
-                    setTimeout(() => {
-                        copyButton.textContent = 'Copy';
-                    }, 2000);
-                }).catch(function(err) {
-                    console.error('Failed to copy code:', err);
-                });
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
             });
-            
-            example.style.position = 'relative';
-            example.appendChild(copyButton);
-            
-            // Add run button for examples (if supported)
-            if (example.dataset.runnable === 'true') {
-                const runButton = document.createElement('button');
-                runButton.textContent = 'Run';
-                runButton.className = 'run-button';
-                runButton.addEventListener('click', function() {
-                    runCodeExample(example);
-                });
-                example.appendChild(runButton);
-            }
+        }, {
+            threshold: 0.1,
+            rootMargin: '-20% 0px -80% 0px'
         });
-    }
-
-    function runCodeExample(example) {
-        // Placeholder for code execution
-        // In a real implementation, this would send the code to a server
-        // or use a client-side CURSED interpreter
-        console.log('Running code example:', example.querySelector('code').textContent);
         
-        // Show output placeholder
-        let output = example.querySelector('.example-output');
-        if (!output) {
-            output = document.createElement('div');
-            output.className = 'example-output';
-            example.appendChild(output);
-        }
-        
-        output.innerHTML = '<div class="output-placeholder">Code execution not implemented</div>';
+        sections.forEach(section => observer.observe(section));
     }
-
+    
     // Tooltips
-    function initializeTooltips() {
-        document.querySelectorAll('[data-tooltip]').forEach(element => {
-            element.addEventListener('mouseenter', function() {
-                showTooltip(this, this.dataset.tooltip);
+    setupTooltips() {
+        const tooltips = document.querySelectorAll('[data-tooltip]');
+        
+        tooltips.forEach(element => {
+            element.addEventListener('mouseenter', (e) => {
+                this.showTooltip(e.target, e.target.getAttribute('data-tooltip'));
             });
             
-            element.addEventListener('mouseleave', function() {
-                hideTooltip();
+            element.addEventListener('mouseleave', () => {
+                this.hideTooltip();
             });
         });
     }
-
-    function showTooltip(element, text) {
+    
+    showTooltip(element, text) {
         const tooltip = document.createElement('div');
         tooltip.className = 'tooltip';
         tooltip.textContent = text;
+        
         document.body.appendChild(tooltip);
         
         const rect = element.getBoundingClientRect();
-        tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
-        tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + 'px';
+        tooltip.style.left = `${rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2)}px`;
+        tooltip.style.top = `${rect.top - tooltip.offsetHeight - 10}px`;
         
-        setTimeout(() => {
-            tooltip.classList.add('visible');
-        }, 10);
+        setTimeout(() => tooltip.classList.add('show'), 10);
     }
-
-    function hideTooltip() {
+    
+    hideTooltip() {
         const tooltip = document.querySelector('.tooltip');
         if (tooltip) {
             tooltip.remove();
         }
     }
-
-    // Theme toggle
-    function initializeThemeToggle() {
-        const themeToggle = document.querySelector('.theme-toggle');
-        if (!themeToggle) return;
-        
-        // Check for saved theme or default to light
-        const savedTheme = localStorage.getItem('cursed-docs-theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-        
-        document.documentElement.setAttribute('data-theme', theme);
-        updateThemeToggle(themeToggle, theme);
-        
-        themeToggle.addEventListener('click', function() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    // Keyboard shortcuts
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + K to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.querySelector('.search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
             
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('cursed-docs-theme', newTheme);
-            updateThemeToggle(themeToggle, newTheme);
+            // Escape to clear search
+            if (e.key === 'Escape') {
+                this.clearSearch();
+            }
         });
     }
-
-    function updateThemeToggle(toggle, theme) {
-        toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-        toggle.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
+    
+    // Copy code functionality
+    setupCodeCopy() {
+        const codeBlocks = document.querySelectorAll('pre code');
+        
+        codeBlocks.forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-button';
+            button.textContent = 'Copy';
+            button.onclick = () => this.copyCode(block, button);
+            
+            block.parentNode.style.position = 'relative';
+            block.parentNode.appendChild(button);
+        });
     }
-
-    // Utility functions
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    
+    copyCode(codeElement, button) {
+        const text = codeElement.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = 'Copy';
+            }, 2000);
+        });
     }
-
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        // Ctrl/Cmd + K to focus search
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            const searchInput = document.querySelector('.search-input');
-            if (searchInput) {
-                searchInput.focus();
-            }
+    
+    // Theme toggle
+    setupThemeToggle() {
+        const themeToggle = document.querySelector('.theme-toggle');
+        
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-theme');
+                localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+            });
         }
         
-        // Escape to close search results
-        if (e.key === 'Escape') {
-            const searchResults = document.querySelector('.search-results');
-            if (searchResults) {
-                searchResults.style.display = 'none';
-            }
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-theme');
         }
-    });
-
-    // Performance monitoring
-    if (window.performance && window.performance.mark) {
-        window.performance.mark('cursed-docs-js-loaded');
     }
-
-    // Analytics placeholder
-    function trackPageView() {
-        // Placeholder for analytics tracking
-        console.log('Page view tracked:', window.location.pathname);
+    
+    // Collapsible sections
+    setupCollapsibleSections() {
+        const toggles = document.querySelectorAll('.section-toggle');
+        
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const section = toggle.closest('.collapsible-section');
+                const content = section.querySelector('.section-content');
+                
+                section.classList.toggle('collapsed');
+                
+                if (section.classList.contains('collapsed')) {
+                    content.style.maxHeight = '0';
+                    toggle.textContent = '▶';
+                } else {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                    toggle.textContent = '▼';
+                }
+            });
+        });
     }
-
-    function trackEvent(category, action, label) {
-        // Placeholder for event tracking
-        console.log('Event tracked:', { category, action, label });
+    
+    // Progress indicator
+    setupProgressIndicator() {
+        const progressBar = document.querySelector('.progress-bar');
+        
+        if (progressBar) {
+            window.addEventListener('scroll', () => {
+                const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (window.scrollY / totalHeight) * 100;
+                progressBar.style.width = `${progress}%`;
+            });
+        }
     }
+}
 
-    // Export for testing
-    window.CursedDocs = {
-        trackPageView,
-        trackEvent,
-        escapeHtml,
-        debounce
-    };
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    new CursedDocumentation();
+});
 
-})();
+// Add CSS for JavaScript-generated elements
+const style = document.createElement('style');
+style.textContent = `
+    .tooltip {
+        position: absolute;
+        background: #333;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 1000;
+        pointer-events: none;
+    }
+    
+    .tooltip.show {
+        opacity: 1;
+    }
+    
+    .tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #333;
+    }
+    
+    .copy-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    pre:hover .copy-button {
+        opacity: 1;
+    }
+    
+    .copy-button:hover {
+        background: #0056b3;
+    }
+    
+    .theme-toggle {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+    }
+    
+    .theme-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: #007bff;
+        z-index: 1000;
+        transition: width 0.3s;
+    }
+    
+    .section-toggle {
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 0;
+        margin-right: 10px;
+        transition: transform 0.3s;
+    }
+    
+    .collapsible-section.collapsed .section-toggle {
+        transform: rotate(-90deg);
+    }
+    
+    .section-content {
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .collapsible-section.collapsed .section-content {
+        max-height: 0;
+    }
+    
+    .module-nav a.active {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    
+    mark {
+        background-color: #ffeb3b;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+`;
+document.head.appendChild(style);

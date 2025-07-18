@@ -399,13 +399,34 @@ entry:
         self.type_interfaces.get(type_name)
     }
 
-    /// Check if interface extends another interface
+    /// Check if interface extends another interface (supports transitive inheritance)
     pub fn interface_extends(&self, derived: &str, base: &str) -> bool {
-        if let Some(extends) = self.interface_inheritance.get(derived) {
-            extends.contains(&base.to_string())
-        } else {
-            false
+        if derived == base {
+            return true;
         }
+        
+        let mut visited = std::collections::HashSet::new();
+        self.interface_extends_recursive(derived, base, &mut visited)
+    }
+    
+    /// Recursive helper for checking transitive inheritance
+    fn interface_extends_recursive(&self, derived: &str, base: &str, visited: &mut std::collections::HashSet<String>) -> bool {
+        if visited.contains(derived) {
+            return false; // Circular inheritance
+        }
+        visited.insert(derived.to_string());
+        
+        if let Some(extends) = self.interface_inheritance.get(derived) {
+            for parent in extends {
+                if parent == base {
+                    return true;
+                }
+                if self.interface_extends_recursive(parent, base, visited) {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     /// Get all interfaces in hierarchy
@@ -461,6 +482,19 @@ mod tests {
         // Test interface registration
         assert!(checker.register_interface(&interface).is_ok());
         
+        // Register a type implementation for TestType
+        let method_impl = ConcreteMethodImplementation {
+            name: "test_method".to_string(),
+            receiver_type: ReceiverType::Value,
+            parameters: vec![],
+            return_type: Some(AstType::Normie),
+        };
+        
+        assert!(checker.compliance_checker.register_type_methods(
+            "TestType",
+            vec![method_impl]
+        ).is_ok());
+        
         // Test type checking IR generation
         let ir = checker.generate_type_checking_ir("TestType", "TestInterface");
         assert!(ir.is_ok());
@@ -473,7 +507,7 @@ mod tests {
     fn test_interface_hierarchy() {
         let mut checker = InterfaceTypeChecker::new();
         
-        // Test hierarchy checking
+        // Test simple hierarchy checking
         checker.interface_inheritance.insert("DerivedInterface".to_string(), vec!["BaseInterface".to_string()]);
         
         assert!(checker.interface_extends("DerivedInterface", "BaseInterface"));
@@ -482,5 +516,26 @@ mod tests {
         let hierarchy = checker.get_interface_hierarchy("DerivedInterface");
         assert!(hierarchy.contains(&"DerivedInterface".to_string()));
         assert!(hierarchy.contains(&"BaseInterface".to_string()));
+        
+        // Test transitive inheritance: GrandChild -> Child -> Parent
+        checker.interface_inheritance.insert("Child".to_string(), vec!["Parent".to_string()]);
+        checker.interface_inheritance.insert("GrandChild".to_string(), vec!["Child".to_string()]);
+        
+        assert!(checker.interface_extends("GrandChild", "Child"));
+        assert!(checker.interface_extends("GrandChild", "Parent"));
+        assert!(checker.interface_extends("Child", "Parent"));
+        assert!(!checker.interface_extends("Parent", "GrandChild"));
+        
+        // Test self-inheritance (should return true)
+        assert!(checker.interface_extends("GrandChild", "GrandChild"));
+        
+        // Test multiple inheritance
+        checker.interface_inheritance.insert("MultipleChild".to_string(), vec!["Parent".to_string(), "BaseInterface".to_string()]);
+        assert!(checker.interface_extends("MultipleChild", "Parent"));
+        assert!(checker.interface_extends("MultipleChild", "BaseInterface"));
+        
+        // Test non-existent interface
+        assert!(!checker.interface_extends("NonExistent", "Parent"));
+        assert!(!checker.interface_extends("Parent", "NonExistent"));
     }
 }

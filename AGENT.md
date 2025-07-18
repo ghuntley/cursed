@@ -83,36 +83,41 @@
 
 **✅ LATEST SESSION LEARNINGS (2025-07-16)**
 
-**Building Multiple CLI Tools**
-- **Binary Targets**: Add new tools to `Cargo.toml` under `[[bin]]` sections
-- **LSP Server**: `cursed-lsp` binary provides Language Server Protocol support
+**Testing Framework Implementation**
+- **Fast Test Execution**: `./run_fast_tests_final.sh` - 4-second test suite for rapid development iteration
+- **Module-Specific Testing**: `cargo test interface_dispatch`, `cargo test mutable_references` for targeted validation
+- **Both-Mode Verification**: Always test interpretation and compilation modes with `test_both_modes()` function
+- **Parallel Testing**: Use `--test-threads=32` for efficient parallel test execution
+
+**Stdlib Module Testing Commands**
+- **Core Module Testing**: `cargo run --bin cursed stdlib/module/test_module.csd` pattern for all modules
+- **Advanced Modules**: Test ast_mood, jit_vibes, macro_slay modules for compiler infrastructure
+- **Network Modules**: Test fs, io, vibe_net, web_vibez, tls_vibe modules with both-mode verification
+- **FFI-Free Validation**: All 543+ modules use pure CURSED with zero external dependencies
+
+**CURSED Module Development Patterns**
+- **Module Structure**: `specs/module.md` (spec) → `stdlib/module/mod.csd` (impl) → `test_module.csd` (tests) → `README.md` (docs)
+- **Import Standardization**: Use `yeet "module"` simple names instead of relative paths for reliable resolution
+- **Testing Integration**: Always start with `yeet "testz"` import for comprehensive test coverage
+- **Template Creation**: Use standardized templates for consistent parallel module development
+
+**Build/Test Optimization Findings**
+- **Ultra-Fast Iteration**: `cargo check` (0.5s) → `./run_fast_tests_final.sh` (4s) → targeted tests
+- **RegisterTracker Pattern**: Use `context.register_tracker.next_register()` for consistent LLVM IR generation
+- **Interface Runtime Linking**: Critical runtime linking fix in src/lib.rs ~line 1250 enables native compilation
+- **Compilation Workflow**: Test simple programs first, then complex features progressively
+
+**Debugging Techniques Discovered**
+- **Comment Parsing Debug**: Use `grep -r "^#" stdlib/` to identify comment usage patterns in modules
+- **Stage 2 Bootstrap Testing**: Validate self-compilation with `cargo run --bin cursed -- compile src/bootstrap/stage2/main.csd`
+- **Parser Issue Isolation**: Create minimal test cases to isolate specific parsing problems
+- **Build Health Monitoring**: Monitor build status with consistent `cargo check` validation
+
+**CLI Tool Development**
+- **Multiple Binaries**: Add tools to `Cargo.toml` under `[[bin]]` sections for cursed-lsp, etc.
+- **LSP Integration**: `cargo run --bin cursed-lsp` for Language Server Protocol support
 - **Build Commands**: `cargo build --bin tool_name` for specific tools
-- **Tool Pattern**: Each tool has dedicated main function in `src/bin/tool_name.rs`
-
-**Implementing Stdlib Modules**
-- **Complete Pattern**: `specs/module.md` (spec) → `stdlib/module/mod.csd` (impl) → `stdlib/module/test_module.csd` (tests) → `stdlib/module/README.md` (docs)
-- **Spec-Driven Development**: Always start with formal specification in `specs/` directory
-- **Pure CURSED Implementation**: All modules use zero FFI for maximum portability
-- **Testing Integration**: Use `yeet "testz"` import with comprehensive test coverage
-
-**Working LSP Integration**
-- **Server Implementation**: `src/bin/cursed-lsp.rs` provides full LSP server functionality
-- **Editor Integration**: Works with VS Code, Neovim, and other LSP-compatible editors
-- **Language Features**: Syntax highlighting, completion, diagnostics, hover information
-- **Start Command**: `cargo run --bin cursed-lsp` launches LSP server on stdin/stdout
-
-**Build System Patterns**
-- **Self-Hosting Build**: `src/build_system/` implements complete build system in CURSED
-- **Native Builds**: `cargo run --bin cursed -- build project.csd` for CURSED projects
-- **Package Management**: CursedBuild.toml, CursedPackage.toml for project configuration
-- **Workspace Support**: CursedWorkspace.toml for multi-project builds
-
-**Development Workflow Optimization**
-- **Fast Iteration**: `./run_fast_tests_final.sh` (4s) → `cargo check` (0.5s) → targeted tests
-- **Both-Mode Testing**: Always verify interpretation and compilation produce identical output
-- **Module Development**: Use template pattern for consistent stdlib module creation
-- **LSP Workflow**: Real-time feedback during development with editor integration
-- **Build Validation**: `cargo build --bin cursed-lsp && cargo run --bin cursed test` for complete validation
+- **Self-Hosting Tools**: All tools built using pure CURSED for maximum portability
 
 
 ```bash

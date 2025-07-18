@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vibez Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>vibez Module</h1>
+    <p>vibez module - Formatted I/O operations for CURSED Pure CURSED implementation without FFI dependencies Provides console I/O, formatting, and print functions</p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>spill</h3>
+        <p>Basic print function - outputs text to console</p>
+        <p><code>slay spill(message tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spillf</h3>
+        <p>Formatted print function - printf-style formatting</p>
+        <p><code>slay spillf(format tea, args ...tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spillstr</h3>
+        <p>String formatting function - returns formatted string</p>
+        <p><code>slay spillstr(format tea, args ...tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>format_string</h3>
+        <p>Format string with arguments</p>
+        <p><code>slay format_string(format tea, args ...tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>spillln</h3>
+        <p>Print with newline</p>
+        <p><code>slay spillln(message tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spillfln</h3>
+        <p>Print formatted with newline</p>
+        <p><code>slay spillfln(format tea, args ...tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>scan</h3>
+        <p>Read input from console</p>
+        <p><code>slay scan() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>scanln</h3>
+        <p>Read line from console</p>
+        <p><code>slay scanln() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>scanf</h3>
+        <p>Read formatted input</p>
+        <p><code>slay scanf(format tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_input</h3>
+        <p>Parse input according to format</p>
+        <p><code>slay parse_input(input tea, format tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>spill_values</h3>
+        <p>Print multiple values separated by spaces</p>
+        <p><code>slay spill_values(values ...tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spill_values_ln</h3>
+        <p>Print multiple values with newline</p>
+        <p><code>slay spill_values_ln(values ...tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spill_sep</h3>
+        <p>Print with separator</p>
+        <p><code>slay spill_sep(separator tea, values ...tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spill_error</h3>
+        <p>Print error message to stderr</p>
+        <p><code>slay spill_error(message tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spill_warning</h3>
+        <p>Print warning message</p>
+        <p><code>slay spill_warning(message tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spill_debug</h3>
+        <p>Print debug message</p>
+        <p><code>slay spill_debug(message tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spill_with_time</h3>
+        <p>Print with timestamp</p>
+        <p><code>slay spill_with_time(message tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>format_number</h3>
+        <p>Format number as string</p>
+        <p><code>slay format_number(number normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>format_float</h3>
+        <p>Format float as string</p>
+        <p><code>slay format_float(number drip) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>format_bool</h3>
+        <p>Format boolean as string</p>
+        <p><code>slay format_bool(value lit) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>clear_screen</h3>
+        <p>Clear console screen</p>
+        <p><code>slay clear_screen() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_color</h3>
+        <p>Set text color (ANSI escape codes)</p>
+        <p><code>slay set_color(color tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>spill_colored</h3>
+        <p>Print colored text</p>
+        <p><code>slay spill_colored(message tea, color tea) lit {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>formatted_output</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>arg_index</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p>Replace %s with string arguments, %d with numbers</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>next_char</h3>
+        <p></p>
+        <p>Type: <code>sip</code></p>
+    </div>
+    <div class="variable">
+        <h3>before</h3>
+        <p>Replace %s with string argument</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>after</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>before</h3>
+        <p>Replace %d with number argument</p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>after</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>input</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>error_msg</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>warning_msg</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>debug_msg</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>timestamp</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>timed_msg</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>color_code</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+</body>
+</html>

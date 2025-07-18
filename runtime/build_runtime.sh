@@ -65,6 +65,9 @@ build_library() {
     # Create static library
     ar rcs "${lib_file}" "${obj_file}"
     
+    # Index the archive with ranlib to fix linking issues
+    ranlib "${lib_file}"
+    
     # Verify architecture
     echo "Verifying architecture of ${lib_file}:"
     if command -v lipo &> /dev/null; then

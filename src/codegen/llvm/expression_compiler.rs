@@ -16,6 +16,7 @@ pub struct ExpressionCompiler {
     pub tuple_types: HashMap<String, Vec<String>>, // Track tuple element types
     pub ir_buffer: String,
     pub lambda_functions: Vec<String>,
+    pub target_triple: String,  // Add target triple for WASM detection
 }
 
 impl ExpressionCompiler {
@@ -30,6 +31,28 @@ impl ExpressionCompiler {
             tuple_types: HashMap::new(),
             ir_buffer: String::new(),
             lambda_functions: Vec::new(),
+            target_triple: String::new(),
+        }
+    }
+    
+    pub fn new_with_target(target_triple: String) -> Self {
+        let mut tracker = if target_triple.starts_with("wasm32") {
+            RegisterTracker::new_function_scoped()
+        } else {
+            let mut tracker = RegisterTracker::new();
+            tracker.sync_with_global();
+            tracker
+        };
+        
+        Self {
+            register_tracker: tracker,
+            string_manager: get_global_string_manager(),
+            variables: HashMap::new(),
+            variable_types: HashMap::new(),
+            tuple_types: HashMap::new(),
+            ir_buffer: String::new(),
+            lambda_functions: Vec::new(),
+            target_triple,
         }
     }
 
@@ -200,13 +223,13 @@ impl ExpressionCompiler {
                  Ok(recover_reg)
              },
               Expression::Match(match_expr) => {
-                     // TODO: Implement match expression compilation
-                  let match_reg = self.next_register();
-                  self.ir_buffer.push_str(&format!("  {} = alloca i32\n", match_reg));
-                  return Err(CursedError::TypeError(
-                  "Match expressions not yet implemented in LLVM codegen".to_string()
-                  ));
-                  }
+              // For complex match expressions, delegate to the main codegen system
+              // This is a placeholder - in practice, match expressions are handled in the main codegen
+              // For now, return an error suggesting to use the main codegen path
+              return Err(CursedError::TypeError(
+                  "Match expressions should be handled by the main expression generator".to_string()
+              ));
+              }
                &crate::ast::Expression::TypeSwitch(_) => {
                            // Type switch expressions are handled by the main code generator
                    return Err(CursedError::TypeError(

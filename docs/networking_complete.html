@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>networking_complete Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>networking_complete Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>tcp_socket_create</h3>
+        <p></p>
+        <p><code>slay tcp_socket_create() Socket {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_socket_bind</h3>
+        <p></p>
+        <p><code>slay tcp_socket_bind(sock *Socket, address NetworkAddress) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_socket_listen</h3>
+        <p></p>
+        <p><code>slay tcp_socket_listen(sock *Socket, backlog normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_socket_accept</h3>
+        <p></p>
+        <p><code>slay tcp_socket_accept(server_sock *Socket) Socket {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_socket_connect</h3>
+        <p></p>
+        <p><code>slay tcp_socket_connect(sock *Socket, address NetworkAddress) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_socket_send</h3>
+        <p></p>
+        <p><code>slay tcp_socket_send(sock *Socket, data tea) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_socket_receive</h3>
+        <p></p>
+        <p><code>slay tcp_socket_receive(sock *Socket, buffer_size normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>tcp_socket_close</h3>
+        <p></p>
+        <p><code>slay tcp_socket_close(sock *Socket) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_socket_create</h3>
+        <p></p>
+        <p><code>slay udp_socket_create() Socket {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_socket_bind</h3>
+        <p></p>
+        <p><code>slay udp_socket_bind(sock *Socket, address NetworkAddress) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_socket_sendto</h3>
+        <p></p>
+        <p><code>slay udp_socket_sendto(sock *Socket, data tea, address NetworkAddress) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>udp_socket_recvfrom</h3>
+        <p></p>
+        <p><code>slay udp_socket_recvfrom(sock *Socket, buffer_size normie) (tea, NetworkAddress) {</code></p>
+    </div>
+    <div class="function">
+        <h3>dns_resolve_a</h3>
+        <p></p>
+        <p><code>slay dns_resolve_a(hostname tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>dns_resolve_aaaa</h3>
+        <p></p>
+        <p><code>slay dns_resolve_aaaa(hostname tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>dns_lookup_multiple</h3>
+        <p></p>
+        <p><code>slay dns_lookup_multiple(hostname tea) [10]DNSRecord {</code></p>
+    </div>
+    <div class="function">
+        <h3>dns_reverse_lookup</h3>
+        <p></p>
+        <p><code>slay dns_reverse_lookup(ip tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ssl_context_create</h3>
+        <p></p>
+        <p><code>slay ssl_context_create() SSLContext {</code></p>
+    </div>
+    <div class="function">
+        <h3>ssl_context_load_cert</h3>
+        <p></p>
+        <p><code>slay ssl_context_load_cert(ctx *SSLContext, cert_path tea, key_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ssl_context_set_ca_bundle</h3>
+        <p></p>
+        <p><code>slay ssl_context_set_ca_bundle(ctx *SSLContext, ca_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ssl_socket_wrap</h3>
+        <p></p>
+        <p><code>slay ssl_socket_wrap(sock *Socket, ctx SSLContext) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ssl_handshake</h3>
+        <p></p>
+        <p><code>slay ssl_handshake(sock *Socket) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ssl_encrypt_data</h3>
+        <p></p>
+        <p><code>slay ssl_encrypt_data(data tea, ctx SSLContext) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ssl_decrypt_data</h3>
+        <p></p>
+        <p><code>slay ssl_decrypt_data(encrypted_data tea, ctx SSLContext) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_request_create</h3>
+        <p></p>
+        <p><code>slay http_request_create(method tea, url tea) HTTPRequest {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_request_add_header</h3>
+        <p></p>
+        <p><code>slay http_request_add_header(req *HTTPRequest, name tea, value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_request_set_body</h3>
+        <p></p>
+        <p><code>slay http_request_set_body(req *HTTPRequest, body tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_parse_request</h3>
+        <p></p>
+        <p><code>slay http_parse_request(raw_request tea) HTTPRequest {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_response_create</h3>
+        <p></p>
+        <p><code>slay http_response_create(status_code normie, status_text tea) HTTPResponse {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_response_add_header</h3>
+        <p></p>
+        <p><code>slay http_response_add_header(resp *HTTPResponse, name tea, value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_response_set_body</h3>
+        <p></p>
+        <p><code>slay http_response_set_body(resp *HTTPResponse, body tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>http_serialize_response</h3>
+        <p></p>
+        <p><code>slay http_serialize_response(resp HTTPResponse) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>websocket_generate_key</h3>
+        <p></p>
+        <p><code>slay websocket_generate_key() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>websocket_accept_key</h3>
+        <p></p>
+        <p><code>slay websocket_accept_key(client_key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>websocket_create_frame</h3>
+        <p></p>
+        <p><code>slay websocket_create_frame(opcode normie, payload tea) WebSocketFrame {</code></p>
+    </div>
+    <div class="function">
+        <h3>websocket_parse_frame</h3>
+        <p></p>
+        <p><code>slay websocket_parse_frame(raw_data tea) WebSocketFrame {</code></p>
+    </div>
+    <div class="function">
+        <h3>websocket_serialize_frame</h3>
+        <p></p>
+        <p><code>slay websocket_serialize_frame(frame WebSocketFrame) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>websocket_handshake_response</h3>
+        <p></p>
+        <p><code>slay websocket_handshake_response(client_key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>smtp_send_email</h3>
+        <p></p>
+        <p><code>slay smtp_send_email(server tea, port normie, from tea, to tea, subject tea, body tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ftp_upload_file</h3>
+        <p></p>
+        <p><code>slay ftp_upload_file(server tea, port normie, username tea, password tea, local_path tea, remote_path tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>ping_host</h3>
+        <p></p>
+        <p><code>slay ping_host(hostname tea, timeout_ms normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>traceroute_host</h3>
+        <p></p>
+        <p><code>slay traceroute_host(hostname tea, max_hops normie) [30]tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ip_address_validate</h3>
+        <p></p>
+        <p><code>slay ip_address_validate(ip tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>port_scan</h3>
+        <p></p>
+        <p><code>slay port_scan(target tea, start_port normie, end_port normie) [1000]normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>bandwidth_test</h3>
+        <p></p>
+        <p><code>slay bandwidth_test(server tea, port normie, test_duration_ms normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>network_interface_info</h3>
+        <p></p>
+        <p><code>slay network_interface_info() [10]tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_public_ip</h3>
+        <p></p>
+        <p><code>slay get_public_ip() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>networking_module_info</h3>
+        <p></p>
+        <p><code>slay networking_module_info() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>networking_feature_count</h3>
+        <p></p>
+        <p><code>slay networking_feature_count() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>networking_validate_implementation</h3>
+        <p></p>
+        <p><code>slay networking_validate_implementation() lit {</code></p>
+    </div>
+</body>
+</html>

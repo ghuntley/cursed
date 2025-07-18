@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>exec_slay Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>exec_slay Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>exec_command</h3>
+        <p></p>
+        <p><code>slay exec_command(cmd tea, args []tea) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>exec_background</h3>
+        <p></p>
+        <p><code>slay exec_background(cmd tea) ProcessHandle {</code></p>
+    </div>
+    <div class="function">
+        <h3>create_pipeline</h3>
+        <p></p>
+        <p><code>slay create_pipeline() Pipeline {</code></p>
+    </div>
+    <div class="function">
+        <h3>pipe_command</h3>
+        <p></p>
+        <p><code>slay pipe_command(pipeline *Pipeline, cmd tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>execute_pipeline</h3>
+        <p></p>
+        <p><code>slay execute_pipeline(pipeline Pipeline) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>build_command</h3>
+        <p></p>
+        <p><code>slay build_command(program tea) CommandBuilder {</code></p>
+    </div>
+    <div class="function">
+        <h3>add_argument</h3>
+        <p></p>
+        <p><code>slay add_argument(builder *CommandBuilder, arg tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_env</h3>
+        <p></p>
+        <p><code>slay set_env(builder *CommandBuilder, key tea, value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>set_cwd</h3>
+        <p></p>
+        <p><code>slay set_cwd(builder *CommandBuilder, dir tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>execute_command</h3>
+        <p></p>
+        <p><code>slay execute_command(builder CommandBuilder) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>wait_for_process</h3>
+        <p></p>
+        <p><code>slay wait_for_process(handle ProcessHandle) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>kill_process</h3>
+        <p></p>
+        <p><code>slay kill_process(handle ProcessHandle) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>process_status</h3>
+        <p></p>
+        <p><code>slay process_status(handle ProcessHandle) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_process_running</h3>
+        <p></p>
+        <p><code>slay is_process_running(handle ProcessHandle) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>compile_file</h3>
+        <p></p>
+        <p><code>slay compile_file(source_file tea, output_file tea) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>run_llvm_opt</h3>
+        <p></p>
+        <p><code>slay run_llvm_opt(input_file tea, output_file tea, opt_level normie) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>run_llvm_compile</h3>
+        <p></p>
+        <p><code>slay run_llvm_compile(ir_file tea, obj_file tea) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>link_objects</h3>
+        <p></p>
+        <p><code>slay link_objects(obj_files []tea, output_exe tea) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>compile_pipeline</h3>
+        <p></p>
+        <p><code>slay compile_pipeline(source_file tea, executable tea, optimize lit) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>command_exists</h3>
+        <p></p>
+        <p><code>slay command_exists(cmd tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>get_system_path</h3>
+        <p></p>
+        <p><code>slay get_system_path() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>exec_with_timeout</h3>
+        <p></p>
+        <p><code>slay exec_with_timeout(cmd tea, args []tea, timeout_seconds normie) ProcessResult {</code></p>
+    </div>
+    <div class="function">
+        <h3>exec_to_file</h3>
+        <p></p>
+        <p><code>slay exec_to_file(cmd tea, args []tea, output_file tea) ProcessResult {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>full_cmd</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>exit_code</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>stdout</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>stderr</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>cmd</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ProcessResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>builder</h3>
+        <p></p>
+        <p>Type: <code>CommandBuilder</code></p>
+    </div>
+    <div class="variable">
+        <h3>builder</h3>
+        <p></p>
+        <p>Type: <code>CommandBuilder</code></p>
+    </div>
+    <div class="variable">
+        <h3>builder</h3>
+        <p></p>
+        <p>Type: <code>CommandBuilder</code></p>
+    </div>
+    <div class="variable">
+        <h3>builder</h3>
+        <p></p>
+        <p>Type: <code>CommandBuilder</code></p>
+    </div>
+    <div class="variable">
+        <h3>pipeline</h3>
+        <p></p>
+        <p>Type: <code>Pipeline</code></p>
+    </div>
+    <div class="variable">
+        <h3>ir_file</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>compile_result</h3>
+        <p></p>
+        <p>Type: <code>ProcessResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>opt_file</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>opt_result</h3>
+        <p></p>
+        <p>Type: <code>ProcessResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>obj_file</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>obj_result</h3>
+        <p></p>
+        <p>Type: <code>ProcessResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>link_result</h3>
+        <p></p>
+        <p>Type: <code>ProcessResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>test_result</h3>
+        <p></p>
+        <p>Type: <code>ProcessResult</code></p>
+    </div>
+    <div class="variable">
+        <h3>result</h3>
+        <p></p>
+        <p>Type: <code>ProcessResult</code></p>
+    </div>
+</body>
+</html>

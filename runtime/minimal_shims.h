@@ -51,4 +51,7 @@ void cursed_time_sleep_ms(uint64_t ms);
 char* cursed_crypto_sha256(const char* data);
 char* cursed_crypto_random_bytes(int length);
 
+// Match expression runtime support
+void panic_non_exhaustive_match(void);
+
 #endif // CURSED_MINIMAL_SHIMS_H

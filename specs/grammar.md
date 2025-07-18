@@ -262,10 +262,30 @@ bestie {
 Expressions compute values.
 
 ```
-Expression       = UnaryExpr | Expression binary_op Expression .
+Expression       = LogicalOrExpr .
+LogicalOrExpr    = LogicalAndExpr { "||" LogicalAndExpr } .
+LogicalAndExpr   = EqualityExpr { "&&" EqualityExpr } .
+EqualityExpr     = RelationalExpr { ( "==" | "!=" ) RelationalExpr } .
+RelationalExpr   = AdditiveExpr { ( "<" | "<=" | ">" | ">=" ) AdditiveExpr } .
+AdditiveExpr     = MultiplicativeExpr { ( "+" | "-" ) MultiplicativeExpr } .
+MultiplicativeExpr = UnaryExpr { ( "*" | "/" | "%" ) UnaryExpr } .
 UnaryExpr        = PrimaryExpr | unary_op UnaryExpr .
 PrimaryExpr      = Operand | Conversion | PrimaryExpr Selector | PrimaryExpr Index | PrimaryExpr Slice | PrimaryExpr TypeAssertion | PrimaryExpr Arguments .
 ```
+
+### Operator Precedence
+
+CURSED follows standard operator precedence (highest to lowest):
+
+1. **Primary expressions**: `()`, `[]`, `.`, function calls
+2. **Unary operators**: `!`, `-`, `+`, `*` (dereference), `&` (address-of)
+3. **Multiplicative**: `*`, `/`, `%`
+4. **Additive**: `+`, `-`
+5. **Relational**: `<`, `<=`, `>`, `>=`
+6. **Equality**: `==`, `!=`
+7. **Logical AND**: `&&`
+8. **Logical OR**: `||`
+9. **Assignment**: `=`, `:=`, `+=`, `-=`, etc.
 
 ### Primary Expressions
 

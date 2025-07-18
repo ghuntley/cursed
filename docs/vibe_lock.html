@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vibe_lock Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>vibe_lock Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>mutex_new</h3>
+        <p></p>
+        <p><code>slay mutex_new() *Mutex {</code></p>
+    </div>
+    <div class="function">
+        <h3>mutex_lock</h3>
+        <p></p>
+        <p><code>slay mutex_lock(mu *Mutex) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>mutex_unlock</h3>
+        <p></p>
+        <p><code>slay mutex_unlock(mu *Mutex) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>mutex_try_lock</h3>
+        <p></p>
+        <p><code>slay mutex_try_lock(mu *Mutex) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_new</h3>
+        <p></p>
+        <p><code>slay rwlock_new() *RWLock {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_rlock</h3>
+        <p></p>
+        <p><code>slay rwlock_rlock(rw *RWLock) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_runlock</h3>
+        <p></p>
+        <p><code>slay rwlock_runlock(rw *RWLock) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_lock</h3>
+        <p></p>
+        <p><code>slay rwlock_lock(rw *RWLock) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>rwlock_unlock</h3>
+        <p></p>
+        <p><code>slay rwlock_unlock(rw *RWLock) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>semaphore_new</h3>
+        <p></p>
+        <p><code>slay semaphore_new(initial_count normie) *Semaphore {</code></p>
+    </div>
+    <div class="function">
+        <h3>semaphore_acquire</h3>
+        <p></p>
+        <p><code>slay semaphore_acquire(sem *Semaphore) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>semaphore_release</h3>
+        <p></p>
+        <p><code>slay semaphore_release(sem *Semaphore) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>once_new</h3>
+        <p></p>
+        <p><code>slay once_new() *Once {</code></p>
+    </div>
+    <div class="function">
+        <h3>once_do</h3>
+        <p></p>
+        <p><code>slay once_do(once_obj *Once, fn_ptr normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>atomic_drip_new</h3>
+        <p></p>
+        <p><code>slay atomic_drip_new(value normie) atomic_drip {</code></p>
+    </div>
+    <div class="function">
+        <h3>atomic_drip_load</h3>
+        <p></p>
+        <p><code>slay atomic_drip_load(addr *atomic_drip) atomic_drip {</code></p>
+    </div>
+    <div class="function">
+        <h3>atomic_drip_store</h3>
+        <p></p>
+        <p><code>slay atomic_drip_store(addr *atomic_drip, value atomic_drip) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>atomic_drip_compare_and_swap</h3>
+        <p></p>
+        <p><code>slay atomic_drip_compare_and_swap(addr *atomic_drip, old_val atomic_drip, new_val atomic_drip) atomic_drip {</code></p>
+    </div>
+    <div class="function">
+        <h3>atomic_drip_fetch_and_add</h3>
+        <p></p>
+        <p><code>slay atomic_drip_fetch_and_add(addr *atomic_drip, delta atomic_drip) atomic_drip {</code></p>
+    </div>
+    <div class="function">
+        <h3>atomic_drip_yield</h3>
+        <p></p>
+        <p><code>slay atomic_drip_yield() normie {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>old_val</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>old_val</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>writer_active</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>writer_waiting</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>old_readers</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>writer_check</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>old_writer</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>active_readers</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_count</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>old_count</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>max_count</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>current_count</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>old_count</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_done</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>old_running</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>is_done_check</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>current</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+    <div class="variable">
+        <h3>old_val</h3>
+        <p></p>
+        <p>Type: <code>atomic_drip</code></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tag_core Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>tag_core Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>EscapeString</h3>
+        <p></p>
+        <p><code>slay EscapeString(s tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>UnescapeString</h3>
+        <p></p>
+        <p><code>slay UnescapeString(s tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>stringReplace</h3>
+        <p></p>
+        <p><code>slay stringReplace(s, old, new tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>EscapeBytes</h3>
+        <p></p>
+        <p><code>slay EscapeBytes(b []byte) []byte {</code></p>
+    </div>
+    <div class="function">
+        <h3>UnescapeBytes</h3>
+        <p></p>
+        <p><code>slay UnescapeBytes(b []byte) []byte {</code></p>
+    </div>
+    <div class="function">
+        <h3>EscapeURL</h3>
+        <p></p>
+        <p><code>slay EscapeURL(s tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>EscapeAttribute</h3>
+        <p></p>
+        <p><code>slay EscapeAttribute(s tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>EscapeJavaScript</h3>
+        <p></p>
+        <p><code>slay EscapeJavaScript(s tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>EscapeCSS</h3>
+        <p></p>
+        <p><code>slay EscapeCSS(s tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>EscapeForContext</h3>
+        <p></p>
+        <p><code>slay EscapeForContext(s tea, ctx EscapeContext) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSafeHTML</h3>
+        <p></p>
+        <p><code>slay NewSafeHTML(html tea) SafeHTML {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSafeURL</h3>
+        <p></p>
+        <p><code>slay NewSafeURL(url tea) SafeURL {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSafeJS</h3>
+        <p></p>
+        <p><code>slay NewSafeJS(js tea) SafeJSStr {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewSafeCSS</h3>
+        <p></p>
+        <p><code>slay NewSafeCSS(css tea) SafeCSSStr {</code></p>
+    </div>
+    <div class="function">
+        <h3>ToSafeHTML</h3>
+        <p></p>
+        <p><code>slay ToSafeHTML(html tea) SafeHTML {</code></p>
+    </div>
+    <div class="function">
+        <h3>ToSafeURL</h3>
+        <p></p>
+        <p><code>slay ToSafeURL(url tea) SafeURL {</code></p>
+    </div>
+    <div class="function">
+        <h3>ToSafeJS</h3>
+        <p></p>
+        <p><code>slay ToSafeJS(js tea) SafeJSStr {</code></p>
+    </div>
+    <div class="function">
+        <h3>ToSafeCSS</h3>
+        <p></p>
+        <p><code>slay ToSafeCSS(css tea) SafeCSSStr {</code></p>
+    </div>
+    <div class="function">
+        <h3>ParseHTML</h3>
+        <p></p>
+        <p><code>slay ParseHTML(html tea) (*Document, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>Sanitize</h3>
+        <p></p>
+        <p><code>slay Sanitize(html tea, options *SanitizeOptions) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewTag</h3>
+        <p></p>
+        <p><code>slay NewTag(name tea, category tea) *Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewTagSet</h3>
+        <p></p>
+        <p><code>slay NewTagSet() *TagSet {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewTagIndex</h3>
+        <p></p>
+        <p><code>slay NewTagIndex() *TagIndex {</code></p>
+    </div>
+    <div class="function">
+        <h3>AddTagRelation</h3>
+        <p></p>
+        <p><code>slay AddTagRelation(source_id tea, target_id tea, relation_type tea, weight meal) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>RemoveTagRelation</h3>
+        <p></p>
+        <p><code>slay RemoveTagRelation(relation_id tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetTagRelations</h3>
+        <p></p>
+        <p><code>slay GetTagRelations(tag_id tea) []*TagRelation {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetRelatedTags</h3>
+        <p></p>
+        <p><code>slay GetRelatedTags(tag_id tea, relation_type tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetTagStats</h3>
+        <p></p>
+        <p><code>slay GetTagStats() *TagStats {</code></p>
+    </div>
+    <div class="function">
+        <h3>getMostUsedTags</h3>
+        <p></p>
+        <p><code>slay getMostUsedTags(tags []*Tag, limit normie) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>getLeastUsedTags</h3>
+        <p></p>
+        <p><code>slay getLeastUsedTags(tags []*Tag, limit normie) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>getRecentTags</h3>
+        <p></p>
+        <p><code>slay getRecentTags(tags []*Tag, limit normie) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>CreateTag</h3>
+        <p></p>
+        <p><code>slay CreateTag(name tea, category tea) *Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetTag</h3>
+        <p></p>
+        <p><code>slay GetTag(tag_id tea) *Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetTagByName</h3>
+        <p></p>
+        <p><code>slay GetTagByName(name tea) *Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetTagsByCategory</h3>
+        <p></p>
+        <p><code>slay GetTagsByCategory(category tea) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetAllTags</h3>
+        <p></p>
+        <p><code>slay GetAllTags() []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetAllCategories</h3>
+        <p></p>
+        <p><code>slay GetAllCategories() []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>DeleteTag</h3>
+        <p></p>
+        <p><code>slay DeleteTag(tag_id tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SearchTags</h3>
+        <p></p>
+        <p><code>slay SearchTags(query *TagQuery) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>SearchTagsByName</h3>
+        <p></p>
+        <p><code>slay SearchTagsByName(name tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SearchTagsByCategory</h3>
+        <p></p>
+        <p><code>slay SearchTagsByCategory(category tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SearchTagsByMetadata</h3>
+        <p></p>
+        <p><code>slay SearchTagsByMetadata(key tea, value tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SearchTagsByText</h3>
+        <p></p>
+        <p><code>slay SearchTagsByText(text tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewTagQuery</h3>
+        <p></p>
+        <p><code>slay NewTagQuery() *TagQuery {</code></p>
+    </div>
+    <div class="function">
+        <h3>BulkCreateTags</h3>
+        <p></p>
+        <p><code>slay BulkCreateTags(names []tea, category tea) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>BulkDeleteTags</h3>
+        <p></p>
+        <p><code>slay BulkDeleteTags(tag_ids []tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>BulkUpdateTags</h3>
+        <p></p>
+        <p><code>slay BulkUpdateTags(tag_ids []tea, updates map[tea]interface{}) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ExportTags</h3>
+        <p></p>
+        <p><code>slay ExportTags(tag_ids []tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ImportTags</h3>
+        <p></p>
+        <p><code>slay ImportTags(json_data tea) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>generateTagID</h3>
+        <p></p>
+        <p><code>slay generateTagID() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>generateRelationID</h3>
+        <p></p>
+        <p><code>slay generateRelationID() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>formatValue</h3>
+        <p></p>
+        <p><code>slay formatValue(value interface{}) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>formatBoolean</h3>
+        <p></p>
+        <p><code>slay formatBoolean(value lit) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ValidateTag</h3>
+        <p></p>
+        <p><code>slay ValidateTag(tag *Tag) []tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>isValidColor</h3>
+        <p></p>
+        <p><code>slay isValidColor(color tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>MergeTags</h3>
+        <p></p>
+        <p><code>slay MergeTags(source_id tea, target_id tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>SuggestTags</h3>
+        <p></p>
+        <p><code>slay SuggestTags(text tea, limit normie) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetPopularTags</h3>
+        <p></p>
+        <p><code>slay GetPopularTags(limit normie) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetRecentTags</h3>
+        <p></p>
+        <p><code>slay GetRecentTags(limit normie) []*Tag {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetTagAnalytics</h3>
+        <p></p>
+        <p><code>slay GetTagAnalytics(tag_id tea) map[tea]interface{} {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetCategoryAnalytics</h3>
+        <p></p>
+        <p><code>slay GetCategoryAnalytics(category tea) map[tea]interface{} {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>ContextHTML</h3>
+        <p></p>
+        <p>Type: <code>EscapeContext</code></p>
+    </div>
+    <div class="variable">
+        <h3>ContextAttribute</h3>
+        <p></p>
+        <p>Type: <code>EscapeContext</code></p>
+    </div>
+    <div class="variable">
+        <h3>ContextJS</h3>
+        <p></p>
+        <p>Type: <code>EscapeContext</code></p>
+    </div>
+    <div class="variable">
+        <h3>ContextCSS</h3>
+        <p></p>
+        <p>Type: <code>EscapeContext</code></p>
+    </div>
+    <div class="variable">
+        <h3>ContextURL</h3>
+        <p></p>
+        <p>Type: <code>EscapeContext</code></p>
+    </div>
+    <div class="variable">
+        <h3>ContextRaw</h3>
+        <p></p>
+        <p>Type: <code>EscapeContext</code></p>
+    </div>
+</body>
+</html>

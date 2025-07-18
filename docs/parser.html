@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>parser Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>parser Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>tokenize</h3>
+        <p>Lexical analysis - tokenize source code</p>
+        <p><code>slay tokenize(source tea) []Token {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_keyword</h3>
+        <p>Check if string is a keyword</p>
+        <p><code>slay is_keyword(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_operator</h3>
+        <p>Check if character is an operator</p>
+        <p><code>slay is_operator(ch sip) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>is_delimiter</h3>
+        <p>Check if character is a delimiter</p>
+        <p><code>slay is_delimiter(ch sip) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>parse_source</h3>
+        <p>Main parsing entry point</p>
+        <p><code>slay parse_source(source tea) (*ASTNode, []tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>infer_type</h3>
+        <p>Type inference for expressions</p>
+        <p><code>slay infer_type(node *ASTNode, parser *Parser) tea {</code></p>
+    </div>
+</body>
+</html>

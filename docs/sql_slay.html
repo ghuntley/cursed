@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sql_slay Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>sql_slay Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>db_connect</h3>
+        <p></p>
+        <p><code>slay db_connect(host tea, port normie, dbname tea, user tea, password tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>db_disconnect</h3>
+        <p></p>
+        <p><code>slay db_disconnect() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>db_is_connected</h3>
+        <p></p>
+        <p><code>slay db_is_connected() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>db_get_connection_info</h3>
+        <p></p>
+        <p><code>slay db_get_connection_info() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>db_test_connection</h3>
+        <p></p>
+        <p><code>slay db_test_connection() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>pool_initialize</h3>
+        <p></p>
+        <p><code>slay pool_initialize(max_connections normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>pool_acquire_connection</h3>
+        <p></p>
+        <p><code>slay pool_acquire_connection() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>pool_release_connection</h3>
+        <p></p>
+        <p><code>slay pool_release_connection(connection_id normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>pool_get_status</h3>
+        <p></p>
+        <p><code>slay pool_get_status() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>pool_get_available_connections</h3>
+        <p></p>
+        <p><code>slay pool_get_available_connections() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>model_define</h3>
+        <p></p>
+        <p><code>slay model_define(table_name tea, primary_key tea, columns tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>model_create</h3>
+        <p></p>
+        <p><code>slay model_create(data tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>model_find</h3>
+        <p></p>
+        <p><code>slay model_find(id normie) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>model_update</h3>
+        <p></p>
+        <p><code>slay model_update(id normie, data tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>model_delete</h3>
+        <p></p>
+        <p><code>slay model_delete(id normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>model_all</h3>
+        <p></p>
+        <p><code>slay model_all() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_select</h3>
+        <p></p>
+        <p><code>slay query_select(columns tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_from</h3>
+        <p></p>
+        <p><code>slay query_from(table tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_where</h3>
+        <p></p>
+        <p><code>slay query_where(conditions tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_where_or</h3>
+        <p></p>
+        <p><code>slay query_where_or(conditions tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_join</h3>
+        <p></p>
+        <p><code>slay query_join(table tea, condition tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_left_join</h3>
+        <p></p>
+        <p><code>slay query_left_join(table tea, condition tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_right_join</h3>
+        <p></p>
+        <p><code>slay query_right_join(table tea, condition tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_order_by</h3>
+        <p></p>
+        <p><code>slay query_order_by(columns tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_group_by</h3>
+        <p></p>
+        <p><code>slay query_group_by(columns tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_having</h3>
+        <p></p>
+        <p><code>slay query_having(conditions tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_limit</h3>
+        <p></p>
+        <p><code>slay query_limit(count normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_offset</h3>
+        <p></p>
+        <p><code>slay query_offset(count normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_build</h3>
+        <p></p>
+        <p><code>slay query_build() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_reset</h3>
+        <p></p>
+        <p><code>slay query_reset() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>query_execute</h3>
+        <p></p>
+        <p><code>slay query_execute() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_create</h3>
+        <p></p>
+        <p><code>slay migration_create(name tea, version normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_add_column</h3>
+        <p></p>
+        <p><code>slay migration_add_column(table tea, column tea, type tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_drop_column</h3>
+        <p></p>
+        <p><code>slay migration_drop_column(table tea, column tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_create_table</h3>
+        <p></p>
+        <p><code>slay migration_create_table(table tea, columns tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_drop_table</h3>
+        <p></p>
+        <p><code>slay migration_drop_table(table tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_create_index</h3>
+        <p></p>
+        <p><code>slay migration_create_index(table tea, column tea, index_name tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_drop_index</h3>
+        <p></p>
+        <p><code>slay migration_drop_index(index_name tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_execute</h3>
+        <p></p>
+        <p><code>slay migration_execute(query tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_rollback</h3>
+        <p></p>
+        <p><code>slay migration_rollback(version normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_get_version</h3>
+        <p></p>
+        <p><code>slay migration_get_version() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>migration_is_executed</h3>
+        <p></p>
+        <p><code>slay migration_is_executed() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>orm_has_many</h3>
+        <p></p>
+        <p><code>slay orm_has_many(parent_model tea, child_model tea, foreign_key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>orm_belongs_to</h3>
+        <p></p>
+        <p><code>slay orm_belongs_to(child_model tea, parent_model tea, foreign_key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>orm_has_one</h3>
+        <p></p>
+        <p><code>slay orm_has_one(parent_model tea, child_model tea, foreign_key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>orm_many_to_many</h3>
+        <p></p>
+        <p><code>slay orm_many_to_many(model1 tea, model2 tea, pivot_table tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>orm_with_trashed</h3>
+        <p></p>
+        <p><code>slay orm_with_trashed() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>orm_only_trashed</h3>
+        <p></p>
+        <p><code>slay orm_only_trashed() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>orm_soft_delete</h3>
+        <p></p>
+        <p><code>slay orm_soft_delete(id normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>orm_restore</h3>
+        <p></p>
+        <p><code>slay orm_restore(id normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>schema_create_database</h3>
+        <p></p>
+        <p><code>slay schema_create_database(name tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>schema_drop_database</h3>
+        <p></p>
+        <p><code>slay schema_drop_database(name tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>schema_table_exists</h3>
+        <p></p>
+        <p><code>slay schema_table_exists(table tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>schema_get_columns</h3>
+        <p></p>
+        <p><code>slay schema_get_columns(table tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>schema_get_indexes</h3>
+        <p></p>
+        <p><code>slay schema_get_indexes(table tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>transaction_begin</h3>
+        <p></p>
+        <p><code>slay transaction_begin() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>transaction_commit</h3>
+        <p></p>
+        <p><code>slay transaction_commit() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>transaction_rollback</h3>
+        <p></p>
+        <p><code>slay transaction_rollback() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>transaction_savepoint</h3>
+        <p></p>
+        <p><code>slay transaction_savepoint(name tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>transaction_rollback_to</h3>
+        <p></p>
+        <p><code>slay transaction_rollback_to(name tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>transaction_is_active</h3>
+        <p></p>
+        <p><code>slay transaction_is_active() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_email</h3>
+        <p></p>
+        <p><code>slay validate_email(email tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_not_empty</h3>
+        <p></p>
+        <p><code>slay validate_not_empty(value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_min_length</h3>
+        <p></p>
+        <p><code>slay validate_min_length(value tea, min_length normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>validate_max_length</h3>
+        <p></p>
+        <p><code>slay validate_max_length(value tea, max_length normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>sanitize_input</h3>
+        <p></p>
+        <p><code>slay sanitize_input(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>escape_sql_string</h3>
+        <p></p>
+        <p><code>slay escape_sql_string(input tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>performance_start_timer</h3>
+        <p></p>
+        <p><code>slay performance_start_timer() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>performance_stop_timer</h3>
+        <p></p>
+        <p><code>slay performance_stop_timer() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>performance_get_query_count</h3>
+        <p></p>
+        <p><code>slay performance_get_query_count() normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>performance_increment_query_count</h3>
+        <p></p>
+        <p><code>slay performance_increment_query_count() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>performance_reset_stats</h3>
+        <p></p>
+        <p><code>slay performance_reset_stats() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>cache_enable</h3>
+        <p></p>
+        <p><code>slay cache_enable() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>cache_disable</h3>
+        <p></p>
+        <p><code>slay cache_disable() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>cache_set</h3>
+        <p></p>
+        <p><code>slay cache_set(key tea, value tea) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>cache_get</h3>
+        <p></p>
+        <p><code>slay cache_get(key tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>cache_clear</h3>
+        <p></p>
+        <p><code>slay cache_clear() lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>cache_is_enabled</h3>
+        <p></p>
+        <p><code>slay cache_is_enabled() lit {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>db_connection_type</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>db_connection_host</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>db_connection_port</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>db_connection_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>db_connection_user</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>db_connection_password</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>db_connection_active</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>db_connection_pool_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>db_connection_timeout</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>pool_active_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>pool_max_size</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>pool_acquired_connections</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>model_table_name</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>model_primary_key</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>model_columns</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>model_timestamps</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_select_columns</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_from_table</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_where_conditions</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_join_clauses</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_order_by</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_limit_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_offset_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_group_by</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_having_conditions</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>migration_version</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>migration_batch</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>migration_executed</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>join_clause</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>join_clause</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>join_clause</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>transaction_active</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>transaction_savepoint</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>has_at</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>length</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>length</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>i</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>sanitized</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>escaped</h3>
+        <p></p>
+        <p>Type: <code>tea</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_count</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>query_execution_time</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_enabled</h3>
+        <p></p>
+        <p>Type: <code>lit</code></p>
+    </div>
+    <div class="variable">
+        <h3>cache_ttl</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

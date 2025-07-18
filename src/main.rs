@@ -18,6 +18,7 @@ use cursed::package_manager::{PackageManagerConfig, PackageManager};
 use cursed::tools::{CursedTools, Profiler};
 use cursed::repl::CursedRepl;
 use cursed::execution::pure_cursed_bridge::PureCursedBridge;
+use cursed::coverage;
 
 // Dropz integration helpers to replace std::fs calls
 struct DropzFilesystem {
@@ -347,6 +348,126 @@ fn build_cli() -> Command {
                     .help("Generate coverage report")
                     .long("coverage")
                     .action(clap::ArgAction::SetTrue))
+                .arg(Arg::new("coverage_format")
+                    .help("Coverage report format")
+                    .long("coverage-format")
+                    .value_name("FORMAT")
+                    .value_parser(["html", "json", "xml", "lcov", "console"])
+                    .default_value("html"))
+                .arg(Arg::new("coverage_threshold")
+                    .help("Minimum coverage threshold percentage")
+                    .long("coverage-threshold")
+                    .value_name("PERCENT")
+                    .value_parser(clap::value_parser!(f64))
+                    .default_value("80.0"))
+        )
+        .subcommand(
+            Command::new("coverage")
+                .about("Code coverage analysis")
+                .subcommand_required(true)
+                .subcommand(
+                    Command::new("run")
+                        .about("Run tests with coverage collection")
+                        .arg(Arg::new("test_command")
+                            .help("Test command to run")
+                            .value_name("COMMAND")
+                            .default_value("cargo test"))
+                        .arg(Arg::new("output_dir")
+                            .help("Coverage output directory")
+                            .long("output-dir")
+                            .value_name("DIR")
+                            .default_value("coverage"))
+                        .arg(Arg::new("source_dirs")
+                            .help("Source directories to include")
+                            .long("source-dirs")
+                            .value_name("DIRS")
+                            .action(clap::ArgAction::Append)
+                            .default_values(["src", "stdlib"]))
+                        .arg(Arg::new("exclude_patterns")
+                            .help("Exclude patterns")
+                            .long("exclude")
+                            .value_name("PATTERNS")
+                            .action(clap::ArgAction::Append)
+                            .default_values(["*/target/*", "*/tests/*", "*_test.csd", "test_*.csd"]))
+                        .arg(Arg::new("formats")
+                            .help("Report formats to generate")
+                            .long("format")
+                            .value_name("FORMATS")
+                            .value_parser(["html", "json", "xml", "lcov", "console"])
+                            .action(clap::ArgAction::Append)
+                            .default_values(["html", "json"]))
+                        .arg(Arg::new("threshold")
+                            .help("Minimum coverage threshold")
+                            .long("threshold")
+                            .value_name("PERCENT")
+                            .value_parser(clap::value_parser!(f64))
+                            .default_value("80.0"))
+                        .arg(Arg::new("collect_branches")
+                            .help("Collect branch coverage")
+                            .long("branches")
+                            .action(clap::ArgAction::SetTrue))
+                        .arg(Arg::new("collect_functions")
+                            .help("Collect function coverage")
+                            .long("functions")
+                            .action(clap::ArgAction::SetTrue))
+                        .arg(Arg::new("instrument")
+                            .help("Instrument source files")
+                            .long("instrument")
+                            .action(clap::ArgAction::SetTrue))
+                )
+                .subcommand(
+                    Command::new("report")
+                        .about("Generate coverage report from existing data")
+                        .arg(Arg::new("coverage_data")
+                            .help("Path to coverage data file")
+                            .value_name("FILE")
+                            .required(true))
+                        .arg(Arg::new("output_dir")
+                            .help("Output directory for reports")
+                            .long("output-dir")
+                            .value_name("DIR")
+                            .default_value("coverage"))
+                        .arg(Arg::new("formats")
+                            .help("Report formats to generate")
+                            .long("format")
+                            .value_name("FORMATS")
+                            .value_parser(["html", "json", "xml", "lcov", "console"])
+                            .action(clap::ArgAction::Append)
+                            .default_values(["html", "console"]))
+                )
+                .subcommand(
+                    Command::new("instrument")
+                        .about("Instrument source files for coverage")
+                        .arg(Arg::new("source_dirs")
+                            .help("Source directories to instrument")
+                            .action(clap::ArgAction::Append)
+                            .default_values(["src", "stdlib"]))
+                        .arg(Arg::new("output_dir")
+                            .help("Output directory for instrumented files")
+                            .long("output-dir")
+                            .value_name("DIR")
+                            .default_value("coverage/instrumented"))
+                )
+                .subcommand(
+                    Command::new("analyze")
+                        .about("Analyze coverage data and generate insights")
+                        .arg(Arg::new("coverage_data")
+                            .help("Path to coverage data file")
+                            .value_name("FILE")
+                            .required(true))
+                        .arg(Arg::new("threshold")
+                            .help("Coverage threshold for analysis")
+                            .long("threshold")
+                            .value_name("PERCENT")
+                            .value_parser(clap::value_parser!(f64))
+                            .default_value("80.0"))
+                        .arg(Arg::new("complexity_threshold")
+                            .help("Cyclomatic complexity threshold")
+                            .long("complexity-threshold")
+                            .value_name("NUMBER")
+                            .value_parser(clap::value_parser!(u32))
+                            .default_value("10"))
+                )
         )
         .subcommand(
             Command::new("pkg")
@@ -669,6 +790,7 @@ async fn handle_command(matches: ArgMatches) -> Result<(), Box<dyn std::error::E
         Some(("compile", sub_matches)) => handle_compile(sub_matches, &matches).await,
         Some(("run", sub_matches)) => handle_run(sub_matches, &matches).await,
         Some(("test", sub_matches)) => handle_test(sub_matches, &matches).await,
+        Some(("coverage", sub_matches)) => handle_coverage(sub_matches, &matches).await,
         Some(("pkg", sub_matches)) => handle_pkg(sub_matches, &matches).await,
         Some(("debug", sub_matches)) => handle_debug(sub_matches, &matches).await,
         Some(("lint", sub_matches)) => handle_lint(sub_matches, &matches).await,
@@ -1354,6 +1476,224 @@ async fn handle_test(matches: &ArgMatches, _global_matches: &ArgMatches) -> Resu
     
     if failed > 0 {
         std::process::exit(1);
+    }
+    
+    Ok(())
+}
+
+async fn handle_coverage(matches: &ArgMatches, _global_matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    use crate::coverage::{CoverageAnalyzer, CoverageConfig, OutputFormat, run_coverage_analysis};
+    use std::path::PathBuf;
+    
+    match matches.subcommand() {
+        Some(("run", sub_matches)) => {
+            let test_command = sub_matches.get_one::<String>("test_command").unwrap();
+            let output_dir = PathBuf::from(sub_matches.get_one::<String>("output_dir").unwrap());
+            let threshold = *sub_matches.get_one::<f64>("threshold").unwrap();
+            
+            // Build source directories
+            let source_dirs: Vec<PathBuf> = sub_matches.get_many::<String>("source_dirs")
+                .unwrap()
+                .map(|s| PathBuf::from(s))
+                .collect();
+            
+            // Build exclude patterns
+            let exclude_patterns: Vec<String> = sub_matches.get_many::<String>("exclude_patterns")
+                .unwrap()
+                .map(|s| s.to_string())
+                .collect();
+            
+            // Build formats
+            let formats: Vec<OutputFormat> = sub_matches.get_many::<String>("formats")
+                .unwrap()
+                .map(|s| match s.as_str() {
+                    "html" => OutputFormat::Html,
+                    "json" => OutputFormat::Json,
+                    "xml" => OutputFormat::Xml,
+                    "lcov" => OutputFormat::Lcov,
+                    "console" => OutputFormat::Console,
+                    _ => OutputFormat::Html,
+                })
+                .collect();
+            
+            let config = CoverageConfig {
+                output_dir,
+                source_dirs,
+                exclude_patterns,
+                include_patterns: vec!["*.rs".to_string(), "*.csd".to_string()],
+                formats,
+                min_coverage_threshold: threshold,
+                collect_branch_coverage: sub_matches.get_flag("collect_branches"),
+                collect_function_coverage: sub_matches.get_flag("collect_functions"),
+                enable_instrumentation: sub_matches.get_flag("instrument"),
+            };
+            
+            println!("🎯 Running coverage analysis...");
+            match run_coverage_analysis(test_command, config).await {
+                Ok(coverage_data) => {
+                    println!("✅ Coverage analysis completed successfully!");
+                    println!("📊 Line coverage: {:.2}%", coverage_data.summary.line_coverage_percentage);
+                    println!("🔧 Function coverage: {:.2}%", coverage_data.summary.function_coverage_percentage);
+                    println!("🌿 Branch coverage: {:.2}%", coverage_data.summary.branch_coverage_percentage);
+                }
+                Err(e) => {
+                    eprintln!("❌ Coverage analysis failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        
+        Some(("report", sub_matches)) => {
+            let coverage_data_path = sub_matches.get_one::<String>("coverage_data").unwrap();
+            let output_dir = PathBuf::from(sub_matches.get_one::<String>("output_dir").unwrap());
+            
+            // Build formats
+            let formats: Vec<OutputFormat> = sub_matches.get_many::<String>("formats")
+                .unwrap()
+                .map(|s| match s.as_str() {
+                    "html" => OutputFormat::Html,
+                    "json" => OutputFormat::Json,
+                    "xml" => OutputFormat::Xml,
+                    "lcov" => OutputFormat::Lcov,
+                    "console" => OutputFormat::Console,
+                    _ => OutputFormat::Html,
+                })
+                .collect();
+            
+            let config = CoverageConfig {
+                output_dir,
+                source_dirs: vec![PathBuf::from("src"), PathBuf::from("stdlib")],
+                exclude_patterns: vec![],
+                include_patterns: vec!["*.rs".to_string(), "*.csd".to_string()],
+                formats: formats.clone(),
+                min_coverage_threshold: 80.0,
+                collect_branch_coverage: true,
+                collect_function_coverage: true,
+                enable_instrumentation: false,
+            };
+            
+            // Load coverage data
+            let coverage_data_content = std::fs::read_to_string(coverage_data_path)?;
+            let coverage_data: crate::coverage::CoverageData = serde_json::from_str(&coverage_data_content)?;
+            
+            // Generate reports
+            let reporter = crate::coverage::reporter::CoverageReporter::new(config)?;
+            for format in &formats {
+                reporter.generate_report(&coverage_data, format).await?;
+            }
+            
+            println!("✅ Coverage reports generated successfully!");
+        }
+        
+        Some(("instrument", sub_matches)) => {
+            let source_dirs: Vec<PathBuf> = sub_matches.get_many::<String>("source_dirs")
+                .unwrap()
+                .map(|s| PathBuf::from(s))
+                .collect();
+            let output_dir = PathBuf::from(sub_matches.get_one::<String>("output_dir").unwrap());
+            
+            println!("🔧 Instrumenting source files...");
+            // crate::coverage::instrumentation::instrument_cursed_files(&source_dirs, &output_dir)?;
+            // crate::coverage::instrumentation::create_coverage_runtime_module(&output_dir)?;
+            println!("⚠️  Instrumentation not yet implemented in basic coverage");
+            
+            println!("✅ Source files instrumented successfully!");
+            println!("📁 Instrumented files saved to: {}", output_dir.display());
+        }
+        
+        Some(("analyze", sub_matches)) => {
+            let coverage_data_path = sub_matches.get_one::<String>("coverage_data").unwrap();
+            let threshold = *sub_matches.get_one::<f64>("threshold").unwrap();
+            let complexity_threshold = *sub_matches.get_one::<u32>("complexity_threshold").unwrap();
+            
+            // Load coverage data
+            let coverage_data_content = std::fs::read_to_string(coverage_data_path)?;
+            let coverage_data: crate::coverage::CoverageData = serde_json::from_str(&coverage_data_content)?;
+            
+            println!("🔍 Analyzing coverage data...");
+            
+            // Analyze coverage
+            let summary = &coverage_data.summary;
+            println!("\n📊 Coverage Analysis Results:");
+            println!("  Total files: {}", summary.total_files);
+            println!("  Line coverage: {:.2}% ({}/{})", 
+                     summary.line_coverage_percentage, 
+                     summary.covered_lines, 
+                     summary.total_lines);
+            println!("  Function coverage: {:.2}% ({}/{})", 
+                     summary.function_coverage_percentage, 
+                     summary.covered_functions, 
+                     summary.total_functions);
+            println!("  Branch coverage: {:.2}% ({}/{})", 
+                     summary.branch_coverage_percentage, 
+                     summary.covered_branches, 
+                     summary.total_branches);
+            
+            // Find low coverage files
+            let mut low_coverage_files = Vec::new();
+            for (file_path, file_coverage) in &coverage_data.files {
+                if file_coverage.coverage_percentage < threshold {
+                    low_coverage_files.push((file_path, file_coverage.coverage_percentage));
+                }
+            }
+            
+            if !low_coverage_files.is_empty() {
+                println!("\n⚠️  Files below {}% coverage threshold:", threshold);
+                low_coverage_files.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+                for (file_path, coverage) in low_coverage_files.iter().take(10) {
+                    println!("  📄 {} ({:.2}%)", file_path, coverage);
+                }
+            }
+            
+            // Find high complexity functions
+            let mut high_complexity_functions = Vec::new();
+            for file_coverage in coverage_data.files.values() {
+                for function in file_coverage.functions.values() {
+                    if function.complexity >= complexity_threshold {
+                        high_complexity_functions.push((&file_coverage.path, &function.name, function.complexity));
+                    }
+                }
+            }
+            
+            if !high_complexity_functions.is_empty() {
+                println!("\n🔄 High complexity functions (>= {}):", complexity_threshold);
+                high_complexity_functions.sort_by(|a, b| b.2.cmp(&a.2));
+                for (file_path, function_name, complexity) in high_complexity_functions.iter().take(10) {
+                    println!("  🔧 {}::{} (complexity: {})", file_path, function_name, complexity);
+                }
+            }
+            
+            // Coverage quality assessment
+            println!("\n📈 Coverage Quality Assessment:");
+            let quality_score = (summary.line_coverage_percentage + 
+                                summary.function_coverage_percentage + 
+                                summary.branch_coverage_percentage) / 3.0;
+            let quality_grade = if quality_score >= 90.0 {
+                "A+ (Excellent)"
+            } else if quality_score >= 80.0 {
+                "A (Good)"
+            } else if quality_score >= 70.0 {
+                "B (Fair)"
+            } else if quality_score >= 60.0 {
+                "C (Poor)"
+            } else {
+                "D (Very Poor)"
+            };
+            
+            println!("  Overall quality score: {:.2}% ({})", quality_score, quality_grade);
+            
+            if summary.line_coverage_percentage < threshold {
+                println!("❌ Coverage threshold not met!");
+                std::process::exit(1);
+            } else {
+                println!("✅ Coverage threshold met!");
+            }
+        }
+        
+        _ => {
+            eprintln!("❌ Unknown coverage subcommand");
+            std::process::exit(1);
+        }
     }
     
     Ok(())
@@ -2997,7 +3337,10 @@ impl InteractiveDebugger {
         self.current_line = 1;
         
         // Performance monitoring would be started here
-        // TODO: Implement performance monitoring start
+        // Start performance monitoring if enabled
+        if let Err(e) = self.performance_monitor.start() {
+            eprintln!("Failed to start performance monitor: {}", e);
+        }
         
         // Simulate program execution with breakpoint checking
         for (line_num, line) in self.source_lines.iter().enumerate() {

@@ -433,4 +433,3 @@ yeet "module"
         assert_eq!(coverage_calls, 0);
     }
 }
-"#

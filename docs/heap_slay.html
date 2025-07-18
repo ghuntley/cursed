@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>heap_slay Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>heap_slay Module</h1>
+    <p>heap_slay - Pure CURSED Heap Data Structure Module Provides min/max heap operations and priority queue functionality Heap structure definition</p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>heap_min_new</h3>
+        <p>Create new min heap</p>
+        <p><code>slay heap_min_new(capacity normie) *Heap {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_max_new</h3>
+        <p>Create new max heap</p>
+        <p><code>slay heap_max_new(capacity normie) *Heap {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_parent</h3>
+        <p>Get parent index</p>
+        <p><code>slay heap_parent(index normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_left_child</h3>
+        <p>Get left child index</p>
+        <p><code>slay heap_left_child(index normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_right_child</h3>
+        <p>Get right child index</p>
+        <p><code>slay heap_right_child(index normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_swap</h3>
+        <p>Swap two elements in heap</p>
+        <p><code>slay heap_swap(h *Heap, i normie, j normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_compare</h3>
+        <p>Compare two values based on heap type</p>
+        <p><code>slay heap_compare(h *Heap, a normie, b normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_heapify_up</h3>
+        <p>Heapify up (bubble up)</p>
+        <p><code>slay heap_heapify_up(h *Heap, index normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_heapify_down</h3>
+        <p>Heapify down (bubble down)</p>
+        <p><code>slay heap_heapify_down(h *Heap, index normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_insert</h3>
+        <p>Insert element into heap</p>
+        <p><code>slay heap_insert(h *Heap, value normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_extract</h3>
+        <p>Extract root element (min for min-heap, max for max-heap)</p>
+        <p><code>slay heap_extract(h *Heap) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_peek</h3>
+        <p>Peek at root element without removing</p>
+        <p><code>slay heap_peek(h *Heap) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_size</h3>
+        <p>Get heap size</p>
+        <p><code>slay heap_size(h *Heap) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_is_empty</h3>
+        <p>Check if heap is empty</p>
+        <p><code>slay heap_is_empty(h *Heap) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_is_full</h3>
+        <p>Check if heap is full</p>
+        <p><code>slay heap_is_full(h *Heap) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_build_from_array</h3>
+        <p>Build heap from array (heapify)</p>
+        <p><code>slay heap_build_from_array(h *Heap, arr []normie, arr_size normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_sort</h3>
+        <p>Heap sort implementation</p>
+        <p><code>slay heap_sort(arr []normie, arr_size normie) {</code></p>
+    </div>
+    <div class="function">
+        <h3>pq_new</h3>
+        <p>Create new priority queue (min priority = higher priority)</p>
+        <p><code>slay pq_new(capacity normie) *PriorityQueue {</code></p>
+    </div>
+    <div class="function">
+        <h3>pq_enqueue</h3>
+        <p>Enqueue element with priority</p>
+        <p><code>slay pq_enqueue(pq *PriorityQueue, priority normie) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>pq_dequeue</h3>
+        <p>Dequeue highest priority element</p>
+        <p><code>slay pq_dequeue(pq *PriorityQueue) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>pq_peek</h3>
+        <p>Peek at highest priority element</p>
+        <p><code>slay pq_peek(pq *PriorityQueue) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>pq_is_empty</h3>
+        <p>Check if priority queue is empty</p>
+        <p><code>slay pq_is_empty(pq *PriorityQueue) lit {</code></p>
+    </div>
+    <div class="function">
+        <h3>pq_size</h3>
+        <p>Get priority queue size</p>
+        <p><code>slay pq_size(pq *PriorityQueue) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_kth_largest</h3>
+        <p>Find kth largest element using heap</p>
+        <p><code>slay heap_kth_largest(arr []normie, arr_size normie, k normie) normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_merge_k_arrays</h3>
+        <p>Merge k sorted arrays using heap</p>
+        <p><code>slay heap_merge_k_arrays(arrays [][]normie, k normie) []normie {</code></p>
+    </div>
+    <div class="function">
+        <h3>heap_validate</h3>
+        <p>Validate heap property</p>
+        <p><code>slay heap_validate(h *Heap) lit {</code></p>
+    </div>
+    <h2>Variables</h2>
+    <div class="variable">
+        <h3>temp</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>parent_idx</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>left_idx</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>right_idx</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>target_idx</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>root</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>start_idx</h3>
+        <p>Heapify from last non-leaf node down to root</p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>left_idx</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+    <div class="variable">
+        <h3>right_idx</h3>
+        <p></p>
+        <p>Type: <code>normie</code></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vibe_mime Module - CURSED Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .function { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .variable { margin: 20px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9; }
+        code { background: #e8e8e8; padding: 2px 4px; }
+        .back-link { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="back-link"><a href="index.html">&larr; Back to Index</a></div>
+    <h1>vibe_mime Module</h1>
+    <p></p>
+    <h2>Functions</h2>
+    <div class="function">
+        <h3>ParseMediaType</h3>
+        <p></p>
+        <p><code>slay ParseMediaType(mediaType tea) (MIMEType, tea) {</code></p>
+    </div>
+    <div class="function">
+        <h3>FormatMediaType</h3>
+        <p></p>
+        <p><code>slay FormatMediaType(mimeType MIMEType) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewMultipartReader</h3>
+        <p></p>
+        <p><code>slay NewMultipartReader(reader io.Reader, boundary tea) *MultipartReader {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewMultipartWriter</h3>
+        <p></p>
+        <p><code>slay NewMultipartWriter(writer io.Writer) *MultipartWriter {</code></p>
+    </div>
+    <div class="function">
+        <h3>DetectContentType</h3>
+        <p></p>
+        <p><code>slay DetectContentType(data []byte) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ExtensionByType</h3>
+        <p></p>
+        <p><code>slay ExtensionByType(mimeType tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>TypeByExtension</h3>
+        <p></p>
+        <p><code>slay TypeByExtension(ext tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>AddExtensionType</h3>
+        <p></p>
+        <p><code>slay AddExtensionType(ext, mimeType tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewDetector</h3>
+        <p></p>
+        <p><code>slay NewDetector() *Detector {</code></p>
+    </div>
+    <div class="function">
+        <h3>GetDatabase</h3>
+        <p></p>
+        <p><code>slay GetDatabase() *Database {</code></p>
+    </div>
+    <div class="function">
+        <h3>NewStreamProcessor</h3>
+        <p></p>
+        <p><code>slay NewStreamProcessor(reader io.Reader) *StreamProcessor {</code></p>
+    </div>
+    <div class="function">
+        <h3>EncodeHeader</h3>
+        <p></p>
+        <p><code>slay EncodeHeader(name, value tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>DecodeHeader</h3>
+        <p></p>
+        <p><code>slay DecodeHeader(encoded tea) tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>ParseTree</h3>
+        <p></p>
+        <p><code>slay ParseTree(data []byte) *TreeNode {</code></p>
+    </div>
+    <div class="function">
+        <h3>initializeDatabase</h3>
+        <p></p>
+        <p><code>slay initializeDatabase() *Database {</code></p>
+    </div>
+    <div class="function">
+        <h3>generateBoundary</h3>
+        <p></p>
+        <p><code>slay generateBoundary() tea {</code></p>
+    </div>
+    <div class="function">
+        <h3>isPrintable</h3>
+        <p></p>
+        <p><code>slay isPrintable(content tea) lit {</code></p>
+    </div>
+</body>
+</html>

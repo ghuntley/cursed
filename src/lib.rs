@@ -43,6 +43,8 @@ pub mod stdlib;
 pub mod linter;
 pub mod formatter;
 pub mod metrics; // Performance monitoring and metrics collection
+pub mod coverage; // Code coverage analysis system
+pub mod performance; // Performance monitoring system
 // pub mod security; // Temporarily disabled due to dependency issues
 
 // Test modules  

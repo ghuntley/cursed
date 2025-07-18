@@ -181,18 +181,98 @@ impl CoverageCollector {
         file_path: &str,
         function_hits: &mut HashMap<String, HashMap<String, u64>>
     ) {
+        self.extract_functions_from_ast_with_position(ast, file_path, function_hits, &mut HashMap::new());
+    }
+
+    fn extract_functions_from_ast_with_position(
+        &self,
+        ast: &AstNode,
+        file_path: &str,
+        function_hits: &mut HashMap<String, HashMap<String, u64>>,
+        function_metadata: &mut HashMap<String, (u32, u32, u32)> // (start_line, end_line, complexity)
+    ) {
         match ast {
-            AstNode::FunctionDeclaration { name, body, .. } => {
+            AstNode::FunctionDeclaration { name, body, position, .. } => {
                 if let Some(file_functions) = function_hits.get_mut(file_path) {
                     file_functions.insert(name.clone(), 0);
+                    
+                    // Calculate function boundaries and complexity
+                    let start_line = position.line as u32;
+                    let end_line = self.calculate_function_end_line(body, start_line);
+                    let complexity = self.calculate_cyclomatic_complexity(body);
+                    
+                    function_metadata.insert(name.clone(), (start_line, end_line, complexity));
                 }
             }
             _ => {
                 // Recursively search for functions in child nodes
                 for child in ast.children() {
-                    self.extract_functions_from_ast(child, file_path, function_hits);
+                    self.extract_functions_from_ast_with_position(child, file_path, function_hits, function_metadata);
                 }
             }
+        }
+    }
+
+    /// Calculate the end line of a function from its body AST
+    fn calculate_function_end_line(&self, body: &AstNode, start_line: u32) -> u32 {
+        let mut max_line = start_line;
+        self.find_max_line_in_ast(body, &mut max_line);
+        max_line
+    }
+
+    fn find_max_line_in_ast(&self, node: &AstNode, max_line: &mut u32) {
+        if let Some(pos) = node.position() {
+            if pos.line as u32 > *max_line {
+                *max_line = pos.line as u32;
+            }
+        }
+        
+        for child in node.children() {
+            self.find_max_line_in_ast(child, max_line);
+        }
+    }
+
+    /// Calculate cyclomatic complexity of a function
+    fn calculate_cyclomatic_complexity(&self, body: &AstNode) -> u32 {
+        let mut complexity = 1; // Base complexity is 1
+        self.count_decision_points(body, &mut complexity);
+        complexity
+    }
+
+    fn count_decision_points(&self, node: &AstNode, complexity: &mut u32) {
+        match node {
+            // Conditional statements
+            AstNode::IfStatement { .. } => *complexity += 1,
+            AstNode::ElseIfStatement { .. } => *complexity += 1,
+            AstNode::WhileLoop { .. } => *complexity += 1,
+            AstNode::ForLoop { .. } => *complexity += 1,
+            AstNode::SelectStatement { cases, .. } => {
+                *complexity += cases.len() as u32; // Each case adds complexity
+            }
+            
+            // Logical operators in expressions
+            AstNode::BinaryExpression { operator, .. } => {
+                match operator.as_str() {
+                    "&&" | "||" => *complexity += 1,
+                    _ => {}
+                }
+            }
+            
+            // Pattern matching
+            AstNode::MatchExpression { arms, .. } => {
+                *complexity += arms.len() as u32;
+            }
+            
+            // Exception handling
+            AstNode::TryStatement { .. } => *complexity += 1,
+            AstNode::CatchStatement { .. } => *complexity += 1,
+            
+            _ => {}
+        }
+        
+        // Recursively count in child nodes
+        for child in node.children() {
+            self.count_decision_points(child, complexity);
         }
     }
 
@@ -268,6 +348,10 @@ impl CoverageCollector {
             let path_str = file_path.to_string_lossy().to_string();
             let content = fs::read_to_string(file_path)?;
             
+            // Get function metadata from AST analysis
+            let function_metadata = self.extract_function_metadata(file_path)?;
+            let branch_metadata = self.extract_branch_metadata(file_path)?;
+            
             // Compute line coverage
             let mut file_lines = HashMap::new();
             let mut file_covered_lines = 0;
@@ -303,7 +387,7 @@ impl CoverageCollector {
                 }
             }
             
-            // Compute function coverage
+            // Compute function coverage with metadata
             let mut file_functions = HashMap::new();
             if let Some(func_hits) = function_hits.get(&path_str) {
                 for (func_name, hit_count) in func_hits {
@@ -313,18 +397,23 @@ impl CoverageCollector {
                         covered_functions += 1;
                     }
                     
+                    let (start_line, end_line, complexity) = function_metadata
+                        .get(func_name)
+                        .cloned()
+                        .unwrap_or((0, 0, 1));
+                    
                     file_functions.insert(func_name.clone(), FunctionCoverage {
                         name: func_name.clone(),
-                        start_line: 0, // TODO: Extract from AST
-                        end_line: 0,   // TODO: Extract from AST
+                        start_line,
+                        end_line,
                         execution_count: *hit_count,
                         is_covered,
-                        complexity: 1, // TODO: Calculate cyclomatic complexity
+                        complexity,
                     });
                 }
             }
             
-            // Compute branch coverage
+            // Compute branch coverage with metadata
             let mut file_branches = HashMap::new();
             if let Some(br_hits) = branch_hits.get(&path_str) {
                 for (branch_id, (true_count, false_count)) in br_hits {
@@ -334,10 +423,15 @@ impl CoverageCollector {
                         covered_branches += 1;
                     }
                     
+                    let (line_number, condition) = branch_metadata
+                        .get(branch_id)
+                        .cloned()
+                        .unwrap_or((self.extract_line_from_branch_id(branch_id), "unknown".to_string()));
+                    
                     file_branches.insert(branch_id.clone(), BranchCoverage {
-                        line_number: 0, // TODO: Extract from branch_id
+                        line_number,
                         branch_id: branch_id.clone(),
-                        condition: "unknown".to_string(), // TODO: Extract condition
+                        condition,
                         true_count: *true_count,
                         false_count: *false_count,
                         is_covered,
@@ -434,6 +528,90 @@ impl CoverageCollector {
                 *false_count += 1;
             }
         }
+    }
+
+    /// Extract function metadata from AST analysis
+    fn extract_function_metadata(&self, file_path: &Path) -> io::Result<HashMap<String, (u32, u32, u32)>> {
+        let content = fs::read_to_string(file_path)?;
+        let mut metadata = HashMap::new();
+        
+        if file_path.extension().and_then(|s| s.to_str()) == Some("csd") {
+            // Parse CURSED file to extract function metadata
+            let mut lexer = Lexer::new(&content);
+            if let Ok(tokens) = lexer.tokenize() {
+                let mut parser = Parser::new(tokens);
+                if let Ok(ast) = parser.parse() {
+                    let mut function_hits = HashMap::new();
+                    let path_str = file_path.to_string_lossy().to_string();
+                    function_hits.insert(path_str, HashMap::new());
+                    
+                    self.extract_functions_from_ast_with_position(&ast, &file_path.to_string_lossy(), &mut function_hits, &mut metadata);
+                }
+            }
+        }
+        
+        Ok(metadata)
+    }
+
+    /// Extract branch metadata from source analysis
+    fn extract_branch_metadata(&self, file_path: &Path) -> io::Result<HashMap<String, (u32, String)>> {
+        let content = fs::read_to_string(file_path)?;
+        let mut metadata = HashMap::new();
+        
+        // Analyze each line for branch conditions
+        for (line_idx, line) in content.lines().enumerate() {
+            let line_number = (line_idx + 1) as u32;
+            let trimmed = line.trim();
+            
+            // Extract conditions from different statement types
+            if let Some(condition) = self.extract_condition_from_line(trimmed, "lowkey") {
+                let branch_id = format!("{}:if", line_number);
+                metadata.insert(branch_id, (line_number, condition));
+            }
+            
+            if let Some(condition) = self.extract_condition_from_line(trimmed, "highkey") {
+                let branch_id = format!("{}:else_if", line_number);
+                metadata.insert(branch_id, (line_number, condition));
+            }
+            
+            if let Some(condition) = self.extract_condition_from_line(trimmed, "around") {
+                let branch_id = format!("{}:while", line_number);
+                metadata.insert(branch_id, (line_number, condition));
+            }
+            
+            if let Some(condition) = self.extract_condition_from_line(trimmed, "bestie") {
+                let branch_id = format!("{}:for", line_number);
+                metadata.insert(branch_id, (line_number, condition));
+            }
+            
+            if trimmed.contains("ready") {
+                let branch_id = format!("{}:select", line_number);
+                metadata.insert(branch_id, (line_number, "select statement".to_string()));
+            }
+        }
+        
+        Ok(metadata)
+    }
+
+    /// Extract condition from a line with a specific keyword
+    fn extract_condition_from_line(&self, line: &str, keyword: &str) -> Option<String> {
+        if let Some(keyword_pos) = line.find(keyword) {
+            let after_keyword = &line[keyword_pos + keyword.len()..];
+            if let Some(open_paren) = after_keyword.find('(') {
+                if let Some(close_paren) = after_keyword.find(')') {
+                    let condition = &after_keyword[open_paren + 1..close_paren];
+                    return Some(condition.trim().to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// Extract line number from branch ID
+    fn extract_line_from_branch_id(&self, branch_id: &str) -> u32 {
+        branch_id.split(':').next()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0)
     }
 }
 
