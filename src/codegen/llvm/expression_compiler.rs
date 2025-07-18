@@ -331,9 +331,8 @@ impl ExpressionCompiler {
                 // Function parameters are already values, no need to load - strip PARAM: prefix
                 Ok(reg_name.strip_prefix("PARAM:").unwrap().to_string())
             } else {
-                // Local variable allocated on stack - need to load
-                let load_reg = self.next_register();
-                self.ir_buffer.push_str(&format!("  {} = load i32, i32* {}, align 4\n", load_reg, reg_name));
+                // Local variable allocated on stack - need to load with proper type
+                let load_reg = self.generate_load_instruction(name, &reg_name);
                 Ok(load_reg)
             }
         } else {
@@ -1036,6 +1035,39 @@ impl ExpressionCompiler {
     /// Set a variable type for later reference
     pub fn set_variable_type(&mut self, name: String, var_type: String) {
         self.variable_types.insert(name, var_type);
+    }
+
+    /// Get the LLVM type for a variable, defaulting to i32 if unknown
+    fn get_variable_llvm_type(&self, var_name: &str) -> String {
+        if let Some(var_type) = self.variable_types.get(var_name) {
+            // Convert CURSED type string to LLVM type
+            match var_type.as_str() {
+                "normie" | "rune" => "i32".to_string(),
+                "smol" | "byte" => "i8".to_string(),
+                "mid" => "i16".to_string(), 
+                "thicc" => "i64".to_string(),
+                "snack" => "float".to_string(),
+                "meal" => "double".to_string(),
+                "lit" => "i1".to_string(),
+                "tea" => "i8*".to_string(),
+                "sip" => "i8".to_string(),
+                _ => "i32".to_string(), // Default fallback
+            }
+        } else {
+            "i32".to_string() // Default when type is unknown
+        }
+    }
+
+    /// Generate a type-aware load instruction
+    fn generate_load_instruction(&mut self, var_name: &str, var_reg: &str) -> String {
+        let llvm_type = self.get_variable_llvm_type(var_name);
+        let load_reg = self.next_register();
+        let align = if llvm_type == "i8*" { 8 } else { 4 };
+        self.ir_buffer.push_str(&format!(
+            "  {} = load {}, {}* {}, align {}\n", 
+            load_reg, llvm_type, llvm_type, var_reg, align
+        ));
+        load_reg
     }
 
     /// Set tuple type information for a variable

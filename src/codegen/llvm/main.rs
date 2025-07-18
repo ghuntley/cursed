@@ -99,6 +99,7 @@ pub struct LlvmCodeGenerator {
     label_counter: usize,
     string_manager: StringConstantManager,
     variables: HashMap<String, String>, // variable name -> register mapping
+    variable_types: HashMap<String, String>, // variable name -> LLVM type mapping
     declared_functions: HashMap<String, String>, // function name -> signature for deduplication
     package_manager: Option<Arc<Mutex<PackageManager>>>,
     package_config: Option<LlvmPackageConfig>,
@@ -165,6 +166,7 @@ impl LlvmCodeGenerator {
             label_counter: 0,
             string_manager: get_global_string_manager(),
             variables: HashMap::new(),
+            variable_types: HashMap::new(),
             declared_functions: HashMap::new(),
             loop_stack: Vec::new(),
             package_manager: None,
@@ -440,6 +442,7 @@ impl LlvmCodeGenerator {
         }
         self.label_counter = 0;
         self.variables.clear();
+        self.variable_types.clear();
         
         // Setup error recovery context
         let mut compiler_errors = Vec::new();
@@ -702,25 +705,27 @@ impl LlvmCodeGenerator {
                         let var_reg = self.next_register();
                         
                         // Determine type based on type annotation or value expression
-                        let (var_type, store_value) = if let Some(type_annotation) = &let_stmt.var_type {
+                        let (llvm_type, cursed_type, store_value) = if let Some(type_annotation) = &let_stmt.var_type {
                             let llvm_type = self.convert_cursed_type_to_llvm(type_annotation)?;
-                            (llvm_type, value_reg.clone())
+                            let cursed_type = self.cursed_type_to_string(type_annotation);
+                            (llvm_type, cursed_type, value_reg.clone())
                         } else {
                             match &let_stmt.value {
-                                Expression::String(_) => ("i8*".to_string(), value_reg.clone()),
-                                Expression::Boolean(val) => ("i1".to_string(), if *val { "1" } else { "0" }.to_string()),
-                                Expression::Integer(val) => ("i32".to_string(), val.to_string()), // Use actual integer value
-                                Expression::Float(val) => ("double".to_string(), val.to_string()), // Use actual float value
-                                _ => ("i32".to_string(), "0".to_string()), // Default to 0 for integers
+                                Expression::String(_) => ("i8*".to_string(), "tea".to_string(), value_reg.clone()),
+                                Expression::Boolean(val) => ("i1".to_string(), "lit".to_string(), if *val { "1" } else { "0" }.to_string()),
+                                Expression::Integer(val) => ("i32".to_string(), "normie".to_string(), val.to_string()), // Use actual integer value
+                                Expression::Float(val) => ("double".to_string(), "meal".to_string(), val.to_string()), // Use actual float value
+                                _ => ("i32".to_string(), "normie".to_string(), "0".to_string()), // Default to 0 for integers
                             }
                         };
                         
                         // Allocate and store variable
-                        self.ir_code.push_str(&format!("  {} = alloca {}, align 4\n", var_reg, var_type));
-                        self.ir_code.push_str(&format!("  store {} {}, {}* {}, align 4\n", var_type, store_value, var_type, var_reg));
+                        self.ir_code.push_str(&format!("  {} = alloca {}, align 4\n", var_reg, llvm_type));
+                        self.ir_code.push_str(&format!("  store {} {}, {}* {}, align 4\n", llvm_type, store_value, llvm_type, var_reg));
                         
-                        // Store the variable mapping
+                        // Store the variable mapping and type
                         self.variables.insert(name.clone(), var_reg.clone());
+                        self.variable_types.insert(name.clone(), cursed_type.clone());
                         self.ir_code.push_str(&format!("  ; Variable {} allocated at {}\n", name, var_reg));
                     },
                     crate::ast::LetTarget::Tuple(names) => {
@@ -1189,6 +1194,25 @@ impl LlvmCodeGenerator {
         }
     }
     
+    fn cursed_type_to_string(&self, cursed_type: &crate::ast::Type) -> String {
+        match cursed_type {
+            crate::ast::Type::Integer | crate::ast::Type::Normie => "normie".to_string(),
+            crate::ast::Type::Float => "meal".to_string(),
+            crate::ast::Type::String | crate::ast::Type::Tea => "tea".to_string(),
+            crate::ast::Type::Boolean | crate::ast::Type::Lit => "lit".to_string(),
+            crate::ast::Type::Sip => "sip".to_string(),
+            crate::ast::Type::Smol => "smol".to_string(),
+            crate::ast::Type::Mid => "mid".to_string(),
+            crate::ast::Type::Thicc => "thicc".to_string(),
+            crate::ast::Type::Snack => "snack".to_string(),
+            crate::ast::Type::Meal => "meal".to_string(),
+            crate::ast::Type::Byte => "byte".to_string(),
+            crate::ast::Type::Rune => "rune".to_string(),
+            crate::ast::Type::Extra => "extra".to_string(),
+            _ => "normie".to_string(), // Default fallback
+        }
+    }
+    
     fn convert_cursed_type_to_llvm(&self, cursed_type: &crate::ast::Type) -> Result<String, CursedError> {
         match cursed_type {
             crate::ast::Type::Integer | crate::ast::Type::Normie => Ok("i32".to_string()),
@@ -1457,6 +1481,11 @@ impl LlvmCodeGenerator {
                 // Copy current variables to the expression compiler
                 for (name, reg) in &self.variables {
                     expression_compiler.set_variable(name.clone(), reg.clone());
+                }
+                
+                // Copy variable types to the expression compiler
+                for (name, var_type) in &self.variable_types {
+                    expression_compiler.set_variable_type(name.clone(), var_type.clone());
                 }
                 
                 // Compile the expression to complete LLVM IR
@@ -1812,14 +1841,18 @@ impl LlvmCodeGenerator {
                          self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, double {})\n", call_reg, format_reg, arg_reg));
                         },
                          Expression::Identifier(name) => {
-                            // Variable - need to determine type
-                            let var_type = if name.contains("flag") || name.contains("lit") {
-                                "boolean"
-                            } else if name.contains("greeting") || name.contains("tea") {
-                                "string"
-                            } else {
-                                "integer" // Default
-                            };
+                         // Variable - look up actual type from variable_types HashMap
+                         let var_type = if let Some(cursed_type) = self.variable_types.get(name) {
+                         match cursed_type.as_str() {
+                                 "tea" => "string",
+                             "lit" => "boolean", 
+                                 "normie" | "smol" | "mid" | "thicc" => "integer",
+                             "snack" | "meal" | "drip" => "float",
+                                 _ => "integer" // Default for unknown types
+                                 }
+                             } else {
+                                 "integer" // Default if variable not found
+                             };
                             
                             match var_type {
                                 "string" => {
@@ -1835,6 +1868,14 @@ impl LlvmCodeGenerator {
                                     self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
                                     let call_reg = self.next_register();
                                     self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, i32 {})\n", call_reg, format_reg, conv_reg));
+                                },
+                                "float" => {
+                                    // Float
+                                    let format_str = self.add_string_constant("%g\n");
+                                    let format_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = {}\n", format_reg, format_str));
+                                    let call_reg = self.next_register();
+                                    self.ir_code.push_str(&format!("  {} = call i32 (i8*, ...) @printf(i8* {}, double {})\n", call_reg, format_reg, arg_reg));
                                 },
                                 _ => {
                                     // Integer
