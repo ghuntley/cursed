@@ -28,12 +28,15 @@ impl RegisterTracker {
     
     /// Allocate next register with global synchronization
     pub fn allocate_register(&mut self) -> String {
+        // Use purely global tracking to avoid instance reset issues
+        Self::allocate_global_register()
+    }
+    
+    /// Allocate register using only global state (stateless)
+    pub fn allocate_global_register() -> String {
         let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
         unsafe {
-            // LLVM expects registers to start from %0
             let reg = GLOBAL_REGISTER_COUNTER;
-            self.allocated.insert(reg);
-            self.next_expected = reg + 1;
             GLOBAL_REGISTER_COUNTER += 1;
             format!("%{}", reg)
         }

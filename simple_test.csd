@@ -1,1 +1,1 @@
-slay test_func() { vibez.spill("test") }
+sus x normie = 5; vibez.spill(x)

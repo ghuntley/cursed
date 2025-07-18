@@ -152,8 +152,8 @@ impl LlvmCodeGenerator {
     }
     
     pub fn new() -> Result<Self, CursedError> {
-        // Reset global register counter for new compilation
-        RegisterTracker::set_global_counter(0);
+        // Do NOT reset global register counter - maintain consistency across compilation units
+        // RegisterTracker::set_global_counter(0); // Removed to prevent register reuse
         
         // Detect current platform target triple
         let target_triple = Self::detect_target_triple();
@@ -433,11 +433,20 @@ impl LlvmCodeGenerator {
     
     pub fn generate_ir(&mut self, program: &Program) -> Result<String, CursedError> {
         self.ir_code.clear();
+        // Reset global register counter only once per process
+        static mut GLOBAL_RESET_DONE: bool = false;
+        unsafe {
+            if !GLOBAL_RESET_DONE {
+                RegisterTracker::set_global_counter(0);
+                GLOBAL_RESET_DONE = true;
+            }
+        }
+        
         // For WebAssembly, use function-scoped register tracking
         if self.target_triple.starts_with("wasm32") {
             self.register_tracker = RegisterTracker::new_function_scoped();
         } else {
-            // Sync with global register counter but don't reset it
+            // Sync with global register counter
             self.register_tracker.sync_with_global();
         }
         self.label_counter = 0;
@@ -520,14 +529,8 @@ impl LlvmCodeGenerator {
             self.ir_code.push_str("define i32 @main() {\n");
             self.ir_code.push_str("entry:\n");
             
-            // Main function register numbering
-            if self.target_triple.starts_with("wasm32") {
-                // For WebAssembly, use function-scoped register tracking
-                self.register_tracker = RegisterTracker::new_function_scoped();
-            } else {
-                // Sync register tracker for main function
-                self.register_tracker.sync_with_global();
-            }
+            // Continue using the same register tracker for main function
+            // Don't reset the register tracker here to maintain consistency
             
             // Generate all top-level statements inside main function with error recovery
             for statement in &top_level_statements {
@@ -1376,13 +1379,17 @@ impl LlvmCodeGenerator {
                 if let Some(var_reg) = self.variables.get(name).cloned() {
                     let load_reg = self.next_register();
                     
-                    // Determine type based on variable name patterns  
-                    let var_type = if name.contains("flag") || name.contains("lit") {
-                        "i1"
-                    } else if name.contains("greeting") || name.contains("tea") {
-                        "i8*"
+                    // Determine type based on variable_types HashMap instead of name patterns
+                    let var_type = if let Some(cursed_type) = self.variable_types.get(name) {
+                        match cursed_type.as_str() {
+                            "tea" => "i8*",  // String type
+                            "lit" => "i1",   // Boolean type
+                            "normie" | "smol" | "mid" | "thicc" => "i32", // Integer types
+                            "snack" | "meal" | "drip" => "double", // Float types
+                            _ => "i32" // Default for unknown types
+                        }
                     } else {
-                        "i32" // Default
+                        "i32" // Default if variable not found
                     };
                     
                     self.ir_code.push_str(&format!("  {} = load {}, {}* {}, align 4\n", load_reg, var_type, var_type, var_reg));
