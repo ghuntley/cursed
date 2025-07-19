@@ -197,10 +197,10 @@ pub struct MemoryManager {
     stack_manager: Arc<RuntimeStack>,
     /// Memory statistics
     stats: RwLock<MemoryStats>,
-    /// Object tracking (if enabled)
-    tracked_objects: RwLock<HashMap<*mut HeapObject, ObjectHandle>>,
-    /// Root object registry
-    root_registry: RwLock<HashMap<String, *mut HeapObject>>,
+    /// Object tracking (if enabled) - using object IDs instead of raw pointers for thread safety
+    tracked_objects: RwLock<HashMap<usize, ObjectHandle>>,
+    /// Root object registry - using object IDs instead of raw pointers
+    root_registry: RwLock<HashMap<String, usize>>,
     /// Memory pressure state
     pressure_state: RwLock<PressureState>,
 }
@@ -267,7 +267,7 @@ impl MemoryManager {
         // Track object if enabled
         if self.config.enable_tracking {
             let mut tracked = self.tracked_objects.write().unwrap();
-            tracked.insert(obj_ptr.as_ptr(), handle.clone());
+            tracked.insert(obj_ptr.as_ptr() as usize, handle.clone());
         }
         
         // Update statistics
@@ -301,7 +301,7 @@ impl MemoryManager {
         // Track object if enabled
         if self.config.enable_tracking {
             let mut tracked = self.tracked_objects.write().unwrap();
-            tracked.insert(obj_ptr.as_ptr(), handle.clone());
+            tracked.insert(obj_ptr.as_ptr() as usize, handle.clone());
         }
         
         // Update statistics
@@ -322,7 +322,7 @@ impl MemoryManager {
         // Remove from tracking
         if self.config.enable_tracking {
             let mut tracked = self.tracked_objects.write().unwrap();
-            tracked.remove(&handle.ptr.as_ptr());
+            tracked.remove(&(handle.ptr.as_ptr() as usize));
         }
         
         // Update statistics
@@ -343,7 +343,7 @@ impl MemoryManager {
         // Add to registry
         {
             let mut registry = self.root_registry.write().unwrap();
-            registry.insert(name, handle.ptr.as_ptr());
+            registry.insert(name, handle.ptr.as_ptr() as usize);
         }
         
         Ok(())
@@ -612,33 +612,21 @@ impl MemoryManager {
 }
 
 /// Global memory manager instance
-static mut GLOBAL_MEMORY_MANAGER: Option<Arc<MemoryManager>> = None;
-static MEMORY_INIT: std::sync::Once = std::sync::Once::new();
+static GLOBAL_MEMORY_MANAGER: OnceLock<Arc<MemoryManager>> = OnceLock::new();
 
 /// Initialize global memory manager
 pub fn initialize_memory_manager(
     config: MemoryConfig,
     stack_manager: Arc<RuntimeStack>,
 ) -> Result<(), MemoryError> {
-    MEMORY_INIT.call_once(|| {
-        let manager = MemoryManager::new(config, stack_manager).unwrap();
-        unsafe {
-            GLOBAL_MEMORY_MANAGER = Some(Arc::new(manager));
-        }
-    });
+    let manager = MemoryManager::new(config, stack_manager)?;
+    let _ = GLOBAL_MEMORY_MANAGER.set(Arc::new(manager));
     Ok(())
 }
 
 /// Get global memory manager
 pub fn get_global_memory_manager() -> Option<Arc<MemoryManager>> {
-    unsafe { 
-        let ptr = &raw const GLOBAL_MEMORY_MANAGER;
-        if (*ptr).is_some() {
-            std::ptr::read(ptr)
-        } else {
-            None
-        }
-    }
+    GLOBAL_MEMORY_MANAGER.get().map(|manager| Arc::clone(manager))
 }
 
 /// Shutdown global memory manager

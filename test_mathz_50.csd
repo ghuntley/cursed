@@ -1,3 +1,7 @@
+# mathz - Comprehensive Mathematics Module for CURSED
+# Pure CURSED implementation without FFI dependencies
+# Migrated from Rust stdlib/math modules
+
 yeet "testz"
 
 # Mathematical Constants
@@ -44,37 +48,3 @@ slay abs_meal(x meal) meal {
     damn x
 }
 
-slay abs_normie(x normie) normie {
-    lowkey x < 0 {
-        damn -x
-    }
-    damn x
-}
-
-# Min/Max Functions
-slay max_meal(a meal, b meal) meal {
-    lowkey a > b {
-        damn a
-    }
-    damn b
-}
-
-slay max_normie(a normie, b normie) normie {
-    lowkey a > b {
-        damn a
-    }
-    damn b
-}
-
-slay min_meal(a meal, b meal) meal {
-    lowkey a < b {
-        damn a
-    }
-    damn b
-}
-
-slay min_normie(a normie, b normie) normie {
-    lowkey a < b {
-        damn a
-    }
-    damn b

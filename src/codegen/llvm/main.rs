@@ -718,7 +718,8 @@ impl LlvmCodeGenerator {
         if self.target_triple.starts_with("wasm32") {
             self.register_tracker = RegisterTracker::new_function_scoped();
         } else {
-            // Sync with global register counter
+            // Create a fresh register tracker synced with global counter
+            self.register_tracker = RegisterTracker::new();
             self.register_tracker.sync_with_global();
         }
         self.label_counter = 0;
@@ -1800,10 +1801,9 @@ impl LlvmCodeGenerator {
             },
             _ => {
                 // For complex expressions, use the expression compiler
-                let mut expression_compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new();
+                let mut expression_compiler = self.create_synchronized_expression_compiler();
                 
-                // The ExpressionCompiler is already synced with global counter on creation
-                // No need to reset it backward, which would cause register conflicts
+                // The ExpressionCompiler is now properly synced with global counter
                 
                 // Copy current variables to the expression compiler
                 for (name, reg) in &self.variables {
@@ -2968,6 +2968,14 @@ impl LlvmCodeGenerator {
         } else {
             (self.register_tracker.get_current_counter().saturating_sub(1)) as i32
         }
+    }
+    
+    /// Create properly synchronized ExpressionCompiler instance
+    pub fn create_synchronized_expression_compiler(&self) -> crate::codegen::llvm::expression_compiler::ExpressionCompiler {
+        let mut compiler = crate::codegen::llvm::expression_compiler::ExpressionCompiler::new_with_target(self.target_triple.clone());
+        // Synchronize with current global register state
+        compiler.set_variable_counter(RegisterTracker::get_global_counter());
+        compiler
     }
     
 
