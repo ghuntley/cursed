@@ -1,0 +1,1 @@
+yeet "memory"; sus ptr thicc = malloc(1024); vibez.spill("Allocated memory at:", ptr); sus info tea = memory_info(); vibez.spill("System status:", info); free(ptr); vibez.spill("Memory freed successfully")
