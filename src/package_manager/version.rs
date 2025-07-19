@@ -42,19 +42,8 @@ impl Version {
 
     /// Parse version from string
     pub fn parse(version_str: &str) -> crate::error::Result<Self> {
-        let parts: Vec<&str> = version_str.split('.').collect();
-        if parts.len() < 3 {
-            return Err(crate::error::CursedError::General(format!("Invalid version format: {}", version_str)));
-        }
-
-        let major = parts[0].parse::<u32>()
-            .map_err(|_| crate::error::CursedError::General(format!("Invalid major version: {}", parts[0])))?;
-        let minor = parts[1].parse::<u32>()
-            .map_err(|_| crate::error::CursedError::General(format!("Invalid minor version: {}", parts[1])))?;
-        let patch = parts[2].parse::<u32>()
-            .map_err(|_| crate::error::CursedError::General(format!("Invalid patch version: {}", parts[2])))?;
-
-        Ok(Self::new(major, minor, patch))
+        // Use FromStr implementation which handles pre-release/build metadata
+        version_str.parse().map_err(Into::into)
     }
 
     pub fn with_pre_release(mut self, pre_release: String) -> Self {
@@ -201,6 +190,42 @@ impl VersionReq {
     pub fn parse(s: &str) -> Result<Self, CursedError> {
         if s == "*" {
             return Ok(VersionReq::Any);
+        }
+
+        // Handle single comparison operators like >=1.0.0, >1.0.0, <=1.0.0, <1.0.0
+        if s.starts_with(">=") {
+            let version_str = s.strip_prefix(">=").unwrap().trim();
+            let version = Version::from_str(version_str)?;
+            // Use a range from this version to a very high version
+            let max_version = Version::new(999, 999, 999);
+            return Ok(VersionReq::Range(version, max_version));
+        }
+
+        if s.starts_with("<=") {
+            let version_str = s.strip_prefix("<=").unwrap().trim();
+            let version = Version::from_str(version_str)?;
+            // Use a range from 0.0.0 to this version (inclusive)
+            let min_version = Version::new(0, 0, 0);
+            let mut max_version = version.clone();
+            // Increment patch for exclusive upper bound
+            max_version.patch += 1;
+            return Ok(VersionReq::Range(min_version, max_version));
+        }
+
+        if s.starts_with('>') && !s.starts_with(">=") {
+            let version_str = s.strip_prefix('>').unwrap().trim();
+            let mut version = Version::from_str(version_str)?;
+            // Start from the next patch version
+            version.patch += 1;
+            let max_version = Version::new(999, 999, 999);
+            return Ok(VersionReq::Range(version, max_version));
+        }
+
+        if s.starts_with('<') && !s.starts_with("<=") {
+            let version_str = s.strip_prefix('<').unwrap().trim();
+            let version = Version::from_str(version_str)?;
+            let min_version = Version::new(0, 0, 0);
+            return Ok(VersionReq::Range(min_version, version));
         }
 
         // Handle comma-separated constraints like ">=1.0.0, <2.0.0"

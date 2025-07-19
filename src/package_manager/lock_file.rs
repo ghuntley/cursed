@@ -52,7 +52,6 @@ impl LockFileManager {
     fn parse_lock_file(&mut self, content: &str) -> crate::error::Result<()> {
         // Simple TOML-like parsing for lock file format
         let mut current_section = String::new();
-        let mut current_package = None;
         
         for line in content.lines() {
             let line = line.trim();
@@ -64,16 +63,7 @@ impl LockFileManager {
             if line.starts_with('[') && line.ends_with(']') {
                 // New section
                 current_section = line[1..line.len()-1].to_string();
-                
-                if current_section == "workspace" {
-                    // Handle workspace section
-                    continue;
-                } else if current_section.starts_with("dependencies.") {
-                    // Handle dependencies section
-                    let package_name = current_section.strip_prefix("dependencies.").unwrap().to_string();
-                    current_package = Some(package_name);
-                    continue;
-                }
+                continue;
             }
             
             if line.contains('=') {
@@ -85,8 +75,8 @@ impl LockFileManager {
                     if current_section == "workspace" {
                         // Workspace member
                         self.workspace_members.push(key.to_string());
-                    } else if let Some(ref package_name) = current_package {
-                        // Package dependency
+                    } else if current_section == "packages" {
+                        // Package dependency - create locked package entry
                         let locked_package = LockedPackage {
                             name: key.to_string(),
                             version: value.to_string(),

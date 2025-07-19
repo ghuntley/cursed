@@ -539,6 +539,13 @@ impl PackageManager {
 
     /// Get package information from registry
     pub async fn get_package_info(&self, name: &str, version: Option<&str>) -> crate::error::Result<PackageInfo> {
+        // In offline mode, we should not make network requests
+        if self.config.offline_mode {
+            return Err(crate::error::CursedError::General(
+                format!("Cannot fetch package info for '{}' in offline mode", name)
+            ));
+        }
+        
         let parsed_version = if let Some(v) = version {
             Some(Version::from_str(v)?)
         } else {
