@@ -9,10 +9,12 @@
 use crate::error::CursedError;
 use crate::runtime::goroutine::{GoroutineId, GoroutineState, GoroutineScheduler};
 use crate::runtime::stack::{StackId, StackFrame};
+use crate::runtime::performance_tracker::PERFORMANCE_TRACKER;
 use std::arch::asm;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use std::ptr;
+use std::time::Instant;
 
 /// CPU execution context for goroutine switching
 #[repr(C)]
@@ -265,11 +267,17 @@ pub fn restore_goroutine_context(goroutine_id: GoroutineId) -> Result<(), Cursed
 
 /// Switch from one goroutine context to another
 pub fn switch_goroutine_context(from_id: GoroutineId, to_id: GoroutineId) -> Result<(), CursedError> {
+    let switch_start = Instant::now();
+    
     // Save current context
     save_goroutine_context(from_id)?;
     
     // Restore target context
     restore_goroutine_context(to_id)?;
+    
+    // Track context switch performance
+    let switch_time = switch_start.elapsed();
+    PERFORMANCE_TRACKER.track_context_switch(switch_time);
     
     Ok(())
 }
@@ -456,10 +464,15 @@ pub fn get_context_system_stats() -> Result<ContextSystemStats, CursedError> {
     let native_count = function_registry.values().filter(|f| f.is_native).count();
     let interpreted_count = function_registry.len() - native_count;
     
+    let performance_report = PERFORMANCE_TRACKER.generate_performance_report();
+    
+    // Update performance tracker with current context count
+    PERFORMANCE_TRACKER.update_active_contexts(context_registry.len());
+    
     Ok(ContextSystemStats {
         registered_functions: function_registry.len(),
         active_contexts: context_registry.len(),
-        context_switches: 0, // TODO: Track this in practice
+        context_switches: performance_report.context_stats.total_switches,
         native_functions: native_count,
         interpreted_functions: interpreted_count,
     })

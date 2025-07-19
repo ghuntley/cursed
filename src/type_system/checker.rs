@@ -14,7 +14,7 @@ use crate::core::Type;
 use crate::error_recovery::SourceLocation;
 use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext, 
             TypeSubstitution, ConstraintResolver, ConstraintViolation, TypeDefinition, 
-            TypeKind, MethodSignature};
+            TypeKind, MethodSignature, ConstraintTracker, ConstraintStatus};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -34,6 +34,7 @@ pub struct TypeChecker {
     pub borrow_states: HashMap<String, BorrowState>, // Track variable borrow states
     pub active_borrows: Vec<BorrowInfo>, // Active borrows in current scope
     pub current_file: Option<String>, // Track current file for error reporting
+    pub constraint_tracker: ConstraintTracker, // Track constraint validation status
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -146,6 +147,7 @@ impl TypeChecker {
             borrow_states: HashMap::new(),
             active_borrows: Vec::new(),
             current_file: None,
+            constraint_tracker: ConstraintTracker::new(),
         };
         
         // Initialize built-in types and functions
@@ -915,11 +917,59 @@ impl TypeChecker {
                 
                 Ok(TypeExpression::named("void"))
             }
-            AssignmentTarget::Tuple(_targets) => {
+            AssignmentTarget::Tuple(targets) => {
                 // Handle tuple assignment validation
                 let value_type = self.check_expression(&assignment_stmt.value)?;
-                // TODO: Implement tuple assignment mutability validation
-                Ok(value_type)
+                
+                // Validate that the value is a tuple type
+                let tuple_types = match value_type.get_tuple_types() {
+                    Some(types) => types,
+                    None => {
+                        return Err(TypeCheckError::new(
+                            TypeErrorKind::TypeMismatch,
+                            format!("Cannot destructure non-tuple type into tuple assignment: got {:?}", value_type)
+                        ));
+                    }
+                };
+                
+                // Check that tuple length matches assignment targets
+                if tuple_types.len() != targets.len() {
+                    return Err(TypeCheckError::new(
+                        TypeErrorKind::TypeMismatch,
+                        format!("Tuple assignment length mismatch: {} targets but {} values", 
+                            targets.len(), tuple_types.len())
+                    ));
+                }
+                
+                // Validate mutability for each target variable
+                for (i, target_name) in targets.iter().enumerate() {
+                    if let Some(var_info) = self.get_variable(target_name) {
+                        // Check if variable is mutable before allowing assignment
+                        if !var_info.is_mutable {
+                            return Err(TypeCheckError::new(
+                                TypeErrorKind::MutabilityViolationError,
+                                format!("Cannot assign to immutable variable '{}' in tuple assignment", target_name)
+                            ));
+                        }
+                        
+                        // Check type compatibility
+                        let target_type = &tuple_types[i];
+                        if !self.types_compatible(target_type, &var_info.symbol_type) {
+                            return Err(TypeCheckError::new(
+                                TypeErrorKind::TypeMismatch,
+                                format!("Type mismatch in tuple assignment to '{}': expected {:?}, got {:?}", 
+                                    target_name, var_info.symbol_type, target_type)
+                            ));
+                        }
+                    } else {
+                        return Err(TypeCheckError::new(
+                            TypeErrorKind::UndefinedVariable,
+                            format!("Undefined variable '{}' in tuple assignment", target_name)
+                        ));
+                    }
+                }
+                
+                Ok(TypeExpression::named("void"))
             }
         }
     }
@@ -927,9 +977,41 @@ impl TypeChecker {
     pub fn check_let_statement(&mut self, let_stmt: &LetStatement) -> Result<TypeExpression, TypeCheckError> {
         let value_type = self.check_expression(&let_stmt.value)?;
         
-        // Add variable to current scope with mutability - 'sus' variables are mutable
-        let is_mutable = true; // LetStatement corresponds to 'sus' variables which are mutable
-        self.add_variable_with_mutability(let_stmt.target.primary_name(), value_type.clone(), is_mutable);
+        // Handle tuple destructuring in let statements
+        match &let_stmt.target {
+            crate::ast::LetTarget::Single(name) => {
+                // Add single variable to current scope with mutability - 'sus' variables are mutable
+                let is_mutable = true; // LetStatement corresponds to 'sus' variables which are mutable
+                self.add_variable_with_mutability(name.clone(), value_type.clone(), is_mutable);
+            }
+            crate::ast::LetTarget::Tuple(names) => {
+                // Validate that the value is a tuple type
+                let tuple_types = match value_type.get_tuple_types() {
+                    Some(types) => types,
+                    None => {
+                        return Err(TypeCheckError::new(
+                            TypeErrorKind::TypeMismatch,
+                            format!("Cannot destructure non-tuple type in let statement: got {:?}", value_type)
+                        ));
+                    }
+                };
+                
+                // Check that tuple length matches target names
+                if tuple_types.len() != names.len() {
+                    return Err(TypeCheckError::new(
+                        TypeErrorKind::TypeMismatch,
+                        format!("Tuple destructuring length mismatch: {} names but {} values", 
+                            names.len(), tuple_types.len())
+                    ));
+                }
+                
+                // Add each variable with its corresponding type from the tuple
+                let is_mutable = true; // LetStatement variables are mutable
+                for (name, var_type) in names.iter().zip(tuple_types.iter()) {
+                    self.add_variable_with_mutability(name.clone(), var_type.clone(), is_mutable);
+                }
+            }
+        }
         
         Ok(value_type)
     }

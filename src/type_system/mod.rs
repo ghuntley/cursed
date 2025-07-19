@@ -700,6 +700,18 @@ impl TypeExpression {
         }
     }
     
+    pub fn is_tuple(&self) -> bool {
+        self.name.as_ref().map_or(false, |n| n == "Tuple")
+    }
+    
+    pub fn get_tuple_types(&self) -> Option<&Vec<TypeExpression>> {
+        if self.is_tuple() {
+            Some(&self.parameters)
+        } else {
+            None
+        }
+    }
+    
     pub fn pointer(inner_type: TypeExpression) -> Self {
         Self {
             kind: TypeKind::Primitive,
@@ -889,12 +901,20 @@ pub struct ConstraintBinding {
     pub satisfaction_status: ConstraintStatus,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ConstraintStatus {
-    // TODO: Add variants for constraint status
+    /// Constraint is waiting to be validated
     Pending,
+    /// Constraint has been validated and satisfied
     Resolved,
-    Failed,
+    /// Constraint validation failed
+    Failed(String),
+    /// Constraint is partially satisfied but needs more information
+    Partial(Vec<String>),
+    /// Constraint is being recursively checked (cycle detection)
+    InProgress,
+    /// Constraint validation was skipped due to configuration
+    Skipped(String),
 }
 
 #[derive(Debug, Clone)]
@@ -927,6 +947,153 @@ impl InferenceContext {
     pub fn resolve_type(&self, type_expr: &TypeExpression) -> TypeExpression {
         self.substitutions.apply(type_expr)
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct ConstraintTracker {
+    /// Track status of type constraints by ID
+    pub constraint_status: std::collections::HashMap<String, ConstraintStatus>,
+    /// Track constraint dependencies
+    pub constraint_dependencies: std::collections::HashMap<String, Vec<String>>,
+    /// Track constraint resolution order
+    pub resolution_order: Vec<String>,
+    /// Track constraints currently being validated (cycle detection)
+    pub in_progress: std::collections::HashSet<String>,
+}
+
+impl ConstraintTracker {
+    pub fn new() -> Self {
+        Self {
+            constraint_status: std::collections::HashMap::new(),
+            constraint_dependencies: std::collections::HashMap::new(),
+            resolution_order: Vec::new(),
+            in_progress: std::collections::HashSet::new(),
+        }
+    }
+
+    /// Register a new constraint for tracking
+    pub fn register_constraint(&mut self, constraint_id: String, dependencies: Vec<String>) {
+        self.constraint_status.insert(constraint_id.clone(), ConstraintStatus::Pending);
+        self.constraint_dependencies.insert(constraint_id, dependencies);
+    }
+
+    /// Update constraint status
+    pub fn update_status(&mut self, constraint_id: &str, status: ConstraintStatus) -> Result<(), String> {
+        if !self.constraint_status.contains_key(constraint_id) {
+            return Err(format!("Unknown constraint: {}", constraint_id));
+        }
+
+        // Check for invalid transitions
+        let current_status = &self.constraint_status[constraint_id];
+        match (current_status, &status) {
+            (ConstraintStatus::Resolved, ConstraintStatus::Failed(_)) => {
+                return Err("Cannot transition from Resolved to Failed".to_string());
+            }
+            (ConstraintStatus::Failed(_), ConstraintStatus::Resolved) => {
+                return Err("Cannot transition from Failed to Resolved".to_string());
+            }
+            _ => {}
+        }
+
+        self.constraint_status.insert(constraint_id.to_string(), status);
+        
+        // Add to resolution order if resolved
+        if matches!(self.constraint_status[constraint_id], ConstraintStatus::Resolved) {
+            if !self.resolution_order.contains(&constraint_id.to_string()) {
+                self.resolution_order.push(constraint_id.to_string());
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Start validating a constraint (cycle detection)
+    pub fn start_validation(&mut self, constraint_id: &str) -> Result<(), String> {
+        if self.in_progress.contains(constraint_id) {
+            return Err(format!("Circular dependency detected for constraint: {}", constraint_id));
+        }
+
+        self.in_progress.insert(constraint_id.to_string());
+        self.update_status(constraint_id, ConstraintStatus::InProgress)?;
+        Ok(())
+    }
+
+    /// Finish validating a constraint
+    pub fn finish_validation(&mut self, constraint_id: &str, final_status: ConstraintStatus) -> Result<(), String> {
+        self.in_progress.remove(constraint_id);
+        self.update_status(constraint_id, final_status)?;
+        Ok(())
+    }
+
+    /// Get all constraints with a specific status
+    pub fn get_constraints_with_status(&self, status: &ConstraintStatus) -> Vec<String> {
+        self.constraint_status
+            .iter()
+            .filter(|(_, s)| std::mem::discriminant(*s) == std::mem::discriminant(status))
+            .map(|(id, _)| id.clone())
+            .collect()
+    }
+
+    /// Check if all constraints are resolved
+    pub fn all_resolved(&self) -> bool {
+        self.constraint_status
+            .values()
+            .all(|status| matches!(status, ConstraintStatus::Resolved))
+    }
+
+    /// Get constraints ready for validation (dependencies resolved)
+    pub fn get_ready_constraints(&self) -> Vec<String> {
+        self.constraint_status
+            .iter()
+            .filter(|(id, status)| {
+                matches!(status, ConstraintStatus::Pending) &&
+                self.dependencies_resolved(id)
+            })
+            .map(|(id, _)| id.clone())
+            .collect()
+    }
+
+    /// Check if all dependencies of a constraint are resolved
+    fn dependencies_resolved(&self, constraint_id: &str) -> bool {
+        if let Some(deps) = self.constraint_dependencies.get(constraint_id) {
+            deps.iter().all(|dep| {
+                self.constraint_status
+                    .get(dep)
+                    .map(|status| matches!(status, ConstraintStatus::Resolved))
+                    .unwrap_or(false)
+            })
+        } else {
+            true // No dependencies
+        }
+    }
+
+    /// Get constraint validation summary
+    pub fn get_summary(&self) -> ConstraintValidationSummary {
+        let total = self.constraint_status.len();
+        let resolved = self.get_constraints_with_status(&ConstraintStatus::Resolved).len();
+        let failed = self.constraint_status
+            .values()
+            .filter(|status| matches!(status, ConstraintStatus::Failed(_)))
+            .count();
+        let pending = self.get_constraints_with_status(&ConstraintStatus::Pending).len();
+
+        ConstraintValidationSummary {
+            total,
+            resolved,
+            failed,
+            pending,
+            in_progress: self.in_progress.len(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ConstraintValidationSummary {
+    pub total: usize,
+    pub resolved: usize,
+    pub failed: usize,
+    pub pending: usize,
+    pub in_progress: usize,
 }
 impl Default for TypeSystem {
     fn default() -> Self {

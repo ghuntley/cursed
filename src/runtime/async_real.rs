@@ -3,6 +3,7 @@
 //! Replaces null pointer returns with actual async functionality
 
 use crate::error::CursedError;
+use crate::runtime::performance_tracker::PERFORMANCE_TRACKER;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
@@ -19,6 +20,8 @@ pub struct RealFuture<T> {
     pub state: Arc<Mutex<FutureState<T>>>,
     /// Waker for notification
     pub waker: Arc<Mutex<Option<Waker>>>,
+    /// Creation time for performance tracking
+    pub created_at: Instant,
 }
 
 #[derive(Debug)]
@@ -44,10 +47,14 @@ where
     pub fn new() -> Self {
         let id = NEXT_FUTURE_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         
+        // Track future creation for performance monitoring
+        PERFORMANCE_TRACKER.track_future_created();
+        
         let future = Self {
             id,
             state: Arc::new(Mutex::new(FutureState::Pending)),
             waker: Arc::new(Mutex::new(None)),
+            created_at: Instant::now(),
         };
         
         // Register in global registry
@@ -66,15 +73,21 @@ where
             id,
             state: Arc::new(Mutex::new(FutureState::Completed(value))),
             waker: Arc::new(Mutex::new(None)),
+            created_at: Instant::now(),
         }
     }
     
     /// Complete the future with a value
     pub fn complete(&self, value: T) -> Result<(), CursedError> {
+        let execution_time = self.created_at.elapsed();
+        
         let mut state = self.state.lock()
             .map_err(|_| CursedError::runtime_error("Failed to lock future state"))?;
         
         *state = FutureState::Completed(value);
+        
+        // Track completion for performance monitoring
+        PERFORMANCE_TRACKER.track_future_completed(execution_time);
         
         // Wake up any waiting tasks
         if let Ok(mut waker) = self.waker.lock() {
@@ -88,10 +101,15 @@ where
     
     /// Fail the future with an error
     pub fn fail(&self, error: String) -> Result<(), CursedError> {
+        let execution_time = self.created_at.elapsed();
+        
         let mut state = self.state.lock()
             .map_err(|_| CursedError::runtime_error("Failed to lock future state"))?;
         
         *state = FutureState::Failed(error);
+        
+        // Track failure for performance monitoring
+        PERFORMANCE_TRACKER.track_future_failed(execution_time);
         
         // Wake up any waiting tasks
         if let Ok(mut waker) = self.waker.lock() {
@@ -136,6 +154,7 @@ impl<T> Clone for RealFuture<T> {
             id: self.id,
             state: self.state.clone(),
             waker: self.waker.clone(),
+            created_at: self.created_at,
         }
     }
 }
@@ -187,6 +206,9 @@ impl NetworkFuture {
     pub fn new(operation: NetworkOperation) -> Self {
         let future = RealFuture::new();
         
+        // Track network operation start
+        PERFORMANCE_TRACKER.track_network_operation_start();
+        
         Self { future, operation }
     }
     
@@ -201,9 +223,16 @@ impl NetworkFuture {
             
             match result {
                 Ok(data) => {
+                    // Track successful network operation
+                    PERFORMANCE_TRACKER.track_network_operation_completed(
+                        data.len() as u64,  // bytes sent
+                        data.len() as u64   // bytes received (simplified)
+                    );
                     let _ = future.complete(data);
                 }
                 Err(error) => {
+                    // Track failed network operation
+                    PERFORMANCE_TRACKER.track_network_operation_failed();
                     let _ = future.fail(error);
                 }
             }
@@ -490,10 +519,12 @@ pub fn get_async_runtime_stats() -> Result<AsyncRuntimeStats, CursedError> {
     let registry = FUTURE_REGISTRY.lock()
         .map_err(|_| CursedError::runtime_error("Failed to lock future registry"))?;
     
+    let performance_report = PERFORMANCE_TRACKER.generate_performance_report();
+    
     Ok(AsyncRuntimeStats {
         active_futures: registry.len(),
-        completed_futures: 0, // TODO: Track this
-        failed_futures: 0,    // TODO: Track this
-        pending_network_operations: 0, // TODO: Track this
+        completed_futures: performance_report.future_stats.completed,
+        failed_futures: performance_report.future_stats.failed,
+        pending_network_operations: performance_report.network_stats.pending_operations,
     })
 }

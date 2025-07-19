@@ -505,17 +505,19 @@ fn parse_doc_comment(lines: &[&str], start_idx: usize, file_path: &Path) -> Resu
     
     if i < lines.len() {
         let next_line = lines[i].trim();
-        let (name, item_type) = if next_line.starts_with("fn ") {
+        let (name, item_type, parameters, return_type) = if next_line.starts_with("fn ") || next_line.starts_with("slay ") {
             let name = extract_function_name(next_line);
-            (name, "function".to_string())
+            let parameters = parse_function_parameters(next_line);
+            let return_type = parse_function_return_type(next_line);
+            (name, "function".to_string(), parameters, return_type)
         } else if next_line.starts_with("struct ") {
             let name = extract_struct_name(next_line);
-            (name, "struct".to_string())
+            (name, "struct".to_string(), Vec::new(), None)
         } else if next_line.starts_with("enum ") {
             let name = extract_enum_name(next_line);
-            (name, "enum".to_string())
+            (name, "enum".to_string(), Vec::new(), None)
         } else {
-            ("unknown".to_string(), "item".to_string())
+            ("unknown".to_string(), "item".to_string(), Vec::new(), None)
         };
         
         if name != "unknown" {
@@ -525,8 +527,8 @@ fn parse_doc_comment(lines: &[&str], start_idx: usize, file_path: &Path) -> Resu
                 description: description.trim().to_string(),
                 file_path: file_path.to_path_buf(),
                 line_number: i + 1,
-                parameters: Vec::new(), // TODO: Parse parameters
-                return_type: None, // TODO: Parse return type
+                parameters,
+                return_type,
                 examples,
             }));
         }
@@ -541,11 +543,20 @@ fn parse_rust_doc_comment(lines: &[&str], start_idx: usize, file_path: &Path) ->
 }
 
 fn extract_function_name(line: &str) -> String {
-    line.split_whitespace()
-        .nth(1)
-        .and_then(|s| s.split('(').next())
-        .unwrap_or("unknown")
-        .to_string()
+    // Handle both Rust-style (fn) and CURSED-style (slay) function declarations
+    if line.starts_with("slay ") {
+        line.split_whitespace()
+            .nth(1)
+            .and_then(|s| s.split('(').next())
+            .unwrap_or("unknown")
+            .to_string()
+    } else {
+        line.split_whitespace()
+            .nth(1)
+            .and_then(|s| s.split('(').next())
+            .unwrap_or("unknown")
+            .to_string()
+    }
 }
 
 fn extract_struct_name(line: &str) -> String {
@@ -560,6 +571,110 @@ fn extract_enum_name(line: &str) -> String {
         .nth(1)
         .unwrap_or("unknown")
         .to_string()
+}
+
+/// Parse function parameters from a function declaration line
+/// Supports both Rust-style (fn name(params)) and CURSED-style (slay name(params)) syntax
+fn parse_function_parameters(line: &str) -> Vec<Parameter> {
+    let mut parameters = Vec::new();
+    
+    // Find the parameter list between parentheses
+    if let Some(start) = line.find('(') {
+        if let Some(end) = line.find(')') {
+            let param_str = &line[start + 1..end];
+            
+            if param_str.trim().is_empty() {
+                return parameters;
+            }
+            
+            // Split parameters by comma
+            for param in param_str.split(',') {
+                let param = param.trim();
+                
+                if param.is_empty() {
+                    continue;
+                }
+                
+                // Parse individual parameter
+                // Format: "name: type" or "name tea" (CURSED syntax)
+                let (name, param_type) = if param.contains(':') {
+                    // Standard format: "name: type"
+                    let parts: Vec<&str> = param.splitn(2, ':').collect();
+                    let name = parts[0].trim().to_string();
+                    let param_type = parts.get(1).map(|t| t.trim().to_string()).unwrap_or_default();
+                    (name, param_type)
+                } else {
+                    // CURSED format: might be "name type" or just "name"
+                    let parts: Vec<&str> = param.split_whitespace().collect();
+                    if parts.len() >= 2 {
+                        let name = parts[0].to_string();
+                        let param_type = parts[1..].join(" ");
+                        (name, param_type)
+                    } else {
+                        let name = parts[0].to_string();
+                        (name, "unknown".to_string())
+                    }
+                };
+                
+                parameters.push(Parameter {
+                    name,
+                    param_type,
+                    description: String::new(), // Will be filled from documentation comments
+                });
+            }
+        }
+    }
+    
+    parameters
+}
+
+/// Parse function return type from a function declaration line
+/// Supports both Rust-style (-> type) and CURSED-style (type after parentheses)
+fn parse_function_return_type(line: &str) -> Option<String> {
+    // Look for Rust-style return type with "->"
+    if let Some(arrow_pos) = line.find("->") {
+        let return_part = &line[arrow_pos + 2..];
+        
+        // Extract return type before any braces
+        let return_type = return_part
+            .split('{')
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_string();
+            
+        if !return_type.is_empty() {
+            return Some(return_type);
+        }
+    }
+    
+    // Look for CURSED-style return type (after closing parenthesis, before opening brace)
+    if let Some(paren_end) = line.find(')') {
+        let after_params = &line[paren_end + 1..];
+        
+        // Look for return type before opening brace
+        if let Some(brace_pos) = after_params.find('{') {
+            let return_part = &after_params[..brace_pos].trim();
+            
+            // Remove arrow if present and extract type
+            let return_type = return_part
+                .trim_start_matches("->")
+                .trim()
+                .to_string();
+                
+            if !return_type.is_empty() && return_type != "{" {
+                return Some(return_type);
+            }
+        } else {
+            // No opening brace on same line, check for return type
+            let return_type = after_params.trim().to_string();
+            if !return_type.is_empty() {
+                return Some(return_type);
+            }
+        }
+    }
+    
+    None
 }
 
 fn generate_html_docs(doc_index: &DocumentationIndex, output: &str, title: &str) -> Result<(), Box<dyn std::error::Error>> {

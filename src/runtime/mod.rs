@@ -60,6 +60,7 @@ pub mod r#async;
 pub mod channels;
 pub mod goroutine_context;
 pub mod async_real;
+pub mod performance_tracker;
 
 // Basic exports for minimal build
 pub use stack::RuntimeStack;
@@ -126,3 +127,9 @@ pub use runtime::{initialize_complete_runtime, shutdown_complete_runtime};
 pub use channels::{Channel, ChannelSender, ChannelReceiver, ChannelError};
 pub use r#async::{AsyncRuntime, AsyncScheduler};
 pub use r#async::executor::TaskHandle;
+
+// Performance tracking exports  
+pub use performance_tracker::{
+    PerformanceTracker, PERFORMANCE_TRACKER, PerformanceReport,
+    FutureStats, ContextStats, ThreadStats, NetworkStats
+};

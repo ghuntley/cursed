@@ -362,6 +362,8 @@ benchmarks = []
 web = []
 # Enable cryptography features
 crypto = []
+# Enable interface dispatch tests
+interface_dispatch_tests = []
 # Enable post-quantum cryptography
 pqc = []
 # Enable async/await runtime

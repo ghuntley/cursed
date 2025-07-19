@@ -16,6 +16,7 @@ pub mod gvn;
 pub mod pass_registry;
 pub mod pass_pipeline;
 pub mod performance_monitoring;
+pub mod enhanced_pass_manager;
 pub mod sccp;
 pub mod licm;
 pub mod sroa;
@@ -36,6 +37,10 @@ pub use gvn::{GvnPass, GvnResult};
 pub use pass_registry::{PassRegistry, PassRegistration, PassDependency};
 pub use pass_pipeline::{OptimizationPipeline, PipelineBuilder};
 pub use performance_monitoring::{PerformanceMonitor, OptimizationMetrics, PassExecutionStats};
+pub use enhanced_pass_manager::{
+    EnhancedPassManager, EnhancedPassConfiguration, InliningPhase, InliningTiming,
+    OptimizationPipelineResult
+};
 
 // Optimization passes - restored from minimal implementations
 pub use sccp::SccpPass;

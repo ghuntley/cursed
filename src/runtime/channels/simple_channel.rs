@@ -80,24 +80,33 @@ impl<T> SimpleChannel<T> {
     
     /// Send a value (blocking)
     pub fn send(&self, value: T) -> SendResult<T> {
+        // Check closed status atomically before acquiring lock
         if self.is_closed() {
             return SendResult::Closed(value);
         }
         
-        let mut buffer = self.buffer.lock().unwrap();
+        let mut buffer = match self.buffer.lock() {
+            Ok(guard) => guard,
+            Err(_) => return SendResult::Closed(value), // Poisoned lock indicates failure
+        };
         
         // For unbuffered channels, wait for receiver
         if self.capacity == 0 {
             // Wait for receiver to be available
-            while self.receiver_count.load(Ordering::SeqCst) == 0 && !self.is_closed() {
-                buffer = self.sender_notify.wait(buffer).unwrap();
+            while self.receiver_count.load(Ordering::Acquire) == 0 && !self.is_closed() {
+                buffer = match self.sender_notify.wait(buffer) {
+                    Ok(guard) => guard,
+                    Err(_) => return SendResult::Closed(value), // Poisoned lock
+                };
             }
             
+            // Double-check closed status after wait
             if self.is_closed() {
                 return SendResult::Closed(value);
             }
             
             buffer.push_back(value);
+            drop(buffer); // Release lock before notification
             self.receiver_notify.notify_one();
             
             // Update statistics
@@ -110,14 +119,19 @@ impl<T> SimpleChannel<T> {
         
         // For buffered channels, wait for space
         while buffer.len() >= self.capacity && !self.is_closed() {
-            buffer = self.sender_notify.wait(buffer).unwrap();
+            buffer = match self.sender_notify.wait(buffer) {
+                Ok(guard) => guard,
+                Err(_) => return SendResult::Closed(value), // Poisoned lock
+            };
         }
         
+        // Double-check closed status after wait
         if self.is_closed() {
             return SendResult::Closed(value);
         }
         
         buffer.push_back(value);
+        drop(buffer); // Release lock before notification
         self.receiver_notify.notify_one();
         
         // Update statistics
@@ -130,22 +144,33 @@ impl<T> SimpleChannel<T> {
     
     /// Try to send a value (non-blocking)
     pub fn try_send(&self, value: T) -> SendResult<T> {
+        // Check closed status atomically before acquiring lock
         if self.is_closed() {
             return SendResult::Closed(value);
         }
         
-        let mut buffer = self.buffer.lock().unwrap();
+        let mut buffer = match self.buffer.lock() {
+            Ok(guard) => guard,
+            Err(_) => return SendResult::Closed(value), // Poisoned lock indicates failure
+        };
         
         // For unbuffered channels, need receiver
         if self.capacity == 0 {
-            if self.receiver_count.load(Ordering::SeqCst) == 0 {
+            if self.receiver_count.load(Ordering::Acquire) == 0 {
                 // Track dropped message for unbuffered channel
                 if let Ok(mut stats) = self.stats.lock() {
                     stats.messages_dropped += 1;
                 }
                 return SendResult::WouldBlock(value);
             }
+            
+            // Double-check closed status
+            if self.is_closed() {
+                return SendResult::Closed(value);
+            }
+            
             buffer.push_back(value);
+            drop(buffer); // Release lock before notification
             self.receiver_notify.notify_one();
             
             // Update statistics
@@ -165,7 +190,13 @@ impl<T> SimpleChannel<T> {
             return SendResult::WouldBlock(value);
         }
         
+        // Double-check closed status
+        if self.is_closed() {
+            return SendResult::Closed(value);
+        }
+        
         buffer.push_back(value);
+        drop(buffer); // Release lock before notification
         self.receiver_notify.notify_one();
         
         // Update statistics
@@ -195,14 +226,21 @@ impl<T> SimpleChannel<T> {
     
     /// Receive a value (blocking)
     pub fn recv(&self) -> ReceiveResult<T> {
-        let mut buffer = self.buffer.lock().unwrap();
+        let mut buffer = match self.buffer.lock() {
+            Ok(guard) => guard,
+            Err(_) => return ReceiveResult::Closed, // Poisoned lock indicates failure
+        };
         
         // Wait for data or channel close
         while buffer.is_empty() && !self.is_closed() {
-            buffer = self.receiver_notify.wait(buffer).unwrap();
+            buffer = match self.receiver_notify.wait(buffer) {
+                Ok(guard) => guard,
+                Err(_) => return ReceiveResult::Closed, // Poisoned lock
+            };
         }
         
         if let Some(value) = buffer.pop_front() {
+            drop(buffer); // Release lock before notification
             self.sender_notify.notify_one();
             
             // Update statistics
@@ -223,9 +261,13 @@ impl<T> SimpleChannel<T> {
     
     /// Try to receive a value (non-blocking)
     pub fn try_recv(&self) -> ReceiveResult<T> {
-        let mut buffer = self.buffer.lock().unwrap();
+        let mut buffer = match self.buffer.lock() {
+            Ok(guard) => guard,
+            Err(_) => return ReceiveResult::Closed, // Poisoned lock indicates failure
+        };
         
         if let Some(value) = buffer.pop_front() {
+            drop(buffer); // Release lock before notification
             self.sender_notify.notify_one();
             
             // Update statistics

@@ -558,13 +558,95 @@ impl GenericInterfaceChecker {
             }
         }
 
-        // Check where clauses
-        for _where_clause in &interface.where_clauses {
-            // TODO: Implement proper where clause checking when the method is public
-            // For now, we'll skip this check
+        // Check where clauses  
+        let type_args_map: std::collections::HashMap<String, TypeExpression> = interface.type_parameters
+            .iter()
+            .zip(type_arguments.iter())
+            .map(|(param, arg)| (param.name.clone(), arg.clone()))
+            .collect();
+            
+        for where_clause in &interface.where_clauses {
+            // Convert generic_constraints::WhereClause to ast::WhereClause
+            let ast_where_clause = crate::ast::WhereClause {
+                constraints: where_clause.constraints.iter().map(|c| {
+                    crate::ast::TypeConstraint {
+                        type_name: where_clause.type_expr.name.clone().unwrap_or_default(),
+                        bounds: match c {
+                            crate::type_system::generic_constraints::TypeConstraint::Interface(name) => vec![name.clone()],
+                            crate::type_system::generic_constraints::TypeConstraint::Lifetime(name) => vec![name.clone()],
+                            crate::type_system::generic_constraints::TypeConstraint::Equality(expr) => vec![expr.name.clone().unwrap_or_default()],
+                                _ => vec!["Unknown".to_string()],
+                        }
+                    }
+                }).collect()
+            };
+            self.validate_where_clause_constraint(&ast_where_clause, &type_args_map)?;
         }
 
         Ok(())
+    }
+
+    /// Validate where clause constraints
+    fn validate_where_clause_constraint(
+        &self, 
+        where_clause: &crate::ast::WhereClause, 
+        type_args: &std::collections::HashMap<String, TypeExpression>
+    ) -> Result<(), CursedError> {
+        // Check each constraint in the where clause
+        for constraint in &where_clause.constraints {
+            // Resolve the type being constrained
+            let constrained_type = if let Some(resolved) = type_args.get(&constraint.type_name) {
+                resolved.clone()
+            } else {
+                // If not in type args, treat as generic type parameter
+                TypeExpression::named(&constraint.type_name)
+            };
+
+            // Check each bound in the constraint
+            for bound in &constraint.bounds {
+                // Check if the type implements the required trait/bound
+                if !self.check_trait_implementation(&constrained_type, bound) {
+                    return Err(CursedError::Type(format!(
+                        "Type '{}' does not implement trait '{}' required by where clause", 
+                        &constraint.type_name, bound
+                    )));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Check if a type implements a trait
+    fn check_trait_implementation(&self, type_expr: &TypeExpression, trait_name: &str) -> bool {
+        // Check if the type implements the trait
+        // This is a simplified implementation - in a full system, this would
+        // check the trait implementation registry
+        match trait_name {
+            "Clone" | "Copy" | "Debug" | "Default" => {
+                // Built-in traits that most types can implement
+                true
+            }
+            "Send" | "Sync" => {
+                // Concurrency traits - check if type is safe for threading
+                !type_expr.name.as_ref().map_or(false, |n| n.contains("Rc") || n.contains("RefCell"))
+            }
+            "Eq" | "PartialEq" | "Ord" | "PartialOrd" => {
+                // Comparison traits - primitive types implement these
+                matches!(type_expr.name.as_ref().map(|n| n.as_str()).unwrap_or(""), "drip" | "meal" | "tea" | "lit")
+            }
+            _ => {
+                // For custom traits, assume implementation exists
+                // In a full system, this would check the trait registry
+                true
+            }
+        }
+    }
+
+    /// Check if two types are equivalent
+    fn types_equivalent(&self, type1: &TypeExpression, type2: &TypeExpression) -> bool {
+        // Simplified type equivalence check
+        type1.name == type2.name
     }
 
     /// Check if a type satisfies a trait bound

@@ -410,9 +410,48 @@ impl InterfaceComplianceChecker {
     
     /// Determine receiver type from method signature
     fn determine_receiver_type(&self, method: &MethodSignature) -> Result<ReceiverType, CursedError> {
-        // TODO: Implement proper receiver type detection based on method signature
-        // For now, assume value receiver as default
-        Ok(ReceiverType::Value)
+        // Check if the method has a receiver parameter
+        if let Some(first_param) = method.parameters.first() {
+            // Check if first parameter is a receiver (self-like)
+            if first_param.name == "self" || first_param.name.starts_with("self") {
+                // Determine receiver type based on parameter type
+                match &first_param.param_type {
+                    Some(param_type) => {
+                        // Check for pointer/reference types indicating pointer receiver
+                        match param_type {
+                            crate::ast::Type::Pointer(_) => {
+                                Ok(ReceiverType::Pointer)
+                            }
+                            _ => Ok(ReceiverType::Value)
+                        }
+                    }
+                    None => {
+                        // No explicit type, check parameter name for hints
+                        if first_param.name.contains("ptr") || first_param.name.contains("ref") {
+                            Ok(ReceiverType::Pointer)
+                        } else {
+                            Ok(ReceiverType::Value)
+                        }
+                    }
+                }
+            } else {
+                // Check if first parameter type suggests it's a receiver
+                if let Some(param_type) = &first_param.param_type {
+                    match param_type {
+                        crate::ast::Type::Pointer(_) => {
+                            Ok(ReceiverType::Pointer)
+                        }
+                        _ => Ok(ReceiverType::Value)
+                    }
+                } else {
+                    // Default to value receiver
+                    Ok(ReceiverType::Value)
+                }
+            }
+        } else {
+            // No parameters, assume value receiver (functions without receivers)
+            Ok(ReceiverType::Value)
+        }
     }
     
     /// Get interface method requirements

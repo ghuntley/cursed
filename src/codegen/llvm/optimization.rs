@@ -1,6 +1,19 @@
 //! Minimal LLVM optimization system compatible with inkwell 0.4
 
 use crate::error::{CursedError, Result};
+
+// Re-export enhanced optimization components
+pub use super::enhanced_optimization::{
+    EnhancedOptimizationManager, EnhancedOptimizationConfig, EnhancedOptimizationResult, ModuleComplexity
+};
+pub use super::optimization_integration::{
+    OptimizationIntegration, OptimizationIntegrationFactory, IntegrationConfig, 
+    IntegratedOptimizationResult, CompilationPhase
+};
+pub use super::passes::enhanced_pass_manager::{
+    EnhancedPassManager, EnhancedPassConfiguration, InliningPhase, InliningTiming
+};
+
 // Define OptimizationLevel here for now
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OptimizationLevel {
@@ -148,6 +161,7 @@ pub struct OptimizationManager<'ctx> {
     context: &'ctx Context,
     config: OptimizationConfig,
     stats: OptimizationStats,
+    main_config: Option<crate::optimization::config::OptimizationConfig>,
 }
 
 impl<'ctx> OptimizationManager<'ctx> {
@@ -157,6 +171,17 @@ impl<'ctx> OptimizationManager<'ctx> {
             context,
             config,
             stats: OptimizationStats::default(),
+            main_config: None,
+        }
+    }
+    
+    /// Create optimization manager with main configuration
+    pub fn with_main_config(context: &'ctx Context, config: OptimizationConfig, main_config: crate::optimization::config::OptimizationConfig) -> Self {
+        Self {
+            context,
+            config,
+            stats: OptimizationStats::default(),
+            main_config: Some(main_config),
         }
     }
     
@@ -262,7 +287,32 @@ impl<'ctx> OptimizationManager<'ctx> {
             OptimizationLevel::Os | OptimizationLevel::Oz => 2,
         };
         
-        let mut inlining_pass = InliningPass::for_optimization_level(self.context, opt_level);
+        // Create custom inlining configuration based on settings
+        let mut inlining_config = InliningConfig::for_optimization_level(opt_level);
+        
+        // Apply main configuration overrides if available
+        if let Some(ref main_config) = self.main_config {
+            if main_config.enable_function_inlining {
+                inlining_config.enable_always_inline = true;
+            }
+            if main_config.aggressive_inlining {
+                inlining_config.aggressive_inlining = true;
+                inlining_config.inline_threshold = inlining_config.inline_threshold.max(400);
+            }
+            if main_config.enable_generics_inlining {
+                inlining_config.enable_generics_inlining = true;
+            }
+            if main_config.enable_interface_inlining {
+                inlining_config.enable_interface_inlining = true;
+            }
+            
+            // Use the inline threshold from main config if set
+            if main_config.inline_threshold > 0 {
+                inlining_config.inline_threshold = main_config.inline_threshold;
+            }
+        }
+        
+        let mut inlining_pass = InliningPass::with_config(self.context, inlining_config);
         let result = inlining_pass.run(module)?;
         
         // Update statistics

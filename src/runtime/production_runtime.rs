@@ -297,6 +297,10 @@ impl ProductionRuntime {
             crate::runtime::goroutine::initialize_global_scheduler()?;
         }
 
+        // Initialize timeout manager for reliable channel timeout handling
+        crate::runtime::channels::timeout_manager::init_timeout_manager()
+            .map_err(|e| CursedError::runtime_error(&format!("Failed to initialize timeout manager: {:?}", e)))?;
+
         // Start monitoring thread if enabled
         if self.config.enable_monitoring {
             self.start_monitoring()?;
@@ -318,6 +322,10 @@ impl ProductionRuntime {
 
         // Shutdown goroutine scheduler
         crate::runtime::goroutine::shutdown_global_scheduler()?;
+
+        // Shutdown timeout manager
+        crate::runtime::channels::timeout_manager::shutdown_timeout_manager()
+            .map_err(|e| CursedError::runtime_error(&format!("Failed to shutdown timeout manager: {:?}", e)))?;
 
         Ok(())
     }
