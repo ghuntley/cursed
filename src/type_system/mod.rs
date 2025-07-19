@@ -119,6 +119,11 @@ impl TypeSystem {
         self.scopes.pop();
     }
     
+    /// Check if a type exists in the type system
+    pub fn has_type(&self, type_name: &str) -> bool {
+        self.environment.type_definitions.contains_key(type_name)
+    }
+    
     pub fn add_variable(&mut self, name: String, type_expr: TypeExpression) {
         if let Some(current_scope) = self.scopes.last_mut() {
             current_scope.insert(name, type_expr);

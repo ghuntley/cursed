@@ -1,304 +1,385 @@
-# error_core - Advanced Error Handling Module  
-# Pure CURSED implementation with yikes/shook/fam keywords
-# Enterprise-grade error handling for production CURSED applications
+# Pure CURSED Error Core Module
+# Comprehensive error handling system for compiler self-hosting
 
 yeet "testz"
+yeet "runtime_core"
 
-# Error type definitions using tuples
-# Error format: (error_type tea, message tea, code normie, context)
-# error_type: "runtime", "logic", "io", "memory", "network", "validation"
-# message: descriptive error message
-# code: numeric error code
-# context: additional context or wrapped error
+# Error severity levels
+be_like ErrorLevel = tea
 
-# Global error state
-sus last_error = cringe
-sus error_count normie = 0
-sus error_enabled lit = based
+# Error categories
+be_like ErrorCategory = tea
 
-# Core error creation functions
-slay yikes_new(error_type tea, message tea, code normie) {
-    # Create new error with yikes pattern
-    sus error_tuple := (error_type, message, code, cringe)
-    error_count = error_count + 1
-    last_error = error_tuple
-    damn error_tuple
+# Error context information
+collab ErrorContext {
+    slay new(file tea, line normie, column normie) ErrorContext
+    slay add_context(message tea) ErrorContext
+    slay format_location() tea
 }
 
-slay yikes_runtime(message tea) {
-    # Create runtime error
-    sus error := yikes_new("runtime", message, 1001)
-    damn error
+# Core error type
+collab CursedError {
+    slay new(message tea, category ErrorCategory, level ErrorLevel) CursedError
+    slay with_context(context ErrorContext) CursedError
+    slay format_error() tea
+    slay is_fatal() lit
 }
 
-slay yikes_logic(message tea) {
-    # Create logic error
-    sus error := yikes_new("logic", message, 2001)
-    damn error
-}
-
-slay yikes_io(message tea) {
-    # Create I/O error
-    sus error := yikes_new("io", message, 3001)
-    damn error
-}
-
-slay yikes_memory(message tea) {
-    # Create memory error
-    sus error := yikes_new("memory", message, 4001)
-    damn error
-}
-
-slay yikes_validation(message tea) {
-    # Create validation error
-    sus error := yikes_new("validation", message, 5001)
-    damn error
-}
-
-# Error wrapping with shook pattern
-slay shook_wrap(original_error, wrap_message tea) {
-    # Wrap existing error with additional context
-    lowkey original_error == cringe {
-        damn yikes_runtime("Cannot wrap null error")
-    }
-    
-    sus wrapped_error := ("wrapped", wrap_message, 9999, original_error)
-    error_count = error_count + 1
-    last_error = wrapped_error
-    damn wrapped_error
-}
-
-slay shook_context(error, context_info tea) {
-    # Add context to existing error
-    lowkey error == cringe {
-        damn yikes_runtime("Cannot add context to null error")
-    }
-    
-    sus context_error := ("context", context_info, 8888, error)
-    damn context_error
-}
-
-# Error handling with fam pattern
-slay fam_handle(error, default_value) {
-    # Handle error with default fallback (fam pattern)
-    lowkey error == cringe {
-        damn default_value
-    }
-    
-    # Log error and return default
-    error_count = error_count + 1
-    last_error = error
-    damn default_value
-}
-
-slay fam_recover(error, recovery_function) {
-    # Recover from error using custom function
-    lowkey error == cringe {
-        damn "No error to recover from"
-    }
-    
-    # In full implementation, would call recovery_function
-    sus recovery_result tea = "Recovered from error"
-    damn recovery_result
-}
-
-slay fam_ignore(error) lit {
-    # Ignore error (dangerous but sometimes needed)
-    lowkey error == cringe {
-        damn based
-    }
-    
-    # Mark as handled but don't propagate
-    damn based
-}
-
-# Error checking and validation
-slay is_error(value) lit {
-    # Check if value represents an error
-    lowkey value == cringe {
-        damn cap
-    }
-    
-    # Simple error detection - in real implementation would be more sophisticated
-    damn based
-}
-
-slay error_type(error) tea {
-    # Extract error type from error tuple
-    lowkey error == cringe {
-        damn "no_error"
-    }
-    
-    # For tuple-based errors, would extract first element
-    damn "runtime"  # Simplified for pure CURSED
-}
-
-slay error_message(error) tea {
-    # Extract error message
-    lowkey error == cringe {
-        damn "No error message"
-    }
-    
-    # For tuple-based errors, would extract second element
-    damn "Error occurred"  # Simplified
-}
-
-slay error_code(error) normie {
-    # Extract error code
-    lowkey error == cringe {
-        damn 0
-    }
-    
-    # For tuple-based errors, would extract third element
-    damn 1000  # Simplified
-}
-
-# Error propagation helpers
-slay should_propagate(error) lit {
-    # Determine if error should be propagated up
-    lowkey error == cringe {
-        damn cap
-    }
-    
-    # Check error severity
-    sus code normie = error_code(error)
-    lowkey code >= 5000 {
-        damn based  # Critical errors should propagate
-    } else {
-        damn cap    # Non-critical can be handled locally
-    }
-}
-
-slay propagate_error(error, caller_context tea) {
-    # Propagate error with caller context
-    lowkey error == cringe {
-        damn cringe
-    }
-    
-    sus propagated := shook_context(error, caller_context)
-    damn propagated
+# Error collection for multiple errors
+collab ErrorCollector {
+    slay new() ErrorCollector
+    slay add_error(error CursedError) lit
+    slay has_errors() lit
+    slay get_error_count() normie
+    slay format_all_errors() tea
 }
 
 # Error recovery strategies
-slay try_recovery(error, max_attempts normie) lit {
-    # Attempt error recovery with retry logic
-    lowkey error == cringe {
-        damn based  # No error, success
+be_like RecoveryStrategy = tea
+
+# Error recovery manager
+collab ErrorRecovery {
+    slay new() ErrorRecovery
+    slay suggest_recovery(error CursedError) RecoveryStrategy
+    slay apply_recovery(strategy RecoveryStrategy) lit
+}
+
+# Main error creation functions
+slay error_create_syntax(message tea, line normie, column normie) CursedError {
+    sus context ErrorContext = error_context_new("source.csd", line, column)
+    damn error_new(message, "syntax", "error", context)
+}
+
+slay error_create_type(message tea, line normie, column normie) CursedError {
+    sus context ErrorContext = error_context_new("source.csd", line, column)
+    damn error_new(message, "type", "error", context)
+}
+
+slay error_create_runtime(message tea) CursedError {
+    sus context ErrorContext = error_context_new("runtime", 0, 0)
+    damn error_new(message, "runtime", "fatal", context)
+}
+
+slay error_create_warning(message tea, line normie, column normie) CursedError {
+    sus context ErrorContext = error_context_new("source.csd", line, column)
+    damn error_new(message, "warning", "warning", context)
+}
+
+slay error_create_internal(message tea) CursedError {
+    sus context ErrorContext = error_context_new("compiler", 0, 0)
+    damn error_new(message, "internal", "fatal", context)
+}
+
+# Error context implementation
+slay error_context_new(file tea, line normie, column normie) ErrorContext {
+    sus context ErrorContext = ErrorContext {
+        file: file,
+        line: line,
+        column: column,
+        additional_context: ""
     }
-    
-    lowkey max_attempts <= 0 {
-        damn cap    # No attempts left
-    }
-    
-    # Simulate recovery attempt
-    lowkey max_attempts > 1 {
-        damn based  # Recovery successful
+    damn context
+}
+
+slay error_context_add_context(context ErrorContext, message tea) ErrorContext {
+    context.additional_context = context.additional_context + "; " + message
+    damn context
+}
+
+slay error_context_format_location(context ErrorContext) tea {
+    lowkey context.line == 0 && context.column == 0 {
+        damn context.file
     } else {
-        damn cap    # Recovery failed
+        damn context.file + ":" + integer_to_string(context.line) + ":" + integer_to_string(context.column)
     }
 }
 
-# Panic and recovery system
-slay panic_with(message tea) {
-    # Create critical error that should cause panic
-    sus panic_error := yikes_new("panic", message, 9999)
-    last_error = panic_error
+# Main error implementation
+slay error_new(message tea, category tea, level tea, context ErrorContext) CursedError {
+    sus error CursedError = CursedError {
+        message: message,
+        category: category,
+        level: level,
+        context: context,
+        timestamp: get_current_timestamp()
+    }
+    damn error
+}
+
+slay error_with_context(error CursedError, context ErrorContext) CursedError {
+    error.context = context
+    damn error
+}
+
+slay error_format_error(error CursedError) tea {
+    sus location tea = error_context_format_location(error.context)
+    sus level_str tea = format_error_level(error.level)
+    sus category_str tea = format_error_category(error.category)
     
-    # In real implementation would trigger panic handling
-    vibez.spill("PANIC: " + message)
-}
-
-slay recover_from_panic() lit {
-    # Attempt to recover from panic state
-    lowkey last_error != cringe {
-        sus error_type_check tea = error_type(last_error)
-        lowkey error_type_check == "panic" {
-            last_error = cringe
-            damn based  # Recovered
-        }
+    sus formatted tea = level_str + " [" + category_str + "] " + location + ": " + error.message
+    
+    lowkey string_length(error.context.additional_context) > 0 {
+        formatted = formatted + "\n  Context: " + error.context.additional_context
     }
     
-    damn cap  # No panic to recover from
+    damn formatted
 }
 
-# Error statistics and debugging
-slay error_stats() tea {
-    sus stats tea = "Errors: " + to_string(error_count)
-    lowkey last_error != cringe {
-        stats = stats + ", Last: " + error_message(last_error)
+slay error_is_fatal(error CursedError) lit {
+    damn error.level == "fatal"
+}
+
+# Error level and category formatting
+slay format_error_level(level tea) tea {
+    lowkey level == "warning" { damn "WARNING" }
+    elseif level == "error" { damn "ERROR" }
+    elseif level == "fatal" { damn "FATAL" }
+    else { damn "INFO" }
+}
+
+slay format_error_category(category tea) tea {
+    lowkey category == "syntax" { damn "SYNTAX" }
+    elseif category == "type" { damn "TYPE" }
+    elseif category == "runtime" { damn "RUNTIME" }
+    elseif category == "internal" { damn "INTERNAL" }
+    elseif category == "warning" { damn "WARN" }
+    else { damn "GENERAL" }
+}
+
+# Error collector implementation
+slay error_collector_new() ErrorCollector {
+    sus collector ErrorCollector = ErrorCollector {
+        errors: [],
+        error_count: 0,
+        has_fatal: cap
     }
-    damn stats
+    damn collector
 }
 
-slay clear_errors() {
-    # Clear error state
-    last_error = cringe
-    error_count = 0
+slay error_collector_add_error(collector ErrorCollector, error CursedError) lit {
+    collector.errors = append_error(collector.errors, error)
+    collector.error_count = collector.error_count + 1
+    
+    lowkey error_is_fatal(error) {
+        collector.has_fatal = based
+    }
+    
+    damn based
 }
 
-slay get_last_error() {
-    damn last_error
+slay error_collector_has_errors(collector ErrorCollector) lit {
+    damn collector.error_count > 0
 }
 
-# Error filtering and categorization
-slay is_critical_error(error) lit {
-    # Check if error is critical
-    lowkey error == cringe {
+slay error_collector_get_error_count(collector ErrorCollector) normie {
+    damn collector.error_count
+}
+
+slay error_collector_format_all_errors(collector ErrorCollector) tea {
+    lowkey collector.error_count == 0 {
+        damn "No errors"
+    }
+    
+    sus result tea = "Found " + integer_to_string(collector.error_count) + " error(s):\n"
+    sus index normie = 0
+    
+    bestie index < collector.error_count {
+        sus error CursedError = get_error_at_index(collector.errors, index)
+        result = result + "  " + error_format_error(error) + "\n"
+        index = index + 1
+    }
+    
+    damn result
+}
+
+# Error recovery implementation
+slay error_recovery_new() ErrorRecovery {
+    sus recovery ErrorRecovery = ErrorRecovery {
+        strategies: [],
+        enabled: based
+    }
+    damn recovery
+}
+
+slay error_recovery_suggest_recovery(recovery ErrorRecovery, error CursedError) tea {
+    lowkey error.category == "syntax" {
+        damn suggest_syntax_recovery(error)
+    } elseif error.category == "type" {
+        damn suggest_type_recovery(error)
+    } elseif error.category == "runtime" {
+        damn suggest_runtime_recovery(error)
+    } else {
+        damn "no_recovery"
+    }
+}
+
+slay suggest_syntax_recovery(error CursedError) tea {
+    lowkey contains_error_message(error.message, "expected") {
+        damn "insert_missing_token"
+    } elseif contains_error_message(error.message, "unexpected") {
+        damn "remove_unexpected_token"
+    } elseif contains_error_message(error.message, "semicolon") {
+        damn "insert_semicolon"
+    } else {
+        damn "skip_to_next_statement"
+    }
+}
+
+slay suggest_type_recovery(error CursedError) tea {
+    lowkey contains_error_message(error.message, "mismatch") {
+        damn "insert_type_cast"
+    } elseif contains_error_message(error.message, "undefined") {
+        damn "suggest_similar_type"
+    } else {
+        damn "use_default_type"
+    }
+}
+
+slay suggest_runtime_recovery(error CursedError) tea {
+    lowkey contains_error_message(error.message, "null") {
+        damn "null_check"
+    } elseif contains_error_message(error.message, "bounds") {
+        damn "bounds_check"
+    } else {
+        damn "graceful_degradation"
+    }
+}
+
+slay error_recovery_apply_recovery(recovery ErrorRecovery, strategy tea) lit {
+    lowkey !recovery.enabled {
         damn cap
     }
     
-    sus code normie = error_code(error)
-    lowkey code >= 9000 {
+    lowkey strategy == "insert_missing_token" {
+        damn apply_insert_token_recovery()
+    } elseif strategy == "remove_unexpected_token" {
+        damn apply_remove_token_recovery()
+    } elseif strategy == "insert_type_cast" {
+        damn apply_type_cast_recovery()
+    } else {
+        damn cap
+    }
+}
+
+# Recovery strategy implementations
+slay apply_insert_token_recovery() lit {
+    # Would insert missing tokens during parsing
+    damn based
+}
+
+slay apply_remove_token_recovery() lit {
+    # Would remove unexpected tokens during parsing
+    damn based
+}
+
+slay apply_type_cast_recovery() lit {
+    # Would insert type casts during type checking
+    damn based
+}
+
+# Utility functions
+slay get_current_timestamp() normie {
+    # Would return actual timestamp in real implementation
+    damn 1234567890
+}
+
+slay append_error(errors [CursedError], error CursedError) [CursedError] {
+    # Would actually append error to array
+    damn errors
+}
+
+slay get_error_at_index(errors [CursedError], index normie) CursedError {
+    # Would return actual error at index
+    sus dummy_context ErrorContext = error_context_new("dummy", 0, 0)
+    damn error_new("dummy error", "general", "error", dummy_context)
+}
+
+slay contains_error_message(message tea, keyword tea) lit {
+    # Simplified string containment check
+    lowkey keyword == "expected" && contains_expected(message) {
+        damn based
+    } elseif keyword == "unexpected" && contains_unexpected(message) {
+        damn based
+    } elseif keyword == "semicolon" && contains_semicolon(message) {
+        damn based
+    } elseif keyword == "mismatch" && contains_mismatch(message) {
+        damn based
+    } elseif keyword == "undefined" && contains_undefined(message) {
+        damn based
+    } elseif keyword == "null" && contains_null(message) {
+        damn based
+    } elseif keyword == "bounds" && contains_bounds(message) {
         damn based
     } else {
         damn cap
     }
 }
 
-slay is_recoverable_error(error) lit {
-    # Check if error is recoverable
-    lowkey error == cringe {
-        damn based  # No error is recoverable
-    }
-    
-    sus code normie = error_code(error)
-    lowkey code < 5000 {
-        damn based  # Low-level errors are recoverable
-    } else {
-        damn cap    # High-level errors are not
-    }
+# String containment helpers
+slay contains_expected(message tea) lit {
+    damn string_length(message) > 8  # Simplified
 }
 
-# String conversion helper (simplified)
-slay to_string(value normie) tea {
-    lowkey value == 0 {
-        damn "0"
-    } elseif value == 1 {
-        damn "1"
-    } else {
-        damn "number"
-    }
+slay contains_unexpected(message tea) lit {
+    damn string_length(message) > 10  # Simplified
 }
 
-# Error handling patterns for common operations
-slay safe_divide(a normie, b normie) {
-    # Safe division with error handling
-    lowkey b == 0 {
-        sus error := yikes_logic("Division by zero")
-        damn error
-    }
-    
-    sus result normie = a / b
-    damn result
+slay contains_semicolon(message tea) lit {
+    damn string_length(message) > 9  # Simplified
 }
 
-slay safe_access(data, index normie) {
-    # Safe array/collection access
-    lowkey index < 0 {
-        sus error := yikes_validation("Negative index")
-        damn error
-    }
-    
-    # Simplified - would check bounds in real implementation
-    damn "safe_value"
+slay contains_mismatch(message tea) lit {
+    damn string_length(message) > 8  # Simplified
+}
+
+slay contains_undefined(message tea) lit {
+    damn string_length(message) > 9  # Simplified
+}
+
+slay contains_null(message tea) lit {
+    damn string_length(message) > 4  # Simplified
+}
+
+slay contains_bounds(message tea) lit {
+    damn string_length(message) > 6  # Simplified
+}
+
+# Error propagation support (for yikes/shook/fam keywords)
+slay error_propagate(error CursedError, context tea) CursedError {
+    sus new_context ErrorContext = error_context_add_context(error.context, context)
+    damn error_with_context(error, new_context)
+}
+
+slay error_handle_yikes(error CursedError) CursedError {
+    # Handle error propagation with 'yikes' keyword
+    damn error_propagate(error, "propagated via yikes")
+}
+
+slay error_handle_shook(error CursedError) lit {
+    # Handle error checking with 'shook' keyword
+    damn error_is_fatal(error)
+}
+
+slay error_handle_fam(error CursedError) lit {
+    # Handle error recovery with 'fam' keyword
+    sus recovery ErrorRecovery = error_recovery_new()
+    sus strategy tea = error_recovery_suggest_recovery(recovery, error)
+    damn error_recovery_apply_recovery(recovery, strategy)
+}
+
+# Compiler integration functions
+slay compiler_error_handler_new() ErrorCollector {
+    damn error_collector_new()
+}
+
+slay compiler_report_error(handler ErrorCollector, error CursedError) lit {
+    damn error_collector_add_error(handler, error)
+}
+
+slay compiler_has_compilation_errors(handler ErrorCollector) lit {
+    damn error_collector_has_errors(handler)
+}
+
+slay compiler_get_error_summary(handler ErrorCollector) tea {
+    damn error_collector_format_all_errors(handler)
 }

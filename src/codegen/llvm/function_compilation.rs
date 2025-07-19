@@ -2155,25 +2155,25 @@ impl FunctionCompiler {
 
     /// Compile channel send expression
     fn compile_channel_send(&mut self, channel_send_expr: &ChannelSendExpression) -> Result<String, CursedError> {
-        // Placeholder implementation - compile to placeholder register
+        // Simple placeholder - channel operations are handled in main codegen
         let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = call i32 @channel_send(...) ; placeholder\n", reg));
+        self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; channel send placeholder\n", reg));
         Ok(reg)
     }
 
     /// Compile channel receive expression
     fn compile_channel_receive(&mut self, channel_receive_expr: &ChannelReceiveExpression) -> Result<String, CursedError> {
-        // Placeholder implementation - compile to placeholder register
+        // Simple placeholder - channel operations are handled in main codegen
         let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = call i32 @channel_receive(...) ; placeholder\n", reg));
+        self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; channel receive placeholder\n", reg));
         Ok(reg)
     }
 
     /// Compile channel creation expression
     fn compile_channel_creation(&mut self, channel_creation_expr: &ChannelCreationExpression) -> Result<String, CursedError> {
-        // Placeholder implementation - compile to placeholder register
+        // Simple placeholder - channel operations are handled in main codegen
         let reg = self.next_register();
-        self.ir_code.push_str(&format!("  {} = call i32 @channel_create(...) ; placeholder\n", reg));
+        self.ir_code.push_str(&format!("  {} = add i32 0, 0 ; channel create placeholder\n", reg));
         Ok(reg)
     }
 

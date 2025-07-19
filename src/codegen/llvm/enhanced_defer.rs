@@ -82,13 +82,20 @@ impl EnhancedDeferSystem {
         ir.push_str(&format!("{}:\n", cleanup_label));
         
         // Execute defer expressions in LIFO order with error handling
-        for (index, defer_expr) in self.defer_stack.iter().enumerate().rev() {
+        let defer_expressions: Vec<_> = self.defer_stack.iter().enumerate().rev().collect();
+        
+        // Pre-generate all labels to avoid borrowing conflicts
+        let mut labels = Vec::new();
+        for (index, _) in &defer_expressions {
+            let try_label = format!("defer_try_{}", self.label_counter);
+            let catch_label = format!("defer_catch_{}", self.label_counter);
+            let continue_label = format!("defer_continue_{}", self.label_counter);
+            self.label_counter += 1;
+            labels.push((try_label, catch_label, continue_label));
+        }
+        
+        for ((index, defer_expr), (try_label, catch_label, continue_label)) in defer_expressions.iter().zip(labels.iter()) {
             ir.push_str(&format!("  ; Defer expression {} (exception mode)\n", index + 1));
-            
-            // Wrap in try-catch equivalent for LLVM
-            let try_label = self.get_next_label("defer_try");
-            let catch_label = self.get_next_label("defer_catch");
-            let continue_label = self.get_next_label("defer_continue");
             
             ir.push_str(&format!("  br label %{}\n", try_label));
             ir.push_str(&format!("{}:\n", try_label));
@@ -138,14 +145,15 @@ impl EnhancedDeferSystem {
     /// Generate cleanup for a single defer expression
     fn generate_defer_expression_cleanup(&self, expression: &Expression, ir: &mut String) -> Result<(), CursedError> {
         match expression {
-            Expression::FunctionCall(call) => {
-                ir.push_str(&format!("  ; Cleanup function call: {}\n", call.name));
-                
-                match &call.name[..] {
+            Expression::Call(call) => {
+                if let Expression::Identifier(func_name) = &*call.function {
+                    ir.push_str(&format!("  ; Cleanup function call: {}\n", func_name));
+                    
+                    match func_name.as_str() {
                     "vibez.spill" => {
                         if let Some(arg) = call.arguments.first() {
                             match arg {
-                                Expression::StringLiteral(s) => {
+                                Expression::String(s) => {
                                     let str_len = s.len() + 1;
                                     ir.push_str(&format!("  call i32 (i8*, ...) @printf(i8* getelementptr ([{}x i8], [{}x i8]* @.str_defer_{}, i32 0, i32 0))\n", 
                                         str_len, str_len, self.get_string_id(s)));
@@ -156,10 +164,15 @@ impl EnhancedDeferSystem {
                             }
                         }
                     },
-                    _ => {
-                        // Generate call to cleanup function
-                        ir.push_str(&format!("  call void @{}()\n", call.name));
+                        _ => {
+                            // Generate call to cleanup function
+                            ir.push_str(&format!("  call void @{}()\n", func_name));
+                        }
                     }
+                } else {
+                    // Complex function expression - generate generic cleanup
+                    ir.push_str("  ; Complex function call - generating generic cleanup\n");
+                    ir.push_str("  call void @defer_function()\n");
                 }
             },
             Expression::Identifier(name) => {

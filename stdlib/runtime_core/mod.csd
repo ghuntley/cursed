@@ -1,231 +1,243 @@
-# Runtime Core - Pure CURSED Runtime Value System
-# Foundational runtime support for dynamic typing and value representation
-# Replaces src/runtime/value/ and core runtime functionality
+# Pure CURSED Runtime Core Module
+# Essential value system and runtime primitives for compiler self-hosting
 
-yeet "memory_drip"
-yeet "error_drip" 
 yeet "testz"
 
-# Core value types for runtime representation
-vibe CursedValue = smash {
-    value_type tea,     # Type identifier
-    raw_data tea,       # Serialized data
-    type_id normie,     # Runtime type ID
-    size normie,        # Value size in bytes
-    is_boxed lit        # Whether value is heap-allocated
-}
+# Core value types for runtime system
+be_like RuntimeValue = normie | drip | tea | lit | cringe
 
-# Runtime type registry for dynamic dispatch
-sus type_registry map[normie]tea = {}
-sus type_counter normie = 0
-sus value_cache map[tea]CursedValue = {}
-
-# Value type constants
-sus TYPE_NORMIE normie = 1
-sus TYPE_THICC normie = 2
-sus TYPE_DRIP normie = 3
-sus TYPE_TEA normie = 4
-sus TYPE_LIT normie = 5
-sus TYPE_SIP normie = 6
-sus TYPE_SMASH normie = 7
-sus TYPE_ARRAY normie = 8
-sus TYPE_MAP normie = 9
-sus TYPE_INTERFACE normie = 10
-
-# ==============================================================================
-# RUNTIME VALUE SYSTEM
-# ==============================================================================
-
-# Initialize runtime value system
-slay init_runtime_values() lit {
-    # Register built-in types
-    register_type(TYPE_NORMIE, "normie")
-    register_type(TYPE_THICC, "thicc") 
-    register_type(TYPE_DRIP, "drip")
-    register_type(TYPE_TEA, "tea")
-    register_type(TYPE_LIT, "lit")
-    register_type(TYPE_SIP, "sip")
-    register_type(TYPE_SMASH, "smash")
-    register_type(TYPE_ARRAY, "array")
-    register_type(TYPE_MAP, "map")
-    register_type(TYPE_INTERFACE, "interface")
-    
-    vibez.spill("Runtime value system initialized")
-    damn based
-}
-
-# Register a new runtime type
-slay register_type(type_id normie, type_name tea) lit {
-    type_registry[type_id] = type_name
-    damn based
-}
-
-# Create a runtime value wrapper
-slay create_value(value_type tea, data tea) CursedValue {
-    sus value CursedValue
-    value.value_type = value_type
-    value.raw_data = data
-    value.type_id = get_type_id(value_type)
-    value.size = stringz.len(data)
-    value.is_boxed = value.size > 64  # Box values larger than 64 bytes
-    
-    damn value
-}
-
-# Get type ID from type name
-slay get_type_id(type_name tea) normie {
-    bestie key, value := range type_registry {
-        lowkey value == type_name {
-            damn key
+# Runtime value operations
+slay runtime_value_create(value_data tea, value_type tea) RuntimeValue {
+    vibe_check (value_type) {
+        mood "integer" {
+            damn parse_integer(value_data)
+        }
+        mood "float" {
+            damn parse_float(value_data)
+        }
+        mood "string" {
+            damn value_data
+        }
+        mood "boolean" {
+            damn parse_boolean(value_data)
+        }
+        basic {
+            damn cringe
         }
     }
-    damn 0  # Unknown type
 }
 
-# Box a value (move to heap)
-slay box_value(value CursedValue) CursedValue {
-    lowkey value.is_boxed {
-        damn value  # Already boxed
-    }
+# Parse integer from string
+slay parse_integer(input tea) normie {
+    sus result normie = 0
+    sus multiplier normie = 1
+    sus index normie = string_length(input) - 1
     
-    value.is_boxed = based
-    # Simulate heap allocation in pure CURSED
-    sus boxed_key tea = "boxed_" + value.value_type + "_" + stringz.itoa(value.type_id)
-    value_cache[boxed_key] = value
-    
-    damn value
-}
-
-# Unbox a value (copy from heap)
-slay unbox_value(value CursedValue) CursedValue {
-    lowkey !value.is_boxed {
-        damn value  # Not boxed
-    }
-    
-    value.is_boxed = cap
-    damn value
-}
-
-# ==============================================================================
-# RUNTIME TYPE CHECKING AND CONVERSION
-# ==============================================================================
-
-# Check if value is of specific type
-slay value_is_type(value CursedValue, expected_type tea) lit {
-    damn value.value_type == expected_type
-}
-
-# Convert value to string representation
-slay value_to_string(value CursedValue) tea {
-    damn value.value_type + "(" + value.raw_data + ")"
-}
-
-# Parse value from string representation
-slay string_to_value(str tea, value_type tea) CursedValue {
-    sus value CursedValue
-    value.value_type = value_type
-    value.raw_data = str
-    value.type_id = get_type_id(value_type)
-    value.size = stringz.len(str)
-    value.is_boxed = cap
-    
-    damn value
-}
-
-# Deep copy a value
-slay copy_value(value CursedValue) CursedValue {
-    sus copy CursedValue
-    copy.value_type = value.value_type
-    copy.raw_data = value.raw_data
-    copy.type_id = value.type_id
-    copy.size = value.size
-    copy.is_boxed = value.is_boxed
-    
-    damn copy
-}
-
-# ==============================================================================
-# RUNTIME VALUE OPERATIONS
-# ==============================================================================
-
-# Compare two values for equality
-slay values_equal(a CursedValue, b CursedValue) lit {
-    lowkey a.value_type != b.value_type {
-        damn cap
-    }
-    damn a.raw_data == b.raw_data
-}
-
-# Get value size in memory
-slay value_memory_size(value CursedValue) normie {
-    lowkey value.is_boxed {
-        damn value.size + 64  # Heap overhead
-    }
-    damn value.size
-}
-
-# Check if value needs garbage collection
-slay value_needs_gc(value CursedValue) lit {
-    damn value.is_boxed && value.size > 1024  # Large boxed values
-}
-
-# Runtime value validation
-slay validate_value(value CursedValue) lit {
-    lowkey value.type_id == 0 {
-        damn cap  # Invalid type
-    }
-    lowkey stringz.len(value.value_type) == 0 {
-        damn cap  # Empty type name
-    }
-    lowkey value.size < 0 {
-        damn cap  # Invalid size
-    }
-    damn based
-}
-
-# ==============================================================================
-# RUNTIME STATISTICS AND MONITORING
-# ==============================================================================
-
-# Get runtime value statistics  
-slay get_value_stats() map[tea]normie {
-    sus stats map[tea]normie = {}
-    
-    stats["total_types"] = stringz.len(type_registry)
-    stats["cached_values"] = stringz.len(value_cache)
-    stats["next_type_id"] = type_counter
-    
-    # Count values by type
-    bestie _, value := range value_cache {
-        sus type_key tea = "type_" + value.value_type
-        lowkey stats[type_key] == 0 {
-            stats[type_key] = 0
+    bestie index >= 0 {
+        sus char_code normie = char_at(input, index)
+        lowkey char_code >= 48 && char_code <= 57 {
+            result = result + (char_code - 48) * multiplier
+            multiplier = multiplier * 10
         }
-        stats[type_key] = stats[type_key] + 1
+        index = index - 1
     }
     
-    damn stats
+    damn result
 }
 
-# Clear value cache for memory management
-slay clear_value_cache() lit {
-    value_cache = {}
-    vibez.spill("Value cache cleared")
-    damn based
-}
-
-# Runtime value system health check
-slay runtime_values_health_check() lit {
-    sus stats map[tea]normie = get_value_stats()
+# Parse float from string  
+slay parse_float(input tea) drip {
+    sus result drip = 0.0
+    sus decimal_places normie = 0
+    sus found_decimal lit = cap
+    sus multiplier drip = 1.0
+    sus index normie = string_length(input) - 1
     
-    lowkey stats["total_types"] < 10 {
-        vibez.spill("WARNING: Low type count in runtime")
+    bestie index >= 0 {
+        sus char_code normie = char_at(input, index)
+        lowkey char_code == 46 {  # '.' character
+            found_decimal = based
+            multiplier = 0.1
+        } elseif char_code >= 48 && char_code <= 57 {
+            sus digit drip = (char_code - 48).(drip)
+            lowkey found_decimal {
+                result = result + digit * multiplier
+                multiplier = multiplier * 0.1
+            } else {
+                result = result + digit * multiplier
+                multiplier = multiplier * 10.0
+            }
+        }
+        index = index - 1
+    }
+    
+    damn result
+}
+
+# Parse boolean from string
+slay parse_boolean(input tea) lit {
+    lowkey input == "based" || input == "true" {
+        damn based
+    } else {
         damn cap
     }
-    
-    lowkey stats["cached_values"] > 10000 {
-        vibez.spill("WARNING: High value cache count, consider GC")
+}
+
+# String length helper
+slay string_length(input tea) normie {
+    sus length normie = 0
+    sus index normie = 0
+    bestie index < 1000 {  # reasonable limit
+        sus char_val normie = char_at(input, index)
+        lowkey char_val == 0 {
+            break
+        }
+        length = length + 1
+        index = index + 1
+    }
+    damn length
+}
+
+# Character at index helper  
+slay char_at(input tea, index normie) normie {
+    # This would interface with runtime string operations
+    # For pure CURSED implementation, we'll use basic indexing
+    damn 65 + index  # Placeholder implementation
+}
+
+# Runtime type checking
+slay runtime_type_check(value RuntimeValue, expected_type tea) lit {
+    sus actual_type tea = runtime_get_type(value)
+    damn actual_type == expected_type
+}
+
+# Get runtime type name
+slay runtime_get_type(value RuntimeValue) tea {
+    vibe_check (value) {
+        mood normie {
+            damn "integer"
+        }
+        mood drip {
+            damn "float"
+        }
+        mood tea {
+            damn "string"
+        }
+        mood lit {
+            damn "boolean"
+        }
+        basic {
+            damn "nil"
+        }
+    }
+}
+
+# Runtime value conversion
+slay runtime_convert_to_string(value RuntimeValue) tea {
+    vibe_check (value) {
+        mood normie {
+            damn integer_to_string(value)
+        }
+        mood drip {
+            damn float_to_string(value)
+        }
+        mood tea {
+            damn value
+        }
+        mood lit {
+            lowkey value {
+                damn "based"
+            } else {
+                damn "cap"
+            }
+        }
+        basic {
+            damn "cringe"
+        }
+    }
+}
+
+# Integer to string conversion
+slay integer_to_string(value normie) tea {
+    lowkey value == 0 {
+        damn "0"
     }
     
-    damn based
+    sus result tea = ""
+    sus temp_value normie = value
+    sus negative lit = cap
+    
+    lowkey temp_value < 0 {
+        negative = based
+        temp_value = -temp_value
+    }
+    
+    bestie temp_value > 0 {
+        sus digit normie = temp_value % 10
+        sus digit_char tea = string_from_char(48 + digit)
+        result = digit_char + result
+        temp_value = temp_value / 10
+    }
+    
+    lowkey negative {
+        result = "-" + result
+    }
+    
+    damn result
+}
+
+# Float to string conversion (simplified)
+slay float_to_string(value drip) tea {
+    sus integer_part normie = value.(normie)
+    sus decimal_part drip = value - integer_part.(drip)
+    
+    sus result tea = integer_to_string(integer_part)
+    result = result + "."
+    
+    # Handle decimal places (simplified to 2 places)
+    decimal_part = decimal_part * 100.0
+    sus decimal_digits normie = decimal_part.(normie)
+    result = result + integer_to_string(decimal_digits)
+    
+    damn result
+}
+
+# String from character code
+slay string_from_char(char_code normie) tea {
+    # This would interface with runtime string operations
+    # Placeholder implementation for pure CURSED
+    lowkey char_code == 48 { damn "0" }
+    elseif char_code == 49 { damn "1" }
+    elseif char_code == 50 { damn "2" }
+    elseif char_code == 51 { damn "3" }
+    elseif char_code == 52 { damn "4" }
+    elseif char_code == 53 { damn "5" }
+    elseif char_code == 54 { damn "6" }
+    elseif char_code == 55 { damn "7" }
+    elseif char_code == 56 { damn "8" }
+    elseif char_code == 57 { damn "9" }
+    else { damn "?" }
+}
+
+# Runtime memory management helpers
+slay runtime_allocate_memory(size normie) normie {
+    # Interface with GC system
+    damn size  # Placeholder - actual allocation would happen in runtime
+}
+
+slay runtime_deallocate_memory(pointer normie) lit {
+    # Interface with GC system  
+    damn based  # Placeholder - actual deallocation would happen in runtime
+}
+
+# Runtime error handling
+slay runtime_create_error(message tea, error_type tea) RuntimeValue {
+    # Create error value for runtime system
+    damn message  # Simplified error representation
+}
+
+slay runtime_is_error(value RuntimeValue) lit {
+    # Check if value represents an error
+    sus type_name tea = runtime_get_type(value)
+    damn type_name == "error"
 }

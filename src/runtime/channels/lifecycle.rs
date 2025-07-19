@@ -127,6 +127,8 @@ pub struct ChannelInfo {
     pub messages_sent: u64,
     /// Total messages received
     pub messages_received: u64,
+    /// Messages dropped (not processed)
+    pub messages_dropped: u64,
     /// Memory allocated for this channel
     pub memory_allocated: usize,
     /// Whether channel is closed
@@ -219,6 +221,7 @@ impl ChannelLifecycleManager {
             last_activity: now,
             messages_sent: 0,
             messages_received: 0,
+            messages_dropped: 0,
             memory_allocated: capacity * std::mem::size_of::<usize>(), // Estimate
             is_closed: false,
             sender_count: 1,
@@ -327,6 +330,47 @@ impl ChannelLifecycleManager {
         Ok(())
     }
 
+    /// Record message dropped (for GC integration)
+    pub fn record_message_dropped(&self, id: u64, size: usize) -> ChannelResult<()> {
+        if let Ok(mut registry) = self.registry.write() {
+            if let Some(info) = registry.get_mut(&id) {
+                info.messages_dropped += 1;
+                info.last_activity = Instant::now();
+                info.current_size = info.current_size.saturating_sub(size);
+                
+                if self.debug_mode {
+                    println!("Message dropped for channel {}: size={}, total_dropped={}", 
+                        id, size, info.messages_dropped);
+                }
+            }
+        }
+
+        // Trigger GC cleanup if drop count is high
+        self.trigger_gc_cleanup_if_needed(id)?;
+
+        Ok(())
+    }
+
+    /// Trigger GC cleanup if needed based on drop count
+    fn trigger_gc_cleanup_if_needed(&self, id: u64) -> ChannelResult<()> {
+        if let Ok(registry) = self.registry.read() {
+            if let Some(info) = registry.get(&id) {
+                // Trigger cleanup if more than 10% of messages are being dropped
+                let drop_ratio = info.messages_dropped as f64 / 
+                    (info.messages_sent.max(1)) as f64;
+                
+                if drop_ratio > 0.1 {
+                    if self.debug_mode {
+                        println!("High drop ratio {:.2}% for channel {}, triggering GC cleanup", 
+                            drop_ratio * 100.0, id);
+                    }
+                    self.force_cleanup()?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Add buffer address for GC integration (enhanced)
     pub fn add_buffer_address(&self, id: u64, address: usize) -> ChannelResult<()> {
         if let Ok(mut registry) = self.registry.write() {
@@ -349,6 +393,157 @@ impl ChannelLifecycleManager {
             }
         }
         Vec::new()
+    }
+    
+    /// Enhanced channel creation with proper memory management
+    pub fn create_channel_with_buffer(&self, type_name: String, capacity: usize, 
+                                     buffer_ptr: *mut u8, buffer_size: usize) -> ChannelResult<u64> {
+        // Check resource limits first
+        if let Err(e) = self.check_resource_limits(capacity) {
+            return Err(e);
+        }
+        
+        let id = self.next_id.fetch_add(1, Ordering::SeqCst);
+        let now = Instant::now();
+        
+        // Calculate actual memory allocation
+        let memory_allocation = capacity * std::mem::size_of::<usize>() + buffer_size;
+        
+        let mut info = ChannelInfo {
+            id,
+            type_name: type_name.clone(),
+            capacity,
+            current_size: 0,
+            created_at: now,
+            last_activity: now,
+            messages_sent: 0,
+            messages_received: 0,
+            messages_dropped: 0,
+            memory_allocated: memory_allocation,
+            is_closed: false,
+            sender_count: 1,
+            receiver_count: 1,
+            buffer_addresses: Vec::new(),
+        };
+        
+        // Add buffer address if provided
+        if !buffer_ptr.is_null() {
+            info.buffer_addresses.push(buffer_ptr as usize);
+        }
+        
+        // Register with GC system
+        if let Ok(gc_opt) = self.gc_integration.lock() {
+            if let Some(gc) = gc_opt.as_ref() {
+                if !buffer_ptr.is_null() {
+                    if let Err(e) = gc.add_root(buffer_ptr) {
+                        if self.debug_mode {
+                            println!("Failed to add GC root for new channel {}: {:?}", id, e);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Add to registry
+        if let Ok(mut registry) = self.registry.write() {
+            registry.insert(id, info);
+        }
+        
+        // Update statistics
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.total_created += 1;
+            stats.active_channels += 1;
+            stats.total_memory_allocated += memory_allocation;
+            if stats.active_channels > stats.peak_concurrent_channels {
+                stats.peak_concurrent_channels = stats.active_channels;
+            }
+        }
+        
+        // Emit event
+        let event = ChannelEvent::Created { id, capacity };
+        self.emit_event(&event);
+        
+        if self.debug_mode {
+            println!("Channel {} created with buffer: type={}, capacity={}, buffer_size={}", 
+                id, type_name, capacity, buffer_size);
+        }
+        
+        Ok(id)
+    }
+    
+    /// Enhanced channel destruction with proper cleanup
+    pub fn destroy_channel(&self, id: u64) -> ChannelResult<()> {
+        let mut info = None;
+        
+        // Remove from registry
+        if let Ok(mut registry) = self.registry.write() {
+            info = registry.remove(&id);
+        }
+        
+        if let Some(channel_info) = info {
+            // Perform proper cleanup of channel resources
+            self.cleanup_channel_resources(&channel_info)?;
+            
+            // Update statistics
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.total_closed += 1;
+                stats.active_channels = stats.active_channels.saturating_sub(1);
+                stats.total_memory_freed += channel_info.memory_allocated;
+                
+                // Update average lifetime
+                let lifetime = channel_info.created_at.elapsed().as_secs_f64();
+                let total_lifetime = stats.average_lifetime * (stats.total_closed - 1) as f64;
+                stats.average_lifetime = (total_lifetime + lifetime) / stats.total_closed as f64;
+            }
+            
+            // Emit cleanup completed event
+            let event = ChannelEvent::CleanupCompleted { id };
+            self.emit_event(&event);
+            
+            if self.debug_mode {
+                println!("Channel {} destroyed: lifetime={:.2}s, memory_freed={}", 
+                    id, channel_info.created_at.elapsed().as_secs_f64(), 
+                    channel_info.memory_allocated);
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Cleanup channel resources including buffer memory
+    fn cleanup_channel_resources(&self, info: &ChannelInfo) -> ChannelResult<()> {
+        if self.debug_mode {
+            println!("Cleaning up resources for channel {}: {} buffer addresses", 
+                info.id, info.buffer_addresses.len());
+        }
+        
+        // Clean up GC integration
+        if let Ok(gc_opt) = self.gc_integration.lock() {
+            if let Some(gc) = gc_opt.as_ref() {
+                for &addr in &info.buffer_addresses {
+                    let ptr = addr as *mut u8;
+                    
+                    // Remove from GC root set
+                    if let Err(e) = gc.remove_root(ptr) {
+                        if self.debug_mode {
+                            println!("Failed to remove GC root for channel {} address 0x{:x}: {:?}", 
+                                info.id, addr, e);
+                        }
+                    } else if self.debug_mode {
+                        println!("Removed GC root for channel {} address: 0x{:x}", info.id, addr);
+                    }
+                }
+                
+                // Force a collection to clean up any remaining references
+                if let Err(e) = gc.force_collection() {
+                    if self.debug_mode {
+                        println!("Failed to force GC collection for channel {}: {:?}", info.id, e);
+                    }
+                }
+            }
+        }
+        
+        Ok(())
     }
     
     /// Update channel buffer addresses for GC tracking
@@ -390,7 +585,7 @@ impl ChannelLifecycleManager {
                     is_closed: info.is_closed,
                     total_sent: info.messages_sent,
                     total_received: info.messages_received,
-                    messages_dropped: 0, // TODO: implement
+                    messages_dropped: info.messages_dropped,
                 });
             }
         }
@@ -433,6 +628,173 @@ impl ChannelLifecycleManager {
         }
         Ok(())
     }
+    
+    /// Resize channel buffer with proper synchronization
+    pub fn resize_channel_buffer(&self, id: u64, new_capacity: usize) -> ChannelResult<()> {
+        // Check resource limits for new capacity
+        if let Err(e) = self.check_resource_limits(new_capacity) {
+            return Err(e);
+        }
+        
+        if let Ok(mut registry) = self.registry.write() {
+            if let Some(info) = registry.get_mut(&id) {
+                let old_capacity = info.capacity;
+                
+                // Calculate memory difference
+                let old_memory = old_capacity * std::mem::size_of::<usize>();
+                let new_memory = new_capacity * std::mem::size_of::<usize>();
+                let memory_diff = new_memory as i64 - old_memory as i64;
+                
+                // Update channel info
+                info.capacity = new_capacity;
+                info.memory_allocated = (info.memory_allocated as i64 + memory_diff) as usize;
+                info.last_activity = Instant::now();
+                
+                // Update statistics
+                if let Ok(mut stats) = self.stats.lock() {
+                    stats.total_memory_allocated = (stats.total_memory_allocated as i64 + memory_diff) as usize;
+                }
+                
+                // Emit resize event
+                let event = ChannelEvent::BufferResized { 
+                    id, 
+                    old_capacity, 
+                    new_capacity 
+                };
+                self.emit_event(&event);
+                
+                if self.debug_mode {
+                    println!("Channel {} buffer resized: {} -> {} (memory change: {:+})", 
+                        id, old_capacity, new_capacity, memory_diff);
+                }
+                
+                return Ok(());
+            }
+        }
+        
+        Err(ChannelError::ChannelNotFound)
+    }
+    
+    /// Add synchronization primitive for channel operations
+    pub fn create_channel_sync_barrier(&self, channel_ids: Vec<u64>) -> ChannelResult<u64> {
+        // Create a barrier ID
+        let barrier_id = self.next_id.fetch_add(1, Ordering::SeqCst);
+        
+        // Validate all channels exist
+        if let Ok(registry) = self.registry.read() {
+            for &id in &channel_ids {
+                if !registry.contains_key(&id) {
+                    return Err(ChannelError::ChannelNotFound);
+                }
+            }
+        }
+        
+        // Create barrier tracking entry
+        if let Ok(mut registry) = self.registry.write() {
+            let barrier_info = ChannelInfo {
+                id: barrier_id,
+                type_name: "sync_barrier".to_string(),
+                capacity: channel_ids.len(),
+                current_size: 0,
+                created_at: Instant::now(),
+                last_activity: Instant::now(),
+                messages_sent: 0,
+                messages_received: 0,
+                messages_dropped: 0,
+                memory_allocated: std::mem::size_of::<u64>() * channel_ids.len(),
+                is_closed: false,
+                sender_count: 0,
+                receiver_count: 0,
+                buffer_addresses: channel_ids.iter().map(|&id| id as usize).collect(),
+            };
+            
+            registry.insert(barrier_id, barrier_info);
+        }
+        
+        if self.debug_mode {
+            println!("Created sync barrier {} for channels: {:?}", barrier_id, channel_ids);
+        }
+        
+        Ok(barrier_id)
+    }
+    
+    /// Synchronize operations across multiple channels
+    pub fn sync_channels(&self, barrier_id: u64) -> ChannelResult<()> {
+        if let Ok(mut registry) = self.registry.write() {
+            if let Some(barrier_info) = registry.get_mut(&barrier_id) {
+                barrier_info.current_size += 1;
+                barrier_info.last_activity = Instant::now();
+                
+                // Check if all channels in barrier are synchronized
+                if barrier_info.current_size >= barrier_info.capacity {
+                    // Reset barrier for next synchronization
+                    barrier_info.current_size = 0;
+                    
+                    if self.debug_mode {
+                        println!("Sync barrier {} completed synchronization", barrier_id);
+                    }
+                    
+                    return Ok(());
+                }
+                
+                if self.debug_mode {
+                    println!("Sync barrier {} waiting: {}/{}", 
+                        barrier_id, barrier_info.current_size, barrier_info.capacity);
+                }
+                
+                return Ok(());
+            }
+        }
+        
+        Err(ChannelError::ChannelNotFound)
+    }
+    
+    /// Enhanced error handling for channel operations
+    pub fn handle_channel_error(&self, id: u64, error: &ChannelError) -> ChannelResult<()> {
+        if let Ok(mut registry) = self.registry.write() {
+            if let Some(info) = registry.get_mut(&id) {
+                info.last_activity = Instant::now();
+                
+                match error {
+                    ChannelError::BufferFull => {
+                        // Check if we've hit capacity limits frequently
+                        if info.messages_dropped > info.messages_sent / 10 {
+                            let event = ChannelEvent::CapacityLimitReached {
+                                id,
+                                current: info.current_size,
+                                limit: info.capacity,
+                            };
+                            self.emit_event(&event);
+                            
+                            if self.debug_mode {
+                                println!("Channel {} frequently hitting capacity limits", id);
+                            }
+                        }
+                    }
+                    ChannelError::Closed => {
+                        info.is_closed = true;
+                        
+                        // Emit closure event
+                        let event = ChannelEvent::Closed { id };
+                        self.emit_event(&event);
+                    }
+                    ChannelError::AllocationError(_) => {
+                        // Force memory cleanup if allocation failed
+                        if let Err(e) = self.force_cleanup() {
+                            if self.debug_mode {
+                                println!("Failed to force cleanup after allocation error: {:?}", e);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+                
+                return Ok(());
+            }
+        }
+        
+        Err(ChannelError::ChannelNotFound)
+    }
 
     /// Start monitoring thread
     pub fn start_monitoring(&mut self) -> ChannelResult<()> {
@@ -445,6 +807,7 @@ impl ChannelLifecycleManager {
 
         let registry = Arc::clone(&self.registry);
         let stats = Arc::clone(&self.stats);
+        let limits = Arc::clone(&self.limits);
         let gc_integration = Arc::clone(&self.gc_integration);
         let debug_mode = self.debug_mode;
 
@@ -460,8 +823,13 @@ impl ChannelLifecycleManager {
                             Self::perform_cleanup(&registry, &stats, &gc_integration, debug_mode);
                             last_cleanup = Instant::now();
                         }
-                        MonitorCommand::UpdateLimits(_) => {
-                            // TODO: implement limits update
+                        MonitorCommand::UpdateLimits(new_limits) => {
+                            if let Ok(mut current_limits) = limits.write() {
+                                *current_limits = new_limits;
+                                if debug_mode {
+                                    println!("Channel resource limits updated");
+                                }
+                            }
                         }
                     }
                 }
@@ -523,11 +891,34 @@ impl ChannelLifecycleManager {
                 for id in &channels_to_cleanup {
                     if let Ok(registry) = registry.read() {
                         if let Some(info) = registry.get(id) {
-                            // Notify GC about channel buffer addresses
+                            // Integrate with GC system for proper cleanup
                             for &addr in &info.buffer_addresses {
-                                // TODO: Integrate with GC system
-                                if debug_mode {
-                                    println!("GC cleanup for channel {} address: 0x{:x}", id, addr);
+                                // Add address to GC root set for proper tracking
+                                let ptr = addr as *mut u8;
+                                if let Err(e) = gc.add_root(ptr) {
+                            if debug_mode {
+                                println!("Failed to add GC root for channel {} address 0x{:x}: {:?}", id, addr, e);
+                                }
+                            } else if debug_mode {
+                                println!("Added GC root for channel {} address: 0x{:x}", id, addr);
+                            }
+                            
+                            // Force GC collection to clean up channel buffers
+                            if let Err(e) = gc.force_collection() {
+                            if debug_mode {
+                                println!("Failed to force GC collection for channel {}: {:?}", id, e);
+                                }
+                            } else if debug_mode {
+                                println!("Forced GC collection for channel {} cleanup", id);
+                            }
+                            
+                            // Remove from root set after collection to prevent memory leaks
+                            if let Err(e) = gc.remove_root(ptr) {
+                            if debug_mode {
+                                println!("Failed to remove GC root for channel {} address 0x{:x}: {:?}", id, addr, e);
+                                }
+                                } else if debug_mode {
+                                    println!("Removed GC root for channel {} address: 0x{:x}", id, addr);
                                 }
                             }
                         }
@@ -622,8 +1013,82 @@ impl ChannelLifecycleManager {
     /// Update resource limits
     pub fn update_limits(&self, limits: ChannelResourceLimits) -> ChannelResult<()> {
         if let Ok(mut current_limits) = self.limits.write() {
-            *current_limits = limits;
+            *current_limits = limits.clone();
         }
+        
+        // Send update command to monitor thread if running
+        if let Some(tx) = &self.monitor_control {
+            let _ = tx.send(MonitorCommand::UpdateLimits(limits));
+        }
+        
+        Ok(())
+    }
+
+    /// Integrate channel with GC for memory management
+    pub fn integrate_with_gc(&self, id: u64, buffer_ptr: *mut u8, size: usize) -> ChannelResult<()> {
+        // Add buffer address to channel tracking
+        self.add_buffer_address(id, buffer_ptr as usize)?;
+        
+        // Integrate with GC if available
+        if let Ok(gc_opt) = self.gc_integration.lock() {
+            if let Some(gc) = gc_opt.as_ref() {
+                // Add buffer to GC root set
+                if let Err(e) = gc.add_root(buffer_ptr) {
+                    if self.debug_mode {
+                        println!("Failed to add GC root for channel {} buffer: {:?}", id, e);
+                    }
+                    return Err(ChannelError::AllocationError(
+                        format!("GC integration failed: {:?}", e)
+                    ));
+                }
+                
+                if self.debug_mode {
+                    println!("Integrated channel {} buffer (size: {}) with GC", id, size);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Remove channel buffer from GC tracking
+    pub fn remove_from_gc(&self, id: u64, buffer_ptr: *mut u8) -> ChannelResult<()> {
+        // Remove buffer address from channel tracking
+        self.remove_buffer_address(id, buffer_ptr as usize)?;
+        
+        // Remove from GC if available
+        if let Ok(gc_opt) = self.gc_integration.lock() {
+            if let Some(gc) = gc_opt.as_ref() {
+                if let Err(e) = gc.remove_root(buffer_ptr) {
+                    if self.debug_mode {
+                        println!("Failed to remove GC root for channel {} buffer: {:?}", id, e);
+                    }
+                }
+                
+                if self.debug_mode {
+                    println!("Removed channel {} buffer from GC tracking", id);
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Check memory pressure and trigger cleanup if needed
+    pub fn check_memory_pressure(&self) -> ChannelResult<()> {
+        if let Ok(stats) = self.stats.lock() {
+            let memory_usage_ratio = stats.total_memory_allocated as f64 / 
+                (1024.0 * 1024.0 * 100.0); // 100MB baseline
+            
+            if memory_usage_ratio > 0.8 { // 80% of memory limit
+                if self.debug_mode {
+                    println!("High memory pressure detected: {:.1}%, triggering cleanup", 
+                        memory_usage_ratio * 100.0);
+                }
+                self.force_cleanup()?;
+            }
+        }
+        
         Ok(())
     }
 }
@@ -769,6 +1234,151 @@ mod tests {
         
         let stats = manager.get_lifecycle_stats();
         assert!(stats.total_created > 0);
+        
+        manager.unregister_channel(id).unwrap();
+    }
+
+    #[test]
+    fn test_message_drop_tracking() {
+        let manager = ChannelLifecycleManager::new();
+        
+        let id = manager.register_channel("drop_test".to_string(), 100).unwrap();
+        
+        // Record some messages
+        manager.record_message_sent(id, 10).unwrap();
+        manager.record_message_sent(id, 15).unwrap();
+        manager.record_message_received(id, 10).unwrap();
+        manager.record_message_dropped(id, 15).unwrap();
+        
+        let stats = manager.get_channel_stats(id).unwrap();
+        assert_eq!(stats.total_sent, 2);
+        assert_eq!(stats.total_received, 1);
+        assert_eq!(stats.messages_dropped, 1);
+        
+        manager.unregister_channel(id).unwrap();
+    }
+
+    #[test]
+    fn test_gc_integration() {
+        let manager = ChannelLifecycleManager::new();
+        let gc = Arc::new(GarbageCollector::new());
+        manager.set_gc_integration(gc.clone()).unwrap();
+        
+        let id = manager.register_channel("gc_test".to_string(), 100).unwrap();
+        
+        // Test buffer integration
+        let buffer_ptr = 0x1000 as *mut u8;
+        manager.integrate_with_gc(id, buffer_ptr, 100).unwrap();
+        
+        let addresses = manager.get_buffer_addresses(id);
+        assert_eq!(addresses.len(), 1);
+        assert_eq!(addresses[0], buffer_ptr as usize);
+        
+        // Test removal
+        manager.remove_from_gc(id, buffer_ptr).unwrap();
+        let addresses_after = manager.get_buffer_addresses(id);
+        assert_eq!(addresses_after.len(), 0);
+        
+        manager.unregister_channel(id).unwrap();
+    }
+
+    #[test]
+    fn test_limits_update() {
+        let manager = ChannelLifecycleManager::new();
+        
+        let new_limits = ChannelResourceLimits {
+            max_concurrent_channels: 5,
+            max_buffer_size: 200,
+            max_total_memory: 20000, // Increased to accommodate test channels
+            max_messages_per_channel: 500,
+            strict_enforcement: true,
+        };
+        
+        manager.update_limits(new_limits.clone()).unwrap();
+        
+        // Test that new limits are enforced
+        let id1 = manager.register_channel("test1".to_string(), 150).unwrap();
+        let id2 = manager.register_channel("test2".to_string(), 150).unwrap();
+        
+        // Should fail - buffer too large for new limits
+        let result = manager.register_channel("test3".to_string(), 250);
+        assert!(result.is_err());
+        
+        manager.unregister_channel(id1).unwrap();
+        manager.unregister_channel(id2).unwrap();
+    }
+
+    #[test]
+    fn test_memory_pressure_detection() {
+        let manager = ChannelLifecycleManager::new();
+        
+        // Create channels that would trigger memory pressure
+        let mut ids = Vec::new();
+        for i in 0..10 {
+            let id = manager.register_channel(format!("pressure_test_{}", i), 1000).unwrap();
+            ids.push(id);
+        }
+        
+        // Check memory pressure (should trigger cleanup)
+        let result = manager.check_memory_pressure();
+        assert!(result.is_ok());
+        
+        // Clean up
+        for id in ids {
+            manager.unregister_channel(id).unwrap();
+        }
+    }
+
+    #[test]
+    fn test_thread_safety() {
+        use std::thread;
+        use std::sync::Arc;
+        
+        let manager = Arc::new(ChannelLifecycleManager::new());
+        let mut handles = Vec::new();
+        
+        // Spawn multiple threads doing operations
+        for i in 0..5 {
+            let manager_clone = Arc::clone(&manager);
+            let handle = thread::spawn(move || {
+                let id = manager_clone.register_channel(format!("thread_test_{}", i), 100).unwrap();
+                manager_clone.record_message_sent(id, 10).unwrap();
+                manager_clone.record_message_received(id, 10).unwrap();
+                manager_clone.unregister_channel(id).unwrap();
+            });
+            handles.push(handle);
+        }
+        
+        // Wait for all threads to complete
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        
+        let stats = manager.get_lifecycle_stats();
+        assert_eq!(stats.total_created, 5);
+        assert_eq!(stats.total_closed, 5);
+        assert_eq!(stats.active_channels, 0);
+    }
+
+    #[test]
+    fn test_cleanup_trigger() {
+        let mut manager = ChannelLifecycleManager::new();
+        manager.enable_debug();
+        
+        let id = manager.register_channel("cleanup_test".to_string(), 100).unwrap();
+        
+        // Simulate high drop ratio to trigger cleanup
+        for _ in 0..15 {
+            manager.record_message_sent(id, 10).unwrap();
+        }
+        for _ in 0..10 {
+            manager.record_message_dropped(id, 10).unwrap();
+        }
+        
+        // Drop ratio should be high enough to trigger cleanup
+        let stats = manager.get_channel_stats(id).unwrap();
+        let drop_ratio = stats.messages_dropped as f64 / stats.total_sent as f64;
+        assert!(drop_ratio > 0.1);
         
         manager.unregister_channel(id).unwrap();
     }

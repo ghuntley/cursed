@@ -6,13 +6,25 @@
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_void};
 use std::ptr::NonNull;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, LazyLock};
+use std::collections::HashSet;
 
 use crate::error::CursedError;
 use crate::memory::Tag;
 use crate::runtime::gc::{GarbageCollector, get_global_gc};
 use crate::runtime::heap_optimizer::{HeapOptimizer, HeapOptimizerConfig};
 use crate::runtime::memory::{MemoryManager, MemoryConfig};
+
+/// Track allocation source to prevent double-free
+#[derive(Debug, PartialEq, Eq)]
+enum AllocationSource {
+    GarbageCollector,
+    SystemMalloc,
+}
+
+/// Global allocation tracker to prevent double-free
+static ALLOCATION_TRACKER: LazyLock<Mutex<HashSet<usize>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
+static GC_ALLOCATIONS: LazyLock<Mutex<HashSet<usize>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
 
 /// FFI functions called from C runtime bridge
 
@@ -32,13 +44,31 @@ pub extern "C" fn rust_heap_allocate(size: usize, tag: i32) -> *mut c_void {
     // Try to get global GC and allocate through it
     if let Some(gc) = get_global_gc() {
         match gc.allocate(size, memory_tag) {
-            Ok(ptr) => ptr.as_ptr() as *mut c_void,
+            Ok(ptr) => {
+                let ptr_addr = ptr.as_ptr() as usize;
+                // Track this as a GC allocation
+                if let Ok(mut gc_allocs) = GC_ALLOCATIONS.lock() {
+                    gc_allocs.insert(ptr_addr);
+                }
+                if let Ok(mut tracker) = ALLOCATION_TRACKER.lock() {
+                    tracker.insert(ptr_addr);
+                }
+                ptr.as_ptr() as *mut c_void
+            }
             Err(_) => std::ptr::null_mut(),
         }
     } else {
         // Fallback to system allocation
         unsafe {
-            libc::malloc(size)
+            let ptr = libc::malloc(size);
+            if !ptr.is_null() {
+                let ptr_addr = ptr as usize;
+                // Track this as a system allocation (NOT in GC_ALLOCATIONS)
+                if let Ok(mut tracker) = ALLOCATION_TRACKER.lock() {
+                    tracker.insert(ptr_addr);
+                }
+            }
+            ptr
         }
     }
 }
@@ -50,10 +80,42 @@ pub extern "C" fn rust_heap_deallocate(ptr: *mut c_void) {
         return;
     }
 
-    if let Some(gc) = get_global_gc() {
-        let _ = gc.deallocate(ptr as *mut u8);
+    let ptr_addr = ptr as usize;
+    
+    // Check if this pointer was allocated by us to prevent double-free
+    let is_tracked = if let Ok(tracker) = ALLOCATION_TRACKER.lock() {
+        tracker.contains(&ptr_addr)
     } else {
-        // Fallback to system deallocation
+        false
+    };
+    
+    if !is_tracked {
+        // Not our allocation, don't free it
+        return;
+    }
+    
+    // Check if this was a GC allocation
+    let is_gc_allocation = if let Ok(gc_allocs) = GC_ALLOCATIONS.lock() {
+        gc_allocs.contains(&ptr_addr)
+    } else {
+        false
+    };
+    
+    // Remove from tracking sets first to prevent double-free
+    if let Ok(mut tracker) = ALLOCATION_TRACKER.lock() {
+        tracker.remove(&ptr_addr);
+    }
+    
+    if is_gc_allocation {
+        if let Ok(mut gc_allocs) = GC_ALLOCATIONS.lock() {
+            gc_allocs.remove(&ptr_addr);
+        }
+        // Use GC deallocate for GC allocations
+        if let Some(gc) = get_global_gc() {
+            let _ = gc.deallocate(ptr as *mut u8);
+        }
+    } else {
+        // Use system free for system allocations
         unsafe {
             libc::free(ptr);
         }
@@ -72,14 +134,28 @@ pub extern "C" fn rust_heap_reallocate(ptr: *mut c_void, new_size: usize) -> *mu
         return std::ptr::null_mut();
     }
 
-    // For now, allocate new and copy (would be optimized in real implementation)
+    let ptr_addr = ptr as usize;
+    
+    // Check if this is our allocation
+    let is_tracked = if let Ok(tracker) = ALLOCATION_TRACKER.lock() {
+        tracker.contains(&ptr_addr)
+    } else {
+        false
+    };
+    
+    if !is_tracked {
+        // Not our allocation, can't safely realloc
+        return std::ptr::null_mut();
+    }
+
+    // Allocate new memory
     let new_ptr = rust_heap_allocate(new_size, 1);
     if !new_ptr.is_null() {
-        // Copy existing data (assuming we can determine old size)
-        // In real implementation, we'd track allocation sizes
+        // Copy existing data (conservative size estimation)
         unsafe {
             std::ptr::copy_nonoverlapping(ptr as *const u8, new_ptr as *mut u8, new_size.min(1024));
         }
+        // Free old memory using our tracked deallocate
         rust_heap_deallocate(ptr);
     }
 

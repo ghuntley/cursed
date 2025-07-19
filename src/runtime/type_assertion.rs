@@ -1,10 +1,12 @@
 //! Type Assertion Runtime Support for CURSED
 //!
 //! This module provides runtime support for type assertion operations
-//! including type checking, casting, and panic handling.
+//! including type checking, casting, and proper error handling following
+//! CURSED error patterns with yikes/shook/fam keywords.
 
 use std::collections::HashMap;
 use std::ffi::{CStr, CString};
+use std::fmt;
 use std::os::raw::{c_char, c_int, c_void};
 use std::sync::{LazyLock, RwLock};
 
@@ -51,6 +53,33 @@ impl From<u32> for CursedTypeId {
         }
     }
 }
+
+// CURSED error type for type assertions following yikes/shook/fam pattern
+#[derive(Debug, Clone)]
+pub struct TypeAssertionError {
+    pub message: String,
+    pub source_type: CursedTypeId,
+    pub target_type: CursedTypeId,
+    pub context: Option<String>,
+}
+
+impl fmt::Display for TypeAssertionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let source_name = get_type_name(self.source_type);
+        let target_name = get_type_name(self.target_type);
+        
+        if let Some(context) = &self.context {
+            write!(f, "Type assertion yikes: {} (context: {})", self.message, context)
+        } else {
+            write!(f, "Type assertion yikes: cannot convert {} to {}", source_name, target_name)
+        }
+    }
+}
+
+impl std::error::Error for TypeAssertionError {}
+
+// Result type for CURSED type assertions following the yikes pattern
+pub type TypeAssertionResult<T> = Result<T, TypeAssertionError>;
 
 // Runtime type information structure
 #[derive(Debug, Clone)]
@@ -105,15 +134,33 @@ fn is_compatible_type(source: CursedTypeId, target: CursedTypeId) -> bool {
     }
 }
 
-// Type casting implementation
-fn cast_value(value: *mut c_void, source: CursedTypeId, target: CursedTypeId) -> *mut c_void {
+// Safe type casting implementation with proper error handling
+fn safe_cast_value(value: *mut c_void, source: CursedTypeId, target: CursedTypeId) -> TypeAssertionResult<*mut c_void> {
     if source == target {
-        return value;
+        return Ok(value);
     }
     
-    // For now, return the original value
+    if !is_compatible_type(source, target) {
+        return Err(TypeAssertionError {
+            message: format!("Incompatible type conversion from {} to {}", 
+                           get_type_name(source), get_type_name(target)),
+            source_type: source,
+            target_type: target,
+            context: Some("safe_cast_value".to_string()),
+        });
+    }
+    
+    // For now, return the original value if compatible
     // In a full implementation, this would perform actual type conversions
-    value
+    Ok(value)
+}
+
+// Legacy wrapper for C compatibility (unsafe)
+fn cast_value(value: *mut c_void, source: CursedTypeId, target: CursedTypeId) -> *mut c_void {
+    match safe_cast_value(value, source, target) {
+        Ok(result) => result,
+        Err(_) => std::ptr::null_mut(), // Return null on error for C compatibility
+    }
 }
 
 // Runtime initialization
@@ -240,7 +287,93 @@ pub extern "C" fn cursed_null_value() -> *mut c_void {
     std::ptr::null_mut()
 }
 
+// Safe type assertion with proper error handling (CURSED pattern)
 #[no_mangle]
+pub extern "C" fn cursed_safe_type_assertion(
+    value: *mut c_void,
+    source_type_id: c_int,
+    target_type_id: c_int,
+    error_out: *mut *mut c_char,
+) -> *mut c_void {
+    let source = CursedTypeId::from(source_type_id as u32);
+    let target = CursedTypeId::from(target_type_id as u32);
+    
+    match safe_cast_value(value, source, target) {
+        Ok(result) => {
+            // Clear error pointer
+            if !error_out.is_null() {
+                unsafe { *error_out = std::ptr::null_mut(); }
+            }
+            result
+        },
+        Err(error) => {
+            // Set error message following CURSED yikes pattern
+            if !error_out.is_null() {
+                let error_msg = CString::new(format!("yikes: {}", error.message))
+                    .unwrap_or_else(|_| CString::new("yikes: type assertion failed").unwrap());
+                unsafe { *error_out = error_msg.into_raw(); }
+            }
+            std::ptr::null_mut()
+        }
+    }
+}
+
+// Create a TypeAssertionError from C types
+#[no_mangle]
+pub extern "C" fn cursed_create_type_assertion_error(
+    source_type_id: c_int,
+    target_type_id: c_int,
+    context: *const c_char,
+) -> *mut TypeAssertionError {
+    let source = CursedTypeId::from(source_type_id as u32);
+    let target = CursedTypeId::from(target_type_id as u32);
+    
+    let context_str = if context.is_null() {
+        None
+    } else {
+        unsafe {
+            CStr::from_ptr(context)
+                .to_string_lossy()
+                .to_string()
+                .into()
+        }
+    };
+    
+    let error = TypeAssertionError {
+        message: format!("Type assertion failed: {} -> {}", 
+                        get_type_name(source), get_type_name(target)),
+        source_type: source,
+        target_type: target,
+        context: context_str,
+    };
+    
+    Box::into_raw(Box::new(error))
+}
+
+// Recovery-friendly type assertion (fam pattern)
+#[no_mangle]
+pub extern "C" fn cursed_recoverable_type_assertion(
+    value: *mut c_void,
+    source_type_id: c_int,
+    target_type_id: c_int,
+) -> *mut c_void {
+    let source = CursedTypeId::from(source_type_id as u32);
+    let target = CursedTypeId::from(target_type_id as u32);
+    
+    // Use safe casting for recovery-friendly assertions
+    match safe_cast_value(value, source, target) {
+        Ok(result) => result,
+        Err(error) => {
+            // Log error for debugging but don't panic
+            eprintln!("CURSED: Type assertion error in fam block: {}", error);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+// Legacy panic function (deprecated, use safe versions)
+#[no_mangle]
+#[deprecated(note = "Use cursed_safe_type_assertion or cursed_recoverable_type_assertion instead")]
 pub extern "C" fn cursed_panic_type_assertion(source_type_id: c_int, target_type_id: c_int) -> ! {
     let source = CursedTypeId::from(source_type_id as u32);
     let target = CursedTypeId::from(target_type_id as u32);
@@ -248,11 +381,19 @@ pub extern "C" fn cursed_panic_type_assertion(source_type_id: c_int, target_type
     let source_name = get_type_name(source);
     let target_name = get_type_name(target);
     
-    eprintln!("CURSED PANIC: Type assertion failed - cannot convert {} to {}", source_name, target_name);
-    eprintln!("This is a type assertion panic in CURSED runtime");
+    eprintln!("CURSED YIKES: Type assertion failed - cannot convert {} to {}", source_name, target_name);
+    eprintln!("Consider using cursed_safe_type_assertion for proper error handling");
     
-    // Trigger panic with detailed message
-    panic!("Type assertion failed: {} -> {}", source_name, target_name);
+    // Create a proper TypeAssertionError instead of panicking
+    let error = TypeAssertionError {
+        message: format!("Type assertion panic: {} -> {}", source_name, target_name),
+        source_type: source,
+        target_type: target,
+        context: Some("legacy_panic_function".to_string()),
+    };
+    
+    // Still panic for backward compatibility, but with structured error
+    panic!("{}", error);
 }
 
 #[no_mangle]
@@ -309,6 +450,7 @@ pub extern "C" fn cursed_cleanup_type_assertion_runtime() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::CString;
     
     #[test]
     fn test_type_compatibility() {
@@ -354,5 +496,185 @@ mod tests {
         // Test null value
         let null_val = cursed_null_value();
         assert!(null_val.is_null());
+    }
+    
+    #[test]
+    fn test_safe_cast_value_success() {
+        // Test successful cast (same type)
+        let dummy_value = 42i32 as *mut c_void;
+        let result = safe_cast_value(dummy_value, CursedTypeId::Integer, CursedTypeId::Integer);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), dummy_value);
+        
+        // Test successful cast (compatible types)
+        let result = safe_cast_value(dummy_value, CursedTypeId::Integer, CursedTypeId::Float);
+        assert!(result.is_ok());
+    }
+    
+    #[test]
+    fn test_safe_cast_value_failure() {
+        let dummy_value = 42i32 as *mut c_void;
+        
+        // Test failed cast (incompatible types)
+        let result = safe_cast_value(dummy_value, CursedTypeId::String, CursedTypeId::Integer);
+        assert!(result.is_err());
+        
+        let error = result.unwrap_err();
+        assert_eq!(error.source_type, CursedTypeId::String);
+        assert_eq!(error.target_type, CursedTypeId::Integer);
+        assert!(error.message.contains("Incompatible type conversion"));
+    }
+    
+    #[test]
+    fn test_type_assertion_error_display() {
+        let error = TypeAssertionError {
+            message: "Test error message".to_string(),
+            source_type: CursedTypeId::String,
+            target_type: CursedTypeId::Integer,
+            context: Some("test_context".to_string()),
+        };
+        
+        let display_str = format!("{}", error);
+        assert!(display_str.contains("Type assertion yikes"));
+        assert!(display_str.contains("test_context"));
+    }
+    
+    #[test]
+    fn test_cursed_safe_type_assertion_success() {
+        let dummy_value = 42i32 as *mut c_void;
+        let mut error_ptr: *mut c_char = std::ptr::null_mut();
+        
+        // Test successful assertion
+        let result = cursed_safe_type_assertion(
+            dummy_value,
+            CursedTypeId::Integer as c_int,
+            CursedTypeId::Integer as c_int,
+            &mut error_ptr as *mut *mut c_char,
+        );
+        
+        assert_eq!(result, dummy_value);
+        assert!(error_ptr.is_null());
+    }
+    
+    #[test]
+    fn test_cursed_safe_type_assertion_failure() {
+        let dummy_value = 42i32 as *mut c_void;
+        let mut error_ptr: *mut c_char = std::ptr::null_mut();
+        
+        // Test failed assertion
+        let result = cursed_safe_type_assertion(
+            dummy_value,
+            CursedTypeId::String as c_int,
+            CursedTypeId::Integer as c_int,
+            &mut error_ptr as *mut *mut c_char,
+        );
+        
+        assert!(result.is_null());
+        assert!(!error_ptr.is_null());
+        
+        // Verify error message follows CURSED yikes pattern
+        let error_str = unsafe { CStr::from_ptr(error_ptr).to_string_lossy() };
+        assert!(error_str.starts_with("yikes:"));
+        
+        // Cleanup
+        unsafe {
+            let _ = CString::from_raw(error_ptr);
+        }
+    }
+    
+    #[test]
+    fn test_cursed_recoverable_type_assertion() {
+        let dummy_value = 42i32 as *mut c_void;
+        
+        // Test successful recoverable assertion
+        let result = cursed_recoverable_type_assertion(
+            dummy_value,
+            CursedTypeId::Integer as c_int,
+            CursedTypeId::Float as c_int,
+        );
+        assert_eq!(result, dummy_value);
+        
+        // Test failed recoverable assertion (should not panic)
+        let result = cursed_recoverable_type_assertion(
+            dummy_value,
+            CursedTypeId::String as c_int,
+            CursedTypeId::Integer as c_int,
+        );
+        assert!(result.is_null());
+    }
+    
+    #[test]
+    fn test_cursed_create_type_assertion_error() {
+        let context = CString::new("test_context").unwrap();
+        let error_ptr = cursed_create_type_assertion_error(
+            CursedTypeId::String as c_int,
+            CursedTypeId::Integer as c_int,
+            context.as_ptr(),
+        );
+        
+        assert!(!error_ptr.is_null());
+        
+        let error = unsafe { Box::from_raw(error_ptr) };
+        assert_eq!(error.source_type, CursedTypeId::String);
+        assert_eq!(error.target_type, CursedTypeId::Integer);
+        assert!(error.context.is_some());
+        assert_eq!(error.context.unwrap(), "test_context");
+    }
+    
+    #[test]
+    fn test_error_propagation_patterns() {
+        // Test error propagation following CURSED shook pattern
+        fn test_function() -> TypeAssertionResult<*mut c_void> {
+            let dummy_value = 42i32 as *mut c_void;
+            safe_cast_value(dummy_value, CursedTypeId::String, CursedTypeId::Integer)
+        }
+        
+        let result = test_function();
+        assert!(result.is_err());
+        
+        // Test error propagation chain
+        fn wrapper_function() -> TypeAssertionResult<*mut c_void> {
+            test_function()
+        }
+        
+        let wrapped_result = wrapper_function();
+        assert!(wrapped_result.is_err());
+    }
+    
+    #[test]
+    fn test_fam_recovery_pattern() {
+        // Simulate fam recovery pattern
+        fn recoverable_operation() -> Option<*mut c_void> {
+            let dummy_value = 42i32 as *mut c_void;
+            match safe_cast_value(dummy_value, CursedTypeId::String, CursedTypeId::Integer) {
+                Ok(result) => Some(result),
+                Err(_) => None, // Error handled gracefully
+            }
+        }
+        
+        let result = recoverable_operation();
+        assert!(result.is_none()); // Should handle error gracefully
+    }
+    
+    #[test]
+    fn test_multiple_error_handling_scenarios() {
+        let test_cases = vec![
+            (CursedTypeId::Integer, CursedTypeId::Integer, true),
+            (CursedTypeId::Integer, CursedTypeId::Float, true),
+            (CursedTypeId::Float, CursedTypeId::Integer, true),
+            (CursedTypeId::String, CursedTypeId::Integer, false),
+            (CursedTypeId::Boolean, CursedTypeId::String, false),
+        ];
+        
+        for (source, target, should_succeed) in test_cases {
+            let dummy_value = 42i32 as *mut c_void;
+            let result = safe_cast_value(dummy_value, source, target);
+            
+            if should_succeed {
+                assert!(result.is_ok(), "Expected success for {:?} -> {:?}", source, target);
+            } else {
+                assert!(result.is_err(), "Expected failure for {:?} -> {:?}", source, target);
+            }
+        }
     }
 }

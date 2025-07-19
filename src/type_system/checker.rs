@@ -11,6 +11,7 @@ use crate::ast::{Expression, Statement, Program, BinaryExpression, CallExpressio
                  ChannelCreationExpression, TypeAliasStatement, DeferStatement, AstVisitor};
 use crate::error::CursedError;
 use crate::core::Type;
+use crate::error_recovery::SourceLocation;
 use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext, 
             TypeSubstitution, ConstraintResolver, ConstraintViolation, TypeDefinition, 
             TypeKind, MethodSignature};
@@ -32,6 +33,7 @@ pub struct TypeChecker {
     pub type_alias_resolution_stack: Vec<String>, // For circular reference detection
     pub borrow_states: HashMap<String, BorrowState>, // Track variable borrow states
     pub active_borrows: Vec<BorrowInfo>, // Active borrows in current scope
+    pub current_file: Option<String>, // Track current file for error reporting
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -53,7 +55,7 @@ pub struct BorrowInfo {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeCheckError {
     pub message: String,
-    pub location: Option<String>,
+    pub location: Option<SourceLocation>,
     pub error_type: TypeErrorKind,
 }
 
@@ -101,9 +103,34 @@ impl TypeCheckError {
         }
     }
     
-    pub fn with_location(mut self, location: String) -> Self {
+    pub fn with_location(mut self, location: SourceLocation) -> Self {
         self.location = Some(location);
         self
+    }
+    
+    pub fn with_line_col(mut self, line: usize, column: usize) -> Self {
+        self.location = Some(SourceLocation::new(line, column, 0));
+        self
+    }
+    
+    pub fn with_file_location(mut self, file: String, line: usize, column: usize) -> Self {
+        self.location = Some(SourceLocation::new(line, column, 0).with_file(file));
+        self
+    }
+}
+
+impl std::fmt::Display for TypeCheckError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.location {
+            Some(location) => {
+                if let Some(ref file) = location.file {
+                    write!(f, "{}:{}:{}: {}", file, location.line, location.column, self.message)
+                } else {
+                    write!(f, "{}:{}: {}", location.line, location.column, self.message)
+                }
+            }
+            None => write!(f, "{}", self.message)
+        }
     }
 }
 
@@ -118,6 +145,7 @@ impl TypeChecker {
             type_alias_resolution_stack: Vec::new(),
             borrow_states: HashMap::new(),
             active_borrows: Vec::new(),
+            current_file: None,
         };
         
         // Initialize built-in types and functions
@@ -137,6 +165,38 @@ impl TypeChecker {
         self.add_function("len".to_string(),
                          vec![TypeExpression::named("tea")],
                          TypeExpression::named("normie"));
+    }
+    
+    /// Set the current file being type checked
+    pub fn set_current_file(&mut self, file: String) {
+        self.current_file = Some(file);
+    }
+    
+    /// Extract source location from AST comments or use default
+    fn get_location_from_comments(&self, comments: &[crate::ast::Comment]) -> Option<SourceLocation> {
+        comments.first().map(|comment| {
+            let mut location = SourceLocation::new(comment.line, comment.column, 0);
+            if let Some(ref file) = self.current_file {
+                location = location.with_file(file.clone());
+            }
+            location
+        })
+    }
+    
+    /// Create a type error with location information if available
+    fn create_error_with_location(&self, message: String, error_type: TypeErrorKind, line: Option<usize>, column: Option<usize>) -> TypeCheckError {
+        let error = TypeCheckError::new(error_type, message);
+        
+        match (line, column) {
+            (Some(l), Some(c)) => {
+                if let Some(ref file) = self.current_file {
+                    error.with_file_location(file.clone(), l, c)
+                } else {
+                    error.with_line_col(l, c)
+                }
+            }
+            _ => error
+        }
     }
     
     /// Convert AST type string to TypeExpression
@@ -1722,11 +1782,12 @@ impl TypeChecker {
         
         // Panic message should be a string
         if !self.types_compatible(&message_type, &TypeExpression::named("string")) {
-            return Err(TypeCheckError {
-                message: "Panic message must be a string".to_string(),
-                location: None, // TODO: Add location support to AST
-                error_type: TypeErrorKind::TypeMismatch,
-            });
+            return Err(self.create_error_with_location(
+                "Panic message must be a string".to_string(),
+                TypeErrorKind::TypeMismatch,
+                None, // Line will be set by parser in future enhancement
+                None, // Column will be set by parser in future enhancement
+            ));
         }
         
         // Panic statements don't return (they diverge)
@@ -1778,6 +1839,15 @@ impl TypeChecker {
         // Check the channel expression
         let channel_type = self.check_expression(&*channel_send.channel)?;
         
+        // Validate that we have a proper channel type
+        if !self.is_channel_type(&channel_type) {
+            return Err(TypeCheckError {
+                message: format!("Cannot send to non-channel type '{:?}'", channel_type),
+                location: None,
+                error_type: TypeErrorKind::TypeMismatch,
+            });
+        }
+        
         // Check the value being sent
         let value_type = self.check_expression(&*channel_send.value)?;
         
@@ -1785,11 +1855,19 @@ impl TypeChecker {
         if let Some(channel_element_type) = self.extract_channel_element_type(&channel_type) {
             if !self.types_compatible(&value_type, &channel_element_type) {
                 return Err(TypeCheckError {
-                    message: format!("Type mismatch: expected {:?}, got {:?}", channel_element_type, value_type),
+                    message: format!("Channel send type mismatch: cannot send '{}' to channel of type '{}'", 
+                                   self.type_to_string(&value_type),
+                                   self.type_to_string(&channel_element_type)),
                     location: None,
                     error_type: TypeErrorKind::TypeMismatch,
                 });
             }
+        } else {
+            return Err(TypeCheckError {
+                message: "Cannot determine channel element type for send operation".to_string(),
+                location: None,
+                error_type: TypeErrorKind::TypeMismatch,
+            });
         }
         
         Ok(TypeExpression::named("void"))
@@ -1799,12 +1877,24 @@ impl TypeChecker {
         // Check the channel expression
         let channel_type = self.check_expression(&*channel_receive.channel)?;
         
+        // Validate that we have a proper channel type
+        if !self.is_channel_type(&channel_type) {
+            return Err(TypeCheckError {
+                message: format!("Cannot receive from non-channel type '{:?}'", channel_type),
+                location: None,
+                error_type: TypeErrorKind::TypeMismatch,
+            });
+        }
+        
         // Extract the element type from the channel type
         if let Some(element_type) = self.extract_channel_element_type(&channel_type) {
             Ok(element_type)
         } else {
-            // If we can't determine the element type, return a generic type
-            Ok(TypeExpression::named("unknown"))
+            return Err(TypeCheckError {
+                message: "Cannot determine channel element type for receive operation".to_string(),
+                location: None,
+                error_type: TypeErrorKind::TypeMismatch,
+            });
         }
     }
     
@@ -1932,20 +2022,100 @@ impl TypeChecker {
         if let Some(type_name) = &channel_type.name {
             if type_name.starts_with("channel<") && type_name.ends_with(">") {
                 let element_type_str = &type_name[8..type_name.len()-1];
-                return Some(TypeExpression::named(element_type_str));
+                // Validate the element type exists and is well-formed
+                if let Ok(element_type) = self.validate_type_name(element_type_str) {
+                    return Some(element_type);
+                }
+                return None; // Invalid element type
             }
             if type_name.starts_with("dm<") && type_name.ends_with(">") {
                 let element_type_str = &type_name[3..type_name.len()-1];
-                return Some(TypeExpression::named(element_type_str));
+                // Validate the element type exists and is well-formed
+                if let Ok(element_type) = self.validate_type_name(element_type_str) {
+                    return Some(element_type);
+                }
+                return None; // Invalid element type
             }
         }
         
-        // Handle generic channel types
+        // Handle generic channel types with proper parameter validation
         if !channel_type.parameters.is_empty() {
-            return Some(channel_type.parameters[0].clone());
+            let first_param = &channel_type.parameters[0];
+            // Validate the parameter type is properly formed
+            if self.is_valid_channel_element_type(first_param) {
+                return Some(first_param.clone());
+            }
         }
         
         None
+    }
+
+    /// Validate a type name and return a proper TypeExpression
+    fn validate_type_name(&self, type_name: &str) -> Result<TypeExpression, TypeCheckError> {
+        // Handle basic types
+        match type_name {
+            "normie" | "int" | "i32" => Ok(TypeExpression::named("normie")),
+            "smol" | "i8" => Ok(TypeExpression::named("smol")),
+            "mid" | "i16" => Ok(TypeExpression::named("mid")),
+            "thicc" | "i64" => Ok(TypeExpression::named("thicc")),
+            "drip" | "f32" => Ok(TypeExpression::named("drip")),
+            "snack" | "f32_alt" => Ok(TypeExpression::named("snack")),
+            "meal" | "f64" => Ok(TypeExpression::named("meal")),
+            "tea" | "string" => Ok(TypeExpression::named("tea")),
+            "lit" | "bool" => Ok(TypeExpression::named("lit")),
+            "sip" | "char" => Ok(TypeExpression::named("sip")),
+            "byte" | "u8" => Ok(TypeExpression::named("byte")),
+            "rune" | "i32_unicode" => Ok(TypeExpression::named("rune")),
+            "extra" | "complex" => Ok(TypeExpression::named("extra")),
+            _ => {
+                // Check if it's a user-defined type
+                if self.type_system.environment.get_type(type_name).is_some() {
+                    Ok(TypeExpression::named(type_name))
+                } else {
+                    Err(TypeCheckError {
+                        message: format!("Unknown type '{}' in channel declaration", type_name),
+                        location: None,
+                        error_type: TypeErrorKind::TypeMismatch,
+                    })
+                }
+            }
+        }
+    }
+
+    /// Check if a type expression is valid for use as a channel element type
+    fn is_valid_channel_element_type(&self, type_expr: &TypeExpression) -> bool {
+        // Basic types are always valid
+        if let Some(ref type_name) = type_expr.name {
+            match type_name.as_str() {
+                "normie" | "smol" | "mid" | "thicc" | "drip" | "snack" | "meal" |
+                "tea" | "lit" | "sip" | "byte" | "rune" | "extra" => return true,
+                _ => {
+                    // Check if it's a user-defined type
+                    return self.type_system.environment.get_type(type_name).is_some();
+                }
+            }
+        }
+        
+        // Complex types (arrays, structs, etc.) need additional validation
+        // For now, allow them but this could be extended
+        true
+    }
+
+    /// Check if a type expression represents a channel type
+    fn is_channel_type(&self, type_expr: &TypeExpression) -> bool {
+        if let Some(ref type_name) = type_expr.name {
+            return type_name.starts_with("dm<") || type_name.starts_with("channel<");
+        }
+        false
+    }
+
+    /// Convert a type expression to a human-readable string
+    fn type_to_string(&self, type_expr: &TypeExpression) -> String {
+        if let Some(ref name) = type_expr.name {
+            name.clone()
+        } else {
+            format!("{:?}", type_expr)
+        }
     }
     
 
@@ -2242,8 +2412,24 @@ impl TypeChecker {
             }
             Type::Dm(inner_type) => {
                 let inner_type_expr = self.convert_ast_type_to_type_expression(inner_type)?;
-                // Use named type for channels since channel constructor doesn't exist
-                Ok(TypeExpression::named(&format!("dm<{}>", inner_type_expr.name.unwrap_or("unknown".to_string()))))
+                // Validate the inner type for channel compatibility
+                if !self.is_valid_channel_element_type(&inner_type_expr) {
+                    return Err(TypeCheckError {
+                        message: format!("Invalid type '{}' for channel element", 
+                                       inner_type_expr.name.as_ref().unwrap_or(&"<anonymous>".to_string())),
+                        location: None,
+                        error_type: TypeErrorKind::TypeMismatch,
+                    });
+                }
+                
+                // Create properly typed channel expression
+                let type_name = inner_type_expr.name.ok_or_else(|| TypeCheckError {
+                    message: "Channel element type must be named".to_string(),
+                    location: None,
+                    error_type: TypeErrorKind::TypeMismatch,
+                })?;
+                
+                Ok(TypeExpression::named(&format!("dm<{}>", type_name)))
             }
             Type::Collab(name) => Ok(TypeExpression::named(&format!("collab {}", name))),
             Type::Squad(element_type) => {
@@ -2950,5 +3136,78 @@ mod tests {
         let error = result.unwrap_err();
         assert!(error.message.contains("Cannot assign to immutable variable"), 
                 "Error should mention immutability violation");
+    }
+    
+    #[test]
+    fn test_type_check_error_with_source_location() {
+        // Test creating an error without location
+        let error_no_location = TypeCheckError::new(
+            TypeErrorKind::TypeMismatch, 
+            "Test error without location".to_string()
+        );
+        assert!(error_no_location.location.is_none());
+        
+        // Test error display without location
+        let display_no_location = format!("{}", error_no_location);
+        assert_eq!(display_no_location, "Test error without location");
+        
+        // Test creating an error with line/column
+        let error_with_line_col = TypeCheckError::new(
+            TypeErrorKind::TypeMismatch,
+            "Test error with location".to_string()
+        ).with_line_col(42, 15);
+        
+        assert!(error_with_line_col.location.is_some());
+        let location = error_with_line_col.location.as_ref().unwrap();
+        assert_eq!(location.line, 42);
+        assert_eq!(location.column, 15);
+        
+        // Test error display with line/column
+        let display_with_location = format!("{}", error_with_line_col);
+        assert_eq!(display_with_location, "42:15: Test error with location");
+        
+        // Test creating an error with file location
+        let error_with_file = TypeCheckError::new(
+            TypeErrorKind::UndefinedVariable,
+            "Variable not found".to_string()
+        ).with_file_location("test.csd".to_string(), 10, 5);
+        
+        assert!(error_with_file.location.is_some());
+        let file_location = error_with_file.location.as_ref().unwrap();
+        assert_eq!(file_location.line, 10);
+        assert_eq!(file_location.column, 5);
+        assert_eq!(file_location.file.as_ref().unwrap(), "test.csd");
+        
+        // Test error display with file location
+        let display_with_file = format!("{}", error_with_file);
+        assert_eq!(display_with_file, "test.csd:10:5: Variable not found");
+    }
+    
+    #[test]
+    fn test_type_checker_current_file() {
+        let mut checker = TypeChecker::new();
+        
+        // Test setting current file
+        assert!(checker.current_file.is_none());
+        checker.set_current_file("my_program.csd".to_string());
+        assert_eq!(checker.current_file.as_ref().unwrap(), "my_program.csd");
+        
+        // Test creating error with location when file is set
+        let error = checker.create_error_with_location(
+            "Test message".to_string(),
+            TypeErrorKind::TypeMismatch,
+            Some(20),
+            Some(8)
+        );
+        
+        assert!(error.location.is_some());
+        let location = error.location.as_ref().unwrap();
+        assert_eq!(location.line, 20);
+        assert_eq!(location.column, 8);
+        assert_eq!(location.file.as_ref().unwrap(), "my_program.csd");
+        
+        // Test error display
+        let display = format!("{}", error);
+        assert_eq!(display, "my_program.csd:20:8: Test message");
     }
 }

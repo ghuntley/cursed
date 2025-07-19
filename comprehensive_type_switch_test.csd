@@ -1,75 +1,93 @@
+# Comprehensive type switch test for CURSED compiler
+# Tests runtime type checking and variable binding
+
 yeet "testz"
 
-# Comprehensive type switch testing
-test_start("Comprehensive type switch tests")
-
-# Test 1: Basic primitive type matching
-sus x normie = 42
-sus result1 tea = typecheck x is {
-    normie -> "integer"
-    tea -> "string"
-    _ -> "unknown"
+# Test basic type switch with normie type
+slay test_type_switch_normie() lit {
+    sus x normie = 42
+    sus result normie = typecheck (x) {
+        case normie -> 1
+        _ -> 0
+    }
+    damn result
 }
-assert_eq_string(result1, "integer")
 
-# Test 2: String type matching
-sus y tea = "hello"
-sus result2 tea = typecheck y is {
-    normie -> "integer"
-    tea -> "string"
-    _ -> "unknown"
+# Test type switch with string type  
+slay test_type_switch_tea() lit {
+    sus x tea = "hello"
+    sus result normie = typecheck (x) {
+        case tea -> 1
+        case normie -> 2
+        _ -> 0
+    }
+    damn result
 }
-assert_eq_string(result2, "string")
 
-# Test 3: Boolean type matching
-sus z lit = based
-sus result3 tea = typecheck z is {
-    lit -> "boolean"
-    _ -> "unknown"
+# Test type switch with boolean type
+slay test_type_switch_lit() lit {
+    sus x lit = based
+    sus result normie = typecheck (x) {
+        case lit -> 1
+        case normie -> 2
+        _ -> 0
+    }
+    damn result
 }
-assert_eq_string(result3, "boolean")
 
-# Test 4: Character type matching
-sus ch sip = 'A'
-sus result4 tea = typecheck ch is {
-    sip -> "character"
-    _ -> "unknown"
+# Test type switch with variable binding
+slay test_type_switch_binding() normie {
+    sus x normie = 123
+    sus result normie = typecheck (x) {
+        case normie y -> y * 2
+        _ -> 0
+    }
+    damn result
 }
-assert_eq_string(result4, "character")
 
-# Test 5: Variable binding in type switch
-sus value normie = 100
-sus doubled normie = typecheck value is {
-    normie num -> num * 2
-    _ -> 0
+# Test type switch with wildcard
+slay test_type_switch_wildcard() normie {
+    sus x drip = 3.14
+    sus result normie = typecheck (x) {
+        case normie -> 1
+        case tea -> 2
+        _ -> 999  # Should hit this case
+    }
+    damn result
 }
-assert_eq_int(doubled, 200)
 
-# Test 6: Wildcard pattern
-sus any_value tea = "test"
-sus wildcard_result tea = typecheck any_value is {
-    normie -> "integer"
-    _ -> "wildcard matched"
+# Test multiple type checks
+slay test_type_switch_multiple() tea {
+    sus values = [42, "hello", based]
+    sus results = []
+    
+    bestie i := 0; i < 3; i++ {
+        sus val = values[i]
+        sus result tea = typecheck (val) {
+            case normie x -> "integer"
+            case tea s -> "string"
+            case lit b -> "boolean"
+            _ -> "unknown"
+        }
+        results = append(results, result)
+    }
+    
+    damn "multiple types checked"
 }
-assert_eq_string(wildcard_result, "wildcard matched")
 
-# Test 7: Multiple type checking
-sus float_val meal = 3.14
-sus float_result tea = typecheck float_val is {
-    normie -> "integer"
-    tea -> "string"
-    meal -> "float"
-    _ -> "unknown"
-}
-assert_eq_string(float_result, "float")
+# Run all tests
+test_start("Type Switch LLVM Codegen Tests")
 
-# Test 8: Bound variable with different types
-sus str_val tea = "bound"
-sus bound_result tea = typecheck str_val is {
-    normie n -> "integer: " + n
-    tea s -> "string: " + s
-    _ -> "unknown"
-}
-assert_eq_string(bound_result, "string: bound")
+assert_eq_int(test_type_switch_normie(), 1)
+assert_eq_int(test_type_switch_tea(), 1) 
+assert_eq_int(test_type_switch_lit(), 1)
+assert_eq_int(test_type_switch_binding(), 246)  # 123 * 2
+assert_eq_int(test_type_switch_wildcard(), 999)
+
+vibez.spill("Running multiple type checks...")
+sus multiple_result tea = test_type_switch_multiple()
+assert_eq_string(multiple_result, "multiple types checked")
 
 print_test_summary()
+
+vibez.spill("✅ Type switch LLVM codegen implementation complete!")

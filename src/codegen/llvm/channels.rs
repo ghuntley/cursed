@@ -209,38 +209,127 @@ impl ChannelCodegen {
         default_case: Option<&Statement>,
         codegen: &mut LlvmCodeGenerator,
     ) -> Result<String, CursedError> {
-        // This is a simplified implementation of select
-        // A full implementation would need to handle multiple channels simultaneously
-        
+        // Note: Runtime functions will be declared in main generator
+
         let mut ir_code = String::new();
-        let select_result_reg = format!("%{}", codegen.next_variable());
+        let select_end_label = format!("select_end_{}", codegen.next_variable());
+        let default_label = format!("select_default_{}", codegen.next_variable());
         
-        // For now, implement as a series of try operations
+        // Generate labels for each case
+        let case_labels: Vec<String> = (0..cases.len())
+            .map(|i| format!("select_case_{}_{}", i, codegen.next_variable()))
+            .collect();
+        let next_labels: Vec<String> = (0..cases.len())
+            .map(|i| format!("select_next_{}_{}", i, codegen.next_variable()))
+            .collect();
+
+        // Try each case in order (non-blocking)
         for (i, (channel_expr, stmt)) in cases.iter().enumerate() {
-            let case_label = format!("select_case_{}", i);
-            let next_label = format!("select_next_{}", i);
-            let try_result_reg = format!("%{}", codegen.next_variable());
+            ir_code.push_str(&format!("  ; Try select case {}\n", i));
             
-            // Try to receive from this channel (non-blocking)
+            // Generate channel expression
             let channel_code = codegen.generate_expression_public(channel_expr)?;
             ir_code.push_str(&channel_code);
             
-            // Simplified: just assume successful receive for now
-            // In a real implementation, this would use a try_recv function
-            let stmt_code = codegen.generate_statement_public(stmt)?;
-            ir_code.push_str(&stmt_code);
+            match channel_expr {
+                Expression::ChannelReceive(recv_expr) => {
+                    // Non-blocking receive
+                    let channel_reg = codegen.generate_expression_public(&recv_expr.channel)?;
+                    let channel_ptr_reg = format!("%{}", codegen.next_variable());
+                    let value_ptr_reg = format!("%{}", codegen.next_variable());
+                    let status_reg = format!("%{}", codegen.next_variable());
+                    let cmp_reg = format!("%{}", codegen.next_variable());
+                    
+                    ir_code.push_str(&format!("  {} = bitcast {} to i8*\n", channel_ptr_reg, channel_reg));
+                    ir_code.push_str(&format!("  {} = alloca i64\n", value_ptr_reg));
+                    ir_code.push_str(&format!(
+                        "  {} = call i32 @cursed_channel_try_receive(i8* {}, i64* {})\n",
+                        status_reg, channel_ptr_reg, value_ptr_reg
+                    ));
+                    
+                    // Check if receive was successful (status == 0)
+                    ir_code.push_str(&format!("  {} = icmp eq i32 {}, 0\n", cmp_reg, status_reg));
+                    ir_code.push_str(&format!(
+                        "  br i1 {}, label %{}, label %{}\n",
+                        cmp_reg, case_labels[i], next_labels.get(i + 1).unwrap_or(&default_label)
+                    ));
+                    
+                    // Case successful - execute statement
+                    ir_code.push_str(&format!("{}:\n", case_labels[i]));
+                    let stmt_code = codegen.generate_statement_public(stmt)?;
+                    ir_code.push_str(&stmt_code);
+                    ir_code.push_str(&format!("  br label %{}\n", select_end_label));
+                },
+                
+                Expression::ChannelSend(send_expr) => {
+                    // Non-blocking send
+                    let channel_reg = codegen.generate_expression_public(&send_expr.channel)?;
+                    let value_reg = codegen.generate_expression_public(&send_expr.value)?;
+                    let channel_ptr_reg = format!("%{}", codegen.next_variable());
+                    let status_reg = format!("%{}", codegen.next_variable());
+                    let cmp_reg = format!("%{}", codegen.next_variable());
+                    
+                    ir_code.push_str(&format!("  {} = bitcast {} to i8*\n", channel_ptr_reg, channel_reg));
+                    ir_code.push_str(&format!(
+                        "  {} = call i32 @cursed_channel_try_send(i8* {}, i64 {})\n",
+                        status_reg, channel_ptr_reg, value_reg
+                    ));
+                    
+                    // Check if send was successful (status == 0)
+                    ir_code.push_str(&format!("  {} = icmp eq i32 {}, 0\n", cmp_reg, status_reg));
+                    ir_code.push_str(&format!(
+                        "  br i1 {}, label %{}, label %{}\n",
+                        cmp_reg, case_labels[i], next_labels.get(i + 1).unwrap_or(&default_label)
+                    ));
+                    
+                    // Case successful - execute statement
+                    ir_code.push_str(&format!("{}:\n", case_labels[i]));
+                    let stmt_code = codegen.generate_statement_public(stmt)?;
+                    ir_code.push_str(&stmt_code);
+                    ir_code.push_str(&format!("  br label %{}\n", select_end_label));
+                },
+                
+                _ => {
+                    // Fallback for other expressions - treat as condition
+                    let condition_reg = codegen.generate_expression_public(channel_expr)?;
+                    let cmp_reg = format!("%{}", codegen.next_variable());
+                    
+                    ir_code.push_str(&format!("  {} = icmp ne i64 {}, 0\n", cmp_reg, condition_reg));
+                    ir_code.push_str(&format!(
+                        "  br i1 {}, label %{}, label %{}\n",
+                        cmp_reg, case_labels[i], next_labels.get(i + 1).unwrap_or(&default_label)
+                    ));
+                    
+                    // Case successful - execute statement
+                    ir_code.push_str(&format!("{}:\n", case_labels[i]));
+                    let stmt_code = codegen.generate_statement_public(stmt)?;
+                    ir_code.push_str(&stmt_code);
+                    ir_code.push_str(&format!("  br label %{}\n", select_end_label));
+                }
+            }
+            
+            // Add next label for chaining
+            if i < cases.len() - 1 {
+                ir_code.push_str(&format!("{}:\n", next_labels[i]));
+            }
         }
         
         // Handle default case if present
         if let Some(default_stmt) = default_case {
+            ir_code.push_str(&format!("{}:\n", default_label));
+            ir_code.push_str("  ; Execute default case\n");
             let default_code = codegen.generate_statement_public(default_stmt)?;
             ir_code.push_str(&default_code);
+            ir_code.push_str(&format!("  br label %{}\n", select_end_label));
+        } else {
+            // No default case - should block or handle appropriately
+            ir_code.push_str(&format!("{}:\n", default_label));
+            ir_code.push_str("  ; No channels ready and no default case\n");
+            ir_code.push_str(&format!("  br label %{}\n", select_end_label));
         }
         
-        ir_code.push_str(&format!(
-            "  {} = add i32 0, 0  ; select completed\n",
-            select_result_reg
-        ));
+        // End label
+        ir_code.push_str(&format!("{}:\n", select_end_label));
         
         Ok(ir_code)
     }

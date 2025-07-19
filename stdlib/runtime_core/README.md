@@ -1,102 +1,93 @@
 # Runtime Core Module
 
-Pure CURSED implementation of the runtime value system, replacing core functionality from `src/runtime/value/` with zero FFI dependencies.
+Pure CURSED implementation of the core runtime value system essential for compiler self-hosting.
 
 ## Overview
 
-The Runtime Core module provides foundational runtime support for dynamic typing and value representation in the CURSED language. This module enables self-hosting by eliminating dependencies on Rust runtime components.
+The runtime_core module provides fundamental value types, conversions, and runtime operations needed by the CURSED compiler for self-hosting. This module is FFI-free and implemented entirely in pure CURSED.
 
 ## Key Features
 
-- **Dynamic Value System**: Runtime representation for all CURSED types
-- **Type Registry**: Dynamic type registration and lookup
-- **Boxing/Unboxing**: Heap allocation for large values  
-- **Value Operations**: Copying, comparison, validation
-- **Memory Management**: Integration with garbage collection
-- **Statistics**: Runtime monitoring and health checks
+### Value System
+- **RuntimeValue**: Union type supporting integer, float, string, boolean, and nil values
+- **Type Checking**: Runtime type validation and conversion
+- **Value Creation**: Parse values from string representations
+- **Type Introspection**: Get type information at runtime
 
-## Core Types
+### Core Operations
+- `runtime_value_create(data, type)` - Create runtime values from string data
+- `runtime_convert_to_string(value)` - Convert any value to string representation
+- `runtime_type_check(value, expected)` - Validate value types
+- `runtime_get_type(value)` - Get type name for any value
 
-### CursedValue
-```cursed
-vibe CursedValue = smash {
-    value_type tea,     # Type identifier
-    raw_data tea,       # Serialized data
-    type_id normie,     # Runtime type ID
-    size normie,        # Value size in bytes
-    is_boxed lit        # Whether value is heap-allocated
-}
-```
-
-## Key Functions
-
-### Initialization
-- `init_runtime_values()` - Initialize the runtime value system
-- `register_type(type_id, type_name)` - Register a runtime type
-
-### Value Management
-- `create_value(type, data)` - Create a runtime value wrapper
-- `box_value(value)` - Move value to heap
-- `unbox_value(value)` - Copy value from heap
-- `copy_value(value)` - Deep copy a value
-
-### Type Operations
-- `value_is_type(value, type)` - Type checking
-- `get_type_id(type_name)` - Get type ID from name
-- `validate_value(value)` - Runtime value validation
-
-### Statistics and Monitoring
-- `get_value_stats()` - Runtime statistics
-- `runtime_values_health_check()` - System health check
-- `clear_value_cache()` - Memory management
-
-## Integration Points
+### String Processing
+- `string_length(input)` - Calculate string length
+- `char_at(input, index)` - Get character at position
+- `integer_to_string(value)` - Convert integers to strings
+- `float_to_string(value)` - Convert floats to strings
 
 ### Memory Management
-- Integrates with `memory_core` module for heap allocation
-- Provides GC hints via `value_needs_gc()`
-- Tracks memory usage with `value_memory_size()`
+- `runtime_allocate_memory(size)` - Interface with GC allocation
+- `runtime_deallocate_memory(pointer)` - Interface with GC deallocation
+- Memory operations integrate with CURSED's garbage collection system
 
-### Goroutine System
-- Values can be passed between goroutines
-- Thread-safe value operations
-- Supports concurrent type registration
+### Error Handling
+- `runtime_create_error(message, type)` - Create error values
+- `runtime_is_error(value)` - Check if value represents an error
+- Supports the runtime error propagation system
 
-### Channel System
-- Values are serialized for channel transport
-- Type information preserved across channel boundaries
-- Supports type-safe channel operations
+## Usage Examples
+
+```cursed
+yeet "runtime_core"
+
+# Create and convert values
+sus int_val RuntimeValue = runtime_value_create("42", "integer")
+sus str_rep tea = runtime_convert_to_string(int_val)  # "42"
+
+# Type checking
+lowkey runtime_type_check(int_val, "integer") {
+    vibez.spill("Value is an integer")
+}
+
+# String operations
+sus length normie = string_length("hello world")  # 11
+sus representation tea = integer_to_string(123)   # "123"
+```
 
 ## Testing
 
-Run comprehensive tests with:
+Comprehensive test suite validates all core operations:
+
 ```bash
 cargo run --bin cursed stdlib/runtime_core/test_runtime_core.csd
 ```
 
-The test suite covers:
-- Runtime initialization and type registration
-- Value creation, boxing, and unboxing
-- Type checking and validation
-- Memory management integration
-- Statistics and health monitoring
-- Error handling and edge cases
+## Self-Hosting Significance
 
-## Self-Hosting Impact
+This module is critical for compiler self-hosting as it provides:
 
-This module is **critical for self-hosting** as it replaces Rust-based value representation with pure CURSED implementation:
+1. **Value Representation**: How the compiler represents values internally
+2. **Type System**: Runtime type checking and conversion
+3. **String Processing**: Essential for parsing and code generation
+4. **Memory Interface**: Integration with garbage collection
+5. **Error Handling**: Runtime error representation and propagation
 
-1. **Zero FFI Dependencies**: No external C/Rust calls required
-2. **Type System Foundation**: Enables dynamic typing without Rust runtime
-3. **Memory Management**: Works with pure CURSED garbage collection
-4. **Performance**: Optimized for CURSED compiler implementation
+The pure CURSED implementation ensures the compiler can fully bootstrap itself without external dependencies.
 
-## Migration Status
+## Implementation Details
 
-- ✅ **Complete**: Core value system implementation  
-- ✅ **Complete**: Type registration and lookup
-- ✅ **Complete**: Boxing/unboxing operations
-- ✅ **Complete**: Value validation and statistics
-- ✅ **Complete**: Comprehensive test coverage
+- **FFI-Free**: No external dependencies or foreign function interfaces
+- **Type Safety**: Comprehensive type checking and validation
+- **Memory Safe**: Integrates with CURSED's garbage collection system
+- **Performance**: Optimized for compiler bootstrap scenarios
+- **Extensible**: Designed to support additional value types as needed
 
-This module successfully replaces `src/runtime/value/` components and enables the CURSED compiler to manage its own runtime values.
+## Integration
+
+This module integrates with:
+- **Compiler Core**: Provides value system for AST and type checking
+- **Memory Management**: Works with GC for safe memory operations  
+- **Error System**: Supports runtime error handling and propagation
+- **String Processing**: Essential for lexical analysis and code generation
+- **Bootstrap Process**: Core component of compiler self-hosting
