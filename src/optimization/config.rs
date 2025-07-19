@@ -16,6 +16,12 @@ pub struct OptimizationConfig {
     pub custom_passes: Vec<String>,
     pub pass_manager_config: PassManagerConfig,
     
+    // Function inlining configuration
+    pub enable_function_inlining: bool,
+    pub aggressive_inlining: bool,
+    pub enable_generics_inlining: bool,
+    pub enable_interface_inlining: bool,
+    
     // Compatibility fields for examples/tests
     pub optimization_level: OptimizationLevel,
     pub enable_profiling: bool,
@@ -107,6 +113,13 @@ impl OptimizationConfig {
             debug_info: false,
             custom_passes: Vec::new(),
             pass_manager_config: PassManagerConfig::default(),
+            
+            // Function inlining defaults
+            enable_function_inlining: true,
+            aggressive_inlining: false,
+            enable_generics_inlining: false,
+            enable_interface_inlining: false,
+            
             optimization_level: level,
             enable_profiling: false,
             profile_data_dir: None,
@@ -136,6 +149,13 @@ impl OptimizationConfig {
             debug_info: true,
             custom_passes: Vec::new(),
             pass_manager_config: PassManagerConfig::debug(),
+            
+            // Debug inlining settings
+            enable_function_inlining: false,
+            aggressive_inlining: false,
+            enable_generics_inlining: false,
+            enable_interface_inlining: false,
+            
             optimization_level: OptimizationLevel::None,
             enable_profiling: false,
             profile_data_dir: None,
@@ -171,6 +191,13 @@ impl OptimizationConfig {
                 "simplifycfg".to_string(),
             ],
             pass_manager_config: PassManagerConfig::release(),
+            
+            // Release inlining settings
+            enable_function_inlining: true,
+            aggressive_inlining: true,
+            enable_generics_inlining: true,
+            enable_interface_inlining: true,
+            
             optimization_level: OptimizationLevel::Aggressive,
             enable_profiling: true,
             profile_data_dir: None,
@@ -204,6 +231,13 @@ impl OptimizationConfig {
                 "deadargelim".to_string(),
             ],
             pass_manager_config: PassManagerConfig::default(),
+            
+            // Size optimization inlining settings - conservative inlining
+            enable_function_inlining: true,
+            aggressive_inlining: false,
+            enable_generics_inlining: false,
+            enable_interface_inlining: false,
+            
             optimization_level: OptimizationLevel::Size,
             enable_profiling: false,
             profile_data_dir: None,
@@ -239,6 +273,38 @@ impl OptimizationConfig {
 
     pub fn set_unroll_threshold(&mut self, threshold: u32) {
         self.unroll_threshold = threshold;
+    }
+    
+    pub fn enable_function_inlining(&mut self) {
+        self.enable_function_inlining = true;
+    }
+    
+    pub fn disable_function_inlining(&mut self) {
+        self.enable_function_inlining = false;
+    }
+    
+    pub fn enable_aggressive_inlining(&mut self) {
+        self.aggressive_inlining = true;
+    }
+    
+    pub fn disable_aggressive_inlining(&mut self) {
+        self.aggressive_inlining = false;
+    }
+    
+    pub fn enable_generics_inlining(&mut self) {
+        self.enable_generics_inlining = true;
+    }
+    
+    pub fn disable_generics_inlining(&mut self) {
+        self.enable_generics_inlining = false;
+    }
+    
+    pub fn enable_interface_inlining(&mut self) {
+        self.enable_interface_inlining = true;
+    }
+    
+    pub fn disable_interface_inlining(&mut self) {
+        self.enable_interface_inlining = false;
     }
 
     pub fn enable_lto(&mut self) {
@@ -432,6 +498,13 @@ impl OptimizationConfig {
                 "tail-call-elim".to_string(),
             ],
             pass_manager_config: PassManagerConfig::release(),
+            
+            // Benchmarking inlining settings - maximum performance
+            enable_function_inlining: true,
+            aggressive_inlining: true,
+            enable_generics_inlining: true,
+            enable_interface_inlining: true,
+            
             optimization_level: OptimizationLevel::Aggressive,
             enable_profiling: true,
             profile_data_dir: None,
@@ -539,6 +612,13 @@ impl OptimizationConfig {
             debug_info: true,
             custom_passes: vec!["mem2reg".to_string()],
             pass_manager_config: PassManagerConfig::debug(),
+            
+            // Development inlining settings - minimal inlining for fast builds
+            enable_function_inlining: true,
+            aggressive_inlining: false,
+            enable_generics_inlining: false,
+            enable_interface_inlining: false,
+            
             optimization_level: OptimizationLevel::Less,
             enable_profiling: false,
             profile_data_dir: None,
@@ -577,6 +657,13 @@ impl OptimizationConfig {
                 "sroa".to_string(),
             ],
             pass_manager_config: PassManagerConfig::release(),
+            
+            // Production inlining settings - maximum performance
+            enable_function_inlining: true,
+            aggressive_inlining: true,
+            enable_generics_inlining: true,
+            enable_interface_inlining: true,
+            
             optimization_level: OptimizationLevel::Aggressive,
             enable_profiling: true,
             profile_data_dir: None,

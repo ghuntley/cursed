@@ -545,6 +545,377 @@ slay test_advanced_features() lit {
     damn based
 }
 
+# === ADVANCED FIELD IMPLEMENTATION TESTS ===
+
+slay test_field_mapping() lit {
+    test_start("Field mapping")
+    
+    sus mapping tea = create_field_mapping("User", "full_name", "name", "tea")
+    
+    assert_true(mapping.contains("field:User.full_name"))
+    assert_true(mapping.contains("col:name"))
+    assert_true(mapping.contains("type:tea"))
+    
+    damn based
+}
+
+slay test_field_type_conversion() lit {
+    test_start("Field type conversion")
+    
+    sus int_conv tea = convert_field_type("42", "normie")
+    sus float_conv tea = convert_field_type("3.14", "meal")
+    sus bool_conv tea = convert_field_type("based", "lit")
+    sus string_conv tea = convert_field_type("test", "tea")
+    
+    assert_true(int_conv.contains("toInt()"))
+    assert_true(float_conv.contains("toFloat()"))
+    assert_eq_string(bool_conv, "based")
+    assert_eq_string(string_conv, "test")
+    
+    damn based
+}
+
+slay test_validation_rules() lit {
+    test_start("Validation rules")
+    
+    sus rule tea = create_validation_rule("email", "required", "true")
+    
+    assert_true(rule.contains("rule:email"))
+    assert_true(rule.contains("type:required"))
+    
+    sus valid_required lit = validate_field("test@example.com", "type:required")
+    sus invalid_required lit = validate_field("", "type:required")
+    
+    assert_eq_lit(valid_required, based)
+    assert_eq_lit(invalid_required, cap)
+    
+    damn based
+}
+
+# === ENHANCED MIGRATION SYSTEM TESTS ===
+
+slay test_migration_with_sql() lit {
+    test_start("Migration with SQL")
+    
+    sus migration tea = create_migration_with_sql("001", "Create users", "CREATE TABLE users (id INT)", "DROP TABLE users")
+    
+    assert_true(migration.contains("migration:v001"))
+    assert_true(migration.contains("up:CREATE TABLE users"))
+    assert_true(migration.contains("down:DROP TABLE users"))
+    
+    damn based
+}
+
+slay test_migration_history() lit {
+    test_start("Migration history")
+    
+    sus connection tea = "test_conn"
+    sus migration tea = create_migration("001", "Test")
+    
+    sus added lit = add_migration_to_history(connection, migration)
+    sus applied lit = is_migration_applied(connection, "001")
+    sus pending tea = get_pending_migrations(connection)
+    
+    assert_eq_lit(added, based)
+    assert_eq_lit(applied, cap)
+    assert_true(pending.contains("pending:"))
+    
+    damn based
+}
+
+slay test_schema_diff_migration() lit {
+    test_start("Schema diff migration")
+    
+    sus old_schema tea = "CREATE TABLE users (id INT)"
+    sus new_schema tea = "CREATE TABLE users (id INT, name VARCHAR(255))"
+    sus diff_sql tea = generate_migration_from_schema_diff(old_schema, new_schema)
+    
+    assert_true(diff_sql.contains("ALTER TABLE"))
+    
+    damn based
+}
+
+# === ENHANCED QUERY BUILDER TESTS ===
+
+slay test_subquery() lit {
+    test_start("Subquery")
+    
+    sus builder tea = create_query_builder("users")
+    sus subquery tea = create_subquery(builder)
+    
+    assert_true(subquery.contains("(SELECT * FROM users)"))
+    
+    damn based
+}
+
+slay test_exists_clause() lit {
+    test_start("EXISTS clause")
+    
+    sus builder tea = create_query_builder("users")
+    sus subquery tea = "(SELECT 1 FROM profiles WHERE profiles.user_id = users.id)"
+    sus with_exists tea = add_exists_clause(builder, subquery)
+    
+    assert_true(with_exists.contains("WHERE EXISTS"))
+    
+    damn based
+}
+
+slay test_group_by_having() lit {
+    test_start("GROUP BY and HAVING")
+    
+    sus builder tea = create_query_builder("users")
+    builder = group_by(builder, "department")
+    builder = having_condition(builder, "COUNT(*) > 5")
+    
+    assert_true(builder.contains("GROUP BY department"))
+    assert_true(builder.contains("HAVING COUNT(*) > 5"))
+    
+    damn based
+}
+
+slay test_union_queries() lit {
+    test_start("UNION queries")
+    
+    sus query1 tea = "SELECT * FROM users WHERE active = 1"
+    sus query2 tea = "SELECT * FROM users WHERE priority = 'high'"
+    sus union_query tea = union_queries(query1, query2)
+    
+    assert_true(union_query.contains("UNION"))
+    
+    damn based
+}
+
+slay test_cte() lit {
+    test_start("Common Table Expressions")
+    
+    sus cte tea = create_cte("active_users", "SELECT * FROM users WHERE active = 1")
+    
+    assert_true(cte.contains("WITH active_users AS"))
+    
+    damn based
+}
+
+slay test_window_functions() lit {
+    test_start("Window functions")
+    
+    sus builder tea = create_query_builder("sales")
+    sus with_window tea = add_window_function(builder, "ROW_NUMBER", "department", "salary DESC")
+    
+    assert_true(with_window.contains("ROW_NUMBER() OVER"))
+    assert_true(with_window.contains("PARTITION BY department"))
+    assert_true(with_window.contains("ORDER BY salary DESC"))
+    
+    damn based
+}
+
+# === ADVANCED RELATIONSHIP MANAGEMENT TESTS ===
+
+slay test_relationship_definitions() lit {
+    test_start("Relationship definitions")
+    
+    sus one_to_one tea = define_one_to_one_relationship("User", "Profile", "user_id")
+    sus one_to_many tea = define_one_to_many_relationship("User", "Post", "user_id")
+    sus many_to_many tea = define_many_to_many_relationship("User", "Role", "user_roles")
+    
+    assert_true(one_to_one.contains("rel:1to1"))
+    assert_true(one_to_many.contains("rel:1toN"))
+    assert_true(many_to_many.contains("rel:NtoN"))
+    assert_true(many_to_many.contains("junction:user_roles"))
+    
+    damn based
+}
+
+slay test_relationship_loading() lit {
+    test_start("Relationship loading")
+    
+    sus entity tea = create_entity("users", "id")
+    sus eager_loaded tea = load_relationship_eager(entity, "posts", 2)
+    sus lazy_loaded tea = load_relationship_lazy(entity, "profile")
+    
+    assert_true(eager_loaded.contains("eager_loaded:posts"))
+    assert_true(eager_loaded.contains("depth:2"))
+    assert_true(lazy_loaded.contains("lazy_loaded:profile"))
+    
+    damn based
+}
+
+slay test_cascade_delete() lit {
+    test_start("Cascade delete")
+    
+    sus entity tea = create_entity("users", "id")
+    sus cascaded lit = cascade_delete(entity, "posts")
+    
+    assert_eq_lit(cascaded, based)
+    
+    damn based
+}
+
+# === ENHANCED SCHEMA MANAGEMENT TESTS ===
+
+slay test_index_management() lit {
+    test_start("Index management")
+    
+    sus create_idx tea = create_index("users", "email", "idx_user_email", based)
+    sus drop_idx tea = drop_index("idx_user_email")
+    
+    assert_true(create_idx.contains("CREATE UNIQUE INDEX"))
+    assert_true(create_idx.contains("idx_user_email"))
+    assert_true(drop_idx.contains("DROP INDEX"))
+    
+    damn based
+}
+
+slay test_constraints() lit {
+    test_start("Constraints")
+    
+    sus fk_constraint tea = add_foreign_key_constraint("posts", "user_id", "users", "id")
+    sus check_constraint tea = add_check_constraint("users", "check_age", "age >= 18")
+    
+    assert_true(fk_constraint.contains("FOREIGN KEY"))
+    assert_true(fk_constraint.contains("REFERENCES users(id)"))
+    assert_true(check_constraint.contains("CHECK (age >= 18)"))
+    
+    damn based
+}
+
+slay test_views() lit {
+    test_start("Views")
+    
+    sus view tea = create_view("active_users", "SELECT * FROM users WHERE active = 1")
+    sus materialized_view tea = create_materialized_view("user_stats", "SELECT department, COUNT(*) FROM users GROUP BY department")
+    
+    assert_true(view.contains("CREATE VIEW active_users"))
+    assert_true(materialized_view.contains("CREATE MATERIALIZED VIEW user_stats"))
+    
+    damn based
+}
+
+slay test_schema_versioning() lit {
+    test_start("Schema versioning")
+    
+    sus connection tea = "test_conn"
+    sus version tea = get_schema_version(connection)
+    sus updated lit = update_schema_version(connection, "2.0.0")
+    
+    assert_eq_string(version, "1.0.0")
+    assert_eq_lit(updated, based)
+    
+    damn based
+}
+
+# === ADVANCED CRUD OPERATIONS TESTS ===
+
+slay test_bulk_operations() lit {
+    test_start("Bulk operations")
+    
+    sus bulk_result lit = bulk_insert("users", "entity_list", 100)
+    
+    assert_eq_lit(bulk_result, based)
+    
+    damn based
+}
+
+slay test_upsert_operations() lit {
+    test_start("Upsert operations")
+    
+    sus repository tea = create_repository("User")
+    sus entity tea = create_entity("users", "id")
+    sus upserted tea = upsert_entity(repository, entity, "email")
+    
+    assert_true(upserted.contains("upserted=true"))
+    
+    damn based
+}
+
+slay test_soft_delete() lit {
+    test_start("Soft delete")
+    
+    sus repository tea = create_repository("User")
+    sus entity tea = create_entity("users", "id")
+    sus soft_deleted tea = soft_delete_entity(repository, entity)
+    sus restored tea = restore_entity(repository, soft_deleted)
+    
+    assert_true(soft_deleted.contains("deleted_at="))
+    assert_true(restored.contains("deleted_at=null"))
+    
+    damn based
+}
+
+slay test_count_and_pagination() lit {
+    test_start("Count and pagination")
+    
+    sus repository tea = create_repository("User")
+    sus count normie = count_entities(repository, "status=active")
+    
+    sus builder tea = create_query_builder("users")
+    sus paginated tea = paginate_query(builder, 2, 10)
+    
+    assert_eq_int(count, 42)
+    assert_true(paginated.contains("LIMIT 10"))
+    assert_true(paginated.contains("OFFSET 10"))
+    
+    damn based
+}
+
+# === ENTERPRISE FEATURES TESTS ===
+
+slay test_multi_tenancy() lit {
+    test_start("Multi-tenancy")
+    
+    sus builder tea = create_query_builder("users")
+    sus filtered tea = add_tenant_filter(builder, "tenant_123")
+    
+    assert_true(filtered.contains("tenant_id = 'tenant_123'"))
+    
+    damn based
+}
+
+slay test_audit_trail() lit {
+    test_start("Audit trail")
+    
+    sus audit tea = create_audit_entry("User", "123", "UPDATE", "user_456")
+    
+    assert_true(audit.contains("audit:User"))
+    assert_true(audit.contains("id:123"))
+    assert_true(audit.contains("op:UPDATE"))
+    assert_true(audit.contains("user:user_456"))
+    
+    damn based
+}
+
+slay test_encryption() lit {
+    test_start("Data encryption")
+    
+    sus encrypted tea = encrypt_field_value("sensitive_data", "key123")
+    sus decrypted tea = decrypt_field_value(encrypted, "key123")
+    
+    assert_true(encrypted.contains("ENCRYPTED:"))
+    assert_eq_string(decrypted, "sensitive_data")
+    
+    damn based
+}
+
+slay test_row_level_security() lit {
+    test_start("Row-level security")
+    
+    sus builder tea = create_query_builder("users")
+    sus admin_query tea = apply_row_level_security(builder, "admin", "user_123")
+    sus user_query tea = apply_row_level_security(builder, "user", "user_123")
+    sus guest_query tea = apply_row_level_security(builder, "guest", "user_123")
+    
+    # Admin should see original query
+    assert_true(admin_query.contains("SELECT * FROM users"))
+    assert_false(admin_query.contains("WHERE user_id ="))
+    
+    # User should have user_id filter
+    assert_true(user_query.contains("WHERE user_id = 'user_123'"))
+    
+    # Guest should have no access
+    assert_true(guest_query.contains("WHERE 1 = '0'"))
+    
+    damn based
+}
+
 # === RUN ALL TESTS ===
 
 slay run_all_database_orm_tests() lit {
@@ -614,6 +985,47 @@ slay run_all_database_orm_tests() lit {
     test_complex_query_building()
     test_full_orm_operations()
     test_advanced_features()
+    
+    # Advanced field implementation tests
+    test_field_mapping()
+    test_field_type_conversion()
+    test_validation_rules()
+    
+    # Enhanced migration system tests
+    test_migration_with_sql()
+    test_migration_history()
+    test_schema_diff_migration()
+    
+    # Enhanced query builder tests
+    test_subquery()
+    test_exists_clause()
+    test_group_by_having()
+    test_union_queries()
+    test_cte()
+    test_window_functions()
+    
+    # Advanced relationship management tests
+    test_relationship_definitions()
+    test_relationship_loading()
+    test_cascade_delete()
+    
+    # Enhanced schema management tests
+    test_index_management()
+    test_constraints()
+    test_views()
+    test_schema_versioning()
+    
+    # Advanced CRUD operations tests
+    test_bulk_operations()
+    test_upsert_operations()
+    test_soft_delete()
+    test_count_and_pagination()
+    
+    # Enterprise features tests
+    test_multi_tenancy()
+    test_audit_trail()
+    test_encryption()
+    test_row_level_security()
     
     print_test_summary()
     

@@ -44,6 +44,9 @@ pub mod select_timeout;
 // Channel lifecycle management
 pub mod lifecycle;
 
+// Timeout manager for reliable timeout handling
+pub mod timeout_manager;
+
 // Channel lifecycle tests
 #[cfg(test)]
 pub mod lifecycle_test;

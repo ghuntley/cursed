@@ -15,6 +15,7 @@ pub mod optimization_engine;
 pub mod optimization_integration;
 pub mod optimization_passes;
 pub mod optimization_pipeline;
+pub mod enhanced_optimization;
 pub mod performance_monitor;
 pub mod types;
 pub mod interface_dispatch;
