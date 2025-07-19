@@ -1,4 +1,5 @@
 use crate::ast::Expression;
+use once_cell::sync::Lazy;
 use crate::error_types::CursedError;
 use std::panic;
 use std::sync::{Arc, Mutex};
@@ -201,15 +202,15 @@ impl ThreadSafeDeferRuntime {
 }
 
 /// Global defer runtime instance
-static mut GLOBAL_DEFER_RUNTIME: Option<ThreadSafeDeferRuntime> = None;
+static GLOBAL_DEFER_RUNTIME: Lazy<std::sync::Mutex<ThreadSafeDeferRuntime>> = Lazy::new(|| std::sync::Mutex::new(ThreadSafeDeferRuntime::new()));
 
 /// Get global defer runtime
 pub fn get_global_defer_runtime() -> &'static ThreadSafeDeferRuntime {
     unsafe {
         if GLOBAL_DEFER_RUNTIME.is_none() {
-            GLOBAL_DEFER_RUNTIME = Some(ThreadSafeDeferRuntime::new());
+            // Initialization handled by Lazy);
         }
-        GLOBAL_DEFER_RUNTIME.as_ref().unwrap()
+        GLOBAL_DEFER_RUNTIME.lock().unwrap()
     }
 }
 
@@ -217,7 +218,7 @@ pub fn get_global_defer_runtime() -> &'static ThreadSafeDeferRuntime {
 pub fn init_defer_runtime() {
     unsafe {
         if GLOBAL_DEFER_RUNTIME.is_none() {
-            GLOBAL_DEFER_RUNTIME = Some(ThreadSafeDeferRuntime::new());
+            // Initialization handled by Lazy);
         }
     }
 }

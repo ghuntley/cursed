@@ -9,6 +9,7 @@
 //! - Resource usage monitoring
 
 use std::time::{Duration, Instant, SystemTime};
+use once_cell::sync::Lazy;
 use std::sync::{Arc, Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::collections::{HashMap, VecDeque};
@@ -863,25 +864,19 @@ pub struct PerformanceHooksStats {
 }
 
 /// Global performance hooks instance
-static mut GLOBAL_HOOKS: Option<Arc<PerformanceHooks>> = None;
+static GLOBAL_HOOKS: once_cell::sync::Lazy<Arc<PerformanceHooks>> = 
+    once_cell::sync::Lazy::new(|| Arc::new(PerformanceHooks::new()));
 static HOOKS_INIT: std::sync::Once = std::sync::Once::new();
 
 /// Initialize global performance hooks
 pub fn init_global_hooks(config: PerformanceHooksConfig) -> Result<(), CursedError> {
-    HOOKS_INIT.call_once(|| {
-        let hooks = Arc::new(PerformanceHooks::new(config));
-        unsafe {
-            GLOBAL_HOOKS = Some(hooks);
-        }
-    });
+    // Initialization is handled automatically by Lazy
     Ok(())
 }
 
 /// Get global performance hooks instance
-pub fn get_global_hooks() -> Option<Arc<PerformanceHooks>> {
-    unsafe {
-        GLOBAL_HOOKS.clone()
-    }
+pub fn get_global_hooks() -> Arc<PerformanceHooks> {
+    GLOBAL_HOOKS.clone()
 }
 
 /// Convenience macros for performance hooks

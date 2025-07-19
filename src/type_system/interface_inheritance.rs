@@ -8,6 +8,7 @@
 //! - Interface constraint propagation
 
 use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type as AstType, TypeParameter};
+use once_cell::sync::Lazy;
 use crate::error_types::CursedError;
 use crate::type_system::interface_compliance::{
     InterfaceComplianceChecker, 
@@ -644,22 +645,18 @@ pub struct MethodConflict {
 }
 
 /// Global interface inheritance checker
-static mut GLOBAL_INHERITANCE_CHECKER: Option<InterfaceInheritanceChecker> = None;
+static GLOBAL_INHERITANCE_CHECKER: Lazy<std::sync::Mutex<InterfaceInheritanceChecker>> = Lazy::new(|| std::sync::Mutex::new(InterfaceInheritanceChecker::new()));
 
 /// Initialize global inheritance checker
 pub fn initialize_interface_inheritance_checker() {
     unsafe {
-        GLOBAL_INHERITANCE_CHECKER = Some(InterfaceInheritanceChecker::new());
+        // Initialization handled by Lazy);
     }
 }
 
 /// Get global inheritance checker
-pub fn get_global_inheritance_checker() -> Result<&'static mut InterfaceInheritanceChecker, CursedError> {
-    unsafe {
-        GLOBAL_INHERITANCE_CHECKER
-            .as_mut()
-            .ok_or_else(|| CursedError::Runtime("Interface inheritance checker not initialized".to_string()))
-    }
+pub fn get_global_inheritance_checker() -> Result<std::sync::MutexGuard<'static, InterfaceInheritanceChecker>, CursedError> {
+    Ok(GLOBAL_INHERITANCE_CHECKER.lock().unwrap())
 }
 
 #[cfg(test)]

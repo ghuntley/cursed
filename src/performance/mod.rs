@@ -18,6 +18,7 @@ pub mod analysis;
 pub mod hooks;
 
 use std::sync::Arc;
+use once_cell::sync::Lazy;
 use std::time::{Duration, Instant};
 use crate::error::CursedError;
 
@@ -270,31 +271,19 @@ impl Default for BenchmarkConfig {
 }
 
 /// Global performance system instance
-static mut GLOBAL_PERFORMANCE_SYSTEM: Option<Arc<PerformanceSystem>> = None;
+static GLOBAL_PERFORMANCE_SYSTEM: once_cell::sync::Lazy<Arc<PerformanceSystem>> = 
+    once_cell::sync::Lazy::new(|| Arc::new(PerformanceSystem::new(PerformanceConfig::default()).unwrap()));
 static PERFORMANCE_INIT: std::sync::Once = std::sync::Once::new();
 
 /// Initialize global performance system
 pub fn init_global_performance_system(config: PerformanceConfig) -> Result<(), CursedError> {
-    PERFORMANCE_INIT.call_once(|| {
-        match PerformanceSystem::new(config) {
-            Ok(system) => {
-                unsafe {
-                    GLOBAL_PERFORMANCE_SYSTEM = Some(Arc::new(system));
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to initialize performance system: {}", e);
-            }
-        }
-    });
+    // Initialization is handled automatically by Lazy
     Ok(())
 }
 
 /// Get global performance system instance
-pub fn get_global_performance_system() -> Option<Arc<PerformanceSystem>> {
-    unsafe {
-        GLOBAL_PERFORMANCE_SYSTEM.clone()
-    }
+pub fn get_global_performance_system() -> Arc<PerformanceSystem> {
+    GLOBAL_PERFORMANCE_SYSTEM.clone()
 }
 
 /// Convenience macro for performance monitoring
