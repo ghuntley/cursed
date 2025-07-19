@@ -1,3 +1,7 @@
+# mathz - Comprehensive Mathematics Module for CURSED
+# Pure CURSED implementation without FFI dependencies
+# Migrated from Rust stdlib/math modules
+
 yeet "testz"
 
 # Mathematical Constants
@@ -78,3 +82,19 @@ slay min_normie(a normie, b normie) normie {
         damn a
     }
     damn b
+}
+
+# Floor, Ceiling, and Rounding
+slay floor_meal(x meal) normie {
+    sus result normie = 0
+    lowkey x >= 0.0 {
+        # For positive numbers, truncate
+        result = x  # Implicit conversion to int truncates
+    } {
+        # For negative numbers, subtract 1 if not exact
+        result = x  # Truncate
+        lowkey x < result {
+            result = result - 1
+        }
+    }
+    damn result

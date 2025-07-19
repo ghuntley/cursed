@@ -700,26 +700,20 @@ impl PanicRecoverRuntime {
 }
 
 /// Global panic/recover runtime
-static mut GLOBAL_PANIC_RECOVER_RUNTIME: Option<Arc<PanicRecoverRuntime>> = None;
-static GLOBAL_PANIC_RECOVER_RUNTIME_INIT: std::sync::Once = std::sync::Once::new();
+use std::sync::OnceLock;
+static GLOBAL_PANIC_RECOVER_RUNTIME: OnceLock<Arc<PanicRecoverRuntime>> = OnceLock::new();
 
 /// Initialize global panic/recover runtime
 pub fn initialize_global_panic_recover_runtime() -> Result<()> {
-    unsafe {
-        GLOBAL_PANIC_RECOVER_RUNTIME_INIT.call_once(|| {
-            let runtime = Arc::new(PanicRecoverRuntime::new());
-            runtime.initialize().expect("Failed to initialize panic/recover runtime");
-            GLOBAL_PANIC_RECOVER_RUNTIME = Some(runtime);
-        });
-    }
+    let runtime = Arc::new(PanicRecoverRuntime::new());
+    runtime.initialize().expect("Failed to initialize panic/recover runtime");
+    let _ = GLOBAL_PANIC_RECOVER_RUNTIME.set(runtime);
     Ok(())
 }
 
 /// Get global panic/recover runtime
 pub fn get_global_panic_recover_runtime() -> Option<Arc<PanicRecoverRuntime>> {
-    unsafe {
-        GLOBAL_PANIC_RECOVER_RUNTIME.clone()
-    }
+    GLOBAL_PANIC_RECOVER_RUNTIME.get().map(|runtime| Arc::clone(runtime))
 }
 
 /// Test helper functions

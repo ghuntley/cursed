@@ -561,28 +561,21 @@ impl InterfaceDispatchRegistry {
 }
 
 /// Global interface dispatch registry
-static mut GLOBAL_DISPATCH_REGISTRY: Option<Mutex<InterfaceDispatchRegistry>> = None;
+use std::sync::OnceLock;
+static GLOBAL_DISPATCH_REGISTRY: OnceLock<Mutex<InterfaceDispatchRegistry>> = OnceLock::new();
 
 /// Initialize global dispatch registry
 pub fn initialize_interface_dispatch() -> Result<(), CursedError> {
-    unsafe {
-        if GLOBAL_DISPATCH_REGISTRY.is_some() {
-            return Ok(()); // Already initialized
-        }
-        
-        GLOBAL_DISPATCH_REGISTRY = Some(Mutex::new(InterfaceDispatchRegistry::new()));
-        Ok(())
-    }
+    let _ = GLOBAL_DISPATCH_REGISTRY.set(Mutex::new(InterfaceDispatchRegistry::new()));
+    Ok(())
 }
 
 /// Get global dispatch registry
 pub fn get_global_dispatch_registry() -> Result<&'static Mutex<InterfaceDispatchRegistry>, CursedError> {
-    unsafe {
-        GLOBAL_DISPATCH_REGISTRY.as_ref()
-            .ok_or_else(|| CursedError::Runtime(
-                "Interface dispatch registry not initialized".to_string()
-            ))
-    }
+    GLOBAL_DISPATCH_REGISTRY.get()
+        .ok_or_else(|| CursedError::Runtime(
+            "Interface dispatch registry not initialized".to_string()
+        ))
 }
 
 /// Register interface with global registry

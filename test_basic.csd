@@ -1,1 +1,2 @@
-vibez.spill("Testing basic functionality")
+sus message tea = "Hello, CURSED!"
+vibez.spill(message)

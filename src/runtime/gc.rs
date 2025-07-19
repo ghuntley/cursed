@@ -705,30 +705,24 @@ mod tests {
 }
 
 // Global GC instance
-static mut GLOBAL_GC: Option<Arc<GarbageCollector>> = None;
-static GC_INIT: std::sync::Once = std::sync::Once::new();
+use std::sync::OnceLock;
+static GLOBAL_GC: OnceLock<Arc<GarbageCollector>> = OnceLock::new();
 
 /// Initialize the global garbage collector
 pub fn initialize_gc(config: GcConfig, stack_manager: Arc<RuntimeStack>) -> Result<(), CursedError> {
-    GC_INIT.call_once(|| {
-        let gc = GarbageCollector::new();
-        unsafe {
-            GLOBAL_GC = Some(Arc::new(gc));
-        }
-    });
+    let gc = GarbageCollector::new();
+    let _ = GLOBAL_GC.set(Arc::new(gc));
     Ok(())
 }
 
 /// Get the global garbage collector instance
 pub fn get_global_gc() -> Option<Arc<GarbageCollector>> {
-    unsafe { GLOBAL_GC.as_ref().map(|gc| Arc::clone(gc)) }
+    GLOBAL_GC.get().map(|gc| Arc::clone(gc))
 }
 
-/// Shutdown the global garbage collector
+/// Shutdown the global garbage collector  
 pub fn shutdown_gc() -> Result<(), CursedError> {
-    unsafe {
-        GLOBAL_GC = None;
-    }
+    // Note: OnceLock cannot be reset, but GC will be dropped when program exits
     Ok(())
 }
 
