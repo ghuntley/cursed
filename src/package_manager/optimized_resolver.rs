@@ -178,8 +178,31 @@ impl OptimizedPackageResolver {
         let mut resolved_packages = HashMap::new();
         let mut conflicts = Vec::new();
 
+        // Timeout protection: 30 seconds for large graphs, 5 seconds for normal
+        let start_time = std::time::Instant::now();
+        let max_duration = if config.max_depth > 50 { 
+            std::time::Duration::from_secs(30) 
+        } else { 
+            std::time::Duration::from_secs(5) 
+        };
+        
+        // Maximum iterations to prevent infinite loops
+        let max_iterations = if config.max_depth > 50 { 10000 } else { 1000 };
+
         loop {
             metrics.sat_iterations += 1;
+
+            // Timeout protection
+            if start_time.elapsed() > max_duration {
+                tracing::warn!("SAT solver timeout after {:?} with {} iterations", start_time.elapsed(), metrics.sat_iterations);
+                return Err(CursedError::General(format!("Dependency resolution timed out after {:?}", start_time.elapsed())));
+            }
+            
+            // Iteration limit protection
+            if metrics.sat_iterations > max_iterations {
+                tracing::warn!("SAT solver iteration limit reached: {}", metrics.sat_iterations);
+                return Err(CursedError::General(format!("Dependency resolution exceeded maximum iterations: {}", max_iterations)));
+            }
 
             // Unit propagation
             if let Some(conflict) = self.unit_propagation(config, &mut resolved_packages, metrics).await? {
@@ -196,6 +219,12 @@ impl OptimizedPackageResolver {
                 self.solver_state.add_learned_clause(self.build_learned_clause(&analysis));
                 conflicts.push(conflict);
                 metrics.backtrack_count += 1;
+                
+                // Prevent excessive backtracking
+                if metrics.backtrack_count > 100 {
+                    tracing::warn!("Excessive backtracking detected: {} backtracks", metrics.backtrack_count);
+                    return Err(CursedError::General("Dependency resolution failed: excessive backtracking".to_string()));
+                }
                 continue;
             }
 
@@ -210,12 +239,19 @@ impl OptimizedPackageResolver {
                 self.solver_state.assign_variable(package.clone(), version.clone());
                 self.solver_state.decision_level += 1;
                 
+                // Prevent excessive decision depth
+                if self.solver_state.decision_level > config.max_depth * 2 {
+                    tracing::warn!("Excessive decision depth: {}", self.solver_state.decision_level);
+                    return Err(CursedError::General("Dependency resolution failed: excessive decision depth".to_string()));
+                }
+                
                 // Create resolved package for the decision - handle metadata failures gracefully
                 let metadata = match self.get_cached_metadata(&package, &version, metrics).await {
                     Ok(metadata) => metadata,
                     Err(e) => {
                         tracing::warn!("Failed to get metadata for {}@{}: {}", package, version, e);
                         // Skip this decision and continue, like the original resolver
+                        self.solver_state.decision_level = self.solver_state.decision_level.saturating_sub(1);
                         continue;
                     }
                 };
@@ -230,9 +266,15 @@ impl OptimizedPackageResolver {
                 
                 resolved_packages.insert(package.clone(), resolved_package);
                 
-                // Add new constraints from dependencies
+                // Add new constraints from dependencies (with circular dependency protection)
                 for dep in &metadata.dependencies {
                     if !dep.optional || config.include_optional {
+                        // Prevent circular dependencies
+                        if self.would_create_circular_dependency(&dep.name, &package) {
+                            tracing::warn!("Circular dependency detected: {} -> {}", package, dep.name);
+                            continue;
+                        }
+                        
                         self.solver_state.add_constraint(Constraint {
                             package: dep.name.clone(),
                             version_req: dep.version_req.clone(),
@@ -557,6 +599,27 @@ impl OptimizedPackageResolver {
             literals,
             learned: true,
         }
+    }
+
+    /// Check if adding a dependency would create a circular dependency
+    fn would_create_circular_dependency(&self, dep_name: &str, current_package: &str) -> bool {
+        if dep_name == current_package {
+            return true;
+        }
+        
+        // Check if the dependency package already depends on current package
+        // This is a simplified check - in a full implementation we'd do a full graph traversal
+        for constraint in &self.solver_state.constraints {
+            if constraint.package == current_package {
+                for required_by in &constraint.required_by {
+                    if required_by == dep_name {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        false
     }
 
     /// Generate resolution key for caching

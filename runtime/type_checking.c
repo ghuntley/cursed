@@ -10,6 +10,13 @@
 #include <string.h>
 #include <stdint.h>
 
+// C11 alignment support
+#if __STDC_VERSION__ >= 201112L
+#include <stdalign.h>
+#else
+#define alignof _Alignof
+#endif
+
 // Runtime type information structure
 typedef struct runtime_type_info {
     uint32_t type_id;
