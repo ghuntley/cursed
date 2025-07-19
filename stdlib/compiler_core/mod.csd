@@ -1,442 +1,388 @@
+# Pure CURSED Compiler Core Module
+# Essential compiler infrastructure for self-hosting
+
 yeet "testz"
-
-# Comprehensive Compiler Core Infrastructure for Self-Hosting
-# Provides lexical analysis, parsing, AST operations, type checking, and code generation
-
-# ==============================================================================
-# TOKEN DEFINITIONS AND LEXICAL ANALYSIS
-# ==============================================================================
+yeet "runtime_core"
 
 # Token types for lexical analysis
-facts TOKEN_IDENTIFIER = 1
-facts TOKEN_NUMBER = 2
-facts TOKEN_STRING = 3
-facts TOKEN_KEYWORD = 4
-facts TOKEN_OPERATOR = 5
-facts TOKEN_DELIMITER = 6
-facts TOKEN_EOF = 7
-facts TOKEN_NEWLINE = 8
-facts TOKEN_COMMENT = 9
+be_like TokenType = tea
 
-# Token structure representation
-sus Token tea
+# AST node types
+be_like ASTNodeType = tea
 
-# Lexical analyzer state
-sus LexerState tea
+# Compiler phases
+be_like CompilerPhase = tea
 
-# Initialize lexical analyzer
-slay lexer_create(source tea) tea {
-    # Create lexer state with source input
-    damn "lexer_initialized"
+# Lexer state
+collab LexerState {
+    slay new(source tea) LexerState
+    slay tokenize() [TokenType]
+    slay next_token() TokenType
+    slay peek_token() TokenType
+    slay current_position() normie
 }
 
-# Tokenize source code into token stream
-slay lexer_tokenize(lexer tea) tea {
-    sus tokens tea
-    # Basic tokenization logic
+# Parser state  
+collab ParserState {
+    slay new(tokens [TokenType]) ParserState
+    slay parse_program() ASTNodeType
+    slay parse_expression() ASTNodeType
+    slay parse_statement() ASTNodeType
+    slay current_token() TokenType
+}
+
+# Type checker
+collab TypeChecker {
+    slay new() TypeChecker
+    slay check_program(ast ASTNodeType) lit
+    slay check_expression(expr ASTNodeType) tea
+    slay check_statement(stmt ASTNodeType) lit
+    slay resolve_type(type_name tea) tea
+}
+
+# Code generator
+collab CodeGenerator {
+    slay new() CodeGenerator
+    slay generate_llvm(ast ASTNodeType) tea
+    slay generate_native(ast ASTNodeType) tea
+    slay optimize_code(code tea) tea
+}
+
+# Main compiler interface
+slay compiler_create_lexer(source tea) LexerState {
+    damn lexer_new(source)
+}
+
+slay compiler_create_parser(tokens [TokenType]) ParserState {
+    damn parser_new(tokens)
+}
+
+slay compiler_create_type_checker() TypeChecker {
+    damn type_checker_new()
+}
+
+slay compiler_create_code_generator() CodeGenerator {
+    damn code_generator_new()
+}
+
+# Lexer implementation
+slay lexer_new(source tea) LexerState {
+    sus state LexerState = LexerState {
+        source: source,
+        position: 0,
+        current_char: "",
+        tokens: []
+    }
+    damn state
+}
+
+slay lexer_tokenize(lexer LexerState) [TokenType] {
+    sus tokens [TokenType] = []
+    sus position normie = 0
+    sus source tea = lexer.source
+    
+    bestie position < string_length(source) {
+        sus char tea = char_at_string(source, position)
+        
+        lowkey char == " " || char == "\t" || char == "\n" {
+            # Skip whitespace
+            position = position + 1
+        } elseif char == "s" {
+            # Check for 'sus' keyword
+            sus token tea = lexer_read_identifier(source, position)
+            lowkey token == "sus" {
+                tokens = append_token(tokens, "KEYWORD_SUS")
+                position = position + 3
+            } else {
+                tokens = append_token(tokens, "IDENTIFIER")
+                position = position + identifier_length(token)
+            }
+        } elseif char == "d" {
+            # Check for 'damn' keyword
+            sus token tea = lexer_read_identifier(source, position)
+            lowkey token == "damn" {
+                tokens = append_token(tokens, "KEYWORD_DAMN")
+                position = position + 4
+            } else {
+                tokens = append_token(tokens, "IDENTIFIER")
+                position = position + identifier_length(token)
+            }
+        } elseif is_digit(char) {
+            sus number tea = lexer_read_number(source, position)
+            tokens = append_token(tokens, "NUMBER")
+            position = position + identifier_length(number)
+        } elseif char == "\"" {
+            sus string_val tea = lexer_read_string(source, position)
+            tokens = append_token(tokens, "STRING")
+            position = position + identifier_length(string_val) + 2  # +2 for quotes
+        } elseif char == "=" {
+            tokens = append_token(tokens, "ASSIGN")
+            position = position + 1
+        } elseif char == "(" {
+            tokens = append_token(tokens, "LPAREN")
+            position = position + 1
+        } elseif char == ")" {
+            tokens = append_token(tokens, "RPAREN")
+            position = position + 1
+        } elseif char == "{" {
+            tokens = append_token(tokens, "LBRACE")
+            position = position + 1
+        } elseif char == "}" {
+            tokens = append_token(tokens, "RBRACE")
+            position = position + 1
+        } else {
+            # Unknown character
+            position = position + 1
+        }
+    }
+    
+    tokens = append_token(tokens, "EOF")
     damn tokens
 }
 
-# Peek next token without consuming
-slay lexer_peek(lexer tea) tea {
-    damn "peek_token"
+# Helper functions for lexer
+slay char_at_string(source tea, index normie) tea {
+    # Simplified character access
+    lowkey index == 0 { damn "s" }
+    elseif index == 1 { damn "u" }
+    elseif index == 2 { damn "s" }
+    elseif index == 3 { damn " " }
+    else { damn "a" }  # Placeholder
 }
 
-# Advance to next token
-slay lexer_advance(lexer tea) tea {
-    damn "next_token"
+slay is_digit(char tea) lit {
+    damn char == "0" || char == "1" || char == "2" || char == "3" || char == "4" ||
+         char == "5" || char == "6" || char == "7" || char == "8" || char == "9"
 }
 
-# Check if token matches expected type
-slay token_is_type(token tea, token_type normie) lit {
-    damn based
+slay lexer_read_identifier(source tea, start_pos normie) tea {
+    # Simplified identifier reading
+    damn "identifier"
 }
 
-# Get token value/content
-slay token_get_value(token tea) tea {
-    damn "token_value"
+slay lexer_read_number(source tea, start_pos normie) tea {
+    # Simplified number reading
+    damn "42"
 }
 
-# ==============================================================================
-# AST NODE DEFINITIONS AND OPERATIONS
-# ==============================================================================
-
-# AST node types
-facts AST_PROGRAM = 1
-facts AST_FUNCTION = 2
-facts AST_VARIABLE = 3
-facts AST_EXPRESSION = 4
-facts AST_STATEMENT = 5
-facts AST_LITERAL = 6
-facts AST_BINARY_OP = 7
-facts AST_UNARY_OP = 8
-
-# AST node structure
-sus ASTNode tea
-
-# Create AST node
-slay ast_create_node(node_type normie, value tea) tea {
-    damn "ast_node"
+slay lexer_read_string(source tea, start_pos normie) tea {
+    # Simplified string reading
+    damn "string_literal"
 }
 
-# Add child to AST node
-slay ast_add_child(parent tea, child tea) lit {
-    damn based
+slay identifier_length(token tea) normie {
+    damn string_length(token)
 }
 
-# Get AST node children
-slay ast_get_children(node tea) tea {
-    sus children tea
-    damn children
+slay append_token(tokens [TokenType], token tea) [TokenType] {
+    # Simplified token appending
+    damn tokens  # Would actually append token
 }
 
-# Get AST node type
-slay ast_get_type(node tea) normie {
-    damn AST_PROGRAM
-}
-
-# Get AST node value
-slay ast_get_value(node tea) tea {
-    damn "node_value"
-}
-
-# Traverse AST with visitor pattern
-slay ast_traverse(root tea, visitor_func tea) lit {
-    # Depth-first traversal
-    damn based
-}
-
-# Print AST for debugging
-slay ast_print(node tea, indent normie) {
-    # Pretty print AST structure
-}
-
-# ==============================================================================
-# PARSER INFRASTRUCTURE
-# ==============================================================================
-
-# Parser state and configuration
-sus ParserState tea
-
-# Initialize parser with token stream
-slay parser_create(tokens tea) tea {
-    damn "parser_initialized"
-}
-
-# Parse program (top-level entry point)
-slay parser_parse_program(parser tea) tea {
-    damn ast_create_node(AST_PROGRAM, "program")
-}
-
-# Parse function declaration
-slay parser_parse_function(parser tea) tea {
-    damn ast_create_node(AST_FUNCTION, "function")
-}
-
-# Parse variable declaration
-slay parser_parse_variable(parser tea) tea {
-    damn ast_create_node(AST_VARIABLE, "variable")
-}
-
-# Parse expression with precedence
-slay parser_parse_expression(parser tea, precedence normie) tea {
-    damn ast_create_node(AST_EXPRESSION, "expression")
-}
-
-# Parse statement
-slay parser_parse_statement(parser tea) tea {
-    damn ast_create_node(AST_STATEMENT, "statement")
-}
-
-# Check if current token matches expected
-slay parser_expect_token(parser tea, expected_type normie) lit {
-    damn based
-}
-
-# Consume current token and advance
-slay parser_consume_token(parser tea) tea {
-    damn "consumed_token"
-}
-
-# ==============================================================================
-# TYPE CHECKING UTILITIES
-# ==============================================================================
-
-# Type definitions
-facts TYPE_INT = 1
-facts TYPE_FLOAT = 2
-facts TYPE_STRING = 3
-facts TYPE_BOOL = 4
-facts TYPE_VOID = 5
-facts TYPE_FUNCTION = 6
-facts TYPE_ARRAY = 7
-
-# Type checker state
-sus TypeChecker tea
-
-# Initialize type checker
-slay typechecker_create() tea {
-    damn "typechecker_initialized"
-}
-
-# Check AST node types
-slay typechecker_check_node(checker tea, node tea) normie {
-    damn TYPE_INT
-}
-
-# Validate type compatibility
-slay typechecker_compatible(type1 normie, type2 normie) lit {
-    damn based
-}
-
-# Infer expression type
-slay typechecker_infer_type(checker tea, expr tea) normie {
-    damn TYPE_INT
-}
-
-# Add type information to AST
-slay typechecker_annotate(checker tea, node tea) lit {
-    damn based
-}
-
-# ==============================================================================
-# SYMBOL TABLE MANAGEMENT
-# ==============================================================================
-
-# Symbol table for scope management
-sus SymbolTable tea
-
-# Symbol entry structure
-sus Symbol tea
-
-# Create symbol table
-slay symboltable_create() tea {
-    damn "symboltable_initialized"
-}
-
-# Enter new scope
-slay symboltable_push_scope(table tea) lit {
-    damn based
-}
-
-# Exit current scope
-slay symboltable_pop_scope(table tea) lit {
-    damn based
-}
-
-# Define symbol in current scope
-slay symboltable_define(table tea, name tea, symbol_type normie) lit {
-    damn based
-}
-
-# Lookup symbol in all scopes
-slay symboltable_lookup(table tea, name tea) tea {
-    damn "symbol_found"
-}
-
-# Check if symbol exists
-slay symboltable_exists(table tea, name tea) lit {
-    damn based
-}
-
-# ==============================================================================
-# CODE GENERATION HELPERS
-# ==============================================================================
-
-# Code generator state
-sus CodeGenerator tea
-
-# Initialize code generator
-slay codegen_create(target tea) tea {
-    damn "codegen_initialized"
-}
-
-# Generate code for AST node
-slay codegen_generate_node(gen tea, node tea) tea {
-    damn "generated_code"
-}
-
-# Generate function code
-slay codegen_generate_function(gen tea, func_node tea) tea {
-    damn "function_code"
-}
-
-# Generate expression code
-slay codegen_generate_expression(gen tea, expr_node tea) tea {
-    damn "expression_code"
-}
-
-# Generate variable access code
-slay codegen_generate_variable(gen tea, var_node tea) tea {
-    damn "variable_code"
-}
-
-# Emit instruction
-slay codegen_emit(gen tea, instruction tea) lit {
-    damn based
-}
-
-# Get generated code
-slay codegen_get_output(gen tea) tea {
-    damn "final_generated_code"
-}
-
-# ==============================================================================
-# ERROR REPORTING SYSTEM
-# ==============================================================================
-
-# Error severity levels
-facts ERROR_WARNING = 1
-facts ERROR_ERROR = 2
-facts ERROR_FATAL = 3
-
-# Error reporter state
-sus ErrorReporter tea
-
-# Initialize error reporter
-slay error_reporter_create() tea {
-    damn "error_reporter_initialized"
-}
-
-# Report error with location
-slay error_report(reporter tea, message tea, line normie, column normie, severity normie) lit {
-    vibez.spill("Error: ")
-    vibez.spill(message)
-    damn based
-}
-
-# Report warning
-slay error_warning(reporter tea, message tea, line normie, column normie) lit {
-    vibez.spill("Warning: ")
-    vibez.spill(message)
-    damn based
-}
-
-# Check if any errors occurred
-slay error_has_errors(reporter tea) lit {
-    damn cap
-}
-
-# Get error count
-slay error_get_count(reporter tea) normie {
-    damn 0
-}
-
-# Clear all errors
-slay error_clear(reporter tea) lit {
-    damn based
-}
-
-# ==============================================================================
-# COMPILATION PIPELINE ORCHESTRATION
-# ==============================================================================
-
-# Complete compilation pipeline
-slay compiler_compile_source(source tea, target tea, optimize_level normie) tea {
-    # 1. Lexical Analysis
-    sus lexer = lexer_create(source)
-    sus tokens = lexer_tokenize(lexer)
-    
-    # 2. Parsing
-    sus parser = parser_create(tokens)
-    sus ast = parser_parse_program(parser)
-    
-    # 3. Type Checking
-    sus typechecker = typechecker_create()
-    typechecker_check_node(typechecker, ast)
-    
-    # 4. Code Generation
-    sus codegen = codegen_create(target)
-    sus code = codegen_generate_node(codegen, ast)
-    
-    damn code
-}
-
-# Compile with error handling
-slay compiler_compile_safe(source tea, target tea, optimize_level normie) tea {
-    sus error_reporter = error_reporter_create()
-    
-    # Try compilation with error handling
-    sus result = compiler_compile_source(source, target, optimize_level)
-    
-    lowkey error_has_errors(error_reporter) {
-        damn "compilation_failed"
-    } aight {
-        damn result
+# Parser implementation
+slay parser_new(tokens [TokenType]) ParserState {
+    sus state ParserState = ParserState {
+        tokens: tokens,
+        position: 0,
+        current_token: ""
     }
+    damn state
 }
 
-# Bootstrap compiler compilation
-slay compiler_bootstrap_compile(compiler_source tea) tea {
-    # Self-hosting compilation
-    damn compiler_compile_safe(compiler_source, "native", 2)
-}
-
-# ==============================================================================
-# OPTIMIZATION UTILITIES
-# ==============================================================================
-
-# Optimization pass types
-facts OPT_CONSTANT_FOLDING = 1
-facts OPT_DEAD_CODE_ELIMINATION = 2
-facts OPT_FUNCTION_INLINING = 3
-facts OPT_REGISTER_ALLOCATION = 4
-
-# Apply optimization pass to AST
-slay optimizer_apply_pass(ast tea, pass_type normie) tea {
+slay parser_parse_program(parser ParserState) ASTNodeType {
+    sus ast ASTNodeType = ast_create_program()
+    
+    bestie parser.position < array_length(parser.tokens) {
+        sus stmt ASTNodeType = parser_parse_statement(parser)
+        ast = ast_add_statement(ast, stmt)
+        parser.position = parser.position + 1
+    }
+    
     damn ast
 }
 
-# Run all optimization passes
-slay optimizer_optimize_ast(ast tea, level normie) tea {
-    sus optimized_ast = ast
+slay parser_parse_statement(parser ParserState) ASTNodeType {
+    sus current tea = array_get(parser.tokens, parser.position)
     
-    # Apply different optimization levels
-    lowkey level >= 1 {
-        optimized_ast = optimizer_apply_pass(optimized_ast, OPT_CONSTANT_FOLDING)
+    lowkey current == "KEYWORD_SUS" {
+        damn parser_parse_variable_declaration(parser)
+    } elseif current == "KEYWORD_DAMN" {
+        damn parser_parse_return_statement(parser)
+    } else {
+        damn parser_parse_expression_statement(parser)
     }
-    
-    lowkey level >= 2 {
-        optimized_ast = optimizer_apply_pass(optimized_ast, OPT_DEAD_CODE_ELIMINATION)
-    }
-    
-    lowkey level >= 3 {
-        optimized_ast = optimizer_apply_pass(optimized_ast, OPT_FUNCTION_INLINING)
-    }
-    
-    damn optimized_ast
 }
 
-# ==============================================================================
-# UTILITY FUNCTIONS
-# ==============================================================================
+slay parser_parse_variable_declaration(parser ParserState) ASTNodeType {
+    # Parse: sus name type = value
+    sus name tea = array_get(parser.tokens, parser.position + 1)
+    sus type_name tea = array_get(parser.tokens, parser.position + 2)
+    sus value ASTNodeType = parser_parse_expression(parser)
+    
+    damn ast_create_variable_declaration(name, type_name, value)
+}
 
-# Initialize complete compiler core
-slay compiler_core_initialize() lit {
-    vibez.spill("Compiler core infrastructure initialized")
+slay parser_parse_return_statement(parser ParserState) ASTNodeType {
+    sus value ASTNodeType = parser_parse_expression(parser)
+    damn ast_create_return_statement(value)
+}
+
+slay parser_parse_expression_statement(parser ParserState) ASTNodeType {
+    sus expr ASTNodeType = parser_parse_expression(parser)
+    damn ast_create_expression_statement(expr)
+}
+
+slay parser_parse_expression(parser ParserState) ASTNodeType {
+    sus current tea = array_get(parser.tokens, parser.position)
+    
+    lowkey current == "NUMBER" {
+        damn ast_create_number_literal("42")
+    } elseif current == "STRING" {
+        damn ast_create_string_literal("string")
+    } elseif current == "IDENTIFIER" {
+        damn ast_create_identifier("name")
+    } else {
+        damn ast_create_error("unknown_expression")
+    }
+}
+
+# AST node creation functions
+slay ast_create_program() ASTNodeType {
+    damn "program"
+}
+
+slay ast_create_variable_declaration(name tea, type_name tea, value ASTNodeType) ASTNodeType {
+    damn "var_decl:" + name + ":" + type_name
+}
+
+slay ast_create_return_statement(value ASTNodeType) ASTNodeType {
+    damn "return:" + value
+}
+
+slay ast_create_expression_statement(expr ASTNodeType) ASTNodeType {
+    damn "expr_stmt:" + expr
+}
+
+slay ast_create_number_literal(value tea) ASTNodeType {
+    damn "number:" + value
+}
+
+slay ast_create_string_literal(value tea) ASTNodeType {
+    damn "string:" + value
+}
+
+slay ast_create_identifier(name tea) ASTNodeType {
+    damn "identifier:" + name
+}
+
+slay ast_create_error(message tea) ASTNodeType {
+    damn "error:" + message
+}
+
+slay ast_add_statement(program ASTNodeType, stmt ASTNodeType) ASTNodeType {
+    damn program + ";" + stmt
+}
+
+# Array helper functions
+slay array_length(arr [TokenType]) normie {
+    damn 10  # Placeholder
+}
+
+slay array_get(arr [TokenType], index normie) tea {
+    damn "token"  # Placeholder
+}
+
+# Type checker implementation
+slay type_checker_new() TypeChecker {
+    sus checker TypeChecker = TypeChecker {
+        types: {},
+        errors: []
+    }
+    damn checker
+}
+
+slay type_checker_check_program(checker TypeChecker, ast ASTNodeType) lit {
+    # Simplified type checking
     damn based
 }
 
-# Get compiler core status
-slay compiler_core_status() tea {
-    damn "Comprehensive compiler core: lexer, parser, AST, typechecker, codegen, error reporting"
+slay type_checker_check_expression(checker TypeChecker, expr ASTNodeType) tea {
+    # Return inferred type
+    damn "normie"
 }
 
-# Validate compiler core functionality
-slay compiler_core_validate() lit {
-    # Basic validation of all components
-    sus lexer = lexer_create("test source")
-    sus parser = parser_create([])
-    sus typechecker = typechecker_create()
-    sus codegen = codegen_create("test")
-    sus error_reporter = error_reporter_create()
-    sus symboltable = symboltable_create()
+slay type_checker_resolve_type(checker TypeChecker, type_name tea) tea {
+    lowkey type_name == "normie" { damn "i32" }
+    elseif type_name == "drip" { damn "f32" }
+    elseif type_name == "tea" { damn "string" }
+    elseif type_name == "lit" { damn "bool" }
+    else { damn "unknown" }
+}
+
+# Code generator implementation
+slay code_generator_new() CodeGenerator {
+    sus generator CodeGenerator = CodeGenerator {
+        output: "",
+        optimizations: based
+    }
+    damn generator
+}
+
+slay code_generator_generate_llvm(generator CodeGenerator, ast ASTNodeType) tea {
+    sus llvm_code tea = "; LLVM IR generated by CURSED compiler\n"
+    llvm_code = llvm_code + "define i32 @main() {\n"
+    llvm_code = llvm_code + "  ret i32 0\n"
+    llvm_code = llvm_code + "}\n"
+    damn llvm_code
+}
+
+slay code_generator_generate_native(generator CodeGenerator, ast ASTNodeType) tea {
+    # Generate native assembly
+    sus native_code tea = ".section .text\n"
+    native_code = native_code + ".globl _start\n"
+    native_code = native_code + "_start:\n"
+    native_code = native_code + "  mov $60, %rax\n"
+    native_code = native_code + "  mov $0, %rdi\n"
+    native_code = native_code + "  syscall\n"
+    damn native_code
+}
+
+slay code_generator_optimize_code(generator CodeGenerator, code tea) tea {
+    # Apply optimizations
+    damn code + "# Optimized"
+}
+
+# Main compiler pipeline
+slay compile_source(source tea) tea {
+    # Lexical analysis
+    sus lexer LexerState = compiler_create_lexer(source)
+    sus tokens [TokenType] = lexer_tokenize(lexer)
     
-    damn based
+    # Parsing
+    sus parser ParserState = compiler_create_parser(tokens)
+    sus ast ASTNodeType = parser_parse_program(parser)
+    
+    # Type checking
+    sus type_checker TypeChecker = compiler_create_type_checker()
+    sus type_check_success lit = type_checker_check_program(type_checker, ast)
+    
+    lowkey !type_check_success {
+        damn "Type checking failed"
+    }
+    
+    # Code generation
+    sus code_generator CodeGenerator = compiler_create_code_generator()
+    sus llvm_code tea = code_generator_generate_llvm(code_generator, ast)
+    
+    damn llvm_code
 }
 
-# Self-hosting capability check
-slay compiler_core_self_hosting_ready() lit {
-    # Verify all components needed for self-hosting are present
-    damn based
+# Error handling for compiler
+slay compiler_create_error(message tea, phase tea) tea {
+    damn phase + " error: " + message
+}
+
+slay compiler_handle_error(error tea) lit {
+    vibez.spill("Compiler error: " + error)
+    damn cap
 }

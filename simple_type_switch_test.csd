@@ -1,9 +1,11 @@
-# Simple type switch test
+# Simple type switch test for CURSED compiler
+
 sus x normie = 42
-sus result tea = typecheck x is {
-    normie -> "integer"
-    tea -> "string"
-    _ -> "other"
+
+sus result normie = typecheck (x) {
+    case normie -> 1
+    _ -> 0
 }
 
+vibez.spill("Type switch result:")
 vibez.spill(result)

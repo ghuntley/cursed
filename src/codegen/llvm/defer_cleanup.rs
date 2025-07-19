@@ -133,16 +133,17 @@ impl DeferCleanupSystem {
     /// Generate LLVM IR for a defer expression
     fn generate_defer_expression_ir(&self, expression: &Expression, ir: &mut String) -> Result<(), CursedError> {
         match expression {
-            Expression::FunctionCall(call) => {
+            Expression::Call(call) => {
                 // Generate function call for defer
-                ir.push_str(&format!("  ; Defer function call: {}\n", call.name));
-                
-                // Generate the actual function call IR
-                match &call.name[..] {
+                if let Expression::Identifier(func_name) = &*call.function {
+                    ir.push_str(&format!("  ; Defer function call: {}\n", func_name));
+                    
+                    // Generate the actual function call IR
+                    match func_name.as_str() {
                     "vibez.spill" => {
                         if let Some(arg) = call.arguments.first() {
                             match arg {
-                                Expression::StringLiteral(s) => {
+                                Expression::String(s) => {
                                     ir.push_str(&format!("  call i32 (i8*, ...) @printf(i8* getelementptr ([{}x i8], [{}x i8]* @.str, i32 0, i32 0))\n", 
                                         s.len() + 1, s.len() + 1));
                                 },
@@ -153,10 +154,15 @@ impl DeferCleanupSystem {
                             }
                         }
                     },
-                    _ => {
-                        // Generic function call cleanup
-                        ir.push_str(&format!("  call void @{}()\n", call.name));
+                        _ => {
+                            // Generic function call cleanup
+                            ir.push_str(&format!("  call void @{}()\n", func_name));
+                        }
                     }
+                } else {
+                    // Complex function expression - generate generic cleanup
+                    ir.push_str("  ; Complex function call - generating generic cleanup\n");
+                    ir.push_str("  call void @defer_function()\n");
                 }
             },
             Expression::Identifier(name) => {

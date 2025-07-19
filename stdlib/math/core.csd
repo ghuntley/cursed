@@ -622,7 +622,24 @@ slay median(values [meal]) meal {
     
     # Create sorted copy
     sus sorted [meal] = values;
-    # TODO: Implement sorting algorithm
+    
+    # Pure CURSED bubble sort implementation
+    bestie (len > 1) {
+        sus i normie = 0
+        bestie (i < len - 1) {
+            sus j normie = 0
+            bestie (j < len - i - 1) {
+                lowkey (sorted[j] > sorted[j + 1]) {
+                    # Swap elements
+                    sus temp meal = sorted[j]
+                    sorted[j] = sorted[j + 1]
+                    sorted[j + 1] = temp
+                }
+                j = j + 1
+            }
+            i = i + 1
+        }
+    }
     
     bestie (len % 2 == 0) {
         damn (sorted[len / 2 - 1] + sorted[len / 2]) / 2.0;

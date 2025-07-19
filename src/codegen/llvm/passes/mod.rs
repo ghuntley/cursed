@@ -9,6 +9,7 @@ pub mod constant_propagation;
 pub mod loop_optimization;
 pub mod loop_optimization_old;
 pub mod inlining;
+pub mod inlining_fixed;
 pub mod gvn;
 
 // Critical optimization passes (minimally implemented)
@@ -28,6 +29,7 @@ pub use constant_propagation::ConstantPropagationPass;
 pub use loop_optimization::{LoopOptimizationPass, LoopInfo};
 pub use loop_optimization_old::LoopOptimizationResult;
 pub use inlining::{InliningPass, InliningHeuristics, CallSiteAnalyzer, InliningResult};
+pub use inlining_fixed::{EnhancedInliningPass, InliningConfig as EnhancedInliningConfig};
 pub use gvn::{GvnPass, GvnResult};
 
 // Placeholder exports for other passes

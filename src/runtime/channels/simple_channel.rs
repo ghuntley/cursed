@@ -15,6 +15,24 @@ use std::fmt;
 use crate::runtime::channels::{SendResult, ReceiveResult, ChannelStats};
 use crate::runtime::goroutine::GoroutineId;
 
+/// Channel statistics tracking
+#[derive(Debug)]
+struct ChannelStatsInternal {
+    total_sent: u64,
+    total_received: u64,
+    messages_dropped: u64,
+}
+
+impl ChannelStatsInternal {
+    fn new() -> Self {
+        Self {
+            total_sent: 0,
+            total_received: 0,
+            messages_dropped: 0,
+        }
+    }
+}
+
 /// Simple channel implementation
 pub struct SimpleChannel<T> {
     /// Channel ID
@@ -33,6 +51,8 @@ pub struct SimpleChannel<T> {
     sender_count: Arc<AtomicUsize>,
     /// Number of active receivers
     receiver_count: Arc<AtomicUsize>,
+    /// Channel statistics
+    stats: Arc<Mutex<ChannelStatsInternal>>,
 }
 
 impl<T> SimpleChannel<T> {
@@ -54,6 +74,7 @@ impl<T> SimpleChannel<T> {
             receiver_notify: Arc::new(Condvar::new()),
             sender_count: Arc::new(AtomicUsize::new(0)),
             receiver_count: Arc::new(AtomicUsize::new(0)),
+            stats: Arc::new(Mutex::new(ChannelStatsInternal::new())),
         }
     }
     
@@ -78,6 +99,12 @@ impl<T> SimpleChannel<T> {
             
             buffer.push_back(value);
             self.receiver_notify.notify_one();
+            
+            // Update statistics
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.total_sent += 1;
+            }
+            
             return SendResult::Sent;
         }
         
@@ -92,6 +119,12 @@ impl<T> SimpleChannel<T> {
         
         buffer.push_back(value);
         self.receiver_notify.notify_one();
+        
+        // Update statistics
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.total_sent += 1;
+        }
+        
         SendResult::Sent
     }
     
@@ -106,20 +139,40 @@ impl<T> SimpleChannel<T> {
         // For unbuffered channels, need receiver
         if self.capacity == 0 {
             if self.receiver_count.load(Ordering::SeqCst) == 0 {
+                // Track dropped message for unbuffered channel
+                if let Ok(mut stats) = self.stats.lock() {
+                    stats.messages_dropped += 1;
+                }
                 return SendResult::WouldBlock(value);
             }
             buffer.push_back(value);
             self.receiver_notify.notify_one();
+            
+            // Update statistics
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.total_sent += 1;
+            }
+            
             return SendResult::Sent;
         }
         
         // For buffered channels, check capacity
         if buffer.len() >= self.capacity {
+            // Track dropped message for full buffer
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.messages_dropped += 1;
+            }
             return SendResult::WouldBlock(value);
         }
         
         buffer.push_back(value);
         self.receiver_notify.notify_one();
+        
+        // Update statistics
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.total_sent += 1;
+        }
+        
         SendResult::Sent
     }
     
@@ -151,6 +204,12 @@ impl<T> SimpleChannel<T> {
         
         if let Some(value) = buffer.pop_front() {
             self.sender_notify.notify_one();
+            
+            // Update statistics
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.total_received += 1;
+            }
+            
             return ReceiveResult::Received(value);
         }
         
@@ -168,6 +227,12 @@ impl<T> SimpleChannel<T> {
         
         if let Some(value) = buffer.pop_front() {
             self.sender_notify.notify_one();
+            
+            // Update statistics
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.total_received += 1;
+            }
+            
             ReceiveResult::Received(value)
         } else if self.is_closed() {
             ReceiveResult::Closed
@@ -239,6 +304,7 @@ impl<T> SimpleChannel<T> {
     
     /// Get detailed channel statistics
     pub fn stats(&self) -> ChannelStats {
+        let stats_internal = self.stats.lock().unwrap();
         ChannelStats {
             id: self.id,
             capacity: self.capacity,
@@ -246,9 +312,9 @@ impl<T> SimpleChannel<T> {
             sender_count: self.sender_count.load(Ordering::SeqCst),
             receiver_count: self.receiver_count.load(Ordering::SeqCst),
             is_closed: self.is_closed(),
-            total_sent: 0, // TODO: Add counters for these
-            total_received: 0,
-            messages_dropped: 0,
+            total_sent: stats_internal.total_sent,
+            total_received: stats_internal.total_received,
+            messages_dropped: stats_internal.messages_dropped,
         }
     }
     
@@ -320,6 +386,7 @@ impl<T> Clone for SimpleChannel<T> {
             receiver_notify: self.receiver_notify.clone(),
             sender_count: self.sender_count.clone(),
             receiver_count: self.receiver_count.clone(),
+            stats: self.stats.clone(),
         }
     }
 }

@@ -1680,3 +1680,4 @@ fn try_parse_and_evaluate(code: &str) -> crate::error::Result<()> {
     
     Err(CursedError::Parse("Could not parse REPL input".to_string()))
 }
+

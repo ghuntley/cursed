@@ -310,6 +310,21 @@ pub extern "C" fn cursed_channel_try_receive(channel_ptr: *mut c_void, value_out
     }
 }
 
+/// Try to send a value to a channel (non-blocking)
+#[no_mangle]
+pub extern "C" fn cursed_channel_try_send(channel_ptr: *mut c_void, value: i64) -> i32 {
+    if channel_ptr.is_null() {
+        return -1;
+    }
+    
+    let channel = unsafe { &*(channel_ptr as *const Channel<i64>) };
+    match channel.try_send(value) {
+        SendResult::Sent => 0, // Success
+        SendResult::WouldBlock(_) => 1, // Channel full (would block)
+        SendResult::Closed(_) => -2, // Channel closed
+    }
+}
+
 /// Close a channel
 #[no_mangle]
 pub extern "C" fn cursed_channel_close(channel_ptr: *mut c_void) {

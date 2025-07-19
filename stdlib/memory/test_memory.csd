@@ -1,139 +1,231 @@
 yeet "testz"
 yeet "memory"
 
-test_start("Production Memory Allocation System")
+# Test memory management functionality
+test_start("memory comprehensive tests")
 
-// Test basic allocation
-sus ptr thicc = malloc(1024)
-assert_true(ptr != 0)
-vibez.spill("✅ Basic allocation works")
+# Test basic memory allocation and deallocation
+sus pointer1 normie = memory_allocate(1024)
+assert_true(pointer1 != 0)
 
-// Test tagged allocation
-sus obj_ptr thicc = alloc_object(256)
-assert_true(obj_ptr != 0)
-vibez.spill("✅ Tagged object allocation works")
+sus dealloc_success lit = memory_deallocate(pointer1)
+assert_true(dealloc_success)
 
-sus arr_ptr thicc = alloc_array(512)
-assert_true(arr_ptr != 0)
-vibez.spill("✅ Tagged array allocation works")
+# Test invalid allocations
+sus invalid_pointer normie = memory_allocate(0)
+assert_eq_int(invalid_pointer, 0)
 
-sus str_ptr thicc = alloc_string(128)
-assert_true(str_ptr != 0)
-vibez.spill("✅ Tagged string allocation works")
+sus negative_pointer normie = memory_allocate(-100)
+assert_eq_int(negative_pointer, 0)
 
-// Test memory utilities
-sus success lit = zero_memory(ptr, 1024)
-assert_true(success)
-vibez.spill("✅ Memory zeroing works")
+# Test null pointer deallocation
+sus null_dealloc lit = memory_deallocate(0)
+assert_false(null_dealloc)
 
-// Test memory alignment
-sus aligned_size normie = align_size(100, 8)
-assert_true(aligned_size >= 100)
-assert_true(aligned_size % 8 == 0)
-vibez.spill("✅ Memory alignment works")
+# Test memory reallocation
+sus pointer2 normie = memory_allocate(512)
+assert_true(pointer2 != 0)
 
-// Test memory comparison
-sus ptr2 thicc = malloc(1024)
-zero_memory(ptr2, 1024)
-sus cmp_result normie = compare_memory(ptr, ptr2, 1024)
-assert_true(cmp_result == 0)
-vibez.spill("✅ Memory comparison works")
+sus realloc_pointer normie = memory_reallocate(pointer2, 1024)
+assert_true(realloc_pointer != 0)
 
-// Test memory copy
-sus copy_success lit = copy_memory(ptr2, ptr, 1024)
-assert_true(copy_success)
-vibez.spill("✅ Memory copy works")
+# Test reallocation edge cases
+sus null_realloc normie = memory_reallocate(0, 256)
+assert_true(null_realloc != 0)
+memory_deallocate(null_realloc)
 
-// Test garbage collection
-sus freed_bytes normie = gc_collect()
+sus zero_realloc normie = memory_reallocate(realloc_pointer, 0)
+assert_eq_int(zero_realloc, 0)
+
+# Test memory operations
+sus src_pointer normie = memory_allocate(64)
+sus dest_pointer normie = memory_allocate(64)
+
+assert_true(memory_copy(dest_pointer, src_pointer, 32))
+assert_false(memory_copy(0, src_pointer, 32))  # Null destination
+assert_false(memory_copy(dest_pointer, 0, 32))  # Null source
+
+assert_true(memory_zero(dest_pointer, 64))
+assert_false(memory_zero(0, 64))  # Null pointer
+
+memory_deallocate(src_pointer)
+memory_deallocate(dest_pointer)
+
+# Test memory comparison
+sus ptr_a normie = memory_allocate(32)
+sus ptr_b normie = memory_allocate(32)
+
+assert_eq_int(memory_compare(ptr_a, ptr_a, 32), 0)  # Same pointer
+assert_eq_int(memory_compare(ptr_a, ptr_b, 32), 1)  # Different pointers
+assert_eq_int(memory_compare(0, ptr_a, 32), -1)   # Null pointer error
+
+memory_deallocate(ptr_a)
+memory_deallocate(ptr_b)
+
+# Test garbage collector
+sus gc GCState = memory_get_gc()
+assert_true(gc != cringe)
+
+sus initial_allocated normie = gc_get_total_allocated(gc)
+sus gc_pointer normie = gc_allocate(gc, 256)
+assert_true(gc_pointer != 0)
+
+sus after_alloc normie = gc_get_total_allocated(gc)
+assert_true(after_alloc >= initial_allocated)
+
+assert_true(gc_deallocate(gc, gc_pointer))
+sus after_dealloc normie = gc_get_total_allocated(gc)
+assert_true(after_dealloc <= after_alloc)
+
+# Test garbage collection
+sus freed_bytes normie = gc_collect(gc)
 assert_true(freed_bytes >= 0)
-vibez.spill("✅ Garbage collection works")
 
-// Test GC statistics
-sus gc_stats_str tea = gc_stats()
-assert_true(gc_stats_str != "")
-vibez.spill("✅ GC statistics available:", gc_stats_str)
+# Test memory allocator
+sus allocator MemoryAllocator = allocator_create()
+assert_true(allocator != cringe)
 
-// Test memory pressure monitoring
-sus pressure drip = gc_pressure()
-assert_true(pressure >= 0.0)
-assert_true(pressure <= 1.0)
-vibez.spill("✅ Memory pressure monitoring works:", pressure)
+sus alloc_ptr normie = allocator_malloc(128)
+assert_true(alloc_ptr != 0)
 
-// Test memory reporting
-sus memory_report_str tea = memory_report()
-assert_true(memory_report_str != "")
-vibez.spill("✅ Memory reporting works:", memory_report_str)
+assert_true(allocator_free(alloc_ptr))
 
-// Test memory usage tracking
-sus usage thicc = memory_usage()
-assert_true(usage > 0)
-vibez.spill("✅ Memory usage tracking works:", usage)
+# Test allocator edge cases
+assert_eq_int(allocator_malloc(0), 0)
+assert_false(allocator_free(0))
 
-// Test stack operations
-sus stack_size normie = get_stack_size()
-assert_true(stack_size > 0)
-vibez.spill("✅ Stack size monitoring works:", stack_size)
+# Test allocator reallocation
+sus orig_ptr normie = allocator_malloc(64)
+sus new_ptr normie = allocator_realloc(orig_ptr, 128)
+assert_true(new_ptr != 0)
 
-sus stack_overflow lit = check_stack_overflow()
-assert_true(stack_overflow == cap)
-vibez.spill("✅ Stack overflow check works")
+sus zero_ptr normie = allocator_realloc(new_ptr, 0)
+assert_eq_int(zero_ptr, 0)
 
-// Test memory pool operations
-sus pool_id thicc = create_pool(64, 100)
-assert_true(pool_id != 0)
-vibez.spill("✅ Memory pool creation works")
+sus from_null normie = allocator_realloc(0, 64)
+assert_true(from_null != 0)
+allocator_free(from_null)
 
-sus pool_ptr thicc = pool_alloc(pool_id, 64)
-assert_true(pool_ptr != 0)
-vibez.spill("✅ Pool allocation works")
+# Test memory pool
+sus pool MemoryPool = memory_pool_create(32, 10)
+assert_true(pool != cringe)
+assert_false(memory_pool_is_empty(pool))
 
-sus pool_free_success lit = pool_free(pool_id, pool_ptr)
-assert_true(pool_free_success)
-vibez.spill("✅ Pool deallocation works")
+sus pool_block normie = memory_pool_acquire(pool)
+assert_true(pool_block != 0)
 
-// Test memory limits and compaction
-sus limit_success lit = set_memory_limit(128 * 1024 * 1024)  // 128MB
-assert_true(limit_success)
-vibez.spill("✅ Memory limit setting works")
+assert_true(memory_pool_release(pool, pool_block))
+assert_false(memory_pool_release(pool, 0))  # Null pointer
 
-sus compacted_bytes normie = memory_compact()
-assert_true(compacted_bytes >= 0)
-vibez.spill("✅ Memory compaction works")
+# Test pool exhaustion
+sus blocks [normie] = []
+sus i normie = 0
+bestie i < 10 {  # Exhaust the pool
+    sus block normie = memory_pool_acquire(pool)
+    lowkey block != 0 {
+        blocks = append_block(blocks, block)
+    }
+    i = i + 1
+}
 
-// Test memory performance monitoring
-sus pressure_monitor_result lit = memory_pressure_monitor()
-vibez.spill("✅ Memory pressure monitoring works")
+assert_true(memory_pool_is_empty(pool))
+sus exhausted_block normie = memory_pool_acquire(pool)
+assert_eq_int(exhausted_block, 0)
 
-sus performance_report tea = memory_performance_report()
-assert_true(performance_report != "")
-vibez.spill("✅ Memory performance reporting works")
+# Test memory safety
+sus safety MemorySafety = memory_safety_create()
+assert_true(safety != cringe)
 
-// Test memory leak detection
-sus leak_report tea = check_memory_leaks()
-assert_true(leak_report != "")
-vibez.spill("✅ Memory leak detection works")
+sus safe_ptr normie = memory_allocate(100)
+assert_true(memory_check_bounds(safety, safe_ptr, 50))
+assert_false(memory_check_bounds(safety, safe_ptr, 200))  # Exceeds bounds
+assert_false(memory_check_bounds(safety, 0, 50))         # Null pointer
 
-// Clean up allocations
-free(ptr)
-free(obj_ptr)
-free(arr_ptr)
-free(str_ptr)
-free(ptr2)
-vibez.spill("✅ Memory deallocation works")
+assert_true(memory_check_null(safety, safe_ptr))
+assert_false(memory_check_null(safety, 0))
 
-// Reset stats for clean finish
-sus reset_success lit = reset_memory_stats()
-assert_true(reset_success)
-vibez.spill("✅ Memory statistics reset works")
+assert_true(memory_check_double_free(safety, safe_ptr))
+memory_deallocate(safe_ptr)
 
-vibez.spill("\n🎉 All memory allocation tests passed!")
-vibez.spill("📊 Memory system is production-ready with:")
-vibez.spill("  - Real GC-integrated allocation")
-vibez.spill("  - Multiple allocation strategies")
-vibez.spill("  - Memory tracking and profiling")  
-vibez.spill("  - Error handling and leak detection")
-vibez.spill("  - Performance monitoring")
-vibez.spill("  - Memory pools and compaction")
+# Test memory block metadata
+sus block MemoryBlock = memory_block_create(256, "ast_node")
+assert_true(block != cringe)
+assert_eq_int(memory_block_get_size(block), 256)
+assert_eq_string(memory_block_get_type(block), "ast_node")
+assert_true(memory_block_is_valid(block))
+
+# Test memory statistics
+sus stats tea = memory_get_stats()
+assert_true(string_length(stats) > 0)
+
+assert_true(memory_print_stats())
+
+sus gc_freed normie = memory_force_gc()
+assert_true(gc_freed >= 0)
+
+# Test compiler-specific memory utilities
+sus ast_node_ptr normie = memory_allocate_ast_node("expression")
+assert_true(ast_node_ptr != 0)
+memory_deallocate(ast_node_ptr)
+
+sus symbol_table_ptr normie = memory_allocate_symbol_table(50)
+assert_true(symbol_table_ptr != 0)
+memory_deallocate(symbol_table_ptr)
+
+sus string_buffer_ptr normie = memory_allocate_string_buffer(100)
+assert_true(string_buffer_ptr != 0)
+memory_deallocate(string_buffer_ptr)
+
+# Test AST node size calculation
+assert_eq_int(get_ast_node_size("expression"), 32)
+assert_eq_int(get_ast_node_size("statement"), 48)
+assert_eq_int(get_ast_node_size("declaration"), 64)
+assert_eq_int(get_ast_node_size("unknown"), 32)
+
+# Test string duplication
+sus original_string normie = memory_allocate_string_buffer(20)
+sus duplicated_string normie = memory_string_duplicate(original_string)
+assert_true(duplicated_string != 0)
+assert_true(duplicated_string != original_string)
+
+memory_deallocate(original_string)
+memory_deallocate(duplicated_string)
+
+# Test helper functions
+assert_eq_int(min_size(10, 20), 10)
+assert_eq_int(min_size(30, 15), 15)
+assert_eq_int(min_size(5, 5), 5)
+
+sus timestamp normie = get_current_time()
+assert_true(timestamp > 0)
+
+assert_true(is_valid_pointer(100))
+assert_false(is_valid_pointer(0))
+
+sus length normie = string_pointer_length(42)  # Mock string pointer
+assert_true(length > 0)
+
+# Test memory operations with realistic scenarios
+sus compiler_memory normie = memory_allocate(8192)  # Large block for compiler
+assert_true(compiler_memory != 0)
+
+sus temp_buffer normie = memory_allocate(1024)
+assert_true(temp_buffer != 0)
+
+# Test memory copy between large blocks
+assert_true(memory_copy(compiler_memory, temp_buffer, 512))
+
+# Test memory zeroing
+assert_true(memory_zero(temp_buffer, 1024))
+
+# Clean up
+memory_deallocate(compiler_memory)
+memory_deallocate(temp_buffer)
 
 print_test_summary()
+
+# Helper function for block array operations
+slay append_block(blocks [normie], block normie) [normie] {
+    # Would actually append block to array
+    damn blocks
+}

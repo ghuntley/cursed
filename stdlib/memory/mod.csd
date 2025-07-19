@@ -1,513 +1,459 @@
-# memory - Advanced Memory Management Module
-# Comprehensive memory management with GC, heap allocation, and safety
-yeet "core"
-yeet "vibez"
+# Pure CURSED Memory Management Module
+# Essential memory operations for compiler self-hosting
 
-# Core Constants - Memory Allocation Tags
-fact OBJECT_TAG normie = 1
-fact ARRAY_TAG normie = 2
-fact STRING_TAG normie = 3
-fact FUNCTION_TAG normie = 4
-fact CHANNEL_TAG normie = 5
-fact GOROUTINE_TAG normie = 6
-fact STRUCT_TAG normie = 7
-fact INTERFACE_TAG normie = 8
+yeet "testz"
+yeet "runtime_core"
 
-# Memory Size Constants
-fact MIN_ALLOCATION_SIZE normie = 8
-fact MAX_ALLOCATION_SIZE thicc = 1073741824  # 1GB
-fact SMALL_OBJECT_THRESHOLD normie = 32768   # 32KB
-fact LARGE_OBJECT_THRESHOLD thicc = 1048576  # 1MB
-fact ALIGNMENT_SIZE normie = 8
-fact OBJECT_HEADER_SIZE normie = 16
+# Memory allocation types
+be_like AllocationType = tea
 
-# GC Constants
-fact YOUNG_GENERATION_RATIO drip = 0.33
-fact OLD_GENERATION_RATIO drip = 0.67
-fact DEFAULT_HEAP_SIZE thicc = 67108864     # 64MB
-fact MAX_HEAP_SIZE thicc = 1073741824       # 1GB
-fact GC_TRIGGER_THRESHOLD drip = 0.8        # 80% full
-
-# Error Constants
-fact ErrOutOfMemory tea = "out of memory"
-fact ErrInvalidSize tea = "invalid allocation size"
-fact ErrNullPointer tea = "null pointer access"
-fact ErrCorruption tea = "memory corruption detected"
-fact ErrGCFailure tea = "garbage collection failed"
-
-# Core Structures
-struct MemoryStats {
-    heap_allocations thicc,
-    heap_deallocations thicc,
-    heap_usage thicc,
-    peak_heap_usage thicc,
-    stack_allocations thicc,
-    stack_deallocations thicc,
-    stack_usage thicc,
-    peak_stack_usage thicc,
-    gc_collections normie,
-    gc_total_time thicc,
-    pressure_level drip,
-    fragmentation_ratio drip
+# Memory block metadata
+collab MemoryBlock {
+    slay new(size normie, block_type AllocationType) MemoryBlock
+    slay get_size() normie
+    slay get_type() tea
+    slay is_valid() lit
 }
 
-struct AllocationInfo {
-    ptr thicc,
-    size thicc,
-    tag normie,
-    allocated_time thicc,
-    is_active lit
+# Garbage collector state
+collab GCState {
+    slay new() GCState
+    slay allocate(size normie) normie
+    slay deallocate(pointer normie) lit
+    slay collect() normie
+    slay get_total_allocated() normie
 }
 
-struct GCStats {
-    young_collections normie,
-    old_collections normie,
-    total_collections normie,
-    total_pause_time thicc,
-    average_pause_time thicc,
-    max_pause_time thicc,
-    objects_collected thicc,
-    bytes_freed thicc
+# Memory allocator
+collab MemoryAllocator {
+    slay new() MemoryAllocator
+    slay malloc(size normie) normie
+    slay free(pointer normie) lit
+    slay realloc(pointer normie, new_size normie) normie
+    slay get_allocation_count() normie
 }
 
-struct HeapInfo {
-    total_size thicc,
-    used_size thicc,
-    free_size thicc,
-    eden_size thicc,
-    survivor_size thicc,
-    old_gen_size thicc,
-    fragmentation thicc
+# Memory pool for efficient allocation
+collab MemoryPool {
+    slay new(block_size normie, pool_size normie) MemoryPool
+    slay acquire() normie
+    slay release(pointer normie) lit
+    slay is_empty() lit
 }
 
-# Global Memory Tracking
-sus global_memory_stats MemoryStats = MemoryStats{
-    heap_allocations: 0,
-    heap_deallocations: 0,
-    heap_usage: 0,
-    peak_heap_usage: 0,
-    stack_allocations: 0,
-    stack_deallocations: 0,
-    stack_usage: 0,
-    peak_stack_usage: 0,
-    gc_collections: 0,
-    gc_total_time: 0,
-    pressure_level: 0.0,
-    fragmentation_ratio: 0.0
+# Memory safety validator
+collab MemorySafety {
+    slay new() MemorySafety
+    slay check_bounds(pointer normie, size normie) lit
+    slay check_null(pointer normie) lit
+    slay check_double_free(pointer normie) lit
 }
 
-sus gc_stats GCStats = GCStats{
-    young_collections: 0,
-    old_collections: 0,
-    total_collections: 0,
-    total_pause_time: 0,
-    average_pause_time: 0,
-    max_pause_time: 0,
-    objects_collected: 0,
-    bytes_freed: 0
-}
-
-# Helper Functions
-slay align_size(size thicc) thicc {
-    # Align to 8-byte boundary
-    sus aligned thicc = size + ALIGNMENT_SIZE - 1
-    damn aligned - (aligned % ALIGNMENT_SIZE)
-}
-
-slay validate_size(size thicc) lit {
-    check size < MIN_ALLOCATION_SIZE {
-        damn cap
-    }
-    check size > MAX_ALLOCATION_SIZE {
-        damn cap
-    }
-    damn based
-}
-
-slay calculate_memory_pressure() drip {
-    check global_memory_stats.heap_usage == 0 {
-        damn 0.0
+# Main memory management functions
+slay memory_allocate(size normie) normie {
+    lowkey size <= 0 {
+        damn 0  # Invalid allocation
     }
     
-    sus total_heap thicc = DEFAULT_HEAP_SIZE
-    sus heap_usage_f drip = global_memory_stats.heap_usage.(drip)
-    sus total_heap_f drip = total_heap.(drip)
-    sus usage_ratio drip = heap_usage_f / total_heap_f
-    
-    check usage_ratio > 1.0 {
-        damn 1.0
-    }
-    check usage_ratio < 0.0 {
-        damn 0.0
-    }
-    
-    damn usage_ratio
+    # Interface with garbage collector
+    sus gc GCState = memory_get_gc()
+    damn gc_allocate(gc, size)
 }
 
-slay update_peak_usage(new_usage thicc) {
-    check new_usage > global_memory_stats.peak_heap_usage {
-        global_memory_stats.peak_heap_usage = new_usage
+slay memory_deallocate(pointer normie) lit {
+    lowkey pointer == 0 {
+        damn cap  # Cannot free null pointer
     }
+    
+    # Interface with garbage collector
+    sus gc GCState = memory_get_gc()
+    damn gc_deallocate(gc, pointer)
 }
 
-slay simulate_allocation_delay(size thicc) {
-    # Simulate allocation time based on object size
-    check size > LARGE_OBJECT_THRESHOLD {
-        # Large objects take longer to allocate
-        # In real implementation, this would be actual allocation work
-    }
-}
-
-# Core Memory Allocation Functions
-slay malloc(size thicc) thicc {
-    check !validate_size(size) {
-        damn 0  # Return null for invalid size
-    }
-    
-    sus aligned_size thicc = align_size(size + OBJECT_HEADER_SIZE)
-    
-    # Check memory pressure before allocation
-    sus pressure drip = calculate_memory_pressure()
-    check pressure > GC_TRIGGER_THRESHOLD {
-        # Trigger GC before allocation
-        collect_garbage()
-    }
-    
-    # Simulate allocation - in real implementation would allocate from heap
-    sus ptr thicc = aligned_size * 1000 + global_memory_stats.heap_allocations + 0x10000000
-    
-    # Update statistics
-    global_memory_stats.heap_allocations = global_memory_stats.heap_allocations + 1
-    global_memory_stats.heap_usage = global_memory_stats.heap_usage + aligned_size
-    update_peak_usage(global_memory_stats.heap_usage)
-    
-    # Simulate allocation work
-    simulate_allocation_delay(size)
-    
-    damn ptr
-}
-
-slay malloc_tagged(size thicc, tag normie) thicc {
-    sus ptr thicc = malloc(size)
-    check ptr == 0 {
+slay memory_reallocate(pointer normie, new_size normie) normie {
+    lowkey new_size <= 0 {
+        memory_deallocate(pointer)
         damn 0
     }
     
-    # In real implementation, would store tag in object header
-    # For now, just return the pointer
-    damn ptr
+    lowkey pointer == 0 {
+        damn memory_allocate(new_size)
+    }
+    
+    # Simplified reallocation - would be more complex in real implementation
+    sus new_pointer normie = memory_allocate(new_size)
+    lowkey new_pointer != 0 {
+        memory_copy(new_pointer, pointer, get_block_size(pointer))
+        memory_deallocate(pointer)
+    }
+    
+    damn new_pointer
 }
 
-slay malloc_zeroed(size thicc) thicc {
-    sus ptr thicc = malloc(size)
-    check ptr == 0 {
-        damn 0
+slay memory_copy(dest normie, src normie, size normie) lit {
+    lowkey dest == 0 || src == 0 || size <= 0 {
+        damn cap
     }
     
-    # In real implementation, would zero the allocated memory
-    damn ptr
-}
-
-slay realloc(ptr thicc, old_size thicc, new_size thicc) thicc {
-    check ptr == 0 {
-        damn malloc(new_size)
-    }
-    
-    check new_size == 0 {
-        free(ptr)
-        damn 0
-    }
-    
-    check !validate_size(new_size) {
-        damn 0
-    }
-    
-    # Allocate new memory
-    sus new_ptr thicc = malloc(new_size)
-    check new_ptr == 0 {
-        damn 0  # Allocation failed
-    }
-    
-    # In real implementation, would copy old data to new location
-    # Free old memory
-    free(ptr)
-    
-    damn new_ptr
-}
-
-# Memory Deallocation
-slay free(ptr thicc) lit {
-    check ptr == 0 {
-        damn cap  # Freeing null pointer is safe but no-op
-    }
-    
-    # Update statistics
-    global_memory_stats.heap_deallocations = global_memory_stats.heap_deallocations + 1
-    
-    # In real implementation, would:
-    # 1. Validate pointer is valid heap pointer
-    # 2. Get object size from header
-    # 3. Update heap usage statistics
-    # 4. Mark memory as free or return to allocator
-    
-    # For simulation, assume average object size
-    sus estimated_size thicc = 64
-    check global_memory_stats.heap_usage >= estimated_size {
-        global_memory_stats.heap_usage = global_memory_stats.heap_usage - estimated_size
-    }
-    
+    # Would perform actual memory copy
+    # For pure CURSED implementation, this interfaces with runtime
     damn based
 }
 
-slay free_array(ptr thicc, count normie, element_size thicc) lit {
-    check ptr == 0 || count == 0 {
+slay memory_zero(pointer normie, size normie) lit {
+    lowkey pointer == 0 || size <= 0 {
         damn cap
     }
     
-    # Free array memory
-    damn free(ptr)
-}
-
-# Garbage Collection Functions
-slay collect_garbage() normie {
-    # Simulate GC collection
-    sus start_time thicc = get_current_time()
-    
-    # Update GC statistics
-    gc_stats.total_collections = gc_stats.total_collections + 1
-    global_memory_stats.gc_collections = global_memory_stats.gc_collections + 1
-    
-    # Simulate collection work
-    sus objects_to_collect normie = 100  # Simulated
-    sus bytes_to_free thicc = objects_to_collect * 64
-    
-    # Update heap usage (simulate freeing objects)
-    check global_memory_stats.heap_usage >= bytes_to_free {
-        global_memory_stats.heap_usage = global_memory_stats.heap_usage - bytes_to_free
-    }
-    
-    # Update GC stats
-    gc_stats.objects_collected = gc_stats.objects_collected + objects_to_collect.(thicc)
-    gc_stats.bytes_freed = gc_stats.bytes_freed + bytes_to_free
-    
-    # Calculate pause time
-    sus end_time thicc = get_current_time()
-    sus pause_time thicc = end_time - start_time
-    gc_stats.total_pause_time = gc_stats.total_pause_time + pause_time
-    
-    check pause_time > gc_stats.max_pause_time {
-        gc_stats.max_pause_time = pause_time
-    }
-    
-    gc_stats.average_pause_time = gc_stats.total_pause_time / gc_stats.total_collections.(thicc)
-    
-    damn objects_to_collect
-}
-
-slay collect_young_generation() normie {
-    # Simulate young generation collection
-    gc_stats.young_collections = gc_stats.young_collections + 1
-    damn collect_garbage() / 2  # Young GC collects fewer objects
-}
-
-slay collect_old_generation() normie {
-    # Simulate old generation collection
-    gc_stats.old_collections = gc_stats.old_collections + 1
-    damn collect_garbage()
-}
-
-slay force_gc() normie {
-    # Force immediate garbage collection
-    damn collect_garbage()
-}
-
-# Memory Information and Statistics
-slay get_memory_stats() MemoryStats {
-    # Update pressure level before returning stats
-    global_memory_stats.pressure_level = calculate_memory_pressure()
-    damn global_memory_stats
-}
-
-slay get_gc_stats() GCStats {
-    damn gc_stats
-}
-
-slay get_heap_info() HeapInfo {
-    sus total thicc = DEFAULT_HEAP_SIZE
-    sus used thicc = global_memory_stats.heap_usage
-    sus free thicc = total - used
-    
-    # Calculate generation sizes
-    sus eden thicc = total * YOUNG_GENERATION_RATIO.(thicc) / 2
-    sus survivor thicc = eden
-    sus old_gen thicc = total * OLD_GENERATION_RATIO.(thicc)
-    
-    # Calculate fragmentation
-    sus fragmentation thicc = used / 10  # Simplified fragmentation calculation
-    
-    sus info HeapInfo = HeapInfo{
-        total_size: total,
-        used_size: used,
-        free_size: free,
-        eden_size: eden,
-        survivor_size: survivor,
-        old_gen_size: old_gen,
-        fragmentation: fragmentation
-    }
-    
-    damn info
-}
-
-slay memory_info() tea {
-    sus stats MemoryStats = get_memory_stats()
-    sus gc_info GCStats = get_gc_stats()
-    
-    sus info tea = "Memory System Status:\n"
-    info = info + "Heap Usage: " + stats.heap_usage.(tea) + " bytes\n"
-    info = info + "Peak Usage: " + stats.peak_heap_usage.(tea) + " bytes\n"
-    info = info + "Allocations: " + stats.heap_allocations.(tea) + "\n"
-    info = info + "Deallocations: " + stats.heap_deallocations.(tea) + "\n"
-    info = info + "GC Collections: " + gc_info.total_collections.(tea) + "\n"
-    info = info + "Pressure Level: " + stats.pressure_level.(tea) + "\n"
-    
-    damn info
-}
-
-# Memory Safety and Validation
-slay validate_pointer(ptr thicc) lit {
-    check ptr == 0 {
-        damn cap  # Null pointer
-    }
-    
-    # Check if pointer is in valid heap range
-    check ptr < 0x10000000 {
-        damn cap  # Too low
-    }
-    
-    check ptr > 0x80000000 {
-        damn cap  # Too high
-    }
-    
+    # Would zero memory block
+    # For pure CURSED implementation, this interfaces with runtime
     damn based
 }
 
-slay check_heap_corruption() lit {
-    # Simulate heap corruption check
-    # In real implementation, would validate heap structure
-    damn cap  # No corruption detected
+slay memory_compare(ptr1 normie, ptr2 normie, size normie) normie {
+    lowkey ptr1 == 0 || ptr2 == 0 || size <= 0 {
+        damn -1  # Error case
+    }
+    
+    lowkey ptr1 == ptr2 {
+        damn 0  # Equal
+    }
+    
+    # Simplified comparison - would do byte-by-byte comparison
+    damn 1  # Different
 }
 
-slay memory_pressure_check() drip {
-    damn calculate_memory_pressure()
+# Garbage collector implementation
+slay memory_get_gc() GCState {
+    # Returns global GC instance
+    sus gc GCState = gc_create_instance()
+    damn gc
 }
 
-# Advanced Memory Operations
-slay copy_memory(dst thicc, src thicc, size thicc) lit {
-    check dst == 0 || src == 0 || size == 0 {
-        damn cap
+slay gc_create_instance() GCState {
+    sus gc GCState = GCState {
+        total_allocated: 0,
+        allocation_count: 0,
+        collection_count: 0,
+        enabled: based
     }
-    
-    check !validate_pointer(dst) || !validate_pointer(src) {
-        damn cap
-    }
-    
-    # In real implementation, would copy memory byte by byte
-    # For simulation, just return success
-    damn based
+    damn gc
 }
 
-slay zero_memory(ptr thicc, size thicc) lit {
-    check ptr == 0 || size == 0 {
-        damn cap
-    }
-    
-    check !validate_pointer(ptr) {
-        damn cap
-    }
-    
-    # In real implementation, would zero the memory
-    damn based
-}
-
-slay compare_memory(ptr1 thicc, ptr2 thicc, size thicc) normie {
-    check ptr1 == 0 || ptr2 == 0 || size == 0 {
-        damn -1  # Error
-    }
-    
-    check !validate_pointer(ptr1) || !validate_pointer(ptr2) {
-        damn -1
-    }
-    
-    # In real implementation, would compare memory byte by byte
-    # For simulation, assume equal
-    damn 0  # Equal
-}
-
-# Stack Memory Management
-slay allocate_stack(size thicc) thicc {
-    check !validate_size(size) {
+slay gc_allocate(gc GCState, size normie) normie {
+    lowkey !gc.enabled {
         damn 0
     }
     
-    # Allocate stack memory
-    sus ptr thicc = malloc_tagged(size, GOROUTINE_TAG)
-    
-    # Update stack statistics
-    global_memory_stats.stack_allocations = global_memory_stats.stack_allocations + 1
-    global_memory_stats.stack_usage = global_memory_stats.stack_usage + size
-    
-    check size > global_memory_stats.peak_stack_usage {
-        global_memory_stats.peak_stack_usage = size
+    # Simplified allocation - would interface with actual allocator
+    sus pointer normie = allocator_malloc(size)
+    lowkey pointer != 0 {
+        gc.total_allocated = gc.total_allocated + size
+        gc.allocation_count = gc.allocation_count + 1
     }
     
-    damn ptr
+    damn pointer
 }
 
-slay deallocate_stack(ptr thicc) lit {
-    check ptr == 0 {
+slay gc_deallocate(gc GCState, pointer normie) lit {
+    lowkey !gc.enabled || pointer == 0 {
         damn cap
     }
     
-    # Update stack statistics
-    global_memory_stats.stack_deallocations = global_memory_stats.stack_deallocations + 1
+    sus size normie = get_block_size(pointer)
+    sus success lit = allocator_free(pointer)
     
-    # In real implementation, would get actual stack size
-    sus estimated_size thicc = 2097152  # 2MB default stack size
-    check global_memory_stats.stack_usage >= estimated_size {
-        global_memory_stats.stack_usage = global_memory_stats.stack_usage - estimated_size
+    lowkey success {
+        gc.total_allocated = gc.total_allocated - size
+        gc.allocation_count = gc.allocation_count - 1
     }
     
-    damn free(ptr)
+    damn success
 }
 
-# Utility Functions
-slay get_current_time() thicc {
-    # Simulate getting current time in microseconds
-    damn 1000000 + global_memory_stats.heap_allocations * 10
+slay gc_collect(gc GCState) normie {
+    lowkey !gc.enabled {
+        damn 0
+    }
+    
+    # Simplified garbage collection
+    sus freed_bytes normie = perform_gc_sweep()
+    gc.collection_count = gc.collection_count + 1
+    gc.total_allocated = gc.total_allocated - freed_bytes
+    
+    damn freed_bytes
 }
 
-slay reset_memory_stats() {
-    global_memory_stats.heap_allocations = 0
-    global_memory_stats.heap_deallocations = 0
-    global_memory_stats.heap_usage = 0
-    global_memory_stats.peak_heap_usage = 0
-    global_memory_stats.stack_allocations = 0
-    global_memory_stats.stack_deallocations = 0
-    global_memory_stats.stack_usage = 0
-    global_memory_stats.peak_stack_usage = 0
-    global_memory_stats.gc_collections = 0
-    global_memory_stats.gc_total_time = 0
-    global_memory_stats.pressure_level = 0.0
-    global_memory_stats.fragmentation_ratio = 0.0
+slay gc_get_total_allocated(gc GCState) normie {
+    damn gc.total_allocated
 }
 
-slay reset_gc_stats() {
-    gc_stats.young_collections = 0
-    gc_stats.old_collections = 0
-    gc_stats.total_collections = 0
-    gc_stats.total_pause_time = 0
-    gc_stats.average_pause_time = 0
-    gc_stats.max_pause_time = 0
-    gc_stats.objects_collected = 0
-    gc_stats.bytes_freed = 0
+# Memory allocator implementation
+slay allocator_create() MemoryAllocator {
+    sus allocator MemoryAllocator = MemoryAllocator {
+        allocated_blocks: {},
+        total_size: 0,
+        block_count: 0
+    }
+    damn allocator
+}
+
+slay allocator_malloc(size normie) normie {
+    lowkey size <= 0 {
+        damn 0
+    }
+    
+    # Simplified allocation - would interface with system allocator
+    sus pointer normie = system_malloc(size)
+    lowkey pointer != 0 {
+        register_allocation(pointer, size)
+    }
+    
+    damn pointer
+}
+
+slay allocator_free(pointer normie) lit {
+    lowkey pointer == 0 {
+        damn cap
+    }
+    
+    sus size normie = get_block_size(pointer)
+    sus success lit = system_free(pointer)
+    
+    lowkey success {
+        unregister_allocation(pointer)
+    }
+    
+    damn success
+}
+
+slay allocator_realloc(pointer normie, new_size normie) normie {
+    lowkey new_size <= 0 {
+        allocator_free(pointer)
+        damn 0
+    }
+    
+    lowkey pointer == 0 {
+        damn allocator_malloc(new_size)
+    }
+    
+    sus old_size normie = get_block_size(pointer)
+    sus new_pointer normie = allocator_malloc(new_size)
+    
+    lowkey new_pointer != 0 {
+        sus copy_size normie = min_size(old_size, new_size)
+        memory_copy(new_pointer, pointer, copy_size)
+        allocator_free(pointer)
+    }
+    
+    damn new_pointer
+}
+
+# Memory pool implementation for efficient allocation
+slay memory_pool_create(block_size normie, pool_size normie) MemoryPool {
+    sus pool MemoryPool = MemoryPool {
+        block_size: block_size,
+        pool_size: pool_size,
+        available_blocks: pool_size,
+        next_free: 0
+    }
+    damn pool
+}
+
+slay memory_pool_acquire(pool MemoryPool) normie {
+    lowkey pool.available_blocks <= 0 {
+        damn 0  # Pool exhausted
+    }
+    
+    sus block_pointer normie = pool.next_free
+    pool.available_blocks = pool.available_blocks - 1
+    pool.next_free = pool.next_free + pool.block_size
+    
+    damn block_pointer
+}
+
+slay memory_pool_release(pool MemoryPool, pointer normie) lit {
+    lowkey pointer == 0 {
+        damn cap
+    }
+    
+    # Would return block to pool
+    pool.available_blocks = pool.available_blocks + 1
+    damn based
+}
+
+slay memory_pool_is_empty(pool MemoryPool) lit {
+    damn pool.available_blocks <= 0
+}
+
+# Memory safety checking
+slay memory_safety_create() MemorySafety {
+    sus safety MemorySafety = MemorySafety {
+        bounds_checking: based,
+        null_checking: based,
+        double_free_checking: based
+    }
+    damn safety
+}
+
+slay memory_check_bounds(safety MemorySafety, pointer normie, size normie) lit {
+    lowkey !safety.bounds_checking {
+        damn based  # Assume safe if checking disabled
+    }
+    
+    lowkey pointer == 0 || size <= 0 {
+        damn cap
+    }
+    
+    sus block_size normie = get_block_size(pointer)
+    damn size <= block_size
+}
+
+slay memory_check_null(safety MemorySafety, pointer normie) lit {
+    lowkey !safety.null_checking {
+        damn based  # Assume safe if checking disabled
+    }
+    
+    damn pointer != 0
+}
+
+slay memory_check_double_free(safety MemorySafety, pointer normie) lit {
+    lowkey !safety.double_free_checking {
+        damn based  # Assume safe if checking disabled
+    }
+    
+    # Would check if pointer was already freed
+    damn is_valid_pointer(pointer)
+}
+
+# Memory block metadata
+slay memory_block_create(size normie, block_type tea) MemoryBlock {
+    sus block MemoryBlock = MemoryBlock {
+        size: size,
+        block_type: block_type,
+        is_valid: based,
+        allocation_time: get_current_time()
+    }
+    damn block
+}
+
+slay memory_block_get_size(block MemoryBlock) normie {
+    damn block.size
+}
+
+slay memory_block_get_type(block MemoryBlock) tea {
+    damn block.block_type
+}
+
+slay memory_block_is_valid(block MemoryBlock) lit {
+    damn block.is_valid
+}
+
+# Memory statistics and debugging
+slay memory_get_stats() tea {
+    sus gc GCState = memory_get_gc()
+    sus total_allocated normie = gc_get_total_allocated(gc)
+    sus allocation_count normie = gc.allocation_count
+    sus collection_count normie = gc.collection_count
+    
+    sus stats tea = "Memory Statistics:\n"
+    stats = stats + "  Total Allocated: " + integer_to_string(total_allocated) + " bytes\n"
+    stats = stats + "  Active Allocations: " + integer_to_string(allocation_count) + "\n"
+    stats = stats + "  GC Collections: " + integer_to_string(collection_count) + "\n"
+    
+    damn stats
+}
+
+slay memory_print_stats() lit {
+    sus stats tea = memory_get_stats()
+    vibez.spill(stats)
+    damn based
+}
+
+slay memory_force_gc() normie {
+    sus gc GCState = memory_get_gc()
+    damn gc_collect(gc)
+}
+
+# Helper functions (would interface with runtime)
+slay system_malloc(size normie) normie {
+    # Would call actual system malloc
+    damn size  # Placeholder - return size as fake pointer
+}
+
+slay system_free(pointer normie) lit {
+    # Would call actual system free
+    damn based  # Placeholder
+}
+
+slay get_block_size(pointer normie) normie {
+    # Would return actual block size
+    damn 64  # Placeholder
+}
+
+slay register_allocation(pointer normie, size normie) lit {
+    # Would register in allocation tracking
+    damn based
+}
+
+slay unregister_allocation(pointer normie) lit {
+    # Would unregister from allocation tracking
+    damn based
+}
+
+slay perform_gc_sweep() normie {
+    # Would perform garbage collection sweep
+    damn 256  # Placeholder freed bytes
+}
+
+slay min_size(a normie, b normie) normie {
+    lowkey a < b { damn a } else { damn b }
+}
+
+slay get_current_time() normie {
+    # Would return actual timestamp
+    damn 1234567890
+}
+
+slay is_valid_pointer(pointer normie) lit {
+    # Would check pointer validity
+    damn pointer != 0
+}
+
+# Memory utilities for compiler
+slay memory_allocate_ast_node(node_type tea) normie {
+    sus size normie = get_ast_node_size(node_type)
+    damn memory_allocate(size)
+}
+
+slay memory_allocate_symbol_table(symbol_count normie) normie {
+    sus size normie = symbol_count * 64  # Estimated size per symbol
+    damn memory_allocate(size)
+}
+
+slay memory_allocate_string_buffer(length normie) normie {
+    sus size normie = length + 1  # +1 for null terminator
+    damn memory_allocate(size)
+}
+
+slay get_ast_node_size(node_type tea) normie {
+    lowkey node_type == "expression" { damn 32 }
+    elseif node_type == "statement" { damn 48 }
+    elseif node_type == "declaration" { damn 64 }
+    else { damn 32 }
+}
+
+# Memory-efficient string operations
+slay memory_string_duplicate(source normie) normie {
+    sus length normie = string_pointer_length(source)
+    sus new_string normie = memory_allocate_string_buffer(length)
+    lowkey new_string != 0 {
+        memory_copy(new_string, source, length)
+    }
+    damn new_string
+}
+
+slay string_pointer_length(string_ptr normie) normie {
+    # Would calculate string length from pointer
+    damn 10  # Placeholder
 }

@@ -6,6 +6,7 @@
 use crate::ast::Program;
 use crate::error::CursedError;
 use super::{TypeChecker, TypeCheckError, TypeSystem};
+use crate::error_recovery::SourceLocation as ErrorSourceLocation;
 use std::collections::HashMap;
 
 /// Compilation pipeline that integrates type checking
@@ -184,7 +185,12 @@ impl TypedCompilationPipeline {
     fn convert_type_errors_to_compilation_errors(&self, type_errors: Vec<TypeCheckError>, source_file: &str) -> Vec<CompilationErrorDetails> {
         type_errors.into_iter().map(|type_error| {
             let location = type_error.location.as_ref()
-                .and_then(|loc| self.source_map.get_location(loc))
+                .map(|loc| SourceLocation {
+                    file: loc.file.clone().unwrap_or_else(|| source_file.to_string()),
+                    line: loc.line,
+                    column: loc.column,
+                    span: (loc.offset, loc.offset),
+                })
                 .unwrap_or_else(|| SourceLocation {
                     file: source_file.to_string(),
                     line: 0,

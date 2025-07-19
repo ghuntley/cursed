@@ -1,174 +1,267 @@
 # Error Core Module
 
-Advanced pure CURSED error handling system implementing the `yikes`, `shook`, and `fam` error handling patterns for enterprise-grade error management.
+Pure CURSED implementation of comprehensive error handling system for compiler self-hosting.
 
-## Features
+## Overview
 
-- **yikes Pattern**: Error creation with typed error categories
-- **shook Pattern**: Error wrapping and context addition  
-- **fam Pattern**: Error handling, recovery, and fallback strategies
-- **Panic System**: Critical error handling with recovery mechanisms
-- **Error Classification**: Critical vs recoverable error categorization
-- **Safe Operations**: Error-aware wrapper functions for common operations
-- **Error Statistics**: Tracking and debugging support
+The error_core module provides a complete error handling infrastructure essential for the CURSED compiler's self-hosting capability. It implements error creation, propagation, recovery, and reporting - all in pure CURSED without FFI dependencies.
 
-## Error Patterns
+## Key Components
 
-### yikes - Error Creation
+### Error Types and Hierarchy
+
+#### CursedError
+Core error type with comprehensive information:
+- **Message**: Human-readable error description
+- **Category**: Type of error (syntax, type, runtime, internal, warning)
+- **Level**: Severity level (warning, error, fatal)
+- **Context**: Source location and additional context
+- **Timestamp**: When the error occurred
+
+#### ErrorContext
+Source location and contextual information:
+- **File**: Source file where error occurred
+- **Line/Column**: Exact position in source code
+- **Additional Context**: Supplementary information
+
+#### Error Categories
+- **Syntax Errors**: Parse errors, malformed code
+- **Type Errors**: Type system violations
+- **Runtime Errors**: Execution-time failures
+- **Internal Errors**: Compiler bugs and internal failures
+- **Warnings**: Non-fatal issues and suggestions
+
+### Error Collection and Management
+
+#### ErrorCollector
+Manages multiple errors during compilation:
+- Collects errors from all compilation phases
+- Tracks error counts and severity
+- Formats comprehensive error reports
+- Determines compilation success/failure
+
+#### Error Propagation
+Supports CURSED's error handling keywords:
+- **`yikes`**: Propagate errors up the call stack
+- **`shook`**: Check if error is serious/fatal
+- **`fam`**: Attempt error recovery
+
+### Error Recovery System
+
+#### ErrorRecovery
+Intelligent error recovery strategies:
+- **Syntax Recovery**: Insert missing tokens, remove unexpected tokens
+- **Type Recovery**: Suggest type casts, similar types
+- **Runtime Recovery**: Add safety checks, graceful degradation
+
+#### Recovery Strategies
+- `insert_missing_token` - Add missing semicolons, braces
+- `remove_unexpected_token` - Skip malformed tokens
+- `insert_type_cast` - Add type conversions
+- `suggest_similar_type` - Recommend correct types
+- `null_check` - Add null safety
+- `bounds_check` - Add array bounds validation
+
+## Core Functions
+
+### Error Creation
 ```cursed
-# Create specific error types
-sus runtime_err = yikes_runtime("Runtime failure")
-sus logic_err = yikes_logic("Invalid operation")
-sus io_err = yikes_io("File not found")
-sus memory_err = yikes_memory("Out of memory")
-sus validation_err = yikes_validation("Invalid input")
+# Create different types of errors
+sus syntax_err CursedError = error_create_syntax("Expected ';'", 10, 15)
+sus type_err CursedError = error_create_type("Type mismatch", 20, 5)
+sus runtime_err CursedError = error_create_runtime("Null pointer")
+sus warning CursedError = error_create_warning("Unused variable", 5, 10)
+sus internal_err CursedError = error_create_internal("Compiler bug")
 ```
 
-### shook - Error Wrapping
+### Error Context
 ```cursed
-# Wrap errors with additional context
-sus original_err = yikes_runtime("Database connection failed")
-sus wrapped_err = shook_wrap(original_err, "During user authentication")
-sus context_err = shook_context(wrapped_err, "Function: authenticate_user")
+# Create and enhance error context
+sus context ErrorContext = error_context_new("main.csd", 42, 10)
+sus enhanced ErrorContext = error_context_add_context(context, "in function main")
+sus location tea = error_context_format_location(enhanced)
 ```
 
-### fam - Error Handling
+### Error Collection
 ```cursed
-# Handle errors with fallbacks
-sus result = fam_handle(potential_error, "default_value")
-sus recovered = fam_recover(error, recovery_function)
-sus ignored lit = fam_ignore(non_critical_error)
-```
+# Collect and manage multiple errors
+sus collector ErrorCollector = error_collector_new()
+error_collector_add_error(collector, syntax_err)
+error_collector_add_error(collector, type_err)
 
-## Functions
-
-### Error Creation (yikes pattern)
-- `yikes_new(error_type tea, message tea, code normie)` - Create custom error
-- `yikes_runtime(message tea)` - Create runtime error
-- `yikes_logic(message tea)` - Create logic error
-- `yikes_io(message tea)` - Create I/O error
-- `yikes_memory(message tea)` - Create memory error
-- `yikes_validation(message tea)` - Create validation error
-
-### Error Wrapping (shook pattern)
-- `shook_wrap(original_error, wrap_message tea)` - Wrap error with context
-- `shook_context(error, context_info tea)` - Add context information
-
-### Error Handling (fam pattern)
-- `fam_handle(error, default_value)` - Handle with fallback value
-- `fam_recover(error, recovery_function)` - Attempt error recovery
-- `fam_ignore(error) lit` - Safely ignore non-critical errors
-
-### Error Analysis
-- `is_error(value) lit` - Check if value is an error
-- `error_type(error) tea` - Extract error type
-- `error_message(error) tea` - Extract error message
-- `error_code(error) normie` - Extract error code
-- `is_critical_error(error) lit` - Check if error is critical
-- `is_recoverable_error(error) lit` - Check if error can be recovered
-
-### Error Propagation
-- `should_propagate(error) lit` - Determine if error should propagate
-- `propagate_error(error, caller_context tea)` - Propagate with context
-- `try_recovery(error, max_attempts normie) lit` - Attempt recovery
-
-### Panic System
-- `panic_with(message tea)` - Trigger panic state
-- `recover_from_panic() lit` - Recover from panic
-
-### Safe Operations
-- `safe_divide(a normie, b normie)` - Division with error handling
-- `safe_access(data, index normie)` - Safe array access
-
-### Error Management
-- `error_stats() tea` - Get error statistics
-- `clear_errors()` - Clear error state
-- `get_last_error()` - Get last error
-
-## Usage Examples
-
-### Basic Error Handling
-```cursed
-yeet "error_core"
-
-# Create and handle errors
-sus err = yikes_validation("Invalid user input")
-sus result = fam_handle(err, "default_response")
-vibez.spill(result)  # Outputs: "default_response"
-```
-
-### Error Chaining
-```cursed
-# Chain errors with context
-sus db_err = yikes_io("Database connection failed")
-sus auth_err = shook_wrap(db_err, "During user authentication")
-sus final_err = shook_context(auth_err, "Login endpoint")
-
-# Handle the chained error
-sus fallback = fam_handle(final_err, "Please try again later")
-```
-
-### Safe Operations
-```cursed
-# Safe division with error handling
-sus division_result = safe_divide(10, 0)
-lowkey is_error(division_result) {
-    vibez.spill("Division failed: " + error_message(division_result))
-} else {
-    vibez.spill("Result: " + division_result)
+lowkey error_collector_has_errors(collector) {
+    sus summary tea = error_collector_format_all_errors(collector)
+    vibez.spill(summary)
 }
 ```
 
 ### Error Recovery
 ```cursed
-# Attempt recovery with retries
-sus operation_error = yikes_io("Network timeout")
-sus recovered lit = try_recovery(operation_error, 3)
+# Intelligent error recovery
+sus recovery ErrorRecovery = error_recovery_new()
+sus strategy tea = error_recovery_suggest_recovery(recovery, syntax_err)
+sus recovered lit = error_recovery_apply_recovery(recovery, strategy)
+```
 
-lowkey recovered {
-    vibez.spill("Operation recovered successfully")
-} else {
-    vibez.spill("Recovery failed after 3 attempts")
+## Compiler Integration
+
+### Compilation Error Handling
+```cursed
+# Use in compiler phases
+sus handler ErrorCollector = compiler_error_handler_new()
+
+# Report errors during compilation
+compiler_report_error(handler, parse_error)
+compiler_report_error(handler, type_error)
+
+# Check compilation status
+lowkey compiler_has_compilation_errors(handler) {
+    sus errors tea = compiler_get_error_summary(handler)
+    vibez.spill("Compilation failed:\n" + errors)
+    damn cap  # Indicate compilation failure
+}
+```
+
+### Error Propagation in Compiler
+```cursed
+# Error handling with CURSED keywords
+slay parse_expression() ASTNode {
+    sus result ASTNode = try_parse_primary()
+    
+    # Check for parse errors
+    lowkey shook parse_error {
+        yikes error_create_syntax("Invalid expression", line, col)
+    }
+    
+    # Attempt recovery
+    lowkey fam parse_error {
+        sus recovered ASTNode = recover_expression()
+        damn recovered
+    }
+    
+    damn result
+}
+```
+
+## Advanced Features
+
+### Error Message Templates
+```cursed
+# Contextual error messages
+slay create_type_mismatch_error(expected tea, actual tea, line normie, col normie) CursedError {
+    sus message tea = "Type mismatch: expected '" + expected + "', got '" + actual + "'"
+    damn error_create_type(message, line, col)
+}
+
+slay create_undefined_variable_error(name tea, line normie, col normie) CursedError {
+    sus message tea = "Undefined variable '" + name + "'"
+    sus error CursedError = error_create_type(message, line, col)
+    
+    # Add context with suggestion
+    sus context ErrorContext = error_context_new("source.csd", line, col)
+    sus enhanced ErrorContext = error_context_add_context(context, "Did you mean '" + suggest_similar_name(name) + "'?")
+    
+    damn error_with_context(error, enhanced)
+}
+```
+
+### Batch Error Processing
+```cursed
+# Process multiple errors efficiently
+slay process_compilation_errors(errors [CursedError]) tea {
+    sus fatal_count normie = 0
+    sus warning_count normie = 0
+    sus error_count normie = 0
+    
+    sus index normie = 0
+    bestie index < array_length(errors) {
+        sus error CursedError = array_get(errors, index)
+        
+        lowkey error_is_fatal(error) {
+            fatal_count = fatal_count + 1
+        } elseif error.level == "warning" {
+            warning_count = warning_count + 1
+        } else {
+            error_count = error_count + 1
+        }
+        
+        index = index + 1
+    }
+    
+    sus summary tea = "Compilation summary: "
+    summary = summary + integer_to_string(fatal_count) + " fatal, "
+    summary = summary + integer_to_string(error_count) + " errors, "
+    summary = summary + integer_to_string(warning_count) + " warnings"
+    
+    damn summary
 }
 ```
 
 ## Testing
 
-```bash
-# Test interpretation mode
-cargo run --bin cursed stdlib/error_core/test_error_core.csd
+Comprehensive test suite validates all error handling:
 
-# Test compilation mode
-cargo run --bin cursed -- compile stdlib/error_core/test_error_core.csd
-./test_error_core
+```bash
+cargo run --bin cursed stdlib/error_core/test_error_core.csd
 ```
 
-## Error Types
+Tests cover:
+- Error creation for all categories and levels
+- Error context formatting and enhancement
+- Error collection and batch processing
+- Recovery strategy suggestion and application
+- Error propagation with yikes/shook/fam
+- Compiler integration scenarios
+- Edge cases and error conditions
 
-| Type | Code Range | Description |
-|------|------------|-------------|
-| runtime | 1001+ | Runtime execution errors |
-| logic | 2001+ | Logic and algorithm errors |
-| io | 3001+ | Input/output operation errors |
-| memory | 4001+ | Memory allocation/management errors |
-| validation | 5001+ | Data validation errors |
-| context | 8888 | Context wrapper errors |
-| wrapped | 9999 | Wrapped error containers |
-| panic | 9999 | Critical panic-level errors |
+## Self-Hosting Significance
 
-## Implementation Notes
+Critical for compiler self-hosting:
 
-- Pure CURSED implementation without FFI dependencies
-- Tuple-based error representation for flexibility
-- Compatible with both interpretation and compilation modes
-- Enterprise-grade error handling patterns
-- Thread-safe error state management
-- Comprehensive error categorization and recovery
+1. **Robust Error Reporting**: Clear, actionable error messages
+2. **Recovery Strategies**: Continue compilation after errors
+3. **Error Propagation**: Proper error handling throughout compiler
+4. **Development Experience**: Helpful error messages for CURSED developers
+5. **Debugging Support**: Detailed error context for troubleshooting
 
-## Dependencies
+## Performance Considerations
 
-- `testz` - Testing framework (for tests only)
+- **Lazy Formatting**: Error messages formatted only when needed
+- **Efficient Collection**: Minimal overhead during normal compilation
+- **Recovery Caching**: Cache recovery strategies for similar errors
+- **Context Sharing**: Reuse error contexts when possible
 
-## Status
+## Integration Points
 
-✅ **Complete** - Full implementation of CURSED error handling patterns with yikes/shook/fam keywords
+Works with other stdlib modules:
+- **compiler_core**: Provides error handling for all compilation phases
+- **runtime_core**: Handles runtime value errors
+- **fs**: File I/O error handling
+- **process**: External process error management
+- **testz**: Test failure reporting and analysis
+
+## Error Recovery Examples
+
+### Syntax Error Recovery
+```cursed
+# Missing semicolon recovery
+# Before: "sus x normie = 42" (missing semicolon)
+# Recovery: Insert semicolon → "sus x normie = 42;"
+
+# Unexpected token recovery  
+# Before: "sus x normie = = 42;" (double equals)
+# Recovery: Remove extra token → "sus x normie = 42;"
+```
+
+### Type Error Recovery
+```cursed
+# Type mismatch recovery
+# Before: "sus x normie = 3.14" (float assigned to int)
+# Recovery: Insert cast → "sus x normie = 3.14.(normie)"
+
+# Undefined type recovery
+# Before: "sus x CustomType = value" (unknown type)
+# Recovery: Suggest → "Did you mean 'normie'?"
+```
+
+This comprehensive error handling system ensures the CURSED compiler can provide excellent developer experience while maintaining robust self-hosting capabilities.

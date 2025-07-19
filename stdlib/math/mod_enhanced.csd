@@ -473,8 +473,24 @@ slay math_pow_impl(base meal, exponent meal) meal {
         damn base
     }
     
-    # Simplified power implementation
-    damn base * base  # This is a placeholder
+    vibe_check exponent < 0.0 {
+        damn 1.0 / math_pow_impl(base, -exponent)
+    }
+    
+    # Binary exponentiation for positive integer exponents
+    sus result meal = 1.0
+    sus current_base meal = base
+    sus exp normie = exponent.(normie)  # Convert to integer
+    
+    bestie (exp > 0) {
+        vibe_check (exp % 2 == 1) {
+            result = result * current_base
+        }
+        current_base = current_base * current_base
+        exp = exp / 2
+    }
+    
+    damn result
 }
 
 slay math_log_impl(x meal) meal {
@@ -498,13 +514,69 @@ slay math_exp_impl(x meal) meal {
 }
 
 slay math_sin_impl(x meal) meal {
-    # Placeholder - would use proper sine implementation
-    damn 0.0
+    # Pure CURSED sine implementation using Taylor series
+    # sin(x) = x - x^3/3! + x^5/5! - x^7/7! + ...
+    
+    # Normalize angle to [-π, π] range (approximate)
+    sus normalized_x meal = x
+    bestie (normalized_x > 3.14159) {
+        normalized_x = normalized_x - 6.28318  # 2π
+    }
+    bestie (normalized_x < -3.14159) {
+        normalized_x = normalized_x + 6.28318  # 2π
+    }
+    
+    # Taylor series approximation (first 5 terms)
+    sus result meal = normalized_x
+    sus x_squared meal = normalized_x * normalized_x
+    sus term meal = normalized_x
+    
+    # Second term: -x^3/6
+    term = term * x_squared * normalized_x / (2.0 * 3.0)
+    result = result - term
+    
+    # Third term: +x^5/120
+    term = term * x_squared / (4.0 * 5.0)
+    result = result + term
+    
+    # Fourth term: -x^7/5040
+    term = term * x_squared / (6.0 * 7.0)
+    result = result - term
+    
+    damn result
 }
 
 slay math_cos_impl(x meal) meal {
-    # Placeholder - would use proper cosine implementation
-    damn 1.0
+    # Pure CURSED cosine implementation using Taylor series
+    # cos(x) = 1 - x^2/2! + x^4/4! - x^6/6! + ...
+    
+    # Normalize angle to [-π, π] range (approximate)
+    sus normalized_x meal = x
+    bestie (normalized_x > 3.14159) {
+        normalized_x = normalized_x - 6.28318  # 2π
+    }
+    bestie (normalized_x < -3.14159) {
+        normalized_x = normalized_x + 6.28318  # 2π
+    }
+    
+    # Taylor series approximation (first 4 terms)
+    sus result meal = 1.0
+    sus x_squared meal = normalized_x * normalized_x
+    sus term meal = 1.0
+    
+    # Second term: -x^2/2
+    term = term * x_squared / (1.0 * 2.0)
+    result = result - term
+    
+    # Third term: +x^4/24
+    term = term * x_squared / (3.0 * 4.0)
+    result = result + term
+    
+    # Fourth term: -x^6/720
+    term = term * x_squared / (5.0 * 6.0)
+    result = result - term
+    
+    damn result
 }
 
 slay math_tan_impl(x meal) meal {

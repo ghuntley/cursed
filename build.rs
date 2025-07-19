@@ -265,7 +265,8 @@ fn build_runtime_libraries() {
     let libs = [
         "libcursed_minimal_shims.a",
         "libcursed_interface_runtime.a", 
-        "libcursed_type_assertion_runtime.a"
+        "libcursed_type_assertion_runtime.a",
+        "libcursed_type_checking.a"
     ];
     
     let mut needs_rebuild = false;
@@ -522,5 +523,6 @@ fn link_system_libraries() {
     // Link interface runtime for self-hosting
     println!("cargo:rustc-link-lib=static=cursed_interface_runtime");
     println!("cargo:rustc-link-lib=static=cursed_type_assertion_runtime");
+    println!("cargo:rustc-link-lib=static=cursed_type_checking");
     println!("cargo:rustc-link-lib=static=cursed_memory_runtime");
 }

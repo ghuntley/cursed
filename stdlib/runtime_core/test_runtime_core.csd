@@ -1,107 +1,80 @@
 yeet "testz"
 yeet "runtime_core"
 
-# Test Runtime Core Value System
-test_start("Runtime Core Value System Tests")
+# Test runtime value creation and conversion
+test_start("runtime_core comprehensive tests")
 
-# Test 1: Runtime initialization
-sus init_result lit = init_runtime_values()
-assert_true(init_result)
-print_test_status("Runtime initialization", init_result)
+# Test integer parsing
+sus int_val RuntimeValue = runtime_value_create("42", "integer")
+assert_eq_int(int_val, 42)
 
-# Test 2: Type registration
-register_type(100, "custom_type")
-sus type_id normie = get_type_id("custom_type")
-assert_eq_int(type_id, 100)
-print_test_status("Type registration", type_id == 100)
+sus int_str tea = runtime_convert_to_string(int_val)
+assert_eq_string(int_str, "42")
 
-# Test 3: Value creation and basic operations
-sus test_value CursedValue = create_value("normie", "42")
-assert_true(validate_value(test_value))
-assert_true(value_is_type(test_value, "normie"))
-print_test_status("Value creation", based)
+# Test float parsing
+sus float_val RuntimeValue = runtime_value_create("3.14", "float")
+sus float_str tea = runtime_convert_to_string(float_val)
+assert_eq_string(float_str, "3.14")
 
-# Test 4: Value boxing and unboxing
-sus large_data tea = "This is a very large string that should trigger boxing due to its size being over 64 bytes for sure"
-sus large_value CursedValue = create_value("tea", large_data)
-assert_true(large_value.is_boxed)
+# Test boolean parsing
+sus bool_val RuntimeValue = runtime_value_create("based", "boolean")
+assert_true(bool_val)
 
-sus boxed_value CursedValue = box_value(test_value)
-sus unboxed_value CursedValue = unbox_value(boxed_value)
-assert_true(!unboxed_value.is_boxed)
-print_test_status("Boxing/unboxing", based)
+sus bool_str tea = runtime_convert_to_string(bool_val)
+assert_eq_string(bool_str, "based")
 
-# Test 5: Value comparison
-sus value1 CursedValue = create_value("normie", "42")
-sus value2 CursedValue = create_value("normie", "42")
-sus value3 CursedValue = create_value("normie", "43")
-assert_true(values_equal(value1, value2))
-assert_true(!values_equal(value1, value3))
-print_test_status("Value equality", based)
+# Test string values
+sus string_val RuntimeValue = runtime_value_create("hello", "string")
+sus string_str tea = runtime_convert_to_string(string_val)
+assert_eq_string(string_str, "hello")
 
-# Test 6: Value copying
-sus original CursedValue = create_value("tea", "hello")
-sus copy CursedValue = copy_value(original)
-assert_true(values_equal(original, copy))
-assert_true(original.value_type == copy.value_type)
-print_test_status("Value copying", based)
+# Test type checking
+assert_true(runtime_type_check(int_val, "integer"))
+assert_true(runtime_type_check(float_val, "float"))
+assert_true(runtime_type_check(bool_val, "boolean"))
+assert_true(runtime_type_check(string_val, "string"))
 
-# Test 7: String conversion
-sus str_value CursedValue = create_value("tea", "test")
-sus str_repr tea = value_to_string(str_value)
-assert_true(stringz.contains(str_repr, "tea"))
-assert_true(stringz.contains(str_repr, "test"))
-print_test_status("String conversion", based)
+# Test type name retrieval
+assert_eq_string(runtime_get_type(int_val), "integer")
+assert_eq_string(runtime_get_type(float_val), "float")
+assert_eq_string(runtime_get_type(bool_val), "boolean")
+assert_eq_string(runtime_get_type(string_val), "string")
 
-# Test 8: Memory size calculation
-sus small_value CursedValue = create_value("normie", "1")
-sus large_value_mem CursedValue = create_value("tea", large_data)
-sus small_size normie = value_memory_size(small_value)
-sus large_size normie = value_memory_size(large_value_mem)
-assert_true(large_size > small_size)
-print_test_status("Memory size calculation", based)
+# Test nil values
+sus nil_val RuntimeValue = cringe
+assert_eq_string(runtime_get_type(nil_val), "nil")
+assert_eq_string(runtime_convert_to_string(nil_val), "cringe")
 
-# Test 9: GC detection
-sus gc_candidate CursedValue = create_value("tea", large_data)
-assert_true(value_needs_gc(gc_candidate))
-assert_true(!value_needs_gc(small_value))
-print_test_status("GC detection", based)
+# Test string length calculation
+assert_eq_int(string_length("hello"), 5)
+assert_eq_int(string_length(""), 0)
 
-# Test 10: Runtime statistics
-sus stats map[tea]normie = get_value_stats()
-assert_true(stats["total_types"] >= 10)  # Built-in types
-print_test_status("Runtime statistics", stats["total_types"] >= 10)
+# Test integer to string conversion
+assert_eq_string(integer_to_string(0), "0")
+assert_eq_string(integer_to_string(123), "123")
+assert_eq_string(integer_to_string(-456), "-456")
 
-# Test 11: Health check
-sus health lit = runtime_values_health_check()
-assert_true(health)
-print_test_status("Health check", health)
+# Test boolean parsing edge cases
+sus false_val RuntimeValue = runtime_value_create("cap", "boolean")
+assert_false(false_val)
+assert_eq_string(runtime_convert_to_string(false_val), "cap")
 
-# Test 12: Cache management
-clear_value_cache()
-sus stats_after map[tea]normie = get_value_stats()
-assert_eq_int(stats_after["cached_values"], 0)
-print_test_status("Cache management", stats_after["cached_values"] == 0)
+sus unknown_bool RuntimeValue = runtime_value_create("unknown", "boolean")
+assert_false(unknown_bool)
 
-# Test 13: Type ID edge cases
-sus unknown_id normie = get_type_id("nonexistent_type")
-assert_eq_int(unknown_id, 0)
-print_test_status("Unknown type handling", unknown_id == 0)
+# Test memory allocation placeholders
+sus allocated_size normie = runtime_allocate_memory(1024)
+assert_eq_int(allocated_size, 1024)
 
-# Test 14: Value validation edge cases
-sus invalid_value CursedValue
-invalid_value.type_id = 0
-invalid_value.value_type = ""
-invalid_value.size = -1
-assert_true(!validate_value(invalid_value))
-print_test_status("Invalid value detection", based)
+sus dealloc_success lit = runtime_deallocate_memory(allocated_size)
+assert_true(dealloc_success)
 
-# Test 15: Complex type system integration
-register_type(200, "interface_type")
-register_type(300, "generic_type")
-sus complex_value CursedValue = create_value("interface_type", "complex_data")
-assert_true(value_is_type(complex_value, "interface_type"))
-assert_true(!value_is_type(complex_value, "generic_type"))
-print_test_status("Complex type system", based)
+# Test error handling
+sus error_val RuntimeValue = runtime_create_error("test error", "runtime")
+assert_eq_string(error_val, "test error")
+
+# Test invalid type handling
+sus invalid_val RuntimeValue = runtime_value_create("invalid", "unknown")
+assert_eq_string(runtime_get_type(invalid_val), "nil")
 
 print_test_summary()
