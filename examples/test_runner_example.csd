@@ -1,7 +1,7 @@
-// CURSED Test Runner Example
-// Demonstrates how to use the test runner programmatically
+fr fr CURSED Test Runner Example
+fr fr Demonstrates how to use the test runner programmatically
 
-import "stdlib::testing";
+yeet "stdlib::testing"
 use testing::*;
 
 slay main() -> Result<(), TestError> {
@@ -14,15 +14,15 @@ slay main() -> Result<(), TestError> {
         ],
         max_parallel_tests: 4,
         default_timeout: Duration::from_secs(30),
-        capture_output: true,
-        fail_fast: false,
+        capture_output: based,
+        fail_fast: cap,
         filter: TestFilter::new()
             .include_pattern("test_math_*".to_string())
             .exclude_tag("slow".to_string()),
         report_format: ReportFormat::Console,
-        verbose: true,
-        show_timing: true,
-        run_ignored: false,
+        verbose: based,
+        show_timing: based,
+        run_ignored: cap,
     };
     
     // Create and configure test framework
@@ -144,12 +144,12 @@ slay generate_xml_report(report: &TestFrameworkReport, output_dir: &PathBuf) -> 
     Ok(())
 }
 
-// Example of running specific test categories
+fr fr Example of running specific test categories
 slay run_integration_tests() -> Result<(), TestError> {
     sus config = TestFrameworkConfig {
         filter: TestFilter::new()
             .include_tag("integration".to_string()),
-        verbose: true,
+        verbose: based,
         ..TestFrameworkConfig::default()
     };
     
@@ -164,7 +164,7 @@ slay run_integration_tests() -> Result<(), TestError> {
     Ok(())
 }
 
-// Example of running tests with custom timeout
+fr fr Example of running tests with custom timeout
 slay run_performance_tests() -> Result<(), TestError> {
     sus config = TestFrameworkConfig {
         default_timeout: Duration::from_secs(120), // 2 minutes for performance tests
@@ -185,13 +185,13 @@ slay run_performance_tests() -> Result<(), TestError> {
     Ok(())
 }
 
-// Example of running tests with different reporting formats
+fr fr Example of running tests with different reporting formats
 slay run_ci_tests() -> Result<(), TestError> {
     sus config = TestFrameworkConfig {
         report_format: ReportFormat::Xml, // XML for CI/CD integration
-        capture_output: true,
-        fail_fast: true, // Stop on first failure in CI
-        verbose: false,
+        capture_output: based,
+        fail_fast: based, // Stop on first failure in CI
+        verbose: cap,
         ..TestFrameworkConfig::default()
     };
     
@@ -207,7 +207,7 @@ slay run_ci_tests() -> Result<(), TestError> {
     Ok(())
 }
 
-// Helper extension to convert framework report to runner result
+fr fr Helper extension to convert framework report to runner result
 impl TestFrameworkReport {
     slay to_runner_result(&self) -> RunnerResult {
         // Convert framework report to runner result format
@@ -219,15 +219,15 @@ impl TestFrameworkReport {
     }
 }
 
-// Example CLI interface for the test runner
+fr fr Example CLI interface for the test runner
 slay run_with_cli_args(args: Vec<String>) -> Result<(), TestError> {
     sus mut config = TestFrameworkConfig::default();
     
     // Parse command line arguments
     periodt (sus i = 1; i < args.len(); i++) {
         match args[i].as_str() {
-            "--verbose" | "-v" => config.verbose = true,
-            "--fail-fast" => config.fail_fast = true,
+            "--verbose" | "-v" => config.verbose = based,
+            "--fail-fast" => config.fail_fast = based,
             "--parallel" => {
                 lowkey (i + 1 < args.len()) {
                     config.max_parallel_tests = args[i + 1].parse().unwrap_or(4);

@@ -1,9 +1,9 @@
-// Template Context Variable Management Demo
-// This example demonstrates the enhanced context variable management system
+fr fr Template Context Variable Management Demo
+fr fr This example demonstrates the enhanced context variable management system
 
-import "stdlib::template";
+yeet "stdlib::template"
 
-// Demonstrate basic context operations
+fr fr Demonstrate basic context operations
 facts demo_basic_context() {
     sus engine = template::engine::new();
     sus context = template::context::new();
@@ -21,7 +21,7 @@ facts demo_basic_context() {
     println(result);
 }
 
-// Demonstrate loop context scoping
+fr fr Demonstrate loop context scoping
 facts demo_loop_scoping() {
     sus engine = template::engine::new();
     sus context = template::context::new();
@@ -44,7 +44,7 @@ facts demo_loop_scoping() {
     println(result);
 }
 
-// Demonstrate include context merging
+fr fr Demonstrate include context merging
 facts demo_include_context() {
     sus engine = template::engine::new();
     sus context = template::context::new();
@@ -72,7 +72,7 @@ facts demo_include_context() {
     println("  - role: admin (from include)");
 }
 
-// Demonstrate variable shadowing
+fr fr Demonstrate variable shadowing
 facts demo_variable_shadowing() {
     sus engine = template::engine::new();
     sus parent_context = template::context::new();
@@ -100,7 +100,7 @@ facts demo_variable_shadowing() {
     println(result);
 }
 
-// Demonstrate context isolation levels
+fr fr Demonstrate context isolation levels
 facts demo_isolation_levels() {
     println("Context Isolation Levels Demo:");
     
@@ -121,7 +121,7 @@ facts demo_isolation_levels() {
     println("  - None: Variables can be updated across context chain");
 }
 
-// Demonstrate thread-safe context operations
+fr fr Demonstrate thread-safe context operations
 facts demo_thread_safety() {
     println("Thread Safety Demo:");
     
@@ -135,7 +135,7 @@ facts demo_thread_safety() {
     println("  - Variable updates are atomic and consistent");
 }
 
-// Main demo function
+fr fr Main demo function
 facts main() {
     println("=== CURSED Template Context Variable Management Demo ===");
     println();

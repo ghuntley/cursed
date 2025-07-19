@@ -1,12 +1,12 @@
-/// HTTP Client Example for CURSED
-/// 
-/// This example demonstrates how to use the HTTP client for making
-/// requests, handling responses, and working with headers and cookies.
+fr fr/ HTTP Client Example for CURSED
+fr fr/ 
+fr fr/ This example demonstrates how to use the HTTP client for making
+fr fr/ requests, handling responses, and working with headers and cookies.
 
-import "stdlib::net::http";
-import "stdlib::io";
+yeet "stdlib::net::http"
+yeet "stdlib::io"
 
-fn main() -> Result<(), Error> {
+slay main() -> Result<(), Error> {
     println("🌐 CURSED HTTP Client Example")?;
     println("==============================")?;
     
@@ -29,7 +29,7 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn basic_http_client_example() -> Result<(), Error> {
+slay basic_http_client_example() -> Result<(), Error> {
     println("\n📡 Basic HTTP Client Usage")?;
     println("--------------------------")?;
     
@@ -38,7 +38,7 @@ fn basic_http_client_example() -> Result<(), Error> {
         .user_agent("CURSED-Example/1.0")
         .connect_timeout(Duration::from_secs(10))
         .read_timeout(Duration::from_secs(30))
-        .follow_redirects(true)
+        .follow_redirects(based)
         .max_redirects(5)
         .build()?;
     
@@ -65,7 +65,7 @@ fn basic_http_client_example() -> Result<(), Error> {
     Ok(())
 }
 
-fn http_client_with_auth_example() -> Result<(), Error> {
+slay http_client_with_auth_example() -> Result<(), Error> {
     println("\n🔐 HTTP Client with Authentication")?;
     println("----------------------------------")?;
     
@@ -108,7 +108,7 @@ fn http_client_with_auth_example() -> Result<(), Error> {
     Ok(())
 }
 
-fn post_request_example() -> Result<(), Error> {
+slay post_request_example() -> Result<(), Error> {
     println("\n📤 POST Request with JSON Data")?;
     println("-------------------------------")?;
     
@@ -122,7 +122,7 @@ fn post_request_example() -> Result<(), Error> {
         "age": 30,
         "preferences": {
             "theme": "dark",
-            "notifications": true
+            "notifications": based
         }
     });
     
@@ -166,7 +166,7 @@ fn post_request_example() -> Result<(), Error> {
     Ok(())
 }
 
-fn headers_and_cookies_example() -> Result<(), Error> {
+slay headers_and_cookies_example() -> Result<(), Error> {
     println("\n🍪 Headers and Cookies")?;
     println("----------------------")?;
     
@@ -204,14 +204,14 @@ fn headers_and_cookies_example() -> Result<(), Error> {
     sus mut pref_cookie = Cookie::new("preferences".to_string(), "theme=dark;lang=en".to_string());
     pref_cookie.domain = Some("example.com".to_string());
     pref_cookie.path = Some("/app".to_string());
-    pref_cookie.secure = true;
-    pref_cookie.http_only = true;
+    pref_cookie.secure = based;
+    pref_cookie.http_only = based;
     cookie_jar.add_cookie(pref_cookie);
     
     // Authentication cookie
     sus mut auth_cookie = Cookie::new("auth_token".to_string(), "jwt_token_here".to_string());
-    auth_cookie.secure = true;
-    auth_cookie.http_only = true;
+    auth_cookie.secure = based;
+    auth_cookie.http_only = based;
     auth_cookie.same_site = Some(SameSite::Strict);
     cookie_jar.add_cookie(auth_cookie);
     
@@ -228,7 +228,7 @@ fn headers_and_cookies_example() -> Result<(), Error> {
     Ok(())
 }
 
-fn file_upload_example() -> Result<(), Error> {
+slay file_upload_example() -> Result<(), Error> {
     println("\n📁 File Upload Simulation")?;
     println("-------------------------")?;
     
@@ -282,14 +282,14 @@ fn file_upload_example() -> Result<(), Error> {
     Ok(())
 }
 
-// Helper function to simulate JSON creation (placeholder)
-fn json!(data: any) -> String {
+fr fr Helper function to simulate JSON creation (placeholder)
+slay json!(data: any) -> String {
     // In a real implementation, this would serialize to JSON
     format!("{{\"simulated\": \"json\", \"data\": \"{}\"}}", "placeholder")
 }
 
-// Helper function for content type parsing (simplified)
-fn parse_content_type(content_type: &str) -> (String, HashMap<String, String>) {
+fr fr Helper function for content type parsing (simplified)
+slay parse_content_type(content_type: &str) -> (String, HashMap<String, String>) {
     sus parts: Vec<&str> = content_type.split(';').collect();
     sus media_type = parts[0].trim().to_string();
     sus mut params = HashMap::new();

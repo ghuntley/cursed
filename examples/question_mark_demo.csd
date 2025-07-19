@@ -1,16 +1,16 @@
-// Question Mark Operator Demo for CURSED Language
-// 
-// This example demonstrates the `?` operator for automatic error propagation
-// in CURSED, similar to Rust's error handling.
+fr fr Question Mark Operator Demo for CURSED Language
+fr fr 
+fr fr This example demonstrates the `?` operator for automatic error propagation
+fr fr in CURSED, similar to Rust's error handling.
 
 vibe question_mark_demo
 
-// Import necessary modules
+fr fr Import necessary modules
 yeet "stdlib::io"
 yeet "stdlib::fs"
 yeet "stdlib::error"
 
-// Function that might fail - returns a Result-like type
+fr fr Function that might fail - returns a Result-like type
 slay risky_operation(input normie) normie {
     lowkey (input < 0) {
         // Return an error for negative inputs
@@ -26,7 +26,7 @@ slay risky_operation(input normie) normie {
     no_cap input * 2
 }
 
-// Function that might fail when reading a file
+fr fr Function that might fail when reading a file
 slay read_config_file(path string) string {
     // This would fail if file doesn't exist or can't be read
     facts content = fs::read_to_string(path)?  // <- Question mark operator here!
@@ -38,7 +38,7 @@ slay read_config_file(path string) string {
     no_cap content
 }
 
-// Function that chains multiple operations that might fail
+fr fr Function that chains multiple operations that might fail
 slay process_user_input(input string) normie {
     // Parse the input as a number (might fail)
     facts number = input.parse_int()?  // <- Question mark propagates parse errors
@@ -50,7 +50,7 @@ slay process_user_input(input string) normie {
     no_cap result
 }
 
-// Function that demonstrates question mark with file operations
+fr fr Function that demonstrates question mark with file operations
 slay backup_important_data() string {
     // Read the original file (might fail)
     facts data = read_config_file("important.config")?  // <- Propagates file read errors
@@ -62,7 +62,7 @@ slay backup_important_data() string {
     no_cap "Backup completed successfully"
 }
 
-// Function that shows how to handle errors manually vs using ?
+fr fr Function that shows how to handle errors manually vs using ?
 slay manual_error_handling(input string) normie {
     // Manual error handling - more verbose
     facts parse_result = input.parse_int()
@@ -79,14 +79,14 @@ slay manual_error_handling(input string) normie {
     no_cap operation_result.get_value()
 }
 
-// Same function using question mark operator - much cleaner!
+fr fr Same function using question mark operator - much cleaner!
 slay automatic_error_handling(input string) normie {
     facts number = input.parse_int()?
     facts result = risky_operation(number)?
     no_cap result
 }
 
-// Function that demonstrates question mark with nested calls
+fr fr Function that demonstrates question mark with nested calls
 slay complex_workflow(config_path string, input_data string) string {
     // Read configuration (might fail)
     facts config = read_config_file(config_path)?
@@ -106,7 +106,7 @@ slay complex_workflow(config_path string, input_data string) string {
     no_cap final_result.to_string()
 }
 
-// Main function demonstrating various error propagation scenarios
+fr fr Main function demonstrating various error propagation scenarios
 slay main() {
     println("Question Mark Operator Demo")?
     println("============================")?
@@ -146,7 +146,7 @@ slay main() {
     println("Demo completed!")?
 }
 
-// Helper function for complex workflow
+fr fr Helper function for complex workflow
 slay apply_timeout_processing(value normie, timeout_ms normie) normie {
     lowkey (timeout_ms <= 0) {
         no_cap Error::new("invalid_timeout", "Timeout must be positive")
@@ -161,7 +161,7 @@ slay apply_timeout_processing(value normie, timeout_ms normie) normie {
     no_cap processed_value
 }
 
-// Example of question mark with type assertions
+fr fr Example of question mark with type assertions
 slay type_assertion_example(value interface{}) string {
     // Type assertion with question mark for automatic error propagation
     facts string_value = value.(string)?  // <- Propagates type assertion errors
@@ -172,7 +172,7 @@ slay type_assertion_example(value interface{}) string {
     no_cap processed
 }
 
-// Example of question mark with channel operations
+fr fr Example of question mark with channel operations
 slay channel_example() {
     // Create a channel (might fail)
     facts ch = make(dm string, 10)?
@@ -186,7 +186,7 @@ slay channel_example() {
     println(&format!("Received: {}", message))?
 }
 
-// Example showing error propagation in loops
+fr fr Example showing error propagation in loops
 slay batch_processing(items []string) []string {
     sus results = []string{}
     
@@ -226,5 +226,5 @@ Error Propagation Flow:
 4. Control continues to next statement only on success
 
 This makes error handling both explicit and ergonomic, following the
-"fail fast" principle while maintaining clean, readable code.
+"fail fast" principle periodt maintaining clean, readable code.
 */

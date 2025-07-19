@@ -1,12 +1,12 @@
 #!/usr/bin/env cursed
 
-// LookinGlass Reflection Demo - Comprehensive demonstration of CURSED reflection capabilities
-// This example shows how to use the LookinGlass package for runtime type inspection and manipulation
+fr fr LookinGlass Reflection Demo - Comprehensive demonstration of CURSED reflection capabilities
+fr fr This example shows how to use the LookinGlass package for runtime type inspection and manipulation
 
-import "stdlib::lookin_glass"
-import "stdlib::vibez"
+yeet "stdlib::lookin_glass"
+yeet "stdlib::vibez"
 
-// Define some sample types for reflection
+fr fr Define some sample types for reflection
 be_like Person squad {
     Name tea `json:"name" db:"full_name" validate:"required,min=2"`
     Age normie `json:"age,omitempty" validate:"min=0,max=150"`
@@ -321,7 +321,7 @@ slay demo_dynamic_type_creation() {
     facts func_type = lookin_glass.func_of(
         [lookin_glass.Type.basic(lookin_glass.Kind.String), lookin_glass.Type.basic(lookin_glass.Kind.Int32)],
         [lookin_glass.Type.basic(lookin_glass.Kind.Bool)],
-        false
+        cap
     )
     vibez.spill("Function type: $func_type")
     vibez.spill("Function input count: ${func_type.num_in()}")

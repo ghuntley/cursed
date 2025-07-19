@@ -1,12 +1,12 @@
-//! XChaCha20-Poly1305 AEAD Demo
-//! 
-//! This example demonstrates the complete XChaCha20-Poly1305 AEAD functionality
-//! including basic encryption/decryption, streaming APIs, key derivation, and
-//! security best practices.
+fr fr! XChaCha20-Poly1305 AEAD Demo
+fr fr! 
+fr fr! This example demonstrates the complete XChaCha20-Poly1305 AEAD functionality
+fr fr! including basic encryption/decryption, streaming APIs, key derivation, and
+fr fr! security best practices.
 
-import "stdlib::crypto";
+yeet "stdlib::crypto"
 
-// Basic encryption/decryption example
+fr fr Basic encryption/decryption example
 slay demo_basic_encryption() {
     println("🔐 XChaCha20-Poly1305 Basic Encryption Demo");
     
@@ -41,7 +41,7 @@ slay demo_basic_encryption() {
     Ok(())
 }
 
-// Streaming encryption for large files
+fr fr Streaming encryption for large files
 slay demo_streaming_encryption() {
     println("\n📡 XChaCha20-Poly1305 Streaming Encryption Demo");
     
@@ -99,7 +99,7 @@ slay demo_streaming_encryption() {
     Ok(())
 }
 
-// Key derivation demonstration
+fr fr Key derivation demonstration
 slay demo_key_derivation() {
     println("\n🔑 XChaCha20-Poly1305 Key Derivation Demo");
     
@@ -146,7 +146,7 @@ slay demo_key_derivation() {
     Ok(())
 }
 
-// Security best practices demonstration
+fr fr Security best practices demonstration
 slay demo_security_practices() {
     println("\n🛡️  XChaCha20-Poly1305 Security Best Practices Demo");
     
@@ -209,7 +209,7 @@ slay demo_security_practices() {
     Ok(())
 }
 
-// Performance demonstration
+fr fr Performance demonstration
 slay demo_performance() {
     println("\n⚡ XChaCha20-Poly1305 Performance Demo");
     
@@ -253,7 +253,7 @@ slay demo_performance() {
     Ok(())
 }
 
-// File encryption utility example
+fr fr File encryption utility example
 slay demo_file_encryption() {
     println("\n📁 XChaCha20-Poly1305 File Encryption Demo");
     
@@ -309,7 +309,7 @@ slay demo_file_encryption() {
     Ok(())
 }
 
-// Main demo function
+fr fr Main demo function
 slay main() {
     println("🚀 XChaCha20-Poly1305 AEAD Comprehensive Demo");
     println("================================================");

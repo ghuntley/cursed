@@ -1,9 +1,9 @@
-// Type Switch Demo - Showcasing CURSED type switch (vibe_check) compilation
-// This example demonstrates the type switch feature with interface types and variable binding
+fr fr Type Switch Demo - Showcasing CURSED type switch (vibe_check) compilation
+fr fr This example demonstrates the type switch feature with interface types and variable binding
 
 package type_switch_demo;
 
-// Define some types to work with
+fr fr Define some types to work with
 squad Person {
     name: tea,
     age: normie,
@@ -21,13 +21,13 @@ squad Product {
     category: tea,
 }
 
-// Interface for processing entities
+fr fr Interface for processing entities
 collab EntityProcessor {
-    fn process(entity: sus) -> tea;
+    slay process(entity: sus) -> tea;
 }
 
-// Main function demonstrating type switches
-fn main() {
+fr fr Main function demonstrating type switches
+slay main() {
     // Create some test entities
     sus person = Person { name: "Alice", age: 25 };
     sus company = Company { name: "Tech Corp", employees: 100, revenue: 1000000.0 };
@@ -42,8 +42,8 @@ fn main() {
     }
 }
 
-// Function that uses type switch to handle different entity types
-fn process_entity(entity: sus) -> tea {
+fr fr Function that uses type switch to handle different entity types
+slay process_entity(entity: sus) -> tea {
     // Type switch with vibe_check syntax
     vibe_check entity.(Type) {
         mood Person as person: {
@@ -82,8 +82,8 @@ fn process_entity(entity: sus) -> tea {
     }
 }
 
-// Advanced type switch with nested patterns
-fn advanced_type_switch_demo(value: sus) {
+fr fr Advanced type switch with nested patterns
+slay advanced_type_switch_demo(value: sus) {
     vibe_check value.(Type) {
         mood tea as text: {
             lowkey (text.length() > 10) {
@@ -117,16 +117,16 @@ fn advanced_type_switch_demo(value: sus) {
     }
 }
 
-// Type switch with multiple interface types
+fr fr Type switch with multiple interface types
 collab Drawable {
-    fn draw() -> tea;
+    slay draw() -> tea;
 }
 
 collab Clickable {
-    fn click() -> tea;
+    slay click() -> tea;
 }
 
-fn handle_ui_element(element: sus) {
+slay handle_ui_element(element: sus) {
     vibe_check element.(Type) {
         mood Drawable as drawable: {
             stan drawable.draw();
@@ -142,8 +142,8 @@ fn handle_ui_element(element: sus) {
     }
 }
 
-// Type switch in error handling context
-fn safe_type_switch_demo(maybe_value: sus?) -> tea? {
+fr fr Type switch in error handling context
+slay safe_type_switch_demo(maybe_value: sus?) -> tea? {
     lowkey (maybe_value != nil) {
         vibe_check maybe_value.(Type) {
             mood tea as text: {
@@ -163,8 +163,8 @@ fn safe_type_switch_demo(maybe_value: sus?) -> tea? {
     }
 }
 
-// Type switch with goroutines
-fn concurrent_type_processing(entities: [sus]) {
+fr fr Type switch with goroutines
+slay concurrent_type_processing(entities: [sus]) {
     lowkey (sus entity in entities) {
         stan {
             vibe_check entity.(Type) {
@@ -188,8 +188,8 @@ fn concurrent_type_processing(entities: [sus]) {
     }
 }
 
-// Type switch with result types
-fn type_switch_with_results(input: sus) -> Result<tea, tea> {
+fr fr Type switch with result types
+slay type_switch_with_results(input: sus) -> Result<tea, tea> {
     vibe_check input.(Type) {
         mood tea as text: {
             lowkey (text.length() > 0) {

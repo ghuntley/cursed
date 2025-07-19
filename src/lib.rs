@@ -19,6 +19,7 @@ pub mod lexer;
 pub mod preprocessor;
 pub mod parser_main;
 pub mod parser;
+pub mod parser_interfaces;
 pub mod core; // Re-enabled for type system integration
 pub mod codegen; // Re-enabled for type system integration
 pub mod memory;

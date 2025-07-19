@@ -1,10 +1,10 @@
-/// fr fr CURSED Symmetric Encryption Examples - Security in style periodt
-/// 
-/// This file demonstrates comprehensive symmetric encryption usage in CURSED:
-/// - File encryption/decryption with password
-/// - Authenticated encryption with additional data
-/// - Key derivation and secure key management
-/// - Performance-optimized bulk encryption
+fr fr/ fr fr CURSED Symmetric Encryption Examples - Security in style periodt
+fr fr/ 
+fr fr/ This file demonstrates comprehensive symmetric encryption usage in CURSED:
+fr fr/ - File encryption/decryption with password
+fr fr/ - Authenticated encryption with additional data
+fr fr/ - Key derivation and secure key management
+fr fr/ - Performance-optimized bulk encryption
 
 from crypto_advanced::aes_gcm import AesGcm256
 from crypto_advanced::chacha20_poly1305 import ChaCha20Poly1305  
@@ -17,8 +17,8 @@ from dropz import read_file, write_file, exists
 from timez import now
 from stringz import split, join
 
-/// slay Main encryption demo function
-fn main() -> void {
+fr fr/ slay Main encryption demo function
+slay main() -> void {
     spillf("🔐 CURSED Symmetric Encryption Demo - Let's secure the bag bestie!\n")
     
     // Demo 1: Basic password-based file encryption
@@ -44,8 +44,8 @@ fn main() -> void {
     spill("\n✨ All crypto demos completed successfully! Security = slay periodt")
 }
 
-/// slay Demo password-based file encryption
-fn demo_password_file_encryption() -> void {
+fr fr/ slay Demo password-based file encryption
+slay demo_password_file_encryption() -> void {
     let password = "my_super_secure_password_123!"
     let original_file = "test_document.txt"
     let encrypted_file = "test_document.txt.encrypted"
@@ -91,8 +91,8 @@ fn demo_password_file_encryption() -> void {
     }
 }
 
-/// slay Encrypt file with password using specified algorithm
-fn encrypt_file_with_password(content: string, password: string, algorithm: string) -> Result<string, Error> {
+fr fr/ slay Encrypt file with password using specified algorithm
+slay encrypt_file_with_password(content: string, password: string, algorithm: string) -> Result<string, Error> {
     // Generate salt for key derivation
     let salt = generate_secure_salt(32)
     
@@ -132,8 +132,8 @@ fn encrypt_file_with_password(content: string, password: string, algorithm: stri
     }
 }
 
-/// slay Decrypt file with password
-fn decrypt_file_with_password(encrypted_content: string, password: string, algorithm: string) -> Result<string, Error> {
+fr fr/ slay Decrypt file with password
+slay decrypt_file_with_password(encrypted_content: string, password: string, algorithm: string) -> Result<string, Error> {
     // Decode base64
     let encrypted_data = base64_decode(encrypted_content)?
     
@@ -172,8 +172,8 @@ fn decrypt_file_with_password(encrypted_content: string, password: string, algor
     }
 }
 
-/// slay Demo authenticated encryption with additional data
-fn demo_authenticated_encryption() -> void {
+fr fr/ slay Demo authenticated encryption with additional data
+slay demo_authenticated_encryption() -> void {
     let key = generate_secure_key(32)
     let message = "Secret message that needs authentication"
     let sender_id = "alice@cursed.dev"
@@ -222,8 +222,8 @@ fn demo_authenticated_encryption() -> void {
     }
 }
 
-/// slay Demo key derivation and management
-fn demo_key_derivation() -> void {
+fr fr/ slay Demo key derivation and management
+slay demo_key_derivation() -> void {
     let password = "user_master_password"
     let salt = generate_secure_salt(32)
     
@@ -261,8 +261,8 @@ fn demo_key_derivation() -> void {
     spill("✅ Key derivation and management demo completed")
 }
 
-/// slay Demo high-performance bulk encryption
-fn demo_bulk_encryption() -> void {
+fr fr/ slay Demo high-performance bulk encryption
+slay demo_bulk_encryption() -> void {
     let data_sizes = [1024, 10240, 102400, 1048576] // 1KB, 10KB, 100KB, 1MB
     let key = generate_secure_key(32)
     
@@ -306,8 +306,8 @@ fn demo_bulk_encryption() -> void {
     spill("\n✅ Bulk encryption performance testing completed")
 }
 
-/// slay Demo secure communication protocol
-fn demo_secure_communication() -> void {
+fr fr/ slay Demo secure communication protocol
+slay demo_secure_communication() -> void {
     spill("🔗 Implementing secure communication protocol")
     
     // Simulate Alice and Bob key exchange (in real scenario, use ECDH)
@@ -346,8 +346,8 @@ fn demo_secure_communication() -> void {
     spill("🔐 All messages authenticated and encrypted successfully!")
 }
 
-/// slay Send secure message with authentication
-fn secure_send_message(key: Vec<u8>, message: string, sender: string, recipient: string, sequence: i32) -> string {
+fr fr/ slay Send secure message with authentication
+slay secure_send_message(key: Vec<u8>, message: string, sender: string, recipient: string, sequence: i32) -> string {
     let cipher = ChaCha20Poly1305::new(key)
     
     // Create authenticated additional data
@@ -367,8 +367,8 @@ fn secure_send_message(key: Vec<u8>, message: string, sender: string, recipient:
     base64_encode(package)
 }
 
-/// slay Receive and decrypt secure message
-fn secure_receive_message(key: Vec<u8>, encrypted_package: string, expected_sender: string, expected_recipient: string, expected_sequence: i32) -> Result<string, Error> {
+fr fr/ slay Receive and decrypt secure message
+slay secure_receive_message(key: Vec<u8>, encrypted_package: string, expected_sender: string, expected_recipient: string, expected_sequence: i32) -> Result<string, Error> {
     let package = base64_decode(encrypted_package)?
     
     // Extract components
@@ -404,22 +404,22 @@ fn secure_receive_message(key: Vec<u8>, encrypted_package: string, expected_send
     }
 }
 
-/// slay Generate secure random salt
-fn generate_secure_salt(size: usize) -> Vec<u8> {
+fr fr/ slay Generate secure random salt
+slay generate_secure_salt(size: usize) -> Vec<u8> {
     let mut salt = vec![0u8; size]
     fill_random(&mut salt).unwrap()
     salt
 }
 
-/// slay Generate secure random key
-fn generate_secure_key(size: usize) -> Vec<u8> {
+fr fr/ slay Generate secure random key
+slay generate_secure_key(size: usize) -> Vec<u8> {
     let mut key = vec![0u8; size]
     fill_random(&mut key).unwrap()
     key
 }
 
-/// slay Generate test data of specified size
-fn generate_test_data(size: usize) -> Vec<u8> {
+fr fr/ slay Generate test data of specified size
+slay generate_test_data(size: usize) -> Vec<u8> {
     let mut data = vec![0u8; size]
     for i in 0..size {
         data[i] = (i % 256) as u8
@@ -427,8 +427,8 @@ fn generate_test_data(size: usize) -> Vec<u8> {
     data
 }
 
-/// slay Format byte size for display
-fn format_size(bytes: usize) -> string {
+fr fr/ slay Format byte size for display
+slay format_size(bytes: usize) -> string {
     lowkey bytes < 1024 {
         spillstr("%d B", bytes)
     } highkey bytes < 1024 * 1024 {
@@ -440,8 +440,8 @@ fn format_size(bytes: usize) -> string {
     }
 }
 
-/// slay Convert bytes to hex string
-fn hex_encode(bytes: Vec<u8>) -> string {
+fr fr/ slay Convert bytes to hex string
+slay hex_encode(bytes: Vec<u8>) -> string {
     let mut result = String::new()
     for byte in bytes {
         result.push_str(&spillstr("%02x", byte))
@@ -449,8 +449,8 @@ fn hex_encode(bytes: Vec<u8>) -> string {
     result
 }
 
-/// slay Convert hex string to bytes
-fn hex_decode(hex: string) -> Result<Vec<u8>, Error> {
+fr fr/ slay Convert hex string to bytes
+slay hex_decode(hex: string) -> Result<Vec<u8>, Error> {
     let mut bytes = Vec::new()
     let chars: Vec<char> = hex.chars().collect()
     
@@ -467,8 +467,8 @@ fn hex_decode(hex: string) -> Result<Vec<u8>, Error> {
     Ok(bytes)
 }
 
-/// slay Base64 encode bytes
-fn base64_encode(bytes: Vec<u8>) -> string {
+fr fr/ slay Base64 encode bytes
+slay base64_encode(bytes: Vec<u8>) -> string {
     // Simple base64 implementation for demo
     // In production, use proper base64 library
     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -491,8 +491,8 @@ fn base64_encode(bytes: Vec<u8>) -> string {
     result
 }
 
-/// slay Base64 decode string
-fn base64_decode(s: string) -> Result<Vec<u8>, Error> {
+fr fr/ slay Base64 decode string
+slay base64_decode(s: string) -> Result<Vec<u8>, Error> {
     // Simple base64 decoder for demo
     let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     let mut result = Vec::new()

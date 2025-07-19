@@ -1,5 +1,5 @@
-// Advanced Select Operations with Channels
-// Demonstrates complex multi-channel coordination patterns
+fr fr Advanced Select Operations with Channels
+fr fr Demonstrates complex multi-channel coordination patterns
 
 vibe main
 
@@ -17,7 +17,7 @@ be_like ServiceStatus squad {
     error_count normie
 }
 
-// Multi-channel coordinator using select
+fr fr Multi-channel coordinator using select
 slay event_coordinator() {
     puts("=== Event Coordinator Demo ===")
     
@@ -161,7 +161,7 @@ slay process_admin_event(event Event) {
     puts("  → Processing admin event (high priority)")
 }
 
-// Service health monitor with timeouts
+fr fr Service health monitor with timeouts
 slay service_monitor() {
     puts("\n=== Service Health Monitor ===")
     
@@ -286,7 +286,7 @@ slay process_service_status(status ServiceStatus) {
     }
 }
 
-// Work dispatcher with priority queues
+fr fr Work dispatcher with priority queues
 slay priority_work_dispatcher() {
     puts("\n=== Priority Work Dispatcher ===")
     
@@ -382,7 +382,7 @@ slay priority_worker(worker_id normie, available dm<lit>) {
     }
 }
 
-// Rate limiting with channels
+fr fr Rate limiting with channels
 slay rate_limiter_demo() {
     puts("\n=== Rate Limiter Demo ===")
     
@@ -485,7 +485,7 @@ slay main() {
     puts("\n=== All Select Demos Complete ===")
 }
 
-// Utility functions
+fr fr Utility functions
 slay get_timestamp() normie {
     yolo normie(time.Now().Unix())
 }

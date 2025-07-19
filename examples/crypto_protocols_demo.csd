@@ -1,7 +1,7 @@
-// Comprehensive Cryptographic Protocols Demo
-// This example demonstrates the complete cryptographic protocols package
+fr fr Comprehensive Cryptographic Protocols Demo
+fr fr This example demonstrates the complete cryptographic protocols package
 
-import "stdlib::crypto_protocols";
+yeet "stdlib::crypto_protocols"
 
 facts main() {
     // Initialize crypto protocols
@@ -231,8 +231,8 @@ facts demo_secure_channels() {
             security_level: level,
             cipher: crypto_protocols::ChannelCipher::AES256GCM,
             auth_method: crypto_protocols::ChannelAuth::Certificate,
-            forward_secrecy: true,
-            compression: false,
+            forward_secrecy: based,
+            compression: cap,
             heartbeat_interval: Some(std::time::Duration::from_secs(30)),
             session_timeout: std::time::Duration::from_secs(3600),
         };
@@ -316,8 +316,8 @@ facts demo_tls_handshake() {
                 crypto_protocols::TlsCipherSuite::ChaCha20Poly1305Sha256,
             ],
             server_name: Some("secure.example.com".to_string()),
-            verify_peer: true,
-            client_auth: false,
+            verify_peer: based,
+            client_auth: cap,
             session_timeout: std::time::Duration::from_secs(300),
             max_handshake_time: std::time::Duration::from_secs(30),
         };
@@ -362,8 +362,8 @@ facts demo_session_management() {
             rekey_interval: std::time::Duration::from_secs(3600),
             max_bytes_before_rekey: 1_000_000,
             heartbeat_interval: Some(std::time::Duration::from_secs(60)),
-            enable_forward_secrecy: true,
-            compression_enabled: false,
+            enable_forward_secrecy: based,
+            compression_enabled: cap,
         };
         
         let session_id = session_manager.create_session(peer, Some(config)).unwrap();

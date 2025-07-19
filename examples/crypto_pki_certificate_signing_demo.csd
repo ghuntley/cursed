@@ -1,15 +1,15 @@
-// Certificate Signing Demo for CURSED Crypto PKI Package
-// 
-// This example demonstrates comprehensive certificate signing functionality including:
-// - Creating and configuring a Certificate Authority (CA)
-// - Generating Certificate Signing Requests (CSRs)
-// - Signing certificates with various algorithms
-// - Batch certificate signing
-// - Certificate renewal
-// - Signature verification
+fr fr Certificate Signing Demo for CURSED Crypto PKI Package
+fr fr 
+fr fr This example demonstrates comprehensive certificate signing functionality including:
+fr fr - Creating and configuring a Certificate Authority (CA)
+fr fr - Generating Certificate Signing Requests (CSRs)
+fr fr - Signing certificates with various algorithms
+fr fr - Batch certificate signing
+fr fr - Certificate renewal
+fr fr - Signature verification
 
-import "stdlib::crypto_pki";
-import "stdlib::io";
+yeet "stdlib::crypto_pki"
+yeet "stdlib::io"
 
 sus main() {
     periodt {
@@ -38,7 +38,7 @@ sus main() {
     }
 }
 
-// Demo 1: Basic Certificate Signing
+fr fr Demo 1: Basic Certificate Signing
 sus demo_basic_certificate_signing() {
     println("\n🔐 Demo 1: Basic Certificate Signing")?;
     
@@ -47,18 +47,18 @@ sus demo_basic_certificate_signing() {
         distinguished_name: crypto_pki::DistinguishedName::from_common_name("Demo Root CA"),
         signature_algorithm: crypto_pki::SignatureAlgorithm::RsaWithSha256,
         ca_key_usage: crypto_pki::KeyUsage {
-            key_cert_sign: true,
-            crl_sign: true,
-            digital_signature: false,
-            key_encipherment: false,
-            data_encipherment: false,
-            key_agreement: false,
-            non_repudiation: false,
-            encipher_only: false,
-            decipher_only: false,
+            key_cert_sign: based,
+            crl_sign: based,
+            digital_signature: cap,
+            key_encipherment: cap,
+            data_encipherment: cap,
+            key_agreement: cap,
+            non_repudiation: cap,
+            encipher_only: cap,
+            decipher_only: cap,
         },
         basic_constraints: crypto_pki::BasicConstraints {
-            is_ca: true,
+            is_ca: based,
             path_length_constraint: None,
         },
         validity_days: 3650, // 10 years
@@ -113,7 +113,7 @@ sus demo_basic_certificate_signing() {
     println("   ⏰ Valid until: {:?}", certificate.validity.not_after)?;
 }
 
-// Demo 2: Certificate Templates
+fr fr Demo 2: Certificate Templates
 sus demo_certificate_templates() {
     println("\n📋 Demo 2: Certificate Templates")?;
     
@@ -121,23 +121,23 @@ sus demo_certificate_templates() {
     sus server_template = crypto_pki::CertificateTemplate {
         name: "TLS Server Template".to_string(),
         key_usage: crypto_pki::KeyUsage {
-            digital_signature: true,
-            key_encipherment: true,
-            data_encipherment: false,
-            key_agreement: false,
-            key_cert_sign: false,
-            crl_sign: false,
-            non_repudiation: false,
-            encipher_only: false,
-            decipher_only: false,
+            digital_signature: based,
+            key_encipherment: based,
+            data_encipherment: cap,
+            key_agreement: cap,
+            key_cert_sign: cap,
+            crl_sign: cap,
+            non_repudiation: cap,
+            encipher_only: cap,
+            decipher_only: cap,
         },
         extended_key_usage: crypto_pki::ExtendedKeyUsage {
-            server_auth: true,
-            client_auth: false,
-            code_signing: false,
-            email_protection: false,
-            time_stamping: false,
-            ocsp_signing: false,
+            server_auth: based,
+            client_auth: cap,
+            code_signing: cap,
+            email_protection: cap,
+            time_stamping: cap,
+            ocsp_signing: cap,
             custom_purposes: vec![],
         },
         validity_period: Duration::from_secs(2 * 365 * 24 * 60 * 60), // 2 years
@@ -149,23 +149,23 @@ sus demo_certificate_templates() {
     sus client_template = crypto_pki::CertificateTemplate {
         name: "TLS Client Template".to_string(),
         key_usage: crypto_pki::KeyUsage {
-            digital_signature: true,
-            key_encipherment: false,
-            data_encipherment: false,
-            key_agreement: false,
-            key_cert_sign: false,
-            crl_sign: false,
-            non_repudiation: false,
-            encipher_only: false,
-            decipher_only: false,
+            digital_signature: based,
+            key_encipherment: cap,
+            data_encipherment: cap,
+            key_agreement: cap,
+            key_cert_sign: cap,
+            crl_sign: cap,
+            non_repudiation: cap,
+            encipher_only: cap,
+            decipher_only: cap,
         },
         extended_key_usage: crypto_pki::ExtendedKeyUsage {
-            server_auth: false,
-            client_auth: true,
-            code_signing: false,
-            email_protection: false,
-            time_stamping: false,
-            ocsp_signing: false,
+            server_auth: cap,
+            client_auth: based,
+            code_signing: cap,
+            email_protection: cap,
+            time_stamping: cap,
+            ocsp_signing: cap,
             custom_purposes: vec![],
         },
         validity_period: Duration::from_secs(365 * 24 * 60 * 60), // 1 year
@@ -182,7 +182,7 @@ sus demo_certificate_templates() {
     println("   🎯 Client template: TLS Client Authentication")?;
 }
 
-// Demo 3: Batch Certificate Signing
+fr fr Demo 3: Batch Certificate Signing
 sus demo_batch_certificate_signing() {
     println("\n📦 Demo 3: Batch Certificate Signing")?;
     
@@ -218,10 +218,10 @@ sus demo_batch_certificate_signing() {
     
     // Configure batch signing options
     sus batch_options = crypto_pki::BatchSigningOptions {
-        continue_on_failure: true,
+        continue_on_failure: based,
         max_concurrent: 3,
         signing_timeout: Duration::from_secs(30),
-        detailed_report: true,
+        detailed_report: based,
     };
     
     // Create batch signing request
@@ -246,7 +246,7 @@ sus demo_batch_certificate_signing() {
     }
 }
 
-// Demo 4: Certificate Renewal
+fr fr Demo 4: Certificate Renewal
 sus demo_certificate_renewal() {
     println("\n🔄 Demo 4: Certificate Renewal")?;
     
@@ -287,7 +287,7 @@ sus demo_certificate_renewal() {
         }),
         new_validity_period: Some(Duration::from_secs(2 * 365 * 24 * 60 * 60)), // 2 years
         extension_updates: HashMap::new(),
-        keep_serial_number: false,
+        keep_serial_number: cap,
     };
     
     println("   ✅ Created renewal request with new 4096-bit RSA key")?;
@@ -295,7 +295,7 @@ sus demo_certificate_renewal() {
     println("   🔄 Certificate renewal demonstrates key rotation and lifecycle management")?;
 }
 
-// Demo 5: Certificate Signature Verification
+fr fr Demo 5: Certificate Signature Verification
 sus demo_signature_verification() {
     println("\n🔍 Demo 5: Certificate Signature Verification")?;
     
@@ -337,7 +337,7 @@ sus demo_signature_verification() {
     println("   ✅ Signature verification ensures certificate authenticity")?;
 }
 
-// Demo 6: Certificate Signing Policies
+fr fr Demo 6: Certificate Signing Policies
 sus demo_signing_policies() {
     println("\n📜 Demo 6: Certificate Signing Policies")?;
     
@@ -347,29 +347,29 @@ sus demo_signing_policies() {
         min_validity_period: Duration::from_secs(7 * 24 * 60 * 60), // 7 days min
         allowed_key_usages: vec![
             crypto_pki::KeyUsage {
-                digital_signature: true,
-                key_encipherment: true,
-                data_encipherment: false,
-                key_agreement: false,
-                key_cert_sign: false,
-                crl_sign: false,
-                non_repudiation: false,
-                encipher_only: false,
-                decipher_only: false,
+                digital_signature: based,
+                key_encipherment: based,
+                data_encipherment: cap,
+                key_agreement: cap,
+                key_cert_sign: cap,
+                crl_sign: cap,
+                non_repudiation: cap,
+                encipher_only: cap,
+                decipher_only: cap,
             }
         ],
         allowed_extended_key_usages: vec![
             crypto_pki::ExtendedKeyUsage {
-                server_auth: true,
-                client_auth: true,
-                code_signing: false,
-                email_protection: false,
-                time_stamping: false,
-                ocsp_signing: false,
+                server_auth: based,
+                client_auth: based,
+                code_signing: cap,
+                email_protection: cap,
+                time_stamping: cap,
+                ocsp_signing: cap,
                 custom_purposes: vec![],
             }
         ],
-        require_san: true,
+        require_san: based,
         max_san_entries: 10,
         allowed_subject_fields: vec![
             "CN".to_string(),
@@ -381,15 +381,15 @@ sus demo_signing_policies() {
         ],
         serial_number_policy: crypto_pki::SerialNumberPolicy {
             length: 16,
-            secure_random: true,
+            secure_random: based,
             prefix: None,
-            track_uniqueness: true,
+            track_uniqueness: based,
         },
         extension_policy: crypto_pki::ExtensionPolicy {
             required_extensions: vec!["2.5.29.15".to_string()], // Key Usage required
             forbidden_extensions: vec![],
-            auto_basic_constraints: true,
-            auto_key_identifiers: true,
+            auto_basic_constraints: based,
+            auto_key_identifiers: based,
         },
     };
     
@@ -409,7 +409,7 @@ sus demo_signing_policies() {
     println("     - Unique serial number generation")?;
 }
 
-// Certificate purpose examples
+fr fr Certificate purpose examples
 sus demonstrate_certificate_purposes() {
     println("\n🎯 Certificate Purpose Classifications:")?;
     
@@ -424,7 +424,7 @@ sus demonstrate_certificate_purposes() {
     println("   🎭 Custom: Application-specific purposes")?;
 }
 
-// Signature algorithm showcase
+fr fr Signature algorithm showcase
 sus demonstrate_signature_algorithms() {
     println("\n🔐 Supported Signature Algorithms:")?;
     

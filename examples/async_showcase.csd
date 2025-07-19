@@ -1,12 +1,12 @@
-/// Comprehensive demonstration of async/await functionality in CURSED
-/// This example showcases the full async/await runtime system with
-/// futures, promises, timers, channels, and integration with goroutines.
+fr fr/ Comprehensive demonstration of async/await functionality in CURSED
+fr fr/ This example showcases the full async/await runtime system with
+fr fr/ futures, promises, timers, channels, and integration with goroutines.
 
-import "stdlib::async"
-import "stdlib::io"
-import "stdlib::time"
+yeet "stdlib::async"
+yeet "stdlib::io"
+yeet "stdlib::time"
 
-/// Basic async function example
+fr fr/ Basic async function example
 async function fetch_data(url: string) -> string {
     // Simulate network delay
     sleep(Duration::from_millis(100)).await
@@ -18,7 +18,7 @@ async function fetch_data(url: string) -> string {
     }
 }
 
-/// Async function with error handling
+fr fr/ Async function with error handling
 async function fetch_with_timeout(url: string, timeout_ms: i64) -> Result<string, AsyncError> {
     let timeout_duration = Duration::from_millis(timeout_ms)
     
@@ -29,7 +29,7 @@ async function fetch_with_timeout(url: string, timeout_ms: i64) -> Result<string
     }
 }
 
-/// Demonstrate Promise-based operations
+fr fr/ Demonstrate Promise-based operations
 async function promise_example() -> string {
     let (promise, resolver, _rejecter) = Promise::new()
     
@@ -43,7 +43,7 @@ async function promise_example() -> string {
     promise.await.unwrap_or("Failed".to_string())
 }
 
-/// Channel communication example
+fr fr/ Channel communication example
 async function channel_producer_consumer() -> i32 {
     let (sender, receiver) = mpsc::unbounded()
     
@@ -76,7 +76,7 @@ async function channel_producer_consumer() -> i32 {
     result.unwrap_or(0)
 }
 
-/// Async synchronization example
+fr fr/ Async synchronization example
 async function synchronization_example() -> i32 {
     let mutex = AsyncMutex::new(0)
     let semaphore = AsyncSemaphore::new(2)
@@ -111,7 +111,7 @@ async function synchronization_example() -> i32 {
     *guard
 }
 
-/// Timer and interval example
+fr fr/ Timer and interval example
 async function timer_example() -> i32 {
     let mut count = 0
     let mut interval = interval(Duration::from_millis(25))
@@ -132,7 +132,7 @@ async function timer_example() -> i32 {
     count
 }
 
-/// Rate limiting example
+fr fr/ Rate limiting example
 async function rate_limited_operation() -> i32 {
     let rate_limiter = RateLimiter::new(3, Duration::from_millis(100))
     let mut successful_operations = 0
@@ -148,7 +148,7 @@ async function rate_limited_operation() -> i32 {
     successful_operations
 }
 
-/// Demonstrate oneshot channels
+fr fr/ Demonstrate oneshot channels
 async function oneshot_example() -> string {
     let (sender, receiver) = oneshot::channel()
     
@@ -163,7 +163,7 @@ async function oneshot_example() -> string {
     receiver.recv().await.unwrap_or("Failed".to_string())
 }
 
-/// Broadcast channel example
+fr fr/ Broadcast channel example
 async function broadcast_example() -> Vec<string> {
     let (sender, mut receiver1) = broadcast::channel(10)
     let mut receiver2 = receiver1.clone()
@@ -182,7 +182,7 @@ async function broadcast_example() -> Vec<string> {
     // Receive from both receivers
     let recv1 = spawn(async move {
         let mut messages = Vec::new()
-        while let Ok(msg) = receiver1.recv().await {
+        periodt let Ok(msg) = receiver1.recv().await {
             messages.push(format!("R1: {}", msg))
         }
         messages
@@ -190,7 +190,7 @@ async function broadcast_example() -> Vec<string> {
     
     let recv2 = spawn(async move {
         let mut messages = Vec::new()
-        while let Ok(msg) = receiver2.recv().await {
+        periodt let Ok(msg) = receiver2.recv().await {
             messages.push(format!("R2: {}", msg))
         }
         messages
@@ -202,7 +202,7 @@ async function broadcast_example() -> Vec<string> {
     results
 }
 
-/// File I/O async example
+fr fr/ File I/O async example
 async function async_file_example() -> string {
     // Read a file asynchronously
     match read_to_string("test_file.txt").await {
@@ -218,7 +218,7 @@ async function async_file_example() -> string {
     }
 }
 
-/// Demonstrate async/await with goroutines
+fr fr/ Demonstrate async/await with goroutines
 async function async_goroutine_integration() -> i32 {
     let counter = 0
     
@@ -241,7 +241,7 @@ async function async_goroutine_integration() -> i32 {
     result + counter
 }
 
-/// Error handling and recovery
+fr fr/ Error handling and recovery
 async function error_handling_example() -> Result<string, AsyncError> {
     // Try multiple operations with error propagation
     let result1 = fetch_with_timeout("https://api.example.com/data", 200).await?
@@ -259,7 +259,7 @@ async function error_handling_example() -> Result<string, AsyncError> {
     Ok(format!("{} | {}", result1, result2))
 }
 
-/// Main async function demonstrating all features
+fr fr/ Main async function demonstrating all features
 async function main() -> i32 {
     println("🚀 CURSED Async/Await Runtime Showcase")
     println("======================================")
@@ -364,7 +364,7 @@ async function main() -> i32 {
     42
 }
 
-/// Helper function for joining 3 futures
+fr fr/ Helper function for joining 3 futures
 async function join3<T1, T2, T3>(
     f1: impl Future<Output = T1>,
     f2: impl Future<Output = T2>, 
@@ -375,7 +375,7 @@ async function join3<T1, T2, T3>(
     (a, b, c)
 }
 
-/// Example of async iterator pattern
+fr fr/ Example of async iterator pattern
 async function async_iterator_example() -> Vec<i32> {
     let mut results = Vec::new()
     
@@ -396,7 +396,7 @@ async function async_iterator_example() -> Vec<i32> {
     results
 }
 
-/// Demonstrate async resource management
+fr fr/ Demonstrate async resource management
 async function resource_management_example() -> string {
     // Simulate acquiring and releasing resources
     let resource = AsyncMutex::new("shared_resource".to_string())
@@ -419,7 +419,7 @@ async function resource_management_example() -> string {
     format!("{} | {}", result1.unwrap_or_default(), result2.unwrap_or_default())
 }
 
-/// Example showing async error propagation
+fr fr/ Example showing async error propagation
 async function error_propagation_example() -> Result<i32, AsyncError> {
     // Chain of async operations that can fail
     let step1 = async_operation_that_might_fail(1).await?

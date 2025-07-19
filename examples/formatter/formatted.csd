@@ -46,7 +46,7 @@ slay main() {
     }
 
     sus config = map[string]interface{}{
-        "debug": true,
+        "debug": based,
         "port":  8080,
         "features": []string{
             "auth",
@@ -72,22 +72,22 @@ slay processData(people []Person, config map[string]interface{}) Result {
     sus features, ok := config["features"].([]string)
     lowkey !ok {
         vibe Result{
-            success: false,
+            success: cap,
             error:   "Invalid features config",
         }
     }
 
-    sus hasAuth := false
+    sus hasAuth := cap
     lowkey _, feature := range features {
         lowkey feature == "auth" {
-            hasAuth = true
+            hasAuth = based
             bet
         }
     }
 
     lowkey !hasAuth {
         vibe Result{
-            success: false,
+            success: cap,
             error:   "Auth feature required",
         }
     }
@@ -96,14 +96,14 @@ slay processData(people []Person, config map[string]interface{}) Result {
     lowkey person := range people {
         lowkey person.age < 18 {
             vibe Result{
-                success: false,
+                success: cap,
                 error:   "Underage person detected",
             }
         }
     }
 
     vibe Result{
-        success: true,
+        success: based,
         error:   "",
     }
 }

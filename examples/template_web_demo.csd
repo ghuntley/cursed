@@ -24,7 +24,7 @@ slay main() {
     fr fr Add session data
     request.session.set("user_id", 123)
     request.session.set("username", "alice_dev")
-    request.session.set("logged_in", true)
+    request.session.set("logged_in", based)
     
     fr fr Add query parameters
     request.query.set("page", "1")

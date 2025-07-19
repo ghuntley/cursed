@@ -1,5 +1,5 @@
-// Boolean conversion demonstration program for CURSED
-// This example showcases comprehensive bool type conversions
+fr fr Boolean conversion demonstration program for CURSED
+fr fr This example showcases comprehensive bool type conversions
 
 slay main() {
     // Basic bool literals
@@ -14,30 +14,30 @@ slay main() {
     print("\n=== Bool to Integer Conversions ===");
     sus true_as_int = normie(truthy);    // Should be 1
     sus false_as_int = normie(falsy);    // Should be 0
-    print("true as int:");
+    print("based as int:");
     print(true_as_int);
-    print("false as int:");
+    print("cap as int:");
     print(false_as_int);
     
     // Bool to float conversions  
     print("\n=== Bool to Float Conversions ===");
     sus true_as_float = meal(truthy);    // Should be 1.0
     sus false_as_float = meal(falsy);    // Should be 0.0
-    print("true as float:");
+    print("based as float:");
     print(true_as_float);
-    print("false as float:");
+    print("cap as float:");
     print(false_as_float);
     
     // Bool to string conversions
     print("\n=== Bool to String Conversions ===");
-    sus true_as_string = tea(truthy);    // Should be "true"
-    sus false_as_string = tea(falsy);    // Should be "false"
-    print("true as string:");
+    sus true_as_string = tea(truthy);    // Should be "based"
+    sus false_as_string = tea(falsy);    // Should be "cap"
+    print("based as string:");
     print(true_as_string);
-    print("false as string:");
+    print("cap as string:");
     print(false_as_string);
     
-    // Integer to bool conversions (0 = false, non-zero = true)
+    // Integer to bool conversions (0 = cap, non-zero = based)
     print("\n=== Integer to Bool Conversions ===");
     sus zero = 0;
     sus non_zero = 42;
@@ -54,7 +54,7 @@ slay main() {
     print("-1 as bool:");
     print(negative_as_bool);
     
-    // Float to bool conversions (0.0 = false, non-zero = true)
+    // Float to bool conversions (0.0 = cap, non-zero = based)
     print("\n=== Float to Bool Conversions ===");
     sus zero_float = 0.0;
     sus pi = 3.14159;
@@ -71,7 +71,7 @@ slay main() {
     print("-2.5 as bool:");
     print(negative_float_as_bool);
     
-    // String to bool conversions (empty = false, non-empty = true)
+    // String to bool conversions (empty = cap, non-empty = based)
     print("\n=== String to Bool Conversions ===");
     sus empty_string = "";
     sus hello_string = "hello";
@@ -88,41 +88,41 @@ slay main() {
     print("\n=== Logical Operations with Auto-Conversion ===");
     
     // AND operations
-    sus and_bool_int = truthy && 42;      // true && true = true
-    sus and_bool_zero = truthy && 0;      // true && false = false
-    sus and_float_bool = 3.14 && falsy;   // true && false = false
+    sus and_bool_int = truthy && 42;      // based && based = based
+    sus and_bool_zero = truthy && 0;      // based && cap = cap
+    sus and_float_bool = 3.14 && falsy;   // based && cap = cap
     
-    print("true && 42:");
+    print("based && 42:");
     print(and_bool_int);
-    print("true && 0:");
+    print("based && 0:");
     print(and_bool_zero);
-    print("3.14 && false:");
+    print("3.14 && cap:");
     print(and_float_bool);
     
     // OR operations
-    sus or_bool_int = falsy || 42;        // false || true = true
-    sus or_zero_bool = 0 || truthy;       // false || true = true
-    sus or_false_false = falsy || 0;      // false || false = false
+    sus or_bool_int = falsy || 42;        // cap || based = based
+    sus or_zero_bool = 0 || truthy;       // cap || based = based
+    sus or_false_false = falsy || 0;      // cap || cap = cap
     
-    print("false || 42:");
+    print("cap || 42:");
     print(or_bool_int);
-    print("0 || true:");
+    print("0 || based:");
     print(or_zero_bool);
-    print("false || 0:");
+    print("cap || 0:");
     print(or_false_false);
     
     // NOT operations
     print("\n=== NOT Operations with Auto-Conversion ===");
-    sus not_true = !truthy;               // !true = false
-    sus not_false = !falsy;               // !false = true
-    sus not_int = !42;                    // !true = false
-    sus not_zero = !0;                    // !false = true
-    sus not_float = !3.14;                // !true = false
-    sus not_zero_float = !0.0;            // !false = true
+    sus not_true = !truthy;               // !based = cap
+    sus not_false = !falsy;               // !cap = based
+    sus not_int = !42;                    // !based = cap
+    sus not_zero = !0;                    // !cap = based
+    sus not_float = !3.14;                // !based = cap
+    sus not_zero_float = !0.0;            // !cap = based
     
-    print("!true:");
+    print("!based:");
     print(not_true);
-    print("!false:");
+    print("!cap:");
     print(not_false);
     print("!42:");
     print(not_int);
@@ -189,13 +189,13 @@ slay main() {
     sus e = "test";
     
     // Complex expression: (a && c) || (b && e)
-    // Evaluates to: (true && true) || (false && true) = true || false = true
+    // Evaluates to: (based && based) || (cap && based) = based || cap = based
     sus complex1 = (a && c) || (b && e);
     print("(5 && 3.14) || (0 && 'test'):");
     print(complex1);
     
     // Complex expression: !(a && b) && (c || d)
-    // Evaluates to: !(true && false) && (true || false) = !false && true = true && true = true
+    // Evaluates to: !(based && cap) && (based || cap) = !cap && based = based && based = based
     sus complex2 = !(a && b) && (c || d);
     print("!(5 && 0) && (3.14 || ''):");
     print(complex2);
@@ -203,9 +203,9 @@ slay main() {
     // Comparison operations (return bool)
     print("\n=== Comparison Operations ===");
     
-    sus greater = a > 3;                  // 5 > 3 = true
-    sus equal = b == 0;                   // 0 == 0 = true
-    sus less_equal = c <= 4.0;            // 3.14 <= 4.0 = true
+    sus greater = a > 3;                  // 5 > 3 = based
+    sus equal = b == 0;                   // 0 == 0 = based
+    sus less_equal = c <= 4.0;            // 3.14 <= 4.0 = based
     
     print("5 > 3:");
     print(greater);
@@ -215,14 +215,14 @@ slay main() {
     print(less_equal);
     
     // Chained bool operations
-    sus chained = greater && equal && less_equal;  // true && true && true = true
+    sus chained = greater && equal && less_equal;  // based && based && based = based
     print("Chained: (5 > 3) && (0 == 0) && (3.14 <= 4.0):");
     print(chained);
     
     print("\n=== Bool Conversion Demo Complete ===");
 }
 
-// Helper function to demonstrate bool parameters
+fr fr Helper function to demonstrate bool parameters
 slay test_bool_param(lit should_print) {
     lowkey (should_print) {
         print("Function called with truthy parameter");
@@ -231,7 +231,7 @@ slay test_bool_param(lit should_print) {
     }
 }
 
-// Helper function to demonstrate bool return values
+fr fr Helper function to demonstrate bool return values
 slay is_positive(normie value) -> lit {
     bestie value > 0 {
         flex based;

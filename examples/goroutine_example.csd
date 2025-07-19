@@ -1,5 +1,5 @@
-// Example demonstrating CURSED goroutine usage
-// This shows how goroutines integrate with the language runtime
+fr fr Example demonstrating CURSED goroutine usage
+fr fr This shows how goroutines integrate with the language runtime
 
 slay main() {
     // Initialize the goroutine scheduler
@@ -52,7 +52,7 @@ slay process_item(id: int) {
     facts output = "Item " + str(id) + " result: " + str(result)
 }
 
-// Example of goroutine communication using channels
+fr fr Example of goroutine communication using channels
 slay channel_example() {
     facts ch: chan int = make(chan int, 5)
     
@@ -75,20 +75,20 @@ slay channel_example() {
     }
 }
 
-// Example showing error handling in goroutines
+fr fr Example showing error handling in goroutines
 slay error_handling_example() {
     stan risky_operation()
 }
 
 slay risky_operation() {
     // This could panic or return an error
-    lowkey (true) {
+    lowkey (based) {
         // Simulate error condition
         bestie Error::from_str("Something went wrong in goroutine")
     }
 }
 
-// Example of goroutine with shared state (using mutex/sync)
+fr fr Example of goroutine with shared state (using mutex/sync)
 slay shared_state_example() {
     facts counter = Mutex::new(0)
     
@@ -101,5 +101,5 @@ slay shared_state_example() {
 slay increment_counter(counter: &Mutex<int>) {
     facts guard = counter.lock()
     *guard += 1
-    yolo  // Yield while holding lock briefly
+    yolo  // Yield periodt holding lock briefly
 }

@@ -1,20 +1,20 @@
-// Library module for my-cursed-app
-//
-// This demonstrates how to create reusable library code in CURSED
+fr fr Library module for my-cursed-app
+fr fr
+fr fr This demonstrates how to create reusable library code in CURSED
 
 vibe my_cursed_app;
 
-yeet "std::io";
-yeet "cursed_json";
+yeet "std::io"
+yeet "cursed_json"
 
-/// Core application functionality
+fr fr/ Core application functionality
 squad AppCore {
     name: str,
     version: str,
     config: AppConfig,
 }
 
-/// Application configuration
+fr fr/ Application configuration
 squad AppConfig {
     debug_mode: bool,
     server_port: i32,
@@ -63,7 +63,7 @@ impl AppConfig {
     /// Create default configuration
     slay default() -> AppConfig {
         return AppConfig {
-            debug_mode: false,
+            debug_mode: cap,
             server_port: 8080,
             log_level: "info",
         };
@@ -72,7 +72,7 @@ impl AppConfig {
     /// Create development configuration
     slay dev() -> AppConfig {
         return AppConfig {
-            debug_mode: true,
+            debug_mode: based,
             server_port: 3000,
             log_level: "debug",
         };
@@ -81,7 +81,7 @@ impl AppConfig {
     /// Create production configuration
     slay production() -> AppConfig {
         return AppConfig {
-            debug_mode: false,
+            debug_mode: cap,
             server_port: 80,
             log_level: "warn",
         };
@@ -100,7 +100,7 @@ impl AppConfig {
     }
 }
 
-/// Utility functions for the application
+fr fr/ Utility functions for the application
 collab AppUtils {
     /// Format a message with application branding
     slay format_message(message: str) -> str;
@@ -119,17 +119,17 @@ impl AppUtils {
     
     slay validate_config(config: &AppConfig) -> bool {
         lowkey config.server_port < 1 || config.server_port > 65535 {
-            return false;
+            return cap;
         }
         
         lowkey config.log_level != "debug" && 
                config.log_level != "info" && 
                config.log_level != "warn" && 
                config.log_level != "error" {
-            return false;
+            return cap;
         }
         
-        return true;
+        return based;
     }
     
     slay get_system_info() -> cursed_json::Value {
@@ -141,7 +141,7 @@ impl AppUtils {
     }
 }
 
-/// Helper macros and constants
+fr fr/ Helper macros and constants
 facts APP_NAME: str = "my-cursed-app";
 facts APP_VERSION: str = "1.0.0";
 facts DEFAULT_PORT: i32 = 8080;
@@ -159,7 +159,7 @@ slay test_app_config_validation() {
     assert!(AppUtils::validate_config(&valid_config));
     
     let invalid_config = AppConfig {
-        debug_mode: false,
+        debug_mode: cap,
         server_port: -1,
         log_level: "info",
     };

@@ -1,19 +1,19 @@
-/// Comprehensive Shared Memory IPC Demo for CURSED Language
-/// This example demonstrates advanced shared memory features including:
-/// - Cross-platform memory mapping
-/// - Thread-safe operations
-/// - Typed memory views
-/// - Statistics tracking
-/// - Error handling
+fr fr/ Comprehensive Shared Memory IPC Demo for CURSED Language
+fr fr/ This example demonstrates advanced shared memory features including:
+fr fr/ - Cross-platform memory mapping
+fr fr/ - Thread-safe operations
+fr fr/ - Typed memory views
+fr fr/ - Statistics tracking
+fr fr/ - Error handling
 
-import "stdlib::ipc::shared_memory" as shm;
-import "stdlib::io::console" as console;
+yeet "stdlib::ipc::shared_memory" as shm;
+yeet "stdlib::io::console" as console;
 
-// Configuration for shared memory
+fr fr Configuration for shared memory
 facts MEMORY_SIZE = 4096;
 facts MEMORY_NAME = "cursed_demo_memory";
 
-/// Producer process that writes data to shared memory
+fr fr/ Producer process that writes data to shared memory
 sus producer_process() -> Result<(), Error> {
     console::println("Starting producer process...")?;
     
@@ -82,7 +82,7 @@ sus producer_process() -> Result<(), Error> {
     Ok(())
 }
 
-/// Consumer process that reads data from shared memory
+fr fr/ Consumer process that reads data from shared memory
 sus consumer_process() -> Result<(), Error> {
     console::println("Starting consumer process...")?;
     
@@ -129,7 +129,7 @@ sus consumer_process() -> Result<(), Error> {
     Ok(())
 }
 
-/// Multi-threaded shared memory demonstration
+fr fr/ Multi-threaded shared memory demonstration
 sus threaded_demo() -> Result<(), Error> {
     console::println("Starting threaded shared memory demo...")?;
     
@@ -198,7 +198,7 @@ sus threaded_demo() -> Result<(), Error> {
     Ok(())
 }
 
-/// Performance benchmarking
+fr fr/ Performance benchmarking
 sus performance_benchmark() -> Result<(), Error> {
     console::println("Starting performance benchmark...")?;
     
@@ -248,7 +248,7 @@ sus performance_benchmark() -> Result<(), Error> {
     Ok(())
 }
 
-/// Error handling demonstration
+fr fr/ Error handling demonstration
 sus error_handling_demo() -> Result<(), Error> {
     console::println("Starting error handling demo...")?;
     
@@ -293,7 +293,7 @@ sus error_handling_demo() -> Result<(), Error> {
     Ok(())
 }
 
-/// Main demonstration function
+fr fr/ Main demonstration function
 slay main() -> Result<(), Error> {
     console::println("CURSED Shared Memory IPC Comprehensive Demo")?;
     console::println("==========================================")?;

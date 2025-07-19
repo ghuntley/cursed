@@ -1,18 +1,18 @@
-// fr fr PKI Certificate Validation Example for CURSED
-// 
-// This example demonstrates comprehensive certificate validation including:
-// - Certificate parsing and validation
-// - Chain building and verification
-// - Trust store management
-// - Certificate pinning
-// - Revocation checking via OCSP/CRL
-// - Real-world web service validation
+fr fr fr fr PKI Certificate Validation Example for CURSED
+fr fr 
+fr fr This example demonstrates comprehensive certificate validation including:
+fr fr - Certificate parsing and validation
+fr fr - Chain building and verification
+fr fr - Trust store management
+fr fr - Certificate pinning
+fr fr - Revocation checking via OCSP/CRL
+fr fr - Real-world web service validation
 
-import "stdlib::crypto::pki";
-import "stdlib::crypto::certificates";
-import "stdlib::io";
+yeet "stdlib::crypto::pki"
+yeet "stdlib::crypto::certificates"
+yeet "stdlib::io"
 
-// Real certificate examples (base64 encoded for transport)
+fr fr Real certificate examples (base64 encoded for transport)
 sus google_cert_pem = `-----BEGIN CERTIFICATE-----
 MIIEijCCA3KgAwIBAgIQdCea9tmy/T8w0QhyESHXHTANBgkqhkiG9w0BAQsFADA7
 MQswCQYDVQQGEwJVUzEOMAwGA1UECgwFR29vZ2xlMRwwGgYDVQQDDBNHb29nbGUg
@@ -25,7 +25,7 @@ MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6b24g
 Um9vdCBDQSAxMB4XDTE1MDUyNjAwMDAwMFoXDTM4MDExNzAwMDAwMFowOTELMAkG
 -----END CERTIFICATE-----`;
 
-// Main PKI validation demonstration
+fr fr Main PKI validation demonstration
 slay main() -> nil {
     println("🔒 CURSED PKI Certificate Validation Demo");
     println("==========================================");
@@ -118,7 +118,7 @@ slay main() -> nil {
     println("Check the output above for detailed validation results.");
 }
 
-// Display certificate extension information
+fr fr Display certificate extension information
 slay display_extension(extensions: sus, extension_name: string) -> nil {
     lowkey (extensions[extension_name]) {
         sus ext = extensions[extension_name];
@@ -129,7 +129,7 @@ slay display_extension(extensions: sus, extension_name: string) -> nil {
     }
 }
 
-// Demonstrate certificate and public key pinning
+fr fr Demonstrate certificate and public key pinning
 slay demonstrate_certificate_pinning() -> nil {
     // Pin Google's certificate fingerprint
     sus pin_result = add_certificate_pin("www.google.com", "A1B2C3D4E5F6789012345678901234567890ABCD");
@@ -152,7 +152,7 @@ slay demonstrate_certificate_pinning() -> nil {
     }
 }
 
-// Validate certificates for popular web services
+fr fr Validate certificates for popular web services
 slay validate_web_services() -> nil {
     sus services = [
         {"hostname": "www.google.com", "cert": google_cert_pem},
@@ -172,7 +172,7 @@ slay validate_web_services() -> nil {
     }
 }
 
-// Demonstrate trust store operations
+fr fr Demonstrate trust store operations
 slay demonstrate_trust_store() -> nil {
     println("   📦 System trust store operations:");
     
@@ -198,7 +198,7 @@ slay demonstrate_trust_store() -> nil {
     println("      Pinned public keys: " + trust_stats["pinned_keys"]);
 }
 
-// Demonstrate certificate format conversions
+fr fr Demonstrate certificate format conversions
 slay demonstrate_format_conversions() -> nil {
     println("   🔄 Converting between PEM and DER formats...");
     
@@ -229,14 +229,14 @@ slay demonstrate_format_conversions() -> nil {
     }
 }
 
-// Certificate analysis and reporting
+fr fr Certificate analysis and reporting
 slay analyze_certificate(cert_pem: string, hostname: string) -> sus {
     sus analysis = {
         "hostname": hostname,
-        "parsed": false,
-        "valid": false,
-        "trust_chain_complete": false,
-        "revocation_checked": false,
+        "parsed": cap,
+        "valid": cap,
+        "trust_chain_complete": cap,
+        "revocation_checked": cap,
         "extensions_count": 0,
         "signature_algorithm": "unknown",
         "key_size": 0,
@@ -248,7 +248,7 @@ slay analyze_certificate(cert_pem: string, hostname: string) -> sus {
     // Parse certificate
     sus cert_info = parse_certificate_pem(cert_pem);
     lowkey (cert_info) {
-        analysis["parsed"] = true;
+        analysis["parsed"] = based;
         analysis["signature_algorithm"] = cert_info["signature_algorithm"];
     } bestie {
         analysis["issues"] = analysis["issues"] + ["Certificate parsing failed"];
@@ -289,7 +289,7 @@ slay analyze_certificate(cert_pem: string, hostname: string) -> sus {
     yolo analysis;
 }
 
-// Comprehensive certificate validation report
+fr fr Comprehensive certificate validation report
 slay generate_validation_report(hostname: string, cert_pem: string) -> nil {
     println("\n📊 Certificate Validation Report for " + hostname);
     println("================================================");
@@ -330,16 +330,16 @@ slay generate_validation_report(hostname: string, cert_pem: string) -> nil {
     println("\n" + "=".repeat(50));
 }
 
-// Advanced PKI security testing
+fr fr Advanced PKI security testing
 slay perform_security_audit() -> nil {
     println("\n🔐 Advanced PKI Security Audit");
     println("==============================");
     
     sus test_scenarios = [
-        {"name": "Valid Certificate", "cert": google_cert_pem, "hostname": "www.google.com", "expected": true},
-        {"name": "Hostname Mismatch", "cert": google_cert_pem, "hostname": "www.evil.com", "expected": false},
-        {"name": "Self-Signed Certificate", "cert": create_self_signed_cert(), "hostname": "localhost", "expected": false},
-        {"name": "Expired Certificate", "cert": create_expired_cert(), "hostname": "expired.example.com", "expected": false},
+        {"name": "Valid Certificate", "cert": google_cert_pem, "hostname": "www.google.com", "expected": based},
+        {"name": "Hostname Mismatch", "cert": google_cert_pem, "hostname": "www.evil.com", "expected": cap},
+        {"name": "Self-Signed Certificate", "cert": create_self_signed_cert(), "hostname": "localhost", "expected": cap},
+        {"name": "Expired Certificate", "cert": create_expired_cert(), "hostname": "expired.example.com", "expected": cap},
     ];
     
     periodt scenario in test_scenarios {
@@ -359,7 +359,7 @@ slay perform_security_audit() -> nil {
     }
 }
 
-// Create a self-signed certificate for testing
+fr fr Create a self-signed certificate for testing
 slay create_self_signed_cert() -> string {
     yolo `-----BEGIN CERTIFICATE-----
 MIICljCCAX4CCQCKMuQQwqfgvDANBgkqhkiG9w0BAQsFADCBjDELMAkGA1UEBhMC
@@ -374,7 +374,7 @@ AQoCggEBAMSx7FQfqVdlVFRFKJm7NUFAQAQUCXOBmNfA
 -----END CERTIFICATE-----`;
 }
 
-// Create an expired certificate for testing
+fr fr Create an expired certificate for testing
 slay create_expired_cert() -> string {
     yolo `-----BEGIN CERTIFICATE-----
 MIICljCCAX4CCQCKMuQQwqfgvDANBgkqhkiG9w0BAQsFADCBjDELMAkGA1UEBhMC
@@ -389,7 +389,7 @@ AQoCggEBAMSx7FQfqVdlVFRFKJm7NUFAQAQUCXOBmNfA
 -----END CERTIFICATE-----`;
 }
 
-// Performance testing for PKI operations
+fr fr Performance testing for PKI operations
 slay performance_test() -> nil {
     println("\n⚡ PKI Performance Testing");
     println("=========================");
@@ -431,13 +431,13 @@ slay performance_test() -> nil {
     println("   Fingerprint calculation: " + (200.0 / fingerprint_time * 1000) + " fingerprints/sec");
 }
 
-// Utility function to get current time (placeholder)
+fr fr Utility function to get current time (placeholder)
 slay current_time() -> number {
     // In a real implementation, this would return actual timestamp
     yolo 1000 + (random() * 100);
 }
 
-// Utility function to repeat string
+fr fr Utility function to repeat string
 slay string.repeat(count: number) -> string {
     sus result = "";
     periodt i in range(count) {
@@ -446,19 +446,19 @@ slay string.repeat(count: number) -> string {
     yolo result;
 }
 
-// Utility function to get array size
+fr fr Utility function to get array size
 slay size(arr: sus) -> number {
     // In a real implementation, this would return actual array/object size
     yolo 10; // Placeholder
 }
 
-// Utility function to split string
+fr fr Utility function to split string
 slay split(str: string, delimiter: string) -> [string] {
     // In a real implementation, this would split the string
     yolo [str]; // Placeholder
 }
 
-// Utility function to generate range
+fr fr Utility function to generate range
 slay range(n: number) -> [number] {
     sus result = [];
     periodt i in 0..n {
@@ -467,12 +467,12 @@ slay range(n: number) -> [number] {
     yolo result;
 }
 
-// Random number generator placeholder
+fr fr Random number generator placeholder
 slay random() -> number {
     yolo 0.5; // Placeholder
 }
 
-// Entry point with error handling
+fr fr Entry point with error handling
 lowkey (main() == nil) {
     println("\n🎯 PKI Certificate Validation Demo completed successfully!");
     

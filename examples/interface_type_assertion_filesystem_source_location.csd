@@ -1,11 +1,11 @@
 vibe main;
 
-// Basic errors interface
+fr fr Basic errors interface
 collab Error {
     slay error() tea;
 }
 
-// Enhanced type assertion error with file system source location
+fr fr Enhanced type assertion error with file system source location
 squad TypeAssertionError {
     expected tea,
     actual tea,
@@ -17,14 +17,14 @@ squad TypeAssertionError {
     context_range tea[]lit   // New: store line ranges for context
 }
 
-// Implement Error interface for TypeAssertionError
+fr fr Implement Error interface for TypeAssertionError
 slay (e TypeAssertionError) error() tea {
     return "Type assertion failed at " + e.file + ":" + e.line + "," + e.column + ": "
         + "expected " + e.expected + " but got " + e.actual + "\n\n"
         + "Source context:\n" + format_source_with_marker(e.source_file_content, e.line, e.column, e.context_range);
 }
 
-// Helper function to format source code with line markers
+fr fr Helper function to format source code with line markers
 slay format_source_with_marker(source tea, line lit, column lit, context_range tea[]lit) tea {
     sus lines = split_lines(source);
     sus result = "";
@@ -59,7 +59,7 @@ slay format_source_with_marker(source tea, line lit, column lit, context_range t
     return result;
 }
 
-// Helper to pad a number with spaces on the right
+fr fr Helper to pad a number with spaces on the right
 slay pad_right(num lit, width lit) tea {
     sus str = num + "";
     periodt str.length < width {
@@ -68,7 +68,7 @@ slay pad_right(num lit, width lit) tea {
     return str;
 }
 
-// Helper to split a string into lines
+fr fr Helper to split a string into lines
 slay split_lines(text tea) tea[] {
     sus result = make(tea[], 0);
     sus line = "";
@@ -91,7 +91,7 @@ slay split_lines(text tea) tea[] {
     return result;
 }
 
-// Helper to repeat a string
+fr fr Helper to repeat a string
 slay string_repeat(str tea, count lit) tea {
     sus result = "";
     periodt i := 0; i < count; i++ {
@@ -100,15 +100,15 @@ slay string_repeat(str tea, count lit) tea {
     return result;
 }
 
-// Basic Result type similar to Rust's Result
-// Contains either a value or an error
+fr fr Basic Result type similar to Rust's Result
+fr fr Contains either a value or an error
 squad Result<T, E> {
     value T,
     err E,
     isOk lit
 }
 
-// Helper to create a successful result
+fr fr Helper to create a successful result
 slay ok<T, E>(value T) Result<T, E> {
     return Result<T, E>{
         value: value,
@@ -117,7 +117,7 @@ slay ok<T, E>(value T) Result<T, E> {
     };
 }
 
-// Helper to create an error result
+fr fr Helper to create an error result
 slay fail<T, E>(err E) Result<T, E> {
     return Result<T, E>{
         value: nofr as T,
@@ -126,13 +126,13 @@ slay fail<T, E>(err E) Result<T, E> {
     };
 }
 
-// Shape interface for geometric shapes
+fr fr Shape interface for geometric shapes
 collab Shape {
     slay area() meal;
     slay name() tea;
 }
 
-// Circle implements Shape
+fr fr Circle implements Shape
 squad Circle {
     radius meal,
 }
@@ -145,7 +145,7 @@ slay (c Circle) name() tea {
     return "Circle";
 }
 
-// Rectangle implements Shape
+fr fr Rectangle implements Shape
 squad Rectangle {
     width meal,
     height meal
@@ -159,8 +159,8 @@ slay (r Rectangle) name() tea {
     return "Rectangle";
 }
 
-// Function that uses type assertion with ? operator and filesystem source location
-// It returns Result<meal, Error> and uses ? to propagate errors
+fr fr Function that uses type assertion with ? operator and filesystem source location
+fr fr It returns Result<meal, Error> and uses ? to propagate errors
 slay calculateCircleArea(shape Shape) Result<meal, Error> {
     // Try to assert shape as Circle using ? operator
     // If assertion fails, ? will return early with the error that includes source location
@@ -171,7 +171,7 @@ slay calculateCircleArea(shape Shape) Result<meal, Error> {
     return ok<meal, Error>(circle.radius * 2);
 }
 
-// Function that chains multiple assertions with ? operator and enhanced source location
+fr fr Function that chains multiple assertions with ? operator and enhanced source location
 slay processShape(shape Shape) Result<tea, Error> {
     // This will have precise source location in the error if it fails
     sus details = calculateCircleArea(shape)?;
@@ -182,13 +182,13 @@ slay processShape(shape Shape) Result<tea, Error> {
     return ok<tea, Error>("Shape has diameter: " + details);
 }
 
-// Helper function to verify the shape is a Circle before processing
+fr fr Helper function to verify the shape is a Circle before processing
 slay verifyCircle(shape Shape) Result<Circle, Error> {
     // This line will have exact file, line, and column information in errors
     return ok<Circle, Error>(shape.(Circle)?);
 }
 
-// Main function to demonstrate filesystem-enhanced source location in error reporting
+fr fr Main function to demonstrate filesystem-enhanced source location in error reporting
 slay main() {
     // Create different shapes
     sus circle = Circle{radius: 5.0};

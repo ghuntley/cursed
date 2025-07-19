@@ -2,14 +2,14 @@ vibe main
 
 yeet "vibez"
 
-// Define a simple struct to demonstrate dot expression on user-defined types
+fr fr Define a simple struct to demonstrate dot expression on user-defined types
 facts Person {
     name string
     age int
 }
 
-// Method definition (simulated)
-// func (p Person) greet() string { return "Hello, my name is " + p.name }
+fr fr Method definition (simulated)
+fr fr func (p Person) greet() string { return "Hello, my name is " + p.name }
 
 slay main() {
     // Package function call

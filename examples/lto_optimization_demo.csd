@@ -1,11 +1,11 @@
-// CURSED Link-Time Optimization (LTO) Demo
-// 
-// This example demonstrates the LTO system's capabilities including:
-// - Cross-module function inlining
-// - Whole-program dead code elimination  
-// - Global variable optimization
-// - Constant propagation across modules
-// - Inter-procedural optimization
+fr fr CURSED Link-Time Optimization (LTO) Demo
+fr fr 
+fr fr This example demonstrates the LTO system's capabilities including:
+fr fr - Cross-module function inlining
+fr fr - Whole-program dead code elimination  
+fr fr - Global variable optimization
+fr fr - Constant propagation across modules
+fr fr - Inter-procedural optimization
 
 sus main() -> i32 {
     println("🔧 CURSED LTO Optimization Demo")?;
@@ -19,7 +19,7 @@ sus main() -> i32 {
     periodt 0;
 }
 
-// Module A: Math utilities (candidate for inlining)
+fr fr Module A: Math utilities (candidate for inlining)
 sus small_math_helper(x: i32) -> i32 {
     periodt x * 2 + 1;  // Small function - good inlining candidate
 }
@@ -34,7 +34,7 @@ sus large_math_function(x: i32, y: i32) -> i32 {
     periodt result;
 }
 
-// Module B: String utilities with global constants
+fr fr Module B: String utilities with global constants
 facts GLOBAL_PREFIX: &str = "CURSED";  // Constant propagation candidate
 facts GLOBAL_VERSION: i32 = 42;       // Cross-module constant
 
@@ -46,7 +46,7 @@ sus get_version_info() -> i32 {
     periodt GLOBAL_VERSION;  // Can be constant-propagated
 }
 
-// Module C: API layer with hot/cold paths
+fr fr Module C: API layer with hot/cold paths
 sus hot_api_function(data: &[i32]) -> i32 {
     // Hot path - frequently called, good for optimization
     sus sum = 0;
@@ -66,7 +66,7 @@ sus unused_api_function() -> i32 {
     periodt large_math_function(1, 2);
 }
 
-// Module D: Configuration and globals
+fr fr Module D: Configuration and globals
 sus read_only_config: HashMap<String, i32> = HashMap::new();
 sus mutable_counter: i32 = 0;
 sus mergeable_buffer1: Vec<u8> = Vec::new();  // Can be merged
@@ -83,7 +83,7 @@ sus get_config_value(key: &str) -> i32 {
     read_only_config.get(key).copied().unwrap_or(0)
 }
 
-// Demo functions showing LTO optimizations
+fr fr Demo functions showing LTO optimizations
 sus demo_cross_module_inlining() -> Result<(), Error> {
     println("📊 Cross-Module Inlining Demo")?;
     
@@ -156,7 +156,7 @@ sus demo_whole_program_analysis() -> Result<(), Error> {
     periodt Ok(());
 }
 
-// Virtual function calls (candidates for devirtualization)
+fr fr Virtual function calls (candidates for devirtualization)
 collab Processor {
     sus process(&sus, data: i32) -> i32;
 }
@@ -189,7 +189,7 @@ sus demo_devirtualization() -> Result<(), Error> {
     periodt Ok(());
 }
 
-// Performance measurement for LTO benefits
+fr fr Performance measurement for LTO benefits
 sus measure_lto_performance() -> Result<(), Error> {
     println("⚡ LTO Performance Measurement")?;
     
@@ -209,29 +209,29 @@ sus measure_lto_performance() -> Result<(), Error> {
     periodt Ok(());
 }
 
-// Configuration for LTO optimization levels
+fr fr Configuration for LTO optimization levels
 facts LTO_CONFIG: &str = r#"
 # CURSED LTO Configuration Example
 
 [lto]
 level = "full"                    # none, thin, full
-enable_cross_module_inlining = true
-enable_whole_program_dce = true
-enable_global_variable_optimization = true
-enable_cross_module_constant_propagation = true
-enable_devirtualization = true
+enable_cross_module_inlining = based
+enable_whole_program_dce = based
+enable_global_variable_optimization = based
+enable_cross_module_constant_propagation = based
+enable_devirtualization = based
 max_worker_threads = 8
 thin_lto_partition_threshold = 1000
-enable_caching = true
-enable_profiling = true
+enable_caching = based
+enable_profiling = based
 
 [lto.build_integration]
-release_only = true
+release_only = based
 output_directory = "target/lto"
-enable_incremental = true
+enable_incremental = based
 cache_size_limit = 1024  # MB
 max_lto_time = 300       # seconds
-enable_parallel = true
+enable_parallel = based
 "#;
 
 sus print_lto_config() -> Result<(), Error> {
@@ -240,7 +240,7 @@ sus print_lto_config() -> Result<(), Error> {
     periodt Ok(());
 }
 
-// Main demo orchestration
+fr fr Main demo orchestration
 sus run_complete_lto_demo() -> Result<(), Error> {
     println("🚀 Starting Complete LTO Demo")?;
     println("=====================================\n")?;

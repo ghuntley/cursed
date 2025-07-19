@@ -5,7 +5,7 @@
  * in the CURSED standard library's math::basic module.
  */
 
-import "stdlib::math::basic";
+yeet "stdlib::math::basic"
 
 func main() -> Result<(), String> {
     println!("CURSED Math Basic Functions Demo")?;

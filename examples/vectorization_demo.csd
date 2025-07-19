@@ -5,11 +5,11 @@
  * CURSED compiler, showing how loops and operations are optimized for SIMD.
  */
 
-// Import math and core functionality
-import "stdlib::math";
-import "stdlib::core";
+fr fr Import math and core functionality
+yeet "stdlib::math"
+yeet "stdlib::core"
 
-// Example 1: Simple vector addition - easily vectorizable
+fr fr Example 1: Simple vector addition - easily vectorizable
 slay vector_add(sus a: [f32], sus b: [f32], sus c: [f32]) -> () {
     facts len = len(a);
     
@@ -20,7 +20,7 @@ slay vector_add(sus a: [f32], sus b: [f32], sus c: [f32]) -> () {
     }
 }
 
-// Example 2: Fused multiply-add - optimal for vectorization  
+fr fr Example 2: Fused multiply-add - optimal for vectorization  
 slay fused_multiply_add(sus a: [f32], sus b: [f32], sus c: [f32], sus scalar: f32) -> () {
     facts len = len(a);
     
@@ -31,7 +31,7 @@ slay fused_multiply_add(sus a: [f32], sus b: [f32], sus c: [f32], sus scalar: f3
     }
 }
 
-// Example 3: Dot product reduction - vectorizable with reduction
+fr fr Example 3: Dot product reduction - vectorizable with reduction
 slay dot_product(sus a: [f32], sus b: [f32]) -> f32 {
     facts len = len(a);
     sus sum = 0.0;
@@ -45,7 +45,7 @@ slay dot_product(sus a: [f32], sus b: [f32]) -> f32 {
     return sum;
 }
 
-// Example 4: Matrix multiplication - complex vectorization
+fr fr Example 4: Matrix multiplication - complex vectorization
 slay matrix_multiply(sus a: [[f32]], sus b: [[f32]], sus c: [[f32]], sus n: i32) -> () {
     // Triple nested loop - outer loops vectorized, inner optimized
     lowkey (sus i = 0; i < n; i++) {
@@ -65,7 +65,7 @@ slay matrix_multiply(sus a: [[f32]], sus b: [[f32]], sus c: [[f32]], sus n: i32)
     }
 }
 
-// Example 5: Mathematical operations - various vectorizable patterns
+fr fr Example 5: Mathematical operations - various vectorizable patterns
 slay math_operations(sus input: [f32], sus output: [f32]) -> () {
     facts len = len(input);
     
@@ -84,7 +84,7 @@ slay math_operations(sus input: [f32], sus output: [f32]) -> () {
     }
 }
 
-// Example 6: Conditional operations - partially vectorizable
+fr fr Example 6: Conditional operations - partially vectorizable
 slay conditional_operations(sus input: [f32], sus output: [f32], sus threshold: f32) -> () {
     facts len = len(input);
     
@@ -99,7 +99,7 @@ slay conditional_operations(sus input: [f32], sus output: [f32], sus threshold: 
     }
 }
 
-// Example 7: Strided access pattern - challenging for vectorization
+fr fr Example 7: Strided access pattern - challenging for vectorization
 slay strided_access(sus input: [f32], sus output: [f32], sus stride: i32) -> () {
     facts len = len(input);
     
@@ -110,7 +110,7 @@ slay strided_access(sus input: [f32], sus output: [f32], sus stride: i32) -> () 
     }
 }
 
-// Example 8: Complex number operations - paired vectorization
+fr fr Example 8: Complex number operations - paired vectorization
 squad Complex {
     real: f32,
     imag: f32,
@@ -132,7 +132,7 @@ slay complex_multiply(sus a: [Complex], sus b: [Complex], sus result: [Complex])
     }
 }
 
-// Example 9: Parallel algorithm with goroutines and vectorization
+fr fr Example 9: Parallel algorithm with goroutines and vectorization
 slay parallel_vector_process(sus data: [f32], sus num_threads: i32) -> () {
     facts len = len(data);
     facts chunk_size = len / num_threads;
@@ -153,7 +153,7 @@ slay parallel_vector_process(sus data: [f32], sus num_threads: i32) -> () {
     }
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 slay main() -> () {
     println("CURSED Vectorization Demo - Automatic SIMD Optimization")?;
     
@@ -217,7 +217,7 @@ slay main() -> () {
     println("Check the generated assembly to see AVX/SSE instructions.")?;
 }
 
-// Performance comparison function
+fr fr Performance comparison function
 slay performance_comparison() -> () {
     println("Vectorization Performance Comparison")?;
     

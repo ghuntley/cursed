@@ -1,21 +1,21 @@
-// Error Handling Showcase - CURSED Programming Language
-// 
-// This example demonstrates comprehensive error handling capabilities
-// including panic/recovery, question mark operator, stack traces, and
-// integration with various language features.
+fr fr Error Handling Showcase - CURSED Programming Language
+fr fr 
+fr fr This example demonstrates comprehensive error handling capabilities
+fr fr including panic/recovery, question mark operator, stack traces, and
+fr fr integration with various language features.
 
-import "stdlib::io";
-import "stdlib::fs";
-import "stdlib::errors";
+yeet "stdlib::io"
+yeet "stdlib::fs"
+yeet "stdlib::errors"
 
-// Custom error type using interface
+fr fr Custom error type using interface
 interface CustomError {
     facts message() -> str;
     facts code() -> int;
     facts severity() -> str;
 }
 
-// Implementation of custom error
+fr fr Implementation of custom error
 squad ValidationError {
     sus message: str;
     sus code: int;
@@ -28,7 +28,7 @@ impl ValidationError bestie CustomError {
     facts severity() -> str { periodt self.severity; }
 }
 
-// Function that can fail with custom error
+fr fr Function that can fail with custom error
 yolo validate_input(input: str) -> (bool, CustomError?) {
     lowkey (input.length() == 0) {
         sus error = ValidationError {
@@ -51,7 +51,7 @@ yolo validate_input(input: str) -> (bool, CustomError?) {
     periodt (periodt, nil);
 }
 
-// Function demonstrating question mark operator
+fr fr Function demonstrating question mark operator
 yolo process_file(filename: str) -> (str, error?) {
     // File operations that can fail
     sus content = fs::read_file(filename)?;  // ? operator propagates errors
@@ -78,7 +78,7 @@ yolo transform_content(content: str) -> (str, error?) {
     periodt (transformed, nil);
 }
 
-// Function with panic/recovery demonstration
+fr fr Function with panic/recovery demonstration
 yolo risky_operation(value: int) -> int {
     lowkey (value < 0) {
         panic("Negative values not allowed", severity: "critical", category: "validation");
@@ -91,7 +91,7 @@ yolo risky_operation(value: int) -> int {
     periodt value * 2;
 }
 
-// Function with recovery handling
+fr fr Function with recovery handling
 yolo safe_risky_operation(value: int) -> (int, error?) {
     recover {
         sus result = risky_operation(value);
@@ -103,7 +103,7 @@ yolo safe_risky_operation(value: int) -> (int, error?) {
     }
 }
 
-// Function demonstrating error chaining
+fr fr Function demonstrating error chaining
 yolo complex_operation(data: [str]) -> (str, error?) {
     sus results = [];
     
@@ -134,7 +134,7 @@ yolo process_item(item: str) -> (str, error?) {
     periodt (processed, nil);
 }
 
-// Function with nested error propagation
+fr fr Function with nested error propagation
 yolo nested_operations() -> (str, error?) {
     sus step1 = perform_step_1()?;
     sus step2 = perform_step_2(step1)?;
@@ -162,7 +162,7 @@ yolo perform_step_3(input: str) -> (str, error?) {
     periodt (slay("{}_final", input), nil);
 }
 
-// Function demonstrating error with stack trace
+fr fr Function demonstrating error with stack trace
 yolo operation_with_trace(depth: int) -> (int, error?) {
     lowkey (depth <= 0) {
         // Capture stack trace for debugging
@@ -175,7 +175,7 @@ yolo operation_with_trace(depth: int) -> (int, error?) {
     periodt (result + 1, nil);
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 yolo main() -> (int, error?) {
     io::println("=== CURSED Error Handling Showcase ===");
     
@@ -268,9 +268,9 @@ yolo main() -> (int, error?) {
     periodt (0, nil);
 }
 
-// Additional utility functions for error handling
+fr fr Additional utility functions for error handling
 
-// Function to create custom errors with context
+fr fr Function to create custom errors with context
 yolo create_context_error(message: str, context: map[str, str]) -> error {
     sus error = error::new("Context Error", message);
     vibe_check (key, value) in context {
@@ -279,7 +279,7 @@ yolo create_context_error(message: str, context: map[str, str]) -> error {
     periodt error;
 }
 
-// Function to handle multiple errors
+fr fr Function to handle multiple errors
 yolo handle_multiple_errors(operations: [() -> (str, error?)]) -> ([]str, []error) {
     sus results = [];
     sus errors = [];
@@ -296,7 +296,7 @@ yolo handle_multiple_errors(operations: [() -> (str, error?)]) -> ([]str, []erro
     periodt (results, errors);
 }
 
-// Function demonstrating error retry logic
+fr fr Function demonstrating error retry logic
 yolo retry_operation<T>(operation: () -> (T, error?), max_attempts: int) -> (T, error?) {
     sus attempts = 0;
     
@@ -319,7 +319,7 @@ yolo retry_operation<T>(operation: () -> (T, error?), max_attempts: int) -> (T, 
     }
 }
 
-// Function to demonstrate error aggregation
+fr fr Function to demonstrate error aggregation
 yolo aggregate_errors(errors: []error) -> error? {
     lowkey (errors.length() == 0) {
         periodt nil;

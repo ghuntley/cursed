@@ -1,10 +1,10 @@
 #!/usr/bin/env cursed
 
-// ByteFit Comprehensive Demo
-// Demonstrates all ByteFit byte manipulation functionality
+fr fr ByteFit Comprehensive Demo
+fr fr Demonstrates all ByteFit byte manipulation functionality
 
-import "stdlib::bytefit";
-import "stdlib::vibez";
+yeet "stdlib::bytefit"
+yeet "stdlib::vibez"
 
 slay main() {
     vibez.spillln("=== ByteFit Comprehensive Demo ===\n");

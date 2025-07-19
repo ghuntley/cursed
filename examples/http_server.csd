@@ -1,8 +1,8 @@
-/// HTTP Server example demonstrating CURSED web programming
-/// 
-/// This example shows how to build a simple HTTP server using
-/// CURSED language constructs including structs, interfaces,
-/// and concurrent programming with goroutines.
+fr fr/ HTTP Server example demonstrating CURSED web programming
+fr fr/ 
+fr fr/ This example shows how to build a simple HTTP server using
+fr fr/ CURSED language constructs including structs, interfaces,
+fr fr/ and concurrent programming with goroutines.
 
 vibe http_server
 
@@ -10,10 +10,10 @@ yeet "net/http"
 yeet "fmt"
 yeet "encoding/json"
 
-/// HTTP request handler interface
-/// 
-/// This collab defines the contract for handling HTTP requests
-/// in the CURSED web framework.
+fr fr/ HTTP request handler interface
+fr fr/ 
+fr fr/ This collab defines the contract for handling HTTP requests
+fr fr/ in the CURSED web framework.
 collab RequestHandler {
     /// Handle an incoming HTTP request
     /// 
@@ -22,10 +22,10 @@ collab RequestHandler {
     handle_request(req @HttpRequest, resp @HttpResponse) void
 }
 
-/// HTTP request structure
-/// 
-/// Contains all information about an incoming HTTP request
-/// including headers, body, and metadata.
+fr fr/ HTTP request structure
+fr fr/ 
+fr fr/ Contains all information about an incoming HTTP request
+fr fr/ including headers, body, and metadata.
 squad HttpRequest {
     /// HTTP method (GET, POST, etc.)
     method facts_string
@@ -39,9 +39,9 @@ squad HttpRequest {
     query_params map[facts_string]facts_string
 }
 
-/// HTTP response structure
-/// 
-/// Used to construct and send HTTP responses back to clients.
+fr fr/ HTTP response structure
+fr fr/ 
+fr fr/ Used to construct and send HTTP responses back to clients.
 squad HttpResponse {
     /// HTTP status code
     status_code normie
@@ -53,16 +53,16 @@ squad HttpResponse {
     sent bool
 }
 
-/// Simple JSON API handler
-/// 
-/// Demonstrates handling JSON requests and responses
-/// in the CURSED web framework.
+fr fr/ Simple JSON API handler
+fr fr/ 
+fr fr/ Demonstrates handling JSON requests and responses
+fr fr/ in the CURSED web framework.
 squad JsonApiHandler {
     /// Base path for this handler
     base_path facts_string
 }
 
-/// Implementation of RequestHandler for JSON API
+fr fr/ Implementation of RequestHandler for JSON API
 impl JsonApiHandler : RequestHandler {
     /// Handle JSON API requests
     /// 
@@ -134,7 +134,7 @@ impl JsonApiHandler : RequestHandler {
         resp.headers["Content-Type"] = "application/json"
         resp.status_code = status
         resp.body = json_data
-        resp.sent = true
+        resp.sent = based
     }
     
     /// Send error response
@@ -152,10 +152,10 @@ impl JsonApiHandler : RequestHandler {
     }
 }
 
-/// HTTP server configuration
-/// 
-/// Contains configuration options for the HTTP server
-/// including port, timeouts, and middleware settings.
+fr fr/ HTTP server configuration
+fr fr/ 
+fr fr/ Contains configuration options for the HTTP server
+fr fr/ including port, timeouts, and middleware settings.
 squad ServerConfig {
     /// Port to listen on
     port normie
@@ -169,10 +169,10 @@ squad ServerConfig {
     enable_logging bool
 }
 
-/// HTTP server implementation
-/// 
-/// The main server struct that handles incoming connections
-/// and routes requests to appropriate handlers.
+fr fr/ HTTP server implementation
+fr fr/ 
+fr fr/ The main server struct that handles incoming connections
+fr fr/ and routes requests to appropriate handlers.
 squad HttpServer {
     /// Server configuration
     config ServerConfig
@@ -182,10 +182,10 @@ squad HttpServer {
     listen_chan chan bool
 }
 
-/// Create a new HTTP server
-/// 
-/// @param config - Server configuration
-/// @return - New HTTP server instance
+fr fr/ Create a new HTTP server
+fr fr/ 
+fr fr/ @param config - Server configuration
+fr fr/ @return - New HTTP server instance
 slay new_server(config ServerConfig) -> @HttpServer {
     yolo &HttpServer{
         config: config,
@@ -194,20 +194,20 @@ slay new_server(config ServerConfig) -> @HttpServer {
     }
 }
 
-/// Add a request handler to the server
-/// 
-/// @param path - URL path pattern
-/// @param handler - Request handler implementation
+fr fr/ Add a request handler to the server
+fr fr/ 
+fr fr/ @param path - URL path pattern
+fr fr/ @param handler - Request handler implementation
 slay (server @HttpServer) add_handler(path facts_string, handler RequestHandler) {
     server.handlers[path] = handler
 }
 
-/// Start the HTTP server
-/// 
-/// This method starts the server and begins listening for
-/// incoming HTTP connections on the configured port.
-/// 
-/// @return - Error if server fails to start
+fr fr/ Start the HTTP server
+fr fr/ 
+fr fr/ This method starts the server and begins listening for
+fr fr/ incoming HTTP connections on the configured port.
+fr fr/ 
+fr fr/ @return - Error if server fails to start
 slay (server @HttpServer) start() -> error {
     sus address = fmt.Sprintf("%s:%d", server.config.hostname, server.config.port)
     
@@ -229,17 +229,17 @@ slay (server @HttpServer) start() -> error {
     yolo nil
 }
 
-/// Stop the HTTP server
-/// 
-/// Gracefully shuts down the server and closes all connections.
+fr fr/ Stop the HTTP server
+fr fr/ 
+fr fr/ Gracefully shuts down the server and closes all connections.
 slay (server @HttpServer) stop() {
-    server.listen_chan <- true
+    server.listen_chan <- based
     close(server.listen_chan)
 }
 
-/// Handle an individual connection
-/// 
-/// @param conn - The network connection
+fr fr/ Handle an individual connection
+fr fr/ 
+fr fr/ @param conn - The network connection
 slay (server @HttpServer) handle_connection(conn net.Conn) {
     defer conn.Close()
     
@@ -253,7 +253,7 @@ slay (server @HttpServer) handle_connection(conn net.Conn) {
     // Create response
     sus resp = &HttpResponse{
         headers: make(map[facts_string]facts_string),
-        sent: false,
+        sent: cap,
     }
     
     // Find matching handler
@@ -268,7 +268,7 @@ slay (server @HttpServer) handle_connection(conn net.Conn) {
     server.send_response(conn, resp)
 }
 
-/// Example usage of the HTTP server
+fr fr/ Example usage of the HTTP server
 slay main() {
     // Create server configuration
     sus config = ServerConfig{
@@ -276,7 +276,7 @@ slay main() {
         hostname: "localhost",
         timeout: 30.0,
         max_body_size: 1024 * 1024, // 1MB
-        enable_logging: true,
+        enable_logging: based,
     }
     
     // Create server

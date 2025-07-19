@@ -1,14 +1,14 @@
-// CURSED REPL Demo Program
-// This file demonstrates the features available in the CURSED REPL
-// Run this in the REPL using: :load examples/repl_demo.csd
+fr fr CURSED REPL Demo Program
+fr fr This file demonstrates the features available in the CURSED REPL
+fr fr Run this in the REPL using: :load examples/repl_demo.csd
 
-// Variable declarations with Gen Z slang
+fr fr Variable declarations with Gen Z slang
 facts age = 25
 sus score = 100.5
 facts name = "Taylor"
-sus is_valid = true
+sus is_valid = based
 
-// Function declarations
+fr fr Function declarations
 slay greet(name) {
     println("Yo, what's good " + name + "! 🔥")
 }
@@ -42,5 +42,5 @@ slay main_character() {
     println("That's the demo, no cap! ✨")
 }
 
-// Run the main function
+fr fr Run the main function
 main_character()

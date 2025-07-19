@@ -1,14 +1,14 @@
 #!/usr/bin/env cursed
-/// fr fr Simple Hybrid Cryptography Example
-/// 
-/// This example shows the most common hybrid cryptography use cases:
-/// - Secure key generation
-/// - Message encryption/decryption  
-/// - Digital signatures
-/// - Secure messaging between parties
+fr fr/ fr fr Simple Hybrid Cryptography Example
+fr fr/ 
+fr fr/ This example shows the most common hybrid cryptography use cases:
+fr fr/ - Secure key generation
+fr fr/ - Message encryption/decryption  
+fr fr/ - Digital signatures
+fr fr/ - Secure messaging between parties
 
-import "stdlib::crypto_pqc::hybrid_crypto";
-import "stdlib::io";
+yeet "stdlib::crypto_pqc::hybrid_crypto"
+yeet "stdlib::io"
 
 sus main() {
     println("🔐 Simple Hybrid Cryptography Example")?;
@@ -27,7 +27,7 @@ sus main() {
     println("🛡️  Your data is now quantum-resistant!")?;
 }
 
-/// Simple encryption and decryption example
+fr fr/ Simple encryption and decryption example
 fun basic_encryption_example() -> Result<(), CursedError> {
     println("1. Basic Hybrid Encryption 🔒")?;
     println("-----------------------------")?;
@@ -52,7 +52,7 @@ fun basic_encryption_example() -> Result<(), CursedError> {
     Ok(())
 }
 
-/// Digital signature example
+fr fr/ Digital signature example
 fun digital_signature_example() -> Result<(), CursedError> {
     println("2. Hybrid Digital Signatures ✍️")?;
     println("-------------------------------")?;
@@ -81,7 +81,7 @@ fun digital_signature_example() -> Result<(), CursedError> {
     Ok(())
 }
 
-/// Secure messaging between two parties
+fr fr/ Secure messaging between two parties
 fun secure_messaging_example() -> Result<(), CursedError> {
     println("3. Secure Messaging 💬")?;
     println("---------------------")?;

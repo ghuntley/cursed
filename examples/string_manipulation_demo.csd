@@ -1,9 +1,9 @@
 #!/usr/bin/env cursed
 
-// Comprehensive string manipulation demo for CURSED
-// Shows all the string functions available in stdlib
+fr fr Comprehensive string manipulation demo for CURSED
+fr fr Shows all the string functions available in stdlib
 
-import "stdlib::string"
+yeet "stdlib::string"
 
 slay main() {
     facts message = "hello world"

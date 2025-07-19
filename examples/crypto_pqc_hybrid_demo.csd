@@ -1,11 +1,11 @@
-// Comprehensive Post-Quantum Cryptography Hybrid System Demo
-// 
-// This example demonstrates the hybrid cryptographic system that combines
-// classical and post-quantum algorithms for maximum security during the
-// post-quantum transition period.
+fr fr Comprehensive Post-Quantum Cryptography Hybrid System Demo
+fr fr 
+fr fr This example demonstrates the hybrid cryptographic system that combines
+fr fr classical and post-quantum algorithms for maximum security during the
+fr fr post-quantum transition period.
 
-import "stdlib::crypto_pqc::hybrid";
-import "stdlib::io";
+yeet "stdlib::crypto_pqc::hybrid"
+yeet "stdlib::io"
 
 slay main() {
     println("🔐 CURSED Post-Quantum Cryptography Hybrid System Demo")?;
@@ -287,7 +287,7 @@ slay demo_performance_comparison() {
     println("✅ Performance comparison complete!")?;
 }
 
-// Utility functions for better output formatting
+fr fr Utility functions for better output formatting
 slay format_bytes(sus size: usize) -> String {
     lowkey (size < 1024) {
         format!("{} B", size)
@@ -311,7 +311,7 @@ slay format_duration(sus duration: Duration) -> String {
     }
 }
 
-// Advanced demo showing real-world usage scenarios
+fr fr Advanced demo showing real-world usage scenarios
 slay demo_real_world_scenarios() {
     println("\n🌍 Real-World Usage Scenarios")?;
     println("==============================")?;

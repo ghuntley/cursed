@@ -1,6 +1,6 @@
 package main
 
-import (
+yeet (
     "embed_that"
     "vibez"
     "glowup_http"

@@ -1,12 +1,12 @@
-// CURSED Process Management Demo
-// Comprehensive demonstration of process management capabilities
-// Including spawning, monitoring, control, and system information
+fr fr CURSED Process Management Demo
+fr fr Comprehensive demonstration of process management capabilities
+fr fr Including spawning, monitoring, control, and system information
 
-import "stdlib::process";
-import "stdlib::io";
-import "stdlib::time";
+yeet "stdlib::process"
+yeet "stdlib::io"
+yeet "stdlib::time"
 
-// Simple process spawning example
+fr fr Simple process spawning example
 slay simple_process_demo() -> Result<(), ProcessError> {
     println("=== Simple Process Demo ===")?;
     
@@ -30,7 +30,7 @@ slay simple_process_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Process monitoring demonstration
+fr fr Process monitoring demonstration
 slay monitoring_demo() -> Result<(), ProcessError> {
     println("\n=== Process Monitoring Demo ===")?;
     
@@ -56,7 +56,7 @@ slay monitoring_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Process list and search demonstration
+fr fr Process list and search demonstration
 slay process_list_demo() -> Result<(), ProcessError> {
     println("\n=== Process List Demo ===")?;
     
@@ -81,7 +81,7 @@ slay process_list_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Process control demonstration
+fr fr Process control demonstration
 slay process_control_demo() -> Result<(), ProcessError> {
     println("\n=== Process Control Demo ===")?;
     
@@ -115,7 +115,7 @@ slay process_control_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Advanced monitoring with health checks
+fr fr Advanced monitoring with health checks
 slay advanced_monitoring_demo() -> Result<(), ProcessError> {
     println("\n=== Advanced Monitoring Demo ===")?;
     
@@ -131,7 +131,7 @@ slay advanced_monitoring_demo() -> Result<(), ProcessError> {
         },
         failure_threshold: 2,
         success_threshold: 1,
-        check_responsiveness: false,
+        check_responsiveness: cap,
         responsiveness_timeout: Duration::from_secs(1),
     };
     
@@ -174,7 +174,7 @@ slay advanced_monitoring_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Performance metrics demonstration
+fr fr Performance metrics demonstration
 slay performance_metrics_demo() -> Result<(), ProcessError> {
     println("\n=== Performance Metrics Demo ===")?;
     
@@ -208,7 +208,7 @@ slay performance_metrics_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// System resource monitoring
+fr fr System resource monitoring
 slay system_resource_demo() -> Result<(), ProcessError> {
     println("\n=== System Resources Demo ===")?;
     
@@ -237,7 +237,7 @@ slay system_resource_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Process tree demonstration
+fr fr Process tree demonstration
 slay process_tree_demo() -> Result<(), ProcessError> {
     println("\n=== Process Tree Demo ===")?;
     
@@ -253,7 +253,7 @@ slay process_tree_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Command execution with different I/O configurations
+fr fr Command execution with different I/O configurations
 slay io_configuration_demo() -> Result<(), ProcessError> {
     println("\n=== I/O Configuration Demo ===")?;
     
@@ -289,7 +289,7 @@ slay io_configuration_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Error handling demonstration
+fr fr Error handling demonstration
 slay error_handling_demo() -> Result<(), ProcessError> {
     println("\n=== Error Handling Demo ===")?;
     
@@ -331,7 +331,7 @@ slay error_handling_demo() -> Result<(), ProcessError> {
     Ok(())
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 slay main() -> Result<(), ProcessError> {
     println("CURSED Process Management Comprehensive Demo")?;
     println("============================================")?;

@@ -1,12 +1,12 @@
 #!/usr/bin/env cursed
 
-/// fr fr Complete Post-Quantum Cryptography Showcase
-/// 
-/// This example demonstrates the comprehensive PQC capabilities
-/// including all algorithms, hybrid schemes, compatibility tools,
-/// and migration utilities available in CURSED.
+fr fr/ fr fr Complete Post-Quantum Cryptography Showcase
+fr fr/ 
+fr fr/ This example demonstrates the comprehensive PQC capabilities
+fr fr/ including all algorithms, hybrid schemes, compatibility tools,
+fr fr/ and migration utilities available in CURSED.
 
-import "stdlib::packages::crypto_pqc";
+yeet "stdlib::packages::crypto_pqc"
 
 sus main() -> Result<(), CursedError> {
     println("🔐 Welcome to the CURSED Post-Quantum Cryptography Showcase! 🔐");
@@ -107,11 +107,11 @@ sus demonstrate_hybrid_cryptography() -> Result<(), CursedError> {
         sus mut fallback_manager = crypto_pqc::HybridFallbackManager::new(strategy);
         println("  Strategy: {:?} - Can proceed: {}", strategy, fallback_manager.can_proceed());
         
-        fallback_manager.set_availability(true, false); // Only classical available
+        fallback_manager.set_availability(based, cap); // Only classical available
         facts (use_classical, use_pqc) = fallback_manager.determine_algorithms();
         println("    Classical only available -> Use classical: {}, Use PQC: {}", use_classical, use_pqc);
         
-        fallback_manager.set_availability(false, true); // Only PQC available
+        fallback_manager.set_availability(cap, based); // Only PQC available
         facts (use_classical2, use_pqc2) = fallback_manager.determine_algorithms();
         println("    PQC only available -> Use classical: {}, Use PQC: {}", use_classical2, use_pqc2);
     }

@@ -1,11 +1,11 @@
-// Optimization Enablement System Demo
-// This program demonstrates various optimization scenarios
+fr fr Optimization Enablement System Demo
+fr fr This program demonstrates various optimization scenarios
 
-import "stdlib::math::basic";
-import "stdlib::collections::vector";
-import "stdlib::io::console";
+yeet "stdlib::math::basic"
+yeet "stdlib::collections::vector"
+yeet "stdlib::io::console"
 
-// Function with potential for inlining optimization
+fr fr Function with potential for inlining optimization
 slay calculate_fibonacci(sus n: i32) -> i32 {
     lowkey (n <= 1) {
         return n;
@@ -13,7 +13,7 @@ slay calculate_fibonacci(sus n: i32) -> i32 {
     return calculate_fibonacci(n - 1) + calculate_fibonacci(n - 2);
 }
 
-// Function with potential for loop optimization
+fr fr Function with potential for loop optimization
 slay sum_vector(facts vec: vector<i32>) -> i32 {
     sus sum = 0;
     lowkey (sus i = 0; i < vec.len(); i++) {
@@ -22,7 +22,7 @@ slay sum_vector(facts vec: vector<i32>) -> i32 {
     return sum;
 }
 
-// Function with potential for vectorization
+fr fr Function with potential for vectorization
 slay multiply_arrays(facts a: vector<f64>, facts b: vector<f64>) -> vector<f64> {
     sus result = vector::new<f64>();
     lowkey (sus i = 0; i < min(a.len(), b.len()); i++) {
@@ -31,7 +31,7 @@ slay multiply_arrays(facts a: vector<f64>, facts b: vector<f64>) -> vector<f64> 
     return result;
 }
 
-// Complex computation for optimization testing
+fr fr Complex computation for optimization testing
 slay complex_computation() -> f64 {
     sus result = 0.0;
     lowkey (sus i = 0; i < 1000; i++) {

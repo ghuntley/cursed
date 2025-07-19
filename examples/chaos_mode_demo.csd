@@ -1,9 +1,9 @@
 fr fr ChaosMode Demo - CURSED Runtime System Package
 fr fr Demonstrates comprehensive runtime management, profiling, and system introspection
 
-import "stdlib::chaos_mode";
-import "stdlib::io";
-import "stdlib::json_tea";
+yeet "stdlib::chaos_mode"
+yeet "stdlib::io"
+yeet "stdlib::json_tea"
 
 slay main() {
     println("🔥 CURSED ChaosMode Runtime Demo 🔥")?;

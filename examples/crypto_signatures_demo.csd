@@ -1,17 +1,17 @@
-/// fr fr CURSED Digital Signatures Demo - Comprehensive showcase bestie!
-/// 
-/// This program demonstrates all the digital signature capabilities of CURSED:
-/// - Ed25519, ECDSA, and RSA signatures
-/// - Key generation and management
-/// - Multi-signature schemes
-/// - Universal verification interface
-/// - Batch processing
-/// - Real-world use cases
+fr fr/ fr fr CURSED Digital Signatures Demo - Comprehensive showcase bestie!
+fr fr/ 
+fr fr/ This program demonstrates all the digital signature capabilities of CURSED:
+fr fr/ - Ed25519, ECDSA, and RSA signatures
+fr fr/ - Key generation and management
+fr fr/ - Multi-signature schemes
+fr fr/ - Universal verification interface
+fr fr/ - Batch processing
+fr fr/ - Real-world use cases
 
-import "stdlib::crypto_signatures";
-import "stdlib::io";
+yeet "stdlib::crypto_signatures"
+yeet "stdlib::io"
 
-// Main demo function
+fr fr Main demo function
 func main() -> yolo {
     println("🔐 CURSED Digital Signatures Demo - Let's secure some data!")?;
     println("=" * 60)?;
@@ -33,7 +33,7 @@ func main() -> yolo {
     println("🎉 CURSED crypto signatures are ready for production use!")?;
 }
 
-// Demonstrate Ed25519 signatures
+fr fr Demonstrate Ed25519 signatures
 func demo_ed25519_signatures() -> yolo {
     println("\n📝 Ed25519 Digital Signatures Demo")?;
     println("-" * 40)?;
@@ -73,7 +73,7 @@ func demo_ed25519_signatures() -> yolo {
            &[stats.signatures_created, stats.signatures_verified])?;
 }
 
-// Demonstrate ECDSA signatures
+fr fr Demonstrate ECDSA signatures
 func demo_ecdsa_signatures() -> yolo {
     println("\n🌐 ECDSA Digital Signatures Demo")?;
     println("-" * 40)?;
@@ -105,7 +105,7 @@ func demo_ecdsa_signatures() -> yolo {
     }
 }
 
-// Demonstrate RSA signatures
+fr fr Demonstrate RSA signatures
 func demo_rsa_signatures() -> yolo {
     println("\n🔒 RSA Digital Signatures Demo")?;
     println("-" * 40)?;
@@ -144,7 +144,7 @@ func demo_rsa_signatures() -> yolo {
     }
 }
 
-// Demonstrate universal signature interface
+fr fr Demonstrate universal signature interface
 func demo_universal_interface() -> yolo {
     println("\n🌟 Universal Signature Interface Demo")?;
     println("-" * 40)?;
@@ -178,7 +178,7 @@ func demo_universal_interface() -> yolo {
     }
 }
 
-// Demonstrate key management
+fr fr Demonstrate key management
 func demo_key_management() -> yolo {
     println("\n🔑 Key Management Demo")?;
     println("-" * 40)?;
@@ -220,7 +220,7 @@ func demo_key_management() -> yolo {
     printf("📊 Keys remaining: {}\n", &[key_manager.key_count()])?;
 }
 
-// Demonstrate multi-signature schemes
+fr fr Demonstrate multi-signature schemes
 func demo_multi_signatures() -> yolo {
     println("\n🤝 Multi-Signature Demo")?;
     println("-" * 40)?;
@@ -279,7 +279,7 @@ func demo_multi_signatures() -> yolo {
            &[stats.completed_multisigs, stats.verification_successes])?;
 }
 
-// Demonstrate batch verification
+fr fr Demonstrate batch verification
 func demo_batch_verification() -> yolo {
     println("\n📦 Batch Verification Demo")?;
     println("-" * 40)?;
@@ -325,7 +325,7 @@ func demo_batch_verification() -> yolo {
            &[batch_stats.successful_verifications, batch_stats.failed_verifications])?;
 }
 
-// Demonstrate real-world scenarios
+fr fr Demonstrate real-world scenarios
 func demo_real_world_scenarios() -> yolo {
     println("\n🌍 Real-World Scenarios Demo")?;
     println("-" * 40)?;
@@ -343,7 +343,7 @@ func demo_real_world_scenarios() -> yolo {
     demo_blockchain_signing()?;
 }
 
-// Document signing workflow
+fr fr Document signing workflow
 func demo_document_signing() -> yolo {
     sus mut generator = KeyGenerator::new();
     sus keypair = generator.generate_keypair(KeyType::Ed25519)?;
@@ -368,7 +368,7 @@ func demo_document_signing() -> yolo {
     println("📋 Document signing workflow completed")?;
 }
 
-// API authentication
+fr fr API authentication
 func demo_api_authentication() -> yolo {
     sus mut generator = KeyGenerator::new();
     sus keypair = generator.generate_keypair(KeyType::EcdsaSecp256k1)?;
@@ -398,7 +398,7 @@ func demo_api_authentication() -> yolo {
     println("🔗 API authentication completed")?;
 }
 
-// Blockchain transaction signing
+fr fr Blockchain transaction signing
 func demo_blockchain_signing() -> yolo {
     sus mut generator = KeyGenerator::new();
     sus keypair = generator.generate_keypair(KeyType::EcdsaSecp256k1)?;

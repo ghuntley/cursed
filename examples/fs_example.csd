@@ -1,7 +1,7 @@
-// CURSED File System Operations Example
-// Demonstrates the comprehensive file system capabilities
+fr fr CURSED File System Operations Example
+fr fr Demonstrates the comprehensive file system capabilities
 
-import stdlib::fs;
+yeet stdlib::fs;
 
 func main() {
     // Create a test directory
@@ -24,7 +24,7 @@ func main() {
     
     // Create some more files
     fs::write_file(fs::join_path(vec![test_dir, "test1.txt"]), "Test 1")?;
-    fs::write_file(fs::join_path(vec![test_dir, "test2.rs"]), "fn main() {}")?;
+    fs::write_file(fs::join_path(vec![test_dir, "test2.rs"]), "slay main() {}")?;
     fs::write_file(fs::join_path(vec![test_dir, "config.json"]), "{\"app\": \"cursed\"}")?;
     
     // List directory contents

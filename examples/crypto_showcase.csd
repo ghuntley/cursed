@@ -1,19 +1,19 @@
-/// fr fr CURSED Crypto Showcase - Maximum Security Demo periodt
-/// 
-/// This example demonstrates the complete CURSED crypto ecosystem including:
-/// - Symmetric encryption (AES-256-GCM, ChaCha20-Poly1305)
-/// - Asymmetric cryptography (RSA, ECDSA, Ed25519, X25519)
-/// - Hash functions (SHA-256, SHA-512, MD5)
-/// - Key derivation (PBKDF2, scrypt)
-/// - Secure random generation
-/// - Real-world usage patterns
-/// 
-/// Usage: cursed examples/crypto_showcase.csd
+fr fr/ fr fr CURSED Crypto Showcase - Maximum Security Demo periodt
+fr fr/ 
+fr fr/ This example demonstrates the complete CURSED crypto ecosystem including:
+fr fr/ - Symmetric encryption (AES-256-GCM, ChaCha20-Poly1305)
+fr fr/ - Asymmetric cryptography (RSA, ECDSA, Ed25519, X25519)
+fr fr/ - Hash functions (SHA-256, SHA-512, MD5)
+fr fr/ - Key derivation (PBKDF2, scrypt)
+fr fr/ - Secure random generation
+fr fr/ - Real-world usage patterns
+fr fr/ 
+fr fr/ Usage: cursed examples/crypto_showcase.csd
 
-import "stdlib::crypto";
-import "stdlib::io";
+yeet "stdlib::crypto"
+yeet "stdlib::io"
 
-/// slay Main crypto showcase function
+fr fr/ slay Main crypto showcase function
 function main() {
     println("🔐 Welcome to the CURSED Crypto Showcase! Maximum security bestie!")?;
     println("")?;
@@ -45,7 +45,7 @@ function main() {
     println("🎉 Crypto showcase completed - maximum security achieved periodt!")?;
 }
 
-/// bestie Demonstrate symmetric encryption capabilities
+fr fr/ bestie Demonstrate symmetric encryption capabilities
 function demonstrate_symmetric_encryption() {
     println("🔒 === Symmetric Encryption Demo ===")?;
     
@@ -88,7 +88,7 @@ function demonstrate_symmetric_encryption() {
     println("")?;
 }
 
-/// vibes Demonstrate asymmetric cryptography
+fr fr/ vibes Demonstrate asymmetric cryptography
 function demonstrate_asymmetric_crypto() {
     println("🔐 === Asymmetric Cryptography Demo ===")?;
     
@@ -134,7 +134,7 @@ function demonstrate_asymmetric_crypto() {
     println("")?;
 }
 
-/// facts Demonstrate hash functions
+fr fr/ facts Demonstrate hash functions
 function demonstrate_hash_functions() {
     println("# === Hash Functions Demo ===")?;
     
@@ -171,7 +171,7 @@ function demonstrate_hash_functions() {
     println("")?;
 }
 
-/// yolo Demonstrate key derivation functions
+fr fr/ yolo Demonstrate key derivation functions
 function demonstrate_key_derivation() {
     println("🔑 === Key Derivation Demo ===")?;
     
@@ -206,7 +206,7 @@ function demonstrate_key_derivation() {
     println("")?;
 }
 
-/// periodt Demonstrate secure random generation
+fr fr/ periodt Demonstrate secure random generation
 function demonstrate_random_generation() {
     println("🎲 === Secure Random Generation Demo ===")?;
     
@@ -240,7 +240,7 @@ function demonstrate_random_generation() {
     println("")?;
 }
 
-/// flex Show comprehensive crypto system information
+fr fr/ flex Show comprehensive crypto system information
 function show_crypto_info() {
     println("ℹ️  === Crypto System Information ===")?;
     
@@ -279,7 +279,7 @@ function show_crypto_info() {
     println("")?;
 }
 
-/// sus Error handling demonstration
+fr fr/ sus Error handling demonstration
 function demonstrate_error_handling() {
     println("⚠️  === Error Handling Demo ===")?;
     
@@ -320,7 +320,7 @@ function demonstrate_error_handling() {
     println("")?;
 }
 
-/// Real-world usage patterns
+fr fr/ Real-world usage patterns
 function demonstrate_real_world_patterns() {
     println("🌟 === Real-World Usage Patterns ===")?;
     
@@ -376,5 +376,5 @@ function demonstrate_real_world_patterns() {
     println("")?;
 }
 
-// Entry point
+fr fr Entry point
 main()?;

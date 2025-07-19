@@ -1,27 +1,27 @@
-/// fr fr Secure Messaging System - End-to-End Encryption periodt
-/// 
-/// This example demonstrates a complete secure messaging system using CURSED crypto:
-/// - X25519 key exchange for perfect forward secrecy
-/// - ChaCha20-Poly1305 for message encryption
-/// - Ed25519 for message authentication and identity verification
-/// - Secure key derivation and management
-/// 
-/// Usage: cursed examples/secure_messaging.csd
+fr fr/ fr fr Secure Messaging System - End-to-End Encryption periodt
+fr fr/ 
+fr fr/ This example demonstrates a complete secure messaging system using CURSED crypto:
+fr fr/ - X25519 key exchange for perfect forward secrecy
+fr fr/ - ChaCha20-Poly1305 for message encryption
+fr fr/ - Ed25519 for message authentication and identity verification
+fr fr/ - Secure key derivation and management
+fr fr/ 
+fr fr/ Usage: cursed examples/secure_messaging.csd
 
-import "stdlib::crypto";
-import "stdlib::io";
-import "stdlib::string";
+yeet "stdlib::crypto"
+yeet "stdlib::io"
+yeet "stdlib::string"
 
-/// User identity with cryptographic keys
-struct UserIdentity {
+fr fr/ User identity with cryptographic keys
+squad UserIdentity {
     username: String,
     long_term_signing_key: Ed25519PrivateKey,
     long_term_verify_key: Ed25519PublicKey,
     ephemeral_key_pair: X25519KeyPair,
 }
 
-/// Encrypted message with metadata
-struct SecureMessage {
+fr fr/ Encrypted message with metadata
+squad SecureMessage {
     sender: String,
     recipient: String,
     timestamp: String,
@@ -30,15 +30,15 @@ struct SecureMessage {
     sender_ephemeral_public: X25519PublicKey,
 }
 
-/// Message conversation state
-struct Conversation {
+fr fr/ Message conversation state
+squad Conversation {
     participants: [String],
     shared_secret: [u8],
     message_count: u32,
     last_message_time: String,
 }
 
-/// slay Main secure messaging demonstration
+fr fr/ slay Main secure messaging demonstration
 function main() {
     println("💬 Welcome to CURSED Secure Messaging System!")?;
     println("🔐 End-to-end encryption with perfect forward secrecy")?;
@@ -68,7 +68,7 @@ function main() {
     println("🎉 Secure messaging demonstration completed!")?;
 }
 
-/// bestie Create a new user with cryptographic identity
+fr fr/ bestie Create a new user with cryptographic identity
 function create_user(username: String) -> UserIdentity {
     println("👤 Creating secure identity for {}...", username)?;
     
@@ -91,7 +91,7 @@ function create_user(username: String) -> UserIdentity {
     user
 }
 
-/// vibes Establish secure conversation between two users
+fr fr/ vibes Establish secure conversation between two users
 function establish_conversation(alice: UserIdentity, bob: UserIdentity) -> Conversation {
     println("🤝 Establishing secure conversation between {} and {}...", alice.username, bob.username)?;
     
@@ -131,7 +131,7 @@ function establish_conversation(alice: UserIdentity, bob: UserIdentity) -> Conve
     conversation
 }
 
-/// facts Send secure message between users
+fr fr/ facts Send secure message between users
 function send_secure_message(
     sender: UserIdentity,
     recipient: UserIdentity,
@@ -181,7 +181,7 @@ function send_secure_message(
     secure_message
 }
 
-/// yolo Receive and decrypt secure message
+fr fr/ yolo Receive and decrypt secure message
 function receive_secure_message(
     recipient: UserIdentity,
     sender_verify_key: Ed25519PublicKey,
@@ -241,7 +241,7 @@ function receive_secure_message(
     content_line
 }
 
-/// periodt Demonstrate two-party secure messaging
+fr fr/ periodt Demonstrate two-party secure messaging
 function demonstrate_two_party_messaging(
     alice: UserIdentity,
     bob: UserIdentity,
@@ -273,7 +273,7 @@ function demonstrate_two_party_messaging(
     println("")?;
 }
 
-/// flex Demonstrate message authentication and tamper detection
+fr fr/ flex Demonstrate message authentication and tamper detection
 function demonstrate_message_authentication(alice: UserIdentity, bob: UserIdentity) {
     println("🛡️  === Message Authentication Demo ===")?;
     
@@ -312,7 +312,7 @@ function demonstrate_message_authentication(alice: UserIdentity, bob: UserIdenti
     println("")?;
 }
 
-/// sus Demonstrate perfect forward secrecy
+fr fr/ sus Demonstrate perfect forward secrecy
 function demonstrate_forward_secrecy(alice: UserIdentity, bob: UserIdentity) {
     println("🔄 === Perfect Forward Secrecy Demo ===")?;
     
@@ -345,7 +345,7 @@ function demonstrate_forward_secrecy(alice: UserIdentity, bob: UserIdentity) {
     println("")?;
 }
 
-/// bestie Establish group conversation (simplified multi-party)
+fr fr/ bestie Establish group conversation (simplified multi-party)
 function establish_group_conversation(users: [UserIdentity]) -> Conversation {
     println("👥 Establishing group conversation with {} participants...", users.length)?;
     
@@ -378,7 +378,7 @@ function establish_group_conversation(users: [UserIdentity]) -> Conversation {
     conversation
 }
 
-/// facts Demonstrate group messaging
+fr fr/ facts Demonstrate group messaging
 function demonstrate_group_messaging(
     alice: UserIdentity,
     bob: UserIdentity,
@@ -419,7 +419,7 @@ function demonstrate_group_messaging(
     println("")?;
 }
 
-/// Send message to group
+fr fr/ Send message to group
 function send_group_message(
     sender: UserIdentity,
     group_conversation: Conversation,
@@ -455,7 +455,7 @@ function send_group_message(
     }
 }
 
-/// Receive group message
+fr fr/ Receive group message
 function receive_group_message(
     recipient: UserIdentity,
     sender_verify_key: Ed25519PublicKey,
@@ -492,12 +492,12 @@ function receive_group_message(
     ""
 }
 
-/// Helper function to get current time (simplified)
+fr fr/ Helper function to get current time (simplified)
 function get_current_time() -> String {
     // In real implementation, would use proper time library
     sus random_time = crypto::generate_random_u64()?;
     string::format("time_{}", random_time)
 }
 
-// Entry point
+fr fr Entry point
 main()?;

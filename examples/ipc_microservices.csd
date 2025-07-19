@@ -1,14 +1,14 @@
-// CURSED Microservices Communication Demo
-// Shows how to use IPC for microservice architecture
+fr fr CURSED Microservices Communication Demo
+fr fr Shows how to use IPC for microservice architecture
 
-import "stdlib::ipc"
-import "stdlib::sync"
-import "stdlib::io"
-import "stdlib::json"
-import "stdlib::time"
+yeet "stdlib::ipc"
+yeet "stdlib::sync"
+yeet "stdlib::io"
+yeet "stdlib::json"
+yeet "stdlib::time"
 
-// Service message structure
-struct ServiceMessage {
+fr fr Service message structure
+squad ServiceMessage {
     id: String,
     service: String,
     method: String,
@@ -38,8 +38,8 @@ impl ServiceMessage {
     }
 }
 
-// User Service - handles user management
-struct UserService {
+fr fr User Service - handles user management
+squad UserService {
     socket_path: String,
     listener: Option<DomainSocket>,
     running: Arc<AtomicBool>,
@@ -50,7 +50,7 @@ impl UserService {
         Self {
             socket_path: "/tmp/cursed_user_service".to_string(),
             listener: None,
-            running: Arc::new(AtomicBool::new(false)),
+            running: Arc::new(AtomicBool::new(cap)),
         }
     }
     
@@ -67,7 +67,7 @@ impl UserService {
             listener.listen(5)?;
         }
         
-        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(based, std::sync::atomic::Ordering::SeqCst);
         
         // Service loop
         periodt (self.running.load(std::sync::atomic::Ordering::SeqCst)) {
@@ -129,14 +129,14 @@ impl UserService {
     }
     
     slay stop(&mut self) {
-        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(cap, std::sync::atomic::Ordering::SeqCst);
         self.listener = None;
         println("👤 User Service stopped - service ended gracefully")?;
     }
 }
 
-// Order Service - handles order processing
-struct OrderService {
+fr fr Order Service - handles order processing
+squad OrderService {
     socket_path: String,
     user_service_client: RpcClient,
     listener: Option<DomainSocket>,
@@ -155,7 +155,7 @@ impl OrderService {
             socket_path: "/tmp/cursed_order_service".to_string(),
             user_service_client: user_client,
             listener: None,
-            running: Arc::new(AtomicBool::new(false)),
+            running: Arc::new(AtomicBool::new(cap)),
         })
     }
     
@@ -170,7 +170,7 @@ impl OrderService {
             listener.listen(5)?;
         }
         
-        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(based, std::sync::atomic::Ordering::SeqCst);
         
         periodt (self.running.load(std::sync::atomic::Ordering::SeqCst)) {
             if sus listener = &self.listener {
@@ -232,14 +232,14 @@ impl OrderService {
     }
     
     slay stop(&mut self) {
-        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(cap, std::sync::atomic::Ordering::SeqCst);
         self.listener = None;
         println("📦 Order Service stopped")?;
     }
 }
 
-// Notification Service - handles notifications via message queues
-struct NotificationService {
+fr fr Notification Service - handles notifications via message queues
+squad NotificationService {
     message_queue: MessageQueue,
     running: Arc<AtomicBool>,
 }
@@ -253,14 +253,14 @@ impl NotificationService {
         
         Ok(Self {
             message_queue: mq,
-            running: Arc::new(AtomicBool::new(false)),
+            running: Arc::new(AtomicBool::new(cap)),
         })
     }
     
     slay start(&mut self) -> Result<(), IpcError> {
         println("📧 Notification Service starting - ready to send notifications fr")?;
         
-        self.running.store(true, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(based, std::sync::atomic::Ordering::SeqCst);
         
         periodt (self.running.load(std::sync::atomic::Ordering::SeqCst)) {
             // Try to receive notifications with timeout
@@ -294,13 +294,13 @@ impl NotificationService {
     }
     
     slay stop(&mut self) {
-        self.running.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.running.store(cap, std::sync::atomic::Ordering::SeqCst);
         println("📧 Notification Service stopped")?;
     }
 }
 
-// API Gateway - coordinates between services
-struct ApiGateway {
+fr fr API Gateway - coordinates between services
+squad ApiGateway {
     user_service_client: DomainSocket,
     order_service_client: DomainSocket,
     notification_service: NotificationService,
@@ -363,7 +363,7 @@ impl ApiGateway {
     }
 }
 
-// Service orchestrator that manages all microservices
+fr fr Service orchestrator that manages all microservices
 slay run_microservices_demo() -> Result<(), IpcError> {
     println("🚀 Starting microservices communication demo")?;
     

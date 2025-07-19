@@ -1,7 +1,7 @@
-// CURSED Statistics Module Demo
-// Demonstrates comprehensive statistical analysis capabilities
+fr fr CURSED Statistics Module Demo
+fr fr Demonstrates comprehensive statistical analysis capabilities
 
-import "stdlib::math::statistics";
+yeet "stdlib::math::statistics"
 
 slay main() {
     println("=== CURSED Statistics Module Demo ===\n")?;
@@ -252,7 +252,7 @@ slay main() {
     println("\n=== Demo Complete ===")?;
 }
 
-// Error handling helper
+fr fr Error handling helper
 slay handle_stat_error(error: MathError) {
     lowkey let MathError::DomainError { function, value, message } = error {
         printf("Domain error in {}: value {} - {}\n", function, value, message)?;

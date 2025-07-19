@@ -1,11 +1,11 @@
-// CURSED Optimization Performance Demonstration
-// This program showcases the advanced LLVM optimization passes
-// and their measurable performance improvements.
+fr fr CURSED Optimization Performance Demonstration
+fr fr This program showcases the advanced LLVM optimization passes
+fr fr and their measurable performance improvements.
 
 facts PI = 3.14159265359;
 facts E = 2.71828182846;
 
-// Mathematical computation function that benefits from FMA optimization
+fr fr Mathematical computation function that benefits from FMA optimization
 slay advanced_math_computation(x: f64, y: f64, z: f64) -> f64 {
     // Pattern that can use FMA: a * b + c
     facts result1 = x * y + z;
@@ -20,7 +20,7 @@ slay advanced_math_computation(x: f64, y: f64, z: f64) -> f64 {
     return result3 + sin_approx * cos_approx;
 }
 
-// Loop function that benefits from vectorization and unrolling
+fr fr Loop function that benefits from vectorization and unrolling
 slay array_processing(input: []f64, output: []f64, size: i32) -> f64 {
     sus sum = 0.0;
     sus i = 0;
@@ -44,7 +44,7 @@ slay array_processing(input: []f64, output: []f64, size: i32) -> f64 {
     return sum;
 }
 
-// Function with inlining opportunities
+fr fr Function with inlining opportunities
 slay small_utility_function(a: i32, b: i32) -> i32 {
     // Simple function that should be inlined
     return a * 2 + b;
@@ -59,7 +59,7 @@ slay caller_function(x: i32, y: i32, z: i32) -> i32 {
     return result3;
 }
 
-// Function with CFG optimization opportunities
+fr fr Function with CFG optimization opportunities
 slay cfg_optimization_demo(value: i32) -> i32 {
     // Conditional branches that can be simplified
     lowkey (value > 0) {
@@ -77,7 +77,7 @@ slay cfg_optimization_demo(value: i32) -> i32 {
     }
 }
 
-// Memory layout optimization demonstration
+fr fr Memory layout optimization demonstration
 squad OptimizedStruct {
     // Fields ordered for optimal memory layout
     large_field: f64,      // 8 bytes
@@ -113,7 +113,7 @@ slay struct_operations(structs: []OptimizedStruct, count: i32) -> f64 {
     return total;
 }
 
-// Recursive function with tail call optimization opportunity
+fr fr Recursive function with tail call optimization opportunity
 slay factorial_tail_recursive(n: i32, acc: i32) -> i32 {
     lowkey (n <= 1) {
         return acc;
@@ -123,7 +123,7 @@ slay factorial_tail_recursive(n: i32, acc: i32) -> i32 {
     }
 }
 
-// Function with constant propagation opportunities
+fr fr Function with constant propagation opportunities
 slay constant_demo() -> i32 {
     facts CONST_A = 42;
     facts CONST_B = 17;
@@ -137,7 +137,7 @@ slay constant_demo() -> i32 {
     return result3;
 }
 
-// Main function demonstrating all optimizations
+fr fr Main function demonstrating all optimizations
 slay main() -> i32 {
     yeet("🔧 CURSED Advanced Optimization Demo");
     yeet("Testing various optimization passes...");

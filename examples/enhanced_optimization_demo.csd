@@ -1,13 +1,13 @@
-/// Enhanced Optimization Demo
-/// 
-/// This CURSED program demonstrates various optimization opportunities
-/// that the enhanced LLVM passes can detect and improve.
+fr fr/ Enhanced Optimization Demo
+fr fr/ 
+fr fr/ This CURSED program demonstrates various optimization opportunities
+fr fr/ that the enhanced LLVM passes can detect and improve.
 
-import "stdlib::goroutine"
-import "stdlib::channel"
-import "stdlib::math"
+yeet "stdlib::goroutine"
+yeet "stdlib::channel"
+yeet "stdlib::math"
 
-/// Function that can benefit from specialization
+fr fr/ Function that can benefit from specialization
 slay process_data(sus mode: string, facts data: [int]) -> int {
     lowkey (mode == "sum") {
         sus result = 0
@@ -28,7 +28,7 @@ slay process_data(sus mode: string, facts data: [int]) -> int {
     }
 }
 
-/// Function with channel operations
+fr fr/ Function with channel operations
 slay channel_worker(facts work_channel: chan<int>, facts result_channel: chan<int>) {
     periodt {
         lowkey (work_channel.is_closed()) {
@@ -51,7 +51,7 @@ slay channel_worker(facts work_channel: chan<int>, facts result_channel: chan<in
     }
 }
 
-/// Function with Gen Z slang constructs
+fr fr/ Function with Gen Z slang constructs
 slay slang_heavy_function(sus x: int, sus y: int) -> int {
     facts is_positive = x > 0  // facts -> efficient const
     facts is_even = y % 2 == 0  // facts -> efficient const
@@ -67,7 +67,7 @@ slay slang_heavy_function(sus x: int, sus y: int) -> int {
     }
 }
 
-/// Function that can benefit from vectorization
+fr fr/ Function that can benefit from vectorization
 slay vector_operations(facts data: [float]) -> [float] {
     sus result = make([]float, data.length())
     
@@ -80,7 +80,7 @@ slay vector_operations(facts data: [float]) -> [float] {
     cap result
 }
 
-/// Function with error propagation patterns
+fr fr/ Function with error propagation patterns
 slay error_heavy_function(sus value: int) -> int? {
     lowkey (value < 0) {
         cap nah_chief("negative value not allowed")
@@ -93,7 +93,7 @@ slay error_heavy_function(sus value: int) -> int? {
     cap value * 2
 }
 
-/// Main function demonstrating optimization opportunities
+fr fr/ Main function demonstrating optimization opportunities
 slay main() {
     println("🚀 Enhanced Optimization Demo")
     

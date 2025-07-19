@@ -1,16 +1,16 @@
-//! Comprehensive Zero-Knowledge Proof Demo for CURSED
-//! 
-//! This example demonstrates the complete ZK functionality including:
-//! - Commitment schemes (Pedersen, Hash, Polynomial)
-//! - Proof protocols (Schnorr, Range proofs, PLONK, STARKs)
-//! - Privacy-preserving applications (Anonymous credentials, PSI)
-//! - Circuit construction and verification
-//! - Zero-knowledge virtual machine execution
+fr fr! Comprehensive Zero-Knowledge Proof Demo for CURSED
+fr fr! 
+fr fr! This example demonstrates the complete ZK functionality including:
+fr fr! - Commitment schemes (Pedersen, Hash, Polynomial)
+fr fr! - Proof protocols (Schnorr, Range proofs, PLONK, STARKs)
+fr fr! - Privacy-preserving applications (Anonymous credentials, PSI)
+fr fr! - Circuit construction and verification
+fr fr! - Zero-knowledge virtual machine execution
 
-import "stdlib::crypto::zk_enhanced";
-import "stdlib::io";
+yeet "stdlib::crypto::zk_enhanced"
+yeet "stdlib::io"
 
-// Demonstrate field element arithmetic
+fr fr Demonstrate field element arithmetic
 func demonstrate_field_arithmetic() -> Result<Nil, Error> {
     println("=== Field Element Arithmetic Demo ===");
     
@@ -31,7 +31,7 @@ func demonstrate_field_arithmetic() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate polynomial operations
+fr fr Demonstrate polynomial operations
 func demonstrate_polynomial_operations() -> Result<Nil, Error> {
     println("\n=== Polynomial Operations Demo ===");
     
@@ -52,7 +52,7 @@ func demonstrate_polynomial_operations() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate commitment schemes
+fr fr Demonstrate commitment schemes
 func demonstrate_commitments() -> Result<Nil, Error> {
     println("\n=== Commitment Schemes Demo ===");
     
@@ -80,7 +80,7 @@ func demonstrate_commitments() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate range proofs
+fr fr Demonstrate range proofs
 func demonstrate_range_proofs() -> Result<Nil, Error> {
     println("\n=== Range Proof Demo ===");
     
@@ -100,7 +100,7 @@ func demonstrate_range_proofs() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate Schnorr protocol
+fr fr Demonstrate Schnorr protocol
 func demonstrate_schnorr_protocol() -> Result<Nil, Error> {
     println("\n=== Schnorr Protocol Demo ===");
     
@@ -121,7 +121,7 @@ func demonstrate_schnorr_protocol() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate PLONK protocol
+fr fr Demonstrate PLONK protocol
 func demonstrate_plonk_protocol() -> Result<Nil, Error> {
     println("\n=== PLONK Protocol Demo ===");
     
@@ -154,7 +154,7 @@ func demonstrate_plonk_protocol() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate STARK protocol
+fr fr Demonstrate STARK protocol
 func demonstrate_stark_protocol() -> Result<Nil, Error> {
     println("\n=== STARK Protocol Demo ===");
     
@@ -191,7 +191,7 @@ func demonstrate_stark_protocol() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate anonymous credentials
+fr fr Demonstrate anonymous credentials
 func demonstrate_anonymous_credentials() -> Result<Nil, Error> {
     println("\n=== Anonymous Credentials Demo ===");
     
@@ -229,7 +229,7 @@ func demonstrate_anonymous_credentials() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate private set intersection
+fr fr Demonstrate private set intersection
 func demonstrate_private_set_intersection() -> Result<Nil, Error> {
     println("\n=== Private Set Intersection Demo ===");
     
@@ -261,7 +261,7 @@ func demonstrate_private_set_intersection() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate zero-knowledge virtual machine
+fr fr Demonstrate zero-knowledge virtual machine
 func demonstrate_zk_vm() -> Result<Nil, Error> {
     println("\n=== Zero-Knowledge Virtual Machine Demo ===");
     
@@ -285,7 +285,7 @@ func demonstrate_zk_vm() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Demonstrate batch verification
+fr fr Demonstrate batch verification
 func demonstrate_batch_verification() -> Result<Nil, Error> {
     println("\n=== Batch Verification Demo ===");
     
@@ -305,7 +305,7 @@ func demonstrate_batch_verification() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 func main() -> Result<Nil, Error> {
     println("🔐 CURSED Zero-Knowledge Proof System Comprehensive Demo");
     println("========================================================");
@@ -342,9 +342,9 @@ func main() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Additional utility functions for advanced ZK applications
+fr fr Additional utility functions for advanced ZK applications
 
-// Electronic voting with zero-knowledge proofs
+fr fr Electronic voting with zero-knowledge proofs
 func demonstrate_zk_voting() -> Result<Nil, Error> {
     println("\n=== Zero-Knowledge Electronic Voting ===");
     
@@ -360,12 +360,12 @@ func demonstrate_zk_voting() -> Result<Nil, Error> {
     sus is_valid_vote = range_system.verify(vote_proof, vote_commitment)?;
     
     printf("Electronic vote validity proof: {}\n", &[is_valid_vote]);
-    printf("Vote choice remains private while proving validity\n", &[]);
+    printf("Vote choice remains private periodt proving validity\n", &[]);
     
     Ok(nil)
 }
 
-// Confidential transactions
+fr fr Confidential transactions
 func demonstrate_confidential_transactions() -> Result<Nil, Error> {
     println("\n=== Confidential Transactions ===");
     
@@ -393,7 +393,7 @@ func demonstrate_confidential_transactions() -> Result<Nil, Error> {
     Ok(nil)
 }
 
-// Privacy-preserving machine learning
+fr fr Privacy-preserving machine learning
 func demonstrate_zk_machine_learning() -> Result<Nil, Error> {
     println("\n=== Zero-Knowledge Machine Learning ===");
     

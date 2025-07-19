@@ -1,13 +1,13 @@
-/// CURSED Documentation Example
-/// 
-/// This example demonstrates the CURSED documentation generator
-/// with various language constructs and documentation comments.
+fr fr/ CURSED Documentation Example
+fr fr/ 
+fr fr/ This example demonstrates the CURSED documentation generator
+fr fr/ with various language constructs and documentation comments.
 
-/// Calculate the factorial of a number
-/// @param n The number to calculate factorial for
-/// @return The factorial result
-/// @example Basic usage
-/// facts result = factorial(5);
+fr fr/ Calculate the factorial of a number
+fr fr/ @param n The number to calculate factorial for
+fr fr/ @return The factorial result
+fr fr/ @example Basic usage
+fr fr/ facts result = factorial(5);
 slay factorial(n: i32) -> i32 {
     lowkey (n <= 1) {
         return 1;
@@ -16,8 +16,8 @@ slay factorial(n: i32) -> i32 {
     }
 }
 
-/// Person struct representing a user
-/// Contains basic information about a person
+fr fr/ Person struct representing a user
+fr fr/ Contains basic information about a person
 squad Person {
     /// Person's full name
     name: string,
@@ -27,7 +27,7 @@ squad Person {
     email: string,
 }
 
-/// Greeting interface for objects that can greet
+fr fr/ Greeting interface for objects that can greet
 collab Greeter {
     /// Say hello to someone
     /// @param name The name to greet
@@ -35,14 +35,14 @@ collab Greeter {
     slay greet(name: string) -> string;
 }
 
-/// Maximum number of retries
+fr fr/ Maximum number of retries
 facts MAX_RETRIES = 3;
 
-/// Current application version
+fr fr/ Current application version
 facts VERSION = "1.0.0";
 
-/// Main application entry point
-/// Demonstrates various CURSED language features
+fr fr/ Main application entry point
+fr fr/ Demonstrates various CURSED language features
 slay main() {
     sus person = Person {
         name: "Alice",

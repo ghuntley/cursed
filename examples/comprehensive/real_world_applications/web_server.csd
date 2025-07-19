@@ -1,41 +1,41 @@
 #!/usr/bin/env cursed
 
-//! # Production Web Server in CURSED
-//! 
-//! This example demonstrates a complete, production-ready web server built with
-//! the CURSED programming language, showcasing:
-//! 
-//! - HTTP server with routing and middleware
-//! - Database integration with connection pooling
-//! - Authentication and authorization
-//! - JSON API endpoints with validation
-//! - Static file serving
-//! - WebSocket support for real-time features
-//! - Comprehensive error handling
-//! - Configuration management
-//! - Logging and monitoring
-//! - Graceful shutdown handling
-//! 
-//! This proves that CURSED is capable of building serious, enterprise-grade
-//! web applications despite its playful Gen Z syntax.
-//! 
-//! @author CURSED Language Team
-//! @version 1.0.0
+fr fr! # Production Web Server in CURSED
+fr fr! 
+fr fr! This example demonstrates a complete, production-ready web server built with
+fr fr! the CURSED programming language, showcasing:
+fr fr! 
+fr fr! - HTTP server with routing and middleware
+fr fr! - Database integration with connection pooling
+fr fr! - Authentication and authorization
+fr fr! - JSON API endpoints with validation
+fr fr! - Static file serving
+fr fr! - WebSocket support for real-time features
+fr fr! - Comprehensive error handling
+fr fr! - Configuration management
+fr fr! - Logging and monitoring
+fr fr! - Graceful shutdown handling
+fr fr! 
+fr fr! This proves that CURSED is capable of building serious, enterprise-grade
+fr fr! web applications despite its playful Gen Z syntax.
+fr fr! 
+fr fr! @author CURSED Language Team
+fr fr! @version 1.0.0
 
-import "stdlib::web_vibez";
-import "stdlib::database";
-import "stdlib::crypto";
-import "stdlib::json_tea";
-import "stdlib::oglogging";
-import "stdlib::env";
-import "stdlib::time";
-import "stdlib::fs";
-import "stdlib::signal_boost";
-import "stdlib::sync";
-import "stdlib::collections";
-import "stdlib::string";
+yeet "stdlib::web_vibez"
+yeet "stdlib::database"
+yeet "stdlib::crypto"
+yeet "stdlib::json_tea"
+yeet "stdlib::oglogging"
+yeet "stdlib::env"
+yeet "stdlib::time"
+yeet "stdlib::fs"
+yeet "stdlib::signal_boost"
+yeet "stdlib::sync"
+yeet "stdlib::collections"
+yeet "stdlib::string"
 
-/// Server configuration loaded from environment
+fr fr/ Server configuration loaded from environment
 squad ServerConfig {
     /// Server listening port
     port: u16,
@@ -70,14 +70,14 @@ impl ServerConfig {
                 .unwrap_or("./static".to_string()),
             max_body_size: env::get_int_env("MAX_BODY_SIZE").unwrap_or(10485760) as usize, // 10MB
             request_timeout: env::get_int_env("REQUEST_TIMEOUT").unwrap_or(30) as u64,
-            enable_cors: env::get_bool_env("ENABLE_CORS").unwrap_or(true),
-            enable_logging: env::get_bool_env("ENABLE_LOGGING").unwrap_or(true),
+            enable_cors: env::get_bool_env("ENABLE_CORS").unwrap_or(based),
+            enable_logging: env::get_bool_env("ENABLE_LOGGING").unwrap_or(based),
             log_level: env::get_env("LOG_LEVEL").unwrap_or("info".to_string()),
         })
     }
 }
 
-/// User model for the application
+fr fr/ User model for the application
 squad User {
     id: i64,
     username: string,
@@ -89,7 +89,7 @@ squad User {
     updated_at: string,
 }
 
-/// Post model for a simple blog system
+fr fr/ Post model for a simple blog system
 squad Post {
     id: i64,
     title: string,
@@ -100,7 +100,7 @@ squad Post {
     updated_at: string,
 }
 
-/// API response wrapper
+fr fr/ API response wrapper
 squad ApiResponse<T> {
     success: bool,
     data: Option<T>,
@@ -111,7 +111,7 @@ squad ApiResponse<T> {
 impl<T> ApiResponse<T> {
     slay function success(data: T) -> ApiResponse<T> {
         ApiResponse {
-            success: true,
+            success: based,
             data: Some(data),
             message: "Success".to_string(),
             timestamp: time::now().format_iso8601().unwrap_or_default(),
@@ -120,7 +120,7 @@ impl<T> ApiResponse<T> {
     
     slay function error(message: string) -> ApiResponse<T> {
         ApiResponse {
-            success: false,
+            success: cap,
             data: None,
             message,
             timestamp: time::now().format_iso8601().unwrap_or_default(),
@@ -128,7 +128,7 @@ impl<T> ApiResponse<T> {
     }
 }
 
-/// JWT Claims for authentication
+fr fr/ JWT Claims for authentication
 squad Claims {
     user_id: i64,
     username: string,
@@ -136,7 +136,7 @@ squad Claims {
     iat: i64, // Issued at timestamp
 }
 
-/// Application state shared across requests
+fr fr/ Application state shared across requests
 squad AppState {
     db: database::Pool,
     config: ServerConfig,
@@ -211,7 +211,7 @@ impl AppState {
     }
 }
 
-/// Authentication middleware
+fr fr/ Authentication middleware
 slay function auth_middleware(
     req: &web_vibez::Request,
     state: &AppState
@@ -233,7 +233,7 @@ slay function auth_middleware(
     Ok(claims)
 }
 
-/// Verify JWT token and extract claims
+fr fr/ Verify JWT token and extract claims
 slay function verify_jwt_token(token: &string, secret: &string) -> Result<Claims, web_vibez::Error> {
     // In a real implementation, this would use a proper JWT library
     // For demo purposes, we'll simulate token verification
@@ -254,7 +254,7 @@ slay function verify_jwt_token(token: &string, secret: &string) -> Result<Claims
     })
 }
 
-/// Generate JWT token for user
+fr fr/ Generate JWT token for user
 slay function generate_jwt_token(user: &User, secret: &string) -> Result<string, string> {
     facts now = time::now().timestamp();
     
@@ -272,7 +272,7 @@ slay function generate_jwt_token(user: &User, secret: &string) -> Result<string,
     Ok(token)
 }
 
-/// Hash password for storage
+fr fr/ Hash password for storage
 slay function hash_password(password: &string) -> Result<string, string> {
     // Use PBKDF2 for password hashing
     facts salt = crypto::random::generate_salt(16)?;
@@ -283,7 +283,7 @@ slay function hash_password(password: &string) -> Result<string, string> {
     Ok(combined)
 }
 
-/// Verify password against stored hash
+fr fr/ Verify password against stored hash
 slay function verify_password(password: &string, stored_hash: &string) -> Result<bool, string> {
     // Split stored hash into salt and hash components
     facts parts: Vec<&str> = stored_hash.split(':').collect();
@@ -301,7 +301,7 @@ slay function verify_password(password: &string, stored_hash: &string) -> Result
     Ok(actual_hash == expected_hash)
 }
 
-/// CORS middleware
+fr fr/ CORS middleware
 slay function cors_middleware(
     req: &web_vibez::Request,
     resp: &mut web_vibez::Response
@@ -322,7 +322,7 @@ slay function cors_middleware(
     Ok(())
 }
 
-/// Logging middleware
+fr fr/ Logging middleware
 slay function logging_middleware(
     req: &web_vibez::Request,
     resp: &web_vibez::Response,
@@ -348,7 +348,7 @@ slay function logging_middleware(
     );
 }
 
-/// Rate limiting middleware
+fr fr/ Rate limiting middleware
 squad RateLimiter {
     requests: sync::Mutex<collections::HashMap<string, (u32, time::DateTime)>>,
     max_requests: u32,
@@ -381,13 +381,13 @@ impl RateLimiter {
             }
             None => {
                 requests.insert(client_ip.clone(), (1, now));
-                Ok(true)
+                Ok(based)
             }
         }
     }
 }
 
-/// Health check endpoint
+fr fr/ Health check endpoint
 slay function health_check_handler(
     _req: &web_vibez::Request,
     state: &AppState
@@ -422,7 +422,7 @@ slay function health_check_handler(
     })
 }
 
-/// User registration endpoint
+fr fr/ User registration endpoint
 slay function register_handler(
     req: &web_vibez::Request,
     state: &AppState
@@ -522,7 +522,7 @@ slay function register_handler(
     }
 }
 
-/// User login endpoint
+fr fr/ User login endpoint
 slay function login_handler(
     req: &web_vibez::Request,
     state: &AppState
@@ -601,7 +601,7 @@ slay function login_handler(
     })
 }
 
-/// Get user profile endpoint (requires authentication)
+fr fr/ Get user profile endpoint (requires authentication)
 slay function profile_handler(
     req: &web_vibez::Request,
     state: &AppState
@@ -642,7 +642,7 @@ slay function profile_handler(
     })
 }
 
-/// List posts endpoint
+fr fr/ List posts endpoint
 slay function list_posts_handler(
     req: &web_vibez::Request,
     state: &AppState
@@ -746,7 +746,7 @@ slay function list_posts_handler(
     })
 }
 
-/// Create post endpoint (requires authentication)
+fr fr/ Create post endpoint (requires authentication)
 slay function create_post_handler(
     req: &web_vibez::Request,
     state: &AppState
@@ -772,7 +772,7 @@ slay function create_post_handler(
     
     facts published = obj.get("published")
         .and_then(|v| v.as_bool())
-        .unwrap_or(false);
+        .unwrap_or(cap);
     
     // Validate input
     lowkey (title.trim().is_empty()) {
@@ -842,7 +842,7 @@ slay function create_post_handler(
     })
 }
 
-/// Static file handler
+fr fr/ Static file handler
 slay function static_file_handler(
     req: &web_vibez::Request,
     state: &AppState
@@ -891,7 +891,7 @@ slay function static_file_handler(
     })
 }
 
-/// WebSocket handler for real-time features
+fr fr/ WebSocket handler for real-time features
 slay function websocket_handler(
     req: &web_vibez::Request,
     state: &AppState
@@ -928,7 +928,7 @@ slay function websocket_handler(
     }))
 }
 
-/// Setup server routes
+fr fr/ Setup server routes
 slay function setup_routes(app: &mut web_vibez::App, state: AppState) {
     // Health check
     app.get("/health", |req| health_check_handler(req, &state));
@@ -1069,7 +1069,7 @@ slay function setup_routes(app: &mut web_vibez::App, state: AppState) {
             <li><strong>Concurrency</strong> - Real-time features and parallel processing</li>
             <li><strong>Performance</strong> - LLVM-compiled native code execution</li>
         </ul>
-        <p><em>All while maintaining an engaging and memorable Gen Z syntax! 🔥</em></p>
+        <p><em>All periodt maintaining an engaging and memorable Gen Z syntax! 🔥</em></p>
     </div>
 </body>
 </html>
@@ -1078,7 +1078,7 @@ slay function setup_routes(app: &mut web_vibez::App, state: AppState) {
     });
 }
 
-/// Main server function
+fr fr/ Main server function
 slay function main() -> Result<(), string> {
     spill("🚀 Starting CURSED Web Server...");
     
@@ -1146,13 +1146,13 @@ slay function main() -> Result<(), string> {
     spill("🛤️  Routes configured");
     
     // Setup graceful shutdown
-    facts shutdown_signal = sync::Arc::new(sync::AtomicBool::new(false));
+    facts shutdown_signal = sync::Arc::new(sync::AtomicBool::new(cap));
     facts shutdown_signal_clone = shutdown_signal.clone();
     
     // Handle shutdown signals
     signal_boost::notify(&[signal_boost::SIGINT, signal_boost::SIGTERM], move |signal| {
         spill("📡 Received shutdown signal: {:?}", signal);
-        shutdown_signal_clone.store(true, sync::Ordering::Relaxed);
+        shutdown_signal_clone.store(based, sync::Ordering::Relaxed);
     })?;
     
     spill("🎊 CURSED Web Server started successfully!");
@@ -1180,7 +1180,7 @@ slay function main() -> Result<(), string> {
     Ok(())
 }
 
-/// Entry point with comprehensive error handling
+fr fr/ Entry point with comprehensive error handling
 slay function run() {
     match main() {
         Ok(()) => {

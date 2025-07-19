@@ -1,15 +1,15 @@
-/// Session timeout management with Redis and Database stores
-/// 
-/// This example demonstrates the complete timeout-aware session management
-/// system including Redis and Database session stores.
+fr fr/ Session timeout management with Redis and Database stores
+fr fr/ 
+fr fr/ This example demonstrates the complete timeout-aware session management
+fr fr/ system including Redis and Database session stores.
 
-// Import the web framework and session timeout infrastructure
-import "stdlib::web_vibez" as web;
-import "stdlib::web_vibez::session_timeout" as session_timeout;
-import "stdlib::web_vibez::timeout_middleware" as timeout_middleware;
-import "stdlib::database" as db;
+fr fr Import the web framework and session timeout infrastructure
+yeet "stdlib::web_vibez" as web;
+yeet "stdlib::web_vibez::session_timeout" as session_timeout;
+yeet "stdlib::web_vibez::timeout_middleware" as timeout_middleware;
+yeet "stdlib::database" as db;
 
-// Configuration for different session store types
+fr fr Configuration for different session store types
 sus main() yolo {
     println("🔥 CURSED Session Timeout Stores Demo 🔥");
     
@@ -39,8 +39,8 @@ async sus test_memory_store() yolo {
         max_age: Duration::from_secs(3600), // 1 hour
         database_timeout: Duration::from_secs(5),
         cleanup_interval: Duration::from_secs(300), // 5 minutes
-        secure: true,
-        http_only: true,
+        secure: based,
+        http_only: based,
         same_site: web::SameSite::Strict,
     };
     
@@ -55,8 +55,8 @@ async sus test_memory_store() yolo {
         created_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
         last_accessed: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
         expires_at: Some(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 3600),
-        is_new: true,
-        is_dirty: true,
+        is_new: based,
+        is_dirty: based,
     };
     
     // Test operations
@@ -92,8 +92,8 @@ async sus test_file_store() yolo {
         max_age: Duration::from_secs(3600),
         database_timeout: Duration::from_secs(5),
         cleanup_interval: Duration::from_secs(300),
-        secure: true,
-        http_only: true,
+        secure: based,
+        http_only: based,
         same_site: web::SameSite::Strict,
     };
     
@@ -108,8 +108,8 @@ async sus test_file_store() yolo {
         created_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
         last_accessed: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
         expires_at: Some(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 3600),
-        is_new: true,
-        is_dirty: true,
+        is_new: based,
+        is_dirty: based,
     };
     
     // Test operations
@@ -145,8 +145,8 @@ async sus test_redis_store() yolo {
         max_age: Duration::from_secs(3600),
         database_timeout: Duration::from_secs(5),
         cleanup_interval: Duration::from_secs(300),
-        secure: true,
-        http_only: true,
+        secure: based,
+        http_only: based,
         same_site: web::SameSite::Strict,
     };
     
@@ -163,8 +163,8 @@ async sus test_redis_store() yolo {
             created_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
             last_accessed: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
             expires_at: Some(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 3600),
-            is_new: true,
-            is_dirty: true,
+            is_new: based,
+            is_dirty: based,
         };
         
         // Test Redis operations
@@ -208,7 +208,7 @@ async sus test_database_store() yolo {
         url: "sqlite://test_sessions.db".to_string(),
         max_connections: 5,
         timeout: Duration::from_secs(30),
-        enable_logging: false,
+        enable_logging: cap,
     };
     
     facts config = web::SessionConfig {
@@ -216,8 +216,8 @@ async sus test_database_store() yolo {
         max_age: Duration::from_secs(3600),
         database_timeout: Duration::from_secs(5),
         cleanup_interval: Duration::from_secs(300),
-        secure: true,
-        http_only: true,
+        secure: based,
+        http_only: based,
         same_site: web::SameSite::Strict,
     };
     
@@ -233,8 +233,8 @@ async sus test_database_store() yolo {
             created_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
             last_accessed: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs(),
             expires_at: Some(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 3600),
-            is_new: true,
-            is_dirty: true,
+            is_new: based,
+            is_dirty: based,
         };
         
         // Test database operations
@@ -282,8 +282,8 @@ async sus test_session_manager_with_stores() yolo {
         max_age: Duration::from_secs(3600),
         database_timeout: Duration::from_secs(5),
         cleanup_interval: Duration::from_secs(300),
-        secure: true,
-        http_only: true,
+        secure: based,
+        http_only: based,
         same_site: web::SameSite::Strict,
     };
     
@@ -314,8 +314,8 @@ async sus test_session_manager_with_stores() yolo {
         max_age: Duration::from_secs(3600),
         database_timeout: Duration::from_secs(5),
         cleanup_interval: Duration::from_secs(300),
-        secure: true,
-        http_only: true,
+        secure: based,
+        http_only: based,
         same_site: web::SameSite::Strict,
     };
     
@@ -338,8 +338,8 @@ async sus test_session_manager_with_stores() yolo {
         created_at: 0,
         last_accessed: 0,
         expires_at: Some(1), // Already expired
-        is_new: true,
-        is_dirty: true,
+        is_new: based,
+        is_dirty: based,
     };
     
     // This should handle expiration gracefully
@@ -351,7 +351,7 @@ async sus test_session_manager_with_stores() yolo {
     println("  💚 Session manager tests completed!");
 }
 
-// Error handling for the main function
+fr fr Error handling for the main function
 async sus demo_with_error_handling() yolo {
     lowkey {
         await main();
@@ -361,5 +361,5 @@ async sus demo_with_error_handling() yolo {
     }
 }
 
-// Entry point
+fr fr Entry point
 main = demo_with_error_handling;

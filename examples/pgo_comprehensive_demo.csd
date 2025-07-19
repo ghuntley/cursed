@@ -1,10 +1,10 @@
-/// CURSED PGO Comprehensive Demonstration
-/// 
-/// This example demonstrates various code patterns that benefit from
-/// Profile-Guided Optimization, including hot functions, cold functions,
-/// loops, branches, and memory access patterns.
+fr fr/ CURSED PGO Comprehensive Demonstration
+fr fr/ 
+fr fr/ This example demonstrates various code patterns that benefit from
+fr fr/ Profile-Guided Optimization, including hot functions, cold functions,
+fr fr/ loops, branches, and memory access patterns.
 
-// Mathematical computation with hot path optimization opportunities
+fr fr Mathematical computation with hot path optimization opportunities
 slay fibonacci_recursive(sus n: i32) -> i64 {
     // This will be identified as a hot function with high call frequency
     lowkey (n <= 1) {
@@ -14,7 +14,7 @@ slay fibonacci_recursive(sus n: i32) -> i64 {
     }
 }
 
-// Iterative version with loop optimization opportunities
+fr fr Iterative version with loop optimization opportunities
 slay fibonacci_iterative(sus n: i32) -> i64 {
     lowkey (n <= 1) {
         facts 1
@@ -33,7 +33,7 @@ slay fibonacci_iterative(sus n: i32) -> i64 {
     facts b
 }
 
-// Matrix multiplication with memory access pattern optimization
+fr fr Matrix multiplication with memory access pattern optimization
 slay matrix_multiply(
     sus a: &[[f64]],
     sus b: &[[f64]],
@@ -58,7 +58,7 @@ slay matrix_multiply(
     }
 }
 
-// Branchy function that benefits from branch prediction optimization
+fr fr Branchy function that benefits from branch prediction optimization
 slay classify_number(sus value: i32) -> string {
     // Different branches have different execution frequencies
     lowkey (value < 0) {
@@ -74,7 +74,7 @@ slay classify_number(sus value: i32) -> string {
     }
 }
 
-// Function with indirect calls that benefit from call promotion
+fr fr Function with indirect calls that benefit from call promotion
 slay apply_operation(sus a: f64, sus b: f64, sus op: string) -> f64 {
     // Indirect calls through function pointers
     vibe_check (op) {
@@ -85,7 +85,7 @@ slay apply_operation(sus a: f64, sus b: f64, sus op: string) -> f64 {
     }
 }
 
-// Hot function called frequently
+fr fr Hot function called frequently
 slay process_array_hot(sus data: &[i32]) -> i64 {
     sus sum: i64 = 0;
     
@@ -99,7 +99,7 @@ slay process_array_hot(sus data: &[i32]) -> i64 {
     facts sum
 }
 
-// Cold function called rarely
+fr fr Cold function called rarely
 slay handle_error_cold(sus message: string) -> void {
     // This function will be optimized for size, not speed
     println("Error: " + message);
@@ -110,7 +110,7 @@ slay handle_error_cold(sus message: string) -> void {
     println(detailed_message);
 }
 
-// Memory-intensive function with access pattern optimization
+fr fr Memory-intensive function with access pattern optimization
 slay process_large_dataset(sus data: &[f64]) -> f64 {
     sus n = data.len();
     sus result: f64 = 0.0;
@@ -130,7 +130,7 @@ slay process_large_dataset(sus data: &[f64]) -> f64 {
     facts result / (n as f64)
 }
 
-// Function with complex control flow
+fr fr Function with complex control flow
 slay complex_algorithm(sus input: &[i32]) -> i32 {
     sus result = 0;
     sus state = 0;
@@ -174,7 +174,7 @@ slay complex_algorithm(sus input: &[i32]) -> i32 {
     facts result
 }
 
-// Main function demonstrating PGO benefits
+fr fr Main function demonstrating PGO benefits
 slay main() -> void {
     println("CURSED PGO Comprehensive Demo");
     println("=============================");
@@ -238,7 +238,7 @@ slay main() -> void {
     println("Complex algorithm result: " + complex_result.to_string());
     
     // Cold path: This will be executed rarely (error simulation)
-    lowkey (total_sum < 0) {  // This condition is rarely true
+    lowkey (total_sum < 0) {  // This condition is rarely based
         handle_error_cold("Negative total sum detected");
     }
     
@@ -277,7 +277,7 @@ slay main() -> void {
     println("- Reduced code size for cold functions");
 }
 
-// Benchmark harness for PGO testing
+fr fr Benchmark harness for PGO testing
 slay benchmark_pgo_effectiveness() -> void {
     println("PGO Benchmark Harness");
     println("====================");
@@ -321,28 +321,28 @@ slay benchmark_pgo_effectiveness() -> void {
     println("Branch results count: " + branch_results.len().to_string());
 }
 
-/// Instructions for using this demo with PGO:
-/// 
-/// 1. Generate instrumented binary:
-///    cursed pgo generate pgo_comprehensive_demo.csd --output demo_instrumented
-/// 
-/// 2. Collect profile data:
-///    cursed pgo collect demo_instrumented --runs 5 --benchmark
-/// 
-/// 3. Analyze profile data:
-///    cursed pgo analyze profile.data --detailed --format text
-/// 
-/// 4. Apply optimizations:
-///    cursed pgo apply pgo_comprehensive_demo.csd --profile profile.data --strategy speed
-/// 
-/// 5. Full workflow:
-///    cursed pgo workflow pgo_comprehensive_demo.csd --training-runs 3 --benchmark
-/// 
-/// Expected optimizations:
-/// - fibonacci_iterative: Function inlining and loop optimization
-/// - matrix_multiply: Vectorization and cache optimization
-/// - process_array_hot: Loop unrolling and branch optimization
-/// - classify_number: Branch prediction optimization
-/// - apply_operation: Indirect call promotion
-/// - handle_error_cold: Size optimization (cold function)
-/// - complex_algorithm: Control flow optimization
+fr fr/ Instructions for using this demo with PGO:
+fr fr/ 
+fr fr/ 1. Generate instrumented binary:
+fr fr/    cursed pgo generate pgo_comprehensive_demo.csd --output demo_instrumented
+fr fr/ 
+fr fr/ 2. Collect profile data:
+fr fr/    cursed pgo collect demo_instrumented --runs 5 --benchmark
+fr fr/ 
+fr fr/ 3. Analyze profile data:
+fr fr/    cursed pgo analyze profile.data --detailed --format text
+fr fr/ 
+fr fr/ 4. Apply optimizations:
+fr fr/    cursed pgo apply pgo_comprehensive_demo.csd --profile profile.data --strategy speed
+fr fr/ 
+fr fr/ 5. Full workflow:
+fr fr/    cursed pgo workflow pgo_comprehensive_demo.csd --training-runs 3 --benchmark
+fr fr/ 
+fr fr/ Expected optimizations:
+fr fr/ - fibonacci_iterative: Function inlining and loop optimization
+fr fr/ - matrix_multiply: Vectorization and cache optimization
+fr fr/ - process_array_hot: Loop unrolling and branch optimization
+fr fr/ - classify_number: Branch prediction optimization
+fr fr/ - apply_operation: Indirect call promotion
+fr fr/ - handle_error_cold: Size optimization (cold function)
+fr fr/ - complex_algorithm: Control flow optimization

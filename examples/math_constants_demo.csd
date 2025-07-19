@@ -1,10 +1,10 @@
 #!/usr/bin/env cursed
 
-// Mathematical Constants Demo Program
-// Demonstrates comprehensive usage of CURSED mathematical constants and utilities
+fr fr Mathematical Constants Demo Program
+fr fr Demonstrates comprehensive usage of CURSED mathematical constants and utilities
 
-import "stdlib::math::constants";
-import "stdlib::math::trigonometry";
+yeet "stdlib::math::constants"
+yeet "stdlib::math::trigonometry"
 
 func main() {
     // ========================================================================
@@ -269,7 +269,7 @@ func main() {
     println("Mathematical constants demo completed successfully!");
 }
 
-// Helper functions for the demo
+fr fr Helper functions for the demo
 func abs(x: f64) -> f64 {
     if x < 0.0 { -x } else { x }
 }

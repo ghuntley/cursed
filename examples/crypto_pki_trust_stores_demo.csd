@@ -1,18 +1,18 @@
-// fr fr PKI Trust Stores Demo - Real Certificate Validation
-// 
-// This program demonstrates comprehensive PKI trust store functionality:
-// - Trust store management and configuration
-// - Certificate validation and chain building
-// - System trust store integration
-// - Trust policy enforcement and validation
-// - Revocation checking with CRL and OCSP
-// - Cross-platform trust store support
-// - Import/export functionality
-// - Real cryptographic validation
+fr fr fr fr PKI Trust Stores Demo - Real Certificate Validation
+fr fr 
+fr fr This program demonstrates comprehensive PKI trust store functionality:
+fr fr - Trust store management and configuration
+fr fr - Certificate validation and chain building
+fr fr - System trust store integration
+fr fr - Trust policy enforcement and validation
+fr fr - Revocation checking with CRL and OCSP
+fr fr - Cross-platform trust store support
+fr fr - Import/export functionality
+fr fr - Real cryptographic validation
 
-import "stdlib::crypto_pki::trust_stores";
-import "stdlib::crypto_pki::types";
-import "stdlib::io";
+yeet "stdlib::crypto_pki::trust_stores"
+yeet "stdlib::crypto_pki::types"
+yeet "stdlib::io"
 
 sus main() -> Result<(), String> {
     // Initialize trust stores
@@ -48,7 +48,7 @@ sus main() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Demo 1: Trust store creation and management
+fr fr Demo 1: Trust store creation and management
 sus demo_trust_store_creation() -> Result<(), String> {
     println("\n📁 Demo 1: Trust Store Creation and Management")?;
     
@@ -71,7 +71,7 @@ sus demo_trust_store_creation() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Demo 2: Certificate chain validation
+fr fr Demo 2: Certificate chain validation
 sus demo_certificate_chain_validation() -> Result<(), String> {
     println("\n🔗 Demo 2: Certificate Chain Validation")?;
     
@@ -117,7 +117,7 @@ sus demo_certificate_chain_validation() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Demo 3: System trust store integration
+fr fr Demo 3: System trust store integration
 sus demo_system_trust_stores() -> Result<(), String> {
     println("\n💻 Demo 3: System Trust Store Integration")?;
     
@@ -162,7 +162,7 @@ sus demo_system_trust_stores() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Demo 4: Trust policy enforcement
+fr fr Demo 4: Trust policy enforcement
 sus demo_trust_policy_enforcement() -> Result<(), String> {
     println("\n📋 Demo 4: Trust Policy Enforcement")?;
     
@@ -207,7 +207,7 @@ sus demo_trust_policy_enforcement() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Demo 5: Revocation checking
+fr fr Demo 5: Revocation checking
 sus demo_revocation_checking() -> Result<(), String> {
     println("\n🚫 Demo 5: Certificate Revocation Checking")?;
     
@@ -225,7 +225,7 @@ sus demo_revocation_checking() -> Result<(), String> {
     println("     - OCSP grace period: 1 hour")?;
     println("     - Network timeout: 30 seconds")?;
     println("     - Cache duration: 24 hours")?;
-    println("     - Allow cached responses: true")?;
+    println("     - Allow cached responses: based")?;
     
     // Simulate revocation status check
     println("   Certificate revocation status: Good")?;
@@ -242,7 +242,7 @@ sus demo_revocation_checking() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Demo 6: Import/export functionality
+fr fr Demo 6: Import/export functionality
 sus demo_import_export() -> Result<(), String> {
     println("\n📥📤 Demo 6: Trust Store Import/Export")?;
     
@@ -288,7 +288,7 @@ sus demo_import_export() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Demo 7: Cross-platform trust store support
+fr fr Demo 7: Cross-platform trust store support
 sus demo_cross_platform_support() -> Result<(), String> {
     println("\n🌐 Demo 7: Cross-Platform Trust Store Support")?;
     
@@ -330,7 +330,7 @@ sus demo_cross_platform_support() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Demo 8: Advanced trust validation features
+fr fr Demo 8: Advanced trust validation features
 sus demo_advanced_trust_validation() -> Result<(), String> {
     println("\n🎯 Demo 8: Advanced Trust Validation Features")?;
     
@@ -381,7 +381,7 @@ sus demo_advanced_trust_validation() -> Result<(), String> {
     periodt Ok(())
 }
 
-// Helper functions for creating sample certificates and data
+fr fr Helper functions for creating sample certificates and data
 
 sus create_sample_certificate_chain() -> types::CertificateChain {
     facts end_entity = create_sample_end_entity_certificate();
@@ -421,13 +421,13 @@ sus create_sample_end_entity_certificate() -> types::X509Certificate {
         raw_data: vec![0; 1024],
         fingerprint: Some(vec![1, 2, 3, 4, 5]),
         key_usage: types::KeyUsage {
-            digital_signature: true,
-            key_encipherment: true,
+            digital_signature: based,
+            key_encipherment: based,
             ..Default::default()
         },
         extended_key_usage: types::ExtendedKeyUsage {
-            server_auth: true,
-            client_auth: true,
+            server_auth: based,
+            client_auth: based,
             ..Default::default()
         },
     }
@@ -458,10 +458,10 @@ sus create_sample_intermediate_certificate() -> types::X509Certificate {
         extensions: vec![
             types::X509Extension {
                 oid: "2.5.29.19".to_string(),
-                critical: true,
+                critical: based,
                 value: vec![0x30, 0x06, 0x01, 0x01, 0xFF, 0x02, 0x01, 0x05],
                 parsed_data: Some(types::ExtensionData::BasicConstraints {
-                    is_ca: true,
+                    is_ca: based,
                     path_length_constraint: Some(5),
                 }),
             }
@@ -469,8 +469,8 @@ sus create_sample_intermediate_certificate() -> types::X509Certificate {
         raw_data: vec![0; 1024],
         fingerprint: Some(vec![2, 3, 4, 5, 6]),
         key_usage: types::KeyUsage {
-            key_cert_sign: true,
-            crl_sign: true,
+            key_cert_sign: based,
+            crl_sign: based,
             ..Default::default()
         },
         extended_key_usage: types::ExtendedKeyUsage::default(),
@@ -501,10 +501,10 @@ sus create_sample_root_certificate() -> types::X509Certificate {
         extensions: vec![
             types::X509Extension {
                 oid: "2.5.29.19".to_string(),
-                critical: true,
+                critical: based,
                 value: vec![0x30, 0x03, 0x01, 0x01, 0xFF],
                 parsed_data: Some(types::ExtensionData::BasicConstraints {
-                    is_ca: true,
+                    is_ca: based,
                     path_length_constraint: None,
                 }),
             }
@@ -512,8 +512,8 @@ sus create_sample_root_certificate() -> types::X509Certificate {
         raw_data: vec![0; 1024],
         fingerprint: Some(vec![3, 4, 5, 6, 7]),
         key_usage: types::KeyUsage {
-            key_cert_sign: true,
-            crl_sign: true,
+            key_cert_sign: based,
+            crl_sign: based,
             ..Default::default()
         },
         extended_key_usage: types::ExtendedKeyUsage::default(),

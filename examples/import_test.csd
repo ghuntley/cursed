@@ -1,7 +1,7 @@
 vibe main
 
-import "./packages/utils"
-import "./packages/math_utils"
+yeet "./packages/utils"
+yeet "./packages/math_utils"
 
 slay main() {
     let result1 = utils.add(5, 3)

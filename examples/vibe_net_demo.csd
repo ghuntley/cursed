@@ -1,8 +1,8 @@
-// VibeNet Networking Demo - Complete networking example
-// This example demonstrates the comprehensive networking capabilities of the CURSED VibeNet package
+fr fr VibeNet Networking Demo - Complete networking example
+fr fr This example demonstrates the comprehensive networking capabilities of the CURSED VibeNet package
 
-import "stdlib::vibe_net";
-import "stdlib::oglogging";
+yeet "stdlib::vibe_net"
+yeet "stdlib::oglogging"
 
 slay runVibeNetDemo() {
     oglogging.spill("🌐 VibeNet Demo - Let's get connected!")

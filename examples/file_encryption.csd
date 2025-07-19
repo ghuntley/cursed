@@ -1,5 +1,5 @@
-// fr fr File Encryption Utility - secure file protection bestie
-// Command-line tool for encrypting/decrypting files with maximum security periodt
+fr fr fr fr File Encryption Utility - secure file protection bestie
+fr fr Command-line tool for encrypting/decrypting files with maximum security periodt
 
 use crypto_advanced::{AesGcm256, ChaCha20Poly1305}
 use crypto_asymmetric::{KeyGenerator}
@@ -8,7 +8,7 @@ use crypto_random::{fill_random}
 use crypto_kdf::{pbkdf2_derive, argon2_derive}
 use std::{fs, io, path::Path}
 
-// File encryption metadata
+fr fr File encryption metadata
 squad EncryptionMetadata {
     algorithm: String,
     kdf_algorithm: String,
@@ -18,13 +18,13 @@ squad EncryptionMetadata {
     version: u8,
 }
 
-// Encrypted file structure
+fr fr Encrypted file structure
 squad EncryptedFile {
     metadata: EncryptionMetadata,
     encrypted_content: Vec<u8>,
 }
 
-// Encryption configuration
+fr fr Encryption configuration
 squad EncryptionConfig {
     algorithm: EncryptionAlgorithm,
     kdf_algorithm: KdfAlgorithm,
@@ -43,7 +43,7 @@ enum KdfAlgorithm {
 }
 
 impl Default for EncryptionConfig {
-    fn default() -> Self {
+    slay default() -> Self {
         EncryptionConfig {
             algorithm: EncryptionAlgorithm::AesGcm256,
             kdf_algorithm: KdfAlgorithm::Argon2,
@@ -55,7 +55,7 @@ impl Default for EncryptionConfig {
 
 impl EncryptionConfig {
     // slay Create high-security configuration
-    fn high_security() -> Self {
+    slay high_security() -> Self {
         EncryptionConfig {
             algorithm: EncryptionAlgorithm::ChaCha20Poly1305,
             kdf_algorithm: KdfAlgorithm::Argon2,
@@ -65,7 +65,7 @@ impl EncryptionConfig {
     }
     
     // slay Create fast configuration for large files
-    fn fast_mode() -> Self {
+    slay fast_mode() -> Self {
         EncryptionConfig {
             algorithm: EncryptionAlgorithm::AesGcm256,
             kdf_algorithm: KdfAlgorithm::Pbkdf2,
@@ -75,7 +75,7 @@ impl EncryptionConfig {
     }
 }
 
-fn main() {
+slay main() {
     print("🔐 CURSED File Encryption Utility")
     print("=================================")
     
@@ -111,7 +111,7 @@ fn main() {
     }
 }
 
-fn print_usage() {
+slay print_usage() {
     print("Usage:")
     print("  cursed file_encryption.csd encrypt <file_path>")
     print("  cursed file_encryption.csd decrypt <file_path>")
@@ -123,7 +123,7 @@ fn print_usage() {
     print("  cursed file_encryption.csd demo")
 }
 
-fn encrypt_file_interactive(file_path: &str) {
+slay encrypt_file_interactive(file_path: &str) {
     print(f"🔒 Encrypting file: {file_path}")
     
     // Check if file exists
@@ -183,7 +183,7 @@ fn encrypt_file_interactive(file_path: &str) {
     }
 }
 
-fn decrypt_file_interactive(file_path: &str) {
+slay decrypt_file_interactive(file_path: &str) {
     print(f"🔓 Decrypting file: {file_path}")
     
     // Check if file exists
@@ -219,7 +219,7 @@ fn decrypt_file_interactive(file_path: &str) {
     }
 }
 
-fn encrypt_file(file_path: &str, password: &str, config: &EncryptionConfig) -> Result<String, Box<dyn std::error::Error>> {
+slay encrypt_file(file_path: &str, password: &str, config: &EncryptionConfig) -> Result<String, Box<dyn std::error::Error>> {
     print("Reading file content...")
     sus file_content = fs::read(file_path)?
     print(f"File size: {} bytes", file_content.len())
@@ -267,7 +267,7 @@ fn encrypt_file(file_path: &str, password: &str, config: &EncryptionConfig) -> R
     Ok(output_path)
 }
 
-fn decrypt_file(file_path: &str, password: &str) -> Result<String, Box<dyn std::error::Error>> {
+slay decrypt_file(file_path: &str, password: &str) -> Result<String, Box<dyn std::error::Error>> {
     print("Reading encrypted file...")
     sus encrypted_data = fs::read(file_path)?
     
@@ -316,7 +316,7 @@ fn decrypt_file(file_path: &str, password: &str) -> Result<String, Box<dyn std::
     Ok(output_path)
 }
 
-fn derive_key_from_password(password: &[u8], salt: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+slay derive_key_from_password(password: &[u8], salt: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     vibe_check &config.kdf_algorithm {
         mood KdfAlgorithm::Pbkdf2 => {
             Ok(pbkdf2_derive(password, salt, config.kdf_iterations, config.key_size)?)
@@ -327,7 +327,7 @@ fn derive_key_from_password(password: &[u8], salt: &[u8], config: &EncryptionCon
     }
 }
 
-fn encrypt_content(content: &[u8], key: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+slay encrypt_content(content: &[u8], key: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     vibe_check &config.algorithm {
         mood EncryptionAlgorithm::AesGcm256 => {
             sus cipher = AesGcm256::new(key)?
@@ -340,7 +340,7 @@ fn encrypt_content(content: &[u8], key: &[u8], config: &EncryptionConfig) -> Res
     }
 }
 
-fn decrypt_content(encrypted: &[u8], key: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+slay decrypt_content(encrypted: &[u8], key: &[u8], config: &EncryptionConfig) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     vibe_check &config.algorithm {
         mood EncryptionAlgorithm::AesGcm256 => {
             sus cipher = AesGcm256::new(key)?
@@ -353,7 +353,7 @@ fn decrypt_content(encrypted: &[u8], key: &[u8], config: &EncryptionConfig) -> R
     }
 }
 
-fn serialize_encrypted_file(encrypted_file: &EncryptedFile) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+slay serialize_encrypted_file(encrypted_file: &EncryptedFile) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     // Simple binary serialization format
     sus mut result = Vec::new()
     
@@ -393,7 +393,7 @@ fn serialize_encrypted_file(encrypted_file: &EncryptedFile) -> Result<Vec<u8>, B
     Ok(result)
 }
 
-fn deserialize_encrypted_file(data: &[u8]) -> Result<EncryptedFile, Box<dyn std::error::Error>> {
+slay deserialize_encrypted_file(data: &[u8]) -> Result<EncryptedFile, Box<dyn std::error::Error>> {
     sus mut offset = 0
     
     // Check magic header
@@ -463,7 +463,7 @@ fn deserialize_encrypted_file(data: &[u8]) -> Result<EncryptedFile, Box<dyn std:
 }
 
 impl EncryptionConfig {
-    fn from_metadata(metadata: &EncryptionMetadata) -> Result<Self, Box<dyn std::error::Error>> {
+    slay from_metadata(metadata: &EncryptionMetadata) -> Result<Self, Box<dyn std::error::Error>> {
         sus algorithm = vibe_check metadata.algorithm.as_str() {
             mood "AesGcm256" => EncryptionAlgorithm::AesGcm256,
             mood "ChaCha20Poly1305" => EncryptionAlgorithm::ChaCha20Poly1305,
@@ -486,7 +486,7 @@ impl EncryptionConfig {
 }
 
 impl EncryptionAlgorithm {
-    fn name(&self) -> &'static str {
+    slay name(&self) -> &'static str {
         vibe_check self {
             mood EncryptionAlgorithm::AesGcm256 => "AesGcm256",
             mood EncryptionAlgorithm::ChaCha20Poly1305 => "ChaCha20Poly1305",
@@ -495,7 +495,7 @@ impl EncryptionAlgorithm {
 }
 
 impl KdfAlgorithm {
-    fn name(&self) -> &'static str {
+    slay name(&self) -> &'static str {
         vibe_check self {
             mood KdfAlgorithm::Pbkdf2 => "Pbkdf2",
             mood KdfAlgorithm::Argon2 => "Argon2",
@@ -503,27 +503,27 @@ impl KdfAlgorithm {
     }
 }
 
-fn verify_decrypted_file(file_path: &str) -> bool {
+slay verify_decrypted_file(file_path: &str) -> bool {
     // Basic file verification - check if file is readable
     vibe_check fs::read(file_path) {
-        mood Ok(_) => true,
-        mood Err(_) => false,
+        mood Ok(_) => based,
+        mood Err(_) => cap,
     }
 }
 
-fn read_password() -> String {
+slay read_password() -> String {
     // In real implementation, use proper password input that doesn't echo
     // For demo, we'll use regular input
     read_line().trim().to_string()
 }
 
-fn read_line() -> String {
+slay read_line() -> String {
     sus mut input = String::new()
     io::stdin().read_line(&mut input).unwrap()
     input
 }
 
-fn run_encryption_demo() {
+slay run_encryption_demo() {
     print("🎭 File Encryption Demo")
     print("======================")
     

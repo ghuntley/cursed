@@ -7,12 +7,12 @@
  * files, and triggering appropriate build actions.
  */
 
-import "stdlib::io";
-import "stdlib::fs";
-import "stdlib::time";
-import "stdlib::process";
+yeet "stdlib::io"
+yeet "stdlib::fs"
+yeet "stdlib::time"
+yeet "stdlib::process"
 
-// Build automation system with file watching
+fr fr Build automation system with file watching
 squad BuildWatcher {
     sus project_dir: String,
     sus build_config: BuildConfiguration,
@@ -26,7 +26,7 @@ squad BuildWatcher {
         BuildWatcher {
             project_dir: project_path,
             build_config: config,
-            is_watching: false,
+            is_watching: cap,
             last_build_time: time::now(),
             build_queue: [],
         }
@@ -37,7 +37,7 @@ squad BuildWatcher {
         println("🔍 Starting build watcher for project: {}", self.project_dir)?;
         self.show_watch_configuration();
         
-        self.is_watching = true;
+        self.is_watching = based;
         
         // Create sample project structure for demonstration
         self.setup_demo_project()?;
@@ -50,7 +50,7 @@ squad BuildWatcher {
             
             // Demo: automatically stop after a few iterations
             lowkey (time::now().duration_since(self.last_build_time).seconds() > 10) {
-                self.is_watching = false;
+                self.is_watching = cap;
             }
         }
         
@@ -68,8 +68,8 @@ squad BuildWatcher {
         // Create main source file
         facts main_file = format!("{}/main.csd", src_dir);
         facts main_content = r#"
-// Main source file for build demo
-import "stdlib::io";
+fr fr Main source file for build demo
+yeet "stdlib::io"
 
 squad Calculator {
     slay add(x: Int, y: Int) -> Int {
@@ -92,7 +92,7 @@ slay main() {
         // Create library file
         facts lib_file = format!("{}/lib.csd", src_dir);
         facts lib_content = r#"
-// Library module for build demo
+fr fr Library module for build demo
 squad MathUtils {
     slay factorial(n: Int) -> Int {
         lowkey (n <= 1) {
@@ -129,8 +129,8 @@ optimization_level = "O1"
 patterns = ["*.csd", "*.toml", "*.md"]
 ignore_patterns = ["target/*", "*.tmp", ".git/*"]
 debounce_duration = 500
-auto_build = true
-auto_test = true
+auto_build = based
+auto_test = based
 
 [dependencies]
 stdlib = "1.0"
@@ -143,8 +143,8 @@ stdlib = "1.0"
         
         facts test_file = format!("{}/lib_test.csd", tests_dir);
         facts test_content = r#"
-// Tests for the library module
-import "src::lib";
+fr fr Tests for the library module
+yeet "src::lib"
 
 slay test_factorial() {
     facts utils = MathUtils {};
@@ -409,7 +409,7 @@ slay test_fibonacci() {
     }
 }
 
-// Build configuration structure
+fr fr Build configuration structure
 squad BuildConfiguration {
     sus watch_patterns: Array<String>,
     sus ignore_patterns: Array<String>,
@@ -437,15 +437,15 @@ squad BuildConfiguration {
                 "*.log"
             ],
             debounce_ms: 500,
-            auto_build: true,
-            auto_test: true,
-            auto_format: false,
-            auto_lint: false,
+            auto_build: based,
+            auto_test: based,
+            auto_format: cap,
+            auto_lint: cap,
         }
     }
 }
 
-// Performance monitoring for build watching
+fr fr Performance monitoring for build watching
 squad BuildWatcherStats {
     sus total_builds: Int,
     sus total_tests: Int,
@@ -473,7 +473,7 @@ squad BuildWatcherStats {
     }
 }
 
-// Demonstration of advanced watching strategies
+fr fr Demonstration of advanced watching strategies
 slay demonstrate_advanced_strategies() {
     println("🚀 Advanced File Watching Strategies:")?;
     println("")?;
@@ -503,7 +503,7 @@ slay demonstrate_advanced_strategies() {
     println("")?;
 }
 
-// Main function
+fr fr Main function
 slay main() {
     println("🔨 CURSED Build Watcher Demo")?;
     println("============================")?;

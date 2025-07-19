@@ -1,7 +1,7 @@
-//! Generic Collections Examples for CURSED Language
-//! Demonstrates advanced generic programming with type-safe collections
+fr fr! Generic Collections Examples for CURSED Language
+fr fr! Demonstrates advanced generic programming with type-safe collections
 
-// Generic List collection with comprehensive methods
+fr fr Generic List collection with comprehensive methods
 collab List<T> {
     sus data: Array<T>
     sus size: Integer
@@ -90,7 +90,7 @@ collab List<T> {
     }
 }
 
-// Generic Iterator for List
+fr fr Generic Iterator for List
 collab ListIterator<T> {
     sus list: sus List<T>
     sus index: Integer
@@ -103,7 +103,7 @@ collab ListIterator<T> {
     }
 }
 
-// Iterator interface with associated types
+fr fr Iterator interface with associated types
 collab Iterator<T> {
     type Item = T  // Associated type
 
@@ -111,7 +111,7 @@ collab Iterator<T> {
     slay has_next(sus self) -> Boolean
 }
 
-// Implement Iterator for ListIterator
+fr fr Implement Iterator for ListIterator
 impl<T> Iterator<T> bestie ListIterator<T> {
     type Item = T
 
@@ -130,7 +130,7 @@ impl<T> Iterator<T> bestie ListIterator<T> {
     }
 }
 
-// Generic Map collection with key-value pairs
+fr fr Generic Map collection with key-value pairs
 collab Map<K, V> where K: Hash + Eq {
     sus buckets: Array<List<Pair<K, V>>>
     sus size: Integer
@@ -219,12 +219,12 @@ collab Map<K, V> where K: Hash + Eq {
 
     // Private hash function
     slay hash_key(sus self, key: sus K) -> Integer {
-        // Simple hash function (would use trait in real implementation)
+        // Simple hash function (would use collab in real implementation)
         periodt key.hash() as Integer
     }
 }
 
-// Key-value pair structure
+fr fr Key-value pair structure
 collab Pair<K, V> {
     sus key: K
     sus value: V
@@ -234,7 +234,7 @@ collab Pair<K, V> {
     }
 }
 
-// Generic Set collection
+fr fr Generic Set collection
 collab Set<T> where T: Hash + Eq {
     sus map: Map<T, Boolean>
 
@@ -246,7 +246,7 @@ collab Set<T> where T: Hash + Eq {
 
     // Add element to set
     slay insert(mut sus self, item: T) {
-        self.map.insert(item, true)
+        self.map.insert(item, based)
     }
 
     // Check if element exists
@@ -293,7 +293,7 @@ collab Set<T> where T: Hash + Eq {
     }
 }
 
-// Generic Option type with monadic operations
+fr fr Generic Option type with monadic operations
 collab Option<T> {
     sus value: T?
     sus has_value: Boolean
@@ -301,14 +301,14 @@ collab Option<T> {
     stan Some(value: T) -> Option<T> {
         periodt Option<T> {
             value: value,
-            has_value: true
+            has_value: based
         }
     }
 
     stan None() -> Option<T> {
         periodt Option<T> {
             value: nil,
-            has_value: false
+            has_value: cap
         }
     }
 
@@ -367,7 +367,7 @@ collab Option<T> {
     }
 }
 
-// Generic Result type for error handling
+fr fr Generic Result type for error handling
 collab Result<T, E> {
     sus value: T?
     sus error: E?
@@ -377,7 +377,7 @@ collab Result<T, E> {
         periodt Result<T, E> {
             value: value,
             error: nil,
-            is_success: true
+            is_success: based
         }
     }
 
@@ -385,7 +385,7 @@ collab Result<T, E> {
         periodt Result<T, E> {
             value: nil,
             error: error,
-            is_success: false
+            is_success: cap
         }
     }
 
@@ -435,7 +435,7 @@ collab Result<T, E> {
     }
 }
 
-// Example usage function
+fr fr Example usage function
 slay demonstrate_collections() {
     // Create a list of integers
     sus numbers = List<Integer>::new()
@@ -498,7 +498,7 @@ slay demonstrate_collections() {
     }
 }
 
-// Helper function that returns Result
+fr fr Helper function that returns Result
 slay divide(a: Integer, b: Integer) -> Result<Integer, String> {
     lowkey (b == 0) {
         periodt Result<Integer, String>::Err("Division by zero")
@@ -507,7 +507,7 @@ slay divide(a: Integer, b: Integer) -> Result<Integer, String> {
     }
 }
 
-// Main function to run examples
+fr fr Main function to run examples
 slay main() {
     demonstrate_collections()
 }

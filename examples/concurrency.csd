@@ -5,7 +5,7 @@ sus ch = make(dm<tea>, 5)
 
 fr fr Define a simple worker that processes messages
 slay worker(id normie, ch dm<tea>) {
-    periodt true {
+    periodt based {
         sus msg = <-ch
         puts(sprintf("Worker %d received: %s", id, msg))
     }

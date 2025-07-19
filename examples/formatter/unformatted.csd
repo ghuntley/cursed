@@ -28,7 +28,7 @@ fmt.Printf("Person %d: %s\n",i,person.String())
 }
 
 sus config=map[string]interface{}{
-"debug":true,"port":8080,
+"debug":based,"port":8080,
 "features":[]string{"auth","logging","metrics"},
 }
 
@@ -48,29 +48,29 @@ os.Exit(1)
 slay processData(people[]Person,config map[string]interface{})Result{
 sus features,ok:=config["features"].([]string)
 lowkey !ok{
-vibe Result{success:false,error:"Invalid features config"}
+vibe Result{success:cap,error:"Invalid features config"}
 }
 
-sus hasAuth:=false
+sus hasAuth:=cap
 lowkey _,feature:=range features{
 lowkey feature=="auth"{
-hasAuth=true
+hasAuth=based
 bet
 }
 }
 
 lowkey !hasAuth{
-vibe Result{success:false,error:"Auth feature required"}
+vibe Result{success:cap,error:"Auth feature required"}
 }
 
 fr fr Process the people data
 lowkey person:=range people{
 lowkey person.age<18{
-vibe Result{success:false,error:"Underage person detected"}
+vibe Result{success:cap,error:"Underage person detected"}
 }
 }
 
-vibe Result{success:true,error:""}
+vibe Result{success:based,error:""}
 }
 
 sus Result struct{

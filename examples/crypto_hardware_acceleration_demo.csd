@@ -1,10 +1,10 @@
 #!/usr/bin/env cursed
 
-// Hardware Acceleration Detection Demo
-// Demonstrates comprehensive hardware acceleration capabilities detection
+fr fr Hardware Acceleration Detection Demo
+fr fr Demonstrates comprehensive hardware acceleration capabilities detection
 
-import "stdlib::io";
-import "stdlib::packages::crypto_asymmetric::hardware_acceleration";
+yeet "stdlib::io"
+yeet "stdlib::packages::crypto_asymmetric::hardware_acceleration"
 
 slay main() -> Result<(), Error> {
     println("🔧 CURSED Hardware Acceleration Detection Demo")?;

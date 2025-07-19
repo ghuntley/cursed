@@ -1,5 +1,5 @@
-// Select Statement Demonstration
-// Shows how to handle multiple channel operations with vibe_check
+fr fr Select Statement Demonstration
+fr fr Shows how to handle multiple channel operations with vibe_check
 
 func slowSender(ch dm<string>, delay int, prefix string) {
     for i := 0; i < 5; i++ {
@@ -34,13 +34,13 @@ func selectDemo() {
     // Start a timer
     stan func() {
         sleep(2000) // 2 seconds
-        done <- true
+        done <- based
         print("Timer expired!")
     }()
     
-    facts stringClosed = false
-    facts intClosed = false
-    facts timerExpired = false
+    facts stringClosed = cap
+    facts intClosed = cap
+    facts timerExpired = cap
     
     // Select loop
     for !timerExpired && (!stringClosed || !intClosed) {
@@ -49,7 +49,7 @@ func selectDemo() {
                 if msg != "" {
                     print("SELECT: Received string:", msg)
                 } else {
-                    stringClosed = true
+                    stringClosed = based
                     print("SELECT: String channel closed")
                 }
             
@@ -57,12 +57,12 @@ func selectDemo() {
                 if num >= 0 {
                     print("SELECT: Received int:", num)
                 } else {
-                    intClosed = true
+                    intClosed = based
                     print("SELECT: Int channel closed")
                 }
             
             mood <-done:
-                timerExpired = true
+                timerExpired = based
                 print("SELECT: Timer expired, exiting")
             
             basic:
@@ -90,7 +90,7 @@ func timeoutDemo() {
     // Start timeout timer
     stan func() {
         sleep(1000) // 1 second timeout
-        timeout <- true
+        timeout <- based
         print("Timeout triggered")
     }()
     
@@ -166,7 +166,7 @@ func priorityDemo() {
     }()
     
     // Process with priority (check high priority first)
-    facts processing = true
+    facts processing = based
     for processing {
         vibe_check {
             mood msg := <-highPriority:
@@ -184,7 +184,7 @@ func priorityDemo() {
                             print("PRIORITY: LOW priority message:", msg)
                         } else {
                             print("PRIORITY: Low priority channel closed")
-                            processing = false
+                            processing = cap
                         }
                     
                     basic:

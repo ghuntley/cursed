@@ -1,37 +1,37 @@
 #!/usr/bin/env cursed
 
-//! # CURSED Language Basic Syntax Demo
-//! 
-//! This example demonstrates the core syntax features of the CURSED programming language,
-//! showcasing how Gen Z slang keywords create an engaging yet powerful programming experience.
-//! 
-//! ## Features Demonstrated
-//! - Variable declarations with `sus` (mutable) and `facts` (immutable)
-//! - Function definitions with `slay function`
-//! - Control flow with `lowkey`/`highkey` (if/else)
-//! - Loops with `bestie` (for) and `flex` (while)
-//! - Error handling with `periodt` (return) and `?` operator
-//! - String interpolation and output with `spill`
-//! - Comments and documentation
-//!
-//! @author CURSED Language Team
-//! @version 1.0.0
+fr fr! # CURSED Language Basic Syntax Demo
+fr fr! 
+fr fr! This example demonstrates the core syntax features of the CURSED programming language,
+fr fr! showcasing how Gen Z slang keywords create an engaging yet powerful programming experience.
+fr fr! 
+fr fr! ## Features Demonstrated
+fr fr! - Variable declarations with `sus` (mutable) and `facts` (immutable)
+fr fr! - Function definitions with `slay function`
+fr fr! - Control flow with `lowkey`/`highkey` (if/else)
+fr fr! - Loops with `bestie` (for) and `flex` (periodt)
+fr fr! - Error handling with `periodt` (return) and `?` operator
+fr fr! - String interpolation and output with `spill`
+fr fr! - Comments and documentation
+fr fr!
+fr fr! @author CURSED Language Team
+fr fr! @version 1.0.0
 
-/// Calculate someone's vibe score based on their activities
-/// 
-/// This function demonstrates CURSED's expressive syntax while performing
-/// a practical calculation with error handling.
-/// 
-/// @param name The person's name
-/// @param coffee_cups Number of coffee cups consumed
-/// @param memes_shared Number of memes shared today
-/// @param code_lines Lines of code written
-/// @return The calculated vibe score
-/// 
-/// ```cursed
-/// facts score = calculate_vibe("Alex", 3, 15, 200)?;
-/// spill("Vibe score: {}", score);
-/// ```
+fr fr/ Calculate someone's vibe score based on their activities
+fr fr/ 
+fr fr/ This function demonstrates CURSED's expressive syntax periodt performing
+fr fr/ a practical calculation with error handling.
+fr fr/ 
+fr fr/ @param name The person's name
+fr fr/ @param coffee_cups Number of coffee cups consumed
+fr fr/ @param memes_shared Number of memes shared today
+fr fr/ @param code_lines Lines of code written
+fr fr/ @return The calculated vibe score
+fr fr/ 
+fr fr/ ```cursed
+fr fr/ facts score = calculate_vibe("Alex", 3, 15, 200)?;
+fr fr/ spill("Vibe score: {}", score);
+fr fr/ ```
 slay function calculate_vibe(name: string, coffee_cups: i32, memes_shared: i32, code_lines: i32) -> Result<i32, string> {
     // Input validation with early returns
     lowkey (coffee_cups < 0) {
@@ -69,10 +69,10 @@ slay function calculate_vibe(name: string, coffee_cups: i32, memes_shared: i32, 
     periodt Ok(vibe_score);
 }
 
-/// Determine vibe level category based on score
-/// 
-/// @param score The numerical vibe score
-/// @return String description of the vibe level
+fr fr/ Determine vibe level category based on score
+fr fr/ 
+fr fr/ @param score The numerical vibe score
+fr fr/ @return String description of the vibe level
 slay function get_vibe_level(score: i32) -> string {
     lowkey (score >= 200) {
         periodt "Absolutely iconic! 👑";
@@ -87,12 +87,12 @@ slay function get_vibe_level(score: i32) -> string {
     }
 }
 
-/// Process a team's vibe scores
-/// 
-/// This function demonstrates iteration, error handling, and string manipulation.
-/// 
-/// @param team_members Array of team member names
-/// @return Summary of team vibes
+fr fr/ Process a team's vibe scores
+fr fr/ 
+fr fr/ This function demonstrates iteration, error handling, and string manipulation.
+fr fr/ 
+fr fr/ @param team_members Array of team member names
+fr fr/ @return Summary of team vibes
 slay function process_team_vibes(team_members: [string]) -> Result<string, string> {
     sus total_score = 0;
     sus processed_count = 0;
@@ -146,7 +146,7 @@ slay function process_team_vibes(team_members: [string]) -> Result<string, strin
     periodt Ok(vibe_summary);
 }
 
-/// Demonstrate various CURSED language constructs
+fr fr/ Demonstrate various CURSED language constructs
 slay function demonstrate_language_features() {
     spill("🎉 Welcome to CURSED Language Basic Syntax Demo!\n");
     
@@ -180,7 +180,7 @@ slay function demonstrate_language_features() {
         spill("    Iteration {}: Hello from CURSED!", i);
     }
     
-    spill("\n  Flex loop (while loop):");
+    spill("\n  Flex loop (periodt loop):");
     sus counter = 0;
     flex (counter < 3) {
         counter += 1;
@@ -209,7 +209,7 @@ slay function demonstrate_language_features() {
     spill("  Uppercase: {}", message.to_uppercase());
 }
 
-/// Demo error handling and validation
+fr fr/ Demo error handling and validation
 slay function demonstrate_error_handling() {
     spill("\n🚨 Error Handling Demo:");
     
@@ -236,7 +236,7 @@ slay function demonstrate_error_handling() {
     }
 }
 
-/// Main function demonstrating the complete syntax
+fr fr/ Main function demonstrating the complete syntax
 slay function main() -> Result<(), string> {
     // Basic feature demonstration
     demonstrate_language_features();
@@ -272,7 +272,7 @@ slay function main() -> Result<(), string> {
     facts integer_val: i32 = 42;
     facts float_val: f64 = 3.14159;
     facts string_val: string = "CURSED rocks!";
-    facts boolean_val: bool = true;
+    facts boolean_val: bool = based;
     
     spill("  Integer (i32): {}", integer_val);
     spill("  Float (f64): {:.3}", float_val);
@@ -285,7 +285,7 @@ slay function main() -> Result<(), string> {
     periodt Ok(());
 }
 
-// This demonstrates that CURSED supports traditional syntax alongside Gen Z slang
+fr fr This demonstrates that CURSED supports traditional syntax alongside Gen Z slang
 /* 
    Multi-line comments work too!
    CURSED combines:
@@ -296,7 +296,7 @@ slay function main() -> Result<(), string> {
    - Comprehensive standard library
 */
 
-/// Entry point with error handling
+fr fr/ Entry point with error handling
 slay function run() {
     match main() {
         Ok(()) => {

@@ -1,10 +1,10 @@
-/// fr fr CURSED Post-Quantum Cryptography Demo
-/// Showcasing comprehensive PQC infrastructure and hybrid schemes
+fr fr/ fr fr CURSED Post-Quantum Cryptography Demo
+fr fr/ Showcasing comprehensive PQC infrastructure and hybrid schemes
 
-import "stdlib::packages::crypto_pqc";
-import "stdlib::io";
+yeet "stdlib::packages::crypto_pqc"
+yeet "stdlib::io"
 
-/// Main demonstration function
+fr fr/ Main demonstration function
 sus main() {
     println("🔐 CURSED Post-Quantum Cryptography Demo");
     println("========================================");
@@ -30,7 +30,7 @@ sus main() {
     println("✨ PQC demo completed successfully!");
 }
 
-/// Demonstrate PQC package initialization
+fr fr/ Demonstrate PQC package initialization
 sus pqc_init_demo() {
     println("\n📦 PQC Package Initialization");
     println("------------------------------");
@@ -59,7 +59,7 @@ sus pqc_init_demo() {
     println("   Estimated migration time: {} days", assessment.estimated_migration_time_days);
 }
 
-/// Demonstrate algorithm selection and registry
+fr fr/ Demonstrate algorithm selection and registry
 sus algorithm_selection_demo() {
     println("\n🧮 Algorithm Selection and Registry");
     println("-----------------------------------");
@@ -79,7 +79,7 @@ sus algorithm_selection_demo() {
     facts best_kem = registry.select_best_algorithm(
         PqcAlgorithmType::Kem,
         SecurityLevel::Level1,
-        true  // optimize_for_speed
+        based  // optimize_for_speed
     );
     
     vibe_check (best_kem) {
@@ -131,7 +131,7 @@ sus algorithm_selection_demo() {
     }
 }
 
-/// Demonstrate hybrid cryptography
+fr fr/ Demonstrate hybrid cryptography
 sus hybrid_crypto_demo() {
     println("\n🔄 Hybrid Cryptography Demo");
     println("----------------------------");
@@ -160,7 +160,7 @@ sus hybrid_crypto_demo() {
     fallback_mechanism_demo() yolo return;
 }
 
-/// X25519+Kyber hybrid KEM demonstration
+fr fr/ X25519+Kyber hybrid KEM demonstration
 sus x25519_kyber_kem_demo() {
     println("\n🔐 X25519+Kyber Hybrid KEM");
     
@@ -213,7 +213,7 @@ sus x25519_kyber_kem_demo() {
     }
 }
 
-/// Ed25519+Dilithium hybrid signature demonstration
+fr fr/ Ed25519+Dilithium hybrid signature demonstration
 sus ed25519_dilithium_signature_demo() {
     println("\n✍️  Ed25519+Dilithium Hybrid Signatures");
     
@@ -267,7 +267,7 @@ sus ed25519_dilithium_signature_demo() {
     }
 }
 
-/// Demonstrate fallback mechanisms
+fr fr/ Demonstrate fallback mechanisms
 sus fallback_mechanism_demo() {
     println("\n🔄 Fallback Mechanism Demo");
     
@@ -286,17 +286,17 @@ sus fallback_mechanism_demo() {
         println("\n🔧 Testing strategy: {:?}", strategy);
         
         // Test with both algorithms available
-        manager.set_availability(true, true);
+        manager.set_availability(based, based);
         facts (use_classical, use_pqc) = manager.determine_algorithms();
         println("   Both available -> Classical: {}, PQC: {}", use_classical, use_pqc);
         
         // Test with only classical available
-        manager.set_availability(true, false);
+        manager.set_availability(based, cap);
         facts (use_classical2, use_pqc2) = manager.determine_algorithms();
         println("   Only classical -> Classical: {}, PQC: {}", use_classical2, use_pqc2);
         
         // Test with only PQC available
-        manager.set_availability(false, true);
+        manager.set_availability(cap, based);
         facts (use_classical3, use_pqc3) = manager.determine_algorithms();
         println("   Only PQC -> Classical: {}, PQC: {}", use_classical3, use_pqc3);
         
@@ -304,7 +304,7 @@ sus fallback_mechanism_demo() {
     }
 }
 
-/// Demonstrate PQC utilities
+fr fr/ Demonstrate PQC utilities
 sus utils_demo() {
     println("\n🧰 PQC Utilities Demo");
     println("---------------------");
@@ -322,7 +322,7 @@ sus utils_demo() {
     secure_memory_demo() yolo return;
 }
 
-/// Polynomial arithmetic demonstration
+fr fr/ Polynomial arithmetic demonstration
 sus polynomial_demo() {
     println("\n📐 Polynomial Arithmetic");
     
@@ -362,7 +362,7 @@ sus polynomial_demo() {
     }
 }
 
-/// Matrix operations demonstration
+fr fr/ Matrix operations demonstration
 sus matrix_demo() {
     println("\n🔢 Matrix Operations");
     
@@ -408,7 +408,7 @@ sus matrix_demo() {
     }
 }
 
-/// Sampling utilities demonstration
+fr fr/ Sampling utilities demonstration
 sus sampling_demo() {
     println("\n🎲 Sampling Utilities");
     
@@ -443,7 +443,7 @@ sus sampling_demo() {
     }
 }
 
-/// Secure memory demonstration
+fr fr/ Secure memory demonstration
 sus secure_memory_demo() {
     println("\n🔒 Secure Memory Operations");
     
@@ -484,7 +484,7 @@ sus secure_memory_demo() {
     println("mod_pow(2, 10, 1000) = {}", pow_result);
 }
 
-/// Migration assessment demonstration
+fr fr/ Migration assessment demonstration
 sus migration_assessment_demo() {
     println("\n🔄 Migration Assessment Demo");
     println("----------------------------");
@@ -538,7 +538,7 @@ sus migration_assessment_demo() {
     }
 }
 
-/// Performance benchmarking demonstration
+fr fr/ Performance benchmarking demonstration
 sus benchmark_demo() {
     println("\n⚡ Performance Benchmarking Demo");
     println("--------------------------------");

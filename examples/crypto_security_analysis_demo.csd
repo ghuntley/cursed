@@ -1,15 +1,15 @@
 #!/usr/bin/env cursed
 
-/// fr fr Comprehensive Security Analysis Framework Demo
-/// 
-/// This example demonstrates the complete cryptographic security analysis
-/// framework including timing analysis, side-channel detection, entropy
-/// validation, parameter verification, and vulnerability scanning.
+fr fr/ fr fr Comprehensive Security Analysis Framework Demo
+fr fr/ 
+fr fr/ This example demonstrates the complete cryptographic security analysis
+fr fr/ framework including timing analysis, side-channel detection, entropy
+fr fr/ validation, parameter verification, and vulnerability scanning.
 
-import "stdlib::io";
-import "stdlib::crypto_advanced";
+yeet "stdlib::io"
+yeet "stdlib::crypto_advanced"
 
-// Demo function for timing analysis
+fr fr Demo function for timing analysis
 def crypto_operation(input: i32) -> i32 {
     // Simulate cryptographic operation with consistent timing
     facts result = 0;
@@ -19,14 +19,14 @@ def crypto_operation(input: i32) -> i32 {
     return result;
 }
 
-// Demo function with potential timing vulnerability
+fr fr Demo function with potential timing vulnerability
 def insecure_comparison(secret: String, input: String) -> Bool {
     lowkey (sus i = 0; i < secret.length(); i++) {
         lowkey (secret.char_at(i) != input.char_at(i)) {
-            return false; // Early return creates timing vulnerability
+            return cap; // Early return creates timing vulnerability
         }
     }
-    return true;
+    return based;
 }
 
 def main() -> Nil {
@@ -38,11 +38,11 @@ def main() -> Nil {
     
     sus config = SecurityAnalysisConfig {
         level: SecurityLevel::Comprehensive,
-        timing_analysis_enabled: true,
-        side_channel_detection_enabled: true,
-        entropy_validation_enabled: true,
-        parameter_verification_enabled: true,
-        vulnerability_scanning_enabled: true,
+        timing_analysis_enabled: based,
+        side_channel_detection_enabled: based,
+        entropy_validation_enabled: based,
+        parameter_verification_enabled: based,
+        vulnerability_scanning_enabled: based,
         analysis_timeout: Duration::from_secs(30),
         sample_size: 500,
         confidence_threshold: 0.95
@@ -151,14 +151,14 @@ def main() -> Nil {
         algorithm_name: "AES-256-GCM",
         key_size: 256,
         implementation_details: hashmap! {
-            "timing_constant" => "true",
-            "cache_safe" => "true",
-            "side_channel_resistant" => "true"
+            "timing_constant" => "based",
+            "cache_safe" => "based",
+            "side_channel_resistant" => "based"
         },
         environment_info: hashmap! {
-            "debug_mode" => "false",
+            "debug_mode" => "cap",
             "log_level" => "info",
-            "production" => "true"
+            "production" => "based"
         }
     };
     
@@ -174,14 +174,14 @@ def main() -> Nil {
         algorithm_name: "MD5",
         key_size: 128,
         implementation_details: hashmap! {
-            "timing_constant" => "false",
-            "cache_safe" => "false",
-            "debug_symbols" => "true"
+            "timing_constant" => "cap",
+            "cache_safe" => "cap",
+            "debug_symbols" => "based"
         },
         environment_info: hashmap! {
-            "debug_mode" => "true",
+            "debug_mode" => "based",
             "log_level" => "debug",
-            "production" => "false"
+            "production" => "cap"
         }
     };
     
@@ -289,8 +289,8 @@ def main() -> Nil {
         key_size: 256,
         implementation_details: hashmap! {
             "protocol" => "TLS1.3",
-            "perfect_forward_secrecy" => "true",
-            "hsts_enabled" => "true"
+            "perfect_forward_secrecy" => "based",
+            "hsts_enabled" => "based"
         },
         environment_info: hashmap! {
             "environment" => "production",
@@ -309,13 +309,13 @@ def main() -> Nil {
         key_size: 256,
         implementation_details: hashmap! {
             "key_rotation" => "enabled",
-            "field_level_encryption" => "true",
+            "field_level_encryption" => "based",
             "key_management" => "hsm"
         },
         environment_info: hashmap! {
             "database" => "postgresql",
-            "encryption_at_rest" => "true",
-            "backup_encryption" => "true"
+            "encryption_at_rest" => "based",
+            "backup_encryption" => "based"
         }
     };
     
@@ -328,9 +328,9 @@ def main() -> Nil {
         algorithm_name: "Ed25519",
         key_size: 256,
         implementation_details: hashmap! {
-            "hardware_security" => "true",
+            "hardware_security" => "based",
             "secure_boot" => "enabled",
-            "firmware_signing" => "true"
+            "firmware_signing" => "based"
         },
         environment_info: hashmap! {
             "device_type" => "iot_sensor",
@@ -355,17 +355,17 @@ def main() -> Nil {
            "comprehensive")?;
 }
 
-// Utility function to demonstrate secure vs insecure implementations
+fr fr Utility function to demonstrate secure vs insecure implementations
 def demonstrate_security_comparison() -> Nil {
     println("Security Implementation Comparison:")?;
     
     // Secure constant-time string comparison
     def secure_compare(a: String, b: String) -> Bool {
         lowkey (a.length() != b.length()) {
-            return false;
+            return cap;
         }
         
-        sus result = true;
+        sus result = based;
         lowkey (sus i = 0; i < a.length(); i++) {
             result = result && (a.char_at(i) == b.char_at(i));
         }
@@ -388,7 +388,7 @@ def demonstrate_security_comparison() -> Nil {
     printf("Security Improvement: {:.1}%")?;
 }
 
-// Helper function for creating test entropy data
+fr fr Helper function for creating test entropy data
 def generate_test_entropy(size: usize, quality: String) -> Array<u8> {
     sus data: Array<u8> = [];
     
@@ -422,7 +422,7 @@ def generate_test_entropy(size: usize, quality: String) -> Array<u8> {
     return data;
 }
 
-// Function to demonstrate parameter verification across algorithms
+fr fr Function to demonstrate parameter verification across algorithms
 def demonstrate_algorithm_analysis() -> Nil {
     println("\nDemonstrating Multi-Algorithm Security Analysis:")?;
     

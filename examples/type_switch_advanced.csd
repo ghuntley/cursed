@@ -1,14 +1,14 @@
-// Advanced Type Switch Examples
-// This example demonstrates complex type switch patterns and real-world use cases
+fr fr Advanced Type Switch Examples
+fr fr This example demonstrates complex type switch patterns and real-world use cases
 
-import "stdlib::fmt"
-import "stdlib::json"
-import "stdlib::strings"
-import "stdlib::io"
+yeet "stdlib::fmt"
+yeet "stdlib::json"
+yeet "stdlib::strings"
+yeet "stdlib::io"
 
-// ================================================
-// 1. JSON Processing with Type Switches
-// ================================================
+fr fr ================================================
+fr fr 1. JSON Processing with Type Switches
+fr fr ================================================
 
 squad JsonProcessor {
     sus indent_level int
@@ -72,7 +72,7 @@ slay demonstrate_json_processing() {
     sus json_data = map[string]interface{}{
         "name": "John Doe",
         "age": 30.0,
-        "active": true,
+        "active": based,
         "address": map[string]interface{}{
             "street": "123 Main St",
             "city": "Anytown",
@@ -88,9 +88,9 @@ slay demonstrate_json_processing() {
     println(formatted)
 }
 
-// ================================================
-// 2. HTTP Request Handler System
-// ================================================
+fr fr ================================================
+fr fr 2. HTTP Request Handler System
+fr fr ================================================
 
 collab ResponseWriter {
     slay write([]byte) (int, error)
@@ -104,7 +104,7 @@ collab Request {
     slay body() []byte
 }
 
-// Mock implementations for demonstration
+fr fr Mock implementations for demonstration
 squad MockResponseWriter {
     sus headers map[string][]string
     sus status_code int
@@ -127,7 +127,7 @@ slay (w *MockResponseWriter) write_header(code int) {
     w.status_code = code
 }
 
-// API Response types
+fr fr API Response types
 squad APIResponse {
     sus message string
     sus data interface{}
@@ -243,9 +243,9 @@ slay demonstrate_http_handling() {
     }
 }
 
-// ================================================
-// 3. Plugin System with Type Switches
-// ================================================
+fr fr ================================================
+fr fr 3. Plugin System with Type Switches
+fr fr ================================================
 
 collab Plugin {
     slay name() string
@@ -263,7 +263,7 @@ collab Validator {
     slay validate(interface{}) []string
 }
 
-// Text processing plugin
+fr fr Text processing plugin
 squad TextPlugin {
     sus plugin_name string
 }
@@ -293,7 +293,7 @@ slay (tp TextPlugin) execute(data interface{}) (interface{}, error) {
     }
 }
 
-// Number processing plugin
+fr fr Number processing plugin
 squad NumberPlugin {
     sus operation string
 }
@@ -348,7 +348,7 @@ slay (np NumberPlugin) execute(data interface{}) (interface{}, error) {
     }
 }
 
-// Validation plugin
+fr fr Validation plugin
 squad EmailValidator {}
 
 slay (ev EmailValidator) name() string {
@@ -448,9 +448,9 @@ slay demonstrate_plugin_system() {
     }
 }
 
-// ================================================
-// 4. Nested Type Switches and Complex Patterns
-// ================================================
+fr fr ================================================
+fr fr 4. Nested Type Switches and Complex Patterns
+fr fr ================================================
 
 slay process_complex_data(data interface{}) {
     println("\n=== Complex Nested Data Processing ===")
@@ -529,7 +529,7 @@ slay demonstrate_complex_patterns() {
             "age": 28.0,
             "settings": map[string]interface{}{
                 "theme": "dark",
-                "notifications": true
+                "notifications": based
             }
         },
         "posts": []interface{}{
@@ -553,7 +553,7 @@ slay demonstrate_complex_patterns() {
     process_complex_data(complex_data)
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 slay main() {
     demonstrate_json_processing()
     demonstrate_http_handling()

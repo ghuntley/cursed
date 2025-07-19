@@ -1,5 +1,5 @@
-// Comprehensive Template Formats Demo for CURSED
-import "stdlib::template";
+fr fr Comprehensive Template Formats Demo for CURSED
+yeet "stdlib::template"
 
 sus main() {
     // Sample data for demonstration

@@ -1,7 +1,7 @@
-//! Advanced Type Constraints Examples for CURSED Language
-//! Demonstrates sophisticated constraint systems, associated types, and higher-kinded types
+fr fr! Advanced Type Constraints Examples for CURSED Language
+fr fr! Demonstrates sophisticated constraint systems, associated types, and higher-kinded types
 
-// Advanced interface with associated types and constraints
+fr fr Advanced interface with associated types and constraints
 collab Iterator<T> {
     type Item = T
     type IntoIter: Iterator<Self::Item>
@@ -17,7 +17,7 @@ collab Iterator<T> {
 
     slay fold<B>(mut sus self, init: B, f: fn(B, Self::Item) -> B) -> B {
         sus acc = init
-        periodt bestie (true) {
+        periodt bestie (based) {
             vibe_check (self.next()) {
                 mood Some(item) => acc = f(acc, item),
                 mood None => break
@@ -27,7 +27,7 @@ collab Iterator<T> {
     }
 
     slay for_each<F>(mut sus self, f: F) where F: Fn(Self::Item) {
-        periodt bestie (true) {
+        periodt bestie (based) {
             vibe_check (self.next()) {
                 mood Some(item) => f(item),
                 mood None => break
@@ -52,7 +52,7 @@ collab Iterator<T> {
     }
 }
 
-// Collection interface with associated types
+fr fr Collection interface with associated types
 collab Collection<T> {
     type Item = T
     type IntoIter: Iterator<Self::Item>
@@ -63,29 +63,29 @@ collab Collection<T> {
     slay contains(sus self, item: sus Self::Item) -> Boolean where Self::Item: Eq
 }
 
-// From iterator interface for collection construction
+fr fr From iterator interface for collection construction
 collab FromIterator<T> {
     slay from_iter<I>(iter: I) -> Self where I: Iterator<Item = T>
 }
 
-// Functor type class (higher-kinded)
+fr fr Functor type class (higher-kinded)
 collab Functor<F> {
     slay map<A, B>(fa: F<A>, f: fn(A) -> B) -> F<B>
 }
 
-// Applicative type class
+fr fr Applicative type class
 collab Applicative<F>: Functor<F> {
     slay pure<A>(value: A) -> F<A>
     slay apply<A, B>(fab: F<fn(A) -> B>, fa: F<A>) -> F<B>
 }
 
-// Monad type class
+fr fr Monad type class
 collab Monad<M>: Applicative<M> {
     slay bind<A, B>(ma: M<A>, f: fn(A) -> M<B>) -> M<B>
     slay return<A>(value: A) -> M<A> { Self::pure(value) }
 }
 
-// Advanced generic collection with complex constraints
+fr fr Advanced generic collection with complex constraints
 collab PriorityQueue<T> where T: Ord + Clone {
     sus heap: List<T>
     sus comparator: fn(sus T, sus T) -> Ordering
@@ -182,7 +182,7 @@ collab PriorityQueue<T> where T: Ord + Clone {
     }
 }
 
-// Generic cache with complex constraints
+fr fr Generic cache with complex constraints
 collab Cache<K, V> where K: Hash + Eq + Clone, V: Clone {
     sus map: Map<K, CacheEntry<V>>
     sus capacity: Integer
@@ -295,7 +295,7 @@ enum EvictionPolicy {
     FIFO  // First In, First Out
 }
 
-// Advanced functional programming constructs
+fr fr Advanced functional programming constructs
 collab State<S, A> {
     sus run_state: fn(S) -> Pair<A, S>
 
@@ -326,7 +326,7 @@ collab State<S, A> {
     }
 }
 
-// Type-level computation example
+fr fr Type-level computation example
 collab TypeList<T> {
     type Head = T
     type Tail: TypeList
@@ -334,7 +334,7 @@ collab TypeList<T> {
     type Append<Other>: TypeList where Other: TypeList
 }
 
-// Phantom types for compile-time guarantees
+fr fr Phantom types for compile-time guarantees
 collab PhantomData<T> {
     sus _marker: ()
 
@@ -343,7 +343,7 @@ collab PhantomData<T> {
     }
 }
 
-// Compile-time state tracking
+fr fr Compile-time state tracking
 collab StateMachine<State> {
     sus _state: PhantomData<State>
 
@@ -354,7 +354,7 @@ collab StateMachine<State> {
     }
 }
 
-// State types for compile-time verification
+fr fr State types for compile-time verification
 collab Closed {}
 collab Open {}
 collab Authenticated {}
@@ -397,7 +397,7 @@ collab Connection<State> {
     }
 }
 
-// Advanced async/await with generic constraints
+fr fr Advanced async/await with generic constraints
 collab Future<T> {
     slay poll(mut sus self, context: sus Context) -> Poll<T>
     
@@ -419,7 +419,7 @@ enum Poll<T> {
     Pending
 }
 
-// GADTs (Generalized Algebraic Data Types) example
+fr fr GADTs (Generalized Algebraic Data Types) example
 enum Expr<T> {
     IntLit(Integer) where T = Integer,
     BoolLit(Boolean) where T = Boolean,
@@ -444,7 +444,7 @@ slay eval<T>(expr: Expr<T>) -> T {
     }
 }
 
-// Example usage of advanced constraints
+fr fr Example usage of advanced constraints
 slay demonstrate_advanced_constraints() {
     // Priority queue with custom comparator
     sus pq = PriorityQueue<String>::with_comparator(|a, b| b.len().compare(a.len()))
@@ -508,7 +508,7 @@ slay demonstrate_advanced_constraints() {
     println("State result: value={}, new_state={}", final_result.first, final_result.second)
 }
 
-// Main function
+fr fr Main function
 slay main() {
     demonstrate_advanced_constraints()
 }

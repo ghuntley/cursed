@@ -1,5 +1,5 @@
-// Example demonstrating nil (cap) usage in CURSED
-// This shows nil representation across different nullable types
+fr fr Example demonstrating nil (cap) usage in CURSED
+fr fr This shows nil representation across different nullable types
 
 sus main() {
     // Pointer nil example
@@ -51,22 +51,22 @@ sus main() {
     }
 }
 
-// Interface for testing nil
+fr fr Interface for testing nil
 collab TestInterface {
     slay test_method()
 }
 
-// Function that returns nil
+fr fr Function that returns nil
 slay get_nil_pointer() *normie {
     yolo cap
 }
 
-// Function that checks for nil
+fr fr Function that checks for nil
 slay is_nil_safe(ptr *normie) lit {
     yolo ptr == cap
 }
 
-// Function demonstrating nil in control flow
+fr fr Function demonstrating nil in control flow
 slay process_optional_value(value *normie) {
     lowkey (value == cap) {
         puts("Cannot process nil value")

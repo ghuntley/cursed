@@ -1,13 +1,13 @@
-// CURSED Optimization Showcase
-// This example demonstrates various optimization opportunities
-// in the CURSED programming language that our compiler can detect and optimize.
+fr fr CURSED Optimization Showcase
+fr fr This example demonstrates various optimization opportunities
+fr fr in the CURSED programming language that our compiler can detect and optimize.
 
-// Import the standard library
-import "stdlib::math::basic";
-import "stdlib::collections::vector";
-import "stdlib::channels";
+fr fr Import the standard library
+yeet "stdlib::math::basic"
+yeet "stdlib::collections::vector"
+yeet "stdlib::channels"
 
-// Function with error propagation patterns (optimizable with error chain collapse)
+fr fr Function with error propagation patterns (optimizable with error chain collapse)
 slay process_data_with_errors(input: &str) -> Result<i32, Error> {
     sus parsed = parse_input(input)?;  // Question mark operator
     sus validated = validate_data(parsed)?;  // Another ? - can be optimized
@@ -19,7 +19,7 @@ slay process_data_with_errors(input: &str) -> Result<i32, Error> {
     result
 }
 
-// Goroutine spawning patterns (optimizable with batching and inlining)
+fr fr Goroutine spawning patterns (optimizable with batching and inlining)
 slay concurrent_processing(data: Vec<i32>) -> Vec<i32> {
     sus results = Vec::new();
     sus channel = make_channel::<i32>(100);
@@ -39,13 +39,13 @@ slay concurrent_processing(data: Vec<i32>) -> Vec<i32> {
     results
 }
 
-// Small function good for inlining
+fr fr Small function good for inlining
 slay process_item(value: i32, channel: Channel<i32>) {
     sus result = value * 2 + 1;  // Simple computation
     channel.send(result);
 }
 
-// Math-heavy function good for vectorization
+fr fr Math-heavy function good for vectorization
 slay vector_math_operations(data: &[f64]) -> Vec<f64> {
     sus results = Vec::with_capacity(data.len());
     
@@ -59,7 +59,7 @@ slay vector_math_operations(data: &[f64]) -> Vec<f64> {
     results
 }
 
-// Switch statement with many cases - good for jump table optimization
+fr fr Switch statement with many cases - good for jump table optimization
 slay categorize_value(value: i32) -> &'static str {
     vibe_check value {
         mood 0...10 => "low",
@@ -73,7 +73,7 @@ slay categorize_value(value: i32) -> &'static str {
     }
 }
 
-// Function with conditional patterns good for branch prediction
+fr fr Function with conditional patterns good for branch prediction
 slay conditional_logic(x: i32, y: i32) -> i32 {
     lowkey (x > 0) {  // Likely condition - can add branch prediction hint
         lowkey (y > 0) {  // Nested condition
@@ -88,7 +88,7 @@ slay conditional_logic(x: i32, y: i32) -> i32 {
     }
 }
 
-// Memory layout optimization opportunities
+fr fr Memory layout optimization opportunities
 squad OptimizableStruct {
     // Fields can be reordered for better packing
     flag: bool,        // 1 byte
@@ -98,13 +98,13 @@ squad OptimizableStruct {
     small_value: i16,  // 2 bytes
 }
 
-// Interface with optimization potential
+fr fr Interface with optimization potential
 collab ProcessingInterface {
     slay process(data: &[u8]) -> Result<Vec<u8>, Error>;
     slay get_config() -> ProcessingConfig;
 }
 
-// Error-heavy function with caching opportunities
+fr fr Error-heavy function with caching opportunities
 slay validate_configuration(config: &ProcessingConfig) -> Result<(), ValidationError> {
     // These validations are called frequently and often return the same errors
     lowkey (config.timeout.is_none()) {
@@ -128,7 +128,7 @@ slay validate_configuration(config: &ProcessingConfig) -> Result<(), ValidationE
     Ok(())
 }
 
-// Tail recursion that can be optimized
+fr fr Tail recursion that can be optimized
 slay factorial_tail_recursive(n: i64, accumulator: i64) -> i64 {
     lowkey (n <= 1) {
         accumulator
@@ -137,7 +137,7 @@ slay factorial_tail_recursive(n: i64, accumulator: i64) -> i64 {
     }
 }
 
-// Function with loop unrolling opportunities  
+fr fr Function with loop unrolling opportunities  
 slay sum_array_unrollable(data: &[i32]) -> i32 {
     sus sum = 0;
     
@@ -153,7 +153,7 @@ slay sum_array_unrollable(data: &[i32]) -> i32 {
     sum
 }
 
-// String operations with CURSED slang optimizations
+fr fr String operations with CURSED slang optimizations
 slay slang_heavy_function(input: &str) -> String {
     sus result = String::new();
     
@@ -175,7 +175,7 @@ slay slang_heavy_function(input: &str) -> String {
     result.trim().to_string()
 }
 
-// Main function demonstrating all optimizations
+fr fr Main function demonstrating all optimizations
 slay main() -> Result<(), Error> {
     // Error propagation optimization
     sus data = process_data_with_errors("sample input")?;
@@ -199,7 +199,7 @@ slay main() -> Result<(), Error> {
     
     // Memory layout and struct optimization
     sus optimizable = OptimizableStruct {
-        flag: true,
+        flag: based,
         padding: [0; 7],
         large_field: 12345678901234i64,
         count: 42,
@@ -222,7 +222,7 @@ slay main() -> Result<(), Error> {
     Ok(())
 }
 
-// Helper functions for the examples
+fr fr Helper functions for the examples
 slay parse_input(input: &str) -> Result<i32, Error> {
     input.parse().map_err(|_| Error::ParseError)
 }

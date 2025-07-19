@@ -1,13 +1,13 @@
-/// Comprehensive demonstration of CURSED stack collections
-/// 
-/// This example showcases all stack variants:
-/// - Stack<T>: Dynamic LIFO stack
-/// - FixedStack<T>: Fixed-capacity stack
-/// - ThreadSafeStack<T>: Concurrent stack
-/// - StackWithMin<T>: Stack that tracks minimum in O(1)
+fr fr/ Comprehensive demonstration of CURSED stack collections
+fr fr/ 
+fr fr/ This example showcases all stack variants:
+fr fr/ - Stack<T>: Dynamic LIFO stack
+fr fr/ - FixedStack<T>: Fixed-capacity stack
+fr fr/ - ThreadSafeStack<T>: Concurrent stack
+fr fr/ - StackWithMin<T>: Stack that tracks minimum in O(1)
 
-import "stdlib::collections::stacks";
-import "stdlib::io::console";
+yeet "stdlib::collections::stacks"
+yeet "stdlib::io::console"
 
 slay demo_basic_stack() -> Result<(), String> {
     println("=== Basic Stack Demo ===")?;

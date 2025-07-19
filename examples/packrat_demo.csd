@@ -1,10 +1,10 @@
-// PackRat Archive Demo
-// Demonstrates TAR and ZIP archive functionality in CURSED
+fr fr PackRat Archive Demo
+fr fr Demonstrates TAR and ZIP archive functionality in CURSED
 
-import "stdlib::packrat";
-import "stdlib::io";
-import "stdlib::dropz";
-import "vibez";
+yeet "stdlib::packrat"
+yeet "stdlib::io"
+yeet "stdlib::dropz"
+yeet "vibez"
 
 slay main() -> tea {
     vibez.spill("🐀 PackRat Archive Demo - Hoarding files like a pro! 🐀");
@@ -29,7 +29,7 @@ slay main() -> tea {
     periodt tea::cap;
 }
 
-// Demonstrate TAR archive operations using RatPack and RatStash
+fr fr Demonstrate TAR archive operations using RatPack and RatStash
 slay demo_tar_operations() -> tea {
     vibez.spill("📦 TAR Archive Operations (RatPack & RatStash)");
     vibez.spill("==============================================");
@@ -125,7 +125,7 @@ slay demo_tar_operations() -> tea {
     periodt cap;
 }
 
-// Demonstrate ZIP archive operations using HoardPack and HoardStash
+fr fr Demonstrate ZIP archive operations using HoardPack and HoardStash
 slay demo_zip_operations() -> tea {
     vibez.spill("🗜️ ZIP Archive Operations (HoardPack & HoardStash)");
     vibez.spill("================================================");
@@ -210,7 +210,7 @@ slay demo_zip_operations() -> tea {
     periodt cap;
 }
 
-// Demonstrate compression utilities and format detection
+fr fr Demonstrate compression utilities and format detection
 slay demo_compression_utilities() -> tea {
     vibez.spill("🔍 Compression Utilities & Format Detection");
     vibez.spill("==========================================");
@@ -297,7 +297,7 @@ slay demo_compression_utilities() -> tea {
     periodt cap;
 }
 
-// Helper function to get minimum of two values
+fr fr Helper function to get minimum of two values
 slay min(a int, b int) -> int {
     lowkey a < b {
         periodt a;
@@ -305,7 +305,7 @@ slay min(a int, b int) -> int {
     periodt b;
 }
 
-// Helper function for enumeration
+fr fr Helper function for enumeration
 slay enumerate(arr []string) -> [][2]any {
     facts result = make([][2]any, len(arr));
     for i, item in range arr {
@@ -314,7 +314,7 @@ slay enumerate(arr []string) -> [][2]any {
     periodt result;
 }
 
-// Helper function for string formatting
+fr fr Helper function for string formatting
 slay format(template string, args ...any) -> string {
     // Simplified format function for demo
     // In real implementation would use proper string formatting

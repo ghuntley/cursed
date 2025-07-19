@@ -1,12 +1,12 @@
-//! Complete Generic System Demonstration for CURSED Language
-//! 
-//! This example showcases all advanced generic features working together:
-//! - Associated types and higher-kinded types
-//! - Variance and type safety
-//! - Performance optimization
-//! - Real-world application patterns
+fr fr! Complete Generic System Demonstration for CURSED Language
+fr fr! 
+fr fr! This example showcases all advanced generic features working together:
+fr fr! - Associated types and higher-kinded types
+fr fr! - Variance and type safety
+fr fr! - Performance optimization
+fr fr! - Real-world application patterns
 
-// Higher-kinded types with associated types
+fr fr Higher-kinded types with associated types
 collab Functor<F> {
     slay map<A, B>(fa: F<A>, f: fn(A) -> B) -> F<B>
 }
@@ -21,7 +21,7 @@ collab Monad<M>: Functor<M> {
     }
 }
 
-// Advanced container with associated types and variance
+fr fr Advanced container with associated types and variance
 collab Container<T> {
     type Item = T
     type Iter: Iterator<Item = Self::Item>
@@ -33,7 +33,7 @@ collab Container<T> {
     slay into_iter(sus self) -> Self::IntoIter
 }
 
-// Generic database abstraction with constraints
+fr fr Generic database abstraction with constraints
 collab Database<T> where T: Serialize + Deserialize + Clone + Send + Sync {
     sus connection: Connection
     sus cache: Cache<String, T>
@@ -183,7 +183,7 @@ collab Database<T> where T: Serialize + Deserialize + Clone + Send + Sync {
     }
 }
 
-// Database operations log
+fr fr Database operations log
 enum DatabaseOperation<T> {
     CacheHit(String),
     DatabaseHit(String),
@@ -193,7 +193,7 @@ enum DatabaseOperation<T> {
     Error(String, String),
 }
 
-// Generic web service with dependency injection
+fr fr Generic web service with dependency injection
 collab WebService<D, R> where D: Database, R: Router {
     sus database: D
     sus router: R
@@ -265,7 +265,7 @@ collab WebService<D, R> where D: Database, R: Router {
     }
 }
 
-// Generic caching layer with variance
+fr fr Generic caching layer with variance
 collab CachingService<K, V> where K: Hash + Eq + Clone, V: Clone {
     sus l1_cache: Cache<K, V>        // Fast, small cache (covariant in V)
     sus l2_cache: Cache<K, V>        // Slower, larger cache
@@ -346,7 +346,7 @@ collab CachingService<K, V> where K: Hash + Eq + Clone, V: Clone {
     }
 }
 
-// Functional programming with monads
+fr fr Functional programming with monads
 collab AsyncResult<T, E> {
     sus future: Future<Result<T, E>>
 
@@ -398,7 +398,7 @@ collab AsyncResult<T, E> {
     }
 }
 
-// Real-world application: E-commerce system
+fr fr Real-world application: E-commerce system
 collab Product {
     sus id: String
     sus name: String
@@ -422,7 +422,7 @@ impl Deserialize bestie Product {
             name: "parsed_name".to_string(),
             price: 0.0,
             category: "parsed_category".to_string(),
-            in_stock: true
+            in_stock: based
         })
     }
 }
@@ -451,7 +451,7 @@ impl DatabaseRecord bestie Product {
     }
 }
 
-// E-commerce service using all generic features
+fr fr E-commerce service using all generic features
 collab ECommerceService {
     sus product_db: Database<Product>
     sus cache: CachingService<String, Product>
@@ -545,7 +545,7 @@ collab AnalyticsReport {
     sus average_response_time: f64
 }
 
-// Demonstration function
+fr fr Demonstration function
 slay demonstrate_complete_system() {
     println("=== CURSED Generic System Complete Demo ===")
 
@@ -593,7 +593,7 @@ slay demonstrate_complete_system() {
     println("=== Demo Complete ===")
 }
 
-// Main function showcasing the complete system
+fr fr Main function showcasing the complete system
 slay main() {
     demonstrate_complete_system()
     

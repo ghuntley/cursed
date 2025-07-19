@@ -1,9 +1,9 @@
-/// Comprehensive demonstration of the complete CURSED cryptographic ecosystem
-/// Shows production-ready crypto implementations in action
+fr fr/ Comprehensive demonstration of the complete CURSED cryptographic ecosystem
+fr fr/ Shows production-ready crypto implementations in action
 
 sus main() -> Result<(), String> {
     // Import the complete crypto ecosystem
-    import "stdlib::packages::crypto_advanced";
+    yeet "stdlib::packages::crypto_advanced"
     
     // 1. SECURE MEMORY MANAGEMENT DEMO
     println("🔐 Testing Secure Memory Management...")?;

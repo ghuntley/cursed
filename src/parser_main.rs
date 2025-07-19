@@ -810,7 +810,7 @@ impl Parser {
         })
     }
     
-    fn parse_type(&mut self) -> Result<Option<Type>> {
+    pub fn parse_type(&mut self) -> Result<Option<Type>> {
         // Parse types - both arrays and basic types
         if let Some(token) = self.current_token.as_ref() {
             if token.kind == TokenKind::LeftBracket {
@@ -2749,103 +2749,7 @@ impl Parser {
         })
     }
 
-    fn parse_interface_statement(&mut self) -> Result<InterfaceStatement> {
-        // Consume 'collab' keyword
-        self.consume_token(TokenKind::Collab)?;
-        
-        // Parse interface name
-        let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Identifier => {
-                let name = token.lexeme.clone();
-                self.advance_token();
-                name
-            }
-            _ => return Err(Error::Parse("Expected interface name".to_string())),
-        };
-        
-        // Parse optional generic type parameters
-        let type_parameters = if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::Less || token.kind == TokenKind::LeftAngle {
-                self.parse_generic_type_parameters_angle_brackets()?
-            } else if token.kind == TokenKind::LeftBracket {
-                self.parse_generic_type_parameters()?
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
-        
-        // Parse optional interface inheritance (extends clause)
-        let extends = if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::Colon {
-                self.advance_token(); // consume ':'
-                self.parse_interface_inheritance_list()?
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
 
-        // Parse optional interface composition (with clause)
-        let compositions = if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::With {
-                self.advance_token(); // consume 'with'
-                self.parse_interface_composition_list()?
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
-        
-        // Expect '{'
-        self.consume_token(TokenKind::LeftBrace)?;
-        
-        // Parse method signatures
-        let mut methods = Vec::new();
-        
-        while let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::RightBrace {
-                break;
-            }
-            
-            // Skip newlines and whitespace
-            if token.kind == TokenKind::Newline {
-                self.advance_token();
-                continue;
-            }
-            
-            // Only parse method signatures that start with 'slay'
-            if token.kind == TokenKind::Slay {
-                let method = self.parse_interface_method_signature()?;
-                methods.push(method);
-                
-                // Consume comma if present
-                if let Some(token) = self.current_token.as_ref() {
-                    if token.kind == TokenKind::Comma {
-                        self.advance_token();
-                    }
-                }
-            } else {
-                // Unexpected token in interface body
-                return Err(Error::Parse(format!("Expected 'slay' keyword or '}}' in interface, found '{}'", token.lexeme)));
-            }
-        }
-        
-        // Expect '}'
-        self.consume_token(TokenKind::RightBrace)?;
-        
-        Ok(InterfaceStatement {
-            name,
-            type_parameters,
-            extends,
-            compositions,
-            methods,
-            visibility: Visibility::Public,
-        })
-    }
 
     fn parse_interface_composition_list(&mut self) -> Result<Vec<InterfaceComposition>> {
         let mut compositions = Vec::new();
@@ -2868,106 +2772,7 @@ impl Parser {
         Ok(compositions)
     }
 
-    fn parse_interface_composition(&mut self) -> Result<InterfaceComposition> {
-        use std::collections::HashMap;
-        
-        // Parse composed interface name
-        let composed_interface = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Identifier => {
-                let name = token.lexeme.clone();
-                self.advance_token();
-                name
-            }
-            _ => return Err(Error::Parse("Expected interface name in composition".to_string())),
-        };
-        
-        let mut alias = None;
-        let mut excluded_methods = Vec::new();
-        let mut method_renames = HashMap::new();
-        
-        // Parse composition modifiers
-        while let Some(token) = self.current_token.as_ref() {
-            match token.kind {
-                TokenKind::As => {
-                    // Parse alias: "with SomeInterface as Alias"
-                    self.advance_token(); // consume 'as'
-                    if let Some(token) = self.current_token.as_ref() {
-                        if token.kind == TokenKind::Identifier {
-                            alias = Some(token.lexeme.clone());
-                            self.advance_token();
-                        }
-                    }
-                },
-                TokenKind::Except => {
-                    // Parse exclusions: "with SomeInterface except method1, method2"
-                    self.advance_token(); // consume 'except'
-                    loop {
-                        if let Some(token) = self.current_token.as_ref() {
-                            if token.kind == TokenKind::Identifier {
-                                excluded_methods.push(token.lexeme.clone());
-                                self.advance_token();
-                            }
-                        }
-                        
-                        if let Some(token) = self.current_token.as_ref() {
-                            if token.kind == TokenKind::Comma {
-                                self.advance_token(); // consume ','
-                            } else {
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                },
-                TokenKind::Rename => {
-                    // Parse renames: "with SomeInterface rename oldMethod -> newMethod"
-                    self.advance_token(); // consume 'rename'
-                    loop {
-                        let old_name = match self.current_token.as_ref() {
-                            Some(token) if token.kind == TokenKind::Identifier => {
-                                let name = token.lexeme.clone();
-                                self.advance_token();
-                                name
-                            }
-                            _ => break,
-                        };
-                        
-                        if let Some(token) = self.current_token.as_ref() {
-                            if token.kind == TokenKind::Arrow {
-                                self.advance_token(); // consume '->'
-                                if let Some(token) = self.current_token.as_ref() {
-                                    if token.kind == TokenKind::Identifier {
-                                        let new_name = token.lexeme.clone();
-                                        self.advance_token();
-                                        method_renames.insert(old_name, new_name);
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if let Some(token) = self.current_token.as_ref() {
-                            if token.kind == TokenKind::Comma {
-                                self.advance_token(); // consume ','
-                            } else {
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                },
-                _ => break,
-            }
-        }
-        
-        Ok(InterfaceComposition {
-            composed_interface,
-            alias,
-            excluded_methods,
-            method_renames,
-        })
-    }
+
 
     fn parse_generic_type_parameters(&mut self) -> Result<Vec<TypeParameter>> {
         self.consume_token(TokenKind::LeftBracket)?;
@@ -3236,68 +3041,7 @@ impl Parser {
         Ok(extends)
     }
     
-    fn parse_method_signature(&mut self) -> Result<MethodSignature> {
-        // Check for receiver syntax: slay (receiver Type) method()
-        let receiver = if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::LeftParen {
-                self.parse_method_receiver()?
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-        
-        // Parse method name
-        let name = match self.current_token.as_ref() {
-            Some(token) if token.kind == TokenKind::Truth => {
-                let name = token.lexeme.clone();
-                self.advance_token();
-                name
-            }
-            _ => return Err(Error::Parse("Expected method name".to_string())),
-        };
-        
-        // Parse parameters
-        self.consume_token(TokenKind::LeftParen)?;
-        let mut parameters = Vec::new();
-        
-        while let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::RightParen {
-                break;
-            }
-            
-            let param = self.parse_parameter()?;
-            parameters.push(param);
-            
-            // Consume comma if present
-            if let Some(token) = self.current_token.as_ref() {
-                if token.kind == TokenKind::Comma {
-                    self.advance_token();
-                }
-            }
-        }
-        
-        self.consume_token(TokenKind::RightParen)?;
-        
-        // Parse return type (optional)
-        let return_type = if let Some(token) = self.current_token.as_ref() {
-            if token.kind == TokenKind::Identifier {
-                self.parse_type()?
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-        
-        Ok(MethodSignature {
-            name,
-            receiver,
-            parameters,
-            return_type,
-        })
-    }
+
 
     fn parse_method_receiver(&mut self) -> Result<Option<MethodReceiver>> {
         self.consume_token(TokenKind::LeftParen)?;

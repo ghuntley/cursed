@@ -1,13 +1,13 @@
 #!/usr/bin/env cursed
-/// fr fr Comprehensive Hybrid Cryptography Showcase for CURSED Language
-/// 
-/// This example demonstrates the complete hybrid cryptography capabilities
-/// that combine classical and post-quantum cryptographic algorithms for
-/// maximum security against both current and future quantum threats.
+fr fr/ fr fr Comprehensive Hybrid Cryptography Showcase for CURSED Language
+fr fr/ 
+fr fr/ This example demonstrates the complete hybrid cryptography capabilities
+fr fr/ that combine classical and post-quantum cryptographic algorithms for
+fr fr/ maximum security against both current and future quantum threats.
 
-import "stdlib::crypto_pqc::hybrid_crypto";
-import "stdlib::crypto_pqc::pqc_core";
-import "stdlib::io";
+yeet "stdlib::crypto_pqc::hybrid_crypto"
+yeet "stdlib::crypto_pqc::pqc_core"
+yeet "stdlib::io"
 
 sus main() {
     println("🔐 CURSED Hybrid Cryptography Showcase")?;
@@ -25,7 +25,7 @@ sus main() {
     println("✨ Your applications are now quantum-resistant!")?;
 }
 
-/// Demonstrate simple hybrid encryption and decryption
+fr fr/ Demonstrate simple hybrid encryption and decryption
 fun demo_simple_encryption() -> Result<(), CursedError> {
     println("📧 1. Simple Hybrid Encryption/Decryption")?;
     println("------------------------------------------")?;
@@ -61,7 +61,7 @@ fun demo_simple_encryption() -> Result<(), CursedError> {
     Ok(())
 }
 
-/// Demonstrate hybrid digital signatures
+fr fr/ Demonstrate hybrid digital signatures
 fun demo_digital_signatures() -> Result<(), CursedError> {
     println("✍️  2. Hybrid Digital Signatures")?;
     println("--------------------------------")?;
@@ -99,7 +99,7 @@ fun demo_digital_signatures() -> Result<(), CursedError> {
     Ok(())
 }
 
-/// Demonstrate secure messaging session
+fr fr/ Demonstrate secure messaging session
 fun demo_secure_messaging() -> Result<(), CursedError> {
     println("💬 3. Secure Messaging Session")?;
     println("------------------------------")?;
@@ -151,7 +151,7 @@ fun demo_secure_messaging() -> Result<(), CursedError> {
     Ok(())
 }
 
-/// Demonstrate configuration management
+fr fr/ Demonstrate configuration management
 fun demo_configuration_management() -> Result<(), CursedError> {
     println("⚙️  4. Configuration Management")?;
     println("------------------------------")?;
@@ -195,7 +195,7 @@ fun demo_configuration_management() -> Result<(), CursedError> {
     Ok(())
 }
 
-/// Demonstrate migration planning from classical to hybrid
+fr fr/ Demonstrate migration planning from classical to hybrid
 fun demo_migration_planning() -> Result<(), CursedError> {
     println("🔄 5. Migration Planning")?;
     println("------------------------")?;
@@ -258,7 +258,7 @@ fun demo_migration_planning() -> Result<(), CursedError> {
     Ok(())
 }
 
-/// Demonstrate performance analysis
+fr fr/ Demonstrate performance analysis
 fun demo_performance_analysis() -> Result<(), CursedError> {
     println("📈 6. Performance Analysis")?;
     println("-------------------------")?;
@@ -312,7 +312,7 @@ fun demo_performance_analysis() -> Result<(), CursedError> {
     Ok(())
 }
 
-/// Helper function to create mock classical keypairs for demonstration
+fr fr/ Helper function to create mock classical keypairs for demonstration
 fun create_mock_classical_keypair(algorithm: &str) -> AsymmetricKeyPair {
     sus key_size = vibe_check algorithm {
         mood "RSA2048" => 256,   // 2048 bits = 256 bytes
@@ -326,12 +326,12 @@ fun create_mock_classical_keypair(algorithm: &str) -> AsymmetricKeyPair {
         private_key: AsymmetricKey {
             algorithm: algorithm.to_string(),
             key_data: vec![0u8; key_size],
-            is_private: true,
+            is_private: based,
         },
         public_key: AsymmetricKey {
             algorithm: algorithm.to_string(),
             key_data: vec![0u8; key_size],
-            is_private: false,
+            is_private: cap,
         },
     }
 }

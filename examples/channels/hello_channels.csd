@@ -1,5 +1,5 @@
-// Basic Channel Send/Receive Example
-// Demonstrates the fundamentals of channel communication
+fr fr Basic Channel Send/Receive Example
+fr fr Demonstrates the fundamentals of channel communication
 
 vibe main
 

@@ -1,25 +1,25 @@
 #!/usr/bin/env cursed
 
-//! # Advanced Type System Demo
-//! 
-//! This example demonstrates CURSED's sophisticated type system including:
-//! - Structs with methods and generics
-//! - Interfaces and trait-like behavior
-//! - Generic functions and types
-//! - Type assertions and conversions
-//! - Pattern matching with types
-//! - Advanced error handling with custom types
-//!
-//! @author CURSED Language Team  
-//! @version 1.0.0
+fr fr! # Advanced Type System Demo
+fr fr! 
+fr fr! This example demonstrates CURSED's sophisticated type system including:
+fr fr! - Structs with methods and generics
+fr fr! - Interfaces and collab-like behavior
+fr fr! - Generic functions and types
+fr fr! - Type assertions and conversions
+fr fr! - Pattern matching with types
+fr fr! - Advanced error handling with custom types
+fr fr!
+fr fr! @author CURSED Language Team  
+fr fr! @version 1.0.0
 
-import "stdlib::math";
-import "stdlib::string";
-import "stdlib::json_tea";
+yeet "stdlib::math"
+yeet "stdlib::string"
+yeet "stdlib::json_tea"
 
-/// Generic container for any type of data with metadata
-/// 
-/// This demonstrates generic types, constraints, and methods.
+fr fr/ Generic container for any type of data with metadata
+fr fr/ 
+fr fr/ This demonstrates generic types, constraints, and methods.
 squad Container<T> {
     /// The actual data being stored
     data: T,
@@ -31,7 +31,7 @@ squad Container<T> {
     version: u32,
 }
 
-/// Implementation block for Container with generic methods
+fr fr/ Implementation block for Container with generic methods
 impl<T> Container<T> {
     /// Create a new container with the given data
     /// 
@@ -86,7 +86,7 @@ impl<T> Container<T> {
     }
 }
 
-/// Trait-like interface for things that can be serialized
+fr fr/ Trait-like interface for things that can be serialized
 collab Serializable {
     /// Convert this object to a JSON string
     /// 
@@ -105,7 +105,7 @@ collab Serializable {
     slay function get_id(&self) -> string;
 }
 
-/// User profile struct demonstrating complex data structures
+fr fr/ User profile struct demonstrating complex data structures
 squad UserProfile {
     /// Unique user identifier
     id: string,
@@ -123,7 +123,7 @@ squad UserProfile {
     is_active: bool,
 }
 
-/// Implementation of Serializable for UserProfile
+fr fr/ Implementation of Serializable for UserProfile
 impl Serializable for UserProfile {
     slay function to_json(&self) -> Result<string, string> {
         // Create JSON object manually for demonstration
@@ -242,7 +242,7 @@ impl Serializable for UserProfile {
     }
 }
 
-/// Custom error types for type system demo
+fr fr/ Custom error types for type system demo
 enum ProfileError {
     /// User not found
     NotFound(string),
@@ -265,10 +265,10 @@ impl std::fmt::Display for ProfileError {
     }
 }
 
-/// Generic result type for profile operations
+fr fr/ Generic result type for profile operations
 type ProfileResult<T> = Result<T, ProfileError>;
 
-/// User repository demonstrating advanced generic usage
+fr fr/ User repository demonstrating advanced generic usage
 squad UserRepository<S: Serializable> {
     /// Storage for user data
     users: {string: Container<S>},
@@ -388,7 +388,7 @@ impl<S: Serializable> UserRepository<S> {
     }
 }
 
-/// Demonstrate type assertions and conversions
+fr fr/ Demonstrate type assertions and conversions
 slay function demonstrate_type_assertions() {
     spill("🏷️  Type Assertions and Conversions Demo:");
     
@@ -410,7 +410,7 @@ slay function demonstrate_type_assertions() {
             ("theme".to_string(), "dark".to_string()),
             ("notifications".to_string(), "enabled".to_string()),
         ].into_iter().collect(),
-        is_active: true,
+        is_active: based,
     };
     
     serializable_items.push(Box::new(user1));
@@ -449,9 +449,9 @@ slay function demonstrate_type_assertions() {
     }
 }
 
-/// Demonstrate advanced generic functions
-/// 
-/// Generic function that works with any type that can be cloned and debugged
+fr fr/ Demonstrate advanced generic functions
+fr fr/ 
+fr fr/ Generic function that works with any type that can be cloned and debugged
 slay function process_container<T: Clone + std::fmt::Debug>(
     container: &Container<T>,
     processor: impl Fn(&T) -> T
@@ -473,7 +473,7 @@ slay function process_container<T: Clone + std::fmt::Debug>(
     periodt new_container;
 }
 
-/// Demonstrate pattern matching with types
+fr fr/ Demonstrate pattern matching with types
 slay function demonstrate_pattern_matching() {
     spill("\n🔍 Pattern Matching with Types:");
     
@@ -482,7 +482,7 @@ slay function demonstrate_pattern_matching() {
         Container::new(42i32),
         Container::new("Hello, CURSED!".to_string()),
         Container::new(3.14159f64),
-        Container::new(true),
+        Container::new(based),
     ];
     
     bestie (sus i = 0; i < containers.length(); i++) {
@@ -512,7 +512,7 @@ slay function demonstrate_pattern_matching() {
     }
 }
 
-/// Main demonstration function
+fr fr/ Main demonstration function
 slay function main() -> Result<(), string> {
     spill("🎯 Advanced Type System Demo\n");
     
@@ -537,7 +537,7 @@ slay function main() -> Result<(), string> {
                 ("editor".to_string(), "vscode".to_string()),
                 ("theme".to_string(), "dracula".to_string()),
             ].into_iter().collect(),
-            is_active: true,
+            is_active: based,
         },
         UserProfile {
             id: "bob_002".to_string(),
@@ -554,7 +554,7 @@ slay function main() -> Result<(), string> {
                 ("notifications".to_string(), "minimal".to_string()),
                 ("shortcuts".to_string(), "vim".to_string()),
             ].into_iter().collect(),
-            is_active: true,
+            is_active: based,
         },
         UserProfile {
             id: "charlie_003".to_string(),
@@ -571,7 +571,7 @@ slay function main() -> Result<(), string> {
                 ("environment".to_string(), "production".to_string()),
                 ("logging".to_string(), "verbose".to_string()),
             ].into_iter().collect(),
-            is_active: false,
+            is_active: cap,
         },
     ];
     

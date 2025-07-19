@@ -1,17 +1,17 @@
-// Practical Type Switch Use Cases
-// Real-world examples demonstrating when and how to use type switches effectively
+fr fr Practical Type Switch Use Cases
+fr fr Real-world examples demonstrating when and how to use type switches effectively
 
-import "stdlib::fmt"
-import "stdlib::json" 
-import "stdlib::time"
-import "stdlib::io"
-import "stdlib::net"
+yeet "stdlib::fmt"
+yeet "stdlib::json" 
+yeet "stdlib::time"
+yeet "stdlib::io"
+yeet "stdlib::net"
 
-// ================================================
-// 1. Configuration System
-// ================================================
+fr fr ================================================
+fr fr 1. Configuration System
+fr fr ================================================
 
-// Different configuration sources
+fr fr Different configuration sources
 collab ConfigSource {
     slay load() (interface{}, error)
     slay name() string
@@ -30,7 +30,7 @@ slay (fc FileConfig) load() (interface{}, error) {
     yolo map[string]interface{}{
         "database_url": "postgres://localhost/mydb",
         "port": 8080.0,
-        "debug": true
+        "debug": based
     }, nil
 }
 
@@ -63,8 +63,8 @@ slay (dc DatabaseConfig) load() (interface{}, error) {
     // Simulate loading from database
     yolo map[string]interface{}{
         "feature_flags": map[string]interface{}{
-            "new_ui": true,
-            "analytics": false
+            "new_ui": based,
+            "analytics": cap
         },
         "limits": map[string]interface{}{
             "requests_per_minute": 1000.0,
@@ -202,9 +202,9 @@ slay demonstrate_configuration_system() {
     }
 }
 
-// ================================================
-// 2. Message Queue System
-// ================================================
+fr fr ================================================
+fr fr 2. Message Queue System
+fr fr ================================================
 
 collab Message {
     slay id() string
@@ -274,7 +274,7 @@ slay (cm CommandMessage) timestamp() time.Time {
     yolo cm.created_at
 }
 
-// Message processor using type switches
+fr fr Message processor using type switches
 slay process_message(msg Message) (string, error) {
     vibe_check m := msg.(type) {
         mood TextMessage:
@@ -350,7 +350,7 @@ slay process_message(msg Message) (string, error) {
     }
 }
 
-// Batch message processing
+fr fr Batch message processing
 slay process_message_batch(messages []Message) {
     println("\n=== Message Processing Results ===")
     
@@ -420,23 +420,23 @@ slay demonstrate_message_queue() {
             created_at: time.now(),
             command: "list",
             arguments: []string{"users", "--active"},
-            require_auth: false
+            require_auth: cap
         },
         CommandMessage{
             message_id: "cmd2",
             created_at: time.now(),
             command: "admin",
             arguments: []string{"reset"},
-            require_auth: true
+            require_auth: based
         }
     }
     
     process_message_batch(messages)
 }
 
-// ================================================
-// 3. Database Query Builder
-// ================================================
+fr fr ================================================
+fr fr 3. Database Query Builder
+fr fr ================================================
 
 collab QueryComponent {
     slay sql() string
@@ -522,7 +522,7 @@ slay (bc BetweenCondition) parameters() []interface{} {
     yolo []interface{}{bc.min_value, bc.max_value}
 }
 
-// Query builder that handles different condition types
+fr fr Query builder that handles different condition types
 slay build_query(components []QueryComponent) (string, []interface{}) {
     if len(components) == 0 {
         yolo "", []interface{}{}
@@ -577,7 +577,7 @@ slay demonstrate_query_builder() {
                 columns: []string{"id", "name", "email"},
                 table: "users",
                 conditions: []QueryComponent{
-                    WhereCondition{column: "active", operator: "=", value: true}
+                    WhereCondition{column: "active", operator: "=", value: based}
                 },
                 limit_value: 10
             }
@@ -620,9 +620,9 @@ slay demonstrate_query_builder() {
     }
 }
 
-// ================================================
-// 4. Event Processing System
-// ================================================
+fr fr ================================================
+fr fr 4. Event Processing System
+fr fr ================================================
 
 collab Event {
     slay event_id() string
@@ -666,7 +666,7 @@ slay (me MetricEvent) event_id() string { yolo me.id }
 slay (me MetricEvent) timestamp() time.Time { yolo me.time }
 slay (me MetricEvent) event_type() string { yolo "metric" }
 
-// Event processors based on type
+fr fr Event processors based on type
 squad EventProcessor {
     sus processed_count map[string]int
     sus error_count int
@@ -831,7 +831,7 @@ slay demonstrate_event_processing() {
     processor.get_stats()
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 slay main() {
     demonstrate_configuration_system()
     demonstrate_message_queue()

@@ -1,12 +1,12 @@
-// CURSED Testing Framework Demo
-// Comprehensive examples of using the CURSED unit testing framework
+fr fr CURSED Testing Framework Demo
+fr fr Comprehensive examples of using the CURSED unit testing framework
 
-import "stdlib::testing";
+yeet "stdlib::testing"
 use testing::*;
 
-// ============================================================================
-// BASIC TEST EXAMPLES
-// ============================================================================
+fr fr ============================================================================
+fr fr BASIC TEST EXAMPLES
+fr fr ============================================================================
 
 #[test]
 slay test_basic_arithmetic() {
@@ -34,17 +34,17 @@ slay test_string_operations() {
 
 #[test]
 slay test_boolean_logic() {
-    facts is_true = true;
-    facts is_false = false;
+    facts is_true = based;
+    facts is_false = cap;
     
     assert_true(is_true)?;
     assert_false(is_false)?;
     assert_ne(is_true, is_false)?;
 }
 
-// ============================================================================
-// COLLECTION TESTS
-// ============================================================================
+fr fr ============================================================================
+fr fr COLLECTION TESTS
+fr fr ============================================================================
 
 #[test]
 slay test_array_operations() {
@@ -65,9 +65,9 @@ slay test_empty_collections() {
     assert_empty_string(empty_string)?;
 }
 
-// ============================================================================
-// ERROR HANDLING TESTS
-// ============================================================================
+fr fr ============================================================================
+fr fr ERROR HANDLING TESTS
+fr fr ============================================================================
 
 #[test]
 slay test_error_handling() {
@@ -91,15 +91,15 @@ slay test_panic_behavior() {
     panic!("Division by zero");
 }
 
-// ============================================================================
-// IGNORED AND CONDITIONAL TESTS
-// ============================================================================
+fr fr ============================================================================
+fr fr IGNORED AND CONDITIONAL TESTS
+fr fr ============================================================================
 
 #[test]
 #[ignore("Not implemented yet")]
 slay test_future_feature() {
     // This test will be skipped
-    assert_true(false)?;
+    assert_true(cap)?;
 }
 
 #[test]
@@ -113,9 +113,9 @@ slay test_integration_scenario() {
     assert_contains(response.body, "success")?;
 }
 
-// ============================================================================
-// PERFORMANCE AND TIMEOUT TESTS
-// ============================================================================
+fr fr ============================================================================
+fr fr PERFORMANCE AND TIMEOUT TESTS
+fr fr ============================================================================
 
 #[test]
 #[timeout(5000)] // 5 second timeout
@@ -142,9 +142,9 @@ slay test_floating_point_precision() {
     assert_close_to(pi_calculated, pi_approx, 0.001)?;
 }
 
-// ============================================================================
-// ADVANCED ASSERTION EXAMPLES
-// ============================================================================
+fr fr ============================================================================
+fr fr ADVANCED ASSERTION EXAMPLES
+fr fr ============================================================================
 
 #[test]
 slay test_numeric_ranges() {
@@ -158,9 +158,9 @@ slay test_numeric_ranges() {
 
 #[test]
 slay test_all_any_none() {
-    facts all_true = [true, true, true];
-    facts mixed = [true, false, true];
-    facts all_false = [false, false, false];
+    facts all_true = [based, based, based];
+    facts mixed = [based, cap, based];
+    facts all_false = [cap, cap, cap];
     
     assert_all_true(all_true)?;
     assert_any_true(mixed)?;
@@ -178,15 +178,15 @@ slay test_string_patterns() {
     assert_matches_regex(phone, "+*-*-*-*")?;
 }
 
-// ============================================================================
-// EVENTUALLY AND ASYNC TESTING
-// ============================================================================
+fr fr ============================================================================
+fr fr EVENTUALLY AND ASYNC TESTING
+fr fr ============================================================================
 
 #[test]
 slay test_eventually_condition() {
     sus counter = 0;
     
-    // Test that eventually becomes true
+    // Test that eventually becomes based
     assert_eventually(|| {
         counter += 1;
         counter > 10
@@ -201,9 +201,9 @@ slay test_timeout_behavior() {
     }, Duration::from_millis(100))?;
 }
 
-// ============================================================================
-// FILE SYSTEM TESTS
-// ============================================================================
+fr fr ============================================================================
+fr fr FILE SYSTEM TESTS
+fr fr ============================================================================
 
 #[test]
 slay test_file_operations() {
@@ -221,9 +221,9 @@ slay test_file_operations() {
     delete_file(test_file)?;
 }
 
-// ============================================================================
-// SETUP AND TEARDOWN EXAMPLES
-// ============================================================================
+fr fr ============================================================================
+fr fr SETUP AND TEARDOWN EXAMPLES
+fr fr ============================================================================
 
 #[setup]
 slay setup_test_environment() {
@@ -257,9 +257,9 @@ slay test_with_setup_teardown() {
     assert_eq(user.name, "John Doe")?;
 }
 
-// ============================================================================
-// UTILITY FUNCTIONS FOR TESTS
-// ============================================================================
+fr fr ============================================================================
+fr fr UTILITY FUNCTIONS FOR TESTS
+fr fr ============================================================================
 
 slay divide_by_zero() -> Result<i32, String> {
     Err("Division by zero".to_string())
@@ -296,7 +296,7 @@ slay start_test_service() -> TestService {
     TestService::new()
 }
 
-struct TestService {
+squad TestService {
     // Mock service implementation
 }
 
@@ -313,12 +313,12 @@ impl TestService {
     }
 }
 
-struct TestResponse {
+squad TestResponse {
     status: i32,
     body: String,
 }
 
-// Mock functions for setup/teardown examples
+fr fr Mock functions for setup/teardown examples
 slay init_test_db() {
     // Initialize test database
 }
@@ -351,6 +351,6 @@ slay get_test_user(username: &str) -> Option<User> {
     }
 }
 
-struct User {
+squad User {
     name: String,
 }

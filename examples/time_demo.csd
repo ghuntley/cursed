@@ -1,7 +1,7 @@
-// Time and Date Library Demo for CURSED
-// Demonstrates comprehensive time/date functionality
+fr fr Time and Date Library Demo for CURSED
+fr fr Demonstrates comprehensive time/date functionality
 
-import "stdlib::time";
+yeet "stdlib::time"
 
 slay main() {
     println("🕒 CURSED Time & Date Library Demo")?;
@@ -158,7 +158,7 @@ slay main() {
     println("\n✅ Time library demo completed!")?;
 }
 
-// Helper function to demonstrate error handling
+fr fr Helper function to demonstrate error handling
 slay demonstrate_error_handling() -> TimeResult<()> {
     println("🚨 Error Handling Demo:")?;
     

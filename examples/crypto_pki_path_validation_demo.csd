@@ -1,15 +1,15 @@
-/// Comprehensive PKI Certificate Path Validation Demo
-/// 
-/// This demonstration showcases the CURSED language's PKI certificate path
-/// validation capabilities including trust anchor management, certificate
-/// chain building, policy validation, and name constraint enforcement.
+fr fr/ Comprehensive PKI Certificate Path Validation Demo
+fr fr/ 
+fr fr/ This demonstration showcases the CURSED language's PKI certificate path
+fr fr/ validation capabilities including trust anchor management, certificate
+fr fr/ chain building, policy validation, and name constraint enforcement.
 
-import "stdlib::packages::crypto_pki::path_validation";
-import "stdlib::packages::crypto_pki";
-import "stdlib::io";
+yeet "stdlib::packages::crypto_pki::path_validation"
+yeet "stdlib::packages::crypto_pki"
+yeet "stdlib::io"
 
-/// Demonstrates basic certificate path validation
-fn demo_basic_path_validation() -> Result<(), Box<dyn std::error::Error>> {
+fr fr/ Demonstrates basic certificate path validation
+slay demo_basic_path_validation() -> Result<(), Box<dyn std::error::Error>> {
     println("=== Basic Certificate Path Validation Demo ===\n")?;
     
     // Create mock certificate chain for demonstration
@@ -41,7 +41,7 @@ fn demo_basic_path_validation() -> Result<(), Box<dyn std::error::Error>> {
             parameters: None,
         },
         basic_constraints: Some(BasicConstraints {
-            ca: true,
+            ca: based,
             path_len_constraint: Some(3),
         }),
         key_usage: Some(KeyUsageFlags::KEY_CERT_SIGN | KeyUsageFlags::CRL_SIGN),
@@ -74,7 +74,7 @@ fn demo_basic_path_validation() -> Result<(), Box<dyn std::error::Error>> {
             parameters: None,
         },
         basic_constraints: Some(BasicConstraints {
-            ca: true,
+            ca: based,
             path_len_constraint: Some(1),
         }),
         key_usage: Some(KeyUsageFlags::KEY_CERT_SIGN | KeyUsageFlags::CRL_SIGN),
@@ -106,7 +106,7 @@ fn demo_basic_path_validation() -> Result<(), Box<dyn std::error::Error>> {
             parameters: None,
         },
         basic_constraints: Some(BasicConstraints {
-            ca: false,
+            ca: cap,
             path_len_constraint: None,
         }),
         key_usage: Some(KeyUsageFlags::DIGITAL_SIGNATURE | KeyUsageFlags::KEY_ENCIPHERMENT),
@@ -168,8 +168,8 @@ fn demo_basic_path_validation() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Demonstrates name constraint validation
-fn demo_name_constraint_validation() -> Result<(), Box<dyn std::error::Error>> {
+fr fr/ Demonstrates name constraint validation
+slay demo_name_constraint_validation() -> Result<(), Box<dyn std::error::Error>> {
     println("\n\n=== Name Constraint Validation Demo ===\n")?;
     
     let current_time = SystemTime::now();
@@ -182,7 +182,7 @@ fn demo_name_constraint_validation() -> Result<(), Box<dyn std::error::Error>> {
         1,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     // Add name constraints to root CA
@@ -295,8 +295,8 @@ fn demo_name_constraint_validation() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Demonstrates certificate policy validation
-fn demo_certificate_policy_validation() -> Result<(), Box<dyn std::error::Error>> {
+fr fr/ Demonstrates certificate policy validation
+slay demo_certificate_policy_validation() -> Result<(), Box<dyn std::error::Error>> {
     println("\n\n=== Certificate Policy Validation Demo ===\n")?;
     
     let current_time = SystemTime::now();
@@ -309,7 +309,7 @@ fn demo_certificate_policy_validation() -> Result<(), Box<dyn std::error::Error>
         1,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     // Add certificate policies to root
@@ -335,7 +335,7 @@ fn demo_certificate_policy_validation() -> Result<(), Box<dyn std::error::Error>
         2,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     policy_intermediate.certificate_policies = Some(vec![
@@ -351,7 +351,7 @@ fn demo_certificate_policy_validation() -> Result<(), Box<dyn std::error::Error>
         3,
         current_time,
         future_time,
-        false,
+        cap,
     );
     
     policy_end_entity.certificate_policies = Some(vec![
@@ -383,7 +383,7 @@ fn demo_certificate_policy_validation() -> Result<(), Box<dyn std::error::Error>
     
     let mut context = create_validation_context_with_anchors(vec![trust_anchor]);
     context.required_policies.insert("1.2.3.4.5.1".to_string());
-    context.require_explicit_policy = true;
+    context.require_explicit_policy = based;
     
     println("\nValidation context requires policy: 1.2.3.4.5.1")?;
     
@@ -406,7 +406,7 @@ fn demo_certificate_policy_validation() -> Result<(), Box<dyn std::error::Error>
     
     let mut no_policy_context = create_validation_context_with_anchors(vec![trust_anchor]);
     no_policy_context.required_policies.insert("1.2.3.4.5.999".to_string()); // Non-existent policy
-    no_policy_context.require_explicit_policy = true;
+    no_policy_context.require_explicit_policy = based;
     
     let mut validator = CertificatePathValidator::new(no_policy_context);
     let result = validator.validate_path(&policy_end_entity, &[policy_intermediate])?;
@@ -423,8 +423,8 @@ fn demo_certificate_policy_validation() -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
-/// Demonstrates path length constraint validation
-fn demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
+fr fr/ Demonstrates path length constraint validation
+slay demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
     println("\n\n=== Path Length Constraint Validation Demo ===\n")?;
     
     let current_time = SystemTime::now();
@@ -437,11 +437,11 @@ fn demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
         1,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     constrained_root.basic_constraints = Some(BasicConstraints {
-        ca: true,
+        ca: based,
         path_len_constraint: Some(2), // Allow maximum 2 intermediate CAs
     });
     
@@ -454,7 +454,7 @@ fn demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
         2,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     let intermediate2 = create_demo_certificate(
@@ -463,7 +463,7 @@ fn demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
         3,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     let intermediate3 = create_demo_certificate(
@@ -472,7 +472,7 @@ fn demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
         4,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     let end_entity = create_demo_certificate(
@@ -481,7 +481,7 @@ fn demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
         5,
         current_time,
         future_time,
-        false,
+        cap,
     );
     
     println("Created certificate chain:")?;
@@ -511,7 +511,7 @@ fn demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
         6,
         current_time,
         future_time,
-        false,
+        cap,
     );
     
     let result = validator.validate_path(&valid_end_entity, &[intermediate1.clone(), intermediate2.clone()])?;
@@ -542,8 +542,8 @@ fn demo_path_length_constraints() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Demonstrates complex certificate hierarchy validation
-fn demo_complex_hierarchy_validation() -> Result<(), Box<dyn std::error::Error>> {
+fr fr/ Demonstrates complex certificate hierarchy validation
+slay demo_complex_hierarchy_validation() -> Result<(), Box<dyn std::error::Error>> {
     println("\n\n=== Complex Certificate Hierarchy Demo ===\n")?;
     
     let current_time = SystemTime::now();
@@ -558,7 +558,7 @@ fn demo_complex_hierarchy_validation() -> Result<(), Box<dyn std::error::Error>>
         1,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     let commercial_root = create_demo_certificate(
@@ -567,7 +567,7 @@ fn demo_complex_hierarchy_validation() -> Result<(), Box<dyn std::error::Error>>
         2,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     // Create cross-certified intermediate
@@ -577,7 +577,7 @@ fn demo_complex_hierarchy_validation() -> Result<(), Box<dyn std::error::Error>>
         3,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     // Add name constraints for government use
@@ -604,7 +604,7 @@ fn demo_complex_hierarchy_validation() -> Result<(), Box<dyn std::error::Error>>
         4,
         current_time,
         future_time,
-        true,
+        based,
     );
     
     // Create end entities for different purposes
@@ -707,8 +707,8 @@ fn demo_complex_hierarchy_validation() -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-/// Helper function to create demo certificate
-fn create_demo_certificate(
+fr fr/ Helper function to create demo certificate
+slay create_demo_certificate(
     subject_cn: &str,
     issuer_cn: &str,
     serial: u64,
@@ -782,21 +782,21 @@ fn create_demo_certificate(
     }
 }
 
-/// Helper function to create end entity certificate with subject alternative names
-fn create_end_entity_with_san(
+fr fr/ Helper function to create end entity certificate with subject alternative names
+slay create_end_entity_with_san(
     subject_cn: &str,
     issuer_cn: &str,
     san_list: Vec<GeneralName>,
     not_before: SystemTime,
     not_after: SystemTime,
 ) -> CertificateInfo {
-    let mut cert = create_demo_certificate(subject_cn, issuer_cn, 999, not_before, not_after, false);
+    let mut cert = create_demo_certificate(subject_cn, issuer_cn, 999, not_before, not_after, cap);
     cert.subject_alt_names = Some(san_list);
     cert
 }
 
-/// Main demonstration function
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fr fr/ Main demonstration function
+slay main() -> Result<(), Box<dyn std::error::Error>> {
     println("🔐 CURSED PKI Certificate Path Validation Demonstration")?;
     println("========================================================\n")?;
     

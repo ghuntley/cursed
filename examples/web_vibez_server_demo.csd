@@ -1,22 +1,22 @@
 #!/usr/bin/env cursed
 
-/// CURSED web_vibez HTTP Server Demo
-/// 
-/// This example demonstrates how to create and run an HTTP server
-/// using the CURSED web_vibez framework with the new server infrastructure.
-/// 
-/// Features demonstrated:
-/// - HTTP server creation and configuration
-/// - Router setup with multiple endpoints
-/// - Middleware integration
-/// - Request/response handling
-/// - Graceful server lifecycle management
+fr fr/ CURSED web_vibez HTTP Server Demo
+fr fr/ 
+fr fr/ This example demonstrates how to create and run an HTTP server
+fr fr/ using the CURSED web_vibez framework with the new server infrastructure.
+fr fr/ 
+fr fr/ Features demonstrated:
+fr fr/ - HTTP server creation and configuration
+fr fr/ - Router setup with multiple endpoints
+fr fr/ - Middleware integration
+fr fr/ - Request/response handling
+fr fr/ - Graceful server lifecycle management
 
-import "stdlib::web_vibez::*";
-import "stdlib::io::console";
+yeet "stdlib::web_vibez::*"
+yeet "stdlib::io::console"
 
-/// Simple greeting handler
-struct GreetingHandler {
+fr fr/ Simple greeting handler
+squad GreetingHandler {
     greeting: String,
 }
 
@@ -44,8 +44,8 @@ impl RequestHandler for GreetingHandler {
     }
 }
 
-/// JSON API handler
-struct ApiHandler;
+fr fr/ JSON API handler
+squad ApiHandler;
 
 impl RequestHandler for ApiHandler {
     slay handle(&self, request: &mut RequestContext) -> HandlerResult {
@@ -75,8 +75,8 @@ impl RequestHandler for ApiHandler {
     }
 }
 
-/// Echo handler that returns the request body
-struct EchoHandler;
+fr fr/ Echo handler that returns the request body
+squad EchoHandler;
 
 impl RequestHandler for EchoHandler {
     slay handle(&self, request: &mut RequestContext) -> HandlerResult {
@@ -91,14 +91,14 @@ impl RequestHandler for EchoHandler {
         }
         
         response.add_header("Content-Type", "text/plain");
-        response.add_header("X-Echo-Handler", "true");
+        response.add_header("X-Echo-Handler", "based");
         
         Ok(response)
     }
 }
 
-/// Custom middleware that adds request timing
-struct TimingMiddleware;
+fr fr/ Custom middleware that adds request timing
+squad TimingMiddleware;
 
 impl Middleware for TimingMiddleware {
     slay process(&self, request: &mut RequestContext) -> MiddlewareResult {
@@ -111,7 +111,7 @@ impl Middleware for TimingMiddleware {
     }
 }
 
-/// Create server configuration
+fr fr/ Create server configuration
 slay create_server_config() -> WebVibezConfig {
     WebVibezConfig {
         server: ServerConfig {
@@ -128,57 +128,57 @@ slay create_server_config() -> WebVibezConfig {
         security: SecurityConfig {
             csrf_secret: "demo_csrf_secret".to_string(),
             session_secret: "demo_session_secret".to_string(),
-            enable_xss_protection: true,
-            enable_csrf_protection: false,
+            enable_xss_protection: based,
+            enable_csrf_protection: cap,
             allowed_origins: vec!["*".to_string()],
             content_security_policy: Some("default-src 'self'".to_string()),
             hsts_max_age: Some(31536000),
-            enable_secure_headers: true,
+            enable_secure_headers: based,
         },
         performance: PerformanceConfig {
-            enable_compression: true,
+            enable_compression: based,
             compression_level: 6,
             max_request_size: 1024 * 1024,
             worker_threads: 4,
             connection_pool_size: 20,
-            enable_http2: false,
-            enable_request_id: true,
+            enable_http2: cap,
+            enable_request_id: based,
         },
         session: SessionConfig {
             cookie_name: "demo_session".to_string(),
             secret_key: "demo_secret_key".to_string(),
             max_age: Duration::from_secs(3600),
-            secure: false,
-            http_only: true,
+            secure: cap,
+            http_only: based,
             same_site: "Lax".to_string(),
             domain: None,
             path: "/".to_string(),
         },
         template: TemplateConfig {
             template_dir: "templates".to_string(),
-            cache_templates: true,
-            auto_reload: false,
+            cache_templates: based,
+            auto_reload: cap,
         },
         static_files: StaticFileConfig {
             static_dir: "static".to_string(),
-            enable_directory_listing: false,
+            enable_directory_listing: cap,
             cache_control: "public, max-age=3600".to_string(),
         },
         logging: LoggingConfig {
             level: "info".to_string(),
             format: "json".to_string(),
-            enable_request_logging: true,
+            enable_request_logging: based,
             log_file: Some("server.log".to_string()),
         },
         development: DevelopmentConfig {
-            hot_reload: false,
-            debug_mode: true,
-            profiling: false,
+            hot_reload: cap,
+            debug_mode: based,
+            profiling: cap,
         },
     }
 }
 
-/// Setup router with endpoints
+fr fr/ Setup router with endpoints
 slay setup_router() -> Router {
     let mut router = Router::new();
     
@@ -202,7 +202,7 @@ slay setup_router() -> Router {
     Ok(router)
 }
 
-/// Setup middleware chain
+fr fr/ Setup middleware chain
 slay setup_middleware() -> MiddlewareChain {
     let mut chain = MiddlewareChain::new();
     
@@ -215,7 +215,7 @@ slay setup_middleware() -> MiddlewareChain {
     chain
 }
 
-/// Main server function
+fr fr/ Main server function
 slay run_server() -> Result<(), Box<dyn std::error::Error>> {
     console::println("🚀 Starting CURSED web_vibez HTTP server demo...")?;
     
@@ -297,7 +297,7 @@ slay run_server() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Entry point
+fr fr/ Entry point
 slay main() -> Result<(), Box<dyn std::error::Error>> {
     console::println("🌟 CURSED web_vibez HTTP Server Demo")?;
     console::println("=====================================\n")?;
@@ -314,7 +314,7 @@ slay main() -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
-/// Example client function for testing
+fr fr/ Example client function for testing
 slay test_client() -> Result<(), Box<dyn std::error::Error>> {
     console::println("🧪 Testing server endpoints...")?;
     

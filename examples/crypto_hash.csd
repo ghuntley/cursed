@@ -1,11 +1,11 @@
-/// fr fr CURSED crypto hash examples - secure hashing periodt
-/// 
-/// This example demonstrates all the hash functions available in CURSED,
-/// including SHA-256, SHA-512, and MD5 for different use cases.
+fr fr/ fr fr CURSED crypto hash examples - secure hashing periodt
+fr fr/ 
+fr fr/ This example demonstrates all the hash functions available in CURSED,
+fr fr/ including SHA-256, SHA-512, and MD5 for different use cases.
 
-import crypto::hash
+yeet crypto::hash
 
-/// bestie Hash a simple string with different algorithms  
+fr fr/ bestie Hash a simple string with different algorithms  
 facts main() -> nil {
     // Basic string to hash
     sus message = "Hello CURSED! This is periodt secure hashing bestie!"
@@ -50,7 +50,7 @@ facts main() -> nil {
     verify_hashes()
 }
 
-/// vibes Simulate hashing file content
+fr fr/ vibes Simulate hashing file content
 facts hash_file_content() -> nil {
     // Simulate reading a file in chunks
     sus file_chunks = [
@@ -84,7 +84,7 @@ facts hash_file_content() -> nil {
     }
 }
 
-/// yolo Hash passwords with different algorithms
+fr fr/ yolo Hash passwords with different algorithms
 facts hash_passwords() -> nil {
     sus passwords = [
         "password123",      // Weak password
@@ -108,7 +108,7 @@ facts hash_passwords() -> nil {
     print("   Consider using bcrypt, scrypt, or Argon2 for password storage.")
 }
 
-/// periodt Compare performance of different hash algorithms
+fr fr/ periodt Compare performance of different hash algorithms
 facts compare_hash_performance() -> nil {
     sus test_data = "A".repeat(100000)  // 100KB of data
     print("Performance test with " + test_data.length() + " bytes of data:")
@@ -141,7 +141,7 @@ facts compare_hash_performance() -> nil {
     print("  MD5:     " + (data_mb / md5_time * 1000).round(2))
 }
 
-/// highkey Verify hash integrity and comparison
+fr fr/ highkey Verify hash integrity and comparison
 facts verify_hashes() -> nil {
     sus original_data = "Important data that must not be tampered with!"
     sus original_hash = crypto::sha256(original_data)
@@ -178,7 +178,7 @@ facts verify_hashes() -> nil {
     print("• Use constant-time comparison to prevent timing attacks")
 }
 
-/// lowkey Advanced example: Hash-based data structures
+fr fr/ lowkey Advanced example: Hash-based data structures
 facts hash_data_structures() -> nil {
     print("=== Hash-Based Data Structures ===")
     
@@ -209,7 +209,7 @@ facts hash_data_structures() -> nil {
     }
 }
 
-/// flex Example: File integrity checking
+fr fr/ flex Example: File integrity checking
 facts file_integrity_example() -> nil {
     print("=== File Integrity Checking ===")
     
@@ -249,7 +249,7 @@ facts file_integrity_example() -> nil {
     }
 }
 
-/// bestie Run all examples
+fr fr/ bestie Run all examples
 facts run_all_examples() -> nil {
     main()
     hash_data_structures()
@@ -260,5 +260,5 @@ facts run_all_examples() -> nil {
     print("Remember: Always use secure hash functions for security-critical applications!")
 }
 
-// Entry point for the example
+fr fr Entry point for the example
 run_all_examples()

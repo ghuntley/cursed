@@ -269,13 +269,7 @@ impl ErrorHandlingCodegen {
         ir.push_str("declare i8* @cursed_get_error_message(i8*)\n");
         ir.push_str("declare i8* @cursed_get_error_details(i8*)\n");
         
-        // Enhanced panic recovery runtime functions
-        ir.push_str("declare void @cursed_enhanced_try_begin(i64)\n");
-        ir.push_str("declare void @cursed_enhanced_try_end(i64)\n");
-        ir.push_str("declare i8* @cursed_get_panic_context(i64)\n");
-        ir.push_str("declare i8* @cursed_extract_panic_value(i8*)\n");
-        ir.push_str("declare i8* @cursed_extract_stack_trace(i8*)\n");
-        ir.push_str("declare void @cursed_clear_panic_context(i64)\n");
+        // Enhanced panic recovery runtime functions (declarations handled by main LLVM codegen)
         ir.push_str("declare void @cursed_register_panic_handler(i64, i8*)\n");
         ir.push_str("declare i8* @cursed_handle_panic(i64, i8*)\n");
         

@@ -1,11 +1,11 @@
 vibe main;
 
-// Basic errors interface
+fr fr Basic errors interface
 collab Error {
     slay error() tea;
 }
 
-// Enhanced type assertion error with more detailed information
+fr fr Enhanced type assertion error with more detailed information
 squad EnhancedTypeAssertionError {
     expected tea,        // Expected type name
     actual tea,         // Actual type name
@@ -16,7 +16,7 @@ squad EnhancedTypeAssertionError {
     interfaces []tea    // List of interfaces implemented by the actual type
 }
 
-// Implement Error interface for EnhancedTypeAssertionError
+fr fr Implement Error interface for EnhancedTypeAssertionError
 slay (e EnhancedTypeAssertionError) error() tea {
     sus message = "Type assertion failed: expected " + e.expected + " but got " + e.actual;
     
@@ -38,15 +38,15 @@ slay (e EnhancedTypeAssertionError) error() tea {
     return message;
 }
 
-// Basic Result type similar to Rust's Result
-// Contains either a value or an error
+fr fr Basic Result type similar to Rust's Result
+fr fr Contains either a value or an error
 squad Result<T, E> {
     value T,
     err E,
     isOk lit
 }
 
-// Helper to create a successful result
+fr fr Helper to create a successful result
 slay ok<T, E>(value T) Result<T, E> {
     return Result<T, E>{
         value: value,
@@ -55,7 +55,7 @@ slay ok<T, E>(value T) Result<T, E> {
     };
 }
 
-// Helper to create an error result
+fr fr Helper to create an error result
 slay fail<T, E>(err E) Result<T, E> {
     return Result<T, E>{
         value: nofr as T,
@@ -64,18 +64,18 @@ slay fail<T, E>(err E) Result<T, E> {
     };
 }
 
-// Shape interface for geometric shapes
+fr fr Shape interface for geometric shapes
 collab Shape {
     slay area() meal;
     slay name() tea;
 }
 
-// Drawable interface for things that can be drawn
+fr fr Drawable interface for things that can be drawn
 collab Drawable {
     slay draw() tea;
 }
 
-// Circle implements Shape
+fr fr Circle implements Shape
 squad Circle {
     radius meal,
 }
@@ -92,7 +92,7 @@ slay (c Circle) draw() tea {
     return "Drawing a circle with radius " + c.radius;
 }
 
-// Rectangle implements Shape and Drawable with a diamond inheritance pattern
+fr fr Rectangle implements Shape and Drawable with a diamond inheritance pattern
 squad Rectangle {
     width meal,
     height meal
@@ -110,7 +110,7 @@ slay (r Rectangle) draw() tea {
     return "Drawing a rectangle " + r.width + "x" + r.height;
 }
 
-// Triangle implements Shape but not Drawable
+fr fr Triangle implements Shape but not Drawable
 squad Triangle {
     base meal,
     height meal
@@ -124,7 +124,7 @@ slay (t Triangle) name() tea {
     return "Triangle";
 }
 
-// Function that tries to assert a drawable shape - demonstrates diamond inheritance pattern
+fr fr Function that tries to assert a drawable shape - demonstrates diamond inheritance pattern
 slay drawShape(shape Shape) Result<tea, Error> {
     // Try to assert shape as Drawable, which could be Circle or Rectangle
     // This will use enhanced error reporting if it fails
@@ -135,7 +135,7 @@ slay drawShape(shape Shape) Result<tea, Error> {
     return ok<tea, Error>(drawable.draw());
 }
 
-// Function with nested assertions to demonstrate error propagation accuracy
+fr fr Function with nested assertions to demonstrate error propagation accuracy
 slay processNestedShape(shape Shape) Result<tea, Error> {
     // First try to get the shape's name
     sus name = shape.name();
@@ -148,7 +148,7 @@ slay processNestedShape(shape Shape) Result<tea, Error> {
     return ok<tea, Error>(name + ": " + drawing);
 }
 
-// Main function to demonstrate enhanced error reporting
+fr fr Main function to demonstrate enhanced error reporting
 slay main() {
     // Create different shapes
     sus circle = Circle{radius: 5.0};

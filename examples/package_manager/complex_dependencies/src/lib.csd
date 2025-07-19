@@ -2,20 +2,20 @@ vibe web_server_demo
 
 fr fr Advanced web server library demonstrating complex dependency usage
 
-import "web_framework"
-import "database_driver" as db
-import "json_utils"
-import "log_manager"
-import "config_parser"
+yeet "web_framework"
+yeet "database_driver" as db
+yeet "json_utils"
+yeet "log_manager"
+yeet "config_parser"
 
 #[cfg(feature = "auth")]
-import "auth_provider"
+yeet "auth_provider"
 
 #[cfg(feature = "caching")]
-import "cache_manager"
+yeet "cache_manager"
 
 #[cfg(feature = "monitoring")]
-import "metrics_collector"
+yeet "metrics_collector"
 
 squad ServerConfig {
     port normie

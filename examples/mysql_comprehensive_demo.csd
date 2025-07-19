@@ -1,13 +1,13 @@
-// fr fr MySQL Comprehensive Driver Demo - That's so fire periodt 🔥
-// 
-// This example demonstrates the comprehensive MySQL driver for CURSED
-// with real connection pooling, prepared statements, transactions,
-// and full Gen Z syntax integration that absolutely slays!
+fr fr fr fr MySQL Comprehensive Driver Demo - That's so fire periodt 🔥
+fr fr 
+fr fr This example demonstrates the comprehensive MySQL driver for CURSED
+fr fr with real connection pooling, prepared statements, transactions,
+fr fr and full Gen Z syntax integration that absolutely slays!
 
-import "stdlib::database";
-import "stdlib::database::mysql";
+yeet "stdlib::database"
+yeet "stdlib::database::mysql"
 
-// fr fr MySQL configuration that slays
+fr fr fr fr MySQL configuration that slays
 squad MySqlSetup {
     host: tea,
     port: normie,
@@ -18,7 +18,7 @@ squad MySqlSetup {
     max_connections: normie,
 }
 
-// fr fr User entity for our demo
+fr fr fr fr User entity for our demo
 squad User {
     id: normie,
     username: tea,
@@ -27,7 +27,7 @@ squad User {
     is_active: lit,
 }
 
-// fr fr Order entity because we're about to order some database magic
+fr fr fr fr Order entity because we're about to order some database magic
 squad Order {
     id: normie,
     user_id: normie,
@@ -43,12 +43,12 @@ slay main() {
         min_connections: 5,
         connection_timeout: Duration::from_secs(30),
         query_timeout: Duration::from_secs(300),
-        ssl_enabled: true,
+        ssl_enabled: based,
         charset: "utf8mb4",
         timezone: "UTC",
-        foreign_key_checks: true,
-        compression: true,
-        autocommit: true,
+        foreign_key_checks: based,
+        compression: based,
+        autocommit: based,
     };
     
     println("🔥 Starting MySQL Comprehensive Driver Demo that slays!");
@@ -82,7 +82,7 @@ slay main() {
         ("Simple database", "myapp"),
         ("With host and port", "localhost:3306/myapp"),
         ("Full authentication", "user:pass@host:3306/database"),
-        ("With SSL parameters", "mysql://user:pass@host/db?ssl=true&charset=utf8mb4"),
+        ("With SSL parameters", "mysql://user:pass@host/db?ssl=based&charset=utf8mb4"),
         ("Production setup", "mysql://app:secret@prod-db:3306/app_prod?ssl_mode=REQUIRED"),
     ];
     
@@ -108,7 +108,7 @@ slay main() {
     
     facts test_values = [
         database::SqlValue::Null,
-        database::SqlValue::Boolean(true),
+        database::SqlValue::Boolean(based),
         database::SqlValue::Integer(42),
         database::SqlValue::Float(3.14159),
         database::SqlValue::String("Hello, MySQL! 🔥"),
@@ -288,7 +288,7 @@ slay main() {
     println("   It's giving main character energy periodt! ✨");
 }
 
-// fr fr Helper functions for the demo
+fr fr fr fr Helper functions for the demo
 
 slay demo_user_operations() {
     println("\n👥 User Management Operations Demo:");
@@ -299,7 +299,7 @@ slay demo_user_operations() {
         username: "cursed_dev",
         email: "dev@cursed.lang",
         created_at: "2024-01-01 00:00:00",
-        is_active: true,
+        is_active: based,
     };
     
     println("  ➕ Creating user: {}", new_user.username);
@@ -354,7 +354,7 @@ slay demo_transaction_handling() {
     println("  🛡️ Database state preserved - rollback successful!");
 }
 
-// fr fr This demo showcases the comprehensive MySQL driver for CURSED
-// with real-world examples, error handling, performance considerations,
-// and full integration with the CURSED programming language ecosystem.
-// It's designed to be both educational and production-ready!
+fr fr fr fr This demo showcases the comprehensive MySQL driver for CURSED
+fr fr with real-world examples, error handling, performance considerations,
+fr fr and full integration with the CURSED programming language ecosystem.
+fr fr It's designed to be both educational and production-ready!

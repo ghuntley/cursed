@@ -1,8 +1,8 @@
-/// fr fr CURSED Database Example - showing off sql_vibes package periodt
-/// This example demonstrates basic database operations using the sql_vibes package
+fr fr/ fr fr CURSED Database Example - showing off sql_vibes package periodt
+fr fr/ This example demonstrates basic database operations using the sql_vibes package
 
-// Import the sql_vibes package for database operations
-import sql_vibes
+fr fr Import the sql_vibes package for database operations
+yeet sql_vibes
 
 slay main() {
     // Connect to an in-memory SQLite database for testing

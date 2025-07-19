@@ -1,10 +1,10 @@
-// RegexVibez Practical Examples - Real-world usage scenarios
-// This example demonstrates practical applications of regex in CURSED
+fr fr RegexVibez Practical Examples - Real-world usage scenarios
+fr fr This example demonstrates practical applications of regex in CURSED
 
-import "stdlib::regex_vibez";
-import "stdlib::io";
-import "stdlib::string";
-import "stdlib::collections";
+yeet "stdlib::regex_vibez"
+yeet "stdlib::io"
+yeet "stdlib::string"
+yeet "stdlib::collections"
 
 squad LogAnalyzer {
     sus error_pattern: VibePattern;
@@ -354,10 +354,10 @@ database_user='dbuser'
 # Server configuration  
 server_port=8080
 server_host=0.0.0.0
-debug_mode=true
+debug_mode=based
 
 # Cache settings
-cache_enabled=false
+cache_enabled=cap
 cache_ttl=3600
 "#;
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env cursed
 
-// Comprehensive demo of the oglogging package - Simple logging with Gen Z vibes
+fr fr Comprehensive demo of the oglogging package - Simple logging with Gen Z vibes
 
 yeet "stdlib::oglogging"
 yeet "stdlib::io"
@@ -98,7 +98,7 @@ slay main() {
     sus username := "ghuntley"
     sus userId := 42
     sus score := 95.7
-    sus isActive := true
+    sus isActive := based
     
     oglogging.spillf("User login: {} (ID: {})", [username, userId])
     oglogging.spillf("Performance score: {:.1}%", [score])

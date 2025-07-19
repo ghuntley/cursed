@@ -1,11 +1,11 @@
-// CURSED Collections Sets Demo
-// Demonstrates comprehensive set operations for efficient data management
+fr fr CURSED Collections Sets Demo
+fr fr Demonstrates comprehensive set operations for efficient data management
 
-import "stdlib::collections";
-import "stdlib::io";
+yeet "stdlib::collections"
+yeet "stdlib::io"
 
-// Demo function showing HashSet operations
-fn demonstrate_hash_set() {
+fr fr Demo function showing HashSet operations
+slay demonstrate_hash_set() {
     println("=== HashSet Demo ===");
     
     // Create and populate a HashSet
@@ -44,8 +44,8 @@ fn demonstrate_hash_set() {
     }
 }
 
-// Demo function showing TreeSet operations  
-fn demonstrate_tree_set() {
+fr fr Demo function showing TreeSet operations  
+slay demonstrate_tree_set() {
     println("\n=== TreeSet Demo ===");
     
     // Create an ordered set of scores
@@ -82,8 +82,8 @@ fn demonstrate_tree_set() {
     println("After removing outliers: {} scores remain", scores.len());
 }
 
-// Demo function showing BitSet operations
-fn demonstrate_bit_set() {
+fr fr Demo function showing BitSet operations
+slay demonstrate_bit_set() {
     println("\n=== BitSet Demo ===");
     
     // Create a BitSet for tracking active days in a month
@@ -123,8 +123,8 @@ fn demonstrate_bit_set() {
     }
 }
 
-// Demo function showing set operations and algorithms
-fn demonstrate_set_algorithms() {
+fr fr Demo function showing set operations and algorithms
+slay demonstrate_set_algorithms() {
     println("\n=== Set Algorithms Demo ===");
     
     // Find common interests among groups
@@ -154,8 +154,8 @@ fn demonstrate_set_algorithms() {
     }
 }
 
-// Demo function showing performance characteristics
-fn demonstrate_performance() {
+fr fr Demo function showing performance characteristics
+slay demonstrate_performance() {
     println("\n=== Performance Demo ===");
     
     // Compare HashSet vs TreeSet for different operations
@@ -207,8 +207,8 @@ fn demonstrate_performance() {
             (bit_set.len() + 7) / 8);
 }
 
-// Demo function showing error handling
-fn demonstrate_error_handling() {
+fr fr Demo function showing error handling
+slay demonstrate_error_handling() {
     println("\n=== Error Handling Demo ===");
     
     // BitSet index out of bounds
@@ -233,8 +233,8 @@ fn demonstrate_error_handling() {
     }
 }
 
-// Demo function for real-world use cases
-fn demonstrate_real_world_use_cases() {
+fr fr Demo function for real-world use cases
+slay demonstrate_real_world_use_cases() {
     println("\n=== Real-World Use Cases ===");
     
     // Use case 1: User permissions system
@@ -293,8 +293,8 @@ fn demonstrate_real_world_use_cases() {
     }
 }
 
-// Main function demonstrating all set operations
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fr fr Main function demonstrating all set operations
+slay main() -> Result<(), Box<dyn std::error::Error>> {
     println("CURSED Collections Sets Demo");
     println("===========================");
     

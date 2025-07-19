@@ -1,5 +1,5 @@
-// Worker Pool Pattern Example
-// Demonstrates distributing work across multiple worker goroutines
+fr fr Worker Pool Pattern Example
+fr fr Demonstrates distributing work across multiple worker goroutines
 
 type Job struct {
     id    int

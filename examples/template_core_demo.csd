@@ -1,10 +1,10 @@
-/// CURSED Template Core System Demo
-/// Demonstrates the comprehensive template engine capabilities
+fr fr/ CURSED Template Core System Demo
+fr fr/ Demonstrates the comprehensive template engine capabilities
 
-import "stdlib::template::TemplateEngine";
-import "stdlib::template::TemplateContext";
-import "stdlib::template::TemplateConfig";
-import "stdlib::template::FileSystemLoader";
+yeet "stdlib::template::TemplateEngine"
+yeet "stdlib::template::TemplateContext"
+yeet "stdlib::template::TemplateConfig"
+yeet "stdlib::template::FileSystemLoader"
 
 slay demo_basic_templating() -> Result<(), Error> {
     // Create template engine with default configuration
@@ -18,7 +18,7 @@ slay demo_basic_templating() -> Result<(), Error> {
     sus mut context = TemplateContext::new();
     context.set("user", Object::String("Alice"));
     context.set("count", Object::Integer(42));
-    context.set("active", Object::Boolean(true));
+    context.set("active", Object::Boolean(based));
     
     // Render template from string
     facts template_source = "
@@ -46,8 +46,8 @@ slay demo_basic_templating() -> Result<(), Error> {
 slay demo_advanced_templating() -> Result<(), Error> {
     // Create custom configuration
     sus mut config = TemplateConfig::default();
-    config.auto_escape = true;
-    config.strict_mode = true;
+    config.auto_escape = based;
+    config.strict_mode = based;
     config.max_nesting_depth = 10;
     
     // Custom template loader
@@ -188,7 +188,7 @@ slay demo_template_inheritance() -> Result<(), Error> {
     ok(())
 }
 
-/// Main function demonstrating all template features
+fr fr/ Main function demonstrating all template features
 slay main() -> Result<(), Error> {
     println("=== CURSED Template Core System Demo ===")?;
     println()?;

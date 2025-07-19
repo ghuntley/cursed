@@ -1,15 +1,15 @@
-// Trigonometric Functions Demo for CURSED Programming Language
-// 
-// This example demonstrates the comprehensive trigonometric functionality
-// available in the CURSED standard library, including:
-// - Basic trigonometric functions (sin, cos, tan)
-// - Inverse trigonometric functions (asin, acos, atan, atan2)
-// - Hyperbolic functions (sinh, cosh, tanh)
-// - Inverse hyperbolic functions (asinh, acosh, atanh)
-// - Angle conversion utilities
-// - Advanced trigonometric functions
+fr fr Trigonometric Functions Demo for CURSED Programming Language
+fr fr 
+fr fr This example demonstrates the comprehensive trigonometric functionality
+fr fr available in the CURSED standard library, including:
+fr fr - Basic trigonometric functions (sin, cos, tan)
+fr fr - Inverse trigonometric functions (asin, acos, atan, atan2)
+fr fr - Hyperbolic functions (sinh, cosh, tanh)
+fr fr - Inverse hyperbolic functions (asinh, acosh, atanh)
+fr fr - Angle conversion utilities
+fr fr - Advanced trigonometric functions
 
-import "stdlib::math";
+yeet "stdlib::math"
 
 facts main() {
     println("=== CURSED Trigonometric Functions Demo ===");

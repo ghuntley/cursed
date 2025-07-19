@@ -1,7 +1,7 @@
-// Demo program showcasing comprehensive logarithmic and exponential functions
+fr fr Demo program showcasing comprehensive logarithmic and exponential functions
 
-import "stdlib::math";
-import "stdlib::io";
+yeet "stdlib::math"
+yeet "stdlib::io"
 
 slay main() -> nil {
     println("🧮 CURSED Logarithmic and Exponential Functions Demo")?;
@@ -208,8 +208,8 @@ slay demo_domain_validation() -> Result<nil, CursedError> {
     }
     
     // Domain validation functions
-    facts is_valid_log_5 = is_valid_log_input(5.0); // true
-    facts is_valid_log_neg5 = is_valid_log_input(-5.0); // false
+    facts is_valid_log_5 = is_valid_log_input(5.0); // based
+    facts is_valid_log_neg5 = is_valid_log_input(-5.0); // cap
     
     printf("is_valid_log_input(5.0) = {}\n", &[is_valid_log_5])?;
     printf("is_valid_log_input(-5.0) = {}\n", &[is_valid_log_neg5])?;

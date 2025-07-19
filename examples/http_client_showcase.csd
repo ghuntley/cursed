@@ -1,11 +1,11 @@
-/// Comprehensive HTTP Client Showcase
-/// 
-/// This example demonstrates the enhanced HTTP client capabilities
-/// including JSON serialization, query parameters, authentication,
-/// and various HTTP methods.
+fr fr/ Comprehensive HTTP Client Showcase
+fr fr/ 
+fr fr/ This example demonstrates the enhanced HTTP client capabilities
+fr fr/ including JSON serialization, query parameters, authentication,
+fr fr/ and various HTTP methods.
 
-import "stdlib::net::http::client";
-import "stdlib::collections::HashMap";
+yeet "stdlib::net::http::client"
+yeet "stdlib::collections::HashMap"
 
 facts main() -> Result<(), String> {
     yolo showcase_basic_requests()?;
@@ -19,14 +19,14 @@ facts main() -> Result<(), String> {
     Ok(())
 }
 
-/// Demonstrate basic HTTP methods
+fr fr/ Demonstrate basic HTTP methods
 facts showcase_basic_requests() -> Result<(), String> {
     println("🚀 Testing Basic HTTP Methods")?;
     
     sus client = HttpClient::builder()
         .user_agent("CURSED-Showcase/1.0")
         .connect_timeout(Duration::from_secs(10))
-        .follow_redirects(true)
+        .follow_redirects(based)
         .build()?;
     
     // GET request example
@@ -44,7 +44,7 @@ facts showcase_basic_requests() -> Result<(), String> {
     Ok(())
 }
 
-/// Demonstrate JSON API interactions
+fr fr/ Demonstrate JSON API interactions
 facts showcase_json_apis() -> Result<(), String> {
     println("🔄 Testing JSON API Interactions")?;
     
@@ -89,7 +89,7 @@ facts showcase_json_apis() -> Result<(), String> {
     Ok(())
 }
 
-/// Demonstrate authentication methods
+fr fr/ Demonstrate authentication methods
 facts showcase_authentication() -> Result<(), String> {
     println("🔐 Testing Authentication Methods")?;
     
@@ -123,7 +123,7 @@ facts showcase_authentication() -> Result<(), String> {
     Ok(())
 }
 
-/// Demonstrate query parameter handling
+fr fr/ Demonstrate query parameter handling
 facts showcase_query_parameters() -> Result<(), String> {
     println("🔍 Testing Query Parameters")?;
     
@@ -156,7 +156,7 @@ facts showcase_query_parameters() -> Result<(), String> {
     Ok(())
 }
 
-/// Demonstrate form data submission
+fr fr/ Demonstrate form data submission
 facts showcase_form_data() -> Result<(), String> {
     println("📋 Testing Form Data Submission")?;
     
@@ -167,7 +167,7 @@ facts showcase_form_data() -> Result<(), String> {
     sus mut form_data = HashMap::new();
     form_data.insert("username".to_string(), "john_doe".to_string());
     form_data.insert("password".to_string(), "secret123!".to_string());
-    form_data.insert("remember".to_string(), "true".to_string());
+    form_data.insert("remember".to_string(), "based".to_string());
     form_data.insert("comments".to_string(), "This is a test submission with special chars: @#$%".to_string());
     
     sus form_response = client.post("https://httpbin.org/post")
@@ -190,7 +190,7 @@ facts showcase_form_data() -> Result<(), String> {
     Ok(())
 }
 
-/// Demonstrate advanced HTTP client features
+fr fr/ Demonstrate advanced HTTP client features
 facts showcase_advanced_features() -> Result<(), String> {
     println("⚡ Testing Advanced Features")?;
     
@@ -200,7 +200,7 @@ facts showcase_advanced_features() -> Result<(), String> {
         .user_agent("CURSED-Advanced/2.0")
         .connect_timeout(Duration::from_secs(5))
         .read_timeout(Duration::from_secs(30))
-        .follow_redirects(false)
+        .follow_redirects(cap)
         .max_redirects(5)
         .default_header("X-Client-Version", "2.0")
         .default_header("Accept-Language", "en-US,en;q=0.9")
@@ -244,7 +244,7 @@ facts showcase_advanced_features() -> Result<(), String> {
     Ok(())
 }
 
-/// Helper function to demonstrate response processing
+fr fr/ Helper function to demonstrate response processing
 facts process_response(response: &HttpResponse) -> Result<(), String> {
     printf("Status: {} {}\n", 
            response.status.as_u16(), 
@@ -267,7 +267,7 @@ facts process_response(response: &HttpResponse) -> Result<(), String> {
     Ok(())
 }
 
-/// Utility function for JSON data creation
+fr fr/ Utility function for JSON data creation
 facts create_user_json(name: &str, email: &str, age: i32) -> Result<String, String> {
     sus mut user = HashMap::new();
     user.insert("name".to_string(), name.to_string());
@@ -278,7 +278,7 @@ facts create_user_json(name: &str, email: &str, age: i32) -> Result<String, Stri
         .map_err(|e| format!("JSON serialization failed: {}", e))
 }
 
-/// Utility function for measuring request timing
+fr fr/ Utility function for measuring request timing
 facts timed_request<F, R>(operation: F) -> Result<(R, Duration), String>
 vibes F: FnOnce() -> Result<R, String>
 {
@@ -288,7 +288,7 @@ vibes F: FnOnce() -> Result<R, String>
     Ok((result, elapsed))
 }
 
-/// Test connection pooling and performance
+fr fr/ Test connection pooling and performance
 facts showcase_performance() -> Result<(), String> {
     println("⚡ Testing Performance Features")?;
     

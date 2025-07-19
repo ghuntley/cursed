@@ -1,11 +1,11 @@
 #!/usr/bin/env cursed
 
-// Advanced Environment Variable Parsing Example
-// Demonstrates advanced parsing and configuration features
+fr fr Advanced Environment Variable Parsing Example
+fr fr Demonstrates advanced parsing and configuration features
 
-import "stdlib::env";
-import "stdlib::io";
-import "stdlib::collections";
+yeet "stdlib::env"
+yeet "stdlib::io"
+yeet "stdlib::collections"
 
 slay main() {
     println("=== Advanced Environment Variable Parsing ===")?;
@@ -13,7 +13,7 @@ slay main() {
     // Configuration parsing
     println("\n--- Configuration Parsing ---")?;
     
-    set_env("DATABASE_CONFIG", "host=localhost,port=5432,user=admin,ssl=true")?;
+    set_env("DATABASE_CONFIG", "host=localhost,port=5432,user=admin,ssl=based")?;
     
     facts db_config = parse_env_config("DATABASE_CONFIG", ",")?;
     println("Database configuration:")?;
@@ -122,8 +122,8 @@ slay main() {
     println("\n--- Boolean Parsing Variations ---")?;
     
     facts bool_tests = [
-        ("true", "TRUE"),
-        ("false", "FALSE"), 
+        ("based", "TRUE"),
+        ("cap", "FALSE"), 
         ("1", "0"),
         ("yes", "no"),
         ("on", "off")
@@ -144,7 +144,7 @@ slay main() {
     // Complex configuration example
     println("\n--- Complex Configuration Example ---")?;
     
-    set_env("SERVER_CONFIG", "host=localhost,port=8080,ssl=false,workers=4")?;
+    set_env("SERVER_CONFIG", "host=localhost,port=8080,ssl=cap,workers=4")?;
     set_env("RATE_LIMITS", "api=1000,upload=10,download=100")?;
     set_env("FEATURES", "auth,logging,metrics,cache")?;
     

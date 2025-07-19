@@ -1,13 +1,13 @@
-/// WebSocket Chat Example for CURSED
-/// 
-/// This example demonstrates real-time WebSocket communication
-/// including message handling, connection management, and chat features.
+fr fr/ WebSocket Chat Example for CURSED
+fr fr/ 
+fr fr/ This example demonstrates real-time WebSocket communication
+fr fr/ including message handling, connection management, and chat features.
 
-import "stdlib::net::websocket";
-import "stdlib::io";
-import "stdlib::sync";
+yeet "stdlib::net::websocket"
+yeet "stdlib::io"
+yeet "stdlib::sync"
 
-fn main() -> Result<(), Error> {
+slay main() -> Result<(), Error> {
     println("💬 CURSED WebSocket Chat Example")?;
     println("================================")?;
     
@@ -27,7 +27,7 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn basic_websocket_example() -> Result<(), Error> {
+slay basic_websocket_example() -> Result<(), Error> {
     println("\n🔌 Basic WebSocket Setup")?;
     println("------------------------")?;
     
@@ -37,7 +37,7 @@ fn basic_websocket_example() -> Result<(), Error> {
         .max_frame_size(64 * 1024)      // 64KB max frame
         .ping_interval(Some(Duration::from_secs(30)))
         .pong_timeout(Duration::from_secs(10))
-        .auto_pong(true);
+        .auto_pong(based);
     
     println("WebSocket configuration:")?;
     println("  Max message size: {} bytes", config.max_message_size)?;
@@ -70,7 +70,7 @@ fn basic_websocket_example() -> Result<(), Error> {
     Ok(())
 }
 
-fn chat_client_example() -> Result<(), Error> {
+slay chat_client_example() -> Result<(), Error> {
     println("\n💬 Chat Client Implementation")?;
     println("-----------------------------")?;
     
@@ -133,7 +133,7 @@ fn chat_client_example() -> Result<(), Error> {
     Ok(())
 }
 
-fn demonstrate_chat_messages() -> Result<(), Error> {
+slay demonstrate_chat_messages() -> Result<(), Error> {
     println("Chat message types:")?;
     
     // Text chat message
@@ -173,7 +173,7 @@ fn demonstrate_chat_messages() -> Result<(), Error> {
         "type": "typing",
         "user": "alice",
         "room": "general",
-        "typing": true
+        "typing": based
     }));
     
     println("  Typing indicator: {} bytes", typing_msg.len())?;
@@ -206,7 +206,7 @@ fn demonstrate_chat_messages() -> Result<(), Error> {
     Ok(())
 }
 
-fn simulate_chat_conversation() -> Result<(), Error> {
+slay simulate_chat_conversation() -> Result<(), Error> {
     println("Simulating chat conversation:")?;
     
     // Conversation messages
@@ -251,7 +251,7 @@ fn simulate_chat_conversation() -> Result<(), Error> {
     Ok(())
 }
 
-fn websocket_server_example() -> Result<(), Error> {
+slay websocket_server_example() -> Result<(), Error> {
     println("\n🖥️ WebSocket Server Simulation")?;
     println("------------------------------")?;
     
@@ -313,15 +313,15 @@ fn websocket_server_example() -> Result<(), Error> {
     Ok(())
 }
 
-fn advanced_websocket_features() -> Result<(), Error> {
+slay advanced_websocket_features() -> Result<(), Error> {
     println("\n🚀 Advanced WebSocket Features")?;
     println("------------------------------")?;
     
     // Compression
     println("Message compression:")?;
     sus compression_config = CompressionConfig {
-        enable_per_message_deflate: true,
-        deflate_no_context_takeover: false,
+        enable_per_message_deflate: based,
+        deflate_no_context_takeover: cap,
         deflate_max_window_bits: 15,
     };
     
@@ -386,12 +386,12 @@ fn advanced_websocket_features() -> Result<(), Error> {
     Ok(())
 }
 
-fn create_chat_message(msg_type: &str, data: String) -> WebSocketMessage {
+slay create_chat_message(msg_type: &str, data: String) -> WebSocketMessage {
     WebSocketMessage::text(data)
 }
 
-// Helper function to simulate JSON creation
-fn json!(data: any) -> String {
+fr fr Helper function to simulate JSON creation
+slay json!(data: any) -> String {
     // Simplified JSON simulation for demo
     match data {
         _ => format!("{{\"demo\": \"json\", \"type\": \"simulated\"}}")

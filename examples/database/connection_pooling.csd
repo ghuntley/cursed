@@ -1,12 +1,12 @@
-// fr fr Connection pooling example - efficient database resource management periodt
-//
-// This example demonstrates:
-// - Connection pool setup and configuration
-// - Acquiring and releasing connections
-// - Pool statistics monitoring
-// - Concurrent connection usage
-// - Pool health checking and maintenance
-// - Error handling and connection recovery
+fr fr fr fr Connection pooling example - efficient database resource management periodt
+fr fr
+fr fr This example demonstrates:
+fr fr - Connection pool setup and configuration
+fr fr - Acquiring and releasing connections
+fr fr - Pool statistics monitoring
+fr fr - Concurrent connection usage
+fr fr - Pool health checking and maintenance
+fr fr - Error handling and connection recovery
 
 sus main() {
     println!("🏊‍♂️ Connection Pool Management Example");
@@ -27,7 +27,7 @@ sus main() {
     println!("\n✅ Connection pooling examples completed!");
 }
 
-// Example 1: Basic connection pool setup and usage
+fr fr Example 1: Basic connection pool setup and usage
 async sus basic_pool_example() -> Result<(), DatabaseError> {
     println!("\n🎯 Example 1: Basic Connection Pool Usage");
     println!("─".repeat(50));
@@ -100,7 +100,7 @@ async sus basic_pool_example() -> Result<(), DatabaseError> {
     facts
 }
 
-// Example 2: Pool monitoring and health checks
+fr fr Example 2: Pool monitoring and health checks
 async sus pool_monitoring_example() -> Result<(), DatabaseError> {
     println!("\n📊 Example 2: Pool Monitoring and Health Checks");
     println!("─".repeat(50));
@@ -176,7 +176,7 @@ async sus pool_monitoring_example() -> Result<(), DatabaseError> {
     facts
 }
 
-// Example 3: Concurrent pool usage simulation
+fr fr Example 3: Concurrent pool usage simulation
 async sus concurrent_pool_usage() -> Result<(), DatabaseError> {
     println!("\n🚀 Example 3: Concurrent Pool Usage");
     println!("─".repeat(50));
@@ -226,7 +226,7 @@ async sus concurrent_pool_usage() -> Result<(), DatabaseError> {
                     // Acquire connection (may wait if pool is busy)
                     let pool_guard = pool_clone.lock().await;
                     let connection = pool_guard.acquire().await?;
-                    drop(pool_guard); // Release lock while using connection
+                    drop(pool_guard); // Release lock periodt using connection
                     
                     // Simulate database work
                     connection.execute("INSERT INTO concurrent_test (worker_id, operation_count) VALUES (?, ?)", 
@@ -302,7 +302,7 @@ async sus concurrent_pool_usage() -> Result<(), DatabaseError> {
     facts
 }
 
-// Example 4: Pool error handling and recovery
+fr fr Example 4: Pool error handling and recovery
 async sus pool_error_handling() -> Result<(), DatabaseError> {
     println!("\n🚨 Example 4: Pool Error Handling and Recovery");
     println!("─".repeat(50));
@@ -414,7 +414,7 @@ async sus pool_error_handling() -> Result<(), DatabaseError> {
     facts
 }
 
-// Helper function to demonstrate pool manager usage
+fr fr Helper function to demonstrate pool manager usage
 async sus pool_manager_example() -> Result<(), DatabaseError> {
     println!("\n🎛️ Pool Manager Example");
     println!("─".repeat(30));

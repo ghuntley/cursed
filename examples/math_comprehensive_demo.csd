@@ -1,10 +1,10 @@
-// CURSED Math Library Comprehensive Demo
-// Demonstrates the complete mathematical capabilities of the CURSED standard library
+fr fr CURSED Math Library Comprehensive Demo
+fr fr Demonstrates the complete mathematical capabilities of the CURSED standard library
 
-import "stdlib::math";
-import "stdlib::io";
+yeet "stdlib::math"
+yeet "stdlib::io"
 
-// Demonstrate basic mathematical operations
+fr fr Demonstrate basic mathematical operations
 slay demonstrate_basic_math() {
     println("=== Basic Mathematical Operations ===")?;
     
@@ -36,7 +36,7 @@ slay demonstrate_basic_math() {
     println("")?;
 }
 
-// Demonstrate trigonometric functions
+fr fr Demonstrate trigonometric functions
 slay demonstrate_trigonometry() {
     println("=== Trigonometric Functions ===")?;
     
@@ -70,7 +70,7 @@ slay demonstrate_trigonometry() {
     println("")?;
 }
 
-// Demonstrate logarithmic and exponential functions
+fr fr Demonstrate logarithmic and exponential functions
 slay demonstrate_logarithmic_exponential() {
     println("=== Logarithmic and Exponential Functions ===")?;
     
@@ -116,7 +116,7 @@ slay demonstrate_logarithmic_exponential() {
     println("")?;
 }
 
-// Demonstrate mathematical constants
+fr fr Demonstrate mathematical constants
 slay demonstrate_constants() {
     println("=== Mathematical Constants ===")?;
     
@@ -144,7 +144,7 @@ slay demonstrate_constants() {
     println("")?;
 }
 
-// Demonstrate random number generation
+fr fr Demonstrate random number generation
 slay demonstrate_random() {
     println("=== Random Number Generation ===")?;
     
@@ -175,7 +175,7 @@ slay demonstrate_random() {
     println("")?;
 }
 
-// Demonstrate statistical functions
+fr fr Demonstrate statistical functions
 slay demonstrate_statistics() {
     println("=== Statistical Functions ===")?;
     
@@ -211,7 +211,7 @@ slay demonstrate_statistics() {
     println("")?;
 }
 
-// Demonstrate special mathematical functions
+fr fr Demonstrate special mathematical functions
 slay demonstrate_special_functions() {
     println("=== Special Mathematical Functions ===")?;
     
@@ -256,7 +256,7 @@ slay demonstrate_special_functions() {
     println("")?;
 }
 
-// Demonstrate advanced mathematical utilities
+fr fr Demonstrate advanced mathematical utilities
 slay demonstrate_utilities() {
     println("=== Advanced Mathematical Utilities ===")?;
     
@@ -306,7 +306,7 @@ slay demonstrate_utilities() {
     println("")?;
 }
 
-// Demonstrate numerical methods
+fr fr Demonstrate numerical methods
 slay demonstrate_numerical_methods() {
     println("=== Numerical Methods ===")?;
     
@@ -334,7 +334,7 @@ slay demonstrate_numerical_methods() {
     println("")?;
 }
 
-// Demonstrate real-world mathematical applications
+fr fr Demonstrate real-world mathematical applications
 slay demonstrate_applications() {
     println("=== Real-World Mathematical Applications ===")?;
     
@@ -402,7 +402,7 @@ slay demonstrate_applications() {
     println("")?;
 }
 
-// Demonstrate cross-module integration
+fr fr Demonstrate cross-module integration
 slay demonstrate_integration() {
     println("=== Cross-Module Integration Example ===")?;
     println("Scientific Data Analysis Pipeline")?;
@@ -486,7 +486,7 @@ slay demonstrate_integration() {
     println("")?;
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 slay main() {
     println("CURSED Mathematical Library - Comprehensive Demonstration")?;
     println("========================================================")?;

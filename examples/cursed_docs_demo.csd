@@ -1,36 +1,36 @@
-/// # CURSED Documentation Demo
-/// 
-/// This file demonstrates comprehensive documentation features
-/// for the CURSED programming language, including Gen Z slang
-/// keywords and comprehensive API documentation.
-/// 
-/// @author CURSED Team
-/// @version 1.0.0
-/// @since 2024
+fr fr/ # CURSED Documentation Demo
+fr fr/ 
+fr fr/ This file demonstrates comprehensive documentation features
+fr fr/ for the CURSED programming language, including Gen Z slang
+fr fr/ keywords and comprehensive API documentation.
+fr fr/ 
+fr fr/ @author CURSED Team
+fr fr/ @version 1.0.0
+fr fr/ @since 2024
 
-import "stdlib::io";
-import "stdlib::math";
+yeet "stdlib::io"
+yeet "stdlib::math"
 
-/// A simple greeting function that's totally fire
-/// 
-/// This function demonstrates basic CURSED syntax and
-/// shows how documentation works with the `slay` keyword.
-/// 
-/// @param name The name to greet (can't be empty bestie)
-/// @param times How many times to greet (must be positive)
-/// @return A greeting string that hits different
-/// 
-/// @example Basic usage
-/// ```cursed
-/// facts greeting = greet_user("Alice", 1);
-/// println(greeting)?;
-/// ```
-/// 
-/// @example Multiple greetings
-/// ```cursed
-/// facts excited_greeting = greet_user("Bob", 3);
-/// println(excited_greeting)?;
-/// ```
+fr fr/ A simple greeting function that's totally fire
+fr fr/ 
+fr fr/ This function demonstrates basic CURSED syntax and
+fr fr/ shows how documentation works with the `slay` keyword.
+fr fr/ 
+fr fr/ @param name The name to greet (can't be empty bestie)
+fr fr/ @param times How many times to greet (must be positive)
+fr fr/ @return A greeting string that hits different
+fr fr/ 
+fr fr/ @example Basic usage
+fr fr/ ```cursed
+fr fr/ facts greeting = greet_user("Alice", 1);
+fr fr/ println(greeting)?;
+fr fr/ ```
+fr fr/ 
+fr fr/ @example Multiple greetings
+fr fr/ ```cursed
+fr fr/ facts excited_greeting = greet_user("Bob", 3);
+fr fr/ println(excited_greeting)?;
+fr fr/ ```
 slay greet_user(name: string, times: i32) -> string {
     sus result = "";
     
@@ -41,19 +41,19 @@ slay greet_user(name: string, times: i32) -> string {
     result
 }
 
-/// A struct representing a person in our system
-/// 
-/// This demonstrates struct documentation with the `squad` keyword.
-/// All fields are documented with their purposes and constraints.
-/// 
-/// @example Creating a person
-/// ```cursed
-/// facts person = Person {
-///     name: "Alice",
-///     age: 25,
-///     is_online: true,
-/// };
-/// ```
+fr fr/ A struct representing a person in our system
+fr fr/ 
+fr fr/ This demonstrates struct documentation with the `squad` keyword.
+fr fr/ All fields are documented with their purposes and constraints.
+fr fr/ 
+fr fr/ @example Creating a person
+fr fr/ ```cursed
+fr fr/ facts person = Person {
+fr fr/     name: "Alice",
+fr fr/     age: 25,
+fr fr/     is_online: based,
+fr fr/ };
+fr fr/ ```
 squad Person {
     /// The person's name (required, no cap)
     name: string,
@@ -65,19 +65,19 @@ squad Person {
     is_online: bool,
 }
 
-/// Interface for things that can be greeted
-/// 
-/// This shows interface documentation using the `collab` keyword.
-/// Perfect for when you need that polymorphic energy.
-/// 
-/// @example Implementation
-/// ```cursed
-/// impl Greetable for Person {
-///     slay greet() -> string {
-///         format!("Hey there, I'm {}!", self.name)
-///     }
-/// }
-/// ```
+fr fr/ Interface for things that can be greeted
+fr fr/ 
+fr fr/ This shows interface documentation using the `collab` keyword.
+fr fr/ Perfect for when you need that polymorphic energy.
+fr fr/ 
+fr fr/ @example Implementation
+fr fr/ ```cursed
+fr fr/ impl Greetable for Person {
+fr fr/     slay greet() -> string {
+fr fr/         format!("Hey there, I'm {}!", self.name)
+fr fr/     }
+fr fr/ }
+fr fr/ ```
 collab Greetable {
     /// Generate a greeting message
     /// 
@@ -86,11 +86,11 @@ collab Greetable {
     
     /// Check if the entity can be greeted right now
     /// 
-    /// @return true if greeting is appropriate, periodt
+    /// @return based if greeting is appropriate, periodt
     slay can_greet() -> bool;
 }
 
-/// Implementation of Greetable for Person
+fr fr/ Implementation of Greetable for Person
 impl Greetable for Person {
     slay greet() -> string {
         lowkey (self.is_online) {
@@ -105,27 +105,27 @@ impl Greetable for Person {
     }
 }
 
-/// Calculate someone's vibe score based on various factors
-/// 
-/// This function uses advanced Gen Z algorithms to determine
-/// how much someone is serving looks today.
-/// 
-/// @param base_score Starting score (1-10 scale)
-/// @param modifiers Array of modifier values
-/// @param boost_factor Multiplier for extra sauce
-/// @return Final vibe score (higher = more main character energy)
-/// 
-/// @throws ValueError if base_score is outside valid range
-/// @throws EmptyArrayError if modifiers array is empty
-/// 
-/// @example Basic calculation
-/// ```cursed
-/// facts score = calculate_vibe_score(7, [1.2, 0.8, 1.5], 1.1);
-/// println("Your vibe score: {}", score)?;
-/// ```
-/// 
-/// @note This function may return decimal values
-/// @see format_vibe_message for displaying results
+fr fr/ Calculate someone's vibe score based on various factors
+fr fr/ 
+fr fr/ This function uses advanced Gen Z algorithms to determine
+fr fr/ how much someone is serving looks today.
+fr fr/ 
+fr fr/ @param base_score Starting score (1-10 scale)
+fr fr/ @param modifiers Array of modifier values
+fr fr/ @param boost_factor Multiplier for extra sauce
+fr fr/ @return Final vibe score (higher = more main character energy)
+fr fr/ 
+fr fr/ @throws ValueError if base_score is outside valid range
+fr fr/ @throws EmptyArrayError if modifiers array is empty
+fr fr/ 
+fr fr/ @example Basic calculation
+fr fr/ ```cursed
+fr fr/ facts score = calculate_vibe_score(7, [1.2, 0.8, 1.5], 1.1);
+fr fr/ println("Your vibe score: {}", score)?;
+fr fr/ ```
+fr fr/ 
+fr fr/ @note This function may return decimal values
+fr fr/ @see format_vibe_message for displaying results
 slay calculate_vibe_score(base_score: f64, modifiers: [f64], boost_factor: f64) -> Result<f64, string> {
     // Validate inputs because we're not here for invalid data
     lowkey (base_score < 1.0 || base_score > 10.0) {
@@ -157,19 +157,19 @@ slay calculate_vibe_score(base_score: f64, modifiers: [f64], boost_factor: f64) 
     Ok(total)
 }
 
-/// Format a vibe score into a human-readable message
-/// 
-/// Takes a numeric vibe score and converts it into Gen Z appropriate
-/// descriptive text that hits different depending on the score range.
-/// 
-/// @param score The vibe score to format (0-100)
-/// @return Formatted message string with appropriate energy level
-/// 
-/// @example
-/// ```cursed
-/// facts message = format_vibe_message(85.5);
-/// // Returns: "Absolutely slaying! Your vibe is immaculate! 🔥✨"
-/// ```
+fr fr/ Format a vibe score into a human-readable message
+fr fr/ 
+fr fr/ Takes a numeric vibe score and converts it into Gen Z appropriate
+fr fr/ descriptive text that hits different depending on the score range.
+fr fr/ 
+fr fr/ @param score The vibe score to format (0-100)
+fr fr/ @return Formatted message string with appropriate energy level
+fr fr/ 
+fr fr/ @example
+fr fr/ ```cursed
+fr fr/ facts message = format_vibe_message(85.5);
+fr fr/ // Returns: "Absolutely slaying! Your vibe is immaculate! 🔥✨"
+fr fr/ ```
 slay format_vibe_message(score: f64) -> string {
     bestie score {
         90.0..=100.0 => "Absolutely slaying! Your vibe is immaculate! 🔥✨",
@@ -182,32 +182,32 @@ slay format_vibe_message(score: f64) -> string {
     }.to_string()
 }
 
-/// Constants for the vibe calculation system
-/// 
-/// These values have been scientifically determined through
-/// extensive Gen Z research and TikTok analysis.
+fr fr/ Constants for the vibe calculation system
+fr fr/ 
+fr fr/ These values have been scientifically determined through
+fr fr/ extensive Gen Z research and TikTok analysis.
 
-/// Maximum possible vibe score (this is the ceiling, periodt)
+fr fr/ Maximum possible vibe score (this is the ceiling, periodt)
 facts MAX_VIBE_SCORE: f64 = 100.0;
 
-/// Minimum vibe score (we don't go below zero energy)
+fr fr/ Minimum vibe score (we don't go below zero energy)
 facts MIN_VIBE_SCORE: f64 = 0.0;
 
-/// Default boost factor for regular calculations
+fr fr/ Default boost factor for regular calculations
 facts DEFAULT_BOOST: f64 = 1.0;
 
-/// Premium boost factor for when you're feeling extra
+fr fr/ Premium boost factor for when you're feeling extra
 facts PREMIUM_BOOST: f64 = 1.25;
 
-/// Main function demonstrating all the documented features
-/// 
-/// This is where the magic happens - we bring together all
-/// our documented functions to create something that slaps.
-/// 
-/// @example Running the demo
-/// ```shell
-/// cursed run examples/cursed_docs_demo.csd
-/// ```
+fr fr/ Main function demonstrating all the documented features
+fr fr/ 
+fr fr/ This is where the magic happens - we bring together all
+fr fr/ our documented functions to create something that slaps.
+fr fr/ 
+fr fr/ @example Running the demo
+fr fr/ ```shell
+fr fr/ cursed run examples/cursed_docs_demo.csd
+fr fr/ ```
 slay main() {
     println("🎉 Welcome to the CURSED Documentation Demo!")?;
     println("This program showcases comprehensive documentation features.")?;
@@ -217,7 +217,7 @@ slay main() {
     facts person = Person {
         name: "Alex",
         age: 22,
-        is_online: true,
+        is_online: based,
     };
     
     // Test greeting functionality
@@ -247,26 +247,26 @@ slay main() {
     println("✨ Demo completed! Check out the generated docs for more info! ✨")?;
 }
 
-// Module-level documentation for overall context
-/// # Module: cursed_docs_demo
-/// 
-/// This module serves as a comprehensive demonstration of the CURSED
-/// programming language's documentation capabilities, featuring:
-/// 
-/// - **Functions**: Documented with parameters, return values, and examples
-/// - **Structs**: Field documentation and usage examples  
-/// - **Interfaces**: Method documentation and implementation examples
-/// - **Constants**: Value documentation and usage context
-/// - **Error Handling**: Comprehensive error documentation
-/// - **Gen Z Slang**: Proper documentation of language-specific keywords
-/// 
-/// The documentation system supports multiple output formats:
-/// - HTML with search functionality and navigation
-/// - Markdown for GitHub and other platforms
-/// - JSON for tooling integration
-/// - XML for enterprise documentation systems
-/// 
-/// @package cursed_examples
-/// @category documentation
-/// @license MIT
-/// @repository https://github.com/cursed-lang/cursed
+fr fr Module-level documentation for overall context
+fr fr/ # Module: cursed_docs_demo
+fr fr/ 
+fr fr/ This module serves as a comprehensive demonstration of the CURSED
+fr fr/ programming language's documentation capabilities, featuring:
+fr fr/ 
+fr fr/ - **Functions**: Documented with parameters, return values, and examples
+fr fr/ - **Structs**: Field documentation and usage examples  
+fr fr/ - **Interfaces**: Method documentation and implementation examples
+fr fr/ - **Constants**: Value documentation and usage context
+fr fr/ - **Error Handling**: Comprehensive error documentation
+fr fr/ - **Gen Z Slang**: Proper documentation of language-specific keywords
+fr fr/ 
+fr fr/ The documentation system supports multiple output formats:
+fr fr/ - HTML with search functionality and navigation
+fr fr/ - Markdown for GitHub and other platforms
+fr fr/ - JSON for tooling integration
+fr fr/ - XML for enterprise documentation systems
+fr fr/ 
+fr fr/ @package cursed_examples
+fr fr/ @category documentation
+fr fr/ @license MIT
+fr fr/ @repository https://github.com/cursed-lang/cursed

@@ -1,14 +1,14 @@
-/// Comprehensive Asymmetric Cryptography Demo
-/// 
-/// This demo showcases all asymmetric cryptographic capabilities:
-/// - RSA encryption/decryption and digital signatures
-/// - ECDSA digital signatures on multiple elliptic curves  
-/// - Ed25519 high-performance digital signatures
-/// - Key exchange protocols: X25519, X448, and Diffie-Hellman
-/// - Unified asymmetric cryptography API
-/// - Real-world cryptographic scenarios
+fr fr/ Comprehensive Asymmetric Cryptography Demo
+fr fr/ 
+fr fr/ This demo showcases all asymmetric cryptographic capabilities:
+fr fr/ - RSA encryption/decryption and digital signatures
+fr fr/ - ECDSA digital signatures on multiple elliptic curves  
+fr fr/ - Ed25519 high-performance digital signatures
+fr fr/ - Key exchange protocols: X25519, X448, and Diffie-Hellman
+fr fr/ - Unified asymmetric cryptography API
+fr fr/ - Real-world cryptographic scenarios
 
-import "stdlib::packages::crypto_asymmetric"
+yeet "stdlib::packages::crypto_asymmetric"
 
 slay demonstrate_asymmetric_crypto() {
     println("🔑 CURSED Asymmetric Cryptography Demo")

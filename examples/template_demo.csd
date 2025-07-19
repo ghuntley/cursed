@@ -1,9 +1,9 @@
-// CURSED Template System Demo - Showcasing complete functionality with Gen Z vibes
-// This demonstrates the fully implemented template system with filter tracking and advanced formatting
+fr fr CURSED Template System Demo - Showcasing complete functionality with Gen Z vibes
+fr fr This demonstrates the fully implemented template system with filter tracking and advanced formatting
 
 sus template_engine = TemplateEngine::new()
 
-// Register custom CURSED-style filter
+fr fr Register custom CURSED-style filter
 template_engine.register_filter("slay_format", |context, args| {
     facts value = args[0]
     sus precision = args[1] ?? 2
@@ -15,12 +15,12 @@ template_engine.register_filter("slay_format", |context, args| {
     }
 })
 
-// Set global variables - no cap, these are always available
+fr fr Set global variables - no cap, these are always available
 template_engine.set_global("app_name", "CURSED Template Engine")
 template_engine.set_global("version", "1.0.0")
 template_engine.set_global("vibe_level", "maximum")
 
-// Create context with user data
+fr fr Create context with user data
 sus context = TemplateContext::new()
 context.set("username", "bestie_alice")
 context.set("score", 95.67)
@@ -28,7 +28,7 @@ context.set("items", ["apple", "banana", "cherry"])
 context.set("user_rating", 8.9)
 context.set("message", "  this is lowkey amazing  ")
 
-// Template with comprehensive filter usage - periodt
+fr fr Template with comprehensive filter usage - periodt
 sus template_source = ```
 <html>
 <head>
@@ -79,7 +79,7 @@ sus template_source = ```
 </html>
 ```
 
-// Render template and show comprehensive metrics
+fr fr Render template and show comprehensive metrics
 sus result = template_engine.render_string(template_source, context)
 
 lowkey result {
@@ -125,10 +125,10 @@ lowkey result {
     }
 }
 
-// Test individual printf/sprintf functionality
+fr fr Test individual printf/sprintf functionality
 println("\n🧪 Testing advanced formatting:")
 
-// Test printf variations
+fr fr Test printf variations
 sus printf_tests = [
     ("String: %s", ["world"]),
     ("Integer: %d", [42]),

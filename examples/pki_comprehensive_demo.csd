@@ -1,17 +1,17 @@
-//! Comprehensive PKI (Public Key Infrastructure) Demo
-//! 
-//! This example demonstrates the full capabilities of the CURSED PKI system:
-//! - X.509 certificate parsing and validation
-//! - Certificate Authority (CA) operations
-//! - Certificate chain validation and path building
-//! - Certificate revocation and CRL management
-//! - OCSP certificate status checking
-//! - Trust store management
-//! - Key generation and CSR creation
-//! - Multiple signature algorithms support
+fr fr! Comprehensive PKI (Public Key Infrastructure) Demo
+fr fr! 
+fr fr! This example demonstrates the full capabilities of the CURSED PKI system:
+fr fr! - X.509 certificate parsing and validation
+fr fr! - Certificate Authority (CA) operations
+fr fr! - Certificate chain validation and path building
+fr fr! - Certificate revocation and CRL management
+fr fr! - OCSP certificate status checking
+fr fr! - Trust store management
+fr fr! - Key generation and CSR creation
+fr fr! - Multiple signature algorithms support
 
-import "stdlib::packages::crypto_pki";
-import "stdlib::io";
+yeet "stdlib::packages::crypto_pki"
+yeet "stdlib::io"
 
 slay main() -> void {
     println("🏛️ CURSED PKI Comprehensive Demo")?;
@@ -59,7 +59,7 @@ slay main() -> void {
     println("\n🎉 PKI Demo completed successfully!")?;
 }
 
-/// Demo Certificate Authority creation and management
+fr fr/ Demo Certificate Authority creation and management
 slay demo_certificate_authority_creation() -> void {
     println("\n📋 Demo 1: Certificate Authority Creation")?;
     println("=========================================")?;
@@ -77,15 +77,15 @@ slay demo_certificate_authority_creation() -> void {
         max_validity: Duration::from_secs(10 * 365 * 24 * 3600), // 10 years
         signature_algorithm: SignatureAlgorithm::RsaWithSha256,
         ca_key_usage: KeyUsage {
-            key_cert_sign: true,
-            crl_sign: true,
-            digital_signature: true,
+            key_cert_sign: based,
+            crl_sign: based,
+            digital_signature: based,
             ..KeyUsage::default()
         },
         basic_constraints: BasicConstraints {
-            is_ca: true,
+            is_ca: based,
             path_length_constraint: Some(5),
-            critical: true,
+            critical: based,
         },
         supported_key_algorithms: vec![
             PublicKeyAlgorithm::Rsa { key_size: 2048 },
@@ -112,7 +112,7 @@ slay demo_certificate_authority_creation() -> void {
     }
 }
 
-/// Demo certificate parsing from various formats
+fr fr/ Demo certificate parsing from various formats
 slay demo_certificate_parsing() -> void {
     println("\n📋 Demo 2: Certificate Parsing and Validation")?;
     println("=============================================")?;
@@ -177,7 +177,7 @@ INVALID_BASE64_DATA_HERE
     }
 }
 
-/// Demo certificate chain validation
+fr fr/ Demo certificate chain validation
 slay demo_chain_validation() -> void {
     println("\n📋 Demo 3: Certificate Chain Validation")?;
     println("=======================================")?;
@@ -188,9 +188,9 @@ slay demo_chain_validation() -> void {
     facts root_dn = DistinguishedName::from_common_name("Root CA");
     
     // Create sample certificates (in real implementation, these would be properly signed)
-    facts end_entity_cert = create_sample_certificate(end_entity_dn, false)?;
-    facts intermediate_cert = create_sample_certificate(intermediate_dn, true)?;
-    facts root_cert = create_sample_certificate(root_dn, true)?;
+    facts end_entity_cert = create_sample_certificate(end_entity_dn, cap)?;
+    facts intermediate_cert = create_sample_certificate(intermediate_dn, based)?;
+    facts root_cert = create_sample_certificate(root_dn, based)?;
     
     // Build certificate chain
     facts cert_chain = CertificateChain {
@@ -234,7 +234,7 @@ slay demo_chain_validation() -> void {
     }
 }
 
-/// Demo Certificate Signing Request generation
+fr fr/ Demo Certificate Signing Request generation
 slay demo_csr_generation() -> void {
     println("\n📋 Demo 4: Certificate Signing Request (CSR) Generation")?;
     println("=======================================================")?;
@@ -256,13 +256,13 @@ slay demo_csr_generation() -> void {
             GeneralName::Rfc822Name("admin@example.com".to_string()),
         ],
         key_usage: KeyUsage {
-            digital_signature: true,
-            key_encipherment: true,
+            digital_signature: based,
+            key_encipherment: based,
             ..KeyUsage::default()
         },
         extended_key_usage: ExtendedKeyUsage {
-            server_auth: true,
-            client_auth: true,
+            server_auth: based,
+            client_auth: based,
             ..ExtendedKeyUsage::default()
         },
         attributes: vec![],
@@ -289,7 +289,7 @@ slay demo_csr_generation() -> void {
     println("✅ CSR request prepared (key generation and signing would follow)")?;
 }
 
-/// Demo certificate issuance by a CA
+fr fr/ Demo certificate issuance by a CA
 slay demo_certificate_issuance() -> void {
     println("\n📋 Demo 5: Certificate Issuance")?;
     println("===============================")?;
@@ -320,7 +320,7 @@ slay demo_certificate_issuance() -> void {
     println("✅ Certificate issuance process demonstrated")?;
 }
 
-/// Demo certificate revocation and CRL management
+fr fr/ Demo certificate revocation and CRL management
 slay demo_certificate_revocation() -> void {
     println("\n📋 Demo 6: Certificate Revocation and CRL")?;
     println("=========================================")?;
@@ -352,7 +352,7 @@ slay demo_certificate_revocation() -> void {
     println("✅ Certificate revocation and CRL management demonstrated")?;
 }
 
-/// Demo trust store management
+fr fr/ Demo trust store management
 slay demo_trust_store_management() -> void {
     println("\n📋 Demo 7: Trust Store Management")?;
     println("=================================")?;
@@ -385,7 +385,7 @@ slay demo_trust_store_management() -> void {
     println("✅ Trust store management demonstrated")?;
 }
 
-/// Demo key management operations
+fr fr/ Demo key management operations
 slay demo_key_management() -> void {
     println("\n📋 Demo 8: Key Management")?;
     println("=========================")?;
@@ -424,7 +424,7 @@ slay demo_key_management() -> void {
     println("✅ Key management operations demonstrated")?;
 }
 
-/// Demo OCSP certificate status checking
+fr fr/ Demo OCSP certificate status checking
 slay demo_ocsp_checking() -> void {
     println("\n📋 Demo 9: OCSP Certificate Status Checking")?;
     println("===========================================")?;
@@ -465,7 +465,7 @@ slay demo_ocsp_checking() -> void {
     println("✅ OCSP certificate status checking demonstrated")?;
 }
 
-/// Demo PKI statistics and monitoring
+fr fr/ Demo PKI statistics and monitoring
 slay demo_pki_statistics() -> void {
     println("\n📋 Demo 10: PKI Statistics and Monitoring")?;
     println("=========================================")?;
@@ -513,7 +513,7 @@ slay demo_pki_statistics() -> void {
     println("✅ PKI statistics and monitoring demonstrated")?;
 }
 
-/// Helper function to create sample certificates for demos
+fr fr/ Helper function to create sample certificates for demos
 slay create_sample_certificate(subject: DistinguishedName, is_ca: bool) -> X509Certificate {
     facts now = SystemTime::now();
     facts one_year = Duration::from_secs(365 * 24 * 3600);
@@ -537,10 +537,10 @@ slay create_sample_certificate(subject: DistinguishedName, is_ca: bool) -> X509C
             vec![
                 X509Extension {
                     oid: "2.5.29.19".to_string(), // Basic Constraints
-                    critical: true,
+                    critical: based,
                     value: vec![0x30, 0x03, 0x01, 0x01, 0xFF],
                     parsed_data: Some(ExtensionData::BasicConstraints {
-                        is_ca: true,
+                        is_ca: based,
                         path_length_constraint: None,
                     }),
                 }
@@ -552,15 +552,15 @@ slay create_sample_certificate(subject: DistinguishedName, is_ca: bool) -> X509C
         fingerprint: Some(vec![0x12, 0x34, 0x56, 0x78]),
         key_usage: if is_ca {
             KeyUsage {
-                key_cert_sign: true,
-                crl_sign: true,
-                digital_signature: true,
+                key_cert_sign: based,
+                crl_sign: based,
+                digital_signature: based,
                 ..KeyUsage::default()
             }
         } else {
             KeyUsage {
-                digital_signature: true,
-                key_encipherment: true,
+                digital_signature: based,
+                key_encipherment: based,
                 ..KeyUsage::default()
             }
         },
@@ -568,8 +568,8 @@ slay create_sample_certificate(subject: DistinguishedName, is_ca: bool) -> X509C
             ExtendedKeyUsage::default()
         } else {
             ExtendedKeyUsage {
-                server_auth: true,
-                client_auth: true,
+                server_auth: based,
+                client_auth: based,
                 ..ExtendedKeyUsage::default()
             }
         },
@@ -578,7 +578,7 @@ slay create_sample_certificate(subject: DistinguishedName, is_ca: bool) -> X509C
     return cert;
 }
 
-/// Helper function to generate random numbers for demo
+fr fr/ Helper function to generate random numbers for demo
 slay rand_u64() -> u64 {
     // Simple pseudo-random number generator for demo purposes
     facts timestamp = SystemTime::now()

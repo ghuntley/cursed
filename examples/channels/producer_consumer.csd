@@ -1,5 +1,5 @@
-// Producer-Consumer Pattern Example
-// Demonstrates basic channel communication between goroutines
+fr fr Producer-Consumer Pattern Example
+fr fr Demonstrates basic channel communication between goroutines
 
 func producer(out dm<int>, count int) {
     print("Producer starting to generate", count, "numbers")

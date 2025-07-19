@@ -1,14 +1,14 @@
-// SSH Client Demo - Complete SSH functionality demonstration
-// This example shows how to use the CURSED SSH client for:
-// - Connecting to remote servers
-// - Executing commands
-// - Transferring files
-// - Handling different authentication methods
+fr fr SSH Client Demo - Complete SSH functionality demonstration
+fr fr This example shows how to use the CURSED SSH client for:
+fr fr - Connecting to remote servers
+fr fr - Executing commands
+fr fr - Transferring files
+fr fr - Handling different authentication methods
 
-import "stdlib::net::protocols::ssh";
-import "stdlib::io";
+yeet "stdlib::net::protocols::ssh"
+yeet "stdlib::io"
 
-// Example: Password-based SSH connection
+fr fr Example: Password-based SSH connection
 func demonstrate_password_auth() {
     // Configure SSH client with password authentication
     let config = SshConfig {
@@ -43,7 +43,7 @@ func demonstrate_password_auth() {
     }
 }
 
-// Example: Key-based SSH connection
+fr fr Example: Key-based SSH connection
 func demonstrate_key_auth() {
     // Load private key (this would normally read from a file)
     let private_key_data = "-----BEGIN OPENSSH PRIVATE KEY-----
@@ -87,7 +87,7 @@ NhAAAAAwEAAQAAAIEA1234567890abcdef...
     }
 }
 
-// Example: File transfer operations
+fr fr Example: File transfer operations
 func demonstrate_file_transfer() {
     let config = SshConfig {
         host: "fileserver.example.com",
@@ -135,7 +135,7 @@ func demonstrate_file_transfer() {
     }
 }
 
-// Example: System administration tasks
+fr fr Example: System administration tasks
 func demonstrate_system_admin() {
     let config = SshConfig {
         host: "admin-server.example.com",
@@ -196,7 +196,7 @@ func demonstrate_system_admin() {
     }
 }
 
-// Example: Batch operations and error handling
+fr fr Example: Batch operations and error handling
 func demonstrate_batch_operations() {
     let servers = [
         ("web1.example.com", "webuser", "webpass"),
@@ -235,7 +235,7 @@ func demonstrate_batch_operations() {
     }
 }
 
-// Main function demonstrating all SSH features
+fr fr Main function demonstrating all SSH features
 func main() {
     println("CURSED SSH Client Demonstration")?;
     println("===============================")?;

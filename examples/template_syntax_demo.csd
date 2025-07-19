@@ -1,10 +1,10 @@
-/// CURSED Template Syntax Demo
-/// Demonstrates the comprehensive template system with CURSED-style Gen Z slang
+fr fr/ CURSED Template Syntax Demo
+fr fr/ Demonstrates the comprehensive template system with CURSED-style Gen Z slang
 
-// Basic template with variable interpolation
+fr fr Basic template with variable interpolation
 sus basic_template = "Hello {{ user.name }}! You have {{ user.message_count }} messages.";
 
-// CURSED-style conditional template
+fr fr CURSED-style conditional template
 sus cursed_conditional = `
 {% lowkey user.is_premium %}
     <div class="premium-user">
@@ -22,7 +22,7 @@ sus cursed_conditional = `
 {% end %}
 `;
 
-// CURSED-style loop template
+fr fr CURSED-style loop template
 sus cursed_loop = `
 <div class="user-list">
     {% stan user in users %}
@@ -35,7 +35,7 @@ sus cursed_loop = `
 </div>
 `;
 
-// Advanced template with expressions and filters
+fr fr Advanced template with expressions and filters
 sus advanced_template = `
 <article class="post">
     <header>
@@ -73,7 +73,7 @@ sus advanced_template = `
 </article>
 `;
 
-// Template with CURSED operators and expressions
+fr fr Template with CURSED operators and expressions
 sus cursed_expressions = `
 <div class="user-profile">
     {% set full_name = user.first_name + " " + user.last_name %}
@@ -113,7 +113,7 @@ sus cursed_expressions = `
 </div>
 `;
 
-// Template inheritance example
+fr fr Template inheritance example
 sus base_layout = `
 <!DOCTYPE html>
 <html>
@@ -173,7 +173,7 @@ sus page_template = `
 {% end %}
 `;
 
-// Complex data manipulation template
+fr fr Complex data manipulation template
 sus data_template = `
 <div class="dashboard">
     {% set total_users = users | length %}
@@ -233,7 +233,7 @@ sus data_template = `
 </div>
 `;
 
-// Function to demonstrate template compilation and rendering
+fr fr Function to demonstrate template compilation and rendering
 slay compile_and_render_template(template_source: String, context: Map<String, Value>) -> Result<String, CursedError> {
     // This would integrate with the template engine
     facts delimiters = TemplateDelimiters {
@@ -256,15 +256,15 @@ slay compile_and_render_template(template_source: String, context: Map<String, V
     periodt "Template compiled successfully!".to_string();
 }
 
-// Example usage
+fr fr Example usage
 slay main() -> Result<(), CursedError> {
     // Sample context data
     sus context = Map::new();
     context.insert("user".to_string(), Value::Object({
         sus mut user = Map::new();
         user.insert("name".to_string(), Value::String("Alice".to_string()));
-        user.insert("is_premium".to_string(), Value::Boolean(true));
-        user.insert("is_active".to_string(), Value::Boolean(true));
+        user.insert("is_premium".to_string(), Value::Boolean(based));
+        user.insert("is_active".to_string(), Value::Boolean(based));
         user.insert("message_count".to_string(), Value::Number(42.0));
         user
     }));
