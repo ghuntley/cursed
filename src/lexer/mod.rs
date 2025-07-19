@@ -167,6 +167,15 @@ pub enum TokenKind {
     Newline,
     Eof,
     
+    // Advanced function signature features
+    Async,          // async keyword
+    Unsafe,         // unsafe keyword
+    Public,         // pub keyword
+    Private,        // priv keyword
+    Comment(String), // Comment with content
+    IntegerLiteral, // Integer literal token
+    DotDotDot,      // ... (variadic parameters)
+    
     // Comments
     LineComment,    // fr fr line comment
     BlockComment,   // no cap ... on god block comment
@@ -268,7 +277,11 @@ impl Lexer {
             },
             '.' => {
                 if self.match_char('.') {
-                    Ok(self.make_token(TokenKind::DotDot, "..".to_string(), start_column))
+                    if self.match_char('.') {
+                        Ok(self.make_token(TokenKind::DotDotDot, "...".to_string(), start_column))
+                    } else {
+                        Ok(self.make_token(TokenKind::DotDot, "..".to_string(), start_column))
+                    }
                 } else {
                     Ok(self.make_token(TokenKind::Dot, ".".to_string(), start_column))
                 }
@@ -816,6 +829,13 @@ impl Lexer {
             "spill" => TokenKind::Spill,
             "priv" => TokenKind::Priv,
             "crew" => TokenKind::Crew,
+            "pub" => TokenKind::Public,
+            "public" => TokenKind::Public,
+            "private" => TokenKind::Private,
+            
+            // Advanced function keywords
+            "async" => TokenKind::Async,
+            "unsafe" => TokenKind::Unsafe,
             
             // Boolean literals
             "based" => TokenKind::Truth,

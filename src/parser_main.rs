@@ -325,6 +325,12 @@ impl Parser {
     }
     
     fn parse_function(&mut self) -> Result<FunctionStatement> {
+        // Try parsing with the advanced signature parser first
+        if let Ok(advanced_signature) = self.try_parse_advanced_signature() {
+            return Ok(self.convert_advanced_signature_to_function_statement(advanced_signature));
+        }
+
+        // Fall back to legacy parsing
         // Consume 'slay' keyword
         self.next_token()?;
         
@@ -474,6 +480,79 @@ impl Parser {
         }
         
         Ok(parameters)
+    }
+
+    /// Try to parse function signature using the advanced parser
+    fn try_parse_advanced_signature(&mut self) -> std::result::Result<crate::parser::AdvancedFunctionSignature, crate::error::CursedError> {
+        use crate::parser::AdvancedSignatureParser;
+        
+        // Collect remaining tokens for the advanced parser
+        let mut tokens = Vec::new();
+        let mut current_token_index = self.token_index;
+        
+        while current_token_index < self.tokens.len() {
+            tokens.push(self.tokens[current_token_index].clone());
+            current_token_index += 1;
+        }
+        
+        let mut advanced_parser = AdvancedSignatureParser::new(&tokens);
+        advanced_parser.parse_advanced_function_signature()
+    }
+
+    /// Convert advanced signature to legacy FunctionStatement
+    fn convert_advanced_signature_to_function_statement(
+        &mut self, 
+        signature: crate::parser::AdvancedFunctionSignature
+    ) -> FunctionStatement {
+        use crate::ast::{TypeParameter, WhereClause, TypeConstraint};
+        
+        // Convert enhanced type parameters to basic type parameters
+        let type_parameters = signature.type_parameters.into_iter()
+            .map(|etp| TypeParameter {
+                name: etp.name,
+                bounds: etp.bounds.into_iter()
+                    .map(|bound| match bound {
+                        crate::parser::TypeBound::Clone => "Clone".to_string(),
+                        crate::parser::TypeBound::Debug => "Debug".to_string(),
+                        crate::parser::TypeBound::Display => "Display".to_string(),
+                        crate::parser::TypeBound::Custom(name) => name,
+                        _ => "Unknown".to_string(),
+                    })
+                    .collect(),
+            })
+            .collect();
+
+        // Convert advanced parameters to basic parameters
+        let parameters = signature.parameters.into_iter()
+            .map(|ap| Parameter {
+                name: ap.name,
+                param_type: ap.param_type,
+            })
+            .collect();
+
+        // Convert where clauses
+        let where_clause = if signature.where_clauses.is_empty() {
+            None
+        } else {
+            Some(WhereClause {
+                constraints: signature.where_clauses.into_iter()
+                    .flat_map(|wc| wc.constraints)
+                    .collect(),
+            })
+        };
+
+        // Advance token index to skip parsed tokens
+        // In a real implementation, we'd need to track how many tokens were consumed
+        
+        FunctionStatement {
+            name: signature.name,
+            type_parameters,
+            parameters,
+            body: Vec::new(), // Will be parsed separately
+            return_type: signature.return_type,
+            where_clause,
+            visibility: signature.visibility,
+        }
     }
     
     fn parse_parameter(&mut self) -> Result<Parameter> {

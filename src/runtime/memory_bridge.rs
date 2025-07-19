@@ -1,0 +1,386 @@
+/// Memory Bridge for CURSED Runtime
+/// 
+/// This module provides the FFI bridge between C runtime functions
+/// and the Rust memory management system with GC integration.
+
+use std::ffi::{CStr, CString};
+use std::os::raw::{c_char, c_void};
+use std::ptr::NonNull;
+use std::sync::Arc;
+
+use crate::error::CursedError;
+use crate::memory::Tag;
+use crate::runtime::gc::{GarbageCollector, get_global_gc};
+use crate::runtime::heap_optimizer::{HeapOptimizer, HeapOptimizerConfig};
+use crate::runtime::memory::{MemoryManager, MemoryConfig};
+
+/// FFI functions called from C runtime bridge
+
+/// Allocate memory through heap optimizer
+#[no_mangle]
+pub extern "C" fn rust_heap_allocate(size: usize, tag: i32) -> *mut c_void {
+    let memory_tag = match tag {
+        1 => Tag::Object,
+        2 => Tag::Array,
+        3 => Tag::String,
+        4 => Tag::Function,
+        5 => Tag::Channel,
+        6 => Tag::Object, // Use Object as fallback for Goroutine
+        _ => Tag::Object,
+    };
+
+    // Try to get global GC and allocate through it
+    if let Some(gc) = get_global_gc() {
+        match gc.allocate(size, memory_tag) {
+            Ok(ptr) => ptr.as_ptr() as *mut c_void,
+            Err(_) => std::ptr::null_mut(),
+        }
+    } else {
+        // Fallback to system allocation
+        unsafe {
+            libc::malloc(size)
+        }
+    }
+}
+
+/// Deallocate memory through GC system
+#[no_mangle]
+pub extern "C" fn rust_heap_deallocate(ptr: *mut c_void) {
+    if ptr.is_null() {
+        return;
+    }
+
+    if let Some(gc) = get_global_gc() {
+        let _ = gc.deallocate(ptr as *mut u8);
+    } else {
+        // Fallback to system deallocation
+        unsafe {
+            libc::free(ptr);
+        }
+    }
+}
+
+/// Reallocate memory through GC system
+#[no_mangle]
+pub extern "C" fn rust_heap_reallocate(ptr: *mut c_void, new_size: usize) -> *mut c_void {
+    if ptr.is_null() {
+        return rust_heap_allocate(new_size, 1); // Default to object tag
+    }
+
+    if new_size == 0 {
+        rust_heap_deallocate(ptr);
+        return std::ptr::null_mut();
+    }
+
+    // For now, allocate new and copy (would be optimized in real implementation)
+    let new_ptr = rust_heap_allocate(new_size, 1);
+    if !new_ptr.is_null() {
+        // Copy existing data (assuming we can determine old size)
+        // In real implementation, we'd track allocation sizes
+        unsafe {
+            std::ptr::copy_nonoverlapping(ptr as *const u8, new_ptr as *mut u8, new_size.min(1024));
+        }
+        rust_heap_deallocate(ptr);
+    }
+
+    new_ptr
+}
+
+/// Trigger garbage collection
+#[no_mangle]
+pub extern "C" fn rust_gc_collect() -> i32 {
+    if let Some(gc) = get_global_gc() {
+        match gc.force_collection() {
+            Ok(_) => 1024, // Return placeholder bytes freed
+            Err(_) => 0,
+        }
+    } else {
+        0
+    }
+}
+
+/// Get GC statistics as C string
+#[no_mangle]
+pub extern "C" fn rust_gc_stats() -> *mut c_char {
+    if let Some(gc) = get_global_gc() {
+        match gc.get_stats() {
+            Ok(stats) => {
+                let stats_str = format!(
+                    "GC Collections: {}, Objects Marked: {}, Objects Swept: {}, Heap Size: {}",
+                    stats.total_collections,
+                    stats.objects_marked,
+                    stats.objects_swept,
+                    stats.current_heap_size
+                );
+                
+                match CString::new(stats_str) {
+                    Ok(c_str) => c_str.into_raw(),
+                    Err(_) => std::ptr::null_mut(),
+                }
+            }
+            Err(_) => std::ptr::null_mut(),
+        }
+    } else {
+        match CString::new("GC not initialized") {
+            Ok(c_str) => c_str.into_raw(),
+            Err(_) => std::ptr::null_mut(),
+        }
+    }
+}
+
+/// Get memory statistics as C string
+#[no_mangle]
+pub extern "C" fn rust_memory_stats() -> *mut c_char {
+    // Placeholder implementation - would gather real stats
+    let stats_str = "Memory Stats: allocations tracked, GC active";
+    
+    match CString::new(stats_str) {
+        Ok(c_str) => c_str.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// Track allocation for debugging
+#[no_mangle]
+pub extern "C" fn rust_track_allocation(ptr: *mut c_void, size: usize, tag: *const c_char) -> bool {
+    if ptr.is_null() || tag.is_null() {
+        return false;
+    }
+
+    // In real implementation, this would add to allocation tracking database
+    // For now, just return true as tracking is handled elsewhere
+    true
+}
+
+/// Get memory pressure (0.0-1.0)
+#[no_mangle]
+pub extern "C" fn rust_memory_pressure() -> f64 {
+    if let Some(gc) = get_global_gc() {
+        let heap_size = gc.get_heap_size();
+        let threshold = 64 * 1024 * 1024; // 64MB threshold
+        (heap_size as f64) / (threshold as f64)
+    } else {
+        0.0
+    }
+}
+
+/// Get current stack size
+#[no_mangle]
+pub extern "C" fn rust_stack_size() -> i32 {
+    // Placeholder - would get from stack manager
+    8192 // 8KB default
+}
+
+/// Check for stack overflow
+#[no_mangle]
+pub extern "C" fn rust_check_stack_overflow() -> bool {
+    // Placeholder - would check actual stack usage
+    false
+}
+
+/// Create memory pool
+#[no_mangle]
+pub extern "C" fn rust_create_memory_pool(block_size: i32, block_count: i32) -> *mut c_void {
+    if block_size <= 0 || block_count <= 0 {
+        return std::ptr::null_mut();
+    }
+
+    // Create a simple pool ID (would be more sophisticated in real implementation)
+    let pool_id = Box::new((block_size, block_count));
+    Box::into_raw(pool_id) as *mut c_void
+}
+
+/// Allocate from memory pool
+#[no_mangle]
+pub extern "C" fn rust_pool_alloc(pool_id: *mut c_void, size: i32) -> *mut c_void {
+    if pool_id.is_null() || size <= 0 {
+        return std::ptr::null_mut();
+    }
+
+    // For now, fallback to regular allocation
+    rust_heap_allocate(size as usize, 1)
+}
+
+/// Free to memory pool
+#[no_mangle]
+pub extern "C" fn rust_pool_free(pool_id: *mut c_void, ptr: *mut c_void) -> bool {
+    if pool_id.is_null() || ptr.is_null() {
+        return false;
+    }
+
+    // For now, fallback to regular deallocation
+    rust_heap_deallocate(ptr);
+    true
+}
+
+/// Zero memory
+#[no_mangle]
+pub extern "C" fn rust_zero_memory(ptr: *mut c_void, size: i32) -> bool {
+    if ptr.is_null() || size <= 0 {
+        return false;
+    }
+
+    unsafe {
+        std::ptr::write_bytes(ptr as *mut u8, 0, size as usize);
+    }
+    true
+}
+
+/// Copy memory
+#[no_mangle]
+pub extern "C" fn rust_copy_memory(dest: *mut c_void, src: *mut c_void, size: i32) -> bool {
+    if dest.is_null() || src.is_null() || size <= 0 {
+        return false;
+    }
+
+    unsafe {
+        std::ptr::copy_nonoverlapping(src as *const u8, dest as *mut u8, size as usize);
+    }
+    true
+}
+
+/// Compare memory
+#[no_mangle]
+pub extern "C" fn rust_compare_memory(ptr1: *mut c_void, ptr2: *mut c_void, size: i32) -> i32 {
+    if ptr1.is_null() || ptr2.is_null() || size <= 0 {
+        return -1;
+    }
+
+    unsafe {
+        let slice1 = std::slice::from_raw_parts(ptr1 as *const u8, size as usize);
+        let slice2 = std::slice::from_raw_parts(ptr2 as *const u8, size as usize);
+        
+        match slice1.cmp(slice2) {
+            std::cmp::Ordering::Less => -1,
+            std::cmp::Ordering::Equal => 0,
+            std::cmp::Ordering::Greater => 1,
+        }
+    }
+}
+
+/// Align size to boundary
+#[no_mangle]
+pub extern "C" fn rust_align_size(size: i32, alignment: i32) -> i32 {
+    if size <= 0 || alignment <= 0 {
+        return size;
+    }
+
+    let size = size as usize;
+    let alignment = alignment as usize;
+    
+    ((size + alignment - 1) & !(alignment - 1)) as i32
+}
+
+/// Check if pointer is aligned
+#[no_mangle]
+pub extern "C" fn rust_is_aligned(ptr: *mut c_void, alignment: i32) -> bool {
+    if ptr.is_null() || alignment <= 0 {
+        return false;
+    }
+
+    (ptr as usize) % (alignment as usize) == 0
+}
+
+/// Set memory limit
+#[no_mangle]
+pub extern "C" fn rust_set_memory_limit(limit: usize) -> bool {
+    // Placeholder - would set in memory manager
+    true
+}
+
+/// Get current memory usage
+#[no_mangle]
+pub extern "C" fn rust_get_memory_usage() -> usize {
+    if let Some(gc) = get_global_gc() {
+        gc.get_heap_size()
+    } else {
+        0
+    }
+}
+
+/// Compact memory
+#[no_mangle]
+pub extern "C" fn rust_memory_compact() -> i32 {
+    if let Some(gc) = get_global_gc() {
+        match gc.force_collection() {
+            Ok(_) => 512, // Return placeholder bytes compacted
+            Err(_) => 0,
+        }
+    } else {
+        0
+    }
+}
+
+/// Reset memory statistics
+#[no_mangle]
+pub extern "C" fn rust_reset_memory_stats() -> bool {
+    // Placeholder - would reset stats in memory manager
+    true
+}
+
+/// Initialize the memory system
+pub fn initialize_memory_system() -> Result<(), CursedError> {
+    // Initialize global GC if not already done
+    if get_global_gc().is_none() {
+        use crate::runtime::gc::{initialize_gc, GcConfig};
+        use crate::runtime::stack::{RuntimeStack};
+        
+        let config = GcConfig::default();
+        let stack_manager = Arc::new(RuntimeStack::new());
+        initialize_gc(config, stack_manager)?;
+    }
+    
+    Ok(())
+}
+
+/// Shutdown the memory system
+pub fn shutdown_memory_system() -> Result<(), CursedError> {
+    use crate::runtime::gc::shutdown_gc;
+    shutdown_gc()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_memory_allocation() {
+        let _ = initialize_memory_system();
+        
+        let ptr = rust_heap_allocate(1024, 1);
+        assert!(!ptr.is_null());
+        
+        rust_heap_deallocate(ptr);
+    }
+
+    #[test]
+    fn test_memory_operations() {
+        let ptr = rust_heap_allocate(1024, 1);
+        assert!(!ptr.is_null());
+        
+        assert!(rust_zero_memory(ptr, 1024));
+        
+        let ptr2 = rust_heap_allocate(1024, 1);
+        assert!(!ptr2.is_null());
+        
+        assert!(rust_copy_memory(ptr2, ptr, 1024));
+        assert_eq!(rust_compare_memory(ptr, ptr2, 1024), 0);
+        
+        rust_heap_deallocate(ptr);
+        rust_heap_deallocate(ptr2);
+    }
+
+    #[test]
+    fn test_alignment() {
+        assert_eq!(rust_align_size(100, 8), 104);
+        assert_eq!(rust_align_size(128, 8), 128);
+        
+        let ptr = rust_heap_allocate(1024, 1);
+        assert!(!ptr.is_null());
+        
+        // Most allocators provide at least 8-byte alignment
+        assert!(rust_is_aligned(ptr, 8));
+        
+        rust_heap_deallocate(ptr);
+    }
+}

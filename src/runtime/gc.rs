@@ -581,6 +581,49 @@ impl GarbageCollector {
         self.shutdown.store(true, Ordering::SeqCst);
         Ok(())
     }
+
+    /// Try first-fit allocation from free blocks
+    pub fn try_allocate_first_fit(&self, size: usize) -> Result<std::ptr::NonNull<u8>, CursedError> {
+        // This would search free blocks for first fit
+        // For now, return error to fallback to system allocation
+        Err(CursedError::runtime_error("No suitable free block found"))
+    }
+
+    /// Try best-fit allocation from free blocks
+    pub fn try_allocate_best_fit(&self, size: usize) -> Result<std::ptr::NonNull<u8>, CursedError> {
+        // This would search free blocks for best fit
+        // For now, return error to fallback to system allocation
+        Err(CursedError::runtime_error("No suitable free block found"))
+    }
+
+    /// Try worst-fit allocation from free blocks
+    pub fn try_allocate_worst_fit(&self, size: usize) -> Result<std::ptr::NonNull<u8>, CursedError> {
+        // This would search free blocks for worst fit
+        // For now, return error to fallback to system allocation
+        Err(CursedError::runtime_error("No suitable free block found"))
+    }
+
+    /// Try next-fit allocation from free blocks
+    pub fn try_allocate_next_fit(&self, size: usize, last_ptr: usize) -> Result<std::ptr::NonNull<u8>, CursedError> {
+        // This would search free blocks starting from last_ptr
+        // For now, return error to fallback to system allocation
+        Err(CursedError::runtime_error("No suitable free block found"))
+    }
+
+    /// Try buddy allocation from free blocks
+    pub fn try_allocate_buddy(&self, size: usize) -> Result<std::ptr::NonNull<u8>, CursedError> {
+        // This would implement buddy system allocation
+        // For now, return error to fallback to system allocation
+        Err(CursedError::runtime_error("No suitable free block found"))
+    }
+
+    /// Collect garbage and return bytes freed
+    pub fn collect_garbage(&self) -> Result<usize, CursedError> {
+        self.force_collection()?;
+        
+        // Return estimated freed bytes (would track actual in real implementation)
+        Ok(1024) // Placeholder
+    }
 }
 
 /// Collection statistics

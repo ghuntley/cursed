@@ -33,6 +33,8 @@ declare i8* @cursed_cast_type(i8*, i32, i32)
 declare i8* @cursed_empty_string()
 declare i8* @cursed_null_value()
 declare void @cursed_panic_type_assertion(i32, i32)
+declare i1 @cursed_test_method_impl(i8*)
+declare i8* @cursed_dispatch_simple_method(i8*, i8*, i32)
 declare i32 @__gxx_personality_v0(...)
 declare i8* @__cxa_begin_catch(i8*)
 declare void @__cxa_end_catch()
@@ -83,70 +85,17 @@ declare i64 @time(i64*)
 declare i8* @cursed_propagate_with_context(i8*, i8*)
 @error_msg_default = private unnamed_addr constant [15 x i8] c"Error occurred\00"
 
-; Interface value creation runtime function
-declare i8* @cursed_create_interface_value(i8*, i8*, i8*)
-
-; Interface value creation wrapper
-define i8* @create_interface_value(i8* %vtable_ptr, i8* %data_ptr, i8* %type_name) {
-entry:
-    %interface_value = call i8* @cursed_create_interface_value(i8* %vtable_ptr, i8* %data_ptr, i8* %type_name)
-    ret i8* %interface_value
-}
-
-
-; Method dispatch runtime function
-declare i8* @cursed_dispatch_method(i8*, i8*, i8*, i32)
-
-; Method dispatch wrapper with optimization
-define i8* @dispatch_interface_method(i8* %interface_value, i8* %method_name, i8* %args, i32 %arg_count) {
-entry:
-    ; Extract vtable from interface value
-    %interface_ptr = bitcast i8* %interface_value to {i8*, i8*}*
-    %vtable_ptr_ptr = getelementptr {i8*, i8*}, {i8*, i8*}* %interface_ptr, i32 0, i32 0
-    %vtable_ptr = load i8*, i8** %vtable_ptr_ptr
-    
-    ; Extract data pointer
-    %data_ptr_ptr = getelementptr {i8*, i8*}, {i8*, i8*}* %interface_ptr, i32 0, i32 1
-    %data_ptr = load i8*, i8** %data_ptr_ptr
-    
-    ; Dispatch method call
-    %result = call i8* @cursed_dispatch_method(i8* %vtable_ptr, i8* %method_name, i8* %args, i32 %arg_count)
-    ret i8* %result
-}
-
-
-; Interface type checking runtime function
-declare i1 @cursed_implements_interface(i8*, i8*)
-
-; Interface type checking wrapper
-define i1 @check_interface_implementation(i8* %type_name, i8* %interface_name) {
-entry:
-    %result = call i1 @cursed_implements_interface(i8* %type_name, i8* %interface_name)
-    ret i1 %result
-}
-
-
-; Runtime vtable lookup
-declare i8* @cursed_runtime_get_vtable(i8*, i8*)
-
-define i8* @get_vtable_runtime(i8* %type_name, i8* %interface_name) {
-entry:
-    %vtable = call i8* @cursed_runtime_get_vtable(i8* %type_name, i8* %interface_name)
-    ret i8* %vtable
-}
-
-
 ; Function: main
 
 ; String constants
-@.str.0 = private unnamed_addr constant [47 x i8] c"CURSED Stage 2 Compiler - Self-Hosting Edition\00", align 1
-@.str.3 = private unnamed_addr constant [32 x i8] c"Running compilation pipeline...\00", align 1
-@.str.4 = private unnamed_addr constant [17 x i8] c"Tokenization: OK\00", align 1
+@.str.5 = private unnamed_addr constant [12 x i8] c"Parsing: OK\00", align 1
 @.str.7 = private unnamed_addr constant [20 x i8] c"Code generation: OK\00", align 1
+@.str.0 = private unnamed_addr constant [47 x i8] c"CURSED Stage 2 Compiler - Self-Hosting Edition\00", align 1
+@.str.4 = private unnamed_addr constant [17 x i8] c"Tokenization: OK\00", align 1
 @.str.1 = private unnamed_addr constant [34 x i8] c"Bootstrap compilation successful!\00", align 1
 @.str.2 = private unnamed_addr constant [30 x i8] c"Bootstrap compilation failed!\00", align 1
-@.str.5 = private unnamed_addr constant [12 x i8] c"Parsing: OK\00", align 1
 @.str.6 = private unnamed_addr constant [18 x i8] c"Type checking: OK\00", align 1
+@.str.3 = private unnamed_addr constant [32 x i8] c"Running compilation pipeline...\00", align 1
 define i32 @main() {
 entry:
   %0 = getelementptr inbounds [47 x i8], [47 x i8]* @.str.0, i64 0, i64 0

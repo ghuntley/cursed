@@ -87,6 +87,7 @@ rm -f *.o *.a
 build_library "minimal_shims.c" "cursed_minimal_shims"
 build_library "interface_runtime.c" "cursed_interface_runtime"
 build_library "type_assertion_runtime.c" "cursed_type_assertion_runtime"
+build_library "memory_runtime.c" "cursed_memory_runtime"
 
 # Set library search paths for the linker
 echo ""

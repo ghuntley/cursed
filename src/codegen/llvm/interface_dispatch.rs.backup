@@ -8,7 +8,7 @@
 //! - Optimization for interface calls
 //! - Runtime support for interface operations
 
-use crate::ast::{InterfaceStatement, MethodSignature, Type as AstType, Expression, Statement, Program, FunctionStatement};
+use crate::ast::{InterfaceStatement, MethodSignature, Type as AstType, Expression, Statement, Program};
 use crate::error::{CursedError, SourceLocation};
 use crate::codegen::llvm::register_tracker::RegisterTracker;
 use crate::runtime::interface_dispatch::{InterfaceVTable, VTableEntry, InterfaceMethod, InterfaceValue};
@@ -1049,26 +1049,18 @@ impl InterfaceDispatchOptimizer {
                             InterfaceMethodSignature {
                                 name: method.name.clone(),
                                 parameters: method.parameters.iter().map(|p| ParameterType {
-                                name: p.name.clone(),
-                                type_name: if let Some(ref param_type) = p.param_type {
-                                    format!("{:?}", param_type) // Simplified type conversion
-                                    } else {
-                                        "i8*".to_string()
-                                     },
-                                     is_pointer: if let Some(ref param_type) = p.param_type {
-                                         format!("{:?}", param_type).contains('*')
-                                     } else {
-                                         true
-                                     },
-                                 }).collect(),
-                                 return_type: method.return_type.as_ref().map(|rt| format!("{:?}", rt)),
+                                    name: p.name.clone(),
+                                    type_name: p.type_name.clone(),
+                                    is_pointer: p.type_name.contains('*'),
+                                }).collect(),
+                                return_type: method.return_type.clone(),
                                 index,
                             }
                         }).collect(),
                         type_parameters: interface.type_parameters.iter().map(|tp| tp.name.clone()).collect(),
                         extends: Vec::new(), // TODO: Extract from interface definition
                     };
-                    self.codegen.interfaces.insert(interface_name.clone(), interface_def);
+                    self.interfaces.insert(interface_name.clone(), interface_def);
                 }
                 Statement::Function(func) => {
                     // Analyze function body for interface method calls
@@ -1095,7 +1087,7 @@ impl InterfaceDispatchOptimizer {
                 function_name: format!("devirtualized_{}", interface_name),
                 is_optimized: true,
             };
-            self.codegen.method_cache.insert(format!("mono_{}", interface_name), resolution);
+            self.method_cache.insert(format!("mono_{}", interface_name), resolution);
         }
         
         Ok(())
@@ -1106,9 +1098,9 @@ impl InterfaceDispatchOptimizer {
         // Scan for interface method calls that can be devirtualized
         for statement in &program.statements {
             if let Statement::Function(func) = statement {
-                self.codegen.current_function = Some(func.name.clone());
+                self.current_function = Some(func.name.clone());
                 self.devirtualize_function_calls(func)?;
-                self.codegen.current_function = None;
+                self.current_function = None;
             }
         }
         
@@ -1125,7 +1117,7 @@ impl InterfaceDispatchOptimizer {
         let mut merged_vtables: HashMap<String, String> = HashMap::new();
         
         // Collect vtable signatures (method type signatures)
-        for (vtable_name, vtable_def) in &self.codegen.vtables.clone() {
+        for (vtable_name, vtable_def) in &self.vtables.clone() {
             let signature: Vec<String> = vtable_def.methods.iter()
                 .map(|method| format!("{}:{}", method.method_name, method.function_type))
                 .collect();
@@ -1147,7 +1139,7 @@ impl InterfaceDispatchOptimizer {
         }
         
         // Step 2: Optimize vtable layout for cache performance
-        for (vtable_name, vtable_def) in self.codegen.vtables.iter_mut() {
+        for (vtable_name, vtable_def) in self.vtables.iter_mut() {
             // Sort methods by call frequency (most called first)
             // For now, use method name hash as proxy for frequency
             vtable_def.methods.sort_by_key(|method| {
@@ -1188,9 +1180,9 @@ impl InterfaceDispatchOptimizer {
         // Apply inlining at call sites
         for statement in &program.statements {
             if let Statement::Function(func) = statement {
-                self.codegen.current_function = Some(func.name.clone());
+                self.current_function = Some(func.name.clone());
                 self.inline_method_calls_in_function(func, &inlinable_methods)?;
-                self.codegen.current_function = None;
+                self.current_function = None;
             }
         }
         
@@ -1202,7 +1194,7 @@ impl InterfaceDispatchOptimizer {
     
     /// Get the current IR code for testing
     pub fn get_ir_code(&self) -> &str {
-        &self.codegen.ir_code
+        &self.ir_code
     }
 
     // Helper functions for optimizations
@@ -1210,9 +1202,9 @@ impl InterfaceDispatchOptimizer {
     /// Analyze function for interface usage patterns
     fn analyze_function_for_interface_usage(&self, func: &FunctionStatement, interface_usage: &mut HashMap<String, Vec<String>>) -> Result<(), CursedError> {
         // Simplified analysis - would need full AST traversal in real implementation
-        for stmt in &func.body {
+        for stmt in &func.body.statements {
             if let Statement::Expression(expr) = stmt {
-                self.analyze_expression_for_interface_usage(&expr, interface_usage)?;
+                self.analyze_expression_for_interface_usage(expr, interface_usage)?;
             }
         }
         Ok(())
@@ -1221,13 +1213,15 @@ impl InterfaceDispatchOptimizer {
     /// Analyze expression for interface usage
     fn analyze_expression_for_interface_usage(&self, expr: &Expression, interface_usage: &mut HashMap<String, Vec<String>>) -> Result<(), CursedError> {
         match expr {
-            Expression::Call(call_expr) => {
+            Expression::MethodCall { object, method, .. } => {
                 // Check if this is an interface method call
-                if let Expression::MemberAccess(member_access) = &*call_expr.function {
-                    if let Expression::Identifier(obj_name) = &*member_access.object {
-                        // Simplified type inference - would need proper type system integration
-                        let obj_type = format!("{}Type", obj_name); // Placeholder
-                        interface_usage.entry(obj_type).or_insert_with(Vec::new).push(member_access.property.clone());
+                if let Expression::Identifier(obj_name) = &**object {
+                    // Simplified type inference - would need proper type system integration
+                    let obj_type = format!("{}Type", obj_name); // Placeholder
+                    for usage_list in interface_usage.values_mut() {
+                        if !usage_list.contains(&obj_type) {
+                            usage_list.push(obj_type.clone());
+                        }
                     }
                 }
             }
@@ -1237,11 +1231,11 @@ impl InterfaceDispatchOptimizer {
     }
 
     /// Devirtualize function calls where possible
-    fn devirtualize_function_calls(&mut self, func: &FunctionStatement) -> Result<(), CursedError> {
+    fn devirtualize_function_calls(&mut self, func: &crate::ast::Function) -> Result<(), CursedError> {
         // Scan function body for interface method calls
-        for stmt in &func.body {
+        for stmt in &func.body.statements {
             if let Statement::Expression(expr) = stmt {
-                self.devirtualize_expression_calls(&expr)?;
+                self.devirtualize_expression_calls(expr)?;
             }
         }
         Ok(())
@@ -1250,15 +1244,13 @@ impl InterfaceDispatchOptimizer {
     /// Devirtualize calls in expression
     fn devirtualize_expression_calls(&mut self, expr: &Expression) -> Result<(), CursedError> {
         match expr {
-            Expression::Call(call_expr) => {
-                // Check if this is an interface method call that can be devirtualized
-                if let Expression::MemberAccess(member_access) = &*call_expr.function {
-                    if let Some(resolution) = self.find_devirtualization_opportunity(&member_access.object, &member_access.property)? {
-                        // Generate direct call instead of virtual dispatch
-                        let direct_call_ir = self.generate_direct_call_ir(&resolution, &call_expr.arguments)?;
-                        // Store for later use in IR generation
-                        self.codegen.ir_code.push_str(&direct_call_ir);
-                    }
+            Expression::MethodCall { object, method, args } => {
+                // Check if this method call can be devirtualized
+                if let Some(resolution) = self.find_devirtualization_opportunity(object, method)? {
+                    // Generate direct call instead of virtual dispatch
+                    let direct_call_ir = self.generate_direct_call_ir(&resolution, args)?;
+                    // Store for later use in IR generation
+                    self.ir_code.push_str(&direct_call_ir);
                 }
             }
             _ => {}
@@ -1272,7 +1264,7 @@ impl InterfaceDispatchOptimizer {
         if let Expression::Identifier(obj_name) = object {
             // Look for monomorphic usage patterns
             let cache_key = format!("mono_{}", obj_name);
-            if let Some(resolution) = self.codegen.method_cache.get(&cache_key) {
+            if let Some(resolution) = self.method_cache.get(&cache_key) {
                 if resolution.method_name == "*" || resolution.method_name == method {
                     return Ok(Some(resolution.clone()));
                 }
@@ -1283,7 +1275,7 @@ impl InterfaceDispatchOptimizer {
 
     /// Generate devirtualized call stubs
     fn generate_devirtualized_stubs(&mut self) -> Result<(), CursedError> {
-        for (key, resolution) in &self.codegen.method_cache.clone() {
+        for (key, resolution) in &self.method_cache.clone() {
             if key.starts_with("mono_") && resolution.is_optimized {
                 let stub_ir = format!(
                     r#"
@@ -1301,7 +1293,7 @@ entry:
                     resolution.implementation_type,
                     resolution.method_name
                 );
-                self.codegen.ir_code.push_str(&stub_ir);
+                self.ir_code.push_str(&stub_ir);
             }
         }
         Ok(())
@@ -1329,11 +1321,11 @@ entry:
                 "@{} = alias @{} ; Merged vtable\n",
                 duplicate_name, canonical_name
             );
-            self.codegen.ir_code.push_str(&alias_ir);
+            self.ir_code.push_str(&alias_ir);
         }
         
         // Generate cache-optimized vtable layouts
-        for (vtable_name, vtable_def) in &self.codegen.vtables {
+        for (vtable_name, vtable_def) in &self.vtables {
             if !merged_vtables.contains_key(vtable_name) {
                 let optimized_ir = format!(
                     r#"
@@ -1351,7 +1343,7 @@ entry:
                         .collect::<Vec<_>>()
                         .join(",\n")
                 );
-                self.codegen.ir_code.push_str(&optimized_ir);
+                self.ir_code.push_str(&optimized_ir);
             }
         }
         
@@ -1359,11 +1351,11 @@ entry:
     }
 
     /// Check if method is suitable for inlining
-    fn is_method_inlinable(&self, func: &FunctionStatement) -> Result<bool, CursedError> {
+    fn is_method_inlinable(&self, func: &crate::ast::Function) -> Result<bool, CursedError> {
         // Heuristics for inlining decision
-        let stmt_count = func.body.len();
-        let has_loops = func.body.iter().any(|stmt| {
-            matches!(stmt, Statement::For(_) | Statement::While(_))
+        let stmt_count = func.body.statements.len();
+        let has_loops = func.body.statements.iter().any(|stmt| {
+            matches!(stmt, Statement::For { .. } | Statement::While { .. })
         });
         
         // Inline if: small size, no loops, no recursive calls
@@ -1371,35 +1363,31 @@ entry:
     }
 
     /// Check if function has recursive calls
-    fn has_recursive_calls(&self, func: &FunctionStatement) -> bool {
+    fn has_recursive_calls(&self, func: &crate::ast::Function) -> bool {
         // Simplified check - would need full call graph analysis
-        func.body.iter().any(|stmt| {
-            if let Statement::Expression(Expression::Call(call_expr)) = stmt {
-            if let Expression::Identifier(name) = &*call_expr.function {
-            name == &func.name
-                } else {
+        func.body.statements.iter().any(|stmt| {
+            if let Statement::Expression(Expression::FunctionCall { name, .. }) = stmt {
+                name == &func.name
+            } else {
                 false
-                }
-             } else {
-                 false
-             }
+            }
         })
     }
 
     /// Generate inline method body
-    fn generate_inline_method_body(&mut self, func: &FunctionStatement) -> Result<String, CursedError> {
+    fn generate_inline_method_body(&mut self, func: &crate::ast::Function) -> Result<String, CursedError> {
         let mut inline_body = String::new();
         
         // Generate LLVM IR for function body suitable for inlining
-        for stmt in &func.body {
+        for stmt in &func.body.statements {
             match stmt {
                 Statement::Expression(expr) => {
-                    let expr_ir = self.generate_expression_ir(&expr)?;
+                    let expr_ir = self.generate_expression_ir(expr)?;
                     inline_body.push_str(&format!("    {}\n", expr_ir));
                 }
-                Statement::Return(return_stmt) => {
-                    if let Some(ref expr) = return_stmt.value {
-                        let expr_ir = self.generate_expression_ir(&expr)?;
+                Statement::Return(expr_opt) => {
+                    if let Some(expr) = expr_opt {
+                        let expr_ir = self.generate_expression_ir(expr)?;
                         inline_body.push_str(&format!("    ret {} {}\n", "i32", expr_ir)); // Simplified
                     } else {
                         inline_body.push_str("    ret void\n");
@@ -1434,20 +1422,18 @@ entry:
     }
 
     /// Inline method calls in function
-    fn inline_method_calls_in_function(&mut self, func: &FunctionStatement, inlinable_methods: &HashMap<String, String>) -> Result<(), CursedError> {
+    fn inline_method_calls_in_function(&mut self, func: &crate::ast::Function, inlinable_methods: &HashMap<String, String>) -> Result<(), CursedError> {
         // Scan function for method calls that can be inlined
-        for stmt in &func.body {
-            if let Statement::Expression(Expression::Call(call_expr)) = stmt {
-                if let Expression::MemberAccess(member_access) = &*call_expr.function {
-                    if let Expression::Identifier(obj_name) = &*member_access.object {
-                        let method_key = format!("{}_{}", obj_name, member_access.property);
-                        if let Some(inline_body) = inlinable_methods.get(&method_key) {
-                            // Replace method call with inline body
-                            self.codegen.ir_code.push_str(&format!(
-                                "    ; Inlined method call {}.{}\n{}\n",
-                                obj_name, member_access.property, inline_body
-                            ));
-                        }
+        for stmt in &func.body.statements {
+            if let Statement::Expression(Expression::MethodCall { object, method, .. }) = stmt {
+                if let Expression::Identifier(obj_name) = &**object {
+                    let method_key = format!("{}_{}", obj_name, method);
+                    if let Some(inline_body) = inlinable_methods.get(&method_key) {
+                        // Replace method call with inline body
+                        self.ir_code.push_str(&format!(
+                            "    ; Inlined method call {}.{}\n{}\n",
+                            obj_name, method, inline_body
+                        ));
                     }
                 }
             }
@@ -1463,7 +1449,7 @@ entry:
                 "!{}_inline = !{{!\"inline\", !\"always\"}}\n",
                 method_name
             );
-            self.codegen.ir_code.push_str(&metadata_ir);
+            self.ir_code.push_str(&metadata_ir);
         }
         Ok(())
     }

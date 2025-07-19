@@ -635,13 +635,28 @@ impl HeapOptimizer {
 
     /// First-fit allocation strategy
     fn allocate_first_fit(&self, size: usize) -> Result<NonNull<u8>, CursedError> {
-        // Stub implementation - would search for first available block
+        // Try to allocate from existing free blocks first
+        if let Some(gc) = &self.gc_ref {
+            if let Ok(ptr) = gc.try_allocate_first_fit(size) {
+                return Ok(ptr);
+            }
+        }
+        
+        // Fallback to system allocation
         let layout = Layout::from_size_align(size, self.config.alignment)
             .map_err(|e| CursedError::runtime_error(&format!("Layout error: {}", e)))?;
         
         let ptr = unsafe { alloc(layout) };
         if ptr.is_null() {
-            return Err(CursedError::runtime_error("Failed to allocate"));
+            // Try GC and retry
+            if let Some(gc) = &self.gc_ref {
+                gc.collect_garbage()?;
+                let ptr = unsafe { alloc(layout) };
+                if !ptr.is_null() {
+                    return Ok(unsafe { NonNull::new_unchecked(ptr) });
+                }
+            }
+            return Err(CursedError::runtime_error("Failed to allocate - out of memory"));
         }
         
         Ok(unsafe { NonNull::new_unchecked(ptr) })
@@ -649,32 +664,189 @@ impl HeapOptimizer {
 
     /// Best-fit allocation strategy
     fn allocate_best_fit(&self, size: usize) -> Result<NonNull<u8>, CursedError> {
-        // Stub implementation - would search for best fitting block
+        // Search for the smallest block that fits the request
+        if let Some(gc) = &self.gc_ref {
+            if let Ok(ptr) = gc.try_allocate_best_fit(size) {
+                return Ok(ptr);
+            }
+        }
+        
+        // If no suitable free blocks, use memory pools for better fit
+        let mut pools = self.memory_pools.write().unwrap();
+        
+        // Find best fitting pool
+        let mut best_pool_size = None;
+        let mut best_difference = usize::MAX;
+        
+        for &pool_size in &self.config.pool_sizes {
+            if pool_size >= size {
+                let difference = pool_size - size;
+                if difference < best_difference {
+                    best_difference = difference;
+                    best_pool_size = Some(pool_size);
+                }
+            }
+        }
+        
+        if let Some(pool_size) = best_pool_size {
+            if let Some(pool) = pools.get_mut(&pool_size) {
+                if let Some(ptr) = pool.available.pop_front() {
+                    pool.used_objects += 1;
+                    return Ok(ptr);
+                }
+                
+                // Allocate new chunk for pool
+                self.allocate_pool_chunk(pool)?;
+                if let Some(ptr) = pool.available.pop_front() {
+                    pool.used_objects += 1;
+                    return Ok(ptr);
+                }
+            }
+        }
+        
+        // Fallback to first-fit
         self.allocate_first_fit(size)
     }
 
     /// Worst-fit allocation strategy
     fn allocate_worst_fit(&self, size: usize) -> Result<NonNull<u8>, CursedError> {
-        // Stub implementation - would search for worst fitting block
+        // Search for the largest available block to minimize fragmentation
+        if let Some(gc) = &self.gc_ref {
+            if let Ok(ptr) = gc.try_allocate_worst_fit(size) {
+                return Ok(ptr);
+            }
+        }
+        
+        // Use largest available pool
+        let pools = self.memory_pools.read().unwrap();
+        let mut largest_pool_size = None;
+        
+        for &pool_size in &self.config.pool_sizes {
+            if pool_size >= size {
+                largest_pool_size = Some(pool_size);
+            }
+        }
+        
+        drop(pools);
+        
+        if let Some(pool_size) = largest_pool_size {
+            return self.allocate_from_pool(pool_size, size);
+        }
+        
+        // Fallback to first-fit
         self.allocate_first_fit(size)
     }
 
     /// Next-fit allocation strategy
     fn allocate_next_fit(&self, size: usize) -> Result<NonNull<u8>, CursedError> {
-        // Stub implementation - would start search from last allocation
-        self.allocate_first_fit(size)
+        // Start search from last allocation point to reduce fragmentation
+        let last_ptr = self.next_fit_ptr.load(Ordering::Relaxed);
+        
+        if let Some(gc) = &self.gc_ref {
+            if let Ok(ptr) = gc.try_allocate_next_fit(size, last_ptr) {
+                self.next_fit_ptr.store(ptr.as_ptr() as usize + size, Ordering::Relaxed);
+                return Ok(ptr);
+            }
+        }
+        
+        // Fallback to first-fit and update next pointer
+        let ptr = self.allocate_first_fit(size)?;
+        self.next_fit_ptr.store(ptr.as_ptr() as usize + size, Ordering::Relaxed);
+        Ok(ptr)
     }
 
     /// Buddy allocation strategy
     fn allocate_buddy(&self, size: usize) -> Result<NonNull<u8>, CursedError> {
-        // Stub implementation - would use buddy system
-        self.allocate_first_fit(size)
+        // Use buddy system for power-of-2 sizes
+        let buddy_size = size.next_power_of_two();
+        
+        if let Some(gc) = &self.gc_ref {
+            if let Ok(ptr) = gc.try_allocate_buddy(buddy_size) {
+                return Ok(ptr);
+            }
+        }
+        
+        // Fallback to size class allocation with power-of-2 rounding
+        self.allocate_size_class(buddy_size)
     }
 
     /// Slab allocation strategy
     fn allocate_slab(&self, size: usize) -> Result<NonNull<u8>, CursedError> {
-        // Stub implementation - would use slab allocator
-        self.allocate_first_fit(size)
+        // Use dedicated slabs for common object sizes
+        let slab_size = self.find_slab_size(size);
+        
+        // Use memory pools as slab allocators
+        self.allocate_from_pool(slab_size, size)
+    }
+
+    /// Helper: Find appropriate slab size
+    fn find_slab_size(&self, size: usize) -> usize {
+        // Common object sizes for slab allocation
+        const SLAB_SIZES: &[usize] = &[16, 32, 64, 96, 128, 192, 256, 512, 1024, 2048, 4096];
+        
+        for &slab_size in SLAB_SIZES {
+            if size <= slab_size {
+                return slab_size;
+            }
+        }
+        
+        // For larger objects, round up to next power of 2
+        size.next_power_of_two()
+    }
+
+    /// Helper: Allocate from specific memory pool
+    fn allocate_from_pool(&self, pool_size: usize, requested_size: usize) -> Result<NonNull<u8>, CursedError> {
+        let mut pools = self.memory_pools.write().unwrap();
+        
+        let pool = pools.entry(pool_size).or_insert_with(|| MemoryPool {
+            object_size: pool_size,
+            available: VecDeque::new(),
+            total_size: 0,
+            used_objects: 0,
+            chunks: Vec::new(),
+        });
+        
+        // Try to get from available objects
+        if let Some(ptr) = pool.available.pop_front() {
+            pool.used_objects += 1;
+            return Ok(ptr);
+        }
+        
+        // Allocate new chunk
+        self.allocate_pool_chunk(pool)?;
+        
+        if let Some(ptr) = pool.available.pop_front() {
+            pool.used_objects += 1;
+            Ok(ptr)
+        } else {
+            Err(CursedError::runtime_error("Failed to allocate from pool"))
+        }
+    }
+
+    /// Helper: Allocate new chunk for memory pool
+    fn allocate_pool_chunk(&self, pool: &mut MemoryPool) -> Result<(), CursedError> {
+        const OBJECTS_PER_CHUNK: usize = 64;
+        let chunk_size = pool.object_size * OBJECTS_PER_CHUNK;
+        
+        let layout = Layout::from_size_align(chunk_size, self.config.alignment)
+            .map_err(|e| CursedError::runtime_error(&format!("Layout error: {}", e)))?;
+        
+        let chunk_ptr = unsafe { alloc(layout) };
+        if chunk_ptr.is_null() {
+            return Err(CursedError::runtime_error("Failed to allocate pool chunk"));
+        }
+        
+        let chunk = unsafe { NonNull::new_unchecked(chunk_ptr) };
+        pool.chunks.push(chunk);
+        pool.total_size += chunk_size;
+        
+        // Add objects to available list
+        for i in 0..OBJECTS_PER_CHUNK {
+            let obj_ptr = unsafe { chunk_ptr.add(i * pool.object_size) };
+            pool.available.push_back(unsafe { NonNull::new_unchecked(obj_ptr) });
+        }
+        
+        Ok(())
     }
 
     /// Get heap statistics
