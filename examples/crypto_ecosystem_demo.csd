@@ -1,20 +1,20 @@
-/// fr fr Comprehensive CURSED Crypto Ecosystem Demo - maximum security periodt
-/// 
-/// This example demonstrates the complete crypto ecosystem including:
-/// - Unified crypto API usage
-/// - Package management and monitoring  
-/// - Cross-package integration
-/// - Performance monitoring
-/// - Security auditing
-/// - Real-world cryptographic operations
-/// 
-/// Run with: ./target/debug/cursed examples/crypto_ecosystem_demo.csd
+fr fr/ fr fr Comprehensive CURSED Crypto Ecosystem Demo - maximum security periodt
+fr fr/ 
+fr fr/ This example demonstrates the complete crypto ecosystem including:
+fr fr/ - Unified crypto API usage
+fr fr/ - Package management and monitoring  
+fr fr/ - Cross-package integration
+fr fr/ - Performance monitoring
+fr fr/ - Security auditing
+fr fr/ - Real-world cryptographic operations
+fr fr/ 
+fr fr/ Run with: ./target/debug/cursed examples/crypto_ecosystem_demo.csd
 
-import "stdlib::crypto";
-import "stdlib::io";
+yeet "stdlib::crypto"
+yeet "stdlib::io"
 
-/// slay Main demo function showcasing the crypto ecosystem
-fn main() -> CursedResult<()> {
+fr fr Main demo function showcasing the crypto ecosystem
+slay main() -> CursedResult<()> {
     println("🚀 CURSED Crypto Ecosystem Demo - Maximum Security Bestie!")?;
     println("==========================================================")?;
     
@@ -47,8 +47,8 @@ fn main() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Demonstrate system overview and status
-fn demo_system_overview() -> CursedResult<()> {
+fr fr Demonstrate system overview and status
+slay demo_system_overview() -> CursedResult<()> {
     println("\n🔍 System Overview:")?;
     println("==================")?;
     
@@ -80,8 +80,8 @@ fn demo_system_overview() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Demonstrate package management capabilities
-fn demo_package_management() -> CursedResult<()> {
+fr fr/ slay Demonstrate package management capabilities
+slay demo_package_management() -> CursedResult<()> {
     println("\n📦 Package Management:")?;
     println("=====================")?;
     
@@ -119,8 +119,8 @@ fn demo_package_management() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Demonstrate unified crypto operations
-fn demo_unified_crypto_operations() -> CursedResult<()> {
+fr fr/ slay Demonstrate unified crypto operations
+slay demo_unified_crypto_operations() -> CursedResult<()> {
     println("\n🔐 Unified Crypto Operations:")?;
     println("=============================")?;
     
@@ -172,8 +172,8 @@ fn demo_unified_crypto_operations() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Demonstrate security auditing
-fn demo_security_auditing() -> CursedResult<()> {
+fr fr/ slay Demonstrate security auditing
+slay demo_security_auditing() -> CursedResult<()> {
     println("\n🔍 Security Auditing:")?;
     println("====================")?;
     
@@ -214,8 +214,8 @@ fn demo_security_auditing() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Demonstrate performance monitoring
-fn demo_performance_monitoring() -> CursedResult<()> {
+fr fr/ slay Demonstrate performance monitoring
+slay demo_performance_monitoring() -> CursedResult<()> {
     println("\n📊 Performance Monitoring:")?;
     println("==========================")?;
     
@@ -250,8 +250,8 @@ fn demo_performance_monitoring() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Demonstrate integration testing
-fn demo_integration_testing() -> CursedResult<()> {
+fr fr/ slay Demonstrate integration testing
+slay demo_integration_testing() -> CursedResult<()> {
     println("\n🔗 Integration Testing:")?;
     println("======================")?;
     
@@ -298,8 +298,8 @@ fn demo_integration_testing() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Demonstrate real-world crypto scenarios
-fn demo_real_world_scenarios() -> CursedResult<()> {
+fr fr/ slay Demonstrate real-world crypto scenarios
+slay demo_real_world_scenarios() -> CursedResult<()> {
     println("\n🌍 Real-World Crypto Scenarios:")?;
     println("===============================")?;
     
@@ -322,8 +322,8 @@ fn demo_real_world_scenarios() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Secure messaging demo
-fn secure_messaging_demo() -> CursedResult<()> {
+fr fr/ slay Secure messaging demo
+slay secure_messaging_demo() -> CursedResult<()> {
     println("  🔐 End-to-end encrypted messaging:")?;
     
     // Key exchange simulation
@@ -336,8 +336,8 @@ fn secure_messaging_demo() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay File encryption demo
-fn file_encryption_demo() -> CursedResult<()> {
+fr fr/ slay File encryption demo
+slay file_encryption_demo() -> CursedResult<()> {
     println("  🗂️  Password-based file encryption:")?;
     
     // File encryption simulation
@@ -350,8 +350,8 @@ fn file_encryption_demo() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Certificate management demo
-fn certificate_management_demo() -> CursedResult<()> {
+fr fr/ slay Certificate management demo
+slay certificate_management_demo() -> CursedResult<()> {
     println("  📋 X.509 certificate operations:")?;
     
     // Certificate operations simulation
@@ -364,8 +364,8 @@ fn certificate_management_demo() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Post-quantum crypto demo
-fn post_quantum_demo() -> CursedResult<()> {
+fr fr/ slay Post-quantum crypto demo
+slay post_quantum_demo() -> CursedResult<()> {
     println("  🛡️  Quantum-resistant cryptography:")?;
     
     // Post-quantum simulation
@@ -378,8 +378,8 @@ fn post_quantum_demo() -> CursedResult<()> {
     Ok(())
 }
 
-/// slay Run comprehensive crypto ecosystem test
-fn run_comprehensive_test() -> CursedResult<()> {
+fr fr/ slay Run comprehensive crypto ecosystem test
+slay run_comprehensive_test() -> CursedResult<()> {
     println("\n🧪 Running Comprehensive Crypto Test Suite:")?;
     println("============================================")?;
     
@@ -421,7 +421,7 @@ fn run_comprehensive_test() -> CursedResult<()> {
     Ok(())
 }
 
-// Execute the demo if this file is run directly
+fr fr Execute the demo if this file is run directly
 if __name__ == "__main__" {
     match main() {
         Ok(_) => {

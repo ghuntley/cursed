@@ -1,6 +1,16 @@
+yeet "testz"
+
+slay test_patterns(x normie) tea {
+    gist x {
+        1 => damn "one"
+        2 => damn "two"
+        _ => damn "other"
+    }
+}
+
 slay main() {
-    sus value normie = 42
-    vibez.spill("Pattern test with value:")
-    vibez.spill(value)
-    damn 0
+    test_start("Pattern Test")
+    sus result = test_patterns(1)
+    assert_eq_string(result, "one")
+    print_test_summary()
 }

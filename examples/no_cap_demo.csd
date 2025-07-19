@@ -1,7 +1,7 @@
-// NoCap String Conversion Demo
-// Demonstrates CURSED string conversion utilities with Gen Z flair
+fr fr NoCap String Conversion Demo
+fr fr Demonstrates CURSED string conversion utilities with Gen Z flair
 
-import "stdlib::no_cap";
+yeet "stdlib::no_cap"
 
 slay main() {
     spillf("=== NoCap String Conversion Demo ===\n");
@@ -9,7 +9,7 @@ slay main() {
     // Boolean conversions with Gen Z slang
     spillf("\n🔥 Boolean Conversions (FactsCheck) 🔥\n");
     
-    facts test_bool_values = ["facts", "cap", "based", "idk", "no cap", "fr fr", "true", "false"];
+    facts test_bool_values = ["facts", "cap", "based", "idk", "no cap", "fr fr", "based", "cap"];
     lowkey (sus i = 0; i < test_bool_values.length; i++) {
         facts value = test_bool_values[i];
         match FactsCheck(value) {
@@ -110,14 +110,14 @@ slay main() {
     }
     
     // Custom boolean formatting
-    facts custom_true = FormatBoolCustom(true, "YES", "NO");
-    facts custom_false = FormatBoolCustom(false, "YES", "NO");
-    spillf("Custom boolean format: true -> '{}', false -> '{}'\n", custom_true, custom_false);
+    facts custom_true = FormatBoolCustom(based, "YES", "NO");
+    facts custom_false = FormatBoolCustom(cap, "YES", "NO");
+    spillf("Custom boolean format: based -> '{}', cap -> '{}'\n", custom_true, custom_false);
     
     spillf("\n🎉 NoCap Demo Complete! 🎉\n");
 }
 
-// Helper function to demonstrate module integration
+fr fr Helper function to demonstrate module integration
 slay demonstrate_module_stats() {
     facts stats = get_no_cap_stats();
     spillf("No Cap Module Stats:\n");
@@ -126,7 +126,7 @@ slay demonstrate_module_stats() {
     spillf("  Gen Z slang terms: {:?}\n", stats.slang_terms);
 }
 
-// Performance testing function
+fr fr Performance testing function
 slay performance_test() {
     spillf("\n⚡ Performance Test ⚡\n");
     
@@ -147,7 +147,7 @@ slay performance_test() {
     spillf("Average time per conversion: {} μs\n", (duration * 1000.0) / (iterations * 3));
 }
 
-// Comprehensive error handling demo
+fr fr Comprehensive error handling demo
 slay error_handling_demo() {
     spillf("\n🛡️  Comprehensive Error Handling 🛡️\n");
     

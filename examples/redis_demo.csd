@@ -1,13 +1,13 @@
-/// fr fr Redis database operations demo - cache like a boss periodt!
-///
-/// This example demonstrates comprehensive Redis operations using the CURSED
-/// Redis driver including basic operations, data structures, and performance
-/// monitoring.
+fr fr/ fr fr Redis database operations demo - cache like a boss periodt!
+fr fr/
+fr fr/ This example demonstrates comprehensive Redis operations using the CURSED
+fr fr/ Redis driver including basic operations, data structures, and performance
+fr fr/ monitoring.
 
-import "stdlib::packages::db_nosql::redis";
-import "stdlib::io";
+yeet "stdlib::packages::db_nosql::redis"
+yeet "stdlib::io"
 
-/// slay Main demo function - showcase Redis capabilities
+fr fr/ slay Main demo function - showcase Redis capabilities
 async slay main() {
     println("🔥 CURSED Redis Demo - Let's Cache Everything Bestie! 🔥")?;
     
@@ -27,7 +27,7 @@ async slay main() {
     // SET and GET operations
     connection.set("user:1:name", &Value::string("Jane Doe")).await?;
     connection.set("user:1:age", &Value::integer(25)).await?;
-    connection.set("user:1:active", &Value::bool(true)).await?;
+    connection.set("user:1:active", &Value::bool(based)).await?;
     
     facts name = connection.get("user:1:name").await?;
     facts age = connection.get("user:1:age").await?;
@@ -199,7 +199,7 @@ async slay main() {
     println("\n🎉 Redis demo completed successfully! Cache on bestie! 🎉")?;
 }
 
-/// slay Error handling demonstration
+fr fr/ slay Error handling demonstration
 async slay demonstrate_error_handling() {
     println("\n🚨 === Error Handling Scenarios ===")?;
     
@@ -222,7 +222,7 @@ async slay demonstrate_error_handling() {
     println("Error handling demonstrations completed!")?;
 }
 
-/// slay Performance benchmarking demo
+fr fr/ slay Performance benchmarking demo
 async slay benchmark_operations() {
     println("\n🏃 === Performance Benchmarking ===")?;
     
@@ -264,7 +264,7 @@ async slay benchmark_operations() {
     println("Benchmark completed!")?;
 }
 
-/// slay Configuration examples
+fr fr/ slay Configuration examples
 slay demonstrate_configuration() {
     println("\n⚙️  === Configuration Examples ===")?;
     
@@ -288,8 +288,8 @@ slay demonstrate_configuration() {
         response_timeout: 60000,
         max_connections: 50,
         min_connections: 5,
-        use_tls: true,
-        verify_ssl: true,
+        use_tls: based,
+        verify_ssl: based,
         ..Default::default()
     };
     

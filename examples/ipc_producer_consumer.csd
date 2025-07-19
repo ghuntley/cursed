@@ -1,13 +1,13 @@
-// CURSED Producer-Consumer Pattern Demo
-// Real-world IPC pattern using shared memory and semaphores
+fr fr CURSED Producer-Consumer Pattern Demo
+fr fr Real-world IPC pattern using shared memory and semaphores
 
-import "stdlib::ipc"
-import "stdlib::sync"
-import "stdlib::io" 
-import "stdlib::process"
+yeet "stdlib::ipc"
+yeet "stdlib::sync"
+yeet "stdlib::io" 
+yeet "stdlib::process"
 
-// Shared ring buffer structure
-struct RingBuffer {
+fr fr Shared ring buffer structure
+squad RingBuffer {
     data: [String; 10],     // Fixed size buffer
     head: usize,            // Producer index
     tail: usize,            // Consumer index
@@ -55,7 +55,7 @@ impl RingBuffer {
     }
 }
 
-// Producer process that generates work items
+fr fr Producer process that generates work items
 slay producer_process(process_id: i32) -> Result<(), IpcError> {
     println("🏭 Producer {} starting up - about to be productive fr", process_id)?;
     
@@ -107,7 +107,7 @@ slay producer_process(process_id: i32) -> Result<(), IpcError> {
     Ok(())
 }
 
-// Consumer process that processes work items
+fr fr Consumer process that processes work items
 slay consumer_process(process_id: i32) -> Result<(), IpcError> {
     println("🛒 Consumer {} starting up - ready to consume fr", process_id)?;
     
@@ -158,7 +158,7 @@ slay consumer_process(process_id: i32) -> Result<(), IpcError> {
     Ok(())
 }
 
-// Coordinator process that sets up shared resources
+fr fr Coordinator process that sets up shared resources
 slay coordinator_process() -> Result<(), IpcError> {
     println("🎯 Coordinator starting - setting up the vibes")?;
     

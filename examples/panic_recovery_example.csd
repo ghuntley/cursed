@@ -1,5 +1,5 @@
-// CURSED Panic/Recovery Example
-// Demonstrates the panic/recovery system with Gen Z slang
+fr fr CURSED Panic/Recovery Example
+fr fr Demonstrates the panic/recovery system with Gen Z slang
 
 slay main() {
     println("Starting panic/recovery demo...")

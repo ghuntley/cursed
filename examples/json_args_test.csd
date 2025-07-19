@@ -16,7 +16,7 @@ slay main() {
     vibez.spill("Circle area with radius 5: " + area);
     
     // Test with boolean arguments
-    sus is_enabled := true;
+    sus is_enabled := based;
     sus result := mathz.ConditionalCalculation(is_enabled, 10); // Takes a boolean and a number
     
     vibez.spill("Conditional calculation result: " + result);

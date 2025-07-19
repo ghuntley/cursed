@@ -1,8 +1,8 @@
 fr fr CURSED Runtime Introspection (vibecheck) Demo
 fr fr This example demonstrates the runtime introspection capabilities
 
-import "stdlib::vibecheck";
-import "stdlib::io";
+yeet "stdlib::vibecheck"
+yeet "stdlib::io"
 
 fr fr Memory statistics example
 slay show_memory_stats() {
@@ -217,7 +217,7 @@ slay goroutine_monitoring_demo() {
     }
     
     fr fr Enable blocking profile
-    vibecheck.block_profile(true);
+    vibecheck.block_profile(based);
     
     fr fr Get specific goroutine info
     let current_id = vibecheck.go_id() as u64;

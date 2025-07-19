@@ -1,19 +1,19 @@
-// Example demonstrating recursive type definitions in CURSED
+fr fr Example demonstrating recursive type definitions in CURSED
 
-// Simple linked list node
+fr fr Simple linked list node
 be_like Node squad {
     value normie
     next *Node
 }
 
-// Binary tree node 
+fr fr Binary tree node 
 be_like TreeNode squad {
     value normie
     left *TreeNode
     right *TreeNode
 }
 
-// Mutually recursive types for a graph structure
+fr fr Mutually recursive types for a graph structure
 be_like GraphNode squad {
     id normie
     edges []*GraphEdge
@@ -25,7 +25,7 @@ be_like GraphEdge squad {
     weight normie
 }
 
-// Generic recursive list
+fr fr Generic recursive list
 be_like List[T] squad {
     head *ListNode[T]
     size normie
@@ -36,7 +36,7 @@ be_like ListNode[T] squad {
     next *ListNode[T]
 }
 
-// Complex recursive structure for an expression tree
+fr fr Complex recursive structure for an expression tree
 be_like Expr squad {
     type tea
 }
@@ -52,7 +52,7 @@ be_like UnaryExpr squad {
     operator tea
 }
 
-// Recursive function to traverse linked list
+fr fr Recursive function to traverse linked list
 slay traverse_list(head *Node) normie {
     if head == nil {
         return 0
@@ -60,7 +60,7 @@ slay traverse_list(head *Node) normie {
     return 1 + traverse_list(head.next)
 }
 
-// Function to create a simple linked list
+fr fr Function to create a simple linked list
 slay create_list() *Node {
     first := Node{value: 1, next: nil}
     second := Node{value: 2, next: nil} 
@@ -72,7 +72,7 @@ slay create_list() *Node {
     return &first
 }
 
-// Binary tree traversal
+fr fr Binary tree traversal
 slay inorder_traversal(node *TreeNode) {
     if node != nil {
         inorder_traversal(node.left)
@@ -81,7 +81,7 @@ slay inorder_traversal(node *TreeNode) {
     }
 }
 
-// Create a simple binary tree
+fr fr Create a simple binary tree
 slay create_tree() *TreeNode {
     root := TreeNode{value: 5, left: nil, right: nil}
     left := TreeNode{value: 3, left: nil, right: nil}
@@ -93,7 +93,7 @@ slay create_tree() *TreeNode {
     return &root
 }
 
-// Main function demonstrating recursive types
+fr fr Main function demonstrating recursive types
 slay main() normie {
     // Test linked list
     list := create_list()

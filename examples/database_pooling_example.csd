@@ -1,10 +1,10 @@
-/// fr fr CURSED Database Connection Pooling Example - enterprise vibes periodt
-/// This example demonstrates connection pooling for high-performance database access
+fr fr/ fr fr CURSED Database Connection Pooling Example - enterprise vibes periodt
+fr fr/ This example demonstrates connection pooling for high-performance database access
 
-// Import necessary packages
-import sql_vibes
-import concurrenz
-import timez
+fr fr Import necessary packages
+yeet sql_vibes
+yeet concurrenz
+yeet timez
 
 squad DatabaseConfig {
     connection_string: String,
@@ -34,7 +34,7 @@ slay setup_database_schema(pool: sql_vibes.ConnectionPool) -> Bool {
     sus conn_result = pool.get_connection()
     lowkey conn_result.is_error() {
         vibez.spill("Failed to get connection for schema setup:", conn_result.error())
-        return false
+        return cap
     }
     
     facts conn = conn_result.value()
@@ -55,7 +55,7 @@ slay setup_database_schema(pool: sql_vibes.ConnectionPool) -> Bool {
     
     lowkey create_result.is_error() {
         vibez.spill("Failed to create users table:", create_result.error())
-        return false
+        return cap
     }
     
     // Create indexes for better performance
@@ -70,12 +70,12 @@ slay setup_database_schema(pool: sql_vibes.ConnectionPool) -> Bool {
         sus result = conn.execute(query)
         lowkey result.is_error() {
             vibez.spill("Failed to create index:", result.error())
-            return false
+            return cap
         }
     }
     
     vibez.spill("✅ Database schema setup complete")
-    return true
+    return based
 }
 
 slay generate_sample_users(count: i32) -> [][]String {

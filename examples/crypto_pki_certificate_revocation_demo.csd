@@ -1,20 +1,20 @@
-// Certificate Revocation Demo - CURSED Language
-// Comprehensive demonstration of PKI certificate revocation functionality
-//
-// This example showcases:
-// - Certificate Revocation List (CRL) generation and management
-// - Online Certificate Status Protocol (OCSP) support
-// - Certificate revocation reason code handling
-// - Bulk certificate revocation capabilities
-// - Emergency revocation procedures
-// - Revocation status checking and verification
+fr fr Certificate Revocation Demo - CURSED Language
+fr fr Comprehensive demonstration of PKI certificate revocation functionality
+fr fr
+fr fr This example showcases:
+fr fr - Certificate Revocation List (CRL) generation and management
+fr fr - Online Certificate Status Protocol (OCSP) support
+fr fr - Certificate revocation reason code handling
+fr fr - Bulk certificate revocation capabilities
+fr fr - Emergency revocation procedures
+fr fr - Revocation status checking and verification
 
-import "stdlib::crypto_pki" as pki;
-import "stdlib::io" as io;
-import "stdlib::time" as time;
-import "stdlib::collections" as collections;
+yeet "stdlib::crypto_pki" as pki;
+yeet "stdlib::io" as io;
+yeet "stdlib::time" as time;
+yeet "stdlib::collections" as collections;
 
-struct CertificateInfo {
+squad CertificateInfo {
     serial_number: sus,
     issuer_name: sus,
     subject_name: sus,
@@ -22,13 +22,13 @@ struct CertificateInfo {
     expiry_date: sus,
 }
 
-struct RevocationDemo {
+squad RevocationDemo {
     revocation_manager: pki::CertificateRevocationManager,
     certificates: collections::Map<sus, CertificateInfo>,
     demo_stats: RevocationStats,
 }
 
-struct RevocationStats {
+squad RevocationStats {
     total_certificates: sus,
     revoked_certificates: sus,
     crls_generated: sus,
@@ -36,7 +36,7 @@ struct RevocationStats {
     emergency_revocations: sus,
 }
 
-yolo fn main() {
+yolo slay main() {
     io::println("🔒 CURSED PKI Certificate Revocation Management Demo")?;
     io::println("====================================================")?;
     
@@ -60,7 +60,7 @@ yolo fn main() {
     io::println("\n✅ Certificate revocation demo completed successfully!")?;
 }
 
-yolo fn create_revocation_demo() -> RevocationDemo {
+yolo slay create_revocation_demo() -> RevocationDemo {
     io::println("\n📋 Setting up certificate revocation management...")?;
     
     // Create revocation manager with custom configuration
@@ -131,7 +131,7 @@ yolo fn create_revocation_demo() -> RevocationDemo {
     }
 }
 
-yolo fn demo_basic_revocation(demo: &mut RevocationDemo) {
+yolo slay demo_basic_revocation(demo: &mut RevocationDemo) {
     io::println("\n🚫 Demonstrating basic certificate revocation...")?;
     
     // Revoke development server certificate (key compromise)
@@ -157,7 +157,7 @@ yolo fn demo_basic_revocation(demo: &mut RevocationDemo) {
         metadata: collections::Map::from([
             ("incident_id", "INC-2024-001"),
             ("severity", "HIGH"),
-            ("notification_sent", "true"),
+            ("notification_sent", "based"),
         ]),
     };
     
@@ -190,7 +190,7 @@ yolo fn demo_basic_revocation(demo: &mut RevocationDemo) {
     io::println("   📊 Basic revocation demonstration completed")?;
 }
 
-yolo fn demo_batch_revocation(demo: &mut RevocationDemo) {
+yolo slay demo_batch_revocation(demo: &mut RevocationDemo) {
     io::println("\n📦 Demonstrating batch certificate revocation...")?;
     
     // Prepare batch revocation for user certificates
@@ -240,7 +240,7 @@ yolo fn demo_batch_revocation(demo: &mut RevocationDemo) {
     io::println("   📊 Batch revocation demonstration completed")?;
 }
 
-yolo fn demo_crl_generation(demo: &mut RevocationDemo) {
+yolo slay demo_crl_generation(demo: &mut RevocationDemo) {
     io::println("\n📜 Demonstrating Certificate Revocation List (CRL) generation...")?;
     
     // Generate full CRL
@@ -298,7 +298,7 @@ yolo fn demo_crl_generation(demo: &mut RevocationDemo) {
     io::println("   📊 CRL generation demonstration completed")?;
 }
 
-yolo fn demo_ocsp_checking(demo: &mut RevocationDemo) {
+yolo slay demo_ocsp_checking(demo: &mut RevocationDemo) {
     io::println("\n🔍 Demonstrating OCSP (Online Certificate Status Protocol) checking...")?;
     
     // Test OCSP for valid certificate
@@ -352,7 +352,7 @@ yolo fn demo_ocsp_checking(demo: &mut RevocationDemo) {
     io::println("   📊 OCSP checking demonstration completed")?;
 }
 
-yolo fn demo_emergency_revocation(demo: &mut RevocationDemo) {
+yolo slay demo_emergency_revocation(demo: &mut RevocationDemo) {
     io::println("\n🚨 Demonstrating emergency revocation procedures...")?;
     
     io::println("   ⚠️  SIMULATING CA COMPROMISE SCENARIO")?;
@@ -398,7 +398,7 @@ yolo fn demo_emergency_revocation(demo: &mut RevocationDemo) {
     io::println("   📊 Emergency revocation demonstration completed")?;
 }
 
-yolo fn demo_revocation_status_checking(demo: &mut RevocationDemo) {
+yolo slay demo_revocation_status_checking(demo: &mut RevocationDemo) {
     io::println("\n📊 Demonstrating comprehensive revocation status checking...")?;
     
     // Check status of all certificates
@@ -451,7 +451,7 @@ yolo fn demo_revocation_status_checking(demo: &mut RevocationDemo) {
     io::println("   📊 Revocation status checking demonstration completed")?;
 }
 
-yolo fn print_final_statistics(demo: &RevocationDemo) {
+yolo slay print_final_statistics(demo: &RevocationDemo) {
     io::println("\n📊 Final Certificate Revocation Management Statistics")?;
     io::println("=====================================================")?;
     
@@ -494,9 +494,9 @@ yolo fn print_final_statistics(demo: &RevocationDemo) {
     io::println("   ✅ Thread-safe concurrent operations")?;
 }
 
-// Helper functions
+fr fr Helper functions
 
-yolo fn create_distinguished_name(common_name: sus) -> pki::DistinguishedName {
+yolo slay create_distinguished_name(common_name: sus) -> pki::DistinguishedName {
     pki::DistinguishedName {
         common_name: Some(common_name),
         organization: Some("CURSED PKI Demonstration"),
@@ -509,34 +509,34 @@ yolo fn create_distinguished_name(common_name: sus) -> pki::DistinguishedName {
     }
 }
 
-yolo fn create_audit_info(user: sus, auth_token: sus) -> pki::RevocationAuditInfo {
+yolo slay create_audit_info(user: sus, auth_token: sus) -> pki::RevocationAuditInfo {
     pki::RevocationAuditInfo {
         initiated_by: user,
         authorization: auth_token,
         request_source: Some("demo.cursed-pki.example.com"),
         metadata: collections::Map::from([
-            ("demo_environment", "true"),
+            ("demo_environment", "based"),
             ("timestamp", time::SystemTime::now().duration_since(time::UNIX_EPOCH).as_secs().to_string()),
             ("demo_version", "1.0.0"),
         ]),
     }
 }
 
-yolo fn format_time(time: time::SystemTime) -> sus {
+yolo slay format_time(time: time::SystemTime) -> sus {
     // In a real implementation, this would format the time properly
     // For demo purposes, we'll show a simplified representation
     facts duration = time.duration_since(time::UNIX_EPOCH).unwrap_or_default();
     format!("Time({}s)", duration.as_secs())
 }
 
-yolo fn format_time_option(time_opt: Option<time::SystemTime>) -> sus {
+yolo slay format_time_option(time_opt: Option<time::SystemTime>) -> sus {
     vibe_check time_opt {
         mood Some(time) => format_time(time),
         mood None => "Not specified".to_string(),
     }
 }
 
-yolo fn format_distinguished_name(dn: &pki::DistinguishedName) -> sus {
+yolo slay format_distinguished_name(dn: &pki::DistinguishedName) -> sus {
     facts parts = collections::Vec::new();
     
     highkey dn.common_name.is_some() {
@@ -552,7 +552,7 @@ yolo fn format_distinguished_name(dn: &pki::DistinguishedName) -> sus {
     parts.join(", ")
 }
 
-yolo fn format_ocsp_cert_status(status: &pki::OcspCertificateStatus) -> sus {
+yolo slay format_ocsp_cert_status(status: &pki::OcspCertificateStatus) -> sus {
     vibe_check status {
         mood pki::OcspCertificateStatus::Good => "GOOD".to_string(),
         mood pki::OcspCertificateStatus::Revoked { revocation_time, reason } => {
@@ -566,9 +566,9 @@ yolo fn format_ocsp_cert_status(status: &pki::OcspCertificateStatus) -> sus {
     }
 }
 
-// Advanced demonstration scenarios
+fr fr Advanced demonstration scenarios
 
-yolo fn demo_audit_trail_analysis(demo: &RevocationDemo) {
+yolo slay demo_audit_trail_analysis(demo: &RevocationDemo) {
     io::println("\n📋 Demonstrating audit trail analysis...")?;
     
     // In a real implementation, this would:
@@ -584,7 +584,7 @@ yolo fn demo_audit_trail_analysis(demo: &RevocationDemo) {
     io::println("      - Compliance reporting")?;
 }
 
-yolo fn demo_performance_monitoring(demo: &RevocationDemo) {
+yolo slay demo_performance_monitoring(demo: &RevocationDemo) {
     io::println("\n⚡ Demonstrating performance monitoring...")?;
     
     // In a real implementation, this would:
@@ -600,7 +600,7 @@ yolo fn demo_performance_monitoring(demo: &RevocationDemo) {
     io::println("      - SLA compliance tracking")?;
 }
 
-yolo fn demo_integration_scenarios(demo: &RevocationDemo) {
+yolo slay demo_integration_scenarios(demo: &RevocationDemo) {
     io::println("\n🔗 Demonstrating integration scenarios...")?;
     
     // In a real implementation, this would:

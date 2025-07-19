@@ -1,10 +1,10 @@
-// ML-Guided Optimization Demo for CURSED
-// This example demonstrates the ML-guided optimization system
+fr fr ML-Guided Optimization Demo for CURSED
+fr fr This example demonstrates the ML-guided optimization system
 
-import "stdlib::io";
-import "optimization::ml";
+yeet "stdlib::io"
+yeet "optimization::ml"
 
-// Example function with various optimization opportunities
+fr fr Example function with various optimization opportunities
 slay fibonacci(sus n: i64) -> i64 {
     lowkey (n <= 1) {
         return n;
@@ -14,7 +14,7 @@ slay fibonacci(sus n: i64) -> i64 {
     return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-// Function with loop optimization opportunities  
+fr fr Function with loop optimization opportunities  
 slay matrix_multiply(
     sus a: [[i64; 100]; 100], 
     sus b: [[i64; 100]; 100]
@@ -34,7 +34,7 @@ slay matrix_multiply(
     return result;
 }
 
-// Function with goroutine usage - CURSED-specific optimization
+fr fr Function with goroutine usage - CURSED-specific optimization
 slay concurrent_processing(sus data: [i64; 1000]) -> [i64; 1000] {
     facts result: [i64; 1000] = [0; 1000];
     facts channels: [channel<i64>; 10];
@@ -53,7 +53,7 @@ slay concurrent_processing(sus data: [i64; 1000]) -> [i64; 1000] {
     return result;
 }
 
-// Worker function for goroutines
+fr fr Worker function for goroutines
 slay process_chunk(
     sus data: [i64; 1000], 
     sus start: usize, 
@@ -69,7 +69,7 @@ slay process_chunk(
     result_chan <- sum;
 }
 
-// Function with error propagation - optimization opportunity
+fr fr Function with error propagation - optimization opportunity
 slay safe_divide(sus a: i64, sus b: i64) -> Result<i64, string> {
     lowkey (b == 0) {
         return Err("Division by zero");
@@ -78,7 +78,7 @@ slay safe_divide(sus a: i64, sus b: i64) -> Result<i64, string> {
     Ok(a / b)
 }
 
-// Function that uses error propagation heavily
+fr fr Function that uses error propagation heavily
 slay complex_calculation(sus values: [i64; 100]) -> Result<i64, string> {
     facts result: i64 = 0;
     
@@ -90,7 +90,7 @@ slay complex_calculation(sus values: [i64; 100]) -> Result<i64, string> {
     Ok(result)
 }
 
-// Interface usage - type assertion optimization opportunities
+fr fr Interface usage - type assertion optimization opportunities
 collab Processor {
     slay process(sus data: i64) -> i64;
 }
@@ -119,7 +119,7 @@ impl Processor for SlowProcessor {
     }
 }
 
-// Function with dynamic dispatch
+fr fr Function with dynamic dispatch
 slay process_with_interface(sus processor: &dyn Processor, sus data: [i64; 1000]) -> [i64; 1000] {
     facts result: [i64; 1000] = [0; 1000];
     
@@ -135,7 +135,7 @@ slay process_with_interface(sus processor: &dyn Processor, sus data: [i64; 1000]
     return result;
 }
 
-// Main function demonstrating various code patterns
+fr fr Main function demonstrating various code patterns
 slay main() -> Result<(), string> {
     println("CURSED ML-Guided Optimization Demo")?;
     
@@ -184,15 +184,15 @@ slay main() -> Result<(), string> {
     Ok(())
 }
 
-// Additional functions to create more optimization opportunities
+fr fr Additional functions to create more optimization opportunities
 
-// Function with many small functions (inlining candidates)
+fr fr Function with many small functions (inlining candidates)
 slay add(sus a: i64, sus b: i64) -> i64 { a + b }
 slay multiply(sus a: i64, sus b: i64) -> i64 { a * b }
 slay square(sus x: i64) -> i64 { multiply(x, x) }
 slay cube(sus x: i64) -> i64 { multiply(square(x), x) }
 
-// Function that calls many small functions
+fr fr Function that calls many small functions
 slay mathematical_operations(sus data: [i64; 1000]) -> [i64; 1000] {
     facts result: [i64; 1000] = [0; 1000];
     
@@ -206,7 +206,7 @@ slay mathematical_operations(sus data: [i64; 1000]) -> [i64; 1000] {
     return result;
 }
 
-// Function with memory-intensive operations
+fr fr Function with memory-intensive operations
 slay memory_intensive_operation() -> [i64; 10000] {
     facts large_array: [i64; 10000] = [0; 10000];
     facts temp_array: [i64; 10000] = [0; 10000];
@@ -230,7 +230,7 @@ slay memory_intensive_operation() -> [i64; 10000] {
     return large_array;
 }
 
-// Function with branching patterns
+fr fr Function with branching patterns
 slay branching_intensive(sus data: [i64; 1000]) -> [i64; 1000] {
     facts result: [i64; 1000] = [0; 1000];
     

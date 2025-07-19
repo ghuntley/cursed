@@ -1,7 +1,7 @@
 //! Enhanced interface parsing for CURSED language
 //! Supports generic interfaces, constraints, and method definitions
 
-use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type, Visibility, InterfaceComposition};
+use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type, Visibility, InterfaceComposition, TypeParameter, MethodReceiver};
 use crate::lexer::{Token, TokenKind};
 use crate::error_types::{Error, Result};
 use crate::parser::Parser;
@@ -19,7 +19,7 @@ impl Parser {
                 self.next_token()?;
                 name
             }
-            _ => return Err(Error::ParseError("Expected interface name".to_string())),
+            _ => return Err(Error::Parse("Expected interface name".to_string())),
         };
         
         // Parse generic type parameters <T, U>
@@ -31,7 +31,10 @@ impl Parser {
             if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::Greater) {
                 if let Some(token) = self.current_token.as_ref() {
                     if token.kind == TokenKind::Identifier {
-                        type_parameters.push(token.lexeme.clone());
+                        type_parameters.push(TypeParameter {
+                            name: token.lexeme.clone(),
+                            bounds: Vec::new(),
+                        });
                         self.next_token()?;
                     }
                 }
@@ -41,7 +44,10 @@ impl Parser {
                     self.next_token()?; // consume ','
                     if let Some(token) = self.current_token.as_ref() {
                         if token.kind == TokenKind::Identifier {
-                            type_parameters.push(token.lexeme.clone());
+                            type_parameters.push(TypeParameter {
+                                name: token.lexeme.clone(),
+                                bounds: Vec::new(),
+                            });
                             self.next_token()?;
                         }
                     }
@@ -101,7 +107,7 @@ impl Parser {
         
         // Expect opening brace
         if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::LeftBrace) {
-            return Err(Error::ParseError("Expected '{' after interface name".to_string()));
+            return Err(Error::Parse("Expected '{' after interface name".to_string()));
         }
         self.next_token()?; // consume '{'
         
@@ -137,7 +143,7 @@ impl Parser {
     fn parse_method_signature(&mut self) -> Result<MethodSignature> {
         // Expect 'slay' keyword
         if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::Slay) {
-            return Err(Error::ParseError("Expected 'slay' keyword for method".to_string()));
+            return Err(Error::Parse("Expected 'slay' keyword for method".to_string()));
         }
         self.next_token()?; // consume 'slay'
         
@@ -148,7 +154,7 @@ impl Parser {
                 self.next_token()?;
                 name
             }
-            _ => return Err(Error::ParseError("Expected method name".to_string())),
+            _ => return Err(Error::Parse("Expected method name".to_string())),
         };
         
         // Parse parameters
@@ -169,8 +175,8 @@ impl Parser {
                 TokenKind::Byte => { self.next_token()?; Some(Type::Byte) },
                 TokenKind::Rune => { self.next_token()?; Some(Type::Rune) },
                 TokenKind::Extra => { self.next_token()?; Some(Type::Extra) },
-                TokenKind::Identifier(name) => {
-                    let type_name = name.clone();
+                TokenKind::Identifier => {
+                    let type_name = token.lexeme.clone();
                     self.next_token()?;
                     Some(Type::Custom(type_name))
                 },
@@ -190,6 +196,7 @@ impl Parser {
         
         Ok(MethodSignature {
             name,
+            receiver: None, // Interface methods don't have receivers
             parameters,
             return_type,
         })
@@ -199,7 +206,7 @@ impl Parser {
     fn parse_method_parameters(&mut self) -> Result<Vec<Parameter>> {
         // Expect '('
         if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::LeftParen) {
-            return Err(Error::ParseError("Expected '(' for method parameters".to_string()));
+            return Err(Error::Parse("Expected '(' for method parameters".to_string()));
         }
         self.next_token()?; // consume '('
         
@@ -220,7 +227,7 @@ impl Parser {
                     self.next_token()?;
                     name
                 }
-                _ => return Err(Error::ParseError("Expected parameter name".to_string())),
+                _ => return Err(Error::Parse("Expected parameter name".to_string())),
             };
             
             // Parse parameter type
@@ -248,7 +255,7 @@ impl Parser {
     }
     
     /// Parse interface composition
-    fn parse_interface_composition(&mut self) -> Result<InterfaceComposition> {
+    pub fn parse_interface_composition(&mut self) -> Result<InterfaceComposition> {
         // Parse composed interface name
         let composed_interface = match self.current_token.as_ref() {
             Some(token) if token.kind == TokenKind::Identifier => {
@@ -256,7 +263,7 @@ impl Parser {
                 self.next_token()?;
                 name
             }
-            _ => return Err(Error::ParseError("Expected interface name in composition".to_string())),
+            _ => return Err(Error::Parse("Expected interface name in composition".to_string())),
         };
         
         let mut alias = None;
@@ -370,12 +377,12 @@ impl Parser {
                 self.next_token()?;
                 name
             }
-            _ => return Err(Error::ParseError("Expected interface name after 'impl'".to_string())),
+            _ => return Err(Error::Parse("Expected interface name after 'impl'".to_string())),
         };
         
         // Parse 'for' keyword
         if self.current_token.as_ref().map(|t| &t.kind) != Some(&TokenKind::For) {
-            return Err(Error::ParseError("Expected 'for' keyword after interface name".to_string()));
+            return Err(Error::Parse("Expected 'for' keyword after interface name".to_string()));
         }
         self.next_token()?; // consume 'for'
         
@@ -386,7 +393,7 @@ impl Parser {
                 self.next_token()?;
                 name
             }
-            _ => return Err(Error::ParseError("Expected type name after 'for'".to_string())),
+            _ => return Err(Error::Parse("Expected type name after 'for'".to_string())),
         };
         
         // Parse implementation body

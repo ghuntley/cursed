@@ -1,10 +1,10 @@
-// CURSED Collections Demo - Comprehensive showcase of all collection types
-// This example demonstrates real-world usage patterns with Gen Z syntax
+fr fr CURSED Collections Demo - Comprehensive showcase of all collection types
+fr fr This example demonstrates real-world usage patterns with Gen Z syntax
 
-import "stdlib::collections";
-import "stdlib::io";
+yeet "stdlib::collections"
+yeet "stdlib::io"
 
-// User data structure for demonstrations
+fr fr User data structure for demonstrations
 collab UserInfo {
     sus id: i32,
     sus name: String,
@@ -12,7 +12,7 @@ collab UserInfo {
     sus active: bool
 }
 
-// Task structure for priority queue demo
+fr fr Task structure for priority queue demo
 collab Task {
     sus id: i32,
     sus description: String,
@@ -20,7 +20,7 @@ collab Task {
     sus deadline: i64
 }
 
-// Main demo function
+fr fr Main demo function
 slay main() -> CursedResult<()> {
     println("🎉 CURSED Collections Demo - Let's get this collection started! 🎉\n")?;
     
@@ -64,7 +64,7 @@ slay main() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 1: HashSet for unique user tracking
+fr fr Demo 1: HashSet for unique user tracking
 slay demo_hash_set() -> CursedResult<()> {
     println("📋 Demo 1: HashSet - Unique User Tracking")?;
     println("==========================================\n")?;
@@ -100,7 +100,7 @@ slay demo_hash_set() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 2: TreeSet for sorted high scores
+fr fr Demo 2: TreeSet for sorted high scores
 slay demo_tree_set() -> CursedResult<()> {
     println("🏆 Demo 2: TreeSet - Sorted High Scores")?;
     println("=======================================\n")?;
@@ -135,7 +135,7 @@ slay demo_tree_set() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 3: BitSet for feature flags
+fr fr Demo 3: BitSet for feature flags
 slay demo_bit_set() -> CursedResult<()> {
     println("🚩 Demo 3: BitSet - Feature Flags")?;
     println("=================================\n")?;
@@ -190,7 +190,7 @@ slay demo_bit_set() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 4: Queue for user registration
+fr fr Demo 4: Queue for user registration
 slay demo_queue() -> CursedResult<()> {
     println("📝 Demo 4: Queue - User Registration Processing")?;
     println("==============================================\n")?;
@@ -232,7 +232,7 @@ slay demo_queue() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 5: Priority Queue for task management
+fr fr Demo 5: Priority Queue for task management
 slay demo_priority_queue() -> CursedResult<()> {
     println("📋 Demo 5: PriorityQueue - Task Management")?;
     println("==========================================\n")?;
@@ -278,7 +278,7 @@ slay demo_priority_queue() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 6: Circular Queue for chat messages
+fr fr Demo 6: Circular Queue for chat messages
 slay demo_circular_queue() -> CursedResult<()> {
     println("💬 Demo 6: CircularQueue - Chat Message Buffer")?;
     println("==============================================\n")?;
@@ -326,7 +326,7 @@ slay demo_circular_queue() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 7: Deque for browser history
+fr fr Demo 7: Deque for browser history
 slay demo_deque() -> CursedResult<()> {
     println("🌐 Demo 7: Deque - Browser History Navigation")?;
     println("============================================\n")?;
@@ -373,7 +373,7 @@ slay demo_deque() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 8: Stack for function call tracking
+fr fr Demo 8: Stack for function call tracking
 slay demo_stack() -> CursedResult<()> {
     println("📚 Demo 8: Stack - Function Call Tracking")?;
     println("=========================================\n")?;
@@ -420,7 +420,7 @@ slay demo_stack() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 9: Fixed Stack for undo operations
+fr fr Demo 9: Fixed Stack for undo operations
 slay demo_fixed_stack() -> CursedResult<()> {
     println("↩️  Demo 9: FixedStack - Undo Operations")?;
     println("=======================================\n")?;
@@ -469,7 +469,7 @@ slay demo_fixed_stack() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 10: Thread Safe Stack for concurrent processing
+fr fr Demo 10: Thread Safe Stack for concurrent processing
 slay demo_thread_safe_stack() -> CursedResult<()> {
     println("🔒 Demo 10: ThreadSafeStack - Concurrent Processing")?;
     println("==================================================\n")?;
@@ -520,7 +520,7 @@ slay demo_thread_safe_stack() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 11: Real-world integration example
+fr fr Demo 11: Real-world integration example
 slay demo_real_world_integration() -> CursedResult<()> {
     println!("🌟 Demo 11: Real-World Integration - Event Processing System")?;
     println!("===========================================================\n")?;
@@ -615,7 +615,7 @@ slay demo_real_world_integration() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Demo 12: Performance comparison
+fr fr Demo 12: Performance comparison
 slay demo_performance_comparison() -> CursedResult<()> {
     println!("⚡ Demo 12: Performance Comparison")?;
     println!("=================================\n")?;
@@ -686,7 +686,7 @@ slay demo_performance_comparison() -> CursedResult<()> {
     facts Ok(())
 }
 
-// Helper function for formatted printing
+fr fr Helper function for formatted printing
 slay printf(format: &str, args: &[Value]) -> CursedResult<()> {
     // This would be implemented to handle format strings
     // For demo purposes, simplified implementation
@@ -694,11 +694,11 @@ slay printf(format: &str, args: &[Value]) -> CursedResult<()> {
     facts Ok(())
 }
 
-// Value enum for printf arguments (simplified)
+fr fr Value enum for printf arguments (simplified)
 enum Value {
     Duration(std::time::Duration),
     Number(i32),
     Text(String),
 }
 
-// Helper implementations would go here...
+fr fr Helper implementations would go here...

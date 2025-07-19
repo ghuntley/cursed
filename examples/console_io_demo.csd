@@ -1,9 +1,9 @@
-// CURSED Console I/O Demonstration
-// Shows comprehensive usage of the console I/O module
+fr fr CURSED Console I/O Demonstration
+fr fr Shows comprehensive usage of the console I/O module
 
-import "stdlib::io";
+yeet "stdlib::io"
 
-fn main() -> Result<(), IoError> {
+slay main() -> Result<(), IoError> {
     // Initialize I/O subsystem
     io::initialize()?;
 
@@ -114,7 +114,7 @@ fn main() -> Result<(), IoError> {
     Ok(())
 }
 
-fn demonstrate_buffered_io() -> IoResult<()> {
+slay demonstrate_buffered_io() -> IoResult<()> {
     println("=== Buffered I/O Demo ===")?;
     
     sus mut writer = buffered_stdout();
@@ -130,7 +130,7 @@ fn demonstrate_buffered_io() -> IoResult<()> {
     Ok(())
 }
 
-fn demonstrate_progress_bar() -> IoResult<()> {
+slay demonstrate_progress_bar() -> IoResult<()> {
     println("=== Progress Bar Demo ===")?;
     
     sus mut progress = ProgressBar::new(100, 50);
@@ -147,7 +147,7 @@ fn demonstrate_progress_bar() -> IoResult<()> {
     Ok(())
 }
 
-fn demonstrate_pagination() -> IoResult<()> {
+slay demonstrate_pagination() -> IoResult<()> {
     println("=== Pagination Demo ===")?;
     
     // Generate sample content
@@ -162,8 +162,8 @@ fn demonstrate_pagination() -> IoResult<()> {
     Ok(())
 }
 
-// Error handling demonstration
-fn demonstrate_error_handling() -> IoResult<()> {
+fr fr Error handling demonstration
+slay demonstrate_error_handling() -> IoResult<()> {
     println("=== Error Handling Demo ===")?;
     
     // Demonstrate various error types
@@ -187,8 +187,8 @@ fn demonstrate_error_handling() -> IoResult<()> {
     Ok(())
 }
 
-// Thread-safe I/O demonstration
-fn demonstrate_threaded_io() -> IoResult<()> {
+fr fr Thread-safe I/O demonstration
+slay demonstrate_threaded_io() -> IoResult<()> {
     println("=== Thread-Safe I/O Demo ===")?;
     
     facts shared_writer = shared_buffered_stdout();

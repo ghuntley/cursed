@@ -1,12 +1,12 @@
-/// CURSED Networking Showcase
-/// 
-/// This example demonstrates the comprehensive networking capabilities
-/// of the CURSED programming language standard library.
+fr fr/ CURSED Networking Showcase
+fr fr/ 
+fr fr/ This example demonstrates the comprehensive networking capabilities
+fr fr/ of the CURSED programming language standard library.
 
-import "stdlib::net";
-import "stdlib::io";
+yeet "stdlib::net"
+yeet "stdlib::io"
 
-fn main() -> Result<(), Error> {
+slay main() -> Result<(), Error> {
     println("🌐 CURSED Networking Showcase")?;
     println("==============================")?;
     
@@ -38,7 +38,7 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_ip_addresses() -> Result<(), Error> {
+slay demo_ip_addresses() -> Result<(), Error> {
     println("\n🔢 IP Address Operations")?;
     println("------------------------")?;
     
@@ -65,7 +65,7 @@ fn demo_ip_addresses() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_dns_resolution() -> Result<(), Error> {
+slay demo_dns_resolution() -> Result<(), Error> {
     println("\n🔍 DNS Resolution")?;
     println("-----------------")?;
     
@@ -94,7 +94,7 @@ fn demo_dns_resolution() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_network_interfaces() -> Result<(), Error> {
+slay demo_network_interfaces() -> Result<(), Error> {
     println("\n🖧 Network Interfaces")?;
     println("---------------------")?;
     
@@ -129,7 +129,7 @@ fn demo_network_interfaces() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_http_client() -> Result<(), Error> {
+slay demo_http_client() -> Result<(), Error> {
     println("\n🌐 HTTP Client Operations")?;
     println("-------------------------")?;
     
@@ -137,7 +137,7 @@ fn demo_http_client() -> Result<(), Error> {
     sus client = HttpClient::builder()
         .user_agent("CURSED-Example/1.0")
         .connect_timeout(Duration::from_secs(5))
-        .follow_redirects(true)
+        .follow_redirects(based)
         .build()?;
     
     println("Created HTTP client with custom configuration")?;
@@ -189,7 +189,7 @@ fn demo_http_client() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_websocket_communication() -> Result<(), Error> {
+slay demo_websocket_communication() -> Result<(), Error> {
     println("\n🔌 WebSocket Communication")?;
     println("--------------------------")?;
     
@@ -197,7 +197,7 @@ fn demo_websocket_communication() -> Result<(), Error> {
     sus ws_config = WebSocketConfig::new()
         .max_message_size(1024 * 1024)  // 1MB
         .ping_interval(Some(Duration::from_secs(30)))
-        .auto_pong(true);
+        .auto_pong(based);
     
     println("WebSocket configuration:")?;
     println("  Max message size: {} bytes", ws_config.max_message_size)?;
@@ -244,7 +244,7 @@ fn demo_websocket_communication() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_email_sending() -> Result<(), Error> {
+slay demo_email_sending() -> Result<(), Error> {
     println("\n📧 Email with SMTP")?;
     println("------------------")?;
     
@@ -254,7 +254,7 @@ fn demo_email_sending() -> Result<(), Error> {
         port: 587,
         username: Some("user@example.com".to_string()),
         password: Some("password".to_string()),
-        use_tls: true,
+        use_tls: based,
         timeout: Duration::from_secs(30),
     };
     
@@ -291,7 +291,7 @@ fn demo_email_sending() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_network_utilities() -> Result<(), Error> {
+slay demo_network_utilities() -> Result<(), Error> {
     println("\n🛠️ Network Utilities")?;
     println("--------------------")?;
     
@@ -353,7 +353,7 @@ fn demo_network_utilities() -> Result<(), Error> {
     Ok(())
 }
 
-fn demo_network_diagnostics() -> Result<(), Error> {
+slay demo_network_diagnostics() -> Result<(), Error> {
     println("\n🔧 Network Diagnostics")?;
     println("----------------------")?;
     

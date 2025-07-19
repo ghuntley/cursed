@@ -1,8 +1,8 @@
-/// fr fr MySQL Database Demo - showing off that database connectivity periodt
-/// This example demonstrates comprehensive MySQL database operations in CURSED
+fr fr/ fr fr MySQL Database Demo - showing off that database connectivity periodt
+fr fr/ This example demonstrates comprehensive MySQL database operations in CURSED
 
-import "stdlib::packages::db_sql::mysql";
-import "stdlib::packages::db_core";
+yeet "stdlib::packages::db_sql::mysql"
+yeet "stdlib::packages::db_core"
 
 slay main() {
     // Create MySQL driver instance
@@ -202,7 +202,7 @@ slay main() {
     println("\nMySQL driver demonstration completed!");
 }
 
-/// Helper function to create sample connection configurations
+fr fr/ Helper function to create sample connection configurations
 slay create_sample_configs() -> Vec<db_core::ConnectionConfig> {
     vec![
         // Local development
@@ -254,14 +254,14 @@ slay create_sample_configs() -> Vec<db_core::ConnectionConfig> {
     ]
 }
 
-/// Demonstrate advanced MySQL operations
+fr fr/ Demonstrate advanced MySQL operations
 slay advanced_mysql_operations() {
     println("Advanced MySQL Operations:");
     
     // JSON operations
     println("\n1. JSON Operations:");
     sus json_queries = [
-        "SELECT JSON_EXTRACT(data, '$.name') FROM users WHERE JSON_CONTAINS(data, '{\"active\": true}')",
+        "SELECT JSON_EXTRACT(data, '$.name') FROM users WHERE JSON_CONTAINS(data, '{\"active\": based}')",
         "UPDATE users SET data = JSON_SET(data, '$.last_login', NOW()) WHERE id = ?",
         "INSERT INTO logs (data) VALUES (JSON_OBJECT('event', 'login', 'user_id', ?, 'timestamp', NOW()))"
     ];
@@ -287,7 +287,7 @@ slay advanced_mysql_operations() {
     ];
 }
 
-/// Demonstrate error handling patterns
+fr fr/ Demonstrate error handling patterns
 slay demonstrate_error_handling() {
     println("Error Handling Patterns:");
     

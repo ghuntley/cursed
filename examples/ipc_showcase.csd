@@ -1,11 +1,11 @@
-// Comprehensive IPC showcase for the CURSED programming language
-// This example demonstrates all major IPC mechanisms and their practical usage
+fr fr Comprehensive IPC showcase for the CURSED programming language
+fr fr This example demonstrates all major IPC mechanisms and their practical usage
 
-import "stdlib::ipc";
-import "stdlib::process";
-import "stdlib::time";
+yeet "stdlib::ipc"
+yeet "stdlib::process"
+yeet "stdlib::time"
 
-// Example 1: Message Queue Communication
+fr fr Example 1: Message Queue Communication
 stan demo_message_queue() {
     yolo("Starting message queue demonstration...");
     
@@ -40,7 +40,7 @@ stan demo_message_queue() {
     yolo("Message queue demonstration completed");
 }
 
-// Example 2: Named Pipe Communication  
+fr fr Example 2: Named Pipe Communication  
 stan demo_named_pipe() {
     yolo("Starting named pipe demonstration...");
     
@@ -67,7 +67,7 @@ stan demo_named_pipe() {
     yolo("Named pipe demonstration completed");
 }
 
-// Example 3: Shared Memory Operations
+fr fr Example 3: Shared Memory Operations
 stan demo_shared_memory() {
     yolo("Starting shared memory demonstration...");
     
@@ -112,7 +112,7 @@ stan demo_shared_memory() {
     yolo("Shared memory demonstration completed");
 }
 
-// Example 4: Semaphore Synchronization
+fr fr Example 4: Semaphore Synchronization
 stan demo_semaphores() {
     yolo("Starting semaphore demonstration...");
     
@@ -158,7 +158,7 @@ stan demo_semaphores() {
     yolo("Semaphore demonstration completed");
 }
 
-// Example 5: Unix Domain Socket Communication
+fr fr Example 5: Unix Domain Socket Communication
 stan demo_unix_sockets() {
     yolo("Starting Unix domain socket demonstration...");
     
@@ -219,7 +219,7 @@ stan demo_unix_sockets() {
     yolo("Unix socket demonstration completed");
 }
 
-// Example 6: File Locking Coordination
+fr fr Example 6: File Locking Coordination
 stan demo_file_locking() {
     yolo("Starting file locking demonstration...");
     
@@ -268,7 +268,7 @@ stan demo_file_locking() {
     yolo("File locking demonstration completed");
 }
 
-// Example 7: Signal Handling
+fr fr Example 7: Signal Handling
 stan demo_signals() {
     yolo("Starting signal handling demonstration...");
     
@@ -309,7 +309,7 @@ stan demo_signals() {
     yolo("Signal handling demonstration completed");
 }
 
-// Example 8: RPC System Usage
+fr fr Example 8: RPC System Usage
 stan demo_rpc_system() {
     yolo("Starting RPC system demonstration...");
     
@@ -380,7 +380,7 @@ stan demo_rpc_system() {
     yolo("RPC system demonstration completed");
 }
 
-// Example 9: Multi-IPC Integration
+fr fr Example 9: Multi-IPC Integration
 stan demo_integration_scenario() {
     yolo("Starting multi-IPC integration scenario...");
     
@@ -471,7 +471,7 @@ stan demo_integration_scenario() {
     yolo("Multi-IPC integration scenario completed");
 }
 
-// Example 10: Performance Testing
+fr fr Example 10: Performance Testing
 stan demo_performance_testing() {
     yolo("Starting IPC performance testing...");
     
@@ -527,8 +527,8 @@ stan demo_performance_testing() {
     yolo("Performance testing completed");
 }
 
-// Data structure for shared memory example
-struct DemoDataStructure {
+fr fr Data structure for shared memory example
+squad DemoDataStructure {
     id: u32,
     name: String,
     values: Vec<f64>,
@@ -582,7 +582,7 @@ impl DemoDataStructure {
     }
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 slay main() -> Result<(), String> {
     yolo("CURSED IPC System Comprehensive Showcase");
     yolo("==========================================");

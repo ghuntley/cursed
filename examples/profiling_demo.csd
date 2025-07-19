@@ -1,9 +1,9 @@
-// CURSED Profiling Demo
-// Demonstrates the comprehensive profiling capabilities of the vibecheck module
+fr fr CURSED Profiling Demo
+fr fr Demonstrates the comprehensive profiling capabilities of the vibecheck module
 
-import "stdlib::vibecheck";
+yeet "stdlib::vibecheck"
 
-// Function that allocates memory to demonstrate memory profiling
+fr fr Function that allocates memory to demonstrate memory profiling
 slay allocate_memory(sus size: i32) -> facts {
     sus data = vec![0; size as usize];
     
@@ -15,7 +15,7 @@ slay allocate_memory(sus size: i32) -> facts {
     return data.len();
 }
 
-// CPU-intensive function to demonstrate CPU profiling
+fr fr CPU-intensive function to demonstrate CPU profiling
 slay fibonacci(sus n: i64) -> i64 {
     lowkey n <= 1 {
         return n;
@@ -23,7 +23,7 @@ slay fibonacci(sus n: i64) -> i64 {
     return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-// Function with nested calls to demonstrate call graph
+fr fr Function with nested calls to demonstrate call graph
 slay process_data(sus iterations: i32) -> void {
     lowkey (sus i = 0; i < iterations; i++) {
         sus size = allocate_memory(1000 + i);
@@ -36,7 +36,7 @@ slay process_data(sus iterations: i32) -> void {
     }
 }
 
-// Hot path function that gets called frequently
+fr fr Hot path function that gets called frequently
 slay hot_path_function(sus x: i32) -> i32 {
     sus result = 0;
     lowkey (sus i = 0; i < x; i++) {
@@ -45,40 +45,40 @@ slay hot_path_function(sus x: i32) -> i32 {
     return result;
 }
 
-// Memory leak simulation for leak detection
+fr fr Memory leak simulation for leak detection
 slay simulate_memory_leak() -> void {
     sus leaked_data = vec![0; 10000];
     // Intentionally not cleaning up to test leak detection
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 slay main() -> void {
     sus result: facts;
     
     // Configure profiler with custom settings
     sus profiler_config = ProfilerConfig {
         memory: MemoryProfilerConfig {
-            stack_traces: true,
+            stack_traces: based,
             sample_rate: 1,
             min_tracked_size: 64,
             max_allocation_records: 50000,
-            leak_detection: true,
+            leak_detection: based,
             leak_threshold: Duration::from_secs(60),
         },
         cpu: CpuProfilerConfig {
             sample_rate: 100,
-            function_tracing: true,
+            function_tracing: based,
             max_stack_depth: 32,
             min_function_duration: 1,
             max_samples: 100000,
-            call_graph: true,
-            per_thread_profiling: true,
+            call_graph: based,
+            per_thread_profiling: based,
         },
         session_name: "cursed_profiling_demo",
         target_name: "profiling_demo.csd",
         export_dir: "./profiling_results",
         export_formats: vec![ReportFormat::Text, ReportFormat::Json, ReportFormat::Html],
-        real_time: true,
+        real_time: based,
         update_interval: Duration::from_secs(2),
     };
     
@@ -153,14 +153,14 @@ slay main() -> void {
     
     // Text report
     sus text_config = ProfileReportConfig {
-        include_memory: true,
-        include_cpu: true,
-        include_call_graph: true,
-        include_hot_paths: true,
-        include_bottlenecks: true,
+        include_memory: based,
+        include_cpu: based,
+        include_call_graph: based,
+        include_hot_paths: based,
+        include_bottlenecks: based,
         max_list_items: 10,
         format: ReportFormat::Text,
-        include_system_info: true,
+        include_system_info: based,
     };
     
     facts text_report_result = generate_profiling_report(text_config);
@@ -232,7 +232,7 @@ slay main() -> void {
     println("\n=== Profiling Demo Complete ===");
 }
 
-// Helper function to format metric values for display
+fr fr Helper function to format metric values for display
 slay format_metric_value(value: &MetricValue) -> String {
     switch value {
         MetricValue::Integer(i) => i.to_string(),
@@ -244,13 +244,13 @@ slay format_metric_value(value: &MetricValue) -> String {
     }
 }
 
-// Helper function for sleeping (milliseconds)
+fr fr Helper function for sleeping (milliseconds)
 slay sleep_ms(ms: u64) -> void {
     // This would be implemented in the standard library
     // For now, it's a placeholder
 }
 
-// Helper function for min
+fr fr Helper function for min
 slay min(a: usize, b: usize) -> usize {
     lowkey a < b { a } else { b }
 }

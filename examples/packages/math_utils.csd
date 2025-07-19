@@ -1,6 +1,6 @@
 vibe math_utils
 
-import "./utils"
+yeet "./utils"
 
 slay square(x normie) normie {
     cap utils.multiply(x, x) fr

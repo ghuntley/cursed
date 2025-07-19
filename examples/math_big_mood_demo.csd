@@ -10,8 +10,8 @@ fr fr - Mathematical functions with unlimited precision
 fr fr - Cryptographic prime generation
 fr fr - Performance optimizations for large numbers
 
-import "stdlib::math::big_mood"
-import "stdlib::io"
+yeet "stdlib::math::big_mood"
+yeet "stdlib::io"
 
 slay main() {
     io.println("🔥 CURSED Big Mood Mathematics Demo 🔥")?

@@ -1,13 +1,13 @@
-//! Enhanced Post-Quantum Cryptography Showcase
-//! 
-//! This example demonstrates the complete PQC ecosystem including:
-//! - Real algorithm implementations (Kyber, NTRU, FrodoKEM, Dilithium, XMSS)
-//! - Performance benchmarking and analysis
-//! - Security level comparisons
-//! - Hybrid classical+PQC protocols
-//! - Integration with existing crypto infrastructure
+fr fr! Enhanced Post-Quantum Cryptography Showcase
+fr fr! 
+fr fr! This example demonstrates the complete PQC ecosystem including:
+fr fr! - Real algorithm implementations (Kyber, NTRU, FrodoKEM, Dilithium, XMSS)
+fr fr! - Performance benchmarking and analysis
+fr fr! - Security level comparisons
+fr fr! - Hybrid classical+PQC protocols
+fr fr! - Integration with existing crypto infrastructure
 
-import "stdlib::crypto_pqc";
+yeet "stdlib::crypto_pqc"
 
 slay main() -> Result<(), CursedError> {
     println("🔐 Enhanced Post-Quantum Cryptography Showcase")?;
@@ -274,7 +274,7 @@ slay demo_algorithm_selection() -> Result<(), CursedError> {
     Ok(())
 }
 
-// Helper function for formatting
+fr fr Helper function for formatting
 slay "*"(times: usize) -> String {
     "=".repeat(times)
 }

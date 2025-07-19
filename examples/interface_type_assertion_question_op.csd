@@ -1,30 +1,30 @@
 vibe main;
 
-// Basic errors interface
+fr fr Basic errors interface
 collab Error {
     slay error() tea;
 }
 
-// Type assertion error - returned when a type assertion fails
+fr fr Type assertion error - returned when a type assertion fails
 squad TypeAssertionError {
     expected tea,
     actual tea
 }
 
-// Implement Error interface for TypeAssertionError
+fr fr Implement Error interface for TypeAssertionError
 slay (e TypeAssertionError) error() tea {
     return "Type assertion failed: expected " + e.expected + " but got " + e.actual;
 }
 
-// Basic Result type similar to Rust's Result
-// Contains either a value or an error
+fr fr Basic Result type similar to Rust's Result
+fr fr Contains either a value or an error
 squad Result<T, E> {
     value T,
     err E,
     isOk lit
 }
 
-// Helper to create a successful result
+fr fr Helper to create a successful result
 slay ok<T, E>(value T) Result<T, E> {
     return Result<T, E>{
         value: value,
@@ -33,7 +33,7 @@ slay ok<T, E>(value T) Result<T, E> {
     };
 }
 
-// Helper to create an error result
+fr fr Helper to create an error result
 slay fail<T, E>(err E) Result<T, E> {
     return Result<T, E>{
         value: nofr as T,
@@ -42,13 +42,13 @@ slay fail<T, E>(err E) Result<T, E> {
     };
 }
 
-// Shape interface for geometric shapes
+fr fr Shape interface for geometric shapes
 collab Shape {
     slay area() meal;
     slay name() tea;
 }
 
-// Circle implements Shape
+fr fr Circle implements Shape
 squad Circle {
     radius meal,
 }
@@ -61,7 +61,7 @@ slay (c Circle) name() tea {
     return "Circle";
 }
 
-// Rectangle implements Shape
+fr fr Rectangle implements Shape
 squad Rectangle {
     width meal,
     height meal
@@ -75,7 +75,7 @@ slay (r Rectangle) name() tea {
     return "Rectangle";
 }
 
-// Triangle implements Shape
+fr fr Triangle implements Shape
 squad Triangle {
     base meal,
     height meal
@@ -89,8 +89,8 @@ slay (t Triangle) name() tea {
     return "Triangle";
 }
 
-// Function that uses type assertion with ? operator
-// It returns Result<meal, Error> and uses ? to propagate errors
+fr fr Function that uses type assertion with ? operator
+fr fr It returns Result<meal, Error> and uses ? to propagate errors
 slay calculateCircleArea(shape Shape) Result<meal, Error> {
     // Try to assert shape as Circle using ? operator
     // If assertion fails, ? will return early with the error
@@ -101,7 +101,7 @@ slay calculateCircleArea(shape Shape) Result<meal, Error> {
     return ok<meal, Error>(circle.radius * 2);
 }
 
-// Function that handles both Circle and Rectangle with ? operator
+fr fr Function that handles both Circle and Rectangle with ? operator
 slay getShapeDetails(shape Shape) Result<tea, Error> {
     // Try asserting as Circle
     sus circle, circleOk = shape.(Circle);
@@ -116,7 +116,7 @@ slay getShapeDetails(shape Shape) Result<tea, Error> {
     return ok<tea, Error>("Rectangle " + rect.width + "x" + rect.height);
 }
 
-// Function that chains multiple assertions with ? operator
+fr fr Function that chains multiple assertions with ? operator
 slay processShape(shape Shape) Result<tea, Error> {
     sus details = getShapeDetails(shape)?;
     vibez.spill("Shape details: " + details);
@@ -128,7 +128,7 @@ slay processShape(shape Shape) Result<tea, Error> {
     return ok<tea, Error>(message);
 }
 
-// Main function to demonstrate ? operator with type assertions
+fr fr Main function to demonstrate ? operator with type assertions
 slay main() {
     // Create different shapes
     sus circle = Circle{radius: 5.0};

@@ -1,14 +1,14 @@
-// CURSED Standard Library Documentation Demo
-// Showcases documentation for stdlib modules
+fr fr CURSED Standard Library Documentation Demo
+fr fr Showcases documentation for stdlib modules
 
-/// Standard Library Documentation Demonstration
-/// 
-/// This module demonstrates comprehensive documentation
-/// for CURSED's standard library functions and modules.
-/// 
-/// @module stdlib_demo
-/// @author CURSED Team
-/// @version 1.0.0
+fr fr/ Standard Library Documentation Demonstration
+fr fr/ 
+fr fr/ This module demonstrates comprehensive documentation
+fr fr/ for CURSED's standard library functions and modules.
+fr fr/ 
+fr fr/ @module stdlib_demo
+fr fr/ @author CURSED Team
+fr fr/ @version 1.0.0
 slay main() {
     println("📚 CURSED Standard Library Documentation Demo")
     
@@ -19,22 +19,22 @@ slay main() {
     demonstrate_crypto_functions()
 }
 
-/// Mathematics Functions Documentation
-/// 
-/// The CURSED math library provides comprehensive mathematical
-/// operations with Gen Z flair and robust error handling.
-/// 
-/// @example Basic math operations
-/// ```cursed
-/// import "stdlib::math"
-/// 
-/// facts result = math::sqrt(16.0)  // returns 4.0
-/// facts power = math::pow(2.0, 3.0)  // returns 8.0
-/// ```
-/// 
-/// @see math::basic
-/// @see math::advanced
-/// @since 1.0.0
+fr fr/ Mathematics Functions Documentation
+fr fr/ 
+fr fr/ The CURSED math library provides comprehensive mathematical
+fr fr/ operations with Gen Z flair and robust error handling.
+fr fr/ 
+fr fr/ @example Basic math operations
+fr fr/ ```cursed
+fr fr/ yeet "stdlib::math"
+fr fr/ 
+fr fr/ facts result = math::sqrt(16.0)  // returns 4.0
+fr fr/ facts power = math::pow(2.0, 3.0)  // returns 8.0
+fr fr/ ```
+fr fr/ 
+fr fr/ @see math::basic
+fr fr/ @see math::advanced
+fr fr/ @since 1.0.0
 slay demonstrate_math_functions() {
     println("🔢 Math Functions:")
     
@@ -57,22 +57,22 @@ slay demonstrate_math_functions() {
     println("cos(0) = " + cos_result.to_string())
 }
 
-/// String Operations Documentation
-/// 
-/// CURSED's string library provides powerful text manipulation
-/// with Unicode support and performance optimization.
-/// 
-/// @example String manipulation
-/// ```cursed
-/// import "stdlib::string"
-/// 
-/// facts greeting = string::concat("Hello", " World")
-/// facts upper = string::to_uppercase("cursed")
-/// ```
-/// 
-/// @performance O(n) for most operations
-/// @unicode Full Unicode support
-/// @since 1.0.0
+fr fr/ String Operations Documentation
+fr fr/ 
+fr fr/ CURSED's string library provides powerful text manipulation
+fr fr/ with Unicode support and performance optimization.
+fr fr/ 
+fr fr/ @example String manipulation
+fr fr/ ```cursed
+fr fr/ yeet "stdlib::string"
+fr fr/ 
+fr fr/ facts greeting = string::concat("Hello", " World")
+fr fr/ facts upper = string::to_uppercase("cursed")
+fr fr/ ```
+fr fr/ 
+fr fr/ @performance O(n) for most operations
+fr fr/ @unicode Full Unicode support
+fr fr/ @since 1.0.0
 slay demonstrate_string_operations() {
     println("🔤 String Operations:")
     
@@ -100,27 +100,27 @@ slay demonstrate_string_operations() {
     println("Split result has " + parts.length().to_string() + " parts")
 }
 
-/// Collections Documentation
-/// 
-/// CURSED provides comprehensive collection types including
-/// arrays, hash maps, sets, and specialized data structures.
-/// 
-/// @example Working with collections
-/// ```cursed
-/// import "stdlib::collections"
-/// 
-/// sus list = Array::new()
-/// list.push("item1")
-/// list.push("item2")
-/// 
-/// sus map = HashMap::new()
-/// map.insert("key", "value")
-/// ```
-/// 
-/// @performance Optimized for common operations
-/// @memory Automatic memory management
-/// @thread_safety Some collections are thread-safe
-/// @since 1.0.0
+fr fr/ Collections Documentation
+fr fr/ 
+fr fr/ CURSED provides comprehensive collection types including
+fr fr/ arrays, hash maps, sets, and specialized data structures.
+fr fr/ 
+fr fr/ @example Working with collections
+fr fr/ ```cursed
+fr fr/ yeet "stdlib::collections"
+fr fr/ 
+fr fr/ sus list = Array::new()
+fr fr/ list.push("item1")
+fr fr/ list.push("item2")
+fr fr/ 
+fr fr/ sus map = HashMap::new()
+fr fr/ map.insert("key", "value")
+fr fr/ ```
+fr fr/ 
+fr fr/ @performance Optimized for common operations
+fr fr/ @memory Automatic memory management
+fr fr/ @thread_safety Some collections are thread-safe
+fr fr/ @since 1.0.0
 slay demonstrate_collections() {
     println("📦 Collections:")
     
@@ -151,23 +151,23 @@ slay demonstrate_collections() {
     println("Unique tags count: " + unique_tags.size().to_string())
 }
 
-/// I/O Operations Documentation
-/// 
-/// CURSED's I/O library provides file operations, console I/O,
-/// and network communication with async support.
-/// 
-/// @example File operations
-/// ```cursed
-/// import "stdlib::io"
-/// 
-/// facts content = io::read_file("example.txt")?
-/// io::write_file("output.txt", content)?
-/// ```
-/// 
-/// @async Supports async operations
-/// @errors Comprehensive error handling
-/// @buffered Buffered I/O for performance
-/// @since 1.0.0
+fr fr/ I/O Operations Documentation
+fr fr/ 
+fr fr/ CURSED's I/O library provides file operations, console I/O,
+fr fr/ and network communication with async support.
+fr fr/ 
+fr fr/ @example File operations
+fr fr/ ```cursed
+fr fr/ yeet "stdlib::io"
+fr fr/ 
+fr fr/ facts content = io::read_file("example.txt")?
+fr fr/ io::write_file("output.txt", content)?
+fr fr/ ```
+fr fr/ 
+fr fr/ @async Supports async operations
+fr fr/ @errors Comprehensive error handling
+fr fr/ @buffered Buffered I/O for performance
+fr fr/ @since 1.0.0
 slay demonstrate_io_operations() {
     println("💾 I/O Operations:")
     
@@ -192,23 +192,23 @@ slay demonstrate_io_operations() {
     println("File extension: " + extension)
 }
 
-/// Cryptography Functions Documentation
-/// 
-/// CURSED's crypto library provides secure cryptographic operations
-/// including hashing, encryption, and key management.
-/// 
-/// @example Hashing
-/// ```cursed
-/// import "stdlib::crypto"
-/// 
-/// facts hash = crypto::sha256("password123")
-/// facts secure_hash = crypto::argon2("password", salt)
-/// ```
-/// 
-/// @security Constant-time operations where applicable
-/// @algorithms Industry-standard cryptographic algorithms
-/// @performance Optimized implementations
-/// @since 1.0.0
+fr fr/ Cryptography Functions Documentation
+fr fr/ 
+fr fr/ CURSED's crypto library provides secure cryptographic operations
+fr fr/ including hashing, encryption, and key management.
+fr fr/ 
+fr fr/ @example Hashing
+fr fr/ ```cursed
+fr fr/ yeet "stdlib::crypto"
+fr fr/ 
+fr fr/ facts hash = crypto::sha256("password123")
+fr fr/ facts secure_hash = crypto::argon2("password", salt)
+fr fr/ ```
+fr fr/ 
+fr fr/ @security Constant-time operations where applicable
+fr fr/ @algorithms Industry-standard cryptographic algorithms
+fr fr/ @performance Optimized implementations
+fr fr/ @since 1.0.0
 slay demonstrate_crypto_functions() {
     println("🔐 Cryptography Functions:")
     
@@ -236,23 +236,23 @@ slay demonstrate_crypto_functions() {
     println("Derived key length: " + derived_key.length().to_string())
 }
 
-/// Network Communication Documentation
-/// 
-/// CURSED provides high-level networking APIs for HTTP,
-/// WebSocket, and TCP communication.
-/// 
-/// @example HTTP client
-/// ```cursed
-/// import "stdlib::http"
-/// 
-/// facts response = http::get("https://api.example.com")?
-/// facts data = response.json()?
-/// ```
-/// 
-/// @async All operations are async
-/// @tls TLS support built-in
-/// @performance Connection pooling and keep-alive
-/// @since 1.0.0
+fr fr/ Network Communication Documentation
+fr fr/ 
+fr fr/ CURSED provides high-level networking APIs for HTTP,
+fr fr/ WebSocket, and TCP communication.
+fr fr/ 
+fr fr/ @example HTTP client
+fr fr/ ```cursed
+fr fr/ yeet "stdlib::http"
+fr fr/ 
+fr fr/ facts response = http::get("https://api.example.com")?
+fr fr/ facts data = response.json()?
+fr fr/ ```
+fr fr/ 
+fr fr/ @async All operations are async
+fr fr/ @tls TLS support built-in
+fr fr/ @performance Connection pooling and keep-alive
+fr fr/ @since 1.0.0
 slay demonstrate_network_operations() {
     println("🌐 Network Operations:")
     
@@ -270,22 +270,22 @@ slay demonstrate_network_operations() {
     println("Would handle incoming connections")
 }
 
-/// Concurrency and Parallelism Documentation
-/// 
-/// CURSED supports goroutines, channels, and async/await
-/// for concurrent and parallel programming.
-/// 
-/// @example Goroutines
-/// ```cursed
-/// stan background_task()  // spawn goroutine
-/// 
-/// facts result = yolo async_operation()  // await result
-/// ```
-/// 
-/// @goroutines Lightweight threads
-/// @channels Message passing between goroutines
-/// @async_await Modern async programming model
-/// @since 1.0.0
+fr fr/ Concurrency and Parallelism Documentation
+fr fr/ 
+fr fr/ CURSED supports goroutines, channels, and async/await
+fr fr/ for concurrent and parallel programming.
+fr fr/ 
+fr fr/ @example Goroutines
+fr fr/ ```cursed
+fr fr/ stan background_task()  // spawn goroutine
+fr fr/ 
+fr fr/ facts result = yolo async_operation()  // await result
+fr fr/ ```
+fr fr/ 
+fr fr/ @goroutines Lightweight threads
+fr fr/ @channels Message passing between goroutines
+fr fr/ @async_await Modern async programming model
+fr fr/ @since 1.0.0
 slay demonstrate_concurrency() {
     println("⚡ Concurrency Operations:")
     
@@ -302,9 +302,9 @@ slay demonstrate_concurrency() {
     println("Concurrent operation result: " + result)
 }
 
-/// Background worker goroutine
-/// 
-/// @param task_name Name of the task to execute
+fr fr/ Background worker goroutine
+fr fr/ 
+fr fr/ @param task_name Name of the task to execute
 slay background_worker(task_name: string) {
     println("🔄 Executing: " + task_name)
     // Simulate work
@@ -312,9 +312,9 @@ slay background_worker(task_name: string) {
     println("✅ Completed: " + task_name)
 }
 
-/// Producer goroutine for channel demo
-/// 
-/// @param channel Channel to send data to
+fr fr/ Producer goroutine for channel demo
+fr fr/ 
+fr fr/ @param channel Channel to send data to
 slay producer(channel: Channel<string>) {
     channel.send("Hello from producer!")
     channel.send("Data packet 1")
@@ -322,10 +322,10 @@ slay producer(channel: Channel<string>) {
     channel.close()
 }
 
-/// Consumer function for channel demo
-/// 
-/// @param channel Channel to receive data from
-/// @return Combined result string
+fr fr/ Consumer function for channel demo
+fr fr/ 
+fr fr/ @param channel Channel to receive data from
+fr fr/ @return Combined result string
 slay consumer(channel: Channel<string>) -> string {
     sus results = Array::new()
     
@@ -336,21 +336,21 @@ slay consumer(channel: Channel<string>) -> string {
     return results.join(", ")
 }
 
-/// Advanced Features Documentation
-/// 
-/// CURSED includes advanced features like reflection,
-/// macros, and compile-time evaluation.
-/// 
-/// @example Reflection
-/// ```cursed
-/// facts type_info = reflect::type_of(my_object)
-/// facts methods = type_info.methods()
-/// ```
-/// 
-/// @reflection Runtime type information
-/// @macros Compile-time code generation
-/// @compile_time Compile-time evaluation
-/// @since 1.0.0
+fr fr/ Advanced Features Documentation
+fr fr/ 
+fr fr/ CURSED includes advanced features like reflection,
+fr fr/ macros, and compile-time evaluation.
+fr fr/ 
+fr fr/ @example Reflection
+fr fr/ ```cursed
+fr fr/ facts type_info = reflect::type_of(my_object)
+fr fr/ facts methods = type_info.methods()
+fr fr/ ```
+fr fr/ 
+fr fr/ @reflection Runtime type information
+fr fr/ @macros Compile-time code generation
+fr fr/ @compile_time Compile-time evaluation
+fr fr/ @since 1.0.0
 slay demonstrate_advanced_features() {
     println("🚀 Advanced Features:")
     
@@ -370,25 +370,25 @@ slay demonstrate_advanced_features() {
     println("Version: " + version)
 }
 
-/// Error Handling Best Practices
-/// 
-/// CURSED provides comprehensive error handling with
-/// Result types, Option types, and panic recovery.
-/// 
-/// @example Error handling
-/// ```cursed
-/// facts result = risky_operation()?
-/// 
-/// lowkey (maybe_value.is_some()) {
-///     facts value = maybe_value.unwrap()
-///     // use value
-/// }
-/// ```
-/// 
-/// @result_type Rust-style Result<T, E>
-/// @option_type Rust-style Option<T>
-/// @panic_recovery Panic recovery mechanisms
-/// @since 1.0.0
+fr fr/ Error Handling Best Practices
+fr fr/ 
+fr fr/ CURSED provides comprehensive error handling with
+fr fr/ Result types, Option types, and panic recovery.
+fr fr/ 
+fr fr/ @example Error handling
+fr fr/ ```cursed
+fr fr/ facts result = risky_operation()?
+fr fr/ 
+fr fr/ lowkey (maybe_value.is_some()) {
+fr fr/     facts value = maybe_value.unwrap()
+fr fr/     // use value
+fr fr/ }
+fr fr/ ```
+fr fr/ 
+fr fr/ @result_type Rust-style Result<T, E>
+fr fr/ @option_type Rust-style Option<T>
+fr fr/ @panic_recovery Panic recovery mechanisms
+fr fr/ @since 1.0.0
 slay demonstrate_error_handling() {
     println("⚠️ Error Handling:")
     
@@ -413,11 +413,11 @@ slay demonstrate_error_handling() {
     println("Chained operations result: " + chained_result)
 }
 
-/// Safe division operation
-/// 
-/// @param numerator Number to divide
-/// @param denominator Number to divide by
-/// @return Result with quotient or error message
+fr fr/ Safe division operation
+fr fr/ 
+fr fr/ @param numerator Number to divide
+fr fr/ @param denominator Number to divide by
+fr fr/ @return Result with quotient or error message
 slay safe_divide(numerator: f64, denominator: f64) -> Result<f64, string> {
     lowkey (denominator == 0.0) {
         return Err("Division by zero is not allowed")
@@ -426,10 +426,10 @@ slay safe_divide(numerator: f64, denominator: f64) -> Result<f64, string> {
     return Ok(numerator / denominator)
 }
 
-/// Parse string to number
-/// 
-/// @param input String to parse
-/// @return Optional number if parsing succeeds
+fr fr/ Parse string to number
+fr fr/ 
+fr fr/ @param input String to parse
+fr fr/ @return Optional number if parsing succeeds
 slay parse_number(input: string) -> Option<i32> {
     // Simulated parsing logic
     lowkey (input == "42") {
@@ -439,9 +439,9 @@ slay parse_number(input: string) -> Option<i32> {
     return None
 }
 
-/// Chain multiple operations that can fail
-/// 
-/// @return Result of chained operations
+fr fr/ Chain multiple operations that can fail
+fr fr/ 
+fr fr/ @return Result of chained operations
 slay chain_operations() -> Result<string, string> {
     facts first = safe_divide(20.0, 4.0)?
     facts second = safe_divide(first, 2.0)?
@@ -450,21 +450,21 @@ slay chain_operations() -> Result<string, string> {
     return Ok("Final result: " + third.to_string())
 }
 
-/// Memory Management Documentation
-/// 
-/// CURSED provides automatic memory management with
-/// garbage collection and smart pointers.
-/// 
-/// @example Smart pointers
-/// ```cursed
-/// facts shared_ptr = Rc::new(data)
-/// facts weak_ref = Rc::downgrade(shared_ptr)
-/// ```
-/// 
-/// @garbage_collection Automatic memory management
-/// @smart_pointers Reference counting and weak references
-/// @memory_safety Memory safety guarantees
-/// @since 1.0.0
+fr fr/ Memory Management Documentation
+fr fr/ 
+fr fr/ CURSED provides automatic memory management with
+fr fr/ garbage collection and smart pointers.
+fr fr/ 
+fr fr/ @example Smart pointers
+fr fr/ ```cursed
+fr fr/ facts shared_ptr = Rc::new(data)
+fr fr/ facts weak_ref = Rc::downgrade(shared_ptr)
+fr fr/ ```
+fr fr/ 
+fr fr/ @garbage_collection Automatic memory management
+fr fr/ @smart_pointers Reference counting and weak references
+fr fr/ @memory_safety Memory safety guarantees
+fr fr/ @since 1.0.0
 slay demonstrate_memory_management() {
     println("🧠 Memory Management:")
     

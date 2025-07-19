@@ -1,6 +1,6 @@
 vibe main
 
-import "math_utils"
+yeet "math_utils"
 
 slay main(args []tea) normie {
     issa len(args) < 3 {

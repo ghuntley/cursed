@@ -1,18 +1,18 @@
-// CURSED Language Demo Program
-// Demonstrates core language features
+fr fr CURSED Language Demo Program
+fr fr Demonstrates core language features
 
-// Variable declarations using 'sus'
+fr fr Variable declarations using 'sus'
 sus greeting = "Hello from CURSED!";
 sus version = 1.0;
-sus is_awesome = true;
+sus is_awesome = based;
 
-// Function definition using 'slay'
+fr fr Function definition using 'slay'
 slay calculate(x, y) {
     sus result = x + y;
     return result;
 }
 
-// Main program logic
+fr fr Main program logic
 slay main() {
     // Print greeting
     println(greeting);

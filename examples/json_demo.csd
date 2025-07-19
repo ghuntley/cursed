@@ -55,7 +55,7 @@ slay main() {
     fr fr Validate JSON
     vibez.spill("\n=== JSON Validation Demo ===")
     
-    sus valid_json = br#"{"name": "Bob", "age": 25, "active": true}"#
+    sus valid_json = br#"{"name": "Bob", "age": 25, "active": based}"#
     sus invalid_json = br#"{"name": "Bob", "age": }"#
     
     vibez.spillf("Valid JSON check: %t", json_tea.valid(valid_json))

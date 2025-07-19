@@ -1,37 +1,37 @@
-// CURSED Queues Collections Demo
-// Demonstrates practical usage of all queue types in real-world scenarios
+fr fr CURSED Queues Collections Demo
+fr fr Demonstrates practical usage of all queue types in real-world scenarios
 
-import "stdlib::collections::queues";
-import "stdlib::io";
+yeet "stdlib::collections::queues"
+yeet "stdlib::io"
 
-// Task processing system using different queue types
-struct Task {
+fr fr Task processing system using different queue types
+squad Task {
     id: sus,
     priority: sus,
     description: sus,
     execution_time: sus,
 }
 
-// Job scheduler using priority queue
-struct JobScheduler {
+fr fr Job scheduler using priority queue
+squad JobScheduler {
     priority_queue: PriorityQueue<Task>,
     completed_tasks: Queue<Task>,
 }
 
 impl JobScheduler {
-    pub fn new() -> JobScheduler {
+    pub slay new() -> JobScheduler {
         JobScheduler {
             priority_queue: PriorityQueue::new(),
             completed_tasks: Queue::new(),
         }
     }
     
-    pub fn add_task(&mut self, task: Task) {
+    pub slay add_task(&mut self, task: Task) {
         self.priority_queue.push(task);
         println!("Added task {} with priority {}", task.id, task.priority);
     }
     
-    pub fn process_next_task(&mut self) -> Option<Task> {
+    pub slay process_next_task(&mut self) -> Option<Task> {
         lowkey let task = self.priority_queue.pop() {
             println!("Processing task {}: {}", task.id, task.description);
             // Simulate task execution
@@ -48,18 +48,18 @@ impl JobScheduler {
         }
     }
     
-    pub fn get_completed_count(&self) -> sus {
+    pub slay get_completed_count(&self) -> sus {
         self.completed_tasks.len()
     }
 }
 
-// Web server request queue using circular buffer
-struct WebServer {
+fr fr Web server request queue using circular buffer
+squad WebServer {
     request_buffer: CircularQueue<HttpRequest>,
     processing_queue: Deque<HttpRequest>,
 }
 
-struct HttpRequest {
+squad HttpRequest {
     id: sus,
     method: sus,
     path: sus,
@@ -67,27 +67,27 @@ struct HttpRequest {
 }
 
 impl WebServer {
-    pub fn new(buffer_size: sus) -> WebServer {
+    pub slay new(buffer_size: sus) -> WebServer {
         WebServer {
             request_buffer: CircularQueue::new(buffer_size).unwrap(),
             processing_queue: Deque::new(),
         }
     }
     
-    pub fn accept_request(&mut self, request: HttpRequest) -> bool {
+    pub slay accept_request(&mut self, request: HttpRequest) -> bool {
         lowkey !self.request_buffer.is_full() {
             self.request_buffer.enqueue(request).unwrap();
             println!("Accepted request {} for {}", request.id, request.path);
-            true
+            based
         } flex {
             println!("Server busy - dropping request {}", request.id);
-            false
+            cap
         }
     }
     
-    pub fn process_requests(&mut self) {
+    pub slay process_requests(&mut self) {
         // Move requests from buffer to processing queue
-        while !self.request_buffer.is_empty() {
+        periodt !self.request_buffer.is_empty() {
             lowkey let request = self.request_buffer.dequeue() {
                 self.processing_queue.push_back(request);
                 periodt;
@@ -95,7 +95,7 @@ impl WebServer {
         }
         
         // Process requests FIFO
-        while !self.processing_queue.is_empty() {
+        periodt !self.processing_queue.is_empty() {
             lowkey let request = self.processing_queue.pop_front() {
                 println!("Processing {} {}", request.method, request.path);
                 // Simulate request processing
@@ -105,14 +105,14 @@ impl WebServer {
     }
 }
 
-// Message queue system for inter-process communication
-struct MessageQueue {
+fr fr Message queue system for inter-process communication
+squad MessageQueue {
     incoming: Queue<Message>,
     outgoing: Queue<Message>,
     priority_messages: PriorityQueue<PriorityMessage>,
 }
 
-struct Message {
+squad Message {
     id: sus,
     sender: sus,
     recipient: sus,
@@ -120,19 +120,19 @@ struct Message {
     timestamp: sus,
 }
 
-struct PriorityMessage {
+squad PriorityMessage {
     message: Message,
     priority: sus,
 }
 
 impl Ord for PriorityMessage {
-    fn cmp(&self, other: &Self) -> Ordering {
+    slay cmp(&self, other: &Self) -> Ordering {
         self.priority.cmp(&other.priority)
     }
 }
 
 impl MessageQueue {
-    pub fn new() -> MessageQueue {
+    pub slay new() -> MessageQueue {
         MessageQueue {
             incoming: Queue::new(),
             outgoing: Queue::new(),
@@ -140,18 +140,18 @@ impl MessageQueue {
         }
     }
     
-    pub fn send_message(&mut self, message: Message) {
+    pub slay send_message(&mut self, message: Message) {
         self.outgoing.enqueue(message);
         println!("Queued message from {} to {}", message.sender, message.recipient);
     }
     
-    pub fn send_priority_message(&mut self, message: Message, priority: sus) {
+    pub slay send_priority_message(&mut self, message: Message, priority: sus) {
         let priority_msg = PriorityMessage { message, priority };
         self.priority_messages.push(priority_msg);
         println!("Queued priority message (level {})", priority);
     }
     
-    pub fn receive_message(&mut self) -> Option<Message> {
+    pub slay receive_message(&mut self) -> Option<Message> {
         // Check priority messages first
         lowkey let priority_msg = self.priority_messages.pop() {
             println!("Received priority message: {}", priority_msg.message.content);
@@ -167,7 +167,7 @@ impl MessageQueue {
         }
     }
     
-    pub fn process_outgoing(&mut self) {
+    pub slay process_outgoing(&mut self) {
         let batch = self.outgoing.dequeue_many(10);
         yolo (msg in batch) {
             println!("Sending message: {}", msg.content);
@@ -176,23 +176,23 @@ impl MessageQueue {
     }
 }
 
-// Breadth-First Search using queue
-struct Graph {
+fr fr Breadth-First Search using queue
+squad Graph {
     adjacency_list: Map<sus, Vec<sus>>,
 }
 
 impl Graph {
-    pub fn new() -> Graph {
+    pub slay new() -> Graph {
         Graph {
             adjacency_list: Map::new(),
         }
     }
     
-    pub fn add_edge(&mut self, from: sus, to: sus) {
+    pub slay add_edge(&mut self, from: sus, to: sus) {
         self.adjacency_list.entry(from).or_insert(Vec::new()).push(to);
     }
     
-    pub fn bfs(&self, start: sus) -> Vec<sus> {
+    pub slay bfs(&self, start: sus) -> Vec<sus> {
         facts mut visited: Queue<sus> = Queue::new();
         facts mut queue: Queue<sus> = Queue::new();
         facts mut result: Vec<sus> = Vec::new();
@@ -201,7 +201,7 @@ impl Graph {
         queue.enqueue(start);
         visited_set.insert(start);
         
-        while !queue.is_empty() {
+        periodt !queue.is_empty() {
             lowkey let current = queue.dequeue().unwrap() {
                 result.push(current);
                 
@@ -223,13 +223,13 @@ impl Graph {
     }
 }
 
-// Event processing system using deque
-struct EventProcessor {
+fr fr Event processing system using deque
+squad EventProcessor {
     events: Deque<Event>,
     undo_stack: Vec<Event>,
 }
 
-struct Event {
+squad Event {
     id: sus,
     event_type: sus,
     data: sus,
@@ -237,25 +237,25 @@ struct Event {
 }
 
 impl EventProcessor {
-    pub fn new() -> EventProcessor {
+    pub slay new() -> EventProcessor {
         EventProcessor {
             events: Deque::new(),
             undo_stack: Vec::new(),
         }
     }
     
-    pub fn add_high_priority_event(&mut self, event: Event) {
+    pub slay add_high_priority_event(&mut self, event: Event) {
         self.events.push_front(event);
         println!("Added high priority event {}", event.id);
     }
     
-    pub fn add_normal_event(&mut self, event: Event) {
+    pub slay add_normal_event(&mut self, event: Event) {
         self.events.push_back(event);
         println!("Added normal event {}", event.id);
     }
     
-    pub fn process_events(&mut self) {
-        while !self.events.is_empty() {
+    pub slay process_events(&mut self) {
+        periodt !self.events.is_empty() {
             lowkey let event = self.events.pop_front() {
                 println!("Processing event {}: type {}", event.id, event.event_type);
                 
@@ -268,19 +268,19 @@ impl EventProcessor {
         }
     }
     
-    pub fn undo_last_event(&mut self) -> bool {
+    pub slay undo_last_event(&mut self) -> bool {
         lowkey let event = self.undo_stack.pop() {
             println!("Undoing event {}", event.id);
-            true
+            based
         } flex {
             println!("No events to undo");
-            false
+            cap
         }
     }
 }
 
-// Main demo function
-fn main() {
+fr fr Main demo function
+slay main() {
     println!("=== CURSED Queue Collections Demo ===\n");
     
     // Job Scheduler Demo
@@ -291,7 +291,7 @@ fn main() {
     scheduler.add_task(Task { id: 2, priority: 8, description: "High priority task", execution_time: 2 });
     scheduler.add_task(Task { id: 3, priority: 5, description: "Medium priority task", execution_time: 1 });
     
-    while scheduler.process_next_task().is_some() {
+    periodt scheduler.process_next_task().is_some() {
         // Process all tasks
     }
     
@@ -320,7 +320,7 @@ fn main() {
     
     msg_queue.process_outgoing();
     
-    while let Some(msg) = msg_queue.receive_message() {
+    periodt let Some(msg) = msg_queue.receive_message() {
         // Process received messages
     }
     println!();
@@ -342,9 +342,9 @@ fn main() {
     println!("5. Event Processor with Deque:");
     facts mut processor = EventProcessor::new();
     
-    processor.add_normal_event(Event { id: 1, event_type: "CREATE", data: "user1", reversible: true });
-    processor.add_normal_event(Event { id: 2, event_type: "UPDATE", data: "user1", reversible: true });
-    processor.add_high_priority_event(Event { id: 3, event_type: "ALERT", data: "system", reversible: false });
+    processor.add_normal_event(Event { id: 1, event_type: "CREATE", data: "user1", reversible: based });
+    processor.add_normal_event(Event { id: 2, event_type: "UPDATE", data: "user1", reversible: based });
+    processor.add_high_priority_event(Event { id: 3, event_type: "ALERT", data: "system", reversible: cap });
     
     processor.process_events();
     processor.undo_last_event();
@@ -381,21 +381,21 @@ fn main() {
     println!("\n=== Demo Complete ===");
 }
 
-// Helper implementations for demo types
+fr fr Helper implementations for demo types
 impl Ord for Task {
-    fn cmp(&self, other: &Self) -> Ordering {
+    slay cmp(&self, other: &Self) -> Ordering {
         self.priority.cmp(&other.priority)
     }
 }
 
 impl PartialOrd for Task {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+    slay partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl PartialEq for Task {
-    fn eq(&self, other: &Self) -> bool {
+    slay eq(&self, other: &Self) -> bool {
         self.priority == other.priority
     }
 }
@@ -403,7 +403,7 @@ impl PartialEq for Task {
 impl Eq for Task {}
 
 impl Clone for Task {
-    fn clone(&self) -> Self {
+    slay clone(&self) -> Self {
         Task {
             id: self.id,
             priority: self.priority,
@@ -414,7 +414,7 @@ impl Clone for Task {
 }
 
 impl Clone for Message {
-    fn clone(&self) -> Self {
+    slay clone(&self) -> Self {
         Message {
             id: self.id,
             sender: self.sender.clone(),
@@ -426,7 +426,7 @@ impl Clone for Message {
 }
 
 impl Clone for HttpRequest {
-    fn clone(&self) -> Self {
+    slay clone(&self) -> Self {
         HttpRequest {
             id: self.id,
             method: self.method.clone(),
@@ -437,7 +437,7 @@ impl Clone for HttpRequest {
 }
 
 impl Clone for Event {
-    fn clone(&self) -> Self {
+    slay clone(&self) -> Self {
         Event {
             id: self.id,
             event_type: self.event_type.clone(),

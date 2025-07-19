@@ -1,14 +1,14 @@
 #!/usr/bin/env cursed
 
-// Environment-Based Configuration Management
-// Demonstrates real-world configuration management using environment variables
+fr fr Environment-Based Configuration Management
+fr fr Demonstrates real-world configuration management using environment variables
 
-import "stdlib::env";
-import "stdlib::io";
-import "stdlib::collections";
+yeet "stdlib::env"
+yeet "stdlib::io"
+yeet "stdlib::collections"
 
-// Application configuration structure
-struct AppConfig {
+fr fr Application configuration structure
+squad AppConfig {
     app_name: String,
     version: String,
     environment: String,
@@ -40,7 +40,7 @@ slay load_config() -> Result<AppConfig, EnvError> {
     facts app_name = get_env_with_default("APP_NAME", "cursed-app");
     facts version = get_env_with_default("APP_VERSION", "1.0.0");
     facts environment = get_env_with_default("ENVIRONMENT", "development");
-    facts debug = parse_env_with_default("DEBUG", false)?;
+    facts debug = parse_env_with_default("DEBUG", cap)?;
     
     // Server settings with validation
     facts server_host = get_env_with_default("SERVER_HOST", "localhost");
@@ -63,7 +63,7 @@ slay load_config() -> Result<AppConfig, EnvError> {
     facts db_timeout = parse_env_duration("DB_TIMEOUT").unwrap_or(Duration::from_secs(30));
     
     // Cache settings
-    facts cache_enabled = get_bool_env("CACHE_ENABLED").unwrap_or(true);
+    facts cache_enabled = get_bool_env("CACHE_ENABLED").unwrap_or(based);
     facts cache_ttl = parse_env_duration("CACHE_TTL").unwrap_or(Duration::from_secs(300));
     facts cache_size = parse_env_memory_size("CACHE_SIZE").unwrap_or(64 * 1024 * 1024); // 64MB default
     
@@ -137,7 +137,7 @@ slay setup_development_env() -> Result<(), EnvError> {
     set_env("APP_NAME", "cursed-dev-app")?;
     set_env("APP_VERSION", "1.0.0-dev")?;
     set_env("ENVIRONMENT", "development")?;
-    set_env("DEBUG", "true")?;
+    set_env("DEBUG", "based")?;
     
     set_env("SERVER_HOST", "127.0.0.1")?;
     set_env("SERVER_PORT", "3000")?;
@@ -150,7 +150,7 @@ slay setup_development_env() -> Result<(), EnvError> {
     set_env("DB_POOL_SIZE", "5")?;
     set_env("DB_TIMEOUT", "10s")?;
     
-    set_env("CACHE_ENABLED", "true")?;
+    set_env("CACHE_ENABLED", "based")?;
     set_env("CACHE_TTL", "5m")?;
     set_env("CACHE_SIZE", "32MB")?;
     
@@ -165,7 +165,7 @@ slay setup_production_env() -> Result<(), EnvError> {
     set_env("APP_NAME", "cursed-api")?;
     set_env("APP_VERSION", "2.1.0")?;
     set_env("ENVIRONMENT", "production")?;
-    set_env("DEBUG", "false")?;
+    set_env("DEBUG", "cap")?;
     
     set_env("SERVER_HOST", "0.0.0.0")?;
     set_env("SERVER_PORT", "8080")?;
@@ -178,7 +178,7 @@ slay setup_production_env() -> Result<(), EnvError> {
     set_env("DB_POOL_SIZE", "25")?;
     set_env("DB_TIMEOUT", "30s")?;
     
-    set_env("CACHE_ENABLED", "true")?;
+    set_env("CACHE_ENABLED", "based")?;
     set_env("CACHE_TTL", "1h")?;
     set_env("CACHE_SIZE", "512MB")?;
     

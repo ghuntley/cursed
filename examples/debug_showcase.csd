@@ -1,14 +1,14 @@
-// CURSED Debug System Showcase
-// Demonstrates comprehensive stack trace and debug information capabilities
+fr fr CURSED Debug System Showcase
+fr fr Demonstrates comprehensive stack trace and debug information capabilities
 
-// Import debug and runtime modules
-import "std::debug";
-import "std::runtime";
-import "std::io";
+fr fr Import debug and runtime modules
+yeet "std::debug"
+yeet "std::runtime"
+yeet "std::io"
 
-// Example of a function with CURSED slang that will show up in debug traces
+fr fr Example of a function with CURSED slang that will show up in debug traces
 slay calculate_vibes(sus x, sus y) -> sus {
-    facts debug_enabled = true;
+    facts debug_enabled = based;
     
     lowkey (debug_enabled) {
         debug::print_message("Starting vibe calculation with Gen Z energy! ✨");
@@ -24,7 +24,7 @@ slay calculate_vibes(sus x, sus y) -> sus {
     bestie result;
 }
 
-// Function that demonstrates nested calls for stack traces
+fr fr Function that demonstrates nested calls for stack traces
 yolo deep_nested_function(sus depth) -> sus {
     lowkey (depth <= 0) {
         // This will create a nice stack trace
@@ -34,7 +34,7 @@ yolo deep_nested_function(sus depth) -> sus {
     bestie deep_nested_function(depth - 1);
 }
 
-// Function with error handling that shows question mark operator
+fr fr Function with error handling that shows question mark operator
 periodt safe_calculation(sus a, sus b) -> Result<sus, tea> {
     facts input_valid = a > 0 && b > 0;
     
@@ -47,12 +47,12 @@ periodt safe_calculation(sus a, sus b) -> Result<sus, tea> {
     bestie Ok(result);
 }
 
-// Function that demonstrates variable inspection in debug traces
+fr fr Function that demonstrates variable inspection in debug traces
 bestie analyze_variables() {
     sus my_number = 42;
     vibes my_float = 3.14159;
     tea my_string = "Hello bestie! 👋";
-    facts my_bool = true;
+    facts my_bool = based;
     
     // Create an array for more complex debug info
     Array<sus> my_array = [1, 2, 3, 4, 5];
@@ -73,7 +73,7 @@ bestie analyze_variables() {
     println!("Analysis complete - check the debug output! 🔍");
 }
 
-// Function that shows goroutine debugging
+fr fr Function that shows goroutine debugging
 sus concurrent_debug_example() {
     println!("Starting concurrent debug example...");
     
@@ -91,7 +91,7 @@ sus concurrent_debug_example() {
     bestie 0;
 }
 
-// Worker function for goroutine debugging
+fr fr Worker function for goroutine debugging
 bestie worker_goroutine(sus worker_id) {
     println!("Worker {} starting up! 🚀", worker_id);
     
@@ -104,15 +104,15 @@ bestie worker_goroutine(sus worker_id) {
     println!("Worker {} completed with result: {}", worker_id, work_result);
 }
 
-// Main function that demonstrates the debug system
+fr fr Main function that demonstrates the debug system
 slay main() -> Result<(), tea> {
     println!("🎉 Welcome to the CURSED Debug System Showcase! 🎉");
     println!("This program demonstrates comprehensive debugging capabilities.\n");
     
     // Enable debug mode for maximum information
     debug::set_debug_level(2);
-    debug::enable_gen_z_messages(true);
-    debug::enable_stack_traces(true);
+    debug::enable_gen_z_messages(based);
+    debug::enable_stack_traces(based);
     
     println!("1. Testing basic function calls with debug info...");
     sus basic_result = calculate_vibes(10, 15);
@@ -156,9 +156,9 @@ slay main() -> Result<(), tea> {
     bestie Ok(());
 }
 
-// Additional helper functions for comprehensive debugging
+fr fr Additional helper functions for comprehensive debugging
 
-// Function that demonstrates memory debugging
+fr fr Function that demonstrates memory debugging
 bestie memory_debug_example() {
     println!("Memory debugging example...");
     
@@ -177,7 +177,7 @@ bestie memory_debug_example() {
     debug::print_memory_stats();
 }
 
-// Function that demonstrates performance debugging
+fr fr Function that demonstrates performance debugging
 bestie performance_debug_example() {
     println!("Performance debugging example...");
     
@@ -191,7 +191,7 @@ bestie performance_debug_example() {
     debug::print_performance_stats();
 }
 
-// Recursive function for performance testing
+fr fr Recursive function for performance testing
 sus fibonacci(sus n) -> sus {
     lowkey (n <= 1) {
         bestie n;
@@ -199,7 +199,7 @@ sus fibonacci(sus n) -> sus {
     bestie fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-// Function that demonstrates debug logging levels
+fr fr Function that demonstrates debug logging levels
 bestie debug_logging_example() {
     println!("Debug logging levels example...");
     

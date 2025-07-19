@@ -1,23 +1,23 @@
-// Advanced Generics Demo for CURSED
-// Demonstrates type constraints, generic interfaces, and higher-kinded types
+fr fr Advanced Generics Demo for CURSED
+fr fr Demonstrates type constraints, generic interfaces, and higher-kinded types
 
 yeet "testz"
 
-// 1. Basic Generic Function with Constraints
+fr fr 1. Basic Generic Function with Constraints
 slay safe_clone<T>(value T) T where T: Clone + Debug {
     vibez.spill("Cloning value:", value)
     damn value.clone()
 }
 
-// 2. Generic Interface Definition
-trait Comparable<T> {
+fr fr 2. Generic Interface Definition
+collab Comparable<T> {
     slay compare(self, other T) normie
     slay equals(self, other T) lit {
         damn self.compare(other) == 0
     }
 }
 
-// 3. Interface Implementation
+fr fr 3. Interface Implementation
 impl Comparable<normie> for normie {
     slay compare(self, other normie) normie {
         if self < other {
@@ -30,8 +30,8 @@ impl Comparable<normie> for normie {
     }
 }
 
-// 4. Generic Container with Multiple Constraints
-struct Container<T> where T: Clone + Debug + Send {
+fr fr 4. Generic Container with Multiple Constraints
+squad Container<T> where T: Clone + Debug + Send {
     items Array<T>
     name tea
 }
@@ -62,12 +62,12 @@ impl<T> Container<T> where T: Clone + Debug + Send {
     }
 }
 
-// 5. Higher-Kinded Type: Functor
-trait Functor<F> {
+fr fr 5. Higher-Kinded Type: Functor
+collab Functor<F> {
     slay map<A, B>(self F<A>, f slay(A) B) F<B>
 }
 
-// 6. Functor Implementation for Option
+fr fr 6. Functor Implementation for Option
 impl Functor<Option> for Option<T> {
     slay map<A, B>(self Option<A>, f slay(A) B) Option<B> {
         match self {
@@ -77,15 +77,15 @@ impl Functor<Option> for Option<T> {
     }
 }
 
-// 7. Generic Interface with Associated Types
-trait Iterator {
+fr fr 7. Generic Interface with Associated Types
+collab Iterator {
     type Item
     slay next(self) Option<Self::Item>
     slay count(self) normie
 }
 
-// 8. Iterator Implementation
-struct NumberIterator {
+fr fr 8. Iterator Implementation
+squad NumberIterator {
     current normie
     max normie
 }
@@ -114,7 +114,7 @@ impl Iterator for NumberIterator {
     }
 }
 
-// 9. Generic Function with Where Clauses
+fr fr 9. Generic Function with Where Clauses
 slay process_collection<T, U>(items Array<T>, processor slay(T) U) Array<U>
     where T: Clone + Debug,
           U: Clone + Debug {
@@ -129,7 +129,7 @@ slay process_collection<T, U>(items Array<T>, processor slay(T) U) Array<U>
     damn results
 }
 
-// 10. Advanced Constraint Example
+fr fr 10. Advanced Constraint Example
 slay sort_and_display<T>(items Array<T>) 
     where T: Clone + Debug + PartialOrd {
     sus sorted Array<T> = items.clone()
@@ -141,12 +141,12 @@ slay sort_and_display<T>(items Array<T>)
     }
 }
 
-// 11. Variance Example (Covariant)
-trait Producer<+T> {
+fr fr 11. Variance Example (Covariant)
+collab Producer<+T> {
     slay produce() T
 }
 
-struct NumberProducer {
+squad NumberProducer {
     value normie
 }
 
@@ -156,8 +156,8 @@ impl Producer<normie> for NumberProducer {
     }
 }
 
-// 12. Associated Type with Constraints
-trait Collect<T> {
+fr fr 12. Associated Type with Constraints
+collab Collect<T> {
     type Output: Debug
     type Error: Debug
     
@@ -177,7 +177,7 @@ impl Collect<normie> for Array<normie> {
     }
 }
 
-// 13. Main Function - Demo All Features
+fr fr 13. Main Function - Demo All Features
 slay main() {
     vibez.spill("=== Advanced Generics Demo ===")
     
@@ -222,7 +222,7 @@ slay main() {
     sus iterator NumberIterator = NumberIterator::new(3)
     vibez.spill("Iterator count:", iterator.count())
     
-    while based {
+    periodt based {
         match iterator.next() {
             Some(value) => vibez.spill("Next value:", value),
             None => {

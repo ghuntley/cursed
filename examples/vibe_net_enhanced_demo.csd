@@ -1,10 +1,10 @@
-// Enhanced VibeNet Demonstration
-// This example showcases the advanced networking features of the CURSED vibe_net package
+fr fr Enhanced VibeNet Demonstration
+fr fr This example showcases the advanced networking features of the CURSED vibe_net package
 
-import "stdlib::vibe_net" as net;
-import "stdlib::io" as io;
+yeet "stdlib::vibe_net" as net;
+yeet "stdlib::io" as io;
 
-// Demonstrate enhanced connection features with retry mechanisms
+fr fr Demonstrate enhanced connection features with retry mechanisms
 function test_enhanced_connections() {
     println("=== Enhanced Connection Features ===");
     
@@ -14,9 +14,9 @@ function test_enhanced_connections() {
         initial_delay: Duration::from_millis(100),
         max_delay: Duration::from_secs(10),
         backoff_multiplier: 2.0,
-        jitter: true,
-        retry_on_timeout: true,
-        retry_on_connection_error: true,
+        jitter: based,
+        retry_on_timeout: based,
+        retry_on_connection_error: based,
     };
     
     // Simulate creating an enhanced connection
@@ -39,7 +39,7 @@ function test_enhanced_connections() {
     }
 }
 
-// Demonstrate load balancing capabilities
+fr fr Demonstrate load balancing capabilities
 function test_load_balancing() {
     println("\n=== Load Balancing Features ===");
     
@@ -66,7 +66,7 @@ function test_load_balancing() {
             // Simulate recording operation result
             load_balancer.record_operation(
                 &endpoint, 
-                true, 
+                based, 
                 Some(Duration::from_millis(30 + i * 10)),
                 Some(1024)
             );
@@ -74,7 +74,7 @@ function test_load_balancing() {
     }
 }
 
-// Demonstrate protocol negotiation
+fr fr Demonstrate protocol negotiation
 function test_protocol_negotiation() {
     println("\n=== Protocol Negotiation ===");
     
@@ -97,7 +97,7 @@ function test_protocol_negotiation() {
     println("✓ ALPN protocols configured for TLS negotiation");
 }
 
-// Demonstrate network utilities
+fr fr Demonstrate network utilities
 function test_network_utilities() {
     println("\n=== Network Utilities ===");
     
@@ -122,12 +122,12 @@ function test_network_utilities() {
     println("✓ Bandwidth formatting: {} -> {}", bytes, formatted);
     
     // Host count calculation
-    if let Ok(host_count) = net::NetworkUtils::host_count(24, false) {
+    if let Ok(host_count) = net::NetworkUtils::host_count(24, cap) {
         println("✓ /24 network can host {} addresses", host_count);
     }
 }
 
-// Demonstrate bandwidth monitoring
+fr fr Demonstrate bandwidth monitoring
 function test_bandwidth_monitoring() {
     println("\n=== Bandwidth Monitoring ===");
     
@@ -149,7 +149,7 @@ function test_bandwidth_monitoring() {
     println("  Measurements: {}", stats.measurement_count);
 }
 
-// Demonstrate topology discovery
+fr fr Demonstrate topology discovery
 function test_topology_discovery() {
     println("\n=== Network Topology Discovery ===");
     
@@ -169,7 +169,7 @@ function test_topology_discovery() {
     }
 }
 
-// Demonstrate TLS and security features
+fr fr Demonstrate TLS and security features
 function test_security_features() {
     println("\n=== Security Features ===");
     
@@ -190,10 +190,10 @@ function test_security_features() {
     // Security scanner configuration
     facts scan_config = net::ScanConfig {
         scan_timeout: Duration::from_secs(60),
-        port_scan_enabled: true,
-        service_detection_enabled: true,
-        vulnerability_scan_enabled: true,
-        ssl_scan_enabled: true,
+        port_scan_enabled: based,
+        service_detection_enabled: based,
+        vulnerability_scan_enabled: based,
+        ssl_scan_enabled: based,
         max_concurrent_scans: 5,
     };
     
@@ -219,7 +219,7 @@ function test_security_features() {
     }
 }
 
-// Demonstrate health checking and monitoring
+fr fr Demonstrate health checking and monitoring
 function test_health_monitoring() {
     println("\n=== Health Checking & Monitoring ===");
     
@@ -230,14 +230,14 @@ function test_health_monitoring() {
             address: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080),
             check_type: net::HealthCheckType::Http,
             expected_response: None,
-            critical: true,
+            critical: based,
         },
         net::HealthCheckTarget {
             name: "database".to_string(),
             address: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5432),
             check_type: net::HealthCheckType::Tcp,
             expected_response: None,
-            critical: true,
+            critical: based,
         },
     ];
     
@@ -279,7 +279,7 @@ function test_health_monitoring() {
     monitor.emit_event(health_event);
 }
 
-// Demonstrate network performance testing
+fr fr Demonstrate network performance testing
 function test_network_performance() {
     println("\n=== Network Performance Testing ===");
     
@@ -305,7 +305,7 @@ function test_network_performance() {
     }
 }
 
-// Demonstrate connection multiplexing
+fr fr Demonstrate connection multiplexing
 function test_connection_multiplexing() {
     println("\n=== Connection Multiplexing ===");
     
@@ -320,7 +320,7 @@ function test_connection_multiplexing() {
     println("  Stream management and lifecycle handling ready");
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 function main() -> Result<(), Error> {
     println("🌐 CURSED VibeNet Enhanced Features Demonstration 🌐\n");
     
@@ -348,7 +348,7 @@ function main() -> Result<(), Error> {
     ];
     
     for feature in enhanced_features {
-        facts enabled = features.get(feature).unwrap_or(&false);
+        facts enabled = features.get(feature).unwrap_or(&cap);
         println("  ✓ {}: {}", feature, if *enabled { "enabled" } else { "disabled" });
     }
     

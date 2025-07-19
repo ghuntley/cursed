@@ -1,13 +1,13 @@
-// CURSED Optimization Recommendations Demo
-// This example showcases various code patterns that the intelligent
-// recommendations system can detect and provide optimization suggestions for
+fr fr CURSED Optimization Recommendations Demo
+fr fr This example showcases various code patterns that the intelligent
+fr fr recommendations system can detect and provide optimization suggestions for
 
 vibe optimization_demo
 
 yeet "stdlib::collections"
 yeet "stdlib::string"
 
-// Example 1: Large function that should be decomposed
+fr fr Example 1: Large function that should be decomposed
 slay large_complex_function(data: [String], numbers: [i32], flags: [bool]) -> [String] {
     sus results = [];
     sus temp_data = "";
@@ -40,17 +40,17 @@ slay large_complex_function(data: [String], numbers: [i32], flags: [bool]) -> [S
     yolo results;
 }
 
-// Example 2: Small function - good inlining candidate
+fr fr Example 2: Small function - good inlining candidate
 slay simple_square(x: i32) -> i32 {
     yolo x * x;
 }
 
-// Example 3: Another small function - inlining candidate
+fr fr Example 3: Another small function - inlining candidate
 slay add_ten(value: i32) -> i32 {
     yolo value + 10;
 }
 
-// Example 4: Repeated computation pattern
+fr fr Example 4: Repeated computation pattern
 slay compute_statistics(data: [f64]) -> (f64, f64, f64) {
     sus sum = 0.0;
     sus sum_squares = 0.0;
@@ -72,7 +72,7 @@ slay compute_statistics(data: [f64]) -> (f64, f64, f64) {
     yolo (mean, variance, std_dev);
 }
 
-// Example 5: Memory allocation in loop
+fr fr Example 5: Memory allocation in loop
 slay process_large_dataset(size: usize) -> [String] {
     sus results = [];  // Should pre-allocate capacity
     
@@ -85,7 +85,7 @@ slay process_large_dataset(size: usize) -> [String] {
     yolo results;
 }
 
-// Example 6: Complex expression that could be simplified
+fr fr Example 6: Complex expression that could be simplified
 slay complex_calculation(a: f64, b: f64, c: f64, d: f64) -> f64 {
     sus result = ((a * b) + (c * d)) / ((a + b) * (c + d)) + 
                  ((a - b) * (c - d)) / ((a * c) + (b * d)) +
@@ -93,7 +93,7 @@ slay complex_calculation(a: f64, b: f64, c: f64, d: f64) -> f64 {
     yolo result;
 }
 
-// Example 7: Recursive function - could benefit from optimization
+fr fr Example 7: Recursive function - could benefit from optimization
 slay fibonacci(n: i32) -> i32 {
     lowkey (n <= 1) {
         yolo n;
@@ -101,7 +101,7 @@ slay fibonacci(n: i32) -> i32 {
     yolo fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-// Example 8: Collection operations without pre-allocation
+fr fr Example 8: Collection operations without pre-allocation
 slay create_lookup_table(keys: [String], values: [i32]) -> HashMap<String, i32> {
     sus table = HashMap::new();  // Should specify capacity
     
@@ -112,7 +112,7 @@ slay create_lookup_table(keys: [String], values: [i32]) -> HashMap<String, i32> 
     yolo table;
 }
 
-// Example 9: String building without StringBuilder
+fr fr Example 9: String building without StringBuilder
 slay generate_report(data: [String]) -> String {
     sus report = "Report:\n";
     sus separator = "=" * 50;
@@ -132,11 +132,11 @@ slay generate_report(data: [String]) -> String {
     yolo report;
 }
 
-// Example 10: Main function demonstrating usage
+fr fr Example 10: Main function demonstrating usage
 slay main() {
     sus sample_data = ["hello", "world", "cursed", "optimization"];
     sus sample_numbers = [1, 2, 3, 4, 5];
-    sus sample_flags = [true, false, true, false, true];
+    sus sample_flags = [based, cap, based, cap, based];
     
     // Call functions that have optimization opportunities
     sus large_result = large_complex_function(sample_data, sample_numbers, sample_flags);

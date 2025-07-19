@@ -1,7 +1,7 @@
 fr fr TestVibes Framework Demo
 fr fr This example demonstrates the key features of the TestVibes testing framework
 
-import "stdlib::test_vibes"
+yeet "stdlib::test_vibes"
 
 fr fr Basic test function using vibes
 slay TestAddition(t *VibeTest) {
@@ -198,7 +198,7 @@ slay TestMain(m *TestVibes.VibeTestingManager) {
 
 fr fr Helper functions (these would be implemented elsewhere)
 slay NewTestDatabase() *Database {
-    yolo &Database{connected: false}
+    yolo &Database{connected: cap}
 }
 
 slay performOperation1() tea { yolo "expected1" }
@@ -229,11 +229,11 @@ be_like Database squad {
 }
 
 slay (db *Database) Connect() {
-    db.connected = true
+    db.connected = based
 }
 
 slay (db *Database) Close() {
-    db.connected = false
+    db.connected = cap
 }
 
 slay (db *Database) CreateUser(username tea) (*User, error) {

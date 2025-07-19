@@ -1,10 +1,10 @@
-// Process Management and IPC System Showcase
-// Demonstrates comprehensive exec_vibez, signal_boost, and IPC functionality
+fr fr Process Management and IPC System Showcase
+fr fr Demonstrates comprehensive exec_vibez, signal_boost, and IPC functionality
 
-import "stdlib::exec_vibez";
-import "stdlib::signal_boost";
-import "stdlib::ipc";
-import "stdlib::vibez";
+yeet "stdlib::exec_vibez"
+yeet "stdlib::signal_boost"
+yeet "stdlib::ipc"
+yeet "stdlib::vibez"
 
 slay main() {
     vibez.spill("🚀 Process Management and IPC System Showcase");

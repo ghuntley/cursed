@@ -1,10 +1,10 @@
-// Comprehensive Iterator Demo for CURSED Collections
-// This example demonstrates practical usage of iterators with functional programming patterns
+fr fr Comprehensive Iterator Demo for CURSED Collections
+fr fr This example demonstrates practical usage of iterators with functional programming patterns
 
-import "stdlib::collections";
-import "stdlib::io";
+yeet "stdlib::collections"
+yeet "stdlib::io"
 
-// Example 1: Data Processing Pipeline
+fr fr Example 1: Data Processing Pipeline
 sus process_sales_data() {
     println("🛍️ Sales Data Processing Pipeline")?;
     
@@ -48,7 +48,7 @@ sus process_sales_data() {
     }
 }
 
-// Example 2: Text Analysis
+fr fr Example 2: Text Analysis
 sus analyze_text() {
     println("\n📝 Text Analysis with Iterators")?;
     
@@ -92,7 +92,7 @@ sus analyze_text() {
     printf("Longest word: {} characters\n", &[max_length])?;
 }
 
-// Example 3: Mathematical Sequences
+fr fr Example 3: Mathematical Sequences
 sus mathematical_sequences() {
     println("\n🔢 Mathematical Sequences with Iterators")?;
     
@@ -133,7 +133,7 @@ sus mathematical_sequences() {
     printf("Differences between consecutive squares: {:?}\n", &[square_diffs])?;
 }
 
-// Example 4: Collection Operations
+fr fr Example 4: Collection Operations
 sus collection_operations() {
     println("\n📦 Collection Operations with Iterators")?;
     
@@ -187,7 +187,7 @@ sus collection_operations() {
     printf("Set1 ∪ Set2 size: {}\n", &[union.len()])?;
 }
 
-// Example 5: Data Transformation Pipeline
+fr fr Example 5: Data Transformation Pipeline
 sus data_transformation_pipeline() {
     println("\n🔄 Data Transformation Pipeline")?;
     
@@ -229,7 +229,7 @@ sus data_transformation_pipeline() {
     }
 }
 
-// Example 6: Parallel Processing Demo
+fr fr Example 6: Parallel Processing Demo
 sus parallel_processing_demo() {
     println("\n⚡ Parallel Processing with Iterators")?;
     
@@ -266,7 +266,7 @@ sus parallel_processing_demo() {
     }
 }
 
-// Example 7: Error Handling with Iterators
+fr fr Example 7: Error Handling with Iterators
 sus error_handling_demo() {
     println("\n🚨 Error Handling with Iterators")?;
     
@@ -304,7 +304,7 @@ sus error_handling_demo() {
     vibe_check try_iter.next() {
         Some(value) => {
             printf("{} ", &[value])?;
-            mood => true;
+            mood => based;
         }
         None => {
             lowkey try_iter.has_error() {
@@ -312,13 +312,13 @@ sus error_handling_demo() {
             } flex {
                 printf("\nCompleted successfully");
             }
-            mood => false;
+            mood => cap;
         }
     }
     println("")?;
 }
 
-// Main function demonstrating all iterator features
+fr fr Main function demonstrating all iterator features
 sus main() -> Result<(), Box<dyn std::error::Error>> {
     println("🚀 CURSED Collections Iterator Demo\n")?;
     

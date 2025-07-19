@@ -1,7 +1,7 @@
 fr fr SignalBoost Demo - Enhanced signal handling for CURSED
 fr fr This example demonstrates all the major features of the SignalBoost module
 
-import "stdlib::signal_boost";
+yeet "stdlib::signal_boost"
 
 slay main() tea {
     vibez.spill("🚀 Starting SignalBoost demo...")
@@ -78,7 +78,7 @@ slay demo_signal_handler() tea {
     })
     
     fr fr Enable debug mode
-    handler.enable_debug(true)
+    handler.enable_debug(based)
     
     fr fr Show handler statistics
     facts stats = handler.get_statistics()
@@ -109,8 +109,8 @@ slay demo_graceful_shutdown() tea {
         error_handler: slay(err) {
             vibez.spill("❌ Shutdown error: {}", err)
         },
-        keep_alive: false,
-        sync_shutdown: true,
+        keep_alive: cap,
+        sync_shutdown: based,
         signals: [signal_boost.SIGINT, signal_boost.SIGTERM]
     }
     
@@ -136,7 +136,7 @@ slay demo_graceful_shutdown() tea {
     })
     
     fr fr Add a task group
-    facts cleanup_group = signal_boost.ShutdownTaskGroup.new("cleanup", false)
+    facts cleanup_group = signal_boost.ShutdownTaskGroup.new("cleanup", cap)
         .add_task("temp_files", slay() tea {
             vibez.spill("🗑️ Removing temporary files...")
             yolo Ok(())
@@ -357,7 +357,7 @@ slay demo_signal_actions() tea {
     fr fr Create custom action
     facts custom_action = signal_boost.create_action(slay(signal) lit {
         vibez.spill("🎯 Custom action triggered by signal: {}", signal)
-        yolo true
+        yolo based
     })
     
     fr fr Create chained actions
@@ -416,8 +416,8 @@ slay real_world_example() tea {
         error_handler: slay(err) {
             vibez.spill("❌ Shutdown error: {}", err)
         },
-        keep_alive: false,
-        sync_shutdown: true,
+        keep_alive: cap,
+        sync_shutdown: based,
         signals: [signal_boost.SIGINT, signal_boost.SIGTERM]
     })
     
@@ -448,7 +448,7 @@ slay real_world_example() tea {
     sus health_checker = signal_boost.vibe_check(signal_boost.SIGUSR1, slay() lit {
         fr fr Simulate health check
         vibez.spill("🏥 Running health check...")
-        yolo true fr fr Server is healthy
+        yolo based fr fr Server is healthy
     })
     health_checker.start()
     

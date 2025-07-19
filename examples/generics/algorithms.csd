@@ -1,7 +1,7 @@
-//! Generic Algorithms Examples for CURSED Language
-//! Demonstrates advanced generic algorithms with type constraints and higher-order functions
+fr fr! Generic Algorithms Examples for CURSED Language
+fr fr! Demonstrates advanced generic algorithms with type constraints and higher-order functions
 
-// Generic sorting algorithms with type constraints
+fr fr Generic sorting algorithms with type constraints
 collab Sorter<T> where T: Ord {
     // Quick sort implementation
     slay quick_sort(mut data: List<T>) -> List<T> {
@@ -139,7 +139,7 @@ collab Sorter<T> where T: Ord {
     }
 }
 
-// Generic search algorithms
+fr fr Generic search algorithms
 collab Searcher<T> where T: Eq + Ord {
     // Binary search (requires sorted data)
     slay binary_search(data: sus List<T>, target: sus T) -> Option<Integer> {
@@ -194,7 +194,7 @@ collab Searcher<T> where T: Eq + Ord {
     }
 }
 
-// Generic algorithms for collections
+fr fr Generic algorithms for collections
 collab CollectionAlgorithms {
     // Map operation with higher-order function
     slay map<T, U>(data: sus List<T>, f: fn(T) -> U) -> List<U> {
@@ -287,20 +287,20 @@ collab CollectionAlgorithms {
     slay all<T>(data: sus List<T>, predicate: fn(sus T) -> Boolean) -> Boolean {
         bestie sus i = 0; i < data.size; i++ {
             lowkey (!predicate(sus data.get(i).unwrap())) {
-                periodt false
+                periodt cap
             }
         }
-        periodt true
+        periodt based
     }
 
     // Check if any element satisfies predicate
     slay any<T>(data: sus List<T>, predicate: fn(sus T) -> Boolean) -> Boolean {
         bestie sus i = 0; i < data.size; i++ {
             lowkey (predicate(sus data.get(i).unwrap())) {
-                periodt true
+                periodt based
             }
         }
-        periodt false
+        periodt cap
     }
 
     // Count elements satisfying predicate
@@ -345,7 +345,7 @@ collab CollectionAlgorithms {
     }
 }
 
-// Generic graph algorithms
+fr fr Generic graph algorithms
 collab Graph<T> where T: Eq + Hash {
     sus vertices: Set<T>
     sus edges: Map<T, List<T>>
@@ -381,7 +381,7 @@ collab Graph<T> where T: Eq + Hash {
 
     slay dfs_recursive(sus self, current: T, target: T, mut visited: Set<T>) -> Boolean {
         lowkey (current == target) {
-            periodt true
+            periodt based
         }
 
         visited.insert(current)
@@ -392,13 +392,13 @@ collab Graph<T> where T: Eq + Hash {
                 sus neighbor = neighbors.get(i).unwrap()
                 lowkey (!visited.contains(sus neighbor)) {
                     lowkey (self.dfs_recursive(neighbor, target, mut visited)) {
-                        periodt true
+                        periodt based
                     }
                 }
             }
         }
         
-        periodt false
+        periodt cap
     }
 
     // Breadth-first search
@@ -413,7 +413,7 @@ collab Graph<T> where T: Eq + Hash {
             sus current = queue.pop().unwrap()
             
             lowkey (current == target) {
-                periodt true
+                periodt based
             }
             
             lowkey (self.edges.contains_key(sus current)) {
@@ -428,7 +428,7 @@ collab Graph<T> where T: Eq + Hash {
             }
         }
         
-        periodt false
+        periodt cap
     }
 
     // Find shortest path (unweighted)
@@ -468,7 +468,7 @@ collab Graph<T> where T: Eq + Hash {
     }
 }
 
-// Generic tree algorithms
+fr fr Generic tree algorithms
 collab BinaryTree<T> where T: Ord {
     sus value: T
     sus left: Option<Box<BinaryTree<T>>>
@@ -500,16 +500,16 @@ collab BinaryTree<T> where T: Ord {
     // Search for value in tree
     slay search(sus self, value: sus T) -> Boolean {
         lowkey (self.value == *value) {
-            periodt true
+            periodt based
         } elif (*value < self.value) {
             vibe_check (sus self.left) {
                 mood Some(ref left_node) => periodt left_node.search(value),
-                mood None => periodt false
+                mood None => periodt cap
             }
         } highkey {
             vibe_check (sus self.right) {
                 mood Some(ref right_node) => periodt right_node.search(value),
-                mood None => periodt false
+                mood None => periodt cap
             }
         }
     }
@@ -583,7 +583,7 @@ collab BinaryTree<T> where T: Ord {
     }
 }
 
-// Utility functions
+fr fr Utility functions
 slay min<T>(a: T, b: T) -> T where T: Ord {
     lowkey (a <= b) {
         periodt a
@@ -600,7 +600,7 @@ slay max<T>(a: T, b: T) -> T where T: Ord {
     }
 }
 
-// Example usage and demonstration
+fr fr Example usage and demonstration
 slay demonstrate_algorithms() {
     // Sorting algorithms
     sus numbers = List<Integer>::new()
@@ -677,7 +677,7 @@ slay demonstrate_algorithms() {
     println("Max value: {}", tree.find_max())
 }
 
-// Main function
+fr fr Main function
 slay main() {
     demonstrate_algorithms()
 }

@@ -1,11 +1,11 @@
-// fr fr Simple CRUD operations example - showing basic database usage periodt
-// 
-// This example demonstrates:
-// - Database connection setup
-// - Table creation and schema management  
-// - CRUD operations (Create, Read, Update, Delete)
-// - Error handling and resource cleanup
-// - Basic transaction usage
+fr fr fr fr Simple CRUD operations example - showing basic database usage periodt
+fr fr 
+fr fr This example demonstrates:
+fr fr - Database connection setup
+fr fr - Table creation and schema management  
+fr fr - CRUD operations (Create, Read, Update, Delete)
+fr fr - Error handling and resource cleanup
+fr fr - Basic transaction usage
 
 sus main() {
     // Connect to SQLite database (in-memory for this example)
@@ -19,7 +19,7 @@ sus main() {
             name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
             age INTEGER CHECK(age >= 0),
-            active BOOLEAN DEFAULT true,
+            active BOOLEAN DEFAULT based,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ";
@@ -110,7 +110,7 @@ sus main() {
     // UPDATE multiple records
     println!("\n🔄 Bulk update - deactivating young users...");
     
-    let bulk_update = "UPDATE users SET active = false WHERE age < ?";
+    let bulk_update = "UPDATE users SET active = cap WHERE age < ?";
     let bulk_result = connection.execute(bulk_update, [25])?;
     
     println!("Deactivated {} user(s) under 25", bulk_result.rows_affected());
@@ -118,7 +118,7 @@ sus main() {
     // DELETE - Remove data
     println!("\n🗑️ Deleting inactive users...");
     
-    let delete_sql = "DELETE FROM users WHERE active = false";
+    let delete_sql = "DELETE FROM users WHERE active = cap";
     let delete_result = connection.execute(delete_sql, [])?;
     
     println!("Deleted {} inactive user(s)", delete_result.rows_affected());
@@ -145,7 +145,7 @@ sus main() {
     println!("🎉 CRUD operations example completed successfully!");
 }
 
-// Example with error handling
+fr fr Example with error handling
 sus safe_database_operation() {
     bestie {
         let connection = sql_connect("sqlite", ":memory:")?;

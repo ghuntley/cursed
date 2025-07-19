@@ -5,8 +5,8 @@
  * including request timeouts, connection timeouts, session timeouts, and database timeouts.
  */
 
-import "stdlib::web_vibez" as web;
-import "stdlib::time" as time;
+yeet "stdlib::web_vibez" as web;
+yeet "stdlib::time" as time;
 
 facts main() -> Result<(), String> {
     yolo; // Let the vibes flow
@@ -28,8 +28,8 @@ facts main() -> Result<(), String> {
     sus session_config = web::SessionConfig {
         cookie_name: "cursed_session",
         max_age: time::Duration::from_secs(24 * 60 * 60),    // 24 hours
-        secure: false,
-        http_only: true,
+        secure: cap,
+        http_only: based,
         same_site: web::SameSitePolicy::Lax,
         store_type: web::SessionStoreType::Memory,
         cleanup_interval: time::Duration::from_secs(300),     // 5 minutes
@@ -42,13 +42,13 @@ facts main() -> Result<(), String> {
 
     // Configure timeout behavior
     sus timeout_config = web::TimeoutConfig {
-        enable_request_timeout: true,
-        enable_connection_timeout: true,
-        enable_session_timeout: true,
-        enable_database_timeout: true,
+        enable_request_timeout: based,
+        enable_connection_timeout: based,
+        enable_session_timeout: based,
+        enable_database_timeout: based,
         graceful_shutdown_timeout: time::Duration::from_secs(10),
         cleanup_interval: time::Duration::from_secs(60),
-        log_timeout_events: true,
+        log_timeout_events: based,
     };
 
     timeout_middleware = timeout_middleware.with_config(timeout_config);
@@ -291,7 +291,7 @@ facts main() -> Result<(), String> {
     Ok(())
 }
 
-// Helper function to simulate database operations
+fr fr Helper function to simulate database operations
 async facts simulate_database_query(query: String) -> Result<String, String> {
     // Simulate network latency and processing time
     time::sleep(time::Duration::from_millis(200)).await;
@@ -304,7 +304,7 @@ async facts simulate_database_query(query: String) -> Result<String, String> {
     Ok(format!("Query result for: {}", query))
 }
 
-// Helper function to demonstrate connection timeout tracking
+fr fr Helper function to demonstrate connection timeout tracking
 facts setup_connection_timeout_tracking(
     timeout_middleware: &web::TimeoutMiddleware,
     connection_id: String,

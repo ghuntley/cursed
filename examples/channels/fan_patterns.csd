@@ -1,7 +1,7 @@
-// Fan-In and Fan-Out Patterns Example
-// Demonstrates merging multiple inputs and distributing to multiple outputs
+fr fr Fan-In and Fan-Out Patterns Example
+fr fr Demonstrates merging multiple inputs and distributing to multiple outputs
 
-// Fan-In: Multiple inputs -> Single output
+fr fr Fan-In: Multiple inputs -> Single output
 func fanIn(input1 dm<string>, input2 dm<string>, input3 dm<string>, output dm<string>) {
     print("Fan-In: Starting to merge inputs")
     
@@ -42,7 +42,7 @@ func fanIn(input1 dm<string>, input2 dm<string>, input3 dm<string>, output dm<st
     print("Fan-In: Finished merging")
 }
 
-// Fan-Out: Single input -> Multiple outputs
+fr fr Fan-Out: Single input -> Multiple outputs
 func fanOut(input dm<string>, output1 dm<string>, output2 dm<string>, output3 dm<string>) {
     print("Fan-Out: Starting to distribute messages")
     

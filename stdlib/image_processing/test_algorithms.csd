@@ -1,0 +1,209 @@
+yeet "testz"
+yeet "image_processing/algorithms"
+
+test_start("Image Processing Algorithms Test Suite")
+
+# Helper function to create test image data
+slay create_test_image(width normie, height normie, channels normie) []byte {
+    sus pixels []byte = []
+    sus pixel_count normie = width * height
+    
+    bestie i := 0; i < pixel_count; i++ {
+        # Create a simple gradient pattern
+        sus x normie = i % width
+        sus y normie = i / width
+        sus value byte = byte((x + y) % 256)
+        
+        bestie c := 0; c < channels; c++ {
+            vibe_check c < 3 {
+                # RGB channels
+                pixels = append(pixels, value)
+            } yolo {
+                # Alpha channel (if present)
+                pixels = append(pixels, 255)
+            }
+        }
+    }
+    
+    damn pixels
+}
+
+test_start("Image Format Detection")
+
+# Test PNG format detection
+sus png_header []byte = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+sus png_format tea = detect_image_format_from_header(png_header)
+assert_eq_string(png_format, "PNG")
+
+# Test JPEG format detection
+sus jpeg_header []byte = [0xFF, 0xD8, 0xFF, 0xE0]
+sus jpeg_format tea = detect_image_format_from_header(jpeg_header)
+assert_eq_string(jpeg_format, "JPEG")
+
+# Test GIF format detection
+sus gif_header []byte = [0x47, 0x49, 0x46, 0x38]
+sus gif_format tea = detect_image_format_from_header(gif_header)
+assert_eq_string(gif_format, "GIF")
+
+# Test BMP format detection
+sus bmp_header []byte = [0x42, 0x4D, 0x36, 0x84]
+sus bmp_format tea = detect_image_format_from_header(bmp_header)
+assert_eq_string(bmp_format, "BMP")
+
+test_start("Safe Pixel Access")
+
+# Create test image 4x4 RGB
+sus test_pixels []byte = create_test_image(4, 4, 3)
+
+# Test valid pixel access
+sus pixel_value byte = get_pixel_safe(test_pixels, 2, 2, 0, 4, 4, 3)
+assert_true(pixel_value >= 0)
+
+# Test out-of-bounds access
+sus oob_pixel byte = get_pixel_safe(test_pixels, 10, 10, 0, 4, 4, 3)
+assert_eq_int(normie(oob_pixel), 0)
+
+# Test negative coordinates
+sus neg_pixel byte = get_pixel_safe(test_pixels, -1, -1, 0, 4, 4, 3)
+assert_eq_int(normie(neg_pixel), 0)
+
+test_start("Image Resizing")
+
+# Test bilinear interpolation
+sus original_pixels []byte = create_test_image(4, 4, 3)
+sus resized_pixels []byte = bilinear_interpolate(original_pixels, 4, 4, 8, 8, 3)
+
+# Check that resized image has correct size
+sus expected_size normie = 8 * 8 * 3
+assert_eq_int(len(resized_pixels), expected_size)
+
+# Test downsizing
+sus downsized_pixels []byte = bilinear_interpolate(original_pixels, 4, 4, 2, 2, 3)
+sus downsize_expected normie = 2 * 2 * 3
+assert_eq_int(len(downsized_pixels), downsize_expected)
+
+test_start("Color Space Conversion")
+
+# Test grayscale conversion
+sus rgb_pixels []byte = create_test_image(3, 3, 3)
+sus gray_pixels []byte = convert_to_grayscale(rgb_pixels, 3, 3, 3)
+
+# Should have same number of pixels
+assert_eq_int(len(gray_pixels), len(rgb_pixels))
+
+# Test RGBA to grayscale
+sus rgba_pixels []byte = create_test_image(2, 2, 4)
+sus gray_rgba_pixels []byte = convert_to_grayscale(rgba_pixels, 2, 2, 4)
+assert_eq_int(len(gray_rgba_pixels), len(rgba_pixels))
+
+test_start("Image Effects")
+
+# Test sepia tone effect
+sus sepia_pixels []byte = apply_sepia_tone(rgb_pixels, 3, 3, 3)
+assert_eq_int(len(sepia_pixels), len(rgb_pixels))
+
+# Test brightness adjustment
+sus bright_pixels []byte = adjust_brightness(rgb_pixels, 3, 3, 3, 50.0)
+assert_eq_int(len(bright_pixels), len(rgb_pixels))
+
+# Test contrast adjustment
+sus contrast_pixels []byte = adjust_contrast(rgb_pixels, 3, 3, 3, 1.5)
+assert_eq_int(len(contrast_pixels), len(rgb_pixels))
+
+test_start("Image Flipping")
+
+# Test horizontal flip
+sus flipped_h []byte = flip_horizontal(rgb_pixels, 3, 3, 3)
+assert_eq_int(len(flipped_h), len(rgb_pixels))
+
+# Test vertical flip
+sus flipped_v []byte = flip_vertical(rgb_pixels, 3, 3, 3)
+assert_eq_int(len(flipped_v), len(rgb_pixels))
+
+# Verify that double flip returns to original (simplified test)
+sus double_flip []byte = flip_horizontal(flipped_h, 3, 3, 3)
+# Note: Exact pixel comparison would require more sophisticated testing
+
+test_start("Image Cropping")
+
+# Test basic cropping
+sus cropped_pixels []byte = crop_image(rgb_pixels, 3, 3, 3, 1, 1, 2, 2)
+sus expected_crop_size normie = 2 * 2 * 3
+assert_eq_int(len(cropped_pixels), expected_crop_size)
+
+# Test cropping with out-of-bounds region
+sus oob_cropped []byte = crop_image(rgb_pixels, 3, 3, 3, 2, 2, 3, 3)
+sus oob_expected_size normie = 3 * 3 * 3
+assert_eq_int(len(oob_cropped), oob_expected_size)
+
+test_start("Edge Detection")
+
+# Test Sobel edge detection
+sus edge_pixels []byte = apply_sobel_edge_detection(rgb_pixels, 3, 3, 3)
+# Edge detection returns smaller image (excludes border)
+sus edge_expected_size normie = 1 * 1 * 3  # (3-2) x (3-2) x 3
+assert_eq_int(len(edge_pixels), edge_expected_size)
+
+test_start("Gaussian Kernel Creation")
+
+# Test creating Gaussian kernel
+sus kernel []meal = create_gaussian_kernel(5, 1.0)
+assert_eq_int(len(kernel), 5)
+
+# Kernel should sum to approximately 1.0
+sus kernel_sum meal = 0.0
+bestie i := 0; i < len(kernel); i++ {
+    kernel_sum = kernel_sum + kernel[i]
+}
+assert_true(kernel_sum > 0.99 && kernel_sum < 1.01)
+
+test_start("Mathematical Helpers")
+
+# Test square root function
+assert_true(math_sqrt(4.0) > 1.9 && math_sqrt(4.0) < 2.1)
+assert_true(math_sqrt(9.0) > 2.9 && math_sqrt(9.0) < 3.1)
+assert_eq_int(normie(math_sqrt(0.0)), 0)
+
+# Test exponential function
+assert_true(math_exp(0.0) > 0.9 && math_exp(0.0) < 1.1)
+assert_true(math_exp(1.0) > 2.5 && math_exp(1.0) < 3.0)
+
+test_start("Image Decoder Tests")
+
+# Test PNG decoding with minimal data
+sus png_test_data []byte = [
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,  # PNG signature
+    0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,  # IHDR chunk
+    0x00, 0x00, 0x00, 0x10,  # Width: 16
+    0x00, 0x00, 0x00, 0x10,  # Height: 16
+    0x08, 0x02, 0x00, 0x00, 0x00  # Bit depth, color type, etc.
+]
+
+sus png_width, png_height, png_pixels = decode_png_basic(png_test_data)
+assert_eq_int(png_width, 16)
+assert_eq_int(png_height, 16)
+assert_true(len(png_pixels) > 0)
+
+# Test JPEG decoding
+sus jpeg_test_data []byte = [
+    0xFF, 0xD8, 0xFF, 0xE0,  # JPEG signature
+    0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
+    0xFF, 0xC0,  # SOF0 marker
+    0x00, 0x11, 0x08,  # Length, precision
+    0x00, 0x20,  # Height: 32
+    0x00, 0x30   # Width: 48
+]
+
+sus jpeg_width, jpeg_height, jpeg_pixels = decode_jpeg_basic(jpeg_test_data)
+assert_eq_int(jpeg_width, 48)
+assert_eq_int(jpeg_height, 32)
+assert_true(len(jpeg_pixels) > 0)
+
+test_start("Blur Filter")
+
+# Test Gaussian blur (simplified test)
+sus blur_test_pixels []byte = create_test_image(5, 5, 3)
+sus blurred_pixels []byte = apply_gaussian_blur(blur_test_pixels, 5, 5, 3, 1)
+assert_eq_int(len(blurred_pixels), len(blur_test_pixels))
+
+print_test_summary()

@@ -1,8 +1,8 @@
-// CSV Mood - Comprehensive CSV processing demonstration
-// This example showcases all the features of the csv_mood module
+fr fr CSV Mood - Comprehensive CSV processing demonstration
+fr fr This example showcases all the features of the csv_mood module
 
-import "stdlib::csv";
-import "stdlib::io";
+yeet "stdlib::csv"
+yeet "stdlib::io"
 
 slay main() {
     vibez.spill("=== CSV Mood Demo ===\n");

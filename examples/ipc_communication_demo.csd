@@ -1,14 +1,14 @@
-/// Complete Inter-Process Communication (IPC) Demo in CURSED
-/// 
-/// This example demonstrates comprehensive IPC mechanisms including shared memory,
-/// named pipes, message queues, semaphores, and signals using CURSED's IPC system.
+fr fr/ Complete Inter-Process Communication (IPC) Demo in CURSED
+fr fr/ 
+fr fr/ This example demonstrates comprehensive IPC mechanisms including shared memory,
+fr fr/ named pipes, message queues, semaphores, and signals using CURSED's IPC system.
 
-import "stdlib::ipc";
-import "stdlib::process";
-import "stdlib::io";
-import "stdlib::error";
+yeet "stdlib::ipc"
+yeet "stdlib::process"
+yeet "stdlib::io"
+yeet "stdlib::error"
 
-// IPC configuration types
+fr fr IPC configuration types
 collab SharedMemoryConfig {
     name: string,
     size: int,
@@ -27,7 +27,7 @@ collab SemaphoreConfig {
     max_count: int
 }
 
-// Message structure for IPC
+fr fr Message structure for IPC
 collab IpcMessage {
     sender_id: int,
     message_type: int,
@@ -35,7 +35,7 @@ collab IpcMessage {
     timestamp: int
 }
 
-// Main IPC demonstration
+fr fr Main IPC demonstration
 slay main() -> Result<(), Error> {
     println("Starting CURSED IPC Communication Demo")?;
     
@@ -61,7 +61,7 @@ slay main() -> Result<(), Error> {
     periodt Ok(())
 }
 
-// Demo 1: Shared Memory for high-performance data sharing
+fr fr Demo 1: Shared Memory for high-performance data sharing
 slay demo_shared_memory_communication() -> Result<(), Error> {
     println("\n=== Demo 1: Shared Memory Communication ===")?;
     
@@ -102,7 +102,7 @@ slay demo_shared_memory_communication() -> Result<(), Error> {
     periodt Ok(())
 }
 
-// Demo 2: Named Pipes for bidirectional communication
+fr fr Demo 2: Named Pipes for bidirectional communication
 slay demo_named_pipe_communication() -> Result<(), Error> {
     println("\n=== Demo 2: Named Pipe Communication ===")?;
     
@@ -146,7 +146,7 @@ slay demo_named_pipe_communication() -> Result<(), Error> {
     periodt Ok(())
 }
 
-// Demo 3: Message Queues for structured communication
+fr fr Demo 3: Message Queues for structured communication
 slay demo_message_queue_communication() -> Result<(), Error> {
     println("\n=== Demo 3: Message Queue Communication ===")?;
     
@@ -200,7 +200,7 @@ slay demo_message_queue_communication() -> Result<(), Error> {
     periodt Ok(())
 }
 
-// Demo 4: Semaphores for resource synchronization
+fr fr Demo 4: Semaphores for resource synchronization
 slay demo_semaphore_synchronization() -> Result<(), Error> {
     println("\n=== Demo 4: Semaphore Synchronization ===")?;
     
@@ -249,7 +249,7 @@ slay demo_semaphore_synchronization() -> Result<(), Error> {
     periodt Ok(())
 }
 
-// Demo 5: Signal communication between processes
+fr fr Demo 5: Signal communication between processes
 slay demo_signal_communication() -> Result<(), Error> {
     println("\n=== Demo 5: Signal Communication ===")?;
     
@@ -287,7 +287,7 @@ slay demo_signal_communication() -> Result<(), Error> {
     periodt Ok(())
 }
 
-// Demo 6: Complete IPC workflow combining multiple mechanisms
+fr fr Demo 6: Complete IPC workflow combining multiple mechanisms
 slay demo_complete_ipc_workflow() -> Result<(), Error> {
     println("\n=== Demo 6: Complete IPC Workflow ===")?;
     
@@ -354,7 +354,7 @@ slay demo_complete_ipc_workflow() -> Result<(), Error> {
     periodt Ok(())
 }
 
-// Helper functions
+fr fr Helper functions
 slay simulate_work(ms: int) -> Result<(), Error> {
     // Simulate work by sleeping
     periodt Ok(())
@@ -386,9 +386,9 @@ slay string_from_bytes(bytes: [u8]) -> Result<string, Error> {
     periodt Ok("converted_string")
 }
 
-// IPC function declarations (implemented in LLVM)
+fr fr IPC function declarations (implemented in LLVM)
 
-// Shared Memory
+fr fr Shared Memory
 extern slay create_shared_memory(name: string, size: int) -> Result<int, Error>;
 extern slay open_shared_memory(name: string) -> Result<int, Error>;
 extern slay read_shared_memory(handle: int, buffer: [u8]) -> Result<int, Error>;
@@ -396,21 +396,21 @@ extern slay write_shared_memory(handle: int, data: [u8]) -> Result<int, Error>;
 extern slay close_shared_memory(handle: int) -> Result<int, Error>;
 extern slay remove_shared_memory(name: string) -> Result<int, Error>;
 
-// Named Pipes
+fr fr Named Pipes
 extern slay create_named_pipe(name: string) -> Result<int, Error>;
 extern slay open_pipe(name: string) -> Result<int, Error>;
 extern slay read_pipe(handle: int, buffer: [u8]) -> Result<int, Error>;
 extern slay write_pipe(handle: int, data: string) -> Result<int, Error>;
 extern slay close_pipe(handle: int) -> Result<int, Error>;
 
-// Message Queues
+fr fr Message Queues
 extern slay create_message_queue(name: string, max_messages: int) -> Result<int, Error>;
 extern slay send_message_queue(handle: int, data: [u8], priority: int) -> Result<(), Error>;
 extern slay receive_message_queue(handle: int) -> Result<[u8], Error>;
 extern slay close_message_queue(handle: int) -> Result<int, Error>;
 extern slay remove_message_queue(name: string) -> Result<int, Error>;
 
-// Semaphores
+fr fr Semaphores
 extern slay create_semaphore(name: string, initial_count: int) -> Result<int, Error>;
 extern slay acquire_semaphore(handle: int) -> Result<(), Error>;
 extern slay try_acquire_semaphore(handle: int) -> Result<bool, Error>;
@@ -418,7 +418,7 @@ extern slay release_semaphore(handle: int) -> Result<(), Error>;
 extern slay close_semaphore(handle: int) -> Result<int, Error>;
 extern slay remove_semaphore(name: string) -> Result<int, Error>;
 
-// Signals
+fr fr Signals
 extern slay setup_signal_handler() -> Result<int, Error>;
 extern slay register_signal_handler(handler: int, signal: int) -> Result<(), Error>;
 extern slay send_signal(pid: int, signal: int) -> Result<(), Error>;

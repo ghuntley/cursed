@@ -1,6 +1,6 @@
 vibe main;
 
-// Define interfaces for our diamond inheritance pattern
+fr fr Define interfaces for our diamond inheritance pattern
 collab Movable {
     slay move(x lit, y lit);
     slay position() tea[]lit;
@@ -11,31 +11,31 @@ collab Drawable {
     slay color() tea;
 }
 
-// Interface inheriting from both (creates diamond potential)
+fr fr Interface inheriting from both (creates diamond potential)
 collab AnimatedObject {
     slay animate();
 }
 
-// Common base interface that others will inherit from
+fr fr Common base interface that others will inherit from
 collab GameObject {
     slay id() lit;
     slay name() tea;
 }
 
-// Drawable inherits from GameObject
+fr fr Drawable inherits from GameObject
 slay (g GameObject) color() tea {
     return "default";
 }
 
-// Movable inherits from GameObject
+fr fr Movable inherits from GameObject
 slay (g GameObject) position() tea[]lit {
     return [0, 0];
 }
 
-// AnimatedObject inherits from both Drawable and Movable
-// This creates a diamond inheritance pattern through GameObject
+fr fr AnimatedObject inherits from both Drawable and Movable
+fr fr This creates a diamond inheritance pattern through GameObject
 
-// Player concrete type - implements the inheritance diamond
+fr fr Player concrete type - implements the inheritance diamond
 squad Player {
     player_id lit,
     player_name tea,
@@ -45,7 +45,7 @@ squad Player {
     animation_frame lit
 }
 
-// Implement GameObject for Player
+fr fr Implement GameObject for Player
 slay (p Player) id() lit {
     return p.player_id;
 }
@@ -54,7 +54,7 @@ slay (p Player) name() tea {
     return p.player_name;
 }
 
-// Implement Movable for Player
+fr fr Implement Movable for Player
 slay (p Player) move(x lit, y lit) {
     p.pos_x = p.pos_x + x;
     p.pos_y = p.pos_y + y;
@@ -64,7 +64,7 @@ slay (p Player) position() tea[]lit {
     return [p.pos_x, p.pos_y];
 }
 
-// Implement Drawable for Player
+fr fr Implement Drawable for Player
 slay (p Player) draw() {
     vibez.spill("Drawing player " + p.player_name + " at position [" + p.pos_x + ", " + p.pos_y + "] with color " + p.player_color);
 }
@@ -73,20 +73,20 @@ slay (p Player) color() tea {
     return p.player_color;
 }
 
-// Implement AnimatedObject for Player
+fr fr Implement AnimatedObject for Player
 slay (p Player) animate() {
     p.animation_frame = (p.animation_frame + 1) % 60;
     vibez.spill("Player " + p.player_name + " animated at frame " + p.animation_frame);
 }
 
-// Result type for error handling (similar to previous example)
+fr fr Result type for error handling (similar to previous example)
 squad Result<T, E> {
     value T,
     err E,
     isOk lit
 }
 
-// Helper to create a successful result
+fr fr Helper to create a successful result
 slay ok<T, E>(value T) Result<T, E> {
     return Result<T, E>{
         value: value,
@@ -95,7 +95,7 @@ slay ok<T, E>(value T) Result<T, E> {
     };
 }
 
-// Helper to create an error result
+fr fr Helper to create an error result
 slay fail<T, E>(err E) Result<T, E> {
     return Result<T, E>{
         value: nofr as T,
@@ -117,7 +117,7 @@ slay (e TypeAssertionError) error() tea {
     return "Type assertion failed: expected " + e.expected + " but got " + e.actual;
 }
 
-// Function that navigates different paths in the diamond
+fr fr Function that navigates different paths in the diamond
 slay testDiamondPaths(obj any) Result<tea, Error> {
     // First try to assert as GameObject (top of diamond)
     sus gameObj = obj.(GameObject)?;

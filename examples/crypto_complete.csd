@@ -1,5 +1,5 @@
-// Comprehensive CURSED Crypto Package Example
-// This example demonstrates all major cryptographic protocols and utilities
+fr fr Comprehensive CURSED Crypto Package Example
+fr fr This example demonstrates all major cryptographic protocols and utilities
 
 yolo main() {
     facts title = "CURSED Crypto Package - Complete Demo"
@@ -24,7 +24,7 @@ yolo main() {
     print("\n🎉 All crypto demonstrations completed successfully!")
 }
 
-// JWT Authentication Example
+fr fr JWT Authentication Example
 yolo demonstrate_jwt_authentication(platform: &CryptoPlatform) {
     print("\n📋 JWT Authentication Demo")
     print("-" * 30)
@@ -70,7 +70,7 @@ yolo demonstrate_jwt_authentication(platform: &CryptoPlatform) {
     }
 }
 
-// HMAC Authentication Example
+fr fr HMAC Authentication Example
 yolo demonstrate_hmac_authentication(platform: &CryptoPlatform) {
     print("\n🔐 HMAC Authentication Demo")
     print("-" * 30)
@@ -117,7 +117,7 @@ yolo demonstrate_hmac_authentication(platform: &CryptoPlatform) {
     }
 }
 
-// TOTP 2FA Example
+fr fr TOTP 2FA Example
 yolo demonstrate_totp_2fa(platform: &CryptoPlatform) {
     print("\n📱 TOTP 2FA Demo")
     print("-" * 30)
@@ -161,7 +161,7 @@ yolo demonstrate_totp_2fa(platform: &CryptoPlatform) {
     }
 }
 
-// TLS Handshake Simulation
+fr fr TLS Handshake Simulation
 yolo demonstrate_tls_handshake() {
     print("\n🤝 TLS Handshake Simulation")
     print("-" * 30)
@@ -201,7 +201,7 @@ yolo demonstrate_tls_handshake() {
     print(f"📊 Handshake State: Client Random ✓, Server Random ✓, Session ID ✓")
 }
 
-// Random Generation Demo
+fr fr Random Generation Demo
 yolo demonstrate_random_generation(platform: &CryptoPlatform) {
     print("\n🎲 Secure Random Generation Demo")
     print("-" * 30)
@@ -247,7 +247,7 @@ yolo demonstrate_random_generation(platform: &CryptoPlatform) {
     print(f"   Has obvious patterns: {quality.has_patterns}")
 }
 
-// Encoding Utilities Demo
+fr fr Encoding Utilities Demo
 yolo demonstrate_encoding_utilities() {
     print("\n📝 Encoding Utilities Demo")
     print("-" * 30)
@@ -269,7 +269,7 @@ yolo demonstrate_encoding_utilities() {
     // Hex encodings
     sus hex_lower = HexEncoder::encode_lower(data_bytes)
     sus hex_upper = HexEncoder::encode_upper(data_bytes)
-    sus hex_formatted = HexEncoder::encode_formatted(data_bytes, ":", true)
+    sus hex_formatted = HexEncoder::encode_formatted(data_bytes, ":", based)
     
     print("🔢 Hex encodings:")
     print(f"   Lowercase: {hex_lower}")
@@ -301,7 +301,7 @@ yolo demonstrate_encoding_utilities() {
     print(f"   URL: {String::from_utf8(url_decoded) == test_data}")
 }
 
-// Secure Communication Example
+fr fr Secure Communication Example
 yolo demonstrate_secure_communication_example() {
     print("\n💬 Secure Communication Example")
     print("-" * 30)
@@ -405,7 +405,7 @@ yolo demonstrate_secure_communication_example() {
     print("   ✅ Structured message format (JSON)")
 }
 
-// Helper function for crypto statistics
+fr fr Helper function for crypto statistics
 yolo show_crypto_statistics() {
     sus stats = CryptoStatistics::new()
     
@@ -427,7 +427,7 @@ yolo show_crypto_statistics() {
     print(f"   TOTP success rate: {stats.totp_success_rate() * 100:.1f}%")
 }
 
-// Example of production crypto configuration
+fr fr Example of production crypto configuration
 yolo show_production_config() {
     print("\n⚙️  Production Crypto Configuration:")
     

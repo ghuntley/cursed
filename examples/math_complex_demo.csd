@@ -1,12 +1,12 @@
-/// Complex Number Mathematics Demo for CURSED
-/// 
-/// This demo showcases the comprehensive complex number support added to 
-/// the CURSED math library, demonstrating all major complex mathematical
-/// operations including basic arithmetic, transcendental functions,
-/// trigonometric and hyperbolic functions, and advanced operations
-/// like matrix operations and polynomial root finding.
+fr fr/ Complex Number Mathematics Demo for CURSED
+fr fr/ 
+fr fr/ This demo showcases the comprehensive complex number support added to 
+fr fr/ the CURSED math library, demonstrating all major complex mathematical
+fr fr/ operations including basic arithmetic, transcendental functions,
+fr fr/ trigonometric and hyperbolic functions, and advanced operations
+fr fr/ like matrix operations and polynomial root finding.
 
-import "stdlib::math"
+yeet "stdlib::math"
 
 slay main() {
     // ===== COMPLEX NUMBER CREATION AND BASIC OPERATIONS =====

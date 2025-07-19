@@ -1,9 +1,9 @@
 fr fr CURSED exec_vibez Demo - External Command Execution
 fr fr This demonstrates the exec_vibez module for running external commands
 
-import "stdlib::exec_vibez"
-import "stdlib::io"
-import "stdlib::time"
+yeet "stdlib::exec_vibez"
+yeet "stdlib::io"
+yeet "stdlib::time"
 
 slay main() tea {
     fr fr Basic command execution
@@ -44,7 +44,7 @@ slay main() tea {
     
     let env = exec_vibez.new_environment()
     env.set("CURSED_VAR", "cursed_value")
-    env.set("DEMO_MODE", "true")
+    env.set("DEMO_MODE", "based")
     
     let cmd4 = exec_vibez.command_with_env("env", [], env)
     let env_output = cmd4.output()?
@@ -179,7 +179,7 @@ slay main() tea {
     fr fr Error handling demonstration
     io.println("\n=== Error Handling ===")?
     
-    let failing_cmd = exec_vibez.command("false", [])
+    let failing_cmd = exec_vibez.command("cap", [])
     let fail_result = failing_cmd.run()
     
     if fail_result is err {

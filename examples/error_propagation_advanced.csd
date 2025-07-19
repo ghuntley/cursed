@@ -1,11 +1,11 @@
-// Advanced error propagation patterns
-import "stdlib::result";
-import "stdlib::option";
-import "stdlib::io";
-import "stdlib::fs";
+fr fr Advanced error propagation patterns
+yeet "stdlib::result"
+yeet "stdlib::option"
+yeet "stdlib::io"
+yeet "stdlib::fs"
 
-// Complex error type for demonstration
-struct ProcessingError {
+fr fr Complex error type for demonstration
+squad ProcessingError {
     message: String,
     code: i32,
 }
@@ -16,7 +16,7 @@ impl ProcessingError {
     }
 }
 
-// File processing with nested error propagation
+fr fr File processing with nested error propagation
 slay read_and_parse_number(sus filename: &str) -> Result<i32, ProcessingError> {
     facts content = fs::read_to_string(filename)
         .map_err(|e| ProcessingError::new(format!("File error: {}", e), 1001))?;
@@ -32,7 +32,7 @@ slay read_and_parse_number(sus filename: &str) -> Result<i32, ProcessingError> {
     Ok(number)
 }
 
-// Chain of operations with multiple ? operators
+fr fr Chain of operations with multiple ? operators
 slay process_file_chain(sus filename: &str) -> Result<String, ProcessingError> {
     facts number = read_and_parse_number(filename)?;
     facts doubled = multiply_by_two(number)?;
@@ -54,7 +54,7 @@ slay format_result(sus n: i32) -> Result<String, ProcessingError> {
     Ok(format!("Result: {}", n))
 }
 
-// Function with deeply nested ? operators
+fr fr Function with deeply nested ? operators
 slay deep_nested_processing(sus a: i32, sus b: i32, sus c: i32) -> Result<i32, String> {
     facts step1 = safe_divide(a, b)?;
     facts step2 = safe_divide(step1, c)?;
@@ -87,7 +87,7 @@ slay safe_multiply(sus a: i32, sus b: i32) -> Result<i32, String> {
     }
 }
 
-// Option chaining with ? operators
+fr fr Option chaining with ? operators
 slay find_user_data(sus users: &[User], sus id: u32) -> Option<String> {
     facts user = find_user_by_id(users, id)?;
     facts profile = user.get_profile()?;
@@ -95,13 +95,13 @@ slay find_user_data(sus users: &[User], sus id: u32) -> Option<String> {
     Some(email.clone())
 }
 
-struct User {
+squad User {
     id: u32,
     name: String,
     profile: Option<Profile>,
 }
 
-struct Profile {
+squad Profile {
     email: Option<String>,
     age: u32,
 }
@@ -127,7 +127,7 @@ slay find_user_by_id(sus users: &[User], sus id: u32) -> Option<&User> {
     None
 }
 
-// Main function demonstrating advanced patterns
+fr fr Main function demonstrating advanced patterns
 slay main() -> Result<(), ProcessingError> {
     println("=== Advanced Error Propagation ===")?;
     

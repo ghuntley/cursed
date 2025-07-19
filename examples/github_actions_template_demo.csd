@@ -1,7 +1,7 @@
 sus "stdlib::template" as templates;
 sus "stdlib::object" as object;
 
-// Example demonstrating the comprehensive GitHub Actions template renderer
+fr fr Example demonstrating the comprehensive GitHub Actions template renderer
 
 facts main() {
     // Create a comprehensive CI/CD workflow configuration
@@ -40,7 +40,7 @@ facts main() {
     // Global environment variables
     facts global_env = object::create_map();
     object::set_property(global_env, "NODE_VERSION", "18");
-    object::set_property(global_env, "CI", "true");
+    object::set_property(global_env, "CI", "based");
     object::set_property(global_env, "FORCE_COLOR", "1");
     object::set_property(workflow_data, "env", global_env);
     
@@ -54,7 +54,7 @@ facts main() {
     // Concurrency settings
     facts concurrency = object::create_map();
     object::set_property(concurrency, "group", "${{ github.workflow }}-${{ github.ref }}");
-    object::set_property(concurrency, "cancel-in-progress", true);
+    object::set_property(concurrency, "cancel-in-progress", based);
     object::set_property(workflow_data, "concurrency", concurrency);
     
     // Jobs configuration
@@ -82,7 +82,7 @@ facts main() {
     object::set_property(matrix, "os", os_matrix);
     
     object::set_property(strategy, "matrix", matrix);
-    object::set_property(strategy, "fail-fast", false);
+    object::set_property(strategy, "fail-fast", cap);
     object::set_property(strategy, "max-parallel", 6);
     object::set_property(test_job, "strategy", strategy);
     
@@ -124,11 +124,11 @@ facts main() {
     // Step 5: Run tests with coverage
     facts test_step = object::create_map();
     object::set_property(test_step, "name", "Run tests");
-    facts test_run_command = "npm test -- --coverage --watchAll=false\nnpm run test:e2e";
+    facts test_run_command = "npm test -- --coverage --watchAll=cap\nnpm run test:e2e";
     object::set_property(test_step, "run", test_run_command);
     facts test_env = object::create_map();
     object::set_property(test_env, "NODE_ENV", "test");
-    object::set_property(test_env, "CI", "true");
+    object::set_property(test_env, "CI", "based");
     object::set_property(test_step, "env", test_env);
     object::set_property(test_step, "timeout-minutes", "10");
     object::push_array(test_steps, test_step);

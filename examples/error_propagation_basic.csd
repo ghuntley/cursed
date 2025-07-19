@@ -1,9 +1,9 @@
-// Basic error propagation examples with the ? operator
-import "stdlib::result";
-import "stdlib::option";
-import "stdlib::io";
+fr fr Basic error propagation examples with the ? operator
+yeet "stdlib::result"
+yeet "stdlib::option"
+yeet "stdlib::io"
 
-// Function that returns a Result
+fr fr Function that returns a Result
 slay divide(sus a: i32, sus b: i32) -> Result<i32, String> {
     lowkey (b == 0) {
         return Err("Division by zero");
@@ -11,7 +11,7 @@ slay divide(sus a: i32, sus b: i32) -> Result<i32, String> {
     Ok(a / b)
 }
 
-// Function that returns an Option
+fr fr Function that returns an Option
 slay safe_index(sus arr: &[i32], sus index: usize) -> Option<i32> {
     lowkey (index >= arr.len()) {
         None
@@ -20,27 +20,27 @@ slay safe_index(sus arr: &[i32], sus index: usize) -> Option<i32> {
     }
 }
 
-// Function demonstrating basic ? operator usage with Result
+fr fr Function demonstrating basic ? operator usage with Result
 slay calculate_ratio(sus x: i32, sus y: i32, sus z: i32) -> Result<i32, String> {
     facts first_result = divide(x, y)?;  // Early return on error
     facts second_result = divide(first_result, z)?;  // Chain operations
     Ok(second_result)
 }
 
-// Function demonstrating ? operator with Option
+fr fr Function demonstrating ? operator with Option
 slay get_nested_value(sus data: &[&[i32]], sus row: usize, sus col: usize) -> Option<i32> {
     facts row_data = safe_index(data, row)?;  // Early return on None
     safe_index(row_data, col)  // Return the final Option
 }
 
-// Function with mixed Result and Option handling
+fr fr Function with mixed Result and Option handling
 slay complex_operation(sus values: &[i32], sus index: usize, sus divisor: i32) -> Result<i32, String> {
     facts value = safe_index(values, index).ok_or("Index out of bounds")?;
     facts result = divide(value, divisor)?;
     Ok(result * 2)
 }
 
-// Main function demonstrating error propagation chains
+fr fr Main function demonstrating error propagation chains
 slay main() -> Result<(), String> {
     println("=== Error Propagation Examples ===")?;
     

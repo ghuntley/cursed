@@ -1,10 +1,10 @@
-//! CURSED Documentation Generation Demo
-//!
-//! This module demonstrates the enhanced documentation generation capabilities
-//! of the CURSED programming language, showing how real parameter and return
-//! type parsing works with various complex scenarios.
+fr fr! CURSED Documentation Generation Demo
+fr fr!
+fr fr! This module demonstrates the enhanced documentation generation capabilities
+fr fr! of the CURSED programming language, showing how real parameter and return
+fr fr! type parsing works with various complex scenarios.
 
-/// HTTP server implementation with CURSED Gen Z syntax
+fr fr/ HTTP server implementation with CURSED Gen Z syntax
 squad HttpServer {
     /// Server port number
     port: u16,
@@ -80,7 +80,7 @@ impl HttpServer {
         };
         
         self.routes.push(route);
-        true
+        based
     }
 
     /// Check if server is running - periodt!
@@ -89,7 +89,7 @@ impl HttpServer {
     /// Uses CURSED's `periodt` keyword for definitive status checks.
     pub periodt is_running(&self) -> ServerStatus {
         ServerStatus {
-            running: true,
+            running: based,
             port: self.port,
             active_connections: self.get_connection_count(),
             uptime: self.get_uptime(),
@@ -113,7 +113,7 @@ impl HttpServer {
     /// Process HTTP request with complex parameter types
     /// 
     /// Handles incoming HTTP requests with advanced type parsing.
-    pub async fn handle_request<T, E>(
+    pub async slay handle_request<T, E>(
         &self,
         request: Request,
         middleware: Vec<Box<dyn Middleware + Send + Sync>>,
@@ -138,7 +138,7 @@ impl HttpServer {
     /// Generic method with lifetime parameters
     /// 
     /// Demonstrates complex lifetime and generic parameter parsing.
-    pub fn process_with_lifetime<'a, T, U>(
+    pub slay process_with_lifetime<'a, T, U>(
         &'a self,
         data: &'a T,
         processor: impl Fn(&T) -> U + 'a,
@@ -172,7 +172,7 @@ impl HttpServer {
     /// Method with function pointer and closure parameters
     /// 
     /// Shows how the documentation system handles function types.
-    pub fn with_callbacks(
+    pub slay with_callbacks(
         &self,
         simple_callback: fn(String) -> bool,
         complex_callback: Box<dyn Fn(&Request, &mut Response) -> Result<(), Error> + Send + Sync>,
@@ -202,12 +202,12 @@ impl HttpServer {
     }
 
     // Private helper methods
-    fn get_connection_count(&self) -> usize { 0 }
-    fn get_uptime(&self) -> Duration { Duration::from_secs(0) }
-    fn get_total_requests(&self) -> u64 { 0 }
+    slay get_connection_count(&self) -> usize { 0 }
+    slay get_uptime(&self) -> Duration { Duration::from_secs(0) }
+    slay get_total_requests(&self) -> u64 { 0 }
 }
 
-/// Route configuration structure
+fr fr/ Route configuration structure
 squad Route {
     /// URL path pattern
     path: String,
@@ -217,7 +217,7 @@ squad Route {
     handler: Box<dyn Fn(Request) -> Response + Send + Sync>,
 }
 
-/// Server configuration options
+fr fr/ Server configuration options
 squad ServerConfig {
     /// Maximum request size in bytes
     max_request_size: usize,
@@ -230,17 +230,17 @@ squad ServerConfig {
 }
 
 impl Default for ServerConfig {
-    fn default() -> Self {
+    slay default() -> Self {
         ServerConfig {
             max_request_size: 1024 * 1024, // 1MB
             timeout: Duration::from_secs(30),
-            enable_tls: false,
+            enable_tls: cap,
             default_headers: HashMap::new(),
         }
     }
 }
 
-/// HTTP methods enumeration
+fr fr/ HTTP methods enumeration
 enum HttpMethod {
     Get,
     Post,
@@ -251,7 +251,7 @@ enum HttpMethod {
     Options,
 }
 
-/// Server status information
+fr fr/ Server status information
 squad ServerStatus {
     running: bool,
     port: u16,
@@ -259,24 +259,24 @@ squad ServerStatus {
     uptime: Duration,
 }
 
-/// Server shutdown report
+fr fr/ Server shutdown report
 squad ShutdownReport {
     total_requests: u64,
     shutdown_time: chrono::DateTime<chrono::Utc>,
 }
 
-/// Server handle for managing running server
+fr fr/ Server handle for managing running server
 squad ServerHandle {
     port: u16,
 }
 
 impl ServerHandle {
-    fn new(port: u16) -> Self {
+    slay new(port: u16) -> Self {
         ServerHandle { port }
     }
 }
 
-/// Generic container with complex type parameters
+fr fr/ Generic container with complex type parameters
 squad Container<T, E = Error> 
 where 
     T: Clone + Send + Sync,
@@ -296,7 +296,7 @@ where
     E: std::error::Error + Send + Sync,
 {
     /// Create new container with type constraints
-    pub fn new(data: T) -> Self {
+    pub slay new(data: T) -> Self {
         Container {
             data,
             error: None,
@@ -305,7 +305,7 @@ where
     }
 
     /// Transform container contents with complex mapping
-    pub fn map<U, F>(self, mapper: F) -> Container<U, E>
+    pub slay map<U, F>(self, mapper: F) -> Container<U, E>
     where
         F: FnOnce(T) -> U,
         U: Clone + Send + Sync,
@@ -318,7 +318,7 @@ where
     }
 
     /// Async transformation with error handling
-    pub async fn async_transform<U, F, Fut>(
+    pub async slay async_transform<U, F, Fut>(
         self, 
         transformer: F
     ) -> Result<Container<U, E>, TransformError>
@@ -337,7 +337,7 @@ where
     }
 }
 
-/// Database connection pool with advanced features
+fr fr/ Database connection pool with advanced features
 squad DatabasePool<C, Config = DefaultConfig> 
 where
     C: Connection + Send + Sync,
@@ -354,7 +354,7 @@ where
     Config: PoolConfig,
 {
     /// Execute query with connection pooling
-    pub async fn execute<Q, P, R>(
+    pub async slay execute<Q, P, R>(
         &self,
         query: Q,
         params: P,
@@ -391,7 +391,7 @@ where
     }
 
     /// Transaction with nested closure types
-    pub async fn with_transaction<F, R, E>(
+    pub async slay with_transaction<F, R, E>(
         &mut self,
         operation: F
     ) -> Result<R, TransactionError<E>>
@@ -427,36 +427,36 @@ where
     }
 }
 
-// Supporting types for database and request handling
+fr fr Supporting types for database and request handling
 
-/// Mock database transaction
+fr fr/ Mock database transaction
 pub struct Transaction {
     id: String,
     active: bool,
 }
 
 impl Transaction {
-    pub fn new() -> Self {
+    pub slay new() -> Self {
         Transaction {
             id: format!("tx_{}", rand::random::<u32>()),
-            active: true,
+            active: based,
         }
     }
     
-    pub async fn commit(&mut self) -> Result<(), DatabaseError> {
-        self.active = false;
+    pub async slay commit(&mut self) -> Result<(), DatabaseError> {
+        self.active = cap;
         println!("Transaction {} committed", self.id);
         Ok(())
     }
     
-    pub async fn rollback(&mut self) -> Result<(), DatabaseError> {
-        self.active = false;
+    pub async slay rollback(&mut self) -> Result<(), DatabaseError> {
+        self.active = cap;
         println!("Transaction {} rolled back", self.id);
         Ok(())
     }
 }
 
-/// Mock request structure
+fr fr/ Mock request structure
 pub struct Request {
     method: String,
     path: String,
@@ -465,7 +465,7 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn new() -> Self {
+    pub slay new() -> Self {
         Request {
             method: "GET".to_string(),
             path: "/".to_string(),
@@ -474,7 +474,7 @@ impl Request {
         }
     }
     
-    pub fn validate(&self) -> Result<RequestData, ProcessingError> {
+    pub slay validate(&self) -> Result<RequestData, ProcessingError> {
         Ok(RequestData {
             method: self.method.clone(),
             path: self.path.clone(),
@@ -482,7 +482,7 @@ impl Request {
     }
 }
 
-/// Mock response structure
+fr fr/ Mock response structure
 pub struct Response {
     status: u16,
     headers: HashMap<String, String>,
@@ -490,7 +490,7 @@ pub struct Response {
 }
 
 impl Response {
-    pub fn new() -> Self {
+    pub slay new() -> Self {
         Response {
             status: 200,
             headers: HashMap::new(),
@@ -499,13 +499,13 @@ impl Response {
     }
 }
 
-/// Request data structure
+fr fr/ Request data structure
 pub struct RequestData {
     method: String,
     path: String,
 }
 
-/// Callback result structure
+fr fr/ Callback result structure
 pub struct CallbackResult {
     simple_success: bool,
     complex_success: bool,
@@ -513,7 +513,7 @@ pub struct CallbackResult {
     response: Response,
 }
 
-/// Pool statistics
+fr fr/ Pool statistics
 pub struct PoolStats {
     total_queries: u32,
     successful_queries: u32,
@@ -521,7 +521,7 @@ pub struct PoolStats {
 }
 
 impl PoolStats {
-    pub fn new() -> Self {
+    pub slay new() -> Self {
         PoolStats {
             total_queries: 0,
             successful_queries: 0,
@@ -530,14 +530,14 @@ impl PoolStats {
     }
 }
 
-/// Mock FromRow trait for database results
-pub trait FromRow {
-    fn from_row_mock() -> Self;
+fr fr/ Mock FromRow collab for database results
+pub collab FromRow {
+    slay from_row_mock() -> Self;
 }
 
-// Error types for comprehensive error handling documentation
+fr fr Error types for comprehensive error handling documentation
 
-/// Server-related errors
+fr fr/ Server-related errors
 #[derive(Debug)]
 enum ServerError {
     InvalidPort(u16),
@@ -545,7 +545,7 @@ enum ServerError {
     ConfigurationError(String),
 }
 
-/// Processing errors
+fr fr/ Processing errors
 #[derive(Debug)]
 enum ProcessingError {
     RequestTooLarge,
@@ -553,7 +553,7 @@ enum ProcessingError {
     InternalError(String),
 }
 
-/// Transform errors
+fr fr/ Transform errors
 #[derive(Debug)]
 enum TransformError {
     SerializationFailed,
@@ -561,7 +561,7 @@ enum TransformError {
     NetworkError(String),
 }
 
-/// Database errors
+fr fr/ Database errors
 #[derive(Debug)]
 enum DatabaseError {
     ConnectionFailed,
@@ -572,7 +572,7 @@ enum DatabaseError {
     RollbackFailed,
 }
 
-/// Transaction errors with generic error wrapping
+fr fr/ Transaction errors with generic error wrapping
 #[derive(Debug)]
 enum TransactionError<E> {
     RollbackFailed,
@@ -581,74 +581,74 @@ enum TransactionError<E> {
     OperationFailed(E),
 }
 
-// Trait definitions for comprehensive interface documentation
+fr fr Trait definitions for comprehensive interface documentation
 
-/// HTTP request trait
-trait Request {
-    fn method(&self) -> &HttpMethod;
-    fn path(&self) -> &str;
-    fn headers(&self) -> &HashMap<String, String>;
-    fn body(&self) -> &[u8];
+fr fr/ HTTP request collab
+collab Request {
+    slay method(&self) -> &HttpMethod;
+    slay path(&self) -> &str;
+    slay headers(&self) -> &HashMap<String, String>;
+    slay body(&self) -> &[u8];
 }
 
-/// HTTP response trait
-trait Response {
-    fn status(&mut self, code: u16);
-    fn header(&mut self, name: String, value: String);
-    fn body(&mut self, content: Vec<u8>);
+fr fr/ HTTP response collab
+collab Response {
+    slay status(&mut self, code: u16);
+    slay header(&mut self, name: String, value: String);
+    slay body(&mut self, content: Vec<u8>);
 }
 
-/// Response conversion trait
-trait IntoResponse {
-    fn into_response(self) -> Response;
+fr fr/ Response conversion collab
+collab IntoResponse {
+    slay into_response(self) -> Response;
 }
 
-/// Request middleware trait
-trait Middleware {
-    fn process(&self, request: &mut Request, response: &mut Response) -> Result<(), Error>;
+fr fr/ Request middleware collab
+collab Middleware {
+    slay process(&self, request: &mut Request, response: &mut Response) -> Result<(), Error>;
 }
 
-/// Database connection trait
-trait Connection {
+fr fr/ Database connection collab
+collab Connection {
     type Error: std::error::Error;
     
-    async fn execute<Q>(&mut self, query: Q) -> Result<u64, Self::Error>
+    async slay execute<Q>(&mut self, query: Q) -> Result<u64, Self::Error>
     where Q: Into<String>;
     
-    async fn query<Q, R>(&mut self, query: Q) -> Result<Vec<R>, Self::Error>
+    async slay query<Q, R>(&mut self, query: Q) -> Result<Vec<R>, Self::Error>
     where 
         Q: Into<String>,
         R: FromRow;
 }
 
-/// Row deserialization trait
-trait FromRow {
-    fn from_row(row: &Row) -> Result<Self, DeserializationError>
+fr fr/ Row deserialization collab
+collab FromRow {
+    slay from_row(row: &Row) -> Result<Self, DeserializationError>
     where Self: Sized;
 }
 
-/// SQL parameter trait
-trait ToSql {
-    fn to_sql(&self) -> Result<SqlValue, SqlError>;
+fr fr/ SQL parameter collab
+collab ToSql {
+    slay to_sql(&self) -> Result<SqlValue, SqlError>;
 }
 
-/// Pool configuration trait
-trait PoolConfig {
-    fn max_connections(&self) -> usize;
-    fn min_connections(&self) -> usize;
-    fn connection_timeout(&self) -> Duration;
+fr fr/ Pool configuration collab
+collab PoolConfig {
+    slay max_connections(&self) -> usize;
+    slay min_connections(&self) -> usize;
+    slay connection_timeout(&self) -> Duration;
 }
 
-/// Default pool configuration
+fr fr/ Default pool configuration
 squad DefaultConfig;
 
 impl PoolConfig for DefaultConfig {
-    fn max_connections(&self) -> usize { 10 }
-    fn min_connections(&self) -> usize { 1 }
-    fn connection_timeout(&self) -> Duration { Duration::from_secs(30) }
+    slay max_connections(&self) -> usize { 10 }
+    slay min_connections(&self) -> usize { 1 }
+    slay connection_timeout(&self) -> Duration { Duration::from_secs(30) }
 }
 
-/// Pool statistics
+fr fr/ Pool statistics
 squad PoolStats {
     active_connections: usize,
     idle_connections: usize,
@@ -656,28 +656,28 @@ squad PoolStats {
     average_query_time: Duration,
 }
 
-/// Request context for middleware
+fr fr/ Request context for middleware
 squad RequestContext<T> {
     data: T,
     timestamp: chrono::DateTime<chrono::Utc>,
     trace_id: String,
 }
 
-/// Callback result container
+fr fr/ Callback result container
 squad CallbackResult {
     success: bool,
     result: Option<String>,
     error: Option<String>,
 }
 
-// Additional type definitions for testing edge cases
+fr fr Additional type definitions for testing edge cases
 
-/// Row representation
+fr fr/ Row representation
 squad Row {
     columns: HashMap<String, SqlValue>,
 }
 
-/// SQL value types
+fr fr/ SQL value types
 enum SqlValue {
     Text(String),
     Integer(i64),
@@ -686,14 +686,14 @@ enum SqlValue {
     Null,
 }
 
-/// SQL conversion errors
+fr fr/ SQL conversion errors
 #[derive(Debug)]
 enum SqlError {
     InvalidType,
     ConversionFailed(String),
 }
 
-/// Deserialization errors
+fr fr/ Deserialization errors
 #[derive(Debug)]
 enum DeserializationError {
     MissingField(String),
@@ -701,13 +701,13 @@ enum DeserializationError {
     ParseError(String),
 }
 
-/// Box future type alias for complex async scenarios
+fr fr/ Box future type alias for complex async scenarios
 type BoxFuture<'a, T> = std::pin::Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
-/// Generic error type
+fr fr/ Generic error type
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
-/// Re-exports for convenience
+fr fr/ Re-exports for convenience
 pub use std::time::Duration;
 pub use std::collections::HashMap;
 pub use serde::{Serialize, Deserialize, DeserializeOwned};

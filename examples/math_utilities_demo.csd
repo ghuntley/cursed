@@ -1,9 +1,9 @@
-// Mathematical Utilities Demo for CURSED Programming Language
-// Demonstrates comprehensive mathematical functions including number theory,
-// combinatorics, special functions, numerical methods, sequences, and modular arithmetic
+fr fr Mathematical Utilities Demo for CURSED Programming Language
+fr fr Demonstrates comprehensive mathematical functions including number theory,
+fr fr combinatorics, special functions, numerical methods, sequences, and modular arithmetic
 
-import "stdlib::math";
-import "stdlib::io";
+yeet "stdlib::math"
+yeet "stdlib::io"
 
 fun demonstrate_number_theory() {
     println("=== Number Theory Functions ===");

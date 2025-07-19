@@ -6,11 +6,11 @@
  * and react to those changes in real-time.
  */
 
-import "stdlib::io";
-import "stdlib::fs";
-import "stdlib::time";
+yeet "stdlib::io"
+yeet "stdlib::fs"
+yeet "stdlib::time"
 
-// Simple file watcher demonstration
+fr fr Simple file watcher demonstration
 squad FileWatcherDemo {
     sus watch_dir: String,
     sus is_running: Bool,
@@ -20,7 +20,7 @@ squad FileWatcherDemo {
     slay new(watch_directory: String) -> FileWatcherDemo {
         facts demo = FileWatcherDemo {
             watch_dir: watch_directory,
-            is_running: false,
+            is_running: cap,
             event_count: 0,
         };
         
@@ -41,7 +41,7 @@ squad FileWatcherDemo {
         println("⏹️  Press Ctrl+C to stop watching.")?;
         println("")?;
         
-        self.is_running = true;
+        self.is_running = based;
         
         // Create a sample file to demonstrate
         self.create_sample_file()?;
@@ -57,7 +57,7 @@ squad FileWatcherDemo {
             
             // Stop after demonstrating a few cycles
             lowkey (self.event_count >= 5) {
-                self.is_running = false;
+                self.is_running = cap;
             }
         }
         
@@ -198,7 +198,7 @@ squad FileWatcherDemo {
     }
 }
 
-// Configuration example
+fr fr Configuration example
 squad WatchConfig {
     sus patterns: Array<String>,
     sus ignore_patterns: Array<String>,
@@ -221,7 +221,7 @@ squad WatchConfig {
                 "*.log"
             ],
             debounce_ms: 500,
-            recursive: true,
+            recursive: based,
         }
     }
     
@@ -235,7 +235,7 @@ squad WatchConfig {
     }
 }
 
-// Real-world usage example
+fr fr Real-world usage example
 slay demonstrate_real_world_usage() {
     println("🌟 Real-World File Watching Scenarios:")?;
     println("")?;
@@ -271,7 +271,7 @@ slay demonstrate_real_world_usage() {
     println("")?;
 }
 
-// Integration with CURSED build system
+fr fr Integration with CURSED build system
 slay demonstrate_build_integration() {
     println("🔧 Integration with CURSED Build System:")?;
     println("")?;
@@ -301,7 +301,7 @@ slay demonstrate_build_integration() {
     println("")?;
 }
 
-// Main function
+fr fr Main function
 slay main() {
     println("🎬 CURSED File Watcher Demo")?;
     println("==========================")?;

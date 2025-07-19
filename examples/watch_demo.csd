@@ -1,4 +1,4 @@
-// Simple CURSED program for testing watch functionality
+fr fr Simple CURSED program for testing watch functionality
 slay main() {
     println("Hello from CURSED! 🔥")
     

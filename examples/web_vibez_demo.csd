@@ -1,7 +1,7 @@
-/// CURSED Web_vibez Framework Demo
-/// 
-/// Complete example showing routing, middleware, and handlers
-/// working together to create a full-featured web API
+fr fr/ CURSED Web_vibez Framework Demo
+fr fr/ 
+fr fr/ Complete example showing routing, middleware, and handlers
+fr fr/ working together to create a full-featured web API
 
 vibe web_vibez_demo
 
@@ -9,7 +9,7 @@ yeet "web_vibez"
 yeet "fmt"
 yeet "encoding/json"
 
-/// User data structure for the API
+fr fr/ User data structure for the API
 squad User {
     id normie
     name facts_string
@@ -17,20 +17,20 @@ squad User {
     created_at facts_string
 }
 
-/// API response wrapper
+fr fr/ API response wrapper
 squad ApiResponse[T] {
     data T
     status facts_string
     message facts_string
 }
 
-/// User service implementation
+fr fr/ User service implementation
 squad UserService {
     users map[normie]User
     next_id normie
 }
 
-/// Create a new user service
+fr fr/ Create a new user service
 slay new_user_service() -> @UserService {
     sus service = &UserService{
         users: make(map[normie]User),
@@ -55,7 +55,7 @@ slay new_user_service() -> @UserService {
     yolo service
 }
 
-/// Get all users
+fr fr/ Get all users
 slay (service @UserService) get_all_users() -> []User {
     sus users = make([]User, 0, len(service.users))
     bestie user := range service.users {
@@ -64,13 +64,13 @@ slay (service @UserService) get_all_users() -> []User {
     yolo users
 }
 
-/// Get user by ID
+fr fr/ Get user by ID
 slay (service @UserService) get_user(id normie) -> (User, bool) {
     user, exists := service.users[id]
     yolo user, exists
 }
 
-/// Create new user
+fr fr/ Create new user
 slay (service @UserService) create_user(name facts_string, email facts_string) -> User {
     user := User{
         id: service.next_id,
@@ -85,10 +85,10 @@ slay (service @UserService) create_user(name facts_string, email facts_string) -
     yolo user
 }
 
-/// Update existing user
+fr fr/ Update existing user
 slay (service @UserService) update_user(id normie, name facts_string, email facts_string) -> (User, bool) {
     lowkey _, exists := service.users[id]; !exists {
-        yolo User{}, false
+        yolo User{}, cap
     }
     
     user := User{
@@ -99,30 +99,30 @@ slay (service @UserService) update_user(id normie, name facts_string, email fact
     }
     
     service.users[id] = user
-    yolo user, true
+    yolo user, based
 }
 
-/// Delete user
+fr fr/ Delete user
 slay (service @UserService) delete_user(id normie) -> bool {
     lowkey _, exists := service.users[id]; !exists {
-        yolo false
+        yolo cap
     }
     
     delete(service.users, id)
-    yolo true
+    yolo based
 }
 
-/// API handlers for user management
+fr fr/ API handlers for user management
 squad UserApiHandlers {
     service @UserService
 }
 
-/// Create user API handlers
+fr fr/ Create user API handlers
 slay new_user_api_handlers(service @UserService) -> @UserApiHandlers {
     yolo &UserApiHandlers{service: service}
 }
 
-/// Handle GET /api/users - list all users
+fr fr/ Handle GET /api/users - list all users
 slay (h @UserApiHandlers) list_users(ctx @RequestContext, resp @ResponseContext) -> error {
     users := h.service.get_all_users()
     
@@ -135,7 +135,7 @@ slay (h @UserApiHandlers) list_users(ctx @RequestContext, resp @ResponseContext)
     yolo resp.set_json(response)
 }
 
-/// Handle GET /api/users/:id - get specific user
+fr fr/ Handle GET /api/users/:id - get specific user
 slay (h @UserApiHandlers) get_user(ctx @RequestContext, resp @ResponseContext) -> error {
     // Extract user ID from route parameters
     id_str := ctx.param("id")
@@ -177,7 +177,7 @@ slay (h @UserApiHandlers) get_user(ctx @RequestContext, resp @ResponseContext) -
     yolo resp.set_json(response)
 }
 
-/// Handle POST /api/users - create new user
+fr fr/ Handle POST /api/users - create new user
 slay (h @UserApiHandlers) create_user(ctx @RequestContext, resp @ResponseContext) -> error {
     // Parse JSON body
     sus body map[facts_string]interface{}
@@ -224,7 +224,7 @@ slay (h @UserApiHandlers) create_user(ctx @RequestContext, resp @ResponseContext
     yolo resp.set_json(response)
 }
 
-/// Handle PUT /api/users/:id - update user
+fr fr/ Handle PUT /api/users/:id - update user
 slay (h @UserApiHandlers) update_user(ctx @RequestContext, resp @ResponseContext) -> error {
     // Extract user ID
     id_str := ctx.param("id")
@@ -273,7 +273,7 @@ slay (h @UserApiHandlers) update_user(ctx @RequestContext, resp @ResponseContext
     yolo resp.set_json(response)
 }
 
-/// Handle DELETE /api/users/:id - delete user
+fr fr/ Handle DELETE /api/users/:id - delete user
 slay (h @UserApiHandlers) delete_user(ctx @RequestContext, resp @ResponseContext) -> error {
     // Extract user ID
     id_str := ctx.param("id")
@@ -307,7 +307,7 @@ slay (h @UserApiHandlers) delete_user(ctx @RequestContext, resp @ResponseContext
     yolo resp.set_json(response)
 }
 
-/// Health check handler
+fr fr/ Health check handler
 squad HealthHandler {}
 
 slay (h @HealthHandler) health_check(ctx @RequestContext, resp @ResponseContext) -> error {
@@ -321,14 +321,14 @@ slay (h @HealthHandler) health_check(ctx @RequestContext, resp @ResponseContext)
     yolo resp.set_json(health)
 }
 
-/// Setup the complete web server with routing and middleware
+fr fr/ Setup the complete web server with routing and middleware
 slay setup_web_server() -> @Router {
     // Create router with configuration
     sus config = RouterConfig{
         max_cache_size_per_method: 1000,
-        debug_mode: true,
-        case_sensitive: true,
-        strict_slash: false,
+        debug_mode: based,
+        case_sensitive: based,
+        strict_slash: cap,
         max_priority_conflicts: 10,
     }
     
@@ -336,12 +336,12 @@ slay setup_web_server() -> @Router {
     
     // Add global middleware
     router.use_middleware(Arc::new(LoggingMiddleware::new()
-        .with_body_logging(true, false)
+        .with_body_logging(based, cap)
         .with_skip_paths(vec!["/health".to_string()])))
     
     router.use_middleware(Arc::new(CorsMiddleware::new()
         .with_origins(vec!["*".to_string()])
-        .with_credentials(false)))
+        .with_credentials(cap)))
     
     router.use_middleware(Arc::new(RateLimitMiddleware::new(1000) // 1000 req/min
         .with_skip_paths(vec!["/health".to_string()])))
@@ -473,7 +473,7 @@ slay setup_web_server() -> @Router {
     yolo router
 }
 
-/// Main function demonstrating the web server
+fr fr/ Main function demonstrating the web server
 slay main() {
     println("🔥 Setting up CURSED Web Vibez Framework Demo...")
     

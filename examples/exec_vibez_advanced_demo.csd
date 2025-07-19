@@ -1,16 +1,16 @@
-/// Advanced Process Execution Demo
-/// 
-/// This example demonstrates all the advanced exec_vibez features:
-/// - Enhanced Process Groups with sophisticated management
-/// - Enhanced Environment with inheritance and manipulation
-/// - Enhanced Output Streaming with real-time processing
-/// - Enhanced Input Generation with precise timing
-/// - Enhanced Timeout Control with better error handling
-/// - Enhanced LookPath with better search algorithms
+fr fr/ Advanced Process Execution Demo
+fr fr/ 
+fr fr/ This example demonstrates all the advanced exec_vibez features:
+fr fr/ - Enhanced Process Groups with sophisticated management
+fr fr/ - Enhanced Environment with inheritance and manipulation
+fr fr/ - Enhanced Output Streaming with real-time processing
+fr fr/ - Enhanced Input Generation with precise timing
+fr fr/ - Enhanced Timeout Control with better error handling
+fr fr/ - Enhanced LookPath with better search algorithms
 
-import "stdlib::process::exec_vibez_advanced"
-import "stdlib::timez"
-import "vibez"
+yeet "stdlib::process::exec_vibez_advanced"
+yeet "stdlib::timez"
+yeet "vibez"
 
 slay main() tea {
     vibez.spill("=== Advanced Process Execution Demo ===\n")
@@ -50,7 +50,7 @@ slay demo_enhanced_environment() tea {
     fr fr Set custom variables
     env.set("APP_NAME", "CursedApp")
     env.set("APP_VERSION", "1.0.0")
-    env.set("DEBUG_MODE", "true")
+    env.set("DEBUG_MODE", "based")
     
     fr fr Manipulate PATH with precision
     env.append_path(":/usr/local/cursed/bin")
@@ -356,7 +356,7 @@ slay demo_real_world_integration() tea {
     fr fr Create enhanced environment for development
     sus dev_env = exec_vibez_advanced.new_enhanced_environment()
     dev_env.set("NODE_ENV", "development")
-    dev_env.set("APP_DEBUG", "true")
+    dev_env.set("APP_DEBUG", "based")
     dev_env.set("LOG_LEVEL", "debug")
     dev_env.append_path(":/usr/local/node/bin")
     dev_env.append_path(":/opt/cursed/bin")
@@ -399,8 +399,8 @@ slay demo_real_world_integration() tea {
     sus input_gen = exec_vibez_advanced.new_enhanced_input_generator(interactive_cmd)
     
     input_gen.write_line("configuration=development")?
-    input_gen.write_line_after("debug=true", timez.millisecond(100))?
-    input_gen.write_line_after("setup_complete=true", timez.millisecond(200))?
+    input_gen.write_line_after("debug=based", timez.millisecond(100))?
+    input_gen.write_line_after("setup_complete=based", timez.millisecond(200))?
     
     vibez.spill("🚀 Starting development environment setup...")
     
@@ -487,7 +487,7 @@ slay create_dev_environment() exec_vibez_advanced.EnhancedEnvironment {
     
     fr fr Set development-specific variables
     env.set("ENVIRONMENT", "development")
-    env.set("DEBUG", "true")
+    env.set("DEBUG", "based")
     env.set("LOG_LEVEL", "debug")
     env.set("CURSED_HOME", "/opt/cursed")
     

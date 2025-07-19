@@ -1,19 +1,19 @@
-// Post-Quantum Cryptography Demo for CURSED Language
-// 
-// This demo showcases all post-quantum cryptographic algorithms
-// available in the CURSED standard library, including:
-// - Kyber Key Encapsulation Mechanism (KEM)
-// - Dilithium Digital Signatures
-// - SPHINCS+ Hash-based Signatures
-// - Falcon Compact Signatures
-// - NTRU Encryption
-//
-// Run with: cursed examples/pqc_demo.csd
+fr fr Post-Quantum Cryptography Demo for CURSED Language
+fr fr 
+fr fr This demo showcases all post-quantum cryptographic algorithms
+fr fr available in the CURSED standard library, including:
+fr fr - Kyber Key Encapsulation Mechanism (KEM)
+fr fr - Dilithium Digital Signatures
+fr fr - SPHINCS+ Hash-based Signatures
+fr fr - Falcon Compact Signatures
+fr fr - NTRU Encryption
+fr fr
+fr fr Run with: cursed examples/pqc_demo.csd
 
-import "stdlib::crypto::pqc"
-import "stdlib::io"
+yeet "stdlib::crypto::pqc"
+yeet "stdlib::io"
 
-// Main demonstration function
+fr fr Main demonstration function
 function main() {
     println("🔐 Post-Quantum Cryptography Demo for CURSED")?
     println("=============================================")?
@@ -35,7 +35,7 @@ function main() {
     println("✅ Post-Quantum Cryptography demo completed successfully!")?
 }
 
-// Demonstrate Kyber Key Encapsulation Mechanism
+fr fr Demonstrate Kyber Key Encapsulation Mechanism
 function demonstrate_kyber_kem() {
     println("🔑 Kyber Key Encapsulation Mechanism (KEM)")?
     println("------------------------------------------")?
@@ -77,7 +77,7 @@ function demonstrate_kyber_kem() {
     }
 }
 
-// Demonstrate Dilithium Digital Signatures
+fr fr Demonstrate Dilithium Digital Signatures
 function demonstrate_dilithium_signatures() {
     println("✍️ Dilithium Digital Signatures")?
     println("-------------------------------")?
@@ -125,7 +125,7 @@ function demonstrate_dilithium_signatures() {
     println()?
 }
 
-// Demonstrate SPHINCS+ Hash-based Signatures
+fr fr Demonstrate SPHINCS+ Hash-based Signatures
 function demonstrate_sphincs_plus_signatures() {
     println("🌳 SPHINCS+ Hash-based Signatures")?
     println("---------------------------------")?
@@ -165,7 +165,7 @@ function demonstrate_sphincs_plus_signatures() {
     println()?
 }
 
-// Demonstrate Falcon Compact Signatures
+fr fr Demonstrate Falcon Compact Signatures
 function demonstrate_falcon_signatures() {
     println("🦅 Falcon Compact Signatures")?
     println("----------------------------")?
@@ -203,7 +203,7 @@ function demonstrate_falcon_signatures() {
     println()?
 }
 
-// Demonstrate NTRU Encryption
+fr fr Demonstrate NTRU Encryption
 function demonstrate_ntru_encryption() {
     println("🔒 NTRU Lattice-based Encryption")?
     println("--------------------------------")?
@@ -258,7 +258,7 @@ function demonstrate_ntru_encryption() {
     println()?
 }
 
-// Run performance benchmarks
+fr fr Run performance benchmarks
 function run_performance_benchmarks() {
     println("⏱️ Performance Benchmarking")?
     println("---------------------------")?
@@ -306,7 +306,7 @@ function run_performance_benchmarks() {
     println()?
 }
 
-// Show quantum resistance assessment
+fr fr Show quantum resistance assessment
 function show_quantum_resistance_assessment() {
     println("🛡️ Quantum Resistance Assessment")?
     println("---------------------------------")?
@@ -333,7 +333,7 @@ function show_quantum_resistance_assessment() {
     println(report)?
 }
 
-// Helper function to create sample binary data
+fr fr Helper function to create sample binary data
 function binary_data_sample() -> Vec<u8> {
     sus data = Vec::new()
     lowkey (sus i = 0; i < 256; i++) {
@@ -342,7 +342,7 @@ function binary_data_sample() -> Vec<u8> {
     data
 }
 
-// Helper function to convert hex string to bytes
+fr fr Helper function to convert hex string to bytes
 function bytes_from_hex(hex_string: &str) -> Vec<u8> {
     hex_to_bytes(hex_string).unwrap_or_else(|_| {
         println("Warning: Invalid hex string, using fallback data")?
@@ -350,7 +350,7 @@ function bytes_from_hex(hex_string: &str) -> Vec<u8> {
     })
 }
 
-// Demonstrate hybrid classical/post-quantum scenarios
+fr fr Demonstrate hybrid classical/post-quantum scenarios
 function demonstrate_hybrid_scenarios() {
     println("🔗 Hybrid Classical/Post-Quantum Scenarios")?
     println("------------------------------------------")?
@@ -396,7 +396,7 @@ function demonstrate_hybrid_scenarios() {
     println()?
 }
 
-// Demonstrate real-world use cases
+fr fr Demonstrate real-world use cases
 function demonstrate_real_world_use_cases() {
     println("🌍 Real-World Use Cases")?
     println("----------------------")?
@@ -478,7 +478,7 @@ function demonstrate_real_world_use_cases() {
     println()?
 }
 
-// Simple SHA-256 hash function simulation
+fr fr Simple SHA-256 hash function simulation
 function sha256(data: &[u8]) -> Vec<u8> {
     // This is a simplified hash for demo purposes
     // In real implementation, use proper SHA-256
@@ -491,7 +491,7 @@ function sha256(data: &[u8]) -> Vec<u8> {
     hash
 }
 
-// Error handling helper
+fr fr Error handling helper
 function handle_crypto_error(error: PqcError) {
     println(format!("❌ Cryptographic error occurred: {}", error))?
     
@@ -521,7 +521,7 @@ function handle_crypto_error(error: PqcError) {
     }
 }
 
-// Advanced features demonstration
+fr fr Advanced features demonstration
 function demonstrate_advanced_features() {
     println("🚀 Advanced PQC Features")?
     println("------------------------")?
@@ -584,7 +584,7 @@ function demonstrate_advanced_features() {
     println()?
 }
 
-// Run all demonstrations
+fr fr Run all demonstrations
 yolo main() catch (error) {
     handle_crypto_error(error)
     println("Demo terminated due to error")?

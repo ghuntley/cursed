@@ -1,11 +1,11 @@
-// CURSED IPC Comprehensive Demo
-// Demonstrates all Inter-Process Communication features
+fr fr CURSED IPC Comprehensive Demo
+fr fr Demonstrates all Inter-Process Communication features
 
-import "stdlib::ipc";
-import "stdlib::sync";
-import "stdlib::io";
+yeet "stdlib::ipc"
+yeet "stdlib::sync"
+yeet "stdlib::io"
 
-// Main IPC demonstration
+fr fr Main IPC demonstration
 slay main() {
     println("🔗 CURSED IPC Comprehensive Demo");
     println("================================");
@@ -43,7 +43,7 @@ slay main() {
     yolo;
 }
 
-// Demonstrate named pipes
+fr fr Demonstrate named pipes
 slay demo_named_pipes() {
     println("\n🚰 Named Pipes Demo");
     println("==================");
@@ -73,7 +73,7 @@ slay demo_named_pipes() {
     println("✓ Cleaned up named pipe");
 }
 
-// Demonstrate shared memory
+fr fr Demonstrate shared memory
 slay demo_shared_memory() {
     println("\n🧠 Shared Memory Demo");
     println("====================");
@@ -112,7 +112,7 @@ slay demo_shared_memory() {
     println("✓ Cleaned up shared memory");
 }
 
-// Demonstrate message queues
+fr fr Demonstrate message queues
 slay demo_message_queues() {
     println("\n📬 Message Queues Demo");
     println("=====================");
@@ -147,7 +147,7 @@ slay demo_message_queues() {
     println("✓ Queue stats - Sent: {}, Received: {}", stats.total_sent, stats.total_received);
 }
 
-// Demonstrate semaphores
+fr fr Demonstrate semaphores
 slay demo_semaphores() {
     println("\n🚦 Semaphores Demo");
     println("=================");
@@ -184,7 +184,7 @@ slay demo_semaphores() {
     println("✓ Semaphore stats - Waits: {}, Posts: {}", sem_stats.total_waits, sem_stats.total_posts);
 }
 
-// Demonstrate barriers
+fr fr Demonstrate barriers
 slay demo_barriers() {
     println("\n🚧 Barriers Demo");
     println("===============");
@@ -207,7 +207,7 @@ slay demo_barriers() {
     println("✓ Reset barrier");
 }
 
-// Demonstrate RwLock with timeout
+fr fr Demonstrate RwLock with timeout
 slay demo_rwlock_timeout() {
     println("\n🔒 RwLock Timeout Demo");
     println("=====================");
@@ -229,13 +229,13 @@ slay demo_rwlock_timeout() {
     println("✓ RwLock stats - Reads: {}, Writes: {}", stats.read_locks, stats.write_locks);
 }
 
-// Demonstrate condition variables
+fr fr Demonstrate condition variables
 slay demo_condition_variables() {
     println("\n⏰ Condition Variables Demo");
     println("==========================");
     
     facts condvar = ipc::create_condition_variable();
-    facts mutex = std::sync::Mutex::new(false);
+    facts mutex = std::sync::Mutex::new(cap);
     
     println("✓ Created condition variable and mutex");
     
@@ -251,7 +251,7 @@ slay demo_condition_variables() {
     println("✓ CondVar stats - Waits: {}, Notifies: {}", stats.total_waits, stats.total_notifies);
 }
 
-// Demonstrate Unix domain sockets
+fr fr Demonstrate Unix domain sockets
 slay demo_unix_sockets() {
     println("\n🔌 Unix Domain Sockets Demo");
     println("===========================");
@@ -273,7 +273,7 @@ slay demo_unix_sockets() {
     println("✓ Socket communication successful");
 }
 
-// Demonstrate signal handling
+fr fr Demonstrate signal handling
 slay demo_signal_handling() {
     println("\n📡 Signal Handling Demo");
     println("======================");
@@ -302,7 +302,7 @@ slay demo_signal_handling() {
             stats.total_signals_sent, stats.total_signals_processed);
 }
 
-// Demonstrate RPC system
+fr fr Demonstrate RPC system
 slay demo_rpc_system() {
     println("\n🌐 RPC System Demo");
     println("=================");
@@ -353,7 +353,7 @@ slay demo_rpc_system() {
     println("✓ RPC system demo completed");
 }
 
-// Demonstrate distributed coordination
+fr fr Demonstrate distributed coordination
 slay demo_distributed_coordination() {
     println("\n🌍 Distributed Coordination Demo");
     println("================================");
@@ -375,7 +375,7 @@ slay demo_distributed_coordination() {
     println("✓ Stopped coordination");
 }
 
-// Demonstrate performance monitoring
+fr fr Demonstrate performance monitoring
 slay demo_performance_monitoring() {
     println("\n📈 Performance Monitoring Demo");
     println("==============================");

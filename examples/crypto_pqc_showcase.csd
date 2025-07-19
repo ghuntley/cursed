@@ -1,13 +1,13 @@
 #!/usr/bin/env cursed
 
-// Post-Quantum Cryptography Showcase
-// Demonstrates all implemented PQC algorithms in CURSED
+fr fr Post-Quantum Cryptography Showcase
+fr fr Demonstrates all implemented PQC algorithms in CURSED
 
-import "stdlib::crypto_pqc";
+yeet "stdlib::crypto_pqc"
 
 squad PqcDemo {
-    // Demonstrate CRYSTALS-Dilithium digital signatures
-    slay fn demonstrate_dilithium() {
+    fr fr Demonstrate CRYSTALS-Dilithium digital signatures
+    slay demonstrate_dilithium() {
         facts message = "Hello, post-quantum digital signatures!";
         
         println("=== CRYSTALS-Dilithium Demo ===");
@@ -38,7 +38,7 @@ squad PqcDemo {
     }
     
     // Demonstrate CRYSTALS-Kyber key encapsulation
-    slay fn demonstrate_kyber() {
+    slay demonstrate_kyber() {
         println("=== CRYSTALS-Kyber Demo ===");
         
         lowkey (sus level in [SecurityLevel::Level1, SecurityLevel::Level3, SecurityLevel::Level5]) {
@@ -65,7 +65,7 @@ squad PqcDemo {
     }
     
     // Demonstrate LMS hash-based signatures
-    slay fn demonstrate_lms() {
+    slay demonstrate_lms() {
         println("=== LMS Hash-Based Signatures Demo ===");
         
         lowkey (sus level in [SecurityLevel::Level1, SecurityLevel::Level3, SecurityLevel::Level5]) {
@@ -96,7 +96,7 @@ squad PqcDemo {
     }
     
     // Demonstrate FALCON compact signatures
-    slay fn demonstrate_falcon() {
+    slay demonstrate_falcon() {
         println("=== FALCON Compact Signatures Demo ===");
         
         lowkey (sus level in [SecurityLevel::Level1, SecurityLevel::Level5]) {
@@ -126,7 +126,7 @@ squad PqcDemo {
     }
     
     // Demonstrate Classic McEliece code-based KEM
-    slay fn demonstrate_mceliece() {
+    slay demonstrate_mceliece() {
         println("=== Classic McEliece Code-Based KEM Demo ===");
         
         lowkey (sus level in [SecurityLevel::Level1, SecurityLevel::Level3, SecurityLevel::Level5]) {
@@ -157,7 +157,7 @@ squad PqcDemo {
     }
     
     // Performance comparison between algorithms
-    slay fn performance_comparison() {
+    slay performance_comparison() {
         println("=== Performance Comparison ===");
         
         facts message = "Performance test message";
@@ -212,7 +212,7 @@ squad PqcDemo {
     }
     
     // Demonstrate hybrid classical+PQC protocols
-    slay fn demonstrate_hybrid_security() {
+    slay demonstrate_hybrid_security() {
         println("=== Hybrid Classical+PQC Security Demo ===");
         
         facts message = "Hybrid security test message";
@@ -258,7 +258,7 @@ squad PqcDemo {
     }
     
     // Security analysis and recommendations
-    slay fn security_analysis() {
+    slay security_analysis() {
         println("=== Security Analysis and Recommendations ===");
         
         println("Algorithm Families:");
@@ -294,7 +294,7 @@ squad PqcDemo {
     }
     
     // Main demonstration function
-    slay fn run_showcase() {
+    slay run_showcase() {
         println("🚀 CURSED Post-Quantum Cryptography Showcase");
         println("============================================\n");
         
@@ -317,33 +317,33 @@ squad PqcDemo {
     }
 }
 
-// Helper functions (would be implemented in stdlib)
-slay fn get_time() -> f64 {
+fr fr Helper functions (would be implemented in stdlib)
+slay get_time() -> f64 {
     // Return current time in milliseconds
     // Implementation would use system time
     0.0
 }
 
-slay fn hash_sha256(data: &[u8]) -> Vec<u8> {
+slay hash_sha256(data: &[u8]) -> Vec<u8> {
     // Return SHA-256 hash
     // Implementation would use crypto library
     vec![0u8; 32]
 }
 
-slay fn aes_encrypt(data: &[u8], key: &[u8]) -> Vec<u8> {
+slay aes_encrypt(data: &[u8], key: &[u8]) -> Vec<u8> {
     // AES encryption
     // Implementation would use crypto library
     data.to_vec()
 }
 
-slay fn aes_decrypt(data: &[u8], key: &[u8]) -> Vec<u8> {
+slay aes_decrypt(data: &[u8], key: &[u8]) -> Vec<u8> {
     // AES decryption
     // Implementation would use crypto library
     data.to_vec()
 }
 
-// Main entry point
-slay fn main() {
+fr fr Main entry point
+slay main() {
     facts demo = PqcDemo {};
     demo.run_showcase();
 }

@@ -1,21 +1,21 @@
-/// Template LLVM Compilation Demo
-/// Demonstrates the complete template compilation to LLVM IR
+fr fr/ Template LLVM Compilation Demo
+fr fr/ Demonstrates the complete template compilation to LLVM IR
 
-import "stdlib::template";
+yeet "stdlib::template"
 
-// Create a template context with variables
+fr fr Create a template context with variables
 sus template_context = TemplateContext::new();
 template_context.set("user", "Alice");
 template_context.set("age", 25);
 template_context.set("items", ["item1", "item2", "item3"]);
-template_context.set("show_details", true);
+template_context.set("show_details", based);
 
-// Basic template with variable interpolation
+fr fr Basic template with variable interpolation
 sus basic_template = "
 Hello, {{ user }}! You are {{ age }} years old.
 ";
 
-// Template with conditional and filtering
+fr fr Template with conditional and filtering
 sus conditional_template = "
 {% lowkey show_details %}
 <div class=\"user-details\">
@@ -28,7 +28,7 @@ sus conditional_template = "
 {% flex %}
 ";
 
-// Template with loops
+fr fr Template with loops
 sus loop_template = "
 <ul>
 {% stan item in items %}
@@ -37,7 +37,7 @@ sus loop_template = "
 </ul>
 ";
 
-// Template with inheritance (child template)
+fr fr Template with inheritance (child template)
 sus child_template = "
 {% extends \"base.html\" %}
 
@@ -57,7 +57,7 @@ sus child_template = "
 {% endblock %}
 ";
 
-// Template with includes
+fr fr Template with includes
 sus include_template = "
 <div class=\"main-content\">
     <h1>{{ title }}</h1>
@@ -69,7 +69,7 @@ sus include_template = "
 </div>
 ";
 
-// Template with complex expressions
+fr fr Template with complex expressions
 sus complex_template = "
 <div class=\"product\">
     <h2>{{ product.name | escape }}</h2>
@@ -98,7 +98,7 @@ sus complex_template = "
 </div>
 ";
 
-// Template security demonstration
+fr fr Template security demonstration
 sus security_template = "
 <div class=\"user-input\">
     <!-- This should be automatically escaped -->
@@ -122,7 +122,7 @@ sus security_template = "
 </div>
 ";
 
-// Template with filters and functions
+fr fr Template with filters and functions
 sus filter_template = "
 <div class=\"formatted-content\">
     <h1>{{ title | upper | trim }}</h1>
@@ -141,7 +141,7 @@ sus filter_template = "
 </div>
 ";
 
-yolo fn compile_template_examples() -> Result<tea, tea> {
+yolo slay compile_template_examples() -> Result<tea, tea> {
     facts engine = TemplateEngine::new();
     
     // Set up template compilation context
@@ -224,8 +224,8 @@ yolo fn compile_template_examples() -> Result<tea, tea> {
     return "Template LLVM compilation demo completed";
 }
 
-// Helper function for template compilation
-yolo fn compile_template_to_llvm(
+fr fr Helper function for template compilation
+yolo slay compile_template_to_llvm(
     ast: &TemplateAst, 
     context: &TemplateCompilationContext
 ) -> Result<CompiledTemplate, tea> {
@@ -242,8 +242,8 @@ yolo fn compile_template_to_llvm(
     return compiled_template;
 }
 
-// Main execution
-yolo fn main() -> Result<(), tea> {
+fr fr Main execution
+yolo slay main() -> Result<(), tea> {
     sus result = compile_template_examples()?;
     println(&format!("🎯 Result: {}", result));
     return ();

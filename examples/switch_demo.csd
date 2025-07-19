@@ -1,8 +1,8 @@
-// CURSED vibe_check (switch/case) demonstration
+fr fr CURSED vibe_check (switch/case) demonstration
 
-vibe main
+fr fr Switch demo main
 
-// Simple switch example with single values per case
+fr fr Simple switch example with single values per case
 slay test_day_of_week(day normie) tea {
     sus result tea = "unknown";
     
@@ -28,7 +28,7 @@ slay test_day_of_week(day normie) tea {
     yolo result;
 }
 
-// Example with multiple values per case
+fr fr Example with multiple values per case
 slay test_grade(score normie) tea {
     sus grade tea = "F";
     
@@ -48,19 +48,19 @@ slay test_grade(score normie) tea {
     yolo grade;
 }
 
-// Fallthrough example
+fr fr Fallthrough example
 slay test_fallthrough(category normie) tea {
     sus priority tea = "unknown";
-    sus requires_attention lit = false;
+    sus requires_attention lit = cap;
     
     vibe_check category {
         mood 1: // Critical
             priority = "Critical";
-            requires_attention = true;
+            requires_attention = based;
             // Fallthrough to high priority case
         mood 2:
             priority = "High";
-            requires_attention = true;
+            requires_attention = based;
             ghosted; // Break out of the switch
         mood 3:
             priority = "Medium";

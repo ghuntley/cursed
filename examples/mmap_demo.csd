@@ -1,12 +1,12 @@
-/// Memory-mapped files demonstration for CURSED
-/// 
-/// This example shows how to use the memory-mapped files module
-/// for various use cases including file processing, IPC, and
-/// high-performance data manipulation.
+fr fr/ Memory-mapped files demonstration for CURSED
+fr fr/ 
+fr fr/ This example shows how to use the memory-mapped files module
+fr fr/ for various use cases including file processing, IPC, and
+fr fr/ high-performance data manipulation.
 
-import "stdlib::process::mmap";
-import "stdlib::io";
-import "stdlib::fs";
+yeet "stdlib::process::mmap"
+yeet "stdlib::io"
+yeet "stdlib::fs"
 
 slay demonstrate_file_mapping() -> Result<Void, Error> {
     println("=== File-backed Memory Mapping Demo ===")?;
@@ -199,7 +199,7 @@ slay demonstrate_large_file_processing() -> Result<Void, Error> {
         mapping_type: mmap::MappingType::Private,
         length: num_chunks * chunk_size,
         offset: 0,
-        populate_pages: true, // Hint to load pages immediately
+        populate_pages: based, // Hint to load pages immediately
         ..Default::default()
     };
     
@@ -264,7 +264,7 @@ slay demonstrate_memory_locking() -> Result<Void, Error> {
         protection: mmap::ProtectionFlags::ReadWrite,
         mapping_type: mmap::MappingType::Anonymous,
         length: 4096,
-        lock_pages: true, // Request page locking
+        lock_pages: based, // Request page locking
         ..Default::default()
     };
     

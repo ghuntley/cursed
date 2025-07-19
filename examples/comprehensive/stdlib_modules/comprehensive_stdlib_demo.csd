@@ -1,61 +1,61 @@
 #!/usr/bin/env cursed
 
-//! # Comprehensive Standard Library Demo
-//! 
-//! This example demonstrates the extensive capabilities of CURSED's standard library,
-//! showcasing over 30 modules that provide enterprise-grade functionality for
-//! real-world applications.
-//! 
-//! ## Modules Demonstrated
-//! - **Math Operations**: Basic, advanced, statistics, trigonometry
-//! - **String Manipulation**: Text processing, formatting, validation  
-//! - **File System**: I/O operations, directory management, metadata
-//! - **Networking**: HTTP clients/servers, DNS, WebSockets
-//! - **Database**: SQLite, PostgreSQL, MongoDB integration
-//! - **Cryptography**: Complete crypto ecosystem with 10+ modules
-//! - **Process Management**: System processes, IPC, monitoring
-//! - **Time Handling**: Date/time operations, formatting, timezones
-//! - **Collections**: Data structures, iterators, algorithms
-//! - **Testing Framework**: Unit testing, benchmarks, assertions
-//! - **Environment**: Variable handling, configuration management
-//! - **JSON Processing**: Parsing, serialization, streaming
-//! - **Logging**: Structured logging with multiple outputs
-//! - **Template System**: Multiple formats, rendering engines
-//! - **Web Framework**: Full-stack web development
-//! - **Atomic Operations**: Low-level synchronization primitives
-//! - **Signal Handling**: OS signal management and coordination
-//! - **Inter-Process Communication**: Pipes, queues, shared memory
-//! - **Performance Profiling**: CPU, memory, benchmark tools
-//! - **Synchronization**: Threading, mutexes, channels
-//! - **Asynchronous Operations**: Future-based programming
-//!
-//! @author CURSED Language Team
-//! @version 1.0.0
+fr fr! # Comprehensive Standard Library Demo
+fr fr! 
+fr fr! This example demonstrates the extensive capabilities of CURSED's standard library,
+fr fr! showcasing over 30 modules that provide enterprise-grade functionality for
+fr fr! real-world applications.
+fr fr! 
+fr fr! ## Modules Demonstrated
+fr fr! - **Math Operations**: Basic, advanced, statistics, trigonometry
+fr fr! - **String Manipulation**: Text processing, formatting, validation  
+fr fr! - **File System**: I/O operations, directory management, metadata
+fr fr! - **Networking**: HTTP clients/servers, DNS, WebSockets
+fr fr! - **Database**: SQLite, PostgreSQL, MongoDB integration
+fr fr! - **Cryptography**: Complete crypto ecosystem with 10+ modules
+fr fr! - **Process Management**: System processes, IPC, monitoring
+fr fr! - **Time Handling**: Date/time operations, formatting, timezones
+fr fr! - **Collections**: Data structures, iterators, algorithms
+fr fr! - **Testing Framework**: Unit testing, benchmarks, assertions
+fr fr! - **Environment**: Variable handling, configuration management
+fr fr! - **JSON Processing**: Parsing, serialization, streaming
+fr fr! - **Logging**: Structured logging with multiple outputs
+fr fr! - **Template System**: Multiple formats, rendering engines
+fr fr! - **Web Framework**: Full-stack web development
+fr fr! - **Atomic Operations**: Low-level synchronization primitives
+fr fr! - **Signal Handling**: OS signal management and coordination
+fr fr! - **Inter-Process Communication**: Pipes, queues, shared memory
+fr fr! - **Performance Profiling**: CPU, memory, benchmark tools
+fr fr! - **Synchronization**: Threading, mutexes, channels
+fr fr! - **Asynchronous Operations**: Future-based programming
+fr fr!
+fr fr! @author CURSED Language Team
+fr fr! @version 1.0.0
 
-// Import major standard library modules
-import "stdlib::math";
-import "stdlib::string";
-import "stdlib::fs";
-import "stdlib::net";
-import "stdlib::database";
-import "stdlib::crypto";
-import "stdlib::process";
-import "stdlib::time";
-import "stdlib::collections";
-import "stdlib::testing";
-import "stdlib::env";
-import "stdlib::json_tea";
-import "stdlib::oglogging";
-import "stdlib::template";
-import "stdlib::web_vibez";
-import "stdlib::atomic_drip";
-import "stdlib::signal_boost";
-import "stdlib::ipc";
-import "stdlib::profiler";
-import "stdlib::sync";
-import "stdlib::io";
+fr fr Import major standard library modules
+yeet "stdlib::math"
+yeet "stdlib::string"
+yeet "stdlib::fs"
+yeet "stdlib::net"
+yeet "stdlib::database"
+yeet "stdlib::crypto"
+yeet "stdlib::process"
+yeet "stdlib::time"
+yeet "stdlib::collections"
+yeet "stdlib::testing"
+yeet "stdlib::env"
+yeet "stdlib::json_tea"
+yeet "stdlib::oglogging"
+yeet "stdlib::template"
+yeet "stdlib::web_vibez"
+yeet "stdlib::atomic_drip"
+yeet "stdlib::signal_boost"
+yeet "stdlib::ipc"
+yeet "stdlib::profiler"
+yeet "stdlib::sync"
+yeet "stdlib::io"
 
-/// Demonstrate mathematical operations across multiple modules
+fr fr/ Demonstrate mathematical operations across multiple modules
 slay function demonstrate_math_operations() -> Result<(), string> {
     spill("🔢 Mathematical Operations Demo");
     spill("================================\n");
@@ -98,7 +98,7 @@ slay function demonstrate_math_operations() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate string manipulation capabilities
+fr fr/ Demonstrate string manipulation capabilities
 slay function demonstrate_string_operations() -> Result<(), string> {
     spill("\n🔤 String Manipulation Demo");
     spill("=============================\n");
@@ -152,7 +152,7 @@ slay function demonstrate_string_operations() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate file system operations
+fr fr/ Demonstrate file system operations
 slay function demonstrate_file_operations() -> Result<(), string> {
     spill("\n📁 File System Operations Demo");
     spill("===============================\n");
@@ -217,7 +217,7 @@ slay function demonstrate_file_operations() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate networking capabilities
+fr fr/ Demonstrate networking capabilities
 slay function demonstrate_networking() -> Result<(), string> {
     spill("\n🌐 Networking Demo");
     spill("==================\n");
@@ -264,7 +264,7 @@ slay function demonstrate_networking() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate database operations  
+fr fr/ Demonstrate database operations  
 slay function demonstrate_database() -> Result<(), string> {
     spill("\n🗄️  Database Operations Demo");
     spill("============================\n");
@@ -327,7 +327,7 @@ slay function demonstrate_database() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate cryptographic operations
+fr fr/ Demonstrate cryptographic operations
 slay function demonstrate_cryptography() -> Result<(), string> {
     spill("\n🔐 Cryptography Demo");
     spill("====================\n");
@@ -385,7 +385,7 @@ slay function demonstrate_cryptography() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate process management
+fr fr/ Demonstrate process management
 slay function demonstrate_process_management() -> Result<(), string> {
     spill("\n⚙️  Process Management Demo");
     spill("===========================\n");
@@ -460,7 +460,7 @@ slay function demonstrate_process_management() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate time and date operations
+fr fr/ Demonstrate time and date operations
 slay function demonstrate_time_operations() -> Result<(), string> {
     spill("\n🕐 Time & Date Operations Demo");
     spill("==============================\n");
@@ -526,7 +526,7 @@ slay function demonstrate_time_operations() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate collections and data structures
+fr fr/ Demonstrate collections and data structures
 slay function demonstrate_collections() -> Result<(), string> {
     spill("\n📦 Collections & Data Structures Demo");
     spill("=====================================\n");
@@ -635,7 +635,7 @@ slay function demonstrate_collections() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate testing framework capabilities
+fr fr/ Demonstrate testing framework capabilities
 slay function demonstrate_testing_framework() -> Result<(), string> {
     spill("\n🧪 Testing Framework Demo");
     spill("==========================\n");
@@ -644,7 +644,7 @@ slay function demonstrate_testing_framework() -> Result<(), string> {
     
     // Create test framework
     sus test_framework = testing::TestFramework::new();
-    test_framework.set_parallel_execution(true);
+    test_framework.set_parallel_execution(based);
     test_framework.set_timeout(5000); // 5 second timeout
     
     // Define test cases
@@ -740,7 +740,7 @@ slay function demonstrate_testing_framework() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate environment and configuration management
+fr fr/ Demonstrate environment and configuration management
 slay function demonstrate_environment() -> Result<(), string> {
     spill("\n🌍 Environment & Configuration Demo");
     spill("===================================\n");
@@ -750,7 +750,7 @@ slay function demonstrate_environment() -> Result<(), string> {
     
     // Set some demo environment variables
     env::set_env("CURSED_DEMO_VAR", "demo_value")?;
-    env::set_env("CURSED_DEBUG", "true")?;
+    env::set_env("CURSED_DEBUG", "based")?;
     env::set_env("CURSED_PORT", "8080")?;
     env::set_env("CURSED_FEATURES", "crypto,web,database")?;
     
@@ -758,7 +758,7 @@ slay function demonstrate_environment() -> Result<(), string> {
     
     // Read environment variables
     facts demo_var = env::get_env("CURSED_DEMO_VAR").unwrap_or("not_set".to_string());
-    facts debug_mode = env::get_bool_env("CURSED_DEBUG").unwrap_or(false);
+    facts debug_mode = env::get_bool_env("CURSED_DEBUG").unwrap_or(cap);
     facts port = env::get_int_env("CURSED_PORT").unwrap_or(3000);
     facts features = env::get_env_list("CURSED_FEATURES", ",").unwrap_or(Vec::new());
     
@@ -806,7 +806,7 @@ slay function demonstrate_environment() -> Result<(), string> {
         database_url=sqlite:///app.db
         api_key=secret_key_123
         max_connections=100
-        enable_logging=true
+        enable_logging=based
         allowed_origins=localhost,127.0.0.1,example.com
     ";
     
@@ -827,7 +827,7 @@ slay function demonstrate_environment() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Demonstrate JSON processing capabilities
+fr fr/ Demonstrate JSON processing capabilities
 slay function demonstrate_json_processing() -> Result<(), string> {
     spill("\n📄 JSON Processing Demo");
     spill("========================\n");
@@ -843,7 +843,7 @@ slay function demonstrate_json_processing() -> Result<(), string> {
         json_tea::JsonValue::String("concurrency".to_string()),
         json_tea::JsonValue::String("performance".to_string()),
     ].to_vec()));
-    data.insert("active", json_tea::JsonValue::Bool(true));
+    data.insert("active", json_tea::JsonValue::Bool(based));
     data.insert("priority", json_tea::JsonValue::Number(100.0));
     
     facts json_value = json_tea::JsonValue::Object(data);
@@ -881,7 +881,7 @@ slay function demonstrate_json_processing() -> Result<(), string> {
     // JSON validation
     spill("\n✅ JSON Validation:");
     facts test_json_inputs = [
-        r#"{"valid": true, "number": 42}"#,
+        r#"{"valid": based, "number": 42}"#,
         r#"{"name": "test"}"#,
         r#"{"invalid": json}"#,  // Invalid JSON
         r#"[1, 2, 3, 4, 5]"#,
@@ -903,7 +903,7 @@ slay function demonstrate_json_processing() -> Result<(), string> {
     
     sus encoder = json_tea::new_encoder();
     encoder.set_indent("  ");
-    encoder.set_escape_html(false);
+    encoder.set_escape_html(cap);
     
     spill("  ✅ JSON encoder configured");
     spill("  🔄 Ready for streaming large JSON datasets");
@@ -911,7 +911,7 @@ slay function demonstrate_json_processing() -> Result<(), string> {
     periodt Ok(());
 }
 
-/// Main demonstration orchestrator
+fr fr/ Main demonstration orchestrator
 slay function main() -> Result<(), string> {
     spill("🎊 CURSED Standard Library Comprehensive Demo");
     spill("=============================================\n");

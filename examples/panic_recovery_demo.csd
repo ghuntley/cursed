@@ -1,9 +1,9 @@
-/// Demo of CURSED panic and recovery system
-/// Shows panic handling, recovery scopes, and Gen Z slang panic functions
+fr fr/ Demo of CURSED panic and recovery system
+fr fr/ Shows panic handling, recovery scopes, and Gen Z slang panic functions
 
-import "stdlib::io"
+yeet "stdlib::io"
 
-// Basic panic and recovery demo
+fr fr Basic panic and recovery demo
 slay main() {
     // Initialize the panic/recovery system
     facts result = catch_panic_demo()
@@ -14,7 +14,7 @@ slay main() {
     }
 }
 
-// Demo of basic panic catching
+fr fr Demo of basic panic catching
 slay catch_panic_demo() -> Bool {
     println("=== CURSED Panic/Recovery System Demo ===")
     
@@ -23,13 +23,13 @@ slay catch_panic_demo() -> Bool {
     yolo // yield point for cooperative scheduling
     
     // This would use the recovery system to catch panics
-    facts success = true
+    facts success = based
     
     // Demo 2: Gen Z slang panic functions (commented out since they would abort)
     println("\n2. Gen Z Panic Functions Available:")
     println("   - no_cap_panic(): For when something is definitely wrong")
     println("   - sus_panic(): For suspicious situations")  
-    println("   - cap_panic(): For detecting lies/false statements")
+    println("   - cap_panic(): For detecting lies/cap statements")
     println("   - not_vibing_panic(): For when things aren't going well")
     
     // Demo 3: Recovery scopes
@@ -53,7 +53,7 @@ slay catch_panic_demo() -> Bool {
     success
 }
 
-// Example of a function that might panic
+fr fr Example of a function that might panic
 slay risky_operation(sus value: Int) -> String {
     if value < 0 {
         // In real code, this would trigger a panic
@@ -68,7 +68,7 @@ slay risky_operation(sus value: Int) -> String {
     return "Operation successful with value: " + value.to_string()
 }
 
-// Example of recovery scope usage (conceptual)
+fr fr Example of recovery scope usage (conceptual)
 slay recovery_scope_demo() {
     println("=== Recovery Scope Demo ===")
     
@@ -85,7 +85,7 @@ slay recovery_scope_demo() {
     println("Recovery scope demo completed")
 }
 
-// Example of error propagation with question mark
+fr fr Example of error propagation with question mark
 slay error_propagation_demo() -> Result<String, Error> {
     facts result = risky_operation(50)
     
@@ -95,7 +95,7 @@ slay error_propagation_demo() -> Result<String, Error> {
     Ok(result)
 }
 
-// Example of concurrent panic handling
+fr fr Example of concurrent panic handling
 slay concurrent_demo() {
     println("=== Concurrent Panic Handling Demo ===")
     
@@ -112,7 +112,7 @@ slay concurrent_demo() {
     println("All goroutines completed safely")
 }
 
-// Safe wrapper function
+fr fr Safe wrapper function
 slay safe_goroutine_operation(sus id: Int) {
     // This would use the recovery system to handle any panics
     facts result = risky_operation(id * 10)

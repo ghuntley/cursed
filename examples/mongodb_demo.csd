@@ -1,17 +1,17 @@
-/// MongoDB Database Demo - CURSED Programming Language
-/// 
-/// This example demonstrates comprehensive MongoDB operations including:
-/// - Connection management with configuration
-/// - CRUD operations (Create, Read, Update, Delete)
-/// - Query building and filtering
-/// - Index management and aggregation pipelines
-/// - Collection management and database operations
-/// - Error handling and async operations
+fr fr/ MongoDB Database Demo - CURSED Programming Language
+fr fr/ 
+fr fr/ This example demonstrates comprehensive MongoDB operations including:
+fr fr/ - Connection management with configuration
+fr fr/ - CRUD operations (Create, Read, Update, Delete)
+fr fr/ - Query building and filtering
+fr fr/ - Index management and aggregation pipelines
+fr fr/ - Collection management and database operations
+fr fr/ - Error handling and async operations
 
-import "stdlib::packages::db_nosql";
-import "stdlib::io";
+yeet "stdlib::packages::db_nosql"
+yeet "stdlib::io"
 
-/// Main demo function
+fr fr/ Main demo function
 slay demo_mongodb_operations() -> Result<(), MongoDbError> {
     // Configure MongoDB connection
     facts config = MongoDbConfig {
@@ -20,8 +20,8 @@ slay demo_mongodb_operations() -> Result<(), MongoDbError> {
         max_pool_size: Some(20),
         min_pool_size: Some(5),
         connect_timeout: Some(10),
-        retry_writes: true,
-        retry_reads: true,
+        retry_writes: based,
+        retry_reads: based,
         app_name: Some("cursed-mongodb-demo"),
     };
 
@@ -58,7 +58,7 @@ slay demo_mongodb_operations() -> Result<(), MongoDbError> {
     Ok(())
 }
 
-/// Demonstrate CRUD operations
+fr fr/ Demonstrate CRUD operations
 slay demo_crud_operations(collection: &MongoDbCollection) -> Result<(), MongoDbError> {
     println("\n📝 === CRUD Operations Demo ===")?;
 
@@ -69,7 +69,7 @@ slay demo_crud_operations(collection: &MongoDbCollection) -> Result<(), MongoDbE
         obj.insert("email", Value::String("alice@example.com"));
         obj.insert("age", Value::Int(28));
         obj.insert("department", Value::String("Engineering"));
-        obj.insert("active", Value::Bool(true));
+        obj.insert("active", Value::Bool(based));
         obj
     });
 
@@ -79,7 +79,7 @@ slay demo_crud_operations(collection: &MongoDbCollection) -> Result<(), MongoDbE
         obj.insert("email", Value::String("bob@example.com"));
         obj.insert("age", Value::Int(32));
         obj.insert("department", Value::String("Marketing"));
-        obj.insert("active", Value::Bool(true));
+        obj.insert("active", Value::Bool(based));
         obj
     });
 
@@ -89,7 +89,7 @@ slay demo_crud_operations(collection: &MongoDbCollection) -> Result<(), MongoDbE
         obj.insert("email", Value::String("carol@example.com"));
         obj.insert("age", Value::Int(26));
         obj.insert("department", Value::String("Engineering"));
-        obj.insert("active", Value::Bool(false));
+        obj.insert("active", Value::Bool(cap));
         obj
     });
 
@@ -142,7 +142,7 @@ slay demo_crud_operations(collection: &MongoDbCollection) -> Result<(), MongoDbE
     
     facts activate_data = Value::Object({
         sus mut obj = HashMap::new();
-        obj.insert("active", Value::Bool(true));
+        obj.insert("active", Value::Bool(based));
         obj
     });
 
@@ -163,7 +163,7 @@ slay demo_crud_operations(collection: &MongoDbCollection) -> Result<(), MongoDbE
     Ok(())
 }
 
-/// Demonstrate query building capabilities
+fr fr/ Demonstrate query building capabilities
 slay demo_query_building(collection: &MongoDbCollection) -> Result<(), MongoDbError> {
     println("\n🔍 === Query Building Demo ===")?;
 
@@ -171,7 +171,7 @@ slay demo_query_building(collection: &MongoDbCollection) -> Result<(), MongoDbEr
     println("Querying active Engineering users...")?;
     facts complex_query = MongoDbQueryBuilder::new()
         .filter("department", &Value::String("Engineering"))?
-        .filter("active", &Value::Bool(true))?
+        .filter("active", &Value::Bool(based))?
         .project(&["name", "email", "age"])
         .sort("age", -1)  // Sort by age descending
         .limit(10);
@@ -216,7 +216,7 @@ slay demo_query_building(collection: &MongoDbCollection) -> Result<(), MongoDbEr
     Ok(())
 }
 
-/// Demonstrate aggregation pipelines
+fr fr/ Demonstrate aggregation pipelines
 slay demo_aggregation(collection: &MongoDbCollection) -> Result<(), MongoDbError> {
     println("\n📊 === Aggregation Pipeline Demo ===")?;
 
@@ -247,7 +247,7 @@ slay demo_aggregation(collection: &MongoDbCollection) -> Result<(), MongoDbError
 
     // Advanced pipeline with multiple stages
     facts advanced_pipeline = AggregationPipelineBuilder::new()
-        .match_stage(doc! { "active": true })
+        .match_stage(doc! { "active": based })
         .group_stage(doc! {
             "_id": "$department",
             "users": { "$push": "$name" },
@@ -287,7 +287,7 @@ slay demo_aggregation(collection: &MongoDbCollection) -> Result<(), MongoDbError
     Ok(())
 }
 
-/// Demonstrate index management
+fr fr/ Demonstrate index management
 slay demo_index_management(collection: &MongoDbCollection) -> Result<(), MongoDbError> {
     println("\n🗂️ === Index Management Demo ===")?;
 
@@ -296,7 +296,7 @@ slay demo_index_management(collection: &MongoDbCollection) -> Result<(), MongoDb
     facts email_index = collection.create_index(
         doc! { "email": 1 },
         Some(IndexOptions::builder()
-            .unique(true)
+            .unique(based)
             .name("email_unique_idx")
             .build())
     ).await?;
@@ -337,14 +337,14 @@ slay demo_index_management(collection: &MongoDbCollection) -> Result<(), MongoDb
     Ok(())
 }
 
-/// Demonstrate collection management
+fr fr/ Demonstrate collection management
 slay demo_collection_management(db: &MongoDbDatabase) -> Result<(), MongoDbError> {
     println("\n📚 === Collection Management Demo ===")?;
 
     // Create a new collection with options
     println("Creating 'products' collection...")?;
     db.create_collection("products", Some(CreateCollectionOptions::builder()
-        .capped(true)
+        .capped(based)
         .size(1024 * 1024)  // 1MB
         .max(1000)          // Max 1000 documents
         .build())).await?;
@@ -367,7 +367,7 @@ slay demo_collection_management(db: &MongoDbDatabase) -> Result<(), MongoDbError
             obj.insert("name", Value::String("Laptop Pro"));
             obj.insert("category", Value::String("Electronics"));
             obj.insert("price", Value::Float(1299.99));
-            obj.insert("in_stock", Value::Bool(true));
+            obj.insert("in_stock", Value::Bool(based));
             obj
         }),
         Value::Object({
@@ -375,7 +375,7 @@ slay demo_collection_management(db: &MongoDbDatabase) -> Result<(), MongoDbError
             obj.insert("name", Value::String("Wireless Mouse"));
             obj.insert("category", Value::String("Electronics"));
             obj.insert("price", Value::Float(29.99));
-            obj.insert("in_stock", Value::Bool(true));
+            obj.insert("in_stock", Value::Bool(based));
             obj
         }),
     ];
@@ -402,7 +402,7 @@ slay demo_collection_management(db: &MongoDbDatabase) -> Result<(), MongoDbError
     Ok(())
 }
 
-/// Helper function to extract string field from Value::Object
+fr fr/ Helper function to extract string field from Value::Object
 slay extract_string_field(value: &Value, field: &str) -> String {
     match value {
         Value::Object(obj) => {
@@ -417,7 +417,7 @@ slay extract_string_field(value: &Value, field: &str) -> String {
     }
 }
 
-/// Helper function to extract int field from Value::Object
+fr fr/ Helper function to extract int field from Value::Object
 slay extract_int_field(value: &Value, field: &str) -> i64 {
     match value {
         Value::Object(obj) => {
@@ -433,7 +433,7 @@ slay extract_int_field(value: &Value, field: &str) -> i64 {
     }
 }
 
-/// Helper function to extract float field from Value::Object
+fr fr/ Helper function to extract float field from Value::Object
 slay extract_float_field(value: &Value, field: &str) -> f64 {
     match value {
         Value::Object(obj) => {
@@ -449,7 +449,7 @@ slay extract_float_field(value: &Value, field: &str) -> f64 {
     }
 }
 
-/// Transaction demo function
+fr fr/ Transaction demo function
 slay demo_transactions() -> Result<(), MongoDbError> {
     println("\n🔄 === Transaction Demo ===")?;
 
@@ -493,7 +493,7 @@ slay demo_transactions() -> Result<(), MongoDbError> {
     Ok(())
 }
 
-/// Error handling demo
+fr fr/ Error handling demo
 slay demo_error_handling() -> Result<(), MongoDbError> {
     println("\n⚠️ === Error Handling Demo ===")?;
 
@@ -529,7 +529,7 @@ slay demo_error_handling() -> Result<(), MongoDbError> {
     Ok(())
 }
 
-/// Main function to run all demos
+fr fr/ Main function to run all demos
 slay main() -> Result<(), Box<dyn std::error::Error>> {
     println("🔥 CURSED MongoDB Driver Demo Starting...")?;
     println("=================================================")?;

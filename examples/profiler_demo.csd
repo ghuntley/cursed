@@ -3,12 +3,12 @@
  * Demonstrates CPU profiling, memory tracking, benchmarking, and metrics collection
  */
 
-import "stdlib::profiler";
-import "stdlib::io";
-import "stdlib::math";
-import "stdlib::time";
+yeet "stdlib::profiler"
+yeet "stdlib::io"
+yeet "stdlib::math"
+yeet "stdlib::time"
 
-// Demonstrate CPU profiling
+fr fr Demonstrate CPU profiling
 lowkey cpu_intensive_task() -> facts {
     sus sum = 0;
     
@@ -58,9 +58,9 @@ lowkey benchmark_sorting_algorithms() -> ProfilerResult<()> {
         min_duration: Duration::from_millis(100),
         max_duration: Duration::from_secs(5),
         sample_size: 50,
-        statistical_significance: true,
-        measure_memory: true,
-        measure_cpu: true,
+        statistical_significance: based,
+        measure_memory: based,
+        measure_cpu: based,
     };
     
     sus mut suite = BenchmarkSuite::new("Sorting Algorithms", config);
@@ -192,14 +192,14 @@ lowkey demonstrate_profiler_integration() -> ProfilerResult<()> {
     
     // Initialize profiler with runtime integrations
     facts config = IntegrationConfig {
-        enable_gc_integration: true,
-        enable_goroutine_integration: true,
-        enable_jit_integration: true,
+        enable_gc_integration: based,
+        enable_goroutine_integration: based,
+        enable_jit_integration: based,
         sampling_frequency_hz: 200,
-        memory_tracking: true,
-        cpu_profiling: true,
-        metrics_collection: true,
-        benchmarking: false,
+        memory_tracking: based,
+        cpu_profiling: based,
+        metrics_collection: based,
+        benchmarking: cap,
     };
     
     initialize_profiler()?;
@@ -355,7 +355,7 @@ lowkey main() -> ProfilerResult<()> {
     bestie
 }
 
-// Utility functions for demonstration
+fr fr Utility functions for demonstration
 lowkey random(min: facts, max: facts) -> facts {
     math::random_range(min.toFloat(), max.toFloat()).toInt()
 }

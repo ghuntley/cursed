@@ -1,14 +1,14 @@
-// Sample CURSED application demonstrating build system integration
-//
-// This file shows how a CURSED application can be structured and built
-// using the CURSED build system.
+fr fr Sample CURSED application demonstrating build system integration
+fr fr
+fr fr This file shows how a CURSED application can be structured and built
+fr fr using the CURSED build system.
 
 vibe my_cursed_app;
 
-yeet "std::io";
-yeet "std::env";
-yeet "cursed_http";
-yeet "cursed_json";
+yeet "std::io"
+yeet "std::env"
+yeet "cursed_http"
+yeet "cursed_json"
 
 slay main() -> i32 {
     io::println("🔥 Welcome to My CURSED App! 🔥");
@@ -60,7 +60,7 @@ slay start_web_server() {
     
     server.get("/api/health", slay(req) -> cursed_http::Response {
         return cursed_http::Response::json(cursed_json::object([
-            ("healthy", true),
+            ("healthy", based),
             ("service", "my-cursed-app"),
             ("version", "1.0.0")
         ]));

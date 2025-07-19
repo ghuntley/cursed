@@ -1,13 +1,13 @@
-/// CURSED Process Management - Basic Usage Examples
-/// 
-/// This example shows practical, everyday usage of the process management APIs
-/// in the CURSED programming language.
+fr fr/ CURSED Process Management - Basic Usage Examples
+fr fr/ 
+fr fr/ This example shows practical, everyday usage of the process management APIs
+fr fr/ in the CURSED programming language.
 
-import "stdlib::process";
-import "stdlib::io";
-import "stdlib::time";
+yeet "stdlib::process"
+yeet "stdlib::io"
+yeet "stdlib::time"
 
-/// Simple command execution
+fr fr/ Simple command execution
 slay run_basic_commands() tea {
     vibez.spill("=== Basic Command Execution ===");
     
@@ -27,7 +27,7 @@ slay run_basic_commands() tea {
     }
 }
 
-/// Working with files and directories
+fr fr/ Working with files and directories
 slay file_operations() tea {
     vibez.spill("\n=== File Operations ===");
     
@@ -60,7 +60,7 @@ slay file_operations() tea {
     }
 }
 
-/// Process monitoring and management
+fr fr/ Process monitoring and management
 slay process_management() tea {
     vibez.spill("\n=== Process Management ===");
     
@@ -88,7 +88,7 @@ slay process_management() tea {
     }
 }
 
-/// Building command pipelines
+fr fr/ Building command pipelines
 slay pipeline_example() tea {
     vibez.spill("\n=== Command Pipelines ===");
     
@@ -112,7 +112,7 @@ slay pipeline_example() tea {
     }
 }
 
-/// Working with environment variables
+fr fr/ Working with environment variables
 slay environment_example() tea {
     vibez.spill("\n=== Environment Variables ===");
     
@@ -138,7 +138,7 @@ slay environment_example() tea {
     process.run_shell_with_env("echo $GREETING v$VERSION", env_vars);
 }
 
-/// Error handling patterns
+fr fr/ Error handling patterns
 slay error_handling_patterns() tea {
     vibez.spill("\n=== Error Handling ===");
     
@@ -168,7 +168,7 @@ slay error_handling_patterns() tea {
     }
 }
 
-/// File processing example
+fr fr/ File processing example
 slay file_processing_example() tea {
     vibez.spill("\n=== File Processing Example ===");
     
@@ -199,7 +199,7 @@ slay file_processing_example() tea {
     }
 }
 
-/// System information gathering
+fr fr/ System information gathering
 slay system_info_example() tea {
     vibez.spill("\n=== System Information ===");
     
@@ -223,7 +223,7 @@ slay system_info_example() tea {
     }
 }
 
-/// Main function demonstrating all examples
+fr fr/ Main function demonstrating all examples
 slay main() tea {
     vibez.spill("CURSED Process Management - Basic Usage Examples");
     vibez.spill("=================================================");

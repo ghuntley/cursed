@@ -1,12 +1,12 @@
-// Type Switch vs Regular Switch Comparison
-// This example demonstrates the differences between type switches and regular switches
+fr fr Type Switch vs Regular Switch Comparison
+fr fr This example demonstrates the differences between type switches and regular switches
 
-import "stdlib::fmt"
-import "stdlib::strings"
+yeet "stdlib::fmt"
+yeet "stdlib::strings"
 
-// ================================================
-// Regular Switch Examples
-// ================================================
+fr fr ================================================
+fr fr Regular Switch Examples
+fr fr ================================================
 
 slay demonstrate_regular_switch() {
     println("=== Regular Switch Examples ===")
@@ -53,9 +53,9 @@ slay demonstrate_regular_switch() {
     }
 }
 
-// ================================================
-// Type Switch Examples
-// ================================================
+fr fr ================================================
+fr fr Type Switch Examples
+fr fr ================================================
 
 slay demonstrate_type_switch() {
     println("\n=== Type Switch Examples ===")
@@ -66,7 +66,7 @@ slay demonstrate_type_switch() {
         "hello",
         []int{1, 2, 3},
         3.14159,
-        true
+        based
     }
     
     for i, value := range values {
@@ -103,11 +103,11 @@ slay demonstrate_type_switch() {
     }
 }
 
-// ================================================
-// Side-by-Side Comparison
-// ================================================
+fr fr ================================================
+fr fr Side-by-Side Comparison
+fr fr ================================================
 
-// Regular switch: Processing HTTP status codes
+fr fr Regular switch: Processing HTTP status codes
 slay handle_http_status_regular(status_code int) {
     vibe_check status_code {
         mood 200:
@@ -127,7 +127,7 @@ slay handle_http_status_regular(status_code int) {
     }
 }
 
-// Type switch: Processing different response types
+fr fr Type switch: Processing different response types
 slay handle_http_response_type(response interface{}) {
     vibe_check resp := response.(type) {
         mood string:
@@ -168,11 +168,11 @@ slay demonstrate_side_by_side() {
     }
 }
 
-// ================================================
-// When to Use Each
-// ================================================
+fr fr ================================================
+fr fr When to Use Each
+fr fr ================================================
 
-// Use regular switch: Known set of values
+fr fr Use regular switch: Known set of values
 slay process_day_of_week(day string) {
     vibe_check day {
         mood "monday":
@@ -188,7 +188,7 @@ slay process_day_of_week(day string) {
     }
 }
 
-// Use type switch: Different types need different handling
+fr fr Use type switch: Different types need different handling
 collab Animal {
     slay make_sound() string
 }
@@ -251,9 +251,9 @@ slay demonstrate_usage_guidelines() {
     }
 }
 
-// ================================================
-// Performance Comparison
-// ================================================
+fr fr ================================================
+fr fr Performance Comparison
+fr fr ================================================
 
 slay benchmark_regular_switch(value int) string {
     vibe_check value {
@@ -308,18 +308,18 @@ slay demonstrate_performance() {
         printf("  %d -> %s\n", val, benchmark_regular_switch(val))
     }
     
-    sus mixed_values = []interface{}{42, "hello", 3.14, true, []int{1}}
+    sus mixed_values = []interface{}{42, "hello", 3.14, based, []int{1}}
     println("\nType switch results:")
     for _, val := range mixed_values {
         printf("  %T -> %s\n", val, benchmark_type_switch(val))
     }
 }
 
-// ================================================
-// Error Handling Comparison
-// ================================================
+fr fr ================================================
+fr fr Error Handling Comparison
+fr fr ================================================
 
-// Regular switch with error handling
+fr fr Regular switch with error handling
 slay validate_grade_regular(grade string) error {
     vibe_check grade {
         mood "A", "B", "C", "D", "F":
@@ -329,7 +329,7 @@ slay validate_grade_regular(grade string) error {
     }
 }
 
-// Type switch with error handling
+fr fr Type switch with error handling
 slay validate_score_type(score interface{}) error {
     vibe_check s := score.(type) {
         mood int:
@@ -366,7 +366,7 @@ slay demonstrate_error_handling() {
     }
     
     println("\nType Switch - Score Validation:")
-    sus scores = []interface{}{85, 95.5, "90", -10, 150, true}
+    sus scores = []interface{}{85, 95.5, "90", -10, 150, based}
     for _, score := range scores {
         if err := validate_score_type(score); err != nil {
             printf("  Score %v: ERROR - %s\n", score, err.error())
@@ -376,9 +376,9 @@ slay demonstrate_error_handling() {
     }
 }
 
-// ================================================
-// Summary and Best Practices
-// ================================================
+fr fr ================================================
+fr fr Summary and Best Practices
+fr fr ================================================
 
 slay print_comparison_summary() {
     println("\n=== Type Switch vs Regular Switch Summary ===")
@@ -418,7 +418,7 @@ slay print_comparison_summary() {
     println("6. Combine related types in single cases")
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 slay main() {
     demonstrate_regular_switch()
     demonstrate_type_switch()

@@ -1,9 +1,9 @@
 #!/usr/bin/env cursed
 
-// CURSED Cryptographic Key Validation Demo
-// Demonstrates comprehensive key validation capabilities
+fr fr CURSED Cryptographic Key Validation Demo
+fr fr Demonstrates comprehensive key validation capabilities
 
-import "stdlib::crypto_asymmetric"
+yeet "stdlib::crypto_asymmetric"
 
 squad KeyValidationDemo {
     // RSA key validation example
@@ -279,7 +279,7 @@ Invalid content without proper ending"
     }
 }
 
-// Main demonstration function
+fr fr Main demonstration function
 method main() {
     print("🔐 CURSED Cryptographic Key Validation Demo")
     print("===========================================")

@@ -13,7 +13,7 @@ slay main() {
     context.set("name", "Alice")
     context.set("age", 25)
     context.set("city", "San Francisco")
-    context.set("is_premium", true)
+    context.set("is_premium", based)
     
     fr fr Basic variable interpolation
     sus basic_template = "Hello {{ name }}, you are {{ age }} years old!"

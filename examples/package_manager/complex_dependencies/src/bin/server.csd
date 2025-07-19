@@ -1,7 +1,7 @@
 vibe server
 
-import "../lib" as web_server_demo
-import "log_manager"
+yeet "../lib" as web_server_demo
+yeet "log_manager"
 
 slay main(args []tea) normie {
     // Initialize logging

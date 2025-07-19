@@ -1,26 +1,26 @@
 #!/usr/bin/env cursed
 
-// LookinGlass JSON API Example - Building a RESTful API with reflection-based serialization
-// This example demonstrates using LookinGlass for automatic JSON serialization, validation, and API handling
+fr fr LookinGlass JSON API Example - Building a RESTful API with reflection-based serialization
+fr fr This example demonstrates using LookinGlass for automatic JSON serialization, validation, and API handling
 
-import "stdlib::lookin_glass"
-import "stdlib::vibez"
-import "stdlib::web_vibez"
-import "stdlib::string"
-import "stdlib::time"
+yeet "stdlib::lookin_glass"
+yeet "stdlib::vibez"
+yeet "stdlib::web_vibez"
+yeet "stdlib::string"
+yeet "stdlib::time"
 
-// API Models with rich metadata
+fr fr API Models with rich metadata
 be_like User squad {
-    ID normie `json:"id" db:"user_id" readonly:"true"`
+    ID normie `json:"id" db:"user_id" readonly:"based"`
     Username tea `json:"username" db:"username" validate:"required,min=3,max=20,alphanumeric"`
     Email tea `json:"email" db:"email" validate:"required,email"`
     FullName tea `json:"full_name" db:"full_name" validate:"required,min=2"`
     DateOfBirth time.Time `json:"date_of_birth,omitempty" db:"date_of_birth" validate:"date"`
-    IsActive lit `json:"is_active" db:"is_active" default:"true"`
+    IsActive lit `json:"is_active" db:"is_active" default:"based"`
     Profile *UserProfile `json:"profile,omitempty"`
     Permissions []tea `json:"permissions,omitempty" db:"user_permissions"`
-    CreatedAt time.Time `json:"created_at" db:"created_at" readonly:"true"`
-    UpdatedAt time.Time `json:"updated_at" db:"updated_at" readonly:"true"`
+    CreatedAt time.Time `json:"created_at" db:"created_at" readonly:"based"`
+    UpdatedAt time.Time `json:"updated_at" db:"updated_at" readonly:"based"`
 }
 
 be_like UserProfile squad {
@@ -36,8 +36,8 @@ be_like UserPreferences squad {
     Theme tea `json:"theme" default:"light" validate:"oneof=light dark"`
     Language tea `json:"language" default:"en" validate:"required,min=2,max=5"`
     Timezone tea `json:"timezone" default:"UTC"`
-    EmailNotifications lit `json:"email_notifications" default:"true"`
-    PushNotifications lit `json:"push_notifications" default:"false"`
+    EmailNotifications lit `json:"email_notifications" default:"based"`
+    PushNotifications lit `json:"push_notifications" default:"cap"`
 }
 
 be_like APIResponse squad {
@@ -56,7 +56,7 @@ be_like ValidationError squad {
     Message tea `json:"message"`
 }
 
-// API Handler using reflection for automatic serialization
+fr fr API Handler using reflection for automatic serialization
 be_like APIHandler squad {
     mapper *lookin_glass.VibeMapper
     validator *ReflectionValidator
@@ -66,7 +66,7 @@ be_like ReflectionValidator squad {
     rules map[tea]func(interface{}) ValidationError
 }
 
-// Initialize the API system
+fr fr Initialize the API system
 slay main() {
     vibez.spill("🚀 LookinGlass JSON API Demo - Reflection-Powered REST API")
     vibez.spill("=" * 60)
@@ -103,7 +103,7 @@ slay NewAPIHandler() *APIHandler {
     facts mapper = lookin_glass.VibeMapper()
         .use_json_tags(lit)
         .omit_empty(lit)
-        .include_unexported(false)
+        .include_unexported(cap)
         .field_name_transformer(lookin_glass.snake_to_camel)
     
     // Create validator with reflection-based rules
@@ -145,7 +145,7 @@ slay demo_user_creation_validation(handler *APIHandler) {
                 Language: "en",
                 Timezone: "America/Los_Angeles",
                 EmailNotifications: lit,
-                PushNotifications: false
+                PushNotifications: cap
             }
         },
         Permissions: ["read", "write", "admin"],
@@ -240,7 +240,7 @@ slay demo_dynamic_response_building(handler *APIHandler) {
     vibez.spill(handler.serialize_to_json(success_response))
     
     // Build error response
-    facts error_response = handler.build_response(false, "Validation failed", []ValidationError{
+    facts error_response = handler.build_response(cap, "Validation failed", []ValidationError{
         {Field: "username", Rule: "min", Message: "Username must be at least 3 characters"},
         {Field: "email", Rule: "email", Message: "Invalid email format"}
     })
@@ -393,7 +393,7 @@ slay demo_api_documentation(handler *APIHandler) {
     vibez.spill(openapi_schema)
 }
 
-// APIHandler implementation methods
+fr fr APIHandler implementation methods
 
 slay (h *APIHandler) serialize_to_json(data interface{}) tea {
     facts json_bytes = h.mapper.to_json(data)
@@ -637,7 +637,7 @@ slay (h *APIHandler) generate_openapi_schema(name tea, struct_type lookin_glass.
     periodt h.serialize_to_json(schema)
 }
 
-// Helper functions
+fr fr Helper functions
 
 slay is_valid_email(email tea) lit {
     periodt string.contains(email, "@") && string.contains(email, ".")

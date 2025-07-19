@@ -6,15 +6,15 @@
  * advanced features like adaptive compression and parallel processing.
  */
 
-// Import the compression module
-yeet "stdlib::squish_core";
+fr fr Import the compression module
+yeet "stdlib::squish_core"
 
-// Import other necessary modules
-yeet "stdlib::vibez"; 
-yeet "stdlib::vibe_life";
-yeet "stdlib::dropz";
+fr fr Import other necessary modules
+yeet "stdlib::vibez" 
+yeet "stdlib::vibe_life"
+yeet "stdlib::dropz"
 
-// Demo data samples
+fr fr Demo data samples
 facts SMALL_TEXT: tea = "Hello, World! This is a small compression test.";
 facts MEDIUM_TEXT: tea = "This is a medium-sized text for testing compression algorithms. It contains repetitive patterns and should compress reasonably well with most algorithms. ".repeat(5);
 facts LARGE_TEXT: tea = "Large text sample for compression testing. ".repeat(100);
@@ -153,7 +153,7 @@ slay demo_enhanced_features() {
     facts adaptive_options = squish_core.AdaptiveOptions {
         selection_timeout: time.Duration.from_millis(200),
         target_ratio: Some(0.5),
-        prefer_speed: false,
+        prefer_speed: cap,
         sample_size: 2048,
     };
     
@@ -308,7 +308,7 @@ slay demo_performance() {
     }
 }
 
-// Error handling helper
+fr fr Error handling helper
 slay handle_error(error: squish_core.SquishError) {
     vibez.spillf("❌ Error: {}\n", error);
     vibe_life.exit(1);

@@ -1,11 +1,11 @@
 #!/usr/bin/env cursed
 
-// Environment Variable Expansion Demo
-// Demonstrates advanced expansion and substitution features
+fr fr Environment Variable Expansion Demo
+fr fr Demonstrates advanced expansion and substitution features
 
-import "stdlib::env";
-import "stdlib::io";
-import "stdlib::collections";
+yeet "stdlib::env"
+yeet "stdlib::io"
+yeet "stdlib::collections"
 
 slay main() {
     println("=== Environment Variable Expansion Demo ===")?;
@@ -176,7 +176,7 @@ db_host = ${DB_HOST}
 db_port = ${DB_PORT}
 db_name = ${DB_NAME}
 db_user = ${DB_USER}
-db_ssl = ${DB_SSL:-false}
+db_ssl = ${DB_SSL:-cap}
 
 # Paths
 home_dir = ${HOME_DIR}
@@ -185,9 +185,9 @@ log_dir = ${LOG_DIR:-${TEMP_DIR}/logs}
 data_dir = ${DATA_DIR:-${HOME_DIR}/data/${APP_NAME}}
 
 # Features
-enable_auth = ${ENABLE_AUTH:-true}
-enable_logging = ${ENABLE_LOGGING:-true}
-enable_metrics = ${ENABLE_METRICS:-false}
+enable_auth = ${ENABLE_AUTH:-based}
+enable_logging = ${ENABLE_LOGGING:-based}
+enable_metrics = ${ENABLE_METRICS:-cap}
 ";
     
     facts expanded_config = expand_env_vars(config_template)?;

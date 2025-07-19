@@ -1,14 +1,14 @@
-// Simple test program for Stage 2 CURSED compiler
-// Tests basic functionality of the self-hosting compiler
+fr fr Simple test program for Stage 2 CURSED compiler
+fr fr Tests basic functionality of the self-hosting compiler
 
-import "std/io"
+yeet "std/io"
 
-// Simple arithmetic function
+fr fr Simple arithmetic function
 func add(a: int, b: int) int {
     return a + b
 }
 
-// Function with conditional logic
+fr fr Function with conditional logic
 func max(a: int, b: int) int {
     if a > b {
         return a
@@ -17,7 +17,7 @@ func max(a: int, b: int) int {
     }
 }
 
-// Function with loop
+fr fr Function with loop
 func factorial(n: int) int {
     if n <= 1 {
         return 1
@@ -30,7 +30,7 @@ func factorial(n: int) int {
     return result
 }
 
-// Array operations
+fr fr Array operations
 func sum_array(arr: []int) int {
     let total: int = 0
     for i := 0; i < len(arr); i = i + 1 {
@@ -39,7 +39,7 @@ func sum_array(arr: []int) int {
     return total
 }
 
-// Main function demonstrating various features
+fr fr Main function demonstrating various features
 func main() int {
     io.println("Stage 2 CURSED Compiler Test")
     

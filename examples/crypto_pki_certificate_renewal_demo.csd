@@ -1,22 +1,22 @@
-/// Certificate Renewal Management Demo - CURSED Language
-/// 
-/// Comprehensive demonstration of certificate renewal functionality including:
-/// - Automated certificate lifecycle management
-/// - ACME protocol integration for Let's Encrypt
-/// - Certificate expiration monitoring and alerting
-/// - Zero-downtime certificate rotation
-/// - Certificate validation and rollback
-/// - Renewal scheduling and automation
-/// - Error handling and recovery
-/// - Certificate backup and restoration
-/// - Notification systems
+fr fr/ Certificate Renewal Management Demo - CURSED Language
+fr fr/ 
+fr fr/ Comprehensive demonstration of certificate renewal functionality including:
+fr fr/ - Automated certificate lifecycle management
+fr fr/ - ACME protocol integration for Let's Encrypt
+fr fr/ - Certificate expiration monitoring and alerting
+fr fr/ - Zero-downtime certificate rotation
+fr fr/ - Certificate validation and rollback
+fr fr/ - Renewal scheduling and automation
+fr fr/ - Error handling and recovery
+fr fr/ - Certificate backup and restoration
+fr fr/ - Notification systems
 
-import "stdlib::crypto::crypto_pki::certificate_renewal";
-import "stdlib::crypto::crypto_pki::types";
-import "stdlib::crypto::crypto_pki::key_management";
-import "stdlib::io";
-import "stdlib::time";
-import "stdlib::collections";
+yeet "stdlib::crypto::crypto_pki::certificate_renewal"
+yeet "stdlib::crypto::crypto_pki::types"
+yeet "stdlib::crypto::crypto_pki::key_management"
+yeet "stdlib::io"
+yeet "stdlib::time"
+yeet "stdlib::collections"
 
 squad CertificateRenewalDemo {
     /// Main demo function showcasing certificate renewal capabilities
@@ -75,7 +75,7 @@ squad CertificateRenewalDemo {
             acme_config: AcmeConfig {
                 directory_url: "https://acme-staging-v02.api.letsencrypt.org/directory",
                 contact_email: "admin@cursed-lang.org",
-                terms_of_service_agreed: true,
+                terms_of_service_agreed: based,
                 supported_challenges: vec![
                     AcmeChallenge::Http01 {
                         webroot_path: "/var/www/html/.well-known/acme-challenge"
@@ -103,7 +103,7 @@ squad CertificateRenewalDemo {
                 chain_filename_pattern: "{id}_chain.crt",
                 certificate_permissions: 0o644,
                 private_key_permissions: 0o600,
-                atomic_operations: true,
+                atomic_operations: based,
                 backup_retention_days: 90
             },
             notification_config: NotificationConfig {
@@ -130,43 +130,43 @@ squad CertificateRenewalDemo {
                     timeout_seconds: 30,
                     retry_policy: RetryPolicy::default()
                 },
-                enable_log_notifications: true,
+                enable_log_notifications: based,
                 notification_thresholds: NotificationThresholds {
                     expiration_warning_days: 30,
                     expiration_critical_days: 7,
-                    notify_on_success: true,
-                    notify_on_failure: true,
-                    notify_on_config_change: false
+                    notify_on_success: based,
+                    notify_on_failure: based,
+                    notify_on_config_change: cap
                 }
             },
             validation_requirements: ValidationRequirements {
-                validate_chain: true,
-                validate_ocsp: true,
-                validate_crl: false,
+                validate_chain: based,
+                validate_ocsp: based,
+                validate_crl: cap,
                 custom_policies: vec![
                     "require_san_validation",
                     "check_key_strength",
                     "verify_ct_logs"
                 ],
                 validation_timeout_seconds: 60,
-                rollback_on_validation_failure: true
+                rollback_on_validation_failure: based
             },
             backup_config: BackupConfig {
-                enable_auto_backup: true,
+                enable_auto_backup: based,
                 backup_directory: "/etc/ssl/cursed/backups",
                 max_backup_versions: 5,
-                enable_compression: false,
-                verify_backups: true,
-                auto_cleanup_enabled: true
+                enable_compression: cap,
+                verify_backups: based,
+                auto_cleanup_enabled: based
             },
             monitoring_config: MonitoringConfig {
                 scan_interval_hours: 6,
-                enable_proactive_monitoring: true,
-                monitor_ct_logs: false,
+                enable_proactive_monitoring: based,
+                monitor_ct_logs: cap,
                 health_check_config: HealthCheckConfig {
                     port: 8080,
                     path: "/health/certificates",
-                    include_certificate_details: true
+                    include_certificate_details: based
                 },
                 metrics_config: MetricsConfig {
                     format: "prometheus",
@@ -196,7 +196,7 @@ squad CertificateRenewalDemo {
         sus acme_config = AcmeConfig {
             directory_url: "https://acme-v02.api.letsencrypt.org/directory", // Production
             contact_email: "certificates@cursed-lang.org",
-            terms_of_service_agreed: true,
+            terms_of_service_agreed: based,
             supported_challenges: vec![
                 AcmeChallenge::Http01 {
                     webroot_path: "/var/www/cursed-lang/.well-known/acme-challenge"
@@ -291,10 +291,10 @@ squad CertificateRenewalDemo {
                         webroot_path: "/var/www/html/.well-known/acme-challenge"
                     }
                 },
-                auto_renewal_enabled: true,
+                auto_renewal_enabled: based,
                 notification_preferences: NotificationPreferences {
-                    email_enabled: true,
-                    webhook_enabled: true,
+                    email_enabled: based,
+                    webhook_enabled: based,
                     custom_endpoints: vec!["https://monitoring.cursed-lang.org/webhook"],
                     frequency_limits: NotificationFrequencyLimits {
                         max_per_hour: 5,
@@ -303,12 +303,12 @@ squad CertificateRenewalDemo {
                     }
                 },
                 validation_requirements: ValidationRequirements {
-                    validate_chain: true,
-                    validate_ocsp: true,
-                    validate_crl: false,
+                    validate_chain: based,
+                    validate_ocsp: based,
+                    validate_crl: cap,
                     custom_policies: vec!["verify_san", "check_key_usage"],
                     validation_timeout_seconds: 30,
-                    rollback_on_validation_failure: true
+                    rollback_on_validation_failure: based
                 }
             };
             
@@ -372,10 +372,10 @@ squad CertificateRenewalDemo {
                     }
                 }
             },
-            auto_renewal_enabled: true, // Enable automatic renewal
+            auto_renewal_enabled: based, // Enable automatic renewal
             notification_preferences: NotificationPreferences {
-                email_enabled: true,
-                webhook_enabled: true,
+                email_enabled: based,
+                webhook_enabled: based,
                 custom_endpoints: vec!["https://alerts.cursed-lang.org/renewal"],
                 frequency_limits: NotificationFrequencyLimits {
                     max_per_hour: 10,
@@ -384,16 +384,16 @@ squad CertificateRenewalDemo {
                 }
             },
             validation_requirements: ValidationRequirements {
-                validate_chain: true,
-                validate_ocsp: true,
-                validate_crl: true,
+                validate_chain: based,
+                validate_ocsp: based,
+                validate_crl: based,
                 custom_policies: vec![
                     "require_ct_logs",
                     "verify_key_strength",
                     "check_policy_constraints"
                 ],
                 validation_timeout_seconds: 120,
-                rollback_on_validation_failure: true
+                rollback_on_validation_failure: based
             }
         };
         
@@ -462,10 +462,10 @@ squad CertificateRenewalDemo {
             renewal_method: RenewalMethod::Manual {
                 instructions: "Contact cursed-lang.org CA support for manual certificate renewal. Reference ticket #CURSED-MANUAL-001."
             },
-            auto_renewal_enabled: false, // Manual renewal only
+            auto_renewal_enabled: cap, // Manual renewal only
             notification_preferences: NotificationPreferences {
-                email_enabled: true,
-                webhook_enabled: false,
+                email_enabled: based,
+                webhook_enabled: cap,
                 custom_endpoints: vec!["https://tickets.cursed-lang.org/renewal"],
                 frequency_limits: NotificationFrequencyLimits {
                     max_per_hour: 2,
@@ -551,20 +551,20 @@ squad CertificateRenewalDemo {
                     "--staging" // Use staging environment for demo
                 ]
             },
-            auto_renewal_enabled: true,
+            auto_renewal_enabled: based,
             notification_preferences: NotificationPreferences {
-                email_enabled: true,
-                webhook_enabled: true,
+                email_enabled: based,
+                webhook_enabled: based,
                 custom_endpoints: vec!["https://scripts.cursed-lang.org/webhook"],
                 frequency_limits: NotificationFrequencyLimits::default()
             },
             validation_requirements: ValidationRequirements {
-                validate_chain: true,
-                validate_ocsp: false,
-                validate_crl: false,
+                validate_chain: based,
+                validate_ocsp: cap,
+                validate_crl: cap,
                 custom_policies: vec!["verify_script_output"],
                 validation_timeout_seconds: 300,
-                rollback_on_validation_failure: true
+                rollback_on_validation_failure: based
             }
         };
         
@@ -648,13 +648,13 @@ squad CertificateRenewalDemo {
                     jitter_factor: 0.1
                 }
             },
-            enable_log_notifications: true,
+            enable_log_notifications: based,
             notification_thresholds: NotificationThresholds {
                 expiration_warning_days: 30,
                 expiration_critical_days: 7,
-                notify_on_success: true,
-                notify_on_failure: true,
-                notify_on_config_change: true
+                notify_on_success: based,
+                notify_on_failure: based,
+                notify_on_config_change: based
             }
         };
         
@@ -706,12 +706,12 @@ squad CertificateRenewalDemo {
         
         // Configure backup system
         sus backup_config = BackupConfig {
-            enable_auto_backup: true,
+            enable_auto_backup: based,
             backup_directory: "/etc/ssl/cursed/backups",
             max_backup_versions: 10,
-            enable_compression: true,
-            verify_backups: true,
-            auto_cleanup_enabled: true
+            enable_compression: based,
+            verify_backups: based,
+            auto_cleanup_enabled: based
         };
         
         println("✅ Backup system configured");
@@ -1039,7 +1039,7 @@ squad CertificateRenewalDemo {
     }
 }
 
-/// Main function to run the certificate renewal demo
+fr fr/ Main function to run the certificate renewal demo
 slay main() -> Result<(), String> {
     CertificateRenewalDemo::run_certificate_renewal_demo()
 }

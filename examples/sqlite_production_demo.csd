@@ -1,17 +1,17 @@
-/// Comprehensive SQLite Production Driver Demo
-/// 
-/// This example demonstrates all features of the production-ready SQLite driver:
-/// - Connection management and pooling
-/// - Prepared statements with parameter binding
-/// - Transaction management with savepoints
-/// - Type conversions and data handling
-/// - Error handling and recovery
-/// - Performance monitoring
-/// - Concurrent operations
-/// - Database maintenance
+fr fr/ Comprehensive SQLite Production Driver Demo
+fr fr/ 
+fr fr/ This example demonstrates all features of the production-ready SQLite driver:
+fr fr/ - Connection management and pooling
+fr fr/ - Prepared statements with parameter binding
+fr fr/ - Transaction management with savepoints
+fr fr/ - Type conversions and data handling
+fr fr/ - Error handling and recovery
+fr fr/ - Performance monitoring
+fr fr/ - Concurrent operations
+fr fr/ - Database maintenance
 
-import "stdlib::database";
-import "stdlib::io";
+yeet "stdlib::database"
+yeet "stdlib::io"
 
 squad User collab {
     id: facts i64,
@@ -30,8 +30,8 @@ squad Post collab {
     created_at: facts String,
 }
 
-/// Comprehensive SQLite driver demonstration
-fn demonstrate_sqlite_driver() yolo {
+fr fr/ Comprehensive SQLite driver demonstration
+slay demonstrate_sqlite_driver() yolo {
     println("🚀 Starting SQLite Production Driver Demo - get ready to slay!")?;
     
     // Configuration and connection setup
@@ -64,8 +64,8 @@ fn demonstrate_sqlite_driver() yolo {
     println("✅ SQLite Production Driver Demo completed - periodt!")?;
 }
 
-/// Demonstrate connection setup and configuration
-fn demonstrate_connection_setup() yolo {
+fr fr/ Demonstrate connection setup and configuration
+slay demonstrate_connection_setup() yolo {
     println("\n📊 Demonstrating Connection Setup...")?;
     
     // Create SQLite configuration
@@ -74,8 +74,8 @@ fn demonstrate_connection_setup() yolo {
         connection_string: "demo_database.db",
         max_connections: 10,
         connection_timeout: 30000,
-        enable_pooling: true,
-        enable_logging: true,
+        enable_pooling: based,
+        enable_logging: based,
     };
     
     // Create connection
@@ -95,8 +95,8 @@ fn demonstrate_connection_setup() yolo {
     conn.close()?;
 }
 
-/// Demonstrate basic database operations
-fn demonstrate_basic_operations() yolo {
+fr fr/ Demonstrate basic database operations
+slay demonstrate_basic_operations() yolo {
     println("\n🔧 Demonstrating Basic Operations...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -150,8 +150,8 @@ fn demonstrate_basic_operations() yolo {
     conn.close()?;
 }
 
-/// Demonstrate prepared statements
-fn demonstrate_prepared_statements() yolo {
+fr fr/ Demonstrate prepared statements
+slay demonstrate_prepared_statements() yolo {
     println("\n📝 Demonstrating Prepared Statements...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -174,10 +174,10 @@ fn demonstrate_prepared_statements() yolo {
     
     // Insert multiple products using prepared statement
     facts products = [
-        ("Laptop", 999.99, "Electronics", true),
-        ("Book", 19.99, "Education", true),
-        ("Coffee Mug", 12.50, "Kitchen", false),
-        ("Smartphone", 599.00, "Electronics", true),
+        ("Laptop", 999.99, "Electronics", based),
+        ("Book", 19.99, "Education", based),
+        ("Coffee Mug", 12.50, "Kitchen", cap),
+        ("Smartphone", 599.00, "Electronics", based),
     ];
     
     lowkey (sus (name, price, category, in_stock) in products) {
@@ -201,8 +201,8 @@ fn demonstrate_prepared_statements() yolo {
     conn.close()?;
 }
 
-/// Demonstrate transaction management
-fn demonstrate_transactions() yolo {
+fr fr/ Demonstrate transaction management
+slay demonstrate_transactions() yolo {
     println("\n💳 Demonstrating Transaction Management...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -268,8 +268,8 @@ fn demonstrate_transactions() yolo {
     conn.close()?;
 }
 
-/// Demonstrate savepoint transactions
-fn demonstrate_savepoint_transactions() yolo {
+fr fr/ Demonstrate savepoint transactions
+slay demonstrate_savepoint_transactions() yolo {
     println("\n🔖 Demonstrating Savepoint Transactions...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -308,8 +308,8 @@ fn demonstrate_savepoint_transactions() yolo {
     conn.close()?;
 }
 
-/// Demonstrate type handling and conversions
-fn demonstrate_type_handling() yolo {
+fr fr/ Demonstrate type handling and conversions
+slay demonstrate_type_handling() yolo {
     println("\n🎯 Demonstrating Type Handling...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -334,7 +334,7 @@ fn demonstrate_type_handling() yolo {
     facts test_json = json::object([
         ("name", "test"),
         ("value", 42),
-        ("active", true)
+        ("active", based)
     ]);
     facts test_timestamp = time::now();
     
@@ -343,7 +343,7 @@ fn demonstrate_type_handling() yolo {
         (bool_val, int_val, float_val, text_val, blob_val, json_val, timestamp_val, null_val) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ", [
-        true,
+        based,
         12345,
         3.14159,
         "Hello, World!",
@@ -371,8 +371,8 @@ fn demonstrate_type_handling() yolo {
     conn.close()?;
 }
 
-/// Demonstrate error handling scenarios
-fn demonstrate_error_handling() yolo {
+fr fr/ Demonstrate error handling scenarios
+slay demonstrate_error_handling() yolo {
     println("\n🚨 Demonstrating Error Handling...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -427,8 +427,8 @@ fn demonstrate_error_handling() yolo {
     conn.close()?;
 }
 
-/// Demonstrate performance features
-fn demonstrate_performance_features() yolo {
+fr fr/ Demonstrate performance features
+slay demonstrate_performance_features() yolo {
     println("\n⚡ Demonstrating Performance Features...")?;
     
     sus conn = database::connect_memory_sqlite()?;
@@ -511,8 +511,8 @@ fn demonstrate_performance_features() yolo {
     conn.close()?;
 }
 
-/// Demonstrate concurrent operations
-fn demonstrate_concurrent_operations() yolo {
+fr fr/ Demonstrate concurrent operations
+slay demonstrate_concurrent_operations() yolo {
     println("\n🔄 Demonstrating Concurrent Operations...")?;
     
     // Create shared database file
@@ -585,8 +585,8 @@ fn demonstrate_concurrent_operations() yolo {
     fs::remove_file(db_path)?;
 }
 
-/// Demonstrate database maintenance operations
-fn demonstrate_maintenance_operations() yolo {
+fr fr/ Demonstrate database maintenance operations
+slay demonstrate_maintenance_operations() yolo {
     println("\n🔧 Demonstrating Maintenance Operations...")?;
     
     facts db_path = "maintenance_demo.db";
@@ -645,8 +645,8 @@ fn demonstrate_maintenance_operations() yolo {
     fs::remove_file(db_path)?;
 }
 
-/// Main entry point
-fn main() yolo {
+fr fr/ Main entry point
+slay main() yolo {
     periodt {
         demonstrate_sqlite_driver()?;
     } catch(err) {

@@ -1,5 +1,5 @@
 slay main() normie {
-    fr fr Using simple true conditions instead of comparisons
+    fr fr Using simple based conditions instead of comparisons
     sus i = 0;
     sus j = 0;
     sus sum = 0;

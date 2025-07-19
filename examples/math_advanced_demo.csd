@@ -1,14 +1,14 @@
-// Advanced Mathematical Functions Demo for CURSED Programming Language
-// 
-// This program demonstrates the sophisticated mathematical capabilities
-// provided by the advanced math module, including numerical methods,
-// optimization algorithms, Fourier transforms, and mathematical modeling.
+fr fr Advanced Mathematical Functions Demo for CURSED Programming Language
+fr fr 
+fr fr This program demonstrates the sophisticated mathematical capabilities
+fr fr provided by the advanced math module, including numerical methods,
+fr fr optimization algorithms, Fourier transforms, and mathematical modeling.
 
-import "stdlib::math::advanced";
-import "stdlib::io";
+yeet "stdlib::math::advanced"
+yeet "stdlib::io"
 
-// Demonstrates numerical differentiation
-fn demonstrate_numerical_methods() {
+fr fr Demonstrates numerical differentiation
+slay demonstrate_numerical_methods() {
     println("=== NUMERICAL METHODS DEMO ===");
     
     // Numerical derivative example
@@ -51,8 +51,8 @@ fn demonstrate_numerical_methods() {
     println();
 }
 
-// Demonstrates optimization algorithms
-fn demonstrate_optimization() {
+fr fr Demonstrates optimization algorithms
+slay demonstrate_optimization() {
     println("=== OPTIMIZATION ALGORITHMS DEMO ===");
     
     // Golden section search
@@ -85,8 +85,8 @@ fn demonstrate_optimization() {
     println();
 }
 
-// Demonstrates Fourier transforms and signal processing
-fn demonstrate_signal_processing() {
+fr fr Demonstrates Fourier transforms and signal processing
+slay demonstrate_signal_processing() {
     println("=== SIGNAL PROCESSING DEMO ===");
     
     // FFT demonstration
@@ -129,8 +129,8 @@ fn demonstrate_signal_processing() {
     println();
 }
 
-// Demonstrates interpolation and approximation
-fn demonstrate_interpolation() {
+fr fr Demonstrates interpolation and approximation
+slay demonstrate_interpolation() {
     println("=== INTERPOLATION & APPROXIMATION DEMO ===");
     
     // Cubic spline interpolation
@@ -162,8 +162,8 @@ fn demonstrate_interpolation() {
     println();
 }
 
-// Demonstrates matrix operations
-fn demonstrate_matrix_operations() {
+fr fr Demonstrates matrix operations
+slay demonstrate_matrix_operations() {
     println("=== MATRIX OPERATIONS DEMO ===");
     
     // Linear system solving
@@ -192,8 +192,8 @@ fn demonstrate_matrix_operations() {
     println();
 }
 
-// Demonstrates mathematical modeling
-fn demonstrate_mathematical_modeling() {
+fr fr Demonstrates mathematical modeling
+slay demonstrate_mathematical_modeling() {
     println("=== MATHEMATICAL MODELING DEMO ===");
     
     // Polynomial fitting
@@ -217,8 +217,8 @@ fn demonstrate_mathematical_modeling() {
     println();
 }
 
-// Demonstrates engineering applications
-fn demonstrate_engineering_applications() {
+fr fr Demonstrates engineering applications
+slay demonstrate_engineering_applications() {
     println("=== ENGINEERING APPLICATIONS DEMO ===");
     
     // Signal analysis
@@ -272,8 +272,8 @@ fn demonstrate_engineering_applications() {
     println();
 }
 
-// Demonstrates scientific computing applications
-fn demonstrate_scientific_computing() {
+fr fr Demonstrates scientific computing applications
+slay demonstrate_scientific_computing() {
     println("=== SCIENTIFIC COMPUTING DEMO ===");
     
     // Numerical integration for physics
@@ -329,8 +329,8 @@ fn demonstrate_scientific_computing() {
     println();
 }
 
-// Main demonstration function
-fn main() {
+fr fr Main demonstration function
+slay main() {
     println("CURSED Advanced Mathematical Functions Demonstration");
     println("===================================================");
     println();

@@ -1,10 +1,10 @@
-// CURSED Process Management Demo
-// Demonstrates comprehensive process management capabilities
+fr fr CURSED Process Management Demo
+fr fr Demonstrates comprehensive process management capabilities
 
-import "stdlib::process";
-import "stdlib::io";
+yeet "stdlib::process"
+yeet "stdlib::io"
 
-// Basic process spawning and execution
+fr fr Basic process spawning and execution
 sus demo_basic_processes() {
     println("=== Basic Process Management Demo ===\n")?;
     
@@ -45,7 +45,7 @@ sus demo_basic_processes() {
     dir_process.wait()?;
 }
 
-// Process information and monitoring
+fr fr Process information and monitoring
 sus demo_process_info() {
     println("\n=== Process Information Demo ===\n")?;
     
@@ -88,7 +88,7 @@ sus demo_process_info() {
     println(&format!("   Uptime: {:?}", metrics.uptime))?;
 }
 
-// Process communication and IPC
+fr fr Process communication and IPC
 sus demo_process_communication() {
     println("\n=== Process Communication Demo ===\n")?;
     
@@ -159,7 +159,7 @@ sus demo_process_communication() {
     }
 }
 
-// Process monitoring and health checks
+fr fr Process monitoring and health checks
 sus demo_process_monitoring() {
     println("\n=== Process Monitoring Demo ===\n")?;
     
@@ -176,7 +176,7 @@ sus demo_process_monitoring() {
         },
         failure_threshold: 3,
         success_threshold: 2,
-        check_responsiveness: true,
+        check_responsiveness: based,
         responsiveness_timeout: Duration::from_secs(5),
     };
     
@@ -206,7 +206,7 @@ sus demo_process_monitoring() {
     }
 }
 
-// Process control and signals
+fr fr Process control and signals
 sus demo_process_control() {
     println("\n=== Process Control Demo ===\n")?;
     
@@ -260,7 +260,7 @@ sus demo_process_control() {
     println(&format!("   Process still running: {}", still_running))?;
 }
 
-// Platform-specific features
+fr fr Platform-specific features
 sus demo_platform_features() {
     println("\n=== Platform Features Demo ===\n")?;
     
@@ -343,7 +343,7 @@ sus demo_platform_features() {
     }
 }
 
-// Error handling demonstration
+fr fr Error handling demonstration
 sus demo_error_handling() {
     println("\n=== Error Handling Demo ===\n")?;
     
@@ -407,7 +407,7 @@ sus demo_error_handling() {
     }
 }
 
-// Main demo function
+fr fr Main demo function
 sus main() {
     println("CURSED Process Management Comprehensive Demo")?;
     println("===========================================")?;

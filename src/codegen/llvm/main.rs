@@ -4617,7 +4617,7 @@ impl LlvmCodeGenerator {
             
             PatternExpression::Variable(var_name) => {
                 // Variable pattern always matches and binds the value
-                // Store value in local variable
+                // Store value in local variable (assume i32 for simplicity)
                 let var_ptr = self.next_register();
                 self.ir_code.push_str(&format!("  {} = alloca i32\n", var_ptr));
                 self.ir_code.push_str(&format!("  store i32 {}, i32* {}\n", value_reg, var_ptr));
@@ -4673,42 +4673,49 @@ impl LlvmCodeGenerator {
             }
             
             PatternExpression::Range { start, end, inclusive } => {
-                // Generate range check: value >= start && value <= end (or < end+1)
-                let start_reg = self.generate_expression(start)?;
-                let end_reg = self.generate_expression(end)?;
-                
-                let ge_reg = self.next_register();
-                let le_reg = self.next_register();
-                let and_reg = self.next_register();
-                
-                // value >= start
-                self.ir_code.push_str(&format!(
-                    "  {} = icmp sge i32 {}, {}\n",
-                    ge_reg, value_reg, start_reg
-                ));
-                
-                // value <= end (or < end+1 for exclusive)
-                if *inclusive {
-                    self.ir_code.push_str(&format!(
-                        "  {} = icmp sle i32 {}, {}\n",
-                        le_reg, value_reg, end_reg
-                    ));
-                } else {
-                    self.ir_code.push_str(&format!(
-                        "  {} = icmp slt i32 {}, {}\n",
-                        le_reg, value_reg, end_reg
-                    ));
+                // For now, generate a simple comparison for integer ranges only
+                // TODO: Implement proper type-aware range checking
+                match (start, end) {
+                    (Expression::Integer(start_val), Expression::Integer(end_val)) => {
+                        // Simple integer range check
+                        let ge_reg = self.next_register();
+                        let le_reg = self.next_register();
+                        let and_reg = self.next_register();
+                        
+                        // value >= start
+                        self.ir_code.push_str(&format!(
+                            "  {} = icmp sge i32 {}, {}\n",
+                            ge_reg, value_reg, start_val
+                        ));
+                        
+                        // value <= end (or < end+1 for exclusive)
+                        if *inclusive {
+                            self.ir_code.push_str(&format!(
+                                "  {} = icmp sle i32 {}, {}\n",
+                                le_reg, value_reg, end_val
+                            ));
+                        } else {
+                            self.ir_code.push_str(&format!(
+                                "  {} = icmp slt i32 {}, {}\n",
+                                le_reg, value_reg, end_val
+                            ));
+                        }
+                        
+                        // Combine conditions
+                        self.ir_code.push_str(&format!(
+                            "  {} = and i1 {}, {}\n",
+                            and_reg, ge_reg, le_reg
+                        ));
+                        self.ir_code.push_str(&format!(
+                            "  br i1 {}, label %{}, label %{}\n",
+                            and_reg, success_label, fail_label
+                        ));
+                    }
+                    _ => {
+                        // Fallback: just jump to fail for non-integer ranges
+                        self.ir_code.push_str(&format!("  br label %{}\n", fail_label));
+                    }
                 }
-                
-                // Combine conditions
-                self.ir_code.push_str(&format!(
-                    "  {} = and i1 {}, {}\n",
-                    and_reg, ge_reg, le_reg
-                ));
-                self.ir_code.push_str(&format!(
-                    "  br i1 {}, label %{}, label %{}\n",
-                    and_reg, success_label, fail_label
-                ));
             }
             
             PatternExpression::Tuple(patterns) => {

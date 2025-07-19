@@ -1,27 +1,27 @@
-/// Fibonacci calculation example in CURSED
-/// 
-/// This example demonstrates the CURSED programming language
-/// syntax including function definitions, control flow, and
-/// recursive function calls.
+fr fr/ Fibonacci calculation example in CURSED
+fr fr/ 
+fr fr/ This example demonstrates the CURSED programming language
+fr fr/ syntax including function definitions, control flow, and
+fr fr/ recursive function calls.
 
-vibe main
+fr fr Fibonacci example
 
-/// Calculate the nth Fibonacci number recursively
-/// 
-/// This is a classic recursive implementation that demonstrates
-/// the CURSED language's control flow constructs.
-/// 
-/// @param n - The position in the Fibonacci sequence
-/// @return - The Fibonacci number at position n
-/// 
-/// # Examples
-/// ```cursed
-/// let result = fibonacci(10)
-/// assert(result == 55)
-/// ```
-/// 
-/// # Time Complexity
-/// O(2^n) - This is an inefficient implementation for demonstration
+fr fr/ Calculate the nth Fibonacci number recursively
+fr fr/ 
+fr fr/ This is a classic recursive implementation that demonstrates
+fr fr/ the CURSED language's control flow constructs.
+fr fr/ 
+fr fr/ @param n - The position in the Fibonacci sequence
+fr fr/ @return - The Fibonacci number at position n
+fr fr/ 
+fr fr/ # Examples
+fr fr/ ```cursed
+fr fr/ let result = fibonacci(10)
+fr fr/ assert(result == 55)
+fr fr/ ```
+fr fr/ 
+fr fr/ # Time Complexity
+fr fr/ O(2^n) - This is an inefficient implementation for demonstration
 slay fibonacci(n normie) -> normie {
     lowkey n <= 1 {
         yolo n
@@ -29,10 +29,10 @@ slay fibonacci(n normie) -> normie {
     yolo fibonacci(n - 1) + fibonacci(n - 2)
 }
 
-/// Iterative fibonacci implementation for better performance
-/// 
-/// @param n - The position in the Fibonacci sequence
-/// @return - The Fibonacci number at position n
+fr fr/ Iterative fibonacci implementation for better performance
+fr fr/ 
+fr fr/ @param n - The position in the Fibonacci sequence
+fr fr/ @return - The Fibonacci number at position n
 slay fibonacci_iterative(n normie) -> normie {
     lowkey n <= 1 {
         yolo n
@@ -50,7 +50,7 @@ slay fibonacci_iterative(n normie) -> normie {
     yolo b
 }
 
-/// Main function to demonstrate fibonacci calculations
+fr fr/ Main function to demonstrate fibonacci calculations
 slay main() {
     facts n = 10
     

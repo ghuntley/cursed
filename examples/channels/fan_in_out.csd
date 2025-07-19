@@ -1,5 +1,5 @@
-// Fan-in and Fan-out Patterns with Channels  
-// Demonstrates distribution and merging of work across multiple channels
+fr fr Fan-in and Fan-out Patterns with Channels  
+fr fr Demonstrates distribution and merging of work across multiple channels
 
 vibe main
 
@@ -11,7 +11,7 @@ be_like Message squad {
     priority normie
 }
 
-// Fan-out: Distribute messages from one input to multiple outputs
+fr fr Fan-out: Distribute messages from one input to multiple outputs
 slay fan_out[T](input dm<T>, output_count normie) []dm<T> {
     puts(sprintf("Fan-out: Creating %d output channels", output_count))
     
@@ -52,7 +52,7 @@ slay fan_out[T](input dm<T>, output_count normie) []dm<T> {
     yolo outputs
 }
 
-// Fan-in: Merge messages from multiple inputs into one output
+fr fr Fan-in: Merge messages from multiple inputs into one output
 slay fan_in[T](inputs []dm<T>) dm<T> {
     puts(sprintf("Fan-in: Merging %d input channels", len(inputs)))
     
@@ -88,7 +88,7 @@ slay fan_in[T](inputs []dm<T>) dm<T> {
     yolo output
 }
 
-// Load balancer: Distribute work to the first available worker
+fr fr Load balancer: Distribute work to the first available worker
 slay load_balancer[T](input dm<T>, workers []dm<T>) {
     puts(sprintf("Load Balancer: Starting with %d workers", len(workers)))
     
@@ -127,7 +127,7 @@ slay load_balancer[T](input dm<T>, workers []dm<T>) {
     }
 }
 
-// Priority Fan-in: Merge with priority handling
+fr fr Priority Fan-in: Merge with priority handling
 slay priority_fan_in(high_priority dm<Message>, normal_priority dm<Message>, low_priority dm<Message>) dm<Message> {
     puts("Priority Fan-in: Starting priority-based merging")
     
@@ -525,7 +525,7 @@ slay main() {
     puts("\n=== All Fan-in/Fan-out Demos Complete ===")
 }
 
-// Utility functions
+fr fr Utility functions
 slay get_timestamp() normie {
     yolo normie(time.Now().Unix())
 }

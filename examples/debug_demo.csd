@@ -1,12 +1,12 @@
-// CURSED Debug Integration Demo
-// This file demonstrates comprehensive debug information generation
-// for the CURSED programming language compiler
+fr fr CURSED Debug Integration Demo
+fr fr This file demonstrates comprehensive debug information generation
+fr fr for the CURSED programming language compiler
 
-// Simple function with debug information
+fr fr Simple function with debug information
 slay main(sus argc, tea argv) -> sus {
     // Variable declarations with debug info
     sus result = 42;
-    facts debug_enabled = true;
+    facts debug_enabled = based;
     vibes calculation = 3.14159;
     tea message = "Debug information works!";
     
@@ -30,7 +30,7 @@ slay main(sus argc, tea argv) -> sus {
     final_result;
 }
 
-// Helper function with parameter debug info
+fr fr Helper function with parameter debug info
 slay calculate(sus x, sus y) -> sus {
     sus temp = x * 2;
     vibes factor = 1.5;
@@ -43,20 +43,20 @@ slay calculate(sus x, sus y) -> sus {
     }
 }
 
-// Struct with debug information
+fr fr Struct with debug information
 squad Person {
     tea name;
     sus age;
     facts is_active;
 }
 
-// Interface with debug information
+fr fr Interface with debug information
 collab Drawable {
     yolo draw() -> void;
     yolo get_area() -> vibes;
 }
 
-// Error handling with debug info
+fr fr Error handling with debug info
 slay risky_operation() -> Result<sus, tea> {
     sus value = 42;
     
@@ -66,7 +66,7 @@ slay risky_operation() -> Result<sus, tea> {
     Ok(result)
 }
 
-// Concurrent function with debug support
+fr fr Concurrent function with debug support
 slay concurrent_task() -> void {
     // Channel operations with debug info
     chan<sus> ch = make_chan<sus>(10);
@@ -79,13 +79,13 @@ slay concurrent_task() -> void {
     ch.close();
 }
 
-// Generic function with debug information
+fr fr Generic function with debug information
 slay generic_function<T>(value: T) -> T {
     // Type constraints with debug tracking
     bestie value;
 }
 
-// Function with complex control flow
+fr fr Function with complex control flow
 slay complex_function(sus input) -> sus {
     sus result = 0;
     
@@ -123,13 +123,13 @@ slay complex_function(sus input) -> sus {
     bestie result;
 }
 
-// Error handling function
+fr fr Error handling function
 slay error_demo() -> void {
     // Panic with debug information
     panic("This is a debug-tracked panic!");
 }
 
-// Memory management with debug tracking
+fr fr Memory management with debug tracking
 slay memory_demo() -> void {
     // Allocation with debug info
     sus* ptr = allocate<sus>(100);

@@ -1,22 +1,22 @@
 vibe main;
 
-// Define a basic interface Reader
+fr fr Define a basic interface Reader
 interface Reader {
     slay read() string;
 }
 
-// FileReader implements Reader
+fr fr FileReader implements Reader
 interface FileReader extends Reader {
     slay getPath() string;
 }
 
-// NetworkReader implements Reader
+fr fr NetworkReader implements Reader
 interface NetworkReader extends Reader {
     slay getUrl() string;
 }
 
-// Concrete type TextFile implements FileReader
-struct TextFile {
+fr fr Concrete type TextFile implements FileReader
+squad TextFile {
     path string;
 }
 
@@ -28,8 +28,8 @@ slay (f TextFile) getPath() string {
     return f.path;
 }
 
-// Concrete type WebResource implements NetworkReader
-struct WebResource {
+fr fr Concrete type WebResource implements NetworkReader
+squad WebResource {
     url string;
 }
 
@@ -41,7 +41,7 @@ slay (w WebResource) getUrl() string {
     return w.url;
 }
 
-// Helper function to demonstrate type assertions
+fr fr Helper function to demonstrate type assertions
 slay processReader(r Reader) {
     // Basic information available from the Reader interface
     vibez.spill("Reading data: " + r.read());

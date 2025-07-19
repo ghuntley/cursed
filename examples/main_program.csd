@@ -1,8 +1,8 @@
 vibe main_program
 
 fr fr Import utilities from other packages
-fr fr import "package1"
-fr fr import "package2"
+fr fr yeet "package1"
+fr fr yeet "package2"
 
 slay main() {
     vibez.spill("Multi-package CURSED program")

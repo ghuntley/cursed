@@ -1,14 +1,14 @@
 #!/usr/bin/env cursed
 
-// Enhanced Process Management Demo
-// Demonstrates the complete enhanced process management and IPC system
-// with real-world examples using ExecSlay and ExecVibez features
+fr fr Enhanced Process Management Demo
+fr fr Demonstrates the complete enhanced process management and IPC system
+fr fr with real-world examples using ExecSlay and ExecVibez features
 
-import "stdlib::process::exec_slay";
-import "stdlib::process::exec_vibez_enhanced";
-import "stdlib::io";
-import "stdlib::fs";
-import "stdlib::time";
+yeet "stdlib::process::exec_slay"
+yeet "stdlib::process::exec_vibez_enhanced"
+yeet "stdlib::io"
+yeet "stdlib::fs"
+yeet "stdlib::time"
 
 fr fr Main demonstration function
 slay main() -> tea {
@@ -340,7 +340,7 @@ slay demo_input_generator() -> tea {
     vibez.spill("==============================================\n");
     
     fr fr Create command that reads input
-    sus cmd = exec_vibez_enhanced.command("bash", ["-c", "while read line; do echo \"Received: $line\"; done"]);
+    sus cmd = exec_vibez_enhanced.command("bash", ["-c", "periodt read line; do echo \"Received: $line\"; done"]);
     sus mut generator = exec_vibez_enhanced.new_input_generator(cmd);
     
     fr fr Queue programmatic input
@@ -465,7 +465,7 @@ slay demo_error_handling() -> tea {
     sus mut error_group = exec_vibez_enhanced.new_process_group();
     
     error_group.add_command(exec_vibez_enhanced.command("echo", ["Success 1"]));
-    error_group.add_command(exec_vibez_enhanced.command("false", [])); fr fr This will fail
+    error_group.add_command(exec_vibez_enhanced.command("cap", [])); fr fr This will fail
     error_group.add_command(exec_vibez_enhanced.command("echo", ["Success 2"]));
     
     sus error_options = exec_vibez_enhanced.ProcessGroupOptions {

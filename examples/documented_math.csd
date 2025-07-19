@@ -1,28 +1,28 @@
-//! # Mathematical Operations Module
-//! 
-//! This module provides comprehensive mathematical operations with Gen Z flair.
-//! It demonstrates the CURSED documentation system with detailed examples.
-//! 
-//! ## Features
-//! - Basic arithmetic operations
-//! - Advanced mathematical functions  
-//! - Type-safe numeric operations
-//! - Comprehensive error handling
-//! 
-//! @author Geoffrey Huntley
-//! @version 1.0.0
-//! @since 0.1.0
+fr fr! # Mathematical Operations Module
+fr fr! 
+fr fr! This module provides comprehensive mathematical operations with Gen Z flair.
+fr fr! It demonstrates the CURSED documentation system with detailed examples.
+fr fr! 
+fr fr! ## Features
+fr fr! - Basic arithmetic operations
+fr fr! - Advanced mathematical functions  
+fr fr! - Type-safe numeric operations
+fr fr! - Comprehensive error handling
+fr fr! 
+fr fr! @author Geoffrey Huntley
+fr fr! @version 1.0.0
+fr fr! @since 0.1.0
 
-/// Vector type for mathematical operations
-/// 
-/// Represents a 2D or 3D vector with x, y, and optional z components.
-/// Used throughout the math module for geometric calculations.
-/// 
-/// @example Basic vector creation
-/// ```cursed
-/// sus vec = Vector { x: 1.0, y: 2.0, z: 3.0 }
-/// println("Vector: {}", vec)
-/// ```
+fr fr/ Vector type for mathematical operations
+fr fr/ 
+fr fr/ Represents a 2D or 3D vector with x, y, and optional z components.
+fr fr/ Used throughout the math module for geometric calculations.
+fr fr/ 
+fr fr/ @example Basic vector creation
+fr fr/ ```cursed
+fr fr/ sus vec = Vector { x: 1.0, y: 2.0, z: 3.0 }
+fr fr/ println("Vector: {}", vec)
+fr fr/ ```
 squad Vector {
     /// X coordinate
     x: f64,
@@ -32,22 +32,22 @@ squad Vector {
     z: f64?
 }
 
-/// Calculate the magnitude of a vector
-/// 
-/// This function computes the Euclidean norm (magnitude) of a vector.
-/// For 2D vectors, it uses the formula: sqrt(x² + y²)
-/// For 3D vectors, it uses: sqrt(x² + y² + z²)
-/// 
-/// @param vec The input vector
-/// @return The magnitude as a positive float
-/// @throws MathError if the vector contains invalid values
-/// @example Calculate vector magnitude
-/// ```cursed
-/// sus vec = Vector { x: 3.0, y: 4.0, z: nil }
-/// sus magnitude = calculate_magnitude(vec)
-/// println("Magnitude: {}", magnitude) // Output: 5.0
-/// ```
-/// @since 0.1.0
+fr fr/ Calculate the magnitude of a vector
+fr fr/ 
+fr fr/ This function computes the Euclidean norm (magnitude) of a vector.
+fr fr/ For 2D vectors, it uses the formula: sqrt(x² + y²)
+fr fr/ For 3D vectors, it uses: sqrt(x² + y² + z²)
+fr fr/ 
+fr fr/ @param vec The input vector
+fr fr/ @return The magnitude as a positive float
+fr fr/ @throws MathError if the vector contains invalid values
+fr fr/ @example Calculate vector magnitude
+fr fr/ ```cursed
+fr fr/ sus vec = Vector { x: 3.0, y: 4.0, z: nil }
+fr fr/ sus magnitude = calculate_magnitude(vec)
+fr fr/ println("Magnitude: {}", magnitude) // Output: 5.0
+fr fr/ ```
+fr fr/ @since 0.1.0
 slay calculate_magnitude(vec: Vector) -> f64 {
     lowkey (vec.z != nil) {
         facts z_val = vec.z ?? 0.0
@@ -57,14 +57,14 @@ slay calculate_magnitude(vec: Vector) -> f64 {
     }
 }
 
-/// Advanced mathematical calculator interface
-/// 
-/// Provides a contract for mathematical operations that can be
-/// implemented by different calculator types.
-/// 
-/// @see BasicCalculator
-/// @see ScientificCalculator
-/// @since 0.1.0
+fr fr/ Advanced mathematical calculator interface
+fr fr/ 
+fr fr/ Provides a contract for mathematical operations that can be
+fr fr/ implemented by different calculator types.
+fr fr/ 
+fr fr/ @see BasicCalculator
+fr fr/ @see ScientificCalculator
+fr fr/ @since 0.1.0
 collab Calculator {
     /// Add two numbers
     /// @param a First operand
@@ -92,35 +92,35 @@ collab Calculator {
     slay divide(a: f64, b: f64) -> f64?
 }
 
-/// Basic calculator implementation
-/// 
-/// A straightforward implementation of the Calculator interface
-/// that provides basic arithmetic operations with error checking.
-/// 
-/// @example Using the basic calculator
-/// ```cursed
-/// sus calc = BasicCalculator()
-/// sus result = calc.add(5.0, 3.0)
-/// println("5 + 3 = {}", result) // Output: 8.0
-/// ```
+fr fr/ Basic calculator implementation
+fr fr/ 
+fr fr/ A straightforward implementation of the Calculator interface
+fr fr/ that provides basic arithmetic operations with error checking.
+fr fr/ 
+fr fr/ @example Using the basic calculator
+fr fr/ ```cursed
+fr fr/ sus calc = BasicCalculator()
+fr fr/ sus result = calc.add(5.0, 3.0)
+fr fr/ println("5 + 3 = {}", result) // Output: 8.0
+fr fr/ ```
 squad BasicCalculator {
     /// Calculator name for debugging
     name: string
 }
 
-/// Create a new basic calculator
-/// 
-/// @param name Optional name for the calculator
-/// @return A new BasicCalculator instance
-/// @example
-/// ```cursed
-/// sus calc = BasicCalculator::new("My Calculator")
-/// ```
+fr fr/ Create a new basic calculator
+fr fr/ 
+fr fr/ @param name Optional name for the calculator
+fr fr/ @return A new BasicCalculator instance
+fr fr/ @example
+fr fr/ ```cursed
+fr fr/ sus calc = BasicCalculator::new("My Calculator")
+fr fr/ ```
 slay BasicCalculator::new(name: string = "Basic Calculator") -> BasicCalculator {
     return BasicCalculator { name: name }
 }
 
-/// Implement Calculator for BasicCalculator
+fr fr/ Implement Calculator for BasicCalculator
 impl Calculator for BasicCalculator {
     slay add(a: f64, b: f64) -> f64 {
         return a + b
@@ -142,12 +142,12 @@ impl Calculator for BasicCalculator {
     }
 }
 
-/// Mathematical constants
-/// 
-/// Pre-calculated mathematical constants for common operations.
-/// These values are computed at compile time for maximum precision.
-/// 
-/// @since 0.1.0
+fr fr/ Mathematical constants
+fr fr/ 
+fr fr/ Pre-calculated mathematical constants for common operations.
+fr fr/ These values are computed at compile time for maximum precision.
+fr fr/ 
+fr fr/ @since 0.1.0
 namespace MathConstants {
     /// Euler's number (e)
     /// @see https://en.wikipedia.org/wiki/E_(mathematical_constant)
@@ -162,23 +162,23 @@ namespace MathConstants {
     facts GOLDEN_RATIO: f64 = 1.618033988749894
 }
 
-/// Compute factorial of a number
-/// 
-/// Calculates the factorial of a non-negative integer using
-/// an iterative approach for efficiency and stack safety.
-/// 
-/// @param n The number to compute factorial for (must be >= 0)
-/// @return The factorial value
-/// @throws InvalidArgumentError if n is negative
-/// @example Factorial calculation
-/// ```cursed
-/// sus result = factorial(5)
-/// println("5! = {}", result) // Output: 120
-/// ```
-/// @note This function uses iterative implementation to avoid stack overflow
-/// @todo Add support for larger numbers using BigInt
-/// @deprecated Use math::factorial from standard library instead
-/// @since 0.1.0
+fr fr/ Compute factorial of a number
+fr fr/ 
+fr fr/ Calculates the factorial of a non-negative integer using
+fr fr/ an iterative approach for efficiency and stack safety.
+fr fr/ 
+fr fr/ @param n The number to compute factorial for (must be >= 0)
+fr fr/ @return The factorial value
+fr fr/ @throws InvalidArgumentError if n is negative
+fr fr/ @example Factorial calculation
+fr fr/ ```cursed
+fr fr/ sus result = factorial(5)
+fr fr/ println("5! = {}", result) // Output: 120
+fr fr/ ```
+fr fr/ @note This function uses iterative implementation to avoid stack overflow
+fr fr/ @todo Add support for larger numbers using BigInt
+fr fr/ @deprecated Use math::factorial from standard library instead
+fr fr/ @since 0.1.0
 slay factorial(n: i32) -> i64 {
     lowkey (n < 0) {
         panic("Factorial is not defined for negative numbers")
@@ -196,16 +196,16 @@ slay factorial(n: i32) -> i64 {
     return result
 }
 
-/// Main demonstration function
-/// 
-/// Shows how to use the various mathematical functions and types
-/// defined in this module. This serves as both documentation and
-/// a test of the implemented functionality.
-/// 
-/// @example Running the demo
-/// ```cursed
-/// math_demo()
-/// ```
+fr fr/ Main demonstration function
+fr fr/ 
+fr fr/ Shows how to use the various mathematical functions and types
+fr fr/ defined in this module. This serves as both documentation and
+fr fr/ a test of the implemented functionality.
+fr fr/ 
+fr fr/ @example Running the demo
+fr fr/ ```cursed
+fr fr/ math_demo()
+fr fr/ ```
 slay math_demo() {
     println("=== CURSED Math Module Demo ===")
     

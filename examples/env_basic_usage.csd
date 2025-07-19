@@ -1,10 +1,10 @@
 #!/usr/bin/env cursed
 
-// Basic Environment Variables Example
-// Demonstrates core environment variable operations in CURSED
+fr fr Basic Environment Variables Example
+fr fr Demonstrates core environment variable operations in CURSED
 
-import "stdlib::env";
-import "stdlib::io";
+yeet "stdlib::env"
+yeet "stdlib::io"
 
 slay main() {
     println("=== CURSED Environment Variables Demo ===")?;
@@ -15,7 +15,7 @@ slay main() {
     // Set environment variables
     set_env("CURSED_APP_NAME", "MyApp")?;
     set_env("CURSED_VERSION", "1.0.0")?;
-    set_env("CURSED_DEBUG", "true")?;
+    set_env("CURSED_DEBUG", "based")?;
     
     // Get environment variables
     facts app_name = get_env("CURSED_APP_NAME");
@@ -43,7 +43,7 @@ slay main() {
     
     set_env("CURSED_PORT", "8080")?;
     set_env("CURSED_TIMEOUT", "30.5")?;
-    set_env("CURSED_ENABLE_LOGS", "true")?;
+    set_env("CURSED_ENABLE_LOGS", "based")?;
     
     // Parse as different types
     facts port = parse_env::<u16>("CURSED_PORT")?;

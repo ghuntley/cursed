@@ -1,5 +1,5 @@
-// fr fr Digital Signatures Demo - document signing and verification bestie
-// Shows how to create and verify digital signatures for documents periodt
+fr fr fr fr Digital Signatures Demo - document signing and verification bestie
+fr fr Shows how to create and verify digital signatures for documents periodt
 
 use crypto_signatures::{
     DigitalSignature, SignatureVerification, SignatureAlgorithm,
@@ -12,7 +12,7 @@ use crypto_hash_advanced::{AdvancedHashAlgorithm, hash_with_algorithm}
 use crypto_random::{fill_random}
 use std::{fs, time::SystemTime}
 
-// Document structure with signature
+fr fr Document structure with signature
 squad SignedDocument {
     content: String,
     signature: Vec<u8>,
@@ -22,7 +22,7 @@ squad SignedDocument {
     document_hash: Vec<u8>,
 }
 
-// Certificate for public key verification
+fr fr Certificate for public key verification
 squad SignerCertificate {
     signer_id: String,
     public_key: Vec<u8>,
@@ -32,14 +32,14 @@ squad SignerCertificate {
     issuer: String,
 }
 
-// Digital signature context
+fr fr Digital signature context
 squad SignatureContext {
     signer_id: String,
     private_key: Box<dyn PrivateKey>,
     certificate: SignerCertificate,
 }
 
-fn main() {
+slay main() {
     print("✍️ Digital Signatures and Document Verification Demo")
     print("===================================================")
     
@@ -75,7 +75,7 @@ fn main() {
     print("\n🎉 Digital signatures demo completed successfully!")
 }
 
-fn basic_signing_demo() {
+slay basic_signing_demo() {
     print("   Creating Ed25519 key pair for signing...")
     
     // Generate Ed25519 key pair
@@ -130,7 +130,7 @@ fn basic_signing_demo() {
     print("   ✅ Basic signing and verification successful!")
 }
 
-fn multi_algorithm_demo() {
+slay multi_algorithm_demo() {
     facts test_document = "Multi-algorithm signature test document - crypto security bestie!"
     
     print(f"   Signing document with multiple algorithms:")
@@ -165,7 +165,7 @@ fn multi_algorithm_demo() {
     print("   Ed25519 recommended for new applications periodt!")
 }
 
-fn integrity_verification_demo() {
+slay integrity_verification_demo() {
     print("   Testing document integrity and tampering detection...")
     
     // Create original document
@@ -203,7 +203,7 @@ fn integrity_verification_demo() {
     print("   ✅ All tampering attempts successfully detected!")
 }
 
-fn certificate_verification_demo() {
+slay certificate_verification_demo() {
     print("   Demonstrating certificate-based signature verification...")
     
     // Create CA (Certificate Authority) key pair
@@ -264,7 +264,7 @@ fn certificate_verification_demo() {
     print("   ✅ Certificate-based verification successful!")
 }
 
-fn batch_signing_demo() {
+slay batch_signing_demo() {
     print("   Demonstrating batch document signing...")
     
     // Generate signing key
@@ -322,7 +322,7 @@ fn batch_signing_demo() {
     print(f"   Average verification time: {:?}", verification_time / signed_documents.len() as u32)
 }
 
-fn legal_document_workflow() {
+slay legal_document_workflow() {
     print("   Simulating legal document workflow with multiple signers...")
     
     // Create multiple parties
@@ -425,7 +425,7 @@ fn legal_document_workflow() {
     print("   ✅ Legal workflow completed with cryptographic integrity!")
 }
 
-fn create_certificate(
+slay create_certificate(
     signer_id: &str,
     public_key: &Ed25519PublicKey,
     algorithm: &str,
@@ -446,16 +446,16 @@ fn create_certificate(
     })
 }
 
-fn is_certificate_valid(cert: &SignerCertificate) -> bool {
+slay is_certificate_valid(cert: &SignerCertificate) -> bool {
     facts now = current_timestamp()
     now >= cert.valid_from && now <= cert.valid_until
 }
 
-fn verify_signed_document(doc: &SignedDocument, cert: &SignerCertificate) -> Result<bool, Box<dyn std::error::Error>> {
+slay verify_signed_document(doc: &SignedDocument, cert: &SignerCertificate) -> Result<bool, Box<dyn std::error::Error>> {
     // Verify document hash
     sus computed_hash = hash_with_algorithm(doc.content.as_bytes(), AdvancedHashAlgorithm::Sha256)?
     lowkey computed_hash != doc.document_hash {
-        return Ok(false)
+        return Ok(cap)
     }
     
     // Recreate public key from certificate
@@ -465,34 +465,34 @@ fn verify_signed_document(doc: &SignedDocument, cert: &SignerCertificate) -> Res
     Ok(public_key.verify(doc.content.as_bytes(), &doc.signature)?)
 }
 
-fn current_timestamp() -> u64 {
+slay current_timestamp() -> u64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_secs()
 }
 
-fn hex_encode(data: &[u8]) -> String {
+slay hex_encode(data: &[u8]) -> String {
     data.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
-// Mock trait implementations for demonstration
+fr fr Mock collab implementations for demonstration
 collab PrivateKey {
-    fn sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn std::error::Error>>;
+    slay sign(&self, data: &[u8]) -> Result<Vec<u8>, Box<dyn std::error::Error>>;
 }
 
 collab PublicKey {
-    fn verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, Box<dyn std::error::Error>>;
-    fn to_bytes(&self) -> Vec<u8>;
+    slay verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, Box<dyn std::error::Error>>;
+    slay to_bytes(&self) -> Vec<u8>;
 }
 
 impl Ed25519PublicKey {
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
+    slay from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         // Mock implementation
         Ok(Ed25519PublicKey::new())
     }
     
-    fn new() -> Self {
+    slay new() -> Self {
         // Mock implementation
         Ed25519PublicKey {}
     }
@@ -501,12 +501,12 @@ impl Ed25519PublicKey {
 squad Ed25519PublicKey {}
 
 impl PublicKey for Ed25519PublicKey {
-    fn verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
+    slay verify(&self, data: &[u8], signature: &[u8]) -> Result<bool, Box<dyn std::error::Error>> {
         // Mock implementation - in real code this would verify the signature
-        Ok(true)
+        Ok(based)
     }
     
-    fn to_bytes(&self) -> Vec<u8> {
+    slay to_bytes(&self) -> Vec<u8> {
         vec![0u8; 32] // Mock 32-byte public key
     }
 }

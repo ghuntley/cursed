@@ -192,6 +192,28 @@ impl VersionReq {
             return Ok(VersionReq::Any);
         }
 
+        // Handle comma-separated constraints like ">=1.0.0, <2.0.0" FIRST
+        // This must come before single operator handling to avoid conflicts
+        if s.contains(',') {
+            let parts: Vec<&str> = s.split(',').map(|p| p.trim()).collect();
+            if parts.len() == 2 {
+                let first = parts[0].trim();
+                let second = parts[1].trim();
+                
+                // Parse range constraints (>=min, <max)
+                if first.starts_with(">=") && second.starts_with('<') {
+                    let min_str = first.strip_prefix(">=").unwrap().trim();
+                    let max_str = second.strip_prefix('<').unwrap().trim();
+                    
+                    let min = Version::from_str(min_str)?;
+                    let max = Version::from_str(max_str)?;
+                    
+                    return Ok(VersionReq::Range(min, max));
+                }
+            }
+            return Err(CursedError::General("Unsupported comma-separated version constraint format".to_string()));
+        }
+
         // Handle single comparison operators like >=1.0.0, >1.0.0, <=1.0.0, <1.0.0
         if s.starts_with(">=") {
             let version_str = s.strip_prefix(">=").unwrap().trim();
@@ -226,27 +248,6 @@ impl VersionReq {
             let version = Version::from_str(version_str)?;
             let min_version = Version::new(0, 0, 0);
             return Ok(VersionReq::Range(min_version, version));
-        }
-
-        // Handle comma-separated constraints like ">=1.0.0, <2.0.0"
-        if s.contains(',') {
-            let parts: Vec<&str> = s.split(',').map(|p| p.trim()).collect();
-            if parts.len() == 2 {
-                let first = parts[0].trim();
-                let second = parts[1].trim();
-                
-                // Parse range constraints (>=min, <max)
-                if first.starts_with(">=") && second.starts_with('<') {
-                    let min_str = first.strip_prefix(">=").unwrap().trim();
-                    let max_str = second.strip_prefix('<').unwrap().trim();
-                    
-                    let min = Version::from_str(min_str)?;
-                    let max = Version::from_str(max_str)?;
-                    
-                    return Ok(VersionReq::Range(min, max));
-                }
-            }
-            return Err(CursedError::General("Unsupported comma-separated version constraint format".to_string()));
         }
 
         if s.starts_with('^') {

@@ -1,15 +1,15 @@
-/// fr fr CURSED Asymmetric Cryptography Examples - secure communication periodt
-/// 
-/// This example demonstrates how to use the CURSED asymmetric crypto library
-/// for key generation, encryption, digital signatures, and certificate handling.
+fr fr/ fr fr CURSED Asymmetric Cryptography Examples - secure communication periodt
+fr fr/ 
+fr fr/ This example demonstrates how to use the CURSED asymmetric crypto library
+fr fr/ for key generation, encryption, digital signatures, and certificate handling.
 
-// Import crypto modules
-import crypto.asymmetric as asymm
-import crypto.certificates as certs
-import stdlib.print as print
-import stdlib.string as str
+fr fr Import crypto modules
+yeet crypto.asymmetric as asymm
+yeet crypto.certificates as certs
+yeet stdlib.print as print
+yeet stdlib.string as str
 
-/// slay Main function demonstrating asymmetric crypto
+fr fr/ slay Main function demonstrating asymmetric crypto
 slay main() {
     print("🔐 CURSED Asymmetric Crypto Examples - let's get secure bestie!")
     
@@ -34,7 +34,7 @@ slay main() {
     print("✨ All crypto examples completed successfully - maximum security achieved periodt!")
 }
 
-/// slay RSA encryption and signing examples
+fr fr/ slay RSA encryption and signing examples
 slay rsa_examples() {
     print("\n🔑 RSA Cryptography Examples")
     print("=" * 40)
@@ -68,7 +68,7 @@ slay rsa_examples() {
     }
 }
 
-/// slay ECDSA signing and verification examples
+fr fr/ slay ECDSA signing and verification examples
 slay ecdsa_examples() {
     print("\n🔵 ECDSA Cryptography Examples")
     print("=" * 40)
@@ -98,7 +98,7 @@ slay ecdsa_examples() {
     }
 }
 
-/// slay Key exchange examples (ECDH)
+fr fr/ slay Key exchange examples (ECDH)
 slay key_exchange_examples() {
     print("\n🤝 Key Exchange Examples")
     print("=" * 40)
@@ -129,7 +129,7 @@ slay key_exchange_examples() {
     }
 }
 
-/// slay Modern cryptography examples (X25519 and Ed25519)
+fr fr/ slay Modern cryptography examples (X25519 and Ed25519)
 slay modern_crypto_examples() {
     print("\n🚀 Modern Cryptography Examples")
     print("=" * 40)
@@ -167,7 +167,7 @@ slay modern_crypto_examples() {
     }
 }
 
-/// slay Certificate handling examples
+fr fr/ slay Certificate handling examples
 slay certificate_examples() {
     print("\n📜 Certificate Handling Examples")
     print("=" * 40)
@@ -225,7 +225,7 @@ o3FdMbqvB5E7RKZzuU8bN5R9LD5MkHy7UyOPxJ3G8vNx5Q5s8YaVw3rZfWnKJ7Qx
     print(f"   Algorithm: {csr.algorithm}")
 }
 
-/// slay Secure communication example
+fr fr/ slay Secure communication example
 slay secure_communication_example() {
     print("\n💬 Secure Communication Example")
     print("=" * 40)
@@ -304,7 +304,7 @@ slay secure_communication_example() {
     }
 }
 
-/// slay Certificate Authority simulation
+fr fr/ slay Certificate Authority simulation
 slay certificate_authority_example() {
     print("\n🏛️ Certificate Authority Simulation")
     print("=" * 40)
@@ -343,7 +343,7 @@ slay certificate_authority_example() {
     }
 }
 
-/// slay Performance benchmarks
+fr fr/ slay Performance benchmarks
 slay performance_benchmarks() {
     print("\n⚡ Performance Benchmarks")
     print("=" * 40)
@@ -393,7 +393,7 @@ slay performance_benchmarks() {
     print(f"   Ed25519 signing (avg): {ed25519_time}ms")
 }
 
-/// slay Error handling examples
+fr fr/ slay Error handling examples
 slay error_handling_examples() {
     print("\n🚨 Error Handling Examples")
     print("=" * 40)
@@ -430,5 +430,5 @@ slay error_handling_examples() {
     }
 }
 
-// Run the main function when the script is executed
+fr fr Run the main function when the script is executed
 main()

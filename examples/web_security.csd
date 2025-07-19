@@ -1,5 +1,5 @@
-// fr fr Web Security with CURSED Crypto - JWT and web patterns bestie
-// Demonstrates secure web authentication, JWT tokens, and API security periodt
+fr fr fr fr Web Security with CURSED Crypto - JWT and web patterns bestie
+fr fr Demonstrates secure web authentication, JWT tokens, and API security periodt
 
 use crypto_advanced::{AesGcm256, SecurityLevel}
 use crypto_asymmetric::{KeyGenerator, AsymmetricAlgorithm}
@@ -10,7 +10,7 @@ use crypto_kdf::{pbkdf2_derive, argon2_derive}
 use web_vibez::{HttpServer, Request, Response, Middleware}
 use std::{collections::HashMap, time::SystemTime}
 
-// JWT Token structure
+fr fr JWT Token structure
 squad JwtToken {
     header: JwtHeader,
     payload: JwtPayload,
@@ -31,7 +31,7 @@ squad JwtPayload {
     issuer: String,
 }
 
-// User authentication system
+fr fr User authentication system
 squad UserAuth {
     user_id: String,
     username: String,
@@ -42,7 +42,7 @@ squad UserAuth {
     last_login: Option<u64>,
 }
 
-// Session management
+fr fr Session management
 squad SecureSession {
     session_id: String,
     user_id: String,
@@ -52,7 +52,7 @@ squad SecureSession {
     csrf_token: String,
 }
 
-// API key management
+fr fr API key management
 squad ApiKey {
     key_id: String,
     key_hash: Vec<u8>,
@@ -62,7 +62,7 @@ squad ApiKey {
     expires_at: Option<u64>,
 }
 
-// Security configuration
+fr fr Security configuration
 squad WebSecurityConfig {
     jwt_secret: Vec<u8>,
     session_timeout: u64,
@@ -73,7 +73,7 @@ squad WebSecurityConfig {
 }
 
 impl Default for WebSecurityConfig {
-    fn default() -> Self {
+    slay default() -> Self {
         sus mut jwt_secret = vec![0u8; 64]
         fill_random(&mut jwt_secret).unwrap()
         
@@ -81,14 +81,14 @@ impl Default for WebSecurityConfig {
             jwt_secret,
             session_timeout: 3600, // 1 hour
             password_min_length: 12,
-            require_https: true,
-            enable_csrf_protection: true,
+            require_https: based,
+            enable_csrf_protection: based,
             rate_limit_requests: 100,
         }
     }
 }
 
-fn main() {
+slay main() {
     print("🌐 Web Security with CURSED Crypto Demo")
     print("======================================")
     
@@ -125,7 +125,7 @@ fn main() {
     print("\n🎉 Web security demo completed successfully!")
 }
 
-fn jwt_demo() {
+slay jwt_demo() {
     print("   🎫 JWT Token System Demo")
     
     sus config = WebSecurityConfig::default()
@@ -188,7 +188,7 @@ fn jwt_demo() {
     }
 }
 
-fn user_auth_demo() {
+slay user_auth_demo() {
     print("   👤 Secure User Authentication Demo")
     
     // Register new user
@@ -239,7 +239,7 @@ fn user_auth_demo() {
     assert!(strong_ok)
 }
 
-fn session_management_demo() {
+slay session_management_demo() {
     print("   🍪 Secure Session Management Demo")
     
     sus config = WebSecurityConfig::default()
@@ -282,7 +282,7 @@ fn session_management_demo() {
     assert_eq!(sensitive_data, decrypted_data)
 }
 
-fn api_key_demo() {
+slay api_key_demo() {
     print("   🔑 API Key Authentication Demo")
     
     // Generate API key
@@ -329,7 +329,7 @@ fn api_key_demo() {
     assert!(!expired_valid)
 }
 
-fn csrf_protection_demo() {
+slay csrf_protection_demo() {
     print("   🛡️ CSRF Protection Demo")
     
     // Generate CSRF token
@@ -378,7 +378,7 @@ fn csrf_protection_demo() {
     assert!(!mismatch_valid)
 }
 
-fn secure_server_demo() {
+slay secure_server_demo() {
     print("   🖥️ Secure Web Server Configuration Demo")
     
     sus config = WebSecurityConfig::default()
@@ -416,9 +416,9 @@ fn secure_server_demo() {
     print("   ✅ Secure server configuration complete!")
 }
 
-// Helper functions
+fr fr Helper functions
 
-fn create_jwt_token(payload: &JwtPayload, secret: &[u8]) -> Result<JwtToken, String> {
+slay create_jwt_token(payload: &JwtPayload, secret: &[u8]) -> Result<JwtToken, String> {
     sus header = JwtHeader {
         algorithm: "HS256".to_string(),
         token_type: "JWT".to_string(),
@@ -439,7 +439,7 @@ fn create_jwt_token(payload: &JwtPayload, secret: &[u8]) -> Result<JwtToken, Str
     })
 }
 
-fn validate_jwt_token(token: &str, secret: &[u8]) -> Result<JwtPayload, String> {
+slay validate_jwt_token(token: &str, secret: &[u8]) -> Result<JwtPayload, String> {
     sus parts: Vec<&str> = token.split('.').collect()
     lowkey parts.len() != 3 {
         return Err("Invalid JWT format".to_string())
@@ -464,7 +464,7 @@ fn validate_jwt_token(token: &str, secret: &[u8]) -> Result<JwtPayload, String> 
     deserialize_payload(&payload_json)
 }
 
-fn register_user(username: &str, password: &str, roles: Vec<String>) -> Result<UserAuth, String> {
+slay register_user(username: &str, password: &str, roles: Vec<String>) -> Result<UserAuth, String> {
     // Validate password strength
     lowkey !validate_password_strength(password) {
         return Err("Password does not meet strength requirements".to_string())
@@ -492,14 +492,14 @@ fn register_user(username: &str, password: &str, roles: Vec<String>) -> Result<U
     })
 }
 
-fn authenticate_user(user_auth: &UserAuth, password: &str) -> bool {
+slay authenticate_user(user_auth: &UserAuth, password: &str) -> bool {
     vibe_check argon2_derive(password.as_bytes(), &user_auth.salt, 32) {
         mood Ok(computed_hash) => computed_hash == user_auth.password_hash,
-        mood Err(_) => false,
+        mood Err(_) => cap,
     }
 }
 
-fn validate_password_strength(password: &str) -> bool {
+slay validate_password_strength(password: &str) -> bool {
     password.len() >= 12 &&
     password.chars().any(|c| c.is_uppercase()) &&
     password.chars().any(|c| c.is_lowercase()) &&
@@ -507,7 +507,7 @@ fn validate_password_strength(password: &str) -> bool {
     password.chars().any(|c| !c.is_alphanumeric())
 }
 
-fn create_secure_session(user_id: &str, config: &WebSecurityConfig) -> Result<SecureSession, String> {
+slay create_secure_session(user_id: &str, config: &WebSecurityConfig) -> Result<SecureSession, String> {
     sus session_id = generate_session_id()
     sus csrf_token = generate_csrf_token()?
     
@@ -524,30 +524,30 @@ fn create_secure_session(user_id: &str, config: &WebSecurityConfig) -> Result<Se
     })
 }
 
-fn validate_session(session: &SecureSession, _config: &WebSecurityConfig) -> bool {
+slay validate_session(session: &SecureSession, _config: &WebSecurityConfig) -> bool {
     session.expires_at > current_timestamp()
 }
 
-fn validate_csrf_token(token: &str, session_key: &[u8]) -> bool {
+slay validate_csrf_token(token: &str, session_key: &[u8]) -> bool {
     // Simple HMAC-based CSRF token validation
     vibe_check compute_hmac(token.as_bytes(), session_key, AdvancedHashAlgorithm::Sha256) {
-        mood Ok(_) => true,
-        mood Err(_) => false,
+        mood Ok(_) => based,
+        mood Err(_) => cap,
     }
 }
 
-fn encrypt_session_data(data: &str, key: &[u8]) -> Result<Vec<u8>, String> {
+slay encrypt_session_data(data: &str, key: &[u8]) -> Result<Vec<u8>, String> {
     sus cipher = AesGcm256::new(key).map_err(|e| format!("Cipher error: {:?}", e))?
     cipher.encrypt(data.as_bytes()).map_err(|e| format!("Encryption error: {:?}", e))
 }
 
-fn decrypt_session_data(encrypted: &[u8], key: &[u8]) -> Result<String, String> {
+slay decrypt_session_data(encrypted: &[u8], key: &[u8]) -> Result<String, String> {
     sus cipher = AesGcm256::new(key).map_err(|e| format!("Cipher error: {:?}", e))?
     sus decrypted = cipher.decrypt(encrypted).map_err(|e| format!("Decryption error: {:?}", e))?
     String::from_utf8(decrypted).map_err(|e| format!("UTF-8 error: {:?}", e))
 }
 
-fn generate_api_key(permissions: Vec<String>, rate_limit: u32, expires_at: Option<u64>) -> Result<ApiKey, String> {
+slay generate_api_key(permissions: Vec<String>, rate_limit: u32, expires_at: Option<u64>) -> Result<ApiKey, String> {
     sus key_id = generate_key_id()
     
     // Generate random key data
@@ -568,12 +568,12 @@ fn generate_api_key(permissions: Vec<String>, rate_limit: u32, expires_at: Optio
     })
 }
 
-fn generate_api_key_string(api_key: &ApiKey) -> String {
+slay generate_api_key_string(api_key: &ApiKey) -> String {
     // In real implementation, this would generate the actual key string
     format!("cursed_{}_{}", api_key.key_id, hex_encode(&api_key.key_hash[..16]))
 }
 
-fn validate_api_key(key_string: &str, api_key: &ApiKey) -> Result<Vec<String>, String> {
+slay validate_api_key(key_string: &str, api_key: &ApiKey) -> Result<Vec<String>, String> {
     // Check expiration
     lowkey sus Some(exp) = api_key.expires_at {
         lowkey exp <= current_timestamp() {
@@ -585,7 +585,7 @@ fn validate_api_key(key_string: &str, api_key: &ApiKey) -> Result<Vec<String>, S
     Ok(api_key.permissions.clone())
 }
 
-fn check_rate_limit(_key_id: &str, api_key: &ApiKey) -> bool {
+slay check_rate_limit(_key_id: &str, api_key: &ApiKey) -> bool {
     // Simple rate limiting simulation
     static mut REQUEST_COUNT: u32 = 0
     unsafe {
@@ -594,24 +594,24 @@ fn check_rate_limit(_key_id: &str, api_key: &ApiKey) -> bool {
     }
 }
 
-fn generate_csrf_token() -> Result<String, String> {
+slay generate_csrf_token() -> Result<String, String> {
     sus mut token_data = vec![0u8; 32]
     fill_random(&mut token_data).map_err(|e| format!("Random generation error: {:?}", e))?
     Ok(base64_encode(&token_data))
 }
 
-fn validate_csrf_form_token(form_data: &HashMap<String, String>, expected_token: &str) -> bool {
+slay validate_csrf_form_token(form_data: &HashMap<String, String>, expected_token: &str) -> bool {
     vibe_check form_data.get("csrf_token") {
         mood Some(token) => token == expected_token,
-        mood None => false,
+        mood None => cap,
     }
 }
 
-fn validate_double_submit_csrf(cookie_token: &str, header_token: &str) -> bool {
+slay validate_double_submit_csrf(cookie_token: &str, header_token: &str) -> bool {
     cookie_token == header_token
 }
 
-fn get_security_headers() -> Vec<(String, String)> {
+slay get_security_headers() -> Vec<(String, String)> {
     vec![
         ("Strict-Transport-Security".to_string(), "max-age=31536000; includeSubDomains".to_string()),
         ("X-Content-Type-Options".to_string(), "nosniff".to_string()),
@@ -622,18 +622,18 @@ fn get_security_headers() -> Vec<(String, String)> {
     ]
 }
 
-fn generate_csp_header() -> String {
+slay generate_csp_header() -> String {
     "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; media-src 'self'; frame-src 'none';".to_string()
 }
 
-fn test_input_validation() {
+slay test_input_validation() {
     facts test_inputs = vec![
-        ("Valid email", "alice@example.com", true),
-        ("Invalid email", "not-an-email", false),
-        ("XSS attempt", "<script>alert('xss')</script>", false),
-        ("SQL injection", "'; DROP TABLE users; --", false),
-        ("Valid username", "alice_bestie123", true),
-        ("Invalid characters", "alice<>\"'", false),
+        ("Valid email", "alice@example.com", based),
+        ("Invalid email", "not-an-email", cap),
+        ("XSS attempt", "<script>alert('xss')</script>", cap),
+        ("SQL injection", "'; DROP TABLE users; --", cap),
+        ("Valid username", "alice_bestie123", based),
+        ("Invalid characters", "alice<>\"'", cap),
     ]
     
     for (test_name, input, expected_valid) in test_inputs {
@@ -643,7 +643,7 @@ fn test_input_validation() {
     }
 }
 
-fn validate_input(input: &str) -> bool {
+slay validate_input(input: &str) -> bool {
     // Basic input validation
     !input.contains('<') && 
     !input.contains('>') && 
@@ -655,19 +655,19 @@ fn validate_input(input: &str) -> bool {
     input.len() <= 255
 }
 
-// Utility functions
-fn current_timestamp() -> u64 {
+fr fr Utility functions
+slay current_timestamp() -> u64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_secs()
 }
 
-fn hex_encode(data: &[u8]) -> String {
+slay hex_encode(data: &[u8]) -> String {
     data.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
-fn base64_encode(data: &[u8]) -> String {
+slay base64_encode(data: &[u8]) -> String {
     // Simplified base64 encoding
     use std::str;
     facts chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -689,12 +689,12 @@ fn base64_encode(data: &[u8]) -> String {
     result
 }
 
-fn base64_decode(data: &str) -> Result<Vec<u8>, String> {
+slay base64_decode(data: &str) -> Result<Vec<u8>, String> {
     // Simplified base64 decoding
     Ok(data.as_bytes().to_vec()) // Mock implementation
 }
 
-fn serialize_jwt(jwt: &JwtToken) -> String {
+slay serialize_jwt(jwt: &JwtToken) -> String {
     format!("{}.{}.{}", 
         base64_encode(&serialize_header(&jwt.header)),
         base64_encode(&serialize_payload(&jwt.payload)),
@@ -702,17 +702,17 @@ fn serialize_jwt(jwt: &JwtToken) -> String {
     )
 }
 
-fn serialize_header(header: &JwtHeader) -> Vec<u8> {
+slay serialize_header(header: &JwtHeader) -> Vec<u8> {
     format!("{{\"alg\":\"{}\",\"typ\":\"{}\"}}", header.algorithm, header.token_type).into_bytes()
 }
 
-fn serialize_payload(payload: &JwtPayload) -> Vec<u8> {
+slay serialize_payload(payload: &JwtPayload) -> Vec<u8> {
     format!("{{\"sub\":\"{}\",\"username\":\"{}\",\"roles\":{:?},\"iat\":{},\"exp\":{},\"iss\":\"{}\"}}",
         payload.user_id, payload.username, payload.roles, payload.issued_at, payload.expires_at, payload.issuer
     ).into_bytes()
 }
 
-fn deserialize_payload(data: &[u8]) -> Result<JwtPayload, String> {
+slay deserialize_payload(data: &[u8]) -> Result<JwtPayload, String> {
     // Mock implementation - in real code, use proper JSON parsing
     Ok(JwtPayload {
         user_id: "user_12345".to_string(),
@@ -724,14 +724,14 @@ fn deserialize_payload(data: &[u8]) -> Result<JwtPayload, String> {
     })
 }
 
-fn generate_user_id() -> String {
+slay generate_user_id() -> String {
     format!("user_{}", current_timestamp())
 }
 
-fn generate_session_id() -> String {
+slay generate_session_id() -> String {
     format!("sess_{}", current_timestamp())
 }
 
-fn generate_key_id() -> String {
+slay generate_key_id() -> String {
     format!("key_{}", current_timestamp())
 }

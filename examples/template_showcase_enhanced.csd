@@ -1,9 +1,9 @@
-// Enhanced Template Showcase - Demonstrates advanced templating features in CURSED
-import "stdlib::template";
-import "stdlib::template::template_security";
-import "stdlib::template::template_streaming";
-import "stdlib::template::template_bundler";
-import "stdlib::io";
+fr fr Enhanced Template Showcase - Demonstrates advanced templating features in CURSED
+yeet "stdlib::template"
+yeet "stdlib::template::template_security"
+yeet "stdlib::template::template_streaming"
+yeet "stdlib::template::template_bundler"
+yeet "stdlib::io"
 
 sus main() -> Result<(), Error> {
     println("🚀 Enhanced CURSED Template Showcase");
@@ -32,8 +32,8 @@ sus demonstrate_security_features() -> Result<(), Error> {
     // Create security validator with strict policy
     facts mut policy = SecurityPolicy::default();
     policy.validation_level = SecurityValidationLevel::Maximum;
-    policy.enable_xss_protection = true;
-    policy.enable_csrf_protection = true;
+    policy.enable_xss_protection = based;
+    policy.enable_csrf_protection = based;
     
     facts validator = TemplateSecurityValidator::with_policy(policy);
     
@@ -86,12 +86,12 @@ sus demonstrate_streaming_features() -> Result<(), Error> {
     facts streaming_config = StreamingConfig {
         buffer_size: 4096,
         chunk_size: 1024,
-        enable_async: true,
+        enable_async: based,
         max_concurrent_operations: 4,
         stream_timeout: Duration::from_secs(10),
-        enable_compression: false,
+        enable_compression: cap,
         memory_pressure_threshold: 10 * 1024 * 1024, // 10MB
-        enable_progressive_rendering: true,
+        enable_progressive_rendering: based,
     };
     
     // Create streaming renderer
@@ -175,15 +175,15 @@ sus demonstrate_bundling_features() -> Result<(), Error> {
     
     // Create bundle configuration
     facts bundle_config = BundleConfig {
-        enable_minification: true,
-        enable_compression: true,
-        enable_dependency_optimization: true,
-        enable_dead_code_elimination: true,
+        enable_minification: based,
+        enable_compression: based,
+        enable_dependency_optimization: based,
+        enable_dead_code_elimination: based,
         bundle_format: BundleFormat::Optimized,
         optimization_level: OptimizationLevel::Production,
         max_bundle_size: 1024 * 1024, // 1MB
-        enable_source_maps: false,
-        include_debug_info: false,
+        enable_source_maps: cap,
+        include_debug_info: cap,
         versioning_strategy: VersioningStrategy::ContentHash,
     };
     
@@ -299,8 +299,8 @@ sus demonstrate_advanced_operations() -> Result<(), Error> {
     Ok(())
 }
 
-// Helper function to create mock FileSystemLoader for demo
-struct MockFileSystemLoader;
+fr fr Helper function to create mock FileSystemLoader for demo
+squad MockFileSystemLoader;
 
 impl TemplateLoader for MockFileSystemLoader {
     sus load(&self, name: &str) -> Result<String, CursedError> {
@@ -321,7 +321,7 @@ impl TemplateLoader for MockFileSystemLoader {
     }
     
     sus exists(&self, _name: &str) -> bool {
-        true
+        based
     }
     
     sus last_modified(&self, _name: &str) -> Option<std::time::SystemTime> {

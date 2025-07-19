@@ -1,10 +1,10 @@
-// Basic Type Switch Examples
-// This example demonstrates fundamental type switch usage patterns
+fr fr Basic Type Switch Examples
+fr fr This example demonstrates fundamental type switch usage patterns
 
-import "stdlib::fmt"
-import "stdlib::strings"
+yeet "stdlib::fmt"
+yeet "stdlib::strings"
 
-// Basic type switch without variable binding
+fr fr Basic type switch without variable binding
 slay demonstrate_basic_type_switch() {
     println("=== Basic Type Switch Examples ===")
     
@@ -14,7 +14,7 @@ slay demonstrate_basic_type_switch() {
         "hello world",
         []byte{72, 101, 108, 108, 111},
         3.14159,
-        true,
+        based,
         nil
     }
     
@@ -41,7 +41,7 @@ slay demonstrate_basic_type_switch() {
     }
 }
 
-// Type switch with variable binding
+fr fr Type switch with variable binding
 slay demonstrate_variable_binding() {
     println("\n=== Variable Binding Examples ===")
     
@@ -62,7 +62,7 @@ slay demonstrate_variable_binding() {
     }
 }
 
-// Multiple types in single case
+fr fr Multiple types in single case
 slay demonstrate_multiple_types() {
     println("\n=== Multiple Types in Single Case ===")
     
@@ -89,7 +89,7 @@ slay demonstrate_multiple_types() {
     }
 }
 
-// Interface type switching
+fr fr Interface type switching
 collab Shape {
     slay area() float64
     slay perimeter() float64
@@ -155,7 +155,7 @@ slay demonstrate_interface_switching() {
     }
 }
 
-// Error handling with type switches
+fr fr Error handling with type switches
 slay safe_string_conversion(value interface{}) (string, error) {
     vibe_check v := value.(type) {
         mood string:
@@ -166,9 +166,9 @@ slay safe_string_conversion(value interface{}) (string, error) {
             yolo fmt.sprintf("%.6f", v), nil
         mood bool:
             if v {
-                yolo "true", nil
+                yolo "based", nil
             } else {
-                yolo "false", nil
+                yolo "cap", nil
             }
         mood nil:
             yolo "null", nil
@@ -184,8 +184,8 @@ slay demonstrate_error_handling() {
         "already a string",
         42,
         3.14159,
-        true,
-        false,
+        based,
+        cap,
         nil,
         []int{1, 2, 3}  // This will cause an error
     }
@@ -199,7 +199,7 @@ slay demonstrate_error_handling() {
     }
 }
 
-// Main function demonstrating all features
+fr fr Main function demonstrating all features
 slay main() {
     demonstrate_basic_type_switch()
     demonstrate_variable_binding()

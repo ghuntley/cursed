@@ -1,8 +1,8 @@
 fr fr Comprehensive demonstration of CURSED Quick Test (property-based testing) module
 fr fr This example showcases why property-based testing is critical for quality assurance
 
-import "stdlib::packages::quick_test";
-import "stdlib::vibez";
+yeet "stdlib::packages::quick_test"
+yeet "stdlib::vibez"
 
 fr fr Example 1: Basic property testing - reverse twice property
 fr fr This tests that reversing a slice twice returns the original slice
@@ -25,14 +25,14 @@ slay test_reverse_twice_property() {
             sus reversedTwice = reverse(reversed);
             yolo arrays_equal(original, reversedTwice);
         }
-        yolo false;
+        yolo cap;
     };
     
     fr fr Configure the test
     config := quick_test.Config{
         max_count: 100,
         max_size: 20,
-        quiet: false,
+        quiet: cap,
     };
     
     fr fr Run the test with array generator
@@ -63,7 +63,7 @@ slay test_abs_positive_property() {
         lowkey let Value.Integer(x) = val {
             yolo abs(x) >= 0;
         }
-        yolo false;
+        yolo cap;
     };
     
     fr fr Test with integer generator
@@ -99,7 +99,7 @@ slay test_string_length_property() {
             sus concatenated = s1 + s2;
             yolo len(concatenated) == len(s1) + len(s2);
         }
-        yolo false;
+        yolo cap;
     };
     
     fr fr Test with dual string generator
@@ -122,7 +122,7 @@ slay test_string_length_property() {
                 yolo stringConcatProperty(arr[0], arr[1]);
             }
         }
-        yolo false;
+        yolo cap;
     };
     
     result := quick_test.check_with_generator(
@@ -151,7 +151,7 @@ slay test_failing_property_with_shrink() {
         lowkey let Value.Integer(x) = val {
             yolo x >= 0; fr fr This will fail for negative numbers
         }
-        yolo false;
+        yolo cap;
     };
     
     fr fr Configure test with shrinking enabled
@@ -236,7 +236,7 @@ slay test_custom_person_generator() {
                 yolo age >= &0 && age < &100 && !name.is_empty();
             }
         }
-        yolo false;
+        yolo cap;
     };
     
     config := quick_test.Config{
@@ -383,7 +383,7 @@ slay test_reproducibility() {
             fr fr Fail if number is divisible by 13 (somewhat arbitrary)
             yolo x % 13 != 0;
         }
-        yolo false;
+        yolo cap;
     };
     
     fr fr First run with fixed seed
@@ -430,12 +430,12 @@ slay test_reproducibility() {
 fr fr Helper functions
 slay arrays_equal(a: []normie, b: []normie) -> lit {
     lowkey len(a) != len(b) {
-        yolo false;
+        yolo cap;
     }
     
     lowkey (sus i = 0; i < len(a); i++) {
         lowkey a[i] != b[i] {
-            yolo false;
+            yolo cap;
         }
     }
     

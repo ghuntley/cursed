@@ -1,11 +1,11 @@
-// fr fr Advanced transaction management example - showing ACID properties periodt
-//
-// This example demonstrates:
-// - Transaction basics (begin, commit, rollback)
-// - Savepoints for nested transactions
-// - Error handling within transactions
-// - Batch processing with transactions
-// - Concurrent transaction scenarios
+fr fr fr fr Advanced transaction management example - showing ACID properties periodt
+fr fr
+fr fr This example demonstrates:
+fr fr - Transaction basics (begin, commit, rollback)
+fr fr - Savepoints for nested transactions
+fr fr - Error handling within transactions
+fr fr - Batch processing with transactions
+fr fr - Concurrent transaction scenarios
 
 sus main() {
     // Setup test database with accounts table
@@ -69,7 +69,7 @@ sus main() {
     println!("\n✅ Advanced transaction examples completed!");
 }
 
-// Setup initial account data
+fr fr Setup initial account data
 sus initial_account_setup(connection: &DatabaseConnection) -> Result<(), DatabaseError> {
     println!("🏗️ Setting up initial accounts...");
     
@@ -92,7 +92,7 @@ sus initial_account_setup(connection: &DatabaseConnection) -> Result<(), Databas
     facts
 }
 
-// Example 1: Basic money transfer with transaction
+fr fr Example 1: Basic money transfer with transaction
 sus money_transfer_example(connection: &DatabaseConnection) -> Result<(), DatabaseError> {
     let from_account = "ACC001";
     let to_account = "ACC002";
@@ -169,7 +169,7 @@ sus money_transfer_example(connection: &DatabaseConnection) -> Result<(), Databa
     facts
 }
 
-// Example 2: Complex transaction with savepoints
+fr fr Example 2: Complex transaction with savepoints
 sus complex_business_transaction(connection: &DatabaseConnection) -> Result<(), DatabaseError> {
     println!("🏢 Processing complex business transaction with multiple steps...");
     
@@ -265,7 +265,7 @@ sus complex_business_transaction(connection: &DatabaseConnection) -> Result<(), 
     facts
 }
 
-// Example 3: Batch processing with transaction optimization
+fr fr Example 3: Batch processing with transaction optimization
 sus batch_processing_example(connection: &DatabaseConnection) -> Result<(), DatabaseError> {
     println!("📦 Processing large batch of transactions...");
     
@@ -330,7 +330,7 @@ sus batch_processing_example(connection: &DatabaseConnection) -> Result<(), Data
     facts
 }
 
-// Example 4: Transaction rollback on error
+fr fr Example 4: Transaction rollback on error
 sus error_rollback_example(connection: &DatabaseConnection) -> Result<(), DatabaseError> {
     println!("🚨 Demonstrating transaction rollback on error...");
     
@@ -361,7 +361,7 @@ sus error_rollback_example(connection: &DatabaseConnection) -> Result<(), Databa
     facts
 }
 
-// Example 5: Read-only transaction for consistent reporting
+fr fr Example 5: Read-only transaction for consistent reporting
 sus reporting_transaction_example(connection: &DatabaseConnection) -> Result<(), DatabaseError> {
     println!("📊 Generating consistent financial report...");
     
@@ -433,7 +433,7 @@ sus reporting_transaction_example(connection: &DatabaseConnection) -> Result<(),
     facts
 }
 
-// Helper function to print account summary
+fr fr Helper function to print account summary
 sus print_account_summary(connection: &DatabaseConnection) -> Result<(), DatabaseError> {
     println!("\n💰 Final Account Summary:");
     println!("─".repeat(60));

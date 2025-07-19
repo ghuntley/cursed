@@ -1,9 +1,9 @@
-// RegexVibez Demo - Comprehensive demonstration of regex functionality in CURSED
-// This example shows all the major features of the RegexVibez module
+fr fr RegexVibez Demo - Comprehensive demonstration of regex functionality in CURSED
+fr fr This example shows all the major features of the RegexVibez module
 
-import "stdlib::regex_vibez";
-import "stdlib::io";
-import "stdlib::string";
+yeet "stdlib::regex_vibez"
+yeet "stdlib::io"
+yeet "stdlib::string"
 
 squad VibeDemo {
     slay demo_basic_matching() -> () {

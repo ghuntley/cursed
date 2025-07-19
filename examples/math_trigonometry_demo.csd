@@ -1,10 +1,10 @@
-// Comprehensive demonstration of CURSED trigonometric functions
-// This example showcases all trigonometric and hyperbolic functions
-// with practical usage examples and error handling
+fr fr Comprehensive demonstration of CURSED trigonometric functions
+fr fr This example showcases all trigonometric and hyperbolic functions
+fr fr with practical usage examples and error handling
 
-import "stdlib::math::trigonometry";
-import "stdlib::math::constants";
-import "stdlib::io::console";
+yeet "stdlib::math::trigonometry"
+yeet "stdlib::math::constants"
+yeet "stdlib::io::console"
 
 func main() -> Result<(), Error> {
     println("=== CURSED Trigonometric Functions Demo ===")?;

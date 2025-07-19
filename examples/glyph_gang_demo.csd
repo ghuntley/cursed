@@ -1,8 +1,8 @@
 fr fr GlyphGang Unicode Package Demo
 fr fr Demonstrates comprehensive Unicode character processing with Gen Z flair
 
-import "stdlib::glyph_gang";
-import "stdlib::vibez";
+yeet "stdlib::glyph_gang"
+yeet "stdlib::vibez"
 
 slay main() {
     vibez.spill("🔥 GlyphGang Unicode Demo - Where Unicode meets Gen Z! 🔥");

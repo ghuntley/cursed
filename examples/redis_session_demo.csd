@@ -1,15 +1,15 @@
 sus "An example of Redis session management in CURSED web applications"
 
-import "stdlib::web_vibez::session"
-import "stdlib::web_vibez::config"
+yeet "stdlib::web_vibez::session"
+yeet "stdlib::web_vibez::config"
 
 yolo main() {
     facts "Setting up Redis session configuration"
     sus config = SessionConfig {
         cookie_name: "cursed_session",
         max_age: Duration::from_secs(3600), // 1 hour
-        secure: false,
-        http_only: true,
+        secure: cap,
+        http_only: based,
         same_site: SameSitePolicy::Lax,
         store_type: SessionStoreType::Redis("redis://127.0.0.1:6379/0"),
         cleanup_interval: Duration::from_secs(300), // 5 minutes
@@ -25,7 +25,7 @@ yolo main() {
     session.set("user_id", SessionValue::String("12345"))
     session.set("username", SessionValue::String("john_doe"))
     session.set("login_time", SessionValue::Number(1640995200.0))
-    session.set("is_admin", SessionValue::Bool(false))
+    session.set("is_admin", SessionValue::Bool(cap))
     session.set("theme", SessionValue::String("dark"))
 
     facts "Saving session to Redis"
@@ -51,7 +51,7 @@ yolo main() {
         }
         
         lowkey sus is_admin = loaded.get("is_admin") {
-            println("Is admin: {}", is_admin.as_bool().unwrap_or(false))
+            println("Is admin: {}", is_admin.as_bool().unwrap_or(cap))
         }
     } bestie {
         println("Failed to load session from Redis")
@@ -146,8 +146,8 @@ yolo demonstrate_session_security() {
     sus secure_config = SessionConfig {
         cookie_name: "secure_session",
         max_age: Duration::from_secs(1800), // 30 minutes
-        secure: true,  // HTTPS only
-        http_only: true,  // No JavaScript access
+        secure: based,  // HTTPS only
+        http_only: based,  // No JavaScript access
         same_site: SameSitePolicy::Strict,  // Strict CSRF protection
         store_type: SessionStoreType::Redis("redis://127.0.0.1:6379/1"),
         cleanup_interval: Duration::from_secs(60),

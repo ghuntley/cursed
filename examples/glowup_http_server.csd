@@ -1,8 +1,8 @@
 #!/usr/bin/env cursed
 
-import "stdlib::glowup_http";
+yeet "stdlib::glowup_http"
 
-// Simple HTTP server example using GlowUpHTTP
+fr fr Simple HTTP server example using GlowUpHTTP
 slay main() tea {
     // Create a new router
     sus router = glowup_http.NewVibeRouter();
@@ -39,7 +39,7 @@ slay main() tea {
     glowup_http.Serve(":8080", router);
 }
 
-// HTTP client example
+fr fr HTTP client example
 slay client_example() tea {
     sus client = &glowup_http.VibeClient{};
     
@@ -78,7 +78,7 @@ slay client_example() tea {
     vibez.spill("POST response status:", postResp.StatusCode);
 }
 
-// WebSocket example
+fr fr WebSocket example
 slay websocket_example() tea {
     sus upgrader = glowup_http.NewWebSocketUpgrader();
     
@@ -106,7 +106,7 @@ slay websocket_example() tea {
     });
 }
 
-// Middleware example
+fr fr Middleware example
 slay custom_middleware_example() tea {
     sus custom_middleware = slay(next glowup_http.HandlerFunc) glowup_http.HandlerFunc {
         periodt slay(w glowup_http.ResponderVibe, r *glowup_http.VibeRequest) tea {

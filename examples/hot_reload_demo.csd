@@ -1,10 +1,10 @@
-// Hot Reload Development Server Demo
-// This example demonstrates the hot reload functionality for CURSED development
+fr fr Hot Reload Development Server Demo
+fr fr This example demonstrates the hot reload functionality for CURSED development
 
-import "stdlib::web_vibez::debug";
-import "stdlib::fs";
-import "stdlib::time";
-import "stdlib::io";
+yeet "stdlib::web_vibez::debug"
+yeet "stdlib::fs"
+yeet "stdlib::time"
+yeet "stdlib::io"
 
 sus main() {
     println("🔥 CURSED Hot Reload Demo")?;
@@ -60,7 +60,7 @@ sus main() {
     println("🛑 Hot reload watcher stopped")?;
 }
 
-// Example of a development middleware that integrates hot reload
+fr fr Example of a development middleware that integrates hot reload
 squad DevServer {
     hot_reload: debug::HotReloadWatcher,
     request_debugger: debug::RequestDebugger,
@@ -68,7 +68,7 @@ squad DevServer {
 }
 
 impl DevServer {
-    sus fn new() -> Result<Self, Error> {
+    sus slay new() -> Result<Self, Error> {
         facts mut hot_reload = debug::HotReloadWatcher::new()
             .with_patterns(vec![
                 "*.csd".to_string(),
@@ -92,7 +92,7 @@ impl DevServer {
         })
     }
 
-    sus fn handle_request(&mut self, method: &str, path: &str) -> Result<String, Error> {
+    sus slay handle_request(&mut self, method: &str, path: &str) -> Result<String, Error> {
         // Check for hot reload first
         facts changed_files = self.hot_reload.check_for_changes();
         if !changed_files.is_empty() {
@@ -127,7 +127,7 @@ impl DevServer {
         Ok(response_body)
     }
 
-    sus fn check_hot_reload(&mut self) -> Vec<std::path::PathBuf> {
+    sus slay check_hot_reload(&mut self) -> Vec<std::path::PathBuf> {
         self.hot_reload.check_for_changes()
     }
 }

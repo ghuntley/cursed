@@ -1,4 +1,4 @@
-// CURSED string switch example with multiple cases
+fr fr CURSED string switch example with multiple cases
 
 vibe main
 vibe stringz

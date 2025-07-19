@@ -1,5 +1,5 @@
-// Pipeline Processing Example
-// Demonstrates data flowing through multiple processing stages
+fr fr Pipeline Processing Example
+fr fr Demonstrates data flowing through multiple processing stages
 
 func stage1_generate(out dm<int>) {
     print("Stage 1: Generating numbers")

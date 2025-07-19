@@ -1,9 +1,9 @@
-// Example CURSED test file demonstrating the test framework
+fr fr Example CURSED test file demonstrating the test framework
 
-import "stdlib::testing::framework"
-import "stdlib::testing::assertions"
+yeet "stdlib::testing::framework"
+yeet "stdlib::testing::assertions"
 
-// Test data structures
+fr fr Test data structures
 squad TestUser {
     sus id: i32,
     sus name: String,
@@ -11,7 +11,7 @@ squad TestUser {
     sus active: bool,
 }
 
-// Basic unit test
+fr fr Basic unit test
 slay test_math_operations() {
     sus result = 2 + 2
     assert_equal(result, 4, "Addition should work correctly")
@@ -23,7 +23,7 @@ slay test_math_operations() {
     assert_equal(quotient, 5, "Division should work correctly")
 }
 
-// String manipulation test
+fr fr String manipulation test
 slay test_string_operations() {
     sus greeting = "Hello, World!"
     
@@ -35,13 +35,13 @@ slay test_string_operations() {
     assert_equal(length, 13, "String length should be 13")
 }
 
-// Data structure test
+fr fr Data structure test
 slay test_user_creation() {
     sus user = TestUser {
         id: 1,
         name: "Alice Smith",
         email: "alice@example.com",
-        active: true,
+        active: based,
     }
     
     assert_equal(user.id, 1, "User ID should be set correctly")
@@ -50,7 +50,7 @@ slay test_user_creation() {
     assert_contains(user.email, "@", "Email should contain @ symbol")
 }
 
-// Array operations test
+fr fr Array operations test
 slay test_array_operations() {
     sus numbers = [1, 2, 3, 4, 5]
     
@@ -65,7 +65,7 @@ slay test_array_operations() {
     assert_equal(last, 5, "Last element should be 5")
 }
 
-// Control flow test
+fr fr Control flow test
 slay test_control_flow() {
     sus count = 0
     
@@ -84,7 +84,7 @@ slay test_control_flow() {
     assert_equal(message, "High count", "Should choose correct branch")
 }
 
-// Error handling test
+fr fr Error handling test
 slay test_error_handling() {
     // Test successful operation
     sus result = divide_safe(10, 2)
@@ -98,7 +98,7 @@ slay test_error_handling() {
     assert_err(error_result, "Division by zero should fail")
 }
 
-// Helper function for error handling test
+fr fr Helper function for error handling test
 slay divide_safe(a: i32, b: i32) -> Result<i32, String> {
     lowkey (b == 0) {
         Err("Division by zero")
@@ -107,7 +107,7 @@ slay divide_safe(a: i32, b: i32) -> Result<i32, String> {
     }
 }
 
-// Floating point test with epsilon comparison
+fr fr Floating point test with epsilon comparison
 slay test_floating_point() {
     sus pi_approx = 3.14159
     sus calculated_pi = 22.0 / 7.0
@@ -119,14 +119,14 @@ slay test_floating_point() {
     assert_in_range(area, 75.0, 85.0, "Circle area should be in expected range")
 }
 
-// Test with custom assertion
+fr fr Test with custom assertion
 slay test_custom_assertion() {
     sus numbers = [2, 4, 6, 8, 10]
     
     assert_that(numbers, |arr| arr.iter().all(|&x| x % 2 == 0), "All numbers should be even")
 }
 
-// Integration test (longer running)
+fr fr Integration test (longer running)
 slay test_integration_workflow() {
     // Simulate a complete workflow
     sus users = create_test_users()
@@ -139,12 +139,12 @@ slay test_integration_workflow() {
     assert_true(user_count > 0, "Should have users from example.com domain")
 }
 
-// Helper functions for integration test
+fr fr Helper functions for integration test
 slay create_test_users() -> Vec<TestUser> {
     facts [
-        TestUser { id: 1, name: "Alice", email: "alice@example.com", active: true },
-        TestUser { id: 2, name: "Bob", email: "bob@test.org", active: false },
-        TestUser { id: 3, name: "Charlie", email: "charlie@example.com", active: true },
+        TestUser { id: 1, name: "Alice", email: "alice@example.com", active: based },
+        TestUser { id: 2, name: "Bob", email: "bob@test.org", active: cap },
+        TestUser { id: 3, name: "Charlie", email: "charlie@example.com", active: based },
     ]
 }
 
@@ -158,7 +158,7 @@ slay count_users_by_domain(users: Vec<TestUser>, domain: &str) -> i32 {
         .count() as i32
 }
 
-// Performance test (should complete quickly)
+fr fr Performance test (should complete quickly)
 slay test_performance_basic() {
     sus start_time = get_current_time_ms()
     
@@ -175,25 +175,25 @@ slay test_performance_basic() {
     assert_equal(result, 499500, "Sum should be calculated correctly")
 }
 
-// Helper function for performance test
+fr fr Helper function for performance test
 slay get_current_time_ms() -> i64 {
     // Simplified implementation - would use actual time in real code
     42
 }
 
-// Test that should fail (for testing failure handling)
+fr fr Test that should fail (for testing failure handling)
 slay test_expected_failure() {
     // This test is expected to fail
     assert_equal(1, 2, "This assertion should fail")
 }
 
-// Test that should be skipped
+fr fr Test that should be skipped
 slay skip_test_not_implemented() {
     // This test is skipped because functionality is not implemented yet
-    assert_true(false, "This test should be skipped")
+    assert_true(cap, "This test should be skipped")
 }
 
-// Benchmark test (for performance measurement)
+fr fr Benchmark test (for performance measurement)
 slay bench_string_concatenation() {
     sus iterations = 1000
     sus start_time = get_current_time_ms()
@@ -211,7 +211,7 @@ slay bench_string_concatenation() {
     record_metric("string_concat_time_ms", duration as f64)
 }
 
-// Helper function to record metrics (would be provided by test framework)
+fr fr Helper function to record metrics (would be provided by test framework)
 slay record_metric(name: &str, value: f64) {
     // Implementation would be provided by test framework
 }
