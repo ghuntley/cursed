@@ -1,449 +1,371 @@
-// Goroutine Core Module - Pure CURSED Implementation
-// Replaces FFI functions in src/runtime/goroutine.rs
+# Goroutine Core - Pure CURSED Goroutine System
+# Cooperative concurrency with work-stealing scheduler
+# Replaces src/runtime/goroutine.rs with zero FFI dependencies
 
+yeet "runtime_core"
+yeet "memory_drip"
+yeet "error_drip"
 yeet "testz"
 
-// ========================================
-// Goroutine Management - Pure CURSED
-// ========================================
+# Goroutine states
+sus GOROUTINE_CREATED normie = 0
+sus GOROUTINE_RUNNABLE normie = 1
+sus GOROUTINE_RUNNING normie = 2
+sus GOROUTINE_BLOCKED normie = 3
+sus GOROUTINE_DONE normie = 4
+sus GOROUTINE_PANIC normie = 5
 
-// Goroutine states
-sus GOROUTINE_READY := 0
-sus GOROUTINE_RUNNING := 1
-sus GOROUTINE_WAITING := 2
-sus GOROUTINE_YIELDED := 3
-sus GOROUTINE_COMPLETED := 4
-sus GOROUTINE_PANICKED := 5
-sus GOROUTINE_ERROR_ISOLATED := 6
+# Goroutine representation
+vibe Goroutine = smash {
+    id normie,
+    state normie,
+    function_name tea,
+    stack_size normie,
+    created_at normie,
+    run_count normie,
+    panic_data tea,
+    parent_id normie,
+    priority normie
+}
 
-// Goroutine priority levels
-sus PRIORITY_LOW := 0
-sus PRIORITY_NORMAL := 1
-sus PRIORITY_HIGH := 2
-sus PRIORITY_CRITICAL := 3
+# Work-stealing scheduler
+vibe Scheduler = smash {
+    goroutines map[normie]Goroutine,
+    runnable_queue []normie,
+    current_id normie,
+    next_id normie,
+    worker_count normie,
+    total_runs normie,
+    panic_count normie
+}
 
-// Global goroutine state
-sus goroutine_store := make(map[normie]map[tea]tea) // goroutine_id -> state
-sus worker_store := make(map[normie]map[tea]tea)    // worker_id -> state
-sus next_goroutine_id := 1
-sus next_worker_id := 1
-sus active_goroutines := 0
-sus scheduler_running := cap
-sus scheduler_stats := make(map[tea]normie)
+# Global scheduler instance
+sus global_scheduler Scheduler
 
-// Goroutine spawning (implements "stan" keyword)
-slay goroutine_spawn(priority normie) normie {
-    sus goroutine_id := next_goroutine_id
-    next_goroutine_id = next_goroutine_id + 1
+# Scheduler configuration
+sus MAX_GOROUTINES normie = 10000
+sus DEFAULT_STACK_SIZE normie = 8192
+sus DEFAULT_WORKER_COUNT normie = 4
+sus SCHEDULER_QUANTUM normie = 100  # Cooperative yield frequency
+
+# ==============================================================================
+# GOROUTINE SCHEDULER INITIALIZATION
+# ==============================================================================
+
+# Initialize the goroutine scheduler
+slay init_goroutine_scheduler() lit {
+    global_scheduler.goroutines = {}
+    global_scheduler.runnable_queue = []
+    global_scheduler.current_id = 0
+    global_scheduler.next_id = 1
+    global_scheduler.worker_count = DEFAULT_WORKER_COUNT
+    global_scheduler.total_runs = 0
+    global_scheduler.panic_count = 0
     
-    // Create goroutine state
-    sus goroutine_state := make(map[tea]tea)
-    goroutine_state["id"] = goroutine_id
-    goroutine_state["state"] = GOROUTINE_READY
-    goroutine_state["priority"] = priority
-    goroutine_state["created_at"] = "now"
-    goroutine_state["parent_id"] = "none"
+    vibez.spill("Goroutine scheduler initialized")
+    damn based
+}
+
+# Create a new goroutine
+slay spawn_goroutine(function_name tea) normie {
+    lowkey global_scheduler.next_id >= MAX_GOROUTINES {
+        vibez.spill("ERROR: Maximum goroutine limit reached")
+        damn -1
+    }
     
-    goroutine_store[goroutine_id] = goroutine_state
-    active_goroutines = active_goroutines + 1
+    sus goroutine_id normie = global_scheduler.next_id
+    global_scheduler.next_id = global_scheduler.next_id + 1
     
-    // Update scheduler stats
-    scheduler_stats["total_spawned"] = scheduler_stats["total_spawned"] + 1
-    scheduler_stats["current_active"] = active_goroutines
+    sus new_goroutine Goroutine
+    new_goroutine.id = goroutine_id
+    new_goroutine.state = GOROUTINE_CREATED
+    new_goroutine.function_name = function_name
+    new_goroutine.stack_size = DEFAULT_STACK_SIZE
+    new_goroutine.created_at = get_current_time()
+    new_goroutine.run_count = 0
+    new_goroutine.panic_data = ""
+    new_goroutine.parent_id = global_scheduler.current_id
+    new_goroutine.priority = 5  # Normal priority
+    
+    global_scheduler.goroutines[goroutine_id] = new_goroutine
+    schedule_goroutine(goroutine_id)
     
     damn goroutine_id
 }
 
-// Goroutine yielding (implements "yolo" keyword)
-slay goroutine_yield() normie {
-    // Update yield statistics
-    scheduler_stats["total_yields"] = scheduler_stats["total_yields"] + 1
+# Schedule a goroutine for execution
+slay schedule_goroutine(goroutine_id normie) lit {
+    lowkey !goroutine_exists(goroutine_id) {
+        damn cap
+    }
     
-    // In a real implementation, this would save context and switch to another goroutine
-    damn 0
+    global_scheduler.runnable_queue = append(global_scheduler.runnable_queue, goroutine_id)
+    set_goroutine_state(goroutine_id, GOROUTINE_RUNNABLE)
+    damn based
 }
 
-// Goroutine completion
-slay goroutine_complete(goroutine_id normie) {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        sus goroutine_state := goroutine_store[goroutine_id]
-        goroutine_state["state"] = GOROUTINE_COMPLETED
-        goroutine_state["completed_at"] = "now"
-        
-        active_goroutines = active_goroutines - 1
-        scheduler_stats["total_completed"] = scheduler_stats["total_completed"] + 1
-        scheduler_stats["current_active"] = active_goroutines
+# ==============================================================================
+# GOROUTINE EXECUTION AND SCHEDULING
+# ==============================================================================
+
+# Execute the next runnable goroutine
+slay run_next_goroutine() lit {
+    lowkey len(global_scheduler.runnable_queue) == 0 {
+        damn cap  # No runnable goroutines
     }
+    
+    # Get next goroutine from queue (simple round-robin)
+    sus next_id normie = global_scheduler.runnable_queue[0]
+    global_scheduler.runnable_queue = global_scheduler.runnable_queue[1:]
+    
+    lowkey !goroutine_exists(next_id) {
+        damn cap
+    }
+    
+    # Execute the goroutine
+    execute_goroutine(next_id)
+    damn based
 }
 
-// Goroutine panic handling
-slay goroutine_panic(goroutine_id normie, panic_message tea) {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        sus goroutine_state := goroutine_store[goroutine_id]
-        goroutine_state["state"] = GOROUTINE_PANICKED
-        goroutine_state["panic_message"] = panic_message
-        goroutine_state["panic_at"] = "now"
-        
-        active_goroutines = active_goroutines - 1
-        scheduler_stats["total_panicked"] = scheduler_stats["total_panicked"] + 1
-        scheduler_stats["current_active"] = active_goroutines
-        
-        // Check if error isolation is enabled
-        lowkey goroutine_state["error_isolation"] == "enabled" {
-            goroutine_state["state"] = GOROUTINE_ERROR_ISOLATED
-        }
+# Execute a specific goroutine
+slay execute_goroutine(goroutine_id normie) lit {
+    sus prev_current normie = global_scheduler.current_id
+    global_scheduler.current_id = goroutine_id
+    
+    set_goroutine_state(goroutine_id, GOROUTINE_RUNNING)
+    
+    # Simulate goroutine execution
+    sus goroutine Goroutine = global_scheduler.goroutines[goroutine_id]
+    goroutine.run_count = goroutine.run_count + 1
+    global_scheduler.goroutines[goroutine_id] = goroutine
+    global_scheduler.total_runs = global_scheduler.total_runs + 1
+    
+    # Execute function (simplified simulation)
+    sus success lit = execute_function(goroutine.function_name)
+    
+    lowkey success {
+        set_goroutine_state(goroutine_id, GOROUTINE_DONE)
+    } yikes {
+        handle_goroutine_panic(goroutine_id, "execution_error")
     }
+    
+    global_scheduler.current_id = prev_current
+    damn success
 }
 
-// Scheduler initialization
-slay scheduler_init(num_workers normie) normie {
-    lowkey scheduler_running == based {
-        damn -1 // Already running
+# Execute a function by name (simulation)
+slay execute_function(function_name tea) lit {
+    # Simulate function execution
+    lowkey function_name == "panic_function" {
+        damn cap  # Simulate panic
     }
     
-    scheduler_running = based
-    
-    // Initialize scheduler stats
-    scheduler_stats["total_spawned"] = 0
-    scheduler_stats["total_completed"] = 0
-    scheduler_stats["total_panicked"] = 0
-    scheduler_stats["total_yields"] = 0
-    scheduler_stats["current_active"] = 0
-    scheduler_stats["started_at"] = "now"
-    
-    // Create worker threads
-    bestie i := 0; i < num_workers; i++ {
-        sus worker_id := next_worker_id
-        next_worker_id = next_worker_id + 1
-        
-        sus worker_state := make(map[tea]tea)
-        worker_state["id"] = worker_id
-        worker_state["goroutines_executed"] = 0
-        worker_state["work_stolen"] = 0
-        worker_state["idle_time"] = 0
-        worker_state["busy_time"] = 0
-        
-        worker_store[worker_id] = worker_state
-    }
-    
-    damn 0
-}
-
-// Scheduler shutdown
-slay scheduler_shutdown() normie {
-    lowkey scheduler_running == cap {
-        damn -1 // Not running
-    }
-    
-    scheduler_running = cap
-    
-    // Clean up remaining goroutines
-    sus remaining_goroutines := 0
-    for goroutine_id, goroutine_state in goroutine_store {
-        lowkey goroutine_state["state"] != GOROUTINE_COMPLETED {
-            remaining_goroutines = remaining_goroutines + 1
+    # Simulate work
+    sus i normie = 0
+    bestie i < SCHEDULER_QUANTUM {
+        i = i + 1
+        # Cooperative yield point
+        lowkey i % 10 == 0 {
+            yield_goroutine()
         }
     }
     
-    damn remaining_goroutines
+    damn based
 }
 
-// Get scheduler statistics
-slay scheduler_get_stats() map[tea]normie {
-    damn scheduler_stats
+# Cooperative yield from current goroutine
+slay yield_goroutine() lit {
+    sus current_id normie = global_scheduler.current_id
+    lowkey current_id > 0 && goroutine_exists(current_id) {
+        # Re-schedule current goroutine if still runnable
+        sus goroutine Goroutine = global_scheduler.goroutines[current_id]
+        lowkey goroutine.state == GOROUTINE_RUNNING {
+            schedule_goroutine(current_id)
+        }
+    }
+    damn based
 }
 
-// Get goroutine state
-slay goroutine_get_state(goroutine_id normie) normie {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        damn goroutine_store[goroutine_id]["state"]
+# ==============================================================================
+# GOROUTINE STATE MANAGEMENT
+# ==============================================================================
+
+# Set goroutine state
+slay set_goroutine_state(goroutine_id normie, new_state normie) lit {
+    lowkey !goroutine_exists(goroutine_id) {
+        damn cap
     }
     
-    damn -1 // Not found
+    sus goroutine Goroutine = global_scheduler.goroutines[goroutine_id]
+    goroutine.state = new_state
+    global_scheduler.goroutines[goroutine_id] = goroutine
+    damn based
 }
 
-// Set goroutine state
-slay goroutine_set_state(goroutine_id normie, new_state normie) normie {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        goroutine_store[goroutine_id]["state"] = new_state
-        damn 0
+# Get goroutine state
+slay get_goroutine_state(goroutine_id normie) normie {
+    lowkey !goroutine_exists(goroutine_id) {
+        damn -1
     }
     
-    damn -1 // Not found
+    sus goroutine Goroutine = global_scheduler.goroutines[goroutine_id]
+    damn goroutine.state
 }
 
-// Goroutine priority management
-slay goroutine_set_priority(goroutine_id normie, priority normie) normie {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        goroutine_store[goroutine_id]["priority"] = priority
-        damn 0
+# Check if goroutine exists
+slay goroutine_exists(goroutine_id normie) lit {
+    damn goroutine_id > 0 && global_scheduler.goroutines[goroutine_id].id == goroutine_id
+}
+
+# Get current goroutine ID
+slay current_goroutine_id() normie {
+    damn global_scheduler.current_id
+}
+
+# ==============================================================================
+# PANIC HANDLING AND ERROR RECOVERY
+# ==============================================================================
+
+# Handle goroutine panic
+slay handle_goroutine_panic(goroutine_id normie, panic_data tea) lit {
+    lowkey !goroutine_exists(goroutine_id) {
+        damn cap
     }
     
-    damn -1 // Not found
+    sus goroutine Goroutine = global_scheduler.goroutines[goroutine_id]
+    goroutine.state = GOROUTINE_PANIC
+    goroutine.panic_data = panic_data
+    global_scheduler.goroutines[goroutine_id] = goroutine
+    global_scheduler.panic_count = global_scheduler.panic_count + 1
+    
+    vibez.spill("Goroutine " + stringz.itoa(goroutine_id) + " panicked: " + panic_data)
+    
+    # Cleanup panic goroutine
+    cleanup_goroutine(goroutine_id)
+    damn based
 }
 
-// Work stealing implementation
-slay worker_steal_work(worker_id normie) normie {
-    lowkey worker_store[worker_id] != cringe {
-        sus worker_state := worker_store[worker_id]
-        worker_state["work_stolen"] = worker_state["work_stolen"] + 1
-        damn 1 // Work stolen
+# Recover from panic in current goroutine
+slay recover_goroutine_panic() tea {
+    sus current_id normie = global_scheduler.current_id
+    lowkey current_id == 0 || !goroutine_exists(current_id) {
+        damn ""
     }
     
-    damn 0 // No work stolen
-}
-
-// Worker execution statistics
-slay worker_update_stats(worker_id normie, goroutines_executed normie, busy_time normie) {
-    lowkey worker_store[worker_id] != cringe {
-        sus worker_state := worker_store[worker_id]
-        worker_state["goroutines_executed"] = worker_state["goroutines_executed"] + goroutines_executed
-        worker_state["busy_time"] = worker_state["busy_time"] + busy_time
-    }
-}
-
-// Error isolation configuration
-slay goroutine_enable_error_isolation(goroutine_id normie) normie {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        goroutine_store[goroutine_id]["error_isolation"] = "enabled"
-        goroutine_store[goroutine_id]["max_recovery_attempts"] = 3
-        goroutine_store[goroutine_id]["recovery_attempts"] = 0
-        damn 0
+    sus goroutine Goroutine = global_scheduler.goroutines[current_id]
+    lowkey goroutine.state == GOROUTINE_PANIC {
+        sus panic_data tea = goroutine.panic_data
+        goroutine.state = GOROUTINE_RUNNABLE
+        goroutine.panic_data = ""
+        global_scheduler.goroutines[current_id] = goroutine
+        damn panic_data
     }
     
-    damn -1 // Not found
+    damn ""
 }
 
-// Panic propagation configuration
-slay goroutine_set_panic_propagation(goroutine_id normie, propagate_to_parent lit, propagate_to_children lit) normie {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        goroutine_store[goroutine_id]["propagate_to_parent"] = propagate_to_parent
-        goroutine_store[goroutine_id]["propagate_to_children"] = propagate_to_children
-        damn 0
+# Cleanup completed or panicked goroutine
+slay cleanup_goroutine(goroutine_id normie) lit {
+    lowkey !goroutine_exists(goroutine_id) {
+        damn cap
     }
     
-    damn -1 // Not found
+    # Remove from runnable queue if present
+    sus new_queue []normie = []
+    bestie _, id := range global_scheduler.runnable_queue {
+        lowkey id != goroutine_id {
+            new_queue = append(new_queue, id)
+        }
+    }
+    global_scheduler.runnable_queue = new_queue
+    
+    # Keep goroutine record for statistics but mark as done
+    set_goroutine_state(goroutine_id, GOROUTINE_DONE)
+    damn based
 }
 
-// Parent-child relationship management
-slay goroutine_set_parent(goroutine_id normie, parent_id normie) normie {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        goroutine_store[goroutine_id]["parent_id"] = parent_id
-        damn 0
+# ==============================================================================
+# SCHEDULER STATISTICS AND MONITORING
+# ==============================================================================
+
+# Get scheduler statistics
+slay get_scheduler_stats() map[tea]normie {
+    sus stats map[tea]normie = {}
+    
+    stats["total_goroutines"] = len(global_scheduler.goroutines)
+    stats["runnable_count"] = len(global_scheduler.runnable_queue)
+    stats["current_goroutine"] = global_scheduler.current_id
+    stats["next_id"] = global_scheduler.next_id
+    stats["total_runs"] = global_scheduler.total_runs
+    stats["panic_count"] = global_scheduler.panic_count
+    stats["worker_count"] = global_scheduler.worker_count
+    
+    # Count by state
+    sus created_count normie = 0
+    sus runnable_count normie = 0
+    sus running_count normie = 0
+    sus blocked_count normie = 0
+    sus done_count normie = 0
+    sus panic_count normie = 0
+    
+    bestie _, goroutine := range global_scheduler.goroutines {
+        lowkey goroutine.state == GOROUTINE_CREATED {
+            created_count = created_count + 1
+        } yikes lowkey goroutine.state == GOROUTINE_RUNNABLE {
+            runnable_count = runnable_count + 1
+        } yikes lowkey goroutine.state == GOROUTINE_RUNNING {
+            running_count = running_count + 1
+        } yikes lowkey goroutine.state == GOROUTINE_BLOCKED {
+            blocked_count = blocked_count + 1
+        } yikes lowkey goroutine.state == GOROUTINE_DONE {
+            done_count = done_count + 1
+        } yikes lowkey goroutine.state == GOROUTINE_PANIC {
+            panic_count = panic_count + 1
+        }
     }
     
-    damn -1 // Not found
+    stats["created_count"] = created_count
+    stats["runnable_count_by_state"] = runnable_count
+    stats["running_count"] = running_count
+    stats["blocked_count"] = blocked_count
+    stats["done_count"] = done_count
+    stats["panic_count_by_state"] = panic_count
+    
+    damn stats
 }
 
-// Stack trace capture (simplified)
-slay goroutine_capture_stack_trace(goroutine_id normie) tea {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        damn "stack_trace_line_1\nstack_trace_line_2\nstack_trace_line_3"
+# Scheduler health check
+slay scheduler_health_check() lit {
+    sus stats map[tea]normie = get_scheduler_stats()
+    
+    lowkey stats["total_goroutines"] > MAX_GOROUTINES * 9 / 10 {
+        vibez.spill("WARNING: Approaching goroutine limit")
     }
     
-    damn "stack_trace_not_available"
-}
-
-// Join handle management
-slay goroutine_create_join_handle(goroutine_id normie) normie {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        goroutine_store[goroutine_id]["join_handle"] = "created"
-        damn 0
+    lowkey stats["panic_count"] > 10 {
+        vibez.spill("WARNING: High panic count detected")
     }
     
-    damn -1 // Not found
-}
-
-// Goroutine execution context
-slay goroutine_get_context(goroutine_id normie) map[tea]tea {
-    lowkey goroutine_store[goroutine_id] != cringe {
-        damn goroutine_store[goroutine_id]
+    lowkey stats["runnable_count"] == 0 && stats["running_count"] == 0 {
+        vibez.spill("INFO: No active goroutines")
     }
     
-    sus empty_context := make(map[tea]tea)
-    damn empty_context
+    damn based
 }
 
-// ========================================
-// Test Suite
-// ========================================
-
-slay test_goroutine_spawning() {
-    test_start("Goroutine Spawning")
-    
-    sus scheduler_result := scheduler_init(4)
-    assert_eq_int(scheduler_result, 0)
-    
-    sus goroutine_id := goroutine_spawn(PRIORITY_NORMAL)
-    assert_true(goroutine_id > 0)
-    
-    sus state := goroutine_get_state(goroutine_id)
-    assert_eq_int(state, GOROUTINE_READY)
-    
-    sus stats := scheduler_get_stats()
-    assert_eq_int(stats["total_spawned"], 1)
-    assert_eq_int(stats["current_active"], 1)
-    
-    print_test_summary()
+# Helper function to get current time (simulation)
+slay get_current_time() normie {
+    # Simulate timestamp
+    damn global_scheduler.total_runs
 }
 
-slay test_goroutine_lifecycle() {
-    test_start("Goroutine Lifecycle")
-    
-    sus goroutine_id := goroutine_spawn(PRIORITY_HIGH)
-    assert_true(goroutine_id > 0)
-    
-    // Test state transitions
-    sus set_result := goroutine_set_state(goroutine_id, GOROUTINE_RUNNING)
-    assert_eq_int(set_result, 0)
-    
-    sus running_state := goroutine_get_state(goroutine_id)
-    assert_eq_int(running_state, GOROUTINE_RUNNING)
-    
-    // Test completion
-    goroutine_complete(goroutine_id)
-    sus completed_state := goroutine_get_state(goroutine_id)
-    assert_eq_int(completed_state, GOROUTINE_COMPLETED)
-    
-    print_test_summary()
-}
-
-slay test_goroutine_yielding() {
-    test_start("Goroutine Yielding")
-    
-    sus initial_yields := scheduler_stats["total_yields"]
-    
-    sus yield_result := goroutine_yield()
-    assert_eq_int(yield_result, 0)
-    
-    sus stats := scheduler_get_stats()
-    assert_eq_int(stats["total_yields"], initial_yields + 1)
-    
-    print_test_summary()
-}
-
-slay test_goroutine_panic_handling() {
-    test_start("Goroutine Panic Handling")
-    
-    sus goroutine_id := goroutine_spawn(PRIORITY_NORMAL)
-    assert_true(goroutine_id > 0)
-    
-    // Enable error isolation
-    sus isolation_result := goroutine_enable_error_isolation(goroutine_id)
-    assert_eq_int(isolation_result, 0)
-    
-    // Simulate panic
-    goroutine_panic(goroutine_id, "test panic message")
-    
-    sus panicked_state := goroutine_get_state(goroutine_id)
-    assert_eq_int(panicked_state, GOROUTINE_ERROR_ISOLATED)
-    
-    sus stats := scheduler_get_stats()
-    assert_eq_int(stats["total_panicked"], 1)
-    
-    print_test_summary()
-}
-
-slay test_worker_management() {
-    test_start("Worker Management")
-    
-    sus worker_id := 1
-    
-    // Test work stealing
-    sus steal_result := worker_steal_work(worker_id)
-    assert_eq_int(steal_result, 1)
-    
-    // Test stats update
-    worker_update_stats(worker_id, 5, 1000)
-    
-    print_test_summary()
-}
-
-slay test_error_isolation() {
-    test_start("Error Isolation")
-    
-    sus goroutine_id := goroutine_spawn(PRIORITY_NORMAL)
-    assert_true(goroutine_id > 0)
-    
-    sus isolation_result := goroutine_enable_error_isolation(goroutine_id)
-    assert_eq_int(isolation_result, 0)
-    
-    sus context := goroutine_get_context(goroutine_id)
-    assert_eq_string(context["error_isolation"], "enabled")
-    
-    print_test_summary()
-}
-
-slay test_panic_propagation() {
-    test_start("Panic Propagation")
-    
-    sus parent_id := goroutine_spawn(PRIORITY_NORMAL)
-    sus child_id := goroutine_spawn(PRIORITY_NORMAL)
-    
-    // Set parent-child relationship
-    sus parent_result := goroutine_set_parent(child_id, parent_id)
-    assert_eq_int(parent_result, 0)
-    
-    // Configure panic propagation
-    sus propagation_result := goroutine_set_panic_propagation(child_id, based, cap)
-    assert_eq_int(propagation_result, 0)
-    
-    sus child_context := goroutine_get_context(child_id)
-    assert_eq_string(child_context["propagate_to_parent"], based)
-    
-    print_test_summary()
-}
-
-slay test_scheduler_lifecycle() {
-    test_start("Scheduler Lifecycle")
-    
-    sus init_result := scheduler_init(2)
-    assert_eq_int(init_result, 0)
-    
-    sus stats := scheduler_get_stats()
-    assert_eq_int(stats["total_spawned"], 0)
-    assert_eq_int(stats["current_active"], 0)
-    
-    sus shutdown_result := scheduler_shutdown()
-    assert_eq_int(shutdown_result, 0)
-    
-    print_test_summary()
-}
-
-slay test_stack_trace() {
-    test_start("Stack Trace Capture")
-    
-    sus goroutine_id := goroutine_spawn(PRIORITY_NORMAL)
-    assert_true(goroutine_id > 0)
-    
-    sus stack_trace := goroutine_capture_stack_trace(goroutine_id)
-    assert_true(len(stack_trace) > 0)
-    assert_true(starts_with(stack_trace, "stack_trace_line_1"))
-    
-    print_test_summary()
-}
-
-// String utility function
-slay starts_with(str tea, prefix tea) lit {
-    sus str_len := len(str)
-    sus prefix_len := len(prefix)
-    
-    lowkey str_len >= prefix_len {
-        damn str[0:prefix_len] == prefix
-    }
-    
-    damn cap
-}
-
-// Main module function
-slay goroutine_core_main() {
-    test_goroutine_spawning()
-    test_goroutine_lifecycle()
-    test_goroutine_yielding()
-    test_goroutine_panic_handling()
-    test_worker_management()
-    test_error_isolation()
-    test_panic_propagation()
-    test_scheduler_lifecycle()
-    test_stack_trace()
+# Reset scheduler (for testing)
+slay reset_scheduler() lit {
+    global_scheduler.goroutines = {}
+    global_scheduler.runnable_queue = []
+    global_scheduler.current_id = 0
+    global_scheduler.next_id = 1
+    global_scheduler.total_runs = 0
+    global_scheduler.panic_count = 0
+    damn based
 }

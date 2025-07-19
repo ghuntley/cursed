@@ -53,6 +53,7 @@ pub mod performance_hooks;  // Runtime performance monitoring hooks
 pub mod gc_write_barrier_safe; // Thread-safe write barriers
 pub mod heap_optimizer_safe;   // Thread-safe heap optimizer
 pub mod gc_race_detector;      // Race condition detection
+pub mod memory_bridge;         // FFI bridge for C runtime memory functions
 
 // Async and channels
 pub mod r#async;
@@ -89,6 +90,7 @@ pub use concurrent_gc::{ConcurrentGarbageCollector, ConcurrentGcConfig, Concurre
 pub use heap_optimizer::{HeapOptimizer, HeapOptimizerConfig, HeapStats, AllocationStrategy};
 pub use gc_monitor::{GcMonitor, GcMonitorConfig, GcEvent, GcEventType, EventSeverity, 
                     TuningRecommendation, RecommendationType};
+pub use memory_bridge::{initialize_memory_system, shutdown_memory_system};
 
 // Additional exports needed by other modules - ADVANCED FEATURES ENABLED
 pub use goroutine::{GoroutineScheduler, GoroutineSchedulerWrapper, SchedulerConfig, get_global_scheduler, initialize_global_scheduler, shutdown_global_scheduler};

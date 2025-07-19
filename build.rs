@@ -522,4 +522,5 @@ fn link_system_libraries() {
     // Link interface runtime for self-hosting
     println!("cargo:rustc-link-lib=static=cursed_interface_runtime");
     println!("cargo:rustc-link-lib=static=cursed_type_assertion_runtime");
+    println!("cargo:rustc-link-lib=static=cursed_memory_runtime");
 }
