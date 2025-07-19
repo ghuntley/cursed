@@ -142,35 +142,19 @@ pub struct LlvmCodeGenerator {
 }
 
 impl LlvmCodeGenerator {
-    /// Detect the target triple for the current platform
+    /// Detect the target triple for the current platform using runtime detection
     fn detect_target_triple() -> String {
         // Try to get from environment first
         if let Ok(target) = std::env::var("TARGET") {
             return target;
         }
         
-        // Detect current platform with proper target triples for arm64 and x86_64
-        cfg_if::cfg_if! {
-            if #[cfg(all(target_arch = "aarch64", target_os = "macos"))] {
-                "aarch64-apple-darwin".to_string()
-            } else if #[cfg(all(target_arch = "aarch64", target_os = "linux"))] {
-                "aarch64-unknown-linux-gnu".to_string()
-            } else if #[cfg(all(target_arch = "x86_64", target_os = "macos"))] {
-                "x86_64-apple-darwin".to_string()
-            } else if #[cfg(all(target_arch = "x86_64", target_os = "linux"))] {
-                "x86_64-unknown-linux-gnu".to_string()
-            } else if #[cfg(all(target_arch = "x86_64", target_os = "windows"))] {
-                "x86_64-pc-windows-msvc".to_string()
-            } else if #[cfg(all(target_arch = "aarch64", target_os = "windows"))] {
-                "aarch64-pc-windows-msvc".to_string()
-            } else {
-                // Generic fallback for other architectures
-                format!("{}-unknown-{}", 
-                    std::env::consts::ARCH, 
-                    std::env::consts::OS
-                )
-            }
-        }
+        // Use runtime platform detection instead of compile-time cfg! macros
+        // This enables cross-compilation and runtime adaptation
+        use crate::runtime::platform::get_runtime_platform_info;
+        
+        let platform_info = get_runtime_platform_info();
+        platform_info.target_triple
     }
     
     pub fn new() -> Result<Self, CursedError> {

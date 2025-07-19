@@ -356,7 +356,27 @@ slay code_generator_generate_llvm(generator CodeGenerator, ast ASTNodeType) tea 
 }
 
 slay code_generator_generate_native(generator CodeGenerator, ast ASTNodeType) tea {
-    # Generate native assembly
+    # Generate cross-platform native assembly
+    damn generate_platform_assembly("exit")
+}
+
+slay generate_platform_assembly(instructions tea) tea {
+    yeet "vibecheck"
+    
+    sus target_arch tea = get_target_architecture()
+    
+    yikes target_arch == "x86_64" {
+        damn generate_x86_64_assembly(instructions)
+    } ayt target_arch == "aarch64" {
+        damn generate_arm64_assembly(instructions)
+    } ayt target_arch == "wasm32" {
+        damn generate_wasm32_assembly(instructions)
+    } yikes cap {
+        damn generate_generic_assembly(instructions)
+    }
+}
+
+slay generate_x86_64_assembly(instructions tea) tea {
     sus native_code tea = ".section .text\n"
     native_code = native_code + ".globl _start\n"
     native_code = native_code + "_start:\n"
@@ -364,6 +384,50 @@ slay code_generator_generate_native(generator CodeGenerator, ast ASTNodeType) te
     native_code = native_code + "  mov $0, %rdi\n"
     native_code = native_code + "  syscall\n"
     damn native_code
+}
+
+slay generate_arm64_assembly(instructions tea) tea {
+    sus native_code tea = ".section .text\n"
+    native_code = native_code + ".globl _start\n"
+    native_code = native_code + "_start:\n"
+    native_code = native_code + "  mov x8, #93\n"    # exit syscall
+    native_code = native_code + "  mov x0, #0\n"     # exit status
+    native_code = native_code + "  svc #0\n"         # supervisor call
+    damn native_code
+}
+
+slay generate_wasm32_assembly(instructions tea) tea {
+    sus wasm_code tea = "(module\n"
+    wasm_code = wasm_code + "  (func $main (export \"_start\")\n"
+    wasm_code = wasm_code + "    (call $exit (i32.const 0))\n"
+    wasm_code = wasm_code + "  )\n"
+    wasm_code = wasm_code + "  (import \"wasi_snapshot_preview1\" \"proc_exit\" (func $exit (param i32)))\n"
+    wasm_code = wasm_code + ")\n"
+    damn wasm_code
+}
+
+slay generate_generic_assembly(instructions tea) tea {
+    # Fallback to portable C code generation
+    sus c_code tea = "#include <stdlib.h>\n"
+    c_code = c_code + "int main() {\n"
+    c_code = c_code + "  exit(0);\n"
+    c_code = c_code + "}\n"
+    damn c_code
+}
+
+slay get_target_architecture() tea {
+    yeet "vibecheck"
+    
+    # In real implementation, this would detect target from build flags
+    # For now, return current architecture
+    sus arch tea = get_current_architecture()
+    damn arch
+}
+
+slay get_current_architecture() tea {
+    # This would be implemented in the runtime to detect current platform
+    # For demo purposes, assume x86_64
+    damn "x86_64"
 }
 
 slay code_generator_optimize_code(generator CodeGenerator, code tea) tea {

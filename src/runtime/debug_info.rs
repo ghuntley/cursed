@@ -13,6 +13,47 @@
 #![allow(non_upper_case_globals)]
 
 use crate::error::{CursedError, SourceLocation};
+
+/// Cross-platform register access
+fn get_platform_stack_pointer() -> u64 {
+    cfg_if::cfg_if! {
+        if #[cfg(target_arch = "x86_64")] {
+            let rsp: u64;
+            unsafe {
+                std::arch::asm!("mov {}, rsp", out(reg) rsp);
+            }
+            rsp
+        } else if #[cfg(target_arch = "aarch64")] {
+            let sp: u64;
+            unsafe {
+                std::arch::asm!("mov {}, sp", out(reg) sp);
+            }
+            sp
+        } else {
+            0 // Fallback for unsupported architectures
+        }
+    }
+}
+
+fn get_platform_base_pointer() -> u64 {
+    cfg_if::cfg_if! {
+        if #[cfg(target_arch = "x86_64")] {
+            let rbp: u64;
+            unsafe {
+                std::arch::asm!("mov {}, rbp", out(reg) rbp);
+            }
+            rbp
+        } else if #[cfg(target_arch = "aarch64")] {
+            let fp: u64;
+            unsafe {
+                std::arch::asm!("mov {}, x29", out(reg) fp);
+            }
+            fp
+        } else {
+            0 // Fallback for unsupported architectures
+        }
+    }
+}
 use crate::debug::DebugSymbol;
 use std::collections::{HashMap, BTreeMap};
 use std::path::{Path, PathBuf};
@@ -2208,50 +2249,12 @@ impl RegisterMap {
         map
     }
 
-    #[cfg(target_arch = "x86_64")]
     fn get_stack_pointer() -> u64 {
-        let rsp: u64;
-        unsafe {
-            std::arch::asm!("mov {}, rsp", out(reg) rsp);
-        }
-        rsp
+        get_platform_stack_pointer()
     }
 
-    #[cfg(target_arch = "x86_64")]
     fn get_base_pointer() -> u64 {
-        let rbp: u64;
-        unsafe {
-            std::arch::asm!("mov {}, rbp", out(reg) rbp);
-        }
-        rbp
-    }
-
-    #[cfg(target_arch = "aarch64")]
-    fn get_stack_pointer() -> u64 {
-        let sp: u64;
-        unsafe {
-            std::arch::asm!("mov {}, sp", out(reg) sp);
-        }
-        sp
-    }
-
-    #[cfg(target_arch = "aarch64")]
-    fn get_base_pointer() -> u64 {
-        let fp: u64;
-        unsafe {
-            std::arch::asm!("mov {}, x29", out(reg) fp);
-        }
-        fp
-    }
-
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-    fn get_stack_pointer() -> u64 {
-        0 // Fallback for unsupported architectures
-    }
-
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-    fn get_base_pointer() -> u64 {
-        0 // Fallback for unsupported architectures
+        get_platform_base_pointer()
     }
 }
 

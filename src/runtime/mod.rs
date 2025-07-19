@@ -41,9 +41,12 @@ pub mod debug_output_tests;
 pub mod production_gc_test;
 #[cfg(test)]
 pub mod panic_recover_tests;
+#[cfg(test)]
+pub mod goroutine_context_test;
 
 // Platform Abstraction Layer
 pub mod pal;         // Platform-specific abstractions for memory and scheduling
+pub mod platform;    // Runtime cross-platform detection and adaptation system
 
 // Memory management system
 pub mod gc;          // Comprehensive garbage collection system
@@ -63,6 +66,7 @@ pub mod memory_bridge;         // FFI bridge for C runtime memory functions
 pub mod r#async;
 pub mod channels;
 pub mod goroutine_context;
+pub mod context_abstraction;
 pub mod async_real;
 pub mod performance_tracker;
 
