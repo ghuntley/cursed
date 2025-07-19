@@ -1,11 +1,10 @@
 //! Register tracking to ensure consecutive numbering across all LLVM modules
 
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::{AtomicUsize, Ordering}};
 
 /// Global register counter to ensure consistent numbering across all LLVM codegen modules
-static mut GLOBAL_REGISTER_COUNTER: usize = 0;
-static GLOBAL_REGISTER_MUTEX: Mutex<()> = Mutex::new(());
+static GLOBAL_REGISTER_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Default, Clone)]
 pub struct RegisterTracker {
@@ -34,12 +33,8 @@ impl RegisterTracker {
     
     /// Allocate register using only global state (stateless)
     pub fn allocate_global_register() -> String {
-        let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
-        unsafe {
-            let reg = GLOBAL_REGISTER_COUNTER;
-            GLOBAL_REGISTER_COUNTER += 1;
-            format!("%{}", reg)
-        }
+        let reg = GLOBAL_REGISTER_COUNTER.fetch_add(1, Ordering::SeqCst);
+        format!("%{}", reg)
     }
     
     /// Allocate next register with function scope (for WASM)
@@ -52,10 +47,7 @@ impl RegisterTracker {
     
     /// Get next register number without allocation
     pub fn peek_next_register(&self) -> String {
-        let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
-        unsafe {
-            format!("%{}", GLOBAL_REGISTER_COUNTER)
-        }
+        format!("%{}", GLOBAL_REGISTER_COUNTER.load(Ordering::SeqCst))
     }
     
     /// Allocate and return the next register
@@ -65,16 +57,12 @@ impl RegisterTracker {
     
     /// Synchronize this tracker with global counter
     pub fn sync_with_global(&mut self) {
-        let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
-        unsafe {
-            self.next_expected = GLOBAL_REGISTER_COUNTER;
-        }
+        self.next_expected = GLOBAL_REGISTER_COUNTER.load(Ordering::SeqCst);
     }
     
     /// Get current counter value
     pub fn get_current_counter(&self) -> usize {
-        let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
-        unsafe { GLOBAL_REGISTER_COUNTER }
+        GLOBAL_REGISTER_COUNTER.load(Ordering::SeqCst)
     }
     
     /// Get current function-scoped counter value
@@ -84,30 +72,22 @@ impl RegisterTracker {
     
     /// Set current counter value
     pub fn set_counter(&mut self, value: usize) {
-        let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
-        unsafe { GLOBAL_REGISTER_COUNTER = value; }
+        GLOBAL_REGISTER_COUNTER.store(value, Ordering::SeqCst);
     }
     
     /// Increment counter (for compatibility)
     pub fn increment_counter(&mut self, amount: usize) {
-        let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
-        unsafe { GLOBAL_REGISTER_COUNTER += amount; }
+        GLOBAL_REGISTER_COUNTER.fetch_add(amount, Ordering::SeqCst);
     }
     
     /// Set global counter (used for resetting)
     pub fn set_global_counter(value: usize) {
-        let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
-        unsafe {
-            GLOBAL_REGISTER_COUNTER = value;
-        }
+        GLOBAL_REGISTER_COUNTER.store(value, Ordering::SeqCst);
     }
     
     /// Get current global counter value
     pub fn get_global_counter() -> usize {
-        let _lock = GLOBAL_REGISTER_MUTEX.lock().unwrap();
-        unsafe {
-            GLOBAL_REGISTER_COUNTER
-        }
+        GLOBAL_REGISTER_COUNTER.load(Ordering::SeqCst)
     }
     
     pub fn validate(&self) -> Result<(), String> {

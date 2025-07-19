@@ -9,6 +9,7 @@
 //! - Production deployment visibility
 
 use std::sync::{Arc, RwLock, Mutex};
+use once_cell::sync::Lazy;
 use std::time::{Duration, SystemTime};
 use std::collections::HashMap;
 use std::thread;
@@ -704,31 +705,18 @@ pub struct AlertSummary {
 }
 
 /// Global metrics manager instance
-static mut GLOBAL_METRICS: Option<Arc<MetricsManager>> = None;
-static METRICS_INIT: std::sync::Once = std::sync::Once::new();
+static GLOBAL_METRICS: once_cell::sync::Lazy<Arc<MetricsManager>> = 
+    once_cell::sync::Lazy::new(|| Arc::new(MetricsManager::new(MetricsConfig::default()).unwrap()));
 
 /// Initialize global metrics manager
 pub fn init_global_metrics(config: MetricsConfig) -> Result<(), CursedError> {
-    METRICS_INIT.call_once(|| {
-        match MetricsManager::new(config) {
-            Ok(manager) => {
-                unsafe {
-                    GLOBAL_METRICS = Some(Arc::new(manager));
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to initialize global metrics: {}", e);
-            }
-        }
-    });
+    // Initialization is handled automatically by Lazy
     Ok(())
 }
 
 /// Get global metrics manager
-pub fn get_global_metrics() -> Option<Arc<MetricsManager>> {
-    unsafe {
-        GLOBAL_METRICS.clone()
-    }
+pub fn get_global_metrics() -> Arc<MetricsManager> {
+    GLOBAL_METRICS.clone()
 }
 
 /// Start global metrics collection

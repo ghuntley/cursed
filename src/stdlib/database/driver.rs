@@ -382,22 +382,17 @@ impl DriverFactory {
 }
 
 /// Global driver registry instance
-static mut GLOBAL_REGISTRY: Option<DriverRegistry> = None;
-static INIT: std::sync::Once = std::sync::Once::new();
+static GLOBAL_REGISTRY: once_cell::sync::Lazy<std::sync::Mutex<DriverRegistry>> = 
+    once_cell::sync::Lazy::new(|| std::sync::Mutex::new(DriverRegistry::new()));
 
 /// Get the global driver registry
-pub fn global_registry() -> &'static mut DriverRegistry {
-    unsafe {
-        INIT.call_once(|| {
-            GLOBAL_REGISTRY = Some(DriverRegistry::new());
-        });
-        GLOBAL_REGISTRY.as_mut().unwrap()
-    }
+pub fn global_registry() -> std::sync::MutexGuard<'static, DriverRegistry> {
+    GLOBAL_REGISTRY.lock().unwrap()
 }
 
 /// Initialize default drivers
 pub fn init_default_drivers() -> DriverResult<()> {
-    let registry = global_registry();
+    let mut registry = global_registry();
     
     registry.register(GenericDriver::new("postgresql", "1.0.0"))?;
     registry.register(GenericDriver::new("mysql", "1.0.0"))?;

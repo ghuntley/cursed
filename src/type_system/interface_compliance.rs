@@ -7,6 +7,7 @@
 // - Auto-dereference rules for interfaces
 
 use crate::ast::{InterfaceStatement, MethodSignature, Parameter, Type as AstType, StructStatement, TypeParameter as AstTypeParameter};
+use once_cell::sync::Lazy;
 use crate::error::SourceLocation;
 use crate::core::Type;
 use crate::error_types::CursedError;
@@ -633,23 +634,18 @@ pub struct IncompatibleMethod {
 }
 
 /// Global interface compliance checker
-static mut GLOBAL_COMPLIANCE_CHECKER: Option<InterfaceComplianceChecker> = None;
+static GLOBAL_COMPLIANCE_CHECKER: Lazy<std::sync::Mutex<InterfaceComplianceChecker>> = Lazy::new(|| std::sync::Mutex::new(InterfaceComplianceChecker::new()));
 
 /// Initialize global compliance checker
 pub fn initialize_interface_compliance_checker() {
     unsafe {
-        GLOBAL_COMPLIANCE_CHECKER = Some(InterfaceComplianceChecker::new());
+        // Initialization handled by Lazy);
     }
 }
 
 /// Get global compliance checker
-pub fn get_global_compliance_checker() -> Result<&'static mut InterfaceComplianceChecker, CursedError> {
-    unsafe {
-        GLOBAL_COMPLIANCE_CHECKER.as_mut()
-            .ok_or_else(|| CursedError::Runtime(
-                "Interface compliance checker not initialized".to_string()
-            ))
-    }
+pub fn get_global_compliance_checker() -> Result<std::sync::MutexGuard<'static, InterfaceComplianceChecker>, CursedError> {
+    Ok(GLOBAL_COMPLIANCE_CHECKER.lock().unwrap())
 }
 
 /// Check interface compliance using global checker

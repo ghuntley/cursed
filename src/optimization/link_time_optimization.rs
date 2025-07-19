@@ -4,6 +4,7 @@
 //! and whole-program optimization passes that work with the CURSED compiler's LLVM backend.
 
 use crate::error_types::CursedError;
+use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -863,14 +864,14 @@ impl LinkTimeOptimizer {
 }
 
 /// Global LTO instance
-static mut GLOBAL_LTO: Option<LTOManager> = None;
+static GLOBAL_LTO: Lazy<std::sync::Mutex<LTOManager>> = Lazy::new(|| std::sync::Mutex::new(LTOManager::new()));
 static GLOBAL_LTO_INIT: std::sync::Once = std::sync::Once::new();
 
 /// Initialize global LTO
 pub fn initialize_global_lto() -> Result<(), CursedError> {
     GLOBAL_LTO_INIT.call_once(|| {
         unsafe {
-            GLOBAL_LTO = Some(LTOManager::new());
+            // Initialization handled by Lazy);
         }
     });
     Ok(())
@@ -880,18 +881,15 @@ pub fn initialize_global_lto() -> Result<(), CursedError> {
 pub fn initialize_global_lto_with_config(config: LTOConfig) -> Result<(), CursedError> {
     GLOBAL_LTO_INIT.call_once(|| {
         unsafe {
-            GLOBAL_LTO = Some(LTOManager::with_config(config));
+            // Initialization handled by Lazy);
         }
     });
     Ok(())
 }
 
 /// Get global LTO instance
-pub fn get_global_lto() -> Result<&'static LTOManager, CursedError> {
-    unsafe {
-        GLOBAL_LTO.as_ref()
-            .ok_or_else(|| CursedError::Optimization("Global LTO not initialized".to_string()))
-    }
+pub fn get_global_lto() -> Result<std::sync::MutexGuard<'static, LTOManager>, CursedError> {
+    Ok(GLOBAL_LTO.lock().unwrap())
 }
 
 /// Convenience function for adding module to global LTO

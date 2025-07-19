@@ -4,6 +4,7 @@
 //! without full implementation complexity.
 
 use crate::error::CursedError;
+use once_cell::sync::Lazy;
 use crate::runtime::stack::RuntimeStack;
 use crate::memory::gc::{GcConfig, GcStats};
 use crate::memory::heap::HeapObject;

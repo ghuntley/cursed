@@ -4,6 +4,7 @@
 /// for production applications.
 
 use std::sync::{Arc, Mutex, RwLock};
+use once_cell::sync::Lazy;
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 use std::thread;
@@ -172,8 +173,13 @@ pub struct MemoryProfiler {
 }
 
 impl MemoryProfiler {
+    /// Create new memory profiler with default config
+    pub fn new() -> Self {
+        Self::new_with_config(ProfilingConfig::default())
+    }
+
     /// Create new memory profiler
-    pub fn new(config: ProfilingConfig) -> Self {
+    pub fn new_with_config(config: ProfilingConfig) -> Self {
         let stats = ProfilingStats {
             total_allocations: 0,
             total_deallocations: 0,
@@ -544,23 +550,18 @@ impl MemoryProfiler {
 }
 
 /// Global memory profiler instance
-static mut GLOBAL_PROFILER: Option<MemoryProfiler> = None;
+static GLOBAL_PROFILER: Lazy<std::sync::Mutex<MemoryProfiler>> = Lazy::new(|| std::sync::Mutex::new(MemoryProfiler::new()));
 static PROFILER_INIT: std::sync::Once = std::sync::Once::new();
 
 /// Initialize global memory profiler
 pub fn initialize_profiler(config: ProfilingConfig) -> Result<(), CursedError> {
-    PROFILER_INIT.call_once(|| {
-        let profiler = MemoryProfiler::new(config);
-        unsafe {
-            GLOBAL_PROFILER = Some(profiler);
-        }
-    });
+    // Initialization is handled automatically by Lazy
     Ok(())
 }
 
 /// Get global memory profiler
-pub fn get_profiler() -> Option<&'static MemoryProfiler> {
-    unsafe { GLOBAL_PROFILER.as_ref() }
+pub fn get_profiler() -> std::sync::MutexGuard<'static, MemoryProfiler> {
+    GLOBAL_PROFILER.lock().unwrap()
 }
 
 /// Record allocation using global profiler
@@ -570,17 +571,15 @@ pub fn record_allocation(
     object_tag: crate::memory::Tag,
     stack_id: Option<StackId>,
 ) -> Result<(), CursedError> {
-    if let Some(profiler) = get_profiler() {
-        profiler.record_allocation(address, size, object_tag, stack_id)?;
-    }
+    let mut profiler = get_profiler();
+    profiler.record_allocation(address, size, object_tag, stack_id)?;
     Ok(())
 }
 
 /// Record deallocation using global profiler
 pub fn record_deallocation(address: usize) -> Result<(), CursedError> {
-    if let Some(profiler) = get_profiler() {
-        profiler.record_deallocation(address)?;
-    }
+    let mut profiler = get_profiler();
+    profiler.record_deallocation(address)?;
     Ok(())
 }
 

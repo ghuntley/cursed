@@ -1473,7 +1473,7 @@ impl TypeChecker {
         );
         
         // Register interface with compliance checker
-        if let Ok(compliance_checker) = crate::type_system::interface_compliance::get_global_compliance_checker() {
+        if let Ok(mut compliance_checker) = crate::type_system::interface_compliance::get_global_compliance_checker() {
             if let Err(e) = compliance_checker.register_interface(interface_stmt) {
                 log::warn!("Failed to register interface '{}' with compliance checker: {:?}", 
                           interface_stmt.name, e);

@@ -6,6 +6,7 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use once_cell::sync::Lazy;
 
 /// Global string constant manager that tracks all string constants
 /// and ensures unique naming across all compilation units
@@ -111,17 +112,11 @@ impl Default for StringConstantManager {
 }
 
 /// Global singleton instance of the string constant manager
-static mut GLOBAL_STRING_MANAGER: Option<StringConstantManager> = None;
-static INIT_ONCE: std::sync::Once = std::sync::Once::new();
+static GLOBAL_STRING_MANAGER: Lazy<StringConstantManager> = Lazy::new(|| StringConstantManager::new());
 
 /// Get the global string constant manager instance
 pub fn get_global_string_manager() -> StringConstantManager {
-    unsafe {
-        INIT_ONCE.call_once(|| {
-            GLOBAL_STRING_MANAGER = Some(StringConstantManager::new());
-        });
-        GLOBAL_STRING_MANAGER.as_ref().unwrap().clone()
-    }
+    GLOBAL_STRING_MANAGER.clone()
 }
 
 /// Reset the global string constant manager (for testing)
