@@ -1,5 +1,5 @@
 // Parser module for CURSED language
-use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement, MatchExpression, MatchArm, MatchPattern, TypeSwitchExpression, TypeSwitchArm, TypePattern};
+use crate::ast::{Program, Ast, Statement, FunctionStatement, Parameter, Expression, LetStatement, IfStatement, ForStatement, WhileStatement, Type, Visibility, LetTarget, Literal, BinaryExpression, IncrementExpression, DecrementExpression, TupleExpression, TupleAccessExpression, MemberAccessExpression, CallExpression, AssignmentStatement, AssignmentTarget, DeferStatement, SelectStatement, SelectCase, PatternSwitchStatement, PatternSwitchCase, PatternExpression, FieldPattern, YikesStatement, FamStatement, ShookExpression, ErrorValueExpression, PanicExpression, RecoverExpression, InterfaceStatement, InterfaceComposition, MethodSignature, MethodReceiver, TypeParameter, StructStatement, StructField, StructLiteralExpression, StructFieldAssignment, ConstDecl, ConstSpec, GoroutineStatement, ImportParseResult, TypeAliasStatement, ReturnStatement, BreakStatement, ContinueStatement, MatchExpression, MatchArm, MatchPattern, TypeSwitchExpression, TypeSwitchArm, TypePattern};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::error_types::{Error, Result};
 use crate::error_recovery::{ErrorRecoveryManager, SourceLocation, ErrorContext, RecoveryStrategy, ParserState, ParserErrorRecovery};
@@ -2787,6 +2787,18 @@ impl Parser {
         } else {
             Vec::new()
         };
+
+        // Parse optional interface composition (with clause)
+        let compositions = if let Some(token) = self.current_token.as_ref() {
+            if token.kind == TokenKind::With {
+                self.advance_token(); // consume 'with'
+                self.parse_interface_composition_list()?
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
         
         // Expect '{'
         self.consume_token(TokenKind::LeftBrace)?;
@@ -2829,9 +2841,131 @@ impl Parser {
             name,
             type_parameters,
             extends,
-            compositions: Vec::new(), // TODO: Parse compositions
+            compositions,
             methods,
             visibility: Visibility::Public,
+        })
+    }
+
+    fn parse_interface_composition_list(&mut self) -> Result<Vec<InterfaceComposition>> {
+        let mut compositions = Vec::new();
+        
+        loop {
+            let composition = self.parse_interface_composition()?;
+            compositions.push(composition);
+            
+            if let Some(token) = self.current_token.as_ref() {
+                if token.kind == TokenKind::Comma {
+                    self.advance_token(); // consume ','
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        
+        Ok(compositions)
+    }
+
+    fn parse_interface_composition(&mut self) -> Result<InterfaceComposition> {
+        use std::collections::HashMap;
+        
+        // Parse composed interface name
+        let composed_interface = match self.current_token.as_ref() {
+            Some(token) if token.kind == TokenKind::Identifier => {
+                let name = token.lexeme.clone();
+                self.advance_token();
+                name
+            }
+            _ => return Err(Error::Parse("Expected interface name in composition".to_string())),
+        };
+        
+        let mut alias = None;
+        let mut excluded_methods = Vec::new();
+        let mut method_renames = HashMap::new();
+        
+        // Parse composition modifiers
+        while let Some(token) = self.current_token.as_ref() {
+            match token.kind {
+                TokenKind::As => {
+                    // Parse alias: "with SomeInterface as Alias"
+                    self.advance_token(); // consume 'as'
+                    if let Some(token) = self.current_token.as_ref() {
+                        if token.kind == TokenKind::Identifier {
+                            alias = Some(token.lexeme.clone());
+                            self.advance_token();
+                        }
+                    }
+                },
+                TokenKind::Except => {
+                    // Parse exclusions: "with SomeInterface except method1, method2"
+                    self.advance_token(); // consume 'except'
+                    loop {
+                        if let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Identifier {
+                                excluded_methods.push(token.lexeme.clone());
+                                self.advance_token();
+                            }
+                        }
+                        
+                        if let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Comma {
+                                self.advance_token(); // consume ','
+                            } else {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                },
+                TokenKind::Rename => {
+                    // Parse renames: "with SomeInterface rename oldMethod -> newMethod"
+                    self.advance_token(); // consume 'rename'
+                    loop {
+                        let old_name = match self.current_token.as_ref() {
+                            Some(token) if token.kind == TokenKind::Identifier => {
+                                let name = token.lexeme.clone();
+                                self.advance_token();
+                                name
+                            }
+                            _ => break,
+                        };
+                        
+                        if let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Arrow {
+                                self.advance_token(); // consume '->'
+                                if let Some(token) = self.current_token.as_ref() {
+                                    if token.kind == TokenKind::Identifier {
+                                        let new_name = token.lexeme.clone();
+                                        self.advance_token();
+                                        method_renames.insert(old_name, new_name);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if let Some(token) = self.current_token.as_ref() {
+                            if token.kind == TokenKind::Comma {
+                                self.advance_token(); // consume ','
+                            } else {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                },
+                _ => break,
+            }
+        }
+        
+        Ok(InterfaceComposition {
+            composed_interface,
+            alias,
+            excluded_methods,
+            method_renames,
         })
     }
 

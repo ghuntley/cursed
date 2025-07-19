@@ -17,6 +17,7 @@ use crate::codegen::llvm::error_handling::{ErrorHandlingCodegen, generate_error_
 use crate::codegen::llvm::register_tracker::RegisterTracker;
 use crate::codegen::llvm::interface_dispatch::{InterfaceDispatchCodegen, InterfaceDispatchOptimizer, InterfaceOptimizationPasses};
 use crate::codegen::llvm::interface_type_checking::InterfaceTypeChecker;
+use crate::type_system::monomorphizer::{Monomorphizer, MonomorphizedInstance, ConcreteAST, ConcreteFunctionDeclaration, ConcreteStructDeclaration, ConcreteMethodDeclaration};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::path::Path;
@@ -117,6 +118,10 @@ pub struct LlvmCodeGenerator {
     interface_dispatch_codegen: InterfaceDispatchCodegen,
     interface_type_checker: InterfaceTypeChecker,
     interface_optimization_passes: InterfaceOptimizationPasses,
+    // Monomorphization system integration
+    monomorphizer: Monomorphizer,
+    monomorphized_instances: HashMap<String, MonomorphizedInstance>,
+    generic_function_queue: Vec<(String, Vec<String>)>, // (function_name, type_args)
 }
 
 impl LlvmCodeGenerator {
@@ -184,6 +189,10 @@ impl LlvmCodeGenerator {
             interface_dispatch_codegen: InterfaceDispatchCodegen::new(),
             interface_type_checker: InterfaceTypeChecker::new(),
             interface_optimization_passes: InterfaceOptimizationPasses::default(),
+            // Initialize monomorphization system
+            monomorphizer: Monomorphizer::new(),
+            monomorphized_instances: HashMap::new(),
+            generic_function_queue: Vec::new(),
         })
     }
 
@@ -219,6 +228,256 @@ impl LlvmCodeGenerator {
     // Method to get source length for tests
     pub fn get_source_len(&self) -> usize {
         self.ir_code.len()
+    }
+
+    /// Process monomorphized instances and generate LLVM IR
+    pub fn process_monomorphized_instances(&mut self) -> Result<(), CursedError> {
+        // Process all pending instantiations
+        let instances = self.monomorphizer.process_instantiations()?;
+        
+        for instance in instances {
+            self.generate_monomorphized_instance(&instance)?;
+            self.monomorphized_instances.insert(instance.instance_id.clone(), instance);
+        }
+        
+        Ok(())
+    }
+    
+    /// Generate LLVM IR for a monomorphized instance
+    fn generate_monomorphized_instance(&mut self, instance: &MonomorphizedInstance) -> Result<(), CursedError> {
+        self.ir_code.push_str(&format!("\n; Monomorphized instance: {}\n", instance.instance_id));
+        
+        match &instance.concrete_ast {
+            ConcreteAST::Function(func) => {
+                self.generate_concrete_function(func)?;
+            }
+            ConcreteAST::Struct(struct_decl) => {
+                self.generate_concrete_struct(struct_decl)?;
+            }
+            ConcreteAST::Method(method) => {
+                self.generate_concrete_method(method)?;
+            }
+        }
+        
+        Ok(())
+    }
+    
+    /// Generate LLVM IR for a concrete function declaration
+    fn generate_concrete_function(&mut self, func: &ConcreteFunctionDeclaration) -> Result<(), CursedError> {
+        // Generate function signature
+        let mut params = Vec::new();
+        for param in &func.parameters {
+            let llvm_type = self.type_expression_to_llvm_type(&param.type_expr)?;
+            params.push(format!("{} %{}", llvm_type, param.name));
+        }
+        
+        let return_type = if let Some(ret_type) = &func.return_type {
+            self.type_expression_to_llvm_type(ret_type)?
+        } else {
+            "void".to_string()
+        };
+        
+        let param_str = params.join(", ");
+        
+        // Generate function definition
+        self.ir_code.push_str(&format!("define {} @{}({}) {{\n", return_type, func.name, param_str));
+        self.ir_code.push_str("entry:\n");
+        
+        // Save current function context
+        let old_function_name = self.current_function_name.clone();
+        self.current_function_name = Some(func.name.clone());
+        
+        // Clear parameter variables and add function parameters
+        let old_variables = self.variables.clone();
+        
+        // Add function parameters to variable mapping
+        for param in &func.parameters {
+            let param_reg = format!("%{}", param.name);
+            self.variables.insert(param.name.clone(), param_reg);
+        }
+        
+        // Generate function body
+        for statement in &func.body {
+            self.generate_statement(statement)?;
+        }
+        
+        // Ensure function ends with return
+        if !self.ir_code.ends_with("ret ") && !self.ir_code.ends_with("unreachable\n") {
+            if return_type == "void" {
+                self.ir_code.push_str("  ret void\n");
+            } else {
+                // Return default value for non-void functions
+                match return_type.as_str() {
+                    "i32" => self.ir_code.push_str("  ret i32 0\n"),
+                    "i1" => self.ir_code.push_str("  ret i1 false\n"),
+                    "double" => self.ir_code.push_str("  ret double 0.0\n"),
+                    "i8*" => self.ir_code.push_str("  ret i8* null\n"),
+                    _ => self.ir_code.push_str(&format!("  ret {} null\n", return_type)),
+                }
+            }
+        }
+        
+        self.ir_code.push_str("}\n\n");
+        
+        // Restore function context
+        self.current_function_name = old_function_name;
+        self.variables = old_variables;
+        
+        Ok(())
+    }
+    
+    /// Generate LLVM IR for a concrete struct declaration
+    fn generate_concrete_struct(&mut self, struct_decl: &ConcreteStructDeclaration) -> Result<(), CursedError> {
+        // Generate struct type definition
+        let mut field_types = Vec::new();
+        for field in &struct_decl.fields {
+            let llvm_type = self.type_expression_to_llvm_type(&field.type_expr)?;
+            field_types.push(llvm_type);
+        }
+        
+        let field_str = field_types.join(", ");
+        self.ir_code.push_str(&format!("%struct.{} = type {{ {} }}\n", struct_decl.name, field_str));
+        
+        // Generate methods
+        for method in &struct_decl.methods {
+            self.generate_concrete_method(method)?;
+        }
+        
+        Ok(())
+    }
+    
+    /// Generate LLVM IR for a concrete method declaration
+    fn generate_concrete_method(&mut self, method: &ConcreteMethodDeclaration) -> Result<(), CursedError> {
+        // Generate method signature
+        let mut params = Vec::new();
+        
+        // Add receiver parameter if present
+        if let Some(receiver) = &method.receiver {
+            let llvm_type = self.type_expression_to_llvm_type(&receiver.type_expr)?;
+            params.push(format!("{} %{}", llvm_type, receiver.name));
+        }
+        
+        // Add other parameters
+        for param in &method.parameters {
+            let llvm_type = self.type_expression_to_llvm_type(&param.type_expr)?;
+            params.push(format!("{} %{}", llvm_type, param.name));
+        }
+        
+        let return_type = if let Some(ret_type) = &method.return_type {
+            self.type_expression_to_llvm_type(ret_type)?
+        } else {
+            "void".to_string()
+        };
+        
+        let param_str = params.join(", ");
+        
+        // Generate method definition
+        self.ir_code.push_str(&format!("define {} @{}({}) {{\n", return_type, method.name, param_str));
+        self.ir_code.push_str("entry:\n");
+        
+        // Save current function context
+        let old_function_name = self.current_function_name.clone();
+        self.current_function_name = Some(method.name.clone());
+        
+        // Clear parameter variables and add method parameters
+        let old_variables = self.variables.clone();
+        
+        // Add receiver parameter to variable mapping
+        if let Some(receiver) = &method.receiver {
+            let param_reg = format!("%{}", receiver.name);
+            self.variables.insert(receiver.name.clone(), param_reg);
+        }
+        
+        // Add method parameters to variable mapping
+        for param in &method.parameters {
+            let param_reg = format!("%{}", param.name);
+            self.variables.insert(param.name.clone(), param_reg);
+        }
+        
+        // Generate method body
+        for statement in &method.body {
+            self.generate_statement(statement)?;
+        }
+        
+        // Ensure method ends with return
+        if !self.ir_code.ends_with("ret ") && !self.ir_code.ends_with("unreachable\n") {
+            if return_type == "void" {
+                self.ir_code.push_str("  ret void\n");
+            } else {
+                // Return default value for non-void methods
+                match return_type.as_str() {
+                    "i32" => self.ir_code.push_str("  ret i32 0\n"),
+                    "i1" => self.ir_code.push_str("  ret i1 false\n"),
+                    "double" => self.ir_code.push_str("  ret double 0.0\n"),
+                    "i8*" => self.ir_code.push_str("  ret i8* null\n"),
+                    _ => self.ir_code.push_str(&format!("  ret {} null\n", return_type)),
+                }
+            }
+        }
+        
+        self.ir_code.push_str("}\n\n");
+        
+        // Restore function context
+        self.current_function_name = old_function_name;
+        self.variables = old_variables;
+        
+        Ok(())
+    }
+    
+    /// Convert type expression to LLVM type string with void generic handling
+    fn type_expression_to_llvm_type(&self, type_expr: &crate::type_system::TypeExpression) -> Result<String, CursedError> {
+        if let Some(name) = &type_expr.name {
+            match name.as_str() {
+                "normie" | "i32" => Ok("i32".to_string()),
+                "smol" | "i8" => Ok("i8".to_string()),
+                "mid" | "i16" => Ok("i16".to_string()),
+                "thicc" | "i64" => Ok("i64".to_string()),
+                "drip" | "snack" | "f32" => Ok("float".to_string()),
+                "meal" | "f64" => Ok("double".to_string()),
+                "lit" | "bool" => Ok("i1".to_string()),
+                "tea" | "string" => Ok("i8*".to_string()),
+                "sip" | "char" => Ok("i8".to_string()),
+                "byte" => Ok("i8".to_string()),
+                "void" => Ok("void".to_string()),
+                // Handle generic void type properly - convert to i8* opaque pointer
+                "T" | "U" | "V" if type_expr.parameters.is_empty() => Ok("i8*".to_string()),
+                // Handle array types
+                "Array" if type_expr.parameters.len() == 1 => {
+                    let element_type = self.type_expression_to_llvm_type(&type_expr.parameters[0])?;
+                    Ok(format!("{}*", element_type))
+                }
+                // Handle tuple types
+                "Tuple" if !type_expr.parameters.is_empty() => {
+                    let mut field_types = Vec::new();
+                    for param in &type_expr.parameters {
+                        field_types.push(self.type_expression_to_llvm_type(param)?);
+                    }
+                    Ok(format!("{{ {} }}", field_types.join(", ")))
+                }
+                // Handle custom types (structs)
+                _ => Ok(format!("%struct.{}*", name)),
+            }
+        } else {
+            // Handle anonymous types or other cases - default to opaque pointer
+            Ok("i8*".to_string())
+        }
+    }
+    
+    /// Request monomorphization of a generic function
+    pub fn request_generic_instantiation(
+        &mut self,
+        generic_name: String,
+        type_arguments: Vec<crate::type_system::TypeExpression>,
+        call_site: Option<String>,
+    ) -> Result<String, CursedError> {
+        let instance_id = self.monomorphizer.request_instantiation(
+            generic_name,
+            type_arguments,
+            vec![], // Empty constraints for now
+            call_site,
+        )?;
+        
+        Ok(instance_id)
     }
 
     /// Generate error context creation LLVM IR
@@ -482,6 +741,11 @@ impl LlvmCodeGenerator {
         // if let Err(e) = self.generate_interface_system(program) {
         //     compiler_errors.push(e);
         // }
+        
+        // Process monomorphized instances before main compilation
+        if let Err(e) = self.process_monomorphized_instances() {
+            compiler_errors.push(e);
+        }
         
         // Collect non-function statements for insertion into main function
         let mut top_level_statements = Vec::new();

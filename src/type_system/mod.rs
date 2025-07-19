@@ -63,6 +63,7 @@ pub use interface_inheritance::{
 pub struct TypeSystem {
     pub environment: TypeEnvironment,
     pub inference: InferenceContext,
+    pub scopes: Vec<std::collections::HashMap<String, TypeExpression>>,
 }
 
 impl TypeSystem {
@@ -104,9 +105,59 @@ impl TypeSystem {
         let mut type_system = Self {
             environment,
             inference: InferenceContext::new(),
+            scopes: vec![std::collections::HashMap::new()],
         };
         
         type_system
+    }
+    
+    pub fn enter_scope(&mut self) {
+        self.scopes.push(std::collections::HashMap::new());
+    }
+    
+    pub fn exit_scope(&mut self) {
+        self.scopes.pop();
+    }
+    
+    pub fn add_variable(&mut self, name: String, type_expr: TypeExpression) {
+        if let Some(current_scope) = self.scopes.last_mut() {
+            current_scope.insert(name, type_expr);
+        }
+    }
+    
+    pub fn ast_type_to_type_expression(&self, ast_type: &crate::ast::Type) -> Result<TypeExpression, TypeCheckError> {
+        use crate::ast::Type;
+        
+        match ast_type {
+            Type::Normie => Ok(TypeExpression::named("normie")),
+            Type::Tea => Ok(TypeExpression::named("tea")),
+            Type::Lit => Ok(TypeExpression::named("lit")),
+            Type::Sip => Ok(TypeExpression::named("sip")),
+            Type::Smol => Ok(TypeExpression::named("smol")),
+            Type::Mid => Ok(TypeExpression::named("mid")),
+            Type::Thicc => Ok(TypeExpression::named("thicc")),
+            Type::Snack => Ok(TypeExpression::named("snack")),
+            Type::Meal => Ok(TypeExpression::named("meal")),
+            Type::Byte => Ok(TypeExpression::named("byte")),
+            Type::Rune => Ok(TypeExpression::named("rune")),
+            Type::Extra => Ok(TypeExpression::named("extra")),
+            Type::Custom(name) => Ok(TypeExpression::named(name)),
+            Type::Array(elem_type, _) => {
+                let element_expr = self.ast_type_to_type_expression(elem_type)?;
+                Ok(TypeExpression::array(element_expr))
+            }
+            Type::Slice(elem_type) => {
+                let element_expr = self.ast_type_to_type_expression(elem_type)?;
+                Ok(TypeExpression::array(element_expr)) // Treat slices as arrays for now
+            }
+            Type::Tuple(element_types) => {
+                let element_exprs: Result<Vec<_>, _> = element_types.iter()
+                    .map(|t| self.ast_type_to_type_expression(t))
+                    .collect();
+                Ok(TypeExpression::tuple(element_exprs?))
+            }
+            _ => Ok(TypeExpression::named("void")),
+        }
     }
     
     pub fn check_expression(&mut self, expr: &crate::ast::Expression) -> Result<TypeExpression, String> {
@@ -421,11 +472,42 @@ impl TypeSystem {
                 }
             }
             
-            // TODO: If there's a bound variable, add it to the type environment
+            // If there's a bound variable, add it to the type environment
             // for the scope of this arm body
+            let has_bound_variable = arm.bound_variable.is_some();
+            
+            if has_bound_variable {
+                self.enter_scope();
+                
+                if let Some(ref bound_var) = arm.bound_variable {
+                    // Determine the narrowed type based on the type pattern
+                    let narrowed_type = match &arm.type_pattern {
+                        crate::ast::TypePattern::Type(type_expr) => {
+                            // Convert the AST type to TypeExpression for the narrowed type
+                            self.ast_type_to_type_expression(type_expr).map_err(|e| e.message)?
+                        }
+                        crate::ast::TypePattern::Interface(interface_name) => {
+                            // The bound variable has the interface type
+                            TypeExpression::named(interface_name)
+                        }
+                        crate::ast::TypePattern::Wildcard => {
+                            // For wildcard, keep the original variable type
+                            variable_type.clone()
+                        }
+                    };
+                    
+                    // Add the bound variable with the narrowed type to the current scope
+                    self.add_variable(bound_var.clone(), narrowed_type);
+                }
+            }
             
             // Type check the arm body
             let body_type = self.check_expression(&arm.body)?;
+            
+            // Exit the scope if we entered one for the bound variable
+            if has_bound_variable {
+                self.exit_scope();
+            }
             arm_types.push(body_type);
         }
         

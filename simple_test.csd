@@ -1,1 +1,1 @@
-sus x normie = 5; vibez.spill(x)
+vibez.spill("Testing runtime integration...")

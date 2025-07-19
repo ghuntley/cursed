@@ -145,6 +145,32 @@ impl Default for GoroutinePriority {
     }
 }
 
+/// Goroutine resource usage information
+#[derive(Debug, Clone)]
+pub struct GoroutineResourceUsage {
+    pub goroutine_id: GoroutineId,
+    pub total_runtime: Duration,
+    pub channel_count: usize,
+    pub child_count: usize,
+    pub has_error_context: bool,
+    pub state: GoroutineState,
+    pub created_at: Instant,
+    pub last_run: Option<Instant>,
+}
+
+/// Memory reclamation statistics
+#[derive(Debug, Clone)]
+pub struct MemoryReclamationStats {
+    pub total_goroutines_cleaned: u64,
+    pub active_goroutines: usize,
+    pub stacks_allocated: usize,
+    pub stacks_deallocated: usize,
+    pub current_stacks: usize,
+    pub total_memory_used: usize,
+    pub peak_goroutines: usize,
+    pub reclamation_efficiency: f64,
+}
+
 /// Goroutine execution context
 pub struct Goroutine {
     /// Unique goroutine identifier
@@ -201,6 +227,65 @@ impl Goroutine {
         }
     }
 
+    /// Cleanup resources when goroutine completes
+    pub fn cleanup_resources(&mut self) {
+        // Close all associated channels
+        self.channels.clear();
+        
+        // Update state to completed
+        self.set_state(GoroutineState::Completed);
+        
+        // Mark join handle as completed
+        if let Some(ref join_handle) = self.join_handle {
+            join_handle.completed.store(true, Ordering::Release);
+            join_handle.error_notifier.notify_all();
+        }
+        
+        log::debug!("Cleaned up resources for goroutine {}", self.id);
+    }
+
+    /// Perform emergency resource cleanup during panic
+    pub fn emergency_cleanup(&mut self) {
+        // Force-close channels and clean up any resources
+        self.channels.clear();
+        
+        // Set state to error isolated or panicked
+        let current_state = self.get_state();
+        if current_state != GoroutineState::ErrorIsolated {
+            self.set_state(GoroutineState::Panicked);
+        }
+        
+        // Signal completion to any waiting threads
+        if let Some(ref join_handle) = self.join_handle {
+            join_handle.completed.store(true, Ordering::Release);
+            join_handle.error_notifier.notify_all();
+        }
+        
+        log::warn!("Emergency cleanup performed for goroutine {}", self.id);
+    }
+
+    /// Check if goroutine requires cleanup
+    pub fn needs_cleanup(&self) -> bool {
+        matches!(
+            self.get_state(),
+            GoroutineState::Completed | GoroutineState::Panicked | GoroutineState::ErrorIsolated
+        )
+    }
+
+    /// Get resource usage information
+    pub fn get_resource_usage(&self) -> GoroutineResourceUsage {
+        GoroutineResourceUsage {
+            goroutine_id: self.id,
+            total_runtime: self.total_runtime,
+            channel_count: self.channels.len(),
+            child_count: self.children.len(),
+            has_error_context: self.error_context.is_some(),
+            state: self.get_state(),
+            created_at: self.created_at,
+            last_run: self.last_run,
+        }
+    }
+
     /// Get current state
     pub fn get_state(&self) -> GoroutineState {
         match self.state.load(Ordering::Acquire) {
@@ -225,6 +310,40 @@ impl Goroutine {
         self.state
             .compare_exchange(from as u64, to as u64, Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
+    }
+}
+
+/// Implement Drop trait for automatic resource cleanup
+impl Drop for Goroutine {
+    fn drop(&mut self) {
+        log::debug!("Dropping goroutine {} (state: {:?})", self.id, self.get_state());
+        
+        // Perform cleanup based on current state
+        match self.get_state() {
+            GoroutineState::Completed => {
+                // Normal completion - clean cleanup
+                self.cleanup_resources();
+            },
+            GoroutineState::Panicked | GoroutineState::ErrorIsolated => {
+                // Error state - emergency cleanup
+                self.emergency_cleanup();
+            },
+            _ => {
+                // Other states - force cleanup
+                log::warn!("Goroutine {} dropped in unexpected state: {:?}", self.id, self.get_state());
+                self.emergency_cleanup();
+            }
+        }
+        
+        // Request stack deallocation from global scheduler
+        if let Some(scheduler) = get_global_scheduler() {
+            if let Err(e) = scheduler.deallocate_goroutine_stack(self.stack_id) {
+                log::error!("Failed to deallocate stack {} for goroutine {}: {}", 
+                           self.stack_id, self.id, e);
+            }
+        }
+        
+        log::debug!("Goroutine {} resources fully cleaned up", self.id);
     }
 }
 
@@ -406,6 +525,8 @@ impl GoroutineScheduler {
             return Ok(()); // Already stopped
         }
 
+        log::info!("Stopping goroutine scheduler...");
+
         // Signal shutdown
         self.shutdown.store(true, Ordering::SeqCst);
 
@@ -414,9 +535,13 @@ impl GoroutineScheduler {
             worker.work_available.notify_all();
         }
 
-        // Wait for all workers to finish (simplified - in real implementation would join threads)
+        // Wait for workers to process shutdown
         std::thread::sleep(Duration::from_millis(100));
 
+        // Cleanup all remaining goroutines
+        self.force_stop_all_goroutines()?;
+
+        log::info!("Goroutine scheduler stopped successfully");
         Ok(())
     }
 
@@ -522,6 +647,196 @@ impl GoroutineScheduler {
         }
         
         CURRENT_GOROUTINE_ID.with(|id| *id.borrow())
+    }
+
+    /// Deallocate goroutine stack
+    pub fn deallocate_goroutine_stack(&self, stack_id: StackId) -> Result<(), CursedError> {
+        self.stack_manager.deallocate_stack(stack_id)
+    }
+
+    /// Cleanup completed goroutines from all workers
+    pub fn cleanup_completed_goroutines(&self) -> Result<usize, CursedError> {
+        let mut cleaned_count = 0;
+        
+        // Clean up from all workers
+        for worker in &self.workers {
+            // Clean up current goroutine if completed
+            if let Ok(mut current) = worker.current.lock() {
+                if let Some(goroutine_arc) = current.take() {
+                    let should_cleanup = {
+                        if let Ok(goroutine) = goroutine_arc.lock() {
+                            goroutine.needs_cleanup()
+                        } else {
+                            false
+                        }
+                    };
+                    
+                    if should_cleanup {
+                        cleaned_count += 1;
+                        // Drop will handle cleanup automatically
+                    } else {
+                        // Put it back if not ready for cleanup
+                        *current = Some(goroutine_arc);
+                    }
+                }
+            }
+            
+            // Clean up queued goroutines that are completed
+            if let Ok(mut queue) = worker.queue.lock() {
+                let original_len = queue.len();
+                queue.retain(|goroutine_arc| {
+                    if let Ok(goroutine) = goroutine_arc.lock() {
+                        !goroutine.needs_cleanup()
+                    } else {
+                        false // Remove if we can't lock
+                    }
+                });
+                cleaned_count += original_len - queue.len();
+            }
+        }
+        
+        // Update active count
+        let old_count = self.active_count.fetch_sub(cleaned_count, Ordering::SeqCst);
+        
+        // Update statistics
+        {
+            let mut stats = self.stats.lock()
+                .map_err(|_| CursedError::runtime_error("Failed to lock scheduler statistics for cleanup"))?;
+            stats.total_goroutines_completed += cleaned_count as u64;
+            stats.current_active_goroutines = old_count.saturating_sub(cleaned_count);
+        }
+        
+        if cleaned_count > 0 {
+            log::debug!("Cleaned up {} completed goroutines", cleaned_count);
+        }
+        
+        Ok(cleaned_count)
+    }
+
+    /// Get memory reclamation statistics
+    pub fn get_memory_reclamation_stats(&self) -> Result<MemoryReclamationStats, CursedError> {
+        let stack_stats = self.stack_manager.get_stats();
+        let scheduler_stats = self.get_stats()?;
+        
+        Ok(MemoryReclamationStats {
+            total_goroutines_cleaned: scheduler_stats.total_goroutines_completed,
+            active_goroutines: scheduler_stats.current_active_goroutines,
+            stacks_allocated: stack_stats.total_allocated,
+            stacks_deallocated: stack_stats.total_deallocated,
+            current_stacks: stack_stats.current_stacks,
+            total_memory_used: stack_stats.total_memory_used,
+            peak_goroutines: scheduler_stats.peak_active_goroutines,
+            reclamation_efficiency: if scheduler_stats.total_goroutines_spawned > 0 {
+                scheduler_stats.total_goroutines_completed as f64 / scheduler_stats.total_goroutines_spawned as f64
+            } else {
+                0.0
+            }
+        })
+    }
+
+    /// Scan all goroutine stacks for GC roots
+    pub fn scan_stacks_for_gc_roots(&self) -> Vec<*mut u8> {
+        let mut all_roots = Vec::new();
+        
+        // Scan stacks from all workers
+        for worker in &self.workers {
+            // Scan current goroutine stack
+            if let Ok(current) = worker.current.lock() {
+                if let Some(goroutine_arc) = current.as_ref() {
+                    if let Ok(goroutine) = goroutine_arc.lock() {
+                        if let Ok(roots) = self.stack_manager.get_gc_roots(goroutine.stack_id) {
+                            all_roots.extend(roots);
+                        }
+                    }
+                }
+            }
+            
+            // Scan queued goroutine stacks
+            if let Ok(queue) = worker.queue.lock() {
+                for goroutine_arc in queue.iter() {
+                    if let Ok(goroutine) = goroutine_arc.lock() {
+                        if let Ok(roots) = self.stack_manager.get_gc_roots(goroutine.stack_id) {
+                            all_roots.extend(roots);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Scan global queue
+        if let Ok(global_queue) = self.global_queue.lock() {
+            for goroutine_arc in global_queue.iter() {
+                if let Ok(goroutine) = goroutine_arc.lock() {
+                    if let Ok(roots) = self.stack_manager.get_gc_roots(goroutine.stack_id) {
+                        all_roots.extend(roots);
+                    }
+                }
+            }
+        }
+        
+        all_roots
+    }
+
+    /// Force stop and cleanup all goroutines (for emergency shutdown)
+    pub fn force_stop_all_goroutines(&self) -> Result<(), CursedError> {
+        log::warn!("Force stopping all goroutines for emergency shutdown");
+        
+        // Set shutdown flag
+        self.shutdown.store(true, Ordering::SeqCst);
+        
+        // Wake up all workers to process shutdown
+        for worker in &self.workers {
+            worker.work_available.notify_all();
+        }
+        
+        // Clean up all goroutines
+        let mut total_cleaned = 0;
+        
+        for worker in &self.workers {
+            // Emergency cleanup current goroutine
+            if let Ok(mut current) = worker.current.lock() {
+                if let Some(goroutine_arc) = current.take() {
+                    if let Ok(mut goroutine) = goroutine_arc.lock() {
+                        goroutine.emergency_cleanup();
+                        total_cleaned += 1;
+                    }
+                }
+            }
+            
+            // Emergency cleanup all queued goroutines
+            if let Ok(mut queue) = worker.queue.lock() {
+                for goroutine_arc in queue.drain(..) {
+                    if let Ok(mut goroutine) = goroutine_arc.lock() {
+                        goroutine.emergency_cleanup();
+                        total_cleaned += 1;
+                    }
+                }
+            }
+        }
+        
+        // Clean up global queue
+        if let Ok(mut global_queue) = self.global_queue.lock() {
+            for goroutine_arc in global_queue.drain(..) {
+                if let Ok(mut goroutine) = goroutine_arc.lock() {
+                    goroutine.emergency_cleanup();
+                    total_cleaned += 1;
+                }
+            }
+        }
+        
+        // Reset all counters
+        self.active_count.store(0, Ordering::SeqCst);
+        
+        // Update statistics
+        {
+            let mut stats = self.stats.lock()
+                .map_err(|_| CursedError::runtime_error("Failed to lock scheduler statistics for emergency stop"))?;
+            stats.total_goroutines_completed += total_cleaned as u64;
+            stats.current_active_goroutines = 0;
+        }
+        
+        log::warn!("Emergency stopped and cleaned up {} goroutines", total_cleaned);
+        Ok(())
     }
 
     /// Get goroutine state by ID
@@ -707,7 +1022,8 @@ impl GoroutineScheduler {
             if let Ok(mut goroutine_guard) = goroutine.lock() {
                 match result {
                     Ok(_) => {
-                        goroutine_guard.set_state(GoroutineState::Completed);
+                        // Perform resource cleanup
+                        goroutine_guard.cleanup_resources();
                         
                         // Update join handle with success
                         if let Ok(mut join_result) = join_handle.result.lock() {
@@ -716,7 +1032,7 @@ impl GoroutineScheduler {
                         join_handle.completed.store(true, Ordering::Release);
                         join_handle.error_notifier.notify_all();
                         
-                        log::debug!("Worker {} completed goroutine {}", worker_id, goroutine_id);
+                        log::debug!("Worker {} completed goroutine {} with cleanup", worker_id, goroutine_id);
                     },
                     Err(panic_info) => {
                         // Extract panic message

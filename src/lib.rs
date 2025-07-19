@@ -1526,6 +1526,7 @@ fn link_with_linker(linker: &str, obj_file: &str, output_file: &str) -> crate::e
             // Link with interface runtime libraries for dynamic dispatch
             cmd.arg("runtime/libcursed_interface_runtime.a")
                .arg("runtime/libcursed_type_assertion_runtime.a")
+               .arg("runtime/libcursed_pattern_matching_runtime.a")
                .arg("runtime/libcursed_minimal_shims.a");
             
             // Add arm64-specific library search paths for macOS
