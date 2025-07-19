@@ -97,6 +97,13 @@
 
 **✅ LATEST SESSION ACHIEVEMENTS (2025-07-19)**
 
+**CRITICAL LLVM AND MEMORY FIXES**
+- **LLVM Inlining API Compatibility**: Fixed LLVM 19.1.0 inlining API compatibility errors preventing compilation
+- **Memory Allocation SIGABRT Fixes**: Resolved double-free errors in heap allocation with proper channel cleanup
+- **Channel Lifecycle Management**: Implemented complete channel creation, communication, and cleanup lifecycle
+- **Defer/Panic Recovery LLVM**: Complete LLVM codegen for defer statements and panic recovery mechanisms
+- **Type Switch LLVM Codegen**: Full LLVM IR generation for runtime type checking with typecheck keyword
+
 **TEST SYSTEM AND INFRASTRUCTURE IMPROVEMENTS**
 - **Test Execution Optimization**: `cargo test --lib` identified as faster/more reliable than full test suite (~1min vs 5+ min)
 - **Critical Race Condition Fixes**: Fixed GC race detector SIGSEGV and thread pool management deadlocks
@@ -151,6 +158,13 @@
 - **Systematic Testing**: Each subagent validates changes with comprehensive test suites
 - **Integration Validation**: Coordinate multiple development streams with continuous integration
 - **Success Rate**: 100% successful parallel implementation of major compiler features
+
+**PARALLEL SUBAGENT BEST PRACTICES FOR COMPLEX COMPILER FEATURES**
+- **Memory-Safe Development**: Always test memory-related changes with valgrind and careful race condition analysis
+- **Component Isolation**: Assign each subagent to independent components (type system, codegen, runtime) to avoid conflicts
+- **Template-Driven Migration**: Use standardized patterns for Rust-to-CURSED stdlib conversion with 100% test coverage
+- **Coordinated Integration**: Implement synchronized checkpoints where all subagents validate their work together
+- **Both-Mode Validation**: Essential verification ensuring interpretation/compilation parity across all parallel work
 
 **FUNCTION SIGNATURE PARSING BREAKTHROUGH**
 - **Complex Parameter Support**: Full support for generic types, default values, variadic arguments
@@ -228,6 +242,47 @@ coordinate_type_system_fixes() {
     cargo test interface_dispatch_fixes &
     wait
     cargo test compiler_integration    # Final integration test
+}
+
+# CRITICAL LLVM AND MEMORY DEBUGGING COMMANDS (2025-07-19)
+# Fix LLVM inlining API compatibility errors
+fix_llvm_inlining_api() {
+    # Check LLVM version: llvm-config --version
+    # Update inlining function calls to match LLVM 19.1.0 API
+    # Focus on src/codegen/llvm.rs inlining functions
+    cargo test llvm_inlining --no-fail-fast    # Identify specific failures
+    cargo build --release                      # Test production build
+}
+
+# Identify and fix memory allocation SIGABRT double-free issues
+debug_memory_allocation_sigabrt() {
+    # Use valgrind: valgrind --leak-check=full --track-fds=yes ./program
+    # Focus on channel cleanup and GC integration
+    cargo test memory_allocation --no-fail-fast
+    cargo test gc_integration --verbose         # Check for double-free patterns
+    # Fix in src/runtime/memory.rs and src/runtime/gc.rs
+}
+
+# Implement channel lifecycle management
+implement_channel_lifecycle() {
+    # Channel creation → communication → cleanup cycle
+    cargo test channel_lifecycle               # Test complete lifecycle
+    cargo test channel_cleanup                # Test proper cleanup
+    # Implementation in src/runtime/channel.rs
+}
+
+# Implement defer/panic recovery LLVM codegen
+implement_defer_panic_llvm() {
+    cargo test defer_llvm_codegen             # Test defer LLVM generation
+    cargo test panic_recovery_llvm            # Test panic recovery codegen
+    # Implementation in src/codegen/control_flow.rs
+}
+
+# Implement type switch LLVM codegen
+implement_type_switch_llvm() {
+    cargo test type_switch_codegen            # Test type switch compilation
+    cargo test runtime_type_checking          # Test runtime type checking
+    # Implementation in src/codegen/type_checking.rs
 }
 
 # Fix interface dispatch compilation errors

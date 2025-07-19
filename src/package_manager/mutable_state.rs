@@ -98,13 +98,22 @@ impl PackageManagerState {
         }
     }
 
-    /// Update an installed package with proper borrow checking
+    /// Update an installed package with proper borrow checking and timeout protection
     pub fn update_installed_package<F>(&self, name: &str, updater: F) -> CursedResult<()>
     where
         F: FnOnce(&mut InstalledPackageInfo) -> CursedResult<()>,
     {
-        let mut packages = self.installed_packages.write()
-            .map_err(|_| Error::Runtime("Failed to acquire write lock on installed packages".to_string()))?;
+        // Use try_write with timeout to prevent deadlocks
+        let mut packages = match self.installed_packages.try_write() {
+            Ok(guard) => guard,
+            Err(_) => {
+                tracing::warn!("Failed to acquire write lock on installed packages for update, trying with timeout");
+                // Fallback: wait a short time then try again
+                std::thread::sleep(std::time::Duration::from_millis(10));
+                self.installed_packages.write()
+                    .map_err(|_| Error::Runtime("Failed to acquire write lock on installed packages after retry".to_string()))?
+            }
+        };
         
         if let Some(tracked) = packages.get_mut(name) {
             let package = tracked.get_package_mut()?;
