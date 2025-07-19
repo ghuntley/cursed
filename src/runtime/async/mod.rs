@@ -217,12 +217,11 @@ pub extern "C" fn cursed_spawn_async_task(
     }
 }
 
-/// Await a future from compiled code (simplified implementation)
+/// Await a future from compiled code (real implementation)
 #[no_mangle]
 pub extern "C" fn cursed_await_future(future_id: u64) -> *mut std::ffi::c_void {
-    // In a real implementation, this would look up the future by ID
-    // and block until completion
-    std::ptr::null_mut()
+    // Use the real implementation from async_real module
+    crate::runtime::async_real::cursed_await_future_real(future_id)
 }
 
 /// Check if a future is ready
@@ -235,8 +234,8 @@ pub extern "C" fn cursed_future_is_ready(future_id: u64) -> bool {
 /// Get the result of a completed future
 #[no_mangle]
 pub extern "C" fn cursed_future_get_result(future_id: u64) -> *mut std::ffi::c_void {
-    // In a real implementation, this would return the future result
-    std::ptr::null_mut()
+    // Use the real implementation from async_real module
+    crate::runtime::async_real::cursed_future_get_result_real(future_id)
 }
 
 /// Create a delay timer from compiled code

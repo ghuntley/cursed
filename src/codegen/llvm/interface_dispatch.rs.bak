@@ -1469,7 +1469,7 @@ entry:
     }
 }
 
-#[cfg(all(test, feature = "interface_dispatch_tests"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::ast::*;

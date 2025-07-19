@@ -17,9 +17,15 @@ use super::{TypeExpression, TypeSystem, TypeEnvironment, InferenceContext,
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
+pub struct VariableInfo {
+    pub symbol_type: TypeExpression,
+    pub is_mutable: bool,
+}
+
+#[derive(Debug, Clone)]
 pub struct TypeChecker {
     pub type_system: TypeSystem,
-    pub scopes: Vec<HashMap<String, TypeExpression>>,
+    pub scopes: Vec<HashMap<String, VariableInfo>>,
     pub current_function_return_type: Option<TypeExpression>,
     pub errors: Vec<TypeCheckError>,
     pub type_aliases: HashMap<String, TypeExpression>,
@@ -277,6 +283,12 @@ impl TypeChecker {
             Statement::Let(let_stmt) => {
                 self.check_let_statement(let_stmt)
             }
+            Statement::Assignment(assignment_stmt) => {
+                self.check_assignment_statement(assignment_stmt)
+            }
+            Statement::Const(const_decl) => {
+                self.check_const_statement(const_decl)
+            }
             Statement::Function(func_stmt) => {
                 self.check_function_statement(func_stmt)
             }
@@ -390,8 +402,8 @@ impl TypeChecker {
     fn check_identifier(&self, name: &str) -> Result<TypeExpression, TypeCheckError> {
         // Look up in current scopes (from innermost to outermost)
         for scope in self.scopes.iter().rev() {
-            if let Some(type_expr) = scope.get(name) {
-                return Ok(type_expr.clone());
+            if let Some(var_info) = scope.get(name) {
+                return Ok(var_info.symbol_type.clone());
             }
         }
         
@@ -569,8 +581,8 @@ impl TypeChecker {
     fn check_function_call(&mut self, func_name: &str, arguments: &[Expression]) -> Result<TypeExpression, TypeCheckError> {
         // Look up function in current scopes
         for scope in self.scopes.iter().rev() {
-            if let Some(func_type) = scope.get(func_name) {
-                let func_type_clone = func_type.clone();
+            if let Some(var_info) = scope.get(func_name) {
+                let func_type_clone = var_info.symbol_type.clone();
                 return self.check_function_type_call(&func_type_clone, arguments);
             }
         }
@@ -806,13 +818,76 @@ impl TypeChecker {
         Ok(TypeExpression::map(key_type, value_type))
     }
     
+    /// Check assignment statement with mutability validation
+    pub fn check_assignment_statement(&mut self, assignment_stmt: &crate::ast::AssignmentStatement) -> Result<TypeExpression, TypeCheckError> {
+        use crate::ast::AssignmentTarget;
+        
+        match &assignment_stmt.target {
+            AssignmentTarget::Single(var_name) => {
+                // Check if variable exists and is mutable
+                if let Some(var_info) = self.get_variable(var_name) {
+                    if !var_info.is_mutable {
+                        return Err(TypeCheckError::new(
+                            TypeErrorKind::MutabilityViolationError,
+                            format!("Cannot assign to immutable variable '{}'. Variables declared with 'facts' are immutable.", var_name)
+                        ));
+                    }
+                } else {
+                    return Err(TypeCheckError::new(
+                        TypeErrorKind::UndefinedVariable,
+                        format!("Undefined variable '{}'", var_name)
+                    ));
+                }
+                
+                // Type check the assignment value
+                let value_type = self.check_expression(&assignment_stmt.value)?;
+                
+                // Get variable type and check compatibility
+                if let Some(var_info) = self.get_variable(var_name) {
+                    if !self.types_compatible(&value_type, &var_info.symbol_type) {
+                        return Err(TypeCheckError::new(
+                            TypeErrorKind::TypeMismatch,
+                            format!("Type mismatch in assignment to '{}': expected {:?}, got {:?}", 
+                                var_name, var_info.symbol_type, value_type)
+                        ));
+                    }
+                }
+                
+                Ok(TypeExpression::named("void"))
+            }
+            AssignmentTarget::Tuple(_targets) => {
+                // Handle tuple assignment validation
+                let value_type = self.check_expression(&assignment_stmt.value)?;
+                // TODO: Implement tuple assignment mutability validation
+                Ok(value_type)
+            }
+        }
+    }
+    
     pub fn check_let_statement(&mut self, let_stmt: &LetStatement) -> Result<TypeExpression, TypeCheckError> {
         let value_type = self.check_expression(&let_stmt.value)?;
         
-        // Add variable to current scope
-        self.add_variable(let_stmt.target.primary_name(), value_type.clone());
+        // Add variable to current scope with mutability - 'sus' variables are mutable
+        let is_mutable = true; // LetStatement corresponds to 'sus' variables which are mutable
+        self.add_variable_with_mutability(let_stmt.target.primary_name(), value_type.clone(), is_mutable);
         
         Ok(value_type)
+    }
+    
+    /// Check const statement (facts declarations - immutable)
+    pub fn check_const_statement(&mut self, const_decl: &crate::ast::ConstDecl) -> Result<TypeExpression, TypeCheckError> {
+        for spec in &const_decl.specs {
+            // Handle multiple names and values in const spec
+            for (name, value) in spec.names.iter().zip(&spec.values) {
+                let value_type = self.check_expression(value)?;
+                
+                // Add constant to current scope with immutability - 'facts' constants are immutable
+                let is_mutable = false; // ConstDecl corresponds to 'facts' constants which are immutable
+                self.add_variable_with_mutability(name.clone(), value_type.clone(), is_mutable);
+            }
+        }
+        
+        Ok(TypeExpression::named("void"))
     }
     
     fn check_function_statement(&mut self, func_stmt: &FunctionStatement) -> Result<TypeExpression, TypeCheckError> {
@@ -1047,9 +1122,26 @@ impl TypeChecker {
     }
     
     fn add_variable(&mut self, name: String, type_expr: TypeExpression) {
+        // Default to mutable for backwards compatibility
+        self.add_variable_with_mutability(name, type_expr, true);
+    }
+    
+    pub fn add_variable_with_mutability(&mut self, name: String, type_expr: TypeExpression, is_mutable: bool) {
         if let Some(current_scope) = self.scopes.last_mut() {
-            current_scope.insert(name, type_expr);
+            current_scope.insert(name, VariableInfo {
+                symbol_type: type_expr,
+                is_mutable,
+            });
         }
+    }
+    
+    pub fn get_variable(&self, name: &str) -> Option<&VariableInfo> {
+        for scope in self.scopes.iter().rev() {
+            if let Some(var_info) = scope.get(name) {
+                return Some(var_info);
+            }
+        }
+        None
     }
     
     fn add_function(&mut self, name: String, param_types: Vec<TypeExpression>, return_type: TypeExpression) {
@@ -1101,8 +1193,8 @@ impl TypeChecker {
         if let Expression::Identifier(name) = expr {
             // Update the variable's type in the current scope
             for scope in self.scopes.iter_mut().rev() {
-                if scope.contains_key(name) {
-                    scope.insert(name.clone(), new_type.clone());
+                if let Some(var_info) = scope.get_mut(name) {
+                    var_info.symbol_type = new_type.clone();
                     break;
                 }
             }
@@ -2188,6 +2280,15 @@ impl TypeChecker {
             Type::TestStatus => Ok(TypeExpression::named("TestStatus")),
             Type::TestSuite => Ok(TypeExpression::named("TestSuite")),
             Type::TestReport => Ok(TypeExpression::named("TestReport")),
+            Type::Result(ok_type, err_type) => {
+                let ok_expr = self.ast_type_to_type_expression(ok_type)?;
+                let err_expr = self.ast_type_to_type_expression(err_type)?;
+                Ok(TypeExpression::generic("Result", vec![ok_expr, err_expr]))
+            },
+            Type::Option(inner_type) => {
+                let inner_expr = self.ast_type_to_type_expression(inner_type)?;
+                Ok(TypeExpression::generic("Option", vec![inner_expr]))
+            },
         }
     }
     
@@ -2756,9 +2857,98 @@ mod tests {
         // Verify array type was registered correctly
         let resolved = checker.resolve_type_alias("IntArray").unwrap();
         assert!(resolved.is_some());
-        
+
         let resolved_type = resolved.unwrap();
         // Since we're using named types, just check the name is present
         assert!(resolved_type.name.is_some());
+        }
+
+    #[test]
+    fn test_mutability_tracking_basic() {
+        let mut checker = TypeChecker::new();
+        checker.enter_scope(); // Add a scope for testing
+        
+        // Test mutable variable
+        checker.add_variable_with_mutability(
+            "mutable_var".to_string(),
+            TypeExpression::named("normie"),
+            true
+        );
+        
+        let var_info = checker.get_variable("mutable_var");
+        assert!(var_info.is_some());
+        assert!(var_info.unwrap().is_mutable, "Mutable variable should be mutable");
+        
+        // Test immutable variable  
+        checker.add_variable_with_mutability(
+            "immutable_var".to_string(),
+            TypeExpression::named("normie"),
+            false
+        );
+        
+        let var_info2 = checker.get_variable("immutable_var");
+        assert!(var_info2.is_some());
+        assert!(!var_info2.unwrap().is_mutable, "Immutable variable should be immutable");
+    }
+
+    #[test]
+    fn test_let_statement_mutability() {
+        let mut checker = TypeChecker::new();
+        
+        let let_stmt = LetStatement {
+            target: LetTarget::Single("test_var".to_string()),
+            value: Expression::Literal(Literal::Integer(42)),
+            var_type: None,
+            visibility: crate::ast::Visibility::Private,
+        };
+        
+        let result = checker.check_let_statement(&let_stmt);
+        assert!(result.is_ok());
+        
+        let var_info = checker.get_variable("test_var");
+        assert!(var_info.is_some());
+        assert!(var_info.unwrap().is_mutable, "Let statement variables should be mutable");
+    }
+
+    #[test]
+    fn test_assignment_validation() {
+        let mut checker = TypeChecker::new();
+        checker.enter_scope();
+        
+        // Add mutable variable
+        checker.add_variable_with_mutability(
+            "mutable_var".to_string(),
+            TypeExpression::named("normie"),
+            true
+        );
+        
+        // Valid assignment to mutable variable
+        let assignment = AssignmentStatement {
+            target: AssignmentTarget::Single("mutable_var".to_string()),
+            value: Expression::Literal(Literal::Integer(84)),
+        };
+        
+        let result = checker.check_assignment_statement(&assignment);
+        assert!(result.is_ok(), "Assignment to mutable variable should succeed");
+        
+        // Add immutable variable
+        checker.add_variable_with_mutability(
+            "immutable_var".to_string(),
+            TypeExpression::named("normie"),
+            false
+        );
+        
+        // Invalid assignment to immutable variable
+        let invalid_assignment = AssignmentStatement {
+            target: AssignmentTarget::Single("immutable_var".to_string()),
+            value: Expression::Literal(Literal::Integer(200)),
+        };
+        
+        let result = checker.check_assignment_statement(&invalid_assignment);
+        assert!(result.is_err(), "Assignment to immutable variable should fail");
+        
+        let error = result.unwrap_err();
+        assert!(error.message.contains("Cannot assign to immutable variable"), 
+                "Error should mention immutability violation");
     }
 }

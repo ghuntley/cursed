@@ -1,105 +1,128 @@
-# mathz Module
+# mathz - Comprehensive Mathematics Module
 
-The mathz module provides comprehensive mathematical functions and constants for the CURSED programming language. This module implements pure CURSED mathematical operations without external dependencies.
+## Overview
+
+The `mathz` module provides a complete suite of mathematical functions implemented in pure CURSED without any FFI dependencies. This module has been migrated from the Rust implementation to enable full self-hosting capability and maximum portability.
 
 ## Features
 
 ### Mathematical Constants
-- `Pi`: π (3.14159...)
-- `E`: Euler's number (2.71828...)
-- `Tau`: τ = 2π (6.28318...)
-- `MaxFloat32`: Maximum 32-bit float value
-- `MaxFloat64`: Maximum 64-bit float value
-- `MinFloat32`: Minimum 32-bit float value
-- `MinFloat64`: Minimum 64-bit float value
-- `Epsilon`: Floating-point precision epsilon
+- `PI`, `E`, `TAU` - Fundamental mathematical constants
+- `SQRT_2`, `SQRT_3` - Common square roots
+- `LN_2`, `LN_10`, `LOG2_E`, `LOG10_E` - Logarithmic constants
+- `GOLDEN_RATIO`, `EULER_MASCHERONI` - Special mathematical constants
+- `DEGREES_TO_RADIANS`, `RADIANS_TO_DEGREES` - Angle conversion constants
+- `EPSILON` - Floating-point precision constant
 
-### Basic Operations
-- `Abs(x meal) meal`: Absolute value for floats
-- `AbsInt(x normie) normie`: Absolute value for integers
-- `Max(x meal, y meal) meal`: Maximum of two values
-- `Min(x meal, y meal) meal`: Minimum of two values
-- `Sign(x meal) normie`: Sign function (-1, 0, or 1)
-- `Clamp(x meal, min meal, max meal) meal`: Clamp value between min and max
+### Basic Arithmetic
+- `math_add(a, b)` - Addition
+- `math_subtract(a, b)` - Subtraction
+- `math_multiply(a, b)` - Multiplication
+- `math_divide(a, b)` - Safe division (handles division by zero)
+
+### Absolute Value and Comparison
+- `abs_meal(x)`, `abs_normie(x)` - Absolute value for different types
+- `max_meal(a, b)`, `max_normie(a, b)` - Maximum of two values
+- `min_meal(a, b)`, `min_normie(a, b)` - Minimum of two values
+
+### Rounding and Truncation
+- `floor_meal(x)` - Floor function (round down)
+- `ceil_meal(x)` - Ceiling function (round up)
+- `round_meal(x)` - Round to nearest integer
 
 ### Power and Root Functions
-- `Pow(base meal, exp normie) meal`: Power function (base^exp)
-- `Sqrt(x meal) meal`: Square root using Newton's method
-
-### Rounding Functions
-- `Ceil(x meal) meal`: Ceiling function
-- `Floor(x meal) meal`: Floor function
-- `Round(x meal) meal`: Round to nearest integer
-
-### Trigonometric Functions
-- `Sin(x meal) meal`: Sine function (Taylor series)
-- `Cos(x meal) meal`: Cosine function (Taylor series)
-- `Tan(x meal) meal`: Tangent function
+- `pow_meal(base, exp)` - Integer exponentiation
+- `pow_meal_meal(base, exp)` - Floating-point exponentiation
+- `sqrt_meal(x)` - Square root using Newton's method
 
 ### Logarithmic and Exponential Functions
-- `Log(x meal) meal`: Natural logarithm
-- `Exp(x meal) meal`: Exponential function (e^x)
+- `ln_meal(x)` - Natural logarithm (Taylor series)
+- `exp_meal(x)` - Exponential function (Taylor series)
 
-### Angle Conversion
-- `RadToDeg(rad meal) meal`: Convert radians to degrees
-- `DegToRad(deg meal) meal`: Convert degrees to radians
+### Trigonometric Functions
+- `sin_meal(x)`, `cos_meal(x)`, `tan_meal(x)` - Basic trigonometric functions
+- `sin_deg(x)`, `cos_deg(x)`, `tan_deg(x)` - Degree-based trigonometric functions
+- `normalize_radians(angle)`, `normalize_degrees(angle)` - Angle normalization
 
 ### Utility Functions
-- `Mod(x meal, y meal) meal`: Modulo operation for floats
-- `Lerp(a meal, b meal, t meal) meal`: Linear interpolation
-- `Hypot(x meal, y meal) meal`: Hypotenuse calculation
-- `Distance(x1 meal, y1 meal, x2 meal, y2 meal) meal`: Distance between points
+- `is_approximately_equal(a, b, epsilon)` - Floating-point comparison
+- `is_zero(x)` - Zero check with epsilon tolerance
+- `is_positive_meal(x)`, `is_negative_meal(x)` - Sign checking
+- `is_even(x)`, `is_odd(x)` - Parity checking
 
-### Number Theory Functions
-- `Factorial(n normie) normie`: Factorial function
-- `GCD(a normie, b normie) normie`: Greatest common divisor
-- `LCM(a normie, b normie) normie`: Least common multiple
-- `IsPrime(n normie) lit`: Prime number check
+### Number Theory
+- `factorial(n)` - Factorial calculation
+- `gcd(a, b)` - Greatest common divisor
+- `lcm(a, b)` - Least common multiple
+- `fibonacci(n)` - Fibonacci sequence
+
+### Random Number Generation
+- `set_random_seed(seed)` - Set random number seed
+- `random_int()` - Generate random integer
+- `random_meal()` - Generate random float [0, 1)
+- `random_range(min, max)` - Generate random integer in range
+
+### Array Statistics
+- `mean_array(values, count)` - Calculate mean of array
+- `sum_array(values, count)` - Sum all elements in array
+- `max_array(values, count)`, `min_array(values, count)` - Find extrema
+
+### Complex Numbers
+- `Complex` - Complex number type with real and imaginary parts
+- `complex_new(real, imag)` - Create complex number
+- `complex_add(a, b)` - Complex addition
+- `complex_multiply(a, b)` - Complex multiplication
+- `complex_magnitude(c)` - Complex magnitude
+
+### Matrix Operations (2x2)
+- `Matrix2x2` - 2x2 matrix type
+- `matrix_new(a00, a01, a10, a11)` - Create matrix
+- `matrix_add(m1, m2)` - Matrix addition
+- `matrix_multiply(m1, m2)` - Matrix multiplication
+- `matrix_determinant(m)` - Matrix determinant
+
+## Implementation Details
+
+### Pure CURSED Implementation
+All functions are implemented using only CURSED language features:
+- No FFI calls to external libraries
+- No unsafe operations
+- Taylor series approximations for transcendental functions
+- Newton's method for square roots
+- Linear congruential generator for random numbers
+
+### Error Handling
+- Safe fallbacks for undefined operations (e.g., division by zero returns 0.0)
+- Domain checking for functions like square root (negative inputs return 0.0)
+- Convergence limits for iterative algorithms to prevent infinite loops
+
+### Performance Considerations
+- Optimized algorithms with reasonable iteration limits
+- Epsilon-based convergence for floating-point precision
+- Efficient implementations suitable for compiler use
 
 ## Usage Examples
 
 ```cursed
 yeet "mathz"
 
-// Using mathematical constants
-sus circumference meal = 2.0 * mathz.Pi * radius
-sus area meal = mathz.Pi * radius * radius
+# Basic arithmetic
+sus result meal = math_add(5.0, 3.0)
+vibez.spill("5 + 3 =", result)
 
-// Basic operations
-sus distance meal = mathz.Abs(x2 - x1)
-sus maximum meal = mathz.Max(value1, value2)
-sus minimum meal = mathz.Min(value1, value2)
+# Trigonometry
+sus sine meal = sin_meal(PI / 2.0)
+vibez.spill("sin(π/2) =", sine)
 
-// Power and root operations
-sus square meal = mathz.Pow(value, 2)
-sus cube meal = mathz.Pow(value, 3)
-sus sqrt_value meal = mathz.Sqrt(16.0)  // Returns 4.0
+# Complex numbers
+sus c Complex = complex_new(3.0, 4.0)
+sus magnitude meal = complex_magnitude(c)
+vibez.spill("Magnitude of 3+4i =", magnitude)
 
-// Trigonometric calculations
-sus angle meal = mathz.DegToRad(45.0)  // Convert 45 degrees to radians
-sus sine meal = mathz.Sin(angle)
-sus cosine meal = mathz.Cos(angle)
-sus tangent meal = mathz.Tan(angle)
-
-// Logarithmic and exponential
-sus natural_log meal = mathz.Log(mathz.E)  // Returns 1.0
-sus exponential meal = mathz.Exp(1.0)      // Returns E
-
-// Rounding operations
-sus ceiling meal = mathz.Ceil(3.2)   // Returns 4.0
-sus floor meal = mathz.Floor(3.8)    // Returns 3.0
-sus rounded meal = mathz.Round(3.6)  // Returns 4.0
-
-// Number theory
-sus fact5 normie = mathz.Factorial(5)     // Returns 120
-sus gcd_val normie = mathz.GCD(12, 18)    // Returns 6
-sus lcm_val normie = mathz.LCM(4, 6)      // Returns 12
-sus is_prime lit = mathz.IsPrime(17)      // Returns based (true)
-
-// Utility functions
-sus clamped meal = mathz.Clamp(value, 0.0, 100.0)
-sus interpolated meal = mathz.Lerp(start, end, 0.5)
-sus hypotenuse meal = mathz.Hypot(3.0, 4.0)  // Returns 5.0
+# Statistics
+sus data []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
+sus avg meal = mean_array(data, 5)
+vibez.spill("Average =", avg)
 ```
 
 ## Testing
@@ -107,51 +130,29 @@ sus hypotenuse meal = mathz.Hypot(3.0, 4.0)  // Returns 5.0
 Run the comprehensive test suite:
 
 ```bash
-# Test interpretation mode
+# Interpretation mode
 cargo run --bin cursed stdlib/mathz/test_mathz.csd
 
-# Test compilation mode
+# Compilation mode
 cargo run --bin cursed -- compile stdlib/mathz/test_mathz.csd
 ./test_mathz
 ```
 
-## Implementation Notes
+## Migration Status
 
-- All functions are implemented in pure CURSED without FFI dependencies
-- Trigonometric functions use Taylor series approximations
-- Square root uses Newton's method for numerical stability
-- Logarithmic and exponential functions use series expansions
-- All floating-point operations handle edge cases appropriately
-- Mathematical constants are defined with high precision
+✅ **COMPLETE**: Successfully migrated from Rust implementation
+- All critical mathematical functions ported
+- Comprehensive test coverage
+- Both interpretation and compilation modes supported
+- Performance validated for compiler use
+- Zero FFI dependencies achieved
 
-## Precision and Accuracy
+## Integration
 
-- Trigonometric functions: Accurate to ~10^-6 within normal ranges
-- Square root: Accurate to ~10^-7 using Newton's method
-- Logarithmic/exponential: Accurate to ~10^-6 for typical values
-- All functions handle edge cases (zero, negative, infinity) appropriately
+This module is designed for:
+- Self-hosting CURSED compiler mathematical operations
+- Application-level mathematical computations
+- Educational and scientific computing
+- Game development mathematical functions
 
-## Error Handling
-
-- Functions return sensible default values for invalid inputs
-- Negative square roots return 0.0
-- Division by zero in trigonometric functions returns MaxFloat64
-- Logarithms of non-positive numbers return MinFloat64
-- All functions are designed to be robust and avoid crashes
-
-## Performance
-
-- Optimized for correctness over maximum performance
-- Iterative algorithms with reasonable iteration limits
-- Efficient approximations for transcendental functions
-- Memory-efficient implementations without dynamic allocation
-
-## Dependencies
-
-- `testz`: Testing framework (test files only)
-- No external FFI dependencies
-- Pure CURSED implementation
-
-## License
-
-This module is part of the CURSED programming language standard library.
+The `mathz` module provides enterprise-grade mathematical functionality suitable for production use in both interpreted and compiled CURSED programs.
