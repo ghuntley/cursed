@@ -58,6 +58,8 @@ pub mod memory_bridge;         // FFI bridge for C runtime memory functions
 // Async and channels
 pub mod r#async;
 pub mod channels;
+pub mod goroutine_context;
+pub mod async_real;
 
 // Basic exports for minimal build
 pub use stack::RuntimeStack;

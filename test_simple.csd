@@ -1,1 +1,2 @@
-vibez.spill("Simple test")
+sus x normie = 42
+vibez.spill(x)

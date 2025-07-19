@@ -1548,6 +1548,15 @@ impl LlvmCodeGenerator {
             crate::ast::Type::TestStatus => Ok("i32".to_string()), // enum as i32
             crate::ast::Type::TestSuite => Ok("%struct.TestSuite".to_string()),
             crate::ast::Type::TestReport => Ok("%struct.TestReport".to_string()),
+            crate::ast::Type::Result(ok_type, err_type) => {
+                let _ok_llvm = self.convert_cursed_type_to_llvm(ok_type)?;
+                let _err_llvm = self.convert_cursed_type_to_llvm(err_type)?;
+                Ok(format!("{{ i1, [8 x i8] }}"))  // Tagged union with discriminant and data
+            },
+            crate::ast::Type::Option(inner_type) => {
+                let _inner_llvm = self.convert_cursed_type_to_llvm(inner_type)?;
+                Ok(format!("{{ i1, [8 x i8] }}"))  // Tagged union with discriminant and data
+            },
         }
     }
     

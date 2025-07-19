@@ -117,21 +117,22 @@ impl TypedCompilationPipeline {
         
         // Extract type information from type checker
         for scope in &self.type_checker.scopes {
-            for (name, type_expr) in scope {
-                type_annotations.insert(name.clone(), type_expr.clone());
+            for (name, var_info) in scope {
+                type_annotations.insert(name.clone(), var_info.symbol_type.clone());
                 
                 // Categorize as function or variable
-                if self.is_function_type(type_expr) {
-                    let func_info = self.extract_function_type_info(name, type_expr);
+                if self.is_function_type(&var_info.symbol_type) {
+                    let func_info = self.extract_function_type_info(name, &var_info.symbol_type);
                     resolved_functions.insert(name.clone(), func_info);
                 } else {
-                    let var_info = VariableTypeInfo {
+                    // Extract mutability from VariableInfo
+                    let var_type_info = VariableTypeInfo {
                         name: name.clone(),
-                        type_expr: type_expr.clone(),
-                        is_mutable: false, // TODO: Track mutability
+                        type_expr: var_info.symbol_type.clone(),
+                        is_mutable: var_info.is_mutable,
                         scope_level: self.type_checker.scopes.len() - 1,
                     };
-                    resolved_variables.insert(name.clone(), var_info);
+                    resolved_variables.insert(name.clone(), var_type_info);
                 }
             }
         }

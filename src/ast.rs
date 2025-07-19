@@ -1092,6 +1092,9 @@ pub enum Type {
     TestStatus,              // TestStatus enum for test status
     TestSuite,               // TestSuite type for test aggregation
     TestReport,              // TestReport type for comprehensive reporting
+    // Error handling types
+    Result(Box<Type>, Box<Type>), // Result<T, E> for error handling
+    Option(Box<Type>),            // Option<T> for nullable values
 }
 
 /// Helper function to convert Expression to string representation
@@ -1176,6 +1179,8 @@ impl std::fmt::Display for Type {
             Type::TestStatus => write!(f, "TestStatus"),
             Type::TestSuite => write!(f, "TestSuite"),
             Type::TestReport => write!(f, "TestReport"),
+            Type::Result(ok_type, err_type) => write!(f, "Result<{}, {}>", ok_type, err_type),
+            Type::Option(inner_type) => write!(f, "Option<{}>", inner_type),
         }
     }
 }
