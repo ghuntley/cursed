@@ -13,6 +13,7 @@
 //! - Platform-specific memory allocators and heap optimization
 
 use super::{PlatformAbstraction, PlatformError, Architecture, OperatingSystem};
+use super::common;
 use crate::runtime::memory::{MemoryManager, PlatformError as MemoryPlatformError};
 use crate::runtime::goroutine::{Scheduler, PlatformError as GoroutinePlatformError};
 use std::sync::{Arc, Mutex, RwLock, OnceLock, atomic::{AtomicUsize, AtomicBool, AtomicU64, Ordering}};
@@ -187,20 +188,20 @@ impl X86_64MacOSPal {
         // Use Rust's built-in feature detection
         #[cfg(target_arch = "x86_64")]
         {
-            caps.has_sse = is_x86_feature_detected!("sse");
-            caps.has_sse2 = is_x86_feature_detected!("sse2");
-            caps.has_sse3 = is_x86_feature_detected!("sse3");
-            caps.has_ssse3 = is_x86_feature_detected!("ssse3");
-            caps.has_sse41 = is_x86_feature_detected!("sse4.1");
-            caps.has_sse42 = is_x86_feature_detected!("sse4.2");
-            caps.has_avx = is_x86_feature_detected!("avx");
-            caps.has_avx2 = is_x86_feature_detected!("avx2");
-            caps.has_avx512f = is_x86_feature_detected!("avx512f");
-            caps.has_aes_ni = is_x86_feature_detected!("aes");
-            caps.has_sha_extensions = is_x86_feature_detected!("sha");
-            caps.has_rdrand = is_x86_feature_detected!("rdrand");
-            caps.has_rdseed = is_x86_feature_detected!("rdseed");
-            caps.has_memory_protection_keys = is_x86_feature_detected!("pku");
+            caps.has_sse = super::common::detect_simd_capability("sse");
+            caps.has_sse2 = super::common::detect_simd_capability("sse2");
+            caps.has_sse3 = super::common::detect_simd_capability("sse3");
+            caps.has_ssse3 = super::common::detect_simd_capability("ssse3");
+            caps.has_sse41 = super::common::detect_simd_capability("sse4.1");
+            caps.has_sse42 = super::common::detect_simd_capability("sse4.2");
+            caps.has_avx = super::common::detect_simd_capability("avx");
+            caps.has_avx2 = super::common::detect_simd_capability("avx2");
+            caps.has_avx512f = super::common::detect_simd_capability("avx512f");
+            caps.has_aes_ni = super::common::detect_crypto_capability("aes");
+            caps.has_sha_extensions = super::common::detect_crypto_capability("sha");
+            caps.has_rdrand = super::common::detect_crypto_capability("rdrand");
+            caps.has_rdseed = super::common::detect_crypto_capability("rdseed");
+            caps.has_memory_protection_keys = super::common::detect_hardware_capability("pku");
         }
 
         // Get detailed CPU information via sysctlbyname on macOS
@@ -1617,9 +1618,8 @@ impl MemoryManager for X86_64MemoryManager {
     fn memory_barrier(&self) {
         // x86_64 memory fence - serializing instruction
         #[cfg(target_arch = "x86_64")]
-        unsafe {
-            std::arch::asm!("mfence", options(nostack, preserves_flags));
-        }
+        // Use cross-platform memory barrier
+        super::common::memory_barrier();
         
         #[cfg(not(target_arch = "x86_64"))]
         std::sync::atomic::fence(Ordering::SeqCst);
@@ -1944,15 +1944,8 @@ impl Scheduler for X86_64Scheduler {
     }
     
     fn yield_now(&self) -> Result<(), GoroutinePlatformError> {
-        // x86_64 pause instruction for better SMT performance
-        #[cfg(target_arch = "x86_64")]
-        unsafe {
-            std::arch::asm!("pause", options(nostack, preserves_flags));
-        }
-        
-        #[cfg(not(target_arch = "x86_64"))]
-        thread::yield_now();
-        
+        // Use cross-platform yield abstraction
+        super::common::AtomicOperations::pause();
         Ok(())
     }
 }

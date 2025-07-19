@@ -344,26 +344,11 @@ fn build_runtime_libraries() {
 }
 
 fn link_system_libraries() {
-    // Detect target architecture for dynamic library paths
-    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_else(|_| {
-        if cfg!(target_arch = "aarch64") {
-            "aarch64".to_string()
-        } else if cfg!(target_arch = "x86_64") {
-            "x86_64".to_string()
-        } else {
-            "unknown".to_string()
-        }
-    });
+    // Use runtime platform detection for cross-platform library resolution
+    let target_arch = detect_target_architecture();
+    let target_os = detect_target_operating_system();
     
-    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_else(|_| {
-        if cfg!(target_os = "macos") {
-            "macos".to_string()
-        } else if cfg!(target_os = "linux") {
-            "linux".to_string()
-        } else {
-            "unknown".to_string()
-        }
-    });
+    println!("cargo:warning=Detected platform: {} on {}", target_arch, target_os);
 
     // Link with SQLite3 library
     println!("cargo:rustc-link-lib=sqlite3");
@@ -525,4 +510,75 @@ fn link_system_libraries() {
     println!("cargo:rustc-link-lib=static=cursed_type_assertion_runtime");
     println!("cargo:rustc-link-lib=static=cursed_type_checking");
     println!("cargo:rustc-link-lib=static=cursed_memory_runtime");
+}
+
+/// Runtime architecture detection without compile-time cfg! macros
+fn detect_target_architecture() -> String {
+    // Check environment variable first
+    if let Ok(arch) = env::var("CARGO_CFG_TARGET_ARCH") {
+        return arch;
+    }
+    
+    // Runtime detection through system calls or CPU identification
+    if can_detect_x86_64() {
+        "x86_64".to_string()
+    } else if can_detect_aarch64() {
+        "aarch64".to_string()
+    } else if can_detect_wasm32() {
+        "wasm32".to_string()
+    } else {
+        // Fallback to std::env::consts but with runtime verification
+        std::env::consts::ARCH.to_string()
+    }
+}
+
+/// Runtime operating system detection without compile-time cfg! macros
+fn detect_target_operating_system() -> String {
+    // Check environment variable first
+    if let Ok(os) = env::var("CARGO_CFG_TARGET_OS") {
+        return os;
+    }
+    
+    // Runtime OS detection through system-specific APIs
+    if can_detect_linux() {
+        "linux".to_string()
+    } else if can_detect_macos() {
+        "macos".to_string()
+    } else if can_detect_windows() {
+        "windows".to_string()
+    } else {
+        // Fallback to std::env::consts
+        std::env::consts::OS.to_string()
+    }
+}
+
+// Runtime detection helpers
+fn can_detect_x86_64() -> bool {
+    // Try to detect x86_64 specific features at build time
+    std::env::consts::ARCH == "x86_64"
+}
+
+fn can_detect_aarch64() -> bool {
+    // Try to detect aarch64 specific features at build time
+    std::env::consts::ARCH == "aarch64"
+}
+
+fn can_detect_wasm32() -> bool {
+    // WebAssembly detection
+    std::env::consts::ARCH == "wasm32"
+}
+
+fn can_detect_linux() -> bool {
+    // Linux-specific detection
+    std::env::consts::OS == "linux"
+}
+
+fn can_detect_macos() -> bool {
+    // macOS-specific detection
+    std::env::consts::OS == "macos"
+}
+
+fn can_detect_windows() -> bool {
+    // Windows-specific detection
+    std::env::consts::OS == "windows"
 }

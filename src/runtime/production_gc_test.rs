@@ -142,7 +142,7 @@ mod tests {
         
         // Create memory manager
         let memory_config = MemoryConfig::default();
-        let memory_manager = Arc::new(MemoryManager::new(memory_config, Arc::clone(&stack_manager)).unwrap());
+        let memory_manager = Arc::new(RuntimeMemoryManager::new(memory_config, Arc::clone(&stack_manager)).unwrap());
         
         // Create profiler without leak detection to prevent hanging
         let profiling_config = ProfilingConfig {

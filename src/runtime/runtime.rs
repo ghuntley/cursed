@@ -912,13 +912,17 @@ mod tests {
 
     #[test]
     fn test_runtime_creation() {
-        let runtime = Runtime::new().unwrap();
+        let config = RuntimeConfig::default();
+        let pal = crate::runtime::pal::detect_platform();
+        let runtime = Runtime::new(config, pal).unwrap();
         assert!(!runtime.is_running());
     }
 
     #[test]
     fn test_runtime_start_shutdown() {
-        let runtime = Runtime::new().unwrap();
+        let config = RuntimeConfig::default();
+        let pal = crate::runtime::pal::detect_platform();
+        let runtime = Runtime::new(config, pal).unwrap();
         assert!(runtime.start().is_ok());
         assert!(runtime.is_running());
         assert!(runtime.shutdown().is_ok());
@@ -938,7 +942,9 @@ mod tests {
 
     #[test]
     fn test_runtime_stats() {
-        let runtime = Runtime::new().unwrap();
+        let config = RuntimeConfig::default();
+        let pal = crate::runtime::pal::detect_platform();
+        let runtime = Runtime::new(config, pal).unwrap();
         let stats = runtime.get_stats().unwrap();
         assert_eq!(stats.active_goroutines, 0);
         assert_eq!(stats.total_goroutines_created, 0);
@@ -982,7 +988,9 @@ mod tests {
 
     #[test]
     fn test_scheduler_error_handling() {
-        let runtime = Runtime::new().unwrap();
+        let config = RuntimeConfig::default();
+        let pal = crate::runtime::pal::detect_platform();
+        let runtime = Runtime::new(config, pal).unwrap();
         let error = RuntimeError::new(RuntimeErrorType::SchedulingError, "Test error");
         
         let result = runtime.handle_scheduler_error(error);

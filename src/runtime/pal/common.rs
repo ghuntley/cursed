@@ -199,6 +199,11 @@ impl AtomicOperations {
     
     /// Platform-optimized pause/yield instruction
     pub fn pause() {
+        Self::platform_yield();
+    }
+    
+    /// Cross-platform yield implementation
+    fn platform_yield() {
         cfg_if::cfg_if! {
             if #[cfg(target_arch = "aarch64")] {
                 unsafe {
@@ -213,6 +218,25 @@ impl AtomicOperations {
                 std::thread::yield_now();
             } else {
                 std::thread::yield_now();
+            }
+        }
+    }
+    
+    /// Cross-platform memory barrier
+    pub fn memory_barrier() {
+        cfg_if::cfg_if! {
+            if #[cfg(target_arch = "x86_64")] {
+                unsafe {
+                    std::arch::asm!("mfence");
+                }
+            } else if #[cfg(target_arch = "aarch64")] {
+                unsafe {
+                    std::arch::asm!("dmb sy");
+                }
+            } else if #[cfg(target_arch = "wasm32")] {
+                std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
+            } else {
+                std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
             }
         }
     }
@@ -268,11 +292,79 @@ impl CacheManager {
     #[cfg(target_arch = "x86_64")]
     fn flush_icache_x86_64(_addr: *mut u8, _len: usize) -> Result<(), PlatformError> {
         // x86_64 has coherent instruction cache, no explicit flushing needed
-        // But we still need a serializing instruction
-        unsafe {
-            std::arch::asm!("mfence");
-        }
+        // Use platform abstraction for memory barriers
+        memory_barrier();
         Ok(())
+    }
+}
+
+/// Cross-platform SIMD capability detection
+pub fn detect_simd_capability(feature: &str) -> bool {
+    cfg_if::cfg_if! {
+        if #[cfg(target_arch = "x86_64")] {
+            match feature {
+                "sse" => is_x86_feature_detected!("sse"),
+                "sse2" => is_x86_feature_detected!("sse2"),
+                "avx" => is_x86_feature_detected!("avx"),
+                "avx2" => is_x86_feature_detected!("avx2"),
+                "avx512f" => is_x86_feature_detected!("avx512f"),
+                _ => false,
+            }
+        } else if #[cfg(target_arch = "aarch64")] {
+            match feature {
+                "neon" => cfg!(target_feature = "neon"),
+                "sve" => cfg!(target_feature = "sve"),
+                _ => false,
+            }
+        } else if #[cfg(target_arch = "wasm32")] {
+            match feature {
+                "simd128" => cfg!(target_feature = "simd128"),
+                _ => false,
+            }
+        } else {
+            false
+        }
+    }
+}
+
+/// Cross-platform crypto capability detection
+pub fn detect_crypto_capability(feature: &str) -> bool {
+    cfg_if::cfg_if! {
+        if #[cfg(target_arch = "x86_64")] {
+            match feature {
+                "aes" => is_x86_feature_detected!("aes"),
+                "sha" => is_x86_feature_detected!("sha"),
+                "rdrand" => is_x86_feature_detected!("rdrand"),
+                _ => false,
+            }
+        } else if #[cfg(target_arch = "aarch64")] {
+            match feature {
+                "aes" => cfg!(target_feature = "aes"),
+                "sha" => cfg!(target_feature = "sha2"),
+                _ => false,
+            }
+        } else {
+            false
+        }
+    }
+}
+
+/// Cross-platform hardware capability detection
+pub fn detect_hardware_capability(feature: &str) -> bool {
+    cfg_if::cfg_if! {
+        if #[cfg(target_arch = "x86_64")] {
+            match feature {
+                "pku" => is_x86_feature_detected!("pku"),
+                _ => false,
+            }
+        } else if #[cfg(target_arch = "aarch64")] {
+            match feature {
+                "mte" => false, // Would need runtime detection
+                _ => false,
+            }
+        } else {
+            false
+        }
     }
 }
 
@@ -307,11 +399,11 @@ impl CapabilityRegistry {
     fn register_vector_capabilities(caps: &mut HashMap<String, bool>) {
         cfg_if::cfg_if! {
             if #[cfg(target_arch = "x86_64")] {
-                caps.insert("sse".to_string(), is_x86_feature_detected!("sse"));
-                caps.insert("sse2".to_string(), is_x86_feature_detected!("sse2"));
-                caps.insert("avx".to_string(), is_x86_feature_detected!("avx"));
-                caps.insert("avx2".to_string(), is_x86_feature_detected!("avx2"));
-                caps.insert("avx512f".to_string(), is_x86_feature_detected!("avx512f"));
+                caps.insert("sse".to_string(), detect_simd_capability("sse"));
+                caps.insert("sse2".to_string(), detect_simd_capability("sse2"));
+                caps.insert("avx".to_string(), detect_simd_capability("avx"));
+                caps.insert("avx2".to_string(), detect_simd_capability("avx2"));
+                caps.insert("avx512f".to_string(), detect_simd_capability("avx512f"));
             } else if #[cfg(target_arch = "aarch64")] {
                 caps.insert("neon".to_string(), cfg!(target_feature = "neon"));
                 caps.insert("sve".to_string(), cfg!(target_feature = "sve"));
@@ -326,7 +418,7 @@ impl CapabilityRegistry {
             if #[cfg(target_arch = "x86_64")] {
                 caps.insert("large_pages".to_string(), true);
                 caps.insert("memory_protection_keys".to_string(), 
-                           is_x86_feature_detected!("pku"));
+                detect_hardware_capability("pku"));
             } else if #[cfg(target_arch = "aarch64")] {
                 caps.insert("large_pages".to_string(), true);
                 caps.insert("memory_tagging".to_string(), false); // Detect MTE support
@@ -340,9 +432,9 @@ impl CapabilityRegistry {
     fn register_crypto_capabilities(caps: &mut HashMap<String, bool>) {
         cfg_if::cfg_if! {
             if #[cfg(target_arch = "x86_64")] {
-                caps.insert("aes_ni".to_string(), is_x86_feature_detected!("aes"));
-                caps.insert("sha_extensions".to_string(), is_x86_feature_detected!("sha"));
-                caps.insert("rdrand".to_string(), is_x86_feature_detected!("rdrand"));
+                caps.insert("aes_ni".to_string(), detect_crypto_capability("aes"));
+                caps.insert("sha_extensions".to_string(), detect_crypto_capability("sha"));
+                caps.insert("rdrand".to_string(), detect_crypto_capability("rdrand"));
             } else if #[cfg(target_arch = "aarch64")] {
                 caps.insert("aes".to_string(), cfg!(target_feature = "aes"));
                 caps.insert("sha2".to_string(), cfg!(target_feature = "sha2"));
