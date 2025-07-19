@@ -9,12 +9,12 @@
     pkgs.git
     pkgs.ninja
     pkgs.cmake
-    pkgs.llvmPackages_17.clang
-    pkgs.llvmPackages_17.llvm
-    pkgs.llvmPackages_17.libllvm
-    pkgs.llvmPackages_17.libllvm.dev
-    pkgs.llvmPackages_17.mlir
-    pkgs.llvmPackages_17.stdenv
+    pkgs.llvmPackages_18.clang
+    pkgs.llvmPackages_18.llvm
+    pkgs.llvmPackages_18.libllvm
+    pkgs.llvmPackages_18.libllvm.dev
+    pkgs.llvmPackages_18.mlir
+    pkgs.llvmPackages_18.stdenv
     # C compiler and build tools for cc-rs
     pkgs.gcc
     pkgs.binutils
@@ -77,8 +77,8 @@
     export AR="${pkgs.binutils}/bin/ar"
 
     # LLVM configuration
-    export LLVM_SYS_170_PREFIX="${pkgs.llvmPackages_17.llvm.dev}"
-    export LLVM_CONFIG_PATH="${pkgs.llvmPackages_17.llvm.dev}/bin/llvm-config"
+    export LLVM_SYS_181_PREFIX="${pkgs.llvmPackages_18.llvm.dev}"
+    export LLVM_CONFIG_PATH="${pkgs.llvmPackages_18.llvm.dev}/bin/llvm-config"
 
     # Library paths for runtime and compilation
     export LD_LIBRARY_PATH="${pkgs.libffi}/lib:${pkgs.zlib}/lib:${pkgs.ncurses}/lib:${pkgs.libxml2}/lib:${pkgs.sqlite}/lib:$LD_LIBRARY_PATH"
@@ -91,7 +91,7 @@
 
     # BFD linker configuration is handled by .cargo/config.toml
     # Just ensure gcc and binutils are available in PATH
-    export PATH="${pkgs.llvmPackages_17.llvm}/bin:${pkgs.llvmPackages_17.clang}/bin:${pkgs.gcc}/bin:${pkgs.binutils}/bin:$PATH"
+    export PATH="${pkgs.llvmPackages_18.llvm}/bin:${pkgs.llvmPackages_18.clang}/bin:${pkgs.gcc}/bin:${pkgs.binutils}/bin:$PATH"
   '';
 
 

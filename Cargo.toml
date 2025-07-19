@@ -40,7 +40,7 @@ dirs = "5.0"  # For finding home directory
 num-traits = "0.2"  # For numerical traits
 num_cpus = "1.16"    # For detecting CPU core count
 libc = "0.2"  # For C functions like strlen
-inkwell = { version = "0.4", features = ["llvm17-0"] } # LLVM bindings
+inkwell = { version = "0.6.0", features = ["llvm18-1"] } # LLVM bindings
 atty = "0.2"  # For checking if stdin/stdout is a terminal
 libloading = "0.8"  # Dynamic library loading for plugins
 backtrace = { version = "0.3", optional = true }  # Stack trace capture
