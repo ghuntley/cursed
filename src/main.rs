@@ -166,6 +166,29 @@ fn build_cli() -> Command {
             .action(clap::ArgAction::SetTrue)
             .global(true))
         
+        // Platform information flags
+        .arg(Arg::new("platform-info")
+            .help("Show platform information and exit")
+            .long("platform-info")
+            .action(clap::ArgAction::SetTrue)
+            .global(true))
+        .arg(Arg::new("version-verbose")
+            .help("Show detailed version information")
+            .long("version")
+            .short('V')
+            .action(clap::ArgAction::SetTrue)
+            .global(true))
+        .arg(Arg::new("runtime-stats")
+            .help("Show runtime statistics")
+            .long("runtime-stats")
+            .action(clap::ArgAction::SetTrue)
+            .global(true))
+        .arg(Arg::new("hardware-info")
+            .help("Show hardware feature detection results")
+            .long("hardware-info")
+            .action(clap::ArgAction::SetTrue)
+            .global(true))
+        
         // Subcommands
         .subcommand(
             Command::new("compile")
@@ -772,6 +795,73 @@ async fn handle_command(matches: ArgMatches) -> Result<(), Box<dyn std::error::E
     if matches.get_flag("list-error-codes") {
         use cursed::error::cli::FileAwareErrorReporter;
         FileAwareErrorReporter::list_error_codes();
+        return Ok(());
+    }
+    
+    // Handle platform information flags
+    if matches.get_flag("platform-info") {
+        let platform_info = cursed::runtime::pal::get_platform_version_info(true);
+        println!("{}", platform_info);
+        return Ok(());
+    }
+    
+    if matches.get_flag("version-verbose") {
+        let verbose = matches.get_flag("verbose");
+        let version_info = cursed::runtime::pal::get_platform_version_info(verbose);
+        println!("{}", version_info);
+        return Ok(());
+    }
+    
+    if matches.get_flag("runtime-stats") {
+        match cursed::runtime::pal::get_platform_stats() {
+            Ok(stats) => {
+                println!("{}", stats.format_human_readable());
+            },
+            Err(e) => {
+                eprintln!("{}: Failed to get platform stats: {}", "Error".red(), e);
+                return Err(e.into());
+            }
+        }
+        return Ok(());
+    }
+    
+    if matches.get_flag("hardware-info") {
+        use cursed::runtime::pal::common::{PlatformDetector, CapabilityRegistry};
+        
+        let platform_info = PlatformDetector::detect();
+        let registry = CapabilityRegistry::new();
+        
+        println!("Hardware Features Detection:");
+        println!("  Architecture: {:?}", platform_info.architecture);
+        println!("  Operating System: {:?}", platform_info.operating_system);
+        println!("  Page Size: {} KB", platform_info.features.memory_features.page_size / 1024);
+        println!("  Cache Line Size: {} bytes", platform_info.features.memory_features.cache_line_size);
+        println!("  Hardware Concurrency: {}", platform_info.features.threading_features.hardware_concurrency);
+        
+        println!("\nVector Instructions:");
+        println!("  SSE: {}", platform_info.features.vector_instructions.sse);
+        println!("  SSE2: {}", platform_info.features.vector_instructions.sse2);
+        println!("  AVX: {}", platform_info.features.vector_instructions.avx);
+        println!("  AVX2: {}", platform_info.features.vector_instructions.avx2);
+        println!("  AVX-512: {}", platform_info.features.vector_instructions.avx512);
+        println!("  NEON: {}", platform_info.features.vector_instructions.neon);
+        println!("  SVE: {}", platform_info.features.vector_instructions.sve);
+        
+        println!("\nCrypto Acceleration:");
+        println!("  AES-NI: {}", platform_info.features.crypto_acceleration.aes_ni);
+        println!("  SHA Extensions: {}", platform_info.features.crypto_acceleration.sha_extensions);
+        println!("  Hardware RNG: {}", platform_info.features.crypto_acceleration.random_number_generator);
+        
+        println!("\nMemory Features:");
+        println!("  Large Pages: {}", platform_info.features.memory_features.large_pages);
+        println!("  Memory Tagging: {}", platform_info.features.memory_features.memory_tagging);
+        println!("  Memory Protection Keys: {}", platform_info.features.memory_features.memory_protection_keys);
+        
+        println!("\nThreading Features:");
+        println!("  Hyper-Threading: {}", platform_info.features.threading_features.hyper_threading);
+        println!("  big.LITTLE Cores: {}", platform_info.features.threading_features.big_little_cores);
+        println!("  NUMA Topology: {}", platform_info.features.threading_features.numa_topology);
+        
         return Ok(());
     }
     

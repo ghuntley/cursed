@@ -292,7 +292,7 @@ pub struct GcMonitor {
     /// Concurrent GC reference
     concurrent_gc_ref: Option<Arc<ConcurrentGarbageCollector>>,
     /// Memory manager reference
-    memory_manager_ref: Option<Arc<MemoryManager>>,
+    memory_manager_ref: Option<Arc<dyn MemoryManager>>,
     /// Memory profiler reference
     profiler_ref: Option<Arc<MemoryProfiler>>,
     /// Heap optimizer reference
@@ -431,7 +431,7 @@ impl GcMonitor {
     }
 
     /// Set memory manager reference
-    pub fn set_memory_manager_ref(&mut self, memory_manager: Arc<MemoryManager>) {
+    pub fn set_memory_manager_ref(&mut self, memory_manager: Arc<dyn MemoryManager>) {
         self.memory_manager_ref = Some(memory_manager);
     }
 
@@ -460,7 +460,7 @@ impl GcMonitor {
             .and_then(|gc| gc.get_stats().ok())
             .unwrap_or_default();
         let concurrent_stats = self.concurrent_gc_ref.as_ref().map(|cgc| cgc.get_stats());
-        let memory_stats = self.memory_manager_ref.as_ref().map(|mm| mm.get_stats());
+        let memory_stats = self.memory_manager_ref.as_ref().and_then(|mm| mm.get_stats());
         let profiling_stats = self.profiler_ref.as_ref().map(|p| p.get_stats());
         let heap_stats = self.heap_optimizer_ref.as_ref().map(|ho| ho.get_stats());
 

@@ -404,8 +404,9 @@ impl<'ctx> ConstantPropagationPass<'ctx> {
         if operands.len() == 2 {
             if let (Some(lhs), Some(rhs)) = (&operands[0], &operands[1]) {
                 if let (BasicValueEnum::IntValue(lhs_int), BasicValueEnum::IntValue(rhs_int)) = (lhs, rhs) {
-                    let result = lhs_int.const_and(*rhs_int);
-                    return Ok(Some(result.as_basic_value_enum()));
+                    // Note: const_and method is not available in current inkwell version
+                    // Skip constant folding for AND operations, but algebraic identities still work
+                    // TODO: Implement when inkwell adds const_and or use direct LLVM-C API
                 }
             }
         }
@@ -460,8 +461,9 @@ impl<'ctx> ConstantPropagationPass<'ctx> {
         if operands.len() == 2 {
             if let (Some(lhs), Some(rhs)) = (&operands[0], &operands[1]) {
                 if let (BasicValueEnum::IntValue(lhs_int), BasicValueEnum::IntValue(rhs_int)) = (lhs, rhs) {
-                    let result = lhs_int.const_or(*rhs_int);
-                    return Ok(Some(result.as_basic_value_enum()));
+                    // Note: const_or method is not available in current inkwell version
+                    // Skip constant folding for OR operations, but algebraic identities still work
+                    // TODO: Implement when inkwell adds const_or or use direct LLVM-C API
                 }
             }
         }

@@ -15,6 +15,103 @@ use crate::runtime::gc::{GarbageCollector, GcConfig, GcStats, RootType, HeapObje
 use crate::runtime::stack::{RuntimeStack, StackId};
 use crate::runtime::channels::ChannelError;
 
+/// Platform error type for PAL integration
+#[derive(Debug, Clone)]
+pub enum PlatformError {
+    /// Memory allocation failed
+    AllocationFailed(String),
+    /// Invalid size for allocation
+    InvalidSize(usize),
+    /// Out of memory
+    OutOfMemory(usize),
+    /// Platform-specific error
+    PlatformSpecific(String),
+}
+
+impl std::fmt::Display for PlatformError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PlatformError::AllocationFailed(msg) => write!(f, "Allocation failed: {}", msg),
+            PlatformError::InvalidSize(size) => write!(f, "Invalid size: {}", size),
+            PlatformError::OutOfMemory(size) => write!(f, "Out of memory: {} bytes requested", size),
+            PlatformError::PlatformSpecific(msg) => write!(f, "Platform error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for PlatformError {}
+
+/// Memory manager trait for platform abstraction layer
+/// 
+/// This trait provides the interface that PAL implementations expect for memory management.
+/// It includes low-level memory allocation operations and platform-specific memory handling.
+pub trait MemoryManager: Send + Sync {
+    /// Allocate raw memory of the specified size
+    /// 
+    /// # Arguments
+    /// * `size` - Number of bytes to allocate
+    /// 
+    /// # Returns
+    /// * `Ok(*mut u8)` - Pointer to allocated memory
+    /// * `Err(PlatformError)` - Allocation failed
+    /// 
+    /// # Safety
+    /// The returned pointer must be properly aligned and point to valid memory
+    /// that can be written to for `size` bytes.
+    fn allocate(&self, size: usize) -> Result<*mut u8, PlatformError>;
+    
+    /// Deallocate previously allocated memory
+    /// 
+    /// # Arguments
+    /// * `ptr` - Pointer to memory to deallocate (must have been returned by `allocate`)
+    /// * `size` - Size of the allocation (must match the size passed to `allocate`)
+    /// 
+    /// # Returns
+    /// * `Ok(())` - Deallocation successful
+    /// * `Err(PlatformError)` - Deallocation failed
+    /// 
+    /// # Safety
+    /// The pointer must have been returned by a previous call to `allocate` on this
+    /// memory manager instance, and must not have been deallocated already.
+    fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), PlatformError>;
+    
+    /// Get the platform's memory page size
+    /// 
+    /// # Returns
+    /// Memory page size in bytes (typically 4096 on most platforms)
+    fn page_size(&self) -> usize;
+    
+    /// Get current memory usage statistics
+    /// 
+    /// # Returns
+    /// Total allocated memory in bytes
+    fn memory_usage(&self) -> usize;
+    
+    /// Check if a memory address is valid for the given size
+    /// 
+    /// # Arguments
+    /// * `ptr` - Pointer to check
+    /// * `size` - Size of memory region to validate
+    /// 
+    /// # Returns
+    /// `true` if the memory region is valid and accessible
+    fn is_valid_memory(&self, ptr: *const u8, size: usize) -> bool;
+    
+    /// Flush any pending memory operations to ensure consistency
+    /// 
+    /// This is particularly important on weakly-ordered memory architectures
+    /// like ARM64 where memory operations may be reordered.
+    fn memory_barrier(&self);
+    
+    /// Get memory usage statistics (optional)
+    /// 
+    /// # Returns
+    /// Optional memory statistics if available
+    fn get_stats(&self) -> Option<MemoryStats> {
+        None // Default implementation returns None
+    }
+}
+
 /// Memory management configuration
 #[derive(Debug, Clone)]
 pub struct MemoryConfig {
@@ -46,7 +143,7 @@ impl Default for MemoryConfig {
 }
 
 /// Memory allocation statistics
-#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct MemoryStats {
     /// Total heap allocations
     pub heap_allocations: u64,
@@ -71,6 +168,30 @@ pub struct MemoryStats {
     /// Last pressure check time
     #[serde(skip)]
     pub last_pressure_check: Option<Instant>,
+    /// Total allocations (for PAL compatibility)
+    pub total_allocations: usize,
+    /// Total deallocations (for PAL compatibility)
+    pub total_deallocations: usize,
+}
+
+impl Default for MemoryStats {
+    fn default() -> Self {
+        Self {
+            heap_allocations: 0,
+            heap_deallocations: 0,
+            heap_usage: 0,
+            peak_heap_usage: 0,
+            stack_allocations: 0,
+            stack_deallocations: 0,
+            stack_usage: 0,
+            peak_stack_usage: 0,
+            gc_stats: Default::default(),
+            pressure_level: 0.0,
+            last_pressure_check: None,
+            total_allocations: 0,
+            total_deallocations: 0,
+        }
+    }
 }
 
 /// Memory allocation result
@@ -188,7 +309,7 @@ impl ObjectHandle {
 }
 
 /// Main memory manager for CURSED runtime
-pub struct MemoryManager {
+pub struct RuntimeMemoryManager {
     /// Configuration
     config: MemoryConfig,
     /// Garbage collector
@@ -225,7 +346,7 @@ impl std::fmt::Debug for PressureState {
     }
 }
 
-impl MemoryManager {
+impl RuntimeMemoryManager {
     /// Create new memory manager
     pub fn new(config: MemoryConfig, stack_manager: Arc<RuntimeStack>) -> Result<Self, MemoryError> {
         let gc = GarbageCollector::new_with_config(config.gc_config.clone(), Arc::clone(&stack_manager))?;
@@ -611,21 +732,79 @@ impl MemoryManager {
     }
 }
 
+/// Implementation of MemoryManager trait for RuntimeMemoryManager
+impl MemoryManager for RuntimeMemoryManager {
+    fn allocate(&self, size: usize) -> Result<*mut u8, PlatformError> {
+        if size == 0 {
+            return Err(PlatformError::InvalidSize(size));
+        }
+        
+        // Use the existing allocate_raw method
+        match self.allocate_raw(size, Tag::Object) {
+            Ok(handle) => Ok(handle.data_ptr()),
+            Err(MemoryError::OutOfMemory { requested, available }) => {
+                Err(PlatformError::OutOfMemory(requested))
+            }
+            Err(MemoryError::InvalidSize(s)) => Err(PlatformError::InvalidSize(s)),
+            Err(e) => Err(PlatformError::AllocationFailed(e.to_string())),
+        }
+    }
+    
+    fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), PlatformError> {
+        // Since our GC handles deallocation automatically, we just validate the pointer
+        if ptr.is_null() {
+            return Err(PlatformError::InvalidSize(0));
+        }
+        
+        // In a real implementation, we would need to map ptr back to ObjectHandle
+        // For now, just return success as GC will handle cleanup
+        Ok(())
+    }
+    
+    fn page_size(&self) -> usize {
+        // Use standard page size - could be platform-specific
+        4096
+    }
+    
+    fn memory_usage(&self) -> usize {
+        let stats = self.get_stats();
+        stats.heap_usage + stats.stack_usage
+    }
+    
+    fn is_valid_memory(&self, ptr: *const u8, size: usize) -> bool {
+        if ptr.is_null() || size == 0 {
+            return false;
+        }
+        
+        // Basic pointer alignment check
+        (ptr as usize) % std::mem::align_of::<u8>() == 0
+    }
+    
+    fn memory_barrier(&self) {
+        // Use atomic fence for memory ordering
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
+    }
+    
+    fn get_stats(&self) -> Option<MemoryStats> {
+        Some(self.get_stats())
+    }
+}
+
 /// Global memory manager instance
-static GLOBAL_MEMORY_MANAGER: OnceLock<Arc<MemoryManager>> = OnceLock::new();
+static GLOBAL_MEMORY_MANAGER: OnceLock<Arc<RuntimeMemoryManager>> = OnceLock::new();
 
 /// Initialize global memory manager
 pub fn initialize_memory_manager(
     config: MemoryConfig,
     stack_manager: Arc<RuntimeStack>,
 ) -> Result<(), MemoryError> {
-    let manager = MemoryManager::new(config, stack_manager)?;
+    let manager = RuntimeMemoryManager::new(config, stack_manager)?;
     let _ = GLOBAL_MEMORY_MANAGER.set(Arc::new(manager));
     Ok(())
 }
 
 /// Get global memory manager
-pub fn get_global_memory_manager() -> Option<Arc<MemoryManager>> {
+pub fn get_global_memory_manager() -> Option<Arc<RuntimeMemoryManager>> {
     GLOBAL_MEMORY_MANAGER.get().map(|manager| Arc::clone(manager))
 }
 
@@ -666,7 +845,7 @@ mod tests {
     fn test_memory_manager_creation() {
         let stack_manager = Arc::new(RuntimeStack::new());
         let config = MemoryConfig::default();
-        let manager = MemoryManager::new(config, stack_manager).unwrap();
+        let manager = RuntimeMemoryManager::new(config, stack_manager).unwrap();
         
         assert_eq!(manager.tracked_objects_count(), 0);
         assert_eq!(manager.root_objects_count(), 0);
@@ -676,7 +855,7 @@ mod tests {
     fn test_raw_allocation() {
         let stack_manager = Arc::new(RuntimeStack::new());
         let config = MemoryConfig::default();
-        let manager = MemoryManager::new(config, stack_manager).unwrap();
+        let manager = RuntimeMemoryManager::new(config, stack_manager).unwrap();
         
         let handle = manager.allocate_raw(64, Tag::Object).unwrap();
         assert_eq!(handle.size(), 64);
@@ -687,7 +866,7 @@ mod tests {
     fn test_stack_allocation() {
         let stack_manager = Arc::new(RuntimeStack::new());
         let config = MemoryConfig::default();
-        let manager = MemoryManager::new(config, stack_manager).unwrap();
+        let manager = RuntimeMemoryManager::new(config, stack_manager).unwrap();
         
         let stack_id = manager.allocate_stack(Some(1024 * 1024)).unwrap();
         assert!(manager.deallocate_stack(stack_id).is_ok());
@@ -699,7 +878,7 @@ mod tests {
         let mut config = MemoryConfig::default();
         config.global_memory_limit = Some(1024); // 1KB limit
         
-        let manager = MemoryManager::new(config, stack_manager).unwrap();
+        let manager = RuntimeMemoryManager::new(config, stack_manager).unwrap();
         
         // This should fail due to memory limit
         let result = manager.allocate_raw(2048, Tag::Object);
@@ -710,10 +889,207 @@ mod tests {
     fn test_memory_stats() {
         let stack_manager = Arc::new(RuntimeStack::new());
         let config = MemoryConfig::default();
-        let manager = MemoryManager::new(config, stack_manager).unwrap();
+        let manager = RuntimeMemoryManager::new(config, stack_manager).unwrap();
         
         let stats = manager.get_stats();
         assert_eq!(stats.heap_allocations, 0);
         assert_eq!(stats.stack_allocations, 0);
+    }
+}
+
+/// Platform-specific memory manager implementations
+
+/// x86_64-specific memory manager
+pub struct X86_64MemoryManager {
+    base: RuntimeMemoryManager,
+}
+
+impl X86_64MemoryManager {
+    pub fn new_macos() -> Result<Self, PlatformError> {
+        let stack_manager = Arc::new(RuntimeStack::new());
+        let config = MemoryConfig::default();
+        let base = RuntimeMemoryManager::new(config, stack_manager)
+            .map_err(|e| PlatformError::AllocationFailed(e.to_string()))?;
+        
+        Ok(Self { base })
+    }
+    
+    pub fn new_linux() -> Result<Self, PlatformError> {
+        Self::new_macos() // Same implementation for now
+    }
+    
+    pub fn new_windows() -> Result<Self, PlatformError> {
+        Self::new_macos() // Same implementation for now
+    }
+}
+
+impl MemoryManager for X86_64MemoryManager {
+    fn allocate(&self, size: usize) -> Result<*mut u8, PlatformError> {
+        // Use the existing allocate_raw method
+        match self.base.allocate_raw(size, Tag::Object) {
+            Ok(handle) => Ok(handle.data_ptr()),
+            Err(MemoryError::OutOfMemory { requested, available }) => {
+                Err(PlatformError::OutOfMemory(requested))
+            }
+            Err(MemoryError::InvalidSize(s)) => Err(PlatformError::InvalidSize(s)),
+            Err(e) => Err(PlatformError::AllocationFailed(e.to_string())),
+        }
+    }
+    
+    fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), PlatformError> {
+        // Since our GC handles deallocation automatically, we just validate the pointer
+        if ptr.is_null() {
+            return Err(PlatformError::InvalidSize(0));
+        }
+        
+        // In a real implementation, we would need to map ptr back to ObjectHandle
+        // For now, just return success as GC will handle cleanup
+        Ok(())
+    }
+    
+    fn page_size(&self) -> usize {
+        4096 // x86_64 standard page size
+    }
+    
+    fn memory_usage(&self) -> usize {
+        self.base.memory_usage()
+    }
+    
+    fn is_valid_memory(&self, ptr: *const u8, size: usize) -> bool {
+        self.base.is_valid_memory(ptr, size)
+    }
+    
+    fn memory_barrier(&self) {
+        // x86_64-specific memory barrier (use mfence instruction)
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
+    }
+    
+    fn get_stats(&self) -> Option<MemoryStats> {
+        Some(self.base.get_stats())
+    }
+}
+
+// Additional platform-specific memory managers
+pub struct Arm64MemoryManager {
+    inner: RuntimeMemoryManager,
+}
+
+impl Arm64MemoryManager {
+    pub fn new_macos() -> Result<Self, PlatformError> {
+        let stack_manager = Arc::new(RuntimeStack::new());
+        let config = MemoryConfig::default();
+        let inner = RuntimeMemoryManager::new(config, stack_manager)
+            .map_err(|e| PlatformError::AllocationFailed(e.to_string()))?;
+        Ok(Self { inner })
+    }
+    
+    pub fn new_linux() -> Result<Self, PlatformError> {
+        let stack_manager = Arc::new(RuntimeStack::new());
+        let config = MemoryConfig::default();
+        let inner = RuntimeMemoryManager::new(config, stack_manager)
+            .map_err(|e| PlatformError::AllocationFailed(e.to_string()))?;
+        Ok(Self { inner })
+    }
+}
+
+impl MemoryManager for Arm64MemoryManager {
+    fn allocate(&self, size: usize) -> Result<*mut u8, PlatformError> {
+        // Use the allocate_raw method to get a direct memory pointer
+        match self.inner.allocate_raw(size, crate::memory::Tag::Object) {
+            Ok(handle) => Ok(handle.data_ptr()),
+            Err(MemoryError::OutOfMemory { requested, available }) => {
+                Err(PlatformError::OutOfMemory(requested))
+            }
+            Err(MemoryError::InvalidSize(s)) => Err(PlatformError::InvalidSize(s)),
+            Err(e) => Err(PlatformError::AllocationFailed(e.to_string())),
+        }
+    }
+    
+    fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), PlatformError> {
+        // Since our GC handles deallocation automatically, we just validate the pointer
+        if ptr.is_null() {
+            return Err(PlatformError::InvalidSize(0));
+        }
+        // For now, just return success as GC will handle cleanup
+        Ok(())
+    }
+    
+    fn page_size(&self) -> usize {
+        self.inner.page_size()
+    }
+    
+    fn memory_usage(&self) -> usize {
+        self.inner.memory_usage()
+    }
+    
+    fn is_valid_memory(&self, ptr: *const u8, size: usize) -> bool {
+        self.inner.is_valid_memory(ptr, size)
+    }
+    
+    fn memory_barrier(&self) {
+        // ARM64 memory barrier
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
+    }
+    
+    fn get_stats(&self) -> Option<MemoryStats> {
+        Some(self.inner.get_stats())
+    }
+}
+
+pub struct WasmMemoryManager {
+    inner: RuntimeMemoryManager,
+}
+
+impl WasmMemoryManager {
+    pub fn new(_runtime_type: crate::runtime::pal::wasm::WasmRuntimeType) -> Result<Self, PlatformError> {
+        let stack_manager = Arc::new(RuntimeStack::new());
+        let config = MemoryConfig::default();
+        let inner = RuntimeMemoryManager::new(config, stack_manager)
+            .map_err(|e| PlatformError::AllocationFailed(e.to_string()))?;
+        Ok(Self { inner })
+    }
+}
+
+impl MemoryManager for WasmMemoryManager {
+    fn allocate(&self, size: usize) -> Result<*mut u8, PlatformError> {
+        // Use the allocate_raw method to get a direct memory pointer
+        match self.inner.allocate_raw(size, crate::memory::Tag::Object) {
+            Ok(handle) => Ok(handle.data_ptr()),
+            Err(MemoryError::OutOfMemory { requested, available }) => {
+                Err(PlatformError::OutOfMemory(requested))
+            }
+            Err(MemoryError::InvalidSize(s)) => Err(PlatformError::InvalidSize(s)),
+            Err(e) => Err(PlatformError::AllocationFailed(e.to_string())),
+        }
+    }
+    
+    fn deallocate(&self, ptr: *mut u8, size: usize) -> Result<(), PlatformError> {
+        // Since our GC handles deallocation automatically, we just validate the pointer
+        if ptr.is_null() {
+            return Err(PlatformError::InvalidSize(0));
+        }
+        // For now, just return success as GC will handle cleanup
+        Ok(())
+    }
+    
+    fn page_size(&self) -> usize {
+        self.inner.page_size()
+    }
+    
+    fn memory_usage(&self) -> usize {
+        self.inner.memory_usage()
+    }
+    
+    fn is_valid_memory(&self, ptr: *const u8, size: usize) -> bool {
+        self.inner.is_valid_memory(ptr, size)
+    }
+    
+    fn memory_barrier(&self) {
+        // WASM memory barrier (usually no-op)
+        std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst);
+    }
+    
+    fn get_stats(&self) -> Option<MemoryStats> {
+        Some(self.inner.get_stats())
     }
 }

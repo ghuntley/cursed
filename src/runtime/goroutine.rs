@@ -21,6 +21,61 @@ use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 use std::panic::{self, AssertUnwindSafe};
 
+/// Platform error type for PAL integration
+#[derive(Debug, Clone)]
+pub enum PlatformError {
+    /// Goroutine spawn failed
+    SpawnFailed(String),
+    /// Yield operation failed
+    YieldFailed(String),
+    /// Scheduler operation failed
+    SchedulerError(String),
+    /// Invalid operation
+    InvalidOperation(String),
+    /// Platform-specific error
+    PlatformSpecific(String),
+}
+
+impl std::fmt::Display for PlatformError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PlatformError::SpawnFailed(msg) => write!(f, "Spawn failed: {}", msg),
+            PlatformError::YieldFailed(msg) => write!(f, "Yield failed: {}", msg),
+            PlatformError::SchedulerError(msg) => write!(f, "Scheduler error: {}", msg),
+            PlatformError::InvalidOperation(msg) => write!(f, "Invalid operation: {}", msg),
+            PlatformError::PlatformSpecific(msg) => write!(f, "Platform error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for PlatformError {}
+
+/// Scheduler trait for platform abstraction layer
+/// 
+/// This trait provides the interface that PAL implementations expect for goroutine scheduling.
+/// It includes goroutine spawning and yielding operations.
+pub trait Scheduler: Send + Sync {
+    /// Spawn a new goroutine with the given task
+    /// 
+    /// # Arguments
+    /// * `task` - The function to execute in the new goroutine
+    /// 
+    /// # Returns
+    /// * `Ok(())` - Goroutine spawned successfully
+    /// * `Err(PlatformError)` - Spawn failed
+    fn spawn_goroutine(&self, task: Box<dyn FnOnce() + Send>) -> Result<(), PlatformError>;
+    
+    /// Yield execution to allow other goroutines to run
+    /// 
+    /// This implements cooperative scheduling by voluntarily giving up
+    /// the CPU to allow other goroutines to execute.
+    /// 
+    /// # Returns
+    /// * `Ok(())` - Yield successful
+    /// * `Err(PlatformError)` - Yield failed
+    fn yield_now(&self) -> Result<(), PlatformError>;
+}
+
 /// Global scheduler instance
 static GLOBAL_SCHEDULER: once_cell::sync::OnceCell<Arc<GoroutineScheduler>> = once_cell::sync::OnceCell::new();
 
@@ -1334,6 +1389,23 @@ impl GoroutineScheduler {
     }
 }
 
+/// Implementation of Scheduler trait for GoroutineScheduler
+impl Scheduler for GoroutineScheduler {
+    fn spawn_goroutine(&self, task: Box<dyn FnOnce() + Send>) -> Result<(), PlatformError> {
+        match self.spawn(task) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(PlatformError::SpawnFailed(e.to_string())),
+        }
+    }
+    
+    fn yield_now(&self) -> Result<(), PlatformError> {
+        match self.yield_current() {
+            Ok(()) => Ok(()),
+            Err(e) => Err(PlatformError::SchedulerError(e.to_string())),
+        }
+    }
+}
+
 /// Wrapper for GoroutineScheduler that implements the runtime trait
 pub struct GoroutineSchedulerWrapper {
     scheduler: Arc<GoroutineScheduler>,
@@ -1653,5 +1725,93 @@ mod tests {
         
         // For now, just test that the functions exist and can be called
         assert!(get_global_scheduler().is_none() || get_global_scheduler().is_some());
+    }
+}
+
+/// Platform-specific scheduler implementations
+
+/// x86_64-specific scheduler
+pub struct X86_64Scheduler {
+    base: Arc<GoroutineScheduler>,
+}
+
+impl X86_64Scheduler {
+    pub fn new_macos() -> Result<Self, PlatformError> {
+        let config = SchedulerConfig::default();
+        let base = Arc::new(GoroutineScheduler::with_config(config));
+        
+        // Start the scheduler
+        base.start().map_err(|e| PlatformError::SchedulerError(e.to_string()))?;
+        
+        Ok(Self { base })
+    }
+    
+    pub fn new_linux() -> Result<Self, PlatformError> {
+        Self::new_macos() // Same implementation for now
+    }
+    
+    pub fn new_windows() -> Result<Self, PlatformError> {
+        Self::new_macos() // Same implementation for now
+    }
+}
+
+impl Scheduler for X86_64Scheduler {
+    fn spawn_goroutine(&self, task: Box<dyn FnOnce() + Send>) -> Result<(), PlatformError> {
+        self.base.spawn_goroutine(task)
+    }
+
+    fn yield_now(&self) -> Result<(), PlatformError> {
+        self.base.yield_now()
+    }
+}
+
+// Additional platform-specific schedulers
+pub struct Arm64Scheduler {
+    inner: GoroutineScheduler,
+}
+
+impl Arm64Scheduler {
+    pub fn new_macos() -> Result<Self, PlatformError> {
+        Ok(Self {
+            inner: GoroutineScheduler::with_config(SchedulerConfig::default()),
+        })
+    }
+    
+    pub fn new_linux() -> Result<Self, PlatformError> {
+        Ok(Self {
+            inner: GoroutineScheduler::with_config(SchedulerConfig::default()),
+        })
+    }
+}
+
+impl Scheduler for Arm64Scheduler {
+    fn spawn_goroutine(&self, task: Box<dyn FnOnce() + Send>) -> Result<(), PlatformError> {
+        self.inner.spawn_goroutine(task)
+    }
+
+    fn yield_now(&self) -> Result<(), PlatformError> {
+        self.inner.yield_now()
+    }
+}
+
+pub struct WasmScheduler {
+    inner: GoroutineScheduler,
+}
+
+impl WasmScheduler {
+    pub fn new(_runtime_type: crate::runtime::pal::wasm::WasmRuntimeType) -> Result<Self, PlatformError> {
+        Ok(Self {
+            inner: GoroutineScheduler::with_config(SchedulerConfig::default()),
+        })
+    }
+}
+
+impl Scheduler for WasmScheduler {
+    fn spawn_goroutine(&self, task: Box<dyn FnOnce() + Send>) -> Result<(), PlatformError> {
+        self.inner.spawn_goroutine(task)
+    }
+
+    fn yield_now(&self) -> Result<(), PlatformError> {
+        self.inner.yield_now()
     }
 }
